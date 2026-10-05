@@ -2791,3 +2791,23 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - The next backend publication attempt requires a stable remote transfer channel (or an operator-provided deployment channel). Contabo reinstall, password fields, billing, and other destructive controls remain out of scope.
+
+## 2026-10-06 / Pass 140
+
+### Scope completed
+
+- Published the prepared backend readiness release to Contabo after a checksum-verified staging transfer.
+- Created a remote backup, installed the exact local `app.py`, ran remote `py_compile`, restarted `osgard-game-api`, and removed temporary staging data.
+
+### Verification
+
+- Remote service is `active`.
+- Remote `/health` returns `{"status":"ok","service":"osgard-game-api","contractVersion":1}`.
+- Remote `/health/ready` returns `{"status":"ready","service":"osgard-game-api","contractVersion":1,"authConfigured":true,"operatorConfigured":false}`.
+- Remote SHA-256 matches local `a0f6b5b254d1df4076d048def884398ff684ebf9754751377da95578ba05c610`.
+- `npm run qa:release` returned `status: ready`; typecheck, API smoke, production build, archive preflight, and 32-route production matrix all passed.
+
+### Publication boundary
+
+- Backend readiness is now live. `operatorConfigured:false` is intentional because no moderation secret was invented or provisioned.
+- Frontend runtime remains the previously verified published bundle; no frontend replacement was required for this backend-only release.
