@@ -15,6 +15,12 @@ async function walk(directory) {
 await walk(root)
 for (const item of required) await stat(join(root, item))
 if (!files.some(file => file.endsWith('.html'))) throw new Error('archive has no html entrypoint')
+const mojibakeMarkers = ['вЂ', 'пїЅ', '\ufffd']
+for (const file of files.filter(item => item.endsWith('.html'))) {
+  const html = await readFile(file, 'utf8')
+  const marker = mojibakeMarkers.find(value => html.includes(value))
+  if (marker) throw new Error(`HTML mojibake marker ${JSON.stringify(marker)} in ${relative(root, file)}`)
+}
 const hash = createHash('sha256')
 let bytes = 0
 for (const file of files.sort()) { const data = await readFile(file); bytes += data.length; hash.update(relative(root, file).replaceAll('\\', '/') + '\0'); hash.update(data) }

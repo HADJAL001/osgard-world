@@ -2592,3 +2592,18 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - Published as frontend commit `46cf3ec`; the normal GitHub release workflow remains the activation path for the new static asset.
+
+## 2026-10-06 / Pass 128
+
+### Scope completed
+
+- Hardened `frontend-archive-preflight` to reject replacement characters and known mojibake markers in every HTML file inside a release archive.
+
+### Verification
+
+- The current `dist` archive passes the new check with `status: ready`.
+- The guard is part of the existing release-readiness workflow, so future static game HTML regressions fail before publication.
+
+### Publication boundary
+
+- This is a release gate improvement; it does not claim that unrelated legacy TypeScript copy has been fully rewritten.
