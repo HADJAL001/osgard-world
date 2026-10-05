@@ -2657,3 +2657,20 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - The revised activation path is ready for one guarded deployment attempt; no new production bundle is claimed until that run succeeds.
+
+## 2026-10-06 / Pass 132
+
+### Scope completed
+
+- Re-ran the atomic-move deployment workflow `37384703747` to distinguish a transient SSH failure from a persistent activation problem.
+- Staging and checksum verification passed again; the activation command closed with exit code 1 again.
+
+### Verification
+
+- Production still serves `index-Cg_No4FM.js` and the `osgard-world` container remains healthy.
+- No document-root replacement or rollback mutation was observed after the failed run.
+- The same activation boundary has now reproduced across copy and atomic-move implementations.
+
+### Publication boundary
+
+- The new frontend bundle is not claimed as live. Further attempts require a background/polled remote activation or direct operator-side inspection of the container command channel; repeating the same foreground SSH activation is not evidence of publication.
