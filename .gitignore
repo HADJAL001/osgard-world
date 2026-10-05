@@ -32,3 +32,5 @@ upload-dist.cmd
 .env
 .env.*
 !.env.example
+osgard_deploy_ci
+osgard_deploy_ci.pub

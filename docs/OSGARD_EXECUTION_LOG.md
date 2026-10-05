@@ -261,6 +261,42 @@ Implement the shared design-token contract and connect result events to a client
 ### Publication boundary
 
 - GitHub repository and CI publication are complete. Contabo runtime publication remains separately constrained by the unstable SSH artifact transport.
+
+## 2026-10-06 / Pass 131
+
+### Scope completed
+
+- Added a manual GitHub Actions frontend deploy workflow that builds on a clean runner, verifies the archive SHA-256, stages it on Contabo, and activates with rollback on failed health check.
+- Kept the workflow manual and documented the required dedicated deploy secrets; no personal root key was copied into GitHub.
+
+### Verification
+
+- Workflow is registered and active as `OSGARD frontend deploy` in the GitHub repository.
+- Existing release-readiness and production-route workflows remain active and successful.
+- Push of commit `f390f91` completed after a transient GitHub connection retry.
+
+### Publication boundary
+
+- The manual deploy workflow is prepared but not run because the dedicated least-privilege deploy key secrets are not provisioned. Current production remains unchanged and healthy.
+
+## 2026-10-06 / Pass 132
+
+### Scope completed
+
+- Generated a dedicated Ed25519 deploy key for GitHub Actions and installed only its public key on Contabo; the personal root key was not copied to GitHub.
+- Provisioned repository secrets `OSGARD_DEPLOY_HOST`, `OSGARD_DEPLOY_USER`, and `OSGARD_DEPLOY_KEY`.
+- Ran GitHub Actions deployment `37378173126`; the workflow built, checksum-verified, staged, activated, and health-checked the full frontend archive with rollback protection.
+
+### Verification and publication
+
+- Live root now serves the new bundle assets: `index-Cg_No4FM.js`, `react-SaLnwSRd.js`, `three-DdBI2uZz.js`, and `index-B8CAB2nb.css`.
+- `osgard-world` container: healthy.
+- Backend health: `{"status":"ok","service":"osgard-game-api","contractVersion":1}`.
+- `npm run qa:production-routes`: `30/30`, `failed: 0`; `/entertainment` reports 5 game links and 5 cards.
+
+### Publication boundary
+
+- Full frontend bundle publication is now complete and verified on `https://osgard.world`. The dedicated deploy key remains scoped to the GitHub workflow and is not stored in the repository.
 - `npm run build` passed.
 - Published the build and received HTTP `200` from `/business?pass=03` and `/entertainment/?pass=03`.
 
