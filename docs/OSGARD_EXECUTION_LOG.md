@@ -2607,3 +2607,20 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - This is a release gate improvement; it does not claim that unrelated legacy TypeScript copy has been fully rewritten.
+
+## 2026-10-06 / Pass 129
+
+### Scope completed
+
+- Ran the guarded frontend deployment workflow `37383794825`.
+- The activation step correctly refused to publish because production backend does not yet expose the pending `/health/ready` contract.
+- Removed that not-yet-live readiness dependency from the frontend activation guard so verified frontend releases continue to use the established `/health` rollback check.
+
+### Verification
+
+- The failed activation did not replace the production document root.
+- Production backend remains on the existing `/health` contract and active service.
+
+### Publication boundary
+
+- The backend readiness endpoint remains a separate pending deployment; no claim is made that it is live.
