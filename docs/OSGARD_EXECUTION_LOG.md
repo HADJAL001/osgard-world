@@ -2494,3 +2494,19 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - This pass verifies the deployment guard and public health contract. Supabase production credentials, moderation secrets, physical device labs, warehouse-scale analytics, and staffing remain external requirements documented in `BRIEF_COVERAGE_AUDIT.md`.
+
+## 2026-10-06 / Pass 122
+
+### Scope completed
+
+- Added the authenticated result/share route `/r/1842` to the production route matrix.
+- Updated the living brief audit to distinguish the deployed result/share surface from the remaining external production requirements.
+
+### Verification
+
+- The route matrix now covers 32 desktop/mobile route checks, including `/r/1842`.
+- The result page submits its player result through the CORE API adapter and provides clipboard/fallback sharing plus links back to the game catalogue.
+
+### Publication boundary
+
+- This pass proves route availability and frontend behavior; it does not fabricate production identity tokens or leaderboard data.

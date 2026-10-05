@@ -1,5 +1,5 @@
 const base = process.env.OSGARD_BASE_URL || 'https://osgard.world'
-const routes = ['/','/entertainment','/community','/stream','/archive','/profile','/games/time','/play/swarm','/play/null-shift','/play/inherit','/play/remix','/media','/business','/create','/mobility']
+const routes = ['/','/entertainment','/community','/stream','/archive','/profile','/r/1842','/games/time','/play/swarm','/play/null-shift','/play/inherit','/play/remix','/media','/business','/create','/mobility']
 const agents = { desktop: 'OSGARD-Route-Matrix/1.0 Desktop', mobile: 'OSGARD-Route-Matrix/1.0 Mobile' }
 const results = []
 for (const [device, userAgent] of Object.entries(agents)) for (const route of routes) {
