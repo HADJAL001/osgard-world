@@ -2721,3 +2721,18 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - This pass confirms the live frontend route surface after activation. External Supabase identity fixtures, moderation secret provisioning, device lab, warehouse analytics, and staffing remain outside repository evidence.
+
+## 2026-10-06 / Pass 136
+
+### Scope completed
+
+- Updated the living brief coverage audit with the authoritative live bundle marker and post-deploy route evidence.
+- Explicitly separated the verified frontend surface from backend credentials, device-lab, warehouse, and staffing requirements that still require external evidence.
+
+### Verification
+
+- Audit now records 32/32 production routes, five entertainment cards, and `/r/1842` as live evidence.
+
+### Publication boundary
+
+- Documentation only; no new runtime behavior or external secret provisioning is claimed in this pass.

@@ -5,7 +5,7 @@ This is a living audit of the 200-point `игры ОСГАРД.txt` brief. It di
 | Range | Evidence | Status |
 |---:|---|---|
 | 1-12 | world manifest, design tokens, portal and account language | Implemented / documented |
-| 13-18 | portal demonstration, five-game catalogue, result/share route | Five-game catalogue and `/r/1842` result/share route deployed and route-verified |
+| 13-18 | portal demonstration, five-game catalogue, result/share route | Five-game catalogue and `/r/1842` result/share route deployed and route-verified in the live bundle; post-deploy matrix is 32/32 |
 | 19-22 | `/business` diagnostic intake and preview report | Implemented prototype |
 | 23-25 | `/create` idea-to-prototype flow | Implemented prototype |
 | 26-28 | `/mobility` route flow and alternatives | Implemented prototype |
@@ -25,4 +25,4 @@ Passes 62–72 add a deployed, operator-guarded moderation sanctions boundary, s
 
 Passes 89-109 additionally verify authenticated session persistence, social lifecycle, game results, analytics, moderation, retention, replay integrity, release build/API/asset gates, deterministic frontend manifest, and document the Supabase identity fixture procedure. The local fixture is test-only; actual Supabase identity creation and operator provisioning remain external.
 
-The portal and prototype layer is published and verified. The brief's full backend, multiplayer infrastructure, moderation, analytics warehouse, device lab, and production team cannot be truthfully marked complete from this repository alone; those remain explicit next production work rather than being silently treated as done.
+The portal and prototype layer is published and verified. The live frontend bundle is `index-6gUiTCiK.js`; the post-deploy matrix reports 32 routes and zero failures, including five entertainment cards and `/r/1842`. The brief's full backend, multiplayer infrastructure, moderation, analytics warehouse, device lab, and production team cannot be truthfully marked complete from this repository alone; those remain explicit next production work rather than being silently treated as done.
