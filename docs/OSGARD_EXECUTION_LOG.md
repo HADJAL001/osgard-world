@@ -2545,3 +2545,19 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - No rollback or destructive operation was required. The backend readiness change is not claimed as live until its remote checksum can be verified.
+
+## 2026-10-06 / Pass 125
+
+### Scope completed
+
+- Removed visible mojibake from the portal FAQ copy and the English private-table quotation.
+- Replaced the affected Russian FAQ descriptions with readable product and data-policy text.
+
+### Verification
+
+- `npm run check` passed.
+- `npm run build` passed and produced the frontend bundle with the corrected copy.
+
+### Publication boundary
+
+- The corrected source is ready for the normal frontend release workflow. Other legacy source surfaces with separate historical copy remain outside this narrow copy pass and are not claimed as corrected here.
