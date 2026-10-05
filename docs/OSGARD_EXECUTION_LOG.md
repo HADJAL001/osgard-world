@@ -2577,3 +2577,18 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - The source and bundle are ready for the normal frontend deployment workflow; legacy unused metadata constants remain in source for later cleanup but are no longer used at runtime.
+
+## 2026-10-06 / Pass 127
+
+### Scope completed
+
+- Corrected the only detected mojibake marker in the published game HTML set: REMIX now uses an em dash in its document title.
+
+### Verification
+
+- `npm run preflight:frontend dist` returned `status: ready`.
+- A full scan of `public/games/**/*.html` no longer finds `вЂ`, `пїЅ`, or replacement-character markers.
+
+### Publication boundary
+
+- Published as frontend commit `46cf3ec`; the normal GitHub release workflow remains the activation path for the new static asset.
