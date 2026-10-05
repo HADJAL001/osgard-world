@@ -2706,3 +2706,18 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - Frontend publication is now verified live. The separate backend `/health/ready` enhancement remains pending and is not required by the current frontend deploy guard.
+
+## 2026-10-06 / Pass 135
+
+### Scope completed
+
+- Ran the post-deploy production route matrix against the newly activated bundle.
+
+### Verification
+
+- `npm run qa:production-routes` returned `status: ready`, `routes: 32`, `failed: 0`.
+- Desktop and mobile checks both load `index-6gUiTCiK.js`; `/entertainment` reports five links and five cards; `/r/1842` returns HTTP 200.
+
+### Publication boundary
+
+- This pass confirms the live frontend route surface after activation. External Supabase identity fixtures, moderation secret provisioning, device lab, warehouse analytics, and staffing remain outside repository evidence.
