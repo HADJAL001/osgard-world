@@ -2811,3 +2811,20 @@ Continue non-financial brief implementation; billing can be handled only after a
 
 - Backend readiness is now live. `operatorConfigured:false` is intentional because no moderation secret was invented or provisioned.
 - Frontend runtime remains the previously verified published bundle; no frontend replacement was required for this backend-only release.
+
+## 2026-10-06 / Pass 141
+
+### Scope completed
+
+- Inspected Supabase project `OSGARD SEVEN` Authentication -> Users through the authorized dashboard.
+- The project UI reports `No users in your project`; the table has no actual user rows (the dashboard's separate estimated total is not treated as identity evidence).
+
+### Verification
+
+- This confirms the production backend is wired for Supabase auth (`authConfigured:true`) but has no verified production identity fixtures.
+- No user, password, token, billing setting, or provider configuration was created or changed.
+
+### Publication boundary
+
+- Supabase identity fixtures remain an external provisioning task requiring named test accounts and an operator-approved credential handoff.
+- The repository and production service remain unchanged in this pass; the observation is documented to prevent treating the estimated dashboard count as real users.
