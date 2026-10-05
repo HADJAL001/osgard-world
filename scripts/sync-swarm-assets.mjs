@@ -1,4 +1,5 @@
 import { cp, mkdir, readFile } from 'node:fs/promises';
+import { access } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -9,6 +10,11 @@ const targetRoot = resolve(projectRoot, 'public', 'games', 'swarm');
 const assets = ['index.html', 'game.js', 'styles.css'];
 
 await mkdir(targetRoot, { recursive: true });
+
+try { await access(swarmRoot) } catch {
+  console.log(`SWARM sibling source not present; keeping checked-in assets in ${targetRoot}`)
+  process.exit(0)
+}
 
 for (const asset of assets) {
   const source = resolve(swarmRoot, asset);

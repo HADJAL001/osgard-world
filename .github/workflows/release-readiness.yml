@@ -17,12 +17,18 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
-      - name: Run release gate
+      - name: Typecheck
+        run: npm run check
+      - name: Build and archive preflight
+        run: npm run build && npm run preflight:frontend
+      - name: Verify production routes
         env:
           OSGARD_BASE_URL: https://osgard.world
-        run: npm run qa:release
+        run: npm run qa:production-routes
       - name: Upload readiness report
         uses: actions/upload-artifact@v4
         with:
           name: osgard-release-readiness
-          path: release-readiness.json
+          path: |
+            release-manifest.json
+            production-route-matrix.json
