@@ -224,6 +224,25 @@ Implement the shared design-token contract and connect result events to a client
 ### Publication boundary
 
 - There is no configured CI/CD path available to bypass the unstable SSH transport. The five-game catalogue remains the latest verified runtime publication; the complete bundle requires deployment-channel setup outside the current repository.
+
+## 2026-10-06 / Pass 129
+
+### Scope completed
+
+- Connected the project to the authenticated GitHub account `HADJAL001`.
+- Created the dedicated public repository `https://github.com/HADJAL001/osgard-world` so this project is separated from unrelated `asgard-redesign` and `osgard-new-world` repositories.
+- Added a repository `.gitignore` that excludes local browser profiles, temporary chunks, archives, build output, screenshots, and environment files.
+- Published the OSGARD WORLD source, game assets, documentation, release gates, and deployment tooling as commit `a2ca4c0` on `master`.
+
+### Verification
+
+- GitHub push completed successfully and the remote repository is reachable.
+- Local staged content contained only project source/assets/docs; no environment files or browser token stores were included.
+- Existing local `npm run qa:release` and live production checks remain green.
+
+### Publication boundary
+
+- GitHub source publication is complete. Contabo runtime still serves the previously verified production image plus the separately published five-game entertainment route; full bundle activation remains a separate deployment-channel task.
 - `npm run build` passed.
 - Published the build and received HTTP `200` from `/business?pass=03` and `/entertainment/?pass=03`.
 
