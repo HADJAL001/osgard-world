@@ -2510,3 +2510,20 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - This pass proves route availability and frontend behavior; it does not fabricate production identity tokens or leaderboard data.
+
+## 2026-10-06 / Pass 123
+
+### Scope completed
+
+- Added backend `GET /health/ready` with redacted readiness flags for Supabase auth wiring and operator-secret provisioning.
+- Extended the guarded frontend deploy workflow to require `authConfigured: true` before activation or retain the previous document root; this guard will take effect with the backend source update.
+- Added smoke-test coverage for the degraded local fixture state and documented that operator readiness is intentionally separate.
+
+### Verification
+
+- `python osgard-game-api/test_api.py` returned `OSGARD_GAME_API_SMOKE_OK`.
+- No secret values are returned by the readiness endpoint or committed to source control. The backend source and fixture test are ready locally; production activation is pending stable SSH transport.
+
+### Publication boundary
+
+- Production `MODERATION_ADMIN_TOKEN` is still an external operator action; the readiness contract reports it as a boolean and does not invent or provision it. The current production service was not replaced after the transport interruption.

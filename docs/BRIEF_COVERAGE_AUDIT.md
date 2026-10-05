@@ -21,7 +21,7 @@ This is a living audit of the 200-point `игры ОСГАРД.txt` brief. It di
 
 Passes 62–85 add the deployed moderation boundary, server notifications, community lifecycle, five-game sessions, stream surface, route matrix, release gate, device runbook, and production handoff. Operator secrets, physical device execution, Supabase identity fixtures, and real staffing remain external evidence requirements.
 
-Passes 62–72 add a deployed, operator-guarded moderation sanctions boundary, server notification feed, and authenticated community/friend lifecycle. Production operator workflows remain intentionally unverified because `MODERATION_ADMIN_TOKEN` is not provisioned.
+Passes 62–72 add a deployed, operator-guarded moderation sanctions boundary, server notification feed, and authenticated community/friend lifecycle. Production operator workflows remain intentionally unverified because `MODERATION_ADMIN_TOKEN` is not provisioned; the readiness contract now reports this boundary without exposing the secret.
 
 Passes 89-109 additionally verify authenticated session persistence, social lifecycle, game results, analytics, moderation, retention, replay integrity, release build/API/asset gates, deterministic frontend manifest, and document the Supabase identity fixture procedure. The local fixture is test-only; actual Supabase identity creation and operator provisioning remain external.
 

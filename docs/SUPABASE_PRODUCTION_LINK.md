@@ -7,6 +7,7 @@ Verified on 2026-10-04:
 - `/etc/osgard-game-api.env` contains `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `OSGARD_EMPIRE_DB`.
 - `osgard-game-api` is `active`.
 - `GET http://127.0.0.1:4317/health` returns `status: ok`.
+- The pending backend readiness contract will expose `authConfigured` and `operatorConfigured` as booleans without exposing values once the stable backend transport is available.
 
 The service uses the Supabase bearer-token validation endpoint for authenticated player requests. The anon key is never copied into frontend source or documentation.
 
