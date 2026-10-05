@@ -2641,3 +2641,19 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - The latest frontend bundle is not claimed as live. Activation failure requires a separately diagnosed container document-root step before another production attempt.
+
+## 2026-10-06 / Pass 131
+
+### Scope completed
+
+- Diagnosed activation failure to the full document-root copy step inside the writable `osgard-world` container.
+- Reworked the guarded deploy activation to use atomic directory moves with rollback moves, avoiding a large in-container copy over the SSH command window.
+
+### Verification
+
+- Container root is writable, has 48 GB free, and a non-destructive extraction test passes.
+- The new workflow keeps the previous document root intact until the new root is moved into place and public/backend health checks pass.
+
+### Publication boundary
+
+- The revised activation path is ready for one guarded deployment attempt; no new production bundle is claimed until that run succeeds.
