@@ -1,0 +1,44 @@
+name: OSGARD frontend deploy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm run build
+      - run: npm run preflight:frontend
+      - name: Archive verified dist
+        run: tar -czf osgard-world-release.tgz -C dist .
+      - name: Configure SSH
+        env:
+          DEPLOY_KEY: ${{ secrets.OSGARD_DEPLOY_KEY }}
+        run: |
+          test -n "$DEPLOY_KEY"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/osgard_deploy
+          chmod 600 ~/.ssh/osgard_deploy
+          ssh-keyscan -H "${{ secrets.OSGARD_DEPLOY_HOST }}" >> ~/.ssh/known_hosts
+      - name: Stage archive and verify checksum
+        env:
+          HOST: ${{ secrets.OSGARD_DEPLOY_HOST }}
+          USER: ${{ secrets.OSGARD_DEPLOY_USER }}
+        run: |
+          sha256sum osgard-world-release.tgz | tee local.sha256
+          ssh -i ~/.ssh/osgard_deploy "$USER@$HOST" 'rm -rf /tmp/osgard-gh-release && mkdir -p /tmp/osgard-gh-release'
+          scp -i ~/.ssh/osgard_deploy osgard-world-release.tgz "$USER@$HOST:/tmp/osgard-gh-release/"
+          scp -i ~/.ssh/osgard_deploy local.sha256 "$USER@$HOST:/tmp/osgard-gh-release/"
+          ssh -i ~/.ssh/osgard_deploy "$USER@$HOST" 'cd /tmp/osgard-gh-release && sha256sum -c local.sha256'
+      - name: Activate verified archive with rollback
+        env:
+          HOST: ${{ secrets.OSGARD_DEPLOY_HOST }}
+          USER: ${{ secrets.OSGARD_DEPLOY_USER }}
+        run: |
+          ssh -i ~/.ssh/osgard_deploy "$USER@$HOST" 'set -e; docker cp /tmp/osgard-gh-release/osgard-world-release.tgz osgard-world:/tmp/osgard-gh-release.tgz; docker exec osgard-world sh -lc "rm -rf /tmp/osgard-gh-next /tmp/osgard-gh-previous && mkdir /tmp/osgard-gh-next && tar -xzf /tmp/osgard-gh-release.tgz -C /tmp/osgard-gh-next && test -f /tmp/osgard-gh-next/index.html && cp -a /usr/share/nginx/html /tmp/osgard-gh-previous && rm -rf /usr/share/nginx/html/* && cp -a /tmp/osgard-gh-next/. /usr/share/nginx/html"; if ! curl -fsS https://osgard.world/ >/dev/null; then docker exec osgard-world sh -lc "rm -rf /usr/share/nginx/html/* && cp -a /tmp/osgard-gh-previous/. /usr/share/nginx/html/"; exit 1; fi'

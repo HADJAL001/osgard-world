@@ -46,4 +46,6 @@ The resumable publisher is `scripts/publish-frontend-resumable.ps1`. It uploads 
 
 Use `-Activate` only after reviewing the verified staging output. The activation path keeps a rollback copy inside the container and restores it if the public root health check fails.
 
+GitHub also contains a manual `OSGARD frontend deploy` workflow. It requires repository secrets `OSGARD_DEPLOY_HOST`, `OSGARD_DEPLOY_USER`, and a dedicated least-privilege `OSGARD_DEPLOY_KEY`. Do not reuse a personal root key; the workflow is intentionally manual until that dedicated key is provisioned.
+
 Do not direct production traffic to the server until the reverse proxy has a valid TLS certificate.
