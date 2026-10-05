@@ -1,0 +1,2421 @@
+VBCSCompilerPreWarmer: watching VBCSCompiler (PID 27460)
+VBCSCompilerPreWarmer: pre-warm launched (dotnet PID 9060)
+VBCSCompiler prewarm took 10.78 ms
+[Licensing::Module] Trying to connect to existing licensing client channel...
+Built from '6000.6/staging' branch; Version is '6000.6.3f1 (45d8eee7de74) revision 4577518'; Using compiler version '194234433'; Build Type 'Release'
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-HADJAL" at "2026-09-29T22:24:29.8136362Z"
+OS: 'Windows 11  (10.0.26200) ProfessionalWorkstation' Language: 'ru' Physical Memory: 16172 MB
+BatchMode: 1, IsHumanControllingUs: 0, StartBugReporterOnCrash: 0, Is64bit: 1
+System  architecture: x64
+Process architecture: x64
+Date: 2026-09-29T22:24:29Z
+[Licensing::Client] Code 10 while verifying Licensing Client signature (process Id: 12200, path: "C:/Program Files/WindowsApps/UnityTechnologies.UnityHub_3.21.3.65535_x64__2vrhnee42bhxm/app/UnityLicensingClient_V1/Unity.Licensing.Client.exe")
+[Licensing::Module] LicensingClient has failed validation; ignoring
+[Licensing::Client] Handshaking with LicensingClient:
+  Version:                 1.18.3+d7ffd15
+  Session Id:              ae818f2f169d451ab586e2c9261ab022
+  Correlation Id:          97064ac72de53bad65c57d8223eaf886
+  External correlation Id: 4193948239559242393
+  Machine Id:              r3K1bDRrylmGUahvK7Iz9ZGvWHU=
+[Licensing::Module] Successfully connected to LicensingClient on channel: "LicenseClient-HADJAL" (connect: 0.00s, validation: 0.00s, handshake: 0.03s)
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-HADJAL-notifications" at "2026-09-29T22:24:29.841483Z"
+[Licensing::Module] Error: Access token is unavailable; failed to update
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] License group:
+  Id: 5774129955682-UnityPersXXXX
+  Product: Unity Personal
+  Type: Assigned
+  Expiration: Unlimited
+[Licensing::Client] Successfully updated license, isAsync: True, time: 0.00
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] Licensing Background thread has ended after 0.04s
+
+COMMAND LINE ARGUMENTS:
+C:\Program Files\Unity\Hub\Editor\6000.6.3f1\Editor\Unity.exe
+-batchmode
+-accept-apiupdate
+-quit
+-projectPath
+C:\remix-game-check
+-buildTarget
+WebGL
+-executeMethod
+Remix.Editor.RemixBuild.BuildWebGL
+-logFile
+C:\remix-game-check\Builds\REMIX-webgl3\unity-webgl-build.log
+Successfully changed project path to: C:\remix-game-check
+C:/remix-game-check
+[UnityMemory] Configuration Parameters - Can be set up in boot.config
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-nav-mesh-worker=65536"
+    "memorysetup-temp-allocator-size-audio-worker=65536"
+    "memorysetup-temp-allocator-size-cloud-worker=32768"
+    "memorysetup-temp-allocator-size-gfx=262144"
+    "memorysetup-remapper-allocator-initial-capacity=32768"
+    "memorysetup-temp-allocator-size-preload-manager=33554432"
+    "memorysetup-allocator-temp-initial-block-size-main=262144"
+    "memorysetup-allocator-temp-initial-block-size-worker=262144"
+    "memorysetup-temp-allocator-size-job-worker=262144"
+    "memorysetup-temp-allocator-size-background-worker=32768"
+    "memorysetup-bucket-allocator-granularity=16"
+    "memorysetup-bucket-allocator-bucket-count=8"
+    "memorysetup-bucket-allocator-block-size=33554432"
+    "memorysetup-bucket-allocator-block-count=8"
+    "memorysetup-main-allocator-block-size=16777216"
+    "memorysetup-thread-allocator-block-size=16777216"
+    "memorysetup-main-allocator-mimalloc-enabled=1"
+    "memorysetup-gfx-main-allocator-block-size=16777216"
+    "memorysetup-gfx-thread-allocator-block-size=16777216"
+    "memorysetup-cache-allocator-block-size=4194304"
+    "memorysetup-typetree-allocator-block-size=2097152"
+    "memorysetup-profiler-bucket-allocator-granularity=16"
+    "memorysetup-profiler-bucket-allocator-bucket-count=8"
+    "memorysetup-profiler-bucket-allocator-block-size=33554432"
+    "memorysetup-profiler-bucket-allocator-block-count=8"
+    "memorysetup-profiler-allocator-block-size=16777216"
+    "memorysetup-profiler-editor-allocator-block-size=1048576"
+    "memorysetup-temp-allocator-size-main=16777216"
+    "memorysetup-job-temp-allocator-block-size=2097152"
+    "memorysetup-job-temp-allocator-block-size-background=1048576"
+    "memorysetup-job-temp-allocator-reduction-small-platforms=262144"
+Logging is directed to a specific file, skipping project log.
+Player connection [7192]  Target information:
+
+Player connection [7192]  * "[IP] 192.168.0.101 [Port] 55504 [Flags] 2 [Guid] 180726730 [EditorId] 180726730 [Version] 1048832 [Id] WindowsEditor(7,HADJAL-PC) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" 
+
+Player connection [7192]  * "[IP] 172.23.208.1 [Port] 55504 [Flags] 2 [Guid] 180726730 [EditorId] 180726730 [Version] 1048832 [Id] WindowsEditor(7,HADJAL-PC) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" 
+
+Player connection [7192]  * "[IP] 172.19.112.1 [Port] 55504 [Flags] 2 [Guid] 180726730 [EditorId] 180726730 [Version] 1048832 [Id] WindowsEditor(7,HADJAL-PC) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" 
+
+Player connection [7192]  * "[IP] 172.18.0.1 [Port] 55504 [Flags] 2 [Guid] 180726730 [EditorId] 180726730 [Version] 1048832 [Id] WindowsEditor(7,HADJAL-PC) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" 
+
+Player connection [7192] Host joined multi-casting on [225.0.0.222:54997]...
+Player connection [7192] Host joined alternative multi-casting on [225.0.0.222:34997]...
+Input System module state changed to: Initialized.
+[Physics::Module] Initialized fallback backend.
+[Physics::Module] Id: 0xdecafbad
+[Package Manager] Connected to IPC stream "Upm-20964" after 0.2 seconds.
+[Licensing::Client] Successfully resolved entitlement details
+Library Redirect Path: Library/
+Launching Unity Data Store - C:/Program Files/Unity/Hub/Editor/6000.6.3f1/Editor/Data/Tools/Unity.DataStore.exe 
+Unity Data Store artifact dir = Library/DataStore, working dir = C:/remix-game-checkUnity Data Store running and initialised
+Targeting platform: WebGL
+[Physics::Module] Selected backend (deferred post-plugins).
+[Physics::Module] Name: PhysX
+[Physics::Module] Id: 0xf2b8ea05
+[Physics::Module] SDK Version: 4.1.2
+[Physics::Module] Integration Version: 1.0.0
+[Physics::Module] Threading Mode: Multi-Threaded
+Initialize engine version: 6000.6.3f1 (45d8eee7de74)
+[EntityIdStore] init: VM path (explicit commit), pageSize=4096, blockCount=1048576, entitiesPerBlock=256, slots reserved=4294967296 bytes
+[Subsystems] Discovering subsystems at path C:/Program Files/Unity/Hub/Editor/6000.6.3f1/Editor/Data/Resources/UnitySubsystems
+[Subsystems] Discovering subsystems at path C:/remix-game-check/Assets
+GfxDevice: creating device client; kGfxThreadingModeNonThreaded
+Direct3D:
+    Version:  Direct3D 11.0 [level 11.1]
+    Renderer: NVIDIA GeForce RTX 5070 (ID=0x2f04)
+    Vendor:   NVIDIA
+    VRAM:     11943 MB
+    Driver:   32.0.15.9174
+Initialize mono
+Mono path[0] = 'C:/Program Files/Unity/Hub/Editor/6000.6.3f1/Editor/Data/Managed'
+Mono path[1] = 'C:/Program Files/Unity/Hub/Editor/6000.6.3f1/Editor/Data/BCLExtensions/runtime/netstandard2.1'
+Mono path[2] = 'C:/Program Files/Unity/Hub/Editor/6000.6.3f1/Editor/Data/MonoBleedingEdge/lib/mono/unityjit-win32'
+Mono config path = 'C:/Program Files/Unity/Hub/Editor/6000.6.3f1/Editor/Data/MonoBleedingEdge/etc'
+Using monoOptions --debugger-agent=transport=dt_socket,embedding=1,server=y,suspend=n,address=127.0.0.1:56964
+CodeReloadManager initialized
+ImportWorker Server TCP listen port: 0
+AcceleratorClientConnectionCallback - disconnected - :0
+Begin MonoManager ReloadAssembly
+Registering precompiled unity dll's ...
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.6.3f1/Editor/Data/PlaybackEngines/WebGLSupport/UnityEditor.WebGL.Extensions.dll
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.6.3f1/Editor/Data/PlaybackEngines/WindowsStandaloneSupport/UnityEditor.WindowsStandalone.Extensions.dll
+Registered in 0.001513 seconds.
+Native extension for WindowsStandalone target not found
+Native extension for WebGL target not found
+Package Manager log level set to [2]
+ScheduleIndexationOnStartup MainProcess:False IndexOnStartup:True
+Scripting: successfully reloaded assembly
+- Finished resetting the current domain, in  0.746 seconds
+Domain Reload Profiling: 1263ms
+	BeginReloadAssembly (125ms)
+		CreateAndSetChildDomain (9ms)
+	RebuildCommonClasses (5ms)
+	RebuildNativeTypeToScriptingClass (15ms)
+	initialDomainReloadingComplete (56ms)
+	LoadAllAssembliesAndSetupDomain (314ms)
+		LoadAssemblies (114ms)
+		TypeCache.Refresh (209ms)
+			TypeCache.ScanAssembly (196ms)
+		AnalyzeDomain (1ms)
+	FinalizeReload (747ms)
+		SetupLoadedEditorAssemblies (0ms)
+			InitializePlatformSupportModulesInManaged (5ms)
+			BeforeProcessingInitializeOnLoad (122ms)
+			ProcessInitializeOnLoadAttributes (154ms)
+			ProcessInitializeOnLoadMethodAttributes (199ms)
+[Licensing::Client] Successfully resolved entitlement details
+Application.AssetDatabase Initial Refresh Start
+[Package Manager] Restoring resolved packages state from cache
+[Licensing::Client] Successfully resolved entitlement details
+[Package Manager] Registered 19 packages:
+  Packages from [https://packages.unity.com]:
+    com.unity.netcode.gameobjects@2.13.3 (location: C:\remix-game-check\Library\PackageCache\com.unity.netcode.gameobjects@277a288a1cea)
+    com.unity.inputsystem@1.20.0 (location: C:\remix-game-check\Library\PackageCache\com.unity.inputsystem@7a4e1a2a8194)
+    com.unity.nuget.mono-cecil@1.11.6 (location: C:\remix-game-check\Library\PackageCache\com.unity.nuget.mono-cecil@ecb9724e46ff)
+  Built-in packages:
+    com.unity.modules.unitywebrequest@1.0.0 (location: C:\remix-game-check\Library\PackageCache\com.unity.modules.unitywebrequest)
+    com.unity.transport@6.6.0 (location: C:\remix-game-check\Library\PackageCache\com.unity.transport@1839533e4eb3)
+    com.unity.multiplayer.playmode@3.0.0 (location: C:\remix-game-check\Library\PackageCache\com.unity.multiplayer.playmode@29d317c343be)
+    com.unity.modules.uielements@1.0.0 (location: C:\remix-game-check\Library\PackageCache\com.unity.modules.uielements)
+    com.unity.collections@6.6.0 (location: C:\remix-game-check\Library\PackageCache\com.unity.collections@10fff0607388)
+    com.unity.burst@2.0.0 (location: C:\remix-game-check\Library\PackageCache\com.unity.burst@626e66ab421b)
+    com.unity.mathematics@1.4.0 (location: C:\remix-game-check\Library\PackageCache\com.unity.mathematics@8306a64d0cd6)
+    com.unity.modules.ui@1.0.0 (location: C:\remix-game-check\Library\PackageCache\com.unity.modules.ui)
+    com.unity.modules.imgui@1.0.0 (location: C:\remix-game-check\Library\PackageCache\com.unity.modules.imgui)
+    com.unity.modules.jsonserialize@1.0.0 (location: C:\remix-game-check\Library\PackageCache\com.unity.modules.jsonserialize)
+    com.unity.modules.hierarchycore@1.0.0 (location: C:\remix-game-check\Library\PackageCache\com.unity.modules.hierarchycore)
+    com.unity.modules.physics@1.0.0 (location: C:\remix-game-check\Library\PackageCache\com.unity.modules.physics)
+    com.unity.modules.animation@1.0.0 (location: C:\remix-game-check\Library\PackageCache\com.unity.modules.animation)
+    com.unity.test-framework@1.8.0 (location: C:\remix-game-check\Library\PackageCache\com.unity.test-framework@80f691d4262b)
+    com.unity.test-framework.performance@6.6.0 (location: C:\remix-game-check\Library\PackageCache\com.unity.test-framework.performance@b6023decb532)
+    com.unity.ext.nunit@2.1.0 (location: C:\remix-game-check\Library\PackageCache\com.unity.ext.nunit@0198eae3b53e)
+[Subsystems] No new subsystems found in resolved package list.
+[Package Manager] Done registering packages in 0.01 seconds
+[ScriptCompilation] Requested script compilation because: AssetDatabase observed changes in script compilation related files
+Starting: C:\Program Files\Unity\Hub\Editor\6000.6.3f1\Editor\Data\Tools\BuildPipeline\bee_backend.exe --ipc --defer-dag-verification --dagfile="Library/Bee/2000b0aE.dag" --continue-on-failure --profile="Library/Bee/backend1.traceevents" ScriptAssemblies
+WorkingDir: C:/remix-game-check
+DisplayProgressbar: Compiling Scripts
+ExitCode: 0 Duration: 0s924ms
+[301/452    0s] WriteResponseFile Library/Bee/artifacts/rsp/4747638433968585886.rsp
+[374/452    0s] ILPP-Configuration Library/ilpp-configuration.nevergeneratedoutput
+[444/452    0s] Csc Library/Bee/artifacts/2000b0aE.dag/Assembly-CSharp.dll (+2 others)
+[446/452    0s] ILPostProcess Library/Bee/artifacts/2000b0aE.dag/post-processed/Assembly-CSharp-Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/2000b0aE.dag/Assembly-CSharp-Editor.dll, with 122 defines and 320 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, Unity.Netcode.Editor.CodeGen.INetworkMessageILPP, Unity.Netcode.Editor.CodeGen.INetworkSerializableILPP, Unity.Netcode.Editor.CodeGen.NetworkBehaviourILPP, Unity.Netcode.Editor.CodeGen.RuntimeAccessModifiersILPP, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+1 processor(s) skipped this assembly
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running Unity.Netcode.Editor.CodeGen.INetworkMessageILPP
+
+running Unity.Netcode.Editor.CodeGen.INetworkSerializableILPP
+
+running Unity.Netcode.Editor.CodeGen.NetworkBehaviourILPP
+
+running Unity.Netcode.Editor.CodeGen.RuntimeAccessModifiersILPP
+[449/452    0s] ILPostProcess Library/Bee/artifacts/2000b0aE.dag/post-processed/Assembly-CSharp.dll (+pdb)
+Processing assembly Library/Bee/artifacts/2000b0aE.dag/Assembly-CSharp.dll, with 124 defines and 272 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, Unity.Netcode.Editor.CodeGen.INetworkMessageILPP, Unity.Netcode.Editor.CodeGen.INetworkSerializableILPP, Unity.Netcode.Editor.CodeGen.NetworkBehaviourILPP, Unity.Netcode.Editor.CodeGen.RuntimeAccessModifiersILPP, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+1 processor(s) skipped this assembly
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running Unity.Netcode.Editor.CodeGen.INetworkMessageILPP
+
+running Unity.Netcode.Editor.CodeGen.INetworkSerializableILPP
+
+running Unity.Netcode.Editor.CodeGen.NetworkBehaviourILPP
+
+running Unity.Netcode.Editor.CodeGen.RuntimeAccessModifiersILPP
+[450/452    0s] CopyFiles Library/ScriptAssemblies/Assembly-CSharp.pdb
+[451/452    0s] CopyFiles Library/ScriptAssemblies/Assembly-CSharp.dll
+*** Tundra build success (0.89 seconds), 7 items updated, 452 evaluated
+Total cache size 41506029
+Total cache size after purge 41506029, took 00:00:00.0457724
+AssetDatabase: script compilation time: 1.365910s
+Begin MonoManager ReloadAssembly
+Native extension for WindowsStandalone target not found
+Native extension for WebGL target not found
+ScheduleIndexationOnStartup MainProcess:True IndexOnStartup:True
+Scripting: successfully reloaded assembly
+- Finished resetting the current domain, in  0.777 seconds
+Domain Reload Profiling: 1411ms
+	BeginReloadAssembly (249ms)
+		DisableScriptedObjects (29ms)
+		CreateAndSetChildDomain (58ms)
+	RebuildCommonClasses (9ms)
+	RebuildNativeTypeToScriptingClass (15ms)
+	initialDomainReloadingComplete (50ms)
+	LoadAllAssembliesAndSetupDomain (308ms)
+		LoadAssemblies (238ms)
+		TypeCache.Refresh (41ms)
+			TypeCache.ScanAssembly (33ms)
+		AnalyzeDomain (16ms)
+			BuildScriptInfoCaches (14ms)
+	FinalizeReload (779ms)
+		SetupLoadedEditorAssemblies (0ms)
+			BeforeProcessingInitializeOnLoad (129ms)
+			ProcessInitializeOnLoadAttributes (310ms)
+			ProcessInitializeOnLoadMethodAttributes (68ms)
+			AfterProcessingInitializeOnLoad (7ms)
+		AwakeInstancesAfterBackupRestoration (37ms)
+Starting new worker id: 0 with log in C:/remix-game-check/Logs/AssetImportWorkerHW0.log
+
+Asset Pipeline Refresh (id=44a18122468c31c4fadf4daea5391d9e): Total: 3.156 seconds - Initiated by InitialRefreshV2(ForceSynchronousImport)
+	(Values over 0.05ms)
+	Summary:
+		Imports: total=0 (actual=0, local cache=0, cache server=0)
+		Asset DB Process Time: managed=0 ms, native=1000 ms
+		Asset DB Callback time: managed=80 ms, native=18 ms
+		Scripting: domain reloads=1, domain reload time=668 ms, compile time=1369 ms, other=18 ms
+		Project Asset Count: scripts=334, non-scripts=246
+		Asset File Changes: new=0, changed=1, moved=0, deleted=0
+		Scan Filter Count: 0
+	InvokePackagesCallback: 17.078ms
+	ApplyChangesToAssetFolders: 0.430ms
+	Scan: 45.306ms
+	Collect global state as custom dependencies: 10.981ms
+	OnSourceAssetsModified: 0.685ms
+	CategorizeScriptCompilationAssets: 7.551ms
+	ProcessAssetsWithTransientArtifactChanges: 14.098ms
+	CategorizeAssets: 5.321ms
+	CompileScripts: 1369.259ms
+	ImportOutOfDateAssets: 790.665ms (781.009ms without children)
+		UnloadImportedAssets: 1.291ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 0.097ms
+		ImportSchedulerStart: 8.264ms
+	PostProcessAllAssets: 81.588ms
+		VCAutoAddAssetPostprocess 0.853ms
+		XRBuildSystem.XRAssetImported 0.160ms
+		MonoPostProcessAllAssets: 79.964ms
+			AssetPostprocessor.OnPostprocessAllAssets 32.641ms
+			StyleCatalogPostProcessor.OnPostprocessAllAssets 11.531ms
+			AssetDatabaseCallbacks.OnPostprocessAllAssets 5.638ms
+			BuilderAssetPostprocessor.OnPostprocessAllAssets 5.509ms
+			NetworkPrefabProcessor.OnPostprocessAllAssets 3.154ms
+			AssetChangedListener.OnPostprocessAllAssets 1.985ms
+			WindowAssetPostprocessingWatcher.OnPostprocessAllAssets 1.847ms
+			EditModeScopePostprocessor.OnPostprocessAllAssets 1.292ms
+			RetainedModeAssetPostprocessor.OnPostprocessAllAssets 1.273ms
+			SyncVS.PostprocessSyncProject 1.203ms
+			SpeedTree9Postprocessor.OnPostprocessAllAssets 0.793ms
+			ArtifactBrowserPostProcessor.OnPostprocessAllAssets 0.557ms
+			InputActionAssetPostprocessor.OnPostprocessAllAssets 0.364ms
+			TextAssetPostProcessor.OnPostprocessAllAssets 0.364ms
+			ReferencedClipsPostProcessor.OnPostprocessAllAssets 0.321ms
+			AudioMixerPostprocessor.OnPostprocessAllAssets 0.314ms
+			InputActionJsonNameModifierAssetProcessor.OnPostprocessAllAssets 0.286ms
+			AssetEvents.OnPostprocessAllAssets 0.271ms
+			TerrainToolbarOverlayPostProcessor.OnPostprocessAllAssets 0.252ms
+			ScenarioDriftAssetsTracker.OnPostprocessAllAssets 0.225ms
+			ConfigAssetsTracker.OnPostprocessAllAssets 0.202ms
+			ProjectSettingsPostprocessor.OnPostprocessAllAssets 0.177ms
+			SpeedTreePostProcessor.OnPostprocessAllAssets 0.150ms
+			ThemePostprocessor.OnPostprocessAllAssets 0.133ms
+			RenderPipelineGlobalSettingsPostprocessor.OnPostprocessAllAssets 0.105ms
+			AudioContainerPostProcessor.OnPostprocessAllAssets 0.082ms
+	PostAssetChangesProfiler: 1.339ms
+	UnloadStreamsBegin: 1.534ms
+	GenerateScriptTypeHashes: 1.008ms
+	GenerateScriptTypeSerializationHashes: 2.190ms
+	Untracked: 780.059ms
+
+Application.AssetDatabase Initial Refresh End
+Launched and connected shader compiler UnityShaderCompiler.exe after 0.01 seconds
+Scanning for USB devices : 38.035ms
+Initializing Unity extensions:
+[MODES] ModeService[none].Initialize
+[MODES] ModeService[none].LoadModes
+[MODES] Loading mode Default (0) for mode-current-id-remix-game-check
+Unloading 4 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 1585 unused Assets / (1.1 MB). Loaded Objects now: 2316.
+Memory consumption went from 251.0 MB to 249.9 MB.
+Total: 7.330000 ms (FindLiveObjects: 0.372900 ms CreateObjectMapping: 0.089800 ms MarkObjects: 6.238500 ms  DeleteObjects: 0.465600 ms)
+
+[TestRunBuilder] Creating new file 'Assets/Resources/PerformanceTestRunInfo.json' (1495 bytes)
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Unity.PerformanceTesting.Editor.TestRunBuilder:SaveToStorage (object,string) (at ./Library/PackageCache/com.unity.test-framework.performance@b6023decb532/Editor/TestRunBuilder.cs:242)
+Unity.PerformanceTesting.Editor.TestRunBuilder:OnPreprocessBuild (UnityEditor.Build.Reporting.BuildReport) (at ./Library/PackageCache/com.unity.test-framework.performance@b6023decb532/Editor/TestRunBuilder.cs:35)
+UnityEditor.Build.BuildPipelineInterfaces/<>c__DisplayClass17_0:<OnBuildPreProcess>b__1 (UnityEditor.Build.IPreprocessBuildWithReport)
+UnityEditor.Build.BuildPipelineInterfaces:InvokeCallbackInterfacesPair<UnityEditor.Build.IPreprocessBuild, UnityEditor.Build.IPreprocessBuildWithReport> (System.Collections.Generic.List`1<UnityEditor.Build.IPreprocessBuild>,System.Action`1<UnityEditor.Build.IPreprocessBuild>,System.Collections.Generic.List`1<UnityEditor.Build.IPreprocessBuildWithReport>,System.Action`1<UnityEditor.Build.IPreprocessBuildWithReport>,bool)
+UnityEditor.Build.BuildPipelineInterfaces:OnBuildPreProcess (UnityEditor.Build.Reporting.BuildReport)
+UnityEditor.BuildPipeline:BuildPlayerInternal (string[],string,string,UnityEditor.BuildTargetGroup,UnityEditor.BuildTarget,int,UnityEditor.BuildOptions,string[],string[],bool)
+UnityEditor.BuildPipeline:BuildPlayer (UnityEditor.BuildPlayerOptions)
+Remix.Editor.RemixBuild:BuildWebGL () (at Assets/Editor/RemixBuild.cs:15)
+
+(Filename: ./Library/PackageCache/com.unity.test-framework.performance@b6023decb532/Editor/TestRunBuilder.cs Line: 242)
+
+[TestRunBuilder] Creating new file 'Assets/Resources/PerformanceTestRunSettings.json' (23 bytes)
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Unity.PerformanceTesting.Editor.TestRunBuilder:SaveToStorage (object,string) (at ./Library/PackageCache/com.unity.test-framework.performance@b6023decb532/Editor/TestRunBuilder.cs:242)
+Unity.PerformanceTesting.Editor.TestRunBuilder:OnPreprocessBuild (UnityEditor.Build.Reporting.BuildReport) (at ./Library/PackageCache/com.unity.test-framework.performance@b6023decb532/Editor/TestRunBuilder.cs:38)
+UnityEditor.Build.BuildPipelineInterfaces/<>c__DisplayClass17_0:<OnBuildPreProcess>b__1 (UnityEditor.Build.IPreprocessBuildWithReport)
+UnityEditor.Build.BuildPipelineInterfaces:InvokeCallbackInterfacesPair<UnityEditor.Build.IPreprocessBuild, UnityEditor.Build.IPreprocessBuildWithReport> (System.Collections.Generic.List`1<UnityEditor.Build.IPreprocessBuild>,System.Action`1<UnityEditor.Build.IPreprocessBuild>,System.Collections.Generic.List`1<UnityEditor.Build.IPreprocessBuildWithReport>,System.Action`1<UnityEditor.Build.IPreprocessBuildWithReport>,bool)
+UnityEditor.Build.BuildPipelineInterfaces:OnBuildPreProcess (UnityEditor.Build.Reporting.BuildReport)
+UnityEditor.BuildPipeline:BuildPlayerInternal (string[],string,string,UnityEditor.BuildTargetGroup,UnityEditor.BuildTarget,int,UnityEditor.BuildOptions,string[],string[],bool)
+UnityEditor.BuildPipeline:BuildPlayer (UnityEditor.BuildPlayerOptions)
+Remix.Editor.RemixBuild:BuildWebGL () (at Assets/Editor/RemixBuild.cs:15)
+
+(Filename: ./Library/PackageCache/com.unity.test-framework.performance@b6023decb532/Editor/TestRunBuilder.cs Line: 242)
+
+Starting: C:\Program Files\Unity\Hub\Editor\6000.6.3f1\Editor\Data\Tools\BuildPipeline\bee_backend.exe --ipc --defer-dag-verification --dagfile="Library/Bee/2000b0aESkipCompile.dag" --continue-on-failure --profile="Library/Bee/backend1.traceevents" ScriptAssembliesAndTypeDB
+WorkingDir: C:/remix-game-check
+ExitCode: 0 Duration: 0s671ms
+[2/3        0s] BuildPlayerDataGenerator Library/BuildPlayerData/Editor/TypeDb-All.json
+*** Tundra build success (0.64 seconds), 1 items updated, 3 evaluated
+Total cache size 41506029
+Total cache size after purge 41506029, took 00:00:00.0419004
+Importing 'GUID: 090a3c5ceb7efc84b841e4199ab4a7da - Path: Assets/Resources/PerformanceTestRunSettings.json' with importer (TextScriptImporter)
+Imported 'GUID: 090a3c5ceb7efc84b841e4199ab4a7da' -> (Import Result ID: 'b35a76cb6aed6d22a757d4479e5eb1b0') in 0.017 seconds [static dependencies only]. Details - ImportResultOutputID=d30d526c08d74ce34206e0ea99608ffe DependenciesID=c8c5640ff4cb6481e3fae86f3f00bf20 StaticDependenciesID=cc33f4abfb72f2dde808b73024e3afff 
+Importing 'GUID: 7fa31a1c4fa07054ba7a72a32d91a499 - Path: Assets/Resources/PerformanceTestRunInfo.json' with importer (TextScriptImporter)
+Curl error 35: Cert verify failed. Certificate could not be verified (either omitted or unsupported). UnityTls error code: 7
+Imported 'GUID: 7fa31a1c4fa07054ba7a72a32d91a499' -> (Import Result ID: 'efcf9cc4234ebe42038a040f9212a262') in 0.011 seconds [static dependencies only]. Details - ImportResultOutputID=d7b77d1926c44aed35112db3b4a84695 DependenciesID=bb6c28e01cb48f3a5a723608ed3c235c StaticDependenciesID=78f53afa96ddb45d4dbc952b09c4cbbe 
+Asset Pipeline Refresh (id=adfc21da865e0ce49b7c70965482a098): Total: 0.056 seconds - Initiated by RefreshV2(NoUpdateAssetOptions)
+[ScriptCompilation] Requested script compilation because: Recompiling scripts for player build.
+BuildPlayer: start building target 20
+Starting: C:\Program Files\Unity\Hub\Editor\6000.6.3f1\Editor\Data\Tools\BuildPipeline\bee_backend.exe --ipc --defer-dag-verification --dagfile="Library/Bee/2000b0aP.dag" --continue-on-failure --profile="Library/Bee/backend1.traceevents" ScriptAssembliesAndTypeDB
+WorkingDir: C:/remix-game-check
+Curl error 35: Cert verify failed. Certificate could not be verified (either omitted or unsupported). UnityTls error code: 7
+Worker ready: AssetImportWorkerHW0 0
+ExitCode: 0 Duration: 1s522ms
+[312/407    0s] WriteResponseFile Library/Bee/artifacts/rsp/4747638433968585886.rsp
+[364/407    0s] ILPP-Configuration Library/ilpp-configuration.nevergeneratedoutput
+[377/407    0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Unity.Networking.Transport.NetcodeInterop.dll
+[378/407    0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Unity.Collections.Tests.CoreCLR.InternalJobNestedPrivate.dll
+[379/407    0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Unity.Collections.dll
+[380/407    0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Unity.Collections.Tests.CoreCLR.PublicJobPrivateGeneric.dll
+[381/407    0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Unity.Collections.Tests.CoreCLR.PublicJobPrivateGeneric.pdb
+[382/407    0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Unity.Netcode.Runtime.dll
+[383/407    0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Unity.InputSystem.ForUI.dll
+[384/407    0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Unity.Mathematics.dll
+[385/407    0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Unity.Collections.Tests.CoreCLR.PrivateJobNested.pdb
+[386/407    0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Unity.InputSystem.dll
+[387/407    0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Unity.Collections.Tests.CoreCLR.PrivateJobNested.dll
+[388/407    0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Unity.Networking.Transport.dll
+[389/407    0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Unity.Burst.dll
+[390/407    0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Unity.InputSystem.pdb
+[391/407    0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Unity.Collections.Tests.CoreCLR.ProtectedJobNested.dll
+[392/407    0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Unity.Burst.pdb
+[393/407    0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Unity.Collections.Tests.CoreCLR.ProtectedJobNested.pdb
+[394/407    0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Unity.InputSystem.ForUI.pdb
+[395/407    0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Unity.Networking.Transport.pdb
+[396/407    0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Unity.Netcode.Runtime.pdb
+[397/407    0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Unity.Collections.pdb
+[398/407    0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Unity.Mathematics.pdb
+[399/407    0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Unity.Networking.Transport.NetcodeInterop.pdb
+[400/407    0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Unity.Collections.Tests.CoreCLR.InternalJobNestedPrivate.pdb
+[401/407    0s] Csc Library/Bee/artifacts/2000b0aP.dag/Assembly-CSharp.dll (+2 others)
+[402/407    0s] ILPostProcess Library/Bee/artifacts/2000b0aP.dag/post-processed/Assembly-CSharp.dll (+pdb)
+Processing assembly Library/Bee/artifacts/2000b0aP.dag/Assembly-CSharp.dll, with 111 defines and 197 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, Unity.Netcode.Editor.CodeGen.INetworkMessageILPP, Unity.Netcode.Editor.CodeGen.INetworkSerializableILPP, Unity.Netcode.Editor.CodeGen.NetworkBehaviourILPP, Unity.Netcode.Editor.CodeGen.RuntimeAccessModifiersILPP, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+1 processor(s) skipped this assembly
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running Unity.Netcode.Editor.CodeGen.INetworkMessageILPP
+
+running Unity.Netcode.Editor.CodeGen.INetworkSerializableILPP
+
+running Unity.Netcode.Editor.CodeGen.NetworkBehaviourILPP
+
+running Unity.Netcode.Editor.CodeGen.RuntimeAccessModifiersILPP
+[403/407    0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Assembly-CSharp.pdb
+[404/407    0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Assembly-CSharp.dll
+[406/407    0s] BuildPlayerDataGenerator Library/BuildPlayerData/Player/RuntimeInitializeOnLoads.json (+1 other)
+*** Tundra build success (1.50 seconds), 31 items updated, 407 evaluated
+Total cache size 41506029
+Total cache size after purge 41506029, took 00:00:00.0366077
+Rebuilding Data files because Assets/Resources/PerformanceTestRunSettings.json is dirty (hash)
+
+
+Mono dependencies included in the build
+Dependency assembly - System.Data.Services.dll
+Dependency assembly - System.Web.dll
+Dependency assembly - System.Security.Cryptography.OpenSsl.dll
+Dependency assembly - System.Threading.Timer.dll
+Dependency assembly - Unity.Networking.Transport.NetcodeInterop.dll
+Dependency assembly - I18N.West.dll
+Dependency assembly - System.Resources.Writer.dll
+Dependency assembly - System.Security.AccessControl.dll
+Dependency assembly - System.Data.Linq.dll
+Dependency assembly - System.Net.Http.dll
+Dependency assembly - System.Security.Cryptography.Primitives.dll
+Dependency assembly - System.Security.Cryptography.Pkcs.dll
+Dependency assembly - System.Memory.dll
+Dependency assembly - System.IO.FileSystem.DriveInfo.dll
+Dependency assembly - System.ServiceModel.Web.dll
+Dependency assembly - I18N.dll
+Dependency assembly - System.Security.Cryptography.Encryption.ECDsa.dll
+Dependency assembly - System.Runtime.dll
+Dependency assembly - System.ObjectModel.dll
+Dependency assembly - System.Security.Principal.Windows.dll
+Dependency assembly - System.Net.Sockets.dll
+Dependency assembly - System.AppContext.dll
+Dependency assembly - System.ComponentModel.Annotations.dll
+Dependency assembly - System.Security.dll
+Dependency assembly - System.Security.Cryptography.Algorithms.dll
+Dependency assembly - System.Reflection.Metadata.dll
+Dependency assembly - Microsoft.Win32.Registry.dll
+Dependency assembly - System.Runtime.Loader.dll
+Dependency assembly - Unity.Collections.Tests.CoreCLR.InternalJobNestedPrivate.dll
+Dependency assembly - System.Net.ServicePoint.dll
+Dependency assembly - System.Net.WebHeaderCollection.dll
+Dependency assembly - Unity.Collections.Tests.CoreCLR.ProtectedJobNested.dll
+Dependency assembly - System.Xml.XPath.XDocument.dll
+Dependency assembly - System.Security.Cryptography.Encryption.Aes.dll
+Dependency assembly - System.Data.Common.dll
+Dependency assembly - netstandard.dll
+Dependency assembly - System.Collections.dll
+Dependency assembly - System.Linq.Queryable.dll
+Dependency assembly - System.Security.Cryptography.RSA.dll
+Dependency assembly - Assembly-CSharp.dll
+Dependency assembly - System.Threading.dll
+Dependency assembly - System.Diagnostics.DiagnosticSource.dll
+Dependency assembly - Microsoft.Bcl.AsyncInterfaces.dll
+Dependency assembly - System.Drawing.dll
+Dependency assembly - I18N.CJK.dll
+Dependency assembly - System.DirectoryServices.Protocols.dll
+Dependency assembly - System.IO.FileSystem.Primitives.dll
+Dependency assembly - System.Buffers.dll
+Dependency assembly - System.Reflection.DispatchProxy.dll
+Dependency assembly - System.ServiceModel.NetTcp.dll
+Dependency assembly - System.IO.UnmanagedMemoryStream.dll
+Dependency assembly - System.Net.WebSockets.dll
+Dependency assembly - Unity.Collections.Tests.CoreCLR.PublicJobPrivateGeneric.dll
+Dependency assembly - System.Collections.Immutable.dll
+Dependency assembly - System.Diagnostics.Contracts.dll
+Dependency assembly - System.Security.Cryptography.Encryption.dll
+Dependency assembly - System.Runtime.Remoting.dll
+Dependency assembly - Accessibility.dll
+Dependency assembly - System.Data.OracleClient.dll
+Dependency assembly - System.IO.MemoryMappedFiles.dll
+Dependency assembly - System.Xml.XmlSerializer.dll
+Dependency assembly - System.Drawing.Design.dll
+Dependency assembly - System.ComponentModel.Primitives.dll
+Dependency assembly - System.Data.dll
+Dependency assembly - System.Runtime.InteropServices.WindowsRuntime.dll
+Dependency assembly - System.Runtime.DurableInstancing.dll
+Dependency assembly - System.Dynamic.Runtime.dll
+Dependency assembly - System.Reflection.Extensions.dll
+Dependency assembly - System.Diagnostics.TraceSource.dll
+Dependency assembly - System.ComponentModel.TypeConverter.dll
+Dependency assembly - System.Globalization.Calendars.dll
+Dependency assembly - System.IO.Hashing.dll
+Dependency assembly - Unity.Collections.Tests.CoreCLR.PrivateJobNested.dll
+Dependency assembly - System.Xml.XDocument.dll
+Dependency assembly - System.Web.RegularExpressions.dll
+Dependency assembly - System.Xml.ReaderWriter.dll
+Dependency assembly - System.Diagnostics.Process.dll
+Dependency assembly - System.Runtime.Serialization.Formatters.dll
+Dependency assembly - System.Text.Encoding.dll
+Dependency assembly - System.ServiceProcess.dll
+Dependency assembly - Mono.Data.Sqlite.dll
+Dependency assembly - System.ServiceModel.Primitives.dll
+Dependency assembly - System.IO.Compression.FileSystem.dll
+Dependency assembly - System.ServiceModel.Duplex.dll
+Dependency assembly - I18N.Other.dll
+Dependency assembly - System.Data.DataSetExtensions.dll
+Dependency assembly - System.dll
+Dependency assembly - System.Runtime.Numerics.dll
+Dependency assembly - System.ServiceModel.Discovery.dll
+Dependency assembly - System.Xaml.dll
+Dependency assembly - System.Runtime.Serialization.dll
+Dependency assembly - System.Core.dll
+Dependency assembly - System.Reflection.Emit.ILGeneration.dll
+Dependency assembly - System.Net.Requests.dll
+Dependency assembly - System.Reflection.Emit.dll
+Dependency assembly - System.Resources.ReaderWriter.dll
+Dependency assembly - System.Web.DynamicData.dll
+Dependency assembly - System.Net.Security.dll
+Dependency assembly - System.Net.Http.WebRequest.dll
+Dependency assembly - System.IO.FileSystem.dll
+Dependency assembly - System.Threading.ThreadPool.dll
+Dependency assembly - System.Text.Encoding.Extensions.dll
+Dependency assembly - System.Messaging.dll
+Dependency assembly - System.Linq.Parallel.dll
+Dependency assembly - System.Xml.Serialization.dll
+Dependency assembly - System.Resources.Reader.dll
+Dependency assembly - System.Xml.Linq.dll
+Dependency assembly - System.IO.FileSystem.Watcher.dll
+Dependency assembly - System.ServiceModel.dll
+Dependency assembly - System.ComponentModel.DataAnnotations.dll
+Dependency assembly - System.Configuration.dll
+Dependency assembly - System.Diagnostics.Tracing.dll
+Dependency assembly - System.Diagnostics.Tools.dll
+Dependency assembly - Microsoft.CSharp.dll
+Dependency assembly - System.Security.Claims.dll
+Dependency assembly - System.IO.Pipes.dll
+Dependency assembly - System.ComponentModel.Composition.dll
+Dependency assembly - I18N.MidEast.dll
+Dependency assembly - System.Reflection.Emit.Lightweight.dll
+Dependency assembly - System.Security.Cryptography.X509Certificates.dll
+Dependency assembly - System.Web.Extensions.dll
+Dependency assembly - Unity.Networking.Transport.dll
+Dependency assembly - System.Data.SqlClient.dll
+Dependency assembly - System.Threading.Tasks.Parallel.dll
+Dependency assembly - System.Drawing.Primitives.dll
+Dependency assembly - System.Net.NetworkInformation.dll
+Dependency assembly - System.ComponentModel.dll
+Dependency assembly - System.Text.Encodings.Web.dll
+Dependency assembly - System.Linq.dll
+Dependency assembly - System.Security.Cryptography.Encoding.dll
+Dependency assembly - System.Runtime.Serialization.Primitives.dll
+Dependency assembly - Microsoft.Win32.Registry.AccessControl.dll
+Dependency assembly - System.Security.Cryptography.Cng.dll
+Dependency assembly - System.Net.NameResolution.dll
+Dependency assembly - System.Collections.Concurrent.dll
+Dependency assembly - System.Runtime.InteropServices.RuntimeInformation.dll
+Dependency assembly - System.Diagnostics.Debug.dll
+Dependency assembly - Microsoft.Win32.Primitives.dll
+Dependency assembly - System.Windows.dll
+Dependency assembly - System.Security.Cryptography.Csp.dll
+Dependency assembly - System.Reflection.TypeExtensions.dll
+Dependency assembly - System.IdentityModel.dll
+Dependency assembly - Unity.Netcode.Runtime.dll
+Dependency assembly - System.Net.HttpListener.dll
+Dependency assembly - System.Runtime.Extensions.dll
+Dependency assembly - System.Xml.XmlDocument.dll
+Dependency assembly - mscorlib.dll
+Dependency assembly - System.Net.AuthenticationManager.dll
+Dependency assembly - Unity.Collections.dll
+Dependency assembly - System.IO.Compression.ZipFile.dll
+Dependency assembly - System.Net.Cache.dll
+Dependency assembly - System.Net.WebSockets.Client.dll
+Dependency assembly - System.Runtime.Serialization.Xml.dll
+Dependency assembly - System.Xml.XPath.XmlDocument.dll
+Dependency assembly - System.Diagnostics.FileVersionInfo.dll
+Dependency assembly - System.Net.Primitives.dll
+Dependency assembly - System.Security.Cryptography.Hashing.Algorithms.dll
+Dependency assembly - System.IO.IsolatedStorage.dll
+Dependency assembly - System.Globalization.Extensions.dll
+Dependency assembly - System.IO.Compression.dll
+Dependency assembly - System.Threading.Thread.dll
+Dependency assembly - System.Net.dll
+Dependency assembly - System.Security.Cryptography.DeriveBytes.dll
+Dependency assembly - System.Json.dll
+Dependency assembly - System.Transactions.dll
+Dependency assembly - System.ServiceModel.Internals.dll
+Dependency assembly - System.Net.Mail.dll
+Dependency assembly - System.ServiceModel.Http.dll
+Dependency assembly - Unity.InputSystem.ForUI.dll
+Dependency assembly - System.Windows.Forms.DataVisualization.dll
+Dependency assembly - System.Web.ApplicationServices.dll
+Dependency assembly - System.IdentityModel.Selectors.dll
+Dependency assembly - System.Configuration.Install.dll
+Dependency assembly - System.Windows.Forms.dll
+Dependency assembly - System.Runtime.Handles.dll
+Dependency assembly - System.Runtime.Serialization.Json.dll
+Dependency assembly - System.Web.Services.dll
+Dependency assembly - System.Collections.Specialized.dll
+Dependency assembly - System.ComponentModel.EventBasedAsync.dll
+Dependency assembly - System.Security.Cryptography.RandomNumberGenerator.dll
+Dependency assembly - System.ServiceModel.Activation.dll
+Dependency assembly - System.Resources.ResourceManager.dll
+Dependency assembly - System.Globalization.dll
+Dependency assembly - Unity.Burst.dll
+Dependency assembly - System.Text.Encoding.CodePages.dll
+Dependency assembly - System.Runtime.CompilerServices.VisualC.dll
+Dependency assembly - System.ServiceProcess.ServiceController.dll
+Dependency assembly - System.Xml.dll
+Dependency assembly - System.Reflection.dll
+Dependency assembly - System.ServiceModel.Routing.dll
+Dependency assembly - System.Collections.NonGeneric.dll
+Dependency assembly - System.DirectoryServices.dll
+Dependency assembly - System.Security.SecureString.dll
+Dependency assembly - System.Diagnostics.TextWriterTraceListener.dll
+Dependency assembly - System.Linq.Expressions.dll
+Dependency assembly - System.Design.dll
+Dependency assembly - System.IO.dll
+Dependency assembly - System.Net.Utilities.dll
+Dependency assembly - Unity.Collections.LowLevel.ILSupport.dll
+Dependency assembly - System.IO.FileSystem.AccessControl.dll
+Dependency assembly - System.Web.Extensions.Design.dll
+Dependency assembly - System.Security.Principal.dll
+Dependency assembly - System.Text.Json.dll
+Dependency assembly - System.Management.dll
+Dependency assembly - System.Runtime.Serialization.Formatters.Soap.dll
+Dependency assembly - System.Runtime.InteropServices.dll
+Dependency assembly - Microsoft.Extensions.DependencyInjection.Abstractions.dll
+Dependency assembly - Mono.Security.dll
+Dependency assembly - System.Xml.XPath.dll
+Dependency assembly - Unity.Mathematics.dll
+Dependency assembly - System.Security.Cryptography.Encryption.ECDiffieHellman.dll
+Dependency assembly - System.Runtime.CompilerServices.Unsafe.dll
+Dependency assembly - System.Threading.Tasks.Extensions.dll
+Dependency assembly - System.Threading.Overlapped.dll
+Dependency assembly - Microsoft.Extensions.Logging.Abstractions.dll
+Dependency assembly - System.EnterpriseServices.dll
+Dependency assembly - System.Security.Cryptography.ProtectedData.dll
+Dependency assembly - System.Numerics.Vectors.dll
+Dependency assembly - System.Diagnostics.TraceEvent.dll
+Dependency assembly - System.Text.RegularExpressions.dll
+Dependency assembly - System.Diagnostics.StackTrace.dll
+Dependency assembly - System.Reflection.Primitives.dll
+Dependency assembly - System.Threading.Tasks.dll
+Dependency assembly - System.Data.Entity.dll
+Dependency assembly - Mono.Data.Tds.dll
+Dependency assembly - System.Reflection.Context.dll
+Dependency assembly - I18N.Rare.dll
+Dependency assembly - System.Numerics.dll
+Dependency assembly - System.Console.dll
+Dependency assembly - System.Runtime.Caching.dll
+Dependency assembly - Unity.InputSystem.dll
+Dependency assembly - System.ValueTuple.dll
+Dependency assembly - System.Xml.Xsl.Primitives.dll
+Dependency assembly - System.Net.Ping.dll
+Dependency assembly - System.Data.Services.Client.dll
+Dependency assembly - System.Threading.AccessControl.dll
+Dependency assembly - System.ServiceModel.Security.dll
+Dependency assembly - System.Security.Cryptography.Hashing.dll
+
+Opening scene 'Assets/Scenes/Main.unity'
+Serialized file "Assets/Scenes/Main.unity" contains a GameObject object at version 1, below the supported minimum (6). Open and re-save the file to upgrade.
+Unknown light lightmapping mode with value: 4. Using the default - StaticGI.
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+Loaded scene 'Assets/Scenes/Main.unity'
+	Deserialize:            0.864 ms
+	Integration:            5.166 ms
+	Integration of assets:  0.002 ms
+	Thread Wait Time:       19.947 ms
+	Total Operation Time:   25.979 ms
+Unloading 33 unused Assets / (0.8 MB). Loaded Objects now: 2337.
+Memory consumption went from 267.4 MB to 266.7 MB.
+Total: 5.917700 ms (FindLiveObjects: 0.201900 ms CreateObjectMapping: 0.030400 ms MarkObjects: 5.237000 ms  DeleteObjects: 0.274600 ms)
+
+Unloading 4 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 2 unused Assets / (3.9 KB). Loaded Objects now: 2336.
+Memory consumption went from 265.1 MB to 265.1 MB.
+Total: 5.859700 ms (FindLiveObjects: 0.188200 ms CreateObjectMapping: 0.027500 ms MarkObjects: 5.468300 ms  DeleteObjects: 0.023000 ms)
+
+Unloading 0 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 0 unused Assets / (Unknown). Loaded Objects now: 2336.
+Memory consumption went from 265.1 MB to 265.1 MB.
+Total: 5.661700 ms (FindLiveObjects: 0.211600 ms CreateObjectMapping: 0.036500 ms MarkObjects: 5.243300 ms  DeleteObjects: 0.009200 ms)
+
+Unloading 1 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 179 unused Assets / (149.8 MB). Loaded Objects now: 2336.
+Memory consumption went from 415.9 MB to 266.2 MB.
+Total: 14.675000 ms (FindLiveObjects: 0.193300 ms CreateObjectMapping: 0.028500 ms MarkObjects: 5.295000 ms  DeleteObjects: 8.993900 ms)
+
+Compiling shader "Legacy Shaders/VertexLit"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         12
+    After settings filtering:   12
+    After built-in stripping:   3
+    After scriptable stripping: 3
+    Processed in 0.01 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         4
+    After settings filtering:   4
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "ShadowCaster" (vp)
+    Target graphics API: gles3
+    Full variant space:         4
+    After settings filtering:   4
+    After built-in stripping:   2
+    After scriptable stripping: 2
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 3 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass ShadowCaster (vp, gles3) finished in 0.00 seconds. Local cache hits 2 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Legacy Shaders/VertexLit in 0.00s
+    gles3 (total internal programs: 6, unique: 6)
+Compiling shader "Legacy Shaders/Diffuse"
+  Pass "FORWARD" (vp)
+    Target graphics API: gles3
+    Full variant space:         664
+    After settings filtering:   664
+    After built-in stripping:   8
+    After scriptable stripping: 8
+    Processed in 0.00 seconds
+  Pass "FORWARD" (vp)
+    Target graphics API: gles3
+    Full variant space:         20
+    After settings filtering:   20
+    After built-in stripping:   5
+    After scriptable stripping: 5
+    Processed in 0.00 seconds
+  Pass "DEFERRED" (vp)
+    Target graphics API: gles3
+    Full variant space:         76
+    After settings filtering:   76
+    After built-in stripping:   4
+    After scriptable stripping: 4
+    Processed in 0.00 seconds
+  Pass FORWARD (vp, gles3) finished in 0.00 seconds. Local cache hits 8 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass FORWARD (vp, gles3) finished in 0.00 seconds. Local cache hits 5 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass DEFERRED (vp, gles3) finished in 0.00 seconds. Local cache hits 4 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Legacy Shaders/Diffuse in 0.00s
+    gles3 (total internal programs: 17, unique: 17)
+Compiling shader "Hidden/Internal-StencilWrite"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/Internal-StencilWrite in 0.00s
+    gles3 (total internal programs: 1, unique: 1)
+Compiling shader "Hidden/Internal-DepthNormalsTexture"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/Internal-DepthNormalsTexture in 0.00s
+    gles3 (total internal programs: 10, unique: 10)
+Compiling shader "Hidden/Internal-ScreenSpaceShadows"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         4
+    After settings filtering:   4
+    After built-in stripping:   4
+    After scriptable stripping: 4
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         4
+    After settings filtering:   4
+    After built-in stripping:   4
+    After scriptable stripping: 4
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         4
+    After settings filtering:   4
+    After built-in stripping:   4
+    After scriptable stripping: 4
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         4
+    After settings filtering:   4
+    After built-in stripping:   4
+    After scriptable stripping: 4
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 4 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 4 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 4 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 4 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/Internal-ScreenSpaceShadows in 0.00s
+    gles3 (total internal programs: 16, unique: 16)
+Compiling shader "Hidden/Internal-CombineDepthNormals"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/Internal-CombineDepthNormals in 0.00s
+    gles3 (total internal programs: 1, unique: 1)
+Compiling shader "Hidden/BlitCopy"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/BlitCopy in 0.00s
+    gles3 (total internal programs: 1, unique: 1)
+Compiling shader "Hidden/BlitCopyDepth"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/BlitCopyDepth in 0.00s
+    gles3 (total internal programs: 1, unique: 1)
+Compiling shader "Hidden/ConvertTexture"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/ConvertTexture in 0.00s
+    gles3 (total internal programs: 1, unique: 1)
+Compiling shader "Hidden/Internal-DeferredShading"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         94
+    After settings filtering:   94
+    After built-in stripping:   26
+    After scriptable stripping: 26
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 26 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/Internal-DeferredShading in 0.00s
+    gles3 (total internal programs: 27, unique: 27)
+Compiling shader "Hidden/Internal-DeferredReflections"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         2
+    After settings filtering:   2
+    After built-in stripping:   2
+    After scriptable stripping: 2
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 2 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/Internal-DeferredReflections in 0.00s
+    gles3 (total internal programs: 3, unique: 3)
+Compiling shader "Hidden/Internal-MotionVectors"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/Internal-MotionVectors in 0.00s
+    gles3 (total internal programs: 3, unique: 3)
+Compiling shader "Hidden/Internal-Flare"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/Internal-Flare in 0.00s
+    gles3 (total internal programs: 1, unique: 1)
+Compiling shader "Hidden/Internal-Halo"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         4
+    After settings filtering:   4
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/Internal-Halo in 0.00s
+    gles3 (total internal programs: 1, unique: 1)
+Compiling shader "Hidden/BlitCopyWithDepth"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/BlitCopyWithDepth in 0.00s
+    gles3 (total internal programs: 1, unique: 1)
+Compiling shader "Hidden/BlitToDepth"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/BlitToDepth in 0.00s
+    gles3 (total internal programs: 1, unique: 1)
+Compiling shader "Hidden/BlitToDepth_MSAA"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/BlitToDepth_MSAA in 0.00s
+    gles3 (total internal programs: 1, unique: 1)
+Compiling shader "Hidden/BlitCopyHDRTonemap"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/BlitCopyHDRTonemap in 0.00s
+    gles3 (total internal programs: 1, unique: 1)
+Compiling shader "Hidden/Internal-DebugPattern"
+  Pass "Target Color and DepthStencil" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "Target only Color" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "Target only DepthStencil" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass Target Color and DepthStencil (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass Target only Color (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass Target only DepthStencil (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/Internal-DebugPattern in 0.00s
+    gles3 (total internal programs: 3, unique: 3)
+Compiling shader "Hidden/Internal-GUITextureClip"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/Internal-GUITextureClip in 0.00s
+    gles3 (total internal programs: 2, unique: 1)
+Compiling shader "Hidden/Internal-GUITextureClipText"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/Internal-GUITextureClipText in 0.00s
+    gles3 (total internal programs: 2, unique: 1)
+Compiling shader "Hidden/Internal-GUITexture"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/Internal-GUITexture in 0.00s
+    gles3 (total internal programs: 2, unique: 1)
+Compiling shader "Hidden/Internal-GUITextureBlit"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/Internal-GUITextureBlit in 0.00s
+    gles3 (total internal programs: 2, unique: 1)
+Compiling shader "Hidden/Internal-GUIRoundedRect"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.01 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/Internal-GUIRoundedRect in 0.00s
+    gles3 (total internal programs: 2, unique: 1)
+Compiling shader "Hidden/Internal-GUIRoundedRectWithColorPerBorder"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/Internal-GUIRoundedRectWithColorPerBorder in 0.00s
+    gles3 (total internal programs: 2, unique: 1)
+Compiling shader "Hidden/Internal-UIRDefault"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         40
+    After settings filtering:   40
+    After built-in stripping:   40
+    After scriptable stripping: 40
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 40 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/Internal-UIRDefault in 0.00s
+    gles3 (total internal programs: 40, unique: 40)
+Compiling shader "Hidden/Internal-UIRAtlasBlitCopy"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/Internal-UIRAtlasBlitCopy in 0.00s
+    gles3 (total internal programs: 1, unique: 1)
+Compiling shader "Sprites/Default"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         8
+    After settings filtering:   8
+    After built-in stripping:   4
+    After scriptable stripping: 4
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 4 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Sprites/Default in 0.00s
+    gles3 (total internal programs: 4, unique: 4)
+Compiling shader "Sprites/Mask"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         4
+    After settings filtering:   4
+    After built-in stripping:   4
+    After scriptable stripping: 4
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 4 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Sprites/Mask in 0.00s
+    gles3 (total internal programs: 4, unique: 4)
+Compiling shader "UI/Default"
+  Pass "Default" (vp)
+    Target graphics API: gles3
+    Full variant space:         4
+    After settings filtering:   4
+    After built-in stripping:   4
+    After scriptable stripping: 4
+    Processed in 0.00 seconds
+  Pass "XRMotionVectors" (vp)
+    Target graphics API: gles3
+    Full variant space:         4
+    After settings filtering:   4
+    After built-in stripping:   4
+    After scriptable stripping: 4
+    Processed in 0.00 seconds
+  Pass Default (vp, gles3) finished in 0.00 seconds. Local cache hits 4 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass XRMotionVectors (vp, gles3) finished in 0.00 seconds. Local cache hits 4 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader UI/Default in 0.00s
+    gles3 (total internal programs: 8, unique: 8)
+Compiling shader "UI/DefaultETC1"
+  Pass "Default" (vp)
+    Target graphics API: gles3
+    Full variant space:         4
+    After settings filtering:   4
+    After built-in stripping:   4
+    After scriptable stripping: 4
+    Processed in 0.00 seconds
+  Pass "XRMotionVectors" (vp)
+    Target graphics API: gles3
+    Full variant space:         4
+    After settings filtering:   4
+    After built-in stripping:   4
+    After scriptable stripping: 4
+    Processed in 0.00 seconds
+  Pass Default (vp, gles3) finished in 0.00 seconds. Local cache hits 4 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass XRMotionVectors (vp, gles3) finished in 0.00 seconds. Local cache hits 4 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader UI/DefaultETC1 in 0.00s
+    gles3 (total internal programs: 8, unique: 8)
+Compiling shader "Hidden/CubeBlur"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/CubeBlur in 0.00s
+    gles3 (total internal programs: 2, unique: 2)
+Compiling shader "Hidden/CubeCopy"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/CubeCopy in 0.00s
+    gles3 (total internal programs: 2, unique: 1)
+Compiling shader "Hidden/CubeBlend"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/CubeBlend in 0.00s
+    gles3 (total internal programs: 2, unique: 1)
+Compiling shader "Hidden/VR/BlitTexArraySlice"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/VR/BlitTexArraySlice in 0.00s
+    gles3 (total internal programs: 1, unique: 1)
+Compiling shader "Hidden/Internal-ODSWorldTexture"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/Internal-ODSWorldTexture in 0.00s
+    gles3 (total internal programs: 10, unique: 9)
+Compiling shader "Hidden/Internal-CubemapToEquirect"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/Internal-CubemapToEquirect in 0.00s
+    gles3 (total internal programs: 1, unique: 1)
+Compiling shader "Hidden/VR/BlitFromTex2DToTexArraySlice"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/VR/BlitFromTex2DToTexArraySlice in 0.00s
+    gles3 (total internal programs: 2, unique: 2)
+Compiling shader "Hidden/VideoComposite"
+  Pass "Default" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass Default (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/VideoComposite in 0.00s
+    gles3 (total internal programs: 1, unique: 1)
+Compiling shader "Hidden/TextCore/Distance Field SSD"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         1
+    After settings filtering:   1
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/TextCore/Distance Field SSD in 0.00s
+    gles3 (total internal programs: 1, unique: 1)
+Compiling shader "Hidden/Physics2D/SDF_CircleGeometry"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         2
+    After settings filtering:   2
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/Physics2D/SDF_CircleGeometry in 0.00s
+    gles3 (total internal programs: 1, unique: 1)
+Compiling shader "Hidden/Physics2D/SDF_CapsuleGeometry"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         2
+    After settings filtering:   2
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/Physics2D/SDF_CapsuleGeometry in 0.00s
+    gles3 (total internal programs: 1, unique: 1)
+Compiling shader "Hidden/Physics2D/SDF_PolygonGeometry"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         2
+    After settings filtering:   2
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/Physics2D/SDF_PolygonGeometry in 0.00s
+    gles3 (total internal programs: 1, unique: 1)
+Compiling shader "Hidden/Physics2D/SDF_Line"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         2
+    After settings filtering:   2
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/Physics2D/SDF_Line in 0.00s
+    gles3 (total internal programs: 1, unique: 1)
+Compiling shader "Hidden/Physics2D/SDF_Point"
+  Pass "" (vp)
+    Target graphics API: gles3
+    Full variant space:         2
+    After settings filtering:   2
+    After built-in stripping:   1
+    After scriptable stripping: 1
+    Processed in 0.00 seconds
+  Pass  (vp, gles3) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+    Prepared data for serialisation in 0.00s
+Serialized binary data for shader Hidden/Physics2D/SDF_Point in 0.00s
+    gles3 (total internal programs: 1, unique: 1)
+
+***Player size statistics***
+Level 0 'Assets/Scenes/Main.unity' uses 262.6 KB compressed / 3.2 MB uncompressed.
+Total compressed size 263.0 KB. Total uncompressed size 3.2 MB.
+SpriteAtlasDatabase::Cleanup
+Starting: C:\Program Files\Unity\Hub\Editor\6000.6.3f1\Editor\Data\Tools\BuildPipeline\bee_backend.exe --ipc --dagfile="Library/Bee/Player597c18ea.dag" --profile="Library/Bee/backend1.traceevents" Player
+WorkingDir: C:/remix-game-check
+ExitCode: 4 Duration: 0s20ms
+Starting: C:\Program Files\Unity\Hub\Editor\6000.6.3f1\Editor\Data\DotNetSdk\dotnet.exe "C:\Program Files\Unity\Hub\Editor\6000.6.3f1\Editor\Data\PlaybackEngines\WebGLSupport\WebGLPlayerBuildProgram.exe" "C:/Program Files/Unity/Hub/Editor/6000.6.3f1/Editor/Data/PlaybackEngines/WebGLSupport/Bee;C:/Program Files/Unity/Hub/Editor/6000.6.3f1/Editor/Data/Tools/BuildPipeline" "Library/Bee/Player597c18ea.dag.json" "Library/Bee/Player597c18ea-inputdata.json" "Library\Bee\buildprogram0.traceevents"
+WorkingDir: C:/remix-game-check
+DisplayProgressbar: Incremental Player Build
+ExitCode: 0 Duration: 0s434ms
+Starting: C:\Program Files\Unity\Hub\Editor\6000.6.3f1\Editor\Data\Tools\BuildPipeline\bee_backend.exe --ipc --dagfile="Library/Bee/Player597c18ea.dag" --dagfilejson="Library\Bee\Player597c18ea.dag.json" --profile="Library/Bee/backend2.traceevents" Player
+WorkingDir: C:/remix-game-check
+Starting: C:\Program Files\Unity\Hub\Editor\6000.6.3f1\Editor\Data\DotNetSdk\dotnet.exe "C:\Program Files\Unity\Hub\Editor\6000.6.3f1\Editor\Data\PlaybackEngines\WebGLSupport\WebGLPlayerBuildProgram.exe" "C:/Program Files/Unity/Hub/Editor/6000.6.3f1/Editor/Data/PlaybackEngines/WebGLSupport/Bee;C:/Program Files/Unity/Hub/Editor/6000.6.3f1/Editor/Data/Tools/BuildPipeline" "Library/Bee/Player597c18ea.dag.json" "Library/Bee/Player597c18ea-inputdata.json" "Library\Bee\buildprogram1.traceevents"
+WorkingDir: C:/remix-game-check
+ExitCode: 4 Duration: 3s310ms
+ExitCode: 0 Duration: 0s548ms
+Starting: C:\Program Files\Unity\Hub\Editor\6000.6.3f1\Editor\Data\Tools\BuildPipeline\bee_backend.exe --ipc --dagfile="Library/Bee/Player597c18ea.dag" --dagfilejson="Library\Bee\Player597c18ea.dag.json" --profile="Library/Bee/backend3.traceevents" Player
+WorkingDir: C:/remix-game-check
+C:/Program Files/Unity/Hub/Editor/6000.6.3f1/Editor/Data\Tools\Burst\Client\bcl\bcl.dll exited after 1194 ms.
+stdout:
+Starting 1 library requests
+Completed library C:\remix-game-check\Library\BurstCache\Wasm-Wasm\1286e84b347e0c411557d0356b67fe5e.wasm with result FoundInCacheModuleHashMatch,FoundInCacheModuleHashMatch,FoundInCacheModuleHashMatch
+Total end-to-end time      :      1063ms
+Peak physical memory usage :   145,348MB
+Peak virtual memory usage  : 2 311,617GB
+Peak paged memory usage    :   146,492MB
+Done
+stderr:
+
+ExitCode: 0 Duration: 50s
+[websockify wrapper] Start node and websockify.js
+
+-------------------------------------------------------------------------------
+Build Report
+Uncompressed usage by category (Percentages based on user generated assets only):
+Textures               2.7 mb	 96.1% 
+Meshes                 0.0 kb	 0.0% 
+Animations             0.0 kb	 0.0% 
+Sounds                 0.0 kb	 0.0% 
+Shaders                0.0 kb	 0.0% 
+Other Assets           3.9 kb	 0.1% 
+Levels                 0.0 kb	 0.0% 
+File headers           21.6 kb	 0.8% 
+Total User Assets      2.8 mb	 100.0% 
+Complete build size    8.4 mb
+Used Assets and files from the Resources folder, sorted by uncompressed size:
+ 2.7 mb	 31.8% Built-in Texture2D: Splash Screen Unity Logo
+ 1.5 kb	 0.0% Assets/Resources/PerformanceTestRunInfo.json
+ 1.2 kb	 0.0% Assets/Scenes/Main.unity
+ 0.4 kb	 0.0% Built-in Sprite: 
+ 0.3 kb	 0.0% Resources/unity_builtin_extra
+ 0.2 kb	 0.0% Packages/com.unity.collections/Unity.Collections.Tests/Jobs/CoreCLRTestAssemblies/PublicJobPrivateGeneric/PublicJobPrivateGenericTestJob.cs
+ 0.2 kb	 0.0% Packages/com.unity.collections/Unity.Collections.Tests/Jobs/CoreCLRTestAssemblies/ProtectedJobNested/NestedProtectedJobTestJob.cs
+ 0.2 kb	 0.0% Packages/com.unity.collections/Unity.Collections.Tests/Jobs/CoreCLRTestAssemblies/InternalJobNestedPrivate/InternalJobNestedPrivate.cs
+ 0.2 kb	 0.0% Packages/com.unity.collections/Unity.Collections.Tests/Jobs/CoreCLRTestAssemblies/PrivateJobNested/NestedPrivateJobTestJob.cs
+ 0.2 kb	 0.0% Packages/com.unity.transport/NetcodeInterop/NetworkTransportInterface.cs
+ 0.2 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/GenerateSerializationForGenericParameterAttribute.cs
+ 0.2 kb	 0.0% Packages/com.unity.collections/Unity.Collections/GenerateTestsForBurstCompatibilityAttribute.cs
+ 0.2 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Commands/QueryEditorWindowCoordinatesCommand.cs
+ 0.2 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Commands/InitiateUserAccountPairingCommand.cs
+ 0.2 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/UITKAssetEditor/Views/CompositePartBindingPropertiesView.cs
+ 0.2 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/UITKAssetEditor/Views/CollectionViewSelectionChangeFilter.cs
+ 0.2 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/UITKAssetEditor/InputActionsEditorSettingsProvider.cs
+ 0.2 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/PropertyDrawers/InputActionReferenceSearchProviders.cs
+ 0.2 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/PropertyDrawers/InputActionReferencePropertyDrawer.cs
+ 0.2 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Devices/Remote/RemoteInputPlayerConnectionEditor.cs
+ 0.2 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Analytics/InputActionsEditorSessionAnalytic.cs
+ 0.2 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Actions/InputControlSchemeEditorExtensions.cs
+ 0.2 kb	 0.0% Packages/com.unity.transport/Runtime/Utilities/UnsafeAtomicFreeList.cs
+ 0.2 kb	 0.0% Packages/com.unity.transport/Runtime/Pipelines/UnreliableSequencedPipelineStage.cs
+ 0.2 kb	 0.0% Packages/com.unity.transport/Runtime/Pipelines/ReliableSequencedPipelineStage.cs
+ 0.2 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/GenerateSerializationForTypeAttribute.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Relay/NetworkDriverRelayExtensions.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Relay/Messages/RelayMessageConnectRequest.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Transports/UTP/INetworkStreamDriverConstructor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Commands/QuerySamplingFrequencyCommand.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Commands/QueryPairedUserAccountCommand.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/UITKAssetEditor/Views/CompositeBindingPropertiesView.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/UITKAssetEditor/InputActionsEditorWindowUtils.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/PropertyDrawers/InputActionAssetSearchProvider.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/ProjectWideActions/ProjectWideActionsBuildProvider.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Plugins/OnScreen/UGUIOnScreenControlEditorUtils.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Internal/SerializedPropertyLinqExtensions.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Internal/InputActionSerializationHelpers.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/EditorInputControlLayoutCache.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/ControlPicker/Layouts/TouchscreenControlPickerLayout.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/ControlPicker/Layouts/DefaultInputControlPickerLayout.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Analytics/PlayerInputManagerEditorAnalytic.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/WebSocketNetworkInterface.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Pipelines/FragmentationPipelineStage.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Transports/SinglePlayer/SinglePlayerTransport.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/NetworkVariable/Serialization/TypedILPPInitializers.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/Messages/AnticipationCounterSyncPingMessage.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Components/Interpolator/BufferedLinearInterpolatorVector3.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Components/Interpolator/BufferedLinearInterpolatorQuaternion.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Utilities/DisplayStringFormatAttribute.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/XR/Haptics/SendBufferedHapticsCommand.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/XR/Haptics/GetHapticCapabilitiesCommand.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/XR/Haptics/GetCurrentHapticStateCommand.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/Android/AndroidGameController.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/Processors/NormalizeVector3Processor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/Processors/NormalizeVector2Processor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/Processors/EditorWindowSpaceProcessor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/Processors/CompensateRotationProcessor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/Processors/CompensateDirectionProcessor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Plugins/HID/HIDSupportEditorInitializer.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Controls/Processors/StickDeadzoneProcessorEditor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Controls/Processors/AxisDeadzoneProcessorEditor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Actions/Interactions/MultiTapInteractionEditor.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/UnsafeParallelHashSetExtensions.gen.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/UnsafeParallelHashMap.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/TLS/UnityTLSConfiguration.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/TLS/SecureParameters.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Relay/RelayNetworkParameter.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Relay/Messages/RelayMessageDisconnect.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Analytics/ConnectionMedium.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Transports/UTP/NetworkMetricsPipelineStage.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/State/IInputStateCallbackReceiver.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/InputForUI/InputSystemProvider.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/DualShock/DualShockGamepadHID.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/IInputUpdateCallbackReceiver.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Commands/SetSamplingFrequencyCommand.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Commands/SetIMECursorPositionCommand.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Commands/QueryKeyboardLayoutCommand.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Commands/EnableIMECompositionCommand.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/InputControlLayoutAttribute.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Actions/InputActionRebindingExtensions.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Actions/DeferBindingResolutionContext.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/UITKAssetEditor/Views/NameAndParametersListView.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/UITKAssetEditor/Views/InputActionMapsTreeViewItem.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/UITKAssetEditor/InputActionsEditorConstants.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Settings/InputSettingsBuildProvider.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Settings/EditorPlayerSettingHelpers.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/PropertyDrawers/InputActionPropertyDrawer.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/PropertyDrawers/GamepadButtonPropertyDrawer.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Internal/SerializedPropertyHelpers.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Internal/AdvancedDropdown/AdvancedDropdownDataSource.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/InputSystemPackageControl.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/InputSystemEditorInitializer.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Debugger/SampleFrequencyCalculator.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Debugger/InputDeviceDebuggerWindow.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Debugger/InputActionDebuggerWindow.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/ControlPicker/InputControlPickerDropdown.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/ControlPicker/IInputControlPickerLayout.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/AssetImporter/InputActionImporterEditor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/AssetImporter/InputActionAssetIconLoader.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/AssetEditor/InputBindingPropertiesView.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/AssetEditor/InputActionPropertiesView.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Analytics/PlayerInputEditorAnalytic.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Analytics/InputExitPlayModeAnalytic.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Analytics/InputComponentEditorAnalytic.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/UnsafeNotBurstCompatible.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/WebSocket/WebSocketParameters.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/UnderlyingConnectionList.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Pipelines/SimulatorPipelineStage.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Pipelines/FragmentationUtility.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/NetworkInterfaceWrapper.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/NetworkDriverReceiver.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Layers/SimpleConnectionLayer.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Layers/SequenceReorderingLayer.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Layers/NetworkInterfaceLayer.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/BaselibNetworkArray.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Analytics/RunningStatistics.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Analytics/PacketSizeStatistics.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Analytics/ConnectionStatistics.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Analytics/BandwidthStatistics.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Spawning/INetworkPrefabInstanceHandler.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/NetworkVariable/Serialization/CollectionSerializationUtility.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/IDeferredNetworkMessageManager.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Logging/LogContext/LogContextNetworkBehaviour.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Exceptions/NetworkConfigurationException.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Components/RigidbodyContactEventManager.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Components/Interpolator/BufferedLinearInterpolatorFloat.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Components/AnticipatedNetworkTransform.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Utilities/Observables/ForDeviceEventObservable.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/XR/Haptics/SendHapticImpulseCommand.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/Android/AndroidSensors.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/Processors/StickDeadzoneProcessor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/Processors/ScaleVector3Processor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/Processors/ScaleVector2Processor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/Processors/InvertVector3Processor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/Processors/InvertVector2Processor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/Processors/AxisDeadzoneProcessor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Actions/Composites/TwoModifiersComposite.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Actions/Composites/ButtonWithTwoModifiers.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Actions/Composites/ButtonWithOneModifier.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/AssetEditor/NameAndParameterListView.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Actions/Interactions/SlowTapInteractionEditor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Actions/Interactions/PressInteractionEditor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Actions/Interactions/HoldInteractionEditor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Actions/Composites/Vector3CompositeEditor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Actions/Composites/Vector2CompositeEditor.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/UnsafeScratchAllocator.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/NativeParallelHashMapExtensions.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/TLS/UnityTLSCallbacks.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Relay/RelayConnectionData.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Relay/RelayAllocationId.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Relay/Messages/RelayMessageRelay.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Relay/Messages/RelayMessageHeader.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Relay/Messages/RelayMessageError.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Relay/Messages/RelayMessageAccepted.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/LoggingParameters.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Transports/UTP/NetworkMetricsContext.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/State/IInputStateChangeMonitor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/iOS/IOSGameController.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/XInput/XInputControllerWindows.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/Users/InputUserAccountHandle.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/Switch/SwitchProControllerHID.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/OSX/OSXGameController.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/EnhancedTouch/EnhancedTouchSupport.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/InputManagerStateMonitors.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Events/DeviceConfigurationEvent.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Remote/RemoteInputPlayerConnection.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/InputDeviceDescription.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Haptics/DualMotorRumbleCommand.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Commands/WarpMousePositionCommand.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Commands/QueryEnabledStateCommand.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Commands/QueryDimensionsCommand.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Commands/QueryCanRunInBackground.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Commands/IInputDeviceCommandInfo.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/InputControlAttribute.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/DiscreteButtonControl.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Actions/InputBindingCompositeContext.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Actions/InputActionSetupExtensions.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Actions/InputActionParameters.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/UITKAssetEditor/Views/VisualElementExtensions.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/UITKAssetEditor/Views/InputActionsTreeViewItem.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/UITKAssetEditor/Views/InputActionsEditorView.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/UITKAssetEditor/Views/BindingPropertiesView.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/UITKAssetEditor/SerializedInputBinding.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/UITKAssetEditor/SerializedInputActionMap.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/UITKAssetEditor/SerializedInputAction.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/UITKAssetEditor/InputActionsEditorWindow.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/UITKAssetEditor/InputActionsEditorState.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/UITKAssetEditor/Commands/ControlSchemeCommands.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Settings/InputSettingsProvider.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/PropertyDrawers/InputControlPathDrawer.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/PropertyDrawers/InputActionDrawerBase.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/PropertyDrawers/InputActionAssetDrawer.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/ProjectWideActions/ProjectWideActionsAsset.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Plugins/PlayerInput/PlayerInputManagerEditor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Plugins/EnhancedTouch/TouchSimulationEditor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Internal/AdvancedDropdown/AdvancedDropdownWindow.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Internal/AdvancedDropdown/AdvancedDropdownState.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/InputSystemPluginControl.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/InputLayoutCodeGenerator.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/InputAssetEditorUtils.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Debugger/InputLatencyCalculator.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/ControlPicker/InputControlPickerState.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/ControlPicker/InputControlPathEditor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/ControlPicker/InputControlDropdownItem.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/AssetImporter/InputActionCodeGenerator.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/AssetImporter/InputActionAssetEditor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/AssetImporter/IInputActionAssetEditor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/AssetEditor/InputActionAssetManager.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Actions/InputActionStateMonitorIndex.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/UnsafeAtomicCounter.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Utilities/ManagedCallWrapper.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/UDPNetworkInterface.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/TCPNetworkInterface.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Pipelines/SimulatorUtility.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Pipelines/ReliableUtility.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Pipelines/ReliableAckMask.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Pipelines/NullPipelineStage.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/NetworkLayerWrapper.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/NetworkEventQueue.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/NetworkDriverSender.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/NetworkConnection.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/MultiNetworkDriver.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/IPCNetworkInterface.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/INetworkInterface.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/HostnameLookupTask.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Analytics/DriverStatistics.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Serialization/NetworkBehaviourReference.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Serialization/INetworkSerializeByMemcpy.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/SceneManagement/DefaultSceneManagerHandler.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/Messages/NetworkVariableDeltaMessage.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/Messages/ConnectionApprovedMessage.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/Messages/ClientDisconnectedMessage.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Logging/LogContext/LogContextNetworkObject.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Logging/LogContext/LogContextNetworkManager.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Exceptions/VisibilityChangeException.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Utilities/NameAndParameters.cs
+Total cache size 41506029
+Total cache size after purge 41506029, took 00:00:00.0357797
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Utilities/CSharpCodeHelpers.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/DualShock/IDualShockHaptics.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/Processors/NormalizeProcessor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Actions/Interactions/SlowTapInteraction.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Actions/Interactions/MultiTapInteraction.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Actions/Composites/OneModifierComposite.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Utilities/DirtyAssetTracker.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Plugins/HID/HIDDescriptorWindow.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/AssetEditor/ParameterListView.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/AssetEditor/InputActionTreeViewItems.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Actions/Interactions/TapInteractionEditor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Actions/Composites/AxisCompositeEditor.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/UnsafeUtilityEx.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/UnsafeAppendBuffer.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/NativeParallelHashSetExtensions.gen.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/Jobs/RegisterGenericJobTypeAttribute.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/DoubleRewindableAllocators.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/DataStreamExtensions.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/TLS/FixedPEMString.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/TLS/DTLSUtilities.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Relay/RelayServerData.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Relay/Messages/RelayMessagePing.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Relay/Messages/RelayMessageBind.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/NetworkParams.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Transports/UTP/SecretsLoaderHelper.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Transports/UTP/BatchedReceiveQueue.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Utilities/Comparers.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/State/InputStateHistory.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/State/InputStateBuffers.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/State/IInputStateTypeInfo.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/Users/InputUserSettings.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/Switch/SwitchProController.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/EnhancedTouch/TouchSimulation.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/NativeInputRuntime.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/InputEditorUserSettings.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Events/InputEventListener.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Events/IMECompositionEvent.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Events/IInputEventTypeInfo.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Events/DeviceRemoveEvent.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/InputDeviceMatcher.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/InputDeviceBuilder.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/ITextInputReceiver.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/IEventPreProcessor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/ICustomDeviceReset.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Commands/RequestSyncCommand.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Commands/RequestResetCommand.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Commands/QueryUserIdCommand.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Commands/QueryKeyNameCommand.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Commands/InputDeviceCommand.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Commands/EnableDeviceCommand.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Commands/DisableDeviceCommand.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/TouchPressControl.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/TouchPhaseControl.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/QuaternionControl.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/InputControlLayout.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/InputControlExtensions.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Actions/InputInteractionContext.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Actions/InputBindingComposite.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Actions/IInputActionCollection.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/UITKAssetEditor/Views/MatchingControlPaths.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/UITKAssetEditor/Views/IViewStateCollection.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/UITKAssetEditor/Views/ControlSchemesView.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/UITKAssetEditor/Views/ActionPropertiesView.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/UITKAssetEditor/EnumerableExtensions.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/PropertyDrawers/InputActionMapDrawer.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/PropertyDrawers/InputActionDrawer.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Plugins/iOS/InputSettingsiOSProvider.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Plugins/PlayerInput/PlayerInputEditor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Internal/InputEventTreeView.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Internal/InputControlTreeView.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Internal/BuildProviderHelpers.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Internal/AdvancedDropdown/MultiLevelDataSource.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Internal/AdvancedDropdown/CallbackDataSource.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Internal/AdvancedDropdown/AdvancedDropdownItem.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Internal/AdvancedDropdown/AdvancedDropdownGUI.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/InputSystemStateManager.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/InputParameterEditor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/DeviceSimulator/InputSystemPlugin.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Debugger/InputDebuggerWindow.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/ControlPicker/InputControlPicker.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/BuildPipeline/LinkFileGenerator.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/AssetImporter/InputActionImporter.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/AssetEditor/PropertiesViewBase.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/AssetEditor/InputActionTreeView.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Analytics/InputEditorAnalytics.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Analytics/InputBuildAnalytic.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/NativeNotBurstCompatible.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/PacketProcessor.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/PacketMetadata.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/OperationResult.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/NetworkSettings.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/NetworkPipeline.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/NetworkEndpoint.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/NetworkDriver.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Layers/WebSocketLayer.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Layers/SimulatorLayer.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Layers/AnalyticsLayer.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/INetworkLayer.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/ConnectionToken.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/ConnectionList.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Serialization/NetworkObjectReference.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Serialization/BufferSerializerWriter.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Serialization/BufferSerializerReader.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/NetworkVariable/Serialization/TypedSerializerImplementations.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Metrics/NetworkMetricsManager.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/RpcTargets/NotAuthorityRpcTarget.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/RpcTargets/ClientsAndHostRpcTarget.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/NetworkMessageManager.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/Messages/NetworkTransformMessage.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/Messages/DisconnectReasonMessage.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/Messages/ConnectionRequestMessage.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/Messages/ClientConnectedMessage.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/Messages/ChangeOwnershipMessage.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/INetworkMessageSender.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/INetworkMessageProvider.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/DeferredMessageManager.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Exceptions/NotListeningException.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Exceptions/InvalidParentException.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Core/NetworkObjectRefreshTool.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Core/NetworkBehaviourUpdater.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Connection/NetworkConnectionManager.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Components/NetworkRigidBodyBase.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Components/NetworkDeltaPosition.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Components/Helpers/ComponentController.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Components/Helpers/AttachableBehaviour.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Utilities/StringHelpers.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Utilities/SpriteUtilities.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Utilities/PrimitiveValue.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Utilities/PredictiveParser.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Utilities/NumberHelpers.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Utilities/MemoryHelpers.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Utilities/InternedString.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Utilities/ExceptionHelpers.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Utilities/DelegateHelpers.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/iOS/iOSStepCounter.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/XR/TrackedPoseDriver.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/XR/Haptics/BufferedRumble.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/DualShock/DualShockSupport.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/DualShock/DualShockGamepad.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/Processors/ScaleProcessor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/Processors/InvertProcessor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/Processors/ClampProcessor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Actions/Interactions/TapInteraction.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Actions/Interactions/PressInteraction.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Actions/Interactions/HoldInteraction.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Actions/InputActionTrace.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Actions/Composites/Vector3Composite.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Actions/Composites/Vector2Composite.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Actions/Composites/AxisComposite.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/UnsafeBitArray.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/UTF8ArrayUnsafeUtility.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/StreamCompressionModel.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/NativeArrayExtensions.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/FixedStringInternalMethods.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/FixedStringFormatMethods.gen.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Relay/RelayHMACKey.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Transports/UTP/UnityTransport.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Transports/UTP/BatchedSendQueue.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/CustomMessageManager.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/State/InputStateBlock.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/XInput/XInputSupport.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/XInput/XInputController.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/XInput/IXboxOneRumble.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/WebGL/WebGLJoystick.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/Switch/SwitchSupportHID.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/PlayerInput/PlayerInputManager.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/PlayerInput/DefaultInputActions.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/OnScreen/OnScreenSupport.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/OnScreen/OnScreenControl.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/Linux/SDLDeviceBuilder.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/EnhancedTouch/TouchHistory.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/Android/AndroidSupport.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/InputSystemTestHooks.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/InputFeatureNames.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/IInputRuntime.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/IInputDiagnostics.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Events/InputEventTrace.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Events/InputEventStream.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Events/InputEventPtr.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Events/InputEventBuffer.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Events/DeviceResetEvent.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Events/DeltaStateEvent.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Haptics/IDualMotorRumble.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Haptics/DualMotorRumble.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/Vector3Control.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/Vector2Control.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/IntegerControl.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/DoubleControl.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/ButtonControl.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/AnyKeyControl.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Actions/InputControlScheme.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Actions/InputBindingResolver.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Actions/InputActionReference.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Actions/InputActionProperty.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Actions/IInputInteraction.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/UITKAssetEditor/Views/PropertiesView.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/UITKAssetEditor/Views/DropManipulator.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/UITKAssetEditor/Views/CopyPasteHelper.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/UITKAssetEditor/Views/ActionsTreeView.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/UITKAssetEditor/Views/ActionMapsView.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/UITKAssetEditor/StateContainer.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/UITKAssetEditor/ExpressionUtils.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Plugins/iOS/iOSPostProcessBuild.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Plugins/UnityRemote/UnityRemoteSupport.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Internal/TreeViewHelpers.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Internal/InputStateWindow.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Internal/EditorHelpers.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Internal/AdvancedDropdown/AdvancedDropdown.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/InputSystemObject.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/InputDiagnostics.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/UnsafeList.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/FixedStringParseMethods.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/FixedStringAppendMethods.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/WebSocket/WebSocket.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/PacketsQueue.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/PacketBuffer.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/NetworkStack.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Layers/RelayLayer.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Layers/DTLSLayer.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Layers/BottomLayer.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/IPCManager.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/HMACSHA256.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/ConnectionId.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Timing/NetworkTimeSystem.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Timing/NetworkTickSystem.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Timing/IRealTimeProvider.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Timing/AnticipationSystem.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Spawning/ReleasedNetworkId.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Spawning/NetworkSpawnManager.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Spawning/NetworkPrefabHandler.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Serialization/INetworkSerializable.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/SceneManagement/SceneEventProgress.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/SceneManagement/NetworkSceneManager.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/SceneManagement/NetworkSceneHandle.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/SceneManagement/ISceneManagerHandler.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/NetworkVariable/Serialization/ResizableBitVector.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/NetworkVariable/NetworkVariableBase.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Metrics/NullNetworkMetrics.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/RpcTargets/ProxyRpcTargetGroup.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/RpcTargets/NotServerRpcTarget.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/RpcTargets/NotOwnerRpcTarget.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/RpcTargets/LocalSendRpcTarget.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/RpcTargets/IIndividualRpcTarget.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/RpcTargets/EveryoneRpcTarget.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/RpcTargets/DirectSendRpcTarget.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/RpcTargets/AuthorityRpcTarget.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/NetworkMessageHeader.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/NetworkManagerHooks.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/NetworkBatchHeader.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/Messages/SessionOwnerMessage.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/Messages/SceneEventMessage.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/Messages/ParentSyncMessage.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/Messages/DestroyObjectMessage.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/Messages/CreateObjectMessage.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/ILPPMessageProvider.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/DefaultMessageSender.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Logging/LogContext/GenericContext.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Logging/ContextualLogger.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Exceptions/SpawnStateException.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Exceptions/NotServerException.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Core/NetworkUpdateLoop.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Configuration/NetworkPrefabsList.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Configuration/CommandLineOptions.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Components/QuaternionCompressor.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Components/NetworkTransform.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Components/NetworkRigidbody.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Components/NetworkAnimator.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Utilities/TypeTable.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Utilities/TypeHelpers.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Utilities/Substring.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Utilities/SavedState.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Utilities/Observables/Observable.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Utilities/NamedValue.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Utilities/MiscHelpers.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Utilities/JsonParser.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Utilities/ArrayHelpers.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/iOS/InputSettingsiOS.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/XR/XRLayoutBuilder.cs
+[websockify wrapper] Proxying from :35020 to localhost:34999
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/InputUpdateType.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/UnsafeText.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/UnsafeStream.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/RewindableAllocator.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/FixedStringMethods.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/AutoFreeAllocator.cs
+ 0.1 kb	 0.0% Assets/Scripts/Network/NetworkPlayerController.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/Messages/MessageMetadata.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Utilities/DynamicBitfield.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/State/InputState.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/WebGL/WebGLSupport.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/WebGL/WebGLGamepad.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/Users/InputUser.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/Linux/LinuxSupport.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/EnhancedTouch/Touch.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/EnhancedTouch/Finger.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/InputSystemState.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/InputSettings.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/InputMetrics.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/InputExtensions.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/InputAnalytics.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Events/TextEvent.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Events/StateEvent.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Events/InputEvent.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Events/ActionEvent.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/TrackedDevice.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Remote/InputRemoting.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Precompiled/FastTouchscreen.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Precompiled/FastMouse.partial.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/IEventMerger.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/TouchControl.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/StickControl.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/KeyControl.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/InputProcessor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/InputControlPath.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/DpadControl.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/DeltaControl.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/AxisControl.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Actions/InputActionState.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Actions/InputActionMap.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Actions/InputActionAsset.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/UITKAssetEditor/Views/Selectors.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/UITKAssetEditor/Views/ContextMenu.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Internal/GUIHelpers.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/UnsafeQueue.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/NativeHashMap.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/FixedStringFormat.gen.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/FixedString.gen.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/SHA256.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Layers/TopLayer.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Layers/TLSLayer.cs
+ 0.1 kb	 0.0% Packages/com.unity.transport/Runtime/Layers/LogLayer.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Transports/NetworkTransport.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Timing/RealTimeProvider.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Serialization/IReaderWriter.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Serialization/FastBufferWriter.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Serialization/FastBufferReader.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/SceneManagement/SceneEventData.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Profiling/ProfilingHooks.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Metrics/INetworkMetrics.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/RpcTargets/ServerRpcTarget.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/RpcTargets/RpcTargetGroup.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/RpcTargets/ProxyRpcTarget.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/RpcTargets/OwnerRpcTarget.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/RpcTargets/NotMeRpcTarget.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/RpcTargets/IGroupRpcTarget.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/RpcTargets/BaseRpcTarget.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/NetworkContext.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/Messages/UnnamedMessage.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/Messages/TimeSyncMessage.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/Messages/ServerLogMessage.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/Messages/RpcMessages.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/INetworkMessage.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/INetworkHooks.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Logging/LogContext/LogContext.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Core/NetworkObject.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Core/NetworkManager.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Core/NetworkBehaviour.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Core/ComponentFactory.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Connection/PendingClient.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Connection/NetworkClient.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Configuration/SessionConfig.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Configuration/NetworkPrefabs.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Configuration/NetworkPrefab.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Configuration/NetworkConstants.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Configuration/NetworkConfig.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Components/HalfVector4.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Components/HalfVector3.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Utilities/FourCC.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/iOS/iOSSupport.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/XR/XRSupport.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/XR/GenericXRDevice.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/XR/Devices/WindowsMR.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/UI/UISupport.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/OSX/OSXSupport.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/HID/HIDSupport.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/HID/HIDParser.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/xxHash3.StreamingState.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/NativeSort.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/NativeBitArray.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/ListExtensions.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/Jobs/IJobParallelForDefer.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/Jobs/IJobParallelForBatch.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/FixedStringUtils.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/DataStreamWriter.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/DataStreamReader.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/ConcurrentMask.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/CollectionHelper.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/AllocatorManager.cs
+ 0.1 kb	 0.0% Assets/Scripts/Services/RemixSessionClient.cs
+ 0.1 kb	 0.0% Assets/Scripts/Bootstrap/RemixServerBootstrap.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/RpcAttributes.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/PlayerInput/PlayerInput.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/PlayerInput/InputValue.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/InputSystem.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/InputManager.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Touchscreen.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Precompiled/FastMouse.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Precompiled/FastKeyboard.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/InputDevice.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Haptics/IHaptics.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/InputControl.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Controls/CommonUsages.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Actions/InputBinding.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Actions/InputAction.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/UITKAssetEditor/Commands/Commands.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/Dialog.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/AssemblyInfo.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/NativeText.gen.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/FixedList.gen.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Timing/NetworkTime.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Serialization/MemoryStructures/UIntFloat.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Serialization/ByteUtility.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Serialization/ByteUnpacker.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Serialization/BytePacker.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Serialization/BitWriter.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Serialization/BitReader.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Serialization/BitCounter.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Serialization/Arithmetic.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Metrics/MetricHooks.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/RpcTargets/RpcTarget.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/RpcParams.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/Messages/ProxyMessage.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/Messages/NamedMessage.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Logging/NetworkLog.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Logging/LogBuilder.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/HelpUrls.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Core/FindObjects.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/XR/Devices/Oculus.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/UIntFloat.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/NativeStream.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/Jobs/EarlyInitHelpers.cs
+ 0.1 kb	 0.0% Assets/Scripts/Challenges/ChallengeRuntime.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/XR/Devices/GoogleVR.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Sensor.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Pointer.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Mouse.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Keyboard.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Joystick.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Gamepad.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Editor/DownloadableSample.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/xxHash3.AVX2.cs
+ 0.1 kb	 0.0% Assets/Scripts/Replay/ReplayRecorder.cs
+ 0.1 kb	 0.0% Assets/Scripts/Player/PlayerInputState.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Serialization/MemoryStructures/ByteBool.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Messaging/MessageDelivery.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Hashing/XXHash.cs
+ 0.1 kb	 0.0% Packages/com.unity.netcode.gameobjects/Runtime/Components/Helpers/AttachableNode.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/XR/Devices/OpenVR.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Plugins/HID/HID.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/xxHash3.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/Unicode.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/Memory.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/Jobs/IJobFilter.cs
+ 0.1 kb	 0.0% Packages/com.unity.collections/Unity.Collections/BitField.cs
+ 0.1 kb	 0.0% Packages/com.unity.inputsystem/InputSystem/Runtime/Devices/Pen.cs
+ 0.1 kb	 0.0% Assets/Resources/PerformanceTestRunSettings.json
+-------------------------------------------------------------------------------
+Unloading 6 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 15 unused Assets / (63.1 KB). Loaded Objects now: 2365.
+Memory consumption went from 274.8 MB to 274.8 MB.
+Total: 8.689400 ms (FindLiveObjects: 0.223900 ms CreateObjectMapping: 0.027700 ms MarkObjects: 8.160300 ms  DeleteObjects: 0.121400 ms)
+
+DisplayProgressNotification: Build Successful
+Build Finished, Result: Success.
+Unloading 0 Unused Serialized files (Serialized files now loaded: 0)
+Loaded scene 'Temp/__Backupscenes/0.backup'
+	Deserialize:            0.881 ms
+	Integration:            4.752 ms
+	Integration of assets:  0.002 ms
+	Thread Wait Time:       0.011 ms
+	Total Operation Time:   5.647 ms
+Unloading 0 unused Assets / (0 B). Loaded Objects now: 2357.
+Memory consumption went from 272.1 MB to 272.1 MB.
+Total: 5.849800 ms (FindLiveObjects: 0.193500 ms CreateObjectMapping: 0.026300 ms MarkObjects: 5.470000 ms  DeleteObjects: 0.004600 ms)
+
+Asset Pipeline Refresh (id=05da25174f102ba47a936708b3cf3619): Total: 0.059 seconds - Initiated by RefreshV2(NoUpdateAssetOptions)
+[Licensing::Client] Successfully resolved entitlement details
+##utp:{"success":true,"type":"PlayerBuildInfo","version":2,"phase":"Immediate","time":1790720734136,"processId":20964,"steps":[{"description":"Call PrepareForBuild callbacks","duration":0},{"description":"Call internal build started callbacks","duration":0},{"description":"Preprocess Player","duration":24},{"description":"Save scenes before build","duration":0},{"description":"Prepare For Build","duration":2},{"description":"ProducePlayerScriptAssemblies","duration":2518},{"description":"Verify Build setup","duration":68},{"description":"Prepare assets for target platform","duration":1},{"description":"Prepare splash screen","duration":0},{"description":"Build scripts DLLs","duration":18},{"description":"Building scenes","duration":52},{"description":"Build GlobalGameManagers file","duration":110},{"description":"Writing asset files","duration":26},{"description":"Building Resources/unity_builtin_extra","duration":89},{"description":"Creating compressed player package","duration":149},{"description":"Write data build dirty tracking information","duration":32},{"description":"Postprocess built player","duration":55355},{"description":"Call Post-Process callbacks","duration":90}],"duration":58534}
+Batchmode quit successfully invoked - shutting down!
+[websockify wrapper] Kill
+[websockify wrapper] Process killed
+[Physics::Module] Cleanup current backend.
+[Physics::Module] Id: 0xf2b8ea05
+Input System module state changed to: ShutdownInProgress.
+Input Polling Thread exited.
+Input System module state changed to: Shutdown.
+[Licensing::IpcConnector] LicenseClient-HADJAL-notifications channel disconnected successfully.
+[Licensing::IpcConnector] LicenseClient-HADJAL channel disconnected successfully.
+Lingering sessions upon destruction of worker manager
+Unity Data Store service was successfully shut down
+UDS shutting down local client system
+AcceleratorClientConnectionCallback - disconnected - :0
+Cleanup mono
+CodeReloadManager destroyed
+[websockify wrapper] Kill
+Exiting batchmode successfully now!
+[ExitDontLaunchBugReporter] Exiting without the bug reporter. Application will exit with return code 0

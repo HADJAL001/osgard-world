@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>OSGARD Entertainment</title>
+  <style>
+    :root{color-scheme:dark;--ink:#eaf2ff;--muted:#9eb2c8;--line:#28445a;--gold:#f3d795}
+    *{box-sizing:border-box}body{margin:0;background:#050914;color:var(--ink);font:14px Inter,Arial,sans-serif}
+    header{height:74px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 clamp(18px,6vw,88px);letter-spacing:.16em;color:#9eb2c8}
+    header a{color:var(--gold);text-decoration:none;font-weight:700}header span{font-size:10px}
+    .wrap{max-width:1320px;margin:auto;padding:clamp(64px,10vw,130px) clamp(18px,6vw,88px) 100px}
+    .hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:48px;align-items:end;padding-bottom:58px;border-bottom:1px solid var(--line)}
+    .eyebrow{color:var(--gold);font-size:10px;letter-spacing:.22em}.hero h1{font:300 clamp(46px,7vw,94px)/.94 Georgia,serif;margin:18px 0;color:#f4f0e7}.hero p{max-width:560px;color:var(--muted);line-height:1.8}
+    .count{border:1px solid #806d43;padding:22px 28px;text-align:center}.count b{display:block;font:300 74px/.85 Georgia,serif;color:#fff}.count span{font-size:9px;color:var(--gold);letter-spacing:.18em}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px;padding-top:42px}.card{grid-column:span 4;min-height:430px;display:flex;flex-direction:column;border:1px solid var(--line);background:#091525;color:inherit;text-decoration:none;transition:.25s}.card:nth-child(1),.card:nth-child(4){grid-column:span 6}.card:hover,.card:focus-visible{transform:translateY(-7px);border-color:var(--accent);outline:none;box-shadow:0 24px 60px -32px #000,0 0 28px color-mix(in srgb,var(--accent) 22%,transparent)}
+    .art{height:220px;display:grid;place-items:center;position:relative;overflow:hidden;background:radial-gradient(circle,color-mix(in srgb,var(--accent) 35%,transparent),transparent 28%),linear-gradient(140deg,var(--dark),#050914 75%)}.art:before,.art:after{content:"";position:absolute;border:1px solid color-mix(in srgb,var(--accent) 55%,transparent);border-radius:50%;width:72%;aspect-ratio:1;transform:rotate(28deg)}.art:after{width:42%;border-style:dashed;transform:rotate(-42deg)}.art b{position:relative;z-index:1;font:300 clamp(58px,8vw,118px)/.8 Georgia,serif;color:#f7f9ff}.art small{position:absolute;z-index:2;top:18px;left:20px;color:var(--gold);font:10px monospace;letter-spacing:.2em}.copy{display:flex;flex-direction:column;flex:1;padding:24px}.copy h2{margin:0;color:#f4f0e7;font:300 clamp(28px,3vw,46px)/.95 Georgia,serif;letter-spacing:.04em}.copy p{margin:14px 0;color:var(--muted);line-height:1.65}.launch{margin-top:auto;padding-top:18px;color:var(--gold);font-size:10px;letter-spacing:.14em;text-transform:uppercase}.time{--accent:#e2b65d;--dark:#382412}.swarm{--accent:#62e4d2;--dark:#0d3030}.shift{--accent:#8eaefe;--dark:#172350}.inherit{--accent:#a7d581;--dark:#193421}.remix{--accent:#f27ba9;--dark:#35142b}
+    @media(max-width:900px){.card,.card:nth-child(1),.card:nth-child(4){grid-column:span 6}}@media(max-width:620px){header{height:64px;padding:0 16px}.hero{grid-template-columns:1fr}.count{justify-self:start}.grid{grid-template-columns:1fr;padding-top:24px}.card,.card:nth-child(1),.card:nth-child(4){grid-column:1;min-height:0}.art{height:205px}}
+  </style>
+</head>
+<body>
+  <header><a href="/">OSGARD WORLD</a><span>05 / ENTERTAINMENT</span></header>
+  <main class="wrap">
+    <section class="hero"><div><div class="eyebrow">OSGARD / PLAYABLE WORLDS</div><h1>Выбери мир.<br>Начни игру.</h1><p>Пять самостоятельных игр. У каждой свой ритм, правила и визуальный язык. Выбери карточку, чтобы войти в мир.</p></div><div class="count"><b>05</b><span>PLAYABLE WORLDS</span></div></section>
+    <section class="grid" aria-label="Все игры OSGARD">
+      <a class="card time" href="/games/time-empire/"><div class="art"><small>01 / LIVE WORLD</small><b>ET</b></div><div class="copy"><h2>Империя времени</h2><p>Город, нефть, фракции и решения.</p><span class="launch">Войти в игру &#8599;</span></div></a>
+      <a class="card swarm" href="/games/swarm/index.html"><div class="art"><small>02 / LIVE WORLD</small><b>SW</b></div><div class="copy"><h2>SWARM</h2><p>Синхронно добудьте ядро и выйдите до тревоги.</p><span class="launch">Войти в игру &#8599;</span></div></a>
+      <a class="card shift" href="/games/null-shift/index.html"><div class="art"><small>03 / LIVE WORLD</small><b>NS</b></div><div class="copy"><h2>NULL//SHIFT</h2><p>Взломайте узел, смените слой и заберите ядро.</p><span class="launch">Войти в игру &#8599;</span></div></a>
+      <a class="card inherit" href="/games/inherit/index.html"><div class="art"><small>04 / LIVE WORLD</small><b>IN</b></div><div class="copy"><h2>INHERIT</h2><p>Наследие, память и решения поколений.</p><span class="launch">Войти в игру &#8599;</span></div></a>
+      <a class="card remix" href="/games/remix/index.html"><div class="art"><small>05 / LIVE WORLD</small><b>RX</b></div><div class="copy"><h2>REMIX</h2><p>Создавай испытания и оставляй свой replay.</p><span class="launch">Войти в игру &#8599;</span></div></a>
+    </section>
+  </main>
+</body>
+</html>

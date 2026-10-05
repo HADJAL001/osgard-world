@@ -1,0 +1,60 @@
+services:
+  osgard-game-api:
+    build: ../osgard-game-api
+    container_name: osgard-game-api
+    restart: unless-stopped
+    expose:
+      - "4317"
+    environment:
+      PORT: "4317"
+      OSGARD_EMPIRE_DB: "/var/lib/osgard-game-api/empire.sqlite3"
+    volumes:
+      - osgard-game-data:/var/lib/osgard-game-api
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4317/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+  osgard-world:
+    build: .
+    container_name: osgard-world
+    restart: unless-stopped
+    depends_on:
+      swarm-api:
+        condition: service_healthy
+      osgard-game-api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:4189:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+  remix-api:
+    build: ../remix/backend
+    container_name: remix-api
+    restart: unless-stopped
+    expose:
+      - "8080"
+  swarm-api:
+    build: ../swarm-mvp
+    container_name: swarm-api
+    restart: unless-stopped
+    expose:
+      - "4175"
+    environment:
+      PORT: "4175"
+      ALLOWED_ORIGINS: "https://osgard.world,https://www.osgard.world"
+      BUILD_VERSION: "${SWARM_BUILD_VERSION:-local}"
+      MONETIZATION_MODE: "disabled"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:4175/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  osgard-game-data:

@@ -1,0 +1,26 @@
+name: OSGARD release readiness
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - name: Run release gate
+        env:
+          OSGARD_BASE_URL: https://osgard.world
+        run: npm run qa:release
+      - name: Upload readiness report
+        uses: actions/upload-artifact@v4
+        with:
+          name: osgard-release-readiness
+          path: release-readiness.json

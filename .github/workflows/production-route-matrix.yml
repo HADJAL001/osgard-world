@@ -1,0 +1,20 @@
+name: OSGARD production route matrix
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 * * * *'
+
+jobs:
+  route-matrix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Check published routes on desktop and mobile profiles
+        env:
+          OSGARD_BASE_URL: https://osgard.world
+        run: npm run qa:production-routes

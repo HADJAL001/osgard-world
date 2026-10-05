@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://osgard.world/sitemap.xml

@@ -1,0 +1,6 @@
+import type { OsgardEvent, OsgardEventName } from './manifest'
+import { syncPlayerEvent } from './playerApi'
+const STORAGE_KEY = 'osgard.core.events.v1'
+const PENDING_KEY = 'osgard.core.events.pending.v1'
+export function recordOsgardEvent(name: OsgardEventName, payload: Record<string, unknown> = {}) { const event: OsgardEvent = { id: crypto.randomUUID(), name, payload, occurredAt: new Date().toISOString(), schemaVersion: 1 }; try { const current = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]') as OsgardEvent[]; localStorage.setItem(STORAGE_KEY, JSON.stringify([...current.slice(-49), event])); const pending = JSON.parse(localStorage.getItem(PENDING_KEY) ?? '[]') as OsgardEvent[]; localStorage.setItem(PENDING_KEY, JSON.stringify([...pending.slice(-49), event])) } catch { /* storage is optional */ } void flushPendingEvents(); return event }
+export async function flushPendingEvents() { try { const pending = JSON.parse(localStorage.getItem(PENDING_KEY) ?? '[]') as OsgardEvent[]; const remaining: OsgardEvent[] = []; for (const event of pending) if (!await syncPlayerEvent(event)) remaining.push(event); localStorage.setItem(PENDING_KEY, JSON.stringify(remaining.slice(-49))) } catch { /* storage/network is optional */ } }

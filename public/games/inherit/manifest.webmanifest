@@ -1,0 +1,12 @@
+{
+  "name": "INHERIT — The Quiet Reach",
+  "short_name": "INHERIT",
+  "description": "Leave one trace in a living world, then pass it to the next person.",
+  "start_url": "/games/inherit/index.html",
+  "scope": "/games/inherit/",
+  "display": "standalone",
+  "background_color": "#071514",
+  "theme_color": "#071514",
+  "lang": "en",
+  "categories": ["games", "social"]
+}

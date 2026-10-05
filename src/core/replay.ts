@@ -1,0 +1,3 @@
+export type ReplayInput = { tick: number, action: string, value?: string | number }
+export type ReplayEnvelope = { gameId: string, sessionId: string, seed: number, version: 1, inputs: ReplayInput[], checkpoints: Array<{ tick: number, stateHash: string }>, hash: string }
+export function serializeReplay(gameId: string, sessionId: string, seed: number, inputs: ReplayInput[], checkpoints: Array<{ tick: number, stateHash: string }>): ReplayEnvelope { const body = JSON.stringify({ gameId, sessionId, seed, version: 1, inputs, checkpoints }); let hash = 0; for (let i = 0; i < body.length; i++) hash = ((hash << 5) - hash + body.charCodeAt(i)) | 0; return { gameId, sessionId, seed, version: 1, inputs, checkpoints, hash: Math.abs(hash).toString(16) } }

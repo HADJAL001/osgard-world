@@ -1,0 +1,10 @@
+export type RemixStatus = 'DRAFT' | 'VALIDATED' | 'PUBLISHED' | 'PLAYING' | 'SUBMITTED'
+export type RemixObject = { id: string, kind: 'hazard' | 'goal' | 'platform', x: number, y: number }
+export type RemixChallenge = { id: string, creatorId: string, seed: number, status: RemixStatus, objects: RemixObject[], bestTimeMs?: number, validation?: { valid: boolean, reason?: string } }
+
+export function createChallenge(creatorId: string, seed = 1): RemixChallenge { return { id: `challenge-${seed}`, creatorId, seed, status: 'DRAFT', objects: [] } }
+export function addObject(challenge: RemixChallenge, object: RemixObject): RemixChallenge { if (challenge.status !== 'DRAFT') throw new Error('Challenge is no longer editable'); return { ...challenge, objects: [...challenge.objects, object] } }
+export function validateChallenge(challenge: RemixChallenge): RemixChallenge { if (challenge.status !== 'DRAFT') throw new Error('Only drafts can be validated'); const hasGoal = challenge.objects.some(object => object.kind === 'goal'); const validation = hasGoal ? { valid: true } : { valid: false, reason: 'A challenge needs a goal.' }; return { ...challenge, validation, status: hasGoal ? 'VALIDATED' : 'DRAFT' } }
+export function publishChallenge(challenge: RemixChallenge): RemixChallenge { if (challenge.status !== 'VALIDATED' || !challenge.validation?.valid) throw new Error('Challenge must pass validation'); return { ...challenge, status: 'PUBLISHED' } }
+export function startChallenge(challenge: RemixChallenge): RemixChallenge { if (challenge.status !== 'PUBLISHED') throw new Error('Challenge is not published'); return { ...challenge, status: 'PLAYING' } }
+export function submitRun(challenge: RemixChallenge, timeMs: number): RemixChallenge { if (challenge.status !== 'PLAYING' || !Number.isFinite(timeMs) || timeMs <= 0) throw new Error('Invalid run'); return { ...challenge, status: 'SUBMITTED', bestTimeMs: challenge.bestTimeMs === undefined ? timeMs : Math.min(challenge.bestTimeMs, timeMs) } }

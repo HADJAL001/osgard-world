@@ -1,0 +1,15 @@
+header{min-height:86px;padding-left:clamp(28px,5vw,88px);padding-right:clamp(28px,5vw,88px)}
+header nav{gap:clamp(22px,2.8vw,42px)}
+header nav button,.standalone-top-nav a{position:relative;font-size:12px!important;letter-spacing:.16em;text-transform:uppercase;font-weight:500;padding:12px 0;color:#b9b2a6;transition:color .3s ease,transform .3s ease}
+header nav button:after,.standalone-top-nav a:after{content:'';position:absolute;left:0;right:0;bottom:1px;height:1px;background:linear-gradient(90deg,transparent,#d8b56f,transparent);transform:scaleX(0);transform-origin:center;transition:transform .35s ease}
+header nav .nav-entertainment{position:relative;display:inline-flex;align-items:center;gap:7px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;font-weight:500;padding:12px 0;color:#e1c47e;transition:color .3s ease,transform .3s ease}
+header nav .nav-entertainment svg{width:14px;height:14px;stroke-width:1.4}
+header nav .nav-entertainment:after{content:'';position:absolute;left:0;right:0;bottom:1px;height:1px;background:linear-gradient(90deg,transparent,#d8b56f,transparent);transform:scaleX(0);transition:transform .35s ease}
+header nav .nav-entertainment:hover{color:#fff;transform:translateY(-2px)}
+header nav .nav-entertainment:hover:after{transform:scaleX(1)}
+header nav button:hover,.standalone-top-nav a:hover{color:#f0dfb5;transform:translateY(-2px)}
+header nav button:hover:after,.standalone-top-nav a:hover:after{transform:scaleX(1)}
+.standalone-top-nav{gap:clamp(20px,2.7vw,40px)!important;margin-left:clamp(28px,4vw,72px)!important}
+.standalone-top-nav a{font-size:11px!important;letter-spacing:.18em!important}
+.head-actions{gap:20px}
+@media(max-width:760px){header{min-height:68px;padding:0 20px}header nav{top:68px;gap:28px;padding:14px 22px}header nav button{font-size:11px!important;padding:9px 0}.standalone-top-nav{top:68px;gap:26px!important;padding:14px 22px}.standalone-top-nav a{font-size:10px!important}}

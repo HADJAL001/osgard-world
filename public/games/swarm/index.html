@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#101313" />
+    <title>SWARM — One Body. Eight Minds.</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="brand" href="#" aria-label="SWARM home"><i></i>SWARM</a>
+        <p>CHORUS FACILITY 07 <b></b> LOCAL SIMULATION</p>
+        <button id="reset" class="quiet" type="button">RESET ROUND</button>
+      </header>
+
+      <section class="arena" aria-label="SWARM training arena">
+        <canvas id="game" width="1280" height="720"></canvas>
+        <div class="hud">
+          <section class="objective">
+            <small>OBJECTIVE</small>
+            <strong>STEAL THE CORE</strong>
+            <span id="objective-status">CONNECT TWO ARMS TO THE CORE</span>
+            <span id="role-cue" class="role-cue">SELECT A ROLE TO SEE YOUR NEXT ACTION</span>
+          </section>
+          <section class="telemetry">
+            <div><small>TIME</small><strong id="timer">01:30</strong></div>
+            <div><small>STABILITY</small><strong id="stability">100%</strong></div>
+          </section>
+        </div>
+
+        <aside id="role-panel" class="role-panel" aria-label="Role controls"></aside>
+
+        <div id="overlay" class="overlay">
+          <div class="sigil"><span>8</span></div>
+          <p class="eyebrow">ONE BODY. EIGHT MINDS.</p>
+          <h1>THE BODY<br /><em>NEEDS YOU.</em></h1>
+          <p class="intro">Guide M-01 through a live training run. Select a role, then coordinate the one thing only that role can do.</p>
+          <section class="mission-brief" aria-label="Mission briefing">
+            <div class="mission-heading"><span id="mission-title">LAB ESCAPE // MISSION PATH</span><b id="mission-modifier">STANDARD RUN</b></div>
+            <ol>
+              <li><i>01</i><span><b>SCAN</b> Head identifies the core.</span></li>
+              <li><i>02</i><span><b>SYNC</b> Both arms secure it.</span></li>
+              <li><i>03</i><span><b>CLEAR</b> Map, jump, then hold the gate.</span></li>
+              <li><i>04</i><span><b>EXTRACT</b> Locomotion crosses with the team.</span></li>
+            </ol>
+            <p id="mission-effect">Baseline systems online. Complete every role gate to extract.</p>
+          </section>
+          <section class="lobby" aria-label="Online room">
+            <div class="lobby-fields">
+              <input id="player-name" maxlength="20" value="MIND" aria-label="Your call sign" placeholder="CALL SIGN" />
+              <input id="room-code" maxlength="6" aria-label="Room code" placeholder="ROOM CODE" />
+              <select id="role-preference" aria-label="Preferred body role">
+                <option value="">AUTO ROLE</option>
+                <option value="locomotion">LOCOMOTION / MOVE</option>
+                <option value="jump">JUMP / LAUNCH</option>
+                <option value="left_arm">LEFT ARM / GRAB</option>
+                <option value="right_arm">RIGHT ARM / GRAB</option>
+                <option value="head">HEAD / SCAN</option>
+                <option value="core">CORE / STABILIZE</option>
+                <option value="tail">TAIL / ANCHOR</option>
+                <option value="special">SPECIAL / OVERDRIVE</option>
+              </select>
+            </div>
+            <div class="lobby-actions">
+              <button id="host-room" type="button">HOST ROOM</button>
+              <button id="join-room" type="button">JOIN ROOM</button>
+              <button id="copy-invite" type="button">SHARE INVITE</button>
+            </div>
+            <p id="network-status" class="network-status">LOCAL TRAINING MODE — HOST OR JOIN FOR LIVE ROLE ASSIGNMENT</p>
+            <section class="recent-runs" aria-label="Your recent runs">
+              <div><span>RECENT RUNS</span><b id="recent-run-count">—</b></div>
+              <p id="recent-runs">Connect to a room to load your completed runs.</p>
+            </section>
+          </section>
+          <button id="start" class="primary" type="button">BODY ONLINE <b>→</b></button>
+          <p class="keys"><kbd>1–8</kbd> CHANGE ROLE &nbsp; <kbd>WASD</kbd> MOVE &nbsp; <kbd>SPACE</kbd> JUMP &nbsp; <kbd>F</kbd> GRAB &nbsp; <kbd>Q</kbd> OVERDRIVE</p>
+        </div>
+
+        <div id="result" class="result is-hidden" role="dialog" aria-modal="true">
+          <p id="result-kicker" class="eyebrow">OBJECTIVE COMPLETE</p>
+          <h2 id="result-title">CORE<br /><em>SECURED.</em></h2>
+          <p id="result-copy">The body left the facility with the core intact.</p>
+          <div class="result-grid">
+            <div><small>TIME REMAINING</small><strong id="result-time">—</strong></div>
+            <div><small>TEAM STATUS</small><strong id="result-status">SYNCED</strong></div>
+          </div>
+          <p id="chaos-card" class="chaos-card" aria-live="polite"></p>
+          <button id="copy-chaos-card" class="share-button" type="button">SHARE CHAOS CARD</button>
+          <p id="rematch-vote" aria-live="polite">COORDINATE THE NEXT RUN WITH YOUR CREW.</p>
+          <form id="playtest-feedback" class="playtest-feedback" hidden>
+            <p>PLAYTEST CHECK — YOUR HONEST SIGNAL</p>
+            <label>FUN <select name="fun" required><option value="">—</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></label>
+            <label>CLEAR <select name="clarity" required><option value="">—</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></label>
+            <label><input name="wouldRematch" type="checkbox" /> PLAY AGAIN</label><label><input name="wouldShare" type="checkbox" /> SHARE IT</label>
+            <input name="note" maxlength="240" placeholder="ONE THING TO FIX (OPTIONAL)" />
+            <button type="submit">SEND PLAYTEST SIGNAL</button><small id="feedback-status"></small>
+          </form>
+          <button id="again" class="primary" type="button">VOTE REMATCH <b>→</b></button>
+        </div>
+
+        <div class="touch" aria-label="Touch controls">
+          <button data-key="KeyA" class="touch-key left" aria-label="Move left">←</button>
+          <button data-key="KeyD" class="touch-key right" aria-label="Move right">→</button>
+          <button data-key="Space" class="touch-key jump" aria-label="Jump">JUMP</button>
+          <button data-key="KeyF" class="touch-key grab" aria-label="Grab">GRAB</button>
+        </div>
+      </section>
+
+      <footer><span>ROLE ASSIGNMENT: <b id="role-name">LOCOMOTION</b></span><span id="signal"><i></i> 8 SIGNALS DETECTED</span></footer>
+    </main>
+    <script type="module" src="./game.js"></script>
+  </body>
+</html>

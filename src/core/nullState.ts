@@ -1,0 +1,6 @@
+export type NullState = { heat: number, reality: 0 | 1, nodeIntegrity: number, core: boolean, status: 'INFILTRATION' | 'EXTRACTED' | 'CAUGHT' }
+export function createNullState(): NullState { return { heat: 0, reality: 0, nodeIntegrity: 100, core: false, status: 'INFILTRATION' } }
+export function hackNode(state: NullState, success: boolean): NullState { if (state.status !== 'INFILTRATION') throw new Error('Contract closed'); const next = { ...state, heat: Math.min(100, state.heat + (success ? 8 : 25)), nodeIntegrity: Math.max(0, state.nodeIntegrity - (success ? 30 : 10)) }; return next.heat >= 100 ? { ...next, status: 'CAUGHT' } : next }
+export function shiftReality(state: NullState): NullState { if (state.status !== 'INFILTRATION') throw new Error('Cannot shift after contract end'); return { ...state, reality: state.reality === 0 ? 1 : 0, heat: Math.min(100, state.heat + 3) } }
+export function recoverCore(state: NullState): NullState { if (state.status !== 'INFILTRATION' || state.nodeIntegrity > 30) throw new Error('Node is not breached'); return { ...state, core: true } }
+export function extractNull(state: NullState): NullState { if (!state.core || state.status !== 'INFILTRATION') throw new Error('Core is not recovered'); return { ...state, status: 'EXTRACTED' } }

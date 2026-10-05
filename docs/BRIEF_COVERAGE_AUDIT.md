@@ -1,0 +1,29 @@
+# Brief coverage audit
+
+This is a living audit of the 200-point `игры ОСГАРД.txt` brief. It distinguishes implemented runtime evidence from documented contracts and remaining production work.
+
+| Range | Evidence | Status |
+|---:|---|---|
+| 1-12 | world manifest, design tokens, portal and account language | Implemented / documented |
+| 13-18 | portal demonstration, five-game catalogue, result/share route | Five-game catalogue deployed and route-verified; result/share remains prototype |
+| 19-22 | `/business` diagnostic intake and preview report | Implemented prototype |
+| 23-25 | `/create` idea-to-prototype flow | Implemented prototype |
+| 26-28 | `/mobility` route flow and alternatives | Implemented prototype |
+| 29-31 | `/marcosa`, `/media`, `/chronicle` surfaces | Implemented prototype |
+| 32-36 | CORE event queue, recommendations, archive | Client queue plus server-backed player event/profile persistence, deterministic leaderboard adapter, server notification feed, and deduplicated meaningful notifications |
+| 37-108 | game bibles, state machines, visible TIME/SWARM/NULL/INHERIT/REMIX surfaces | Five explicit game design packages plus published vertical slices; all five surfaces now open/complete a shared authenticated CORE session lifecycle; SWARM has an authoritative room/WebSocket backend with reconnect and rematch tests |
+| 109-132 | progression and API/data contracts | Game API v1 persistence adapter implements profile/results/replays, top-100 leaderboard, and start/complete/history sessions; SWARM multiplayer backend, authenticated moderation lifecycle, analytics summary/export/cohorts/snapshots, and retention cleanup are fixture-tested; ClickHouse-scale warehouse remains external |
+| 133-164 | replay, QA checklist, liveops and Season 01 | Replay/session contracts with server hash validation, MIME-aware 30-route matrix, production build/API gate, deterministic frontend archive manifest, and device-lab runbook implemented; physical device lab remains external |
+| 165-179 | clips, creator tools, stream/community/re-engagement rules | MEDIA clip flow, moderation reports/sanctions, authenticated clubs/friends, friend lifecycle, meaningful re-engagement events, and `/stream` LIVE/SPECTATOR/REPLAY/CHALLENGE surface are deployed |
+| 180-200 | team structure, bibles, release philosophy | Master architecture, five game packages, art/UX/level/narrative/tech bibles, release handoff and CI readiness workflow documented; real production staffing remains external |
+
+## Audit conclusion
+
+Passes 62–85 add the deployed moderation boundary, server notifications, community lifecycle, five-game sessions, stream surface, route matrix, release gate, device runbook, and production handoff. Operator secrets, physical device execution, Supabase identity fixtures, and real staffing remain external evidence requirements.
+
+Passes 62–72 add a deployed, operator-guarded moderation sanctions boundary, server notification feed, and authenticated community/friend lifecycle. Production operator workflows remain intentionally unverified because `MODERATION_ADMIN_TOKEN` is not provisioned.
+
+Passes 89-109 additionally verify authenticated session persistence, social lifecycle, game results, analytics, moderation, retention, replay integrity, release build/API/asset gates, deterministic frontend manifest, and document the Supabase identity fixture procedure. The local fixture is test-only; actual Supabase identity creation and operator provisioning remain external.
+
+The portal and prototype layer is published and verified. The brief's full backend, multiplayer infrastructure, moderation, analytics warehouse, device lab, and production team cannot be truthfully marked complete from this repository alone; those remain explicit next production work rather than being silently treated as done.
+

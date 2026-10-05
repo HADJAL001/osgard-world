@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Leave one trace in a living world, then pass it to the next person."><meta property="og:title" content="INHERIT — The Quiet Reach"><meta property="og:description" content="Continue a world shaped by generations. Leave one trace and pass it on."><meta property="og:type" content="website"><meta property="og:url" content="https://osgard.world/games/inherit/index.html"><meta name="twitter:card" content="summary"><meta name="twitter:title" content="INHERIT — The Quiet Reach"><meta name="twitter:description" content="Leave one trace. Pass the world on."><title>INHERIT — The Quiet Reach</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap');
+:root{--ink:#edf3e7;--muted:#acc0af;--gold:#e7c778;--night:#071514;--deep:#102825}*{box-sizing:border-box}body{margin:0;background:var(--night);color:var(--ink);font-family:Manrope,sans-serif}.app{min-height:100vh;overflow:hidden;background:radial-gradient(ellipse at 63% 10%,#6c937c 0,transparent 29%),linear-gradient(150deg,#284f4b,#102927 50%,#071514)}header{height:72px;padding:0 4vw;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #fff2}.logo{font:500 17px 'DM Mono';letter-spacing:.23em}.logo sup{color:var(--gold);font-size:8px}.meta,.link,.eyebrow{font:10px 'DM Mono';letter-spacing:.15em;text-transform:uppercase}.meta{color:var(--muted)}.pulse{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 14px var(--gold);margin-right:9px}.link{border:0;background:none;color:var(--muted);cursor:pointer}.link:hover{color:var(--ink)}.world{height:calc(100vh - 174px);min-height:500px;position:relative;overflow:hidden}.stars{position:absolute;inset:0;background-image:radial-gradient(#fff7d2 1px,transparent 1.5px);background-size:82px 67px;opacity:.18;mask-image:linear-gradient(#000,transparent 65%)}.mist{position:absolute;top:42%;left:-10%;width:120%;height:26%;background:#b8d09d55;filter:blur(30px);border-radius:50%}.mountain{position:absolute;bottom:19%;left:-5%;width:110%;height:39%;background:#1d403b;clip-path:polygon(0 67%,9% 42%,17% 63%,27% 30%,38% 58%,45% 31%,56% 65%,68% 43%,78% 63%,89% 27%,100% 52%,100% 100%,0 100%)}.island{position:absolute;left:50%;bottom:-212px;width:min(1050px,94vw);height:525px;transform:translateX(-50%) rotate(-2deg);filter:drop-shadow(0 27px 37px #0006)}.shore,.land{position:absolute;border-radius:48% 52% 44% 56% / 55% 40% 60% 45%}.shore{inset:20px 0 0;background:#b5bd8d;transform:rotate(5deg)}.land{inset:42px 38px 28px;background:radial-gradient(circle at 39% 30%,#a6c47b 0 2%,transparent 2.3%),radial-gradient(circle at 61% 65%,#557a60 0 2%,transparent 2.3%),radial-gradient(ellipse at center,#77976c 0 48%,#4b705b 50% 68%,#2c5147 69%);box-shadow:inset 40px 15px 85px #d8e09c22}.river{position:absolute;left:48%;top:129px;width:102px;height:355px;border-radius:50%;transform:rotate(12deg);background:linear-gradient(90deg,#24575b,#67a29b,#285a5e);box-shadow:0 0 18px #75c2b566}.tree{position:absolute;width:86px;height:151px;cursor:pointer;filter:drop-shadow(8px 9px 3px #0004);transition:.25s}.tree:hover{transform:translateY(-6px) scale(1.04)}.tree:before{content:"";position:absolute;bottom:0;left:38px;width:13px;height:88px;border-radius:50% 50% 15% 15%;background:linear-gradient(90deg,#40382d,#806b47,#2c3428)}.tree:after{content:"";position:absolute;top:0;left:-3px;width:92px;height:111px;clip-path:polygon(47% 0,69% 11%,80% 31%,100% 55%,73% 92%,42% 100%,13% 80%,0 45%,17% 16%);border-radius:48%;background:radial-gradient(circle at 37% 31%,#b5cb7e 0 3%,transparent 4%),linear-gradient(135deg,#93af6a,#315a45)}.old{left:34%;top:23%}.young{right:27%;top:43%;transform:scale(.65)}.ruin{position:absolute;left:61%;top:30%;width:78px;height:98px;border:12px solid #929c8a;border-bottom:0;border-radius:44px 44px 0 0;transform:rotate(7deg);cursor:pointer}.beacon{position:absolute;left:44%;top:39%;width:22px;height:78px;cursor:pointer}.beacon:before{content:"";position:absolute;bottom:0;left:8px;width:7px;height:61px;background:#405348}.beacon:after{content:"";position:absolute;top:0;width:22px;height:22px;border-radius:50%;background:var(--gold);box-shadow:0 0 17px 8px #e7c77877;animation:glow 2.5s infinite}.ring{position:absolute;width:70px;height:20px;border:1px solid #e7c77877;border-radius:50%;left:36%;top:65%;animation:ring 4s infinite}.objects{position:absolute;inset:0}.placed{position:absolute;cursor:pointer;animation:enter .35s ease-out}.placed.tree{width:26px;height:45px;border-radius:50%;background:linear-gradient(135deg,#adc984,#2e634a)}.placed.tree:after{content:"";position:absolute;width:5px;height:22px;left:10px;bottom:-16px;background:#564b32}.placed.stone{width:28px;height:19px;border-radius:50%;background:#acb2a0;box-shadow:-5px 6px 4px #0003}.placed.light{width:12px;height:27px;border-radius:50% 50% 3px 3px;background:#d7c470;box-shadow:0 0 14px 8px #e7c77866}.placed.path{width:43px;height:6px;border-radius:55%;background:#d3bc86;transform:rotate(-23deg)}.hero{position:absolute;left:7vw;bottom:14%;max-width:480px;text-shadow:0 2px 15px #0005}.eyebrow{color:var(--gold)}h1{font:600 clamp(39px,5vw,72px)/.96 'Playfair Display';letter-spacing:-.05em;margin:14px 0}p{color:#d2ded0}.hint{position:absolute;right:5vw;bottom:9%;font:10px 'DM Mono';color:#d4e2d2a8;text-transform:uppercase}.dock{height:102px;background:#071514d9;border-top:1px solid #fff2;display:flex;align-items:center;gap:24px;padding:0 4vw;backdrop-filter:blur(16px)}.turn{min-width:118px}.turn strong{display:block;font:600 31px/1 'Playfair Display';color:var(--gold)}.turn small{color:var(--muted);font-size:9px}.tools{display:flex;gap:4px;flex:1;border-left:1px solid #fff2;padding-left:20px}.tool{border:1px solid transparent;border-radius:2px;background:transparent;color:var(--muted);padding:10px 12px;font:10px 'DM Mono';cursor:pointer}.tool:hover,.tool.active{border-color:#e7c7788c;background:#e7c77816;color:var(--ink)}.tool b{font-size:15px;color:var(--gold);margin-right:5px}.save{border:1px solid var(--gold);background:var(--gold);color:#14201b;padding:13px 17px;font:500 10px 'DM Mono';letter-spacing:.05em;text-transform:uppercase;cursor:pointer}.save:hover{background:#f2dda0}.panel{position:fixed;z-index:10;right:24px;top:95px;width:min(335px,calc(100vw - 48px));padding:29px;background:#0d2926f7;border:1px solid #e7c7787c;box-shadow:0 25px 70px #0008;transform:translateX(calc(100% + 30px));transition:.35s}.panel.show{transform:none}.panel h2,.modal h2{font:600 30px/1.08 'Playfair Display';margin:15px 0}.panel p{font-size:14px;line-height:1.65;color:#c9d6c8}.byline{padding-top:17px;border-top:1px solid #fff2;color:var(--muted);font-size:12px}.close{position:absolute;right:12px;top:8px;border:0;background:none;color:var(--muted);font-size:25px;cursor:pointer}.toast{position:fixed;z-index:20;bottom:125px;left:50%;transform:translate(-50%,20px);opacity:0;background:#e3ead8;color:#10231c;padding:12px 17px;font:10px 'DM Mono';text-transform:uppercase;transition:.25s}.toast.show{transform:translate(-50%,0);opacity:1}.modal{width:min(680px,92vw);background:#102825;color:var(--ink);border:1px solid #e7c77877;padding:40px;box-shadow:0 30px 100px #0009}.modal::backdrop{background:#020908af;backdrop-filter:blur(7px)}.timeline{max-height:270px;overflow:auto;margin:26px 0;border-top:1px solid #fff2}.entry{display:grid;grid-template-columns:80px 1fr;gap:18px;padding:15px 0;border-bottom:1px solid #fff1;font-size:12px}.entry time{font:10px 'DM Mono';color:var(--gold)}.entry p{margin:0;color:#c2d1c0}.entry small{color:var(--muted)}.modal-actions{display:flex;justify-content:space-between;align-items:center}@keyframes glow{50%{box-shadow:0 0 20px 11px #e7c778bb}}@keyframes ring{0%,100%{opacity:0;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}@keyframes enter{from{opacity:0;transform:translateY(-18px) scale(.6)}to{opacity:1;transform:none}}@media(max-width:740px){header{height:60px}.meta,.hint,.turn,.history{display:none}.world{height:calc(100vh - 168px)}.hero{left:7vw;bottom:17%;right:6vw}.dock{height:108px;padding:8px 4vw;gap:7px}.tools{padding-left:0;overflow:auto}.tool{white-space:nowrap;padding:8px}.island{width:900px}}
+</style></head><body><main class="app"><header><div class="logo">INHERIT<sup>®</sup></div><div class="meta"><i class="pulse"></i>THE QUIET REACH &nbsp;/&nbsp; <span id="gen">GEN 173</span></div><button class="link" id="reset">Start a new lineage</button></header><section class="world" id="world"><div class="stars"></div><div class="mist"></div><div class="mountain"></div><div class="island" id="island"><div class="shore"></div><div class="land"></div><div class="river"></div><div class="tree old" data-memory="tree" tabindex="0" role="button"></div><div class="tree young" data-memory="tree" tabindex="0" role="button"></div><div class="ruin" data-memory="ruin" tabindex="0" role="button"></div><div class="beacon" data-memory="beacon" tabindex="0" role="button"></div><div class="ring"></div><div class="objects" id="objects"></div></div><div class="hero"><span class="eyebrow">A WORLD LEFT FOR YOU</span><h1>Someone built a path<br>to the sea.</h1><p id="caption">They did not say why.</p></div><div class="hint">Click the island to leave a trace</div></section><section class="dock"><div class="turn"><span class="eyebrow">YOUR TURN</span><strong id="budget">100</strong><small>changes remaining</small></div><div class="tools"><button class="tool active" data-tool="tree"><b>✦</b>Plant</button><button class="tool" data-tool="stone"><b>◇</b>Place stone</button><button class="tool" data-tool="light"><b>◉</b>Leave a light</button><button class="tool" data-tool="path"><b>⌁</b>Mark a path</button></div><button class="link history" id="showHistory">See history ↗</button><button class="save" id="pass">Pass this world on →</button></section></main><aside class="panel" id="panel"><button class="close" id="close">×</button><span class="eyebrow">OBJECT MEMORY</span><h2 id="memoryTitle">The old tree</h2><p id="memoryText"></p><div class="byline" id="memoryByline"></div></aside><dialog class="modal" id="modal"><button class="close" id="closeModal">×</button><span class="eyebrow">WORLD HISTORY</span><h2>Every change becomes a trace.</h2><div class="timeline" id="timeline"></div><div class="modal-actions"><button class="link" id="past">Show past traces</button><button class="save" id="done">Return to today</button></div></dialog><div class="toast" id="toast"></div><script>
+const saved=localStorage.getItem('inherit-world-v1');const S=saved?JSON.parse(saved):{generation:173,budget:100,changes:[],objects:[],history:[{generation:170,by:'@Naru',action:'Placed the first lantern at the western shore.',when:'3 days ago'},{generation:171,by:'@Ria',action:'Restored the stone arch after the winter tide.',when:'2 days ago'},{generation:172,by:'@Sava',action:'Marked a safe path through the river meadow.',when:'Yesterday'},{generation:173,by:'@Luna',action:'Left the island quiet, except for one signal.',when:'Now'}]};let tool='tree';const q=s=>document.querySelector(s),qa=s=>Array.from(document.querySelectorAll(s));const names={tree:'planted a young tree',stone:'placed a shoreline stone',light:'left a lantern for the next person',path:'marked a new path'};function persist(){localStorage.setItem('inherit-world-v1',JSON.stringify(S))}function render(){q('#gen').textContent='GEN '+S.generation;q('#budget').textContent=S.budget;let box=q('#objects');box.innerHTML='';S.objects.forEach(o=>{let e=document.createElement('button');e.className='placed '+o.tool;e.style.left=o.x+'%';e.style.top=o.y+'%';e.setAttribute('aria-label','A trace you left');e.onclick=x=>{x.stopPropagation();memory('A trace you left','Generation '+S.generation+' '+names[o.tool]+'. Someone will find it after you pass this world on.','Created by <b>you</b>')};box.appendChild(e)})}function notice(t){let e=q('#toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2600)}function memory(t,x,b){q('#memoryTitle').textContent=t;q('#memoryText').textContent=x;q('#memoryByline').innerHTML=b;q('#panel').classList.add('show')}qa('.tool').forEach(e=>e.onclick=()=>{qa('.tool').forEach(x=>x.classList.remove('active'));e.classList.add('active');tool=e.dataset.tool;notice('Selected: '+e.textContent.trim())});q('#world').onclick=e=>{if(e.target.closest('button,.panel,.dock,[data-memory]'))return;let r=q('#island').getBoundingClientRect(),x=(e.clientX-r.left)/r.width*100,y=(e.clientY-r.top)/r.height*100;if(x<8||x>91||y<12||y>77)return;if(!S.budget){notice('Your change budget is complete');return}S.objects.push({tool:tool,x:x,y:y});S.changes.push(names[tool]);S.budget--;persist();render();notice('You '+names[tool])};const M={tree:['The old tree','It has watched 143 generations arrive at this shore. Its roots hold the first promise this island received.','First planted by <b>@Luna</b>'],ruin:['The stone arch','It survived a storm that erased every marker from the eastern coast. Someone rebuilt it before they left.','Restored by <b>@Ria</b>'],beacon:['The last signal','It blinks slowly over the water. A small invitation made for whoever came next.','Left by <b>@Sava</b>']};qa('[data-memory]').forEach(e=>e.onclick=()=>memory(...M[e.dataset.memory]));q('#close').onclick=()=>q('#panel').classList.remove('show');q('#showHistory').onclick=()=>{q('#timeline').innerHTML=S.history.slice().reverse().map(h=>'<div class="entry"><time>GEN '+h.generation+'</time><p><b>'+h.by+'</b> '+h.action+'<br><small>'+h.when+'</small></p></div>').join('');q('#modal').showModal()};q('#closeModal').onclick=()=>q('#modal').close();q('#done').onclick=()=>q('#modal').close();q('#past').onclick=()=>notice('Earlier traces are glowing over the island');q('#pass').onclick=()=>{if(!S.changes.length){notice('Leave one trace before passing the world on');return}S.history.push({generation:S.generation,by:'@You',action:S.changes.length+' changes: '+S.changes.join(', ')+'.',when:'Just now'});S.generation++;S.budget=100;S.changes=[];persist();render();q('#caption').textContent='Your trace is waiting for the next person.';notice('World passed on — a new generation begins')};q('#reset').onclick=()=>{if(confirm('Start a new local lineage?')){localStorage.removeItem('inherit-world-v1');location.reload()}};render();
+</script><script>
+// Founder Preview validates demand before any payment provider is connected.
+document.addEventListener('DOMContentLoaded',function(){
+  const button=document.createElement('button');
+  button.type='button';
+  button.className='founder-preview-button';
+  button.textContent='Founder preview';
+  button.setAttribute('aria-label','Open the cosmetic Founder Pass preview');
+  document.querySelector('.progress-button').insertAdjacentElement('afterend',button);
+  const panel=document.createElement('dialog');
+  panel.className='founder-preview';
+  panel.innerHTML='<button class="close" type="button" aria-label="Close Founder preview">×</button><span class="eyebrow">FUTURE EDITION</span><h2>Founder Pass</h2><p>Cosmetic traces, a founder mark, and an expanded generation card. It will never change budget, score, coordinates, or another player\'s world.</p><p class="founder-note">No payment is available in this preview. Your interest stays on this device.</p><button class="save founder-interest" type="button">Mark my interest</button>';
+  document.body.appendChild(panel);
+  button.onclick=function(){track('founder_preview_opened');panel.showModal()};
+  panel.querySelector('.close').onclick=function(){panel.close()};
+  panel.querySelector('.founder-interest').onclick=function(){
+    localStorage.setItem('inherit-founder-interest','1');
+    track('founder_interest_marked');
+    this.textContent='Interest saved on this device';
+    this.disabled=true;
+    notice('Founder interest saved locally');
+  };
+  document.head.insertAdjacentHTML('beforeend','<style>.founder-preview-button{margin-left:6px;border:1px solid #e7c77888;background:#e7c77812;color:#e7c778;padding:9px 12px;font:10px DM Mono,monospace;text-transform:uppercase;cursor:pointer}.founder-preview-button:hover{background:#e7c77824}.founder-preview{width:min(440px,calc(100vw - 36px));border:1px solid #e7c77888;background:#0b1818;color:#f4eddc;padding:30px;box-shadow:0 26px 80px #000}.founder-preview::backdrop{background:#020706b8}.founder-preview h2{margin:12px 0 8px;font:30px Cormorant Garamond,serif;font-weight:400}.founder-preview p{font:12px/1.6 DM Mono,monospace;color:#c8d7c8}.founder-preview .founder-note{font-size:10px;color:#8fa58f}.founder-interest{margin-top:10px}@media(max-width:740px){.founder-preview-button{margin:8px 0 0;width:100%}}</style>');
+});
+document.head.insertAdjacentHTML('beforeend','<link rel="manifest" href="manifest.webmanifest"><link rel="canonical" href="https://osgard.world/games/inherit/index.html"><meta name="theme-color" content="#071514">');
+if('serviceWorker' in navigator)window.addEventListener('load',function(){navigator.serviceWorker.register('/games/inherit/sw.js',{scope:'/games/inherit/'}).catch(function(){})});
+let inheritInstallEvent=null;
+window.addEventListener('beforeinstallprompt',function(event){event.preventDefault();inheritInstallEvent=event;const install=document.createElement('button');install.type='button';install.className='install-app';install.textContent='Keep INHERIT close';install.setAttribute('aria-label','Install INHERIT on this device');document.querySelector('.dock').appendChild(install);track('pwa_install_prompted');install.onclick=async function(){if(!inheritInstallEvent)return;inheritInstallEvent.prompt();const result=await inheritInstallEvent.userChoice;track('pwa_install_'+(result.outcome==='accepted'?'accepted':'dismissed'));inheritInstallEvent=null;install.remove()};document.head.insertAdjacentHTML('beforeend','<style>.install-app{border:1px solid #9fc58c88;background:transparent;color:#dce8d8;padding:11px 13px;font:10px DM Mono,monospace;text-transform:uppercase;cursor:pointer}.install-app:hover{background:#9fc58c1c}@media(max-width:740px){.install-app{width:100%;margin-top:5px}}</style>')});
+</script></body></html>
+document.head.insertAdjacentHTML('beforeend','<style>.past .app{background:radial-gradient(ellipse at 60% 10%,#767a70 0,transparent 28%),linear-gradient(150deg,#39443f,#192521 51%,#07110f)}.past .island{filter:grayscale(.72) sepia(.2) opacity(.7) drop-shadow(0 27px 37px #0006)}.past .placed{opacity:.16}.past .old,.past .young,.past .ruin,.past .beacon{opacity:.42}</style>');
+if(!S.snapshots){S.snapshots=[{generation:S.generation,objects:(S.objects||[]).slice()}];persist()}
+let pastMode=false;
+q('#past').onclick=function(){pastMode=!pastMode;document.body.classList.toggle('past',pastMode);q('#past').textContent=pastMode?'Return to present':'Show past traces';notice(pastMode?'Showing the world before your generation':'Returned to your generation')};
+q('#pass').onclick=function(){if(!S.changes.length){notice('Leave one trace before passing the world on');return}S.snapshots.push({generation:S.generation,objects:S.objects.slice()});S.history.push({generation:S.generation,by:'@You',action:S.changes.length+' changes: '+S.changes.join(', ')+'.',when:'Just now'});S.generation++;S.budget=100;S.changes=[];persist();render();q('#caption').textContent='Your trace is waiting for the next person.';notice('World passed on — a new generation begins')};
+</script><script>
+const apiWorld='http://127.0.0.1:4174/api/world/quiet-reach';
+S.pending=S.pending||[];
+async function loadSharedWorld(){try{const response=await fetch(apiWorld);if(!response.ok)throw new Error('offline');const world=await response.json();S.generation=world.currentGeneration;S.objects=world.objects.map(item=>({tool:item.type,x:item.x,y:item.y}));S.history=world.generations.map(item=>({generation:item.number,by:item.author,action:item.message,when:new Date(item.createdAt).toLocaleDateString()}));S.pending=[];persist();render();notice('Shared lineage loaded')}catch(error){notice('Offline lineage is active')}}
+q('#world').onclick=function(event){if(event.target.closest('button,.panel,.dock,[data-memory]'))return;const rect=q('#island').getBoundingClientRect(),x=(event.clientX-rect.left)/rect.width*100,y=(event.clientY-rect.top)/rect.height*100;if(x<8||x>91||y<12||y>77)return;if(!S.budget){notice('Your change budget is complete');return}S.objects.push({tool:tool,x:x,y:y});S.pending.push({type:tool,x:x,y:y});S.changes.push(names[tool]);S.budget--;persist();render();notice('You '+names[tool])};
+q('#pass').onclick=async function(){if(!S.pending.length){notice('Leave one trace before passing the world on');return}try{const response=await fetch(apiWorld+'/generations',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({expectedGeneration:S.generation,author:'@You',message:S.pending.length+' new traces for the next person.',delta:S.pending})});if(response.status===409){notice('Someone changed this world — loading their generation');return loadSharedWorld()}if(!response.ok)throw new Error('save failed');const result=await response.json();S.history.push({generation:result.generation.number,by:result.generation.author,action:result.generation.message,when:'Just now'});S.generation=result.currentGeneration;S.snapshots.push({generation:S.generation,objects:S.objects.slice()});S.pending=[];S.changes=[];S.budget=100;persist();render();q('#caption').textContent='Your trace is now part of a shared history.';notice('Generation '+result.generation.number+' is safely passed on')}catch(error){notice('Server unavailable — your local lineage is preserved')}};
+loadSharedWorld();
+</script><script>
+document.head.insertAdjacentHTML('beforeend','<style>.return-card{position:fixed;z-index:30;left:50%;top:90px;width:min(530px,calc(100vw - 36px));padding:22px 24px;background:#e5dfbf;color:#143027;box-shadow:0 22px 70px #0008;transform:translate(-50%,-160%);transition:transform .55s cubic-bezier(.2,.8,.2,1)}.return-card.show{transform:translate(-50%,0)}.return-card .eyebrow{color:#405e44}.return-card h3{font:600 27px/1.05 Playfair Display,serif;margin:8px 0}.return-card p{color:#315346;font-size:13px;margin:0 0 14px}.return-card button{border:1px solid #315346;background:transparent;color:#18382e;padding:9px 13px;font:10px DM Mono,monospace;cursor:pointer;text-transform:uppercase}.profile-chip{border:1px solid #e7c77866;background:#e7c77811;color:#e7c778;padding:7px 10px;font:10px DM Mono,monospace;letter-spacing:.05em;cursor:pointer}@media(max-width:740px){.profile-chip{display:none}}</style>');
+const profile=document.createElement('button');profile.className='profile-chip';profile.id='profile';profile.textContent=localStorage.getItem('inherit-author')||'@You';document.querySelector('header').appendChild(profile);
+profile.onclick=function(){const value=prompt('Name shown in your world history:',profile.textContent);if(value&&value.trim().length>1){profile.textContent=value.trim().slice(0,32);localStorage.setItem('inherit-author',profile.textContent);notice('Profile updated')}};
+const returnCard=document.createElement('section');returnCard.className='return-card';returnCard.innerHTML='<span class="eyebrow">YOUR WORLD CHANGED</span><h3>Someone left a new trace.</h3><p id="return-copy"></p><button id="see-change">See what they did</button>';document.body.appendChild(returnCard);
+async function checkReturn(){try{const response=await fetch(apiWorld);if(!response.ok)return;const world=await response.json();const last=Number(localStorage.getItem('inherit-last-passed')||0);if(last&&world.currentGeneration>last){const latest=world.generations[world.generations.length-1];document.querySelector('#return-copy').textContent=latest.author+' continued your world in generation '+latest.number+'.';returnCard.classList.add('show');document.querySelector('#see-change').onclick=function(){returnCard.classList.remove('show');q('#showHistory').click()}}}catch(error){}}
+q('#pass').onclick=async function(){if(!S.pending.length){notice('Leave one trace before passing the world on');return}const author=localStorage.getItem('inherit-author')||'@You';try{const response=await fetch(apiWorld+'/generations',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({expectedGeneration:S.generation,author:author,message:S.pending.length+' new traces for the next person.',delta:S.pending})});if(response.status===409){notice('Someone changed this world — loading their generation');return loadSharedWorld()}if(!response.ok)throw new Error('save failed');const result=await response.json();S.history.push({generation:result.generation.number,by:result.generation.author,action:result.generation.message,when:'Just now'});S.generation=result.currentGeneration;S.snapshots.push({generation:S.generation,objects:S.objects.slice()});S.pending=[];S.changes=[];S.budget=100;localStorage.setItem('inherit-last-passed',String(result.currentGeneration));persist();render();q('#caption').textContent='Your trace is now part of a shared history.';notice('Generation '+result.generation.number+' is safely passed on')}catch(error){notice('Server unavailable — your local lineage is preserved')}};
+setTimeout(checkReturn,900);
+</script><script>
+document.head.insertAdjacentHTML('beforeend','<style>.catalog-button{border:1px solid #e7c77855;background:#e7c77810;color:#e7c778;padding:9px 11px;font:10px DM Mono,monospace;cursor:pointer;white-space:nowrap}.catalog{position:fixed;z-index:35;left:50%;bottom:122px;width:min(650px,calc(100vw - 30px));padding:20px;background:#102825f7;border:1px solid #e7c77888;box-shadow:0 20px 70px #0009;transform:translate(-50%,calc(100% + 170px));transition:.35s}.catalog.open{transform:translate(-50%,0)}.catalog h3{font:600 23px Playfair Display,serif;margin:6px 0 15px}.catalog-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.catalog-grid button{padding:11px 9px;border:1px solid #ffffff24;background:#ffffff08;color:#dce9d8;text-align:left;font:10px DM Mono,monospace;cursor:pointer}.catalog-grid button:hover{border-color:#e7c77899;background:#e7c77817}.placed.flower{width:19px;height:19px;border-radius:50%;background:#d58b92;box-shadow:10px 0 #c47786,-5px 8px #e2ae9a}.placed.arch{width:28px;height:32px;border:6px solid #aeb29e;border-bottom:0;border-radius:18px 18px 0 0}.placed.chime{width:7px;height:35px;background:#c8b875;box-shadow:5px 0 #6f7b69,-5px 0 #6f7b69}.placed.moss{width:35px;height:15px;border-radius:50%;background:#69905e}.placed.cairn{width:25px;height:20px;border-radius:50%;background:#94998d;box-shadow:5px -7px #b7b6a3,10px 0 #777e76}.placed.marker{width:7px;height:40px;background:#d7c470;box-shadow:0 0 9px #e7c77877}</style>');
+Object.assign(names,{flower:'planted moonflowers',arch:'raised a small arch',chime:'hung a wind chime',moss:'restored a patch of moss',cairn:'stacked a stone cairn',marker:'left a gold waymarker'});
+const catalog=document.createElement('section');catalog.className='catalog';catalog.innerHTML='<span class="eyebrow">MORE WAYS TO LEAVE A TRACE</span><h3>Make the next arrival curious.</h3><div class="catalog-grid"><button data-extra="flower">✿ Moonflowers</button><button data-extra="arch">∩ Stone arch</button><button data-extra="chime">♬ Wind chime</button><button data-extra="moss">◌ Moss patch</button><button data-extra="cairn">▰ Stone cairn</button><button data-extra="marker">│ Gold waymarker</button></div>';
+document.body.appendChild(catalog);const more=document.createElement('button');more.className='catalog-button';more.textContent='More traces +6';document.querySelector('.tools').appendChild(more);more.onclick=function(){catalog.classList.toggle('open')};catalog.querySelectorAll('[data-extra]').forEach(button=>button.onclick=function(){tool=button.dataset.extra;qa('.tool').forEach(item=>item.classList.remove('active'));catalog.classList.remove('open');notice('Selected: '+button.textContent.trim())});
+</script><script>
+document.head.insertAdjacentHTML('beforeend','<style>.journey{position:fixed;z-index:16;left:4vw;top:96px;display:grid;gap:7px}.journey label{font:9px DM Mono,monospace;letter-spacing:.14em;color:#d5e2d5aa;text-transform:uppercase}.journey-step{display:flex;align-items:center;gap:8px;color:#9aad9f;font:10px DM Mono,monospace;letter-spacing:.04em;text-transform:uppercase;transition:.25s}.journey-step i{width:7px;height:7px;border-radius:50%;border:1px solid #a6b9a8}.journey-step.done{color:#e7c778}.journey-step.done i{background:#e7c778;border-color:#e7c778;box-shadow:0 0 9px #e7c778}@media(max-width:740px){.journey{display:none}}</style>');
+const journey=document.createElement('aside');journey.className='journey';journey.innerHTML='<label>Your journey</label><div class="journey-step" data-stage="explorer"><i></i>Explorer</div><div class="journey-step" data-stage="creator"><i></i>Creator</div><div class="journey-step" data-stage="historian"><i></i>Historian</div>';document.body.appendChild(journey);
+const journeyState=JSON.parse(localStorage.getItem('inherit-journey')||'{}');
+function journeyStep(stage){journeyState[stage]=true;localStorage.setItem('inherit-journey',JSON.stringify(journeyState));document.querySelectorAll('.journey-step').forEach(item=>item.classList.toggle('done',Boolean(journeyState[item.dataset.stage])))}
+document.querySelectorAll('[data-memory]').forEach(item=>item.addEventListener('click',()=>journeyStep('explorer')));
+q('#world').addEventListener('click',event=>{if(!event.target.closest('button,.panel,.dock,[data-memory]'))journeyStep('creator')});
+q('#showHistory').addEventListener('click',()=>journeyStep('historian'));
+document.querySelectorAll('.journey-step').forEach(item=>item.classList.toggle('done',Boolean(journeyState[item.dataset.stage])));
+</script><script>
+document.head.insertAdjacentHTML('beforeend','<style>.chronicle-button{border:0;background:none;color:#d2ddcf;font:10px DM Mono,monospace;letter-spacing:.06em;text-transform:uppercase;cursor:pointer}.chronicle{position:fixed;z-index:34;right:25px;bottom:124px;width:min(390px,calc(100vw - 50px));padding:25px;background:#102825f5;border:1px solid #e7c77866;box-shadow:0 25px 80px #0009;transform:translateY(calc(100% + 180px));transition:.35s}.chronicle.open{transform:none}.chronicle h3{font:600 29px/1.1 Playfair Display,serif;margin:10px 0}.chronicle p{font:14px/1.65 Manrope,sans-serif;color:#d1ddce}.chronicle ul{margin:17px 0 0;padding:0;list-style:none;border-top:1px solid #ffffff20}.chronicle li{padding:10px 0;border-bottom:1px solid #ffffff17;color:#adbdad;font:10px/1.45 DM Mono,monospace}.chronicle li b{color:#e7c778;font-weight:500}</style>');
+const chronicleButton=document.createElement('button');chronicleButton.className='chronicle-button';chronicleButton.textContent='World chronicle';document.querySelector('header').appendChild(chronicleButton);
+const chronicle=document.createElement('aside');chronicle.className='chronicle';chronicle.innerHTML='<button class="close" aria-label="Close chronicle">×</button><span class="eyebrow">FACTUAL WORLD HISTORY</span><h3 id="chronicle-title">A world of traces.</h3><p id="chronicle-copy"></p><ul id="chronicle-list"></ul>';document.body.appendChild(chronicle);
+function openChronicle(){const entries=S.history||[];const count=entries.length;const latest=entries[entries.length-1];document.querySelector('#chronicle-title').textContent='Generation '+S.generation+' carries '+count+' recorded traces.';document.querySelector('#chronicle-copy').textContent=count?'The island has been changed by '+new Set(entries.map(item=>item.by)).size+' people. Its most recent chapter was left by '+latest.by+'.':'No generation has been recorded yet.';document.querySelector('#chronicle-list').innerHTML=entries.slice(-4).reverse().map(item=>'<li><b>GEN '+item.generation+'</b> · '+item.by+'<br>'+item.action+'</li>').join('');chronicle.classList.add('open')}
+chronicleButton.onclick=openChronicle;chronicle.querySelector('.close').onclick=function(){chronicle.classList.remove('open')};
+</script><script>
+document.head.insertAdjacentHTML('beforeend','<style>.replay-banner{position:fixed;z-index:40;left:50%;bottom:122px;display:flex;align-items:center;gap:16px;max-width:calc(100vw - 32px);padding:14px 16px;background:#e6ddb5;color:#173229;box-shadow:0 22px 70px #0009;transform:translate(-50%,180px);transition:transform .35s}.replay-banner.show{transform:translate(-50%,0)}.replay-banner span{font:500 10px DM Mono,monospace;letter-spacing:.08em;text-transform:uppercase}.replay-banner button,.replay-choice{border:1px solid #315346;background:transparent;color:#173229;padding:8px 10px;font:10px DM Mono,monospace;cursor:pointer;text-transform:uppercase}.replay-choice{float:right;color:#dce9d8;border-color:#e7c77866;padding:6px 8px}.replay-choice:hover{background:#e7c77822}.replay-mode #world{cursor:not-allowed}.replay-mode #world:after{content:"Viewing a preserved generation";position:absolute;z-index:9;left:50%;top:18px;transform:translateX(-50%);padding:7px 10px;background:#071514cc;border:1px solid #e7c77866;color:#e7c778;font:9px DM Mono,monospace;letter-spacing:.08em;text-transform:uppercase}</style>');
+const replayBanner=document.createElement('aside');
+replayBanner.className='replay-banner';
+replayBanner.innerHTML='<span id="replay-copy">Viewing an earlier generation</span><button id="return-now">Return to today</button>';
+document.body.appendChild(replayBanner);
+let replayGeneration=null;
+function copyObjects(items){return (items||[]).map(function(item){return {tool:item.tool||item.type,x:Number(item.x),y:Number(item.y)}})}
+function snapshotFor(generation){const frames=(S.snapshots||[]).filter(function(frame){return Number(frame.generation)<=Number(generation)}).sort(function(a,b){return b.generation-a.generation});return frames[0]||null}
+function drawReplay(frame){const box=q('#objects');box.innerHTML='';copyObjects(frame.objects).forEach(function(item){const mark=document.createElement('span');mark.className='placed '+item.tool;mark.style.left=item.x+'%';mark.style.top=item.y+'%';mark.setAttribute('aria-hidden','true');box.appendChild(mark)});replayGeneration=frame.generation;document.body.classList.add('replay-mode');q('#replay-copy').textContent='Viewing generation '+frame.generation+' · '+frame.objects.length+' preserved traces';replayBanner.classList.add('show');q('#caption').textContent='This is the island exactly as it was passed on.'}
+function returnToToday(){if(replayGeneration===null)return;replayGeneration=null;document.body.classList.remove('replay-mode');replayBanner.classList.remove('show');render();q('#caption').textContent='The present is yours to continue.'}
+q('#return-now').onclick=returnToToday;
+window.addEventListener('click',function(event){if(replayGeneration!==null&&event.target.closest('#world')){event.stopImmediatePropagation();event.preventDefault()}},true);
+function addReplayChoices(){const rows=Array.from(document.querySelectorAll('#timeline .entry'));const entries=(S.history||[]).slice().reverse();rows.forEach(function(row,index){const entry=entries[index];if(!entry||row.querySelector('.replay-choice'))return;const frame=snapshotFor(entry.generation);if(!frame)return;const choice=document.createElement('button');choice.className='replay-choice';choice.textContent='View traces';choice.onclick=function(){q('#modal').close();drawReplay(frame)};row.appendChild(choice)})}
+q('#showHistory').addEventListener('click',function(){setTimeout(addReplayChoices,0)});
+q('#pass').onclick=async function(){if(!S.pending.length){notice('Leave one trace before passing the world on');return}const author=localStorage.getItem('inherit-author')||'@You';const passedGeneration=S.generation;const frame={generation:passedGeneration,objects:copyObjects(S.objects)};try{const response=await fetch(apiWorld+'/generations',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({expectedGeneration:S.generation,author:author,message:S.pending.length+' new traces for the next person.',delta:S.pending})});if(response.status===409){notice('Someone changed this world — loading their generation');return loadSharedWorld()}if(!response.ok)throw new Error('save failed');const result=await response.json();S.snapshots=S.snapshots||[];S.snapshots.push(frame);S.history.push({generation:result.generation.number,by:result.generation.author,action:result.generation.message,when:'Just now'});S.generation=result.currentGeneration;S.pending=[];S.changes=[];S.budget=100;localStorage.setItem('inherit-last-passed',String(result.currentGeneration));persist();render();q('#caption').textContent='Your trace is now part of a shared history.';notice('Generation '+result.generation.number+' is safely passed on')}catch(error){S.snapshots=S.snapshots||[];S.snapshots.push(frame);S.history.push({generation:passedGeneration,by:author,action:S.pending.length+' local traces preserved for the next person.',when:'Just now'});S.generation=passedGeneration+1;S.pending=[];S.changes=[];S.budget=100;persist();render();q('#caption').textContent='Your offline lineage is safe on this device.';notice('Server unavailable — saved as a local generation')}};
+</script><script>
+document.querySelectorAll('[data-memory]').forEach(function (item) {
+  item.addEventListener('keydown', function (event) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      item.click();
+    }
+  });
+});
+document.addEventListener('keydown', function (event) {
+  if (event.key !== 'Escape') return;
+  q('#panel').classList.remove('show');
+  if (q('#modal').open) q('#modal').close();
+  if (typeof chronicle !== 'undefined') chronicle.classList.remove('open');
+  if (typeof returnToToday === 'function') returnToToday();
+});
+</script><script>
+const traceHotkeys=['tree','stone','light','path','flower','arch','chime','moss','cairn','marker'];
+document.addEventListener('keydown',function(event){
+  if(event.target.matches('input,textarea,[contenteditable="true"]'))return;
+  const index=event.key==='0'?9:Number(event.key)-1;
+  if(index<0||index>9)return;
+  const type=traceHotkeys[index];
+  tool=type;
+  qa('.tool').forEach(function(item){item.classList.toggle('active',item.dataset.tool===type)});
+  notice('Trace '+(index+1)+': '+(names[type]||type));
+});
+const keyHint=document.createElement('span');
+keyHint.className='key-hint';
+keyHint.textContent='Keys 1-0 choose traces';
+keyHint.setAttribute('aria-label','Use number keys 1 through 0 to choose trace types');
+document.querySelector('.tools').appendChild(keyHint);
+document.head.insertAdjacentHTML('beforeend','<style>.key-hint{align-self:center;color:#8fa696;font:9px DM Mono,monospace;letter-spacing:.04em;white-space:nowrap;opacity:.75}@media(max-width:740px){.key-hint{display:none}}</style>');
+</script><script>
+const exportButton=document.createElement('button');
+exportButton.className='chronicle-export';
+exportButton.textContent='Export lineage';
+exportButton.setAttribute('aria-label','Export the current Quiet Reach lineage');
+exportButton.title='Download your world history as JSON';
+chronicle.appendChild(exportButton);
+exportButton.onclick=function(){
+  const payload={world:'The Quiet Reach',generation:S.generation,history:S.history||[],snapshots:S.snapshots||[],objects:S.objects||[]};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const link=document.createElement('a');
+  link.href=URL.createObjectURL(blob);
+  link.download='inherit-lineage-gen-'+S.generation+'.json';
+  link.click();
+  if(typeof track==='function')track('exported_lineage');
+  setTimeout(function(){URL.revokeObjectURL(link.href)},1000);
+  notice('Lineage archive exported');
+};
+document.head.insertAdjacentHTML('beforeend','<style>.chronicle-export{margin-top:18px;border:1px solid #e7c77866;background:#e7c77812;color:#e7c778;padding:9px 11px;font:10px DM Mono,monospace;letter-spacing:.05em;text-transform:uppercase;cursor:pointer}.chronicle-export:hover{background:#e7c77825}</style>');
+</script><script>
+const importButton=document.createElement('button');
+importButton.className='chronicle-export';
+importButton.textContent='Import lineage';
+importButton.setAttribute('aria-label','Import a Quiet Reach lineage archive');
+importButton.title='Restore a previously exported lineage';
+const importInput=document.createElement('input');
+importInput.type='file'; importInput.accept='application/json'; importInput.hidden=true;
+chronicle.appendChild(importButton); chronicle.appendChild(importInput);
+importButton.onclick=function(){importInput.click()};
+importInput.onchange=function(){
+  const file=importInput.files&&importInput.files[0]; if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(){
+    try{
+      const data=JSON.parse(reader.result);
+      const allowed=['tree','stone','light','path','flower','arch','chime','moss','cairn','marker'];
+      if(data.world!=='The Quiet Reach'||!Number.isInteger(data.generation)||data.generation<0||!Array.isArray(data.history)||!Array.isArray(data.objects)||data.objects.length>10000||!data.objects.every(function(item){return item&&allowed.includes(item.tool||item.type)&&Number.isFinite(Number(item.x))&&Number.isFinite(Number(item.y))&&Number(item.x)>=0&&Number(item.x)<=100&&Number(item.y)>=0&&Number(item.y)<=100}))throw new Error('invalid');
+      S.generation=data.generation; S.history=data.history; S.objects=data.objects.map(function(item){return {tool:item.tool||item.type,x:Number(item.x),y:Number(item.y)}}); S.snapshots=Array.isArray(data.snapshots)?data.snapshots:[]; S.budget=100; S.changes=[]; S.pending=[];
+      persist(); render(); openChronicle(); notice('Lineage archive restored');
+    }catch(error){notice('Archive rejected — invalid lineage file')}
+    importInput.value='';
+  };
+  reader.readAsText(file);
+};
+</script><script>
+const escapeHistoryText=function(value){const node=document.createElement('span');node.textContent=String(value??'');return node.innerHTML};
+q('#showHistory').onclick=function(){
+  q('#timeline').innerHTML=(S.history||[]).slice().reverse().map(function(h){return '<div class="entry"><time>GEN '+escapeHistoryText(h.generation)+'</time><p><b>'+escapeHistoryText(h.by)+'</b> '+escapeHistoryText(h.action)+'<br><small>'+escapeHistoryText(h.when)+'</small></p></div>'}).join('');
+  q('#modal').showModal(); if(typeof journeyStep==='function')journeyStep('historian'); setTimeout(addReplayChoices,0);
+};
+</script><script>
+q('#toast').setAttribute('role','status');
+q('#toast').setAttribute('aria-live','polite');
+q('#toast').setAttribute('aria-atomic','true');
+</script><script>
+window.addEventListener('beforeunload',function(){persist()});
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')persist()});
+</script><script>
+const objective=document.createElement('div');
+objective.className='objective';
+objective.innerHTML='<span class="eyebrow">FIRST TRACE</span><strong id="objective-copy">Leave 3 kinds of traces</strong>';
+objective.setAttribute('role','status');
+objective.setAttribute('aria-live','polite');
+objective.setAttribute('aria-atomic','true');
+document.querySelector('.world').appendChild(objective);
+function updateObjective(){
+  const kinds=new Set((S.objects||[]).map(function(item){return item.tool||item.type}));
+  const complete=kinds.size>=3;
+  document.querySelector('#objective-copy').textContent=complete?'The island remembers your hand':'Leave '+Math.max(0,3-kinds.size)+' more kind'+(3-kinds.size===1?'':'s')+' of trace';
+  objective.classList.toggle('complete',complete);
+}
+const oldRender=render;
+render=function(){oldRender();updateObjective()};
+document.head.insertAdjacentHTML('beforeend','<style>.objective{position:absolute;left:7vw;top:8%;display:grid;gap:7px;padding:10px 13px;border-left:2px solid #e7c778;background:#07151466;color:#dce8d8;backdrop-filter:blur(8px)}.objective strong{font:12px DM Mono,monospace;font-weight:400}.objective.complete{border-color:#9fc58c}.objective.complete strong{color:#e7c778}@media(max-width:740px){.objective{top:5%;left:7vw}}</style>');
+</script><script>
+document.addEventListener('keydown',function(event){
+  if(!(event.ctrlKey||event.metaKey)||event.key.toLowerCase()!=='z')return;
+  if(event.target.matches('input,textarea,[contenteditable="true"]'))return;
+  event.preventDefault();
+  if(!S.pending||!S.pending.length){notice('Nothing to undo in this generation');return}
+  const removed=S.pending.pop();
+  S.objects.pop();
+  S.changes.pop();
+  S.budget=Math.min(100,S.budget+1);
+  persist(); render(); notice('Undid '+(names[removed.type]||'the last trace'));
+});
+</script><script>
+document.addEventListener('keydown',function(event){
+  if(event.target.matches('input,textarea,[contenteditable="true"]'))return;
+  if(event.key.toLowerCase()==='h'&&!event.ctrlKey&&!event.metaKey){
+    event.preventDefault();
+    openChronicle();
+  }
+});
+</script><script>
+// Play analytics remains local unless the player explicitly exports it.
+const analyticsKey='inherit-analytics-v1';
+function readAnalytics(){try{const events=JSON.parse(localStorage.getItem(analyticsKey)||'[]');return Array.isArray(events)?events:[]}catch(error){return []}}
+function track(eventName,details){const generation=Number(S.generation)||0;const events=readAnalytics();events.push({event:eventName,at:new Date().toISOString(),generation:generation,details:details||{}});localStorage.setItem(analyticsKey,JSON.stringify(events.slice(-500)));if((location.hostname==='127.0.0.1'||location.hostname==='localhost')&&navigator.onLine){fetch('http://127.0.0.1:4175/api/analytics',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({event:eventName,generation:generation})}).catch(function(){})}}
+track('session_started',{returning:localStorage.getItem('inherit-session-seen')==='1'});localStorage.setItem('inherit-session-seen','1');
+const referralGeneration=new URLSearchParams(location.search).get('inherit_generation');
+if(referralGeneration&&/^\d{1,9}$/.test(referralGeneration)){const referred=Number(referralGeneration);track('heir_link_opened',{referralGeneration:referred});document.title='INHERIT — Generation '+referred;const ogDescription=document.querySelector('meta[property="og:description"]');if(ogDescription)ogDescription.setAttribute('content','Continue INHERIT from generation '+referred+'. Leave one trace and pass it on.');}
+let analyticsTraceCount=readAnalytics().filter(function(item){return item.event==='first_trace_placed'||item.event==='trace_placed'}).length;
+document.addEventListener('click',function(event){
+  if(event.target.closest('#world')&&!event.target.closest('button,.panel,.dock,[data-memory]')){
+    analyticsTraceCount+=1;
+    track(analyticsTraceCount===1?'first_trace_placed':'trace_placed',{count:analyticsTraceCount});
+    if(analyticsTraceCount===3)track('third_trace_placed',{count:analyticsTraceCount});
+  }
+},true);
+q('#pass').addEventListener('click',function(){if(S.pending&&S.pending.length)track('generation_transfer_started',{pending:S.pending.length});},true);
+const shareButton=document.createElement('button');
+shareButton.type='button';shareButton.className='share-generation';shareButton.textContent='Share this generation';shareButton.setAttribute('aria-label','Share this generation');
+q('#pass').insertAdjacentElement('afterend',shareButton);
+shareButton.onclick=async function(){
+  const shareUrl=new URL(location.href);shareUrl.searchParams.set('inherit_generation',String(Number(S.generation)||0));
+  const text='I left a trace in INHERIT, generation '+S.generation+'. Continue the island: '+shareUrl.href;
+  try{if(navigator.share)await navigator.share({title:'INHERIT generation '+S.generation,text:text,url:shareUrl.href});else if(navigator.clipboard)await navigator.clipboard.writeText(text);else throw new Error('share unavailable');track('share_clicked',{generation:Number(S.generation)||0});notice(navigator.share?'Generation shared':'Share text copied');}
+  catch(error){if(error&&error.name==='AbortError')return;notice('Sharing is unavailable on this device');}
+};
+const analyticsExport=document.createElement('button');
+analyticsExport.type='button';analyticsExport.className='analytics-export';analyticsExport.textContent='Export play data';analyticsExport.setAttribute('aria-label','Export locally stored INHERIT play data');
+shareButton.insertAdjacentElement('afterend',analyticsExport);
+analyticsExport.onclick=function(){
+  track('play_data_exported');
+  const payload={product:'INHERIT',schemaVersion:1,scope:'This device only. No names, message text, IP addresses, or device identifiers are collected.',events:readAnalytics()};
+  const url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));
+  const link=document.createElement('a');link.href=url;link.download='inherit-play-data.json';document.body.appendChild(link);link.click();link.remove();setTimeout(function(){URL.revokeObjectURL(url)},1000);
+};
+document.head.insertAdjacentHTML('beforeend','<style>.share-generation,.analytics-export{border:1px solid #e7c77866;background:transparent;color:#e7c778;padding:9px 12px;font:10px DM Mono,monospace;text-transform:uppercase;cursor:pointer}.share-generation{margin-left:8px}.analytics-export{margin-left:6px;color:#c8d7c8;border-color:#c8d7c866}.share-generation:hover,.analytics-export:hover{background:#e7c77818}@media(max-width:740px){.share-generation,.analytics-export{margin:8px 0 0;width:100%}}</style>');
+</script><style>
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
+}
+</style><script>
+// Collective progress is intentionally visual only: no power, budget, or score changes.
+const communitySignal=document.createElement('aside');
+communitySignal.className='community-signal';
+communitySignal.setAttribute('role','status');
+communitySignal.setAttribute('aria-live','polite');
+communitySignal.setAttribute('aria-atomic','true');
+communitySignal.innerHTML='<span class="eyebrow">COMMUNITY SIGNAL</span><strong id="community-signal-title">Leave a living mark</strong><p id="community-signal-copy"></p>';
+document.querySelector('.world').appendChild(communitySignal);
+const communitySignalSeenKey='inherit-community-signal-completed-generation';
+function updateCommunitySignal(){
+  const kinds=new Set((S.objects||[]).map(function(item){return item.tool||item.type}));
+  const target=5;
+  const progress=Math.min(target,kinds.size);
+  document.querySelector('#community-signal-copy').textContent=progress+'/'+target+' trace kinds discovered in this lineage.';
+  const complete=progress>=target;
+  communitySignal.classList.toggle('complete',complete);
+  document.querySelector('#community-signal-title').textContent=complete?'Community signal complete':'Leave a living mark';
+  if(complete&&localStorage.getItem(communitySignalSeenKey)!==String(S.generation)){
+    localStorage.setItem(communitySignalSeenKey,String(S.generation));
+    track('community_signal_completed');
+  }
+}
+const renderBeforeCommunitySignal=render;
+render=function(){renderBeforeCommunitySignal();updateCommunitySignal()};
+document.head.insertAdjacentHTML('beforeend','<style>.community-signal{position:absolute;right:7vw;bottom:12%;z-index:3;display:grid;gap:6px;max-width:250px;padding:11px 14px;border:1px solid #9fc58c55;border-right:3px solid #9fc58c;background:#07151480;color:#dce8d8;backdrop-filter:blur(9px);box-shadow:0 8px 26px #0000002b}.community-signal strong{font:12px DM Mono,monospace;font-weight:400}.community-signal p{margin:0;font:10px/1.45 DM Mono,monospace;color:#b8cbb8}.community-signal.complete{border-right-color:#e7c778}.community-signal.complete strong{color:#e7c778}@media(max-width:740px){.community-signal{right:5vw;bottom:16%;max-width:220px}}</style>');
+updateCommunitySignal();
+const passForAnalytics=q('#pass').onclick;
+q('#pass').onclick=async function(event){
+  const generationBefore=Number(S.generation)||0;
+  const pendingBefore=Array.isArray(S.pending)?S.pending.length:0;
+  const previouslyPassed=localStorage.getItem('inherit-last-passed')||'';
+  await passForAnalytics.call(this,event);
+  const generationAfter=Number(S.generation)||0;
+  const recordedPass=localStorage.getItem('inherit-last-passed')||'';
+  if(pendingBefore>0&&generationAfter>generationBefore&&recordedPass===String(generationAfter)&&recordedPass!==previouslyPassed)track('generation_transferred');
+};
+const returnedEventKey='inherit-lineage-returned-generation';
+setTimeout(function(){
+  if(!returnCard.classList.contains('show'))return;
+  const returnedGeneration=String(Number(S.generation)||0);
+  if(localStorage.getItem(returnedEventKey)===returnedGeneration)return;
+  localStorage.setItem(returnedEventKey,returnedGeneration);
+  track('lineage_returned');
+},1200);
+</script><script>
+// A small, text-only invitation card makes each handoff easy to share without exposing player data.
+(function(){
+  const cardButton=document.createElement('button');
+  cardButton.type='button';
+  cardButton.className='generation-card-button';
+  cardButton.textContent='Create generation card';
+  cardButton.setAttribute('aria-label','Create a shareable generation card');
+  const exportButton=document.querySelector('.analytics-export');
+  exportButton.insertAdjacentElement('afterend',cardButton);
+
+  const card=document.createElement('dialog');
+  card.className='generation-card';
+  card.innerHTML='<button class="close" type="button" aria-label="Close generation card">×</button><span class="eyebrow">A WORLD TO CONTINUE</span><h2></h2><p class="generation-card-summary"></p><p class="generation-card-invite">Leave one trace. Pass it on.</p><button type="button" class="save generation-card-copy">Copy invite</button><button type="button" class="generation-card-heir">Invite one heir</button><button type="button" class="generation-card-open">Open continuation link</button>';
+  document.body.appendChild(card);
+
+  function cardData(){
+    const objects=Array.isArray(S.objects)?S.objects:[];
+    const kinds=[...new Set(objects.map(function(item){return item.tool||item.type}).filter(Boolean))];
+    const generation=Number(S.generation)||0;
+    const label=objects.length===1?'trace':'traces';
+    const kindLabel=kinds.length===1?'kind':'kinds';
+    const url=new URL(location.href);
+    url.searchParams.set('inherit_generation',String(generation));
+    return {generation:generation,objects:objects.length,kinds:kinds.length,summary:'Generation '+generation+' holds '+objects.length+' '+label+' across '+kinds.length+' '+kindLabel+'.',invite:'I am passing on INHERIT, generation '+generation+' — '+objects.length+' '+label+', '+kinds.length+' '+kindLabel+'. Leave one trace and continue the island: '+url.href};
+  }
+
+  function refreshCard(){
+    const data=cardData();
+    card.querySelector('h2').textContent='Generation '+data.generation;
+    card.querySelector('.generation-card-summary').textContent=data.summary;
+    card.querySelector('.generation-card-copy').dataset.invite=data.invite;
+  }
+  cardButton.onclick=function(){refreshCard();card.showModal()};
+  card.querySelector('.close').onclick=function(){card.close()};
+  card.querySelector('.generation-card-copy').onclick=async function(){
+    const invite=this.dataset.invite||cardData().invite;
+    try{
+      if(navigator.clipboard&&navigator.clipboard.writeText)await navigator.clipboard.writeText(invite);
+      else throw new Error('clipboard unavailable');
+      track('generation_card_copied',{generation:Number(S.generation)||0});
+      notice('Generation invite copied');
+    }catch(error){notice('Copy is unavailable on this device');}
+  };
+  card.querySelector('.generation-card-heir').onclick=async function(){
+    const data=cardData();
+    const url=data.invite.slice(data.invite.indexOf('https://'));
+    const text='I chose you as the next keeper of INHERIT, generation '+data.generation+'. Continue the island: '+url;
+    try{
+      if(navigator.share)await navigator.share({title:'Your INHERIT invitation',text:text,url:url});
+      else if(navigator.clipboard&&navigator.clipboard.writeText)await navigator.clipboard.writeText(text);
+      else throw new Error('share unavailable');
+      track('heir_invite_created',{generation:data.generation});
+      notice(navigator.share?'Heir invitation shared':'Heir invitation copied');
+    }catch(error){if(error&&error.name==='AbortError')return;notice('Invitation is unavailable on this device');}
+  };
+  card.querySelector('.generation-card-open').onclick=function(){
+    const data=cardData();
+    track('generation_link_opened',{generation:data.generation});
+    window.open(data.invite.slice(data.invite.indexOf('https://')), '_blank', 'noopener');
+  };
+  document.head.insertAdjacentHTML('beforeend','<style>.generation-card-button{margin-left:6px;border:1px solid #9fc58c88;background:#9fc58c12;color:#dce8d8;padding:9px 12px;font:10px DM Mono,monospace;text-transform:uppercase;cursor:pointer}.generation-card-button:hover{background:#9fc58c24}.generation-card{width:min(440px,calc(100vw - 36px));border:1px solid #e7c77888;background:#0b1818;color:#f4eddc;padding:30px;box-shadow:0 26px 80px #000}.generation-card::backdrop{background:#020706b8}.generation-card h2{margin:12px 0 8px;font:30px Cormorant Garamond,serif;font-weight:400}.generation-card p{font:12px/1.6 DM Mono,monospace;color:#c8d7c8}.generation-card-invite{color:#e7c778!important}.generation-card-copy,.generation-card-open{margin-top:14px}.generation-card-open{margin-left:8px;border:1px solid #9fc58c88;background:transparent;color:#dce8d8;padding:12px 15px;font:10px DM Mono,monospace;text-transform:uppercase;cursor:pointer}@media(max-width:740px){.generation-card-button{margin:8px 0 0;width:100%}.generation-card-open{margin:8px 0 0;width:100%}}</style>');
+})();
+</script><script>
+document.head.insertAdjacentHTML('beforeend','<style>.generation-card-heir{margin:14px 0 0 8px;border:1px solid #e7c77866;background:#e7c77812;color:#e7c778;padding:12px 15px;font:10px DM Mono,monospace;text-transform:uppercase;cursor:pointer}@media(max-width:740px){.generation-card-heir{margin:8px 0 0;width:100%}}</style>');
+// Daily signal: a lightweight, privacy-safe return loop with no gameplay advantage.
+(function(){
+  const key='inherit-daily-signal-v1';
+  const today=new Date().toISOString().slice(0,10);
+  const prompts=['Leave a quiet marker for whoever arrives next.','Add one light to the edge of the map.','Place a trace that makes the island easier to remember.','Connect two places with a path.','Give the next keeper a reason to look closer.'];
+  const prompt=prompts[Math.abs(today.split('-').join('').split('').reduce((a,c)=>a+c.charCodeAt(0),0))%prompts.length];
+  const state=(()=>{try{return JSON.parse(localStorage.getItem(key)||'{}')}catch{return {}}})();
+  const button=document.createElement('button');
+  button.type='button';button.className='daily-signal-button';button.textContent='Daily signal';button.setAttribute('aria-label','Open today\'s INHERIT signal');
+  const anchor=document.querySelector('.progress-button')||document.querySelector('.generation-card-button')||document.querySelector('#pass');
+  if(anchor)anchor.insertAdjacentElement('afterend',button);
+  const dialog=document.createElement('dialog');dialog.className='daily-signal';
+  dialog.innerHTML='<button class="close" type="button" aria-label="Close daily signal">×</button><span class="eyebrow">TODAY\'S RETURN</span><h2>Daily signal</h2><p class="daily-copy"></p><p class="daily-status"></p><button type="button" class="save daily-start">Leave this signal</button>';
+  document.body.appendChild(dialog);
+  const copy=dialog.querySelector('.daily-copy'),status=dialog.querySelector('.daily-status'),start=dialog.querySelector('.daily-start');
+  function render(){const claimed=state.claimed===today;copy.textContent=prompt;status.textContent=claimed?'Signal left today. The island will be waiting tomorrow.':'One small action keeps the lineage moving.';start.disabled=claimed;start.textContent=claimed?'Signal left':'Leave this signal';}
+  button.onclick=function(){render();dialog.showModal();track('daily_signal_opened',{date:today});};
+  dialog.querySelector('.close').onclick=()=>dialog.close();
+  start.onclick=function(){state.claimed=today;state.count=Math.min(10000,Number(state.count)||0)+1;localStorage.setItem(key,JSON.stringify(state));render();track('daily_signal_claimed',{date:today,count:state.count});dialog.close();const world=q('#world');world.setAttribute('tabindex','-1');world.focus({preventScroll:true});notice('Choose a trace, then place it on the island');};
+  document.head.insertAdjacentHTML('beforeend','<style>.daily-signal-button{margin-left:6px;border:1px solid #c8d7c888;background:#c8d7c812;color:#dce8d8;padding:9px 12px;font:10px DM Mono,monospace;text-transform:uppercase;cursor:pointer}.daily-signal-button:hover{background:#c8d7c824}.daily-signal{width:min(440px,calc(100vw - 36px));border:1px solid #9fc58c88;background:#0b1818;color:#f4eddc;padding:30px;box-shadow:0 26px 80px #000}.daily-signal::backdrop{background:#020706b8}.daily-signal h2{margin:12px 0 8px;font:30px Cormorant Garamond,serif;font-weight:400}.daily-signal p{font:12px/1.6 DM Mono,monospace;color:#c8d7c8}.daily-signal .daily-status{font-size:10px;color:#8fa58f}.daily-start{margin-top:10px}.daily-start:disabled{opacity:.55;cursor:default}@media(max-width:740px){.daily-signal-button{margin:8px 0 0;width:100%}}</style>');
+})();
+</script><script>
+// The personal progress panel is computed entirely on-device from existing local events.
+(function(){
+  const progressButton=document.createElement('button');
+  progressButton.type='button';
+  progressButton.className='progress-button';
+  progressButton.textContent='Your journey';
+  progressButton.setAttribute('aria-label','Open your private INHERIT journey progress');
+  document.querySelector('.generation-card-button').insertAdjacentElement('afterend',progressButton);
+
+  const progress=document.createElement('dialog');
+  progress.className='journey-panel';
+  progress.innerHTML='<button class="close" type="button" aria-label="Close journey panel">×</button><span class="eyebrow">YOUR QUIET REACH</span><h2>Your journey</h2><p class="journey-copy"></p><div class="journey-stats"></div><p class="journey-privacy">Stored on this device. Nothing in this panel is sent to OSGARD.</p>';
+  document.body.appendChild(progress);
+    const labels={first_trace_placed:'First trace',third_trace_placed:'Three traces',generation_transferred:'Worlds passed on',share_clicked:'Generations shared',generation_card_copied:'Invites copied',heir_invite_created:'Heirs invited',daily_signal_claimed:'Daily signals',community_signal_completed:'Community signals',lineage_returned:'Heirs returned'};
+  function renderProgress(){
+    const events=readAnalytics();
+    const counts=events.reduce(function(acc,item){acc[item.event]=(acc[item.event]||0)+1;return acc},{});
+    const placed=events.filter(function(item){return item.event==='first_trace_placed'||item.event==='trace_placed'}).length;
+    const played=events.filter(function(item){return item.event==='session_started'}).length;
+    progress.querySelector('.journey-copy').textContent=(played||1)+' visits, '+placed+' traces, and a world still waiting for its next keeper.';
+    progress.querySelector('.journey-stats').innerHTML=Object.keys(labels).map(function(key){return '<div><span>'+labels[key]+'</span><strong>'+Number(counts[key]||0)+'</strong></div>'}).join('');
+  }
+  progressButton.onclick=function(){renderProgress();progress.showModal()};
+  progress.querySelector('.close').onclick=function(){progress.close()};
+  document.head.insertAdjacentHTML('beforeend','<style>.progress-button{margin-left:6px;border:1px solid #b8cbb866;background:transparent;color:#c8d7c8;padding:9px 12px;font:10px DM Mono,monospace;text-transform:uppercase;cursor:pointer}.progress-button:hover{background:#b8cbb81a}.journey-panel{width:min(500px,calc(100vw - 36px));border:1px solid #9fc58c88;background:#0b1818;color:#f4eddc;padding:30px;box-shadow:0 26px 80px #000}.journey-panel::backdrop{background:#020706b8}.journey-panel h2{margin:12px 0 8px;font:30px Cormorant Garamond,serif;font-weight:400}.journey-copy,.journey-privacy{font:12px/1.6 DM Mono,monospace;color:#c8d7c8}.journey-privacy{font-size:10px;color:#8fa58f}.journey-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:20px 0}.journey-stats div{display:flex;justify-content:space-between;gap:8px;padding:10px;border:1px solid #dce8d822;background:#ffffff05;font:10px DM Mono,monospace;color:#b8cbb8}.journey-stats strong{color:#e7c778;font-size:13px;font-weight:400}@media(max-width:740px){.progress-button{margin:8px 0 0;width:100%}.journey-stats{grid-template-columns:1fr}}</style>');
+})();
+</script><script>
+// A return is most valuable when it leads straight back into a meaningful next action.
+(function(){
+  const returnAction=document.createElement('button');
+  returnAction.type='button';
+  returnAction.className='continue-lineage';
+  returnAction.textContent='Leave the next trace';
+  returnAction.setAttribute('aria-label','Continue the lineage by leaving the next trace');
+  const returnHistory=document.querySelector('#see-change');
+  if(returnHistory) returnHistory.insertAdjacentElement('afterend',returnAction);
+  returnAction.addEventListener('click',function(){
+    returnCard.classList.remove('show');
+    const world=q('#world');
+    world.setAttribute('tabindex','-1');
+    world.focus({preventScroll:true});
+    notice('Choose a trace, then place it on the island');
+    track('return_continue_clicked',{generation:Number(S.generation)||0});
+  });
+  document.head.insertAdjacentHTML('beforeend','<style>.return-card .continue-lineage{margin-left:8px;background:#18382e;color:#e5dfbf;border-color:#18382e}.return-card .continue-lineage:hover{background:#0e251d}@media(max-width:520px){.return-card .continue-lineage{margin:8px 0 0}}</style>');
+})();
+</script></body></html>
