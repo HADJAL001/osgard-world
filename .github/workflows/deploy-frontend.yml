@@ -41,4 +41,5 @@ jobs:
           HOST: ${{ secrets.OSGARD_DEPLOY_HOST }}
           USER: ${{ secrets.OSGARD_DEPLOY_USER }}
         run: |
-          ssh -i ~/.ssh/osgard_deploy "$USER@$HOST" 'set -e; docker cp /tmp/osgard-gh-release/osgard-world-release.tgz osgard-world:/tmp/osgard-gh-release.tgz; docker exec osgard-world sh -lc "rm -rf /tmp/osgard-gh-next /tmp/osgard-gh-previous && mkdir /tmp/osgard-gh-next && tar -xzf /tmp/osgard-gh-release.tgz -C /tmp/osgard-gh-next && test -f /tmp/osgard-gh-next/index.html && mv /usr/share/nginx/html /tmp/osgard-gh-previous && mv /tmp/osgard-gh-next /usr/share/nginx/html"; if ! curl -fsS https://osgard.world/ >/dev/null || ! curl -fsS http://127.0.0.1:4317/health | grep -q '"status":"ok"'; then docker exec osgard-world sh -lc "rm -rf /usr/share/nginx/html && mv /tmp/osgard-gh-previous /usr/share/nginx/html"; exit 1; fi'
+          scp -i ~/.ssh/osgard_deploy scripts/activate-frontend-remote.sh "$USER@$HOST:/tmp/activate-frontend-remote.sh"
+          ssh -i ~/.ssh/osgard_deploy "$USER@$HOST" 'chmod 700 /tmp/activate-frontend-remote.sh && OSGARD_ARCHIVE=/tmp/osgard-gh-release.tgz OSGARD_CONTAINER=osgard-world /tmp/activate-frontend-remote.sh'

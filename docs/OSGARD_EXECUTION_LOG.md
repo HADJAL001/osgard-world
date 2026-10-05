@@ -2674,3 +2674,18 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - The new frontend bundle is not claimed as live. Further attempts require a background/polled remote activation or direct operator-side inspection of the container command channel; repeating the same foreground SSH activation is not evidence of publication.
+
+## 2026-10-06 / Pass 133
+
+### Scope completed
+
+- Added `scripts/activate-frontend-remote.sh`, which performs activation in a background process, polls a bounded state file, and executes rollback on failed public/backend health checks.
+- Updated the guarded deploy workflow to transfer and invoke this remote activation script instead of keeping the long container operation in the foreground SSH command.
+
+### Verification
+
+- The script uses a 45-second bounded poll and never reports success without the public root and backend `/health` checks.
+
+### Publication boundary
+
+- The background activation path is ready for a final guarded deployment attempt; no frontend bundle is claimed live until its workflow succeeds.
