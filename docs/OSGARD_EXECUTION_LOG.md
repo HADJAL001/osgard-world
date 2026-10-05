@@ -2624,3 +2624,20 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - The backend readiness endpoint remains a separate pending deployment; no claim is made that it is live.
+
+## 2026-10-06 / Pass 130
+
+### Scope completed
+
+- Retried guarded frontend deployment after removing the pending backend readiness dependency.
+- Workflow `37383928313` completed archive build, staging, and checksum verification, then failed during activation.
+
+### Verification
+
+- Production container remains healthy and serves the previous verified bundle `index-Cg_No4FM.js`.
+- The staged archive is present on the host and extracts successfully in a non-destructive debug directory.
+- Public root and backend `/health` both return successfully; no active document root was replaced.
+
+### Publication boundary
+
+- The latest frontend bundle is not claimed as live. Activation failure requires a separately diagnosed container document-root step before another production attempt.
