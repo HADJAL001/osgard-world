@@ -1,5 +1,7 @@
 # Brief coverage audit
 
+Authoritative source snapshot (2026-10-06): `A:\HADJAL\Рабочий стол\игры ОСГАРД.txt`, 200 numbered sections, 24,226 lines, 388,964 bytes, SHA-256 `5f401ff30a395955acbff653038d2aa140fc1c031efe05c34cb33f9fc6be6914`.
+
 This is a living audit of the 200-point `игры ОСГАРД.txt` brief. It distinguishes implemented runtime evidence from documented contracts and remaining production work.
 
 | Range | Evidence | Status |
