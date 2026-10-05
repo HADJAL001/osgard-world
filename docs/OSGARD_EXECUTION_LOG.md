@@ -2477,3 +2477,20 @@ Continue non-financial brief implementation; billing can be handled only after a
 - `npm run qa:production-routes` returned `status: ready`, `routes: 30`, `failed: 0`.
 - The production report explicitly recorded `/entertainment` as `gameLinks: 5`, `cards: 5`, `ok: true` for desktop and mobile.
 - `npm run check` passed.
+
+## 2026-10-06 / Pass 121
+
+### Scope completed
+
+- Added backend health verification to the guarded frontend deployment activation path.
+- The deploy host must now answer `{"status":"ok","service":"osgard-game-api","contractVersion":1}` before a staged frontend release can be activated.
+
+### Verification
+
+- Release-readiness workflow `37379261869` completed successfully.
+- Production route-matrix workflow `37379261865` completed successfully.
+- The current production container and public routes remain healthy; no rollback was required.
+
+### Publication boundary
+
+- This pass verifies the deployment guard and public health contract. Supabase production credentials, moderation secrets, physical device labs, warehouse-scale analytics, and staffing remain external requirements documented in `BRIEF_COVERAGE_AUDIT.md`.
