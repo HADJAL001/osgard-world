@@ -2689,3 +2689,20 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - The background activation path is ready for a final guarded deployment attempt; no frontend bundle is claimed live until its workflow succeeds.
+
+## 2026-10-06 / Pass 134
+
+### Scope completed
+
+- Published the guarded frontend archive using the background/polled activation script.
+- Workflow `37385093358` completed build, archive preflight, staging checksum, activation, and health verification successfully.
+
+### Verification
+
+- `https://osgard.world/` now serves bundle `index-6gUiTCiK.js`.
+- `https://osgard.world/games/remix/index.html` contains the corrected title `REMIX — OSGARD Entertainment`.
+- The deploy host backend health contract returns `status: ok`.
+
+### Publication boundary
+
+- Frontend publication is now verified live. The separate backend `/health/ready` enhancement remains pending and is not required by the current frontend deploy guard.
