@@ -2774,3 +2774,20 @@ Continue non-financial brief implementation; billing can be handled only after a
 
 - The backend readiness release is prepared and locally tested, but stable remote transport is required for checksum-verified activation.
 - No fallback through Contabo reinstall or billing controls was used; those controls are destructive or unrelated to this release.
+
+## 2026-10-06 / Pass 139
+
+### Scope completed
+
+- Re-ran the Contabo transport check and obtained one successful read-only SSH session: the host accepted the deploy key, `osgard-game-api` was `active`, and the remote source remained on SHA-256 `dc2e1dfb...` (the pre-readiness version).
+- Attempted guarded staging through `scp` and then through a bounded chunked SSH stream.
+- Verified that the interrupted staging path did not activate a file; the temporary staging artifacts were removed and the service was not restarted.
+
+### Verification
+
+- No production mutation occurred in this pass. The backend readiness endpoint remains unclaimed in production.
+- Local source and tests remain valid; the transport failure is isolated to the large/streamed write path rather than a code or checksum failure.
+
+### Publication boundary
+
+- The next backend publication attempt requires a stable remote transfer channel (or an operator-provided deployment channel). Contabo reinstall, password fields, billing, and other destructive controls remain out of scope.
