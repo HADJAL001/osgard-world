@@ -2828,3 +2828,19 @@ Continue non-financial brief implementation; billing can be handled only after a
 
 - Supabase identity fixtures remain an external provisioning task requiring named test accounts and an operator-approved credential handoff.
 - The repository and production service remain unchanged in this pass; the observation is documented to prevent treating the estimated dashboard count as real users.
+
+## 2026-10-06 / Pass 142
+
+### Scope completed
+
+- Ran the post-backend-release production verification sweep.
+
+### Verification
+
+- Contabo `osgard-game-api` is `active`; `/health/ready` returns `status: ready`, `authConfigured: true`, and `operatorConfigured: false`.
+- `npm run qa:production-routes` returned `status: ready`, `routes: 32`, `failed: 0`; `/entertainment` reports five game links and five cards.
+- Desktop and mobile routes continue to load the published `index-6gUiTCiK.js` bundle.
+
+### Publication boundary
+
+- This pass confirms runtime stability after the backend release. Supabase production users, moderation operator secret, physical device lab, warehouse-scale analytics, and staffing remain explicit external requirements.
