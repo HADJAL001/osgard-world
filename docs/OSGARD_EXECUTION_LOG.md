@@ -243,6 +243,24 @@ Implement the shared design-token contract and connect result events to a client
 ### Publication boundary
 
 - GitHub source publication is complete. Contabo runtime still serves the previously verified production image plus the separately published five-game entertainment route; full bundle activation remains a separate deployment-channel task.
+
+## 2026-10-06 / Pass 130
+
+### Scope completed
+
+- Enabled GitHub Actions on pushes to `master` and `main`.
+- Made the checked-in SWARM asset sync self-contained when the optional sibling source is absent in CI.
+- Adjusted the GitHub release workflow to run typecheck, build, archive preflight, and production route verification available from the standalone repository.
+
+### Verification
+
+- GitHub Actions run `37376965481` (release readiness): success.
+- GitHub Actions run `37376965494` (production route matrix): success.
+- Local `npm run check` and `npm run build` passed.
+
+### Publication boundary
+
+- GitHub repository and CI publication are complete. Contabo runtime publication remains separately constrained by the unstable SSH artifact transport.
 - `npm run build` passed.
 - Published the build and received HTTP `200` from `/business?pass=03` and `/entertainment/?pass=03`.
 
