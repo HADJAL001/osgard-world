@@ -50,9 +50,22 @@ const seo: Record<string, { title: string; description: string }> = {
   '/entertainment': { title: 'OSGARD Entertainment � ������������� ����', description: '������������� ������� ��� OSGARD. �������� ���� � ��������� � ��� ��������� ���.' },
 }
 
+const cleanSeo: Record<string, { title: string; description: string }> = {
+  '/': { title: 'OSGARD WORLD — цифровая экосистема', description: 'OSGARD объединяет продукты для защиты, мобильности, бизнеса, времени и создания цифровых решений.' },
+  '/worlds': { title: 'Миры OSGARD — семь самостоятельных продуктов', description: 'Выберите мир OSGARD: защита, мобильность, бизнес, время и создание цифровых продуктов.' },
+  '/catalog': { title: 'Каталог OSGARD — продукты и решения', description: 'Каталог самостоятельных продуктов OSGARD с понятными условиями и маршрутами.' },
+  '/chronicle': { title: 'Хроника OSGARD — история экосистемы', description: 'События, продукты и ключевые этапы развития OSGARD.' },
+  '/masters': { title: 'Мастера OSGARD — люди и команды', description: 'Команды OSGARD и их работа над продуктами, играми и цифровыми решениями.' },
+  '/club': { title: 'Клуб OSGARD — закрытое пространство', description: 'Клуб OSGARD для раннего доступа, общения и совместного развития продуктов.' },
+  '/aurum': { title: 'AURUM — координационный интеллект OSGARD', description: 'AURUM связывает продукты OSGARD в единую картину и помогает выбрать следующий шаг.' },
+  '/timecoin': { title: 'TimeCoin OSGARD — правила и условия', description: 'Правила внутренней бонусной единицы OSGARD для доступа, статуса и специальных условий.' },
+  '/development': { title: 'OSGARD Development — создание цифровых продуктов', description: 'Разработка сайтов, приложений и MVP-платформ от идеи до запуска.' },
+  '/entertainment': { title: 'OSGARD Entertainment — интерактивные игры', description: 'Игры OSGARD: выбирайте мир, запускайте сессию и сохраняйте результат.' },
+}
+
 function Seo({ path }: { path: string }) {
   React.useEffect(() => {
-    const data = seo[path] ?? seo['/']
+    const data = cleanSeo[path] ?? cleanSeo['/']
     const canonical = `https://osgard.world${path === '/' ? '/' : path}`
     document.title = data.title
     const setMeta = (selector: string, attribute: string, value: string) => {

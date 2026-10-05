@@ -2561,3 +2561,19 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - The corrected source is ready for the normal frontend release workflow. Other legacy source surfaces with separate historical copy remain outside this narrow copy pass and are not claimed as corrected here.
+
+## 2026-10-06 / Pass 126
+
+### Scope completed
+
+- Added clean, route-specific SEO titles and descriptions for the portal, worlds, catalogue, chronicle, club, products, development, and entertainment routes.
+- Wired the runtime SEO component to the clean metadata map so browser metadata no longer inherits the legacy mojibake table.
+
+### Verification
+
+- `npm run check` passed.
+- `npm run build` passed with the updated bundle.
+
+### Publication boundary
+
+- The source and bundle are ready for the normal frontend deployment workflow; legacy unused metadata constants remain in source for later cleanup but are no longer used at runtime.
