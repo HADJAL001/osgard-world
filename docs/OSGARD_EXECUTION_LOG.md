@@ -2527,3 +2527,21 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - Production `MODERATION_ADMIN_TOKEN` is still an external operator action; the readiness contract reports it as a boolean and does not invent or provision it. The current production service was not replaced after the transport interruption.
+
+## 2026-10-06 / Pass 124
+
+### Scope completed
+
+- Retried backend readiness publication with a compressed archive and a single-command transfer after the SFTP channel stalled.
+- The remote channel closed before checksum completion; no backend file was activated.
+- Removed all partial remote staging files and retained the previous production `app.py` unchanged.
+
+### Verification
+
+- Remote `/opt/osgard-game-api/app.py` SHA-256 remains `dc2e1dfb9eead55eaf01d82f6d2fd1437a107085572d904eccee644f1d60ea73`.
+- `osgard-game-api.service` remains `active`.
+- The local readiness implementation and smoke test remain green; production readiness endpoint publication is pending a stable artifact transport.
+
+### Publication boundary
+
+- No rollback or destructive operation was required. The backend readiness change is not claimed as live until its remote checksum can be verified.
