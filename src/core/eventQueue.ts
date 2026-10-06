@@ -27,3 +27,10 @@ export function flushPendingEvents(): Promise<void> {
   })()
   return flushPromise
 }
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', () => { void flushPendingEvents() })
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') void flushPendingEvents()
+  })
+}

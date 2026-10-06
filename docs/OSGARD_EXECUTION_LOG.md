@@ -3184,3 +3184,19 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - This pass corrects evidence documentation only; it does not upgrade any external operator, device-lab, warehouse, or staffing requirement to completed.
+
+## 2026-10-06 / Pass 164
+
+### Scope completed
+
+- Added automatic CORE pending-event retries when the browser regains connectivity or the user returns to the OSGARD tab.
+
+### Verification
+
+- `npm run check` passes.
+- `npm run qa:queue` returns `OSGARD_EVENT_QUEUE_SMOKE_OK`.
+- The retry listeners are browser-guarded and do not execute during server/build evaluation.
+
+### Publication boundary
+
+- This improves authenticated event delivery resilience; it does not alter token, moderation, or external production-operation boundaries.
