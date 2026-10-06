@@ -3398,6 +3398,22 @@ Continue non-financial brief implementation; billing can be handled only after a
 
 - This documents an operator action and does not claim that bearer credentials or moderation secrets are provisioned.
 
+## 2026-10-06 / Pass 179
+
+### Scope completed
+
+- Added `qa:live-bundle`, which compares the bundle served by production HTML with the current live bundle marker in `BRIEF_COVERAGE_AUDIT.md`.
+- Included the marker check in the release-readiness gate.
+
+### Verification
+
+- `npm run qa:live-bundle` reports `index-Dws_OJZ2.js` for both production and the audit.
+- A missing or mismatched marker now fails the release gate instead of silently leaving stale publication evidence.
+
+### Publication boundary
+
+- This strengthens publication evidence and does not alter application runtime or external operational requirements.
+
 ## 2026-10-06 / Pass 177
 
 ### Scope completed
