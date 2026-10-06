@@ -20,7 +20,7 @@ OSGARD_GAME_API_SMOKE_OK
 
 ## Supabase-backed fixture
 
-For a staging or production-like check, create two non-privileged users in the Supabase project, obtain short-lived access tokens through the approved Supabase Auth flow, and provide those tokens to the browser session only through local environment tooling. Do not place tokens in source, archives, screenshots, logs, or this document. The request contract is:
+The production project `OSGARD SEVEN` now contains the two named non-privileged fixture users provisioned through the dashboard invitation flow. For a staging or production-like check, obtain short-lived access tokens through the approved Supabase Auth flow and provide those tokens to the browser session only through local environment tooling. Do not place tokens in source, archives, screenshots, logs, or this document. The request contract is:
 
 ```text
 Authorization: Bearer <access-token>
@@ -30,4 +30,4 @@ Verify `/api/v1/player/profile`, `/api/v1/player/sessions`, and `/api/v1/player/
 
 ## Evidence boundary
 
-The repository proves the local contract fixture and production Supabase environment wiring. Actual Supabase user creation, token issuance, and revocation require project-owner access and must be recorded externally without exposing credentials.
+The repository proves the local contract fixture and production Supabase environment wiring. Pass 143 records dashboard evidence for both production fixture identities without recording secrets. Token issuance, authenticated API verification, and revocation still require a local operator workflow and must never expose credentials in source, archives, screenshots, logs, or chat.

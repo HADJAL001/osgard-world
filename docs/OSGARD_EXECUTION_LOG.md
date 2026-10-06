@@ -2861,3 +2861,21 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - Identity fixture creation is complete. Bearer-token API tests still require short-lived tokens obtained locally through the documented fixture runbook; tokens must not be stored in source, logs, screenshots, or chat.
+
+## 2026-10-06 / Pass 144
+
+### Scope completed
+
+- Re-ran the complete `qa:release` gate after the identity fixture publication.
+- Corrected the Supabase identity fixture runbook so it records the two provisioned production users while keeping token handling local-only.
+
+### Verification
+
+- Typecheck passed.
+- API smoke passed with `OSGARD_GAME_API_SMOKE_OK`.
+- Production build and frontend archive preflight passed.
+- Production route matrix passed with zero failed routes; the live matrix continues to report the previously published bundle.
+
+### Publication boundary
+
+- Documentation now distinguishes completed identity creation from the still-local bearer-token verification step. No credentials or secrets were added to the repository.
