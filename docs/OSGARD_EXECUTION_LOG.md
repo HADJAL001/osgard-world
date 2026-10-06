@@ -2895,3 +2895,35 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - This pass changes only evidence wording; it does not claim bearer-token API verification, moderation-secret provisioning, physical-device execution, or staffing that has not been performed.
+
+## 2026-10-06 / Pass 146
+
+### Scope completed
+
+- Added `scripts/brief-coverage-audit.mjs` and the `npm run qa:brief` command.
+- The validator checks the authoritative brief's SHA-256, line/byte counts, and numbered section sequence from 1 through 255.
+
+## 2026-10-06 / Pass 147
+
+### Scope completed
+
+- Corrected the brief audit after the validator found 255 headings in the authoritative source, not 200 numbered sections.
+- Recorded the exact source shape: a `# 0` preamble, sections 1-241 and 243-255, and a missing section 242.
+
+### Verification
+
+- `npm run qa:brief` reports the missing 242 heading and preserves the authoritative SHA-256, line count, and byte count.
+- The discrepancy is documented as a source correction; no runtime feature is claimed from a heading count alone.
+
+### Publication boundary
+
+- This pass expands the audit scope to the actual source file. It does not invent section 242 or mark newly surfaced roadmap/staffing requirements implemented without direct evidence.
+
+### Verification
+
+- The command is deterministic and exits non-zero when a section is missing, duplicated, or outside the expected range.
+- `git diff --check` passes; no production runtime or secret handling changed.
+
+### Publication boundary
+
+- This is an audit/reproducibility improvement. It does not upgrade documented or external requirements into implemented runtime evidence.

@@ -1,8 +1,10 @@
 # Brief coverage audit
 
-Authoritative source snapshot (2026-10-06): `A:\HADJAL\Рабочий стол\игры ОСГАРД.txt`, 200 numbered sections, 24,226 lines, 388,964 bytes, SHA-256 `5f401ff30a395955acbff653038d2aa140fc1c031efe05c34cb33f9fc6be6914`.
+Authoritative source snapshot (2026-10-06): `A:\HADJAL\Рабочий стол\игры ОСГАРД.txt`, 255 numbered headings (254 sections in the 1-255 range; section 242 is absent and a `# 0` preamble exists), 24,226 lines, 388,964 bytes, SHA-256 `5f401ff30a395955acbff653038d2aa140fc1c031efe05c34cb33f9fc6be6914`.
 
-This is a living audit of the 200-point `игры ОСГАРД.txt` brief. It distinguishes implemented runtime evidence from documented contracts and remaining production work.
+This is a living audit of the `игры ОСГАРД.txt` brief. It distinguishes implemented runtime evidence from documented contracts and remaining production work. The source itself currently has a numbering gap at section 242; that gap is recorded rather than silently invented.
+
+The numbered-source check is reproducible with `npm run qa:brief`; it validates the authoritative file's line count, byte count, SHA-256, and reports missing or out-of-range section numbers before a pass is recorded.
 
 | Range | Evidence | Status |
 |---:|---|---|
@@ -18,6 +20,7 @@ This is a living audit of the 200-point `игры ОСГАРД.txt` brief. It di
 | 133-164 | replay, QA checklist, liveops and Season 01 | Replay/session contracts with server hash validation, MIME-aware 30-route matrix, production build/API gate, deterministic frontend archive manifest, and device-lab runbook implemented; physical device lab remains external |
 | 165-179 | clips, creator tools, stream/community/re-engagement rules | MEDIA clip flow, moderation reports/sanctions, authenticated clubs/friends, friend lifecycle, meaningful re-engagement events, and `/stream` LIVE/SPECTATOR/REPLAY/CHALLENGE surface are deployed |
 | 180-200 | team structure, bibles, release philosophy | Master architecture, five game packages, art/UX/level/narrative/tech bibles, release handoff and CI readiness workflow documented; real production staffing remains external |
+| 201-255 | release phases, production organization, game/team roles, and extended delivery plan | Source requirements are captured as roadmap and staffing evidence; implementation and operational proof remain explicitly separated where the repository has no authority |
 
 ## Audit conclusion
 
