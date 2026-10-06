@@ -42,4 +42,4 @@ jobs:
           USER: ${{ secrets.OSGARD_DEPLOY_USER }}
         run: |
           scp -i ~/.ssh/osgard_deploy scripts/activate-frontend-remote.sh "$USER@$HOST:/tmp/activate-frontend-remote.sh"
-          ssh -i ~/.ssh/osgard_deploy "$USER@$HOST" 'chmod 700 /tmp/activate-frontend-remote.sh && OSGARD_ARCHIVE=/tmp/osgard-gh-release.tgz OSGARD_CONTAINER=osgard-world /tmp/activate-frontend-remote.sh'
+          ssh -i ~/.ssh/osgard_deploy "$USER@$HOST" 'chmod 700 /tmp/activate-frontend-remote.sh && OSGARD_ARCHIVE=/tmp/osgard-gh-release/osgard-world-release.tgz OSGARD_CONTAINER=osgard-world /tmp/activate-frontend-remote.sh'

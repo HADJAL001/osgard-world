@@ -3039,3 +3039,19 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - The frontend deploy workflow is operational. Bundle replacement remains subject to direct remote checksum evidence when the public HTML changes; no rollback or destructive action was performed.
+
+## 2026-10-06 / Pass 155
+
+### Scope completed
+
+- Audited the manual frontend deploy workflow after the public bundle remained unchanged.
+- Corrected the activation archive path: staging uploads `/tmp/osgard-gh-release/osgard-world-release.tgz`, and activation now consumes that exact checksum-verified file instead of a different root-level path.
+
+### Verification
+
+- The workflow source now has one consistent archive path from upload through activation.
+- No production activation was performed from the local shell; the corrected workflow requires a new GitHub Actions run for runtime proof.
+
+### Publication boundary
+
+- This pass fixes a deployment correctness defect. The next workflow run must confirm the new bundle hash in public HTML before frontend replacement is claimed live.
