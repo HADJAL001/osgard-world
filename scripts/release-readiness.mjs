@@ -12,6 +12,7 @@ async function check(name, command, args, shell = process.platform === 'win32') 
 }
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm'
 await check('typecheck', npm, ['run', 'check'])
+await check('core-state-smoke', npm, ['run', 'qa:core'])
 await check('api-smoke', npm, ['run', 'qa:api'])
 await check('production-build', npm, ['run', 'build'])
 await check('frontend-archive-preflight', npm, ['run', 'preflight:frontend'])

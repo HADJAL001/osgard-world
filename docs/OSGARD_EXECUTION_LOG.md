@@ -3006,3 +3006,19 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - This pass improves vertical-slice confidence only; it does not claim unimplemented production economy systems.
+
+## 2026-10-06 / Pass 153
+
+### Scope completed
+
+- Added `scripts/core-state-smoke.mjs` and `npm run qa:core` to execute the real TIME state module under Node's type-stripping runtime.
+- Added the smoke check to the release gate alongside typecheck and API smoke.
+
+### Verification
+
+- `qa:core` exercises higher-tax, lower-tax, and steady-tax transitions and returns `OSGARD_CORE_STATE_SMOKE_OK`.
+- The runner avoids changing browser-facing extensionless imports solely to satisfy a Node test harness.
+
+### Publication boundary
+
+- This adds executable vertical-slice evidence; it does not claim full economy production infrastructure.
