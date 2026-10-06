@@ -3152,3 +3152,19 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - This pass improves client-side event durability only; it does not change authentication, moderation, or external production-operation boundaries.
+
+## 2026-10-06 / Pass 162
+
+### Scope completed
+
+- Published commit `921e127` through the frontend deployment workflow.
+
+### Verification
+
+- GitHub Actions deploy run `37424638011` completed successfully, including checksum-verified staging and activation.
+- The live production route matrix reports `32` routes with `failed: 0`.
+- `/entertainment` reports five game links and five cards on desktop; the same live bundle `index-Cr9o8DoX.js` is served on desktop and mobile routes.
+
+### Publication boundary
+
+- The concurrent CORE queue fix is live in the current frontend bundle. Backend operator, device-lab, warehouse, and staffing requirements remain external evidence boundaries.
