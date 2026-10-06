@@ -3323,3 +3323,18 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - This is dependency evidence only; it does not change the external operator, bearer-token, device-lab, warehouse, or staffing boundaries.
+
+## 2026-10-06 / Pass 173
+
+### Scope completed
+
+- Strengthened the production route matrix to fetch every `/entertainment` game link, not only count cards and href attributes.
+
+### Verification
+
+- The live matrix confirms `32` routes with `failed: 0`.
+- Both desktop and mobile catalog checks validate five cards and five playable links: TIME, SWARM, NULL//SHIFT, INHERIT, and REMIX.
+
+### Publication boundary
+
+- This improves automated portal/catalog verification; it does not alter game content or external operational requirements.
