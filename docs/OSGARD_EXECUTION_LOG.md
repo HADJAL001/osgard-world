@@ -3103,3 +3103,19 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - Historical pass entries retain their original bundle evidence; only the current audit conclusion and new pass use the latest live marker.
+
+## 2026-10-06 / Pass 159
+
+### Scope completed
+
+- Re-ran the authoritative brief audit and inspected the public production HTML after frontend activation.
+
+### Verification
+
+- `npm run qa:brief` returned `status: ready` with all 255 sections and the fixed source hash.
+- Public root and the current route shell reference `index-CFZKU4Xw.js`.
+- The public `/health` paths are handled by the frontend shell; backend readiness remains separately verified through the Contabo service contract and is not inferred from the SPA fallback.
+
+### Publication boundary
+
+- This pass separates public frontend evidence from backend health evidence; no backend claim is upgraded based on the HTML fallback.
