@@ -2907,17 +2907,17 @@ Continue non-financial brief implementation; billing can be handled only after a
 
 ### Scope completed
 
-- Corrected the brief audit after the validator found 255 headings in the authoritative source, not 200 numbered sections.
-- Recorded the exact source shape: a `# 0` preamble, sections 1-241 and 243-255, and a missing section 242.
+- Corrected the brief audit after inspecting the source context around section 242.
+- The section is present in a dated conversation line (`...: # 242.`), followed by sections 243-255; a separate `# 0` preamble also exists.
 
 ### Verification
 
-- `npm run qa:brief` reports the missing 242 heading and preserves the authoritative SHA-256, line count, and byte count.
+- `npm run qa:brief` recognizes all 255 sections and preserves the authoritative SHA-256, line count, and byte count.
 - The discrepancy is documented as a source correction; no runtime feature is claimed from a heading count alone.
 
 ### Publication boundary
 
-- This pass expands the audit scope to the actual source file. It does not invent section 242 or mark newly surfaced roadmap/staffing requirements implemented without direct evidence.
+- This pass expands the audit scope to the actual source file. It does not invent section 242 or mark roadmap/staffing requirements implemented without direct evidence.
 
 ### Verification
 

@@ -10,7 +10,7 @@ if (!sourcePath) {
 const source = fs.readFileSync(sourcePath)
 const text = source.toString('utf8')
 const lines = text.split(/\r?\n/)
-const sections = [...text.matchAll(/^\s*#\s+(\d+)\b/gm)].map((match) => Number(match[1]))
+const sections = [...text.matchAll(/(?:^|:\s)#\s+(\d+)\./gm)].map((match) => Number(match[1]))
 const uniqueSections = [...new Set(sections)].sort((a, b) => a - b)
 const expected = Array.from({ length: 255 }, (_, index) => index + 1)
 const missing = expected.filter((number) => !uniqueSections.includes(number))

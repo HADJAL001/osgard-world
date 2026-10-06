@@ -1,8 +1,8 @@
 # Brief coverage audit
 
-Authoritative source snapshot (2026-10-06): `A:\HADJAL\Рабочий стол\игры ОСГАРД.txt`, 255 numbered headings (254 sections in the 1-255 range; section 242 is absent and a `# 0` preamble exists), 24,226 lines, 388,964 bytes, SHA-256 `5f401ff30a395955acbff653038d2aa140fc1c031efe05c34cb33f9fc6be6914`.
+Authoritative source snapshot (2026-10-06): `A:\HADJAL\Рабочий стол\игры ОСГАРД.txt`, 255 numbered sections, 24,226 lines, 388,964 bytes, SHA-256 `5f401ff30a395955acbff653038d2aa140fc1c031efe05c34cb33f9fc6be6914`. Section 242 is embedded in the dated conversation line immediately after section 241, while a separate `# 0` preamble exists.
 
-This is a living audit of the `игры ОСГАРД.txt` brief. It distinguishes implemented runtime evidence from documented contracts and remaining production work. The source itself currently has a numbering gap at section 242; that gap is recorded rather than silently invented.
+This is a living audit of the 255-point `игры ОСГАРД.txt` brief. It distinguishes implemented runtime evidence from documented contracts and remaining production work. The validator accepts the documented dated-line format used for section 242 and does not silently invent headings.
 
 The numbered-source check is reproducible with `npm run qa:brief`; it validates the authoritative file's line count, byte count, SHA-256, and reports missing or out-of-range section numbers before a pass is recorded.
 
