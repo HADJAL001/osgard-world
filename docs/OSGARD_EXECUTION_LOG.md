@@ -3262,3 +3262,18 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - The probe creates the missing verification path but does not claim bearer-token production evidence until an operator provisions the GitHub secrets.
+
+## 2026-10-06 / Pass 169
+
+### Scope completed
+
+- Extended the Supabase identity-fixture runbook with the guarded production probe invocation and its secret-handling boundary.
+
+### Verification
+
+- The documented command uses only environment variables and short-lived bearer tokens.
+- `qa:production-api` remains explicitly `skipped` when either variable is absent and never prints credential values.
+
+### Publication boundary
+
+- This makes the outstanding operator handoff executable and auditable; it does not claim that a production bearer token has been issued or used.
