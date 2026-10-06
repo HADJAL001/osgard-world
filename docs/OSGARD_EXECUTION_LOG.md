@@ -3087,3 +3087,19 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - The current frontend bundle is live and route-verified. Backend operator secrets, physical device execution, warehouse operations, and staffing remain separate external requirements.
+
+## 2026-10-06 / Pass 158
+
+### Scope completed
+
+- Reconciled the living brief audit with the verified post-activation production bundle.
+- Updated the current live bundle marker from `index-6gUiTCiK.js` to `index-CFZKU4Xw.js`.
+
+### Verification
+
+- Public HTML inspection with a cache-busting query references `index-CFZKU4Xw.js`.
+- The successful route matrix confirms the same bundle on desktop and mobile across 32 routes.
+
+### Publication boundary
+
+- Historical pass entries retain their original bundle evidence; only the current audit conclusion and new pass use the latest live marker.
