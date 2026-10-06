@@ -2991,3 +2991,18 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - This pass strengthens the simulation state contract; it does not claim a full production economy or staffing system beyond the implemented vertical slice.
+
+## 2026-10-06 / Pass 152
+
+### Scope completed
+
+- Expanded TIME regression coverage to higher-tax, lower-tax, and steady-tax decisions.
+- Asserted that each branch records a distinct consequence while energy continues to decrement deterministically.
+
+### Verification
+
+- TypeScript build remains the compile gate for the state fixture; the assertions cover all consequence branches.
+
+### Publication boundary
+
+- This pass improves vertical-slice confidence only; it does not claim unimplemented production economy systems.
