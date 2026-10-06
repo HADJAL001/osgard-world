@@ -3168,3 +3168,19 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - The concurrent CORE queue fix is live in the current frontend bundle. Backend operator, device-lab, warehouse, and staffing requirements remain external evidence boundaries.
+
+## 2026-10-06 / Pass 163
+
+### Scope completed
+
+- Reconciled the living brief audit with the post-deploy production asset marker.
+
+### Verification
+
+- `npm run qa:release` returned `status: ready` after the deploy.
+- The production route matrix confirmed `32` routes with `failed: 0` and live bundle `index-Cr9o8DoX.js` on desktop and mobile.
+- `/entertainment` still reports five game links and five cards.
+
+### Publication boundary
+
+- This pass corrects evidence documentation only; it does not upgrade any external operator, device-lab, warehouse, or staffing requirement to completed.
