@@ -3246,3 +3246,19 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - This is an evidence-documentation correction only. No external production requirement is reclassified.
+
+## 2026-10-06 / Pass 168
+
+### Scope completed
+
+- Added `qa:production-api`, a fail-closed authenticated production API probe that checks `/health/ready` and a bearer-token player profile request when CI secrets are provisioned.
+- Wired the probe into the release workflow without adding, logging, or inventing credentials.
+
+### Verification
+
+- With production credentials absent, the probe returns an explicit `skipped` result and exits successfully.
+- When both environment variables are present, non-200 readiness/profile responses fail the release gate; output contains only status metadata.
+
+### Publication boundary
+
+- The probe creates the missing verification path but does not claim bearer-token production evidence until an operator provisions the GitHub secrets.

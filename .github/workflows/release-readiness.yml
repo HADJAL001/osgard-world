@@ -25,6 +25,11 @@ jobs:
         env:
           OSGARD_BASE_URL: https://osgard.world
         run: npm run qa:production-routes
+      - name: Probe authenticated production API when configured
+        env:
+          OSGARD_PRODUCTION_API_BASE: ${{ secrets.OSGARD_PRODUCTION_API_BASE }}
+          OSGARD_PRODUCTION_BEARER_TOKEN: ${{ secrets.OSGARD_PRODUCTION_BEARER_TOKEN }}
+        run: npm run qa:production-api
       - name: Upload readiness report
         uses: actions/upload-artifact@v4
         with:

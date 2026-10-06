@@ -15,7 +15,8 @@
     "qa:api": "python ../osgard-game-api/test_api.py",
     "qa:production-routes": "node scripts/production-route-matrix.mjs",
     "qa:release": "node scripts/release-readiness.mjs",
-    "qa:queue": "node --experimental-strip-types scripts/event-queue-smoke.mjs"
+    "qa:queue": "node --experimental-strip-types scripts/event-queue-smoke.mjs",
+    "qa:production-api": "node scripts/production-api-probe.mjs"
   },
   "dependencies": {
     "@types/three": "^0.186.0",
