@@ -3383,6 +3383,21 @@ Continue non-financial brief implementation; billing can be handled only after a
 
 - This is a CI security invariant; it does not alter runtime behavior or external production requirements.
 
+## 2026-10-06 / Pass 178
+
+### Scope completed
+
+- Added the two optional production API probe secret names and their handling rules to the production release handoff.
+
+### Verification
+
+- The handoff matches `.github/workflows/release-readiness.yml` and `scripts/production-api-probe.mjs`.
+- No secret values were added; the release gate remains green with the probe explicitly skipped when unprovisioned.
+
+### Publication boundary
+
+- This documents an operator action and does not claim that bearer credentials or moderation secrets are provisioned.
+
 ## 2026-10-06 / Pass 177
 
 ### Scope completed

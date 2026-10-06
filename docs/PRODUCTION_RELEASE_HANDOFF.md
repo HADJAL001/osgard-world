@@ -12,6 +12,15 @@
 | QA | QA lead | viewport/device evidence | route gate + screenshots |
 | Community | Community manager | clubs/friends/re-engagement checks | authenticated fixtures |
 
+## CI secret handoff
+
+The release workflow accepts two optional GitHub Actions secrets for the authenticated production API probe:
+
+- `OSGARD_PRODUCTION_API_BASE`: backend base URL, without a trailing slash.
+- `OSGARD_PRODUCTION_BEARER_TOKEN`: short-lived fixture-user bearer token.
+
+Provision both through the approved secret manager only. The workflow runs `npm run qa:production-api`; without both values it records `skipped`, and with both values a readiness response plus authenticated profile response are required. Never commit, print, screenshot, or paste either value.
+
 ## Release sequence
 
 1. Run `npm ci` and `npm run qa:release`.
