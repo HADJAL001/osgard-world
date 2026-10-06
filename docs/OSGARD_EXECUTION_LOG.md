@@ -3353,3 +3353,18 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - This strengthens verifier accuracy only; game content and external operational requirements are unchanged.
+
+## 2026-10-06 / Pass 175
+
+### Scope completed
+
+- Updated the lockfile to resolve the transitive `source-map-js` high-severity advisory affecting the development toolchain.
+
+### Verification
+
+- `npm audit --json` now reports zero vulnerabilities across production and development dependencies.
+- The production-only audit remains clean as well; release gate verification follows this lockfile update.
+
+### Publication boundary
+
+- This changes dependency resolution only and does not alter application behavior or external operational requirements.
