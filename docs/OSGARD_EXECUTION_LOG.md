@@ -2944,3 +2944,34 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - No production files were changed in this pass. The transient failure was not treated as a code regression because the bounded repeat passed and the route response was HTTP 200.
+
+## 2026-10-06 / Pass 149
+
+### Scope completed
+
+- Integrated the source brief validator into `scripts/release-readiness.mjs`.
+- The release gate now runs `brief-source-audit` when the authoritative external file is present and records a non-blocking `skipped` result in repository-only CI when it is unavailable.
+
+### Verification
+
+- The gate preserves the existing typecheck, API, build, archive, and route checks.
+- `brief-source-audit` uses the same SHA-256 and 1-255 numbering validation as `npm run qa:brief`.
+
+### Publication boundary
+
+- This is release-gate and documentation infrastructure; it does not claim external source availability in CI environments where the brief file is not mounted.
+
+## 2026-10-06 / Pass 150
+
+### Scope completed
+
+- Fixed Windows path handling for the integrated brief audit by invoking the Node validator without shell argument splitting.
+
+### Verification
+
+- `npm run qa:release` returned `status: ready`.
+- All checks passed, including `brief-source-audit` with 255 sections, 24,226 lines, 388,964 bytes, and the authoritative SHA-256.
+
+### Publication boundary
+
+- The release gate now has reproducible source-integrity evidence alongside runtime checks; no production deployment was triggered by this documentation/tooling change.
