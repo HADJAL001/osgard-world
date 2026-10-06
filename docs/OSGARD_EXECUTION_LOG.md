@@ -3071,3 +3071,19 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - No production content was activated by the failed run; rollback was not needed. A new workflow run is required for live bundle evidence.
+
+## 2026-10-06 / Pass 157
+
+### Scope completed
+
+- Published the corrected frontend archive through GitHub Actions after copying it into the serving container before activation.
+
+### Verification
+
+- GitHub Actions run `37420564965` completed successfully, including archive checksum verification and container activation.
+- Public HTML now references `index-CFZKU4Xw.js`, replacing the previously observed `index-6gUiTCiK.js`.
+- Production route matrix passed with `32` routes and `failed: 0`; desktop/mobile assets and all five entertainment cards passed.
+
+### Publication boundary
+
+- The current frontend bundle is live and route-verified. Backend operator secrets, physical device execution, warehouse operations, and staffing remain separate external requirements.
