@@ -3022,3 +3022,20 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - This adds executable vertical-slice evidence; it does not claim full economy production infrastructure.
+
+## 2026-10-06 / Pass 154
+
+### Scope completed
+
+- Ran the manual GitHub Actions `OSGARD frontend deploy` workflow for the current `master` revision after the local resumable SSH transfer was reset.
+- The workflow completed successfully with checksum-verified archive staging and activation commands.
+
+### Verification
+
+- GitHub Actions run `37396405893` completed with `success`.
+- Production route matrix after the run returned `32` routes and `failed: 0`; `/entertainment` still reports five cards.
+- The public HTML continues to reference the existing `index-6gUiTCiK.js` bundle, so this pass records route health and workflow success but does not overclaim a bundle hash replacement without stronger remote artifact evidence.
+
+### Publication boundary
+
+- The frontend deploy workflow is operational. Bundle replacement remains subject to direct remote checksum evidence when the public HTML changes; no rollback or destructive action was performed.
