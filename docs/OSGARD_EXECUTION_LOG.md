@@ -2927,3 +2927,20 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - This is an audit/reproducibility improvement. It does not upgrade documented or external requirements into implemented runtime evidence.
+
+## 2026-10-06 / Pass 148
+
+### Scope completed
+
+- Ran the full release gate after the brief validator update.
+- Re-ran the production route matrix after one transient network failure on mobile `/games/time`.
+
+### Verification
+
+- Typecheck, API smoke, production build, and frontend archive preflight passed.
+- The first matrix run reported one `fetch failed` transport error; an immediate repeat returned `routes: 32`, `failed: 0`, `status: ready`.
+- All desktop and mobile routes, five entertainment cards, and referenced assets passed on the successful repeat.
+
+### Publication boundary
+
+- No production files were changed in this pass. The transient failure was not treated as a code regression because the bounded repeat passed and the route response was HTTP 200.
