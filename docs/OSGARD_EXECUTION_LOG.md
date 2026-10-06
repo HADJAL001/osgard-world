@@ -3368,3 +3368,17 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - This changes dependency resolution only and does not alter application behavior or external operational requirements.
+
+## 2026-10-06 / Pass 176
+
+### Scope completed
+
+- Added `npm audit --audit-level=high` to the release-readiness gate.
+
+### Verification
+
+- The gate now fails publication when high or critical dependency advisories are present, while the current lockfile remains clean.
+
+### Publication boundary
+
+- This is a CI security invariant; it does not alter runtime behavior or external production requirements.
