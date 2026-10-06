@@ -3277,3 +3277,19 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - This makes the outstanding operator handoff executable and auditable; it does not claim that a production bearer token has been issued or used.
+
+## 2026-10-06 / Pass 170
+
+### Scope completed
+
+- Added a local `qa:production-api-smoke` fixture that exercises the production probe's readiness and bearer profile branches against an ephemeral HTTP server.
+- Added the fixture to the release gate so probe regressions fail before publication.
+
+### Verification
+
+- `npm run qa:production-api-smoke` returns `OSGARD_PRODUCTION_API_PROBE_SMOKE_OK`.
+- `npm run check` passes; the fixture never contacts production and uses only an in-process token.
+
+### Publication boundary
+
+- This validates the probe implementation, not production bearer-token evidence. Production verification remains skipped until approved secrets are provisioned.

@@ -16,7 +16,8 @@
     "qa:production-routes": "node scripts/production-route-matrix.mjs",
     "qa:release": "node scripts/release-readiness.mjs",
     "qa:queue": "node --experimental-strip-types scripts/event-queue-smoke.mjs",
-    "qa:production-api": "node scripts/production-api-probe.mjs"
+    "qa:production-api": "node scripts/production-api-probe.mjs",
+    "qa:production-api-smoke": "node scripts/production-api-probe-smoke.mjs"
   },
   "dependencies": {
     "@types/three": "^0.186.0",
