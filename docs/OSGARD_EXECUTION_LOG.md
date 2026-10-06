@@ -3231,3 +3231,18 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - This pass updates a design-package status line to match existing evidence; it does not claim the external warehouse, device lab, staffing, or operator-secret requirements.
+
+## 2026-10-06 / Pass 167
+
+### Scope completed
+
+- Corrected the current brief audit to describe the verified 32-route production matrix rather than the earlier 30-route scope.
+
+### Verification
+
+- The latest production verifier reports `32` routes with `failed: 0`.
+- The release gate and brief source audit remain green; historical pass entries retain their original scope.
+
+### Publication boundary
+
+- This is an evidence-documentation correction only. No external production requirement is reclassified.
