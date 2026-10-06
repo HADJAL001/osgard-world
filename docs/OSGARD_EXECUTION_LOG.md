@@ -3216,3 +3216,18 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - CORE retry behavior is live. External operator, device-lab, warehouse, and staffing requirements remain explicitly unverified.
+
+## 2026-10-06 / Pass 166
+
+### Scope completed
+
+- Reconciled the TIME game package with its shipped runtime: the networking contract now records the authenticated revisioned server state API and stale-command rejection instead of marking networking as pending.
+
+### Verification
+
+- The API smoke gate exercises authenticated empire state reads, revision increments, and stale revision rejection.
+- `npm run qa:release` remains `ready` after the documentation correction.
+
+### Publication boundary
+
+- This pass updates a design-package status line to match existing evidence; it does not claim the external warehouse, device lab, staffing, or operator-secret requirements.
