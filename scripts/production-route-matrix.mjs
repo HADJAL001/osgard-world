@@ -15,7 +15,8 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         return { path, status: target.status, ok: target.status === 200 }
       } catch (error) { return { path, status: 0, ok: false, error: String(error) } }
     }))
-    const gameLinksOk = route !== '/entertainment' || (gameHrefs.length === 5 && gameLinkChecks.every(link => link.ok))
+    const cardCount = route === '/entertainment' ? [...text.matchAll(/class=["'][^"']*\bcard\b/g)].length : 0
+    const gameLinksOk = route !== '/entertainment' || (gameHrefs.length === 5 && cardCount === 5 && gameLinkChecks.every(link => link.ok))
     const entertainmentCatalogOk = route === '/entertainment'
       ? [...text.matchAll(/href=["']\/games\//g)].length === 5 && [...text.matchAll(/class=["'][^"']*\bcard\b/g)].length === 5 && !text.includes('РљР')
       : true
@@ -35,7 +36,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
       }
     }))
     const assetsOk = assetChecks.every(asset => asset.ok)
-    results.push({ device, route, status: response.status, assets: assetChecks, catalog: route === '/entertainment' ? { gameLinks: gameHrefs.length, cards: 5, links: gameLinkChecks, ok: entertainmentCatalogOk && gameLinksOk } : undefined, ok: response.status === 200 && shellOk && assetsOk && entertainmentCatalogOk && gameLinksOk, durationMs: Date.now() - started })
+    results.push({ device, route, status: response.status, assets: assetChecks, catalog: route === '/entertainment' ? { gameLinks: gameHrefs.length, cards: cardCount, links: gameLinkChecks, ok: entertainmentCatalogOk && gameLinksOk } : undefined, ok: response.status === 200 && shellOk && assetsOk && entertainmentCatalogOk && gameLinksOk, durationMs: Date.now() - started })
   } catch (error) { results.push({ device, route, status: 0, ok: false, error: String(error), durationMs: Date.now() - started }) }
 }
 const failed = results.filter(item => !item.ok)

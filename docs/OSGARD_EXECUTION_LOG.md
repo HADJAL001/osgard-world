@@ -3338,3 +3338,18 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - This improves automated portal/catalog verification; it does not alter game content or external operational requirements.
+
+## 2026-10-06 / Pass 174
+
+### Scope completed
+
+- Removed the final hardcoded card count from the production route report; catalog evidence now records and validates the measured card count.
+
+### Verification
+
+- Production matrix reports `32` routes with `failed: 0`.
+- Desktop and mobile `/entertainment` checks report measured `gameLinks: 5` and `cards: 5`, with every link returning HTTP 200.
+
+### Publication boundary
+
+- This strengthens verifier accuracy only; game content and external operational requirements are unchanged.
