@@ -2844,3 +2844,20 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - This pass confirms runtime stability after the backend release. Supabase production users, moderation operator secret, physical device lab, warehouse-scale analytics, and staffing remain explicit external requirements.
+
+## 2026-10-06 / Pass 143
+
+### Scope completed
+
+- Provisioned the two named non-privileged Supabase identity fixtures in project `OSGARD SEVEN` through Authentication -> Users using the dashboard invitation flow.
+- Added `osman.osmanov0099@gmail.com` and `osman.osmanov6880@gmail.com`; both rows are visible with the email provider and distinct UIDs.
+
+### Verification
+
+- Supabase project ref: `zminagefqbjjisokahba`.
+- Dashboard verification shows both requested email rows in the Users table.
+- No passwords, access tokens, admin roles, billing settings, or moderation secrets were created or recorded.
+
+### Publication boundary
+
+- Identity fixture creation is complete. Bearer-token API tests still require short-lived tokens obtained locally through the documented fixture runbook; tokens must not be stored in source, logs, screenshots, or chat.
