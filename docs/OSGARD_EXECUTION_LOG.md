@@ -3293,3 +3293,19 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - This validates the probe implementation, not production bearer-token evidence. Production verification remains skipped until approved secrets are provisioned.
+
+## 2026-10-06 / Pass 171
+
+### Scope completed
+
+- Extended the production API probe smoke fixture with an invalid-token path.
+
+### Verification
+
+- Valid fixture credentials produce a ready report.
+- Invalid credentials fail closed, and the rejected token is absent from captured stdout/stderr.
+- `npm run qa:production-api-smoke` remains green.
+
+### Publication boundary
+
+- This is local security-contract evidence only; no production credential was issued or tested.

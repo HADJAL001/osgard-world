@@ -29,6 +29,19 @@ try {
   })
   const report = JSON.parse(result.stdout)
   if (report.status !== 'ready' || report.profileStatus !== 200) throw new Error('probe smoke did not report ready')
+  const rejectedToken = 'fixture-token-that-must-not-leak'
+  let rejected = false
+  try {
+    await run(process.execPath, ['scripts/production-api-probe.mjs'], {
+      cwd: process.cwd(),
+      env: { ...process.env, OSGARD_PRODUCTION_API_BASE: `http://127.0.0.1:${address.port}`, OSGARD_PRODUCTION_BEARER_TOKEN: rejectedToken },
+    })
+  } catch (error) {
+    rejected = true
+    const output = `${error.stdout || ''}${error.stderr || ''}`
+    if (output.includes(rejectedToken)) throw new Error('probe leaked bearer token')
+  }
+  if (!rejected) throw new Error('invalid bearer token unexpectedly passed')
   console.log('OSGARD_PRODUCTION_API_PROBE_SMOKE_OK')
 } finally {
   server.close()
