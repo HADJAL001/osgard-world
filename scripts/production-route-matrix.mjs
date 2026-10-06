@@ -10,10 +10,15 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
     const shellOk = route === '/entertainment' ? text.includes('<title>OSGARD Entertainment</title>') : text.includes('<div id="root">')
     const gameHrefs = route === '/entertainment' ? [...new Set([...text.matchAll(/href=["'](\/games\/[^"']+)["']/g)].map(match => match[1]))] : []
     const gameLinkChecks = await Promise.all(gameHrefs.map(async path => {
-      try {
-        const target = await fetch(new URL(path, base), { headers: { 'user-agent': userAgent } })
-        return { path, status: target.status, ok: target.status === 200 }
-      } catch (error) { return { path, status: 0, ok: false, error: String(error) } }
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          const target = await fetch(new URL(path, base), { headers: { 'user-agent': userAgent } })
+          if (target.status === 200 || attempt === 3) return { path, status: target.status, attempts: attempt, ok: target.status === 200 }
+        } catch (error) {
+          if (attempt === 3) return { path, status: 0, attempts: attempt, ok: false, error: String(error) }
+        }
+        await new Promise(resolve => setTimeout(resolve, 200 * attempt))
+      }
     }))
     const cardCount = route === '/entertainment' ? [...text.matchAll(/class=["'][^"']*\bcard\b/g)].length : 0
     const gameLinksOk = route !== '/entertainment' || (gameHrefs.length === 5 && cardCount === 5 && gameLinkChecks.every(link => link.ok))

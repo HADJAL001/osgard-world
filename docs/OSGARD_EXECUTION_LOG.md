@@ -3382,3 +3382,18 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - This is a CI security invariant; it does not alter runtime behavior or external production requirements.
+
+## 2026-10-06 / Pass 177
+
+### Scope completed
+
+- Added bounded three-attempt retry/backoff to each `/entertainment` game-link probe, with attempt counts retained in the route evidence.
+
+### Verification
+
+- The production matrix still requires five measured links and HTTP 200 for every game; retries only tolerate transient transport failures.
+- Full local release gate remains the required publication check.
+
+### Publication boundary
+
+- This changes verifier resilience only; it does not weaken catalog correctness or alter external production requirements.
