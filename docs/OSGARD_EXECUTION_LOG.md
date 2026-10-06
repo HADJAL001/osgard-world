@@ -3309,3 +3309,17 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - This is local security-contract evidence only; no production credential was issued or tested.
+
+## 2026-10-06 / Pass 172
+
+### Scope completed
+
+- Ran the production dependency audit for the published frontend package.
+
+### Verification
+
+- `npm audit --omit=dev --json` reports zero info, low, moderate, high, or critical production vulnerabilities across 13 production dependencies.
+
+### Publication boundary
+
+- This is dependency evidence only; it does not change the external operator, bearer-token, device-lab, warehouse, or staffing boundaries.
