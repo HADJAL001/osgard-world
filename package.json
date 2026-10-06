@@ -3,7 +3,32 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "scripts": { "dev": "vite --host 0.0.0.0", "sync:swarm": "node scripts/sync-swarm-assets.mjs", "build": "npm run sync:swarm && tsc -b && vite build", "check": "tsc -b --pretty false", "preflight:frontend": "node scripts/frontend-archive-preflight.mjs dist", "qa:brief": "node scripts/brief-coverage-audit.mjs \"A:\\HADJAL\\Рабочий стол\\игры ОСГАРД.txt\"", "qa:core": "node --experimental-strip-types scripts/core-state-smoke.mjs", "preview": "vite preview --host 0.0.0.0", "qa:api": "python ../osgard-game-api/test_api.py", "qa:production-routes": "node scripts/production-route-matrix.mjs", "qa:release": "node scripts/release-readiness.mjs" },
-  "dependencies": { "@types/three": "^0.186.0", "lucide-react": "^0.468.0", "react": "^19.0.0", "react-dom": "^19.0.0", "three": "^0.186.0" },
-  "devDependencies": { "@types/react": "^19.0.3", "@types/react-dom": "^19.0.3", "@vitejs/plugin-react": "^4.3.4", "typescript": "~5.7.2", "vite": "^6.0.5" }
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "sync:swarm": "node scripts/sync-swarm-assets.mjs",
+    "build": "npm run sync:swarm && tsc -b && vite build",
+    "check": "tsc -b --pretty false",
+    "preflight:frontend": "node scripts/frontend-archive-preflight.mjs dist",
+    "qa:brief": "node scripts/brief-coverage-audit.mjs \"A:\\HADJAL\\Рабочий стол\\игры ОСГАРД.txt\"",
+    "qa:core": "node --experimental-strip-types scripts/core-state-smoke.mjs",
+    "preview": "vite preview --host 0.0.0.0",
+    "qa:api": "python ../osgard-game-api/test_api.py",
+    "qa:production-routes": "node scripts/production-route-matrix.mjs",
+    "qa:release": "node scripts/release-readiness.mjs",
+    "qa:queue": "node --experimental-strip-types scripts/event-queue-smoke.mjs"
+  },
+  "dependencies": {
+    "@types/three": "^0.186.0",
+    "lucide-react": "^0.468.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "three": "^0.186.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.3",
+    "@types/react-dom": "^19.0.3",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "~5.7.2",
+    "vite": "^6.0.5"
+  }
 }

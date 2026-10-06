@@ -3135,3 +3135,20 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - This is a final verification pass for the current release state; external operator, device-lab, warehouse, and staffing requirements remain explicitly outside repository evidence.
+
+## 2026-10-06 / Pass 161
+
+### Scope completed
+
+- Hardened the client CORE pending-event queue against a flush race: events recorded while an earlier network flush is in flight are re-read and preserved instead of being overwritten.
+- Added a focused queue reconciliation smoke check and included it in the release gate.
+
+### Verification
+
+- `npm run qa:queue` returns `OSGARD_EVENT_QUEUE_SMOKE_OK`.
+- `npm run check` passes.
+- The full release gate below is required before publication.
+
+### Publication boundary
+
+- This pass improves client-side event durability only; it does not change authentication, moderation, or external production-operation boundaries.
