@@ -2975,3 +2975,19 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - The release gate now has reproducible source-integrity evidence alongside runtime checks; no production deployment was triggered by this documentation/tooling change.
+
+## 2026-10-06 / Pass 151
+
+### Scope completed
+
+- Extended the TIME state contract with a persisted `lastConsequence` explanation for each tax decision.
+- Added regression coverage proving that a higher-tax decision records both the political consequence and the energy cost.
+
+### Verification
+
+- The state transition remains deterministic and preserves the existing treasury, approval, energy, and collapse rules.
+- The new fixture fails if a decision changes numbers without recording its system consequence.
+
+### Publication boundary
+
+- This pass strengthens the simulation state contract; it does not claim a full production economy or staffing system beyond the implemented vertical slice.
