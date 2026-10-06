@@ -3055,3 +3055,19 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - This pass fixes a deployment correctness defect. The next workflow run must confirm the new bundle hash in public HTML before frontend replacement is claimed live.
+
+## 2026-10-06 / Pass 156
+
+### Scope completed
+
+- Diagnosed the failed corrected deploy run: the archive existed on the host staging path, but activation extracts inside the `osgard-world` container.
+- Updated the workflow to `docker cp` the checksum-verified archive into the container before running activation.
+
+### Verification
+
+- GitHub run `37420429666` reached staging checksum verification and failed only at container archive lookup, confirming the host/container path boundary.
+- The next deploy run will use `/tmp/osgard-gh-release.tgz` inside the container, matching `activate-frontend-remote.sh`.
+
+### Publication boundary
+
+- No production content was activated by the failed run; rollback was not needed. A new workflow run is required for live bundle evidence.
