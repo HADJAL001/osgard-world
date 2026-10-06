@@ -3200,3 +3200,19 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - This improves authenticated event delivery resilience; it does not alter token, moderation, or external production-operation boundaries.
+
+## 2026-10-06 / Pass 165
+
+### Scope completed
+
+- Published the reconnect/visibility retry improvement through the production frontend workflow.
+
+### Verification
+
+- GitHub Actions deploy run `37425507130` completed successfully.
+- The live route matrix reports `32` routes and `failed: 0`.
+- `/entertainment` reports five game links and five cards; the live bundle is `index-Dws_OJZ2.js` on desktop and mobile.
+
+### Publication boundary
+
+- CORE retry behavior is live. External operator, device-lab, warehouse, and staffing requirements remain explicitly unverified.
