@@ -21,6 +21,8 @@ This is a living audit of the 200-point `игры ОСГАРД.txt` brief. It di
 
 ## Audit conclusion
 
+Pass 143 supersedes earlier notes that treated Supabase identity fixtures as unprovisioned: both named non-privileged production users now exist in `OSGARD SEVEN`. Remaining external evidence is limited to local bearer-token handoff, moderation-secret provisioning, physical-device execution, warehouse-scale operations, and staffing.
+
 Passes 62–85 add the deployed moderation boundary, server notifications, community lifecycle, five-game sessions, stream surface, route matrix, release gate, device runbook, and production handoff. Operator secrets, physical device execution, Supabase identity fixtures, and real staffing remain external evidence requirements.
 
 Passes 62–72 add a deployed, operator-guarded moderation sanctions boundary, server notification feed, and authenticated community/friend lifecycle. Production operator workflows remain intentionally unverified because `MODERATION_ADMIN_TOKEN` is not provisioned; the readiness contract now reports this boundary without exposing the secret.
