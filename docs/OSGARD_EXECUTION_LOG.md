@@ -2,7 +2,7 @@
 
 Source brief: `A:\HADJAL\Рабочий стол\игры ОСГАРД.txt` (received 2026-10-03).
 
-This log is the persistent record for the 200-point OSGARD brief. The source brief remains authoritative; no requirement is silently removed. Each production pass records scope, files, verification, and the next numbered range.
+This log is the persistent record for the 255-section OSGARD brief. The source brief remains authoritative; no requirement is silently removed. Each production pass records scope, files, verification, and the next numbered range.
 
 ## Current Baseline
 
@@ -2884,12 +2884,12 @@ Continue non-financial brief implementation; billing can be handled only after a
 
 ### Scope completed
 
-- Reconciled the living 200-point coverage audit after production identity provisioning.
+- Reconciled the living 255-section coverage audit after production identity provisioning.
 - Added an explicit superseding note so the audit no longer relies on the pre-provisioning state as current evidence.
 
 ### Verification
 
-- Audit still maps all 200 numbered brief sections to implementation evidence, documented contracts, or explicit external requirements.
+- Audit still maps all 255 numbered brief sections to implementation evidence, documented contracts, or explicit external requirements.
 - `git diff --check` passes and no runtime source was changed in this documentation-only pass.
 
 ### Publication boundary
