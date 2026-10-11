@@ -184,7 +184,7 @@ if(!("IntersectionObserver" in window)||reduced){items.forEach(function(item){it
 var observer=new IntersectionObserver(function(entries){entries.forEach(function(entry){if(entry.isIntersecting){if(entry.target.classList.contains("kinetic-heading"))wrapHeadingWords(entry.target);entry.target.classList.add("is-visible");observer.unobserve(entry.target);}});},{threshold:.12,rootMargin:"0px 0px -28px 0px"});
 items.forEach(function(item){observer.observe(item);});
 var heroHead=document.querySelector(".hero .kinetic-heading"),heroCopy=document.querySelector(".hero-copy.reveal");
-if(heroHead){wrapHeadingWords(heroHead);heroHead.classList.add("is-visible");}
+if(heroHead){heroHead.classList.add("is-visible");}
 if(heroCopy)heroCopy.classList.add("is-visible");
 }
 function tiltSetup(){
