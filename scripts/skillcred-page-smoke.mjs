@@ -8,6 +8,18 @@ const candidates = process.argv.slice(2).length
 const files = candidates.filter(path => existsSync(resolve(path)))
 assert.ok(files.length > 0, 'SkillCred page is missing from source and build output')
 
+const nginxPath = resolve('nginx.conf')
+assert.ok(existsSync(nginxPath), 'nginx.conf is missing')
+const nginx = readFileSync(nginxPath, 'utf8')
+assert.ok(nginx.includes('location ^~ /skillcred/'), 'SkillCred static location is missing')
+assert.ok(nginx.includes('location ^~ /skillcred-api/'), 'same-origin API proxy is missing')
+assert.ok(nginx.includes('proxy_set_header Authorization "";'), 'proxy must not forward browser Authorization')
+assert.ok(nginx.includes('proxy_set_header Cookie "";'), 'proxy must not forward browser cookies')
+assert.ok(nginx.includes("connect-src 'self'"), 'CSP must restrict API connections to same origin')
+for (const header of ['X-Content-Type-Options nosniff', 'X-Frame-Options SAMEORIGIN', 'Referrer-Policy strict-origin-when-cross-origin', 'Permissions-Policy']) {
+  assert.ok(nginx.includes(header), 'security header missing for SkillCred: ' + header)
+}
+
 const requiredIds = [
   'issueBtn', 'verifyBtn', 'revokeBtn', 'downloadBtn',
   'demoResult', 'demoCard', 'badgeTitle', 'eventLog',
