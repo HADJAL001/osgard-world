@@ -280,3 +280,24 @@ html, body, #root { max-width: 100%; overflow-x: hidden; }
 .access-preloader .celestial-wordmark{left:50%!important;top:calc(45% + min(14vw,145px))!important;transform:translateX(-50%)!important}
 .access-preloader .celestial-submark{left:50%!important;top:calc(45% + min(21vw,220px))!important;transform:translateX(-50%)!important}
 @media(max-width:760px){.access-preloader .access-ring-outer{width:92vw!important;height:92vw!important}.access-preloader .access-ring-inner{width:58vw!important;height:58vw!important}.access-preloader .celestial-emblem{width:25vw!important;height:25vw!important}.access-preloader .celestial-wordmark{top:calc(44% + 20vw)!important}.access-preloader .celestial-submark{top:calc(44% + 32vw)!important}}
+
+/* SkillCred is a separate OSGARD destination: trust infrastructure, not another generic card. */
+.skillcred-teaser{position:relative;isolation:isolate;overflow:hidden;display:grid;grid-template-columns:.9fr 1.1fr;align-items:center;gap:clamp(32px,7vw,100px);padding:clamp(80px,10vw,145px) clamp(20px,10vw,180px);border-block:1px solid rgba(212,175,55,.19);background:radial-gradient(ellipse at 24% 50%,rgba(78,156,255,.10),transparent 34%),linear-gradient(125deg,#050b1a,#030711 70%)}
+.skillcred-teaser:before{content:"";position:absolute;inset:0;background:linear-gradient(rgba(212,175,55,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(212,175,55,.025) 1px,transparent 1px);background-size:34px 34px;mask-image:linear-gradient(90deg,#000,transparent 78%);pointer-events:none}
+.skillcred-teaser-art{min-height:310px;position:relative;display:grid;place-items:center;overflow:hidden;border:1px solid rgba(126,174,241,.22);background:radial-gradient(circle,rgba(59,130,246,.17),transparent 48%),#050b18}
+.skillcred-teaser-art:before,.skillcred-teaser-art:after{content:"";position:absolute;width:min(68%,300px);aspect-ratio:1;border:1px solid rgba(200,169,110,.28);border-radius:50%;box-shadow:0 0 45px rgba(59,130,246,.1),inset 0 0 42px rgba(212,175,55,.035)}
+.skillcred-teaser-art:after{width:min(48%,210px);border-style:dashed;transform:rotate(24deg)}
+.skillcred-seal{position:relative;z-index:1;display:grid;place-items:center;width:92px;height:92px;border:1px solid #d4af3780;border-radius:50%;color:#ead8a2;font:300 54px 'Cormorant Garamond',Georgia,serif;box-shadow:0 0 42px rgba(212,175,55,.09),inset 0 0 22px rgba(212,175,55,.05)}
+.skillcred-teaser-art>span{position:absolute;bottom:18px;left:20px;color:#90acd5;font:9px 'JetBrains Mono',monospace;letter-spacing:.2em}
+.skillcred-teaser-art>i{position:absolute;width:1px;height:76%;background:linear-gradient(transparent,rgba(200,169,110,.45),transparent);transform:rotate(33deg)}
+.skillcred-teaser-art>i:last-child{transform:rotate(-33deg);opacity:.5}
+.skillcred-teaser-copy{position:relative;z-index:1}
+.skillcred-teaser-copy h2{font:300 clamp(36px,4.4vw,65px)/1.04 'Cormorant Garamond',Georgia,serif;letter-spacing:.035em;color:#f2f0e9;margin:0 0 22px}
+.skillcred-teaser-copy>p:not(.eyebrow){max-width:650px;color:#aab5c6;font-size:14px;line-height:1.85}
+.skillcred-facts{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0 27px}
+.skillcred-facts span{padding:7px 10px;border:1px solid rgba(126,174,241,.20);color:#b4c4dc;font:9px Inter,Arial,sans-serif;letter-spacing:.08em}
+.skillcred-teaser-copy small{display:block;color:#76869e;font-size:10px;line-height:1.65;margin-top:16px}
+header nav .nav-skillcred{color:#e4d19a;border:1px solid rgba(212,175,55,.3);padding:9px 12px;border-radius:3px}
+header nav .nav-skillcred svg{width:14px}
+@media(max-width:760px){.skillcred-teaser{grid-template-columns:1fr;padding:82px 20px;gap:28px}.skillcred-teaser-art{min-height:250px}.skillcred-teaser-copy h2{font-size:clamp(36px,10vw,52px)}.skillcred-facts span{font-size:8px}header nav .nav-skillcred{border:0;padding:8px 0}}
+@media(prefers-reduced-motion:reduce){.skillcred-teaser *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
