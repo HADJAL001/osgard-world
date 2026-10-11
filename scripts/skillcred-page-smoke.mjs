@@ -46,7 +46,7 @@ for (const file of files) {
   assert.ok(existsSync(fontNoticesPath), file + ': third-party font notices not found')
   assert.ok(existsSync(serifFontPath), file + ': self-hosted Instrument Serif Italic font not found')
   assert.ok(existsSync(monoFontPath), file + ': self-hosted JetBrains Mono font not found')
-  assert.match(html, /<html lang="ru">/i, file + ': missing Russian document language')
+  assert.match(html, /<html lang="ru"(?:\s[^>]*)?>/i, file + ': missing Russian document language')
   assert.ok((html.match(/<style\b/gi) || []).length === 1 && /<noscript><style id="nojs-fallback">[\s\S]*?<\/style><\/noscript>/.test(html), file + ': only the bounded critical no-JS fallback style is allowed')
   assert.match(html, /<html lang="ru" class="js-ready">/, file + ': enhancement class must be present before first paint')
   assert.ok(html.includes('fonts/JetBrainsMono-Regular.woff2') && html.includes('as="font"'), file + ': critical mono font must be discoverable from HTML')
