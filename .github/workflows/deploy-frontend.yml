@@ -103,6 +103,7 @@ jobs:
       - name: Verify published routes and same-origin API proxy
         env:
           OSGARD_BASE_URL: https://osgard.world
+          SKILLCRED_EXPECT_CURRENT_DESIGN: "1"
         run: npm run qa:production-routes
       - name: Test real issue, verify and revoke through OSGARD proxy
         env:

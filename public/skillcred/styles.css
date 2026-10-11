@@ -149,6 +149,6 @@ main{position:relative;isolation:isolate}
 .trust-spine[data-state="issued"] .trust-spine-progress{stroke:var(--muted);opacity:.72}
 .trust-spine[data-state="revoked"] .trust-spine-progress{stroke:var(--red);stroke-dasharray:3 14!important;stroke-dashoffset:0!important;opacity:1}
 .trust-spine[data-state="revoked"] .trust-spine-base{stroke:rgba(var(--rgb-alert),.13);stroke-dasharray:2 12}
-.section-shell{position:relative}
+.section-shell{position:relative;z-index:1}
 @media(max-width:600px){.trust-spine{opacity:.34}}
 @media(prefers-reduced-motion:reduce){.trust-spine-progress{transition:none!important}}
