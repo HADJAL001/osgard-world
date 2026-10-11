@@ -1,7 +1,8 @@
 (function () {
 "use strict";
+var fullStylesheet=document.getElementById("fullStylesheet");if(fullStylesheet){var enableFullStyles=function(){fullStylesheet.media="all";};fullStylesheet.addEventListener("load",enableFullStyles,{once:true});if(fullStylesheet.sheet)enableFullStyles();}
 var API_BASE=(document.querySelector('meta[name="api-base"]')||{}).content||"/skillcred-api";
-var $=function(id){return document.getElementById(id);},credential=null,verified=false,revoked=false,busy=false,events=0,lastJson="",heroStarted=false,inspectorReady=false,eventLogVisible=false,eventScrollPending=false,eventScrollScheduled=false,pendingEvents=[];
+var $=function(id){return document.getElementById(id);},credential=null,verified=false,revoked=false,busy=false,events=0,lastJson="",heroStarted=false,inspectorReady=false,eventLogVisible=false,eventScrollPending=false,eventScrollScheduled=false,pendingEvents=[],heroVerifiedAt=0,freshnessTimer=0;
 var reduced=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 var samples={
 curl:{file:"terminal / issue.sh",text:"curl -sS -X POST \\\n  https://osgard.world/skillcred-api/demo/issue \\\n  -H 'Accept: application/json' \\\n  -H 'Content-Type: application/json' \\\n  -d '{}'"},
@@ -22,6 +23,7 @@ var explanations={
 "credentialStatus":"Ссылка на механизм проверки статуса или отзыва."
 };
 if($("copyrightYear"))$("copyrightYear").textContent=String(new Date().getFullYear());
+function updateHeroFreshness(){if(!heroVerifiedAt)return;if(freshnessTimer)window.clearTimeout(freshnessTimer);freshnessTimer=0;var age=Math.max(0,Math.floor((Date.now()-heroVerifiedAt)/1000));text("heroLiveTime",age<1?"Обновлено только что":"Обновлено "+age+" сек. назад");if(document.visibilityState!=="hidden")freshnessTimer=window.setTimeout(updateHeroFreshness,1000);}
 function wait(ms){return new Promise(function(resolve){window.setTimeout(resolve,ms);});}
 function escapeHtml(v){return String(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
 function plain(v,fallback){return typeof v==="string"&&v.trim()?v.trim():fallback;}
@@ -67,6 +69,7 @@ var labels={idle:"ОЖИДАЕМ ПРОВЕРКУ",active:"ПОДПИСЬ ВАЛ
 var hero=$("heroStatus");if(hero){hero.className="credential-status "+(state==="active"?"status-active":state==="revoked"?"status-revoked":"status-pending");hero.textContent="";var dot=document.createElement("span");dot.className="status-dot";hero.append(dot,document.createTextNode(labels[state]||labels.idle));}
 var badge=$("badgeStatus");if(badge){badge.className="badge-status "+(state==="active"?"status-active":state==="revoked"?"status-revoked":"status-pending");badge.textContent=state==="active"?"ACTIVE":state==="issued"?"ISSUED":state==="revoked"?"REVOKED":state==="pending"?"PENDING":"ОЖИДАНИЕ";}
 var visual=document.querySelector(".hero-visual");if(visual){visual.dataset.state=state==="active"?"valid":state;text("validStamp",state==="active"?"VALID":state==="issued"?"ISSUED":state==="revoked"?"REVOKED":"WAIT");$("validStamp").setAttribute("aria-label",state==="active"?"Подпись валидна, статус active":state==="issued"?"Документ выдан; подпись ещё не проверена":state==="revoked"?"Документ отозван":"Проверка ещё не завершена");}
+if(state==="active"){heroVerifiedAt=Date.now();updateHeroFreshness();text("heroLiveStatus","Подпись: валидна · статус: active");}else{heroVerifiedAt=0;if(freshnessTimer)window.clearTimeout(freshnessTimer);freshnessTimer=0;if(state==="revoked")text("heroLiveTime","Статус изменён");else if(state==="issued")text("heroLiveTime","Ожидает проверки");}
 }
 function setBusy(value,label){
 busy=value;
@@ -212,7 +215,7 @@ head.dataset.worded="true";
 function revealSetup(){
 var items=Array.from(document.querySelectorAll(".reveal,.kinetic-heading"));
 if(!("IntersectionObserver" in window)||reduced){items.forEach(function(item){item.classList.add("is-visible");});return;}
-var observer=new IntersectionObserver(function(entries){entries.forEach(function(entry){if(entry.isIntersecting){if(entry.target.classList.contains("kinetic-heading"))wrapHeadingWords(entry.target);entry.target.classList.add("is-visible");observer.unobserve(entry.target);}});},{threshold:.12,rootMargin:"0px 0px -28px 0px"});
+var observer=new IntersectionObserver(function(entries){entries.forEach(function(entry){if(!entry.isIntersecting)return;var target=entry.target;observer.unobserve(target);if(target.classList.contains("kinetic-heading")){window.setTimeout(function(){wrapHeadingWords(target);target.classList.add("is-visible");},0);}else{target.classList.add("is-visible");}});},{threshold:.12,rootMargin:"0px 0px -28px 0px"});
 items.forEach(function(item){observer.observe(item);});
 var heroHead=document.querySelector(".hero .kinetic-heading"),heroCopy=document.querySelector(".hero-copy.reveal");
 if(heroHead){heroHead.classList.add("is-visible");}
@@ -229,7 +232,7 @@ if(visual)visual.dataset.state="pending";if(card)card.dataset.phase="signature";
 try{
 var out=await request("/demo/issue","POST",{});if(!out.ok||!out.data||!out.data.credentialSubject||!out.data.proof)throw new Error("API не выдал проверяемое удостоверение.");issued=out.data;await renderCredential(issued);text("heroLiveStatus","Подпись вычисляется · запускаем проверку");
 await wait(Math.max(0,1850-(performance.now()-started)));var check=await request("/demo/verify","POST",{credential:issued});if(!check.ok)throw new Error("API не подтвердил подпись.");var d=check.data||{};if(d.signature_valid!==true||d.valid!==true||String(d.status).toLowerCase()!=="active")throw new Error("Сервер не подтвердил подпись и статус ACTIVE.");
-verified=true;revoked=false;setStatus("active");verificationResult("active",check);text("heroLiveStatus","Подпись валидна · статус active");text("heroLiveTime","API · "+check.duration+" ms");text("heroFrameState","SIGNATURE VALID");setResult("Живое демо подключено. Это синтетическое удостоверение с настоящим ответом API, не статическая картинка. Можно выдать другое или отозвать его.","ok");setBusy(false);steps();if(card){card.dataset.phase="valid";card.setAttribute("aria-busy","false");}
+verified=true;revoked=false;setStatus("active");verificationResult("active",check);text("heroLiveStatus","Подпись: валидна · статус: active");text("heroFrameState","SIGNATURE VALID");setResult("Живое демо подключено. Это синтетическое удостоверение с настоящим ответом API, не статическая картинка. Можно выдать другое или отозвать его.","ok");setBusy(false);steps();if(card){card.dataset.phase="valid";card.setAttribute("aria-busy","false");}
 }catch(err){
 if(issued){try{await request("/demo/revoke","POST",{credential:issued});}catch(_){}}
 if(visual)visual.dataset.state="pending";if(card){card.dataset.phase="document";card.setAttribute("aria-busy","false");}text("heroFrameState","API UNAVAILABLE");text("heroLiveStatus","API не ответил · используйте демо ниже");text("heroProof","Подпись не подтверждена");text("heroProofSub","Не показываем VALID без ответа сервера");setResult("Не удалось автоматически завершить демонстрацию: "+err.message+" Нажмите «Выдать удостоверение», чтобы повторить запрос.","bad");apiStatus("API недоступен или демо не готово","bad");addEvent("Автоматическое демо не завершено","HERO BOOTSTRAP",null,err.message,false);setBusy(false);steps();
@@ -242,6 +245,6 @@ if($("downloadBtn"))$("downloadBtn").addEventListener("click",downloadCredential
 if($("restartBtn"))$("restartBtn").addEventListener("click",resetDemo);
 navSetup();faqSetup();codeSetup();jsonSetup();revealSetup();tiltSetup();inspectorActivationSetup();eventLogVisibilitySetup();
 if("IntersectionObserver" in window){var observed=new IntersectionObserver(function(entries){if(entries.some(function(e){return e.isIntersecting;})){observed.disconnect();window.setTimeout(loadHeroArtifact,1800);}},{threshold:.08});var hero=document.querySelector(".hero-visual");if(hero)observed.observe(hero);}else window.setTimeout(function(){window.setTimeout(loadHeroArtifact,1800);},0);
-document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"&&!heroStarted)loadHeroArtifact();});
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"&&!heroStarted)loadHeroArtifact();else if(document.visibilityState==="visible"&&heroVerifiedAt&&!freshnessTimer)updateHeroFreshness();});
 window.SkillCredDemo={getState:function(){return{issued:!!credential,verified:verified,revoked:revoked,events:events};}};
 })();
