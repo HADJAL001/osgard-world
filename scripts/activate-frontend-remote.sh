@@ -62,7 +62,7 @@ rollback() {
     && curl --max-time 12 -sS -D /tmp/skillcred-direct-gzip-headers.txt -o /tmp/skillcred-direct-gzip-body.gz https://osgard.world/skillcred/styles.css.gz \
     && { echo 'Direct .gz URL response:'; grep -Ei '^(HTTP/|content-type:|content-length:|content-encoding:|cache-control:)' /tmp/skillcred-direct-gzip-headers.txt || true; wc -c /tmp/skillcred-direct-gzip-body.gz; } \
     && curl --max-time 12 --compressed -fsS https://osgard.world/skillcred/styles.css -o /tmp/skillcred-css-check.txt \
-    && grep -q -- '--accent:#c8ff3d' /tmp/skillcred-css-check.txt \
+    && grep -qi -- '--acid:#c8ff3d' /tmp/skillcred-css-check.txt \
     && grep -oE '/skillcred/styles\.css\?v=[A-Za-z0-9]+' /tmp/skillcred-page-check.html > /tmp/skillcred-versioned-css-paths.txt \
     && css_path="$(sed -n '1p' /tmp/skillcred-versioned-css-paths.txt)" \
     && test -n "$css_path" \
