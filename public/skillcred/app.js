@@ -228,21 +228,26 @@ card.addEventListener("pointermove",function(ev){var r=card.getBoundingClientRec
 card.addEventListener("pointerleave",function(){card.style.transform="";});
 }
 function trustScrollSetup(){
-var spine=$("trustSpine"),path=$("trustSpineProgress"),main=$("main");if(!spine||!path)return;
-var scheduled=false,maxScroll=1;
-function measure(){maxScroll=Math.max(1,document.documentElement.scrollHeight-window.innerHeight);}
-function paint(){
-var progress=Math.max(0,Math.min(1,window.scrollY/maxScroll));
+var spine=$("trustSpine"),path=$("trustSpineProgress");if(!spine||!path)return;
+var sections=["promise","problem","how","demo","audience","developers","invitation"].map(function(id){return $(id);}).filter(Boolean);
+function paint(index,ratio){
+var progress=Math.max(0,Math.min(1,(index+Math.max(.08,Math.min(.92,ratio)))/sections.length));
 path.setAttribute("stroke-dashoffset",String(1000*(1-progress)));
-if(!spine.dataset.state)spine.dataset.state="idle";
 }
-function schedule(){if(scheduled)return;scheduled=true;window.requestAnimationFrame(function(){scheduled=false;paint();});}
-measure();paint();
-if(reduced)return;
-window.addEventListener("scroll",schedule,{passive:true});
-window.addEventListener("resize",function(){measure();schedule();},{passive:true});
-if("ResizeObserver" in window&&main){var observer=new ResizeObserver(function(){measure();schedule();});observer.observe(main);}
-if(document.fonts&&document.fonts.ready)document.fonts.ready.then(function(){measure();schedule();});
+paint(0,0.08);
+if(reduced||!("IntersectionObserver" in window))return;
+var activeIndex=0;
+var observer=new IntersectionObserver(function(entries){
+entries.sort(function(a,b){return a.boundingClientRect.top-b.boundingClientRect.top;});
+entries.forEach(function(entry){
+if(!entry.isIntersecting)return;
+var index=sections.indexOf(entry.target);
+if(index<0)return;
+activeIndex=index;
+paint(activeIndex,entry.intersectionRatio);
+});
+},{rootMargin:"-28% 0px -62% 0px",threshold:[0,.05,.15,.3,.5,.75,1]});
+sections.forEach(function(section){observer.observe(section);});
 }
 async function loadHeroArtifact(){
 if(heroStarted||document.visibilityState==="hidden")return;heroStarted=true;var started=performance.now(),issued=null,visual=document.querySelector(".hero-visual"),card=$("heroCredential");

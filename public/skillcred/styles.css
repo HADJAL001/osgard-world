@@ -141,7 +141,7 @@ a{color:inherit;text-decoration:none}button{font:inherit}button,a{-webkit-tap-hi
 
 /* One continuous trust thread ties all seven acts together; scroll reveals only the traversed segment. */
 main{position:relative;isolation:isolate}
-.trust-spine{position:absolute;z-index:-1;top:0;bottom:0;left:max(0px,calc((100% - var(--page-width))/2));width:var(--gutter);height:100%;overflow:visible;pointer-events:none;opacity:.76}
+.trust-spine{position:absolute;z-index:0;top:0;bottom:0;left:max(0px,calc((100% - var(--page-width))/2));width:var(--gutter);height:100%;overflow:visible;pointer-events:none;opacity:.76}
 .trust-spine path{fill:none;vector-effect:non-scaling-stroke;stroke-linecap:round;stroke-linejoin:round}
 .trust-spine-base{stroke:var(--border-active);stroke-width:1}
 .trust-spine-progress{stroke:rgba(var(--rgb-acid),.42);stroke-width:1.35;stroke-dasharray:1000;stroke-dashoffset:1000;transition:stroke var(--medium) ease,opacity var(--medium) ease}
@@ -149,6 +149,6 @@ main{position:relative;isolation:isolate}
 .trust-spine[data-state="issued"] .trust-spine-progress{stroke:var(--muted);opacity:.72}
 .trust-spine[data-state="revoked"] .trust-spine-progress{stroke:var(--red);stroke-dasharray:3 14!important;stroke-dashoffset:0!important;opacity:1}
 .trust-spine[data-state="revoked"] .trust-spine-base{stroke:rgba(var(--rgb-alert),.13);stroke-dasharray:2 12}
-.section-shell{position:relative}
+.section-shell{position:relative;z-index:1}
 @media(max-width:600px){.trust-spine{opacity:.34}}
 @media(prefers-reduced-motion:reduce){.trust-spine-progress{transition:none!important}}
