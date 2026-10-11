@@ -230,7 +230,7 @@ if(heroStarted||document.visibilityState==="hidden")return;heroStarted=true;var 
 if(visual)visual.dataset.state="pending";if(card)card.dataset.phase="signature";text("heroFrameState","CALCULATING SIGNATURE");text("heroLiveStatus","Получаем документ у демо-издателя…");
 try{
 var out=await request("/demo/issue","POST",{});if(!out.ok||!out.data||!out.data.credentialSubject||!out.data.proof)throw new Error("API не выдал проверяемое удостоверение.");issued=out.data;await renderCredential(issued);text("heroLiveStatus","Подпись вычисляется · запускаем проверку");
-await wait(Math.max(0,1850-(performance.now()-started)));var check=await request("/demo/verify","POST",{credential:issued});if(!check.ok)throw new Error("API не подтвердил подпись.");var d=check.data||{};if(d.signature_valid!==true||d.valid!==true||String(d.status).toLowerCase()!=="active")throw new Error("Сервер не подтвердил подпись и статус ACTIVE.");
+await wait(Math.max(0,(reduced?0:1850)-(performance.now()-started)));var check=await request("/demo/verify","POST",{credential:issued});if(!check.ok)throw new Error("API не подтвердил подпись.");var d=check.data||{};if(d.signature_valid!==true||d.valid!==true||String(d.status).toLowerCase()!=="active")throw new Error("Сервер не подтвердил подпись и статус ACTIVE.");
 verified=true;revoked=false;setStatus("active");verificationResult("active",check);text("heroLiveStatus","Подпись: валидна · статус: active");text("heroFrameState","SIGNATURE VALID");setResult("Живое демо подключено. Это синтетическое удостоверение с настоящим ответом API, не статическая картинка. Можно выдать другое или отозвать его.","ok");setBusy(false);steps();if(card){card.dataset.phase="valid";card.setAttribute("aria-busy","false");}
 }catch(err){
 if(issued){try{await request("/demo/revoke","POST",{credential:issued});}catch(_){}}
@@ -243,7 +243,8 @@ if($("revokeBtn"))$("revokeBtn").addEventListener("click",revokeCurrent);
 if($("downloadBtn"))$("downloadBtn").addEventListener("click",downloadCredential);
 if($("restartBtn"))$("restartBtn").addEventListener("click",resetDemo);
 navSetup();faqSetup();codeSetup();jsonSetup();revealSetup();tiltSetup();inspectorActivationSetup();eventLogVisibilitySetup();
-if("IntersectionObserver" in window){var observed=new IntersectionObserver(function(entries){if(entries.some(function(e){return e.isIntersecting;})){observed.disconnect();loadHeroArtifact();}},{threshold:.08});var hero=document.querySelector(".hero-visual");if(hero)observed.observe(hero);}else window.setTimeout(loadHeroArtifact,0);
+function afterFirstPaint(callback){if(typeof window.requestAnimationFrame==="function"){window.requestAnimationFrame(function(){window.requestAnimationFrame(callback);});}else window.setTimeout(callback,0);}
+if("IntersectionObserver" in window){var observed=new IntersectionObserver(function(entries){if(entries.some(function(e){return e.isIntersecting;})){observed.disconnect();afterFirstPaint(loadHeroArtifact);}},{threshold:.08});var hero=document.querySelector(".hero-visual");if(hero)observed.observe(hero);}else afterFirstPaint(loadHeroArtifact);
 document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"&&!heroStarted)loadHeroArtifact();else if(document.visibilityState==="visible"&&heroVerifiedAt&&!freshnessTimer)updateHeroFreshness();});
 window.SkillCredDemo={getState:function(){return{issued:!!credential,verified:verified,revoked:revoked,events:events};}};
 })();
