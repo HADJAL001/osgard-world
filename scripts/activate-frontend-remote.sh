@@ -48,6 +48,7 @@ rollback() {
     fi
   "
 
+  set -x
   if curl --max-time 12 -fsS https://osgard.world/ >/dev/null \
     && curl --max-time 12 -fsS https://osgard.world/skillcred/ -o /tmp/skillcred-page-check.html \
     && grep -q 'id="issueBtn"' /tmp/skillcred-page-check.html \
