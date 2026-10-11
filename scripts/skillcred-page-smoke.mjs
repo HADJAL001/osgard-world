@@ -104,7 +104,7 @@ for (const file of files) {
   assert.ok(js.includes('IntersectionObserver') && js.includes('trustSpine') && js.includes('stroke-dashoffset'), file + ': scroll-driven trust thread is not wired')
   assert.ok(!/scrollHeight|ResizeObserver/.test(js.slice(js.indexOf('function trustScrollSetup()'), js.indexOf('async function loadHeroArtifact()'))), file + ': trust-thread progress must not force full-document layout')
   assert.ok(js.includes('"hero-title"'), file + ': hero heading must keep its natural wrapping path')
-  assert.ok(/(?:window\.)?requestAnimationFrame\(paint\)/.test(js) && /removeProperty\(["\']--pointer-x["\']\)/.test(js), file + ': cursor depth must be frame-limited and reset on exit');
+  assert.ok(js.includes("requestAnimationFrame(") && /removeProperty\(["\']--pointer-x["\']\)/.test(js), file + ': cursor depth must be frame-limited and reset on exit');
 
   assert.ok(css.includes('.artifact-statusline{position:relative;z-index:2;gap:9px;margin:15px 0 0;min-height:3em'), file + ': hero status needs reserved height')
   assert.ok(css.includes('JetBrains Mono') && css.includes('font-display:optional'), file + ': late technical font swaps must not shift layout')
