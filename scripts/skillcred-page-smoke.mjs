@@ -81,6 +81,9 @@ for (const file of files) {
   assert.match(css, /@media\(max-width:380px\)/, file + ': missing small-screen layout rules')
   assert.doesNotThrow(() => new Function(js), file + ': app.js has a syntax error')
   assert.match(js, /credentials\s*:\s*["']same-origin["']/, file + ': API requests must use same-origin proxy')
+  assert.ok(js.includes('head.classList.contains("hero-title")'), file + ': hero heading must not be rewrapped after first paint')
+  assert.ok(css.includes('.artifact-statusline{position:relative;z-index:2;gap:9px;margin:15px 0 0;min-height:3em'), file + ': hero status needs reserved height')
+  assert.ok(css.includes('font-family:"JetBrains Mono"') && css.includes('font-display:optional'), file + ': late technical font swaps must not shift layout')
   assert.ok(js.includes('HTTP '), file + ': HTTP response codes are not logged')
   if (file.startsWith('public/skillcred/')) {
     assert.ok(js.includes('eventLogVisibilitySetup'), file + ': event log must avoid off-screen forced layout')

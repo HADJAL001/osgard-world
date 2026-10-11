@@ -177,6 +177,7 @@ observer.observe(log);
 }
 function wrapHeadingWords(head){
 if(!head||head.dataset.worded==="true")return;
+if(head.classList.contains("hero-title")){head.dataset.worded="true";return;}
 var walker=document.createTreeWalker(head,NodeFilter.SHOW_TEXT,{acceptNode:function(node){return node.nodeValue.trim()&&!node.parentElement.closest("svg,script,style,code")?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT;}});
 var nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
 nodes.forEach(function(node){var parts=node.nodeValue.match(/\s+|[^\s]+/g)||[],fragment=document.createDocumentFragment(),index=0;
