@@ -59,6 +59,8 @@ rollback() {
     && curl --max-time 12 -fsS https://osgard.world/skillcred/ -o /tmp/skillcred-page-check.html \
     && grep -q 'id="issueBtn"' /tmp/skillcred-page-check.html \
     && grep -q 'name="api-base" content="/skillcred-api"' /tmp/skillcred-page-check.html \
+    && curl --max-time 12 -sS -D /tmp/skillcred-direct-gzip-headers.txt -o /tmp/skillcred-direct-gzip-body.gz https://osgard.world/skillcred/styles.css.gz \
+    && { echo 'Direct .gz URL response:'; grep -Ei '^(HTTP/|content-type:|content-length:|content-encoding:|cache-control:)' /tmp/skillcred-direct-gzip-headers.txt || true; wc -c /tmp/skillcred-direct-gzip-body.gz; } \
     && curl --max-time 12 -fsS https://osgard.world/skillcred/styles.css -o /tmp/skillcred-css-check.txt \
     && grep -q -- '--accent:#c8ff3d' /tmp/skillcred-css-check.txt \
     && grep -oE '/skillcred/styles\.css\?v=[A-Za-z0-9]+' /tmp/skillcred-page-check.html > /tmp/skillcred-versioned-css-paths.txt \
