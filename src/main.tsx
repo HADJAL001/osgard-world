@@ -61,6 +61,8 @@ const cleanSeo: Record<string, { title: string; description: string }> = {
   '/timecoin': { title: 'TimeCoin OSGARD — правила и условия', description: 'Правила внутренней бонусной единицы OSGARD для доступа, статуса и специальных условий.' },
   '/development': { title: 'OSGARD Development — создание цифровых продуктов', description: 'Разработка сайтов, приложений и MVP-платформ от идеи до запуска.' },
   '/entertainment': { title: 'OSGARD Entertainment — интерактивные игры', description: 'Игры OSGARD: выбирайте мир, запускайте сессию и сохраняйте результат.' },
+  '/skillcred': { title: 'SkillCred — навыки, которые остаются с вами | OSGARD', description: 'Переносимые цифровые подтверждения навыков. Проверка Ed25519 в браузере.' },
+  '/skillcred': { title: 'SkillCred — переносимые подтверждения навыков | OSGARD', description: 'Открытый пилот цифровых подтверждений навыков с подписью Ed25519. Демо проверки в браузере.' },
 }
 
 function Seo({ path }: { path: string }) {
