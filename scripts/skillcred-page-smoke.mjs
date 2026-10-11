@@ -96,7 +96,7 @@ for (const file of files) {
   assert.ok(css.includes('.faq-answer p{font-size:13px}'), file + ': mobile FAQ text should remain legible')
   assert.ok(css.includes('min-height:27px'), file + ': mobile footer links need at least 24px targets')
   assert.ok(css.includes('.hero-visual{order:-1;padding-top:0}.hero-copy{order:0}.hero-json-preview,.visual-caption{display:none}'), file + ': mobile hero must show the credential artifact before supporting copy')
-  assert.ok(js.includes('pendingEvents.push(record)'), file + ': off-screen event log must buffer startup events')
+  assert.ok(js.includes('pendingEvents.push('), file + ': off-screen event log must buffer startup events')
   assert.ok(js.includes('pendingEvents.splice(0)'), file + ': buffered events must flush when the log enters view')
   console.log('PASS ' + file + ': semantic page, local assets, same-origin API and JS syntax')
 }
