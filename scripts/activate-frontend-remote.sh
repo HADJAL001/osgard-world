@@ -61,7 +61,7 @@ rollback() {
     && curl --max-time 12 -fsS https://osgard.world/skillcred-api/ready -o /tmp/skillcred-ready-check.json \
     && grep -q '"ready":true' /tmp/skillcred-ready-check.json \
     && curl --max-time 10 -fsS http://127.0.0.1:4317/health -o /tmp/osgard-game-health-check.json \
-    && grep -q '"status":"ok"' /tmp/osgard-game-health-check.json;
+    && grep -q '"status":"ok"' /tmp/osgard-game-health-check.json; then
     printf 'success\n' > "$state_file"
   else
     rollback

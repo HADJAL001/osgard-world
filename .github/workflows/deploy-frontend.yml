@@ -36,6 +36,8 @@ jobs:
       - run: npm run build
       - run: npm run preflight:frontend
       - run: npm run qa:skillcred
+      - name: Check deployment shell syntax
+        run: bash -n scripts/activate-frontend-remote.sh
       - name: Package HTML assets and matching Nginx config
         run: |
           mkdir -p osgard-release/html
