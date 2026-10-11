@@ -34,3 +34,4 @@ for (const path of paths) {
   if (issues.length) console.log('  High-priority findings: ' + issues.map(a => a.id + ' (' + Math.round((a.score || 0) * 100) + ')').join(', '))
 }
 console.log('\nLowest measured category score: ' + lowest + '/100')
+assert.equal(lowest, 100, 'Brief requires Lighthouse 100/100 in every reported category on mobile and desktop')
