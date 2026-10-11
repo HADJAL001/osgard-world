@@ -42,6 +42,13 @@ jobs:
           test -s /tmp/InterVariable-subset.woff2
           stat -c 'Subset font bytes: %s' /tmp/InterVariable-subset.woff2
           cp /tmp/InterVariable-subset.woff2 dist/skillcred/fonts/InterVariable.woff2
+          python -m fontTools.subset dist/skillcred/fonts/JetBrainsMono-Regular.woff2 --output-file=/tmp/JetBrainsMono-subset.woff2 --flavor=woff2 --unicodes="U+0020-007E,U+00A0-00FF,U+2000-206F,U+2116,U+2190-2199,U+2212,U+2713-2717,U+FEFF,U+FFFD" --layout-features="*" --no-hinting
+          test -s /tmp/JetBrainsMono-subset.woff2
+          cp /tmp/JetBrainsMono-subset.woff2 dist/skillcred/fonts/JetBrainsMono-Regular.woff2
+          python -m fontTools.subset dist/skillcred/fonts/InstrumentSerif-Italic.woff2 --output-file=/tmp/InstrumentSerif-subset.woff2 --flavor=woff2 --unicodes="U+0020-007E,U+00A0-00FF,U+2000-206F,U+2116,U+2190-2199,U+2212,U+2713-2717,U+FEFF,U+FFFD" --layout-features="*" --no-hinting
+          test -s /tmp/InstrumentSerif-subset.woff2
+          cp /tmp/InstrumentSerif-subset.woff2 dist/skillcred/fonts/InstrumentSerif-Italic.woff2
+          printf 'Font bytes — Inter: %s; JetBrains Mono: %s; Instrument Serif: %s\\n' "$(wc -c < dist/skillcred/fonts/InterVariable.woff2)" "$(wc -c < dist/skillcred/fonts/JetBrainsMono-Regular.woff2)" "$(wc -c < dist/skillcred/fonts/InstrumentSerif-Italic.woff2)"
           ./node_modules/.bin/esbuild dist/skillcred/app.js --minify --outfile=/tmp/skillcred-app.min.js
           mv /tmp/skillcred-app.min.js dist/skillcred/app.js
           ./node_modules/.bin/esbuild dist/skillcred/styles.css --minify --outfile=/tmp/skillcred-styles.min.css
