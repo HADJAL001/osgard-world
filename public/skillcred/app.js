@@ -334,6 +334,7 @@
         primaryNav.classList.remove("is-open");
         navToggle.setAttribute("aria-expanded", "false");
         navToggle.setAttribute("aria-label", "Открыть меню");
+        navToggle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
       });
     });
   }
@@ -342,8 +343,14 @@
   faqButtons.forEach(function (button) {
     button.addEventListener("click", function () {
       var shouldOpen = button.getAttribute("aria-expanded") !== "true";
-      faqButtons.forEach(function (other) { other.setAttribute("aria-expanded", "false"); });
+      faqButtons.forEach(function (other) {
+        other.setAttribute("aria-expanded", "false");
+        var otherItem = other.closest(".faq-item");
+        if (otherItem) otherItem.classList.remove("is-open");
+      });
       button.setAttribute("aria-expanded", String(shouldOpen));
+      var activeItem = button.closest(".faq-item");
+      if (activeItem) activeItem.classList.toggle("is-open", shouldOpen);
     });
   });
 
@@ -358,10 +365,7 @@
         other.classList.toggle("is-active", active);
         other.setAttribute("aria-selected", String(active));
       });
-      $("copyCode").textContent = "Копировать";
-      if (!$("copyCode").querySelector("svg")) {
-        $("copyCode").insertAdjacentHTML("beforeend", '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8" height="9" rx="1.2"/><path d="M3 11V3.7A.7.7 0 0 1 3.7 3H10"/></svg>');
-      }
+      $("copyCode").innerHTML = 'Копировать <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8" height="9" rx="1.2"/><path d="M3 11V3.7A.7.7 0 0 1 3.7 3H10"/></svg>';
     });
   });
 
@@ -370,8 +374,7 @@
     try {
       if (!navigator.clipboard || !navigator.clipboard.writeText) throw new Error("Clipboard unavailable");
       await navigator.clipboard.writeText(code.textContent);
-      button.textContent = "Скопировано";
-      button.insertAdjacentHTML("beforeend", '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8 3 3 7-7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+      button.innerHTML = 'Скопировано <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8 3 3 7-7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     } catch (_) {
       button.textContent = "Выделите код";
       var range = document.createRange();
@@ -380,8 +383,7 @@
       if (selection) { selection.removeAllRanges(); selection.addRange(range); }
     }
     window.setTimeout(function () {
-      button.textContent = "Копировать";
-      button.insertAdjacentHTML("beforeend", '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8" height="9" rx="1.2"/><path d="M3 11V3.7A.7.7 0 0 1 3.7 3H10"/></svg>');
+      button.innerHTML = 'Копировать <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8" height="9" rx="1.2"/><path d="M3 11V3.7A.7.7 0 0 1 3.7 3H10"/></svg>';
     }, 1800);
   });
 
