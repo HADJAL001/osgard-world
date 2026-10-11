@@ -57,6 +57,9 @@ jobs:
           sed -i "s|/skillcred/styles.css|/skillcred/styles.css?v=$ASSET_VERSION|g" osgard-release/html/skillcred/index.html
           sed -i "s|/skillcred/app.js|/skillcred/app.js?v=$ASSET_VERSION|g" osgard-release/html/skillcred/index.html
           find osgard-release/html/skillcred -type f \( -name '*.html' -o -name '*.css' -o -name '*.js' \) -exec gzip -9 -k {} +
+          test -s osgard-release/html/skillcred/styles.css.gz
+          test -s osgard-release/html/skillcred/app.js.gz
+          gzip -t osgard-release/html/skillcred/styles.css.gz osgard-release/html/skillcred/app.js.gz
           cp nginx.conf osgard-release/nginx.conf
           tar -czf osgard-world-release.tgz -C osgard-release .
       - name: Configure SSH
