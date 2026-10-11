@@ -60,3 +60,13 @@
 ## Проверки
 
 Перед публикацией: `npm run check`, `npm run build`, `npm run qa:core` и `npm run qa:release`.
+
+
+## Runtime quality and diagnostic export
+
+- FPS, average frame interval, P95 frame interval and slow frames are derived from real foreground `requestAnimationFrame` timestamps; hidden-tab intervals are excluded.
+- Browser input handling delay is estimated from the event timestamp to the first capture handler. It is **not** a network ping or an end-to-end display latency.
+- Viewport, device-pixel ratio and reported logical CPU count are read from browser APIs. JavaScript heap is shown only where `performance.memory` is available; otherwise it is unavailable, not estimated.
+- The performance panel exports a local JSON report with the current game state and measured runtime metrics. No browser capability values are added to remote telemetry.
+- Visual effects automatically move to a balanced profile after three consecutive one-second windows below 38 FPS. Cinematic decoration returns only after five windows at or above 52 FPS. Economic rules, turn resolution and game state are identical in both profiles.
+- Treasury and allied-faction pressure alter atlas lighting and traffic presentation using the current simulation state, not random presentation-only values.

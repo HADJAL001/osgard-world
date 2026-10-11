@@ -406,3 +406,56 @@
 .tg-decree-copy b{margin-top:2px;font:7px/1.5 "JetBrains Mono",monospace;letter-spacing:.06em;color:var(--tg-gold-bright)}
 .tg-decree-arrow{align-self:center;color:var(--tg-dim)}
 @media(max-width:600px){.tg-decree-section{margin:17px 0 14px;padding-top:13px}.tg-decree-heading{align-items:flex-start;font-size:6px;gap:8px}.tg-decree-intro{font-size:9px}.tg-decree-card{grid-template-columns:30px minmax(0,1fr) 12px;gap:8px;padding:10px}.tg-decree-icon{width:29px;height:29px}.tg-decree-copy strong{font-size:10px}.tg-decree-copy small{font-size:8px}.tg-decree-copy em,.tg-decree-copy b{font-size:6px}}
+
+
+/* Adaptive cinematic quality: this only removes expensive decoration after measured slow frames; game rules never change. */
+.time-game[data-render-quality="balanced"] .tg-map-aurora,
+.time-game[data-render-quality="balanced"] .tg-city-light,
+.time-game[data-render-quality="balanced"] .tg-water-bank,
+.time-game[data-render-quality="balanced"] .tg-selection-ring,
+.time-game[data-render-quality="balanced"] .tg-citadel-orbit,
+.time-game[data-render-quality="balanced"] .tg-citadel-pulse,
+.time-game[data-render-quality="balanced"] .tg-city-streets path,
+.time-game[data-render-quality="balanced"] .tg-city-traffic circle{animation:none!important}
+.time-game[data-render-quality="balanced"] .tg-city-light{opacity:.34!important;filter:none!important}
+.time-game[data-render-quality="balanced"] .tg-city-light-halo,
+.time-game[data-render-quality="balanced"] .tg-city-citadel,
+.time-game[data-render-quality="balanced"] .tg-map-world,
+.time-game[data-render-quality="balanced"] .tg-city-map{filter:none!important}
+.time-game[data-render-quality="balanced"] .tg-map-impact span{display:none}
+.time-game[data-render-quality="balanced"] .tg-map-aurora{opacity:.28}
+.tg-quality-pill{padding:4px 7px;border:1px solid var(--tg-line-strong);border-radius:5px;color:var(--tg-gold-bright);font:7px/1.4 "JetBrains Mono",monospace;letter-spacing:.07em;white-space:nowrap}
+.tg-quality-pill[data-quality="balanced"]{border-color:rgba(126,198,178,.3);color:var(--tg-green)}
+.tg-diagnostic-export{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:30px;padding:5px 9px;border:1px solid rgba(217,194,139,.25);border-radius:5px;background:rgba(217,194,139,.045);color:var(--tg-gold-bright);font:7px/1.4 "JetBrains Mono",monospace;letter-spacing:.06em;white-space:nowrap;cursor:pointer;transition:background .18s ease,border-color .18s ease,transform .18s ease}
+.tg-diagnostic-export:hover{background:rgba(217,194,139,.11);border-color:rgba(217,194,139,.48);transform:translateY(-1px)}
+.tg-diagnostic-export:focus-visible{outline:2px solid var(--tg-gold-bright);outline-offset:3px}
+.tg-diagnostic-foot{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--tg-line);color:var(--tg-dim);font:7px/1.6 "JetBrains Mono",monospace;letter-spacing:.055em}
+.tg-diagnostic-foot strong{font:500 9px/1.5 var(--tg-mono, "JetBrains Mono",monospace);letter-spacing:0;color:var(--tg-text)}
+.tg-diagnostic-foot span:last-child{margin-left:auto;text-align:right}
+.tg-map-viewport[data-city-treasury="critical"] .tg-city-lights{opacity:.3}
+.tg-map-viewport[data-city-treasury="critical"] .tg-water-shimmer{stroke:#e78e81;filter:drop-shadow(0 0 4px rgba(231,142,129,.3))}
+.tg-map-viewport[data-city-treasury="strained"] .tg-city-lights{opacity:.44}
+.tg-map-viewport[data-city-support="critical"] .tg-city-traffic{opacity:.28}
+.tg-map-viewport[data-city-support="critical"] .tg-city-walls path{stroke:#e78e81;stroke-opacity:.2}
+.tg-map-viewport[data-city-support="stable"] .tg-city-traffic{opacity:1}
+.tg-map-viewport[data-city-layer="politics"] .tg-city-traffic{filter:drop-shadow(0 0 4px rgba(217,194,139,.2))}
+@media(max-width:600px){
+  .tg-diagnostic-title{flex-wrap:wrap;gap:8px}
+  .tg-diagnostic-title>div{flex:1 1 calc(100% - 60px)}
+  .tg-diagnostic-title small{line-height:1.5}
+  .tg-quality-pill{margin-left:25px}
+  .tg-diagnostic-export{margin-left:auto;min-height:38px;padding-inline:11px}
+  .tg-diagnostic-foot{align-items:flex-start;flex-direction:column;gap:5px}
+  .tg-diagnostic-foot span:last-child{margin-left:0;text-align:left}
+}
+@media(prefers-reduced-motion:reduce){
+  .time-game[data-render-quality="cinematic"] .tg-diagnostic-export{transition:none}
+  .time-game[data-render-quality="balanced"] .tg-map-aurora,
+  .time-game[data-render-quality="balanced"] .tg-city-light,
+  .time-game[data-render-quality="balanced"] .tg-water-bank,
+  .time-game[data-render-quality="balanced"] .tg-selection-ring,
+  .time-game[data-render-quality="balanced"] .tg-citadel-orbit,
+  .time-game[data-render-quality="balanced"] .tg-citadel-pulse,
+  .time-game[data-render-quality="balanced"] .tg-city-streets path,
+  .time-game[data-render-quality="balanced"] .tg-city-traffic circle{animation:none!important}
+}

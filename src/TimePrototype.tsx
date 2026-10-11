@@ -12,7 +12,8 @@ import { completePlayerSession, startPlayerSession } from './core/playerApi'
 
 type Tab = 'council' | 'construction' | 'chronicle'
 type MapLayer = 'prosperity' | 'politics' | 'infrastructure'
-type Diagnostics = { fps: number; frameMs: number; frameP95Ms: number; slowFrames: number; fpsHistory: number[]; longTasks: number; longTaskSupported: boolean; tickMs: number; actions: number; save: 'saved' | 'error'; saveMs: number; saveBytes: number }
+type QualityMode = 'cinematic' | 'balanced'
+type Diagnostics = { fps: number; frameMs: number; frameP95Ms: number; slowFrames: number; fpsHistory: number[]; longTasks: number; longTaskSupported: boolean; tickMs: number; actions: number; save: 'saved' | 'error'; saveMs: number; saveBytes: number; inputLatencyMs: number | null; inputAverageMs: number | null; inputSamples: number; viewportWidth: number; viewportHeight: number; devicePixelRatio: number; logicalCores: number; heapUsedMB: number | null; heapLimitMB: number | null; qualityMode: QualityMode; lastAction: string }
 
 const SAVE_KEY = 'osgard.time.empire.save.v1'
 const GUIDE_DISMISSED_KEY = 'osgard.time.empire.guide.dismissed.v1'
@@ -56,6 +57,11 @@ function relativeTone(value: number, neutral = 0) {
 function shortImpact(entry: ChronicleEntry) {
   return entry.impact.replace(/Казна/g, '₽').replace(/Энергия/g, 'ЭН').replace(/Стабильность/g, 'СТАБ.')
 }
+function readBrowserMemory() {
+  const measured = (performance as Performance & { memory?: { usedJSHeapSize: number; jsHeapSizeLimit: number } }).memory
+  if (!measured || !Number.isFinite(measured.usedJSHeapSize) || !Number.isFinite(measured.jsHeapSizeLimit)) return null
+  return { usedMB: Number((measured.usedJSHeapSize / 1048576).toFixed(1)), limitMB: Number((measured.jsHeapSizeLimit / 1048576).toFixed(1)) }
+}
 
 export function TimePrototype() {
   const [state, setState] = useState<TimeState>(loadSavedState)
@@ -71,14 +77,15 @@ export function TimePrototype() {
   const [districtVisited, setDistrictVisited] = useState(false)
   const [planTouched, setPlanTouched] = useState(false)
   const [announcement, setAnnouncement] = useState('Совет ожидает вашего решения.')
-  const [diagnostics, setDiagnostics] = useState<Diagnostics>({ fps: 0, frameMs: 0, frameP95Ms: 0, slowFrames: 0, fpsHistory: [], longTasks: 0, longTaskSupported: false, tickMs: 0, actions: 0, save: 'saved', saveMs: 0, saveBytes: 0 })
+  const [diagnostics, setDiagnostics] = useState<Diagnostics>({ fps: 0, frameMs: 0, frameP95Ms: 0, slowFrames: 0, fpsHistory: [], longTasks: 0, longTaskSupported: false, tickMs: 0, actions: 0, save: 'saved', saveMs: 0, saveBytes: 0, inputLatencyMs: null, inputAverageMs: null, inputSamples: 0, viewportWidth: 0, viewportHeight: 0, devicePixelRatio: 1, logicalCores: 0, heapUsedMB: null, heapLimitMB: null, qualityMode: 'cinematic', lastAction: 'Нет подтверждённых действий' })
   const session = useRef<string | null>(null)
   const completed = useRef(false)
   const stateRef = useRef(state)
   const cityPanelRef = useRef<HTMLElement | null>(null)
   const commandPanelRef = useRef<HTMLElement | null>(null)
   const cinematicToggleRef = useRef<HTMLButtonElement | null>(null)
-  const diagnosticRef = useRef({ frames: 0, elapsed: 0, start: 0, last: 0, samples: [] as number[], slowFrames: 0 })
+  const diagnosticRef = useRef({ frames: 0, elapsed: 0, start: 0, last: 0, samples: [] as number[], slowFrames: 0, lowFpsWindows: 0, highFpsWindows: 0, qualityMode: 'cinematic' as QualityMode })
+  const inputMetricRef = useRef({ samples: 0, totalMs: 0 })
 
   stateRef.current = state
   const district = state.districts.find((item) => item.id === selectedDistrict) ?? state.districts[0]
@@ -141,7 +148,7 @@ export function TimePrototype() {
     let alive = true
     let observer: PerformanceObserver | null = null
     const meter = diagnosticRef.current
-    const resetWindow = () => { meter.frames = 0; meter.elapsed = 0; meter.start = 0; meter.last = 0; meter.samples = []; meter.slowFrames = 0 }
+    const resetWindow = () => { meter.frames = 0; meter.elapsed = 0; meter.start = 0; meter.last = 0; meter.samples = []; meter.slowFrames = 0; meter.lowFpsWindows = 0; meter.highFpsWindows = 0 }
     const sample = (now: number) => {
       if (!alive || document.visibilityState !== 'visible') return
       if (meter.last > 0) {
@@ -160,7 +167,11 @@ export function TimePrototype() {
         const sortedSamples = [...meter.samples].sort((a, b) => a - b)
         const p95Index = Math.min(sortedSamples.length - 1, Math.max(0, Math.ceil(sortedSamples.length * 0.95) - 1))
         const frameP95Ms = sortedSamples.length ? sortedSamples[p95Index] : 0
-        setDiagnostics((old) => ({ ...old, fps, frameMs: Number(frameMs.toFixed(1)), frameP95Ms: Number(frameP95Ms.toFixed(1)), slowFrames: meter.slowFrames, fpsHistory: [...old.fpsHistory.slice(-29), fps] }))
+        if (fps < 38) { meter.lowFpsWindows += 1; meter.highFpsWindows = 0; if (meter.lowFpsWindows >= 3) meter.qualityMode = 'balanced' }
+        else if (fps >= 52) { meter.highFpsWindows += 1; meter.lowFpsWindows = 0; if (meter.highFpsWindows >= 5) meter.qualityMode = 'cinematic' }
+        else { meter.lowFpsWindows = 0; meter.highFpsWindows = 0 }
+        const memory = readBrowserMemory()
+        setDiagnostics((old) => ({ ...old, fps, frameMs: Number(frameMs.toFixed(1)), frameP95Ms: Number(frameP95Ms.toFixed(1)), slowFrames: meter.slowFrames, qualityMode: meter.qualityMode, heapUsedMB: memory?.usedMB ?? null, heapLimitMB: memory?.limitMB ?? null, fpsHistory: [...old.fpsHistory.slice(-29), fps] }))
         meter.frames = 0; meter.elapsed = 0; meter.samples = []; meter.slowFrames = 0; meter.start = now
       }
       frame = requestAnimationFrame(sample)
@@ -181,6 +192,48 @@ export function TimePrototype() {
     }
     if (document.visibilityState === 'visible') frame = requestAnimationFrame(sample)
     return () => { alive = false; cancelAnimationFrame(frame); document.removeEventListener('visibilitychange', onVisibility); observer?.disconnect() }
+  }, [])
+
+  useEffect(() => {
+    let alive = true
+    const updateEnvironment = () => {
+      const memory = readBrowserMemory()
+      if (!alive) return
+      setDiagnostics((old) => ({
+        ...old,
+        viewportWidth: window.innerWidth,
+        viewportHeight: window.innerHeight,
+        devicePixelRatio: window.devicePixelRatio || 1,
+        logicalCores: navigator.hardwareConcurrency || 0,
+        heapUsedMB: memory?.usedMB ?? old.heapUsedMB,
+        heapLimitMB: memory?.limitMB ?? old.heapLimitMB,
+      }))
+    }
+    const measureInputHandling = (event: Event) => {
+      const delay = performance.now() - event.timeStamp
+      // Event timestamps and performance.now() share the same high-resolution time origin in modern browsers.
+      // Ignore browsers/events that report incompatible timestamps instead of inventing a value.
+      if (!Number.isFinite(delay) || delay < 0 || delay > 1000) return
+      inputMetricRef.current.samples += 1
+      inputMetricRef.current.totalMs += delay
+      const inputSamples = inputMetricRef.current.samples
+      setDiagnostics((old) => ({
+        ...old,
+        inputLatencyMs: Number(delay.toFixed(2)),
+        inputAverageMs: Number((inputMetricRef.current.totalMs / inputSamples).toFixed(2)),
+        inputSamples,
+      }))
+    }
+    updateEnvironment()
+    window.addEventListener('resize', updateEnvironment, { passive: true })
+    document.addEventListener('pointerdown', measureInputHandling, { capture: true, passive: true })
+    document.addEventListener('keydown', measureInputHandling, { capture: true })
+    return () => {
+      alive = false
+      window.removeEventListener('resize', updateEnvironment)
+      document.removeEventListener('pointerdown', measureInputHandling, true)
+      document.removeEventListener('keydown', measureInputHandling, true)
+    }
   }, [])
 
   useEffect(() => {
@@ -218,7 +271,7 @@ export function TimePrototype() {
     try {
       const next = resolveTimeTurn(state, { taxRate: tax, policy })
       const elapsed = Number((performance.now() - start).toFixed(2))
-      setDiagnostics((old) => ({ ...old, tickMs: elapsed, actions: old.actions + 1 }))
+      setDiagnostics((old) => ({ ...old, tickMs: elapsed, actions: old.actions + 1, lastAction: 'Продвижение такта' }))
       setState(next)
       setAnnouncement(next.archive[next.archive.length - 1]?.detail ?? next.lastAction)
       recordOsgardEvent('portal_opened', { game: 'time', action: 'RESOLVE_TURN', taxRate: tax, policy, tick: next.tick, calcMs: elapsed })
@@ -234,7 +287,7 @@ export function TimePrototype() {
     try {
       const next = applyCouncilAction(state, actionId, district.id)
       const elapsed = Number((performance.now() - start).toFixed(2))
-      setDiagnostics((old) => ({ ...old, tickMs: elapsed, actions: old.actions + 1 }))
+      setDiagnostics((old) => ({ ...old, tickMs: elapsed, actions: old.actions + 1, lastAction: 'Указ Совета: ' + actionId }))
       setState(next)
       setAnnouncement(next.lastConsequence)
       recordOsgardEvent('portal_opened', { game: 'time', action: 'COUNCIL_DECREE', decree: actionId, district: district.id, treasury: next.treasury, calcMs: elapsed })
@@ -249,7 +302,7 @@ export function TimePrototype() {
     try {
       const next = buildStructure(state, district.id, buildingId)
       const elapsed = Number((performance.now() - start).toFixed(2))
-      setDiagnostics((old) => ({ ...old, tickMs: elapsed, actions: old.actions + 1 }))
+      setDiagnostics((old) => ({ ...old, tickMs: elapsed, actions: old.actions + 1, lastAction: 'Строительство: ' + BUILDINGS[buildingId].name }))
       setState(next)
       setAnnouncement(next.lastConsequence)
       recordOsgardEvent('portal_opened', { game: 'time', action: 'BUILD', district: district.id, building: buildingId, level: next.districts.find((item) => item.id === district.id)?.buildingLevel ?? 0, calcMs: elapsed })
@@ -265,6 +318,7 @@ export function TimePrototype() {
     setPolicy(next.policy)
     setSelectedDistrict('forum')
     setTab('council')
+    setDiagnostics((old) => ({ ...old, tickMs: 0, actions: 0, lastAction: 'Начата новая партия' }))
     setAnnouncement('Новая летопись началась. Решения прошлого цикла сохранены только в вашей памяти.')
     completed.current = false
     session.current = null
@@ -278,6 +332,61 @@ export function TimePrototype() {
     recordOsgardEvent('portal_opened', { game: 'time', action: 'RESET_GAME' })
   }
 
+  function exportDiagnostics() {
+    try {
+      const memory = readBrowserMemory()
+      const report = {
+        format: 'OSGARD_IMPERIUM_RUNTIME_DIAGNOSTICS',
+        schemaVersion: 1,
+        capturedAt: new Date().toISOString(),
+        note: 'Browser-local measurements. FPS/latency vary by device, tab visibility and current workload; unavailable browser APIs are null.',
+        game: {
+          status: state.status,
+          year: state.year,
+          tick: state.tick,
+          taxRate: state.taxRate,
+          policy: state.policy,
+          treasury: state.treasury,
+          energy: state.energy,
+          stability: state.stability,
+          population: state.population,
+          score: state.score,
+          selectedDistrict,
+          approval: state.approval,
+          districts: state.districts.map((item) => ({ id: item.id, prosperity: item.prosperity, population: item.population, building: item.building, buildingLevel: item.buildingLevel })),
+        },
+        runtime: {
+          ...diagnostics,
+          fpsHistory: [...diagnostics.fpsHistory],
+          currentRenderQuality: diagnostics.qualityMode,
+          currentAction: diagnostics.lastAction,
+        },
+        environment: {
+          viewportCssPixels: { width: window.innerWidth, height: window.innerHeight },
+          effectiveDisplayPixels: { width: Math.round(window.innerWidth * (window.devicePixelRatio || 1)), height: Math.round(window.innerHeight * (window.devicePixelRatio || 1)) },
+          devicePixelRatio: window.devicePixelRatio || 1,
+          browserReportedLogicalCores: navigator.hardwareConcurrency || null,
+          jsHeap: memory ? { usedMB: memory.usedMB, limitMB: memory.limitMB } : null,
+          reducedMotionPreference: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+          visibility: document.visibilityState,
+        },
+      }
+      const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const anchor = document.createElement('a')
+      anchor.href = url
+      anchor.download = 'osgard-imperium-diagnostics-' + new Date().toISOString().replace(/[:.]/g, '-') + '.json'
+      document.body.appendChild(anchor)
+      anchor.click()
+      anchor.remove()
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+      setAnnouncement('Диагностический отчёт сохранён на этом устройстве. В нём указаны реальные замеры браузера и состояние текущей партии.')
+      recordOsgardEvent('game_diagnostics_exported', { game: 'time', tick: state.tick, quality: diagnostics.qualityMode, actions: diagnostics.actions })
+    } catch {
+      setAnnouncement('Не удалось сформировать отчёт. Проверьте, что браузер разрешает локальное скачивание файлов.')
+    }
+  }
+
   const chooseDistrict = (id: DistrictId) => {
     setSelectedDistrict(id)
     setDistrictVisited(true)
@@ -289,7 +398,7 @@ export function TimePrototype() {
   const showFirstTurnGuide = state.tick === 0 && !guideDismissed
 
   return (
-    <main className={'time-game' + (cinematicMap ? ' is-cinematic-view' : '')}>
+    <main className={'time-game' + (cinematicMap ? ' is-cinematic-view' : '')} data-render-quality={diagnostics.qualityMode}>
       <div className="time-game-noise" aria-hidden="true" />
       <header className="tg-topbar">
         <a className="tg-brand" href="/entertainment" aria-label="Назад к играм OSGARD">
@@ -336,7 +445,7 @@ export function TimePrototype() {
       </section>}
 
       {diagnosticsOpen && <section className="tg-diagnostics" aria-label="Диагностика производительности">
-        <div className="tg-diagnostic-title"><Activity size={15} /><div><strong>ДИАГНОСТИКА RUNTIME</strong><small>Измерения этого браузера, обновляются в реальном времени</small></div><span className="tg-live-pill">LIVE</span></div>
+        <div className="tg-diagnostic-title"><Activity size={15} /><div><strong>ДИАГНОСТИКА RUNTIME</strong><small>Измерения этого браузера, обновляются в реальном времени</small></div><span className="tg-quality-pill" data-quality={diagnostics.qualityMode}>{diagnostics.qualityMode === 'cinematic' ? 'CINEMATIC' : 'BALANCED AUTO'}</span><span className="tg-live-pill">LIVE</span><button type="button" className="tg-diagnostic-export" onClick={exportDiagnostics}><Save size={12} /> ЭКСПОРТ JSON</button></div>
         <div className="tg-diagnostic-grid">
           <Diagnostic label="Частота кадров" value={diagnostics.fps ? String(diagnostics.fps) + ' FPS' : '…'} description="Измерение requestAnimationFrame" tone={diagnostics.fps >= 50 ? 'positive' : diagnostics.fps >= 30 ? 'neutral' : 'negative'} />
           <Diagnostic label="Интервал кадра" value={diagnostics.frameMs ? diagnostics.frameMs + ' мс' : '…'} description="Среднее за последнюю секунду" tone={diagnostics.frameMs > 32 ? 'negative' : 'positive'} />
@@ -347,7 +456,12 @@ export function TimePrototype() {
           <Diagnostic label="Запись сохранения" value={diagnostics.saveMs ? diagnostics.saveMs.toFixed(2) + ' мс' : '…'} description="Измеренная длительность localStorage" tone={diagnostics.saveMs > 16 ? 'negative' : 'positive'} />
           <Diagnostic label="Размер сохранения" value={diagnostics.saveBytes ? (diagnostics.saveBytes / 1024).toFixed(1) + ' КБ' : '…'} description="Фактический размер JSON в UTF-8" />
           <Diagnostic label="Действия" value={String(diagnostics.actions)} description="Успешные локальные команды" />
+          <Diagnostic label="Обработка ввода" value={diagnostics.inputLatencyMs === null ? '—' : diagnostics.inputLatencyMs.toFixed(2) + ' мс'} description="Событие браузера → обработчик JS; не сетевой ping" tone={diagnostics.inputLatencyMs !== null && diagnostics.inputLatencyMs > 50 ? 'negative' : 'neutral'} />
+          <Diagnostic label="Размер рабочей области" value={diagnostics.viewportWidth ? diagnostics.viewportWidth + ' × ' + diagnostics.viewportHeight : '…'} description={'CSS-пиксели · DPR ' + diagnostics.devicePixelRatio.toFixed(2)} />
+          <Diagnostic label="Память JS" value={diagnostics.heapUsedMB === null ? 'Н/Д' : diagnostics.heapUsedMB + ' МБ'} description={diagnostics.heapLimitMB === null ? 'Браузер не предоставляет memory API' : 'Доступный предел JS heap: ' + diagnostics.heapLimitMB + ' МБ'} tone={diagnostics.heapUsedMB !== null && diagnostics.heapLimitMB !== null && diagnostics.heapUsedMB / diagnostics.heapLimitMB > 0.8 ? 'negative' : 'neutral'} />
+          <Diagnostic label="Логические потоки" value={diagnostics.logicalCores ? String(diagnostics.logicalCores) : 'Н/Д'} description="Значение, сообщённое браузером" />
         </div>
+        <div className="tg-diagnostic-foot"><span>ПОСЛЕДНЯЯ КОМАНДА</span><strong>{diagnostics.lastAction}</strong><span>УСРЕДНЕНИЕ ОБРАБОТКИ ВВОДА: {diagnostics.inputAverageMs === null ? '—' : diagnostics.inputAverageMs.toFixed(2) + ' мс'} · ВЫБОРКА {diagnostics.inputSamples}</span></div>
         <div className="tg-diagnostic-trend">
           <div className="tg-diagnostic-trend-head">
             <div><span>FRAME RATE / FOREGROUND</span><small>Последние 30 секундных замеров · фоновые паузы исключены</small></div>
@@ -381,7 +495,7 @@ export function TimePrototype() {
               <span>{layer.label}</span>
             </button>)}
           </div>
-          <div className="tg-map-viewport" data-city-status={state.status} data-city-tick={state.tick} data-city-energy={state.energy < 25 ? 'critical' : state.energy < 55 ? 'strained' : 'stable'} data-city-stability={state.stability < 25 ? 'critical' : state.stability < 55 ? 'strained' : 'stable'}>
+          <div className="tg-map-viewport" data-city-status={state.status} data-city-tick={state.tick} data-city-energy={state.energy < 25 ? 'critical' : state.energy < 55 ? 'strained' : 'stable'} data-city-stability={state.stability < 25 ? 'critical' : state.stability < 55 ? 'strained' : 'stable'} data-city-treasury={state.treasury <= 0 ? 'critical' : state.treasury < 1000 ? 'strained' : 'stable'} data-city-support={allies < 1 ? 'critical' : allies < 2 ? 'strained' : 'stable'} data-city-layer={mapLayer}>
             <div
               className="tg-map-world"
               style={{ transform: 'scale(' + mapZoom + ')' }}
@@ -508,7 +622,7 @@ export function TimePrototype() {
                 <g className="tg-map-compass" transform="translate(783 61)"><circle r="22" fill="#10191f" stroke="#7c938a" strokeOpacity=".45" /><path d="M0 -16 6 4 0 0-6 4Z" fill="#d7c28f" /><text x="0" y="34" fill="#9aaca6" fontSize="8" textAnchor="middle">N</text></g>
               </svg>
             </div>
-            <div className="tg-map-impact" key={state.tick + ':' + state.districts.map((item) => item.buildingLevel).join('-')} aria-hidden="true"><span /></div>
+            <div className="tg-map-impact" key={[state.tick, state.treasury, state.energy, state.stability, state.approval.guild, state.approval.commons, state.approval.senate, state.districts.map((item) => item.buildingLevel).join('-')].join(':')} aria-hidden="true"><span /></div>
             <div className="tg-map-key">
               <span><i className="key-selected" /> ВЫБРАННЫЙ РАЙОН</span>
               <span><i className="key-built" /> ПОСТРОЙКА</span>
