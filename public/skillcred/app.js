@@ -64,10 +64,10 @@ function text(id,value){var el=$(id);if(el)el.textContent=value;}
 function setResult(message,state){var el=$("demoResult");if(el){el.textContent=message;el.dataset.state=state||"info";}}
 function apiStatus(message,mode){var el=$("apiStatus");if(el)el.textContent=message;var dot=el&&el.parentElement.querySelector(".status-dot");if(dot)dot.className="status-dot"+(mode==="ok"?" is-active":mode==="bad"?" is-error":"");}
 function setStatus(state){
-var labels={idle:"ОЖИДАЕМ ПРОВЕРКУ",active:"ПОДПИСЬ ВАЛИДНА",revoked:"ДОКУМЕНТ ОТОЗВАН",pending:"ОЖИДАЕМ ПРОВЕРКУ"};
+var labels={idle:"ОЖИДАЕМ ПРОВЕРКУ",active:"ПОДПИСЬ ВАЛИДНА",issued:"УДОСТОВЕРЕНИЕ ВЫДАНО",revoked:"ДОКУМЕНТ ОТОЗВАН",pending:"ОЖИДАЕМ ПРОВЕРКУ"};
 var hero=$("heroStatus");if(hero){hero.className="credential-status "+(state==="active"?"status-active":state==="revoked"?"status-revoked":"status-pending");hero.textContent="";var dot=document.createElement("span");dot.className="status-dot";hero.append(dot,document.createTextNode(labels[state]||labels.idle));}
-var badge=$("badgeStatus");if(badge){badge.className="badge-status "+(state==="active"?"status-active":state==="revoked"?"status-revoked":"status-pending");badge.textContent=state==="active"?"ACTIVE":state==="revoked"?"REVOKED":state==="pending"?"PENDING":"ОЖИДАНИЕ";}
-var visual=document.querySelector(".hero-visual");if(visual){visual.dataset.state=state==="active"?"valid":state;text("validStamp",state==="active"?"VALID":state==="revoked"?"REVOKED":"WAIT");$("validStamp").setAttribute("aria-label",state==="active"?"Подпись валидна, статус active":state==="revoked"?"Документ отозван":"Проверка ещё не завершена");}
+var badge=$("badgeStatus");if(badge){badge.className="badge-status "+(state==="active"?"status-active":state==="revoked"?"status-revoked":"status-pending");badge.textContent=state==="active"?"ACTIVE":state==="issued"?"ISSUED":state==="revoked"?"REVOKED":state==="pending"?"PENDING":"ОЖИДАНИЕ";}
+var visual=document.querySelector(".hero-visual");if(visual){visual.dataset.state=state==="active"?"valid":state;text("validStamp",state==="active"?"VALID":state==="issued"?"ISSUED":state==="revoked"?"REVOKED":"WAIT");$("validStamp").setAttribute("aria-label",state==="active"?"Подпись валидна, статус active":state==="issued"?"Документ выдан; подпись ещё не проверена":state==="revoked"?"Документ отозван":"Проверка ещё не завершена");}
 }
 function setBusy(value,label){
 busy=value;
@@ -92,8 +92,8 @@ credential=item;verified=false;revoked=false;var heroCard=$("heroCredential");if
 var s=item.credentialSubject||{},a=s.achievement||{},title=plain(a.name||s.name||s.title,"Подтверждённый навык"),description=plain(a.description||s.description,"Переносимое цифровое подтверждение навыка."),issuer=issuerOf(item);
 text("heroSkill",title);text("heroDescription",description);text("heroIssuer",issuer);text("heroSubject",subjectOf(item));text("heroDate",dateLabel(item.issuanceDate||item.validFrom||item.issued));
 text("badgeTitle",title);text("badgeDescription",description);text("badgeIssuer",issuer);text("badgeId",item.id||"ID НЕ УКАЗАН");
-text("heroProof","Подпись создана · ожидает проверки");text("heroProofSub","Теперь запустите проверку API");text("demoProofLabel","Подпись создана · ожидает проверки");text("demoProofSub","Дальше — реальная проверка подписи");text("heroLiveStatus","Документ получен от API · проверка ожидается");text("heroFrameState","DOCUMENT ISSUED");
-text("heroHash",await hash(JSON.stringify(item)));setStatus("pending");renderJson(item,true);apiStatus("API выпустил синтетический документ","ok");steps();setBusy(false);
+text("heroProof","Подпись создана · ожидает проверки");text("heroProofSub","Теперь запустите проверку API");text("demoProofLabel","Подпись создана · ожидает проверки");text("demoProofSub","Дальше — реальная проверка подписи");text("heroLiveStatus","Документ получен · подпись ещё не проверена");text("heroFrameState","DOCUMENT ISSUED");
+text("heroHash",await hash(JSON.stringify(item)));setStatus("issued");renderJson(item,true);apiStatus("API выпустил синтетический документ","ok");steps();setBusy(false);
 }
 async function prepareDemo(){
 var h=await request("/health","GET"),r=await request("/ready","GET"),i=await request("/issuer","GET");
@@ -118,7 +118,7 @@ var bottom=document.querySelector(".clock-bottom");if(bottom)bottom.dataset.stat
 var timer=window.setInterval(function(){if(!busy||i>=3){window.clearInterval(timer);return;}timeline(i);i++;},270);
 }
 function verificationResult(state,res){
-if(state==="active"){text("heroProof","Подпись: валидна ✓");text("heroProofSub","Bitstring Status List: ACTIVE");text("demoProofLabel","Подпись валидна · статус ACTIVE");text("demoProofSub","Сервер подтвердил подпись и статус");text("heroLiveStatus","Подпись валидна · статус active");text("heroFrameState","SIGNATURE VALID");apiStatus("Подпись и активный статус подтверждены","ok");}
+if(state==="active"){text("heroProof","Подпись: валидна ✓");text("heroProofSub","Bitstring Status List: ACTIVE");text("demoProofLabel","Подпись валидна · статус ACTIVE");text("demoProofSub","Сервер подтвердил подпись и статус");text("heroLiveStatus","Подпись: валидна · Статус: active · Обновлено только что");text("heroFrameState","SIGNATURE VALID");apiStatus("Подпись и активный статус подтверждены","ok");}
 else if(state==="revoked"){text("heroProof","Подпись корректна · документ отозван");text("heroProofSub","Bitstring Status List: REVOKED");text("demoProofLabel","Подпись корректна · статус REVOKED");text("demoProofSub","Документ не должен считаться действительным");text("heroLiveStatus","Подпись корректна · статус revoked");text("heroFrameState","STATUS REVOKED");apiStatus("Отзыв подтверждён проверкой","bad");}
 else{text("heroProof","Проверка не подтверждена");text("heroProofSub","Смотрите ответ сервера в журнале");text("demoProofLabel","Проверка не подтверждена");text("demoProofSub","Не считайте документ действительным");text("heroFrameState","CHECK REQUIRED");apiStatus("Ответ не подтвердил действительность","bad");}
 finishClock(state,res.duration,res.status);
