@@ -1,0 +1,38 @@
+name: SkillCred Lighthouse Audit
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "public/skillcred/**"
+      - "nginx.conf"
+      - ".github/workflows/skillcred-lighthouse.yml"
+      - "scripts/lighthouse-report.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Audit mobile experience
+        run: npx --yes lighthouse@12.8.2 https://osgard.world/skillcred/ --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" --only-categories=performance,accessibility,best-practices,seo --output=json --output-path=/tmp/skillcred-lighthouse-mobile.json --quiet
+      - name: Audit desktop experience
+        run: npx --yes lighthouse@12.8.2 https://osgard.world/skillcred/ --preset=desktop --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" --only-categories=performance,accessibility,best-practices,seo --output=json --output-path=/tmp/skillcred-lighthouse-desktop.json --quiet
+      - name: Print measured category scores
+        run: node scripts/lighthouse-report.mjs /tmp/skillcred-lighthouse-mobile.json /tmp/skillcred-lighthouse-desktop.json
+      - name: Preserve raw Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: skillcred-lighthouse-reports
+          path: /tmp/skillcred-lighthouse-*.json
+          if-no-files-found: warn
+          retention-days: 14
