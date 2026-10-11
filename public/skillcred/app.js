@@ -1,7 +1,7 @@
 (function () {
 "use strict";
 var API_BASE=(document.querySelector('meta[name="api-base"]')||{}).content||"/skillcred-api";
-var $=function(id){return document.getElementById(id);},credential=null,verified=false,revoked=false,busy=false,events=0,lastJson="",heroStarted=false;
+var $=function(id){return document.getElementById(id);},credential=null,verified=false,revoked=false,busy=false,events=0,lastJson="",heroStarted=false,inspectorReady=false;
 var reduced=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 var samples={
 curl:{file:"terminal / issue.sh",text:"curl -sS -X POST \\\n  https://osgard.world/skillcred-api/demo/issue \\\n  -H 'Accept: application/json' \\\n  -H 'Content-Type: application/json' \\\n  -d '{}'"},
@@ -64,10 +64,15 @@ var card=$("demoCard");if(card)card.setAttribute("aria-busy",value?"true":"false
 }
 function steps(){[$("issueBtn"),$("verifyBtn"),$("revokeBtn")].forEach(function(b,i){if(b)b.classList.toggle("is-complete",i===0?!!credential:i===1?!!verified:!!revoked);});}
 function renderJson(item,flash){
-var target=$("credentialJson");if(!target)return;
-var json=item?JSON.stringify(item,null,2):'{\n  "@context": "https://www.w3.org/ns/credentials/v2",\n  "type": ["VerifiableCredential", "OpenBadgeCredential"],\n  "proof": "ожидаем ответ API"\n}',lines=json.split("\n"),old=lastJson.split("\n");
+var target=$("credentialJson");
+var json=item?JSON.stringify(item,null,2):'{\n  "@context": "https://www.w3.org/ns/credentials/v2",\n  "type": ["VerifiableCredential", "OpenBadgeCredential"],\n  "proof": "ожидаем ответ API"\n}';
+var lines=json.split("\n");
+text("heroJson",lines.length>12?lines.slice(0,10).join("\n")+"\n  …":json);
+if(!target||(!inspectorReady&&item))return;
+var old=lastJson.split("\n");
 target.innerHTML="<code>"+lines.map(function(line,i){var match=line.match(/"([^"]+)"\s*:/),key=match&&match[1],exp=explanations[key]||"",changed=flash&&old[i]!==line;return'<span class="json-line'+(changed?" is-changed":"")+'"'+(exp?' tabindex="0" data-explain="'+escapeHtml(exp)+'" title="'+escapeHtml(exp)+'"':"")+'>'+escapeHtml(line)+"</span>";}).join("")+"</code>";
-lastJson=json;text("heroJson",lines.length>12?lines.slice(0,10).join("\n")+"\n  …":json);if(flash)window.setTimeout(function(){target.querySelectorAll(".is-changed").forEach(function(el){el.classList.remove("is-changed");});},1400);
+lastJson=json;
+if(flash)window.setTimeout(function(){target.querySelectorAll(".is-changed").forEach(function(el){el.classList.remove("is-changed");});},1400);
 }
 async function renderCredential(item){
 credential=item;verified=false;revoked=false;
@@ -120,7 +125,7 @@ return{verified:verified,revoked:revoked,response:res};
 finally{setBusy(false);steps();}
 }
 async function issueNew(){
-if(busy)return;setBusy(true,"ВЫПУСКАЕМ ДОКУМЕНТ");setResult("Проверяем API и выпускаем новый синтетический документ…");
+if(busy)return;if($("demo")&&$("demo").getBoundingClientRect().top<window.innerHeight+80)activateInspector();setBusy(true,"ВЫПУСКАЕМ ДОКУМЕНТ");setResult("Проверяем API и выпускаем новый синтетический документ…");
 try{await prepareDemo();var res=await request("/demo/issue","POST",{});if(!res.ok||!res.data||!res.data.credentialSubject||!res.data.proof)throw new Error("Выпуск не подтверждён API (HTTP "+res.status+").");await renderCredential(res.data);setResult("Документ получен. Следующий шаг — проверить подпись и актуальный статус.","ok");text("heroLiveStatus","Документ выпущен · проверка ожидается");}
 catch(err){setResult("Не удалось выдать удостоверение: "+err.message,"bad");apiStatus("Выпуск не подтверждён","bad");}
 finally{setBusy(false);steps();}
@@ -152,12 +157,35 @@ document.querySelectorAll("[data-code-tab]").forEach(function(tab){tab.addEventL
 var copy=$("copyCode");if(copy)copy.addEventListener("click",async function(){var value=$("codeSample").textContent;try{await navigator.clipboard.writeText(value);copy.textContent="Скопировано ✓";}catch(_){var area=document.createElement("textarea");area.value=value;area.setAttribute("readonly","");area.style.position="fixed";area.style.opacity="0";document.body.appendChild(area);area.select();var ok=false;try{ok=document.execCommand("copy");}catch(__){}area.remove();copy.textContent=ok?"Скопировано ✓":"Выделите код вручную";}window.setTimeout(function(){copy.textContent="Копировать код ↗";},1500);});
 }
 function jsonSetup(){var pane=$("credentialJson");if(!pane)return;["pointerover","focusin","click"].forEach(function(type){pane.addEventListener(type,function(ev){var field=ev.target.closest&&ev.target.closest("[data-explain]");if(field)text("fieldExplainer",field.dataset.explain);});});}
+function activateInspector(){
+if(inspectorReady)return;
+inspectorReady=true;
+renderJson(credential,false);
+}
+function inspectorActivationSetup(){
+var section=$("demo");if(!section)return;
+if(!("IntersectionObserver" in window)||reduced)return;
+var observer=new IntersectionObserver(function(entries){if(entries.some(function(entry){return entry.isIntersecting;})){activateInspector();observer.disconnect();}},{rootMargin:"180px 0px",threshold:0});
+observer.observe(section);
+}
+
+function wrapHeadingWords(head){
+if(!head||head.dataset.worded==="true")return;
+var walker=document.createTreeWalker(head,NodeFilter.SHOW_TEXT,{acceptNode:function(node){return node.nodeValue.trim()&&!node.parentElement.closest("svg,script,style,code")?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT;}});
+var nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
+nodes.forEach(function(node){var parts=node.nodeValue.match(/\s+|[^\s]+/g)||[],fragment=document.createDocumentFragment(),index=0;
+parts.forEach(function(part){if(/^\s+$/.test(part))fragment.appendChild(document.createTextNode(part));else{var span=document.createElement("span");span.className="heading-word w-"+(index%24);span.textContent=part;fragment.appendChild(span);index++;}});
+node.parentNode.replaceChild(fragment,node);});
+head.dataset.worded="true";
+}
 function revealSetup(){
-var heads=Array.from(document.querySelectorAll(".kinetic-heading"));
-heads.forEach(function(head){var walk=document.createTreeWalker(head,NodeFilter.SHOW_TEXT,{acceptNode:function(n){return n.nodeValue.trim()&&!n.parentElement.closest("svg,script,style,code")?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT;}}),nodes=[];while(walk.nextNode())nodes.push(walk.currentNode);nodes.forEach(function(node){var parts=node.nodeValue.match(/\s+|[^\s]+/g)||[],frag=document.createDocumentFragment(),index=0;parts.forEach(function(part){if(/^\s+$/.test(part))frag.appendChild(document.createTextNode(part));else{var span=document.createElement("span");span.className="heading-word w-"+(index%24);span.textContent=part;frag.appendChild(span);index++;}});node.parentNode.replaceChild(frag,node);});});
-var items=Array.from(document.querySelectorAll(".reveal,.kinetic-heading"));if(!("IntersectionObserver" in window)||reduced){items.forEach(function(item){item.classList.add("is-visible");});return;}
-var observer=new IntersectionObserver(function(entries){entries.forEach(function(entry){if(entry.isIntersecting){entry.target.classList.add("is-visible");observer.unobserve(entry.target);}});},{threshold:.12,rootMargin:"0px 0px -28px 0px"});items.forEach(function(item){observer.observe(item);});
-var heroHead=document.querySelector(".hero .kinetic-heading"),heroCopy=document.querySelector(".hero-copy.reveal");if(heroHead)heroHead.classList.add("is-visible");if(heroCopy)heroCopy.classList.add("is-visible");
+var items=Array.from(document.querySelectorAll(".reveal,.kinetic-heading"));
+if(!("IntersectionObserver" in window)||reduced){items.forEach(function(item){item.classList.add("is-visible");});return;}
+var observer=new IntersectionObserver(function(entries){entries.forEach(function(entry){if(entry.isIntersecting){if(entry.target.classList.contains("kinetic-heading"))wrapHeadingWords(entry.target);entry.target.classList.add("is-visible");observer.unobserve(entry.target);}});},{threshold:.12,rootMargin:"0px 0px -28px 0px"});
+items.forEach(function(item){observer.observe(item);});
+var heroHead=document.querySelector(".hero .kinetic-heading"),heroCopy=document.querySelector(".hero-copy.reveal");
+if(heroHead){wrapHeadingWords(heroHead);heroHead.classList.add("is-visible");}
+if(heroCopy)heroCopy.classList.add("is-visible");
 }
 function tiltSetup(){
 var card=$("heroCredential");if(!card||reduced||!window.matchMedia("(hover:hover) and (pointer:fine)").matches)return;
@@ -181,7 +209,7 @@ if($("verifyBtn"))$("verifyBtn").addEventListener("click",function(){verifyCurre
 if($("revokeBtn"))$("revokeBtn").addEventListener("click",revokeCurrent);
 if($("downloadBtn"))$("downloadBtn").addEventListener("click",downloadCredential);
 if($("restartBtn"))$("restartBtn").addEventListener("click",resetDemo);
-navSetup();faqSetup();codeSetup();jsonSetup();revealSetup();tiltSetup();renderJson(null,false);
+navSetup();faqSetup();codeSetup();jsonSetup();revealSetup();tiltSetup();renderJson(null,false);inspectorActivationSetup();
 if("IntersectionObserver" in window){var observed=new IntersectionObserver(function(entries){if(entries.some(function(e){return e.isIntersecting;})){loadHeroArtifact();observed.disconnect();}},{threshold:.08});var hero=document.querySelector(".hero-visual");if(hero)observed.observe(hero);}else window.setTimeout(loadHeroArtifact,reduced?0:350);
 document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"&&!heroStarted)loadHeroArtifact();});
 window.SkillCredDemo={getState:function(){return{issued:!!credential,verified:verified,revoked:revoked,events:events};}};
