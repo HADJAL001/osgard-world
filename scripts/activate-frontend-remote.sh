@@ -9,7 +9,11 @@ rm -f "$state_file" "$log_file"
 (
   set -euo pipefail
   docker exec "$container_name" sh -lc "rm -rf /tmp/osgard-gh-next /tmp/osgard-gh-previous && mkdir /tmp/osgard-gh-next && tar -xzf '$archive' -C /tmp/osgard-gh-next && test -f /tmp/osgard-gh-next/index.html && mv /usr/share/nginx/html /tmp/osgard-gh-previous && mv /tmp/osgard-gh-next /usr/share/nginx/html"
-  if curl --max-time 10 -fsS https://osgard.world/ >/dev/null && curl --max-time 10 -fsS http://127.0.0.1:4317/health | grep -q '"status":"ok"'; then
+  if curl --max-time 10 -fsS https://osgard.world/ >/dev/null \
+    && curl --max-time 10 -fsS https://osgard.world/skillcred/ -o /tmp/skillcred-page-check.html \
+    && grep -q 'id="issueBtn"' /tmp/skillcred-page-check.html \
+    && grep -q 'https://skillcred-pilot-api.onrender.com' /tmp/skillcred-page-check.html \
+    && curl --max-time 10 -fsS http://127.0.0.1:4317/health | grep -q '"status":"ok"'; then
     printf 'success\n' > "$state_file"
   else
     docker exec "$container_name" sh -lc 'rm -rf /usr/share/nginx/html && mv /tmp/osgard-gh-previous /usr/share/nginx/html'
