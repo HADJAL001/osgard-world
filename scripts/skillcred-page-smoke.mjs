@@ -66,7 +66,7 @@ for (const file of files) {
   assert.ok(existsSync(cssPath), file + ': styles.css not found')
   assert.ok(existsSync(jsPath), file + ': app.js not found')
   const css = readFileSync(cssPath, 'utf8')
-  assert.ok(css.includes('.nav-right .nav-cta::after'), file + ': mobile CTA must keep a visible glyph')
+  assert.ok(html.includes('Проверить самому ↗'), file + ': mobile CTA must keep a visible glyph')
   const js = readFileSync(jsPath, 'utf8')
   assert.match(css, /@font-face[^{}]*\{[^}]*InterVariable\.woff2/, file + ': self-hosted Inter font is not configured')
   assert.match(css, /@font-face[^{}]*\{[^}]*InstrumentSerif-Italic\.woff2/, file + ': self-hosted Instrument Serif accent font is not configured')
