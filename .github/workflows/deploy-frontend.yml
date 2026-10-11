@@ -1,6 +1,19 @@
 name: OSGARD frontend deploy
 
 on:
+  push:
+    branches: [master]
+    paths:
+      - "src/**"
+      - "public/skillcred/**"
+      - "index.html"
+      - "package.json"
+      - "package-lock.json"
+      - "vite.config.ts"
+      - "scripts/sync-swarm-assets.mjs"
+      - "scripts/frontend-archive-preflight.mjs"
+      - "scripts/activate-frontend-remote.sh"
+      - ".github/workflows/deploy-frontend.yml"
   workflow_dispatch:
 
 jobs:
