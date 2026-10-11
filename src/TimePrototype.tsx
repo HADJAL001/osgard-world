@@ -11,6 +11,7 @@ import { recordOsgardEvent } from './core/eventQueue'
 import { completePlayerSession, startPlayerSession } from './core/playerApi'
 
 type Tab = 'council' | 'construction' | 'chronicle'
+type MapLayer = 'prosperity' | 'politics' | 'infrastructure'
 type Diagnostics = { fps: number; frameMs: number; frameP95Ms: number; slowFrames: number; fpsHistory: number[]; longTasks: number; longTaskSupported: boolean; tickMs: number; actions: number; save: 'saved' | 'error'; saveMs: number; saveBytes: number }
 
 const SAVE_KEY = 'osgard.time.empire.save.v1'
@@ -21,6 +22,11 @@ const factions = [
   { id: 'senate' as const, name: 'Сенат', short: 'СЕНАТ', mark: 'S', icon: Landmark, description: 'Порядок и легитимность' },
 ]
 const buildingIds: BuildingId[] = ['SOLAR_ARRAY', 'MARKET_HALL', 'ACADEMY', 'CIVIC_FORUM']
+const mapLayers: Array<{ id: MapLayer; label: string; description: string }> = [
+  { id: 'prosperity', label: 'Процветание', description: 'Уровень развития и благополучия кварталов' },
+  { id: 'politics', label: 'Политика', description: 'Поддержка ключевой городской силы' },
+  { id: 'infrastructure', label: 'Инфраструктура', description: 'Тип постройки и уровень улучшения' },
+]
 const districts: Array<{ id: DistrictId; points: string; labelX: number; labelY: number; markerX: number; markerY: number }> = [
   { id: 'foundry', points: '130,124 355,82 421,210 360,274 190,297 112,211', labelX: 245, labelY: 174, markerX: 280, markerY: 209 },
   { id: 'forum', points: '385,87 595,85 685,202 565,284 424,242 421,210', labelX: 525, labelY: 143, markerX: 542, markerY: 181 },
@@ -56,6 +62,7 @@ export function TimePrototype() {
   const [tax, setTax] = useState(state.taxRate)
   const [policy, setPolicy] = useState<PolicyId>(state.policy)
   const [selectedDistrict, setSelectedDistrict] = useState<DistrictId>('forum')
+  const [mapLayer, setMapLayer] = useState<MapLayer>('prosperity')
   const [tab, setTab] = useState<Tab>('council')
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false)
   const [cinematicMap, setCinematicMap] = useState(false)
@@ -351,6 +358,13 @@ export function TimePrototype() {
               <button ref={cinematicToggleRef} className="tg-cinema-button" type="button" aria-label={cinematicMap ? 'Выйти из кинематографического вида карты' : 'Открыть кинематографический вид карты'} aria-pressed={cinematicMap} title={cinematicMap ? 'Закрыть кинематографический вид (Esc)' : 'Кинематографический вид карты'} onClick={() => setCinematicMap((value) => !value)}>{cinematicMap ? <Minimize2 size={15} /> : <Expand size={15} />}</button>
             </div>
           </div>
+          <div className="tg-map-layers" role="group" aria-label="Слой данных городской карты">
+            <span className="tg-map-layers-label">АТЛАС / СЛОЙ</span>
+            {mapLayers.map((layer) => <button key={layer.id} type="button" aria-pressed={mapLayer === layer.id} title={layer.description} onClick={() => setMapLayer(layer.id)}>
+              {layer.id === 'prosperity' ? <TrendingUp size={13} /> : layer.id === 'politics' ? <Users size={13} /> : <Building2 size={13} />}
+              <span>{layer.label}</span>
+            </button>)}
+          </div>
           <div className="tg-map-viewport" data-city-status={state.status} data-city-tick={state.tick} data-city-energy={state.energy < 25 ? 'critical' : state.energy < 55 ? 'strained' : 'stable'} data-city-stability={state.stability < 25 ? 'critical' : state.stability < 55 ? 'strained' : 'stable'}>
             <div
               className="tg-map-world"
@@ -410,9 +424,26 @@ export function TimePrototype() {
                 {districts.map((shape) => {
                   const item = state.districts.find((d) => d.id === shape.id)!
                   const isSelected = selectedDistrict === shape.id
+                  const politicalSignal = shape.id === 'foundry' ? state.approval.guild :
+                    shape.id === 'commons' ? state.approval.commons : shape.id === 'forum' ? state.approval.senate :
+                    Math.round((state.approval.guild + state.approval.commons + state.approval.senate) / 3)
+                  const mapSignal = mapLayer === 'politics' ? politicalSignal :
+                    mapLayer === 'infrastructure' ? (item.building ? item.buildingLevel * 100 / 3 : 0) : item.prosperity
+                  const structureColors: Record<BuildingId, string> = {
+                    SOLAR_ARRAY: '#7ec6b2', MARKET_HALL: '#d9c28b', ACADEMY: '#a8bfe3', CIVIC_FORUM: '#f0dfad',
+                  }
+                  const mapColor = mapLayer === 'infrastructure'
+                    ? item.building ? structureColors[item.building] : '#52636b'
+                    : mapSignal < 35 ? '#d98473' : mapSignal >= 65 ? '#8fc7ad' : '#d8bd7b'
+                  const mapMetric = mapLayer === 'infrastructure'
+                    ? item.building ? 'LVL ' + item.buildingLevel + '/3' : 'EMPTY'
+                    : Math.round(mapSignal) + '%'
+                  const mapMetricLabel = mapLayer === 'prosperity' ? 'PROSPERITY' : mapLayer === 'politics'
+                    ? shape.id === 'foundry' ? 'GUILD SUPPORT' : shape.id === 'commons' ? 'CIVIC SUPPORT' : shape.id === 'forum' ? 'SENATE SUPPORT' : 'CITY SUPPORT'
+                    : 'INFRASTRUCTURE'
                   return <g key={shape.id} className={'tg-map-district ' + (isSelected ? 'is-selected' : '')} role="button" tabIndex={0} aria-label={item.name + ', процветание ' + item.prosperity + '%'} aria-pressed={isSelected} onClick={() => chooseDistrict(shape.id)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); chooseDistrict(shape.id) } }}>
-                    <circle className="tg-district-heat" cx={shape.markerX} cy={shape.markerY} r={31 + Math.round(item.prosperity / 5)} fill={item.prosperity < 35 ? '#d98473' : item.prosperity >= 65 ? '#8fc7ad' : '#d8bd7b'} fillOpacity={isSelected ? '.22' : '.055'} />
-                    <polygon points={shape.points} fill={isSelected ? '#d8bd7b' : item.prosperity < 35 ? '#d98473' : item.prosperity >= 65 ? '#8fc7ad' : '#9db5b2'} fillOpacity={isSelected ? '.15' : '.035'} stroke={isSelected ? '#ecdca7' : item.prosperity < 35 ? '#d98473' : item.prosperity >= 65 ? '#8fc7ad' : '#9ab5b0'} strokeWidth={isSelected ? '2.1' : '1'} strokeOpacity={isSelected ? '.9' : '.45'} />
+                    <circle className="tg-district-heat" cx={shape.markerX} cy={shape.markerY} r={31 + Math.round(mapSignal / 5)} fill={mapColor} fillOpacity={isSelected ? '.22' : mapSignal > 0 ? '.055' : '.025'} />
+                    <polygon points={shape.points} fill={mapColor} fillOpacity={isSelected ? '.14' : mapLayer === 'infrastructure' && !item.building ? '.018' : '.045'} stroke={isSelected ? '#ecdca7' : mapColor} strokeWidth={isSelected ? '2.1' : '1'} strokeOpacity={isSelected ? '.95' : '.55'} />
                     {isSelected && <circle className="tg-selection-ring" cx={shape.markerX} cy={shape.markerY} r="62" />}
                     <g className="tg-city-blocks" transform={'translate(' + (shape.markerX - 44) + ' ' + (shape.markerY - 32) + ')'}>
                       {Array.from({ length: 8 }, (_, i) => {
@@ -437,7 +468,7 @@ export function TimePrototype() {
                     </g>
                     {item.building && <g transform={'translate(' + (shape.markerX + 38) + ' ' + (shape.markerY - 38) + ')'}><circle r="14" fill="#0a1116" stroke="#d6c185" strokeWidth="1.2" /><path d="M-5 3h10M-4 -2h8M-2 -7h4" stroke="#e2d09e" strokeWidth="1.2" /><text x="0" y="23" textAnchor="middle" fill="#e4d7ac" fontSize="9">LVL {item.buildingLevel}</text></g>}
                     <text x={shape.labelX} y={shape.labelY} textAnchor="middle" fill={isSelected ? '#f0e5c1' : '#c0cbc7'} fontSize="11" fontFamily="monospace" letterSpacing="1.3">{item.name.toLocaleUpperCase('ru-RU')}</text>
-                    <text x={shape.labelX} y={shape.labelY + 17} textAnchor="middle" fill="#93a6a1" fontSize="9" fontFamily="monospace">PROSPERITY / {item.prosperity}%</text>
+                    <text x={shape.labelX} y={shape.labelY + 17} textAnchor="middle" fill={isSelected ? '#c2d8cc' : '#93a6a1'} fontSize="8" fontFamily="monospace" letterSpacing=".3">{mapMetricLabel} / {mapMetric}</text>
                     {isSelected && <circle cx={shape.markerX} cy={shape.markerY} r="53" fill="url(#tgGlow)" filter="url(#tgBloom)" />}
                   </g>
                 })}
@@ -465,6 +496,7 @@ export function TimePrototype() {
             <div className="tg-map-key">
               <span><i className="key-selected" /> ВЫБРАННЫЙ РАЙОН</span>
               <span><i className="key-built" /> ПОСТРОЙКА</span>
+              <span className="tg-map-layer-legend"><i style={{ background: mapLayer === 'infrastructure' ? '#7ec6b2' : mapLayer === 'politics' ? '#d9c28b' : '#8fc7ad' }} /> {mapLayer === 'prosperity' ? 'ПРОЦВЕТАНИЕ' : mapLayer === 'politics' ? 'ПОДДЕРЖКА ФРАКЦИЙ' : 'УРОВЕНЬ И ТИП ЗДАНИЯ'}</span>
               <span className="tg-map-shortcuts">КЛАВИШИ: 1–3 · +/− · 0</span>
               <span className="tg-map-coordinates">CITY IX / {district.id.toUpperCase()} / {String(state.tick).padStart(2, '0')}</span>
             </div>

@@ -361,3 +361,24 @@
  .tg-map-impact span{display:none;animation:none}
  .tg-district-heat,.tg-resource-card>strong,.tg-faction-score strong{animation:none!important}
 }
+
+
+/* Tactical map layers: encoded state changes the atlas, not the simulation. */
+.tg-map-layers{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 16px;border-bottom:1px solid var(--tg-line);background:linear-gradient(90deg,rgba(126,198,178,.025),transparent 70%)}
+.tg-map-layers-label{margin-right:4px;color:var(--tg-dim);font:7px/1.2 "JetBrains Mono",monospace;letter-spacing:.13em;white-space:nowrap}
+.tg-map-layers button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:34px;padding:7px 11px;border:1px solid transparent;border-radius:6px;background:transparent;color:var(--tg-muted);font-size:10px;white-space:nowrap;transition:color .18s ease,background .18s ease,border-color .18s ease}
+.tg-map-layers button svg{flex:0 0 auto;color:var(--tg-dim);transition:color .18s ease}
+.tg-map-layers button:hover{color:var(--tg-text);background:rgba(255,255,255,.035)}
+.tg-map-layers button[aria-pressed="true"]{border-color:rgba(217,194,139,.23);background:linear-gradient(135deg,rgba(217,194,139,.11),rgba(126,198,178,.045));color:var(--tg-gold-bright);box-shadow:inset 0 1px rgba(255,255,255,.035)}
+.tg-map-layers button[aria-pressed="true"] svg{color:var(--tg-green)}
+.tg-map-layers button:focus-visible{outline:2px solid var(--tg-gold-bright);outline-offset:2px}
+.tg-map-layer-legend{color:var(--tg-muted)!important}
+.tg-map-layer-legend i{box-shadow:0 0 8px currentColor}
+@media(max-width:600px){
+  .tg-map-layers{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;padding:9px 9px}
+  .tg-map-layers-label{grid-column:1/-1;margin:0 0 2px}
+  .tg-map-layers button{min-width:0;min-height:40px;gap:5px;flex-direction:column;padding:6px 3px;font-size:8px;line-height:1.2}
+  .tg-map-layers button svg{width:14px;height:14px}
+  .tg-map-layer-legend{width:100%;margin-left:0!important}
+}
+@media(max-width:360px){.tg-map-layers button{font-size:7px}.tg-map-layers{gap:3px;padding-inline:7px}}
