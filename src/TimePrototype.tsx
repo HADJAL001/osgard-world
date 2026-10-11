@@ -381,7 +381,7 @@ export function TimePrototype() {
       anchor.remove()
       window.setTimeout(() => URL.revokeObjectURL(url), 1000)
       setAnnouncement('Диагностический отчёт сохранён на этом устройстве. В нём указаны реальные замеры браузера и состояние текущей партии.')
-      recordOsgardEvent('game_diagnostics_exported', { game: 'time', tick: state.tick, quality: diagnostics.qualityMode, actions: diagnostics.actions })
+      recordOsgardEvent('portal_opened', { game: 'time', action: 'EXPORT_DIAGNOSTICS', tick: state.tick, quality: diagnostics.qualityMode, actions: diagnostics.actions })
     } catch {
       setAnnouncement('Не удалось сформировать отчёт. Проверьте, что браузер разрешает локальное скачивание файлов.')
     }
