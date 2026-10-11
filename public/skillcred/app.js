@@ -1,441 +1,188 @@
 (function () {
-  "use strict";
-  var API_BASE = (document.querySelector('meta[name="api-base"]') || {}).content || "/skillcred-api";
-  var $ = function (id) { return document.getElementById(id); };
-  var credential = null;
-  var issuerName = "SkillCred Demo Issuer";
-  var busy = false;
-  var verified = false;
-  var revoked = false;
-  var eventTotal = 0;
-  var codeSamples = {
-    curl: "curl -sS -X POST \\\n  https://osgard.world/skillcred-api/demo/issue \\\n  -H 'Accept: application/json' \\\n  -H 'Content-Type: application/json' \\\n  -d '{}'",
-    python: "import requests\n\nbase = \"https://osgard.world/skillcred-api\"\nresponse = requests.post(\n    base + \"/demo/issue\",\n    json={},\n    timeout=15,\n)\nresponse.raise_for_status()\ncredential = response.json()\nprint(credential[\"id\"])",
-    node: "const base = \"https://osgard.world/skillcred-api\";\nconst response = await fetch(base + \"/demo/issue\", {\n  method: \"POST\",\n  headers: { \"Accept\": \"application/json\", \"Content-Type\": \"application/json\" },\n  body: \"{}\",\n});\nif (!response.ok) throw new Error(\"HTTP \" + response.status);\nconst credential = await response.json();\nconsole.log(credential.id);"
-  };
-
-  document.documentElement.classList.add("js-ready");
-  $("currentYear").textContent = String(new Date().getFullYear());
-
-  function safeText(value, fallback) {
-    if (typeof value === "string" && value.trim()) return value.trim();
-    return fallback || "—";
-  }
-
-  function shortDate(value) {
-    if (!value || typeof value !== "string") return "—";
-    var date = new Date(value);
-    if (Number.isNaN(date.getTime())) return value.slice(0, 10);
-    return new Intl.DateTimeFormat("ru-RU", { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(date);
-  }
-
-  function achievementFrom(item) {
-    var subject = item && item.credentialSubject;
-    var achievement = subject && subject.achievement;
-    if (typeof achievement === "string") return achievement;
-    return safeText(achievement && (achievement.name || achievement.title), "Практическая безопасность");
-  }
-
-  function descriptionFrom(item) {
-    var subject = item && item.credentialSubject;
-    var achievement = subject && subject.achievement;
-    return safeText(achievement && (achievement.description || achievement.summary), "Цифровое подтверждение практического навыка.");
-  }
-
-  function issuerFrom(item) {
-    var issuer = item && item.issuer;
-    if (typeof issuer === "string") return issuer;
-    return safeText(issuer && (issuer.name || issuer.id), issuerName);
-  }
-
-  function proofFrom(item) {
-    var proof = item && item.proof;
-    if (Array.isArray(proof)) proof = proof[0];
-    if (!proof || typeof proof !== "object") return "";
-    return safeText(proof.proofValue || proof.signatureValue || proof.jws || proof.proof, "");
-  }
-
-  async function fingerprint(value) {
-    if (!value) return "Не найдено поле подписи";
-    try {
-      if (window.crypto && window.crypto.subtle && window.TextEncoder) {
-        var digest = await window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
-        return Array.from(new Uint8Array(digest)).map(function (byte) { return byte.toString(16).padStart(2, "0"); }).join("").slice(0, 20);
-      }
-    } catch (_) {}
-    var hash = 2166136261;
-    for (var i = 0; i < value.length; i++) { hash ^= value.charCodeAt(i); hash = Math.imul(hash, 16777619); }
-    return "fnv-" + (hash >>> 0).toString(16).padStart(8, "0");
-  }
-
-  function timeNow() {
-    return new Intl.DateTimeFormat("ru-RU", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date());
-  }
-
-  function addEvent(name, path, code, detail, ok) {
-    eventTotal += 1;
-    var list = $("eventLog");
-    var empty = list.querySelector(".event-empty");
-    if (empty) empty.remove();
-    var item = document.createElement("div");
-    item.className = "event-item";
-    var time = document.createElement("span");
-    time.className = "event-time";
-    time.textContent = timeNow();
-    var details = document.createElement("span");
-    details.className = "event-detail";
-    var title = document.createElement("strong");
-    title.textContent = name;
-    var sub = document.createElement("small");
-    sub.textContent = path + (detail ? " · " + detail : "");
-    details.append(title, sub);
-    var status = document.createElement("span");
-    status.className = "event-code " + (ok === true ? "is-ok" : ok === false ? "is-bad" : "");
-    status.textContent = code === null ? "HTTP —" : "HTTP " + code;
-    item.append(time, details, status);
-    list.prepend(item);
-    $("eventCount").textContent = eventTotal + (eventTotal === 1 ? " событие" : eventTotal < 5 ? " события" : " событий");
-  }
-
-  async function request(path, method, body) {
-    var options = { method: method || "GET", headers: { "Accept": "application/json" }, cache: "no-store", credentials: "same-origin" };
-    if (body !== undefined && body !== null) {
-      options.headers["Content-Type"] = "application/json";
-      options.body = JSON.stringify(body);
-    }
-    var started = performance.now();
-    try {
-      var response = await fetch(API_BASE + path, options);
-      var data = await response.json().catch(function () { return {}; });
-      var duration = Math.round(performance.now() - started);
-      var info = data && data.detail ? String(data.detail) : (data && data.service ? String(data.service) : "");
-      var label = method === "GET" ? "Запрос состояния" : path.indexOf("/issue") >= 0 ? "Выпуск удостоверения" : path.indexOf("/verify") >= 0 ? "Проверка удостоверения" : path.indexOf("/revoke") >= 0 ? "Отзыв удостоверения" : "Ответ API";
-      addEvent(label, path, response.status, duration + " мс" + (info ? " · " + info : ""), response.ok);
-      return { ok: response.ok, status: response.status, data: data, duration: duration };
-    } catch (_) {
-      addEvent("Сетевая ошибка", path, null, "API недоступен", false);
-      throw new Error("Не удалось связаться с API через прокси OSGARD. Проверьте соединение и повторите запрос.");
-    }
-  }
-
-  function setResult(message, mode) {
-    var box = $("demoResult").parentElement;
-    box.classList.toggle("is-ok", mode === "ok");
-    box.classList.toggle("is-bad", mode === "bad");
-    $("demoResult").textContent = message;
-  }
-
-  function setBusy(value, label) {
-    busy = value;
-    ["issueBtn", "verifyBtn", "revokeBtn"].forEach(function (id) {
-      var button = $(id);
-      button.disabled = value || (id === "verifyBtn" && !credential) || (id === "revokeBtn" && (!credential || !verified || revoked));
-    });
-    if (value) {
-      $("demoLive").classList.add("is-online");
-      $("demoLive").innerHTML = '<span class="live-dot"></span> ' + (label || "ЗАПРОС ВЫПОЛНЯЕТСЯ");
-    } else if (credential) {
-      $("demoLive").classList.add("is-online");
-      $("demoLive").innerHTML = '<span class="live-dot"></span> ' + (revoked ? "СТАТУС: REVOKED" : verified ? "СТАТУС: ACTIVE" : "ДОКУМЕНТ ВЫДАН");
-    } else {
-      $("demoLive").classList.remove("is-online");
-      $("demoLive").innerHTML = '<span class="live-dot"></span> ОЖИДАЕТ ЗАПУСКА';
-    }
-  }
-
-  function setStepState(step) {
-    ["issueBtn", "verifyBtn", "revokeBtn"].forEach(function (id, index) {
-      var button = $(id);
-      button.classList.toggle("is-current", index + 1 === step);
-      button.classList.toggle("is-complete", index + 1 < step || (index === 0 && !!credential) || (index === 1 && verified) || (index === 2 && revoked));
-    });
-  }
-
-  function setBadgeStatus(state) {
-    var labels = { idle: "ОЖИДАНИЕ", active: "ACTIVE", revoked: "REVOKED", pending: "ОЖИДАЕТ ПРОВЕРКИ" };
-    var heroLabels = { idle: "ОЖИДАЕТ ВЫПУСКА", active: "ПОДПИСЬ ВАЛИДНА", revoked: "УДОСТОВЕРЕНИЕ ОТОЗВАНО", pending: "ОЖИДАЕТ ПРОВЕРКИ" };
-    var css = state === "active" ? "status-active" : state === "revoked" ? "status-revoked" : "status-idle";
-    ["badgeStatus", "heroStatus"].forEach(function (id) {
-      var el = $(id);
-      el.className = (id === "badgeStatus" ? "badge-status " : "credential-status ") + css;
-      if (id === "badgeStatus") el.textContent = labels[state] || labels.idle;
-      else el.innerHTML = '<span class="status-dot"></span> ' + (heroLabels[state] || heroLabels.idle);
-    });
-  }
-
-  function setVerification(state, title, description, side) {
-    var line = $("verificationLine");
-    line.classList.remove("is-active", "is-revoked");
-    if (state === "active") line.classList.add("is-active");
-    if (state === "revoked") line.classList.add("is-revoked");
-    $("verificationTitle").textContent = title;
-    $("verificationText").textContent = description;
-    $("verificationSide").textContent = side || "—";
-    line.querySelector(".verification-icon").textContent = state === "active" ? "✓" : state === "revoked" ? "×" : "·";
-  }
-
-  async function renderCredential(item) {
-    credential = item;
-    verified = false;
-    revoked = false;
-    var hash = await fingerprint(proofFrom(item));
-    var skill = achievementFrom(item);
-    var description = descriptionFrom(item);
-    var issuer = issuerFrom(item);
-    var date = shortDate(item.issuanceDate || item.validFrom || item.issued);
-    issuerName = issuer;
-    $("heroSkill").textContent = skill;
-    $("heroDescription").textContent = description;
-    $("heroIssuer").textContent = issuer;
-    $("heroDate").textContent = date;
-    $("heroHash").textContent = hash;
-    $("heroProof").textContent = "Подпись создана · ожидает проверки";
-    $("heroProofSub").textContent = "SHA-256 отпечаток рассчитан в браузере";
-    $("badgeTitle").textContent = skill;
-    $("badgeDescription").textContent = description;
-    $("badgeIssuer").textContent = issuer;
-    $("badgeDate").textContent = date;
-    $("issuerMonogram").textContent = issuer.slice(0, 1).toUpperCase();
-    $("badgeId").textContent = safeText(item.id, "Идентификатор отсутствует");
-    $("downloadBtn").hidden = false;
-    $("apiStatus").innerHTML = '<span class="status-dot status-dot-idle"></span> Документ получен с сервера';
-    setBadgeStatus("pending");
-    setVerification("pending", "Подпись ожидает проверки", "Документ выпущен; криптографический результат ещё не подтверждён.", "PENDING");
-    setStepState(2);
-    setBusy(false);
-  }
-
-  async function prepareDemo() {
-    var health = await request("/health", "GET");
-    var ready = await request("/ready", "GET");
-    var issuer = await request("/issuer", "GET");
-    if (!health.ok || !ready.ok || !issuer.ok) throw new Error("API не прошёл проверку состояния. Проверьте HTTP-коды в журнале.");
-    if (health.data.demo_ready !== true || ready.data.ready !== true) {
-      $("apiStatus").innerHTML = '<span class="status-dot" style="background:var(--red)"></span> Сервер отвечает, но демо не готово';
-      throw new Error("Сервер доступен, но демо-издатель не готов. Попробуйте позже.");
-    }
-    issuerName = safeText(issuer.data.name, issuerName);
-    $("apiStatus").innerHTML = '<span class="status-dot" style="background:var(--green)"></span> API готов · v' + safeText(health.data.version, "0.3.0");
-  }
-
-  $("issueBtn").addEventListener("click", async function () {
-    if (busy) return;
-    setBusy(true, "ПРОВЕРКА API");
-    setResult("Проверяем готовность API и отдельного демо-издателя…");
-    try {
-      await prepareDemo();
-      setResult("Сервер готов. Запрашиваем новое JSON-LD удостоверение с подписью Ed25519…");
-      var response = await request("/demo/issue", "POST", {});
-      if (!response.ok || !response.data || !response.data.credentialSubject) throw new Error("Выпуск отклонён сервером (HTTP " + response.status + ").");
-      await renderCredential(response.data);
-      setResult("Удостоверение получено от API. Следующий шаг — проверить реальную подпись и статус отзыва.", "ok");
-      setStepState(2);
-    } catch (error) {
-      setResult("Не удалось выдать удостоверение: " + error.message, "bad");
-      setBusy(false);
-      $("apiStatus").innerHTML = '<span class="status-dot" style="background:var(--red)"></span> Выпуск не подтверждён';
-    }
-  });
-
-  $("verifyBtn").addEventListener("click", async function () {
-    if (!credential || busy) return;
-    setBusy(true, "ПРОВЕРКА ПОДПИСИ");
-    setResult("Проверяем подпись и актуальный статус на сервере…");
-    try {
-      var response = await request("/demo/verify", "POST", { credential: credential });
-      if (!response.ok) throw new Error("Проверка отклонена сервером (HTTP " + response.status + ").");
-      var result = response.data || {};
-      var signatureOk = result.signature_valid === true;
-      var state = String(result.status || "unknown").toLowerCase();
-      verified = signatureOk && result.valid === true && state === "active";
-      revoked = state === "revoked";
-      if (verified) {
-        setBadgeStatus("active");
-        setVerification("active", "Подпись валидна · статус ACTIVE", "Сервер подтвердил подпись и активный статус удостоверения.", "HTTP " + response.status);
-        $("heroProof").textContent = "Подпись: валидна ✓";
-        $("heroProofSub").textContent = "Bitstring Status List: ACTIVE";
-        $("apiStatus").innerHTML = '<span class="status-dot" style="background:var(--green)"></span> Подпись и статус подтверждены';
-        setResult("Подпись Ed25519 валидна. Bitstring Status List сообщает ACTIVE. Теперь можно отозвать тестовый документ.", "ok");
-        setStepState(3);
-      } else if (signatureOk && state === "revoked") {
-        setBadgeStatus("revoked");
-        setVerification("revoked", "Подпись корректна · статус REVOKED", "Криптографическая подпись не изменилась, но документ больше не действителен.", "HTTP " + response.status);
-        $("heroProof").textContent = "Подпись корректна · документ отозван";
-        $("heroProofSub").textContent = "Bitstring Status List: REVOKED";
-        $("apiStatus").innerHTML = '<span class="status-dot" style="background:var(--red)"></span> Отзыв подтверждён проверкой';
-        setResult("Подпись остаётся корректной, но Bitstring Status List сообщает REVOKED. Документ нельзя считать действительным.", "bad");
-        verified = false;
-        revoked = true;
-        setStepState(3);
-      } else {
-        setBadgeStatus(state === "revoked" ? "revoked" : "pending");
-        setVerification("pending", "Проверка не подтверждена", "Ответ сервера не подтвердил одновременно подпись и активный статус.", "HTTP " + response.status);
-        $("heroProof").textContent = "Проверка не подтверждена";
-        $("heroProofSub").textContent = "Смотрите ответ сервера и ошибки";
-        setResult("Удостоверение не прошло проверку. Подробности доступны в JSON-ответе API.", "bad");
-      }
-    } catch (error) {
-      setResult("Проверка не выполнена: " + error.message, "bad");
-    } finally {
-      setBusy(false);
-    }
-  });
-
-  $("revokeBtn").addEventListener("click", async function () {
-    if (!credential || busy || !verified || revoked) return;
-    setBusy(true, "ОТЗЫВ ДОКУМЕНТА");
-    setResult("Отправляем запрос на отзыв в Bitstring Status List…");
-    try {
-      var response = await request("/demo/revoke", "POST", { credential: credential });
-      if (!response.ok || response.data.revoked !== true) throw new Error("Сервер не подтвердил отзыв (HTTP " + response.status + ").");
-      revoked = true;
-      verified = false;
-      setBadgeStatus("revoked");
-      setVerification("revoked", "Отзыв сохранён · ожидает повторной проверки", "Теперь нажмите «Проверить», чтобы сервер подтвердил статус REVOKED.", "REVOKED");
-      $("heroProof").textContent = "Удостоверение отозвано";
-      $("heroProofSub").textContent = "Нажмите «Проверить» для подтверждения";
-      $("apiStatus").innerHTML = '<span class="status-dot" style="background:var(--red)"></span> Отзыв записан на сервере';
-      setResult("Сервер подтвердил отзыв. Для финального шага проверьте документ повторно: подпись останется прежней, статус должен стать REVOKED.", "ok");
-      setStepState(3);
-    } catch (error) {
-      setResult("Не удалось отозвать удостоверение: " + error.message, "bad");
-    } finally {
-      setBusy(false);
-    }
-  });
-
-  $("downloadBtn").addEventListener("click", function () {
-    if (!credential) return;
-    var blob = new Blob([JSON.stringify(credential, null, 2)], { type: "application/ld+json;charset=utf-8" });
-    var url = URL.createObjectURL(blob);
-    var anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "skillcred-demo-credential.json";
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    window.setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-  });
-
-  var navToggle = $("menuToggle");
-  var primaryNav = $("primaryNav");
-  if (navToggle && primaryNav) {
-    navToggle.addEventListener("click", function () {
-      var open = navToggle.getAttribute("aria-expanded") !== "true";
-      navToggle.setAttribute("aria-expanded", String(open));
-      navToggle.setAttribute("aria-label", open ? "Закрыть меню" : "Открыть меню");
-      primaryNav.classList.toggle("is-open", open);
-      navToggle.innerHTML = open
-        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>'
-        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
-    });
-    primaryNav.querySelectorAll("a").forEach(function (link) {
-      link.addEventListener("click", function () {
-        primaryNav.classList.remove("is-open");
-        navToggle.setAttribute("aria-expanded", "false");
-        navToggle.setAttribute("aria-label", "Открыть меню");
-        navToggle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
-      });
-    });
-  }
-
-  var faqButtons = Array.prototype.slice.call(document.querySelectorAll(".faq-question"));
-  faqButtons.forEach(function (button) {
-    button.addEventListener("click", function () {
-      var shouldOpen = button.getAttribute("aria-expanded") !== "true";
-      faqButtons.forEach(function (other) {
-        other.setAttribute("aria-expanded", "false");
-        var otherItem = other.closest(".faq-item");
-        if (otherItem) otherItem.classList.remove("is-open");
-      });
-      button.setAttribute("aria-expanded", String(shouldOpen));
-      var activeItem = button.closest(".faq-item");
-      if (activeItem) activeItem.classList.toggle("is-open", shouldOpen);
-    });
-  });
-
-  var code = $("codeOutput");
-  var codeTabs = Array.prototype.slice.call(document.querySelectorAll("[data-code-tab]"));
-  codeTabs.forEach(function (tab) {
-    tab.addEventListener("click", function () {
-      var selected = tab.getAttribute("data-code-tab");
-      code.textContent = codeSamples[selected];
-      codeTabs.forEach(function (other) {
-        var active = other === tab;
-        other.classList.toggle("is-active", active);
-        other.setAttribute("aria-selected", String(active));
-      });
-      $("copyCode").innerHTML = 'Копировать <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8" height="9" rx="1.2"/><path d="M3 11V3.7A.7.7 0 0 1 3.7 3H10"/></svg>';
-    });
-  });
-
-  $("copyCode").addEventListener("click", async function () {
-    var button = $("copyCode");
-    try {
-      if (!navigator.clipboard || !navigator.clipboard.writeText) throw new Error("Clipboard unavailable");
-      await navigator.clipboard.writeText(code.textContent);
-      button.innerHTML = 'Скопировано <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8 3 3 7-7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-    } catch (_) {
-      button.textContent = "Выделите код";
-      var range = document.createRange();
-      range.selectNodeContents(code);
-      var selection = window.getSelection();
-      if (selection) { selection.removeAllRanges(); selection.addRange(range); }
-    }
-    window.setTimeout(function () {
-      button.innerHTML = 'Копировать <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8" height="9" rx="1.2"/><path d="M3 11V3.7A.7.7 0 0 1 3.7 3H10"/></svg>';
-    }, 1800);
-  });
-
-  var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  var revealItems = Array.prototype.slice.call(document.querySelectorAll(".reveal"));
-  var timelineSteps = Array.prototype.slice.call(document.querySelectorAll(".timeline-step"));
-  if ("IntersectionObserver" in window && !reduceMotion) {
-    var revealObserver = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (entry.isIntersecting) {
-          entry.target.classList.add("is-visible");
-          revealObserver.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.12, rootMargin: "0px 0px -36px 0px" });
-    revealItems.forEach(function (item, index) {
-      item.style.transitionDelay = Math.min(index % 3, 2) * 65 + "ms";
-      revealObserver.observe(item);
-    });
-    var timelineObserver = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (!entry.isIntersecting) return;
-        timelineSteps.forEach(function (step, index) {
-          window.setTimeout(function () { step.classList.add("is-visible"); }, index * 140);
-        });
-        var progress = $("timelineProgress");
-        if (window.matchMedia("(max-width: 760px)").matches) progress.style.height = "100%";
-        else progress.style.width = "100%";
-        timelineObserver.unobserve(entry.target);
-      });
-    }, { threshold: 0.15 });
-    if ($("timeline")) timelineObserver.observe($("timeline"));
-  } else {
-    revealItems.forEach(function (item) { item.classList.add("is-visible"); });
-    timelineSteps.forEach(function (item) { item.classList.add("is-visible"); });
-  }
-
-  var tiltCard = $("heroCredential");
-  var pointerFine = window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-  if (tiltCard && pointerFine && !reduceMotion) {
-    tiltCard.addEventListener("pointermove", function (event) {
-      var rect = tiltCard.getBoundingClientRect();
-      var x = (event.clientX - rect.left) / rect.width;
-      var y = (event.clientY - rect.top) / rect.height;
-      var rotateY = (x - .5) * 5;
-      var rotateX = (.5 - y) * 4;
-      tiltCard.style.transform = "rotateX(" + rotateX.toFixed(2) + "deg) rotateY(" + rotateY.toFixed(2) + "deg) translateY(-2px)";
-    });
-    tiltCard.addEventListener("pointerleave", function () { tiltCard.style.transform = ""; });
-  }
-
-  window.skillCredDemo = Object.freeze({
-    getState: function () { return { issued: !!credential, verified: verified, revoked: revoked, events: eventTotal }; }
-  });
+"use strict";
+var API_BASE=(document.querySelector('meta[name="api-base"]')||{}).content||"/skillcred-api";
+var $=function(id){return document.getElementById(id);},credential=null,verified=false,revoked=false,busy=false,events=0,lastJson="",heroStarted=false;
+var reduced=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+var samples={
+curl:{file:"terminal / issue.sh",text:"curl -sS -X POST \\\n  https://osgard.world/skillcred-api/demo/issue \\\n  -H 'Accept: application/json' \\\n  -H 'Content-Type: application/json' \\\n  -d '{}'"},
+node:{file:"node / issue.mjs",text:'const base = "https://osgard.world/skillcred-api";\nconst response = await fetch(base + "/demo/issue", {\n  method: "POST",\n  headers: { "Accept": "application/json", "Content-Type": "application/json" },\n  body: "{}"\n});\nif (!response.ok) throw new Error("HTTP " + response.status);\nconst credential = await response.json();\nconsole.log(credential.id);'},
+python:{file:"python / issue.py",text:'import requests\n\nbase = "https://osgard.world/skillcred-api"\nresponse = requests.post(base + "/demo/issue", json={}, timeout=15)\nresponse.raise_for_status()\ncredential = response.json()\nprint(credential["id"])'}
+};
+var explanations={
+"@context":"Определяет контекст JSON-LD: как интерпретировать поля документа.",
+"type":"Указывает тип удостоверения и совместимую модель Open Badges.",
+"id":"Идентификатор удостоверения, не секрет авторизации.",
+"issuer":"Издатель, чьему ключу должна доверять проверяющая сторона.",
+"issuanceDate":"Дата выпуска удостоверения.",
+"validFrom":"Момент, с которого документ действует, если поле используется.",
+"credentialSubject":"Утверждения о получателе и подтверждаемом достижении.",
+"proof":"Криптографическое доказательство для проверки подписи и целостности.",
+"cryptosuite":"Указывает криптографическую схему доказательства.",
+"proofValue":"Значение доказательства; само по себе не означает доверие.",
+"credentialStatus":"Ссылка на механизм проверки статуса или отзыва."
+};
+document.documentElement.classList.add("js-ready");
+if($("copyrightYear"))$("copyrightYear").textContent=String(new Date().getFullYear());
+function wait(ms){return new Promise(function(resolve){window.setTimeout(resolve,ms);});}
+function escapeHtml(v){return String(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
+function plain(v,fallback){return typeof v==="string"&&v.trim()?v.trim():fallback;}
+function dateLabel(v){if(!v)return"ДАТА НЕ УКАЗАНА";var d=new Date(v);return Number.isNaN(d.getTime())?String(v).slice(0,24):d.toLocaleDateString("ru-RU",{year:"numeric",month:"short",day:"2-digit"}).toUpperCase();}
+function issuerOf(item){var v=item&&item.issuer;if(typeof v==="string")return v;return plain(v&&(v.name||v.id),"SkillCred Demo Issuer");}
+function subjectOf(item){var s=item&&item.credentialSubject;if(!s||typeof s!=="object")return"Демонстрационный профиль";return s.name||(s.achievement&&s.achievement.name)||s.description||s.id||"Демонстрационный профиль";}
+async function hash(value){try{if(!crypto||!crypto.subtle)return"ОТПЕЧАТОК В ПОДПИСИ";var digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value));return Array.from(new Uint8Array(digest)).map(function(b){return b.toString(16).padStart(2,"0");}).join("").slice(0,24);}catch(_){return"ОТПЕЧАТОК В ПОДПИСИ";}}
+function time(){var d=new Date();return d.toLocaleTimeString("ru-RU",{hour12:false})+"."+String(d.getMilliseconds()).padStart(3,"0");}
+function addEvent(name,path,code,detail,ok){
+var log=$("eventLog");if(!log)return;var empty=log.querySelector(".event-empty");if(empty)empty.remove();events++;
+var li=document.createElement("li"),t=document.createElement("span"),body=document.createElement("span"),title=document.createElement("strong"),small=document.createElement("small"),status=document.createElement("span");
+t.className="event-time";t.textContent=time();body.className="event-details";title.textContent=name;small.textContent=path+(detail?" · "+detail:"");body.append(title,small);
+status.className="event-code"+(ok===true?" is-ok":ok===false?" is-bad":"");status.textContent=code==null?"HTTP —":"HTTP "+code;li.append(t,body,status);log.append(li);
+while(log.children.length>18)log.firstElementChild.remove();log.scrollTop=log.scrollHeight;
+}
+async function request(path,method,body){
+var opts={method:method||"GET",headers:{Accept:"application/json"},cache:"no-store",credentials:"same-origin"};
+if(body!==undefined){opts.headers["Content-Type"]="application/json";opts.body=JSON.stringify(body);}
+var started=performance.now(),label=path.indexOf("/health")===0?"Проверка состояния API":path.indexOf("/ready")===0?"Проверка готовности":path.indexOf("/issuer")===0?"Проверка демо-издателя":path.indexOf("/issue")>=0?"Выпуск удостоверения":path.indexOf("/verify")>=0?"Проверка подписи и статуса":path.indexOf("/revoke")>=0?"Отзыв удостоверения":"Запрос API";
+try{var res=await fetch(API_BASE+path,opts),raw=await res.text(),data={};try{data=raw?JSON.parse(raw):{};}catch(_){data={detail:raw.slice(0,200)};}
+var elapsed=Math.round(performance.now()-started);addEvent(label,(method||"GET")+" "+path,res.status,elapsed+" ms"+(data.status?" · "+String(data.status).toUpperCase():""),res.ok);
+return{ok:res.ok,status:res.status,data:data,duration:elapsed};
+}catch(error){var elapsedError=Math.round(performance.now()-started);addEvent(label,(method||"GET")+" "+path,null,elapsedError+" ms · network error",false);throw new Error("Не удалось подключиться к API. Повторите запрос через несколько секунд.");}
+}
+function text(id,value){var el=$(id);if(el)el.textContent=value;}
+function setResult(message,state){var el=$("demoResult");if(el){el.textContent=message;el.dataset.state=state||"info";}}
+function apiStatus(message,mode){var el=$("apiStatus");if(el)el.textContent=message;var dot=el&&el.parentElement.querySelector(".status-dot");if(dot)dot.className="status-dot"+(mode==="ok"?" is-active":"");if(dot&&mode==="bad")dot.style.background="var(--red)";else if(dot&&mode!=="ok")dot.style.background="var(--quiet)";}
+function setStatus(state){
+var labels={idle:"ОЖИДАЕМ ПРОВЕРКУ",active:"ПОДПИСЬ ВАЛИДНА",revoked:"ДОКУМЕНТ ОТОЗВАН",pending:"ОЖИДАЕМ ПРОВЕРКУ"};
+var hero=$("heroStatus");if(hero){hero.className="credential-status "+(state==="active"?"status-active":state==="revoked"?"status-revoked":"status-pending");hero.textContent="";var dot=document.createElement("span");dot.className="status-dot";hero.append(dot,document.createTextNode(labels[state]||labels.idle));}
+var badge=$("badgeStatus");if(badge){badge.className="badge-status "+(state==="active"?"status-active":state==="revoked"?"status-revoked":"status-pending");badge.textContent=state==="active"?"ACTIVE":state==="revoked"?"REVOKED":state==="pending"?"PENDING":"ОЖИДАНИЕ";}
+var visual=document.querySelector(".hero-visual");if(visual){visual.dataset.state=state==="active"?"valid":state;text("validStamp",state==="active"?"VALID":state==="revoked"?"REVOKED":"WAIT");$("validStamp").setAttribute("aria-label",state==="active"?"Подпись валидна, статус active":state==="revoked"?"Документ отозван":"Проверка ещё не завершена");}
+}
+function setBusy(value,label){
+busy=value;
+["issueBtn","verifyBtn","revokeBtn","downloadBtn","restartBtn"].forEach(function(id){var b=$(id);if(!b)return;if(id==="issueBtn"||id==="restartBtn")b.disabled=value;else if(id==="verifyBtn")b.disabled=value||!credential;else if(id==="revokeBtn")b.disabled=value||!credential||!verified||revoked;else b.disabled=value||!credential;b.setAttribute("aria-busy",value?"true":"false");});
+var live=$("demoLive");if(live){live.classList.toggle("is-online",!value&&!!credential);live.textContent="";var dot=document.createElement("span");dot.className="status-dot";live.append(dot,document.createTextNode(value?(label||"ВЫПОЛНЯЕМ ЗАПРОС"):revoked?"ОТОЗВАНО":verified?"ACTIVE / VALID":credential?"ДОКУМЕНТ ВЫДАН":"ОЖИДАЕМ"));}
+var card=$("demoCard");if(card)card.setAttribute("aria-busy",value?"true":"false");
+}
+function steps(){[$("issueBtn"),$("verifyBtn"),$("revokeBtn")].forEach(function(b,i){if(b)b.classList.toggle("is-complete",i===0?!!credential:i===1?!!verified:!!revoked);});}
+function renderJson(item,flash){
+var target=$("credentialJson");if(!target)return;
+var json=item?JSON.stringify(item,null,2):'{\n  "@context": "https://www.w3.org/ns/credentials/v2",\n  "type": ["VerifiableCredential", "OpenBadgeCredential"],\n  "proof": "ожидаем ответ API"\n}',lines=json.split("\n"),old=lastJson.split("\n");
+target.innerHTML="<code>"+lines.map(function(line,i){var match=line.match(/"([^"]+)"\s*:/),key=match&&match[1],exp=explanations[key]||"",changed=flash&&old[i]!==line;return'<span class="json-line'+(changed?" is-changed":"")+'"'+(exp?' tabindex="0" data-explain="'+escapeHtml(exp)+'" title="'+escapeHtml(exp)+'"':"")+'>'+escapeHtml(line)+"</span>";}).join("")+"</code>";
+lastJson=json;text("heroJson",lines.length>12?lines.slice(0,10).join("\n")+"\n  …":json);if(flash)window.setTimeout(function(){target.querySelectorAll(".is-changed").forEach(function(el){el.classList.remove("is-changed");});},1400);
+}
+async function renderCredential(item){
+credential=item;verified=false;revoked=false;
+var s=item.credentialSubject||{},a=s.achievement||{},title=plain(a.name||s.name||s.title,"Подтверждённый навык"),description=plain(a.description||s.description,"Переносимое цифровое подтверждение навыка."),issuer=issuerOf(item);
+text("heroSkill",title);text("heroDescription",description);text("heroIssuer",issuer);text("heroSubject",subjectOf(item));text("heroDate",dateLabel(item.issuanceDate||item.validFrom||item.issued));
+text("badgeTitle",title);text("badgeDescription",description);text("badgeIssuer",issuer);text("badgeId",item.id||"ID НЕ УКАЗАН");
+text("heroProof","Подпись создана · ожидает проверки");text("heroProofSub","Теперь запустите проверку API");text("demoProofLabel","Подпись создана · ожидает проверки");text("demoProofSub","Дальше — реальная проверка подписи");text("heroLiveStatus","Документ получен от API · проверка ожидается");text("heroFrameState","DOCUMENT ISSUED");
+text("heroHash",await hash(JSON.stringify(item)));setStatus("pending");renderJson(item,true);apiStatus("API выпустил синтетический документ","ok");steps();setBusy(false);
+}
+async function prepareDemo(){
+var h=await request("/health","GET"),r=await request("/ready","GET"),i=await request("/issuer","GET");
+if(!h.ok||!r.ok||!i.ok)throw new Error("API не прошёл проверку состояния.");
+if(h.data.demo_ready!==true||r.data.ready!==true)throw new Error("Сервис отвечает, но публичное демо сейчас не готово.");
+text("heroLiveTime","API v"+plain(h.data.version,"0.3.0"));return{health:h.data,issuer:i.data};
+}
+function timeline(index){
+var nodes=Array.from(document.querySelectorAll("[data-clock-step]")),p=$("clockProgress");
+nodes.forEach(function(node,i){node.classList.toggle("is-active",i===index);node.classList.toggle("is-done",i<index||index===nodes.length);});
+if(p)p.style.width=Math.max(0,Math.min(100,(index+1)/nodes.length*100))+"%";
+var track=$("clockTrack");if(track)track.setAttribute("aria-label",index>=nodes.length?"Четыре этапа проверки завершены":"Этап "+(index+1)+" из "+nodes.length);
+}
+function finishClock(state,ms,http){
+timeline(4);text("timeElapsed",Math.max(0,Math.round(ms))+" ms");text("clockVerdict",state==="active"?"VALID":state==="revoked"?"REVOKED":"CHECK");text("clockHttp","HTTP "+http);
+var bottom=document.querySelector(".clock-bottom");if(bottom)bottom.dataset.state=state==="active"?"active":state==="revoked"?"error":"error";
+text("clockCaption",state==="active"?"Подпись корректна · статус ACTIVE":state==="revoked"?"Подпись корректна · статус REVOKED":"Проверка требует внимания");
+}
+function startClock(){
+timeline(-1);text("timeElapsed","… ms");text("clockCaption","Сервер проверяет данные и актуальный статус");text("clockHttp","WAITING");
+var bottom=document.querySelector(".clock-bottom");if(bottom)bottom.dataset.state="active";var i=0;
+var timer=window.setInterval(function(){if(!busy||i>=3){window.clearInterval(timer);return;}timeline(i);i++;},270);
+}
+function verificationResult(state,res){
+if(state==="active"){text("heroProof","Подпись: валидна ✓");text("heroProofSub","Bitstring Status List: ACTIVE");text("demoProofLabel","Подпись валидна · статус ACTIVE");text("demoProofSub","Сервер подтвердил подпись и статус");text("heroLiveStatus","Подпись валидна · статус active");text("heroFrameState","SIGNATURE VALID");apiStatus("Подпись и активный статус подтверждены","ok");}
+else if(state==="revoked"){text("heroProof","Подпись корректна · документ отозван");text("heroProofSub","Bitstring Status List: REVOKED");text("demoProofLabel","Подпись корректна · статус REVOKED");text("demoProofSub","Документ не должен считаться действительным");text("heroLiveStatus","Подпись корректна · статус revoked");text("heroFrameState","STATUS REVOKED");apiStatus("Отзыв подтверждён проверкой","bad");}
+else{text("heroProof","Проверка не подтверждена");text("heroProofSub","Смотрите ответ сервера в журнале");text("demoProofLabel","Проверка не подтверждена");text("demoProofSub","Не считайте документ действительным");text("heroFrameState","CHECK REQUIRED");apiStatus("Ответ не подтвердил действительность","bad");}
+finishClock(state,res.duration,res.status);
+}
+async function verifyCurrent(options){
+if(!credential||busy)return;
+setBusy(true,"ПРОВЕРЯЕМ ПОДПИСЬ");setResult("Проверяем подпись Ed25519 и актуальный статус на сервере…");startClock();var res;
+try{
+res=await request("/demo/verify","POST",{credential:credential});if(!res.ok)throw new Error("Проверка отклонена сервером (HTTP "+res.status+").");
+var data=res.data||{},signature=data.signature_valid===true,status=String(data.status||"unknown").toLowerCase();
+if(signature&&data.valid===true&&status==="active"){verified=true;revoked=false;setStatus("active");verificationResult("active",res);setResult("Подпись Ed25519 валидна. Bitstring Status List сообщает ACTIVE. Доверие к издателю оценивается отдельно.","ok");text("heroLiveTime","API · "+res.duration+" ms");}
+else if(signature&&status==="revoked"){verified=false;revoked=true;setStatus("revoked");verificationResult("revoked",res);setResult("Подпись остаётся корректной, но статус REVOKED: документ больше нельзя считать действительным.","bad");}
+else{verified=false;revoked=status==="revoked";setStatus(revoked?"revoked":"pending");verificationResult("unknown",res);setResult("Сервер не подтвердил одновременно подпись и активный статус. Изучите ответ API и журнал событий.","bad");}
+steps();if(options&&options.auto&&!verified)throw new Error("Сервер не подтвердил активное удостоверение.");
+return{verified:verified,revoked:revoked,response:res};
+}catch(err){setResult(err.message||"Проверка не выполнена.","bad");text("heroLiveStatus","Проверка API не завершена");var bottom=document.querySelector(".clock-bottom");if(bottom)bottom.dataset.state="error";text("clockCaption","Проверка не завершена · смотрите журнал");text("clockHttp",res?"HTTP "+res.status:"NETWORK ERROR");throw err;}
+finally{setBusy(false);steps();}
+}
+async function issueNew(){
+if(busy)return;setBusy(true,"ВЫПУСКАЕМ ДОКУМЕНТ");setResult("Проверяем API и выпускаем новый синтетический документ…");
+try{await prepareDemo();var res=await request("/demo/issue","POST",{});if(!res.ok||!res.data||!res.data.credentialSubject||!res.data.proof)throw new Error("Выпуск не подтверждён API (HTTP "+res.status+").");await renderCredential(res.data);setResult("Документ получен. Следующий шаг — проверить подпись и актуальный статус.","ok");text("heroLiveStatus","Документ выпущен · проверка ожидается");}
+catch(err){setResult("Не удалось выдать удостоверение: "+err.message,"bad");apiStatus("Выпуск не подтверждён","bad");}
+finally{setBusy(false);steps();}
+}
+async function revokeCurrent(){
+if(!credential||busy||!verified||revoked)return;setBusy(true,"ОТОЗЫВАЕМ ДОКУМЕНТ");setResult("Отправляем запрос на отзыв в Bitstring Status List…");
+try{var res=await request("/demo/revoke","POST",{credential:credential});if(!res.ok||res.data.revoked!==true)throw new Error("Сервер не подтвердил отзыв (HTTP "+res.status+").");revoked=true;verified=false;setStatus("revoked");text("heroProof","Удостоверение отозвано");text("heroProofSub","Подпись сохранена · статус изменён");text("demoProofLabel","Отзыв сохранён · нужна повторная проверка");text("demoProofSub","Нажмите «Проверить», чтобы получить статус REVOKED");text("heroLiveStatus","Отзыв сохранён · требуется перепроверка");text("heroFrameState","REVOCATION REQUESTED");apiStatus("Отзыв записан на сервере","bad");setResult("Сервер подтвердил отзыв. Проверьте документ повторно: подпись останется прежней, но статус должен стать REVOKED.","ok");text("clockVerdict","RECHECK");text("clockCaption","Отзыв записан · повторите проверку статуса");steps();}
+catch(err){setResult("Не удалось отозвать удостоверение: "+err.message,"bad");}
+finally{setBusy(false);steps();}
+}
+function resetDemo(){
+if(busy)return;credential=null;verified=false;revoked=false;lastJson="";setStatus("idle");
+text("heroSkill","Практическая безопасность");text("heroDescription","Переносимое цифровое подтверждение навыка.");text("heroIssuer","SkillCred Demo Issuer");text("heroSubject","Демонстрационный профиль");text("heroDate","DEMO RECORD");text("heroHash","ЖДЁМ КРИПТОГРАФИЧЕСКУЮ ПОДПИСЬ");text("heroProof","Подпись ещё не проверена");text("heroProofSub","Начните с выдачи документа");text("heroLiveStatus","Демо сброшено · можно выдать новый документ");text("heroFrameState","READY FOR ISSUE");
+text("badgeTitle","Практическая безопасность");text("badgeDescription","Переносимое цифровое подтверждение навыка.");text("badgeIssuer","SkillCred Demo Issuer");text("badgeId","ОЖИДАЕМ ВЫПУСКА");text("demoProofLabel","Подпись ещё не проверена");text("demoProofSub","Результат появится после ответа API");text("timeElapsed","— ms");text("clockVerdict","WAITING");text("clockHttp","HTTP —");text("clockCaption","Ожидаем действие пользователя");text("fieldExplainer","Выберите поле JSON, чтобы понять его роль.");setResult("Шаги сброшены. Начните с выдачи нового тестового удостоверения.");renderJson(null,false);timeline(-1);steps();setBusy(false);
+}
+function downloadCredential(){
+if(!credential)return;var blob=new Blob([JSON.stringify(credential,null,2)],{type:"application/ld+json;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="skillcred-demo-credential.json";document.body.appendChild(a);a.click();a.remove();window.setTimeout(function(){URL.revokeObjectURL(url);},1000);addEvent("Экспорт документа","LOCAL DOWNLOAD","OK","JSON-LD",true);
+}
+function navSetup(){
+var toggle=$("menuToggle"),nav=$("primaryNav");if(!toggle||!nav)return;
+toggle.addEventListener("click",function(){var open=toggle.getAttribute("aria-expanded")!=="true";toggle.setAttribute("aria-expanded",open?"true":"false");toggle.setAttribute("aria-label",open?"Закрыть навигацию":"Открыть навигацию");nav.classList.toggle("is-open",open);});
+nav.querySelectorAll("a").forEach(function(a){a.addEventListener("click",function(){toggle.setAttribute("aria-expanded","false");toggle.setAttribute("aria-label","Открыть навигацию");nav.classList.remove("is-open");});});
+}
+function faqSetup(){
+document.querySelectorAll(".faq-question").forEach(function(button){button.addEventListener("click",function(){var item=button.closest(".faq-item"),open=button.getAttribute("aria-expanded")!=="true";document.querySelectorAll(".faq-question").forEach(function(other){other.setAttribute("aria-expanded","false");var parent=other.closest(".faq-item");if(parent)parent.classList.remove("is-open");});if(open&&item){button.setAttribute("aria-expanded","true");item.classList.add("is-open");}});});
+}
+function codeSetup(){
+document.querySelectorAll("[data-code-tab]").forEach(function(tab){tab.addEventListener("click",function(){var sample=samples[tab.dataset.codeTab];if(!sample)return;document.querySelectorAll("[data-code-tab]").forEach(function(other){other.classList.toggle("is-active",other===tab);other.setAttribute("aria-selected",other===tab?"true":"false");});text("codeFileName",sample.file);text("codeSample",sample.text);});});
+var copy=$("copyCode");if(copy)copy.addEventListener("click",async function(){var value=$("codeSample").textContent;try{await navigator.clipboard.writeText(value);copy.textContent="Скопировано ✓";}catch(_){var area=document.createElement("textarea");area.value=value;area.setAttribute("readonly","");area.style.position="fixed";area.style.opacity="0";document.body.appendChild(area);area.select();var ok=false;try{ok=document.execCommand("copy");}catch(__){}area.remove();copy.textContent=ok?"Скопировано ✓":"Выделите код вручную";}window.setTimeout(function(){copy.textContent="Копировать код ↗";},1500);});
+}
+function jsonSetup(){var pane=$("credentialJson");if(!pane)return;["pointerover","focusin","click"].forEach(function(type){pane.addEventListener(type,function(ev){var field=ev.target.closest&&ev.target.closest("[data-explain]");if(field)text("fieldExplainer",field.dataset.explain);});});}
+function revealSetup(){
+var heads=Array.from(document.querySelectorAll(".kinetic-heading"));
+heads.forEach(function(head){var walk=document.createTreeWalker(head,NodeFilter.SHOW_TEXT,{acceptNode:function(n){return n.nodeValue.trim()&&!n.parentElement.closest("svg,script,style,code")?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT;}}),nodes=[];while(walk.nextNode())nodes.push(walk.currentNode);nodes.forEach(function(node){var parts=node.nodeValue.match(/\s+|[^\s]+/g)||[],frag=document.createDocumentFragment(),index=0;parts.forEach(function(part){if(/^\s+$/.test(part))frag.appendChild(document.createTextNode(part));else{var span=document.createElement("span");span.className="heading-word w-"+(index%24);span.textContent=part;frag.appendChild(span);index++;}});node.parentNode.replaceChild(frag,node);});});
+var items=Array.from(document.querySelectorAll(".reveal,.kinetic-heading"));if(!("IntersectionObserver" in window)||reduced){items.forEach(function(item){item.classList.add("is-visible");});return;}
+var observer=new IntersectionObserver(function(entries){entries.forEach(function(entry){if(entry.isIntersecting){entry.target.classList.add("is-visible");observer.unobserve(entry.target);}});},{threshold:.12,rootMargin:"0px 0px -28px 0px"});items.forEach(function(item){observer.observe(item);});
+var heroHead=document.querySelector(".hero .kinetic-heading"),heroCopy=document.querySelector(".hero-copy.reveal");if(heroHead)heroHead.classList.add("is-visible");if(heroCopy)heroCopy.classList.add("is-visible");
+}
+function tiltSetup(){
+var card=$("heroCredential");if(!card||reduced||!window.matchMedia("(hover:hover) and (pointer:fine)").matches)return;
+card.addEventListener("pointermove",function(ev){var r=card.getBoundingClientRect(),x=(ev.clientX-r.left)/r.width,y=(ev.clientY-r.top)/r.height;card.style.transform="perspective(1100px) rotateX("+((.5-y)*4.4).toFixed(2)+"deg) rotateY("+((x-.5)*5).toFixed(2)+"deg) translateY(-2px)";});
+card.addEventListener("pointerleave",function(){card.style.transform="";});
+}
+async function loadHeroArtifact(){
+if(heroStarted||document.visibilityState==="hidden")return;heroStarted=true;var started=performance.now(),issued=null,visual=document.querySelector(".hero-visual"),card=$("heroCredential");
+if(visual)visual.dataset.state="pending";if(card)card.dataset.phase="signature";text("heroFrameState","CALCULATING SIGNATURE");text("heroLiveStatus","Получаем документ у демо-издателя…");
+try{
+await prepareDemo();var out=await request("/demo/issue","POST",{});if(!out.ok||!out.data||!out.data.credentialSubject||!out.data.proof)throw new Error("API не выдал проверяемое удостоверение.");issued=out.data;await renderCredential(issued);text("heroLiveStatus","Подпись вычисляется · запускаем проверку");
+await wait(Math.max(0,1250-(performance.now()-started)));var check=await request("/demo/verify","POST",{credential:issued});if(!check.ok)throw new Error("API не подтвердил подпись.");var d=check.data||{};if(d.signature_valid!==true||d.valid!==true||String(d.status).toLowerCase()!=="active")throw new Error("Сервер не подтвердил подпись и статус ACTIVE.");
+verified=true;revoked=false;setStatus("active");verificationResult("active",check);text("heroLiveStatus","Подпись валидна · статус active");text("heroLiveTime","API · "+check.duration+" ms");text("heroFrameState","SIGNATURE VALID");setResult("Живое демо подключено. Это синтетическое удостоверение с настоящим ответом API, не статическая картинка. Можно выдать другое или отозвать его.","ok");setBusy(false);steps();if(card){card.dataset.phase="valid";card.setAttribute("aria-busy","false");}
+}catch(err){
+if(issued){try{await request("/demo/revoke","POST",{credential:issued});}catch(_){}}
+if(visual)visual.dataset.state="pending";if(card){card.dataset.phase="document";card.setAttribute("aria-busy","false");}text("heroFrameState","API UNAVAILABLE");text("heroLiveStatus","API не ответил · используйте демо ниже");text("heroProof","Подпись не подтверждена");text("heroProofSub","Не показываем VALID без ответа сервера");setResult("Не удалось автоматически завершить демонстрацию: "+err.message+" Нажмите «Выдать удостоверение», чтобы повторить запрос.","bad");apiStatus("API недоступен или демо не готово","bad");addEvent("Автоматическое демо не завершено","HERO BOOTSTRAP",null,err.message,false);setBusy(false);steps();
+}
+}
+if($("issueBtn"))$("issueBtn").addEventListener("click",issueNew);
+if($("verifyBtn"))$("verifyBtn").addEventListener("click",function(){verifyCurrent().catch(function(){});});
+if($("revokeBtn"))$("revokeBtn").addEventListener("click",revokeCurrent);
+if($("downloadBtn"))$("downloadBtn").addEventListener("click",downloadCredential);
+if($("restartBtn"))$("restartBtn").addEventListener("click",resetDemo);
+navSetup();faqSetup();codeSetup();jsonSetup();revealSetup();tiltSetup();renderJson(null,false);
+if("IntersectionObserver" in window){var observed=new IntersectionObserver(function(entries){if(entries.some(function(e){return e.isIntersecting;})){loadHeroArtifact();observed.disconnect();}},{threshold:.08});var hero=document.querySelector(".hero-visual");if(hero)observed.observe(hero);}else window.setTimeout(loadHeroArtifact,reduced?0:350);
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"&&!heroStarted)loadHeroArtifact();});
+window.SkillCredDemo={getState:function(){return{issued:!!credential,verified:verified,revoked:revoked,events:events};}};
 })();
