@@ -64,6 +64,9 @@ for (const file of files) {
   for (const endpoint of ['/demo/issue', '/demo/verify', '/demo/revoke']) assert.ok(html.includes(endpoint), file + ': missing endpoint contract ' + endpoint)
   assert.ok(!html.includes('DEMO_ISSUER_TOKEN'), file + ': server secret name leaked into UI')
   assert.ok(html.includes('id="signatureClock"'), file + ': central signature timeline is missing')
+  assert.ok(html.includes('class="clock-track-svg"') && html.includes('id="clockProgress"'), file + ': signature progress must be drawn as SVG, not a layout div')
+  assert.ok(html.includes('id="issueStamp"') && html.includes('id="verifyStamp"') && html.includes('id="revokeStamp"'), file + ': every demo action needs an outcome stamp')
+  assert.ok((html.match(/data-request-step=/g) || []).length === 5 && (html.match(/data-request-link=/g) || []).length === 4, file + ': developer request path must sequence five stages and four links')
   assert.ok(html.includes('id="heroCredential"'), file + ': hero credential artifact is missing')
   assert.ok(html.includes('id="validStamp"'), file + ': live verification stamp is missing')
   assert.ok(html.includes('id="timeElapsed"'), file + ': measured verification latency field is missing')
@@ -112,6 +115,8 @@ for (const file of files) {
   if (file.startsWith('public/skillcred/')) {
      assert.ok(js.includes('function afterFirstPaint(callback)'), file + ': automatic API startup must use a first-paint scheduler')
      assert.ok(js.includes('window.requestAnimationFrame(function(){window.requestAnimationFrame(callback);})'), file + ': automatic API startup must settle two browser frames before network work')
+     assert.ok(js.includes('p.setAttribute("stroke-dashoffset",String(100-progress))'), file + ': timeline state must drive SVG progress without inline CSS width')
+     assert.ok(js.includes('stamp.textContent=labels[i]'), file + ': demo stamps must follow API state')
      assert.ok(!js.includes('window.setTimeout(loadHeroArtifact,1800)'), file + ': automatic API startup must not use a fixed 1.8s delay')
      assert.ok(js.includes('reduced?0:1850'), file + ': reduced-motion must skip the hero scene wait')
    }

@@ -76,7 +76,7 @@ busy=value;
 var live=$("demoLive");if(live){live.classList.toggle("is-online",!value&&!!credential);live.textContent="";var dot=document.createElement("span");dot.className="status-dot";live.append(dot,document.createTextNode(value?(label||"ВЫПОЛНЯЕМ ЗАПРОС"):revoked?"ОТОЗВАНО":verified?"ACTIVE / VALID":credential?"ДОКУМЕНТ ВЫДАН":"ОЖИДАЕМ"));}
 var card=$("demoCard");if(card)card.setAttribute("aria-busy",value?"true":"false");
 }
-function steps(){[$("issueBtn"),$("verifyBtn"),$("revokeBtn")].forEach(function(b,i){if(b)b.classList.toggle("is-complete",i===0?!!credential:i===1?!!verified:!!revoked);});}
+function steps(){var buttons=[$("issueBtn"),$("verifyBtn"),$("revokeBtn")];buttons.forEach(function(b,i){if(b)b.classList.toggle("is-complete",i===0?!!credential:i===1?!!verified:!!revoked);});var labels=[credential?"ISSUED":"WAIT",revoked?"REVOKED":verified?"VALID":credential?"PENDING":"WAIT",revoked?"REVOKED":verified?"READY":"WAIT"];buttons.forEach(function(b,i){var stamp=b&&b.querySelector(".action-stamp");if(!stamp)return;stamp.textContent=labels[i];stamp.className="action-stamp "+(revoked&&(i===1||i===2)?"stamp-revoked":i===1&&verified?"stamp-valid":i===0&&credential?"stamp-issued":"stamp-pending");});}
 function renderJson(item,flash){
 var target=$("credentialJson");
 var json=item?JSON.stringify(item,null,2):'{\n  "@context": "https://www.w3.org/ns/credentials/v2",\n  "type": ["VerifiableCredential", "OpenBadgeCredential"],\n  "proof": "ожидаем ответ API"\n}';
@@ -103,9 +103,9 @@ if(h.data.demo_ready!==true||r.data.ready!==true)throw new Error("Сервис �
 text("heroLiveTime","API v"+plain(h.data.version,"0.3.0"));return{health:h.data,issuer:i.data};
 }
 function timeline(index){
-var nodes=Array.from(document.querySelectorAll("[data-clock-step]")),p=$("clockProgress");
+var nodes=Array.from(document.querySelectorAll("[data-clock-step]")),p=$("clockProgress"),progress=Math.max(0,Math.min(100,(index+1)/nodes.length*100));
 nodes.forEach(function(node,i){node.classList.toggle("is-active",i===index);node.classList.toggle("is-done",i<index||index===nodes.length);});
-if(p)p.style.width=Math.max(0,Math.min(100,(index+1)/nodes.length*100))+"%";
+if(p)p.setAttribute("stroke-dashoffset",String(100-progress));
 var track=$("clockTrack");if(track)track.setAttribute("aria-label",index>=nodes.length?"Четыре этапа проверки завершены":"Этап "+(index+1)+" из "+nodes.length);
 }
 function finishClock(state,ms,http){
