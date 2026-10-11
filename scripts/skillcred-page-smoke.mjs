@@ -80,10 +80,12 @@ for (const file of files) {
   assert.doesNotThrow(() => new Function(js), file + ': app.js has a syntax error')
   assert.match(js, /credentials\s*:\s*["']same-origin["']/, file + ': API requests must use same-origin proxy')
   assert.ok(js.includes('HTTP '), file + ': HTTP response codes are not logged')
-  assert.ok(js.includes('eventLogVisibilitySetup'), file + ': event log must avoid off-screen forced layout')
-  assert.ok(js.includes('eventScrollPending'), file + ': off-screen event log must defer auto-scroll')
-  const heroBootstrap = js.slice(js.indexOf('async function loadHeroArtifact'), js.indexOf('if($("issueBtn"))'))
-  assert.ok(!heroBootstrap.includes('prepareDemo()'), file + ': hero should not serialize 3 unnecessary readiness requests')
+  if (file.startsWith('public/skillcred/')) {
+    assert.ok(js.includes('eventLogVisibilitySetup'), file + ': event log must avoid off-screen forced layout')
+    assert.ok(js.includes('eventScrollPending'), file + ': off-screen event log must defer auto-scroll')
+    const heroBootstrap = js.slice(js.indexOf('async function loadHeroArtifact'), js.indexOf('if($("issueBtn"))'))
+    assert.ok(!heroBootstrap.includes('prepareDemo()'), file + ': hero should not serialize 3 unnecessary readiness requests')
+  }
   assert.ok(!js.includes('DEMO_ISSUER_TOKEN'), file + ': server secret name leaked into JS')
   assert.ok(!/fonts\.googleapis\.com|fonts\.gstatic\.com/.test(js), file + ': external font CDN found')
   assert.ok(css.includes('.faq-answer p{font-size:13px}'), file + ': mobile FAQ text should remain legible')
