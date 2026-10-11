@@ -19,6 +19,7 @@ on:
       - "scripts/frontend-archive-preflight.mjs"
       - "scripts/production-route-matrix.mjs"
       - "scripts/activate-frontend-remote.sh"
+      - "scripts/skillcred-page-smoke.mjs"
       - ".github/workflows/deploy-frontend.yml"
   workflow_dispatch:
 
