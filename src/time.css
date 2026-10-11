@@ -73,7 +73,7 @@
 .tg-map-viewport::after{position:absolute;inset:0;z-index:1;pointer-events:none;content:"";background:radial-gradient(ellipse at 50% 44%,transparent 35%,rgba(3,7,10,.22) 100%),linear-gradient(120deg,rgba(126,198,178,.035),transparent 36%,rgba(217,194,139,.035));mix-blend-mode:screen}
 .tg-map-viewport[data-city-status="COLLAPSED"]::after{background:radial-gradient(ellipse at 50% 44%,rgba(231,96,86,.04),transparent 38%),linear-gradient(120deg,rgba(25,4,6,.04),rgba(3,7,10,.38))}
 .tg-map-world{position:relative;z-index:0;will-change:transform;animation:tg-map-arrive .65s cubic-bezier(.2,.8,.2,1) both}
-@keyframes tg-map-arrive{from{opacity:.72;filter:brightness(.78);transform:scale(.985)}to{opacity:1;filter:brightness(1)}}
+@keyframes tg-map-arrive{from{opacity:.72;filter:brightness(.78)}to{opacity:1;filter:brightness(1)}}
 .tg-city-map{filter:drop-shadow(0 15px 32px rgba(0,0,0,.14))}
 .tg-city-stars circle{animation:tg-star-pulse 4.8s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:center}
 .tg-city-stars circle:nth-child(4n){animation-delay:-2.2s}

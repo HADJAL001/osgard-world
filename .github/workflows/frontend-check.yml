@@ -6,6 +6,8 @@ on:
     paths:
       - "src/**"
       - "scripts/skillcred-page-smoke.mjs"
+      - "scripts/time-prototype-smoke.mjs"
+      - "docs/02_IMPERIUM_OF_TIME_GAME_DESIGN.md"
       - "public/skillcred/**"
       - "package.json"
       - "package-lock.json"
@@ -42,5 +44,7 @@ jobs:
         run: npm run build
       - name: Verify live SkillCred page wiring
         run: npm run qa:skillcred
+      - name: Verify Imperium of Time game systems and visual diagnostics
+        run: npm run qa:time-ui
       - name: Validate static archive and HTML
         run: npm run preflight:frontend

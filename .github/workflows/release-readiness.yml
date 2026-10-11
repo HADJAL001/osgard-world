@@ -21,6 +21,8 @@ jobs:
         run: npm run check
       - name: Build and archive preflight
         run: npm run build && npm run preflight:frontend
+      - name: Verify Imperium of Time gameplay and diagnostics
+        run: npm run qa:time-ui
       - name: Verify production routes
         env:
           OSGARD_BASE_URL: https://osgard.world

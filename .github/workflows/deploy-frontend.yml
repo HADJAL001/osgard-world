@@ -20,6 +20,8 @@ on:
       - "scripts/production-route-matrix.mjs"
       - "scripts/activate-frontend-remote.sh"
       - "scripts/skillcred-page-smoke.mjs"
+      - "scripts/time-prototype-smoke.mjs"
+      - "docs/02_IMPERIUM_OF_TIME_GAME_DESIGN.md"
       - ".github/workflows/deploy-frontend.yml"
   workflow_dispatch:
 
@@ -55,6 +57,8 @@ jobs:
           mv /tmp/skillcred-styles.min.css dist/skillcred/styles.css
       - run: npm run preflight:frontend
       - run: npm run qa:skillcred
+      - name: Verify Imperium of Time visuals and real diagnostics
+        run: npm run qa:time-ui
       - name: Check deployment shell syntax
         run: bash -n scripts/activate-frontend-remote.sh
       - name: Package HTML assets and matching Nginx config
