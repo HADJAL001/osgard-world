@@ -28,7 +28,7 @@
 
 ## Указы Совета
 
-Один раз за такт игрок может применить один особый указ до завершения времени. Указ списывает средства немедленно, меняет игровые показатели и сохраняется в летописи. Доступные решения: стабилизировать энергосеть (только если энергия ниже 92%), городской пакет помощи или пакт с Сенатом. Повторный указ в том же такте, действие при кризисе и действие при недостатке казны блокируются игровой логикой, а не только интерфейсом.
+Один раз за такт игрок может применить один особый указ до завершения времени. Указ списывает средства немедленно, меняет игровые показатели и сохраняется в летописи. Доступные решения: «Стабилизировать энергосеть» (только если энергия ниже 92%), городской пакет помощи или пакт с Сенатом. Повторный указ в том же такте, действие при кризисе и действие при недостатке казны блокируются игровой логикой, а не только интерфейсом.
 
 ## Управление и интерфейс
 
@@ -62,11 +62,11 @@
 Перед публикацией: `npm run check`, `npm run build`, `npm run qa:core` и `npm run qa:release`.
 
 
-## Runtime quality and diagnostic export
+## Качество рендеринга и диагностика
 
-- FPS, average frame interval, P95 frame interval and slow frames are derived from real foreground `requestAnimationFrame` timestamps; hidden-tab intervals are excluded.
-- Browser input handling delay is estimated from the event timestamp to the first capture handler. It is **not** a network ping or an end-to-end display latency.
-- Viewport, device-pixel ratio and reported logical CPU count are read from browser APIs. JavaScript heap is shown only where `performance.memory` is available; otherwise it is unavailable, not estimated.
-- The performance panel exports a local JSON report with the current game state and measured runtime metrics. No browser capability values are added to remote telemetry.
-- Visual effects automatically move to a balanced profile after three consecutive one-second windows below 38 FPS. Cinematic decoration returns only after five windows at or above 52 FPS. Economic rules, turn resolution and game state are identical in both profiles.
-- Treasury and allied-faction pressure alter atlas lighting and traffic presentation using the current simulation state, not random presentation-only values.
+- FPS, средний интервал кадра, 95-й процентиль интервала кадра и количество медленных кадров считаются по реальным временным меткам `requestAnimationFrame` на переднем плане. Интервалы фоновой вкладки исключаются.
+- Задержка обработки ввода оценивается по времени события браузера до первого обработчика. Это **не** сетевой ping и не измерение полного времени до появления пикселя на экране.
+- Размер рабочей области, коэффициент плотности пикселей (DPR) и сообщённое браузером число логических потоков берутся из браузерных API. Память JavaScript показывается только там, где доступен `performance.memory`; иначе значение не подменяется оценкой.
+- Панель производительности экспортирует локальный JSON-отчёт с состоянием партии и измерениями браузера. Значения возможностей устройства не добавляются в удалённую игровую аналитику.
+- После трёх подряд секундных окон с FPS ниже 38 декоративные эффекты переходят в сбалансированный режим. Возврат к кинематографическому режиму происходит после пяти окон с FPS не ниже 52. Экономические правила и ход симуляции в обоих режимах идентичны.
+- Освещение атласа и движение городских огней реагируют на текущую казну и поддержку союзных фракций, а не на случайно подобранные декоративные значения.
