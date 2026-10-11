@@ -1,4 +1,4 @@
-# 04 / NULL//SHIFT — Cinematic Raid Update
+# 04 / NULL//SHIFT — Cinematic Raid Update / Release 0.2
 
 ## Product promise
 

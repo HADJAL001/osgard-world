@@ -2,28 +2,36 @@ name: OSGARD release readiness
 
 on:
   workflow_dispatch:
-  push:
-    branches: [master, main]
+  workflow_run:
+    workflows: ["OSGARD frontend deploy"]
+    types: [completed]
+    branches: [master]
   pull_request:
     branches: [main]
 
 jobs:
   readiness:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 20
       - run: npm ci
       - name: Typecheck
         run: npm run check
+      - name: Validate NULL SHIFT standalone game
+        run: npm run qa:null-shift
       - name: Build and archive preflight
         run: npm run build && npm run preflight:frontend
       - name: Verify Imperium of Time gameplay and diagnostics
         run: npm run qa:time-ui
-      - name: Verify production routes
+      - name: Verify production routes after deploy or manual request
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_run'
         env:
           OSGARD_BASE_URL: https://osgard.world
         run: npm run qa:production-routes
