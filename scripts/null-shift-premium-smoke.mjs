@@ -40,6 +40,7 @@ assert.ok(css.includes('@media(max-width:380px)'), 'Narrow 320px layout rules mi
 assert.ok(css.includes('@media(prefers-reduced-motion:reduce)'), 'Reduced-motion support missing')
 assert.ok(css.includes('.frame:fullscreen'), 'Fullscreen presentation rules missing')
 assert.ok(css.includes('.diag-panel'), 'Diagnostics presentation missing')
+assert.ok(!js.includes("if(premiumAimHeld&&S.p)"), 'Manual aim stick must not be overwritten by auto-aim')
 
 new Function(js)
 console.log('PASS NULL//SHIFT: standalone assets, core mechanics, touch input, diagnostics, motion preference and JS syntax')
