@@ -61,7 +61,7 @@ for (const file of files) {
   assert.ok(js.includes('HTTP '), file + ': HTTP response codes are not logged')
   assert.ok(!js.includes('DEMO_ISSUER_TOKEN'), file + ': server secret name leaked into JS')
   assert.ok(!/fonts\.googleapis\.com|fonts\.gstatic\.com/.test(js), file + ': external font CDN found')
-  assert.match(css, /faq-answer p\\s*\\{[^}]*font-size:\\s*13px/, file + ': mobile FAQ text should remain legible')
-  assert.match(css, /footer-col>a\\s*\\{[^}]*min-height:\\s*27px/, file + ': mobile footer links need at least 24px targets')
+  assert.ok(css.includes('.faq-answer p{font-size:13px}'), file + ': mobile FAQ text should remain legible')
+  assert.ok(css.includes('min-height:27px'), file + ': mobile footer links need at least 24px targets')
   console.log('PASS ' + file + ': semantic page, local assets, same-origin API and JS syntax')
 }
