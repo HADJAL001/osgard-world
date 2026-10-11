@@ -1,7 +1,7 @@
 (function () {
 "use strict";
 var API_BASE=(document.querySelector('meta[name="api-base"]')||{}).content||"/skillcred-api";
-var $=function(id){return document.getElementById(id);},credential=null,verified=false,revoked=false,busy=false,events=0,lastJson="",heroStarted=false,inspectorReady=false,eventLogVisible=false,eventScrollPending=false;
+var $=function(id){return document.getElementById(id);},credential=null,verified=false,revoked=false,busy=false,events=0,lastJson="",heroStarted=false,inspectorReady=false,eventLogVisible=false,eventScrollPending=false,eventScrollScheduled=false,pendingEvents=[];
 var reduced=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 var samples={
 curl:{file:"terminal / issue.sh",text:"curl -sS -X POST \\\n  https://osgard.world/skillcred-api/demo/issue \\\n  -H 'Accept: application/json' \\\n  -H 'Content-Type: application/json' \\\n  -d '{}'"},
@@ -31,12 +31,25 @@ function issuerOf(item){var v=item&&item.issuer;if(typeof v==="string")return v;
 function subjectOf(item){var s=item&&item.credentialSubject;if(!s||typeof s!=="object")return"Демонстрационный профиль";return s.name||(s.achievement&&s.achievement.name)||s.description||s.id||"Демонстрационный профиль";}
 async function hash(value){try{if(!crypto||!crypto.subtle)return"ОТПЕЧАТОК В ПОДПИСИ";var digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value));return Array.from(new Uint8Array(digest)).map(function(b){return b.toString(16).padStart(2,"0");}).join("").slice(0,24);}catch(_){return"ОТПЕЧАТОК В ПОДПИСИ";}}
 function time(){var d=new Date();return d.toLocaleTimeString("ru-RU",{hour12:false})+"."+String(d.getMilliseconds()).padStart(3,"0");}
-function addEvent(name,path,code,detail,ok){
-var log=$("eventLog");if(!log)return;var empty=log.querySelector(".event-empty");if(empty)empty.remove();events++;
+function appendEvent(record){
+var log=$("eventLog");if(!log)return;
+var empty=log.querySelector(".event-empty");if(empty)empty.remove();
 var li=document.createElement("li"),t=document.createElement("span"),body=document.createElement("span"),title=document.createElement("strong"),small=document.createElement("small"),status=document.createElement("span");
-t.className="event-time";t.textContent=time();body.className="event-details";title.textContent=name;small.textContent=path+(detail?" · "+detail:"");body.append(title,small);
-status.className="event-code"+(ok===true?" is-ok":ok===false?" is-bad":"");status.textContent=code==null?"HTTP —":"HTTP "+code;li.append(t,body,status);log.append(li);
-while(log.children.length>18)log.firstElementChild.remove();if(eventLogVisible){log.scrollTop=log.scrollHeight;eventScrollPending=false;}else{eventScrollPending=true;}
+t.className="event-time";t.textContent=record.at;body.className="event-details";title.textContent=record.name;small.textContent=record.path+(record.detail?" · "+record.detail:"");body.append(title,small);
+status.className="event-code"+(record.ok===true?" is-ok":record.ok===false?" is-bad":"");status.textContent=record.code==null?"HTTP —":"HTTP "+record.code;li.append(t,body,status);log.append(li);
+while(log.children.length>18)log.firstElementChild.remove();
+if(eventLogVisible){eventScrollPending=true;if(!eventScrollScheduled){eventScrollScheduled=true;window.requestAnimationFrame(function(){eventScrollScheduled=false;if(eventLogVisible){log.scrollTop=log.scrollHeight;eventScrollPending=false;}});}}else{eventScrollPending=true;}
+}
+function addEvent(name,path,code,detail,ok){
+events++;
+var record={name:name,path:path,code:code,detail:detail,ok:ok,at:time()};
+if(!eventLogVisible){
+if(pendingEvents.length>=18)pendingEvents.shift();
+pendingEvents.push(record);
+eventScrollPending=true;
+return;
+}
+appendEvent(record);
 }
 async function request(path,method,body){
 var opts={method:method||"GET",headers:{Accept:"application/json"},cache:"no-store",credentials:"same-origin"};
@@ -171,8 +184,20 @@ observer.observe(section);
 
 function eventLogVisibilitySetup(){
 var log=$("eventLog");if(!log)return;
-if(!("IntersectionObserver" in window)){eventLogVisible=true;return;}
-var observer=new IntersectionObserver(function(entries){entries.forEach(function(entry){eventLogVisible=entry.isIntersecting;if(eventLogVisible&&eventScrollPending){window.requestAnimationFrame(function(){if(eventLogVisible){log.scrollTop=log.scrollHeight;eventScrollPending=false;}});}});},{threshold:.01});
+if(!("IntersectionObserver" in window)){eventLogVisible=true;if(pendingEvents.length){pendingEvents.splice(0).forEach(appendEvent);}return;}
+var observer=new IntersectionObserver(function(entries){
+entries.forEach(function(entry){
+eventLogVisible=entry.isIntersecting;
+if(eventLogVisible&&pendingEvents.length){
+var batch=pendingEvents.splice(0);
+batch.forEach(appendEvent);
+}
+if(eventLogVisible&&eventScrollPending&&!eventScrollScheduled){
+eventScrollScheduled=true;
+window.requestAnimationFrame(function(){eventScrollScheduled=false;if(eventLogVisible){log.scrollTop=log.scrollHeight;eventScrollPending=false;}});
+}
+});
+},{threshold:.01});
 observer.observe(log);
 }
 function wrapHeadingWords(head){
@@ -216,7 +241,7 @@ if($("verifyBtn"))$("verifyBtn").addEventListener("click",function(){verifyCurre
 if($("revokeBtn"))$("revokeBtn").addEventListener("click",revokeCurrent);
 if($("downloadBtn"))$("downloadBtn").addEventListener("click",downloadCredential);
 if($("restartBtn"))$("restartBtn").addEventListener("click",resetDemo);
-navSetup();faqSetup();codeSetup();jsonSetup();revealSetup();tiltSetup();renderJson(null,false);inspectorActivationSetup();eventLogVisibilitySetup();
+navSetup();faqSetup();codeSetup();jsonSetup();revealSetup();tiltSetup();inspectorActivationSetup();eventLogVisibilitySetup();
 if("IntersectionObserver" in window){var observed=new IntersectionObserver(function(entries){if(entries.some(function(e){return e.isIntersecting;})){loadHeroArtifact();observed.disconnect();}},{threshold:.08});var hero=document.querySelector(".hero-visual");if(hero)observed.observe(hero);}else window.setTimeout(loadHeroArtifact,reduced?0:350);
 document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"&&!heroStarted)loadHeroArtifact();});
 window.SkillCredDemo={getState:function(){return{issued:!!credential,verified:verified,revoked:revoked,events:events};}};
