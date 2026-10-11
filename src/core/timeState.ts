@@ -123,7 +123,8 @@ export function resolveTimeTurn(state: TimeState, plan: TurnPlan): TimeState {
   const status: CityStatus = collapse ? 'COLLAPSED' : elected ? 'ELECTED' : 'ACTIVE'
   const consequence = plan.taxRate > state.taxRate ? 'Higher tax funds the treasury but reduces commons approval.' :
     plan.taxRate < state.taxRate ? 'Lower tax protects approval but drains the treasury.' : 'A steady tax preserves the current political balance.'
-  const energyText = forecast.energyDelta < 0 ? 'Energy -' + Math.abs(forecast.energyDelta) + '.' : 'Energy +' + forecast.energyDelta + '.'
+  const actualEnergyDelta = energy - state.energy
+  const energyText = actualEnergyDelta < 0 ? 'Energy ' + actualEnergyDelta + '.' : 'Energy +' + actualEnergyDelta + '.'
   const policyName = POLICIES[plan.policy].name
   const entry: ChronicleEntry = {
     id: 'turn-' + tick + '-' + incident.seed, tick, year, category: 'POLITICS', title: 'Такт ' + tick + '. ' + policyName,
