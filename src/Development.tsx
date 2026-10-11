@@ -12,6 +12,7 @@ const projects = [
   ['NEW WORLD', 'osgardnewworld.com', 'App platform', 'Пространство от идеи до цифрового продукта.', '2 мин до MVP'],
   ['O2 SYSTEM', 'o2system.art', 'Accounting', 'Учёт, созданный для точности.', '0.0% ошибок'],
   ['VANGUARD STUDIO', 'osgardvanguard.studio', 'AI studio', 'Инструменты для создания рекламного видео.', '4K экспорт'],
+  ['SkillCred', 'osgard.world/skillcred/', 'Trust infrastructure', 'Переносимые цифровые подтверждения навыков с проверяемой подписью.', 'Ed25519 · Apache-2.0'],
   ['GG EMPIRE', 'gold-glamour.online', 'Private commerce', 'Премиальная цифровая витрина и личный сервис.', 'Private service'],
 ]
 
