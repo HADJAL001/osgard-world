@@ -88,7 +88,7 @@ lastJson=json;
 if(flash)window.setTimeout(function(){target.querySelectorAll(".is-changed").forEach(function(el){el.classList.remove("is-changed");});},1400);
 }
 async function renderCredential(item){
-credential=item;verified=false;revoked=false;
+credential=item;verified=false;revoked=false;var heroCard=$("heroCredential");if(heroCard)heroCard.dataset.phase="issued";
 var s=item.credentialSubject||{},a=s.achievement||{},title=plain(a.name||s.name||s.title,"Подтверждённый навык"),description=plain(a.description||s.description,"Переносимое цифровое подтверждение навыка."),issuer=issuerOf(item);
 text("heroSkill",title);text("heroDescription",description);text("heroIssuer",issuer);text("heroSubject",subjectOf(item));text("heroDate",dateLabel(item.issuanceDate||item.validFrom||item.issued));
 text("badgeTitle",title);text("badgeDescription",description);text("badgeIssuer",issuer);text("badgeId",item.id||"ID НЕ УКАЗАН");
@@ -242,7 +242,7 @@ if($("revokeBtn"))$("revokeBtn").addEventListener("click",revokeCurrent);
 if($("downloadBtn"))$("downloadBtn").addEventListener("click",downloadCredential);
 if($("restartBtn"))$("restartBtn").addEventListener("click",resetDemo);
 navSetup();faqSetup();codeSetup();jsonSetup();revealSetup();tiltSetup();inspectorActivationSetup();eventLogVisibilitySetup();
-if("IntersectionObserver" in window){var observed=new IntersectionObserver(function(entries){if(entries.some(function(e){return e.isIntersecting;})){loadHeroArtifact();observed.disconnect();}},{threshold:.08});var hero=document.querySelector(".hero-visual");if(hero)observed.observe(hero);}else window.setTimeout(loadHeroArtifact,reduced?0:350);
+if("IntersectionObserver" in window){var observed=new IntersectionObserver(function(entries){if(entries.some(function(e){return e.isIntersecting;})){observed.disconnect();window.setTimeout(loadHeroArtifact,1800);}},{threshold:.08});var hero=document.querySelector(".hero-visual");if(hero)observed.observe(hero);}else window.setTimeout(function(){window.setTimeout(loadHeroArtifact,1800);},0);
 document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"&&!heroStarted)loadHeroArtifact();});
 window.SkillCredDemo={getState:function(){return{issued:!!credential,verified:verified,revoked:revoked,events:events};}};
 })();
