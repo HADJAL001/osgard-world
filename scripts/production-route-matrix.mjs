@@ -1,5 +1,5 @@
 const base = process.env.OSGARD_BASE_URL || 'https://osgard.world'
-const routes = ['/','/entertainment','/community','/stream','/archive','/profile','/r/1842','/games/time','/play/swarm','/play/null-shift','/play/inherit','/play/remix','/media','/business','/create','/mobility']
+const routes = ['/','/skillcred/','/entertainment','/community','/stream','/archive','/profile','/r/1842','/games/time','/play/swarm','/play/null-shift','/play/inherit','/play/remix','/media','/business','/create','/mobility']
 const agents = { desktop: 'OSGARD-Route-Matrix/1.0 Desktop', mobile: 'OSGARD-Route-Matrix/1.0 Mobile' }
 const results = []
 for (const [device, userAgent] of Object.entries(agents)) for (const route of routes) {
@@ -7,7 +7,18 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
   try {
     const response = await fetch(new URL(route, base), { headers: { 'user-agent': userAgent } })
     const text = await response.text()
-    const shellOk = route === '/entertainment' ? text.includes('<title>OSGARD Entertainment</title>') : text.includes('<div id="root">')
+    const shellOk = route === '/skillcred/'
+      ? text.includes('id="issueBtn"') &&
+        text.includes('id="verifyBtn"') &&
+        text.includes('id="revokeBtn"') &&
+        text.includes('id="downloadBtn"') &&
+        text.includes('https://skillcred-pilot-api.onrender.com') &&
+        text.includes('/demo/issue') &&
+        text.includes('/demo/verify') &&
+        text.includes('/demo/revoke')
+      : route === '/entertainment'
+        ? text.includes('<title>OSGARD Entertainment</title>')
+        : text.includes('<div id="root">')
     const gameHrefs = route === '/entertainment' ? [...new Set([...text.matchAll(/href=["'](\/games\/[^"']+)["']/g)].map(match => match[1]))] : []
     const gameLinkChecks = await Promise.all(gameHrefs.map(async path => {
       for (let attempt = 1; attempt <= 3; attempt++) {
