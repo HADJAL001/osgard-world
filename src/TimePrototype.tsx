@@ -11,7 +11,7 @@ import { recordOsgardEvent } from './core/eventQueue'
 import { completePlayerSession, startPlayerSession } from './core/playerApi'
 
 type Tab = 'council' | 'construction' | 'chronicle'
-type Diagnostics = { fps: number; frameMs: number; frameP95Ms: number; slowFrames: number; longTasks: number; longTaskSupported: boolean; tickMs: number; actions: number; save: 'saved' | 'error'; saveMs: number; saveBytes: number }
+type Diagnostics = { fps: number; frameMs: number; frameP95Ms: number; slowFrames: number; fpsHistory: number[]; longTasks: number; longTaskSupported: boolean; tickMs: number; actions: number; save: 'saved' | 'error'; saveMs: number; saveBytes: number }
 
 const SAVE_KEY = 'osgard.time.empire.save.v1'
 const GUIDE_DISMISSED_KEY = 'osgard.time.empire.guide.dismissed.v1'
@@ -64,7 +64,7 @@ export function TimePrototype() {
   const [districtVisited, setDistrictVisited] = useState(false)
   const [planTouched, setPlanTouched] = useState(false)
   const [announcement, setAnnouncement] = useState('Совет ожидает вашего решения.')
-  const [diagnostics, setDiagnostics] = useState<Diagnostics>({ fps: 0, frameMs: 0, frameP95Ms: 0, slowFrames: 0, longTasks: 0, longTaskSupported: false, tickMs: 0, actions: 0, save: 'saved', saveMs: 0, saveBytes: 0 })
+  const [diagnostics, setDiagnostics] = useState<Diagnostics>({ fps: 0, frameMs: 0, frameP95Ms: 0, slowFrames: 0, fpsHistory: [], longTasks: 0, longTaskSupported: false, tickMs: 0, actions: 0, save: 'saved', saveMs: 0, saveBytes: 0 })
   const session = useRef<string | null>(null)
   const completed = useRef(false)
   const stateRef = useRef(state)
@@ -81,6 +81,16 @@ export function TimePrototype() {
   const missionProgress = Math.min(100, Math.round((state.tick / 8) * 100))
   const activeBuildings = state.districts.filter((item) => item.building).length
   const latestEntries = [...state.archive].reverse().slice(0, 5)
+  const fpsHistoryPoints = diagnostics.fpsHistory.map((fps, index, values) => {
+    const x = values.length === 1 ? 360 : index / (values.length - 1) * 360
+    const y = 43 - (Math.min(120, Math.max(0, fps)) / 120) * 34
+    return x.toFixed(1) + ',' + y.toFixed(1)
+  }).join(' ')
+  const fpsHistoryLatest = diagnostics.fpsHistory[diagnostics.fpsHistory.length - 1] ?? diagnostics.fps
+  const fpsHistoryAverage = diagnostics.fpsHistory.length
+    ? Math.round(diagnostics.fpsHistory.reduce((sum, value) => sum + value, 0) / diagnostics.fpsHistory.length)
+    : 0
+  const fpsHistoryLastY = 43 - (Math.min(120, Math.max(0, fpsHistoryLatest)) / 120) * 34
 
   useEffect(() => {
     let alive = true
@@ -142,12 +152,17 @@ export function TimePrototype() {
         const sortedSamples = [...meter.samples].sort((a, b) => a - b)
         const p95Index = Math.min(sortedSamples.length - 1, Math.max(0, Math.ceil(sortedSamples.length * 0.95) - 1))
         const frameP95Ms = sortedSamples.length ? sortedSamples[p95Index] : 0
-        setDiagnostics((old) => ({ ...old, fps, frameMs: Number(frameMs.toFixed(1)), frameP95Ms: Number(frameP95Ms.toFixed(1)), slowFrames: meter.slowFrames }))
+        setDiagnostics((old) => ({ ...old, fps, frameMs: Number(frameMs.toFixed(1)), frameP95Ms: Number(frameP95Ms.toFixed(1)), slowFrames: meter.slowFrames, fpsHistory: [...old.fpsHistory.slice(-29), fps] }))
         meter.frames = 0; meter.elapsed = 0; meter.samples = []; meter.slowFrames = 0; meter.start = now
       }
       frame = requestAnimationFrame(sample)
     }
-    const onVisibility = () => { cancelAnimationFrame(frame); resetWindow(); if (document.visibilityState === 'visible' && alive) frame = requestAnimationFrame(sample) }
+    const onVisibility = () => {
+      cancelAnimationFrame(frame)
+      resetWindow()
+      setDiagnostics((old) => ({ ...old, fps: 0, frameMs: 0, frameP95Ms: 0, slowFrames: 0, fpsHistory: [] }))
+      if (document.visibilityState === 'visible' && alive) frame = requestAnimationFrame(sample)
+    }
     document.addEventListener('visibilitychange', onVisibility)
     if (typeof PerformanceObserver !== 'undefined') {
       try {
@@ -310,6 +325,19 @@ export function TimePrototype() {
           <Diagnostic label="Размер сохранения" value={diagnostics.saveBytes ? (diagnostics.saveBytes / 1024).toFixed(1) + ' КБ' : '…'} description="Фактический размер JSON в UTF-8" />
           <Diagnostic label="Действия" value={String(diagnostics.actions)} description="Успешные локальные команды" />
         </div>
+        <div className="tg-diagnostic-trend">
+          <div className="tg-diagnostic-trend-head">
+            <div><span>FRAME RATE / FOREGROUND</span><small>Последние 30 секундных замеров · фоновые паузы исключены</small></div>
+            <div className="tg-diagnostic-trend-stat"><strong>{fpsHistoryAverage ? fpsHistoryAverage + ' FPS' : '—'}</strong><span>СРЕДНЕЕ</span></div>
+          </div>
+          <svg viewBox="0 0 360 48" preserveAspectRatio="none" role="img" aria-label={diagnostics.fpsHistory.length ? 'Измеренный FPS за последние ' + diagnostics.fpsHistory.length + ' секунд активной вкладки. Последнее значение: ' + fpsHistoryLatest + ' FPS.' : 'График появится после начала измерений'}>
+            <path className="tg-diagnostic-gridline" d="M0 9H360 M0 26H360 M0 43H360" />
+            <path className="tg-diagnostic-target" d="M0 26H360" />
+            {diagnostics.fpsHistory.length > 1 && <polyline className="tg-diagnostic-line" points={fpsHistoryPoints} />}
+            {diagnostics.fpsHistory.length > 0 && <circle className="tg-diagnostic-last-point" cx="360" cy={fpsHistoryLastY} r="3" />}
+          </svg>
+          <div className="tg-diagnostic-trend-foot"><span>0 FPS</span><span>ОРИЕНТИР: 60 FPS / 16,7 МС</span><span>120 FPS</span><span>{diagnostics.fpsHistory.length}/30</span></div>
+        </div>
       </section>}
 
       <div className="tg-play-grid">
@@ -326,7 +354,6 @@ export function TimePrototype() {
           <div className="tg-map-viewport" data-city-status={state.status} data-city-tick={state.tick} data-city-energy={state.energy < 25 ? 'critical' : state.energy < 55 ? 'strained' : 'stable'} data-city-stability={state.stability < 25 ? 'critical' : state.stability < 55 ? 'strained' : 'stable'}>
             <div
               className="tg-map-world"
-              key={state.tick + ':' + state.districts.map((item) => item.buildingLevel).join('-')}
               style={{ transform: 'scale(' + mapZoom + ')' }}
             >
               <svg className="tg-city-map" viewBox="0 0 840 520" role="img" aria-label="Схематическая карта четырёх районов имперского города">
@@ -425,9 +452,16 @@ export function TimePrototype() {
                   <text x="0" y="43" textAnchor="middle" fill="#e4d4aa" fontSize="8" fontFamily="monospace" letterSpacing="1.5">IMPERIUM</text>
                 </g>
                 <path className="tg-signal-path" d="M420 265 Q370 205 286 209 T542 181 T594 404" fill="none" stroke="#e2c884" strokeWidth="1" strokeDasharray="4 9" opacity=".56" />
+                <g className="tg-city-traffic" aria-hidden="true">
+                  <circle r="2.5" fill="#f0dfad"><animateMotion dur="14s" repeatCount="indefinite" path="M82 196 C178 140 250 226 340 210 S500 168 642 246" /></circle>
+                  <circle r="2" fill="#8ff0d0"><animateMotion dur="19s" begin="-7s" repeatCount="indefinite" path="M118 369 C204 302 293 368 388 328 S553 280 710 341" /></circle>
+                  <circle r="1.8" fill="#f0dfad"><animateMotion dur="23s" begin="-13s" repeatCount="indefinite" path="M224 89 C282 165 333 186 420 265 S562 355 657 435" /></circle>
+                  <circle r="1.6" fill="#8ff0d0"><animateMotion dur="17s" begin="-4s" repeatCount="indefinite" path="M739 157 C639 190 570 216 521 253 S390 331 284 421" /></circle>
+                </g>
                 <g className="tg-map-compass" transform="translate(783 61)"><circle r="22" fill="#10191f" stroke="#7c938a" strokeOpacity=".45" /><path d="M0 -16 6 4 0 0-6 4Z" fill="#d7c28f" /><text x="0" y="34" fill="#9aaca6" fontSize="8" textAnchor="middle">N</text></g>
               </svg>
             </div>
+            <div className="tg-map-impact" key={state.tick + ':' + state.districts.map((item) => item.buildingLevel).join('-')} aria-hidden="true"><span /></div>
             <div className="tg-map-key">
               <span><i className="key-selected" /> ВЫБРАННЫЙ РАЙОН</span>
               <span><i className="key-built" /> ПОСТРОЙКА</span>
@@ -515,7 +549,7 @@ export function TimePrototype() {
             return <article className="tg-faction-card" key={faction.id}>
               <div className="tg-faction-top"><span className="tg-faction-symbol"><Icon size={17} /></span><span className={'tg-faction-state ' + (score >= 65 ? 'is-ally' : score < 35 ? 'is-hostile' : '')}>{score >= 65 ? 'СОЮЗНИК' : score < 35 ? 'ОПОЗИЦИЯ' : 'НАБЛЮДАЕТ'}</span></div>
               <div className="tg-faction-name">{faction.name}</div><p>{faction.description}</p>
-              <div className="tg-faction-score"><strong>{score}<small>/100</small></strong><span>ОДОБРЕНИЕ</span></div>
+              <div className="tg-faction-score"><strong key={score}>{score}<small>/100</small></strong><span>ОДОБРЕНИЕ</span></div>
               <div className="tg-approval-track"><span style={{ width: score + '%' }} /></div>
             </article>
           })}
@@ -545,7 +579,7 @@ export function TimePrototype() {
 }
 
 function Resource({ icon, label, value, hint, tone = 'neutral', meter }: { icon: React.ReactNode; label: string; value: string; hint: string; tone?: string; meter?: number }) {
-  return <article className="tg-resource-card"><div className="tg-resource-label"><span>{icon}</span>{label}</div><strong>{value}</strong><div className={'tg-resource-hint tone-' + tone}>{hint}</div>{meter !== undefined && <div className="tg-resource-meter"><span style={{ width: meter + '%' }} /></div>}</article>
+  return <article className="tg-resource-card"><div className="tg-resource-label"><span>{icon}</span>{label}</div><strong key={value}>{value}</strong><div className={'tg-resource-hint tone-' + tone}>{hint}</div>{meter !== undefined && <div className="tg-resource-meter"><span style={{ width: meter + '%' }} /></div>}</article>
 }
 function Diagnostic({ label, value, description, tone = 'neutral' }: { label: string; value: string; description: string; tone?: 'positive' | 'neutral' | 'negative' }) {
   return <div className={'tg-diagnostic-item tone-' + tone}><span>{label}</span><strong>{value}</strong><small>{description}</small></div>

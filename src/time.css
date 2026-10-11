@@ -312,3 +312,52 @@
 @media(max-width:600px){.tg-start-guide{padding:14px 12px 10px;margin-bottom:13px}.tg-guide-head h2{font-size:18px}.tg-guide-step{gap:8px;padding:10px 8px}.tg-guide-copy strong{font-size:10px}.tg-guide-copy small{font-size:8px}.tg-guide-foot{align-items:flex-start;flex-direction:column;gap:5px}.tg-city-panel.is-cinematic{top:max(6px,env(safe-area-inset-top));left:max(6px,env(safe-area-inset-left));width:calc(100vw - 12px);max-height:calc(100dvh - 12px);border-radius:10px}.tg-city-panel.is-cinematic .tg-panel-head{padding:12px 10px}.tg-city-panel.is-cinematic .tg-panel-head h2{font-size:16px}.tg-city-panel.is-cinematic .tg-map-viewport{height:54dvh;min-height:260px}.tg-city-panel.is-cinematic .tg-map-key{gap:8px 10px}}
 @media(prefers-reduced-motion:reduce){.tg-map-aurora,.tg-city-streets path,.tg-city-light,.tg-water-bank,.tg-selection-ring,.tg-citadel-orbit,.tg-citadel-pulse{animation:none!important}.time-game.is-cinematic-view::after{backdrop-filter:none}}
 @media(max-width:600px),(prefers-reduced-motion:reduce){.tg-city-light-halo{filter:none}.tg-map-aurora{opacity:.25}}
+
+/* Runtime telemetry and responsive interaction pass */
+.tg-diagnostic-trend{margin-top:10px;padding:13px 14px 10px;border:1px solid var(--tg-line);border-radius:8px;background:linear-gradient(120deg,rgba(0,0,0,.14),rgba(126,198,178,.025))}
+.tg-diagnostic-trend-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.tg-diagnostic-trend-head>div:first-child{display:grid;gap:4px}
+.tg-diagnostic-trend-head>div:first-child>span,.tg-diagnostic-trend-foot{font-family:"JetBrains Mono",monospace;font-size:7px;letter-spacing:.1em;color:var(--tg-dim)}
+.tg-diagnostic-trend-head small{font-size:9px;color:var(--tg-muted);line-height:1.5}
+.tg-diagnostic-trend-stat{display:grid;gap:3px;text-align:right}
+.tg-diagnostic-trend-stat strong{font:500 14px/1 "JetBrains Mono",monospace;font-variant-numeric:tabular-nums;color:var(--tg-gold-bright)}
+.tg-diagnostic-trend-stat span{font:7px/1 "JetBrains Mono",monospace;letter-spacing:.1em;color:var(--tg-dim)}
+.tg-diagnostic-trend svg{display:block;width:100%;height:60px;margin-top:8px;overflow:visible}
+.tg-diagnostic-gridline{fill:none;stroke:rgba(190,206,193,.13);stroke-width:.7;vector-effect:non-scaling-stroke}
+.tg-diagnostic-target{fill:none;stroke:rgba(217,194,139,.34);stroke-width:.8;stroke-dasharray:3 4;vector-effect:non-scaling-stroke}
+.tg-diagnostic-line{fill:none;stroke:var(--tg-green);stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 3px rgba(126,198,178,.24));vector-effect:non-scaling-stroke}
+.tg-diagnostic-last-point{fill:var(--tg-gold-bright);stroke:var(--tg-bg);stroke-width:1.5;filter:drop-shadow(0 0 4px rgba(217,194,139,.6));vector-effect:non-scaling-stroke}
+.tg-diagnostic-trend-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:7px}
+.tg-map-impact{position:absolute;inset:0;z-index:3;overflow:hidden;pointer-events:none}
+.tg-map-impact span{position:absolute;top:-15%;bottom:-15%;left:0;width:36%;background:linear-gradient(90deg,transparent,rgba(217,194,139,.025) 20%,rgba(217,194,139,.11) 50%,rgba(126,198,178,.04) 74%,transparent);transform:translateX(-110%);animation:tg-map-sweep 1.15s cubic-bezier(.2,.7,.2,1) both}
+@keyframes tg-map-sweep{0%{transform:translateX(-110%);opacity:0}16%{opacity:1}76%{opacity:.5}100%{transform:translateX(290%);opacity:0}}
+.tg-city-traffic{pointer-events:none}
+.tg-city-traffic circle{filter:drop-shadow(0 0 4px rgba(217,194,139,.9))}
+.tg-resource-card>strong,.tg-faction-score strong{animation:tg-value-arrive .36s cubic-bezier(.2,.8,.2,1) both}
+@keyframes tg-value-arrive{from{opacity:.52;transform:translateY(4px);filter:blur(1.5px)}to{opacity:1;transform:translateY(0);filter:blur(0)}}
+.tg-map-district.is-selected .tg-district-heat{animation:tg-district-breathe 3.6s ease-in-out infinite}
+@keyframes tg-district-breathe{0%,100%{opacity:.7}50%{opacity:1}}
+.tg-map-district:focus-visible{filter:drop-shadow(0 0 8px rgba(217,194,139,.35))}
+.tg-map-controls button{min-width:32px;min-height:32px}
+.tg-icon-button{min-width:38px;min-height:38px}
+.tg-tabs button{min-height:43px}
+.tg-building-card>button{min-height:36px;padding-left:10px;padding-right:10px}
+.tg-resolve-button{min-height:58px}
+@media(max-width:600px){
+ .tg-diagnostic-trend{padding:11px}
+ .tg-diagnostic-trend-head{align-items:flex-start}
+ .tg-diagnostic-trend-head small{max-width:220px}
+ .tg-diagnostic-trend svg{height:55px}
+ .tg-diagnostic-trend-foot{gap:6px}
+ .tg-map-controls button{min-width:38px;min-height:38px;width:38px;height:38px}
+ .tg-icon-button{width:40px;height:40px;min-width:40px;min-height:40px}
+ .tg-tabs button{min-height:46px}
+ .tg-building-card>button{min-height:40px}
+ .tg-policy-option{min-height:54px}
+ .tg-resolve-button{min-height:60px}
+}
+@media(prefers-reduced-motion:reduce){
+ .tg-city-traffic{display:none!important}
+ .tg-map-impact span{display:none;animation:none}
+ .tg-district-heat,.tg-resource-card>strong,.tg-faction-score strong{animation:none!important}
+}
