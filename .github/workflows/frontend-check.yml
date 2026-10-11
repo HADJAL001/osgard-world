@@ -1,0 +1,43 @@
+name: OSGARD frontend validation
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "src/**"
+      - "public/skillcred/**"
+      - "package.json"
+      - "package-lock.json"
+      - "vite.config.ts"
+      - ".github/workflows/frontend-check.yml"
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: osgard-frontend-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Type-check the frontend
+        run: npm run check
+      - name: Build the production site
+        run: npm run build
+      - name: Validate static archive and HTML
+        run: npm run preflight:frontend
