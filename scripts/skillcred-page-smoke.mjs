@@ -82,6 +82,8 @@ for (const file of files) {
   assert.ok(html.includes('Проверить самому ↗'), file + ': mobile CTA must keep a visible glyph')
   const js = readFileSync(jsPath, 'utf8')
   assert.match(js, /\.media=["\x27]all["\x27]/, file + ': asynchronous stylesheet activation is missing')
+  assert.ok(js.includes("setTimeout(enableFullStyles,2200)") && js.includes("setTimeout(enableFullStyles,3500)"), file + ': full stylesheet should wait until after first paint')
+  assert.ok(js.includes('"pointerdown","keydown","touchstart","wheel","scroll"'), file + ': first user action must activate full stylesheet immediately')
   assert.ok(!js.includes("cssRules.length"), file + ': avoid forced synchronous CSSOM parsing')
   assert.match(css, /@font-face[^{}]*\{[^}]*InterVariable\.woff2/, file + ': self-hosted Inter font is not configured')
   assert.match(css, /@font-face[^{}]*\{[^}]*InstrumentSerif-Italic\.woff2/, file + ': self-hosted Instrument Serif accent font is not configured')
