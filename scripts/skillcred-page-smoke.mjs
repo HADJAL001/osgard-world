@@ -76,7 +76,7 @@ for (const file of files) {
   const css = readFileSync(cssPath, 'utf8')
   assert.ok(html.includes('Проверить самому ↗'), file + ': mobile CTA must keep a visible glyph')
   const js = readFileSync(jsPath, 'utf8')
-  assert.ok(js.includes('fullStylesheet.media="all"'), file + ': asynchronous stylesheet activation is missing')
+  assert.match(js, /\.media=["']all["']/, file + ': asynchronous stylesheet activation is missing')
   assert.match(css, /@font-face[^{}]*\{[^}]*InterVariable\.woff2/, file + ': self-hosted Inter font is not configured')
   assert.match(css, /@font-face[^{}]*\{[^}]*InstrumentSerif-Italic\.woff2/, file + ': self-hosted Instrument Serif accent font is not configured')
   assert.match(css, /@font-face[^{}]*\{[^}]*JetBrainsMono-Regular\.woff2/, file + ': self-hosted JetBrains Mono is not configured')
