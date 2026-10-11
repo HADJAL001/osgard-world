@@ -1,6 +1,6 @@
 const base = process.env.OSGARD_BASE_URL || 'https://osgard.world'
 const expectCurrentDesign = process.env.SKILLCRED_EXPECT_CURRENT_DESIGN === '1'
-const routes = ['/','/skillcred/','/skillcred-api/health','/skillcred-api/ready','/skillcred-api/issuer','/entertainment','/community','/stream','/archive','/profile','/r/1842','/games/time','/play/swarm','/play/null-shift','/play/inherit','/play/remix','/media','/business','/create','/mobility']
+const routes = ['/','/skillcred/','/skillcred-api/health','/skillcred-api/ready','/skillcred-api/issuer','/entertainment','/community','/stream','/archive','/profile','/r/1842','/games/time','/games/null-shift/','/games/null-shift/index.html','/play/swarm','/play/null-shift','/play/inherit','/play/remix','/media','/business','/create','/mobility']
 const agents = { desktop: 'OSGARD-Route-Matrix/1.1 Desktop', mobile: 'OSGARD-Route-Matrix/1.1 Mobile' }
 const results = []
 for (const [device, userAgent] of Object.entries(agents)) for (const route of routes) {
@@ -25,10 +25,12 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         ? route.endsWith('/health') ? /"service"\s*:\s*"skillcred"/.test(text) && /"version"\s*:\s*"0\.3\.0"/.test(text)
           : route.endsWith('/ready') ? /"ready"\s*:\s*true/.test(text)
             : /"id"\s*:/.test(text) && /"name"\s*:/.test(text)
-        : route === '/entertainment'
-          ? text.includes('<title>OSGARD Entertainment</title>')
-          : text.includes('<div id="root">')
-    const assetPaths = route === '/skillcred/' ? ['/skillcred/styles.css', '/skillcred/app.js', '/skillcred/fonts/InterVariable.woff2', '/skillcred/fonts/InstrumentSerif-Italic.woff2', '/skillcred/fonts/JetBrainsMono-Regular.woff2'] : []
+        : route.startsWith('/games/null-shift')
+          ? text.includes('id="game"') && text.includes('id="mobile-ui"') && text.includes('id="diag-panel"') && text.includes('./styles.css') && text.includes('./game.js')
+          : route === '/entertainment'
+            ? text.includes('<title>OSGARD Entertainment</title>')
+            : text.includes('<div id="root">')
+    const assetPaths = route === '/skillcred/' ? ['/skillcred/styles.css', '/skillcred/app.js', '/skillcred/fonts/InterVariable.woff2', '/skillcred/fonts/InstrumentSerif-Italic.woff2', '/skillcred/fonts/JetBrainsMono-Regular.woff2'] : route.startsWith('/games/null-shift') ? ['/games/null-shift/styles.css', '/games/null-shift/game.js'] : []
     const assetChecks = await Promise.all(assetPaths.map(async path => {
       const expectedType = path.endsWith('.css') ? 'text/css' : path.endsWith('.js') ? 'javascript' : 'font'
       const asset = await fetch(new URL(path, base), { headers: { 'user-agent': userAgent } })
@@ -42,7 +44,9 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
       } else {
         const content = await asset.text()
         const normalized = content.toLowerCase()
-        nonEmpty = path.endsWith('.css')
+        nonEmpty = path.startsWith('/games/null-shift/')
+          ? (path.endsWith('.css') ? content.includes('.mobile-ui') && content.includes('prefers-reduced-motion') : content.includes('premiumAtmosphere') && content.includes('PerformanceObserver'))
+          : path.endsWith('.css')
           ? normalized.includes('--acid:#c8ff3d') &&
             normalized.includes('/skillcred/fonts/intervariable.woff2') &&
             normalized.includes('/skillcred/fonts/instrumentserif-italic.woff2') &&

@@ -10,6 +10,7 @@ on:
     paths:
       - "src/**"
       - "public/skillcred/**"
+      - "public/games/null-shift/**"
       - "index.html"
       - "nginx.conf"
       - "package.json"
@@ -21,6 +22,8 @@ on:
       - "scripts/activate-frontend-remote.sh"
       - "scripts/skillcred-page-smoke.mjs"
       - "scripts/time-prototype-smoke.mjs"
+      - "scripts/null-shift-premium-smoke.mjs"
+      - "docs/04_NULL_SHIFT_GAME_DESIGN.md"
       - "docs/02_IMPERIUM_OF_TIME_GAME_DESIGN.md"
       - ".github/workflows/deploy-frontend.yml"
   workflow_dispatch:
@@ -36,6 +39,7 @@ jobs:
           node-version: 20
       - run: npm ci
       - run: npm run check
+      - run: npm run qa:null-shift
       - run: npm run build
       - name: Subset self-hosted Inter and minify SkillCred assets
         run: |
