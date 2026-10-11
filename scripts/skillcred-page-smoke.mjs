@@ -99,6 +99,6 @@ for (const file of files) {
   assert.ok(css.includes('min-height:27px'), file + ': mobile footer links need at least 24px targets')
   assert.ok(css.includes('.hero-visual{order:-1;padding-top:0;height:472px;min-height:472px;overflow:visible}.hero-copy{order:0}.hero-json-preview,.visual-caption{display:none}'), file + ': mobile hero must show the credential artifact in a reserved first-screen stage')
     assert.match(css, /\.artifact-card\[data-phase=["']?issued["']?\]\{animation:artifact-arrive\s+(?:420ms|\.42s)/, file + ': only issued credentials may run the card arrival animation')
-  assert.ok(js.includes('window.setTimeout(loadHeroArtifact,1800)'), file + ': automatic API startup must wait until the first render has settled')
+  assert.match(js, /(?:window\.)?setTimeout\(loadHeroArtifact,1800\)/, file + ': automatic API startup must wait until the first render has settled')
   console.log('PASS ' + file + ': semantic page, local assets, same-origin API and JS syntax')
 }
