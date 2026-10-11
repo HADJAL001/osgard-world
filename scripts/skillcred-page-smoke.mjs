@@ -28,6 +28,7 @@ for (const file of files) {
   assert.match(html, /https:\/\/osgard\.world\/skillcred\//, file + ': missing canonical URL')
   assert.match(html, /\/skillcred\/styles\.css/, file + ': missing external stylesheet')
   assert.match(html, /\/skillcred\/app\.js/, file + ': missing application script')
+  assert.ok(html.includes('.nav-right .nav-cta::after'), file + ': mobile CTA must keep a visible glyph')
   for (const id of requiredIds) assert.match(html, new RegExp('id=["\\x27]' + id + '["\\x27]'), file + ': missing #' + id)
   for (const section of requiredSections) assert.ok(html.includes('id="' + section + '"'), file + ': missing section #' + section)
   for (const endpoint of ['/demo/issue', '/demo/verify', '/demo/revoke']) assert.ok(html.includes(endpoint), file + ': missing endpoint contract ' + endpoint)
