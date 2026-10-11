@@ -9,6 +9,7 @@
     "build": "npm run sync:swarm && tsc -b && vite build",
     "check": "tsc -b --pretty false",
     "preflight:frontend": "node scripts/frontend-archive-preflight.mjs dist",
+    "qa:skillcred": "node scripts/skillcred-page-smoke.mjs",
     "qa:brief": "node scripts/brief-coverage-audit.mjs \"A:\\HADJAL\\Рабочий стол\\игры ОСГАРД.txt\"",
     "qa:core": "node --experimental-strip-types scripts/core-state-smoke.mjs",
     "preview": "vite preview --host 0.0.0.0",
