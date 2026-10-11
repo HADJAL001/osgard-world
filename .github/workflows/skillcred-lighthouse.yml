@@ -1,13 +1,10 @@
 name: SkillCred Lighthouse Audit
 
 on:
-  push:
+  workflow_run:
+    workflows: ["OSGARD frontend deploy"]
+    types: [completed]
     branches: [master]
-    paths:
-      - "public/skillcred/**"
-      - "nginx.conf"
-      - ".github/workflows/skillcred-lighthouse.yml"
-      - "scripts/lighthouse-report.mjs"
   workflow_dispatch:
 
 permissions:
@@ -15,6 +12,7 @@ permissions:
 
 jobs:
   lighthouse:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
