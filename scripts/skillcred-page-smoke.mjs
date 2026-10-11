@@ -74,6 +74,8 @@ for (const file of files) {
   assert.match(css, /@font-face[^{}]*\{[^}]*InstrumentSerif-Italic\.woff2/, file + ': self-hosted Instrument Serif accent font is not configured')
   assert.match(css, /@font-face[^{}]*\{[^}]*JetBrainsMono-Regular\.woff2/, file + ': self-hosted JetBrains Mono is not configured')
   assert.ok(css.includes('--acid:#C8FF3D') && css.includes('--bg:#08090A'), file + ': design tokens or palette are missing')
+  assert.ok(css.includes('.hero-json-preview pre{height:8.5em'), file + ': the live JSON preview must not cause layout shifts')
+  assert.ok(css.includes('font-display:optional'), file + ': late font swaps must not move the first viewport')
   assert.match(css, /prefers-reduced-motion/, file + ': missing reduced motion support')
   assert.match(css, /content-visibility:auto/, file + ': below-the-fold sections should defer rendering')
   assert.match(css, /@media\(max-width:380px\)/, file + ': missing small-screen layout rules')

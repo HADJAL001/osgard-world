@@ -1,4 +1,4 @@
-@font-face{font-family:Inter;src:url("/skillcred/fonts/InterVariable.woff2") format("woff2");font-style:normal;font-weight:100 900;font-display:swap}
+@font-face{font-family:Inter;src:url("/skillcred/fonts/InterVariable.woff2") format("woff2");font-style:normal;font-weight:100 900;font-display:optional}
 @font-face{font-family:"Instrument Serif";src:url("/skillcred/fonts/InstrumentSerif-Italic.woff2") format("woff2");font-style:italic;font-weight:400;font-display:swap}
 @font-face{font-family:"JetBrains Mono";src:url("/skillcred/fonts/JetBrainsMono-Regular.woff2") format("woff2");font-style:normal;font-weight:400;font-display:swap}
 :root{color-scheme:dark;--bg:#08090A;--surface:#0E0F11;--surface-raised:#111316;--surface-soft:#0B0C0E;--text:#F5F5F5;--muted:#9BA1A9;--quiet:#8A9098;--acid:#C8FF3D;--red:#FF5A5A;--border:rgba(255,255,255,.055);--border-active:rgba(255,255,255,.10);--shadow:0 32px 90px rgba(0,0,0,.38);--radius-sm:8px;--radius-md:14px;--radius-lg:22px;--radius-xl:30px;--page-width:1320px;--gutter:clamp(22px,5.2vw,84px);--section-space:clamp(88px,12vw,176px);--sans:"Inter",Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--serif:"Instrument Serif",Georgia,serif;--mono:"JetBrains Mono","SFMono-Regular",Consolas,monospace;--ease:cubic-bezier(.2,.8,.2,1);--fast:160ms;--medium:250ms;--slow:500ms;--hero-size:clamp(54px,6.25vw,100px);--h2-size:clamp(44px,5vw,72px);--h3-size:clamp(22px,2.1vw,30px);font-synthesis:none;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;scroll-behavior:smooth;scroll-padding-top:100px;background:var(--bg);color:var(--text)}
@@ -98,3 +98,15 @@ a{color:inherit;text-decoration:none}button{font:inherit}button,a{-webkit-tap-hi
   .artifact-card::after{width:145px;height:145px;top:-55px;right:-45px}
   .trust-thread{opacity:.6}
 }
+
+
+/* Reserve dynamic hero space: live API text must not move the page after first paint. */
+.hero-title{min-height:3em}
+.hero-json-preview pre{height:8.5em;min-height:8.5em;max-height:8.5em;overflow:hidden}
+.signature-data code{display:block;min-height:2.8em}
+.artifact-title{min-height:2.25em}
+.artifact-meta strong{min-height:2.8em}
+@media(max-width:600px){
+  .hero-title{min-height:5em}
+}
+
