@@ -1,6 +1,5 @@
 import {
-  Activity, ArrowDownRight, ArrowRight, ArrowUpRight, BarChart3, BatteryCharging, Building2,
-  Check, ChevronRight, CircleHelp, Coins, Factory, Landmark, Leaf, MapPinned, Pause, Play,
+  Activity, ArrowRight, ArrowUpRight, Building2, Check, ChevronRight, CircleHelp, Coins, Factory, Landmark, Leaf, MapPinned, Play,
   RotateCcw, Save, ShieldAlert, ShieldCheck, Sparkles, TrendingUp, Users, Vote, Waves, Zap,
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -61,7 +60,6 @@ export function TimePrototype() {
   const [mapZoom, setMapZoom] = useState(1)
   const [announcement, setAnnouncement] = useState('Совет ожидает вашего решения.')
   const [diagnostics, setDiagnostics] = useState<Diagnostics>({ fps: 0, frameMs: 0, tickMs: 0, actions: 0, save: 'saved' })
-  const [sessionActive, setSessionActive] = useState(false)
   const session = useRef<string | null>(null)
   const completed = useRef(false)
   const stateRef = useRef(state)
@@ -81,7 +79,6 @@ export function TimePrototype() {
     void startPlayerSession('time', { surface: 'time', schemaVersion: 2, entry: 'imperium-of-time' }).then((value) => {
       if (!alive || !value?.id) return
       session.current = value.id
-      setSessionActive(true)
       if (stateRef.current.status !== 'ACTIVE' && !completed.current) {
         completed.current = true
         void completePlayerSession(value.id, { status: stateRef.current.status, tick: stateRef.current.tick, treasury: stateRef.current.treasury, score: stateRef.current.score })
@@ -94,7 +91,6 @@ export function TimePrototype() {
   useEffect(() => {
     if (state.status !== 'ACTIVE' && session.current && !completed.current) {
       completed.current = true
-      setSessionActive(false)
       void completePlayerSession(session.current, { status: state.status, tick: state.tick, treasury: state.treasury, score: state.score, population: state.population })
       recordOsgardEvent('game_session_completed', { game: 'time', status: state.status, tick: state.tick, score: state.score })
     }
@@ -177,7 +173,13 @@ export function TimePrototype() {
     setAnnouncement('Новая летопись началась. Решения прошлого цикла сохранены только в вашей памяти.')
     completed.current = false
     session.current = null
-    setSessionActive(false)
+    void startPlayerSession('time', { surface: 'time', schemaVersion: 2, entry: 'imperium-of-time', restarted: true }).then((value) => {
+      session.current = value?.id ?? null
+      if (value?.id && stateRef.current.status !== 'ACTIVE' && !completed.current) {
+        completed.current = true
+        void completePlayerSession(value.id, { status: stateRef.current.status, tick: stateRef.current.tick, treasury: stateRef.current.treasury, score: stateRef.current.score })
+      }
+    })
     recordOsgardEvent('portal_opened', { game: 'time', action: 'RESET_GAME' })
   }
 
@@ -187,7 +189,6 @@ export function TimePrototype() {
     if (target) setAnnouncement(target.name + ' — ' + target.description)
   }
 
-  const canBuild = state.treasury >= (district.building ? BUILDINGS[district.building].cost * (district.buildingLevel + 1) : 0)
   const active = state.status === 'ACTIVE'
 
   return (
@@ -208,7 +209,7 @@ export function TimePrototype() {
 
       <div className="tg-intro">
         <div className="tg-title-block">
-          <div className="tg-overline"><span>2048—</span><span>МАНДАТ I</span><span>·</span><span>ЦИКЛ {String(state.tick).padStart(2, '0')}</span></div>
+          <div className="tg-overline"><span>{state.year} / MANDATE I</span><span>·</span><span>ЦИКЛ {String(state.tick).padStart(2, '0')}</span></div>
           <h1>Империя <em>времени.</em></h1>
           <p>Город запоминает каждое решение. Казна, энергия и три силы определят, переживёт ли империя следующий такт.</p>
         </div>
