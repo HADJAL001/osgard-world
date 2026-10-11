@@ -12,6 +12,9 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         text.includes('id="verifyBtn"') &&
         text.includes('id="revokeBtn"') &&
         text.includes('id="downloadBtn"') &&
+        text.includes('id="signatureClock"') &&
+        text.includes('id="timeElapsed"') &&
+        text.includes('id="heroCredential"') &&
         text.includes('name="api-base" content="/skillcred-api"') &&
         text.includes('/demo/issue') &&
         text.includes('/demo/verify') &&
@@ -23,17 +26,23 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         : route === '/entertainment'
           ? text.includes('<title>OSGARD Entertainment</title>')
           : text.includes('<div id="root">')
-    const assetPaths = route === '/skillcred/' ? ['/skillcred/styles.css', '/skillcred/app.js', '/skillcred/fonts/InterVariable.woff2'] : []
+    const assetPaths = route === '/skillcred/' ? ['/skillcred/styles.css', '/skillcred/app.js', '/skillcred/fonts/InterVariable.woff2', '/skillcred/fonts/InstrumentSerif-Italic.woff2', '/skillcred/fonts/JetBrainsMono-Regular.woff2'] : []
     const assetChecks = await Promise.all(assetPaths.map(async path => {
       const expectedType = path.endsWith('.css') ? 'text/css' : path.endsWith('.js') ? 'javascript' : 'font'
       const asset = await fetch(new URL(path, base), { headers: { 'user-agent': userAgent } })
       const contentType = asset.headers.get('content-type') || ''
       const typeOk = expectedType === 'text/css' ? contentType.toLowerCase().includes('text/css') : expectedType === 'javascript' ? /javascript|ecmascript/i.test(contentType) : /font\/woff2|application\/octet-stream/i.test(contentType)
       let nonEmpty = false
-      if (expectedType === 'font') nonEmpty = (await asset.arrayBuffer()).byteLength > 100000
-      else {
+      if (expectedType === 'font') {
+        const size = (await asset.arrayBuffer()).byteLength
+        const minimum = path.endsWith('InterVariable.woff2') ? 100000 : 5000
+        nonEmpty = size > minimum
+      } else {
         const content = await asset.text()
-        nonEmpty = path.endsWith('.css') ? content.includes('--accent:#c8ff3d') && content.includes('/skillcred/fonts/InterVariable.woff2') : content.includes('demo/issue')
+        const normalized = content.toLowerCase()
+        nonEmpty = path.endsWith('.css')
+          ? normalized.includes('--acid:#c8ff3d') && normalized.includes('/skillcred/fonts/intervariable.woff2') && normalized.includes('/skillcred/fonts/instrumentserif-italic.woff2') && normalized.includes('/skillcred/fonts/jetbrainsmono-regular.woff2')
+          : content.includes('demo/issue') && content.includes('data-clock-step')
       }
       return { path, status: asset.status, contentType, ok: asset.status === 200 && typeOk && nonEmpty }
     }))

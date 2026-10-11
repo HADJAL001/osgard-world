@@ -49,7 +49,7 @@ return{ok:res.ok,status:res.status,data:data,duration:elapsed};
 }
 function text(id,value){var el=$(id);if(el)el.textContent=value;}
 function setResult(message,state){var el=$("demoResult");if(el){el.textContent=message;el.dataset.state=state||"info";}}
-function apiStatus(message,mode){var el=$("apiStatus");if(el)el.textContent=message;var dot=el&&el.parentElement.querySelector(".status-dot");if(dot)dot.className="status-dot"+(mode==="ok"?" is-active":"");if(dot&&mode==="bad")dot.style.background="var(--red)";else if(dot&&mode!=="ok")dot.style.background="var(--quiet)";}
+function apiStatus(message,mode){var el=$("apiStatus");if(el)el.textContent=message;var dot=el&&el.parentElement.querySelector(".status-dot");if(dot)dot.className="status-dot"+(mode==="ok"?" is-active":mode==="bad"?" is-error":"");}
 function setStatus(state){
 var labels={idle:"ОЖИДАЕМ ПРОВЕРКУ",active:"ПОДПИСЬ ВАЛИДНА",revoked:"ДОКУМЕНТ ОТОЗВАН",pending:"ОЖИДАЕМ ПРОВЕРКУ"};
 var hero=$("heroStatus");if(hero){hero.className="credential-status "+(state==="active"?"status-active":state==="revoked"?"status-revoked":"status-pending");hero.textContent="";var dot=document.createElement("span");dot.className="status-dot";hero.append(dot,document.createTextNode(labels[state]||labels.idle));}

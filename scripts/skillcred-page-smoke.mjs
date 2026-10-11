@@ -47,6 +47,8 @@ for (const file of files) {
   assert.ok(existsSync(serifFontPath), file + ': self-hosted Instrument Serif Italic font not found')
   assert.ok(existsSync(monoFontPath), file + ': self-hosted JetBrains Mono font not found')
   assert.match(html, /<html lang="ru">/i, file + ': missing Russian document language')
+  assert.ok(!/<style\b/i.test(html), file + ': inline style element is not allowed')
+  assert.ok(!/\sstyle=["\x27]/i.test(html), file + ': inline style attribute is not allowed')
   assert.match(html, /name="api-base" content="\/skillcred-api"/, file + ': missing same-origin proxy')
   assert.match(html, /https:\/\/osgard\.world\/skillcred\//, file + ': missing canonical URL')
   assert.match(html, /\/skillcred\/styles\.css/, file + ': missing external stylesheet')

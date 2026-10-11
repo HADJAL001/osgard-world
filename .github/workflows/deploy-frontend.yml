@@ -58,6 +58,9 @@ jobs:
           sed -i "s|/skillcred/styles.css|/skillcred/styles.css?v=$ASSET_VERSION|g" osgard-release/html/skillcred/index.html
           sed -i "s|/skillcred/app.js|/skillcred/app.js?v=$ASSET_VERSION|g" osgard-release/html/skillcred/index.html
           find osgard-release/html/skillcred -type f \( -name '*.html' -o -name '*.css' -o -name '*.js' \) -exec gzip -9 -k {} +
+          SKILLCRED_JS_GZIP_BYTES=$(wc -c < osgard-release/html/skillcred/app.js.gz)
+          printf 'SkillCred JavaScript transfer size: %s bytes / 15360 bytes budget\n' "$SKILLCRED_JS_GZIP_BYTES"
+          test "$SKILLCRED_JS_GZIP_BYTES" -le 15360 || { echo 'SkillCred compressed JavaScript exceeds 15 KiB budget' >&2; exit 1; }
           touch osgard-release/html/skillcred/styles.css.gz osgard-release/html/skillcred/app.js.gz
           test -s osgard-release/html/skillcred/styles.css.gz
           test -s osgard-release/html/skillcred/app.js.gz

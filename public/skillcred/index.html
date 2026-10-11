@@ -11,8 +11,7 @@
   <link rel="preload" href="/skillcred/fonts/InstrumentSerif-Italic.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/skillcred/styles.css">
   <title>SkillCred — Подтверждение навыков, которое принадлежит человеку</title>
-  <style>.nav-right .nav-cta::after{content:"↗"}</style>
-  <script defer src="/skillcred/app.js"></script>
+    <script defer src="/skillcred/app.js"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Перейти к содержимому</a>
@@ -35,7 +34,7 @@
   <main id="main">
     <section class="hero section-shell" id="promise" aria-labelledby="heroTitle">
       <div class="hero-copy reveal">
-        <p class="eyebrow"><span class="eyebrow-line"></span> OPEN BADGES 3.0 <span>·</span> ED25519 <span>·</span> APACHE-2.0</p>
+        <p class="eyebrow"><span class="eyebrow-index">01 / ОБЕЩАНИЕ</span><span class="eyebrow-line"></span> OPEN BADGES 3.0 <span>·</span> ED25519 <span>·</span> APACHE-2.0</p>
         <h1 class="hero-title kinetic-heading" id="heroTitle">Подтверждение навыков, <span class="title-soft">которое принадлежит человеку.</span></h1>
         <p class="hero-lede">Цифровое удостоверение, которое можно проверить независимо от платформы. Подпись и статус открыты для проверки, а не спрятаны за обещаниями.</p>
         <div class="hero-actions"><a class="button button-primary" href="#demo">Попробовать демо <span aria-hidden="true">→</span></a><a class="button button-quiet" href="https://github.com/osmanosmanov6880-bot/SkillCred" target="_blank" rel="noopener noreferrer">Открыть GitHub ↗</a></div>
@@ -67,7 +66,7 @@
   "type": ["VerifiableCredential", "OpenBadgeCredential"],
   "proof": "ожидаем ответ API"
 }</pre></div>
-        <p class="visual-caption"><span aria-hidden="true">✳</span> ПОДПИСЬ ПРОВЕРЯЕТСЯ НА СЕРВЕРЕ, НЕ РИСУЕТСЯ ИНТЕРФЕЙСОМ</p>
+        <p class="visual-caption"><span class="caption-star" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none"><path d="M8 1.5 9.2 6.8 14.5 8 9.2 9.2 8 14.5 6.8 9.2 1.5 8 6.8 6.8 8 1.5Z" stroke="currentColor" stroke-width="1"/></svg></span> ПОДПИСЬ ПРОВЕРЯЕТСЯ НА СЕРВЕРЕ, НЕ РИСУЕТСЯ ИНТЕРФЕЙСОМ</p>
       </div>
     </section>
 
@@ -172,7 +171,7 @@
       </div>
     </section>
 
-    <section class="invitation section-shell" id="invitation" aria-labelledby="invitationTitle"><div class="invitation-frame reveal"><div class="invitation-light"></div><div class="act-label act-label-center"><span>07</span><span class="act-rule"></span><span>ПРИГЛАШЕНИЕ</span><span class="act-rule"></span><span>YOUR TURN</span></div><p class="invitation-kicker">ПОДПИСЬ МОЖНО ПРОВЕРИТЬ. ДОВЕРИЕ — НУЖНО ЗАСЛУЖИТЬ.</p><h2 class="invitation-title kinetic-heading" id="invitationTitle">Проверьте документ.<br><em>Своими руками.</em></h2><p class="invitation-copy">Выдайте тестовое удостоверение, проверьте подпись, отзовите его и посмотрите, как меняется статус. Демо работает прямо сейчас, без регистрации.</p><a class="button button-primary invitation-button" href="#demo">Начать живое демо <span aria-hidden="true">→</span></a><p class="invitation-footnote"><span class="status-dot"></span> ОТКРЫТЫЙ КОД · СИНТЕТИЧЕСКИЕ ДАННЫЕ · БЕЗ СЛЕЖКИ</p></div></section>
+    <section class="invitation section-shell" id="invitation" aria-labelledby="invitationTitle"><div class="invitation-frame reveal"><div class="invitation-light"></div><div class="act-label act-label-center"><span>07</span><span class="act-rule"></span><span>ПРИГЛАШЕНИЕ</span><span class="act-rule"></span><span>YOUR TURN</span></div><p class="invitation-kicker">ПОДПИСЬ МОЖНО ПРОВЕРИТЬ. ДОВЕРИЕ — НУЖНО ЗАСЛУЖИТЬ.</p><h2 class="invitation-title kinetic-heading" id="invitationTitle">Проверьте документ.<br><em>Verify it.</em></h2><p class="invitation-copy">Выдайте тестовое удостоверение, проверьте подпись, отзовите его и посмотрите, как меняется статус. Демо работает прямо сейчас, без регистрации.</p><a class="button button-primary invitation-button" href="#demo">Начать живое демо <span aria-hidden="true">→</span></a><p class="invitation-footnote"><span class="status-dot"></span> ОТКРЫТЫЙ КОД · СИНТЕТИЧЕСКИЕ ДАННЫЕ · БЕЗ СЛЕЖКИ</p></div></section>
   </main>
 
   <footer class="site-footer"><div class="footer-top"><div class="footer-brand"><a class="wordmark" href="/skillcred/"><span class="brand-glyph" aria-hidden="true"><svg viewBox="0 0 28 28" fill="none"><path d="M14 2.5 25 8v12L14 25.5 3 20V8L14 2.5Z" stroke="currentColor"/><path d="m8 14 4 4 8-9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>skillcred<span class="wordmark-period">.</span></span></a><p>Переносимые цифровые удостоверения с открытой проверкой.</p></div><div class="footer-col"><h3>Исследовать</h3><a href="#demo">Живое демо</a><a href="#how">Путь удостоверения</a><a href="#audience">Для кого</a><a href="#faq">Вопросы</a></div><div class="footer-col"><h3>Разработчикам</h3><a href="https://github.com/osmanosmanov6880-bot/SkillCred" target="_blank" rel="noopener noreferrer">GitHub ↗</a><a href="https://github.com/osmanosmanov6880-bot/SkillCred/blob/main/README.md" target="_blank" rel="noopener noreferrer">README</a><a href="/skillcred-api/docs">API docs</a><a href="/skillcred-api/health">Health endpoint</a></div><div class="footer-col"><h3>Ответственность</h3><a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank" rel="noopener noreferrer">Apache-2.0 License</a><a href="https://www.1edtech.org/standards/open-badges" target="_blank" rel="noopener noreferrer">Open Badges 3.0 ↗</a><span class="footer-muted">Не сертифицировано 1EdTech</span></div></div><div class="footer-bottom"><span>© <span id="copyrightYear">2026</span> SKILLCRED · EXPERIMENTAL PILOT 0.3.0</span><span>СДЕЛАНО ДЛЯ ПРОВЕРКИ, НЕ ДЛЯ СЛЕПОЙ ВЕРЫ.</span></div></footer>
