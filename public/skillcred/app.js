@@ -97,7 +97,7 @@ text("heroProof","Подпись создана · ожидает проверк
 text("heroHash",await hash(JSON.stringify(item)));setStatus("issued");renderJson(item,true);apiStatus("API выпустил синтетический документ","ok");steps();setBusy(false);
 }
 async function prepareDemo(){
-var h=await request("/health","GET"),r=await request("/ready","GET"),i=await request("/issuer","GET");
+var checks=await Promise.all([request("/health","GET"),request("/ready","GET"),request("/issuer","GET")]),h=checks[0],r=checks[1],i=checks[2];
 if(!h.ok||!r.ok||!i.ok)throw new Error("API не прошёл проверку состояния.");
 if(h.data.demo_ready!==true||r.data.ready!==true)throw new Error("Сервис отвечает, но публичное демо сейчас не готово.");
 text("heroLiveTime","API v"+plain(h.data.version,"0.3.0"));return{health:h.data,issuer:i.data};
