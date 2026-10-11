@@ -63,3 +63,8 @@ for (const file of files) {
   assert.ok(!/fonts\.googleapis\.com|fonts\.gstatic\.com/.test(js), file + ': external font CDN found')
   console.log('PASS ' + file + ': semantic page, local assets, same-origin API and JS syntax')
 }
+
+
+const mobileAccessCss = css.slice(css.indexOf('/* MOBILE ACCESSIBILITY FINISH */'))
+assert.ok(mobileAccessCss.includes('.faq-answer p{font-size:13px}'), file + ': mobile FAQ text should remain legible')
+assert.ok(mobileAccessCss.includes('min-height:27px'), file + ': mobile footer links need at least 24px targets')

@@ -37,3 +37,14 @@
 
 /* Defer below-the-fold rendering without hiding content from assistive technology. */
 .demo-section{content-visibility:auto;contain-intrinsic-size:auto 1150px}.how-section{content-visibility:auto;contain-intrinsic-size:auto 820px}.contrast-section{content-visibility:auto;contain-intrinsic-size:auto 790px}.audience-section{content-visibility:auto;contain-intrinsic-size:auto 950px}.developer-section{content-visibility:auto;contain-intrinsic-size:auto 950px}.faq-section{content-visibility:auto;contain-intrinsic-size:auto 1050px}.final-cta{content-visibility:auto;contain-intrinsic-size:auto 380px}.footer{content-visibility:auto;contain-intrinsic-size:auto 500px}@media(max-width:760px){.demo-section{contain-intrinsic-size:auto 1450px}.how-section{contain-intrinsic-size:auto 1050px}.contrast-section{contain-intrinsic-size:auto 900px}.audience-section{contain-intrinsic-size:auto 1450px}.developer-section{contain-intrinsic-size:auto 1350px}.faq-section{contain-intrinsic-size:auto 1300px}.final-cta{contain-intrinsic-size:auto 500px}.footer{contain-intrinsic-size:auto 730px}}
+
+
+/* MOBILE ACCESSIBILITY FINISH */
+@media(max-width:760px){
+  .faq-answer p{font-size:13px}
+  .code-pre{font-size:12px}
+  .legal-note{font-size:12px}
+  .pilot-note p{font-size:12px}
+  .demo-explain,.demo-explainer-grid p{font-size:12px}
+  .footer-col>a{display:inline-flex;align-items:center;min-height:27px;padding-block:5px;font-size:12px;line-height:1.4}
+}

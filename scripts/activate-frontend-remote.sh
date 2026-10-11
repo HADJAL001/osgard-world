@@ -54,6 +54,11 @@ rollback() {
     && grep -q 'name="api-base" content="/skillcred-api"' /tmp/skillcred-page-check.html \
     && curl --max-time 12 -fsS https://osgard.world/skillcred/styles.css -o /tmp/skillcred-css-check.txt \
     && grep -q -- '--accent:#c8ff3d' /tmp/skillcred-css-check.txt \
+    && grep -oE '/skillcred/styles\\.css\\?v=[A-Za-z0-9]+' /tmp/skillcred-page-check.html > /tmp/skillcred-versioned-css-paths.txt \
+    && css_path="$(sed -n '1p' /tmp/skillcred-versioned-css-paths.txt)" \
+    && test -n "$css_path" \
+    && curl --max-time 12 -fsS -H 'Accept-Encoding: gzip' -D /tmp/skillcred-versioned-css-headers.txt -o /tmp/skillcred-versioned-css.gz "https://osgard.world$css_path" \
+    && grep -qi '^content-encoding: gzip' /tmp/skillcred-versioned-css-headers.txt \
     && curl --max-time 12 -fsS https://osgard.world/skillcred/app.js -o /tmp/skillcred-js-check.txt \
     && grep -q 'demo/issue' /tmp/skillcred-js-check.txt \
     && curl --max-time 12 -fsS https://osgard.world/skillcred-api/health -o /tmp/skillcred-health-check.json \
