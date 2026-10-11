@@ -228,20 +228,21 @@ card.addEventListener("pointermove",function(ev){var r=card.getBoundingClientRec
 card.addEventListener("pointerleave",function(){card.style.transform="";});
 }
 function trustScrollSetup(){
-var spine=$("trustSpine"),path=$("trustSpineProgress");if(!spine||!path)return;
-var scheduled=false;
-function sync(){
-var root=document.documentElement,max=Math.max(1,root.scrollHeight-window.innerHeight);
-var progress=Math.max(0,Math.min(1,window.scrollY/max));
+var spine=$("trustSpine"),path=$("trustSpineProgress"),main=$("main");if(!spine||!path)return;
+var scheduled=false,maxScroll=1;
+function measure(){maxScroll=Math.max(1,document.documentElement.scrollHeight-window.innerHeight);}
+function paint(){
+var progress=Math.max(0,Math.min(1,window.scrollY/maxScroll));
 path.setAttribute("stroke-dashoffset",String(1000*(1-progress)));
 if(!spine.dataset.state)spine.dataset.state="idle";
 }
-function schedule(){if(scheduled)return;scheduled=true;window.requestAnimationFrame(function(){scheduled=false;sync();});}
-sync();
+function schedule(){if(scheduled)return;scheduled=true;window.requestAnimationFrame(function(){scheduled=false;paint();});}
+measure();paint();
 if(reduced)return;
 window.addEventListener("scroll",schedule,{passive:true});
-window.addEventListener("resize",schedule,{passive:true});
-if(document.fonts&&document.fonts.ready)document.fonts.ready.then(schedule);
+window.addEventListener("resize",function(){measure();schedule();},{passive:true});
+if("ResizeObserver" in window&&main){var observer=new ResizeObserver(function(){measure();schedule();});observer.observe(main);}
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(function(){measure();schedule();});
 }
 async function loadHeroArtifact(){
 if(heroStarted||document.visibilityState==="hidden")return;heroStarted=true;var started=performance.now(),issued=null,visual=document.querySelector(".hero-visual"),card=$("heroCredential");

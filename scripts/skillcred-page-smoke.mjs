@@ -85,7 +85,7 @@ for (const file of files) {
   assert.match(css, /@font-face[^{}]*\{[^}]*InstrumentSerif-Italic\.woff2/, file + ': self-hosted Instrument Serif accent font is not configured')
   assert.match(css, /@font-face[^{}]*\{[^}]*JetBrainsMono-Regular\.woff2/, file + ': self-hosted JetBrains Mono is not configured')
   assert.ok(css.includes('--acid:#C8FF3D') && css.includes('--bg:#08090A'), file + ': design tokens or palette are missing')
-  assert.match(css, /--hero-size:clamp\(80px,5\.8vw,92px\)/, file + ': desktop hero type scale must be 80–92px')
+  assert.match(css, /--hero-size:clamp\(88px,6vw,104px\)/, file + ': desktop hero type scale must be 88–104px')
   assert.ok(css.replace(/["']/g, '').includes('.trust-spine[data-state=revoked]'), file + ': revoked state must break the trust thread')
   assert.ok(css.includes('.hero-json-preview pre{height:8.5em'), file + ': the live JSON preview must not cause layout shifts')
   assert.ok(css.includes('font-display:optional'), file + ': late font swaps must not move the first viewport')
