@@ -13,12 +13,12 @@ Every session has a deterministic `sessionId`, `gameId`, `schemaVersion`, seed, 
 - Reason to exist: управлять.
 - Fantasy: build a city whose economy and politics remember every decision.
 - Core loop: `observe city -> choose policy -> allocate resources -> respond to faction reaction -> archive consequence`.
-- Vertical slice: one district, three factions, six buildings, two resources (money and energy), one tax decision, one election event.
-- State: population, treasury, energy, faction approval, prices, active laws, calendar tick.
-- Failure: treasury collapse, energy shortage, or loss of faction legitimacy.
-- Success: complete the district objective while preserving two of three faction alliances.
-- Save: event checkpoints after every policy and calendar tick; server validates state transitions.
-- Analytics: `time_city_open`, `time_policy_set`, `time_faction_reacted`, `time_election_resolved`.
+- Vertical slice now implemented: four selectable districts, three factions, four building types with three upgrade levels, two main resources (treasury and energy), tax decision, four policy styles, deterministic city incidents and an election/mayoral mandate outcome.
+- State: population, treasury, energy, stability, faction approval, district prosperity, building level, tax rate, policy, calendar tick, score and chronicle entries.
+- Failure: treasury/energy/stability collapse or all three factions lose legitimacy; success: reach tick 8 with at least two factions at 52+ approval, treasury at 500+, and stability at 35+.
+- Save: versioned localStorage checkpoint on every state transition. Server-authoritative city state and conflict resolution remain future work; client-side simulation is not trusted for competitive score or currency.
+- Diagnostics: real client FPS from requestAnimationFrame, average frame interval, synchronous simulation duration from performance.now(), and action counter.
+- Analytics: current generic OSGARD game/portal events include game ID and action payload; named TIME-specific analytics events still need a schema/API update.
 
 ## SWARM
 
