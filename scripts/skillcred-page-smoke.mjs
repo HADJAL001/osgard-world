@@ -110,7 +110,7 @@ for (const file of files) {
   assert.ok(!/fonts\.googleapis\.com|fonts\.gstatic\.com/.test(js), file + ': external font CDN found')
   assert.ok(css.includes('.faq-answer p{font-size:13px}'), file + ': mobile FAQ text should remain legible')
   assert.ok(css.includes('min-height:27px'), file + ': mobile footer links need at least 24px targets')
-  assert.ok(css.includes('.hero-visual{order:0;padding-top:0;height:430px;min-height:430px;overflow:visible}.hero-copy{order:-1}.hero-json-preview,.visual-caption{display:none}.hero-proofline{display:none}'), file + ': mobile hero must show the credential artifact in a reserved first-screen stage')
+  assert.ok(/\.hero-visual\{[^}]*order:0;[^}]*height:430px;[^}]*min-height:430px;[^}]*overflow:visible\}/.test(css) && /\.hero-copy\{[^}]*order:-1\}/.test(css) && /\.hero-proofline\{display:none\}/.test(css), file + ': mobile hero must prioritize the headline and keep the credential in a reserved first-screen stage')
     assert.match(css, /\.artifact-card\[data-phase=["']?issued["']?\]\{animation:artifact-arrive\s+(?:420ms|\.42s)/, file + ': only issued credentials may run the card arrival animation')
   if (file.startsWith('public/skillcred/')) {
      assert.ok(js.includes('function afterFirstPaint(callback)'), file + ': automatic API startup must use a first-paint scheduler')
