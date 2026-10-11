@@ -70,7 +70,19 @@ export function getTurnForecast(state: TimeState, plan: TurnPlan): TurnForecast 
   }
 }
 
-function incidentFor(seed: number) {
+type Incident = {
+  seed: number
+  category: ChronicleEntry['category']
+  title: string
+  detail: string
+  impact: string
+  tone: ChronicleEntry['tone']
+  treasury: number
+  energy: number
+  approval: Partial<Record<FactionId, number>>
+  stability: number
+}
+function incidentFor(seed: number): Incident {
   const nextSeed = (Math.imul(seed, 1664525) + 1013904223) >>> 0
   const items = [
     { category: 'ECONOMY' as const, title: 'Торговый караван', detail: 'Караван прибыл раньше срока: торговцы пополнили городские склады.', impact: 'Казна +45 · Гильдии +2', tone: 'positive' as const, treasury: 45, energy: 0, approval: { guild: 2 }, stability: 0 },
