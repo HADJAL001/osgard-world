@@ -47,7 +47,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
             normalized.includes('/skillcred/fonts/intervariable.woff2') &&
             normalized.includes('/skillcred/fonts/instrumentserif-italic.woff2') &&
             normalized.includes('/skillcred/fonts/jetbrainsmono-regular.woff2') &&
-            (!expectCurrentDesign || (normalized.includes('--hero-size:clamp(80px,5.8vw,92px)') && /\\.trust-spine\\[data-state=["\\x27]?revoked["\\x27]?\\]/.test(normalized)))
+            (!expectCurrentDesign || (normalized.includes('--hero-size:clamp(80px,5.8vw,92px)') && normalized.replace(/["']/g, '').includes('.trust-spine[data-state=revoked]')))
           : content.includes('demo/issue') && content.includes('data-clock-step')
       }
       return { path, status: asset.status, contentType, ok: asset.status === 200 && typeOk && nonEmpty }

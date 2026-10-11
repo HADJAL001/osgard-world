@@ -86,7 +86,7 @@ for (const file of files) {
   assert.match(css, /@font-face[^{}]*\{[^}]*JetBrainsMono-Regular\.woff2/, file + ': self-hosted JetBrains Mono is not configured')
   assert.ok(css.includes('--acid:#C8FF3D') && css.includes('--bg:#08090A'), file + ': design tokens or palette are missing')
   assert.match(css, /--hero-size:clamp\(80px,5\.8vw,92px\)/, file + ': desktop hero type scale must be 80–92px')
-  assert.match(css, /\\.trust-spine\\[data-state=["\\x27]?revoked["\\x27]?\\]/, file + ': revoked state must break the trust thread')
+  assert.ok(css.replace(/["']/g, '').includes('.trust-spine[data-state=revoked]'), file + ': revoked state must break the trust thread')
   assert.ok(css.includes('.hero-json-preview pre{height:8.5em'), file + ': the live JSON preview must not cause layout shifts')
   assert.ok(css.includes('font-display:optional'), file + ': late font swaps must not move the first viewport')
   assert.match(css, /prefers-reduced-motion/, file + ': missing reduced motion support')
