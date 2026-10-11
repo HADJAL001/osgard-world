@@ -152,3 +152,120 @@ main{position:relative;isolation:isolate}
 .section-shell{position:relative;z-index:1}
 @media(max-width:600px){.trust-spine{opacity:.34}}
 @media(prefers-reduced-motion:reduce){.trust-spine-progress{transition:none!important}}
+
+
+/* CINEMATIC TRUST OPTICS — native vector light; no raster asset or external dependency. */
+:root{
+  --trust-orbit-duration:46s;
+  --credential-scan-duration:1.8s;
+  --trust-orbit-opacity:.30;
+  --trust-grain-opacity:.11;
+  --pointer-glow-opacity:.085;
+  --perspective-depth:1150px;
+  --tilt-x-max:4.4;
+  --tilt-y-max:5;
+  --surface-glint:rgba(var(--rgb-white),.075);
+}
+.hero-visual{isolation:isolate}
+.hero-visual::before{
+  content:"";
+  position:absolute;
+  z-index:0;
+  top:47%;
+  left:50%;
+  width:min(158%,760px);
+  aspect-ratio:1;
+  border-radius:50%;
+  pointer-events:none;
+  transform:translate(-50%,-50%);
+  background:
+    radial-gradient(ellipse at 50% 50%,transparent 0 28%,rgba(var(--rgb-white),.075) 28.15%,transparent 28.45% 43%,rgba(var(--rgb-acid),.14) 43.2%,transparent 43.5% 59%,rgba(var(--rgb-white),.04) 59.15%,transparent 59.45%),
+    repeating-conic-gradient(from 3deg at 50% 50%,rgba(var(--rgb-white),.055) 0deg .18deg,transparent .18deg 12deg);
+  opacity:var(--trust-orbit-opacity);
+  mask-image:radial-gradient(ellipse at center,transparent 0%,black 20%,black 57%,transparent 73%);
+  animation:trust-orbit-rotation var(--trust-orbit-duration) linear infinite;
+}
+.hero-visual::after{
+  content:"";
+  position:absolute;
+  z-index:0;
+  inset:3% -7% 5%;
+  pointer-events:none;
+  opacity:var(--trust-grain-opacity);
+  background:
+    repeating-linear-gradient(0deg,transparent 0 4px,rgba(var(--rgb-white),.06) 5px,transparent 6px),
+    repeating-linear-gradient(90deg,transparent 0 79px,rgba(var(--rgb-white),.055) 80px,transparent 81px);
+  mask-image:radial-gradient(ellipse at center,black 0%,transparent 77%);
+}
+@keyframes trust-orbit-rotation{
+  from{transform:translate(-50%,-50%) rotate(0deg)}
+  to{transform:translate(-50%,-50%) rotate(360deg)}
+}
+.hero-visual .trust-thread{z-index:1}
+.hero-visual .artifact-card{z-index:2}
+.hero-visual .artifact-statusline,
+.hero-visual .hero-json-preview,
+.hero-visual .visual-caption{position:relative;z-index:2}
+.artifact-card{
+  box-shadow:var(--shadow),inset 0 1px 0 rgba(var(--rgb-white),.045);
+  transition:transform var(--motion-card) var(--ease),border-color var(--medium) ease,box-shadow var(--medium) ease;
+}
+.artifact-card::after{
+  inset:0;
+  top:0;
+  right:0;
+  width:auto;
+  height:auto;
+  border-radius:inherit;
+  background:radial-gradient(ellipse at var(--pointer-x,82%) var(--pointer-y,12%),rgba(var(--rgb-acid),var(--pointer-glow-opacity)),transparent 47%);
+  opacity:.92;
+  transition:opacity var(--medium) ease;
+}
+.artifact-card[data-phase="signature"]{
+  border-color:rgba(var(--rgb-acid),.25);
+  box-shadow:var(--shadow),0 0 0 1px rgba(var(--rgb-acid),.035);
+}
+.artifact-card[data-phase="signature"]::before{
+  background-image:
+    linear-gradient(112deg,rgba(var(--rgb-white),.035),transparent 36%),
+    repeating-linear-gradient(0deg,transparent 0 35px,rgba(var(--rgb-white),.009) 36px),
+    linear-gradient(105deg,transparent 0 41%,var(--surface-glint) 49%,transparent 57% 100%);
+  background-size:100% 100%,100% 100%,220% 100%;
+  background-position:0 0,0 0,-120% 0;
+  animation:credential-light-sweep var(--credential-scan-duration) var(--ease) both;
+}
+@keyframes credential-light-sweep{
+  from{background-position:0 0,0 0,-120% 0}
+  to{background-position:0 0,0 0,220% 0}
+}
+.hero-visual[data-state="valid"] .artifact-card{
+  border-color:rgba(var(--rgb-acid),.24);
+  box-shadow:var(--shadow),0 0 0 1px rgba(var(--rgb-acid),.045),0 0 42px rgba(var(--rgb-acid),.035);
+}
+.hero-visual[data-state="revoked"] .artifact-card{
+  border-color:rgba(var(--rgb-alert),.26);
+  box-shadow:var(--shadow),0 0 0 1px rgba(var(--rgb-alert),.035);
+}
+.hero-visual[data-state="revoked"]::before{
+  animation-play-state:paused;
+  opacity:.11;
+}
+@media(hover:hover) and (pointer:fine){
+  .artifact-card:hover{
+    border-color:rgba(var(--rgb-white),.17);
+    box-shadow:var(--shadow-hover),inset 0 1px 0 rgba(var(--rgb-white),.05);
+  }
+  .hero-visual[data-state="valid"] .artifact-card:hover{
+    border-color:rgba(var(--rgb-acid),.34);
+    box-shadow:var(--shadow-hover),0 0 36px rgba(var(--rgb-acid),.055);
+  }
+}
+@media(max-width:600px){
+  :root{--trust-orbit-opacity:.15;--trust-grain-opacity:.035;--pointer-glow-opacity:.04}
+  .hero-visual::before{width:min(168%,520px);top:43%}
+  .hero-visual::after{inset:4% -4%}
+}
+@media(prefers-reduced-motion:reduce){
+  .hero-visual::before{animation:none!important}
+  .artifact-card[data-phase="signature"]::before{animation:none!important;background-position:0 0,0 0,50% 0}
+}

@@ -90,6 +90,10 @@ for (const file of files) {
   assert.ok(css.includes('.hero-json-preview pre{height:8.5em'), file + ': the live JSON preview must not cause layout shifts')
   assert.ok(css.includes('font-display:optional'), file + ': late font swaps must not move the first viewport')
   assert.match(css, /prefers-reduced-motion/, file + ': missing reduced motion support')
+  assert.ok(css.includes('.hero-visual::before{') && css.includes('repeating-conic-gradient'), file + ': cinematic trust optics are missing')
+  assert.ok(css.includes('@keyframes credential-light-sweep') && css.includes('var(--surface-glint)'), file + ': signature light sweep must use design tokens')
+  assert.ok(css.includes('var(--pointer-x,82%)') && css.includes('var(--perspective-depth)'), file + ': credential depth must use pointer-aware design tokens');
+
   assert.ok(css.includes('button:disabled{cursor:not-allowed;opacity:1}'), file + ': disabled buttons must not lose text contrast')
   assert.ok(css.includes('.nav-right{display:none;'), file + ': mobile navigation must be collapsed before JS to avoid layout shifts')
   assert.ok(css.includes('.js-ready .faq-answer{display:grid;grid-template-rows:0fr;'), file + ': FAQ accordion must be an enhancement over visible no-JS answers')
@@ -100,6 +104,8 @@ for (const file of files) {
   assert.ok(js.includes('IntersectionObserver') && js.includes('trustSpine') && js.includes('stroke-dashoffset'), file + ': scroll-driven trust thread is not wired')
   assert.ok(!/scrollHeight|ResizeObserver/.test(js.slice(js.indexOf('function trustScrollSetup()'), js.indexOf('async function loadHeroArtifact()'))), file + ': trust-thread progress must not force full-document layout')
   assert.ok(js.includes('"hero-title"'), file + ': hero heading must keep its natural wrapping path')
+  assert.ok(js.includes('window.requestAnimationFrame(paint)') && js.includes('removeProperty("--pointer-x")'), file + ': cursor depth must be frame-limited and reset on exit');
+
   assert.ok(css.includes('.artifact-statusline{position:relative;z-index:2;gap:9px;margin:15px 0 0;min-height:3em'), file + ': hero status needs reserved height')
   assert.ok(css.includes('JetBrains Mono') && css.includes('font-display:optional'), file + ': late technical font swaps must not shift layout')
   assert.ok(js.includes('HTTP '), file + ': HTTP response codes are not logged')
