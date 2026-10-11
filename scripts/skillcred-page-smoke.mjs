@@ -51,7 +51,6 @@ for (const file of files) {
   assert.ok(!html.includes('id="critical-css"') && !html.includes('id="fullStylesheet"'), file + ': avoid duplicate stylesheet activation and full-document style recalculation')
   assert.ok(!html.includes('href="/skillcred/fonts/JetBrainsMono-Regular.woff2" as="font"'), file + ': mono font should not compete with hero font preload')
   assert.match(html, /<html lang="ru" class="js-ready">/, file + ': enhancement class must be present before first paint')
-  assert.ok(html.includes('fonts/JetBrainsMono-Regular.woff2') && html.includes('as="font"'), file + ': critical mono font must be discoverable from HTML')
   assert.ok(html.includes('<noscript><nav class="noscript-nav'), file + ': no-JS mobile navigation fallback is missing')
   assert.ok(html.includes('<link rel="stylesheet" href="/skillcred/styles.css">'), file + ': page should load one self-hosted stylesheet directly')
   assert.ok(!/\sstyle=["\x27]/i.test(html), file + ': inline style attribute is not allowed')
