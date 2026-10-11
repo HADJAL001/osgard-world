@@ -62,6 +62,7 @@ const cleanSeo: Record<string, { title: string; description: string }> = {
   '/development': { title: 'OSGARD Development — создание цифровых продуктов', description: 'Разработка сайтов, приложений и MVP-платформ от идеи до запуска.' },
   '/entertainment': { title: 'OSGARD Entertainment — интерактивные игры', description: 'Игры OSGARD: выбирайте мир, запускайте сессию и сохраняйте результат.' },
   '/skillcred': { title: 'SkillCred — навыки, которые остаются с вами | OSGARD', description: 'Переносимые цифровые подтверждения навыков. Проверка Ed25519 в браузере.' },
+  '/games/time': { title: 'Империя времени — стратегия живого города | OSGARD PLAY', description: 'Управляйте казной, энергией, районами и политическими фракциями. Каждое решение меняет летопись города.' },
 }
 
 function Seo({ path }: { path: string }) {
@@ -93,7 +94,7 @@ const path = location.pathname.replace(/\/+$/, '') || '/'
 function RoutedRoot() {
   const [locale, setLocale] = React.useState<'ru' | 'en'>('ru')
   if (path === '/miniapp') return <MiniApp />
-  if (path === '/games/time') return <TimePrototype />
+  if (path === '/games/time' || path === '/games/time-empire') return <><Seo path="/games/time" /><TimePrototype /></>
   if (path === '/play/swarm') return <OnlineGamePrototype game="swarm" />
   if (path === '/play/null-shift') return <OnlineGamePrototype game="null" />
   if (path === '/play/inherit') return <InheritPrototype />
