@@ -21,7 +21,6 @@ var explanations={
 "proofValue":"Значение доказательства; само по себе не означает доверие.",
 "credentialStatus":"Ссылка на механизм проверки статуса или отзыва."
 };
-document.documentElement.classList.add("js-ready");
 if($("copyrightYear"))$("copyrightYear").textContent=String(new Date().getFullYear());
 function wait(ms){return new Promise(function(resolve){window.setTimeout(resolve,ms);});}
 function escapeHtml(v){return String(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
