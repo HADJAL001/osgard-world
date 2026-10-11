@@ -1,5 +1,5 @@
 import {
-  Activity, ArrowRight, ArrowUpRight, Building2, Check, ChevronRight, CircleHelp, Coins, Factory, Landmark, Leaf, MapPinned, Play,
+  Activity, ArrowRight, ArrowUpRight, Building2, Check, ChevronRight, CircleHelp, Coins, Expand, Factory, Landmark, Leaf, MapPinned, Minimize2, Play,
   RotateCcw, Save, ShieldAlert, ShieldCheck, Sparkles, TrendingUp, Users, Vote, Waves, Zap,
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -11,9 +11,10 @@ import { recordOsgardEvent } from './core/eventQueue'
 import { completePlayerSession, startPlayerSession } from './core/playerApi'
 
 type Tab = 'council' | 'construction' | 'chronicle'
-type Diagnostics = { fps: number; frameMs: number; frameP95Ms: number; slowFrames: number; tickMs: number; actions: number; save: 'saved' | 'error'; saveMs: number; saveBytes: number }
+type Diagnostics = { fps: number; frameMs: number; frameP95Ms: number; slowFrames: number; longTasks: number; longTaskSupported: boolean; tickMs: number; actions: number; save: 'saved' | 'error'; saveMs: number; saveBytes: number }
 
 const SAVE_KEY = 'osgard.time.empire.save.v1'
+const GUIDE_DISMISSED_KEY = 'osgard.time.empire.guide.dismissed.v1'
 const factions = [
   { id: 'guild' as const, name: 'Гильдии мастеров', short: 'ГИЛЬДИИ', mark: 'G', icon: Factory, description: 'Производство и торговля' },
   { id: 'commons' as const, name: 'Горожане', short: 'ГРАЖДАНЕ', mark: 'C', icon: Users, description: 'Благосостояние и налоги' },
@@ -57,12 +58,19 @@ export function TimePrototype() {
   const [selectedDistrict, setSelectedDistrict] = useState<DistrictId>('forum')
   const [tab, setTab] = useState<Tab>('council')
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false)
+  const [cinematicMap, setCinematicMap] = useState(false)
   const [mapZoom, setMapZoom] = useState(1)
+  const [guideDismissed, setGuideDismissed] = useState(() => { try { return localStorage.getItem(GUIDE_DISMISSED_KEY) === '1' } catch { return false } })
+  const [districtVisited, setDistrictVisited] = useState(false)
+  const [planTouched, setPlanTouched] = useState(false)
   const [announcement, setAnnouncement] = useState('Совет ожидает вашего решения.')
-  const [diagnostics, setDiagnostics] = useState<Diagnostics>({ fps: 0, frameMs: 0, frameP95Ms: 0, slowFrames: 0, tickMs: 0, actions: 0, save: 'saved', saveMs: 0, saveBytes: 0 })
+  const [diagnostics, setDiagnostics] = useState<Diagnostics>({ fps: 0, frameMs: 0, frameP95Ms: 0, slowFrames: 0, longTasks: 0, longTaskSupported: false, tickMs: 0, actions: 0, save: 'saved', saveMs: 0, saveBytes: 0 })
   const session = useRef<string | null>(null)
   const completed = useRef(false)
   const stateRef = useRef(state)
+  const cityPanelRef = useRef<HTMLElement | null>(null)
+  const commandPanelRef = useRef<HTMLElement | null>(null)
+  const cinematicToggleRef = useRef<HTMLButtonElement | null>(null)
   const diagnosticRef = useRef({ frames: 0, elapsed: 0, start: 0, last: 0, samples: [] as number[], slowFrames: 0 })
 
   stateRef.current = state
@@ -113,53 +121,55 @@ export function TimePrototype() {
   useEffect(() => {
     let frame = 0
     let alive = true
+    let observer: PerformanceObserver | null = null
+    const meter = diagnosticRef.current
+    const resetWindow = () => { meter.frames = 0; meter.elapsed = 0; meter.start = 0; meter.last = 0; meter.samples = []; meter.slowFrames = 0 }
     const sample = (now: number) => {
-      if (!alive) return
-      const meter = diagnosticRef.current
+      if (!alive || document.visibilityState !== 'visible') return
       if (meter.last > 0) {
         const delta = now - meter.last
-        meter.frames += 1
-        meter.elapsed += delta
-        meter.samples.push(delta)
-        if (meter.samples.length > 240) meter.samples.shift()
-        if (delta > 25) meter.slowFrames += 1
+        if (Number.isFinite(delta) && delta > 0) {
+          meter.frames += 1; meter.elapsed += delta; meter.samples.push(delta)
+          if (delta > 25) meter.slowFrames += 1
+        }
       }
       meter.last = now
       if (!meter.start) meter.start = now
       if (now - meter.start >= 1000) {
         const duration = now - meter.start
         const fps = Math.round((meter.frames * 1000) / duration)
-        const frameMs = meter.frames ? meter.elapsed / meter.frames : 0
+        const frameMs = meter.samples.length ? meter.elapsed / meter.samples.length : 0
         const sortedSamples = [...meter.samples].sort((a, b) => a - b)
         const p95Index = Math.min(sortedSamples.length - 1, Math.max(0, Math.ceil(sortedSamples.length * 0.95) - 1))
         const frameP95Ms = sortedSamples.length ? sortedSamples[p95Index] : 0
-        setDiagnostics((old) => ({
-          ...old,
-          fps,
-          frameMs: Number(frameMs.toFixed(1)),
-          frameP95Ms: Number(frameP95Ms.toFixed(1)),
-          slowFrames: meter.slowFrames,
-        }))
-        meter.frames = 0
-        meter.elapsed = 0
-        meter.slowFrames = 0
-        meter.start = now
+        setDiagnostics((old) => ({ ...old, fps, frameMs: Number(frameMs.toFixed(1)), frameP95Ms: Number(frameP95Ms.toFixed(1)), slowFrames: meter.slowFrames }))
+        meter.frames = 0; meter.elapsed = 0; meter.samples = []; meter.slowFrames = 0; meter.start = now
       }
       frame = requestAnimationFrame(sample)
     }
-    frame = requestAnimationFrame(sample)
-    return () => { alive = false; cancelAnimationFrame(frame) }
+    const onVisibility = () => { cancelAnimationFrame(frame); resetWindow(); if (document.visibilityState === 'visible' && alive) frame = requestAnimationFrame(sample) }
+    document.addEventListener('visibilitychange', onVisibility)
+    if (typeof PerformanceObserver !== 'undefined') {
+      try {
+        observer = new PerformanceObserver((list) => { if (list.getEntries().length) setDiagnostics((old) => ({ ...old, longTasks: old.longTasks + list.getEntries().length })) })
+        observer.observe({ entryTypes: ['longtask'] })
+        setDiagnostics((old) => ({ ...old, longTaskSupported: true }))
+      } catch { observer?.disconnect(); observer = null }
+    }
+    if (document.visibilityState === 'visible') frame = requestAnimationFrame(sample)
+    return () => { alive = false; cancelAnimationFrame(frame); document.removeEventListener('visibilitychange', onVisibility); observer?.disconnect() }
   }, [])
 
   useEffect(() => {
     const handleShortcuts = (event: KeyboardEvent) => {
       if (event.altKey || event.ctrlKey || event.metaKey) return
-      const target = event.target
-      if (target instanceof HTMLElement && target.closest('input, textarea, select, button, a, [contenteditable="true"]')) return
       if (event.key === 'Escape') {
-        setDiagnosticsOpen(false)
+        if (cinematicMap) { setCinematicMap(false); cinematicToggleRef.current?.focus() }
+        else setDiagnosticsOpen(false)
         return
       }
+      const target = event.target
+      if (target instanceof HTMLElement && target.closest('input, textarea, select, button, a, [contenteditable="true"]')) return
       if (event.key === '1') setTab('council')
       if (event.key === '2') setTab('construction')
       if (event.key === '3') setTab('chronicle')
@@ -169,7 +179,15 @@ export function TimePrototype() {
     }
     window.addEventListener('keydown', handleShortcuts)
     return () => window.removeEventListener('keydown', handleShortcuts)
-  }, [])
+  }, [cinematicMap])
+
+  useEffect(() => {
+    if (!cinematicMap) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const focusFrame = requestAnimationFrame(() => cinematicToggleRef.current?.focus())
+    return () => { document.body.style.overflow = previousOverflow; cancelAnimationFrame(focusFrame) }
+  }, [cinematicMap])
 
   function applyTurn() {
     if (state.status !== 'ACTIVE') return
@@ -224,14 +242,16 @@ export function TimePrototype() {
 
   const chooseDistrict = (id: DistrictId) => {
     setSelectedDistrict(id)
+    setDistrictVisited(true)
     const target = state.districts.find((item) => item.id === id)
     if (target) setAnnouncement(target.name + ' — ' + target.description)
   }
 
   const active = state.status === 'ACTIVE'
+  const showFirstTurnGuide = state.tick === 0 && !guideDismissed
 
   return (
-    <main className="time-game">
+    <main className={'time-game' + (cinematicMap ? ' is-cinematic-view' : '')}>
       <div className="time-game-noise" aria-hidden="true" />
       <header className="tg-topbar">
         <a className="tg-brand" href="/entertainment" aria-label="Назад к играм OSGARD">
@@ -268,6 +288,15 @@ export function TimePrototype() {
         <Resource icon={<ShieldCheck />} label="СТАБИЛЬНОСТЬ" value={state.stability + '%'} hint={state.stability >= 60 ? 'Порядок устойчив' : state.stability >= 30 ? 'Растёт напряжение' : 'Кризис близко'} tone={state.stability >= 60 ? 'positive' : state.stability >= 30 ? 'neutral' : 'negative'} meter={state.stability} />
       </section>
 
+      {showFirstTurnGuide && <section className="tg-start-guide" aria-labelledby="tgGuideTitle">
+        <div className="tg-guide-head"><div><span className="tg-overline">FIRST TURN / КРАТКОЕ ОБУЧЕНИЕ</span><h2 id="tgGuideTitle">Первый такт — три решения</h2></div><button type="button" className="tg-guide-dismiss" onClick={() => { setGuideDismissed(true); try { localStorage.setItem(GUIDE_DISMISSED_KEY, '1') } catch { /* optional */ } }}>СКРЫТЬ <span aria-hidden="true">×</span></button></div>
+        <div className="tg-guide-steps">
+          <button type="button" className={'tg-guide-step ' + (districtVisited ? 'is-complete' : '')} onClick={() => cityPanelRef.current?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' })}><span className="tg-guide-index">01</span><span className="tg-guide-copy"><strong>Осмотрите районы</strong><small>Нажмите на участок карты и изучите его состояние.</small></span><span className="tg-guide-state">{districtVisited ? 'ГОТОВО ✓' : 'КАРТА'}</span></button>
+          <button type="button" className={'tg-guide-step ' + (planTouched ? 'is-complete' : '')} onClick={() => { setTab('council'); commandPanelRef.current?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' }) }}><span className="tg-guide-index">02</span><span className="tg-guide-copy"><strong>Задайте курс</strong><small>Измените налог или выберите один из четырёх курсов.</small></span><span className="tg-guide-state">{planTouched ? 'ГОТОВО ✓' : 'СОВЕТ'}</span></button>
+          <button type="button" className="tg-guide-step" onClick={() => { setTab('council'); commandPanelRef.current?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' }) }}><span className="tg-guide-index">03</span><span className="tg-guide-copy"><strong>Запустите такт</strong><small>Проверьте прогноз и нажмите «Продвинуть время».</small></span><span className="tg-guide-state">ХОД →</span></button>
+        </div><div className="tg-guide-foot"><span>Постройки необязательны, но меняют будущие расчёты.</span><span>{Number(districtVisited) + Number(planTouched)} / 2 ПОДГОТОВЛЕНО</span></div>
+      </section>}
+
       {diagnosticsOpen && <section className="tg-diagnostics" aria-label="Диагностика производительности">
         <div className="tg-diagnostic-title"><Activity size={15} /><div><strong>ДИАГНОСТИКА RUNTIME</strong><small>Измерения этого браузера, обновляются в реальном времени</small></div><span className="tg-live-pill">LIVE</span></div>
         <div className="tg-diagnostic-grid">
@@ -275,6 +304,7 @@ export function TimePrototype() {
           <Diagnostic label="Интервал кадра" value={diagnostics.frameMs ? diagnostics.frameMs + ' мс' : '…'} description="Среднее за последнюю секунду" tone={diagnostics.frameMs > 32 ? 'negative' : 'positive'} />
           <Diagnostic label="P95 кадра" value={diagnostics.frameP95Ms ? diagnostics.frameP95Ms + ' мс' : '…'} description="95% интервалов не выше" tone={diagnostics.frameP95Ms > 32 ? 'negative' : diagnostics.frameP95Ms > 20 ? 'neutral' : 'positive'} />
           <Diagnostic label="Медленные кадры" value={String(diagnostics.slowFrames)} description="Интервал свыше 25 мс за секунду" tone={diagnostics.slowFrames > 4 ? 'negative' : 'positive'} />
+          <Diagnostic label="Долгие задачи" value={diagnostics.longTaskSupported ? String(diagnostics.longTasks) : 'Н/Д'} description={diagnostics.longTaskSupported ? 'Основной поток дольше 50 мс' : 'Браузер не поддерживает API'} tone={diagnostics.longTaskSupported && diagnostics.longTasks > 0 ? 'negative' : 'neutral'} />
           <Diagnostic label="Расчёт действия" value={diagnostics.actions ? diagnostics.tickMs.toFixed(2) + ' мс' : '—'} description="Последняя симуляция / стройка" tone={diagnostics.tickMs > 50 ? 'negative' : 'positive'} />
           <Diagnostic label="Запись сохранения" value={diagnostics.saveMs ? diagnostics.saveMs.toFixed(2) + ' мс' : '…'} description="Измеренная длительность localStorage" tone={diagnostics.saveMs > 16 ? 'negative' : 'positive'} />
           <Diagnostic label="Размер сохранения" value={diagnostics.saveBytes ? (diagnostics.saveBytes / 1024).toFixed(1) + ' КБ' : '…'} description="Фактический размер JSON в UTF-8" />
@@ -283,16 +313,17 @@ export function TimePrototype() {
       </section>}
 
       <div className="tg-play-grid">
-        <section className="tg-city-panel" aria-label="Карта города">
+        <section ref={cityPanelRef} id="tgCityPanel" className={'tg-city-panel' + (cinematicMap ? ' is-cinematic' : '')} aria-label={cinematicMap ? 'Кинематографический атлас города' : 'Карта города'} role={cinematicMap ? 'dialog' : undefined} aria-modal={cinematicMap ? true : undefined}>
           <div className="tg-panel-head">
             <div><span className="tg-overline">ATLAS / URBS IX</span><h2>Живая карта</h2></div>
             <div className="tg-map-controls">
               <button type="button" aria-label="Уменьшить карту" onClick={() => setMapZoom((zoom) => Math.max(0.86, Number((zoom - 0.06).toFixed(2))))}>−</button>
               <button className="tg-zoom-reset" type="button" aria-label="Сбросить масштаб карты" title="Сбросить масштаб карты" onClick={() => setMapZoom(1)}>{Math.round(mapZoom * 100)}%</button>
               <button type="button" aria-label="Увеличить карту" onClick={() => setMapZoom((zoom) => Math.min(1.24, Number((zoom + 0.06).toFixed(2))))}>+</button>
+              <button ref={cinematicToggleRef} className="tg-cinema-button" type="button" aria-label={cinematicMap ? 'Выйти из кинематографического вида карты' : 'Открыть кинематографический вид карты'} aria-pressed={cinematicMap} title={cinematicMap ? 'Закрыть кинематографический вид (Esc)' : 'Кинематографический вид карты'} onClick={() => setCinematicMap((value) => !value)}>{cinematicMap ? <Minimize2 size={15} /> : <Expand size={15} />}</button>
             </div>
           </div>
-          <div className="tg-map-viewport" data-city-status={state.status} data-city-tick={state.tick}>
+          <div className="tg-map-viewport" data-city-status={state.status} data-city-tick={state.tick} data-city-energy={state.energy < 25 ? 'critical' : state.energy < 55 ? 'strained' : 'stable'} data-city-stability={state.stability < 25 ? 'critical' : state.stability < 55 ? 'strained' : 'stable'}>
             <div
               className="tg-map-world"
               key={state.tick + ':' + state.districts.map((item) => item.buildingLevel).join('-')}
@@ -305,9 +336,18 @@ export function TimePrototype() {
                   <radialGradient id="tgGlow"><stop offset="0%" stopColor="#d9bd79" stopOpacity=".32" /><stop offset="100%" stopColor="#d9bd79" stopOpacity="0" /></radialGradient>
                   <pattern id="tgGrid" width="26" height="26" patternUnits="userSpaceOnUse"><path d="M 26 0 L 0 0 0 26" fill="none" stroke="#9ab3b0" strokeOpacity=".09" strokeWidth=".7" /></pattern>
                   <filter id="tgBloom"><feGaussianBlur stdDeviation="3.5" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+                <linearGradient id="tgHorizon" x1="0" y1="0" x2="0.12" y2="1"><stop offset="0%" stopColor="#1e3138" /><stop offset="52%" stopColor="#101d24" /><stop offset="100%" stopColor="#091116" /></linearGradient>
+                <radialGradient id="tgAurora" cx="50%" cy="0%" r="100%"><stop offset="0%" stopColor="#a3d8c1" stopOpacity=".28" /><stop offset="38%" stopColor="#8bb7ad" stopOpacity=".09" /><stop offset="100%" stopColor="#0b141a" stopOpacity="0" /></radialGradient>
+                <linearGradient id="tgCanalDepth" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#1e5555" /><stop offset="48%" stopColor="#112f39" /><stop offset="100%" stopColor="#081820" /></linearGradient>
+                <pattern id="tgBlockTexture" width="18" height="18" patternUnits="userSpaceOnUse"><path d="M0 18 18 0M-4 4 4 -4M14 22 22 14" stroke="#8aa8a0" strokeOpacity=".035" strokeWidth="1" /></pattern>
                 </defs>
                 <rect width="840" height="520" fill="#0a1116" />
+                <rect width="840" height="520" fill="url(#tgHorizon)" opacity=".62" />
                 <rect width="840" height="520" fill="url(#tgGrid)" />
+                <rect width="840" height="520" fill="url(#tgBlockTexture)" />
+                <ellipse className="tg-map-aurora" cx="420" cy="82" rx="390" ry="190" fill="url(#tgAurora)" />
+                <path className="tg-map-ridge" d="M0 170 48 141 81 151 124 106 162 130 204 91 245 132 291 103 328 125 376 79 412 111 458 75 501 120 552 94 590 124 644 89 694 123 739 106 794 151 840 127V0H0Z" fill="#132329" opacity=".42" />
+                <g className="tg-map-contours" fill="none" aria-hidden="true"><path d="M-30 220C82 152 161 171 240 214S394 269 477 205 639 149 870 215" /><path d="M-24 238C92 171 160 191 244 233S396 289 486 222 645 173 865 237" /><path d="M-30 458C92 394 165 424 240 455S392 498 477 442 647 399 871 461" /></g>
                 <g className="tg-city-stars" aria-hidden="true">
                   {Array.from({ length: 52 }, (_, i) => {
                     const x = (i * 131 + 37) % 820 + 10
@@ -316,9 +356,13 @@ export function TimePrototype() {
                   })}
                 </g>
                 <ellipse cx="432" cy="266" rx="315" ry="240" fill="url(#tgGlow)" opacity=".45" />
-                <path d="M-20 350 C135 305 176 402 317 344 S551 193 867 230" fill="none" stroke="#17343a" strokeWidth="35" opacity=".78" />
+                <path d="M-20 350 C135 305 176 402 317 344 S551 193 867 230" fill="none" stroke="#4a9889" strokeWidth="48" opacity=".08" />
+                <path d="M-20 350 C135 305 176 402 317 344 S551 193 867 230" fill="none" stroke="url(#tgCanalDepth)" strokeWidth="36" opacity=".9" />
+                <path className="tg-water-bank" d="M-20 350 C135 305 176 402 317 344 S551 193 867 230" fill="none" stroke="#7da898" strokeWidth="1.8" strokeDasharray="3 8" opacity=".52" />
                 <path d="M-20 350 C135 305 176 402 317 344 S551 193 867 230" fill="none" stroke="#54746e" strokeWidth="1.4" strokeDasharray="8 7" opacity=".58" />
                 <path className="tg-water-shimmer" d="M-20 350 C135 305 176 402 317 344 S551 193 867 230" fill="none" stroke="#a0d6c3" strokeWidth="1.2" strokeDasharray="2 42 14 75" opacity=".8" />
+                <g className="tg-city-walls" fill="none" aria-hidden="true"><path d="M82 187 113 116 219 77 314 61 402 79 476 45 573 62 674 105 761 188 789 278 749 377 671 440 567 478 455 487 351 477 247 492 143 451 82 368 59 273Z" stroke="#cbb57d" strokeWidth="8" strokeOpacity=".035" /><path d="M82 187 113 116 219 77 314 61 402 79 476 45 573 62 674 105 761 188 789 278 749 377 671 440 567 478 455 487 351 477 247 492 143 451 82 368 59 273Z" stroke="#b9c7ae" strokeWidth="1.2" strokeOpacity=".25" strokeDasharray="2 9" /></g>
+                <g className="tg-city-streets" fill="none" aria-hidden="true"><path d="M68 101 160 78 234 95 305 65 397 72 470 54 569 65 651 99 720 149 777 219" stroke="#d6c38c" strokeWidth="5" strokeOpacity=".025" /><path d="M86 218 174 238 257 227 333 264 418 250 504 281 601 271 734 315" stroke="#a2d0c0" strokeWidth="4" strokeOpacity=".035" /></g>
                 <g fill="none" stroke="#a4a77c" strokeOpacity=".20" strokeWidth="2">
                   <path d="M68 101 160 78 234 95 305 65 397 72 470 54 569 65 651 99 720 149 777 219" />
                   <path d="M86 218 174 238 257 227 333 264 418 250 504 281 601 271 734 315" />
@@ -328,6 +372,8 @@ export function TimePrototype() {
                   <path d="M566 45 544 121 579 205 560 287 587 360 581 481" />
                   <path d="M703 115 654 178 668 256 700 333 668 425" />
                 </g>
+                <g className="tg-city-lights" aria-hidden="true">{Array.from({ length: 64 }, (_, i) => { const angle = ((i * 137.508) % 360) * Math.PI / 180; const radius = 112 + (i % 9) * 19; const x = 420 + Math.cos(angle) * radius * 1.45; const y = 260 + Math.sin(angle) * radius * .77; if (x < 12 || x > 828 || y < 14 || y > 506) return null; const bright = i % 9 === 0; return <g key={i} className={'tg-city-light ' + (bright ? 'is-bright' : '')}><circle cx={x} cy={y} r={bright ? 1.65 : .8} fill={i % 4 === 0 ? '#e5d19b' : '#8fc7ad'} opacity={bright ? '.86' : '.44'} />{bright && <circle className="tg-city-light-halo" cx={x} cy={y} r="4.5" fill="#d9c28b" />}</g> })}</g>
+                <g className="tg-canal-bridges" aria-hidden="true"><path d="M174 358Q195 347 216 365" fill="none" stroke="#071116" strokeWidth="17" strokeLinecap="round" /><path d="M174 358Q195 347 216 365" fill="none" stroke="#b5a879" strokeWidth="7" strokeLinecap="round" strokeOpacity=".55" /><path d="M379 315Q396 299 414 298" fill="none" stroke="#071116" strokeWidth="15" strokeLinecap="round" /><path d="M379 315Q396 299 414 298" fill="none" stroke="#b5a879" strokeWidth="6" strokeLinecap="round" strokeOpacity=".5" /></g>
                 <g fill="url(#tgLand)" stroke="#8fa098" strokeOpacity=".30" strokeWidth="1.4">
                   <path d={districts[0].points} />
                   <path d={districts[1].points} />
@@ -340,6 +386,7 @@ export function TimePrototype() {
                   return <g key={shape.id} className={'tg-map-district ' + (isSelected ? 'is-selected' : '')} role="button" tabIndex={0} aria-label={item.name + ', процветание ' + item.prosperity + '%'} aria-pressed={isSelected} onClick={() => chooseDistrict(shape.id)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); chooseDistrict(shape.id) } }}>
                     <circle className="tg-district-heat" cx={shape.markerX} cy={shape.markerY} r={31 + Math.round(item.prosperity / 5)} fill={item.prosperity < 35 ? '#d98473' : item.prosperity >= 65 ? '#8fc7ad' : '#d8bd7b'} fillOpacity={isSelected ? '.22' : '.055'} />
                     <polygon points={shape.points} fill={isSelected ? '#d8bd7b' : item.prosperity < 35 ? '#d98473' : item.prosperity >= 65 ? '#8fc7ad' : '#9db5b2'} fillOpacity={isSelected ? '.15' : '.035'} stroke={isSelected ? '#ecdca7' : item.prosperity < 35 ? '#d98473' : item.prosperity >= 65 ? '#8fc7ad' : '#9ab5b0'} strokeWidth={isSelected ? '2.1' : '1'} strokeOpacity={isSelected ? '.9' : '.45'} />
+                    {isSelected && <circle className="tg-selection-ring" cx={shape.markerX} cy={shape.markerY} r="62" />}
                     <g className="tg-city-blocks" transform={'translate(' + (shape.markerX - 44) + ' ' + (shape.markerY - 32) + ')'}>
                       {Array.from({ length: 8 }, (_, i) => {
                         const height = 7 + ((i * 3 + item.prosperity) % 6) + (item.building ? item.buildingLevel * 2 : 0)
@@ -367,9 +414,11 @@ export function TimePrototype() {
                     {isSelected && <circle cx={shape.markerX} cy={shape.markerY} r="53" fill="url(#tgGlow)" filter="url(#tgBloom)" />}
                   </g>
                 })}
-                <g transform="translate(420 265)">
+                <g className="tg-city-citadel" transform="translate(420 265)">
+                  <circle className="tg-citadel-orbit" r="78" fill="none" stroke="#d9c28b" strokeOpacity=".18" strokeWidth=".8" strokeDasharray="2 8" />
                   <circle r="64" fill="#0b1217" stroke="#cfb77b" strokeOpacity=".45" strokeWidth="1.5" />
                   <circle r="52" fill="none" stroke="#e6d3a0" strokeOpacity=".32" strokeDasharray="2 5" />
+                  <circle className="tg-citadel-pulse" r="45" fill="none" stroke="#a3d8c1" strokeOpacity=".3" strokeWidth=".7" />
                   <circle r="37" fill="url(#tgGlow)" />
                   <path d="M0 -26 17 -16V5L0 25-17 5V-16Z" fill="#18272b" stroke="url(#tgGold)" strokeWidth="1.4" />
                   <path d="M-8 1 0 -13 8 1 0 12Z" fill="#d1b675" fillOpacity=".82" />
@@ -393,7 +442,7 @@ export function TimePrototype() {
           </div>
         </section>
 
-        <section className="tg-command-panel" aria-label="Панель управления городом">
+        <section ref={commandPanelRef} className="tg-command-panel" aria-label="Панель управления городом">
           <div className="tg-panel-head tg-command-head"><div><span className="tg-overline">IMPERIAL CHAMBER</span><h2>Кабинет правителя</h2></div><span className={'tg-status-chip ' + (active ? 'is-active' : state.status === 'ELECTED' ? 'is-won' : 'is-lost')}><i />{active ? 'АКТИВЕН' : state.status === 'ELECTED' ? 'МАНДАТ ПРОДЛЁН' : 'КРИЗИС'}</span></div>
           <div className="tg-tabs" role="tablist" aria-label="Инструменты управления">
             <button type="button" role="tab" aria-selected={tab === 'council'} className={tab === 'council' ? 'is-active' : ''} onClick={() => setTab('council')}><Vote size={14} />СОВЕТ</button>
@@ -404,14 +453,14 @@ export function TimePrototype() {
           {tab === 'council' && <div className="tg-tab-content">
             <div className="tg-panel-section-title"><span>01 / НАЛОГОВАЯ ПОЛИТИКА</span><span>0—40%</span></div>
             <div className="tg-tax-heading"><div><span>Ставка города</span><small>Изменится при завершении такта</small></div><strong>{tax}<small>%</small></strong></div>
-            <input className="tg-tax-slider" aria-label="Налоговая ставка" type="range" min="0" max="40" step="1" value={tax} disabled={!active} style={{ '--range-fill': (tax / 40 * 100) + '%' } as React.CSSProperties} onChange={(event) => setTax(Number(event.currentTarget.value))} />
+            <input className="tg-tax-slider" aria-label="Налоговая ставка" type="range" min="0" max="40" step="1" value={tax} disabled={!active} style={{ '--range-fill': (tax / 40 * 100) + '%' } as React.CSSProperties} onChange={(event) => { setPlanTouched(true); setTax(Number(event.currentTarget.value)) }} />
             <div className="tg-range-labels"><span>0% · МЯГКО</span><span>40% · ЖЁСТКО</span></div>
             <div className="tg-policy-heading"><span>02 / КУРС УПРАВЛЕНИЯ</span><span>ВЫБЕРИТЕ ОДИН</span></div>
             <div className="tg-policy-grid">
               {Object.entries(POLICIES).map(([key, item]) => {
                 const id = key as PolicyId
                 const Icon = id === 'BALANCED' ? ShieldCheck : id === 'INDUSTRY' ? Factory : id === 'GREEN' ? Leaf : Users
-                return <button type="button" key={key} disabled={!active} className={'tg-policy-option ' + (policy === id ? 'is-selected' : '')} aria-pressed={policy === id} onClick={() => setPolicy(id)}>
+                return <button type="button" key={key} disabled={!active} className={'tg-policy-option ' + (policy === id ? 'is-selected' : '')} aria-pressed={policy === id} onClick={() => { setPlanTouched(true); setPolicy(id) }}>
                   <span className="tg-policy-icon"><Icon size={16} /></span><span><strong>{item.label}</strong><small>{item.short}</small></span>{policy === id && <Check size={14} className="tg-policy-check" />}
                 </button>
               })}
