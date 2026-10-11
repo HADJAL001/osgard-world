@@ -1,6 +1,5 @@
 (function () {
 "use strict";
-var fullStylesheet=document.getElementById("fullStylesheet");if(fullStylesheet){var enableFullStyles=function(){fullStylesheet.media="all";};fullStylesheet.addEventListener("load",enableFullStyles,{once:true});try{if(fullStylesheet.sheet&&fullStylesheet.sheet.cssRules.length)enableFullStyles();}catch(_){}}
 var API_BASE=(document.querySelector('meta[name="api-base"]')||{}).content||"/skillcred-api";
 var $=function(id){return document.getElementById(id);},credential=null,verified=false,revoked=false,busy=false,events=0,lastJson="",heroStarted=false,inspectorReady=false,eventLogVisible=false,eventScrollPending=false,eventScrollScheduled=false,pendingEvents=[];
 var reduced=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
