@@ -41,6 +41,7 @@ const API_BASE="https://skillcred-pilot-api.onrender.com";
 const $=function(id){return document.getElementById(id)};
 let credential=null;
 let busy=false;
+let demoReady=false;
 function setResult(message,kind){
  const el=$("demoResult");
  el.className="result"+(kind?" "+kind:"");
@@ -107,12 +108,23 @@ async function loadServiceStatus(){
    const results=await Promise.all([api("/health"),api("/ready"),api("/issuer")]);
    const health=results[0],ready=results[1],issuer=results[2];
    const name=safeName(issuer.name);
+   const signingReady=ready.ready===true&&health.signing_ready===true;
+   demoReady=signingReady&&health.demo_ready===true;
    $("heroIssuer").textContent=name;
    $("liveVersion").textContent="v"+safeName(health.version||"0.3.0");
-   status.textContent=ready.ready&&health.signing_ready?"API онлайн · ключ подписи готов · "+name:"API отвечает, но подпись не готова";
-   status.parentElement.querySelector(".pulse").style.background=ready.ready&&health.signing_ready?"var(--ok)":"var(--bad)";
+   $("issueBtn").disabled=!demoReady;
+   if(demoReady){
+     status.textContent="API онлайн · отдельный издатель демо готов · "+name;
+   }else if(signingReady){
+     status.textContent="API онлайн · издатель готов, но публичное демо отключено в серверной конфигурации";
+   }else{
+     status.textContent="API отвечает, но ключ подписи не готов";
+   }
+   status.parentElement.querySelector(".pulse").style.background=demoReady?"var(--ok)":"var(--bad)";
  }catch(error){
-   status.textContent="API недоступен · демо не может выпускать удостоверения";
+   demoReady=false;
+   $("issueBtn").disabled=true;
+   status.textContent="API недоступен · выпуск, проверка и отзыв требуют работающего сервера";
    status.parentElement.querySelector(".pulse").style.background="var(--bad)";
    $("heroIssuer").textContent="Нет соединения с API";
    $("heroStatus").textContent="API OFFLINE";
