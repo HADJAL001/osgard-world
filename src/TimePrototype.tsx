@@ -11,7 +11,7 @@ import { recordOsgardEvent } from './core/eventQueue'
 import { completePlayerSession, startPlayerSession } from './core/playerApi'
 
 type Tab = 'council' | 'construction' | 'chronicle'
-type Diagnostics = { fps: number; frameMs: number; tickMs: number; actions: number; save: 'saved' | 'error' }
+type Diagnostics = { fps: number; frameMs: number; frameP95Ms: number; slowFrames: number; tickMs: number; actions: number; save: 'saved' | 'error'; saveMs: number; saveBytes: number }
 
 const SAVE_KEY = 'osgard.time.empire.save.v1'
 const factions = [
@@ -59,11 +59,11 @@ export function TimePrototype() {
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false)
   const [mapZoom, setMapZoom] = useState(1)
   const [announcement, setAnnouncement] = useState('Совет ожидает вашего решения.')
-  const [diagnostics, setDiagnostics] = useState<Diagnostics>({ fps: 0, frameMs: 0, tickMs: 0, actions: 0, save: 'saved' })
+  const [diagnostics, setDiagnostics] = useState<Diagnostics>({ fps: 0, frameMs: 0, frameP95Ms: 0, slowFrames: 0, tickMs: 0, actions: 0, save: 'saved', saveMs: 0, saveBytes: 0 })
   const session = useRef<string | null>(null)
   const completed = useRef(false)
   const stateRef = useRef(state)
-  const diagnosticRef = useRef({ frames: 0, elapsed: 0, start: 0, last: 0 })
+  const diagnosticRef = useRef({ frames: 0, elapsed: 0, start: 0, last: 0, samples: [] as number[], slowFrames: 0 })
 
   stateRef.current = state
   const district = state.districts.find((item) => item.id === selectedDistrict) ?? state.districts[0]
@@ -97,11 +97,16 @@ export function TimePrototype() {
   }, [state.status, state.tick, state.treasury, state.score, state.population])
 
   useEffect(() => {
+    const started = performance.now()
     try {
-      localStorage.setItem(SAVE_KEY, JSON.stringify(state))
-      setDiagnostics((old) => old.save === 'saved' ? old : { ...old, save: 'saved' })
+      const serialized = JSON.stringify(state)
+      localStorage.setItem(SAVE_KEY, serialized)
+      const saveMs = Number((performance.now() - started).toFixed(2))
+      const saveBytes = new Blob([serialized]).size
+      setDiagnostics((old) => ({ ...old, save: 'saved', saveMs, saveBytes }))
     } catch {
-      setDiagnostics((old) => ({ ...old, save: 'error' }))
+      const saveMs = Number((performance.now() - started).toFixed(2))
+      setDiagnostics((old) => ({ ...old, save: 'error', saveMs }))
     }
   }, [state])
 
@@ -112,8 +117,12 @@ export function TimePrototype() {
       if (!alive) return
       const meter = diagnosticRef.current
       if (meter.last > 0) {
+        const delta = now - meter.last
         meter.frames += 1
-        meter.elapsed += now - meter.last
+        meter.elapsed += delta
+        meter.samples.push(delta)
+        if (meter.samples.length > 240) meter.samples.shift()
+        if (delta > 25) meter.slowFrames += 1
       }
       meter.last = now
       if (!meter.start) meter.start = now
@@ -121,15 +130,45 @@ export function TimePrototype() {
         const duration = now - meter.start
         const fps = Math.round((meter.frames * 1000) / duration)
         const frameMs = meter.frames ? meter.elapsed / meter.frames : 0
-        setDiagnostics((old) => ({ ...old, fps, frameMs: Number(frameMs.toFixed(1)) }))
+        const sortedSamples = [...meter.samples].sort((a, b) => a - b)
+        const p95Index = Math.min(sortedSamples.length - 1, Math.max(0, Math.ceil(sortedSamples.length * 0.95) - 1))
+        const frameP95Ms = sortedSamples.length ? sortedSamples[p95Index] : 0
+        setDiagnostics((old) => ({
+          ...old,
+          fps,
+          frameMs: Number(frameMs.toFixed(1)),
+          frameP95Ms: Number(frameP95Ms.toFixed(1)),
+          slowFrames: meter.slowFrames,
+        }))
         meter.frames = 0
         meter.elapsed = 0
+        meter.slowFrames = 0
         meter.start = now
       }
       frame = requestAnimationFrame(sample)
     }
     frame = requestAnimationFrame(sample)
     return () => { alive = false; cancelAnimationFrame(frame) }
+  }, [])
+
+  useEffect(() => {
+    const handleShortcuts = (event: KeyboardEvent) => {
+      if (event.altKey || event.ctrlKey || event.metaKey) return
+      const target = event.target
+      if (target instanceof HTMLElement && target.closest('input, textarea, select, button, a, [contenteditable="true"]')) return
+      if (event.key === 'Escape') {
+        setDiagnosticsOpen(false)
+        return
+      }
+      if (event.key === '1') setTab('council')
+      if (event.key === '2') setTab('construction')
+      if (event.key === '3') setTab('chronicle')
+      if (event.key === '+' || event.key === '=') setMapZoom((zoom) => Math.min(1.24, Number((zoom + 0.06).toFixed(2))))
+      if (event.key === '-') setMapZoom((zoom) => Math.max(0.86, Number((zoom - 0.06).toFixed(2))))
+      if (event.key === '0') setMapZoom(1)
+    }
+    window.addEventListener('keydown', handleShortcuts)
+    return () => window.removeEventListener('keydown', handleShortcuts)
   }, [])
 
   function applyTurn() {
@@ -232,9 +271,13 @@ export function TimePrototype() {
       {diagnosticsOpen && <section className="tg-diagnostics" aria-label="Диагностика производительности">
         <div className="tg-diagnostic-title"><Activity size={15} /><div><strong>ДИАГНОСТИКА RUNTIME</strong><small>Измерения этого браузера, обновляются в реальном времени</small></div><span className="tg-live-pill">LIVE</span></div>
         <div className="tg-diagnostic-grid">
-          <Diagnostic label="Частота кадров" value={diagnostics.fps ? String(diagnostics.fps) + ' FPS' : '…'} description="Поток requestAnimationFrame" />
-          <Diagnostic label="Интервал кадра" value={diagnostics.frameMs ? diagnostics.frameMs + ' мс' : '…'} description="Среднее между кадрами" />
-          <Diagnostic label="Расчёт действия" value={diagnostics.tickMs.toFixed(2) + ' мс'} description="Последняя симуляция / строительство" />
+          <Diagnostic label="Частота кадров" value={diagnostics.fps ? String(diagnostics.fps) + ' FPS' : '…'} description="Измерение requestAnimationFrame" tone={diagnostics.fps >= 50 ? 'positive' : diagnostics.fps >= 30 ? 'neutral' : 'negative'} />
+          <Diagnostic label="Интервал кадра" value={diagnostics.frameMs ? diagnostics.frameMs + ' мс' : '…'} description="Среднее за последнюю секунду" tone={diagnostics.frameMs > 32 ? 'negative' : 'positive'} />
+          <Diagnostic label="P95 кадра" value={diagnostics.frameP95Ms ? diagnostics.frameP95Ms + ' мс' : '…'} description="95% интервалов не выше" tone={diagnostics.frameP95Ms > 32 ? 'negative' : diagnostics.frameP95Ms > 20 ? 'neutral' : 'positive'} />
+          <Diagnostic label="Медленные кадры" value={String(diagnostics.slowFrames)} description="Интервал свыше 25 мс за секунду" tone={diagnostics.slowFrames > 4 ? 'negative' : 'positive'} />
+          <Diagnostic label="Расчёт действия" value={diagnostics.actions ? diagnostics.tickMs.toFixed(2) + ' мс' : '—'} description="Последняя симуляция / стройка" tone={diagnostics.tickMs > 50 ? 'negative' : 'positive'} />
+          <Diagnostic label="Запись сохранения" value={diagnostics.saveMs ? diagnostics.saveMs.toFixed(2) + ' мс' : '…'} description="Измеренная длительность localStorage" tone={diagnostics.saveMs > 16 ? 'negative' : 'positive'} />
+          <Diagnostic label="Размер сохранения" value={diagnostics.saveBytes ? (diagnostics.saveBytes / 1024).toFixed(1) + ' КБ' : '…'} description="Фактический размер JSON в UTF-8" />
           <Diagnostic label="Действия" value={String(diagnostics.actions)} description="Успешные локальные команды" />
         </div>
       </section>}
@@ -244,13 +287,17 @@ export function TimePrototype() {
           <div className="tg-panel-head">
             <div><span className="tg-overline">ATLAS / URBS IX</span><h2>Живая карта</h2></div>
             <div className="tg-map-controls">
-              <button type="button" aria-label="Уменьшить карту" onClick={() => setMapZoom((zoom) => Math.max(1, Number((zoom - 0.06).toFixed(2))))}>−</button>
-              <span>{Math.round(mapZoom * 100)}%</span>
-              <button type="button" aria-label="Увеличить карту" onClick={() => setMapZoom((zoom) => Math.min(1.18, Number((zoom + 0.06).toFixed(2))))}>+</button>
+              <button type="button" aria-label="Уменьшить карту" onClick={() => setMapZoom((zoom) => Math.max(0.86, Number((zoom - 0.06).toFixed(2))))}>−</button>
+              <button className="tg-zoom-reset" type="button" aria-label="Сбросить масштаб карты" title="Сбросить масштаб карты" onClick={() => setMapZoom(1)}>{Math.round(mapZoom * 100)}%</button>
+              <button type="button" aria-label="Увеличить карту" onClick={() => setMapZoom((zoom) => Math.min(1.24, Number((zoom + 0.06).toFixed(2))))}>+</button>
             </div>
           </div>
-          <div className="tg-map-viewport">
-            <div className="tg-map-world" style={{ transform: 'scale(' + mapZoom + ')' }}>
+          <div className="tg-map-viewport" data-city-status={state.status} data-city-tick={state.tick}>
+            <div
+              className="tg-map-world"
+              key={state.tick + ':' + state.districts.map((item) => item.buildingLevel).join('-')}
+              style={{ transform: 'scale(' + mapZoom + ')' }}
+            >
               <svg className="tg-city-map" viewBox="0 0 840 520" role="img" aria-label="Схематическая карта четырёх районов имперского города">
                 <defs>
                   <linearGradient id="tgLand" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#17252b" /><stop offset="100%" stopColor="#0b1119" /></linearGradient>
@@ -261,9 +308,17 @@ export function TimePrototype() {
                 </defs>
                 <rect width="840" height="520" fill="#0a1116" />
                 <rect width="840" height="520" fill="url(#tgGrid)" />
+                <g className="tg-city-stars" aria-hidden="true">
+                  {Array.from({ length: 52 }, (_, i) => {
+                    const x = (i * 131 + 37) % 820 + 10
+                    const y = (i * 71 + 23) % 500 + 10
+                    return <circle key={i} cx={x} cy={y} r={i % 8 === 0 ? 1.2 : 0.55} fill={i % 5 === 0 ? '#e3d19b' : '#9ccfc2'} opacity={i % 6 === 0 ? '.72' : '.28'} />
+                  })}
+                </g>
                 <ellipse cx="432" cy="266" rx="315" ry="240" fill="url(#tgGlow)" opacity=".45" />
                 <path d="M-20 350 C135 305 176 402 317 344 S551 193 867 230" fill="none" stroke="#17343a" strokeWidth="35" opacity=".78" />
                 <path d="M-20 350 C135 305 176 402 317 344 S551 193 867 230" fill="none" stroke="#54746e" strokeWidth="1.4" strokeDasharray="8 7" opacity=".58" />
+                <path className="tg-water-shimmer" d="M-20 350 C135 305 176 402 317 344 S551 193 867 230" fill="none" stroke="#a0d6c3" strokeWidth="1.2" strokeDasharray="2 42 14 75" opacity=".8" />
                 <g fill="none" stroke="#a4a77c" strokeOpacity=".20" strokeWidth="2">
                   <path d="M68 101 160 78 234 95 305 65 397 72 470 54 569 65 651 99 720 149 777 219" />
                   <path d="M86 218 174 238 257 227 333 264 418 250 504 281 601 271 734 315" />
@@ -283,12 +338,28 @@ export function TimePrototype() {
                   const item = state.districts.find((d) => d.id === shape.id)!
                   const isSelected = selectedDistrict === shape.id
                   return <g key={shape.id} className={'tg-map-district ' + (isSelected ? 'is-selected' : '')} role="button" tabIndex={0} aria-label={item.name + ', процветание ' + item.prosperity + '%'} aria-pressed={isSelected} onClick={() => chooseDistrict(shape.id)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); chooseDistrict(shape.id) } }}>
-                    <polygon points={shape.points} fill={isSelected ? '#d8bd7b' : '#9db5b2'} fillOpacity={isSelected ? '.15' : '.035'} stroke={isSelected ? '#ecdca7' : '#9ab5b0'} strokeWidth={isSelected ? '2.1' : '1'} strokeOpacity={isSelected ? '.9' : '.45'} />
-                    <g className="tg-city-blocks" transform={'translate(' + (shape.markerX - 44) + ' ' + (shape.markerY - 28) + ')'}>
-                      {Array.from({ length: 7 }, (_, i) => <g key={i} transform={'translate(' + ((i % 4) * 23) + ' ' + (Math.floor(i / 4) * 22) + ')'}>
-                        <path d="M0 5 8 0 17 4 17 18 0 18Z" fill={item.building === 'SOLAR_ARRAY' ? '#4e8880' : item.building === 'MARKET_HALL' ? '#bd9b5f' : '#6d8589'} fillOpacity={isSelected ? '.9' : '.58'} stroke="#d4d7b5" strokeOpacity=".42" strokeWidth=".7" />
-                        <path d="M4 8h3v3H4zM10 8h3v3h-3z" fill="#d9d4b0" fillOpacity=".3" />
-                      </g>)}
+                    <circle className="tg-district-heat" cx={shape.markerX} cy={shape.markerY} r={31 + Math.round(item.prosperity / 5)} fill={item.prosperity < 35 ? '#d98473' : item.prosperity >= 65 ? '#8fc7ad' : '#d8bd7b'} fillOpacity={isSelected ? '.22' : '.055'} />
+                    <polygon points={shape.points} fill={isSelected ? '#d8bd7b' : item.prosperity < 35 ? '#d98473' : item.prosperity >= 65 ? '#8fc7ad' : '#9db5b2'} fillOpacity={isSelected ? '.15' : '.035'} stroke={isSelected ? '#ecdca7' : item.prosperity < 35 ? '#d98473' : item.prosperity >= 65 ? '#8fc7ad' : '#9ab5b0'} strokeWidth={isSelected ? '2.1' : '1'} strokeOpacity={isSelected ? '.9' : '.45'} />
+                    <g className="tg-city-blocks" transform={'translate(' + (shape.markerX - 44) + ' ' + (shape.markerY - 32) + ')'}>
+                      {Array.from({ length: 8 }, (_, i) => {
+                        const height = 7 + ((i * 3 + item.prosperity) % 6) + (item.building ? item.buildingLevel * 2 : 0)
+                        const tone = item.prosperity < 35 ? '#a96561' : item.building === 'SOLAR_ARRAY' ? '#5d9d91' : item.building === 'MARKET_HALL' ? '#bd9b5f' : item.building === 'ACADEMY' ? '#8f9db0' : item.building === 'CIVIC_FORUM' ? '#c0ad7b' : '#6d8589'
+                        return <g key={i} className="tg-city-building" transform={'translate(' + ((i % 4) * 23) + ' ' + (Math.floor(i / 4) * 26) + ')'}>
+                          <ellipse cx="9" cy={height + 7} rx="11" ry="3" fill="#000" opacity=".22" />
+                          <polygon points={'0,6 7,1 17,6 9,11'} fill={item.building && i === 3 ? '#e0ca8c' : tone} stroke="#e1d3a7" strokeOpacity=".54" strokeWidth=".55" />
+                          <polygon points={'0,6 9,11 9,' + (height + 7) + ' 0,' + (height + 2)} fill={tone} fillOpacity={isSelected ? '.98' : '.72'} stroke="#b9c7b6" strokeOpacity=".32" strokeWidth=".5" />
+                          <polygon points={'9,11 17,6 17,' + (height + 2) + ' 9,' + (height + 7)} fill="#263a3d" fillOpacity=".95" stroke="#a3b6aa" strokeOpacity=".3" strokeWidth=".5" />
+                          <path d={'M3 12v' + Math.max(2, height - 3) + ' M6 13v' + Math.max(2, height - 4)} stroke={isSelected ? '#e8dcae' : '#c4d2bd'} strokeOpacity=".48" strokeWidth="1.1" />
+                          <path d={'M12 13v' + Math.max(2, height - 4)} stroke="#d9bd79" strokeOpacity=".58" strokeWidth="1" />
+                          {item.building && i === 3 && (item.building === 'SOLAR_ARRAY'
+                            ? <g className="tg-building-solar"><path d="M1 4 7 0 11 3 5 7Z" fill="#8dcfc1" stroke="#d9e0bd" strokeWidth=".55" /><path d="M7 0 7 5M4 2 9 3" stroke="#244344" strokeWidth=".55" /></g>
+                            : item.building === 'MARKET_HALL'
+                              ? <path d="M1 4 7 -1 14 3 9 7Z" fill="#cda96e" stroke="#ead4a1" strokeWidth=".7" />
+                              : item.building === 'ACADEMY'
+                                ? <g><path d="M1 5 8 -1 15 4 8 9Z" fill="#8c9eaa" stroke="#e0d6b6" strokeWidth=".6" /><circle cx="8" cy="2" r="3.3" fill="#d1c08c" fillOpacity=".62" /></g>
+                                : <g><path d="M1 5 8 -1 15 4 8 9Z" fill="#c8b782" stroke="#e3d5ad" strokeWidth=".6" /><path d="M4 5v4M8 5v4M12 5v4" stroke="#f0dfad" strokeWidth=".75" /></g>)}
+                        </g>
+                      })}
                     </g>
                     {item.building && <g transform={'translate(' + (shape.markerX + 38) + ' ' + (shape.markerY - 38) + ')'}><circle r="14" fill="#0a1116" stroke="#d6c185" strokeWidth="1.2" /><path d="M-5 3h10M-4 -2h8M-2 -7h4" stroke="#e2d09e" strokeWidth="1.2" /><text x="0" y="23" textAnchor="middle" fill="#e4d7ac" fontSize="9">LVL {item.buildingLevel}</text></g>}
                     <text x={shape.labelX} y={shape.labelY} textAnchor="middle" fill={isSelected ? '#f0e5c1' : '#c0cbc7'} fontSize="11" fontFamily="monospace" letterSpacing="1.3">{item.name.toLocaleUpperCase('ru-RU')}</text>
@@ -308,7 +379,12 @@ export function TimePrototype() {
                 <g className="tg-map-compass" transform="translate(783 61)"><circle r="22" fill="#10191f" stroke="#7c938a" strokeOpacity=".45" /><path d="M0 -16 6 4 0 0-6 4Z" fill="#d7c28f" /><text x="0" y="34" fill="#9aaca6" fontSize="8" textAnchor="middle">N</text></g>
               </svg>
             </div>
-            <div className="tg-map-key"><span><i className="key-selected" /> ВЫБРАННЫЙ РАЙОН</span><span><i className="key-built" /> ПОСТРОЙКА</span><span className="tg-map-coordinates">CITY IX / {district.id.toUpperCase()} / {String(state.tick).padStart(2, '0')}</span></div>
+            <div className="tg-map-key">
+              <span><i className="key-selected" /> ВЫБРАННЫЙ РАЙОН</span>
+              <span><i className="key-built" /> ПОСТРОЙКА</span>
+              <span className="tg-map-shortcuts">КЛАВИШИ: 1–3 · +/− · 0</span>
+              <span className="tg-map-coordinates">CITY IX / {district.id.toUpperCase()} / {String(state.tick).padStart(2, '0')}</span>
+            </div>
           </div>
           <div className="tg-selected-district">
             <div className="tg-district-index"><MapPinned size={15} /><span>РАЙОН / {String(state.districts.findIndex((item) => item.id === district.id) + 1).padStart(2, '0')}</span></div>
@@ -422,6 +498,6 @@ export function TimePrototype() {
 function Resource({ icon, label, value, hint, tone = 'neutral', meter }: { icon: React.ReactNode; label: string; value: string; hint: string; tone?: string; meter?: number }) {
   return <article className="tg-resource-card"><div className="tg-resource-label"><span>{icon}</span>{label}</div><strong>{value}</strong><div className={'tg-resource-hint tone-' + tone}>{hint}</div>{meter !== undefined && <div className="tg-resource-meter"><span style={{ width: meter + '%' }} /></div>}</article>
 }
-function Diagnostic({ label, value, description }: { label: string; value: string; description: string }) {
-  return <div className="tg-diagnostic-item"><span>{label}</span><strong>{value}</strong><small>{description}</small></div>
+function Diagnostic({ label, value, description, tone = 'neutral' }: { label: string; value: string; description: string; tone?: 'positive' | 'neutral' | 'negative' }) {
+  return <div className={'tg-diagnostic-item tone-' + tone}><span>{label}</span><strong>{value}</strong><small>{description}</small></div>
 }
