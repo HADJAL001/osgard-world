@@ -34,7 +34,7 @@ for (const file of files) {
   assert.ok(!/fonts\.googleapis\.com|fonts\.gstatic\.com/.test(html), `${file}: external font CDN found`)
   assert.ok(!/google-analytics|gtag\(|mixpanel|segment\.com/.test(html), `${file}: analytics code found`)
 
-  const scripts = [...html.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/gi)]
+  const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)]
     .map(match => match[1].trim())
     .filter(Boolean)
   assert.ok(scripts.length > 0, `${file}: missing interactive script`)
