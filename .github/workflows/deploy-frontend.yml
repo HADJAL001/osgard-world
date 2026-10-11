@@ -54,8 +54,8 @@ jobs:
           mkdir -p osgard-release/html
           cp -a dist/. osgard-release/html/
           ASSET_VERSION="${GITHUB_SHA:0:12}"
-          sed -i "s|/skillcred/styles.css.gz|/skillcred/styles.css.gz?v=$ASSET_VERSION|g" osgard-release/html/skillcred/index.html
-          sed -i "s|/skillcred/app.js.gz|/skillcred/app.js.gz?v=$ASSET_VERSION|g" osgard-release/html/skillcred/index.html
+          sed -i "s|/skillcred/styles.css|/skillcred/styles.css?v=$ASSET_VERSION|g" osgard-release/html/skillcred/index.html
+          sed -i "s|/skillcred/app.js|/skillcred/app.js?v=$ASSET_VERSION|g" osgard-release/html/skillcred/index.html
           find osgard-release/html/skillcred -type f \( -name '*.html' -o -name '*.css' -o -name '*.js' \) -exec gzip -9 -k {} +
           touch osgard-release/html/skillcred/styles.css.gz osgard-release/html/skillcred/app.js.gz
           test -s osgard-release/html/skillcred/styles.css.gz
