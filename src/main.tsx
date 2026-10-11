@@ -1,3 +1,42 @@
+import React, { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './styles.css'
+import './miniapp.css'
+import './founders.css'
+import './brand.css'
+import './navigation.css'
+import './create.css'
+import './mobility.css'
+import './surfaces.css'
+import './time.css'
+import './online.css'
+import './legacy.css'
+import './week.css'
+import './recommendations.css'
+import './archive.css'
+import './profile.css'
+import './community.css'
+import './stream.css'
+import App from './App'
+import MiniApp from './MiniApp'
+import { AurumPage, CatalogPage, ChroniclePage, ClubPage, DevelopmentPage, MastersPage, TimeCoinPage, WorldsPage } from './Sections'
+import { EntertainmentCatalog } from './EntertainmentCatalog'
+import { ResultPage } from './ResultPage'
+import { BusinessDiagnostic } from './BusinessDiagnostic'
+import { CreatePrototype } from './CreatePrototype'
+import { MobilityPrototype } from './MobilityPrototype'
+import { TimePrototype } from './TimePrototype'
+import { WeekSurface } from './WeekSurface'
+import { Recommendations } from './Recommendations'
+import { ArchiveSurface } from './ArchiveSurface'
+import { ProfileSurface } from './ProfileSurface'
+import { InheritPrototype, RemixPrototype } from './LegacyCreatorPrototypes'
+import { OnlineGamePrototype } from './OnlineGamePrototype'
+import { CoreEvents } from './CoreEvents'
+import { EcosystemSurface } from './EcosystemSurfaces'
+import { CommunitySurface } from './CommunitySurface'
+import { StreamSurface } from './StreamSurface'
+
 const seo: Record<string, { title: string; description: string }> = {
   '/': { title: 'OSGARD WORLD � �������� ����������', description: 'OSGARD WORLD ���������� �������� ��� ������, �����������, �������, ������� � �������� �������� �������.' },
   '/worlds': { title: '���� OSGARD � ���� ��������� ����� ����������', description: '���� ������� ����� OSGARD: ������, �����������, ������, ���� ��� � ������ ����� ���������.' },
@@ -9,8 +48,8 @@ const seo: Record<string, { title: string; description: string }> = {
   '/timecoin': { title: 'TimeCoin OSGARD � ������ � �������', description: 'TimeCoin � ���������� ������� ����������, ������� � ����������� ������� OSGARD.' },
   '/development': { title: 'OSGARD Development � ���������� �������� ���������', description: '���������� ������, �������� � �������� ��������� OSGARD: �� ������ �� �������.' },
   '/entertainment': { title: 'OSGARD Entertainment � ������������� ����', description: '������������� ������� ��� OSGARD. �������� ���� � ��������� � ��� ��������� ���.' },
-  '/skillcred': { title: 'SkillCred — переносимые подтверждения навыков | OSGARD', description: 'Открытый пилот цифровых подтверждений навыков с подписью Ed25519. Демо проверки в браузере.' },
 }
+
 const cleanSeo: Record<string, { title: string; description: string }> = {
   '/': { title: 'OSGARD WORLD — цифровая экосистема', description: 'OSGARD объединяет продукты для защиты, мобильности, бизнеса, времени и создания цифровых решений.' },
   '/worlds': { title: 'Миры OSGARD — семь самостоятельных продуктов', description: 'Выберите мир OSGARD: защита, мобильность, бизнес, время и создание цифровых продуктов.' },
