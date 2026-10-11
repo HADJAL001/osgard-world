@@ -183,6 +183,7 @@ var observer=new IntersectionObserver(function(entries){if(entries.some(function
 observer.observe(section);
 }
 
+function sectionMotionSetup(){if(!("IntersectionObserver" in window)||reduced)return;[[".journey-line","is-visible"],[".developers","is-tracing"]].forEach(function(pair){var section=document.querySelector(pair[0]);if(!section)return;var observer=new IntersectionObserver(function(entries){entries.forEach(function(entry){section.classList.toggle(pair[1],entry.isIntersecting);});},{rootMargin:"0px 0px 18% 0px",threshold:.01});observer.observe(section);});}
 function eventLogVisibilitySetup(){
 var log=$("eventLog");if(!log)return;
 if(!("IntersectionObserver" in window)){eventLogVisible=true;if(pendingEvents.length){pendingEvents.splice(0).forEach(appendEvent);}return;}
@@ -229,8 +230,10 @@ async function loadHeroArtifact(){
 if(heroStarted||document.visibilityState==="hidden")return;heroStarted=true;var started=performance.now(),issued=null,visual=document.querySelector(".hero-visual"),card=$("heroCredential");
 if(visual)visual.dataset.state="pending";if(card)card.dataset.phase="signature";text("heroFrameState","CALCULATING SIGNATURE");text("heroLiveStatus","Получаем документ у демо-издателя…");
 try{
-var out=await request("/demo/issue","POST",{});if(!out.ok||!out.data||!out.data.credentialSubject||!out.data.proof)throw new Error("API не выдал проверяемое удостоверение.");issued=out.data;await renderCredential(issued);text("heroLiveStatus","Подпись вычисляется · запускаем проверку");
-await wait(Math.max(0,(reduced?0:1850)-(performance.now()-started)));var check=await request("/demo/verify","POST",{credential:issued});if(!check.ok)throw new Error("API не подтвердил подпись.");var d=check.data||{};if(d.signature_valid!==true||d.valid!==true||String(d.status).toLowerCase()!=="active")throw new Error("Сервер не подтвердил подпись и статус ACTIVE.");
+var issuePromise=request("/demo/issue","POST",{}).then(function(value){return{value:value};},function(error){return{error:error};});
+await wait(Math.max(0,(reduced?0:1850)-(performance.now()-started)));
+var issueResult=await issuePromise;if(issueResult.error)throw issueResult.error;var out=issueResult.value;if(!out.ok||!out.data||!out.data.credentialSubject||!out.data.proof)throw new Error("API не выдал проверяемое удостоверение.");issued=out.data;await renderCredential(issued);text("heroLiveStatus","Подпись вычисляется · запускаем проверку");
+var check=await request("/demo/verify","POST",{credential:issued});if(!check.ok)throw new Error("API не подтвердил подпись.");var d=check.data||{};if(d.signature_valid!==true||d.valid!==true||String(d.status).toLowerCase()!=="active")throw new Error("Сервер не подтвердил подпись и статус ACTIVE.");
 verified=true;revoked=false;setStatus("active");verificationResult("active",check);text("heroLiveStatus","Подпись: валидна · статус: active");text("heroFrameState","SIGNATURE VALID");setResult("Живое демо подключено. Это синтетическое удостоверение с настоящим ответом API, не статическая картинка. Можно выдать другое или отозвать его.","ok");setBusy(false);steps();if(card){card.dataset.phase="valid";card.setAttribute("aria-busy","false");}
 }catch(err){
 if(issued){try{await request("/demo/revoke","POST",{credential:issued});}catch(_){}}
@@ -242,7 +245,7 @@ if($("verifyBtn"))$("verifyBtn").addEventListener("click",function(){verifyCurre
 if($("revokeBtn"))$("revokeBtn").addEventListener("click",revokeCurrent);
 if($("downloadBtn"))$("downloadBtn").addEventListener("click",downloadCredential);
 if($("restartBtn"))$("restartBtn").addEventListener("click",resetDemo);
-navSetup();faqSetup();codeSetup();jsonSetup();revealSetup();tiltSetup();inspectorActivationSetup();eventLogVisibilitySetup();
+navSetup();faqSetup();codeSetup();jsonSetup();revealSetup();tiltSetup();inspectorActivationSetup();eventLogVisibilitySetup();sectionMotionSetup();
 function afterFirstPaint(callback){if(typeof window.requestAnimationFrame==="function"){window.requestAnimationFrame(function(){window.requestAnimationFrame(callback);});}else window.setTimeout(callback,0);}
 if("IntersectionObserver" in window){var observed=new IntersectionObserver(function(entries){if(entries.some(function(e){return e.isIntersecting;})){observed.disconnect();afterFirstPaint(loadHeroArtifact);}},{threshold:.08});var hero=document.querySelector(".hero-visual");if(hero)observed.observe(hero);}else afterFirstPaint(loadHeroArtifact);
 document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"&&!heroStarted)loadHeroArtifact();else if(document.visibilityState==="visible"&&heroVerifiedAt&&!freshnessTimer)updateHeroFreshness();});

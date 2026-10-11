@@ -110,13 +110,16 @@ for (const file of files) {
   assert.ok(!/fonts\.googleapis\.com|fonts\.gstatic\.com/.test(js), file + ': external font CDN found')
   assert.ok(css.includes('.faq-answer p{font-size:13px}'), file + ': mobile FAQ text should remain legible')
   assert.ok(css.includes('min-height:27px'), file + ': mobile footer links need at least 24px targets')
-  assert.ok(css.includes('.hero-visual{order:-1;padding-top:0;height:472px;min-height:472px;overflow:visible}.hero-copy{order:0}.hero-json-preview,.visual-caption{display:none}'), file + ': mobile hero must show the credential artifact in a reserved first-screen stage')
+  assert.ok(css.includes('.hero-visual{order:0;padding-top:0;height:430px;min-height:430px;overflow:visible}.hero-copy{order:-1}.hero-json-preview,.visual-caption{display:none}.hero-proofline{display:none}'), file + ': mobile hero must show the credential artifact in a reserved first-screen stage')
     assert.match(css, /\.artifact-card\[data-phase=["']?issued["']?\]\{animation:artifact-arrive\s+(?:420ms|\.42s)/, file + ': only issued credentials may run the card arrival animation')
   if (file.startsWith('public/skillcred/')) {
      assert.ok(js.includes('function afterFirstPaint(callback)'), file + ': automatic API startup must use a first-paint scheduler')
      assert.ok(js.includes('window.requestAnimationFrame(function(){window.requestAnimationFrame(callback);})'), file + ': automatic API startup must settle two browser frames before network work')
      assert.ok(js.includes('p.setAttribute("stroke-dashoffset",String(100-progress))'), file + ': timeline state must drive SVG progress without inline CSS width')
      assert.ok(js.includes('stamp.textContent=labels[i]'), file + ': demo stamps must follow API state')
+     assert.ok(js.includes('var issuePromise=request("/demo/issue","POST",{})'), file + ': demo issuance should start immediately')
+     assert.ok(js.indexOf('await wait(Math.max(0,(reduced?0:1850)-(performance.now()-started)))') < js.indexOf('await renderCredential(issued)'), file + ': update the credential only after the first-paint scene')
+     assert.ok(js.includes('function sectionMotionSetup()') && js.includes('section.classList.toggle(pair[1],entry.isIntersecting)'), file + ': off-screen trace animations must remain idle')
      assert.ok(!js.includes('window.setTimeout(loadHeroArtifact,1800)'), file + ': automatic API startup must not use a fixed 1.8s delay')
      assert.ok(js.includes('reduced?0:1850'), file + ': reduced-motion must skip the hero scene wait')
    }
