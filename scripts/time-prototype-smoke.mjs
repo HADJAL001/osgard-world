@@ -24,6 +24,12 @@ assert.ok(component.includes('tg-start-guide') && component.includes('GUIDE_DISM
 assert.ok(component.includes('cinematicToggleRef') && component.includes('tgCityPanel'), 'the map must include an accessible cinematic mode')
 assert.ok(component.includes('tg-city-lights') && component.includes('tg-selection-ring') && component.includes('tg-city-walls'), 'the map must have layered lighting, walls and district focus effects')
 assert.ok(component.includes('inputLatencyMs') && component.includes('performance.now() - event.timeStamp'), 'input-handler delay must be sampled from real browser event timestamps')
+assert.ok(component.includes('function measureUiResponse') && component.includes('requestAnimationFrame(() => {') && component.includes('responseAverageMs'), 'UI response proxy must be measured over two animation frames')
+assert.ok(component.includes('label="Отклик интерфейса"') && component.includes('второй requestAnimationFrame'), 'UI response measurements must be labelled as a frame-based proxy, not physical display latency')
+assert.ok(component.includes('onPointerDown={beginMapPan}') && component.includes('onPointerMove={moveMapPan}') && component.includes('onClickCapture={blockClickAfterMapPan}'), 'zoomed map must support touch/mouse panning without converting a drag into a district selection')
+assert.ok(component.includes("data-map-zoomed={mapZoom > 1.02 ? 'true' : 'false'}") && component.includes('function resetMapView'), 'map drag must activate only when zoomed and reset from the map control')
+assert.ok(component.includes('tg-mobile-command-dock') && component.includes('onClick={applyTurn}'), 'mobile command dock must use the same guarded game transition')
+
 assert.ok(component.includes('devicePixelRatio') && component.includes('viewportWidth') && component.includes('logicalCores'), 'runtime diagnostics must expose actual viewport and browser capability data')
 assert.ok(component.includes('readBrowserMemory') && component.includes('usedJSHeapSize'), 'heap usage must be measured only where the browser exposes the memory API')
 assert.ok(component.includes('exportDiagnostics') && component.includes('OSGARD_IMPERIUM_RUNTIME_DIAGNOSTICS') && component.includes('URL.createObjectURL'), 'diagnostics must be exportable as a local JSON report')
@@ -42,6 +48,9 @@ assert.ok(styles.includes('tg-start-guide') && styles.includes('@media(max-width
 assert.ok(styles.includes('.tg-map-world{position:relative;z-index:0;will-change:transform;animation:tg-map-arrive'), 'animated map layer must exist')
 assert.ok(!styles.includes('@keyframes tg-map-arrive{from{opacity:.72;filter:brightness(.78);transform:scale(.985)}to{opacity:1;filter:brightness(1)}}'), 'map entrance animation must not override interactive zoom transform')
 assert.ok(styles.includes('prefers-reduced-motion:reduce') && styles.includes('.tg-city-map{filter:none}'), 'visual effects must respect reduced-motion preference')
+assert.ok(styles.includes('.tg-mobile-command-dock') && styles.includes('env(safe-area-inset-bottom)'), 'mobile game CTA must respect device safe-area insets')
+assert.ok(styles.includes('touch-action:none') && styles.includes('[data-map-panning="true"] .tg-map-world'), 'zoomed map drag must suppress page gestures and disable transition lag')
+
 assert.ok(styles.includes('.time-game[data-render-quality="balanced"] .tg-map-aurora') && styles.includes('.time-game[data-render-quality="balanced"] .tg-city-traffic'), 'adaptive balanced rendering must reduce expensive visual effects without changing state rules')
 assert.ok(styles.includes('.tg-diagnostic-export:hover') && styles.includes('.tg-diagnostic-foot'), 'the diagnostic export action and summary need styled responsive UI')
 assert.ok(styles.includes('[data-city-treasury="critical"]') && styles.includes('[data-city-support="critical"]'), 'city atmosphere must react to economy and political support')

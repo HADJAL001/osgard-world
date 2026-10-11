@@ -13,7 +13,7 @@ import { completePlayerSession, startPlayerSession } from './core/playerApi'
 type Tab = 'council' | 'construction' | 'chronicle'
 type MapLayer = 'prosperity' | 'politics' | 'infrastructure'
 type QualityMode = 'cinematic' | 'balanced'
-type Diagnostics = { fps: number; frameMs: number; frameP95Ms: number; slowFrames: number; fpsHistory: number[]; longTasks: number; longTaskSupported: boolean; tickMs: number; actions: number; save: 'saved' | 'error'; saveMs: number; saveBytes: number; inputLatencyMs: number | null; inputAverageMs: number | null; inputSamples: number; viewportWidth: number; viewportHeight: number; devicePixelRatio: number; logicalCores: number; heapUsedMB: number | null; heapLimitMB: number | null; qualityMode: QualityMode; lastAction: string }
+type Diagnostics = { fps: number; frameMs: number; frameP95Ms: number; slowFrames: number; fpsHistory: number[]; longTasks: number; longTaskSupported: boolean; tickMs: number; actions: number; save: 'saved' | 'error'; saveMs: number; saveBytes: number; inputLatencyMs: number | null; inputAverageMs: number | null; inputSamples: number; responseLatencyMs: number | null; responseAverageMs: number | null; responseSamples: number; viewportWidth: number; viewportHeight: number; devicePixelRatio: number; logicalCores: number; heapUsedMB: number | null; heapLimitMB: number | null; qualityMode: QualityMode; lastAction: string }
 
 const SAVE_KEY = 'osgard.time.empire.save.v1'
 const GUIDE_DISMISSED_KEY = 'osgard.time.empire.guide.dismissed.v1'
@@ -73,17 +73,21 @@ export function TimePrototype() {
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false)
   const [cinematicMap, setCinematicMap] = useState(false)
   const [mapZoom, setMapZoom] = useState(1)
+  const [mapOffset, setMapOffset] = useState({ x: 0, y: 0 })
   const [guideDismissed, setGuideDismissed] = useState(() => { try { return localStorage.getItem(GUIDE_DISMISSED_KEY) === '1' } catch { return false } })
   const [districtVisited, setDistrictVisited] = useState(false)
   const [planTouched, setPlanTouched] = useState(false)
   const [announcement, setAnnouncement] = useState('Совет ожидает вашего решения.')
-  const [diagnostics, setDiagnostics] = useState<Diagnostics>({ fps: 0, frameMs: 0, frameP95Ms: 0, slowFrames: 0, fpsHistory: [], longTasks: 0, longTaskSupported: false, tickMs: 0, actions: 0, save: 'saved', saveMs: 0, saveBytes: 0, inputLatencyMs: null, inputAverageMs: null, inputSamples: 0, viewportWidth: 0, viewportHeight: 0, devicePixelRatio: 1, logicalCores: 0, heapUsedMB: null, heapLimitMB: null, qualityMode: 'cinematic', lastAction: 'Нет подтверждённых действий' })
+  const [diagnostics, setDiagnostics] = useState<Diagnostics>({ fps: 0, frameMs: 0, frameP95Ms: 0, slowFrames: 0, fpsHistory: [], longTasks: 0, longTaskSupported: false, tickMs: 0, actions: 0, save: 'saved', saveMs: 0, saveBytes: 0, inputLatencyMs: null, inputAverageMs: null, inputSamples: 0, responseLatencyMs: null, responseAverageMs: null, responseSamples: 0, viewportWidth: 0, viewportHeight: 0, devicePixelRatio: 1, logicalCores: 0, heapUsedMB: null, heapLimitMB: null, qualityMode: 'cinematic', lastAction: 'Нет подтверждённых действий' })
   const session = useRef<string | null>(null)
   const completed = useRef(false)
   const stateRef = useRef(state)
   const cityPanelRef = useRef<HTMLElement | null>(null)
   const commandPanelRef = useRef<HTMLElement | null>(null)
   const cinematicToggleRef = useRef<HTMLButtonElement | null>(null)
+  const mapViewportRef = useRef<HTMLDivElement | null>(null)
+  const mapWorldRef = useRef<HTMLDivElement | null>(null)
+  const mapPanRef = useRef({ pointerId: -1, startX: 0, startY: 0, originX: 0, originY: 0, lastX: 0, lastY: 0, moved: false })
   const diagnosticRef = useRef({ frames: 0, elapsed: 0, start: 0, last: 0, samples: [] as number[], slowFrames: 0, lowFpsWindows: 0, highFpsWindows: 0, qualityMode: 'cinematic' as QualityMode })
   const inputMetricRef = useRef({ samples: 0, totalMs: 0 })
 
@@ -249,13 +253,13 @@ export function TimePrototype() {
       if (event.key === '1') setTab('council')
       if (event.key === '2') setTab('construction')
       if (event.key === '3') setTab('chronicle')
-      if (event.key === '+' || event.key === '=') setMapZoom((zoom) => Math.min(1.24, Number((zoom + 0.06).toFixed(2))))
-      if (event.key === '-') setMapZoom((zoom) => Math.max(0.86, Number((zoom - 0.06).toFixed(2))))
-      if (event.key === '0') setMapZoom(1)
+      if (event.key === '+' || event.key === '=') adjustMapZoom(0.06)
+      if (event.key === '-') adjustMapZoom(-0.06)
+      if (event.key === '0') resetMapView()
     }
     window.addEventListener('keydown', handleShortcuts)
     return () => window.removeEventListener('keydown', handleShortcuts)
-  }, [cinematicMap])
+  }, [cinematicMap, mapZoom])
 
   useEffect(() => {
     if (!cinematicMap) return
@@ -264,6 +268,96 @@ export function TimePrototype() {
     const focusFrame = requestAnimationFrame(() => cinematicToggleRef.current?.focus())
     return () => { document.body.style.overflow = previousOverflow; cancelAnimationFrame(focusFrame) }
   }, [cinematicMap])
+
+  function adjustMapZoom(delta: number) {
+    const nextZoom = Number(Math.max(0.86, Math.min(1.24, mapZoom + delta)).toFixed(2))
+    const bounds = mapViewportRef.current?.getBoundingClientRect()
+    const maxX = bounds ? Math.max(0, (nextZoom - 1) * bounds.width / 2) : 0
+    const maxY = bounds ? Math.max(0, (nextZoom - 1) * bounds.height / 2) : 0
+    setMapZoom(nextZoom)
+    setMapOffset((current) => ({
+      x: Math.max(-maxX, Math.min(maxX, current.x)),
+      y: Math.max(-maxY, Math.min(maxY, current.y)),
+    }))
+  }
+
+  function resetMapView() {
+    setMapZoom(1)
+    setMapOffset({ x: 0, y: 0 })
+    mapPanRef.current.pointerId = -1
+    mapPanRef.current.moved = false
+    if (mapViewportRef.current) mapViewportRef.current.dataset.mapPanning = 'false'
+  }
+
+  function beginMapPan(event: React.PointerEvent<HTMLDivElement>) {
+    if (mapZoom <= 1.02 || event.button !== 0) return
+    if (event.target instanceof Element && event.target.closest('button')) return
+    const pan = mapPanRef.current
+    if (pan.pointerId !== -1) return
+    pan.pointerId = event.pointerId
+    pan.startX = event.clientX
+    pan.startY = event.clientY
+    pan.originX = mapOffset.x
+    pan.originY = mapOffset.y
+    pan.lastX = mapOffset.x
+    pan.lastY = mapOffset.y
+    pan.moved = false
+  }
+
+  function moveMapPan(event: React.PointerEvent<HTMLDivElement>) {
+    const pan = mapPanRef.current
+    if (pan.pointerId !== event.pointerId) return
+    const deltaX = event.clientX - pan.startX
+    const deltaY = event.clientY - pan.startY
+    if (!pan.moved && Math.hypot(deltaX, deltaY) < 5) return
+    if (!pan.moved) {
+      pan.moved = true
+      event.currentTarget.dataset.mapPanning = 'true'
+      try { event.currentTarget.setPointerCapture(event.pointerId) } catch { /* capture can fail when pointer already left */ }
+    }
+    const bounds = mapViewportRef.current?.getBoundingClientRect()
+    const maxX = bounds ? Math.max(0, (mapZoom - 1) * bounds.width / 2) : 0
+    const maxY = bounds ? Math.max(0, (mapZoom - 1) * bounds.height / 2) : 0
+    pan.lastX = Math.max(-maxX, Math.min(maxX, pan.originX + deltaX))
+    pan.lastY = Math.max(-maxY, Math.min(maxY, pan.originY + deltaY))
+    if (mapWorldRef.current) mapWorldRef.current.style.transform = 'translate3d(' + pan.lastX + 'px, ' + pan.lastY + 'px, 0) scale(' + mapZoom + ')'
+  }
+
+  function finishMapPan(event: React.PointerEvent<HTMLDivElement>) {
+    const pan = mapPanRef.current
+    if (pan.pointerId !== event.pointerId) return
+    if (pan.moved) setMapOffset({ x: pan.lastX, y: pan.lastY })
+    pan.pointerId = -1
+    event.currentTarget.dataset.mapPanning = 'false'
+    try { if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId) } catch { /* capture may already be released */ }
+  }
+
+  function blockClickAfterMapPan(event: React.MouseEvent<HTMLDivElement>) {
+    if (!mapPanRef.current.moved) return
+    event.preventDefault()
+    event.stopPropagation()
+    mapPanRef.current.moved = false
+  }
+
+  function handleMapWheel(event: React.WheelEvent<HTMLDivElement>) {
+    if (!event.ctrlKey && !event.metaKey) return
+    event.preventDefault()
+    adjustMapZoom(event.deltaY < 0 ? 0.06 : -0.06)
+  }
+
+  function measureUiResponse(actionStartedAt: number) {
+    // Two animation frames approximate handler-to-render progress; this is not physical pixel-on-glass latency.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const measured = Number((performance.now() - actionStartedAt).toFixed(2))
+        setDiagnostics((old) => {
+          const samples = old.responseSamples + 1
+          const average = ((old.responseAverageMs ?? 0) * old.responseSamples + measured) / samples
+          return { ...old, responseLatencyMs: measured, responseAverageMs: Number(average.toFixed(2)), responseSamples: samples }
+        })
+      })
+    })
+  }
 
   function applyTurn() {
     if (state.status !== 'ACTIVE') return
@@ -275,6 +369,7 @@ export function TimePrototype() {
       setState(next)
       setAnnouncement(next.archive[next.archive.length - 1]?.detail ?? next.lastAction)
       recordOsgardEvent('portal_opened', { game: 'time', action: 'RESOLVE_TURN', taxRate: tax, policy, tick: next.tick, calcMs: elapsed })
+      measureUiResponse(start)
       if (next.status === 'COLLAPSED') setTab('chronicle')
     } catch (error) {
       setAnnouncement(error instanceof Error ? error.message : 'Не удалось рассчитать ход.')
@@ -291,6 +386,7 @@ export function TimePrototype() {
       setState(next)
       setAnnouncement(next.lastConsequence)
       recordOsgardEvent('portal_opened', { game: 'time', action: 'COUNCIL_DECREE', decree: actionId, district: district.id, treasury: next.treasury, calcMs: elapsed })
+      measureUiResponse(start)
     } catch (error) {
       setAnnouncement(error instanceof Error ? error.message : 'Указ не удалось исполнить.')
     }
@@ -306,6 +402,7 @@ export function TimePrototype() {
       setState(next)
       setAnnouncement(next.lastConsequence)
       recordOsgardEvent('portal_opened', { game: 'time', action: 'BUILD', district: district.id, building: buildingId, level: next.districts.find((item) => item.id === district.id)?.buildingLevel ?? 0, calcMs: elapsed })
+      measureUiResponse(start)
     } catch (error) {
       setAnnouncement(error instanceof Error ? error.message : 'Строительство не выполнено.')
     }
@@ -317,6 +414,8 @@ export function TimePrototype() {
     setTax(next.taxRate)
     setPolicy(next.policy)
     setSelectedDistrict('forum')
+    setMapLayer('prosperity')
+    resetMapView()
     setTab('council')
     setDiagnostics((old) => ({ ...old, tickMs: 0, actions: 0, lastAction: 'Начата новая партия' }))
     setAnnouncement('Новая летопись началась. Решения прошлого цикла сохранены только в вашей памяти.')
@@ -457,6 +556,7 @@ export function TimePrototype() {
           <Diagnostic label="Размер сохранения" value={diagnostics.saveBytes ? (diagnostics.saveBytes / 1024).toFixed(1) + ' КБ' : '…'} description="Фактический размер JSON в UTF-8" />
           <Diagnostic label="Действия" value={String(diagnostics.actions)} description="Успешные локальные команды" />
           <Diagnostic label="Обработка ввода" value={diagnostics.inputLatencyMs === null ? '—' : diagnostics.inputLatencyMs.toFixed(2) + ' мс'} description="Событие браузера → обработчик JS; не сетевой ping" tone={diagnostics.inputLatencyMs !== null && diagnostics.inputLatencyMs > 50 ? 'negative' : 'neutral'} />
+          <Diagnostic label="Отклик интерфейса" value={diagnostics.responseLatencyMs === null ? '—' : diagnostics.responseLatencyMs.toFixed(1) + ' мс'} description={'Среднее ' + (diagnostics.responseAverageMs === null ? '—' : diagnostics.responseAverageMs.toFixed(1) + ' мс') + ' · обработчик → второй кадр, не измерение фотона'} tone={diagnostics.responseLatencyMs !== null && diagnostics.responseLatencyMs > 100 ? 'negative' : diagnostics.responseLatencyMs !== null && diagnostics.responseLatencyMs > 50 ? 'neutral' : 'positive'} />
           <Diagnostic label="Размер рабочей области" value={diagnostics.viewportWidth ? diagnostics.viewportWidth + ' × ' + diagnostics.viewportHeight : '…'} description={'CSS-пиксели · DPR ' + diagnostics.devicePixelRatio.toFixed(2)} />
           <Diagnostic label="Память JS" value={diagnostics.heapUsedMB === null ? 'Н/Д' : diagnostics.heapUsedMB + ' МБ'} description={diagnostics.heapLimitMB === null ? 'Браузер не предоставляет memory API' : 'Доступный предел JS heap: ' + diagnostics.heapLimitMB + ' МБ'} tone={diagnostics.heapUsedMB !== null && diagnostics.heapLimitMB !== null && diagnostics.heapUsedMB / diagnostics.heapLimitMB > 0.8 ? 'negative' : 'neutral'} />
           <Diagnostic label="Логические потоки" value={diagnostics.logicalCores ? String(diagnostics.logicalCores) : 'Н/Д'} description="Значение, сообщённое браузером" />
@@ -482,9 +582,9 @@ export function TimePrototype() {
           <div className="tg-panel-head">
             <div><span className="tg-overline">ATLAS / URBS IX</span><h2>Живая карта</h2></div>
             <div className="tg-map-controls">
-              <button type="button" aria-label="Уменьшить карту" onClick={() => setMapZoom((zoom) => Math.max(0.86, Number((zoom - 0.06).toFixed(2))))}>−</button>
-              <button className="tg-zoom-reset" type="button" aria-label="Сбросить масштаб карты" title="Сбросить масштаб карты" onClick={() => setMapZoom(1)}>{Math.round(mapZoom * 100)}%</button>
-              <button type="button" aria-label="Увеличить карту" onClick={() => setMapZoom((zoom) => Math.min(1.24, Number((zoom + 0.06).toFixed(2))))}>+</button>
+              <button type="button" aria-label="Уменьшить карту" onClick={() => adjustMapZoom(-0.06)}>−</button>
+              <button className="tg-zoom-reset" type="button" aria-label="Сбросить положение и масштаб карты" title="Сбросить положение и масштаб карты" onClick={resetMapView}>{Math.round(mapZoom * 100)}%</button>
+              <button type="button" aria-label="Увеличить карту" onClick={() => adjustMapZoom(0.06)}>+</button>
               <button ref={cinematicToggleRef} className="tg-cinema-button" type="button" aria-label={cinematicMap ? 'Выйти из кинематографического вида карты' : 'Открыть кинематографический вид карты'} aria-pressed={cinematicMap} title={cinematicMap ? 'Закрыть кинематографический вид (Esc)' : 'Кинематографический вид карты'} onClick={() => setCinematicMap((value) => !value)}>{cinematicMap ? <Minimize2 size={15} /> : <Expand size={15} />}</button>
             </div>
           </div>
@@ -495,11 +595,8 @@ export function TimePrototype() {
               <span>{layer.label}</span>
             </button>)}
           </div>
-          <div className="tg-map-viewport" data-city-status={state.status} data-city-tick={state.tick} data-city-energy={state.energy < 25 ? 'critical' : state.energy < 55 ? 'strained' : 'stable'} data-city-stability={state.stability < 25 ? 'critical' : state.stability < 55 ? 'strained' : 'stable'} data-city-treasury={state.treasury <= 0 ? 'critical' : state.treasury < 1000 ? 'strained' : 'stable'} data-city-support={allies < 1 ? 'critical' : allies < 2 ? 'strained' : 'stable'} data-city-layer={mapLayer}>
-            <div
-              className="tg-map-world"
-              style={{ transform: 'scale(' + mapZoom + ')' }}
-            >
+          <div ref={mapViewportRef} className="tg-map-viewport" data-map-zoomed={mapZoom > 1.02 ? 'true' : 'false'} data-map-panning="false" onPointerDown={beginMapPan} onPointerMove={moveMapPan} onPointerUp={finishMapPan} onPointerCancel={finishMapPan} onClickCapture={blockClickAfterMapPan} onWheel={handleMapWheel} aria-label="Атлас города. Выберите район касанием или мышью; увеличенную карту можно перетаскивать." data-city-status={state.status} data-city-tick={state.tick} data-city-energy={state.energy < 25 ? 'critical' : state.energy < 55 ? 'strained' : 'stable'} data-city-stability={state.stability < 25 ? 'critical' : state.stability < 55 ? 'strained' : 'stable'} data-city-treasury={state.treasury <= 0 ? 'critical' : state.treasury < 1000 ? 'strained' : 'stable'} data-city-support={allies < 1 ? 'critical' : allies < 2 ? 'strained' : 'stable'} data-city-layer={mapLayer}>
+            <div ref={mapWorldRef} className="tg-map-world" style={{ transform: 'translate3d(' + mapOffset.x + 'px, ' + mapOffset.y + 'px, 0) scale(' + mapZoom + ')' }}>
               <svg className="tg-city-map" viewBox="0 0 840 520" role="img" aria-label="Схематическая карта четырёх районов имперского города">
                 <defs>
                   <linearGradient id="tgLand" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#17252b" /><stop offset="100%" stopColor="#0b1119" /></linearGradient>
@@ -628,6 +725,7 @@ export function TimePrototype() {
               <span><i className="key-built" /> ПОСТРОЙКА</span>
               <span className="tg-map-layer-legend"><i style={{ background: mapLayer === 'infrastructure' ? '#7ec6b2' : mapLayer === 'politics' ? '#d9c28b' : '#8fc7ad' }} /> {mapLayer === 'prosperity' ? 'ПРОЦВЕТАНИЕ' : mapLayer === 'politics' ? 'ПОДДЕРЖКА ФРАКЦИЙ' : 'УРОВЕНЬ И ТИП ЗДАНИЯ'}</span>
               <span className="tg-map-shortcuts">КЛАВИШИ: 1–3 · +/− · 0</span>
+              <span className="tg-map-pan-hint">DRAG · CTRL + КОЛЕСО</span>
               <span className="tg-map-coordinates">CITY IX / {district.id.toUpperCase()} / {String(state.tick).padStart(2, '0')}</span>
             </div>
           </div>
@@ -750,6 +848,15 @@ export function TimePrototype() {
           <button type="button" className="tg-outcome-archive" onClick={() => { setTab('chronicle'); const first = document.querySelector('.tg-command-panel'); first?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}>Изучить летопись цикла</button>
         </section>
       </div>}
+            <div className={'tg-mobile-command-dock' + (!active ? ' is-terminal' : '')} aria-label="Быстрое управление тактом">
+        <div className="tg-mobile-dock-copy">
+          <span>ТАКТ {String(state.tick + 1).padStart(2, '0')} / ПРОГНОЗ</span>
+          <strong>КАЗНА {signed(forecast.treasuryDelta, ' ₽')} · ЭН {signed(forecast.energyDelta)}</strong>
+        </div>
+        <button type="button" disabled={!active} onClick={applyTurn} aria-label={'Завершить такт ' + (state.tick + 1) + ', расчётный баланс казны ' + signed(forecast.treasuryDelta)}>
+          <Play size={14} fill="currentColor" /><span>Завершить такт</span><ArrowRight size={15} />
+        </button>
+      </div>
       <div className="tg-live-announcement" role="status" aria-live="polite">{announcement}</div>
       <footer className="tg-site-footer"><span>OSGARD PLAY / IMPERIUM OF TIME</span><span>CLIENT-SIDE SIMULATION · LOCAL SAVE</span><a href="/entertainment">ВЫЙТИ В КАТАЛОГ <ArrowUpRight size={12} /></a></footer>
     </main>

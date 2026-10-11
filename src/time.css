@@ -459,3 +459,38 @@
   .time-game[data-render-quality="balanced"] .tg-city-streets path,
   .time-game[data-render-quality="balanced"] .tg-city-traffic circle{animation:none!important}
 }
+
+/* Responsive play layer: drag only at zoom, and keep the core turn action within thumb reach. */
+.tg-map-viewport{touch-action:pan-y;overscroll-behavior:contain}
+.tg-map-viewport[data-map-zoomed="true"]{touch-action:none;cursor:grab}
+.tg-map-viewport[data-map-panning="true"]{cursor:grabbing;user-select:none;-webkit-user-select:none}
+.tg-map-viewport[data-map-panning="true"] .tg-map-world{transition:none!important;will-change:transform}
+.tg-map-world{backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.tg-map-pan-hint{display:inline-flex;align-items:center;gap:5px;color:var(--tg-gold);font-family:"JetBrains Mono",monospace;font-size:7px;letter-spacing:.08em;white-space:nowrap}
+.tg-mobile-command-dock{display:none}
+.tg-mobile-command-dock.is-terminal{display:none!important}
+.tg-mobile-dock-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:5px}
+.tg-mobile-dock-copy>span{color:var(--tg-gold);font:8px/1.3 "JetBrains Mono",monospace;letter-spacing:.11em}
+.tg-mobile-dock-copy>strong{font:10px/1.4 "JetBrains Mono",monospace;font-weight:400;color:var(--tg-text);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.tg-mobile-command-dock>button{min-height:46px;display:inline-flex;flex:0 0 auto;align-items:center;justify-content:center;gap:7px;padding:0 12px;border:1px solid rgba(240,223,173,.42);border-radius:7px;background:linear-gradient(105deg,#d9c28b,#c1a66c);color:#101713;font-size:10px;font-weight:650;white-space:nowrap;box-shadow:0 5px 18px rgba(0,0,0,.24);transition:filter .18s ease,transform .18s ease}
+.tg-mobile-command-dock>button:hover:not(:disabled){filter:brightness(1.06);transform:translateY(-1px)}
+.tg-mobile-command-dock>button:active:not(:disabled){transform:translateY(0) scale(.99)}
+.tg-mobile-command-dock>button:disabled{opacity:.42}
+@media(max-width:600px){
+  .time-game{padding-bottom:calc(108px + env(safe-area-inset-bottom))}
+  .tg-mobile-command-dock{position:fixed;z-index:35;left:0;right:0;bottom:0;display:flex;align-items:center;gap:10px;padding:11px 13px max(11px,env(safe-area-inset-bottom));border-top:1px solid rgba(217,194,139,.24);background:rgba(7,11,14,.96);box-shadow:0 -12px 34px rgba(0,0,0,.28);backdrop-filter:blur(12px) saturate(.84);-webkit-backdrop-filter:blur(12px) saturate(.84)}
+  .tg-mobile-command-dock>button{min-width:136px;min-height:46px;padding:0 10px;font-size:10px}
+  .tg-mobile-command-dock>button svg{flex:0 0 auto}
+  .tg-mobile-dock-copy>strong{font-size:9px;letter-spacing:-.015em}
+  .tg-map-pan-hint{width:100%;font-size:7px;padding-top:2px}
+  .tg-map-key .tg-map-coordinates{order:5}
+}
+@media(max-width:360px){
+  .tg-mobile-command-dock{gap:7px;padding-left:9px;padding-right:9px}
+  .tg-mobile-command-dock>button{min-width:128px;gap:5px;padding:0 8px;font-size:9px}
+  .tg-mobile-dock-copy>strong{font-size:8px}
+}
+@media(prefers-reduced-motion:reduce){
+  .tg-mobile-command-dock{backdrop-filter:none;-webkit-backdrop-filter:none}
+  .tg-map-viewport[data-map-panning="true"] .tg-map-world{transition:none!important}
+}
