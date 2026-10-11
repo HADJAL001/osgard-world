@@ -7,6 +7,7 @@ on:
       - "src/**"
       - "public/skillcred/**"
       - "index.html"
+      - "nginx.conf"
       - "package.json"
       - "package-lock.json"
       - "vite.config.ts"
@@ -27,10 +28,16 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
+      - run: npm run check
       - run: npm run build
       - run: npm run preflight:frontend
-      - name: Archive verified dist
-        run: tar -czf osgard-world-release.tgz -C dist .
+      - run: npm run qa:skillcred
+      - name: Package HTML assets and matching Nginx config
+        run: |
+          mkdir -p osgard-release/html
+          cp -a dist/. osgard-release/html/
+          cp nginx.conf osgard-release/nginx.conf
+          tar -czf osgard-world-release.tgz -C osgard-release .
       - name: Configure SSH
         env:
           DEPLOY_KEY: ${{ secrets.OSGARD_DEPLOY_KEY }}
@@ -50,14 +57,14 @@ jobs:
           scp -i ~/.ssh/osgard_deploy osgard-world-release.tgz "$USER@$HOST:/tmp/osgard-gh-release/"
           scp -i ~/.ssh/osgard_deploy local.sha256 "$USER@$HOST:/tmp/osgard-gh-release/"
           ssh -i ~/.ssh/osgard_deploy "$USER@$HOST" 'cd /tmp/osgard-gh-release && sha256sum -c local.sha256'
-      - name: Activate verified archive with rollback
+      - name: Activate verified archive with config rollback
         env:
           HOST: ${{ secrets.OSGARD_DEPLOY_HOST }}
           USER: ${{ secrets.OSGARD_DEPLOY_USER }}
         run: |
           scp -i ~/.ssh/osgard_deploy scripts/activate-frontend-remote.sh "$USER@$HOST:/tmp/activate-frontend-remote.sh"
           ssh -i ~/.ssh/osgard_deploy "$USER@$HOST" 'docker cp /tmp/osgard-gh-release/osgard-world-release.tgz osgard-world:/tmp/osgard-gh-release.tgz && chmod 700 /tmp/activate-frontend-remote.sh && OSGARD_ARCHIVE=/tmp/osgard-gh-release.tgz OSGARD_CONTAINER=osgard-world /tmp/activate-frontend-remote.sh'
-      - name: Verify published routes after activation
+      - name: Verify published routes and same-origin API proxy
         env:
           OSGARD_BASE_URL: https://osgard.world
         run: npm run qa:production-routes

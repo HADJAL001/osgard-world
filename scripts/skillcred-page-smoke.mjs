@@ -1,45 +1,45 @@
 import assert from 'node:assert/strict'
 import { existsSync, readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { resolve, dirname } from 'node:path'
 
 const candidates = process.argv.slice(2).length
   ? process.argv.slice(2)
   : ['public/skillcred/index.html', 'dist/skillcred/index.html']
 const files = candidates.filter(path => existsSync(resolve(path)))
-
 assert.ok(files.length > 0, 'SkillCred page is missing from source and build output')
 
 const requiredIds = [
   'issueBtn', 'verifyBtn', 'revokeBtn', 'downloadBtn',
-  'demoResult', 'demoCard', 'badgeJson', 'liveStatus',
-  'heroIssuer', 'heroStatus',
+  'demoResult', 'demoCard', 'badgeTitle', 'eventLog',
+  'heroIssuer', 'heroStatus', 'copyCode', 'menuToggle',
 ]
-const requiredApiPaths = [
-  '/health', '/ready', '/issuer',
-  '/demo/issue', '/demo/verify', '/demo/revoke',
-]
+const requiredSections = ['demo', 'how', 'audience', 'developers', 'faq']
 for (const file of files) {
   const html = readFileSync(resolve(file), 'utf8')
-  assert.match(html, /<html lang="ru">/i, `${file}: missing Russian document language`)
-  assert.match(html, /https:\/\/skillcred-pilot-api\.onrender\.com/, `${file}: missing API origin`)
-  assert.match(html, /https:\/\/osgard\.world\/skillcred\//, `${file}: missing canonical product URL`)
-  for (const id of requiredIds) {
-    assert.match(html, new RegExp(`id=["']${id}["']`), `${file}: missing #${id}`)
-  }
-  for (const endpoint of requiredApiPaths) {
-    assert.ok(html.includes(endpoint), `${file}: missing live API path ${endpoint}`)
-  }
-  assert.ok(!html.includes('DEMO_ISSUER_TOKEN'), `${file}: server secret name leaked into browser UI`)
-  assert.ok(!html.includes('crypto.subtle.generateKey'), `${file}: demo must use server-issued credentials`)
-  assert.ok(!/fonts\.googleapis\.com|fonts\.gstatic\.com/.test(html), `${file}: external font CDN found`)
-  assert.ok(!/google-analytics|gtag\(|mixpanel|segment\.com/.test(html), `${file}: analytics code found`)
-
-  const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)]
-    .map(match => match[1].trim())
-    .filter(Boolean)
-  assert.ok(scripts.length > 0, `${file}: missing interactive script`)
-  for (const script of scripts) {
-    assert.doesNotThrow(() => new Function(script), `${file}: inline JavaScript has a syntax error`)
-  }
-  console.log(`PASS ${file}: live API wiring, demo controls, metadata and inline JS`)
+  const folder = dirname(resolve(file))
+  const cssPath = resolve(folder, 'styles.css')
+  const jsPath = resolve(folder, 'app.js')
+  assert.match(html, /<html lang="ru">/i, file + ': missing Russian document language')
+  assert.match(html, /name="api-base" content="\/skillcred-api"/, file + ': missing same-origin proxy')
+  assert.match(html, /https:\/\/osgard\.world\/skillcred\//, file + ': missing canonical URL')
+  assert.match(html, /\/skillcred\/styles\.css/, file + ': missing external stylesheet')
+  assert.match(html, /\/skillcred\/app\.js/, file + ': missing application script')
+  for (const id of requiredIds) assert.match(html, new RegExp('id=["\\x27]' + id + '["\\x27]'), file + ': missing #' + id)
+  for (const section of requiredSections) assert.ok(html.includes('id="' + section + '"'), file + ': missing section #' + section)
+  for (const endpoint of ['/demo/issue', '/demo/verify', '/demo/revoke']) assert.ok(html.includes(endpoint), file + ': missing endpoint contract ' + endpoint)
+  assert.ok(!html.includes('DEMO_ISSUER_TOKEN'), file + ': server secret name leaked into UI')
+  assert.ok(!/fonts\.googleapis\.com|fonts\.gstatic\.com/.test(html), file + ': external font CDN found')
+  assert.ok(!/google-analytics|gtag\(|mixpanel|segment\.com/.test(html), file + ': analytics code found')
+  assert.ok(existsSync(cssPath), file + ': styles.css not found')
+  assert.ok(existsSync(jsPath), file + ': app.js not found')
+  const css = readFileSync(cssPath, 'utf8')
+  const js = readFileSync(jsPath, 'utf8')
+  assert.match(css, /prefers-reduced-motion/, file + ': missing reduced motion support')
+  assert.match(css, /@media\(max-width:380px\)/, file + ': missing small-screen layout rules')
+  assert.doesNotThrow(() => new Function(js), file + ': app.js has a syntax error')
+  assert.ok(js.includes('credentials: "same-origin"'), file + ': API requests must use same-origin proxy')
+  assert.ok(js.includes('HTTP '), file + ': HTTP response codes are not logged')
+  assert.ok(!js.includes('DEMO_ISSUER_TOKEN'), file + ': server secret name leaked into JS')
+  assert.ok(!/fonts\.googleapis\.com|fonts\.gstatic\.com/.test(js), file + ': external font CDN found')
+  console.log('PASS ' + file + ': semantic page, local assets, same-origin API and JS syntax')
 }

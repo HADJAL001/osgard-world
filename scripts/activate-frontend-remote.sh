@@ -6,17 +6,60 @@ archive="${OSGARD_ARCHIVE:-/tmp/osgard-gh-release.tgz}"
 state_file="/tmp/osgard-frontend-activation.state"
 log_file="/tmp/osgard-frontend-activation.log"
 rm -f "$state_file" "$log_file"
+
+rollback() {
+  docker exec "$container_name" sh -lc '
+    set -eu
+    if [ -f /tmp/osgard-nginx-previous.conf ]; then
+      cp /tmp/osgard-nginx-previous.conf /etc/nginx/conf.d/default.conf
+    fi
+    if [ -d /tmp/osgard-gh-previous ]; then
+      rm -rf /usr/share/nginx/html
+      mv /tmp/osgard-gh-previous /usr/share/nginx/html
+    fi
+    nginx -t && nginx -s reload
+  '
+}
+
 (
   set -euo pipefail
-  docker exec "$container_name" sh -lc "rm -rf /tmp/osgard-gh-next /tmp/osgard-gh-previous && mkdir /tmp/osgard-gh-next && tar -xzf '$archive' -C /tmp/osgard-gh-next && test -f /tmp/osgard-gh-next/index.html && mv /usr/share/nginx/html /tmp/osgard-gh-previous && mv /tmp/osgard-gh-next /usr/share/nginx/html"
-  if curl --max-time 10 -fsS https://osgard.world/ >/dev/null \
-    && curl --max-time 10 -fsS https://osgard.world/skillcred/ -o /tmp/skillcred-page-check.html \
+  docker exec "$container_name" sh -lc "
+    set -eu
+    rm -rf /tmp/osgard-gh-next /tmp/osgard-gh-previous
+    mkdir -p /tmp/osgard-gh-next
+    tar -xzf '$archive' -C /tmp/osgard-gh-next
+    test -f /tmp/osgard-gh-next/html/index.html
+    test -f /tmp/osgard-gh-next/html/skillcred/index.html
+    test -f /tmp/osgard-gh-next/html/skillcred/styles.css
+    test -f /tmp/osgard-gh-next/html/skillcred/app.js
+    test -f /tmp/osgard-gh-next/nginx.conf
+    cp /etc/nginx/conf.d/default.conf /tmp/osgard-nginx-previous.conf
+    mv /usr/share/nginx/html /tmp/osgard-gh-previous
+    mv /tmp/osgard-gh-next/html /usr/share/nginx/html
+    cp /tmp/osgard-gh-next/nginx.conf /etc/nginx/conf.d/default.conf
+    if nginx -t; then
+      nginx -s reload
+    else
+      cp /tmp/osgard-nginx-previous.conf /etc/nginx/conf.d/default.conf
+      rm -rf /usr/share/nginx/html
+      mv /tmp/osgard-gh-previous /usr/share/nginx/html
+      nginx -t && nginx -s reload
+      exit 1
+    fi
+  "
+
+  if curl --max-time 12 -fsS https://osgard.world/ >/dev/null \
+    && curl --max-time 12 -fsS https://osgard.world/skillcred/ -o /tmp/skillcred-page-check.html \
     && grep -q 'id="issueBtn"' /tmp/skillcred-page-check.html \
-    && grep -q 'https://skillcred-pilot-api.onrender.com' /tmp/skillcred-page-check.html \
+    && grep -q 'name="api-base" content="/skillcred-api"' /tmp/skillcred-page-check.html \
+    && curl --max-time 12 -fsS https://osgard.world/skillcred/styles.css | grep -q -- '--accent:#c8ff3d' \
+    && curl --max-time 12 -fsS https://osgard.world/skillcred/app.js | grep -q 'demo/issue' \
+    && curl --max-time 12 -fsS https://osgard.world/skillcred-api/health | grep -q '"version":"0.3.0"' \
+    && curl --max-time 12 -fsS https://osgard.world/skillcred-api/ready | grep -q '"ready":true' \
     && curl --max-time 10 -fsS http://127.0.0.1:4317/health | grep -q '"status":"ok"'; then
     printf 'success\n' > "$state_file"
   else
-    docker exec "$container_name" sh -lc 'rm -rf /usr/share/nginx/html && mv /tmp/osgard-gh-previous /usr/share/nginx/html'
+    rollback
     printf 'failed\n' > "$state_file"
     exit 1
   fi
@@ -27,6 +70,10 @@ for _ in $(seq 1 45); do
   kill -0 "$pid" 2>/dev/null || break
   sleep 1
 done
-if [[ ! -f "$state_file" ]]; then kill "$pid" 2>/dev/null || true; cat "$log_file" || true; exit 1; fi
+if [[ ! -f "$state_file" ]]; then
+  kill "$pid" 2>/dev/null || true
+  cat "$log_file" || true
+  exit 1
+fi
 cat "$log_file" || true
 grep -q '^success$' "$state_file"
