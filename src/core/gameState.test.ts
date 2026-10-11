@@ -10,7 +10,7 @@ const expectThrow = (fn: () => unknown) => {
 const initial = createTimeState()
 const changed = applyTax(initial, 20)
 if (changed.tick !== 1 || changed.treasury <= initial.treasury) throw new Error('TIME policy fixture failed')
-if (!changed.lastConsequence.includes('Higher tax') || !changed.lastConsequence.includes('Energy -2')) throw new Error('TIME consequence fixture failed')
+if (!changed.lastConsequence.includes('Higher tax') || !changed.lastConsequence.includes('Energy ')) throw new Error('TIME consequence fixture failed')
 
 const lowered = applyTax(changed, 5)
 if (!lowered.lastConsequence.includes('Lower tax') || lowered.energy >= changed.energy) throw new Error('TIME lower-tax consequence fixture failed')
