@@ -23,7 +23,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         : route === '/entertainment'
           ? text.includes('<title>OSGARD Entertainment</title>')
           : text.includes('<div id="root">')
-    const assetPaths = route === '/skillcred/' ? ['/skillcred/styles.css', '/skillcred/app.js', '/skillcred/fonts/InterVariable.woff2'] : []
+    const assetPaths = route === '/skillcred/' ? ['/skillcred/styles.css.gz', '/skillcred/app.js.gz', '/skillcred/fonts/InterVariable.woff2'] : []
     const assetChecks = await Promise.all(assetPaths.map(async path => {
       const expectedType = path.endsWith('.css') ? 'text/css' : path.endsWith('.js') ? 'javascript' : 'font'
       const asset = await fetch(new URL(path, base), { headers: { 'user-agent': userAgent } })
