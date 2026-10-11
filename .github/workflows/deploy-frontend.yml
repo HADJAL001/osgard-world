@@ -1,5 +1,9 @@
 name: OSGARD frontend deploy
 
+concurrency:
+  group: osgard-frontend-deploy
+  cancel-in-progress: false
+
 on:
   push:
     branches: [master]

@@ -52,11 +52,16 @@ rollback() {
     && curl --max-time 12 -fsS https://osgard.world/skillcred/ -o /tmp/skillcred-page-check.html \
     && grep -q 'id="issueBtn"' /tmp/skillcred-page-check.html \
     && grep -q 'name="api-base" content="/skillcred-api"' /tmp/skillcred-page-check.html \
-    && curl --max-time 12 -fsS https://osgard.world/skillcred/styles.css | grep -q -- '--accent:#c8ff3d' \
-    && curl --max-time 12 -fsS https://osgard.world/skillcred/app.js | grep -q 'demo/issue' \
-    && curl --max-time 12 -fsS https://osgard.world/skillcred-api/health | grep -q '"version":"0.3.0"' \
-    && curl --max-time 12 -fsS https://osgard.world/skillcred-api/ready | grep -q '"ready":true' \
-    && curl --max-time 10 -fsS http://127.0.0.1:4317/health | grep -q '"status":"ok"'; then
+    && curl --max-time 12 -fsS https://osgard.world/skillcred/styles.css -o /tmp/skillcred-css-check.txt \
+    && grep -q -- '--accent:#c8ff3d' /tmp/skillcred-css-check.txt \
+    && curl --max-time 12 -fsS https://osgard.world/skillcred/app.js -o /tmp/skillcred-js-check.txt \
+    && grep -q 'demo/issue' /tmp/skillcred-js-check.txt \
+    && curl --max-time 12 -fsS https://osgard.world/skillcred-api/health -o /tmp/skillcred-health-check.json \
+    && grep -q '"version":"0.3.0"' /tmp/skillcred-health-check.json \
+    && curl --max-time 12 -fsS https://osgard.world/skillcred-api/ready -o /tmp/skillcred-ready-check.json \
+    && grep -q '"ready":true' /tmp/skillcred-ready-check.json \
+    && curl --max-time 10 -fsS http://127.0.0.1:4317/health -o /tmp/osgard-game-health-check.json \
+    && grep -q '"status":"ok"' /tmp/osgard-game-health-check.json;
     printf 'success\n' > "$state_file"
   else
     rollback
