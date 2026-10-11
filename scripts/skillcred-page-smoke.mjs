@@ -90,7 +90,7 @@ for (const file of files) {
   assert.ok(css.includes('.hero-json-preview pre{height:8.5em'), file + ': the live JSON preview must not cause layout shifts')
   assert.ok(css.includes('font-display:optional'), file + ': late font swaps must not move the first viewport')
   assert.match(css, /prefers-reduced-motion/, file + ': missing reduced motion support')
-  assert.ok(css.includes('.hero-visual::before{') && css.includes('repeating-conic-gradient'), file + ': cinematic trust optics are missing')
+  assert.ok(/\.hero-visual:{1,2}before\{/.test(css) && css.includes('repeating-conic-gradient'), file + ': cinematic trust optics are missing')
   assert.ok(css.includes('@keyframes credential-light-sweep') && css.includes('var(--surface-glint)'), file + ': signature light sweep must use design tokens')
   assert.ok(css.includes('var(--pointer-x,82%)') && css.includes('var(--perspective-depth)'), file + ': credential depth must use pointer-aware design tokens');
 
