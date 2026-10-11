@@ -48,3 +48,6 @@
   .demo-explain,.demo-explainer-grid p{font-size:12px}
   .footer-col>a{display:inline-flex;align-items:center;min-height:27px;padding-block:5px;font-size:12px;line-height:1.4}
 }
+
+/* DESKTOP ACCESSIBILITY TARGETS */
+.footer-col>a{display:inline-flex;align-items:center;min-height:27px;padding-block:5px}

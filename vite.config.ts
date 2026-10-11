@@ -3,7 +3,18 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  server: { port: 4188, strictPort: false },
+  server: {
+    port: 4188,
+    strictPort: false,
+    proxy: {
+      '/skillcred-api': {
+        target: 'https://skillcred-pilot-api.onrender.com',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/skillcred-api/, ''),
+      },
+    },
+  },
   build: {
     rollupOptions: {
       output: {
