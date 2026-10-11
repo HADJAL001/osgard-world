@@ -15,6 +15,7 @@ export type TimeState = {
   status: CityStatus; lastConsequence: string; lastAction: string; randomSeed: number; score: number
 }
 export type TurnPlan = { taxRate: number; policy: PolicyId }
+export type CouncilActionId = 'GRID_REPAIR' | 'CIVIC_RELIEF' | 'SENATE_COMPACT'
 export type TurnForecast = { treasuryDelta: number; energyDelta: number; commonsDelta: number; guildDelta: number; senateDelta: number; upkeep: number; income: number }
 
 export const POLICIES: Record<PolicyId, { name: string; label: string; short: string; description: string }> = {
@@ -22,6 +23,11 @@ export const POLICIES: Record<PolicyId, { name: string; label: string; short: st
   INDUSTRY: { name: 'Промышленный рывок', label: 'Промышленность', short: 'Доход', description: 'Больше казённых поступлений ценой повышенного расхода энергии.' },
   GREEN: { name: 'Зелёный пакт', label: 'Энергия', short: 'Энергия', description: 'Увеличивает энергетический резерв и поддерживает район акведуков.' },
   WELFARE: { name: 'Гражданская поддержка', label: 'Благосостояние', short: 'Лояльность', description: 'Поддерживает горожан, но требует дополнительных средств казны.' },
+}
+export const COUNCIL_ACTIONS: Record<CouncilActionId, { name: string; cost: number; description: string; effect: string }> = {
+  GRID_REPAIR: { name: 'Стабилизировать энергосеть', cost: 130, description: 'Починить узлы сети и снизить риск перебоев.', effect: 'Энергия +14 · Гильдии +2' },
+  CIVIC_RELIEF: { name: 'Пакет городской помощи', cost: 110, description: 'Поддержать жителей и снизить напряжение в выбранном районе.', effect: 'Граждане +6 · Стабильность +3' },
+  SENATE_COMPACT: { name: 'Пакт с Сенатом', cost: 90, description: 'Закрепить поддержку Совета и укрепить легитимность.', effect: 'Сенат +7 · Стабильность +2' },
 }
 export const BUILDINGS: Record<BuildingId, { name: string; label: string; cost: number; upkeep: number; income: number; energy: number; description: string }> = {
   SOLAR_ARRAY: { name: 'Солнечный контур', label: 'Энергия', cost: 220, upkeep: 7, income: 0, energy: 7, description: 'Каждый уровень добавляет энергетический прирост на каждом такте.' },
@@ -142,6 +148,49 @@ export function resolveTimeTurn(state: TimeState, plan: TurnPlan): TimeState {
     lastAction: status === 'ELECTED' ? 'Сенат продлил мандат: город сохранил устойчивость.' :
       status === 'COLLAPSED' ? 'Город больше не может поддерживать прежний порядок.' : 'Принято решение: «' + policyName + '».',
     randomSeed: incident.seed, score,
+  }
+}
+
+export function hasUsedCouncilAction(state: TimeState): boolean {
+  return state.archive.some((entry) => entry.tick === state.tick && entry.id.startsWith('decree-'))
+}
+
+export function applyCouncilAction(state: TimeState, actionId: CouncilActionId, districtId: DistrictId): TimeState {
+  if (state.status !== 'ACTIVE') throw new Error('City is not active')
+  if (hasUsedCouncilAction(state)) throw new Error('One council decree is already used this turn')
+  const action = COUNCIL_ACTIONS[actionId]
+  if (!action) throw new Error('Unknown council decree')
+  if (state.treasury < action.cost) throw new Error('Not enough treasury')
+  if (actionId === 'GRID_REPAIR' && state.energy >= 92) throw new Error('The energy grid is already stable')
+  const district = state.districts.find((item) => item.id === districtId)
+  if (!district) throw new Error('District not found')
+  const districts = state.districts.map((item) => item.id !== districtId ? item : {
+    ...item,
+    prosperity: clamp(item.prosperity + (actionId === 'CIVIC_RELIEF' ? 3 : actionId === 'SENATE_COMPACT' ? 1 : districtId === 'aqueduct' ? 3 : 1)),
+  })
+  const treasury = state.treasury - action.cost
+  const energy = actionId === 'GRID_REPAIR' ? clamp(state.energy + 14) : state.energy
+  const approval = {
+    guild: clamp(state.approval.guild + (actionId === 'GRID_REPAIR' ? 2 : 0)),
+    commons: clamp(state.approval.commons + (actionId === 'CIVIC_RELIEF' ? 6 : 0)),
+    senate: clamp(state.approval.senate + (actionId === 'SENATE_COMPACT' ? 7 : 0)),
+  }
+  const stability = clamp(state.stability + (actionId === 'CIVIC_RELIEF' ? 3 : actionId === 'SENATE_COMPACT' ? 2 : 1))
+  const impact = actionId === 'GRID_REPAIR' ? 'Казна −' + action.cost + ' · Энергия +' + (energy - state.energy) + ' · Гильдии +' + (approval.guild - state.approval.guild)
+    : actionId === 'CIVIC_RELIEF' ? 'Казна −' + action.cost + ' · Граждане +' + (approval.commons - state.approval.commons) + ' · Стабильность +' + (stability - state.stability)
+      : 'Казна −' + action.cost + ' · Сенат +' + (approval.senate - state.approval.senate) + ' · Стабильность +' + (stability - state.stability)
+  const entry: ChronicleEntry = {
+    id: 'decree-' + state.tick + '-' + actionId + '-' + districtId,
+    tick: state.tick, year: state.year, category: actionId === 'GRID_REPAIR' ? 'ENERGY' : 'CIVIC',
+    title: 'Указ Совета: ' + action.name,
+    detail: action.description + ' Район: ' + district.name + '.', impact, tone: 'positive',
+  }
+  return {
+    ...state, treasury, energy, stability, approval, districts,
+    archive: appendArchive(state.archive, entry),
+    lastAction: 'Издан указ: «' + action.name + '».',
+    lastConsequence: action.description + ' ' + impact + '.',
+    score: state.score + 12,
   }
 }
 

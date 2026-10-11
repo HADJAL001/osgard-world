@@ -4,8 +4,8 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  BUILDINGS, POLICIES, buildStructure, createTimeState, getTurnForecast, resolveTimeTurn,
-  type BuildingId, type ChronicleEntry, type DistrictId, type PolicyId, type TimeState,
+  BUILDINGS, COUNCIL_ACTIONS, POLICIES, applyCouncilAction, buildStructure, createTimeState, getTurnForecast, hasUsedCouncilAction, resolveTimeTurn,
+  type BuildingId, type ChronicleEntry, type CouncilActionId, type DistrictId, type PolicyId, type TimeState,
 } from './core/timeState'
 import { recordOsgardEvent } from './core/eventQueue'
 import { completePlayerSession, startPlayerSession } from './core/playerApi'
@@ -87,6 +87,7 @@ export function TimePrototype() {
   const allies = factions.filter((faction) => state.approval[faction.id] >= 52).length
   const missionProgress = Math.min(100, Math.round((state.tick / 8) * 100))
   const activeBuildings = state.districts.filter((item) => item.building).length
+  const councilActionUsed = hasUsedCouncilAction(state)
   const latestEntries = [...state.archive].reverse().slice(0, 5)
   const fpsHistoryPoints = diagnostics.fpsHistory.map((fps, index, values) => {
     const x = values.length === 1 ? 360 : index / (values.length - 1) * 360
@@ -224,6 +225,21 @@ export function TimePrototype() {
       if (next.status === 'COLLAPSED') setTab('chronicle')
     } catch (error) {
       setAnnouncement(error instanceof Error ? error.message : 'Не удалось рассчитать ход.')
+    }
+  }
+
+  function applyDecree(actionId: CouncilActionId) {
+    if (state.status !== 'ACTIVE' || councilActionUsed) return
+    const start = performance.now()
+    try {
+      const next = applyCouncilAction(state, actionId, district.id)
+      const elapsed = Number((performance.now() - start).toFixed(2))
+      setDiagnostics((old) => ({ ...old, tickMs: elapsed, actions: old.actions + 1 }))
+      setState(next)
+      setAnnouncement(next.lastConsequence)
+      recordOsgardEvent('portal_opened', { game: 'time', action: 'COUNCIL_DECREE', decree: actionId, district: district.id, treasury: next.treasury, calcMs: elapsed })
+    } catch (error) {
+      setAnnouncement(error instanceof Error ? error.message : 'Указ не удалось исполнить.')
     }
   }
 
@@ -530,6 +546,22 @@ export function TimePrototype() {
                   <span className="tg-policy-icon"><Icon size={16} /></span><span><strong>{item.label}</strong><small>{item.short}</small></span>{policy === id && <Check size={14} className="tg-policy-check" />}
                 </button>
               })}
+            </div>
+            <div className="tg-decree-section">
+              <div className="tg-decree-heading"><span>03 / ОСОБЫЙ УКАЗ СОВЕТА</span><span className={councilActionUsed ? 'is-used' : ''}>{councilActionUsed ? 'ИСПОЛЬЗОВАН В ЭТОМ ТАКТЕ' : 'ОДИН РАЗ ЗА ТАКТ'}</span></div>
+              <p className="tg-decree-intro">{councilActionUsed ? 'Решение уже принято. Новый указ станет доступен после продвижения времени.' : 'Выберите одно дополнительное действие до завершения такта. Указ расходует казну сразу и записывается в летопись.'}</p>
+              <div className="tg-decree-grid">
+                {Object.entries(COUNCIL_ACTIONS).map(([key, action]) => {
+                  const id = key as CouncilActionId
+                  const disabled = !active || councilActionUsed || state.treasury < action.cost || (id === 'GRID_REPAIR' && state.energy >= 92)
+                  const Icon = id === 'GRID_REPAIR' ? Zap : id === 'CIVIC_RELIEF' ? Users : Landmark
+                  return <button type="button" key={id} className="tg-decree-card" disabled={disabled} aria-label={action.name + ', стоимость ' + money(action.cost)} onClick={() => applyDecree(id)}>
+                    <span className="tg-decree-icon"><Icon size={16} /></span>
+                    <span className="tg-decree-copy"><strong>{action.name}</strong><small>{action.description}</small><em>{action.effect}</em><b>{id === 'GRID_REPAIR' && state.energy >= 92 ? 'СЕТЬ УЖЕ СТАБИЛЬНА' : 'ИСПОЛНИТЬ · ' + money(action.cost) + ' ₽'}</b></span>
+                    <ArrowUpRight size={14} className="tg-decree-arrow" />
+                  </button>
+                })}
+              </div>
             </div>
             <div className="tg-preview-card">
               <div className="tg-preview-head"><span>ПРОГНОЗ СЛЕДУЮЩЕГО ТАКТА</span><CircleHelp size={13} /></div>

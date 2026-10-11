@@ -382,3 +382,27 @@
   .tg-map-layer-legend{width:100%;margin-left:0!important}
 }
 @media(max-width:360px){.tg-map-layers button{font-size:7px}.tg-map-layers{gap:3px;padding-inline:7px}}
+
+
+/* Council decrees turn the forecast panel into a second deliberate strategic decision. */
+.tg-decree-section{margin:20px 0 16px;padding-top:16px;border-top:1px solid var(--tg-line)}
+.tg-decree-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;font:7px/1.4 "JetBrains Mono",monospace;letter-spacing:.1em;color:var(--tg-dim)}
+.tg-decree-heading>span:last-child{color:var(--tg-green);text-align:right}
+.tg-decree-heading>span.is-used{color:var(--tg-gold)}
+.tg-decree-intro{margin:8px 0 11px;font-size:10px;line-height:1.65;color:var(--tg-muted)}
+.tg-decree-grid{display:grid;gap:7px}
+.tg-decree-card{display:grid;grid-template-columns:34px minmax(0,1fr) 14px;align-items:start;gap:10px;width:100%;padding:12px;border:1px solid var(--tg-line);border-radius:8px;background:linear-gradient(115deg,rgba(255,255,255,.018),rgba(0,0,0,.08));color:var(--tg-text);text-align:left;transition:border-color .2s ease,background .2s ease,transform .2s ease,opacity .2s ease}
+.tg-decree-card:not(:disabled){cursor:pointer}
+.tg-decree-card:not(:disabled):hover{border-color:rgba(217,194,139,.38);background:linear-gradient(115deg,rgba(217,194,139,.075),rgba(126,198,178,.025));transform:translateY(-1px)}
+.tg-decree-card:focus-visible{outline:2px solid var(--tg-gold-bright);outline-offset:2px}
+.tg-decree-card:disabled{opacity:.5}
+.tg-decree-icon{width:32px;height:32px;display:grid;place-items:center;border:1px solid rgba(217,194,139,.17);border-radius:7px;background:rgba(217,194,139,.06);color:var(--tg-gold-bright)}
+.tg-decree-card:nth-child(2) .tg-decree-icon{border-color:rgba(126,198,178,.2);background:rgba(126,198,178,.055);color:var(--tg-green)}
+.tg-decree-card:nth-child(3) .tg-decree-icon{border-color:rgba(168,191,227,.2);background:rgba(168,191,227,.055);color:#a8bfe3}
+.tg-decree-copy{display:grid;gap:5px;min-width:0}
+.tg-decree-copy strong{font-size:11px;font-weight:560;line-height:1.4}
+.tg-decree-copy small{font-size:9px;line-height:1.55;color:var(--tg-muted)}
+.tg-decree-copy em{font:7px/1.5 "JetBrains Mono",monospace;font-style:normal;letter-spacing:.035em;color:var(--tg-green)}
+.tg-decree-copy b{margin-top:2px;font:7px/1.5 "JetBrains Mono",monospace;letter-spacing:.06em;color:var(--tg-gold-bright)}
+.tg-decree-arrow{align-self:center;color:var(--tg-dim)}
+@media(max-width:600px){.tg-decree-section{margin:17px 0 14px;padding-top:13px}.tg-decree-heading{align-items:flex-start;font-size:6px;gap:8px}.tg-decree-intro{font-size:9px}.tg-decree-card{grid-template-columns:30px minmax(0,1fr) 12px;gap:8px;padding:10px}.tg-decree-icon{width:29px;height:29px}.tg-decree-copy strong{font-size:10px}.tg-decree-copy small{font-size:8px}.tg-decree-copy em,.tg-decree-copy b{font-size:6px}}

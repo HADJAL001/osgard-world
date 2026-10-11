@@ -1,5 +1,5 @@
 import { serializeReplay } from './replay'
-import { applyTax, buildStructure, createTimeState, getTurnForecast, resolveTimeTurn } from './timeState'
+import { applyCouncilAction, applyTax, buildStructure, createTimeState, getTurnForecast, hasUsedCouncilAction, resolveTimeTurn } from './timeState'
 
 const expectThrow = (fn: () => unknown) => {
   let threw = false
@@ -37,3 +37,21 @@ expectThrow(() => resolveTimeTurn(initial, { taxRate: 41, policy: 'BALANCED' }))
 
 const replay = serializeReplay('time', 'session-1', 7, [{ tick: 1, action: 'SET_TAX', value: 20 }], [{ tick: 1, stateHash: 'fixture' }])
 if (replay.version !== 1 || !replay.hash) throw new Error('replay fixture failed')
+
+
+const gridBase = { ...initial, energy: 60 }
+const repaired = applyCouncilAction(gridBase, 'GRID_REPAIR', 'aqueduct')
+if (repaired.treasury !== gridBase.treasury - 130 || repaired.energy !== 74 || repaired.approval.guild !== gridBase.approval.guild + 2 || !hasUsedCouncilAction(repaired)) {
+  throw new Error('TIME grid-repair decree did not apply the declared effects')
+}
+expectThrow(() => applyCouncilAction(repaired, 'CIVIC_RELIEF', 'commons'))
+const nextDecreeTurn = resolveTimeTurn(repaired, { taxRate: 10, policy: 'BALANCED' })
+if (hasUsedCouncilAction(nextDecreeTurn)) throw new Error('TIME council decree must become available after the next turn')
+const relief = applyCouncilAction(initial, 'CIVIC_RELIEF', 'commons')
+if (relief.approval.commons !== initial.approval.commons + 6 || relief.stability !== initial.stability + 3 ||
+  relief.districts.find((item) => item.id === 'commons')!.prosperity !== initial.districts.find((item) => item.id === 'commons')!.prosperity + 3) {
+  throw new Error('TIME civic-relief decree did not apply its declared effects')
+}
+expectThrow(() => applyCouncilAction({ ...initial, treasury: 50 }, 'SENATE_COMPACT', 'forum'))
+expectThrow(() => applyCouncilAction({ ...initial, energy: 100 }, 'GRID_REPAIR', 'aqueduct'))
+expectThrow(() => applyCouncilAction({ ...initial, status: 'COLLAPSED' }, 'CIVIC_RELIEF', 'commons'))

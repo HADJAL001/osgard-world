@@ -1,4 +1,4 @@
-import { applyTax, buildStructure, createTimeState, getTurnForecast, resolveTimeTurn } from '../src/core/timeState.ts'
+import { applyCouncilAction, applyTax, buildStructure, createTimeState, getTurnForecast, hasUsedCouncilAction, resolveTimeTurn } from '../src/core/timeState.ts'
 
 const initial = createTimeState()
 const higher = applyTax(initial, 20)
@@ -17,3 +17,13 @@ const normalEnergy = getTurnForecast(initial, { taxRate: 10, policy: 'BALANCED' 
 const solarEnergy = getTurnForecast(solar, { taxRate: 10, policy: 'BALANCED' }).energyDelta
 if (solar.treasury !== initial.treasury - 220 || solarEnergy - normalEnergy !== 7) throw new Error('TIME building economic effect failed')
 console.log('OSGARD_CORE_STATE_SMOKE_OK')
+
+const gridBase = { ...initial, energy: 60 }
+const gridDecree = applyCouncilAction(gridBase, 'GRID_REPAIR', 'aqueduct')
+if (gridDecree.treasury !== gridBase.treasury - 130 || gridDecree.energy !== 74 || !hasUsedCouncilAction(gridDecree)) throw new Error('TIME council energy decree failed')
+let decreeGuarded = false
+try { applyCouncilAction(gridDecree, 'CIVIC_RELIEF', 'commons') } catch { decreeGuarded = true }
+if (!decreeGuarded) throw new Error('TIME allows more than one council decree per turn')
+const reliefDecree = applyCouncilAction(initial, 'CIVIC_RELIEF', 'commons')
+if (reliefDecree.approval.commons !== initial.approval.commons + 6 || reliefDecree.stability !== initial.stability + 3) throw new Error('TIME civic relief effects failed')
+if (hasUsedCouncilAction(resolveTimeTurn(gridDecree, { taxRate: 10, policy: 'BALANCED' }))) throw new Error('TIME decree availability did not reset at the next turn')
