@@ -12,6 +12,7 @@ on:
       - "vite.config.ts"
       - "scripts/sync-swarm-assets.mjs"
       - "scripts/frontend-archive-preflight.mjs"
+      - "scripts/production-route-matrix.mjs"
       - "scripts/activate-frontend-remote.sh"
       - ".github/workflows/deploy-frontend.yml"
   workflow_dispatch:
@@ -56,3 +57,7 @@ jobs:
         run: |
           scp -i ~/.ssh/osgard_deploy scripts/activate-frontend-remote.sh "$USER@$HOST:/tmp/activate-frontend-remote.sh"
           ssh -i ~/.ssh/osgard_deploy "$USER@$HOST" 'docker cp /tmp/osgard-gh-release/osgard-world-release.tgz osgard-world:/tmp/osgard-gh-release.tgz && chmod 700 /tmp/activate-frontend-remote.sh && OSGARD_ARCHIVE=/tmp/osgard-gh-release.tgz OSGARD_CONTAINER=osgard-world /tmp/activate-frontend-remote.sh'
+      - name: Verify published routes after activation
+        env:
+          OSGARD_BASE_URL: https://osgard.world
+        run: npm run qa:production-routes
