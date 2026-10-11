@@ -32,6 +32,10 @@ rollback() {
     test -f /tmp/osgard-gh-next/html/skillcred/index.html
     test -f /tmp/osgard-gh-next/html/skillcred/styles.css
     test -f /tmp/osgard-gh-next/html/skillcred/app.js
+    echo 'Compressed SkillCred assets in candidate release:'
+    ls -l /tmp/osgard-gh-next/html/skillcred/styles.css /tmp/osgard-gh-next/html/skillcred/styles.css.gz /tmp/osgard-gh-next/html/skillcred/app.js /tmp/osgard-gh-next/html/skillcred/app.js.gz
+    test -s /tmp/osgard-gh-next/html/skillcred/styles.css.gz
+    test -s /tmp/osgard-gh-next/html/skillcred/app.js.gz
     test -f /tmp/osgard-gh-next/nginx.conf
     cp /etc/nginx/conf.d/default.conf /tmp/osgard-nginx-previous.conf
     mv /usr/share/nginx/html /tmp/osgard-gh-previous
