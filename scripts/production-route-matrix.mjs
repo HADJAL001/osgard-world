@@ -1,6 +1,6 @@
 const base = process.env.OSGARD_BASE_URL || 'https://osgard.world'
 const expectCurrentDesign = process.env.SKILLCRED_EXPECT_CURRENT_DESIGN === '1'
-const routes = ['/','/skillcred/','/skillcred-api/health','/skillcred-api/ready','/skillcred-api/issuer','/entertainment','/community','/stream','/archive','/profile','/r/1842','/games/time','/play/swarm','/play/null-shift','/play/inherit','/play/remix','/media','/business','/create','/mobility']
+const routes = ['/','/skillcred/','/skillcred-api/health','/skillcred-api/ready','/skillcred-api/issuer','/entertainment','/community','/stream','/archive','/profile','/r/1842','/games/time','/games/time-empire','/play/swarm','/play/null-shift','/play/inherit','/play/remix','/media','/business','/create','/mobility']
 const agents = { desktop: 'OSGARD-Route-Matrix/1.1 Desktop', mobile: 'OSGARD-Route-Matrix/1.1 Mobile' }
 const results = []
 for (const [device, userAgent] of Object.entries(agents)) for (const route of routes) {
