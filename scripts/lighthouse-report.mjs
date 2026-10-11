@@ -25,6 +25,11 @@ for (const path of paths) {
     console.log('  ' + title + ': ' + score + '/100')
   }
   const audits = json.audits || {}
+  console.log('Core Web Vitals diagnostics:')
+  for (const id of ['first-contentful-paint', 'largest-contentful-paint', 'speed-index', 'total-blocking-time', 'cumulative-layout-shift', 'interactive', 'uses-text-compression']) {
+    const audit = audits[id]
+    if (audit) console.log('  ' + id + ': score=' + audit.score + (audit.displayValue ? ', value=' + audit.displayValue : ''))
+  }
   const issues = Object.values(audits).filter(a => a && a.score !== null && a.score < 1 && ['contrast','font-display','uses-text-compression','render-blocking-resources','uses-responsive-images','meta-description','document-title','html-has-lang'].some(key => (a.id || '').includes(key)))
   if (issues.length) console.log('  High-priority findings: ' + issues.map(a => a.id + ' (' + Math.round((a.score || 0) * 100) + ')').join(', '))
 }
