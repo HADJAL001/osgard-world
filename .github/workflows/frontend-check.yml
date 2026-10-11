@@ -39,5 +39,7 @@ jobs:
         run: npm run check
       - name: Build the production site
         run: npm run build
+      - name: Verify live SkillCred page wiring
+        run: npm run qa:skillcred
       - name: Validate static archive and HTML
         run: npm run preflight:frontend
