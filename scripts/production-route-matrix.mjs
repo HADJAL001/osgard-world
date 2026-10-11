@@ -12,6 +12,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         text.includes('id="verifyBtn"') &&
         text.includes('id="revokeBtn"') &&
         text.includes('id="downloadBtn"') &&
+        text.includes('id="trustSpine"') &&
         text.includes('id="signatureClock"') &&
         text.includes('id="timeElapsed"') &&
         text.includes('id="heroCredential"') &&
@@ -41,7 +42,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         const content = await asset.text()
         const normalized = content.toLowerCase()
         nonEmpty = path.endsWith('.css')
-          ? normalized.includes('--acid:#c8ff3d') && normalized.includes('/skillcred/fonts/intervariable.woff2') && normalized.includes('/skillcred/fonts/instrumentserif-italic.woff2') && normalized.includes('/skillcred/fonts/jetbrainsmono-regular.woff2')
+          ? normalized.includes('--acid:#c8ff3d') && normalized.includes('--hero-size:clamp(80px,5.8vw,92px)') && normalized.includes('.trust-spine[data-state=\\"revoked\\"]') && normalized.includes('/skillcred/fonts/intervariable.woff2') && normalized.includes('/skillcred/fonts/instrumentserif-italic.woff2') && normalized.includes('/skillcred/fonts/jetbrainsmono-regular.woff2')
           : content.includes('demo/issue') && content.includes('data-clock-step')
       }
       return { path, status: asset.status, contentType, ok: asset.status === 200 && typeOk && nonEmpty }
