@@ -11,13 +11,16 @@ func _expect(condition: bool, description: String) -> bool:
 	return true
 
 func _run_smoke() -> void:
+	print("RUNTIME_STAGE: load main scene")
 	var packed := load("res://scenes/main.tscn") as PackedScene
 	if not _expect(packed != null, "main scene must load"):
 		return
+	print("RUNTIME_STAGE: instantiate scene")
 	var game: Variant = packed.instantiate()
 	root.add_child(game)
 	await process_frame
 	await process_frame
+	print("RUNTIME_STAGE: scene ready")
 	game.sound_enabled = false
 
 	if not _expect(is_instance_valid(game.player), "operator must instantiate"):
@@ -36,6 +39,7 @@ func _run_smoke() -> void:
 	if not _expect(game.devices.size() == 3, "three destructible devices must spawn"):
 		return
 
+	print("RUNTIME_STAGE: guard/device combat")
 	var guard_node: Node3D = game.guards[0]["node"]
 	var guard_hp := int(game.guards[0]["hp"])
 	for _hit in range(guard_hp):
@@ -54,6 +58,7 @@ func _run_smoke() -> void:
 	if not _expect(game._living_device_count() == 2, "device count must reflect destruction"):
 		return
 
+	print("RUNTIME_STAGE: pulse and animation")
 	var close_guard: Node3D = game.guards[0]["node"]
 	close_guard.global_position = game.player.global_position + Vector3(0.0, 0.0, -4.0)
 	game._deploy_pulse()
@@ -66,6 +71,7 @@ func _run_smoke() -> void:
 	if not _expect(absf(game.core_ring.rotation.y - before_rotation) > 0.0001, "core orbit must animate"):
 		return
 
+	print("RUNTIME_STAGE: live diagnostics")
 	game._toggle_diagnostics()
 	game._update_hud()
 	if not _expect(game.diagnostics_label.visible, "diagnostics panel must open"):
@@ -75,6 +81,7 @@ func _run_smoke() -> void:
 	if not _expect(game.diagnostics_label.text.contains("DRAW CALLS"), "diagnostics must expose renderer counters"):
 		return
 
+	print("RUNTIME_STAGE: cipher hack")
 	game.player.global_position = game.terminal.global_position + Vector3(0.0, 0.0, 1.0)
 	game._interact()
 	if not _expect(game.terminal_active and game.keypad_panel.visible, "terminal interaction must open the cipher"):
@@ -86,6 +93,7 @@ func _run_smoke() -> void:
 	if not _expect(not game.security_gate.visible, "successful hack must open the security gate"):
 		return
 
+	print("RUNTIME_STAGE: core and extraction")
 	game.player.global_position = game.quantum_core.global_position + Vector3(1.0, 0.0, 0.0)
 	game._interact()
 	if not _expect(game.core_secured, "operator must collect the core after hacking"):
@@ -95,6 +103,7 @@ func _run_smoke() -> void:
 	if not _expect(game.mission_finished and game.career_credits >= 750, "successful extraction must bank mission credits"):
 		return
 
+	print("RUNTIME_STAGE: persistence and upgrades")
 	game._buy_upgrade("weapon")
 	if not _expect(game.weapon_level == 1, "career credits must purchase a weapon upgrade"):
 		return
