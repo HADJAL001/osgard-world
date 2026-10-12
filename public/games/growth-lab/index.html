@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#080a0b">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="noindex,follow">
+<meta name="description" content="Локальная сценарная модель монетизации OSGARD PLAY. Все числа являются допущениями пользователя, а не фактической выручкой.">
+<link rel="icon" href="/games/favicon.svg" type="image/svg+xml">
+<link rel="canonical" href="https://osgard.world/games/growth-lab/">
+<title>OSGARD PLAY — Сценарная модель дохода</title>
+<style>
+:root{color-scheme:dark;--bg:#080a0b;--panel:#101315;--panel2:#141819;--ink:#f2f0e8;--muted:#a0a69b;--line:#ffffff20;--acid:#d3ff69;--metal:#d2c9b4;--blue:#7bc9f0;--mono:ui-monospace,Consolas,monospace;--serif:Georgia,serif;--sans:Inter,Geist,system-ui,-apple-system,"Segoe UI",sans-serif}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse at 85% 0%,#334b2926,transparent 35%),var(--bg);color:var(--ink);font:15px/1.6 var(--sans);-webkit-font-smoothing:antialiased}a{color:inherit;text-underline-offset:4px}button,input{font:inherit}button,a,input{touch-action:manipulation}a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--acid);outline-offset:3px}.skip{position:fixed;left:12px;top:8px;transform:translateY(-150%);z-index:10;padding:10px;background:var(--acid);color:#111}.skip:focus{transform:none}
+.wrap{width:min(1240px,calc(100% - 40px));margin:auto}header{display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:72px;border-bottom:1px solid var(--line)}.brand{display:flex;gap:10px;align-items:center;text-decoration:none;font-weight:800;letter-spacing:.1em;font-size:12px}.seal{width:34px;height:34px;display:grid;place-items:center;border:1px solid #d3ff6960;clip-path:polygon(50% 0,94% 24%,94% 76%,50% 100%,6% 76%,6% 24%);color:var(--acid);font:12px var(--mono)}.brand small{display:block;color:var(--muted);font:9px var(--mono);letter-spacing:.16em;margin-top:3px}.back{font-size:12px;color:var(--muted);text-decoration:none}.eyebrow{color:var(--acid);font:10px/1.5 var(--mono);letter-spacing:.19em;text-transform:uppercase;margin:0 0 18px}.hero{padding:clamp(44px,8vw,90px) 0 40px;max-width:900px}.hero h1{font-size:clamp(42px,7vw,82px);line-height:.97;letter-spacing:-.075em;font-weight:520;margin:0}.hero h1 em{font-family:var(--serif);font-weight:400;color:var(--metal)}.hero p:not(.eyebrow){max-width:690px;color:var(--muted);line-height:1.8;margin:22px 0 0}.notice{display:flex;gap:12px;align-items:flex-start;padding:17px 19px;border:1px solid #d3ff6938;background:#d3ff6908;color:#d4d7cb}.notice b{color:var(--acid)}.notice p{margin:0;font-size:13px}
+.presets{display:flex;flex-wrap:wrap;gap:8px;margin:24px 0}.preset,.action{min-height:44px;padding:0 15px;border:1px solid var(--line);background:#ffffff05;color:var(--ink);border-radius:3px;cursor:pointer}.preset[aria-pressed=true],.action.primary{border-color:var(--acid);background:var(--acid);color:#11170b}.preset:hover,.action:hover{border-color:#d3ff6990}
+.layout{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(300px,.95fr);gap:18px;align-items:start;padding:18px 0 60px}.panel{border:1px solid var(--line);background:linear-gradient(145deg,#141819f2,#0c0e0ff2);padding:clamp(17px,2.5vw,27px);min-width:0}.panel h2{font-size:24px;font-weight:550;letter-spacing:-.04em;margin:0 0 5px}.sub{color:var(--muted);font-size:12px;margin:0 0 24px}.group{padding:19px 0 5px;border-top:1px solid var(--line);margin-top:17px}.group h3{font:10px var(--mono);letter-spacing:.15em;color:var(--metal);text-transform:uppercase;margin:0 0 14px}.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.field{min-width:0;display:flex;flex-direction:column;gap:7px}.field label{font-size:12px;color:#c4c8bf}.field input{width:100%;min-width:0;height:43px;padding:0 11px;color:var(--ink);background:#080a0b;border:1px solid #ffffff28;border-radius:2px;font-variant-numeric:tabular-nums}.field input:hover{border-color:#ffffff50}.field small{font-size:10px;color:#7d857a;line-height:1.45}.unit{color:var(--muted)}
+.outputs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.metric{border:1px solid var(--line);background:#ffffff03;padding:15px;min-width:0}.metric small{display:block;color:var(--muted);font:9px/1.5 var(--mono);letter-spacing:.08em;text-transform:uppercase}.metric strong{display:block;margin-top:12px;font-size:clamp(18px,2.4vw,27px);letter-spacing:-.045em;font-weight:570;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}.metric em{display:block;font-size:10px;color:#7e867d;font-style:normal;margin-top:5px;line-height:1.4}.metric.result{grid-column:1/-1;border-color:#d3ff6960;background:linear-gradient(110deg,#d3ff6910,transparent)}.metric.result strong{font-size:clamp(28px,4.1vw,45px);color:var(--acid)}.metric.result.negative strong{color:#ffb1a7}.formula{margin:20px 0 0;padding:16px;border-left:2px solid var(--blue);background:#7bc9f008;color:#bdc8ca;font-size:12px}.formula code{display:block;font:11px/1.8 var(--mono);overflow-wrap:anywhere;color:#d9e7e8}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:15px}.action{font-size:12px}.report{margin-top:14px;color:var(--muted);font-size:12px;min-height:1.5em}.disclaimer{padding:20px 0 34px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}.disclaimer strong{color:var(--ink)}.disclaimer ul{padding-left:18px}.contact{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;padding:20px 0 30px;border-top:1px solid var(--line);font-size:12px}.contact div{display:flex;flex-wrap:wrap;gap:16px}.contact a{color:var(--metal)}footer{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:18px 0 30px;border-top:1px solid var(--line);color:#778075;font:10px var(--mono)}
+@media(max-width:820px){.layout{grid-template-columns:1fr}.results{order:-1}.hero{padding-top:55px}.panel h2{font-size:22px}}
+@media(max-width:520px){.wrap{width:calc(100% - 28px)}header{min-height:62px}.hero h1{font-size:clamp(39px,12vw,58px)}.fields,.outputs{grid-template-columns:1fr 1fr;gap:8px}.field label{font-size:11px}.metric{padding:12px}.metric strong{font-size:19px}.metric.result strong{font-size:32px}.notice{padding:13px}.preset,.action{flex:1 1 auto}}
+@media(max-width:360px){.fields,.outputs{grid-template-columns:1fr}.metric.result{grid-column:auto}.hero h1{font-size:39px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<a class="skip" href="#model">Перейти к модели</a>
+<div class="wrap">
+<header><a class="brand" href="/games/"><span class="seal" aria-hidden="true">O</span><span>OSGARD WORLD<small>PLAY / GROWTH LAB</small></span></a><a class="back" href="/games/">← Вернуться в каталог</a></header>
+<main>
+<section class="hero">
+<p class="eyebrow">OSGARD PLAY / BUSINESS MODEL LAB</p>
+<h1>Сначала <em>расчёт.</em><br>Потом масштаб.</h1>
+<p>Проверьте экономику игровой платформы до подключения рекламы и платежей. Меняйте допущения, сравнивайте сценарии и выгружайте расчёт. Все данные остаются в этом браузере.</p>
+</section>
+<div class="notice" role="note"><b>Важное ограничение</b><p>Это сценарная модель, не подключённая бухгалтерия. Числа ниже — предположения, а не реальные пользователи, рекламные показы, продажи или подтверждённая выручка OSGARD.</p></div>
+<div class="presets" role="group" aria-label="Готовые сценарии">
+<button class="preset" data-preset="conservative" aria-pressed="false">Осторожный сценарий</button>
+<button class="preset" data-preset="base" aria-pressed="true">Базовый сценарий</button>
+<button class="preset" data-preset="optimistic" aria-pressed="false">Оптимистичный сценарий</button>
+</div>
+<div class="layout" id="model">
+<section class="panel" aria-labelledby="inputs-title">
+<h2 id="inputs-title">Исходные допущения</h2><p class="sub">Измените любое число — результат пересчитается автоматически. Проценты вводятся как 0–100.</p>
+<div class="group"><h3>01 / Аудитория</h3><div class="fields">
+<div class="field"><label for="visits">Посещения в месяц</label><input id="visits" type="number" min="0" max="1000000000" step="1000" value="50000"><small>Посещения каталога за календарный месяц</small></div>
+<div class="field"><label for="launchRate">Доля запуска игры, %</label><input id="launchRate" type="number" min="0" max="100" step="1" value="40"><small>Доля посещений, закончившихся стартом игры</small></div>
+<div class="field"><label for="sessions">Сессий на игрока</label><input id="sessions" type="number" min="0" max="100" step=".1" value="3"><small>Среднее число игровых сессий за месяц</small></div>
+<div class="field"><label for="adSlots">Рекламных возможностей на сессию</label><input id="adSlots" type="number" min="0" max="100" step=".1" value="1.5"><small>Только потенциальные места, а не гарантированные показы</small></div>
+</div></div>
+<div class="group"><h3>02 / Реклама · гипотеза</h3><div class="fields">
+<div class="field"><label for="fillRate">Заполнение мест, %</label><input id="fillRate" type="number" min="0" max="100" step="1" value="50"><small>Доля возможностей, которые могли бы быть заполнены</small></div>
+<div class="field"><label for="ecpm">eCPM, €</label><input id="ecpm" type="number" min="0" max="100000" step=".1" value="2.5"><small>Допущение о доходе за 1000 оплачиваемых показов</small></div>
+</div></div>
+<div class="group"><h3>03 / Покупки · пока не подключены</h3><div class="fields">
+<div class="field"><label for="subscriptionRate">Конверсия в подписку, %</label><input id="subscriptionRate" type="number" min="0" max="100" step=".01" value=".3"></div>
+<div class="field"><label for="subscriptionPrice">Цена подписки, € / месяц</label><input id="subscriptionPrice" type="number" min="0" max="100000" step=".1" value="4.99"></div>
+<div class="field"><label for="purchaseRate">Конверсия в покупку, %</label><input id="purchaseRate" type="number" min="0" max="100" step=".01" value=".1"></div>
+<div class="field"><label for="averageOrder">Средний чек, €</label><input id="averageOrder" type="number" min="0" max="100000" step=".1" value="4.99"></div>
+</div></div>
+<div class="group"><h3>04 / Заявки на разработку</h3><div class="fields">
+<div class="field"><label for="leadRate">Доля заявок от посещений, %</label><input id="leadRate" type="number" min="0" max="100" step=".01" value=".25"></div>
+<div class="field"><label for="closeRate">Заявка → оплаченный проект, %</label><input id="closeRate" type="number" min="0" max="100" step=".1" value="10"></div>
+<div class="field"><label for="projectMargin">Вклад одного проекта после прямых затрат, €</label><input id="projectMargin" type="number" min="0" max="10000000" step="50" value="350"><small>Не цена заказа, а условный вклад после прямых расходов</small></div>
+<div class="field"><label for="operatingCosts">Операционные расходы в месяц, €</label><input id="operatingCosts" type="number" min="0" max="100000000" step="50" value="300"></div>
+</div></div>
+</section>
+<section class="panel results" aria-labelledby="results-title" aria-live="polite">
+<h2 id="results-title">Результат модели</h2><p class="sub">Расчётный месяц · EUR · значения не загружены из production</p>
+<div class="outputs">
+<div class="metric"><small>Игроки, начавшие игру</small><strong id="playersOut">20 000</strong><em>расчёт по доле запуска</em></div>
+<div class="metric"><small>Возможные заполненные показы</small><strong id="impressionsOut">45 000</strong><em>не подтверждённые рекламные события</em></div>
+<div class="metric"><small>Реклама</small><strong id="adRevenueOut">112,50 €</strong><em>при заданном eCPM и заполнении</em></div>
+<div class="metric"><small>Подписки</small><strong id="subscriptionOut">748,50 €</strong><em>до комиссий, налогов и возвратов</em></div>
+<div class="metric"><small>Покупки</small><strong id="purchaseOut">249,50 €</strong><em>гипотеза, checkout не подключён</em></div>
+<div class="metric"><small>Вклад разработки</small><strong id="projectOut">4 375,00 €</strong><em>лиды × конверсия × вклад проекта</em></div>
+<div class="metric"><small>Условная сумма до затрат</small><strong id="grossOut">5 485,50 €</strong><em>сумма модельных компонентов, не выручка по отчётности</em></div>
+<div class="metric result" id="netMetric"><small>Сценарный результат после указанных расходов</small><strong id="netOut">5 185,50 €</strong><em>не прибыль: не учтены все налоги, комиссии и затраты</em></div>
+</div>
+<div class="formula"><b>Формулы модели</b><code>Реклама = показы × eCPM / 1000</code><code>Подписки = посещения × конверсия × цена</code><code>Покупки = посещения × конверсия × средний чек</code><code>Разработка = посещения × доля заявок × закрытие × вклад проекта</code><code>Результат = рекламная модель + подписки + покупки + вклад проектов − расходы</code></div>
+<div class="actions"><button class="action primary" id="exportCsv">Скачать CSV</button><button class="action" id="copySummary">Копировать сводку</button></div><p class="report" id="status" role="status"></p>
+</section>
+</div>
+<section class="disclaimer">
+<strong>Что здесь не моделируется как подтверждённый факт</strong>
+<ul>
+<li>Существующий каталог пока не подключён к рекламной сети или боевому платёжному checkout. Выручка и конверсии выше — только сценарные вводные.</li>
+<li>Не включены налоги/VAT, платёжные комиссии, возвраты, стоимость привлечения, серверы, зарплаты и прочие постоянные расходы. Поэтому результат нельзя считать чистой прибылью.</li>
+<li>До запуска рекламы необходимо получить одобрение рекламного провайдера и проверить требования площадки. Вознаграждение за рекламу должно быть добровольным; вознаграждения наличными или переводимыми денежными ценностями недопустимы, если применимая рекламная политика запрещает их.</li>
+<li>Не используйте оптимистичный сценарий для принятия необратимых финансовых решений. Заменяйте допущения фактическими данными только после внедрения аналитики с согласия пользователя и серверной проверки.</li>
+</ul>
+</section>
+<section class="contact" id="contact"><strong>Есть идея игры, сайта или приложения? OSGARD поможет превратить её в цифровой продукт.</strong><div><a href="mailto:osman.osmanov0099@gmail.com">osman.osmanov0099@gmail.com</a><a href="https://wa.me/79640027222" target="_blank" rel="noopener noreferrer">Обсудить проект в WhatsApp ↗</a></div></section>
+</main>
+<footer><span>OSGARD PLAY / GROWTH LAB</span><span>Локальный расчёт · без отправки вводимых данных на сервер</span></footer>
+</div>
+<script>
+(function(){
+'use strict';
+const ids=['visits','launchRate','sessions','adSlots','fillRate','ecpm','subscriptionRate','subscriptionPrice','purchaseRate','averageOrder','leadRate','closeRate','projectMargin','operatingCosts'];
+const el=id=>document.getElementById(id);
+const defaults={
+ conservative:{visits:10000,launchRate:30,sessions:2,adSlots:1.5,fillRate:20,ecpm:.7,subscriptionRate:.05,subscriptionPrice:3.99,purchaseRate:.1,averageOrder:2.99,leadRate:.1,closeRate:5,projectMargin:250,operatingCosts:100},
+ base:{visits:50000,launchRate:40,sessions:3,adSlots:1.5,fillRate:50,ecpm:2.5,subscriptionRate:.3,subscriptionPrice:4.99,purchaseRate:.1,averageOrder:4.99,leadRate:.25,closeRate:10,projectMargin:350,operatingCosts:300},
+ optimistic:{visits:200000,launchRate:50,sessions:4,adSlots:1.5,fillRate:80,ecpm:5,subscriptionRate:.5,subscriptionPrice:5.99,purchaseRate:.2,averageOrder:6.99,leadRate:.5,closeRate:15,projectMargin:500,operatingCosts:1000}
+};
+const labels={visits:'Посещения в месяц',launchRate:'Доля запуска игры, %',sessions:'Сессий на игрока',adSlots:'Рекламных возможностей на сессию',fillRate:'Заполнение мест, %',ecpm:'eCPM, EUR',subscriptionRate:'Конверсия в подписку, %',subscriptionPrice:'Цена подписки, EUR/мес',purchaseRate:'Конверсия в покупку, %',averageOrder:'Средний чек, EUR',leadRate:'Доля заявок, %',closeRate:'Заявка в проект, %',projectMargin:'Вклад одного проекта после прямых затрат, EUR',operatingCosts:'Операционные расходы, EUR'};
+const euro=new Intl.NumberFormat('ru-RU',{style:'currency',currency:'EUR',minimumFractionDigits:2,maximumFractionDigits:2});
+const integer=new Intl.NumberFormat('ru-RU',{maximumFractionDigits:0});
+let latest=null;
+function val(id){const input=el(id);const n=Number(input.value);if(!Number.isFinite(n))return 0;const min=Number(input.min||0),max=Number(input.max||1e12);return Math.max(min,Math.min(max,n))}
+function calculate(){
+ const x=Object.fromEntries(ids.map(id=>[id,val(id)]));
+ const players=x.visits*x.launchRate/100;
+ const sessions=players*x.sessions;
+ const impressions=sessions*x.adSlots*x.fillRate/100;
+ const ad=impressions/1000*x.ecpm;
+ const subs=x.visits*x.subscriptionRate/100*x.subscriptionPrice;
+ const purchases=x.visits*x.purchaseRate/100*x.averageOrder;
+ const leads=x.visits*x.leadRate/100;
+ const projects=leads*x.closeRate/100;
+ const development=projects*x.projectMargin;
+ const gross=ad+subs+purchases+development;
+ const net=gross-x.operatingCosts;
+ latest={inputs:x,players,sessions,impressions,ad,subs,purchases,leads,projects,development,gross,net};
+ el('playersOut').textContent=integer.format(players);
+ el('impressionsOut').textContent=integer.format(impressions);
+ el('adRevenueOut').textContent=euro.format(ad);
+ el('subscriptionOut').textContent=euro.format(subs);
+ el('purchaseOut').textContent=euro.format(purchases);
+ el('projectOut').textContent=euro.format(development);
+ el('grossOut').textContent=euro.format(gross);
+ el('netOut').textContent=euro.format(net);
+ el('netMetric').classList.toggle('negative',net<0);
+ return latest;
+}
+function setPreset(name){
+ const p=defaults[name];if(!p)return;
+ ids.forEach(id=>{el(id).value=String(p[id])});
+ document.querySelectorAll('[data-preset]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.preset===name)));
+ calculate();el('status').textContent='Загружены предположения сценария «'+({conservative:'Осторожный',base:'Базовый',optimistic:'Оптимистичный'}[name])+'». Это не фактическая статистика.';
+}
+ids.forEach(id=>el(id).addEventListener('input',()=>{document.querySelectorAll('[data-preset]').forEach(b=>b.setAttribute('aria-pressed','false'));calculate();el('status').textContent='Расчёт обновлён локально. Введённые данные не отправляются.'}));
+document.querySelectorAll('[data-preset]').forEach(b=>b.addEventListener('click',()=>setPreset(b.dataset.preset)));
+function rows(){
+ const m=calculate();
+ const raw=[
+ ['Показатель','Значение','Единица / пояснение'],
+ ['Посещения',m.inputs.visits,'за месяц; допущение'],
+ ['Начавшие игру',m.players,'модельная оценка'],
+ ['Потенциально заполненные показы',m.impressions,'не реальные рекламные события'],
+ ['Реклама',m.ad,'EUR; модель'],
+ ['Подписки',m.subs,'EUR; модель, без checkout'],
+ ['Покупки',m.purchases,'EUR; модель, без checkout'],
+ ['Лиды разработки',m.leads,'модельная оценка'],
+ ['Ожидаемые закрытые проекты',m.projects,'модельная оценка'],
+ ['Вклад разработки',m.development,'EUR; после прямых затрат по допущению'],
+ ['Условная сумма до расходов',m.gross,'EUR; не выручка по отчётности'],
+ ['Операционные расходы',m.inputs.operatingCosts,'EUR; введённое допущение'],
+ ['Сценарный результат',m.net,'EUR; не чистая прибыль']
+ ];
+ return raw;
+}
+function csvEscape(v){const s=String(v);return '"'+s.replace(/"/g,'""')+'"'}
+el('exportCsv').addEventListener('click',()=>{
+ const lines=rows().map(row=>row.map(csvEscape).join(';')).join('\r\n');
+ const blob=new Blob(['\ufeff'+lines],{type:'text/csv;charset=utf-8'});
+ const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='osgard-growth-scenario.csv';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+ el('status').textContent='CSV сформирован на устройстве. В таблицу включены вводные и расчётные оценки.';
+});
+el('copySummary').addEventListener('click',async()=>{
+ const m=calculate();
+ const summary=['OSGARD PLAY — СЦЕНАРНАЯ МОДЕЛЬ (НЕ ФАКТИЧЕСКАЯ ВЫРУЧКА)',...ids.map(id=>labels[id]+': '+m.inputs[id]),'Игроки, начавшие игру: '+integer.format(m.players),'Потенциально заполненные показы: '+integer.format(m.impressions),'Реклама: '+euro.format(m.ad),'Подписки: '+euro.format(m.subs),'Покупки: '+euro.format(m.purchases),'Вклад разработки: '+euro.format(m.development),'Сумма до расходов: '+euro.format(m.gross),'Расходы: '+euro.format(m.inputs.operatingCosts),'Сценарный результат: '+euro.format(m.net),'Внимание: допущения; не реальные данные, не прибыль и не прогноз.'].join('\n');
+ try{await navigator.clipboard.writeText(summary);el('status').textContent='Сводка скопирована. Она помечена как сценарная модель.'}
+ catch{el('status').textContent=summary}
+});
+calculate();
+})();
+</script>
+</body>
+</html>
