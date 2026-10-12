@@ -10,7 +10,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
     const response = await fetch(new URL(route, base), { headers: { 'user-agent': userAgent } })
     const text = await response.text()
     const shellOk = route.startsWith('/api/v1/')
-      ? [401, 403].includes(response.status) && /application\\/json/i.test(response.headers.get('content-type') || '') && (() => { try { JSON.parse(text); return true } catch { return false } })()
+      ? [401, 403].includes(response.status) && (response.headers.get('content-type') || '').toLowerCase().includes('application/json') && (() => { try { JSON.parse(text); return true } catch { return false } })()
       : route === '/skillcred/'
       ? text.includes('id="issueBtn"') &&
         text.includes('id="verifyBtn"') &&
