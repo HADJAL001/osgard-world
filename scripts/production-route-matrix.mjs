@@ -41,13 +41,13 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
                 ? text.includes('<title>OSGARD Entertainment</title>')
                 : text.includes('<div id="root">')
     const isGodot = route.startsWith('/games/null-shift-godot')
-    const assetPaths = route === '/skillcred/' ? ['/skillcred/styles.css', '/skillcred/app.js', '/skillcred/fonts/InterVariable.woff2', '/skillcred/fonts/InstrumentSerif-Italic.woff2', '/skillcred/fonts/JetBrainsMono-Regular.woff2'] : isGodot ? ['/games/null-shift-godot/index.js', '/games/null-shift-godot/index.wasm', '/games/null-shift-godot/index.pck'] : route.startsWith('/games/null-shift') ? ['/games/null-shift/styles.css', '/games/null-shift/game.js', '/games/null-shift/engine-3d.js'] : []
+    const assetPaths = route === '/games' ? ['/games/hub.css', '/games/hub.js', '/games/catalog.json'] : route === '/skillcred/' ? ['/skillcred/styles.css', '/skillcred/app.js', '/skillcred/fonts/InterVariable.woff2', '/skillcred/fonts/InstrumentSerif-Italic.woff2', '/skillcred/fonts/JetBrainsMono-Regular.woff2'] : isGodot ? ['/games/null-shift-godot/index.js', '/games/null-shift-godot/index.wasm', '/games/null-shift-godot/index.pck'] : route.startsWith('/games/null-shift') ? ['/games/null-shift/styles.css', '/games/null-shift/game.js', '/games/null-shift/engine-3d.js'] : []
     const assetChecks = await Promise.all(assetPaths.map(async path => {
-      const expectedType = path.endsWith('.css') ? 'text/css' : path.endsWith('.js') ? 'javascript' : path.endsWith('.wasm') ? 'wasm' : path.endsWith('.pck') ? 'pack' : 'font'
+      const expectedType = path.endsWith('.css') ? 'text/css' : path.endsWith('.js') ? 'javascript' : path.endsWith('.wasm') ? 'wasm' : path.endsWith('.pck') ? 'pack' : path.endsWith('.json') ? 'json' : 'font'
       const asset = await fetch(new URL(path, base), { headers: { 'user-agent': userAgent } })
       const contentType = asset.headers.get('content-type') || ''
       const mime = contentType.toLowerCase()
-      const typeOk = expectedType === 'text/css' ? mime.includes('text/css') : expectedType === 'javascript' ? mime.includes('javascript') || mime.includes('ecmascript') : expectedType === 'wasm' ? mime.includes('wasm') || mime.includes('octet-stream') : expectedType === 'pack' ? mime.length > 0 : mime.includes('font/woff2') || mime.includes('application/octet-stream')
+      const typeOk = expectedType === 'text/css' ? mime.includes('text/css') : expectedType === 'javascript' ? mime.includes('javascript') || mime.includes('ecmascript') : expectedType === 'wasm' ? mime.includes('wasm') || mime.includes('octet-stream') : expectedType === 'pack' ? mime.length > 0 : expectedType === 'json' ? mime.includes('application/json') || mime.includes('text/json') : mime.includes('font/woff2') || mime.includes('application/octet-stream')
       let nonEmpty = false
       if (expectedType === 'font' || expectedType === 'wasm' || expectedType === 'pack') {
         const size = (await asset.arrayBuffer()).byteLength
@@ -56,8 +56,10 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
       } else {
         const content = await asset.text()
         const normalized = content.toLowerCase()
-        nonEmpty = isGodot
-          ? content.length > 100000
+        nonEmpty = expectedType === 'json'
+          ? (() => { try { const parsed = JSON.parse(content); return parsed.schemaVersion === 1 && Array.isArray(parsed.games) && parsed.games.length === 5 } catch { return false } })()
+          : isGodot
+            ? content.length > 100000
           : path.startsWith('/games/null-shift/')
             ? path.endsWith('engine-3d.js')
               ? content.includes("getContext('webgl'") && content.includes('NULL_SHIFT_GET_SCENE_STATE') && content.includes('function cube(){') && content.includes('NULL_SHIFT_SCREEN_TO_WORLD') && content.includes('drawParticles') && content.includes('ANGLE_instanced_arrays') && content.includes('renderInstanced') && content.includes('gpuFrameStats.triangles') && content.includes('function updateAdaptiveResolution(') && content.includes('adaptiveScale') && content.includes('renderCost.toFixed(1)') && content.includes('lastStats=0') && content.includes('renderCost=0') && content.includes('function softShadow(') && content.includes('aVertexAlpha') && content.includes('G.shadow')
