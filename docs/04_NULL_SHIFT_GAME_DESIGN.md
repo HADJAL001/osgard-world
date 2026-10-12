@@ -216,3 +216,11 @@ This pass removes recurring allocations from the firefight path: beams and ring 
 - Objective markers use real gameplay state and update when the cipher is unlocked and the core secured. The implementation uses procedural control drawing only, without stock art or remote assets, and redraws on a bounded timer.
 - The radar is shown on desktop and hidden on compact/touch layouts to preserve movement/action safe zones.
 - Static project checks and Godot headless smoke tests cover projected coordinate bounds, clamping, hazard colours and live game-state wiring.
+
+
+## Release 0.4 — visible aim assist and line-of-sight target lock
+
+- Replaced unconditional nearest-enemy touch aim with range-limited, line-of-sight selection. The desktop path only marks enemies inside a narrow cone aligned with actual mouse aim; touch mode prefers the nearest visible guard while mildly retaining the current target to avoid rapid target flicker.
+- Added a native Godot HUD target bracket built from eight vector rectangles, a role-colored health bar and live role/HP readout. Its projected screen position follows the target with exponential smoothing and a restrained pulse. The marker hides if the target is behind the camera, outside usable viewport bounds, destroyed, hidden by a menu or no longer selected.
+- The runtime smoke test now moves a guard into a known visible position and checks the bracket, identity, health bar and hide-on-unlock behaviour. Static source checks require the target selection and ray-query path in the packaged Godot project.
+- This is an engine-backed gameplay feature, not a mockup or an 8K guarantee. It improves touch targeting and combat readability while keeping the same Godot game and web export.

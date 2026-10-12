@@ -114,6 +114,15 @@ var crosshair_hit_timer := 0.0
 var impact_overlay: ColorRect
 var crosshair_root: Control
 var crosshair_parts: Array[ColorRect] = []
+var aim_target_node: Node3D
+var target_lock_root: Control
+var target_lock_label: Label
+var target_lock_health_bar: ProgressBar
+var target_lock_health_fill: StyleBoxFlat
+var target_lock_brackets: Array[ColorRect] = []
+var target_lock_position := Vector2.ZERO
+var target_lock_has_position := false
+var target_lock_tracked_node: Node3D
 var local_lights: Array[OmniLight3D] = []
 var fill_light: OmniLight3D
 var sound_button: Button
@@ -184,6 +193,7 @@ func _process(delta: float) -> void:
 	_update_mobile_layout()
 	_update_player_material()
 	_update_crosshair()
+	_update_target_lock_ui(dt)
 	_update_screen_overlay()
 	hud_clock += dt
 	if hud_clock >= 0.12:
@@ -952,27 +962,22 @@ func _move_player(_delta: float) -> void:
 
 func _update_player_aim() -> void:
 	if not is_instance_valid(player) or not is_instance_valid(camera):
+		aim_target_node = null
 		return
 	var direction := Vector3.ZERO
 	if mobile_controls_visible:
-		var nearest_guard: Dictionary = {}
-		var nearest := 100000.0
-		for guard in guards:
-			var body: CharacterBody3D = guard["node"]
-			if not is_instance_valid(body):
-				continue
-			var distance := player.global_position.distance_to(body.global_position)
-			if distance < nearest:
-				nearest = distance
-				nearest_guard = guard
-		if not nearest_guard.is_empty():
-			direction = (nearest_guard["node"] as Node3D).global_position - player.global_position
-		elif not terminal_unlocked:
-			direction = terminal.global_position - player.global_position
-		elif not core_secured:
-			direction = quantum_core.global_position - player.global_position
+		var selected := _select_aim_target(Vector3.ZERO, true)
+		if not selected.is_empty():
+			aim_target_node = selected["node"] as Node3D
+			direction = aim_target_node.global_position - player.global_position
 		else:
-			direction = extraction.global_position - player.global_position
+			aim_target_node = null
+			if not terminal_unlocked:
+				direction = terminal.global_position - player.global_position
+			elif not core_secured:
+				direction = quantum_core.global_position - player.global_position
+			else:
+				direction = extraction.global_position - player.global_position
 	else:
 		var mouse := get_viewport().get_mouse_position()
 		var ray_origin := camera.project_ray_origin(mouse)
@@ -981,11 +986,65 @@ func _update_player_aim() -> void:
 		var hit_point: Variant = plane.intersects_ray(ray_origin, ray_direction)
 		if hit_point is Vector3:
 			direction = hit_point - player.global_position
+		var aim_direction := direction
+		aim_direction.y = 0.0
+		if aim_direction.length_squared() > 0.01:
+			var selected := _select_aim_target(aim_direction.normalized(), false)
+			aim_target_node = selected["node"] as Node3D if not selected.is_empty() else null
+		else:
+			aim_target_node = null
 	if direction.length_squared() < 0.01:
 		direction = Vector3.FORWARD
 	direction.y = 0.0
 	player_aim = direction.normalized()
 	player.rotation.y = atan2(-player_aim.x, -player_aim.z)
+
+func _select_aim_target(aim_direction: Vector3, mobile: bool) -> Dictionary:
+	if not is_instance_valid(player):
+		return {}
+	var nearest: Dictionary = {}
+	var best_score: float = INF
+	var max_distance: float = 30.0 if mobile else 42.0
+	var facing := aim_direction
+	facing.y = 0.0
+	if facing.length_squared() > 0.001:
+		facing = facing.normalized()
+	for guard in guards:
+		var body: CharacterBody3D = guard.get("node") as CharacterBody3D
+		if not is_instance_valid(body) or int(guard.get("hp", 0)) <= 0:
+			continue
+		var offset := body.global_position - player.global_position
+		offset.y = 0.0
+		var distance: float = offset.length()
+		if distance <= 0.1 or distance > max_distance:
+			continue
+		var alignment: float = 1.0
+		if not mobile:
+			if facing.length_squared() < 0.001:
+				continue
+			alignment = facing.dot(offset / distance)
+			if alignment < 0.965:
+				continue
+		if not _has_clear_path_to_aim_target(body):
+			continue
+		var score: float = distance if mobile else distance * 0.012 + (1.0 - alignment) * 14.0
+		if body == aim_target_node:
+			score -= 1.35 if mobile else 0.55
+		if score < best_score:
+			best_score = score
+			nearest = guard
+	return nearest
+
+func _has_clear_path_to_aim_target(target: Node3D) -> bool:
+	if not is_instance_valid(player) or not is_instance_valid(target):
+		return false
+	var origin: Vector3 = player.global_position + Vector3.UP * 0.68
+	var destination: Vector3 = target.global_position + Vector3.UP * 0.52
+	var query := PhysicsRayQueryParameters3D.create(origin, destination)
+	query.collision_mask = 3
+	query.exclude = [player.get_rid()]
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	return hit.is_empty() or hit.get("collider") == target
 
 func _update_guards(delta: float) -> void:
 	for index in range(guards.size() - 1, -1, -1):
@@ -1191,6 +1250,9 @@ func _damage_target(target: Node) -> void:
 				_spawn_ring_burst(body.global_position + Vector3.UP * 0.14, materials["amber"] if bool(guard["warden"]) else materials["cyan"])
 				_spawn_hit_sparks(body.global_position + Vector3.UP * 0.95, materials["white"])
 				_screen_impulse(0.045 if not bool(guard["warden"]) else 0.085, 0.085 if not bool(guard["warden"]) else 0.14)
+				if aim_target_node == body:
+					aim_target_node = null
+					target_lock_has_position = false
 				body.queue_free()
 				guards.remove_at(index)
 				eliminations += 1
@@ -1747,6 +1809,7 @@ func _create_ui() -> void:
 	impact_overlay.visible = false
 	hud_root.add_child(impact_overlay)
 	_create_crosshair()
+	_create_target_lock_ui()
 	_create_briefing_panel()
 
 func _create_briefing_panel() -> void:
@@ -1842,6 +1905,127 @@ func _update_crosshair() -> void:
 	var reticle_color := Color(1.0, 0.71, 0.29, 1.0) if crosshair_hit_timer > 0.0 else Color(0.48, 1.0, 0.88, 0.94)
 	for index in range(4):
 		crosshair_parts[index].color = reticle_color
+
+func _create_target_lock_ui() -> void:
+	target_lock_root = Control.new()
+	target_lock_root.name = "TargetLockOverlay"
+	target_lock_root.size = Vector2(112.0, 88.0)
+	target_lock_root.custom_minimum_size = target_lock_root.size
+	target_lock_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	target_lock_root.z_index = 22
+	target_lock_root.visible = false
+	hud_root.add_child(target_lock_root)
+
+	target_lock_label = Label.new()
+	target_lock_label.name = "TargetIdentity"
+	target_lock_label.position = Vector2.ZERO
+	target_lock_label.size = Vector2(112.0, 15.0)
+	target_lock_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	target_lock_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	target_lock_label.add_theme_font_size_override("font_size", 9)
+	target_lock_label.add_theme_color_override("font_color", Color(0.61, 1.0, 0.91))
+	target_lock_label.add_theme_color_override("font_outline_color", Color(0.006, 0.018, 0.022, 0.98))
+	target_lock_label.add_theme_constant_override("outline_size", 3)
+	target_lock_root.add_child(target_lock_label)
+
+	var bracket_rects := [
+		Rect2(Vector2(26.0, 18.0), Vector2(14.0, 2.0)),
+		Rect2(Vector2(26.0, 18.0), Vector2(2.0, 14.0)),
+		Rect2(Vector2(72.0, 18.0), Vector2(14.0, 2.0)),
+		Rect2(Vector2(84.0, 18.0), Vector2(2.0, 14.0)),
+		Rect2(Vector2(26.0, 64.0), Vector2(14.0, 2.0)),
+		Rect2(Vector2(26.0, 52.0), Vector2(2.0, 14.0)),
+		Rect2(Vector2(72.0, 64.0), Vector2(14.0, 2.0)),
+		Rect2(Vector2(84.0, 52.0), Vector2(2.0, 14.0))
+	]
+	for rect in bracket_rects:
+		var corner := ColorRect.new()
+		corner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		corner.position = rect.position
+		corner.size = rect.size
+		corner.color = Color(0.38, 1.0, 0.86, 0.96)
+		target_lock_root.add_child(corner)
+		target_lock_brackets.append(corner)
+
+	target_lock_health_bar = ProgressBar.new()
+	target_lock_health_bar.name = "TargetHealth"
+	target_lock_health_bar.position = Vector2(28.0, 79.0)
+	target_lock_health_bar.size = Vector2(56.0, 4.0)
+	target_lock_health_bar.custom_minimum_size = Vector2(56.0, 4.0)
+	target_lock_health_bar.min_value = 0.0
+	target_lock_health_bar.max_value = 1.0
+	target_lock_health_bar.value = 1.0
+	target_lock_health_bar.show_percentage = false
+	var health_background := StyleBoxFlat.new()
+	health_background.bg_color = Color(0.025, 0.045, 0.052, 0.96)
+	health_background.set_corner_radius_all(2)
+	target_lock_health_bar.add_theme_stylebox_override("background", health_background)
+	target_lock_health_fill = StyleBoxFlat.new()
+	target_lock_health_fill.bg_color = Color(0.38, 1.0, 0.86, 1.0)
+	target_lock_health_fill.set_corner_radius_all(2)
+	target_lock_health_bar.add_theme_stylebox_override("fill", target_lock_health_fill)
+	target_lock_root.add_child(target_lock_health_bar)
+
+func _update_target_lock_ui(delta: float) -> void:
+	if not is_instance_valid(target_lock_root) or not is_instance_valid(camera):
+		return
+	var selected: Dictionary = {}
+	if is_instance_valid(aim_target_node):
+		for guard in guards:
+			if guard.get("node") == aim_target_node:
+				selected = guard
+				break
+	if selected.is_empty() or paused_game or terminal_active or mission_finished or briefing_visible:
+		target_lock_root.visible = false
+		target_lock_has_position = false
+		target_lock_tracked_node = null
+		return
+	var role: String = str(selected.get("role", "RANGER"))
+	var target_node: Node3D = aim_target_node
+	var target_height: float = 2.9 if bool(selected.get("warden", false)) else 2.25
+	var world_anchor: Vector3 = target_node.global_position + Vector3.UP * target_height
+	if camera.is_position_behind(world_anchor):
+		target_lock_root.visible = false
+		target_lock_has_position = false
+		return
+	var screen_position: Vector2 = camera.unproject_position(world_anchor)
+	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+	if screen_position.x < 58.0 or screen_position.x > viewport_size.x - 58.0 or screen_position.y < 48.0 or screen_position.y > viewport_size.y - 42.0:
+		target_lock_root.visible = false
+		target_lock_has_position = false
+		return
+	var desired_position: Vector2 = screen_position - Vector2(56.0, 47.0)
+	if not target_lock_has_position or target_lock_tracked_node != target_node:
+		target_lock_position = desired_position
+		target_lock_has_position = true
+		target_lock_tracked_node = target_node
+	else:
+		var follow: float = 1.0 - exp(-maxf(0.0, delta) * 19.0)
+		target_lock_position = target_lock_position.lerp(desired_position, clampf(follow, 0.0, 1.0))
+	target_lock_root.position = target_lock_position
+	target_lock_root.visible = true
+
+	var health: int = maxi(0, int(selected.get("hp", 0)))
+	var max_health: int = maxi(1, int(selected.get("max_hp", 1)))
+	target_lock_label.text = "ЦЕЛЬ / %s  ·  %d/%d" % [role, health, max_health]
+	target_lock_health_bar.max_value = float(max_health)
+	target_lock_health_bar.value = float(health)
+	var role_color := Color(1.0, 0.32, 0.4)
+	match role:
+		"STALKER":
+			role_color = Color(0.76, 0.5, 1.0)
+		"HEAVY", "WARDEN":
+			role_color = Color(1.0, 0.7, 0.32)
+		"RANGER":
+			role_color = Color(1.0, 0.34, 0.42)
+	if health <= maxi(1, int(ceil(float(max_health) * 0.3))):
+		role_color = Color(1.0, 0.2, 0.31)
+	var pulse: float = 0.86 + 0.14 * (0.5 + 0.5 * sin(scene_clock * 5.2))
+	var bracket_color := Color(role_color.r, role_color.g, role_color.b, pulse)
+	for corner in target_lock_brackets:
+		corner.color = bracket_color
+	target_lock_label.add_theme_color_override("font_color", bracket_color)
+	target_lock_health_fill.bg_color = role_color
 
 func _update_screen_overlay() -> void:
 	if not is_instance_valid(impact_overlay):

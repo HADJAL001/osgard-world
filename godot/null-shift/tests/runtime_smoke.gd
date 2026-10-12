@@ -33,6 +33,25 @@ func _run_smoke() -> void:
 		return
 	game.sound_enabled = false
 
+	print("RUNTIME_STAGE: assisted targeting and projected lock reticle")
+	if not _expect(is_instance_valid(game.target_lock_root) and is_instance_valid(game.target_lock_health_bar), "target lock reticle and live target health bar must instantiate"):
+		return
+	var lock_guard: Node3D = game.guards[0]["node"]
+	var lock_saved_position: Vector3 = lock_guard.global_position
+	lock_guard.global_position = game.player.global_position + Vector3(0.0, 0.0, -4.0)
+	await process_frame
+	game.aim_target_node = lock_guard
+	game._update_target_lock_ui(0.016)
+	if not _expect(game.target_lock_root.visible and game.target_lock_brackets.size() == 8, "visible hostile must produce a smoothed eight-corner screen-space target marker"):
+		return
+	if not _expect(game.target_lock_label.text.contains(str(game.guards[0]["role"])) and is_equal_approx(game.target_lock_health_bar.value, float(game.guards[0]["hp"])), "target identity and health must reflect the live hostile state"):
+		return
+	game.aim_target_node = null
+	game._update_target_lock_ui(0.016)
+	if not _expect(not game.target_lock_root.visible, "target marker must disappear when there is no selected hostile"):
+		return
+	lock_guard.global_position = lock_saved_position
+
 	print("RUNTIME_STAGE: tactical radar mapping and live entity feed")
 	if not _expect(is_instance_valid(game.tactical_radar_panel) and is_instance_valid(game.tactical_radar_map), "tactical radar panel and drawing canvas must instantiate"):
 		return
