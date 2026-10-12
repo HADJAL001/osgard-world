@@ -289,7 +289,7 @@ export function GamesPlatform() {
           <h1 id="owg-title">Не просто игры.<br /><em>Целые миры.</em></h1>
           <p className="owg-hero-lead">Выберите игровой мир, погрузитесь в сессию и откройте следующий. Единая коллекция OSGARD — с собственным характером каждой игры.</p>
           <div className="owg-hero-actions">
-            <a className="owg-button owg-button-primary" href={OSGARD_GAMES.find(game => game.id === 'null-shift')?.href ?? '/entertainment'} onClick={() => launchGame('null-shift', 'hero')}>Открыть NULL//SHIFT <ArrowRight size={17} /></a>
+            <a className="owg-button owg-button-primary" href="/games/play/null-shift" onClick={() => launchGame('null-shift', 'hero')}>Открыть NULL//SHIFT <ArrowRight size={17} /></a>
             <a className="owg-button owg-button-quiet" href="#catalog">Вся коллекция <ArrowRight size={16} /></a>
           </div>
           <div className="owg-proofline">
@@ -346,7 +346,7 @@ export function GamesPlatform() {
                 <div className="owg-game-controls"><span><Monitor size={13} /> {game.platform}</span><span>{game.controls}</span></div>
                 <div className="owg-game-actions">
                   <a className="owg-details-link" href={'/games/info/' + game.id}>Подробнее <ArrowRight size={15} /></a>
-                  <a className="owg-button owg-button-primary" href={game.href} onClick={() => launchGame(game.id, 'catalog-card')}>Играть <ArrowUpRight size={16} /></a>
+                  <a className="owg-button owg-button-primary" href={'/games/play/' + game.id} onClick={() => launchGame(game.id, 'catalog-card')}>Играть <ArrowUpRight size={16} /></a>
                   <button className="owg-icon-button" type="button" aria-label={'Поделиться игрой ' + game.title} onClick={() => void shareGame(game.id)}><Share2 size={16} /></button>
                 </div>
               </div>
