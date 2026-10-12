@@ -39,6 +39,7 @@ import { EcosystemSurface } from './EcosystemSurfaces'
 import { CommunitySurface } from './CommunitySurface'
 import { StreamSurface } from './StreamSurface'
 import { GamesPlatform } from './GamesPlatform'
+import { GameDetailPage } from './GameDetailPage'
 import { LegalPage } from './LegalPages'
 
 const seo: Record<string, { title: string; description: string }> = {
@@ -74,7 +75,7 @@ const cleanSeo: Record<string, { title: string; description: string }> = {
 
 function Seo({ path }: { path: string }) {
   React.useEffect(() => {
-    const data = cleanSeo[path] ?? cleanSeo['/']
+    const data = cleanSeo[path] ?? (path.startsWith('/games/info/') ? { title: 'Игровой мир OSGARD PLAY | OSGARD WORLD', description: 'Паспорт игры OSGARD: описание, жанр, тип веб-сборки, управление и переход к запуску.' } : cleanSeo['/'])
     const canonical = `https://osgard.world${path === '/' ? '/' : path}`
     document.title = data.title
     const setMeta = (selector: string, attribute: string, value: string) => {
@@ -101,6 +102,7 @@ const path = location.pathname.replace(/\/+$/, '') || '/'
 function RoutedRoot() {
   const [locale, setLocale] = React.useState<'ru' | 'en'>('ru')
   if (path === '/games') return <><Seo path="/games" /><GamesPlatform /></>
+  if (path.startsWith('/games/info/')) return <><Seo path={path} /><GameDetailPage slug={path.split('/')[3] || ''} /></>
   if (path === '/privacy') return <><Seo path="/privacy" /><LegalPage kind="privacy" /></>
   if (path === '/terms') return <><Seo path="/terms" /><LegalPage kind="terms" /></>
   if (path === '/miniapp') return <MiniApp />
