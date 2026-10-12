@@ -29,7 +29,7 @@ for (const feature of [
   '_submit_cipher_key(', '_destroy_device(', '_deploy_pulse(', '_shift_layer(',
   '_finish_mission(', '_create_mobile_controls(', '_update_hud(', '_create_crosshair(', '_update_crosshair(', '_create_briefing_panel(', '_add_briefing_step(', '_dismiss_briefing(', '_show_briefing(', '_screen_impulse(', '_add_sphere_mesh(',
   'Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME', 'AudioStreamWAV.new()', 'HealthReadout', 'health_timer', 'operator_suit.material_override',
-  'CPUParticles3D.new()', 'TorusMesh.new()', 'glow_enabled', 'shadow_enabled',
+  'CPUParticles3D.new()', 'TorusMesh.new()', 'glow_enabled', 'shadow_enabled', 'MAX_BEAM_POOL', 'MAX_RING_POOL', 'beam_pool', 'ring_effects', 'effect_pool_exhaustions', 'func _trigger_muzzle_flash()', 'MuzzleFlash', 'MuzzleFlashLight',
   'user://null_shift_career.cfg', 'KEY_F2', 'KEY_F3', 'dash_windup', 'dash_timer', 'HEAVY', 'STALKER', 'PhaseConduit_', 'ЭНЕРГОКОНТУР', 'hazard_status_label', 'active_material.emission_energy_multiplier', '_player_inside_lanes(', '_has_clear_path_to_player(', 'attacker: PhysicsBody3D', 'for lane_variant: Variant in lanes', 'attack_lanes', 'camera_shake_timer', 'fog_enabled', 'current_frame_ms', 'briefing_seen', 'ПОМОЩЬ / H'
 ]) assert.ok(game.includes(feature), 'Missing Godot gameplay/diagnostic feature: ' + feature)
 assert.ok(game.length > 25000, 'Godot gameplay source unexpectedly small')
@@ -41,6 +41,9 @@ assert.ok(game.includes('func _layout_compact_controls(viewport_size: Vector2)')
 assert.ok(game.includes('var action_width: float = floor(clampf(width * 0.47, 150.0, 206.0))'), 'Godot mobile action panel widths must resolve to integer layout pixels')
 assert.ok(game.includes('mobile_modules_button.custom_minimum_size = Vector2(action_width - 24.0, 28.0)') && game.includes('sound_button.custom_minimum_size = Vector2(action_width - 24.0, 28.0)'), 'All mobile action utilities must fit their container')
 assert.ok(game.includes('camera_follow_position = camera_follow_position.lerp') && game.includes('operator_rig.position.y = sin(scene_clock'), 'Godot camera smoothing and operator animation must exist')
+assert.ok(game.includes('operator_rig.rotation.y = lerp_angle') && game.includes('operator_leg_pivots') && game.includes('leg.rotation.x = lerpf'), 'Godot operator aim-facing and opposing gait animation must exist')
+assert.ok(game.includes('func _spawn_beam(') && game.includes('line_mesh.clear_surfaces()') && game.includes('func _spawn_ring_burst(') && game.includes('ring.transparency = clampf'), 'Transient 3D effects must reuse bounded beam/ring pools')
+assert.ok(game.includes('FX ACTIVE') && game.includes('FX POOLS') && game.includes('FX DROPPED'), 'Live diagnostics must expose active effects, pool sizes and overflow')
 assert.ok(game.includes('func _update_adaptive_quality()') && game.includes('func _evaluate_adaptive_quality(mean_ms: float, p95_ms: float)') && game.includes('adaptive_quality_degraded'), 'Measured adaptive cinematic quality governor must exist')
 assert.ok(game.includes('Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)') && game.includes('samples.sort()') && game.includes('AUTO-OPTIMIZED'), 'Diagnostics must report runtime frame timing and adaptive profile')
 assert.ok(!game.includes('%.1F'), 'Godot float formatting tokens must use supported lowercase specifiers')

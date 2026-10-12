@@ -126,6 +126,49 @@ func _run_smoke() -> void:
 		return
 	if not _expect(is_instance_valid(game.operator_suit) and game.operator_rig.get_node_or_null("OperatorHelmet") != null, "operator helmet and armor must instantiate"):
 		return
+	if not _expect(game.operator_leg_pivots.size() == 2, "operator must have two animated leg pivots"):
+		return
+	if not _expect(is_instance_valid(game.muzzle_flash) and is_instance_valid(game.muzzle_light) and not game.muzzle_flash.visible, "weapon muzzle flash and light must exist in the idle state"):
+		return
+	game.player.velocity = Vector3(3.0, 0.0, 0.0)
+	game.player_aim = Vector3.RIGHT
+	game._trigger_muzzle_flash()
+	game._animate_world(0.016)
+	if not _expect(game.muzzle_flash.visible and game.muzzle_flash_timer > 0.0 and game.weapon_recoil > 0.0, "weapon fire feedback must trigger a live muzzle flash and recoil"):
+		return
+	if not _expect(absf(game.operator_rig.rotation.y) > 0.01, "operator rig must smoothly rotate toward the aim direction"):
+		return
+	if not _expect(absf(game.operator_leg_pivots[0].rotation.x - game.operator_leg_pivots[1].rotation.x) > 0.01, "operator legs must animate in opposing gait phases"):
+		return
+	game.player.velocity = Vector3.ZERO
+	game.player_aim = Vector3.FORWARD
+
+	print("RUNTIME_STAGE: bounded transient beam/ring pools")
+	game._spawn_beam(Vector3(-1.0, 1.0, 0.0), Vector3(1.0, 1.0, 0.0), game.materials["cyan"], 0.10)
+	if not _expect(game.beam_pool.size() == 1 and game.beam_effects.size() == 1 and game.beam_pool[0].visible, "beam firing must activate one pooled mesh"):
+		return
+	var pooled_beam: MeshInstance3D = game.beam_pool[0]
+	game._update_effect_expiry(0.11)
+	if not _expect(game.beam_effects.is_empty() and not pooled_beam.visible, "expired beam must return hidden to the pool"):
+		return
+	game._spawn_beam(Vector3(-2.0, 1.0, 0.0), Vector3(2.0, 1.0, 0.0), game.materials["amber"], 0.10)
+	if not _expect(game.beam_pool.size() == 1 and game.beam_pool[0] == pooled_beam, "successive beams must reuse the same mesh node"):
+		return
+	game._update_effect_expiry(0.11)
+	game._spawn_ring_burst(Vector3.ZERO, game.materials["amber"])
+	if not _expect(game.ring_pool.size() == 1 and game.ring_effects.size() == 1 and game.ring_pool[0].visible, "ring burst must activate a reusable pool entry"):
+		return
+	var pooled_ring: MeshInstance3D = game.ring_pool[0]
+	game._update_effect_expiry(0.23)
+	if not _expect(pooled_ring.scale.x > 1.0 and pooled_ring.transparency > 0.0, "ring burst must expand and fade from measured frame delta"):
+		return
+	game._update_effect_expiry(0.24)
+	if not _expect(game.ring_effects.is_empty() and not pooled_ring.visible, "expired ring must return hidden to the pool"):
+		return
+	game._spawn_ring_burst(Vector3.ONE, game.materials["cyan"])
+	if not _expect(game.ring_pool.size() == 1 and game.ring_pool[0] == pooled_ring, "successive rings must reuse the same mesh node"):
+		return
+	game._update_effect_expiry(0.5)
 	if not _expect(game.guards[0].get("role", "") == "STALKER" and game.guards[1].get("role", "") == "HEAVY" and game.guards[2].get("role", "") == "RANGER", "enemy archetypes must be distinct"):
 		return
 
@@ -266,6 +309,8 @@ func _run_smoke() -> void:
 		return
 	if not _expect(game.diagnostics_label.text.contains("DRAW CALLS"), "diagnostics must expose renderer counters"):
 		return
+	if not _expect(game.diagnostics_label.text.contains("FX ACTIVE") and game.diagnostics_label.text.contains("FX DROPPED"), "diagnostics must report active effects and pool overflow"):
+		return
 
 	print("RUNTIME_STAGE: cipher hack")
 	game.player.global_position = game.terminal.global_position + Vector3(0.0, 0.0, 1.0)
@@ -296,5 +341,5 @@ func _run_smoke() -> void:
 	if not _expect(game.career.get_value("upgrades", "weapon", 0) == 1, "upgrade must persist in the career save"):
 		return
 
-	print("PASS NULL//SHIFT runtime: combat damage, dodgeable telegraphed attack lanes, enemy roles, eliminations, devices, pulse, animated core, camera response, live telemetry, cipher hack, extraction, credits and persistent upgrade")
+	print("PASS NULL//SHIFT runtime: aim-facing operator, gait, muzzle recoil, pooled beam/ring effects, combat damage, dodgeable phase lanes, enemy roles, eliminations, destructible devices, pulse, animated core, camera response, live telemetry, cipher hack, extraction, credits and persistent upgrades")
 	quit(0)

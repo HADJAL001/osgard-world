@@ -3,6 +3,8 @@ extends Node3D
 const PLAYER_SPEED := 7.4
 const CIPHER := [KEY_UP, KEY_LEFT, KEY_DOWN, KEY_RIGHT]
 const SAVE_PATH := "user://null_shift_career.cfg"
+const MAX_BEAM_POOL := 28
+const MAX_RING_POOL := 10
 
 var player: CharacterBody3D
 var camera: Camera3D
@@ -45,6 +47,16 @@ var hazard_status_label: Label
 var health_bar: ProgressBar
 var health_bar_fill: StyleBoxFlat
 var effects: Array[Node] = []
+var beam_pool: Array[MeshInstance3D] = []
+var beam_effects: Array[Dictionary] = []
+var ring_pool: Array[MeshInstance3D] = []
+var ring_effects: Array[Dictionary] = []
+var effect_pool_exhaustions := 0
+var operator_leg_pivots: Array[Node3D] = []
+var muzzle_flash: MeshInstance3D
+var muzzle_light: OmniLight3D
+var muzzle_flash_timer := 0.0
+var weapon_recoil := 0.0
 var career := ConfigFile.new()
 var career_credits := 0
 var run_credits := 0
@@ -166,7 +178,7 @@ func _process(delta: float) -> void:
 		_update_adaptive_quality()
 	_update_camera(dt)
 	_animate_world(dt)
-	_update_effect_expiry()
+	_update_effect_expiry(dt)
 	_update_mobile_layout()
 	_update_player_material()
 	_update_crosshair()
@@ -756,8 +768,15 @@ func _create_player() -> void:
 	_add_cube(operator_rig, Vector3(0.38, 0.34, -0.02), Vector3(0.23, 0.25, 0.32), materials["cyan_dark"])
 	_add_cube(operator_rig, Vector3(-0.31, 0.08, -0.29), Vector3(0.16, 0.2, 0.26), materials["wall_trim"])
 	_add_cube(operator_rig, Vector3(0.31, 0.08, -0.29), Vector3(0.16, 0.2, 0.26), materials["wall_trim"])
-	_add_cube(operator_rig, Vector3(-0.19, -0.59, -0.02), Vector3(0.23, 0.2, 0.32), materials["black"])
-	_add_cube(operator_rig, Vector3(0.19, -0.59, -0.02), Vector3(0.23, 0.2, 0.32), materials["black"])
+	for leg_index in range(2):
+		var side: float = -1.0 if leg_index == 0 else 1.0
+		var leg_pivot := Node3D.new()
+		leg_pivot.name = "OperatorLeg_L" if leg_index == 0 else "OperatorLeg_R"
+		leg_pivot.position = Vector3(side * 0.19, -0.32, -0.02)
+		operator_rig.add_child(leg_pivot)
+		_add_cube(leg_pivot, Vector3(0.0, -0.27, 0.0), Vector3(0.23, 0.2, 0.32), materials["black"])
+		_add_cube(leg_pivot, Vector3(0.0, -0.365, -0.075), Vector3(0.25, 0.085, 0.42), materials["wall_trim"])
+		operator_leg_pivots.append(leg_pivot)
 	_add_cube(operator_rig, Vector3(0.0, 0.12, 0.31), Vector3(0.42, 0.45, 0.2), materials["black"])
 	_add_cube(operator_rig, Vector3(-0.15, 0.15, 0.42), Vector3(0.06, 0.31, 0.035), materials["cyan"])
 	_add_cube(operator_rig, Vector3(0.15, 0.15, 0.42), Vector3(0.06, 0.31, 0.035), materials["cyan"])
@@ -765,6 +784,28 @@ func _create_player() -> void:
 	helmet.scale = Vector3(1.0, 1.0, 0.92)
 	_add_cube(operator_rig, Vector3(0.0, 0.72, -0.235), Vector3(0.31, 0.075, 0.04), materials["cyan"])
 	_add_cube(operator_rig, Vector3(0.0, 0.56, -0.21), Vector3(0.2, 0.04, 0.035), materials["amber"])
+	var flash_mesh := SphereMesh.new()
+	flash_mesh.radius = 0.085
+	flash_mesh.height = 0.17
+	flash_mesh.radial_segments = 12
+	flash_mesh.rings = 6
+	muzzle_flash = MeshInstance3D.new()
+	muzzle_flash.name = "MuzzleFlash"
+	muzzle_flash.mesh = flash_mesh
+	muzzle_flash.material_override = materials["white"]
+	muzzle_flash.position = Vector3(0.0, 0.16, -1.31)
+	muzzle_flash.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	muzzle_flash.visible = false
+	operator_rig.add_child(muzzle_flash)
+	muzzle_light = OmniLight3D.new()
+	muzzle_light.name = "MuzzleFlashLight"
+	muzzle_light.position = Vector3(0.0, 0.16, -1.31)
+	muzzle_light.light_color = Color(0.22, 1.0, 0.84)
+	muzzle_light.light_energy = 3.2
+	muzzle_light.omni_range = 3.2
+	muzzle_light.shadow_enabled = false
+	muzzle_light.visible = false
+	operator_rig.add_child(muzzle_light)
 	add_child(player)
 
 	camera_rig = Node3D.new()
@@ -1070,10 +1111,20 @@ func _has_clear_path_to_player(from_world: Vector3, attacker: PhysicsBody3D) -> 
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
 	return hit.is_empty() or hit.get("collider") == player
 
+func _trigger_muzzle_flash() -> void:
+	weapon_recoil = minf(1.0, weapon_recoil + 0.58)
+	muzzle_flash_timer = 0.055
+	if is_instance_valid(muzzle_flash):
+		muzzle_flash.visible = true
+	if is_instance_valid(muzzle_light):
+		muzzle_light.light_energy = 2.8 + float(weapon_level) * 0.25
+		muzzle_light.visible = cinematic_quality and not adaptive_quality_degraded
+
 func _fire_weapon() -> void:
 	if fire_cooldown > 0.0 or paused_game or mission_finished or terminal_active:
 		return
 	fire_cooldown = maxf(0.09, 0.17 - float(weapon_level) * 0.022)
+	_trigger_muzzle_flash()
 	var from := player.global_position + Vector3.UP * 0.82 + player_aim * 0.8
 	var to := from + player_aim * 37.0
 	var query := PhysicsRayQueryParameters3D.create(from, to)
@@ -1588,7 +1639,7 @@ func _create_ui() -> void:
 	diagnostics_label.offset_left = 18.0
 	diagnostics_label.offset_top = 218.0
 	diagnostics_label.offset_right = 335.0
-	diagnostics_label.offset_bottom = 360.0
+	diagnostics_label.offset_bottom = 410.0
 	diagnostics_label.visible = false
 	diagnostics_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
@@ -2045,8 +2096,10 @@ func _update_hud() -> void:
 		fps_p95_ms = p95
 		var draw_calls := int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
 		var profile := "BALANCED" if not cinematic_quality else ("AUTO-OPTIMIZED" if adaptive_quality_degraded else "CINEMATIC")
-		diagnostics_label.text = "LIVE DIAGNOSTICS\nFPS        %02d\nFRAME P95  %.1f ms\nFRAME NOW  %.1f ms\nDRAW CALLS %d\nGUARDS     %d\nDEVICES    %d\nPROFILE    %s" % [
-			Engine.get_frames_per_second(), fps_p95_ms, current_frame_ms, draw_calls, guards.size(), _living_device_count(), profile
+		diagnostics_label.text = "LIVE DIAGNOSTICS\nFPS        %02d\nFRAME P95  %.1f ms\nFRAME NOW  %.1f ms\nDRAW CALLS %d\nFX ACTIVE  %02d\nFX POOLS   %02d BEAM / %02d RING\nFX DROPPED %d\nGUARDS     %d\nDEVICES    %d\nPROFILE    %s" % [
+			Engine.get_frames_per_second(), fps_p95_ms, current_frame_ms, draw_calls,
+			effects.size(), beam_pool.size(), ring_pool.size(), effect_pool_exhaustions,
+			guards.size(), _living_device_count(), profile
 		]
 
 func _living_device_count() -> int:
@@ -2087,10 +2140,28 @@ func _update_player_material() -> void:
 func _animate_world(delta: float) -> void:
 	if is_instance_valid(operator_rig) and is_instance_valid(player):
 		var walking: float = player.velocity.length()
+		var walk_weight: float = clampf(walking / PLAYER_SPEED, 0.0, 1.0)
 		var bob_speed: float = 10.0 if walking > 0.35 else 1.8
 		var bob_amount: float = 0.042 if walking > 0.35 else 0.012
+		var smoothing: float = 1.0 - exp(-delta * 14.0)
 		operator_rig.position.y = sin(scene_clock * bob_speed) * bob_amount
-		operator_rig.rotation.z = clampf(-player.velocity.x / PLAYER_SPEED * 0.045, -0.055, 0.055)
+		if Vector2(player_aim.x, player_aim.z).length_squared() > 0.0001:
+			var target_yaw: float = atan2(-player_aim.x, -player_aim.z)
+			operator_rig.rotation.y = lerp_angle(operator_rig.rotation.y, target_yaw, smoothing)
+		weapon_recoil = move_toward(weapon_recoil, 0.0, delta * 10.5)
+		operator_rig.rotation.x = lerpf(operator_rig.rotation.x, -weapon_recoil * 0.035, smoothing)
+		var target_lean: float = clampf(-player.velocity.x / PLAYER_SPEED * 0.045, -0.055, 0.055)
+		operator_rig.rotation.z = lerpf(operator_rig.rotation.z, target_lean, smoothing)
+		for leg_index in range(operator_leg_pivots.size()):
+			var leg: Node3D = operator_leg_pivots[leg_index]
+			var phase_offset: float = 0.0 if leg_index == 0 else PI
+			var target_swing: float = sin(scene_clock * 10.5 + phase_offset) * 0.46 * walk_weight
+			leg.rotation.x = lerpf(leg.rotation.x, target_swing, 1.0 - exp(-delta * 15.0))
+	muzzle_flash_timer = maxf(0.0, muzzle_flash_timer - delta)
+	if is_instance_valid(muzzle_flash):
+		muzzle_flash.visible = muzzle_flash_timer > 0.0
+	if is_instance_valid(muzzle_light):
+		muzzle_light.visible = muzzle_flash_timer > 0.0 and cinematic_quality and not adaptive_quality_degraded
 	if is_instance_valid(core_ring) and quantum_core.visible:
 		core_ring.rotate_y(delta * 1.2)
 		core_ring.rotate_x(sin(scene_clock * 0.8) * delta * 0.25)
@@ -2112,48 +2183,101 @@ func _animate_world(delta: float) -> void:
 			var body_speed: float = body.velocity.length()
 			armor.position.y = sin(scene_clock * (9.0 if body_speed > 0.2 else 1.6) + float(guard["phase"])) * (0.035 if body_speed > 0.2 else 0.012)
 
-func _update_effect_expiry() -> void:
+func _update_effect_expiry(delta: float) -> void:
+	var dt: float = maxf(0.0, delta)
+	for index in range(beam_effects.size() - 1, -1, -1):
+		var state: Dictionary = beam_effects[index]
+		var instance: MeshInstance3D = state["node"]
+		var remaining: float = maxf(0.0, float(state["remaining"]) - dt)
+		if remaining <= 0.0 or not is_instance_valid(instance):
+			if is_instance_valid(instance):
+				instance.visible = false
+			effects.erase(instance)
+			beam_effects.remove_at(index)
+		else:
+			state["remaining"] = remaining
+			beam_effects[index] = state
+	for index in range(ring_effects.size() - 1, -1, -1):
+		var state: Dictionary = ring_effects[index]
+		var ring: MeshInstance3D = state["node"]
+		var duration: float = maxf(0.001, float(state["duration"]))
+		var remaining: float = maxf(0.0, float(state["remaining"]) - dt)
+		if remaining <= 0.0 or not is_instance_valid(ring):
+			if is_instance_valid(ring):
+				ring.visible = false
+				ring.scale = Vector3.ONE
+				ring.transparency = 0.0
+			effects.erase(ring)
+			ring_effects.remove_at(index)
+		else:
+			var progress: float = clampf(1.0 - remaining / duration, 0.0, 1.0)
+			var eased: float = 1.0 - pow(1.0 - progress, 2.2)
+			ring.scale = Vector3.ONE.lerp(Vector3.ONE * 14.0, eased)
+			ring.transparency = clampf(progress * 0.88, 0.0, 0.9)
+			state["remaining"] = remaining
+			ring_effects[index] = state
 	for index in range(effects.size() - 1, -1, -1):
 		if not is_instance_valid(effects[index]):
 			effects.remove_at(index)
-
 func _spawn_beam(from: Vector3, to: Vector3, material: Material, lifetime: float) -> void:
-	var mesh := ImmediateMesh.new()
-	mesh.surface_begin(Mesh.PRIMITIVE_LINES, material)
-	mesh.surface_add_vertex(from)
-	mesh.surface_add_vertex(to)
-	mesh.surface_end()
-	var instance := MeshInstance3D.new()
-	instance.name = "TransientBeam"
-	instance.mesh = mesh
-	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(instance)
+	var instance: MeshInstance3D
+	for pooled: MeshInstance3D in beam_pool:
+		if is_instance_valid(pooled) and not pooled.visible:
+			instance = pooled
+			break
+	if not is_instance_valid(instance):
+		if beam_pool.size() >= MAX_BEAM_POOL:
+			effect_pool_exhaustions += 1
+			return
+		instance = MeshInstance3D.new()
+		instance.name = "TransientBeamPool_%02d" % [beam_pool.size() + 1]
+		instance.mesh = ImmediateMesh.new()
+		instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		instance.visible = false
+		add_child(instance)
+		beam_pool.append(instance)
+	var line_mesh := instance.mesh as ImmediateMesh
+	if not is_instance_valid(line_mesh):
+		effect_pool_exhaustions += 1
+		return
+	line_mesh.clear_surfaces()
+	line_mesh.surface_begin(Mesh.PRIMITIVE_LINES, material)
+	line_mesh.surface_add_vertex(from)
+	line_mesh.surface_add_vertex(to)
+	line_mesh.surface_end()
+	instance.visible = true
+	var duration: float = maxf(0.025, lifetime)
+	beam_effects.append({"node": instance, "remaining": duration, "duration": duration})
 	effects.append(instance)
-	get_tree().create_timer(lifetime).timeout.connect(func():
-		if is_instance_valid(instance):
-			instance.queue_free()
-	)
-
 func _spawn_ring_burst(at: Vector3, material: Material) -> void:
-	var mesh := TorusMesh.new()
-	mesh.inner_radius = 0.18
-	mesh.outer_radius = 0.24
-	mesh.rings = 24
-	mesh.ring_segments = 8
-	var ring := MeshInstance3D.new()
-	ring.name = "PhaseRing"
-	ring.mesh = mesh
+	var ring: MeshInstance3D
+	for pooled: MeshInstance3D in ring_pool:
+		if is_instance_valid(pooled) and not pooled.visible:
+			ring = pooled
+			break
+	if not is_instance_valid(ring):
+		if ring_pool.size() >= MAX_RING_POOL:
+			effect_pool_exhaustions += 1
+			return
+		ring = MeshInstance3D.new()
+		ring.name = "PhaseRingPool_%02d" % [ring_pool.size() + 1]
+		var mesh := TorusMesh.new()
+		mesh.inner_radius = 0.18
+		mesh.outer_radius = 0.24
+		mesh.rings = 24
+		mesh.ring_segments = 8
+		ring.mesh = mesh
+		ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		ring.visible = false
+		add_child(ring)
+		ring_pool.append(ring)
 	ring.material_override = material
 	ring.position = at
-	add_child(ring)
+	ring.scale = Vector3.ONE
+	ring.transparency = 0.0
+	ring.visible = true
+	ring_effects.append({"node": ring, "remaining": 0.46, "duration": 0.46})
 	effects.append(ring)
-	var tween := create_tween()
-	tween.tween_property(ring, "scale", Vector3(14.0, 14.0, 14.0), 0.46)
-	tween.tween_callback(func():
-		if is_instance_valid(ring):
-			ring.queue_free()
-	)
-
 func _spawn_hit_sparks(at: Vector3, material: Material) -> void:
 	if effects.size() > 36:
 		return

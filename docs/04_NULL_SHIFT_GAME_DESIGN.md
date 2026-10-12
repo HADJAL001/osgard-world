@@ -203,3 +203,8 @@ The command npm run qa:null-shift checks required game assets, script syntax, co
 
 - Fixed the phase-surge update order so lane-specific warning/active materials are read from the lane state before the pulse visuals use them.
 - The headless test now checks that the main scene actually attached its GDScript after instantiation, and exits immediately with a clear failure rather than continuing to access missing game properties when a script parse error occurs.
+
+
+## Godot runtime refinement — Release 0.6
+
+This pass removes recurring allocations from the firefight path: beams and ring bursts now use bounded reusable node/mesh pools with deterministic frame-delta expiry rather than a new scene node and timer for each effect. Operator facing follows aim direction smoothly; leg pivots animate in opposing phases according to movement speed, and firing adds a short emissive muzzle flash plus recoil. Diagnostics expose active effects, pool capacity and dropped cosmetic effects. The pinned Godot 4.7.2 CI/export workflow remains the engine installation and web-export authority; no manual local installation or third-party runtime assets were required.
