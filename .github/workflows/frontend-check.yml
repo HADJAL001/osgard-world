@@ -52,5 +52,7 @@ jobs:
         run: npm run qa:time-ui
       - name: Verify OSGARD Games portal and Lighthouse guardrails
         run: npm run qa:games-portal
+      - name: Verify ecosystem links, claims, contacts and privacy boundaries
+        run: npm run qa:ecosystem
       - name: Validate static archive and HTML
         run: npm run preflight:frontend
