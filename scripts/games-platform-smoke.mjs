@@ -44,7 +44,7 @@ check('Static Games portal remains the single /games catalogue', () => {
     if (token === 'id="player-lifecycle.js"') assert.ok(html.includes('src="./player-lifecycle.js"'), 'player lifecycle asset must be loaded')
     else assert.ok(html.includes(token), token)
   }
-  assert.ok(main.includes("const gameMatch = path.match(/^\\\\/game\\\\/([a-z0-9-]+)$/)"), 'React route matcher for per-game pages missing')
+  assert.ok(main.includes("const gameMatch = path.match(/^\\/game\\/([a-z0-9-]+)$/)"), 'React route matcher for per-game pages missing')
   assert.ok(main.includes('<GameDetailPage slug={gameMatch[1]} />'), 'React game detail page is not mounted')
   assert.ok(!main.includes('<GamesHub'), 'Do not create a second React catalogue at /games; static portal owns that route')
 })
