@@ -105,3 +105,11 @@ The command npm run qa:null-shift checks required game assets, script syntax, co
 - Added a desktop recoil reticle, collision hit tint, damage/phase overlay, smooth camera follow and short camera impulses for firing, damage, device destruction and special abilities.
 - FPS/P95 diagnostics use the actual frame interval before the simulation delta is clamped. Quality and sound preferences persist locally. Compact/touch layouts default to Balanced unless a preference is saved.
 - This is an upgraded procedural Godot 3D build, not native 8K/finished AAA artwork. Authored high-resolution models, material maps, skeletal animation and a richer post stack remain separate production work.
+
+
+## First-run clarity / onboarding pass
+
+- A one-time, pausing field briefing explains the mission sequence and exact inputs before enemies can act. It uses Russian copy, three numbered mission steps, desktop control hints and a separate mobile control hint.
+- Enter/Space or the primary action starts the raid; Escape and H dismiss it while open. H reopens the guide on demand, and completion is saved with local settings.
+- A scroll container and viewport-aware panel fit narrow screens. The aiming reticle stays hidden while instructions are open.
+- The Godot headless smoke test exercises opening the briefing, pausing, dismissing it and persisting completion before testing combat and extraction.

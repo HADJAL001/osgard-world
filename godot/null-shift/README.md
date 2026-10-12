@@ -9,6 +9,10 @@ This is the engine-backed 3D branch of NULL//SHIFT. The production game remains 
 - Procedural 3D arena with corner signal pylons and inlaid energy rails, distinct Stalker/Heavy/Ranger/Warden behavior, layered operator armor and guard helmets, physics collisions, terminal, quantum core, extraction pad, metallic/emissive materials, fog, dynamic lighting, shadows, configurable glow, reticle, camera impact response, particles, and synthesized sound.
 - No third-party runtime assets, remote fonts or external image dependencies.
 
+## First-run briefing
+
+The first launch opens a pausing Russian-language field briefing with the three mission steps and separate desktop/touch controls. Enter, Space, Escape or the primary button dismisses it. Completion is saved locally; H reopens the briefing later. A scroll container adapts it to narrow screens.
+
 ## Raid loop
 
 1. Reach the terminal and interact with E or the mobile action button.
