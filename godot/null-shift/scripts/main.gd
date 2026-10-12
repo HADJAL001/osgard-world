@@ -1550,7 +1550,7 @@ func _animate_world(delta: float) -> void:
 			continue
 		var armor := body.get_node_or_null("Armor") as MeshInstance3D
 		if armor:
-			var role := str(guard.get("role", "RANGER"))
+			var role: String = str(guard.get("role", "RANGER"))
 			var role_material: Material = materials["cyan"] if float(guard["stun"]) > 0.0 else (materials["red"] if role in ["WARDEN", "RANGER"] else (materials["violet"] if role == "STALKER" else materials["amber"]))
 			armor.material_override = role_material
 			var body_speed: float = body.velocity.length()
