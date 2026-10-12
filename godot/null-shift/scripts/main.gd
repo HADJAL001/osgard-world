@@ -121,6 +121,8 @@ var phase_flash_timer := 0.0
 var crosshair_kick := 0.0
 var crosshair_hit_timer := 0.0
 var impact_overlay: ColorRect
+var cinematic_vignette: ColorRect
+var cinematic_vignette_material: ShaderMaterial
 var damage_direction_root: Control
 var damage_direction_arrow: Label
 var crosshair_root: Control
@@ -210,6 +212,7 @@ func _process(delta: float) -> void:
 	_update_target_lock_ui(dt)
 	_update_objective_compass(dt)
 	_update_screen_overlay()
+	_update_cinematic_vignette()
 	_update_damage_direction_ui()
 	hud_clock += dt
 	if hud_clock >= 0.12:
@@ -1718,6 +1721,52 @@ func _create_ui() -> void:
 	hud_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	hud_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(hud_root)
+	_create_cinematic_vignette()
+
+func _create_cinematic_vignette() -> void:
+	cinematic_vignette = ColorRect.new()
+	cinematic_vignette.name = "CinematicVignette"
+	cinematic_vignette.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	cinematic_vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cinematic_vignette.color = Color.WHITE
+	var shader := Shader.new()
+	shader.code = """
+shader_type canvas_item;
+uniform float vignette_strength : hint_range(0.0, 0.45) = 0.28;
+uniform float danger : hint_range(0.0, 1.0) = 0.0;
+uniform float phase_shift : hint_range(0.0, 1.0) = 0.0;
+void fragment() {
+	vec2 centered = (UV - vec2(0.5)) * vec2(1.0, 0.86);
+	float distance_from_center = length(centered);
+	float edge = smoothstep(0.24, 0.72, distance_from_center);
+	float pulse = 0.72 + 0.28 * sin(TIME * 2.4);
+	float danger_edge = danger * 0.14 * pulse;
+	float alpha = edge * (vignette_strength + danger_edge + phase_shift * 0.055);
+	vec3 base = vec3(0.003, 0.009, 0.012);
+	vec3 phase_tint = vec3(0.025, 0.004, 0.05);
+	vec3 low_health_tint = vec3(0.035, 0.004, 0.009);
+	base = mix(base, phase_tint, phase_shift * 0.42);
+	base = mix(base, low_health_tint, danger * 0.34);
+	COLOR = vec4(base, clamp(alpha, 0.0, 0.44));
+}
+"""
+	cinematic_vignette_material = ShaderMaterial.new()
+	cinematic_vignette_material.shader = shader
+	cinematic_vignette.material = cinematic_vignette_material
+	cinematic_vignette.z_index = -1
+	hud_root.add_child(cinematic_vignette)
+
+func _update_cinematic_vignette() -> void:
+	if not is_instance_valid(cinematic_vignette_material):
+		return
+	var health_ratio: float = clampf(player_health / maxf(1.0, player_max_health), 0.0, 1.0)
+	var danger: float = clampf((0.78 - health_ratio) / 0.58, 0.0, 1.0)
+	var phase_weight: float = 1.0 if null_shift_timer > 0.0 else 0.0
+	var base_strength: float = 0.31 if cinematic_quality and not adaptive_quality_degraded else (0.22 if cinematic_quality else 0.14)
+	cinematic_vignette_material.set_shader_parameter("vignette_strength", base_strength)
+	cinematic_vignette_material.set_shader_parameter("danger", danger)
+	cinematic_vignette_material.set_shader_parameter("phase_shift", phase_weight)
+	cinematic_vignette.visible = true
 
 	status_panel = _make_panel(hud_root, Control.PRESET_TOP_LEFT, Rect2(18.0, 18.0, 316.0, 190.0))
 	var status_stack := _panel_stack(status_panel)

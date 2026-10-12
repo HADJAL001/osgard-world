@@ -54,6 +54,26 @@ func _run_smoke() -> void:
 	game.terminal_unlocked = compass_saved_terminal
 	game.core_secured = compass_saved_core
 
+	print("RUNTIME_STAGE: cinematic vignette response")
+	if not _expect(is_instance_valid(game.cinematic_vignette) and is_instance_valid(game.cinematic_vignette_material), "cinematic vignette must be a real screen-space shader layer"):
+		return
+	if not _expect(game.cinematic_vignette.mouse_filter == Control.MOUSE_FILTER_IGNORE and game.cinematic_vignette.visible, "vignette must not intercept input and must remain enabled"):
+		return
+	var vignette_saved_health: float = game.player_health
+	var vignette_saved_shift: float = game.null_shift_timer
+	game.player_health = 20.0
+	game.null_shift_timer = 0.0
+	game._update_cinematic_vignette()
+	if not _expect(float(game.cinematic_vignette_material.get_shader_parameter("danger")) > 0.5, "critical health must intensify the screen-space danger vignette"):
+		return
+	game.player_health = vignette_saved_health
+	game.null_shift_timer = 1.0
+	game._update_cinematic_vignette()
+	if not _expect(is_equal_approx(float(game.cinematic_vignette_material.get_shader_parameter("phase_shift")), 1.0), "NULL SHIFT phase must tint the vignette with the phase colour"):
+		return
+	game.null_shift_timer = vignette_saved_shift
+	game._update_cinematic_vignette()
+
 	print("RUNTIME_STAGE: cinematic camera response and incoming-damage direction")
 	if not _expect(is_instance_valid(game.damage_direction_root) and is_instance_valid(game.damage_direction_arrow), "directional damage indicator must instantiate as a native HUD control"):
 		return
