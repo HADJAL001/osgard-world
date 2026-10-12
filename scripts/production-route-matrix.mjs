@@ -26,11 +26,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
           : route.endsWith('/ready') ? /"ready"\s*:\s*true/.test(text)
             : /"id"\s*:/.test(text) && /"name"\s*:/.test(text)
         : route.startsWith('/games/null-shift-godot')
-          ? /<canvas/i.test(text) && /godot/i.test(text) && text.includes('index.wasm') && text.includes('index.pck') &&
-            text.includes('data-nullshift-shell="premium-v1"') &&
-            text.includes('Engine.isWebGLAvailable(2)') &&
-            text.includes('onProgress') &&
-            text.includes('НАЧАТЬ ОПЕРАЦИЮ')
+          ? text.includes('/games/null-shift/index.html') && text.includes('Отдельный Godot Web export в этой сборке не опубликован.')
           : route.startsWith('/games/null-shift')
             ? text.includes('id="game"') && text.includes('id="mobile-ui"') && text.includes('id="diag-panel"') && text.includes('id="sound-toggle"') && text.includes('id="touch-sound"') && text.includes('./styles.css') && text.includes('./game.js') && text.includes('./engine-3d.js') && text.includes('id="engine-toggle"') && text.includes('id="touch-engine"') && text.includes('id="godot-preview"')
           : route === '/games'
@@ -42,8 +38,8 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
                  : route === '/entertainment'
                 ? text.includes('<title>OSGARD Entertainment</title>')
                 : text.includes('<div id="root">')
-    const isGodot = route.startsWith('/games/null-shift-godot')
-    const assetPaths = (route === '/games' || route === '/games/privacy.html') ? ['/games/hub.css', ...(route === '/games' ? ['/games/hub.js', '/games/catalog.json'] : [])] : route === '/skillcred/' ? ['/skillcred/styles.css', '/skillcred/app.js', '/skillcred/fonts/InterVariable.woff2', '/skillcred/fonts/InstrumentSerif-Italic.woff2', '/skillcred/fonts/JetBrainsMono-Regular.woff2'] : isGodot ? ['/games/null-shift-godot/index.js', '/games/null-shift-godot/index.wasm', '/games/null-shift-godot/index.pck'] : route.startsWith('/games/null-shift') ? ['/games/null-shift/styles.css', '/games/null-shift/game.js', '/games/null-shift/engine-3d.js'] : []
+    const legacyGodotRoute = route.startsWith('/games/null-shift-godot')
+    const assetPaths = (route === '/games' || route === '/games/privacy.html') ? ['/games/hub.css', ...(route === '/games' ? ['/games/hub.js', '/games/catalog.json'] : [])] : route === '/skillcred/' ? ['/skillcred/styles.css', '/skillcred/app.js', '/skillcred/fonts/InterVariable.woff2', '/skillcred/fonts/InstrumentSerif-Italic.woff2', '/skillcred/fonts/JetBrainsMono-Regular.woff2'] : legacyGodotRoute ? [] : route.startsWith('/games/null-shift') ? ['/games/null-shift/styles.css', '/games/null-shift/game.js', '/games/null-shift/engine-3d.js'] : []
     const assetChecks = await Promise.all(assetPaths.map(async path => {
       const expectedType = path.endsWith('.css') ? 'text/css' : path.endsWith('.js') ? 'javascript' : path.endsWith('.wasm') ? 'wasm' : path.endsWith('.pck') ? 'pack' : path.endsWith('.json') ? 'json' : 'font'
       const asset = await fetch(new URL(path, base), { headers: { 'user-agent': userAgent } })
