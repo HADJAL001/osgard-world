@@ -4,6 +4,7 @@ import { existsSync, readFileSync } from 'node:fs'
 const read = path => readFileSync(path, 'utf8')
 const requiredFiles = [
   'src/GamesPlatform.tsx',
+  'src/GameDetailPage.tsx',
   'src/games-platform.css',
   'src/LegalPages.tsx',
   'src/legal.css',
@@ -20,6 +21,7 @@ for (const path of requiredFiles) assert.ok(existsSync(path), 'Missing OSGARD PL
 const platform = read('src/GamesPlatform.tsx')
 const css = read('src/games-platform.css')
 const legal = read('src/LegalPages.tsx')
+const detail = read('src/GameDetailPage.tsx')
 const main = read('src/main.tsx')
 const manifest = read('src/core/manifest.ts')
 const events = read('src/core/eventQueue.ts')
@@ -34,12 +36,13 @@ for (const id of ['time', 'swarm', 'null-shift', 'inherit', 'remix']) {
   assert.ok(platform.includes("game.id === '" + id + "'") || platform.includes(id), 'Game metadata is missing: ' + id)
 }
 for (const feature of [
-  "path === '/games'", "path === '/privacy'", "path === '/terms'",
-  "GamesPlatform", "LegalPage kind=\"privacy\"", "LegalPage kind=\"terms\""
+  "path === '/games'", "path.startsWith('/games/info/')", "path === '/privacy'", "path === '/terms'",
+  "GamesPlatform", "GameDetailPage", "LegalPage kind=\"privacy\"", "LegalPage kind=\"terms\""
 ]) assert.ok(main.includes(feature), 'Missing page route: ' + feature)
 
 for (const feature of [
   'function readFavorites()', 'function readHistory()', 'localStorage.setItem(FAVORITES_KEY',
+  "'/games/info/' + game.id",
   'localStorage.setItem(HISTORY_KEY', "value === 'analytics'", 'setAnalyticsConsent',
   'navigator.share', 'navigator.clipboard', "utm_source", "utm_medium", "utm_campaign", "utm_content",
   "url: 'https://osgardbewworld.com'"', "url: 'https://o2system.art'", "url: 'https://senjorio.com'",
@@ -57,6 +60,7 @@ assert.ok(platform.includes('function readHistory()') && platform.includes('Numb
 assert.ok(platform.includes('OSGARD_GAMES.map((game, index)'), 'The actual manifest should be the game catalogue source')
 assert.ok(!/5-star|five stars|\\b[0-9,.]+\\s*(?:million|тыс\\.? игроков|игроков онлайн)/i.test(platform), 'Avoid fabricated ratings or player counts')
 assert.ok(platform.includes('Локально') || platform.includes('локально'), 'Explain local-only player preferences')
+assert.ok(detail.includes('GAME_DETAILS[gameEntry.id]') && detail.includes('Игра запускается по настроенному веб-маршруту'), 'Dedicated game profile must use manifest metadata and clarify launch routing')
 assert.ok(legal.includes('Проектная редакция') && legal.includes('проверить его с юристом'), 'Legal text must be described as a draft')
 assert.ok(legal.includes('не подключены рекламная сеть, платёжная форма или подписка'), 'Do not imply live ads or payments')
 
