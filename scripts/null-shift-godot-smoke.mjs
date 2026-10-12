@@ -26,7 +26,7 @@ for (const feature of [
   '_finish_mission(', '_create_mobile_controls(', '_update_hud(', '_create_crosshair(', '_update_crosshair(', '_create_briefing_panel(', '_add_briefing_step(', '_dismiss_briefing(', '_show_briefing(', '_screen_impulse(', '_add_sphere_mesh(',
   'Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME', 'AudioStreamWAV.new()',
   'CPUParticles3D.new()', 'TorusMesh.new()', 'glow_enabled', 'shadow_enabled',
-  'user://null_shift_career.cfg', 'KEY_F2', 'KEY_F3', 'dash_windup', 'dash_timer', 'HEAVY', 'STALKER', 'camera_shake_timer', 'fog_enabled', 'current_frame_ms', 'briefing_seen', 'ПОМОЩЬ / H'
+  'user://null_shift_career.cfg', 'KEY_F2', 'KEY_F3', 'dash_windup', 'dash_timer', 'HEAVY', 'STALKER', '_player_inside_lanes(', '_has_clear_path_to_player(', 'attack_lanes', 'camera_shake_timer', 'fog_enabled', 'current_frame_ms', 'briefing_seen', 'ПОМОЩЬ / H'
 ]) assert.ok(game.includes(feature), 'Missing Godot gameplay/diagnostic feature: ' + feature)
 assert.ok(game.length > 25000, 'Godot gameplay source unexpectedly small')
 assert.ok(game.includes('get_viewport().get_visible_rect().size.x') && !game.includes('get_viewport_rect()'), 'Godot Node3D responsive profile must use the active viewport API')

@@ -42,6 +42,15 @@ func _run_smoke() -> void:
 	game._screen_impulse(0.2, 0.25)
 	if not _expect(game.camera_shake_timer > 0.0 and game.camera_shake_strength >= 0.2, "camera impact response must be measurable"):
 		return
+	var saved_position: Vector3 = game.player.global_position
+	game.player.global_position = Vector3(0.0, 0.82, 0.0)
+	var clear_lane: Array = [{"from": Vector3(0.0, 1.0, -10.0), "to": Vector3(0.0, 1.0, 0.0)}]
+	if not _expect(game._player_inside_lanes(clear_lane, 14.5, 0.7), "player inside a telegraphed lane must be detected"):
+		return
+	game.player.global_position = Vector3(2.0, 0.82, -4.0)
+	if not _expect(not game._player_inside_lanes(clear_lane, 14.5, 0.7), "player must be able to dodge outside the telegraphed lane"):
+		return
+	game.player.global_position = saved_position
 	if not _expect(game.guards.size() >= 3, "initial hostiles must spawn"):
 		return
 	if not _expect(game.devices.size() == 3, "three destructible devices must spawn"):
@@ -118,5 +127,5 @@ func _run_smoke() -> void:
 	if not _expect(game.career.get_value("upgrades", "weapon", 0) == 1, "upgrade must persist in the career save"):
 		return
 
-	print("PASS NULL//SHIFT runtime: combat damage, eliminations, destructible devices, pulse, animated core, live telemetry, cipher hack, extraction, career credits and persistent upgrade")
+	print("PASS NULL//SHIFT runtime: combat damage, dodgeable telegraphed attack lanes, enemy roles, eliminations, devices, pulse, animated core, camera response, live telemetry, cipher hack, extraction, credits and persistent upgrade")
 	quit(0)

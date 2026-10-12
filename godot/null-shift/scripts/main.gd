@@ -727,6 +727,9 @@ func _update_guards(delta: float) -> void:
 		var stun := maxf(0.0, float(guard["stun"]) - delta)
 		guard["stun"] = stun
 		if stun > 0.0:
+			guard["windup"] = 0.0
+			guard["dash_windup"] = 0.0
+			guard["attack_lanes"] = []
 			body.velocity = Vector3.ZERO
 			guards[index] = guard
 			continue
@@ -770,17 +773,19 @@ func _update_guards(delta: float) -> void:
 			guard["windup"] = windup
 			body.velocity = Vector3.ZERO
 			if windup <= 0.0:
+				var stored_lanes: Array = guard.get("attack_lanes", [])
 				if role == "WARDEN":
 					_spawn_ring_burst(body.global_position + Vector3.UP * 0.12, materials["red"])
 					_screen_impulse(0.13, 0.24)
-					if distance < 17.0 and damage_cooldown <= 0.0:
+					if distance < 7.6 and damage_cooldown <= 0.0 and _has_clear_path_to_player(body.global_position + Vector3.UP * 0.8, body):
 						_damage_player(float(guard["damage"]) * 1.35)
 				elif role == "HEAVY":
 					_screen_impulse(0.055, 0.12)
-					if distance < 14.5 and damage_cooldown <= 0.0:
+					if _player_inside_lanes(stored_lanes, 14.5, 0.88, body) and damage_cooldown <= 0.0:
 						_damage_player(float(guard["damage"]) * 1.3)
-				elif distance < 14.5 and damage_cooldown <= 0.0:
+				elif _player_inside_lanes(stored_lanes, 14.5, 0.62, body) and damage_cooldown <= 0.0:
 					_damage_player(float(guard["damage"]))
+				guard["attack_lanes"] = []
 				guard["cooldown"] = randf_range(1.45, 2.15) if role == "RANGER" else randf_range(2.0, 3.0)
 			guards[index] = guard
 			continue
@@ -791,17 +796,22 @@ func _update_guards(delta: float) -> void:
 			var aim_from := body.global_position + Vector3.UP * 1.0
 			var aim_to := player.global_position + Vector3.UP * 0.8
 			var role_material: StandardMaterial3D = materials["amber"] if role == "HEAVY" else (materials["red"] if role == "WARDEN" else materials["telegraph"])
+			var attack_lanes: Array[Dictionary] = []
 			if role == "HEAVY":
 				var side := Vector3(-to_player.z, 0.0, to_player.x).normalized()
 				for lane in [-1.0, 0.0, 1.0]:
-					_spawn_beam(aim_from, aim_to + side * lane * 1.45, role_material, 0.82)
+					var lane_end: Vector3 = aim_to + side * lane * 1.45
+					attack_lanes.append({"from": aim_from, "to": lane_end})
+					_spawn_beam(aim_from, lane_end, role_material, 0.82)
 			elif role == "WARDEN":
 				for ray_index in range(8):
 					var ray_angle := TAU * float(ray_index) / 8.0
 					var ray_direction := Vector3(cos(ray_angle), 0.0, sin(ray_angle))
 					_spawn_beam(aim_from, body.global_position + Vector3.UP * 0.8 + ray_direction * 5.6, role_material, 0.92)
 			else:
+				attack_lanes.append({"from": aim_from, "to": aim_to})
 				_spawn_beam(aim_from, aim_to, role_material, 0.66)
+			guard["attack_lanes"] = attack_lanes
 			_play_sfx(230.0 if role != "WARDEN" else 115.0, 0.18, 0.08)
 			body.velocity = Vector3.ZERO
 		elif distance > 2.7 and distance < 22.0:
@@ -810,6 +820,39 @@ func _update_guards(delta: float) -> void:
 		else:
 			body.velocity = Vector3.ZERO
 		guards[index] = guard
+
+func _player_inside_lanes(lanes: Array, max_distance: float, half_width: float, attacker: Node3D = null) -> bool:
+	if not is_instance_valid(player):
+		return false
+	var player_point := Vector2(player.global_position.x, player.global_position.z)
+	for lane_variant in lanes:
+		if not lane_variant is Dictionary:
+			continue
+		var lane: Dictionary = lane_variant
+		var from_world: Vector3 = lane.get("from", Vector3.ZERO)
+		var to_world: Vector3 = lane.get("to", Vector3.ZERO)
+		var origin := Vector2(from_world.x, from_world.z)
+		var axis := Vector2(to_world.x - from_world.x, to_world.z - from_world.z)
+		var length := minf(max_distance, axis.length())
+		if length <= 0.01:
+			continue
+		axis = axis.normalized()
+		var offset := player_point - origin
+		var along := offset.dot(axis)
+		var across := absf(offset.x * axis.y - offset.y * axis.x)
+		if along >= 0.0 and along <= length and across <= half_width:
+			if attacker == null or _has_clear_path_to_player(from_world, attacker):
+				return true
+	return false
+
+func _has_clear_path_to_player(from_world: Vector3, attacker: Node3D) -> bool:
+	if not is_instance_valid(player):
+		return false
+	var query := PhysicsRayQueryParameters3D.create(from_world, player.global_position + Vector3.UP * 0.72)
+	query.collision_mask = 1
+	query.exclude = [attacker.get_rid()]
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	return hit.is_empty() or hit.get("collider") == player
 
 func _fire_weapon() -> void:
 	if fire_cooldown > 0.0 or paused_game or mission_finished or terminal_active:
