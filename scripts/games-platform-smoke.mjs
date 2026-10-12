@@ -65,6 +65,8 @@ check('legacy entertainment route points to new hub', oldHub.includes('http-equi
 check('SEO sitemap lists new games hub', sitemap.includes('https://osgard.world/games'))
 const manifest = await read('src/core/manifest.ts')
 check('React manifest no longer points NULL//SHIFT at missing Godot export', manifest.includes("href: '/games/null-shift/index.html'") && !manifest.includes("href: '/games/null-shift-godot/index.html'"))
+const legacyGodot = await read('public/games/null-shift-godot/index.html')
+check('legacy NULL//SHIFT Godot URL redirects to existing browser build', legacyGodot.includes('url=/games/null-shift/index.html') && legacyGodot.includes("window.location.replace('/games/null-shift/index.html')") && route.includes("legacyGodotRoute ? []"))
 const routes = await read('scripts/production-route-matrix.mjs')
 check('production route matrix covers Games hub', routes.includes("'/games'") && routes.includes("route === '/games'"))
 const rootIndex = await read('index.html')
