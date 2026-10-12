@@ -22,6 +22,7 @@ import MiniApp from './MiniApp'
 import { AurumPage, CatalogPage, ChroniclePage, ClubPage, DevelopmentPage, MastersPage, TimeCoinPage, WorldsPage } from './Sections'
 import { EntertainmentCatalog } from './EntertainmentCatalog'
 import { GamesHub, GameDetailPage } from './GamesHub'
+import { LegalPage } from './LegalPage'
 import { ResultPage } from './ResultPage'
 import { BusinessDiagnostic } from './BusinessDiagnostic'
 import { CreatePrototype } from './CreatePrototype'
@@ -97,6 +98,8 @@ function RoutedRoot() {
   const [locale, setLocale] = React.useState<'ru' | 'en'>('ru')
   if (path === '/miniapp') return <MiniApp />
   if (path === '/games') return <><Seo path="/games" /><GamesHub locale={locale} setLocale={setLocale} /></>
+  if (path === '/privacy') return <LegalPage kind="privacy" />
+  if (path === '/terms') return <LegalPage kind="terms" />
   const gameMatch = path.match(/^\/game\/([a-z0-9-]+)$/)
   if (gameMatch) return <><Seo path="/games" /><GameDetailPage slug={gameMatch[1]} /></>
   if (path === '/games/time' || path === '/games/time-empire') return <><Seo path="/games/time" /><TimePrototype /></>
