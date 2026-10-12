@@ -68,9 +68,9 @@ const playerDefinitions: Record<OsgardGameId, PlayerDefinition> = {
     mark: 'RX',
     genre: 'Создание',
     tagline: 'Создавайте испытания, а не только проходите их.',
-    description: 'Браузерная оболочка запускает сборку Unity WebGL. Для загрузки нужны совместимые WebGL 2 и достаточная память устройства.',
+    description: 'Запускается Unity WebGL player. Для загрузки нужны совместимые WebGL 2 и достаточная память устройства; первый запуск может занять время.',
     controls: 'Мышь или сенсорное управление в зависимости от сценария; для слабых устройств загрузка может занять больше времени.',
-    source: '/games/remix/index.html',
+    source: '/games/remix/player/index.html',
     expectedTitle: ['remix']
   }
 }
