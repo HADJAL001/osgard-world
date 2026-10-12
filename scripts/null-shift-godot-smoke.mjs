@@ -3,11 +3,12 @@ import { readFileSync, existsSync, statSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
 const root = 'godot/null-shift'
-const required = ['project.godot','export_presets.cfg','scenes/main.tscn','scripts/main.gd','tests/runtime_smoke.gd','README.md']
+const required = ['project.godot','export_presets.cfg','scenes/main.tscn','scripts/main.gd','tests/runtime_smoke.gd','README.md','web/boot_shell.html']
 for (const path of required) assert.ok(existsSync(join(root, path)), 'Missing Godot project file: ' + path)
 const project = readFileSync(join(root, 'project.godot'), 'utf8')
 const preset = readFileSync(join(root, 'export_presets.cfg'), 'utf8')
 const scene = readFileSync(join(root, 'scenes/main.tscn'), 'utf8')
+const shell = readFileSync(join(root, 'web/boot_shell.html'), 'utf8')
 const game = readFileSync(join(root, 'scripts/main.gd'), 'utf8')
 const oldPage = readFileSync('public/games/null-shift/index.html', 'utf8')
 const packageJson = JSON.parse(readFileSync('package.json', 'utf8'))
@@ -17,6 +18,9 @@ assert.match(project, /renderer\/rendering_method="gl_compatibility"/, 'Web-comp
 assert.match(preset, /name="Web"/, 'Web export preset missing')
 assert.match(preset, /platform="Web"/, 'Web export target missing')
 assert.match(preset, /variant\/thread_support=false/, 'Single-thread web export must remain enabled for ordinary hosting')
+assert.match(preset, /html\/custom_html_shell="res:\/\/web\/boot_shell\.html"/, 'Custom premium loading shell must be exported')
+for (const feature of ['data-nullshift-shell="premium-v1"', '$GODOT_URL', '$GODOT_CONFIG', 'Engine.isWebGLAvailable(2)', 'onProgress:', 'НАЧАТЬ ОПЕРАЦИЮ', 'requestFullscreen()', '../null-shift/']) assert.ok(shell.includes(feature), 'Missing premium Godot loading-shell feature: ' + feature)
+assert.ok(!/https?:\/\//i.test(shell), 'Premium Godot shell must not load remote assets')
 assert.match(scene, /type="Node3D"/, '3D root scene missing')
 assert.equal(packageJson.scripts['qa:null-shift-godot'], 'node scripts/null-shift-godot-smoke.mjs', 'Godot smoke command not registered')
 assert.ok(oldPage.includes('id="godot-preview"') && oldPage.includes('../null-shift-godot/'), 'Legacy game must link to the isolated Godot beta route')
@@ -46,6 +50,7 @@ if (process.argv[2] === '--export-check') {
   }
   const exportedHtml = readFileSync(join(dir, 'index.html'), 'utf8')
   assert.ok(/canvas/i.test(exportedHtml), 'Exported HTML canvas was not found')
+  assert.ok(exportedHtml.includes('data-nullshift-shell="premium-v1"') && exportedHtml.includes('Engine.isWebGLAvailable(2)') && exportedHtml.includes('onProgress:'), 'Premium loading shell was not applied to the actual Web export')
   assert.ok(/index\.wasm/i.test(exportedHtml) && /index\.pck/i.test(exportedHtml), 'Exported HTML does not refer to matching engine assets')
   console.log('PASS NULL//SHIFT Godot export files: HTML, JS, WebAssembly and PCK payload are present')
 }

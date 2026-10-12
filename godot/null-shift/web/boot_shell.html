@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="ru" data-nullshift-shell="premium-v1">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#06090b">
+  <meta name="color-scheme" content="dark">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>$GODOT_PROJECT_NAME — OSGARD</title>
+  $GODOT_HEAD_INCLUDE
+  <style>
+    :root{color-scheme:dark;--bg:#06090b;--panel:rgba(9,17,20,.91);--line:rgba(157,206,205,.14);--muted:#85999b;--text:#edf7f4;--cyan:#64f7dc;--amber:#ffbd60;--violet:#b47aff;font-family:Inter,Geist,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    *{box-sizing:border-box}
+    html,body{width:100%;height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--text)}
+    body{min-height:100svh;min-height:100dvh}
+    button,a{-webkit-tap-highlight-color:transparent}
+    button{font:inherit}
+    .game-stage{position:fixed;inset:0;overflow:hidden;background:#05090b}
+    #canvas{position:absolute;inset:0;display:block;width:100%;height:100%;outline:none;background:#05090b}
+    .atmosphere{position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse at 50% 42%,transparent 12%,rgba(2,7,9,.24) 67%,rgba(2,5,7,.88) 130%);opacity:.88}
+    .grain{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:.06;background-image:repeating-linear-gradient(0deg,transparent 0,transparent 3px,rgba(145,255,232,.06) 4px);background-size:100% 4px;mix-blend-mode:screen}
+    .frame{position:absolute;inset:0;z-index:2;pointer-events:none}
+    .topline{position:absolute;top:max(18px,env(safe-area-inset-top));left:max(18px,env(safe-area-inset-left));right:max(18px,env(safe-area-inset-right));display:flex;align-items:center;justify-content:space-between;gap:14px}
+    .brand{display:flex;align-items:center;gap:12px;min-width:0}
+    .brandmark{width:37px;height:37px;display:grid;place-items:center;flex:none;border:1px solid rgba(100,247,220,.32);border-radius:10px;background:linear-gradient(145deg,rgba(100,247,220,.1),rgba(12,26,30,.7));box-shadow:0 0 36px rgba(100,247,220,.05) inset}
+    .brandmark svg{width:24px;height:24px}
+    .brand-name{font-size:12px;font-weight:850;letter-spacing:.16em;white-space:nowrap}
+    .brand-sub{margin-top:4px;color:#819496;font:9px/1.3 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.14em}
+    .build-tag{display:flex;align-items:center;gap:9px;padding:8px 11px;border:1px solid var(--line);border-radius:999px;background:rgba(8,15,18,.75);color:#aabdbd;font:9px/1.2 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.1em;white-space:nowrap;backdrop-filter:blur(12px)}
+    .live-dot{width:6px;height:6px;flex:none;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px rgba(100,247,220,.75)}
+    .loading-screen{position:absolute;inset:0;z-index:8;display:grid;place-items:center;padding:88px 18px 32px;background:radial-gradient(ellipse at 50% 46%,rgba(18,45,47,.43),transparent 58%),linear-gradient(180deg,rgba(5,9,11,.15),rgba(4,8,10,.72));transition:opacity .55s cubic-bezier(.2,.8,.2,1),visibility .55s}
+    html.is-started .loading-screen{opacity:0;visibility:hidden;pointer-events:none}
+    .mission-card{position:relative;width:min(640px,100%);padding:clamp(24px,5vw,46px);border:1px solid rgba(139,202,197,.18);border-radius:18px;background:linear-gradient(135deg,rgba(12,22,25,.96),rgba(7,13,16,.94));box-shadow:0 32px 100px rgba(0,0,0,.46),0 1px 0 rgba(255,255,255,.035) inset;overflow:hidden;pointer-events:auto}
+    .mission-card:before{content:"";position:absolute;left:0;top:0;width:120px;height:1px;background:linear-gradient(90deg,var(--cyan),transparent)}
+    .eyebrow{display:flex;align-items:center;gap:9px;color:var(--cyan);font:10px/1.4 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.2em;text-transform:uppercase}
+    .eyebrow-line{width:22px;height:1px;background:var(--cyan);opacity:.8}
+    h1{margin:22px 0 0;font-size:clamp(35px,6.7vw,65px);line-height:.93;letter-spacing:-.065em;font-weight:780;max-width:550px}
+    h1 span{color:#83a4a4;font-weight:530}
+    .intro{max-width:445px;margin:18px 0 0;color:#9cafb0;font-size:14px;line-height:1.75}
+    .objective-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:28px 0 0;padding:0;list-style:none}
+    .objective{min-width:0;padding:13px 11px;border:1px solid rgba(148,205,203,.105);border-radius:10px;background:rgba(18,32,35,.45)}
+    .objective-number{color:var(--cyan);font:10px/1.2 ui-monospace,SFMono-Regular,Consolas,monospace}
+    .objective-label{margin-top:8px;color:#d1dfdc;font-size:11px;line-height:1.45;font-weight:650}
+    .objective-note{margin-top:5px;color:#718687;font-size:9px;line-height:1.45}
+    .launch{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;min-height:54px;margin-top:24px;padding:14px 18px;border:1px solid rgba(100,247,220,.42);border-radius:10px;background:linear-gradient(180deg,#8bffe8,#57e4c7);color:#04110f;font-size:12px;line-height:1.2;font-weight:900;letter-spacing:.095em;cursor:pointer;box-shadow:0 12px 30px rgba(43,232,193,.09);transition:transform .2s cubic-bezier(.2,.8,.2,1),filter .2s,box-shadow .2s}
+    .launch:hover:not(:disabled){transform:translateY(-2px);filter:brightness(1.035);box-shadow:0 16px 34px rgba(43,232,193,.15)}
+    .launch:active:not(:disabled){transform:translateY(0)}
+    .launch:focus-visible,.tool-button:focus-visible,.fallback:focus-visible{outline:2px solid var(--cyan);outline-offset:4px}
+    .launch:disabled{cursor:wait;opacity:.78}
+    .launch-arrow{font-size:19px;font-weight:500}
+    .load-status{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:18px;color:#8ca1a2;font:9px/1.4 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.08em}
+    .status-copy{display:flex;align-items:center;gap:8px;min-width:0}
+    .status-led{width:6px;height:6px;flex:none;border-radius:50%;background:#607778}
+    .status-led[data-state=ready]{background:var(--cyan);box-shadow:0 0 9px rgba(100,247,220,.7)}
+    .status-led[data-state=loading]{background:var(--amber);box-shadow:0 0 9px rgba(255,189,96,.4);animation:pulse 1s infinite}
+    .status-led[data-state=error]{background:#ff697a;box-shadow:0 0 9px rgba(255,105,122,.45)}
+    .load-status output{color:#d7e8e4;white-space:nowrap}
+    .progress-track{height:3px;margin-top:10px;border-radius:999px;background:rgba(164,210,204,.12);overflow:hidden}
+    .progress-fill{width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,#40cdb3,#b5ffef);box-shadow:0 0 12px rgba(100,247,220,.38);transition:width .18s linear}
+    .progress-fill.is-indeterminate{width:30%;animation:loading-sweep 1.25s ease-in-out infinite}
+    .fineprint{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px;color:#647a7c;font-size:10px;line-height:1.5}
+    .fineprint strong{color:#8ca2a3;font-weight:650}
+    .fallback{display:none;color:#9df8e5;font-size:11px;font-weight:650;text-decoration:none}
+    .compatibility-error{display:none;margin-top:12px;color:#ffbdac;font-size:12px;line-height:1.6}
+    .runtime-toolbar{position:absolute;top:max(16px,env(safe-area-inset-top));right:max(16px,env(safe-area-inset-right));z-index:5;display:flex;gap:8px;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .3s}
+    html.is-started .runtime-toolbar{opacity:1;visibility:visible;pointer-events:auto}
+    .tool-button{display:grid;place-items:center;min-width:38px;min-height:38px;padding:8px 11px;border:1px solid rgba(100,247,220,.21);border-radius:9px;background:rgba(5,14,17,.76);color:#c8e2de;font-size:11px;cursor:pointer;backdrop-filter:blur(12px)}
+    .tool-button:hover{border-color:rgba(100,247,220,.52);color:#fff}
+    .tool-button svg{width:16px;height:16px}
+    .footer-line{position:absolute;left:max(18px,env(safe-area-inset-left));right:max(18px,env(safe-area-inset-right));bottom:max(16px,env(safe-area-inset-bottom));display:flex;justify-content:space-between;gap:14px;color:#5d7274;font:9px/1.45 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.08em}
+    .footer-line span:last-child{text-align:right}
+    .footer-accent{color:#8ca5a3}
+    @keyframes pulse{0%,100%{opacity:.48}50%{opacity:1}}
+    @keyframes loading-sweep{0%{transform:translateX(-105%)}100%{transform:translateX(360%)}}
+    @media(max-width:600px){
+      .topline{top:max(12px,env(safe-area-inset-top));left:max(12px,env(safe-area-inset-left));right:max(12px,env(safe-area-inset-right))}
+      .brandmark{width:32px;height:32px;border-radius:9px}
+      .brand-name{font-size:10px;letter-spacing:.12em}
+      .brand-sub{font-size:8px}
+      .build-tag{padding:7px 8px;font-size:8px;letter-spacing:.045em;gap:6px}
+      .loading-screen{padding:70px 12px 54px;align-items:center}
+      .mission-card{padding:23px 19px;border-radius:15px}
+      h1{margin-top:18px;font-size:clamp(35px,10vw,51px)}
+      .intro{margin-top:14px;font-size:12px;line-height:1.65}
+      .objective-list{gap:6px;margin-top:22px}
+      .objective{padding:10px 8px}
+      .objective-label{font-size:10px}
+      .objective-note{font-size:8px}
+      .launch{min-height:50px;margin-top:18px;font-size:11px}
+      .fineprint{font-size:9px}
+      .footer-line{font-size:8px;bottom:max(10px,env(safe-area-inset-bottom))}
+      .runtime-toolbar{top:max(10px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right))}
+    }
+    @media(max-width:360px){
+      .build-tag{font-size:7px}
+      .mission-card{padding:19px 15px}
+      .objective{padding:9px 6px}
+      .objective-label{font-size:9px}
+      .objective-note{font-size:7px}
+      .objective-list{gap:5px}
+      .fineprint{align-items:flex-start;flex-direction:column;gap:4px}
+      .footer-line{letter-spacing:.025em}
+    }
+    @media(max-height:700px) and (min-width:601px){
+      .mission-card{padding:24px 30px}
+      h1{margin-top:14px;font-size:clamp(34px,5vw,50px)}
+      .intro{margin-top:11px}
+      .objective-list{margin-top:16px}
+      .launch{min-height:46px;margin-top:15px}
+    }
+    @media(prefers-reduced-motion:reduce){
+      *,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}
+    }
+  </style>
+</head>
+<body>
+  <main class="game-stage">
+    <canvas id="canvas" tabindex="0" aria-label="NULL SHIFT — игровая сцена"></canvas>
+    <div class="atmosphere" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+    <div class="frame">
+      <header class="topline">
+        <div class="brand">
+          <div class="brandmark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M4 18V6h3l10 12h3V6h-3v7L10 6H4" stroke="#64f7dc" stroke-width="1.45" stroke-linejoin="round"/>
+              <path d="M4 21h16" stroke="#64f7dc" stroke-width="1.1" opacity=".4"/>
+            </svg>
+          </div>
+          <div>
+            <div class="brand-name">OSGARD <span style="color:#64f7dc">/</span> PLAY</div>
+            <div class="brand-sub">TACTICAL SIMULATION DIVISION</div>
+          </div>
+        </div>
+        <div class="build-tag"><span class="live-dot"></span> GODOT 4.7.2 <span style="opacity:.45">/</span> BUILD 0.7</div>
+      </header>
+
+      <section class="loading-screen" id="loading-screen" aria-label="Запуск игры">
+        <div class="mission-card">
+          <div class="eyebrow"><span class="eyebrow-line"></span> OPERATION NULL SHIFT <span style="color:#6d8585">/ 001</span></div>
+          <h1>Войди в зону.<br><span>Измени исход.</span></h1>
+          <p class="intro">Тактический рейд в трёхмерной арене. Взломай терминал, отключи охранные устройства, забери квантовое ядро и доберись до точки эвакуации.</p>
+          <ol class="objective-list">
+            <li class="objective"><div class="objective-number">01 / ACCESS</div><div class="objective-label">Взлом терминала</div><div class="objective-note">Кодовый протокол</div></li>
+            <li class="objective"><div class="objective-number">02 / CONTAIN</div><div class="objective-label">Ядро и охрана</div><div class="objective-note">Бой и тактика</div></li>
+            <li class="objective"><div class="objective-number">03 / EXTRACT</div><div class="objective-label">Эвакуация</div><div class="objective-note">Сохрани награду</div></li>
+          </ol>
+          <button class="launch" id="launch" type="button"><span id="launch-label">НАЧАТЬ ОПЕРАЦИЮ</span><span class="launch-arrow" aria-hidden="true">↗</span></button>
+          <div class="load-status">
+            <div class="status-copy"><span class="status-led" id="status-led" data-state="ready"></span><span id="status-label" aria-live="polite">ДВИЖОК ГОТОВ · ОЖИДАНИЕ КОМАНДЫ</span></div>
+            <output id="progress-value" for="launch">READY</output>
+          </div>
+          <div class="progress-track" role="progressbar" aria-label="Загрузка игры" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+          <p class="compatibility-error" id="compatibility-error" role="alert"></p>
+          <div class="fineprint"><span>ЛОКАЛЬНОЕ СОХРАНЕНИЕ <strong>· БЕЗ РЕГИСТРАЦИИ</strong></span><a class="fallback" id="fallback" href="../null-shift/">ОБЛЕГЧЁННАЯ ВЕРСИЯ ↗</a></div>
+        </div>
+      </section>
+
+      <div class="runtime-toolbar" id="runtime-toolbar" aria-label="Настройки игры">
+        <button class="tool-button" id="fullscreen" type="button" aria-label="Переключить полноэкранный режим" title="На весь экран">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M8 4H4v4M16 4h4v4M4 16v4h4M20 16v4h-4"/></svg>
+        </button>
+      </div>
+
+      <footer class="footer-line"><span>NULL//SHIFT <span class="footer-accent">·</span> FIELD PROTOCOL</span><span>DESKTOP: WASD + MOUSE <span class="footer-accent">/</span> TOUCH: ON-SCREEN CONTROLS</span></footer>
+    </div>
+  </main>
+  <script src="$GODOT_URL"></script>
+  <script>
+    (function () {
+      "use strict";
+      var canvas = document.getElementById("canvas");
+      var launch = document.getElementById("launch");
+      var launchLabel = document.getElementById("launch-label");
+      var status = document.getElementById("status-label");
+      var led = document.getElementById("status-led");
+      var value = document.getElementById("progress-value");
+      var bar = document.getElementById("progress-fill");
+      var track = document.getElementById("progress-track");
+      var error = document.getElementById("compatibility-error");
+      var fallback = document.getElementById("fallback");
+      var started = false;
+      function setStatus(text, state) {
+        status.textContent = text;
+        led.dataset.state = state || "ready";
+      }
+      function showError(message) {
+        error.textContent = message;
+        error.style.display = "block";
+        fallback.style.display = "inline";
+        launch.disabled = false;
+        launchLabel.textContent = "ПОВТОРИТЬ ЗАПУСК";
+        value.textContent = "RETRY";
+        setStatus("ЗАПУСК НЕ ЗАВЕРШЁН", "error");
+      }
+      if (!Engine.isWebGLAvailable(2)) {
+        launch.disabled = true;
+        launchLabel.textContent = "WEBGL 2 НЕ ДОСТУПЕН";
+        value.textContent = "UNSUPPORTED";
+        setStatus("ЭТО УСТРОЙСТВО НЕ ПОДДЕРЖИВАЕТ 3D-РЕЖИМ", "error");
+        error.textContent = "Открой страницу в актуальном браузере с поддержкой WebGL 2 либо запусти облегчённую версию.";
+        error.style.display = "block";
+        fallback.style.display = "inline";
+      }
+      launch.addEventListener("click", function () {
+        if (started || !Engine.isWebGLAvailable(2)) return;
+        started = true;
+        launch.disabled = true;
+        error.style.display = "none";
+        fallback.style.display = "none";
+        launchLabel.textContent = "ЗАПУСК ДВИЖКА…";
+        value.textContent = "INITIALIZING";
+        setStatus("ЗАГРУЗКА РЕНДЕРЕРА И СЦЕНЫ", "loading");
+        bar.classList.add("is-indeterminate");
+        var engine = new Engine($GODOT_CONFIG);
+        engine.startGame({
+          canvas: canvas,
+          onProgress: function (current, total) {
+            if (total > 0) {
+              var percentage = Math.min(99, Math.max(0, Math.round(current * 100 / total)));
+              bar.classList.remove("is-indeterminate");
+              bar.style.width = percentage + "%";
+              track.setAttribute("aria-valuenow", String(percentage));
+              value.textContent = percentage + "%";
+              setStatus("ЗАГРУЗКА ИГРОВЫХ ДАННЫХ", "loading");
+            } else {
+              bar.classList.add("is-indeterminate");
+              value.textContent = "LOADING";
+              setStatus("ИНИЦИАЛИЗАЦИЯ WEBASSEMBLY", "loading");
+            }
+          },
+          onPrintError: function (message) {
+            console.warn("[NULL SHIFT]", message);
+          }
+        }).then(function () {
+          document.documentElement.classList.add("is-started");
+          setStatus("СИСТЕМА АКТИВНА", "ready");
+          canvas.focus();
+          window.setTimeout(function () {
+            launch.disabled = false;
+            launchLabel.textContent = "ЗАПУСК ЗАВЕРШЁН";
+            bar.classList.remove("is-indeterminate");
+            bar.style.width = "100%";
+            track.setAttribute("aria-valuenow", "100");
+            value.textContent = "ONLINE";
+          }, 600);
+        }).catch(function (reason) {
+          started = false;
+          showError("Не удалось запустить WebGL-версию. Обнови страницу и попробуй ещё раз. " + String(reason || ""));
+          console.error("[NULL SHIFT] Web export start failed", reason);
+        });
+      });
+      document.getElementById("fullscreen").addEventListener("click", function () {
+        var request = document.fullscreenElement ? document.exitFullscreen() : canvas.requestFullscreen();
+        if (request && typeof request.catch === "function") request.catch(function () {});
+      });
+    })();
+  </script>
+</body>
+</html>

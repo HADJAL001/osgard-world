@@ -121,3 +121,11 @@ The command npm run qa:null-shift checks required game assets, script syntax, co
 - The Warden's radial attack has a 7.6-unit danger radius matching its ring telegraph instead of the previous oversized proximity range. Wall/obstacle ray checks allow hard cover to interrupt direct attacks.
 - A stun clears a pending wind-up and stored lanes, so an EMP relay or pulse reliably interrupts an enemy attack rather than letting it resolve immediately after recovery.
 - Godot runtime smoke checks both inside-lane and outside-lane cases. Source smoke checks that lane storage, geometry tests, line-of-sight query and typed PhysicsBody3D access remain present.
+
+
+## Premium Web launch shell
+
+- The Godot web export now uses `web/boot_shell.html` via `html/custom_html_shell`, rather than the generic engine page. This shell is regenerated on every export from source and is never hand-edited in the compiled output.
+- A cinematic mission card explains the actual three-step raid before engine startup; the start button provides a deliberate user gesture and avoids surprise fullscreen or autoplay audio.
+- The loading bar is driven by Godot's `Engine.startGame({ onProgress })` callback and becomes indeterminate only when the engine cannot report a total. The shell checks WebGL 2 support before launch, includes a real fullscreen control, respects reduced-motion preference and links to the lighter Canvas edition if the device cannot run the 3D build.
+- The shell is fully self-hosted and uses no font, analytics or asset CDN. Export smoke now asserts that the generated `index.html` contains the custom shell marker and engine progress/capability checks.
