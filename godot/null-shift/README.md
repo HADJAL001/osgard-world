@@ -49,3 +49,10 @@ The deployment workflow downloads official Godot 4.7.2 and matching web template
 - Tracer/attack beams and pulse rings use bounded reusable MeshInstance3D pools. Beam surfaces are refreshed on an existing ImmediateMesh; rings animate scale and transparency from frame delta, then return hidden to the pool instead of being freed/re-created. The limits are 28 beams and 10 ring bursts; overflow is counted and only a cosmetic effect is dropped.
 - The live diagnostics panel reports active effects, beam/ring pool capacities and dropped cosmetic effects alongside FPS, frame p95 and draw-call counters.
 - The Godot headless runtime smoke test exercises aim-facing/gait/recoil, beam reuse, ring expansion/fade, object reuse and the new diagnostics fields.
+
+
+## Release 0.7 — hit-confirmation and elimination feedback
+
+- Confirmed hits now flash the primary armor shell white for 140 ms, pop it slightly in scale, and show a compact floating −1 label which eases upward and fades over 520 ms. The readout is created once per guard and reused on subsequent hits instead of spawning a new UI node per shot.
+- Eliminations now trigger a pooled ring burst, a brief white impact particle burst and a restrained camera impulse; elite Warden kills use a stronger amber response. Existing bounded ring and particle budgets still cap cosmetic allocations.
+- Godot runtime smoke now checks the actual hit label, live feedback timers, armor flash/scale, and pooled elimination effect in the combat loop.

@@ -29,7 +29,7 @@ for (const feature of [
   '_submit_cipher_key(', '_destroy_device(', '_deploy_pulse(', '_shift_layer(',
   '_finish_mission(', '_create_mobile_controls(', '_update_hud(', '_create_crosshair(', '_update_crosshair(', '_create_briefing_panel(', '_add_briefing_step(', '_dismiss_briefing(', '_show_briefing(', '_screen_impulse(', '_add_sphere_mesh(',
   'Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME', 'AudioStreamWAV.new()', 'HealthReadout', 'health_timer', 'operator_suit.material_override',
-  'CPUParticles3D.new()', 'TorusMesh.new()', 'glow_enabled', 'shadow_enabled', 'MAX_BEAM_POOL', 'MAX_RING_POOL', 'beam_pool', 'ring_effects', 'effect_pool_exhaustions', 'func _trigger_muzzle_flash()', 'MuzzleFlash', 'MuzzleFlashLight',
+  'CPUParticles3D.new()', 'TorusMesh.new()', 'glow_enabled', 'shadow_enabled', 'MAX_BEAM_POOL', 'MAX_RING_POOL', 'beam_pool', 'ring_effects', 'effect_pool_exhaustions', 'func _trigger_muzzle_flash()', 'HitFeedback', 'hit_flash_timer', 'hit_label_timer', 'func _damage_target(', 'materials["white"] if hit_timer > 0.0', 'MuzzleFlash', 'MuzzleFlashLight',
   'user://null_shift_career.cfg', 'KEY_F2', 'KEY_F3', 'dash_windup', 'dash_timer', 'HEAVY', 'STALKER', 'PhaseConduit_', 'ЭНЕРГОКОНТУР', 'hazard_status_label', 'active_material.emission_energy_multiplier', '_player_inside_lanes(', '_has_clear_path_to_player(', 'attacker: PhysicsBody3D', 'for lane_variant: Variant in lanes', 'attack_lanes', 'camera_shake_timer', 'fog_enabled', 'current_frame_ms', 'briefing_seen', 'ПОМОЩЬ / H'
 ]) assert.ok(game.includes(feature), 'Missing Godot gameplay/diagnostic feature: ' + feature)
 assert.ok(game.length > 25000, 'Godot gameplay source unexpectedly small')

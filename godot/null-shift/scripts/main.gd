@@ -863,6 +863,19 @@ func _spawn_guard(at: Vector3, is_warden: bool) -> void:
 	_add_cube(body, Vector3(0.35, 0.34, -0.02), Vector3(0.2, 0.22, 0.28), role_material)
 	_add_cube(body, Vector3(0.0, 0.16, -0.31), Vector3(0.5, 0.28, 0.075), materials["wall_trim"])
 	_add_sphere_mesh(body, "GuardHelmet", Vector3(0.0, 0.67, -0.025), 0.23 if not is_warden else 0.28, 0.44 if not is_warden else 0.52, materials["black"])
+	var hit_feedback := Label3D.new()
+	hit_feedback.name = "HitFeedback"
+	hit_feedback.text = "−1"
+	hit_feedback.font_size = 36
+	hit_feedback.pixel_size = 0.015
+	hit_feedback.outline_size = 9
+	hit_feedback.outline_modulate = Color(0.004, 0.012, 0.016, 0.98)
+	hit_feedback.modulate = Color(1.0, 0.94, 0.7, 1.0)
+	hit_feedback.position = Vector3(0.0, 2.58 if not is_warden else 3.02, 0.0)
+	hit_feedback.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	hit_feedback.no_depth_test = true
+	hit_feedback.visible = false
+	body.add_child(hit_feedback)
 	var health_readout := Label3D.new()
 	health_readout.name = "HealthReadout"
 	health_readout.text = "HP 10 / 10" if is_warden else "HP 3 / 3"
@@ -899,6 +912,9 @@ func _spawn_guard(at: Vector3, is_warden: bool) -> void:
 		"hp": 10 if is_warden else (4 if current_contract == 2 else 3),
 		"max_hp": 10 if is_warden else (4 if current_contract == 2 else 3),
 		"health_timer": 0.0,
+		"hit_flash_timer": 0.0,
+		"hit_label_timer": 0.0,
+		"hit_label": hit_feedback,
 		"speed": 3.25 if is_warden else (3.0 if role == "STALKER" else (1.6 if role == "HEAVY" else (2.25 if current_contract == 2 else 1.9))),
 		"damage": 18 if is_warden else (16 if role == "HEAVY" else 10),
 		"warden": is_warden,
@@ -978,6 +994,8 @@ func _update_guards(delta: float) -> void:
 			continue
 		var health_timer: float = maxf(0.0, float(guard.get("health_timer", 0.0)) - delta)
 		guard["health_timer"] = health_timer
+		guard["hit_flash_timer"] = maxf(0.0, float(guard.get("hit_flash_timer", 0.0)) - delta)
+		guard["hit_label_timer"] = maxf(0.0, float(guard.get("hit_label_timer", 0.0)) - delta)
 		var health_readout := body.get_node_or_null("HealthReadout") as Label3D
 		if is_instance_valid(health_readout):
 			health_readout.visible = bool(guard["warden"]) or health_timer > 0.0
@@ -1151,6 +1169,15 @@ func _damage_target(target: Node) -> void:
 		if guard["node"] == target:
 			guard["hp"] = int(guard["hp"]) - 1
 			guard["health_timer"] = 1.8
+			guard["hit_flash_timer"] = 0.14
+			guard["hit_label_timer"] = 0.52
+			var hit_feedback: Label3D = guard.get("hit_label") as Label3D
+			if is_instance_valid(hit_feedback):
+				hit_feedback.text = "−1"
+				hit_feedback.visible = true
+				hit_feedback.position.y = 3.02 if bool(guard.get("warden", false)) else 2.58
+				hit_feedback.modulate = Color(1.0, 0.94, 0.7, 1.0)
+				hit_feedback.scale = Vector3.ONE * 0.86
 			var max_hp: int = int(guard.get("max_hp", 3))
 			var health_readout := target.get_node_or_null("HealthReadout") as Label3D
 			if is_instance_valid(health_readout):
@@ -1159,6 +1186,9 @@ func _damage_target(target: Node) -> void:
 			_spawn_hit_sparks(target.global_position + Vector3.UP * 0.7, materials["amber"])
 			if int(guard["hp"]) <= 0:
 				var body: Node3D = guard["node"]
+				_spawn_ring_burst(body.global_position + Vector3.UP * 0.14, materials["amber"] if bool(guard["warden"]) else materials["cyan"])
+				_spawn_hit_sparks(body.global_position + Vector3.UP * 0.95, materials["white"])
+				_screen_impulse(0.045 if not bool(guard["warden"]) else 0.085, 0.085 if not bool(guard["warden"]) else 0.14)
 				body.queue_free()
 				guards.remove_at(index)
 				eliminations += 1
@@ -2176,12 +2206,23 @@ func _animate_world(delta: float) -> void:
 		if not is_instance_valid(body):
 			continue
 		var armor := body.get_node_or_null("Armor") as MeshInstance3D
+		var hit_timer: float = float(guard.get("hit_flash_timer", 0.0))
 		if armor:
 			var role: String = str(guard.get("role", "RANGER"))
-			var role_material: Material = materials["cyan"] if float(guard["stun"]) > 0.0 else (materials["red"] if role in ["WARDEN", "RANGER"] else (materials["violet"] if role == "STALKER" else materials["amber"]))
+			var role_material: Material = materials["white"] if hit_timer > 0.0 else (materials["cyan"] if float(guard["stun"]) > 0.0 else (materials["red"] if role in ["WARDEN", "RANGER"] else (materials["violet"] if role == "STALKER" else materials["amber"])))
 			armor.material_override = role_material
 			var body_speed: float = body.velocity.length()
-			armor.position.y = sin(scene_clock * (9.0 if body_speed > 0.2 else 1.6) + float(guard["phase"])) * (0.035 if body_speed > 0.2 else 0.012)
+			armor.position.y = sin(scene_clock * (9.0 if body_speed > 0.2 else 1.6) + float(guard["phase"])) * (0.035 if body_speed > 0.2 else 0.012) + (0.045 if hit_timer > 0.0 else 0.0)
+			armor.scale = Vector3.ONE * (1.07 if hit_timer > 0.0 else 1.0)
+		var hit_feedback: Label3D = guard.get("hit_label") as Label3D
+		if is_instance_valid(hit_feedback):
+			var remaining: float = float(guard.get("hit_label_timer", 0.0))
+			hit_feedback.visible = remaining > 0.0
+			if remaining > 0.0:
+				var progress: float = clampf(1.0 - remaining / 0.52, 0.0, 1.0)
+				hit_feedback.position.y = (3.02 if bool(guard.get("warden", false)) else 2.58) + progress * 0.62
+				hit_feedback.modulate = Color(1.0, 0.94, 0.7, 1.0 - progress)
+				hit_feedback.scale = Vector3.ONE * (0.86 + sin(progress * PI) * 0.22)
 
 func _update_effect_expiry(delta: float) -> void:
 	var dt: float = maxf(0.0, delta)

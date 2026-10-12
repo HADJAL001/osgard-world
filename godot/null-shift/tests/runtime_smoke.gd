@@ -268,6 +268,15 @@ func _run_smoke() -> void:
 	var guard_node: Node3D = game.guards[0]["node"]
 	var guard_hp := int(game.guards[0]["hp"])
 	game._damage_target(guard_node)
+	var hit_feedback := guard_node.get_node_or_null("HitFeedback") as Label3D
+	if not _expect(is_instance_valid(hit_feedback) and hit_feedback.visible and hit_feedback.text.contains("1"), "confirmed hits must show a floating damage number"):
+		return
+	if not _expect(float(game.guards[0].get("hit_flash_timer", 0.0)) > 0.0 and float(game.guards[0].get("hit_label_timer", 0.0)) > 0.0, "hit feedback timers must be live and measurable"):
+		return
+	game._animate_world(0.016)
+	var armor_flash := guard_node.get_node_or_null("Armor") as MeshInstance3D
+	if not _expect(is_instance_valid(armor_flash) and armor_flash.material_override == game.materials["white"] and armor_flash.scale.x > 1.0, "a confirmed hit must flash and briefly scale the target armor"):
+		return
 	var health_readout := guard_node.get_node_or_null("HealthReadout") as Label3D
 	if not _expect(is_instance_valid(health_readout) and health_readout.visible and health_readout.text.contains(str(guard_hp - 1)), "damage must expose the correct floating enemy health readout"):
 		return
@@ -276,6 +285,8 @@ func _run_smoke() -> void:
 	if not _expect(game.guards.size() == 2, "weapon damage must eliminate a guard"):
 		return
 	if not _expect(game.eliminations == 1, "elimination telemetry must update"):
+		return
+	if not _expect(game.ring_pool.size() > 0 and game.ring_effects.size() > 0, "eliminating a guard must trigger the pooled cinematic impact ring"):
 		return
 
 	var relay: Node3D = game.devices[0]["node"]
