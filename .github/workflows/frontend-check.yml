@@ -44,6 +44,8 @@ jobs:
         run: npm run build
       - name: Verify live SkillCred page wiring
         run: npm run qa:skillcred
+      - name: Verify OSGARD PLAY catalog, game links and consent-gated analytics
+        run: npm run qa:games-hub
       - name: Verify Imperium of Time game systems and visual diagnostics
         run: npm run qa:time-ui
       - name: Validate static archive and HTML
