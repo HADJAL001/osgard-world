@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  ArrowLeft, ArrowUpRight, Check, ChevronRight, Clock3, Copy, ExternalLink,
-  Expand, Gamepad2, Heart, History, Menu, Monitor, Search, Share2, SlidersHorizontal,
-  Smartphone, Sparkles, X,
+  ArrowLeft, ArrowUpRight, Check, ChevronRight, ExternalLink, Expand, Gamepad2, Heart,
+  History, Menu, Monitor, Play, Search, Share2, Smartphone, Sparkles, X,
 } from 'lucide-react'
 import { OsgardLogo } from './OsgardLogo'
 import { OSGARD_GAMES, type OsgardGameId } from './core/manifest'
