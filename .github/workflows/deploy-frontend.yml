@@ -50,6 +50,8 @@ jobs:
       - run: npm run qa:null-shift
       - name: Smoke-test the OSGARD Games hub
         run: npm run qa:games-portal
+      - name: Validate sponsor inventory before deployment
+        run: npm run qa:partners-page
 
       - name: Validate the Godot game project contract
         run: npm run qa:null-shift-godot
