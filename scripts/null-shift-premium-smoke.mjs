@@ -60,7 +60,7 @@ assert.ok(css.includes('.hazard-banner[data-state="warning"]'), 'Warning state s
 assert.ok(!js.includes("if(premiumAimHeld&&S.p)"), 'Manual aim stick must not be overwritten by auto-aim')
 for (const feature of ['premiumV05ArmAudio','premiumV05Sound','premiumV05SetSound','premiumV05DrawMotion','premiumV05DrawRails','premiumV05UpdateMotion','AudioContext','premiumV05Trails']) assert.ok(js.includes(feature), 'Release 0.5 feature missing: ' + feature)
 assert.ok(js.includes("localStorage.setItem('null-shift-sound'"), 'Sound preference must persist locally')
-assert.ok(js.includes("case 'shot'") && js.includes("case 'shift'") && js.includes("case 'blast'"), 'Core gameplay sound cues missing')
+assert.ok(js.includes('shot:[') && js.includes('shift:[') && js.includes('blast:['), 'Core gameplay sound cues missing')
 
 new Function(js)
 console.log('PASS NULL//SHIFT: standalone assets, core mechanics, touch input, diagnostics, motion preference and JS syntax')
