@@ -61,5 +61,9 @@ jobs:
         run: npm run qa:skillcred
       - name: Verify Imperium of Time game systems and visual diagnostics
         run: npm run qa:time-ui
+      - name: Verify NULL SHIFT browser-game UI and runtime contracts
+        run: npm run qa:null-shift
+      - name: Verify NULL SHIFT Godot source contract
+        run: npm run qa:null-shift-godot
       - name: Validate static archive and HTML
         run: npm run preflight:frontend
