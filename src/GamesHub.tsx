@@ -590,13 +590,14 @@ export function GameDetailPage({ slug }: { slug: string }) {
             setLoadingGame(false)
             try {
               const frameTitle = stageRef.current?.querySelector('iframe')?.contentDocument?.title ?? ''
-              const validTitle = {
-                time: /империя времени|empire of time/i.test(frameTitle),
-                swarm: /swarm/i.test(frameTitle),
-                'null-shift': /null\s*\/\/\s*shift|null\s*shift/i.test(frameTitle),
-                inherit: /inherit/i.test(frameTitle),
-                remix: /remix/i.test(frameTitle),
-              }[game.id]
+              const titleChecks: Record<string, RegExp> = {
+                time: /империя времени|empire of time/i,
+                swarm: /swarm/i,
+                'null-shift': /null\s*\/\/\s*shift|null\s*shift/i,
+                inherit: /inherit/i,
+                remix: /remix/i,
+              }
+              const validTitle = titleChecks[game.id]?.test(frameTitle) ?? false
               if (!validTitle) {
                 setFrameError(true)
                 return
