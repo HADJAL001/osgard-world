@@ -18,8 +18,6 @@ function readInputs() {
 function money(value) { return usd.format(Number.isFinite(value) ? value : 0); }
 function count(value) { return number.format(Number.isFinite(value) ? value : 0); }
 function percent(value) { return decimal.format(Number.isFinite(value) ? value : 0) + '%'; }
-function escapeNumber(value) { return Math.max(0, Number.isFinite(value) ? value : 0); }
-
 function render() {
   const inputs = readInputs();
   const results = SCENARIOS.map((scenario) => ({ scenario, result: calculateScenario(inputs, scenario.id) }));
@@ -73,8 +71,10 @@ exportButton.addEventListener('click', () => {
   const link = document.createElement('a');
   link.href = href;
   link.download = 'osgard-games-model.json';
+  document.body.appendChild(link);
   link.click();
-  URL.revokeObjectURL(href);
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(href), 1000);
   statusNode.textContent = 'JSON расчёта создан и сохранён на устройстве.';
 });
 render();
