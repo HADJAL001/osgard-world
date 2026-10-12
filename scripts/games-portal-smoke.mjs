@@ -115,6 +115,6 @@ assert.ok(html.includes('"numberOfItems":6') && html.includes('"name":"PATINA At
 assert.ok(patina.includes('<title>PATINA Atelier — OSGARD WORLD GAMING</title>') && patina.includes('data-patina-ready="true"') && patina.includes('id="patina-workbench"'), 'PATINA Atelier must publish its own playable route')
 for (const feature of ['id="diagnose"','id="swab"','id="stabilize"','id="polish"','id="preserve"','id="finish-case"','id="export-case"','id="journal-list"','osgard:game-lifecycle','simulationOnly:true','localStorage.setItem(STORAGE_KEY']) assert.ok(patina.includes(feature), 'PATINA Atelier gameplay is missing: '+feature)
 assert.ok(!/src=["']https?:/i.test(patina) && !/<link[^>]*rel=["']stylesheet["'][^>]*href=["']https?:/i.test(patina), 'PATINA must run without remote script or stylesheet dependencies')
-const patinaScripts=[...patina.matchAll(/<script>([\\s\\S]*?)<\\/script>/g)].map(m=>m[1])
+const patinaScripts=[...patina.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1])
 assert.equal(patinaScripts.length,1,'PATINA should have one self-contained gameplay script')
 new Function(patinaScripts[0])
