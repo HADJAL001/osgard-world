@@ -254,6 +254,34 @@ func _run_smoke() -> void:
 	if not _expect(not game.adaptive_quality_degraded and game.world_environment.environment.glow_enabled and game.key_light.shadow_enabled and game.fill_light.visible, "stable frame pacing must restore cinematic effects"):
 		return
 
+	print("RUNTIME_STAGE: three graphics presets and touch utility buttons")
+	if not _expect(is_instance_valid(game.mobile_quality_button) and is_instance_valid(game.mobile_diagnostics_button), "touch devices must expose dedicated graphics and diagnostics controls"):
+		return
+	game.cinematic_quality = true
+	game.performance_quality = false
+	game.adaptive_quality_degraded = false
+	game._apply_quality_mode()
+	game.mobile_quality_button.emit_signal("pressed")
+	if not _expect(not game.cinematic_quality and not game.performance_quality and not game.world_environment.environment.glow_enabled and game.key_light.shadow_enabled and game.fill_light.visible, "first quality tap must select balanced mode and retain useful lighting/shadows"):
+		return
+	game.mobile_quality_button.emit_signal("pressed")
+	if not _expect(not game.cinematic_quality and game.performance_quality and not game.key_light.shadow_enabled and not game.fill_light.visible, "second quality tap must select performance mode and disable expensive dynamic lighting"):
+		return
+	if not _expect(bool(game.career.get_value("settings", "performance_quality", false)), "performance mode must persist across sessions"):
+		return
+	game.mobile_quality_button.emit_signal("pressed")
+	if not _expect(game.cinematic_quality and not game.performance_quality and game.world_environment.environment.glow_enabled and game.key_light.shadow_enabled, "third quality tap must return to cinematic mode"):
+		return
+	game.mobile_diagnostics_button.emit_signal("pressed")
+	if not _expect(game.diagnostics_enabled and game.diagnostics_label.visible and game.mobile_diagnostics_button.text == "FPS+", "touch diagnostics button must reveal live FPS/telemetry"):
+		return
+	game.mobile_diagnostics_button.emit_signal("pressed")
+	if not _expect(not game.diagnostics_enabled and not game.diagnostics_label.visible, "touch diagnostics button must hide telemetry when toggled off"):
+		return
+	game.performance_quality = false
+	game.cinematic_quality = true
+	game._apply_quality_mode()
+
 	if not _expect(is_instance_valid(game.player), "operator must instantiate"):
 		return
 	if not _expect(is_instance_valid(game.operator_rig), "operator rig must instantiate"):

@@ -83,6 +83,7 @@ var frame_samples: Array[float] = []
 var fps_p95_ms := 0.0
 var diagnostics_enabled := false
 var cinematic_quality := true
+var performance_quality := false
 var adaptive_quality_degraded := false
 var adaptive_quality_clock := 0.0
 var adaptive_slow_windows := 0
@@ -139,6 +140,9 @@ var target_lock_tracked_node: Node3D
 var local_lights: Array[OmniLight3D] = []
 var fill_light: OmniLight3D
 var sound_button: Button
+var quality_button: Button
+var mobile_quality_button: Button
+var mobile_diagnostics_button: Button
 var mobile_modules_button: Button
 var status_panel: PanelContainer
 var objective_panel: PanelContainer
@@ -1627,11 +1631,20 @@ func _buy_upgrade(which: String) -> void:
 	_update_hud()
 
 func _toggle_quality() -> void:
-	cinematic_quality = not cinematic_quality
+	# F2/touch cycles cinematic -> balanced -> performance -> cinematic.
+	if cinematic_quality:
+		cinematic_quality = false
+		performance_quality = false
+	elif not performance_quality:
+		performance_quality = true
+	else:
+		cinematic_quality = true
+		performance_quality = false
 	_apply_quality_mode()
 	career.set_value("settings", "cinematic_quality", cinematic_quality)
+	career.set_value("settings", "performance_quality", performance_quality)
 	_save_career()
-	objective_text = "ГРАФИКА: КИНОРЕЖИМ" if cinematic_quality else "ГРАФИКА: СБАЛАНСИРОВАННЫЙ РЕЖИМ"
+	objective_text = "ГРАФИКА: КИНОРЕЖИМ" if cinematic_quality else ("ГРАФИКА: ПРОИЗВОДИТЕЛЬНОСТЬ" if performance_quality else "ГРАФИКА: СБАЛАНСИРОВАННЫЙ РЕЖИМ")
 	_update_hud()
 
 func _apply_quality_mode() -> void:
@@ -1639,18 +1652,26 @@ func _apply_quality_mode() -> void:
 		adaptive_quality_degraded = false
 		adaptive_slow_windows = 0
 		adaptive_fast_windows = 0
-	var cinematic_effects := cinematic_quality and not adaptive_quality_degraded
+	var cinematic_effects: bool = cinematic_quality and not adaptive_quality_degraded
+	var balanced_effects: bool = not performance_quality and not adaptive_quality_degraded
 	if is_instance_valid(world_environment) and is_instance_valid(world_environment.environment):
 		world_environment.environment.glow_enabled = cinematic_effects
 	if is_instance_valid(key_light):
-		key_light.shadow_enabled = cinematic_effects
+		key_light.shadow_enabled = balanced_effects
 	if is_instance_valid(fill_light):
-		fill_light.visible = cinematic_effects
+		fill_light.visible = balanced_effects
 	for light in local_lights:
 		if is_instance_valid(light):
-			light.visible = cinematic_effects
+			light.visible = balanced_effects
+	var mode_name: String = "CINEMATIC" if cinematic_quality else ("PERFORMANCE" if performance_quality else "BALANCED")
 	if is_instance_valid(status_subtitle):
-		status_subtitle.text = "PHASE TRANSIT / AUTO-OPTIMIZED" if adaptive_quality_degraded else ("PHASE TRANSIT / CINEMATIC" if cinematic_quality else "PHASE TRANSIT / BALANCED")
+		status_subtitle.text = "PHASE TRANSIT / AUTO-OPTIMIZED" if adaptive_quality_degraded else "PHASE TRANSIT / %s" % mode_name
+	if is_instance_valid(quality_button):
+		quality_button.text = "QUALITY / %s" % mode_name
+	if is_instance_valid(mobile_quality_button):
+		mobile_quality_button.tooltip_text = "Текущий режим: %s. Нажмите для переключения." % mode_name
+	if is_instance_valid(mobile_diagnostics_button):
+		mobile_diagnostics_button.text = "FPS+" if diagnostics_enabled else "FPS"
 	if is_instance_valid(sound_button):
 		sound_button.text = "ЗВУК / ВКЛ" if sound_enabled else "ЗВУК / ВЫКЛ"
 
@@ -1702,6 +1723,8 @@ func _toggle_sound() -> void:
 func _toggle_diagnostics() -> void:
 	diagnostics_enabled = not diagnostics_enabled
 	diagnostics_label.visible = diagnostics_enabled
+	if is_instance_valid(mobile_diagnostics_button):
+		mobile_diagnostics_button.text = "FPS+" if diagnostics_enabled else "FPS"
 
 func _show_briefing() -> void:
 	if not is_instance_valid(briefing_panel) or mission_finished:
@@ -1745,6 +1768,9 @@ func _load_career() -> void:
 	player_health = player_max_health
 	var compact_profile := get_viewport().get_visible_rect().size.x < 920.0 or DisplayServer.is_touchscreen_available()
 	cinematic_quality = bool(career.get_value("settings", "cinematic_quality", not compact_profile))
+	performance_quality = bool(career.get_value("settings", "performance_quality", false))
+	if performance_quality:
+		cinematic_quality = false
 	sound_enabled = bool(career.get_value("settings", "sound_enabled", true))
 
 func _save_career() -> void:
@@ -1827,7 +1853,7 @@ func _create_ui() -> void:
 	objective_actions.add_theme_constant_override("separation", 6)
 	objective_stack.add_child(objective_actions)
 	_add_button(objective_actions, "DIAG / F3", func(): _toggle_diagnostics(), Vector2(88.0, 32.0))
-	_add_button(objective_actions, "QUALITY / F2", func(): _toggle_quality(), Vector2(115.0, 32.0))
+	quality_button = _add_button(objective_actions, "QUALITY / F2", func(): _toggle_quality(), Vector2(115.0, 32.0))
 	_add_button(objective_actions, "PAUSE / ESC", func(): _set_pause(not paused_game), Vector2(88.0, 32.0))
 
 	mid_panel = _make_panel(hud_root, Control.PRESET_CENTER_TOP, Rect2(-225.0, 98.0, 450.0, 68.0))
@@ -2363,7 +2389,7 @@ func _create_mobile_controls(parent: Control) -> void:
 			button.button_down.connect(_set_mobile_action.bind(action, true))
 			button.button_up.connect(_set_mobile_action.bind(action, false))
 			mobile_move_buttons.append(button)
-	mobile_action_panel = _make_panel(parent, Control.PRESET_BOTTOM_RIGHT, Rect2(-222.0, -218.0, 206.0, 202.0))
+	mobile_action_panel = _make_panel(parent, Control.PRESET_BOTTOM_RIGHT, Rect2(-222.0, -252.0, 206.0, 236.0))
 	var action_stack := _panel_stack(mobile_action_panel)
 	_label(action_stack, "COMBAT / СИСТЕМЫ", 9, Color(0.38, 0.9, 0.82))
 	var action_grid := GridContainer.new()
@@ -2382,8 +2408,15 @@ func _create_mobile_controls(parent: Control) -> void:
 		action_button.button_down.connect(_set_mobile_action.bind(item["key"], true))
 		action_button.button_up.connect(_set_mobile_action.bind(item["key"], false))
 		mobile_action_buttons.append(action_button)
-	mobile_modules_button = _add_button(action_stack, "МОДУЛИ", _toggle_loadout, Vector2(176.0, 31.0))
-	sound_button = _add_button(action_stack, "ЗВУК / ВКЛ" if sound_enabled else "ЗВУК / ВЫКЛ", _toggle_sound, Vector2(176.0, 29.0))
+	var utility_row := HBoxContainer.new()
+	utility_row.add_theme_constant_override("separation", 4)
+	action_stack.add_child(utility_row)
+	mobile_quality_button = _add_button(utility_row, "ГРАФИКА", _toggle_quality, Vector2(86.0, 27.0))
+	mobile_quality_button.add_theme_font_size_override("font_size", 8)
+	mobile_diagnostics_button = _add_button(utility_row, "FPS", _toggle_diagnostics, Vector2(86.0, 27.0))
+	mobile_diagnostics_button.add_theme_font_size_override("font_size", 8)
+	mobile_modules_button = _add_button(action_stack, "МОДУЛИ", _toggle_loadout, Vector2(176.0, 28.0))
+	sound_button = _add_button(action_stack, "ЗВУК / ВКЛ" if sound_enabled else "ЗВУК / ВЫКЛ", _toggle_sound, Vector2(176.0, 27.0))
 
 func _set_mobile_action(action: String, pressed: bool) -> void:
 	match action:
@@ -2510,7 +2543,7 @@ func _layout_compact_controls(viewport_size: Vector2) -> void:
 	mobile_move_panel.offset_bottom = -8.0
 	mobile_action_panel.offset_left = -8.0 - action_width
 	mobile_action_panel.offset_right = -8.0
-	mobile_action_panel.offset_top = -202.0
+	mobile_action_panel.offset_top = -244.0
 	mobile_action_panel.offset_bottom = -8.0
 	var move_size: float = 36.0 if width < 400.0 else (44.0 if width < 520.0 else 52.0)
 	var move_button_height: float = 32.0 if width < 400.0 else 36.0
@@ -2521,8 +2554,11 @@ func _layout_compact_controls(viewport_size: Vector2) -> void:
 	var action_button_width: float = floor((action_width - 32.0) * 0.5)
 	for button in mobile_action_buttons:
 		button.custom_minimum_size = Vector2(action_button_width, 34.0)
+	var utility_button_width: float = floor((action_width - 28.0) * 0.5)
+	mobile_quality_button.custom_minimum_size = Vector2(utility_button_width, 27.0)
+	mobile_diagnostics_button.custom_minimum_size = Vector2(utility_button_width, 27.0)
 	mobile_modules_button.custom_minimum_size = Vector2(action_width - 24.0, 28.0)
-	sound_button.custom_minimum_size = Vector2(action_width - 24.0, 28.0)
+	sound_button.custom_minimum_size = Vector2(action_width - 24.0, 27.0)
 
 func _refresh_loadout() -> void:
 	if not is_instance_valid(loadout_panel):
@@ -2598,7 +2634,7 @@ func _update_hud() -> void:
 			p95 = samples[clampi(int(ceil(float(samples.size() - 1) * 0.95)), 0, samples.size() - 1)]
 		fps_p95_ms = p95
 		var draw_calls := int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
-		var profile := "BALANCED" if not cinematic_quality else ("AUTO-OPTIMIZED" if adaptive_quality_degraded else "CINEMATIC")
+		var profile: String = "PERFORMANCE" if performance_quality else ("BALANCED" if not cinematic_quality else ("AUTO-OPTIMIZED" if adaptive_quality_degraded else "CINEMATIC"))
 		diagnostics_label.text = "LIVE DIAGNOSTICS\nFPS        %02d\nFRAME P95  %.1f ms\nFRAME NOW  %.1f ms\nDRAW CALLS %d\nFX ACTIVE  %02d\nFX POOLS   %02d BEAM / %02d RING\nFX DROPPED %d\nGUARDS     %d\nDEVICES    %d\nPROFILE    %s" % [
 			Engine.get_frames_per_second(), fps_p95_ms, current_frame_ms, draw_calls,
 			effects.size(), beam_pool.size(), ring_pool.size(), effect_pool_exhaustions,

@@ -26,9 +26,9 @@ The first launch opens a pausing Russian-language field briefing with the three 
 - WASD or arrow keys: move.
 - Mouse: aim; hold left mouse button: fire.
 - E: interact; Q: pulse; Shift: phase shift.
-- F2: cinematic/balanced graphics; F3: live diagnostics; M: toggle and persist sound; Esc: pause.
-- C: rotate contract; U: loadout; 1/2/3: buy upgrades in the loadout.
-- Narrow/touch screens show on-screen movement and combat controls with assisted aiming.
+- F2 cycles three persisted graphics profiles: Cinematic (glow + shadows), Balanced (shadows + practical fill lights), and Performance (reduced dynamic lighting). Cinematic mode still adapts down under sustained frame-time pressure and restores effects after stable pacing.
+- F3 toggles live diagnostics; M toggles and persists sound; Esc pauses; C rotates contracts; U opens loadout; 1/2/3 buy upgrades.
+- Touch screens include dedicated graphics-profile and FPS/diagnostics buttons alongside movement, fire, action, pulse and phase-shift controls; aiming is assisted.
 
 ## Live diagnostics
 
