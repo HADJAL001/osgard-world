@@ -236,14 +236,16 @@ function toggleFavorite(id) {
     renderCatalog();
   }
 }
-function openDetails(id) {
+function openDetails(id, updateAddress = true) {
   const game = gameById(id);
   if (!game) return;
   state.activeGame = game;
+  const title = state.locale === "ru" ? game.title : game.titleEn;
+  const description = state.locale === "ru" ? game.description : game.descriptionEn;
   $("#detail-mark").textContent = game.mark;
   $("#detail-kicker").textContent = "OSGARD PLAY / " + game.id.toUpperCase();
-  $("#detail-title").textContent = state.locale === "ru" ? game.title : game.titleEn;
-  $("#detail-description").textContent = state.locale === "ru" ? game.description : game.descriptionEn;
+  $("#detail-title").textContent = title;
+  $("#detail-description").textContent = description;
   $("#detail-genre").textContent = state.locale === "ru" ? game.genre : game.genreEn;
   $("#detail-build").textContent = game.buildType;
   $("#detail-status").textContent = state.locale === "ru" ? game.availability : game.availabilityEn;
@@ -251,6 +253,14 @@ function openDetails(id) {
   $("#detail-play").dataset.id = id;
   $("#detail-share").dataset.id = id;
   $("#detail-visual").dataset.tone = ({time:"gold",swarm:"cyan","null-shift":"blue",inherit:"green",remix:"rose"})[id] || "cyan";
+  document.title = title + " — OSGARD WORLD GAMES";
+  const descriptionMeta = $('meta[name="description"]');
+  if (descriptionMeta) descriptionMeta.content = description;
+  if (updateAddress) {
+    const url = new URL(location.href);
+    url.searchParams.set("game", id);
+    history.replaceState({ osgardGameDetail: id }, "", url.pathname + url.search + url.hash);
+  }
   $("#game-details").showModal();
   record("game_details_opened", { gameId: id });
 }
@@ -303,7 +313,7 @@ async function shareGame(id) {
   if (!game) return;
   const title = state.locale === "ru" ? game.title : game.titleEn;
   const summary = state.locale === "ru" ? game.summary : game.summaryEn;
-  const url = new URL(game.launchUrl, location.origin).href;
+  const url = new URL("/games?game=" + encodeURIComponent(id), location.origin).href;
   try {
     if (navigator.share) {
       await navigator.share({title, text:summary, url});
@@ -383,6 +393,15 @@ function bindEvents() {
   });
   $("#detail-share").addEventListener("click", () => shareGame($("#detail-share").dataset.id));
   $("#game-details").addEventListener("close", () => {
+    const url = new URL(location.href);
+    const detailId = url.searchParams.get("game");
+    if (detailId) {
+      url.searchParams.delete("game");
+      history.replaceState(null, "", url.pathname + url.search + url.hash);
+    }
+    document.title = "OSGARD WORLD GAMES — выбирай свой мир";
+    const descriptionMeta = $('meta[name="description"]');
+    if (descriptionMeta) descriptionMeta.content = "Игровая витрина OSGARD WORLD: браузерные игры, стратегия, тактика и творческие испытания.";
     if (!$("#game-dialog").open && !$("#contact-dialog").open) document.body.classList.remove("modal-open");
   });
   $("#launcher-close").addEventListener("click", closeGame);
@@ -479,6 +498,8 @@ async function loadCatalog() {
     renderEcosystem();
     updateContinue();
     record("portal_opened", {surface:"games", gameCount:payload.games.length});
+    const deepLinkedGame = new URLSearchParams(location.search).get("game");
+    if (deepLinkedGame) openDetails(deepLinkedGame, false);
   } catch (error) {
     $("#catalog-error").hidden = false;
     $("#game-grid").innerHTML = "";
