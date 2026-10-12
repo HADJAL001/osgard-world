@@ -23,6 +23,7 @@ The original `OSGARD_GAMES` manifest pointed NULL//SHIFT to `/games/null-shift-g
 
 ## Implemented in this feature branch
 - Shared premium Games catalogue at `/games` and details at `/game/:slug`.
+- Legacy `/entertainment`, `/entertainment/` and `/entertainment/index.html` converge on `/games`: the SPA handles the alias and exact Nginx locations return a permanent redirect while leaving unrelated nested assets untouched.
 - Search by title/genre/mechanic, category/device filters, locally stored favourites and recent game.
 - Game details with controls, platform notes, features, launch iframe, full-screen control, standalone fallback and related games.
 - Consent-gated optional catalogue events, clear local data behavior, sharing and separate outbound ecosystem project links.
