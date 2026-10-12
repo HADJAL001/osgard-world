@@ -60,7 +60,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
             ? content.includes('.game-grid') && content.includes('prefers-reduced-motion')
             : path === '/games/hub.js'
               ? content.includes('function loadCatalog()') && content.includes('/api/v1/player/events')
-              : isGodot
+              : legacyGodotRoute
                 ? content.length > 100000
                 : path.startsWith('/games/null-shift/')
                   ? path.endsWith('engine-3d.js')
