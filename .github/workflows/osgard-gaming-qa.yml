@@ -1,0 +1,53 @@
+name: OSGARD gaming quality gate
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: osgard-gaming-qa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Typecheck, portal checks, model tests, production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: TypeScript check
+        run: npm run check
+
+      - name: Games portal integration smoke
+        run: npm run qa:games-portal
+
+      - name: Game economics calculation tests
+        run: npm run qa:games-model
+
+      - name: Godot source/export contract check
+        run: npm run qa:null-shift-godot
+
+      - name: Event queue regression test
+        run: npm run qa:queue
+
+      - name: Production frontend build
+        run: npm run build
+
+      - name: Static distribution preflight
+        run: npm run preflight:frontend
