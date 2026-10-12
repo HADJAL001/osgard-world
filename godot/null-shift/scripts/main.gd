@@ -94,6 +94,9 @@ var crosshair_parts: Array[ColorRect] = []
 var local_lights: Array[OmniLight3D] = []
 var fill_light: OmniLight3D
 var sound_button: Button
+var briefing_panel: PanelContainer
+var briefing_visible := false
+var briefing_scroll: ScrollContainer
 
 func _ready() -> void:
 	_load_career()
@@ -107,6 +110,8 @@ func _ready() -> void:
 	_create_ui()
 	_apply_quality_mode()
 	_update_hud()
+	if not bool(career.get_value("settings", "briefing_seen", false)):
+		_show_briefing()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	print("NULL//SHIFT Godot prototype ready")
 
@@ -165,6 +170,15 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not key_event.pressed or key_event.echo:
 		return
 	var key := key_event.keycode
+	if briefing_visible:
+		if key in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_ESCAPE, KEY_H]:
+			_dismiss_briefing()
+			get_viewport().set_input_as_handled()
+		return
+	if key == KEY_H:
+		_show_briefing()
+		get_viewport().set_input_as_handled()
+		return
 	if terminal_active and key in CIPHER:
 		_submit_cipher_key(key)
 		get_viewport().set_input_as_handled()
@@ -1139,8 +1153,33 @@ func _toggle_diagnostics() -> void:
 	diagnostics_enabled = not diagnostics_enabled
 	diagnostics_label.visible = diagnostics_enabled
 
+func _show_briefing() -> void:
+	if not is_instance_valid(briefing_panel) or mission_finished:
+		return
+	briefing_visible = true
+	paused_game = true
+	pause_panel.visible = false
+	loadout_panel.visible = false
+	keypad_panel.visible = false
+	terminal_active = false
+	briefing_panel.visible = true
+	_update_crosshair()
+
+func _dismiss_briefing() -> void:
+	if not briefing_visible:
+		return
+	briefing_visible = false
+	paused_game = false
+	if is_instance_valid(briefing_panel):
+		briefing_panel.visible = false
+	career.set_value("settings", "briefing_seen", true)
+	_save_career()
+	objective_text = "ОПЕРАЦИЯ НАЧАЛАСЬ · ВЗЛОМ → ЯДРО → ЭВАКУАЦИЯ"
+	_update_hud()
+	_update_crosshair()
+
 func _set_pause(state: bool) -> void:
-	if mission_finished:
+	if mission_finished or briefing_visible:
 		return
 	paused_game = state
 	pause_panel.visible = state
@@ -1187,7 +1226,7 @@ func _create_ui() -> void:
 	health_label = _label(status_stack, "ВИТАЛЬНОСТЬ  100 / 100", 13, Color(0.86, 1.0, 0.97))
 	credits_label = _label(status_stack, "РЕЙД  000  ·  КАРЬЕРА  000", 12, Color(1.0, 0.77, 0.39))
 	threat_label = _label(status_stack, "УГРОЗА: ВЫСОКАЯ", 11, Color(1.0, 0.3, 0.38))
-	_label(status_stack, "FPS / F3   ·   ГРАФИКА / F2", 9, Color(0.48, 0.6, 0.62))
+	_label(status_stack, "ПОМОЩЬ / H  ·  FPS / F3  ·  ГРАФИКА / F2", 8, Color(0.48, 0.6, 0.62))
 
 	var objective_panel := _make_panel(hud_root, Control.PRESET_TOP_RIGHT, Rect2(-334.0, 18.0, 316.0, 178.0))
 	var objective_stack := _panel_stack(objective_panel)
@@ -1280,6 +1319,60 @@ func _create_ui() -> void:
 	impact_overlay.visible = false
 	hud_root.add_child(impact_overlay)
 	_create_crosshair()
+	_create_briefing_panel()
+
+func _create_briefing_panel() -> void:
+	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+	var panel_width: float = minf(620.0, viewport_size.x - 24.0)
+	var panel_height: float = minf(466.0, viewport_size.y - 24.0)
+	briefing_panel = _make_panel(hud_root, Control.PRESET_CENTER, Rect2(-panel_width * 0.5, -panel_height * 0.5, panel_width, panel_height))
+	briefing_panel.name = "FirstRunFieldBriefing"
+	briefing_panel.z_index = 40
+	briefing_panel.visible = false
+	briefing_scroll = ScrollContainer.new()
+	briefing_scroll.name = "BriefingScroll"
+	briefing_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	briefing_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	briefing_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	briefing_panel.add_child(briefing_scroll)
+	var stack := VBoxContainer.new()
+	stack.name = "BriefingContent"
+	stack.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	stack.add_theme_constant_override("separation", 9)
+	briefing_scroll.add_child(stack)
+
+	_label(stack, "OSGARD FIELD INTELLIGENCE  /  001", 9, Color(0.40, 1.0, 0.84))
+	_label(stack, "NULL//SHIFT", 29, Color(0.74, 1.0, 0.94))
+	var subhead := _label(stack, "ОПЕРАЦИЯ: ВЕРНИ ЯДРО. ВЫБЕРИСЬ ЖИВЫМ.", 13, Color(1.0, 0.75, 0.40))
+	subhead.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var intro := _label(stack, "Ты в закрытом комплексе. Охрана реагирует на взлом — сначала изучи путь, затем действуй.", 11, Color(0.76, 0.88, 0.87))
+	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_add_briefing_step(stack, "01", "ВЗЛОМАТЬ ТЕРМИНАЛ", "Подойди к панели и нажми E. Введи шифр: ↑ ← ↓ →.", Color(0.36, 1.0, 0.83))
+	_add_briefing_step(stack, "02", "ЗАБРАТЬ ЯДРО", "Используй укрытия, стреляй по угрозам. Затем забери золотое ядро.", Color(1.0, 0.74, 0.36))
+	_add_briefing_step(stack, "03", "ЭВАКУИРОВАТЬСЯ", "Доберись до бирюзовой площадки и нажми E, чтобы завершить рейд.", Color(0.56, 0.57, 1.0))
+	var controls := _label(stack, "КОМПЬЮТЕР   WASD / стрелки · мышь + ЛКМ · Q импульс · SHIFT сдвиг", 10, Color(0.48, 0.74, 0.73))
+	controls.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var mobile_note := _label(stack, "ТЕЛЕФОН   Левый блок — движение · правый — огонь и способности", 10, Color(0.48, 0.74, 0.73))
+	mobile_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var start_width: float = maxf(220.0, minf(360.0, panel_width - 32.0))
+	var start_button := _add_button(stack, "НАЧАТЬ РЕЙД  /  ENTER", _dismiss_briefing, Vector2(start_width, 46.0))
+	start_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+
+func _add_briefing_step(parent: VBoxContainer, number: String, title_text: String, detail_text: String, accent: Color) -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	parent.add_child(row)
+	var index_label := _label(row, number, 13, accent)
+	index_label.custom_minimum_size = Vector2(27.0, 24.0)
+	var text_column := VBoxContainer.new()
+	text_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	text_column.add_theme_constant_override("separation", 2)
+	row.add_child(text_column)
+	_label(text_column, title_text, 11, accent)
+	var detail := _label(text_column, detail_text, 10, Color(0.79, 0.89, 0.87))
+	detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	detail.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 func _create_crosshair() -> void:
 	crosshair_root = Control.new()
@@ -1300,7 +1393,7 @@ func _create_crosshair() -> void:
 func _update_crosshair() -> void:
 	if not is_instance_valid(crosshair_root) or crosshair_parts.size() < 5:
 		return
-	var allowed := not mobile_controls_visible and not paused_game and not terminal_active and not mission_finished
+	var allowed := not mobile_controls_visible and not paused_game and not terminal_active and not mission_finished and not briefing_visible
 	allowed = allowed and not (is_instance_valid(loadout_panel) and loadout_panel.visible)
 	allowed = allowed and not (is_instance_valid(keypad_panel) and keypad_panel.visible)
 	crosshair_root.visible = allowed
@@ -1468,8 +1561,16 @@ func _set_mobile_action(action: String, pressed: bool) -> void:
 					_shift_layer()
 
 func _update_mobile_layout() -> void:
-	var width := get_viewport().get_visible_rect().size.x
+	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+	var width: float = viewport_size.x
 	mobile_controls_visible = width < 880.0 or DisplayServer.is_touchscreen_available()
+	if is_instance_valid(briefing_panel):
+		var panel_width: float = maxf(280.0, minf(620.0, viewport_size.x - 24.0))
+		var panel_height: float = maxf(260.0, minf(466.0, viewport_size.y - 24.0))
+		briefing_panel.offset_left = -panel_width * 0.5
+		briefing_panel.offset_right = panel_width * 0.5
+		briefing_panel.offset_top = -panel_height * 0.5
+		briefing_panel.offset_bottom = panel_height * 0.5
 	if is_instance_valid(mobile_move_panel):
 		mobile_move_panel.visible = mobile_controls_visible
 	if is_instance_valid(mobile_action_panel):
