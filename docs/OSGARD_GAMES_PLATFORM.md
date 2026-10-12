@@ -32,7 +32,7 @@ The work in this branch adds an OSGARD PLAY discovery and commercial surface at 
 | SWARM | `/games/swarm/index.html` | Preserve the standalone browser game and its API/WebSocket contract |
 | NULL//SHIFT | `/games/null-shift-godot/index.html` | Preserve the existing Godot Web target as the intended current entry, while keeping the legacy WebGL path separate |
 | INHERIT | `/games/inherit/index.html` | Preserve the standalone browser game/PWA |
-| REMIX | `/games/remix/index.html` | Preserve the creator/replay runtime |
+| REMIX | \`/games/remix/player/index.html\` | Launch the checked-in Unity WebGL player directly; keep the legacy creator/landing page available separately |
 
 The public source tree includes `public/games/swarm`, `public/games/null-shift`, `public/games/inherit`, `public/games/remix`, and `godot/null-shift`. During the audit, no checked-in `public/games/null-shift-godot/` export directory was visible in the Git tree listing, although the manifest and the existing test suite expect exported Godot web assets at that path. The build or release process may materialize these assets separately; this must be confirmed from a production build artifact and the desktop/mobile route matrix before deployment. Do not activate a release in which `index.js`, `index.wasm`, or `index.pck` are missing.
 
@@ -73,6 +73,10 @@ The style uses restraint rather than stacking glow on every element: typographic
 - `nginx.conf`: exact `/games` and `/games/` rules allow the SPA hub to coexist with the static `/games/*` game files.
 - `scripts/games-platform-smoke.mjs`: static integration checks.
 - `package.json`, `.github/workflows/frontend-check.yml`, `scripts/production-route-matrix.mjs`, `scripts/release-readiness.mjs`: wire the new smoke suite into CI/release checks and add hub/legal routes to the runtime matrix.
+
+### Shared game player
+
+The individual game profiles are available at /games/info/:id. Their primary play action opens /games/play/:id, a responsive same-origin iframe shell around the existing game runtime. The player provides visible loading, timeout and error states, retry, fullscreen request, open-in-new-tab fallback, game controls/metadata, and recommendations for the next game. A browser page-load event is not treated as proof of gameplay completion: for same-origin builds the shell checks the expected document title before recording a session-start event. Time in the player is an indicative browser-tab duration, not proof of completed gameplay. NULL//SHIFT tries the Godot web path first and falls back to the checked-in browser/WebGL build if the Godot page cannot be confirmed. The Godot export still needs to pass production asset checks before being considered a reliable primary build. REMIX uses the actual Unity WebGL player at /games/remix/player/index.html.
 
 ### Games page behaviour
 
