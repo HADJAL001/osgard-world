@@ -27,7 +27,8 @@ for(const endpoint of ['/api/v1/analytics/summary','/api/v1/analytics/cohorts','
 assert.ok(admin.includes("'X-Moderation-Token':operatorToken"), 'Operator key must be sent only in the protected API request header')
 assert.ok(admin.includes('API aggregates') || admin.includes('API STATUS'), 'LiveOps status surface missing')
 assert.ok(admin.includes('не показывает все анонимные посещения сайта') && admin.includes('не подключены'), 'Admin must clearly state which commercial metrics are not collected')
-const adminScripts=Array.from(admin.matchAll(/<script>([\\s\\S]*?)<\\/script>/g)).map(m=>m[1])
+const adminScriptBody=admin.split('<script>')[1]?.split('</script>')[0]||''
+const adminScripts=adminScriptBody.trim()?[adminScriptBody]:[]
 assert.equal(adminScripts.length,1,'LiveOps should have one self-contained application module')
 new Function(adminScripts[0])
 assert.ok(!/localStorage|sessionStorage/.test(adminScripts[0]), 'Operator token must not be persisted in browser storage')
