@@ -9,6 +9,7 @@ const manifest = read('src/core/manifest.ts')
 const games = read('public/games/index.html')
 const lifecycle = read('public/games/player-lifecycle.js')
 const sitemap = read('public/sitemap.xml')
+const nginx = read('nginx.conf')
 
 const promotionSources = { app, sections, development }
 const unsupportedClaims = [
@@ -51,6 +52,16 @@ assert.ok(sitemap.includes('https://osgard.world/games/'), 'Sitemap must include
 assert.ok(lifecycle.includes('if(!consent||!token)return'), 'Session analytics must require user consent and authenticated account')
 assert.ok(lifecycle.includes('event.origin!==location.origin') && lifecycle.includes('event.source!==frame.contentWindow'), 'Cross-frame lifecycle messages must be same-origin and source-checked')
 assert.ok(lifecycle.includes('function startSession(') && lifecycle.includes('game_session_completed'), 'Gameplay lifecycle tracking must observe real client readiness and session completion')
+const apiProxyStart = nginx.indexOf('location ^~ /api/v1/ {')
+const apiProxyEnd = nginx.indexOf('location /api/remix/ {', apiProxyStart)
+assert.ok(apiProxyStart >= 0 && apiProxyEnd > apiProxyStart, 'Nginx must route /api/v1/* before the SPA fallback')
+const apiProxy = nginx.slice(apiProxyStart, apiProxyEnd)
+assert.ok(nginx.indexOf('limit_req_zone $binary_remote_addr zone=osgard_player_api:10m rate=15r/s;') < apiProxyStart, 'Nginx API rate-limit zone must be declared in the http context before server blocks')
+assert.ok(apiProxy.includes('proxy_pass http://osgard-game-api:4317;'), 'Protected player and aggregate analytics endpoints must reach the API container')
+assert.ok(apiProxy.includes('limit_req zone=osgard_player_api burst=30 nodelay;') && apiProxy.includes('limit_req_status 429;'), 'API route must enforce an explicit per-client rate limit')
+assert.ok(apiProxy.includes('add_header Cache-Control "no-store" always;'), 'Player and admin analytics responses must not be cached by shared browsers/proxies')
+assert.ok(apiProxy.includes('proxy_read_timeout 10s;') && apiProxy.includes('client_max_body_size 256k;'), 'API proxy needs bounded request size and upstream timeout')
+assert.ok(!apiProxy.includes('proxy_set_header Authorization "Bearer'), 'API credentials must never be injected by static Nginx configuration')
 
 console.log(JSON.stringify({
   status: 'PASS',
