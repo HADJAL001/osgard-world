@@ -40,6 +40,15 @@ assert.ok(css.includes('@media(max-width:380px)'), 'Narrow 320px layout rules mi
 assert.ok(css.includes('@media(prefers-reduced-motion:reduce)'), 'Reduced-motion support missing')
 assert.ok(css.includes('.frame:fullscreen'), 'Fullscreen presentation rules missing')
 assert.ok(css.includes('.diag-panel'), 'Diagnostics presentation missing')
+
+for (const feature of [
+  'premiumCombatAI','premiumProcessDeviceHits','premiumDrawCombat','premiumBurst',
+  "kind:'relay'","kind:'cell'","kind:'anchor'","premiumDashWarn","premiumVolleyWindup",
+  "premiumBossWindup",'TACTICAL TELEMETRY','enemy-count','device-count','elimination-count'
+]) assert.ok((js + html).includes(feature), 'Combat upgrade missing: ' + feature)
+assert.ok(html.includes('class="raid-intel"'), 'Tactical telemetry HUD missing')
+assert.ok(css.includes('.raid-intel'), 'Tactical telemetry presentation missing')
+
 assert.ok(!js.includes("if(premiumAimHeld&&S.p)"), 'Manual aim stick must not be overwritten by auto-aim')
 
 new Function(js)
