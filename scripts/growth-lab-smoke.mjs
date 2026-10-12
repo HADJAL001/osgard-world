@@ -16,7 +16,7 @@ for (const token of [
   '/games/', 'robots" content="noindex,follow"'
 ]) assert.ok(html.includes(token), 'Growth Lab contract missing: ' + token)
 
-const scripts = [...html.matchAll(/<script>([\\s\\S]*?)<\\/script>/g)].map(match => match[1])
+const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1])
 assert.equal(scripts.length, 1, 'Expected one self-contained application script')
 new Function(scripts[0])
 assert.ok(scripts[0].includes('impressions/1000*x.ecpm'), 'Ad revenue formula missing')
@@ -24,7 +24,7 @@ assert.ok(scripts[0].includes('x.visits*x.subscriptionRate/100*x.subscriptionPri
 assert.ok(scripts[0].includes('x.visits*x.purchaseRate/100*x.averageOrder'), 'Purchase formula missing')
 assert.ok(scripts[0].includes('leads*x.closeRate/100'), 'Project closing formula missing')
 assert.ok(scripts[0].includes('gross-x.operatingCosts'), 'Operating result formula missing')
-assert.ok(!/\\bfetch\\s*\\(|sendBeacon|XMLHttpRequest|https?:\\/\\/(?!wa\\.me)/i.test(html), 'No network tracking or remote script calls may exist')
+assert.ok(!/\bfetch\s*\(|sendBeacon|XMLHttpRequest|https?:\/\/(?!wa\.me)/i.test(html), 'No network tracking or remote script calls may exist')
 assert.ok(!/<script[^>]+src=/i.test(html), 'No remote or external scripts may be loaded')
 assert.ok(html.includes('navigator.clipboard') && html.includes('new Blob'), 'Local export/share utilities missing')
 assert.ok(html.includes('URL.createObjectURL'), 'CSV export must be generated in-browser')
