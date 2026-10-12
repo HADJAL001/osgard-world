@@ -216,6 +216,8 @@ export function GamesPlatform({ locale, setLocale }: { locale: Locale; setLocale
   const searchRef = useRef<HTMLInputElement>(null)
   const sessionRecorded = useRef(false)
   const sessionStartedAt = useRef<number | null>(null)
+  const visibleSince = useRef<number | null>(null)
+  const activeDurationMs = useRef(0)
   const sessionEnded = useRef(false)
 
   useEffect(() => {
@@ -267,21 +269,37 @@ export function GamesPlatform({ locale, setLocale }: { locale: Locale; setLocale
 
   useEffect(() => {
     if (pageMode !== 'play' || !activeGame) return
+    const pauseVisibleTime = () => {
+      if (visibleSince.current === null) return
+      activeDurationMs.current += Math.max(0, Date.now() - visibleSince.current)
+      visibleSince.current = null
+    }
+    const onVisibilityChange = () => {
+      if (sessionStartedAt.current === null || sessionEnded.current) return
+      if (document.hidden) pauseVisibleTime()
+      else if (visibleSince.current === null) visibleSince.current = Date.now()
+    }
     const finishSession = () => {
       const startedAt = sessionStartedAt.current
       if (startedAt === null || sessionEnded.current) return
+      pauseVisibleTime()
       sessionEnded.current = true
       const endedAt = Date.now()
       recordOsgardEvent('game_session_completed', {
         game: activeGame.id,
-        durationSeconds: Math.max(0, Math.round((endedAt - startedAt) / 1000)),
+        durationSeconds: Math.max(0, Math.round(activeDurationMs.current / 1000)),
+        elapsedSeconds: Math.max(0, Math.round((endedAt - startedAt) / 1000)),
         startedAt: new Date(startedAt).toISOString(),
         endedAt: new Date(endedAt).toISOString(),
         source: 'osgard_games_embedded',
       })
     }
+    document.addEventListener('visibilitychange', onVisibilityChange)
     window.addEventListener('pagehide', finishSession)
-    return () => window.removeEventListener('pagehide', finishSession)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+      window.removeEventListener('pagehide', finishSession)
+    }
   }, [pageMode, activeGame])
 
   useEffect(() => {
@@ -489,6 +507,9 @@ export function GamesPlatform({ locale, setLocale }: { locale: Locale; setLocale
                 if (sessionStartedAt.current === null && activeGame) {
                   const startedAt = Date.now()
                   sessionStartedAt.current = startedAt
+                  activeDurationMs.current = 0
+                  visibleSince.current = document.hidden ? null : startedAt
+                  sessionEnded.current = false
                   recordOsgardEvent('game_session_started', {
                     game: activeGame.id,
                     href: activeGame.href,
