@@ -1,14 +1,14 @@
 # OSGARD WORLD GAMING — Audit, Product Scope and Release Plan
 
 Date: 2026-10-13  
-Implementation branch: \`feat/osgard-premium-games-platform\`  
-Repository: \`HADJAL001/osgard-world\`
+Implementation branch: `feat/osgard-premium-games-platform`  
+Repository: `HADJAL001/osgard-world`
 
 ## 1. Executive summary
 
 The repository is an existing React + TypeScript + Vite portal, not a blank site. It already contains five game entries, a game manifest, several game runtimes, a first-party event queue, a Godot project for NULL//SHIFT, Nginx routing and a manual staged-deployment process. The implementation therefore extends the existing architecture; it does not duplicate the portal or migrate unrelated games to one engine.
 
-The work in this branch adds an OSGARD PLAY discovery and commercial surface at \`/games\`, a custom SVG compass-style brand mark, project/legal routes, responsive styles and a smoke test. It keeps the existing game IDs and hrefs in \`src/core/manifest.ts\` as the catalogue source of truth.
+The work in this branch adds an OSGARD PLAY discovery and commercial surface at `/games`, a custom SVG compass-style brand mark, project/legal routes, responsive styles and a smoke test. It keeps the existing game IDs and hrefs in `src/core/manifest.ts` as the catalogue source of truth.
 
 **Not done:** this branch has not been merged, deployed to production or verified against the running production server. Payment processing, subscriptions, ad-network delivery and rewarded ads are not enabled. No real analytics counters or revenue totals are claimed.
 
@@ -17,24 +17,24 @@ The work in this branch adds an OSGARD PLAY discovery and commercial surface at 
 ### Existing stack and release architecture
 
 - Frontend: React 19, TypeScript 5.7, Vite 6, Lucide icons and Three.js.
-- Entry/routing: \`src/main.tsx\`; route selection is pathname-based rather than a dedicated router.
-- Catalogue/runtime metadata: \`src/core/manifest.ts\`.
-- Product-event queue: \`src/core/eventQueue.ts\`; up to 50 recent events are retained in browser storage, queued for retry and synchronized only if the existing player API has a valid auth token.
-- Authenticated player endpoints: \`src/core/playerApi.ts\`.
-- Hosting: Nginx and Docker; frontend releases have a staging/checksum/rollback workflow documented in \`DEPLOYMENT.md\`.
-- Build/CI: \`npm run check\`, \`npm run build\`, smoke scripts and a production route matrix.
+- Entry/routing: `src/main.tsx`; route selection is pathname-based rather than a dedicated router.
+- Catalogue/runtime metadata: `src/core/manifest.ts`.
+- Product-event queue: `src/core/eventQueue.ts`; up to 50 recent events are retained in browser storage, queued for retry and synchronized only if the existing player API has a valid auth token.
+- Authenticated player endpoints: `src/core/playerApi.ts`.
+- Hosting: Nginx and Docker; frontend releases have a staging/checksum/rollback workflow documented in `DEPLOYMENT.md`.
+- Build/CI: `npm run check`, `npm run build`, smoke scripts and a production route matrix.
 
 ### Existing game catalogue
 
 | Game | Entry point in the existing manifest | Integration decision |
 | --- | --- | --- |
-| ИМПЕРИЯ ВРЕМЕНИ | \`/games/time\` | Preserve the current strategy runtime |
-| SWARM | \`/games/swarm/index.html\` | Preserve the standalone browser game and its API/WebSocket contract |
-| NULL//SHIFT | \`/games/null-shift-godot/index.html\` | Preserve the existing Godot Web target as the intended current entry, while keeping the legacy WebGL path separate |
-| INHERIT | \`/games/inherit/index.html\` | Preserve the standalone browser game/PWA |
-| REMIX | \`/games/remix/index.html\` | Preserve the creator/replay runtime |
+| ИМПЕРИЯ ВРЕМЕНИ | `/games/time` | Preserve the current strategy runtime |
+| SWARM | `/games/swarm/index.html` | Preserve the standalone browser game and its API/WebSocket contract |
+| NULL//SHIFT | `/games/null-shift-godot/index.html` | Preserve the existing Godot Web target as the intended current entry, while keeping the legacy WebGL path separate |
+| INHERIT | `/games/inherit/index.html` | Preserve the standalone browser game/PWA |
+| REMIX | `/games/remix/index.html` | Preserve the creator/replay runtime |
 
-The public source tree includes \`public/games/swarm\`, \`public/games/null-shift\`, \`public/games/inherit\`, \`public/games/remix\`, and \`godot/null-shift\`. During the audit, no checked-in \`public/games/null-shift-godot/\` export directory was visible in the Git tree listing, although the manifest and the existing test suite expect exported Godot web assets at that path. The build or release process may materialize these assets separately; this must be confirmed from a production build artifact and the desktop/mobile route matrix before deployment. Do not activate a release in which \`index.js\`, \`index.wasm\`, or \`index.pck\` are missing.
+The public source tree includes `public/games/swarm`, `public/games/null-shift`, `public/games/inherit`, `public/games/remix`, and `godot/null-shift`. During the audit, no checked-in `public/games/null-shift-godot/` export directory was visible in the Git tree listing, although the manifest and the existing test suite expect exported Godot web assets at that path. The build or release process may materialize these assets separately; this must be confirmed from a production build artifact and the desktop/mobile route matrix before deployment. Do not activate a release in which `index.js`, `index.wasm`, or `index.pck` are missing.
 
 ### Current telemetry limitation
 
@@ -48,29 +48,31 @@ The portal already has a local event queue and authenticated first-party synchro
 2. **Arctic Signal** — deep navy, cyan/white signals and technical grid. Strong for sci-fi games, less warm for business and service products.
 3. **Aurum Archive** — warm black, brass and editorial serif typography. Premium, but risks feeling like a luxury-services company rather than a game ecosystem.
 
-**Chosen: Obsidian Compass.** The new \`public/osgard-mark.svg\` is a geometric star/compass built from original SVG shapes. The hub uses CSS-generated game cover graphics and locally available brand typography; it does not hotlink third-party cover art. The favicon is wired in \`index.html\`.
+**Chosen: Obsidian Compass.** The new `public/osgard-mark.svg` is a geometric star/compass built from original SVG shapes. The hub uses CSS-generated game cover graphics and locally available brand typography; it does not hotlink third-party cover art. The favicon is wired in `index.html`.
 
 Core palette:
-- Graphite \`#070a0e\` and raised panels \`#0d1219\`
-- Antique gold \`#cdb47d\`
-- Ice accent \`#8eafc9\`
-- High contrast text \`#edf2f8\`
-- Muted text \`#9aa8b9\`
+- Graphite `#070a0e` and raised panels `#0d1219`
+- Antique gold `#cdb47d`
+- Ice accent `#8eafc9`
+- High contrast text `#edf2f8`
+- Muted text `#9aa8b9`
 
 The style uses restraint rather than stacking glow on every element: typographic hierarchy, precise borders, controlled gold accents, game-specific color signatures, and reduced-motion support.
 
 ## 4. Implemented in this branch
 
-- \`src/GamesPlatform.tsx\`: a new OSGARD PLAY catalogue using the existing game manifest, with search, genre filters, sort order, favourites, recently opened history, a “continue” card, sharing, game-specific descriptions/controls labels and responsive card artwork.
-- \`src/games-platform.css\`: desktop/tablet/mobile layouts, focus-visible states, reduced-motion support, consent surface, sponsor inquiry and accessible empty states.
-- \`src/LegalPages.tsx\` and \`src/legal.css\`: working \`/privacy\` and \`/terms\` information pages with an explicit draft/legal-review notice.
-- \`public/osgard-mark.svg\`: original scalable brand mark used as the favicon.
-- \`src/main.tsx\`: new \`/games\`, \`/privacy\`, and \`/terms\` routes and SEO metadata.
-- \`src/App.tsx\`: the home-page all-games gateway now points to \`/games\`.
-- \`public/entertainment/index.html\`: the legacy static entertainment catalogue remains in place and links to the new hub.
-- \`nginx.conf\`: exact \`/games\` and \`/games/\` rules allow the SPA hub to coexist with the static \`/games/*\` game files.
-- \`scripts/games-platform-smoke.mjs\`: static integration checks.
-- \`package.json\`, \`.github/workflows/frontend-check.yml\`, \`scripts/production-route-matrix.mjs\`, \`scripts/release-readiness.mjs\`: wire the new smoke suite into CI/release checks and add hub/legal routes to the runtime matrix.
+- `src/GamesPlatform.tsx`: a new OSGARD PLAY catalogue using the existing game manifest, with search, genre filters, sort order, favourites, recently opened history, a “continue” card, sharing, game-specific descriptions/controls labels and responsive card artwork.
+- `src/games-platform.css`: desktop/tablet/mobile layouts, focus-visible states, reduced-motion support, consent surface, sponsor inquiry and accessible empty states.
+- `src/GameDetailPage.tsx`: individual game profiles at `/games/info/:id`.
+- `src/GamePlayer.tsx` and `src/game-player.css`: immersive launch shell at `/games/play/:id`, with loading/timeout/error/retry states, fullscreen, a NULL//SHIFT Godot-to-WebGL fallback, consent-gated session start/duration events, and recommendations.
+- `src/LegalPages.tsx` and `src/legal.css`: working `/privacy` and `/terms` information pages with an explicit draft/legal-review notice.
+- `public/osgard-mark.svg`: original scalable brand mark used as the favicon.
+- `src/main.tsx`: new `/games`, `/privacy`, and `/terms` routes and SEO metadata.
+- `src/App.tsx`: the home-page all-games gateway now points to `/games`.
+- `public/entertainment/index.html`: the legacy static entertainment catalogue remains in place and links to the new hub.
+- `nginx.conf`: exact `/games` and `/games/` rules allow the SPA hub to coexist with the static `/games/*` game files.
+- `scripts/games-platform-smoke.mjs`: static integration checks.
+- `package.json`, `.github/workflows/frontend-check.yml`, `scripts/production-route-matrix.mjs`, `scripts/release-readiness.mjs`: wire the new smoke suite into CI/release checks and add hub/legal routes to the runtime matrix.
 
 ### Games page behaviour
 
@@ -92,20 +94,20 @@ The hub includes all ten destinations supplied by the owner:
 
 | Project | Destination used in this branch | Copy scope |
 | --- | --- | --- |
-| OSGARD development | \`https://osgardbewworld.com\` | Digital product development |
-| O2 SYSTEM | \`https://o2system.art\` | Digital accounting/business operations |
-| SENJOR | \`https://senjorio.com\` | Personal mobility/ride service |
-| SUPER DAY | \`https://superday.run\` | Day planning and productivity |
-| MARCOSA | \`https://marcosa.club\` | Social/community space |
-| OSA / MYOSA | \`https://myosa.world\` | AI product direction |
-| GG EMPIRE | \`https://gold-glamour.online\` | Premium services |
-| GARD VPN | \`https://gardvpn.is\` | VPN/secure connection service |
-| OSGARD OS | \`https://osgardos.com\` | Business/product development |
-| VANGUARD STUDIO | \`https://osgardvanguard.studio\` | Video and creative services |
+| OSGARD development | `https://osgardbewworld.com` | Digital product development |
+| O2 SYSTEM | `https://o2system.art` | Digital accounting/business operations |
+| SENJOR | `https://senjorio.com` | Personal mobility/ride service |
+| SUPER DAY | `https://superday.run` | Day planning and productivity |
+| MARCOSA | `https://marcosa.club` | Social/community space |
+| OSA / MYOSA | `https://myosa.world` | AI product direction |
+| GG EMPIRE | `https://gold-glamour.online` | Premium services |
+| GARD VPN | `https://gardvpn.is` | VPN/secure connection service |
+| OSGARD OS | `https://osgardos.com` | Business/product development |
+| VANGUARD STUDIO | `https://osgardvanguard.studio` | Video and creative services |
 
 The live website copy and availability of the destinations must be checked again before advertising them in a campaign. A browser inspection showed SUPER DAY has product detail and an onboarding/waitlist flow. MARCOSA explicitly showed a local workspace preview and stated that payments/ad billing are disabled; the card does not claim otherwise. Some domains only returned a title or limited content in the inspection environment, which is insufficient to substantiate more detailed product claims.
 
-**Domain mismatch to confirm:** the owner's requested development domain is \`osgardbewworld.com\`, while the existing \`src/App.tsx\` world catalogue points to \`osgardnewworld.com\`. This branch follows the URL from the new request in the Games cross-promotion card but does not silently change the pre-existing world card. Confirm which domain is canonical before the next cross-site rollout.
+**Domain mismatch to confirm:** the owner's requested development domain is `osgardbewworld.com`, while the existing `src/App.tsx` world catalogue points to `osgardnewworld.com`. This branch follows the URL from the new request in the Games cross-promotion card but does not silently change the pre-existing world card. Confirm which domain is canonical before the next cross-site rollout.
 
 ## 6. Monetization plan — what is and isn't live
 
@@ -176,7 +178,7 @@ There is no verified traffic, eCPM, ad-fill, payer-conversion or lead-close data
 ## 8. Privacy, safety and integrity
 
 - No client-side payment secret, ad-network secret, signing key or privileged API token is added.
-- The form uses \`mailto:\`; there is no server-side lead storage, spam protection or lead dashboard in this branch.
+- The form uses `mailto:`; there is no server-side lead storage, spam protection or lead dashboard in this branch.
 - The optional analytics gate applies to event calls initiated by this new Games page. Existing pages elsewhere in the portal may send events via other paths; a future task should inventory each call site and implement a consistent site-wide consent policy before adding ad pixels or third-party analytics.
 - LocalStorage preferences are not a secure account store and are not synced between devices.
 - No ad impression/click is simulated. The sponsor panel is a labeled inquiry opportunity, not a paid ad.
@@ -184,34 +186,34 @@ There is no verified traffic, eCPM, ad-fill, payer-conversion or lead-close data
 
 ## 9. Test and release plan
 
-The new \`scripts/games-platform-smoke.mjs\` checks repository wiring, all five manifest games, routes, favicon, Nginx route priority, responsive/accessibility styling markers, consent gating, local state sanitation, UTM project URLs and disclosure of non-live advertising/payment status. It is registered as \`npm run qa:games\`, added to the frontend workflow, and added to the release-readiness gate. The production route matrix now includes \`/games\`, \`/games/\`, \`/privacy\` and \`/terms\`.
+The new `scripts/games-platform-smoke.mjs` checks repository wiring, all five manifest games, routes, favicon, Nginx route priority, responsive/accessibility styling markers, consent gating, local state sanitation, UTM project URLs and disclosure of non-live advertising/payment status. It is registered as `npm run qa:games`, added to the frontend workflow, and added to the release-readiness gate. The production route matrix now includes `/games`, `/games/`, `/privacy` and `/terms`.
 
 ### Run locally
 
-\`\`\`sh
+```sh
 npm ci
 npm run check
 npm run qa:games
 npm run build
 npm run preflight:frontend
 npm run qa:release
-\`\`\`
+```
 
 For a preview:
 
-\`\`\`sh
+```sh
 npm run dev
-\`\`\`
+```
 
 ### Pre-production checklist
 
 1. Review the branch diff and allow the pull-request CI to complete.
 2. Check the Godot web export artifacts noted in the technical audit.
 3. Build using the existing deployment process, including the SWARM source in the expected sibling directory.
-4. Stage the archive; compare file list, byte count and SHA-256 to \`release-manifest.json\`.
-5. Set \`OSGARD_BASE_URL\` for the production route matrix against staging; require desktop and mobile route checks to pass.
+4. Stage the archive; compare file list, byte count and SHA-256 to `release-manifest.json`.
+5. Set `OSGARD_BASE_URL` for the production route matrix against staging; require desktop and mobile route checks to pass.
 6. Confirm TLS, route behavior, the three new routes, all five game entry points, and the ten outgoing links.
 7. Activate only using the existing guarded deployment process with rollback retained. Do not delete the previous serving directory first.
-8. Record remote server/container and route-matrix evidence in \`docs/OSGARD_EXECUTION_LOG.md\`.
+8. Record remote server/container and route-matrix evidence in `docs/OSGARD_EXECUTION_LOG.md`.
 
-The manual GitHub deploy workflow remains the controlled production path. It requires \`OSGARD_DEPLOY_HOST\`, \`OSGARD_DEPLOY_USER\` and a dedicated least-privilege \`OSGARD_DEPLOY_KEY\`. The branch work itself does not deploy or change public production traffic.
+The manual GitHub deploy workflow remains the controlled production path. It requires `OSGARD_DEPLOY_HOST`, `OSGARD_DEPLOY_USER` and a dedicated least-privilege `OSGARD_DEPLOY_KEY`. The branch work itself does not deploy or change public production traffic.
