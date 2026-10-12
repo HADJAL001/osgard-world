@@ -9,6 +9,9 @@ on:
       - "scripts/time-prototype-smoke.mjs"
       - "docs/02_IMPERIUM_OF_TIME_GAME_DESIGN.md"
       - "public/skillcred/**"
+      - "public/games/**"
+      - "scripts/games-portal-smoke.mjs"
+      - "scripts/release-readiness.mjs"
       - "package.json"
       - "package-lock.json"
       - "vite.config.ts"
@@ -46,5 +49,7 @@ jobs:
         run: npm run qa:skillcred
       - name: Verify Imperium of Time game systems and visual diagnostics
         run: npm run qa:time-ui
+      - name: Verify game catalogue, INHERIT offline fallback and post-session discovery
+        run: npm run qa:games-portal
       - name: Validate static archive and HTML
         run: npm run preflight:frontend
