@@ -30,6 +30,7 @@ on:
       - "scripts/time-prototype-smoke.mjs"
       - "scripts/null-shift-premium-smoke.mjs"
       - "scripts/games-portal-smoke.mjs"
+      - "scripts/ecosystem-integrity-smoke.mjs"
       - "docs/09_OSGARD_GAMES_PLATFORM_AUDIT.md"
       - "docs/04_NULL_SHIFT_GAME_DESIGN.md"
       - "docs/02_IMPERIUM_OF_TIME_GAME_DESIGN.md"
@@ -50,6 +51,8 @@ jobs:
       - run: npm run qa:null-shift
       - name: Smoke-test the OSGARD Games hub
         run: npm run qa:games-portal
+      - name: Verify ecosystem links, claims, contacts and privacy boundaries
+        run: npm run qa:ecosystem
 
       - name: Validate the Godot game project contract
         run: npm run qa:null-shift-godot
