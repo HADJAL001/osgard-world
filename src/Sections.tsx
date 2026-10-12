@@ -98,10 +98,10 @@ function LegacyClubPage({ locale, setLocale }: { locale: Locale, setLocale: (v: 
 const catalogue = [
   { id: '01', name: 'AURUM CORE', type: 'ARCHIVE OBJECT', metric: '07 THREADS', mark: 4, tone: 'artifact-gold' },
   { id: '02', name: 'TIMECOIN', type: 'ACCESS TOKEN', metric: '2026 EDITION', mark: 5, tone: 'artifact-silver' },
-  { id: '03', name: 'GARD SHIELD', type: 'PRIVATE PROTOCOL', metric: '99.9% QUIET', mark: 0, tone: 'artifact-wine' },
-  { id: '04', name: 'SUPER DAY', type: 'RHYTHM ENGINE', metric: '+02 HOURS', mark: 3, tone: 'artifact-blue' },
-  { id: '05', name: 'VANGUARD FRAME', type: 'VISUAL COMMISSION', metric: '4K MASTER', mark: 6, tone: 'artifact-amber' },
-  { id: '06', name: 'O2 LEDGER', type: 'PRECISION SYSTEM', metric: '0.0% NOISE', mark: 2, tone: 'artifact-green' },
+  { id: '03', name: 'GARD SHIELD', type: 'PRIVATE PROTOCOL', metric: 'VPN SERVICE', mark: 0, tone: 'artifact-wine' },
+  { id: '04', name: 'SUPER DAY', type: 'RHYTHM ENGINE', metric: 'DAY PLANNER', mark: 3, tone: 'artifact-blue' },
+  { id: '05', name: 'VANGUARD FRAME', type: 'VISUAL COMMISSION', metric: 'VIDEO STUDIO', mark: 6, tone: 'artifact-amber' },
+  { id: '06', name: 'O2 LEDGER', type: 'PRECISION SYSTEM', metric: 'CASH TRACKING', mark: 2, tone: 'artifact-green' },
 ]
 
 export function CatalogPage({ locale, setLocale }: { locale: Locale, setLocale: (v: Locale) => void }) {
