@@ -251,7 +251,12 @@
         });
       });
       document.getElementById("fullscreen").addEventListener("click", function () {
-        var request = document.fullscreenElement ? document.exitFullscreen() : canvas.requestFullscreen();
+        var request = null;
+        if (document.fullscreenElement && document.exitFullscreen) {
+          request = document.exitFullscreen();
+        } else if (canvas.requestFullscreen) {
+          request = canvas.requestFullscreen();
+        }
         if (request && typeof request.catch === "function") request.catch(function () {});
       });
     })();

@@ -26,7 +26,11 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
           : route.endsWith('/ready') ? /"ready"\s*:\s*true/.test(text)
             : /"id"\s*:/.test(text) && /"name"\s*:/.test(text)
         : route.startsWith('/games/null-shift-godot')
-          ? /<canvas/i.test(text) && /godot/i.test(text) && text.includes('index.wasm') && text.includes('index.pck')
+          ? /<canvas/i.test(text) && /godot/i.test(text) && text.includes('index.wasm') && text.includes('index.pck') &&
+            text.includes('data-nullshift-shell="premium-v1"') &&
+            text.includes('Engine.isWebGLAvailable(2)') &&
+            text.includes('onProgress') &&
+            text.includes('НАЧАТЬ ОПЕРАЦИЮ')
           : route.startsWith('/games/null-shift')
             ? text.includes('id="game"') && text.includes('id="mobile-ui"') && text.includes('id="diag-panel"') && text.includes('id="sound-toggle"') && text.includes('id="touch-sound"') && text.includes('./styles.css') && text.includes('./game.js') && text.includes('./engine-3d.js') && text.includes('id="engine-toggle"') && text.includes('id="touch-engine"') && text.includes('id="godot-preview"')
           : route === '/entertainment'
