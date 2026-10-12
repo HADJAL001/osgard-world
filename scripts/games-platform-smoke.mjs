@@ -66,6 +66,8 @@ assert.ok(!/5-star|five stars|\b[0-9,.]+\s*(?:million|тыс\.? игроков|�
 assert.ok(platform.includes('Локально') || platform.includes('локально'), 'Explain local-only player preferences')
 assert.ok(detail.includes('GAME_DETAILS[gameEntry.id]') && detail.includes('Игра запускается по настроенному веб-маршруту'), 'Dedicated game profile must use manifest metadata and clarify launch routing')
 assert.ok(player.includes('watchdog') && player.includes('toggleFullscreen') && player.includes('game_session_started') && player.includes('elapsedSeconds') && player.includes('fallbackUsedRef'), 'Player must track opt-in session duration and implement timeout/fullscreen/Godot fallback')
+assert.ok(player.includes('visibilitychange') && player.includes('visibleSinceRef') && player.includes('activeDurationMsRef') && player.includes('durationSeconds'), 'Session duration should measure visible time separately from elapsed time')
+assert.ok(platform.includes('event.key.toLowerCase() === \'k\'') && platform.includes('searchRef.current?.focus()'), 'Catalog search keyboard shortcut must focus the search input')
 assert.ok(playerCss.includes('.ogp-frame-shell') && playerCss.includes(':fullscreen') && playerCss.includes('@media (max-width:600px)'), 'Responsive player shell styling missing')
 assert.ok(platform.includes("href={'/games/play/' + game.id}") && detail.includes("href={'/games/play/' + gameEntry.id}"), 'Catalogue and game profiles should launch through the player shell')
 assert.ok(legal.includes('Проектная редакция') && legal.includes('проверить его с юристом'), 'Legal text must be described as a draft')
