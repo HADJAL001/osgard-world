@@ -48,6 +48,7 @@ check('game hub uses external local assets', html.includes('/games/catalog.json'
 check('search and genre filters exist', html.includes('id="game-search"') && html.includes('id="genre-filter"'))
 check('favorites and recents use local storage', hubJs.includes('osgard.games.favorites.v1') && hubJs.includes('osgard.games.recent.v1'))
 check('analytics is opt-in and local-first', hubJs.includes('osgard.games.analytics-consent.v1') && hubJs.includes('osgard.games.analytics.v1') && hubJs.includes('osgard.games.pending.v1') && hubJs.includes('localStorage'))
+check('server analytics uses only shared OSGARD event names', hubJs.includes('const serverEventNames = ["portal_opened", "game_opened", "game_session_started", "game_session_completed", "score_submitted", "share_created"]') && hubJs.includes('serverEventNames.includes(name)'))
 check('analytics sync requires consent and an authenticated same-origin API', hubJs.includes('if (!hasConsent()) return;') && hubJs.includes('osgard.auth.accessToken') && hubJs.includes('fetch("/api/v1/player/events"') && hubJs.includes('credentials: "same-origin"'))
 check('hub data and analytics use no third-party fetch endpoints', hubJs.includes('fetch("/games/catalog.json"') && !hubJs.includes('fetch("https://') && !hubJs.includes("fetch('https://")
 check('detail and embedded player exist', html.includes('id="game-dialog"') && html.includes('id="game-frame"') && hubJs.includes('requestFullscreen'))
