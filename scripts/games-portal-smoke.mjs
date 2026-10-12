@@ -91,3 +91,18 @@ assert.ok(mainSource.includes("function EntertainmentRedirect()") && mainSource.
 assert.ok(sectionSource.includes("['Entertainment', '/games/']"), 'Secondary OSGARD navigation must link Entertainment directly to Games hub')
 assert.ok(rootIndex.includes('href="/osgard-mark.svg"') && rootIndex.includes('"logo":"https://osgard.world/osgard-mark.svg"'), 'Root page must use the original OSGARD brand mark for favicon and organization schema')
 assert.ok(existsSync(resolve('public/osgard-mark.svg')), 'Original OSGARD brand mark is present')
+
+
+const luxuryCss = readFileSync(resolve(root,'luxury.css'),'utf8')
+const luxuryJs = readFileSync(resolve(root,'luxury.js'),'utf8')
+assert.ok(html.includes('href="./luxury.css"'), 'Premium OSGARD PLAY theme must be linked')
+assert.ok(html.includes('src="./luxury.js" defer'), 'Premium catalogue interactions must be loaded')
+assert.ok(html.includes('<body class="luxury-entertainment">'), 'Premium body theme class is missing')
+for (const feature of ['sortCards','launchRandom','updateResumeButton','navigator.share',"event.key === '/'","event.key.toLowerCase() === 'r'","event.key.toLowerCase() === 'f'"]) {
+  assert.ok(luxuryJs.includes(feature), 'Premium catalogue action missing: '+feature)
+}
+assert.ok(luxuryJs.includes("osgard.games.recent.v1"), 'Premium resume control must reuse existing recent-game history')
+assert.ok(luxuryCss.includes('.luxury-entertainment') && luxuryCss.includes('@media(max-width:760px)'), 'Premium theme or mobile layout missing')
+assert.ok(luxuryCss.includes('@media(prefers-reduced-motion:reduce)'), 'Premium theme must respect reduced-motion preference')
+assert.ok(luxuryCss.includes(':focus-visible') || html.includes(':focus-visible'), 'Keyboard-visible focus state must remain available')
+new Function(luxuryJs)
