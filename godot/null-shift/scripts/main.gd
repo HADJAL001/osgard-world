@@ -1713,7 +1713,7 @@ func _update_mobile_layout() -> void:
 func _layout_compact_controls(viewport_size: Vector2) -> void:
 	var width: float = viewport_size.x
 	var move_width: float = clampf(width * 0.44, 142.0, 218.0)
-	var action_width: float = clampf(width * 0.47, 150.0, 206.0)
+	var action_width: float = floor(clampf(width * 0.47, 150.0, 206.0))
 	mobile_move_panel.offset_left = 8.0
 	mobile_move_panel.offset_right = 8.0 + move_width
 	mobile_move_panel.offset_top = -178.0

@@ -38,6 +38,7 @@ assert.ok(game.includes('var role: String = str(guard.get("role", "RANGER"))') &
 assert.ok(!game.includes('var role := str(guard.get("role", "RANGER"))'), 'Every role read from an untyped dictionary must have an explicit String type')
 assert.ok(!game.includes('var role :='), 'All Godot role local variables must declare an explicit type')
 assert.ok(game.includes('func _layout_compact_controls(viewport_size: Vector2)') && game.includes('var action_button_width: float = floor((action_width - 32.0) * 0.5)'), 'Godot mobile HUD targets must adapt to compact viewports')
+assert.ok(game.includes('var action_width: float = floor(clampf(width * 0.47, 150.0, 206.0))'), 'Godot mobile action panel widths must resolve to integer layout pixels')
 assert.ok(game.includes('mobile_modules_button.custom_minimum_size = Vector2(action_width - 24.0, 28.0)') && game.includes('sound_button.custom_minimum_size = Vector2(action_width - 24.0, 28.0)'), 'All mobile action utilities must fit their container')
 assert.ok(game.includes('camera_follow_position = camera_follow_position.lerp') && game.includes('operator_rig.position.y = sin(scene_clock'), 'Godot camera smoothing and operator animation must exist')
 assert.ok(!game.includes('%.1F'), 'Godot float formatting tokens must use supported lowercase specifiers')
