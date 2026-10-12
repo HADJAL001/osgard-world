@@ -14,6 +14,13 @@
 ## Typography
 The existing portal imports Cormorant Garamond, Jost, Inter, Playfair Display and JetBrains Mono in different surfaces. Games uses Inter for operational labels and Playfair/Cormorant-style serif headlines, with JetBrains Mono for indices and telemetry. Before global typography refactoring, consolidate font loading to avoid duplicate Google Fonts requests and define fallbacks.
 
+## Logo directions considered
+1. **North star / orbit (selected):** a geometric signal/star held by two precise rings. It reads at favicon size and connects the game's systems/network motif with the wider ecosystem.
+2. **OS monogram in a metal frame:** compact and corporate, but too close to a generic SaaS mark and less distinctive across game covers.
+3. **Split axis / two-world glyph:** good for the reality-switching game, but too tied to NULL//SHIFT to represent the whole portfolio.
+
+The selected north-star/orbit direction is implemented as the original SVG favicon below; the other two are documented design routes, not shipped logo files.
+
 ## Mark and use
 `public/osgard-mark.svg` introduces an original star/orbit mark sized for favicon use: dark rounded field, fine gold circle, subtle mint ring, geometric star and mint core. Existing `OsgardLogo` remains the main wordmark. Use the SVG mark for compact contexts, not as a substitute for the full wordmark.
 
