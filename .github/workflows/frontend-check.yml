@@ -54,5 +54,7 @@ jobs:
         run: npm run qa:games-portal
       - name: Verify partner inventory and enquiry form
         run: npm run qa:partners-page
+      - name: Verify ecosystem links, claims, contacts and privacy boundaries
+        run: npm run qa:ecosystem
       - name: Validate static archive and HTML
         run: npm run preflight:frontend
