@@ -224,3 +224,12 @@ This pass removes recurring allocations from the firefight path: beams and ring 
 - Added a native Godot HUD target bracket built from eight vector rectangles, a role-colored health bar and live role/HP readout. Its projected screen position follows the target with exponential smoothing and a restrained pulse. The marker hides if the target is behind the camera, outside usable viewport bounds, destroyed, hidden by a menu or no longer selected.
 - The runtime smoke test now moves a guard into a known visible position and checks the bracket, identity, health bar and hide-on-unlock behaviour. Static source checks require the target selection and ray-query path in the packaged Godot project.
 - This is an engine-backed gameplay feature, not a mockup or an 8K guarantee. It improves touch targeting and combat readability while keeping the same Godot game and web export.
+
+
+## Release 1.8 — tactical operator dash
+
+- Added an engine-side dash mapped to Space and a dedicated mobile action button. Direction follows current WASD/arrow/touch movement; with no movement input it follows operator aim.
+- The CharacterBody3D keeps its collision-aware \`move_and_slide()\` path but receives a short 3.05× movement burst. A 0.24 s active window grants a single bounded evade against the next damage event; a 1.65 s cooldown prevents repeated evades.
+- The dash triggers pooled cyan/violet ring and trail effects, a small camera impulse, a synthesized sound and a temporary suit flash/lean. HUD feedback shows active/recharge/ready state; diagnostics count successful evades and report the cooldown.
+- The compact mobile action panel grows to fit its fifth action without reusing movement or aim surface. Headless smoke checks exercise touch triggering, movement direction, real CharacterBody movement, cooldown rejection, one-hit immunity, suit feedback, and diagnostics rows.
+- CI remains responsible for official Godot 4.7.2 installation/templates, headless gameplay tests, WebAssembly/PCK export and published Godot route checks.

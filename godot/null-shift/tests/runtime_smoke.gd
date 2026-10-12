@@ -305,6 +305,60 @@ func _run_smoke() -> void:
 	game.player.velocity = Vector3.ZERO
 	game.player_aim = Vector3.FORWARD
 
+	print("RUNTIME_STAGE: tactical operator dash, visual response and timed evade")
+	if not _expect(is_instance_valid(game.mobile_dash_button) and game.mobile_action_buttons.size() == 5, "mobile HUD must expose a dedicated fifth dash action"):
+		return
+	var dash_saved_position: Vector3 = game.player.global_position
+	var dash_saved_velocity: Vector3 = game.player.velocity
+	var dash_saved_aim: Vector3 = game.player_aim
+	var dash_saved_health: float = game.player_health
+	var dash_saved_damage_cooldown: float = game.damage_cooldown
+	var dash_saved_phase_timer: float = game.null_shift_timer
+	var dash_saved_damage_flash: float = game.damage_flash_timer
+	game.player.global_position = Vector3(-3.0, 0.82, 0.0)
+	game.player.velocity = Vector3.ZERO
+	game.player_aim = Vector3.RIGHT
+	game.mobile_actions["right"] = true
+	game.dash_timer = 0.0
+	game.dash_cooldown = 0.0
+	game.damage_flash_timer = 0.0
+	var evades_before: int = game.dash_evasions
+	game._set_mobile_action("dash", true)
+	if not _expect(game.dash_timer >= game.DASH_DURATION - 0.001 and game.dash_cooldown >= game.DASH_COOLDOWN - 0.001 and game.dash_direction.is_equal_approx(Vector3.RIGHT), "touch dash must start in the held movement direction and start its cooldown"):
+		return
+	var dash_cooldown_before: float = game.dash_cooldown
+	game._try_dash()
+	if not _expect(is_equal_approx(game.dash_cooldown, dash_cooldown_before), "dash cooldown must prevent a second dash exploit"):
+		return
+	var dash_move_origin: Vector3 = game.player.global_position
+	game._move_player(0.016)
+	if not _expect(game.player.global_position.x > dash_move_origin.x + 0.12, "dash must move the real CharacterBody3D faster than a normal step"):
+		return
+	game.damage_cooldown = 0.0
+	game.null_shift_timer = 0.0
+	game._damage_player(10.0)
+	if not _expect(is_equal_approx(game.player_health, dash_saved_health) and game.dash_evasions == evades_before + 1, "dash must grant a measurable one-hit evade without subtracting health"):
+		return
+	game._damage_player(10.0)
+	if not _expect(game.dash_evasions == evades_before + 1, "one dash can count at most one evaded hit"):
+		return
+	game._update_player_material()
+	if not _expect(game.operator_suit.material_override == game.materials["white"], "dash must create a visible suit flash during its active window"):
+		return
+	game.dash_timer = 0.0
+	game.dash_cooldown = 0.0
+	game.dash_evasion_registered = false
+	game.mobile_actions["right"] = false
+	game.player.global_position = dash_saved_position
+	game.player.velocity = dash_saved_velocity
+	game.player_aim = dash_saved_aim
+	game.player_health = dash_saved_health
+	game.damage_cooldown = dash_saved_damage_cooldown
+	game.null_shift_timer = dash_saved_phase_timer
+	game.damage_flash_timer = dash_saved_damage_flash
+	game._update_hud()
+	game._update_effect_expiry(1.0)
+
 	print("RUNTIME_STAGE: bounded transient beam/ring pools")
 	game._spawn_beam(Vector3(-1.0, 1.0, 0.0), Vector3(1.0, 1.0, 0.0), game.materials["cyan"], 0.10)
 	if not _expect(game.beam_pool.size() == 1 and game.beam_effects.size() == 1 and game.beam_pool[0].visible, "beam firing must activate one pooled mesh"):
@@ -483,6 +537,8 @@ func _run_smoke() -> void:
 	if not _expect(game.diagnostics_label.text.contains("DRAW CALLS"), "diagnostics must expose renderer counters"):
 		return
 	if not _expect(game.diagnostics_label.text.contains("FX ACTIVE") and game.diagnostics_label.text.contains("FX DROPPED"), "diagnostics must report active effects and pool overflow"):
+		return
+	if not _expect(game.diagnostics_label.text.contains("DASH EVADES") and game.diagnostics_label.text.contains("DASH CD"), "diagnostics must expose successful dash evades and cooldown timing"):
 		return
 
 	print("RUNTIME_STAGE: cipher hack")

@@ -6,6 +6,9 @@ const CIPHER := [KEY_UP, KEY_LEFT, KEY_DOWN, KEY_RIGHT]
 const SAVE_PATH := "user://null_shift_career.cfg"
 const MAX_BEAM_POOL := 28
 const MAX_RING_POOL := 10
+const DASH_DURATION := 0.24
+const DASH_COOLDOWN := 1.65
+const DASH_SPEED_MULTIPLIER := 3.05
 
 var player: CharacterBody3D
 var camera: Camera3D
@@ -71,6 +74,11 @@ var armor_level := 0
 var pulse_level := 0
 var player_health := 100.0
 var player_max_health := 100.0
+var dash_timer := 0.0
+var dash_cooldown := 0.0
+var dash_direction := Vector3.FORWARD
+var dash_evasions := 0
+var dash_evasion_registered := false
 var pulse_cooldown := 0.0
 var fire_cooldown := 0.0
 var damage_cooldown := 0.0
@@ -144,6 +152,8 @@ var quality_button: Button
 var mobile_quality_button: Button
 var mobile_diagnostics_button: Button
 var mobile_modules_button: Button
+var mobile_dash_button: Button
+var dash_status_label: Label
 var status_panel: PanelContainer
 var objective_panel: PanelContainer
 var tactical_radar_panel: PanelContainer
@@ -275,6 +285,7 @@ func _physics_process(delta: float) -> void:
 		return
 	var dt := minf(delta, 0.05)
 	fire_cooldown = maxf(0.0, fire_cooldown - dt)
+	dash_cooldown = maxf(0.0, dash_cooldown - dt)
 	pulse_cooldown = maxf(0.0, pulse_cooldown - dt)
 	damage_cooldown = maxf(0.0, damage_cooldown - dt)
 	null_shift_timer = maxf(0.0, null_shift_timer - dt)
@@ -283,6 +294,8 @@ func _physics_process(delta: float) -> void:
 	_move_player(dt)
 	_update_guards(dt)
 	_check_phase_lane_damage()
+	# Keep the evade window open through movement, hostile attacks and lane damage for this physics tick.
+	dash_timer = maxf(0.0, dash_timer - dt)
 	if touch_firing or mouse_firing:
 		_fire_weapon()
 	if player_health <= 0.0:
@@ -316,6 +329,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_interact()
 		KEY_Q:
 			_deploy_pulse()
+		KEY_SPACE:
+			_try_dash()
 		KEY_SHIFT:
 			_shift_layer()
 		KEY_F2:
@@ -1014,13 +1029,7 @@ func _spawn_guard(at: Vector3, is_warden: bool) -> void:
 		"phase": randf_range(0.0, TAU)
 	})
 
-func _move_player(_delta: float) -> void:
-	if not is_instance_valid(player):
-		return
-	if terminal_active:
-		player.velocity = Vector3.ZERO
-		_update_player_aim()
-		return
+func _read_move_input() -> Vector2:
 	var move := Vector2(
 		float(Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT)) - float(Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT)),
 		float(Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN)) - float(Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP))
@@ -1029,11 +1038,51 @@ func _move_player(_delta: float) -> void:
 		float(mobile_actions.get("right", false)) - float(mobile_actions.get("left", false)),
 		float(mobile_actions.get("down", false)) - float(mobile_actions.get("up", false))
 	)
-	if move.length() > 1.0:
-		move = move.normalized()
-	player.velocity = Vector3(move.x * PLAYER_SPEED, 0.0, move.y * PLAYER_SPEED)
+	return move.normalized() if move.length() > 1.0 else move
+
+func _move_player(_delta: float) -> void:
+	if not is_instance_valid(player):
+		return
+	if terminal_active:
+		player.velocity = Vector3.ZERO
+		_update_player_aim()
+		return
+	if dash_timer > 0.0:
+		player.velocity = dash_direction * PLAYER_SPEED * DASH_SPEED_MULTIPLIER
+	else:
+		var move := _read_move_input()
+		player.velocity = Vector3(move.x * PLAYER_SPEED, 0.0, move.y * PLAYER_SPEED)
 	player.move_and_slide()
 	_update_player_aim()
+
+func _try_dash() -> void:
+	if dash_cooldown > 0.0 or paused_game or mission_finished or terminal_active or briefing_visible:
+		return
+	if is_instance_valid(loadout_panel) and loadout_panel.visible:
+		return
+	if is_instance_valid(pause_panel) and pause_panel.visible:
+		return
+	if not is_instance_valid(player):
+		return
+	var move := _read_move_input()
+	if move.length_squared() > 0.001:
+		dash_direction = Vector3(move.x, 0.0, move.y).normalized()
+	else:
+		dash_direction = Vector3(player_aim.x, 0.0, player_aim.z).normalized()
+	if dash_direction.length_squared() < 0.001:
+		dash_direction = Vector3.FORWARD
+	dash_timer = DASH_DURATION
+	dash_cooldown = DASH_COOLDOWN
+	dash_evasion_registered = false
+	var dash_material: Material = materials["violet"] if null_shift_timer > 0.0 else materials["cyan"]
+	var feet: Vector3 = player.global_position + Vector3.UP * 0.12
+	_spawn_ring_burst(feet, dash_material)
+	_spawn_beam(feet + Vector3.UP * 0.34, feet + Vector3.UP * 0.34 - dash_direction * 2.5, dash_material, 0.2)
+	_screen_impulse(0.04, 0.12)
+	_play_sfx(245.0, 0.12, 0.075)
+	if is_instance_valid(dash_status_label):
+		dash_status_label.text = "РЫВОК · УКЛОНЕНИЕ АКТИВНО"
+		dash_status_label.add_theme_color_override("font_color", Color(0.38, 1.0, 0.86))
 
 func _update_player_aim() -> void:
 	if not is_instance_valid(player) or not is_instance_valid(camera):
@@ -1527,6 +1576,16 @@ func _near(first: Node3D, second: Node3D, distance: float) -> bool:
 	return is_instance_valid(first) and is_instance_valid(second) and first.global_position.distance_to(second.global_position) < distance
 
 func _damage_player(amount: float, attacker: Node3D = null) -> void:
+	if dash_timer > 0.0:
+		if not dash_evasion_registered:
+			dash_evasion_registered = true
+			dash_evasions += 1
+			_play_sfx(820.0, 0.065, 0.045)
+			if is_instance_valid(dash_status_label):
+				dash_status_label.text = "УКЛОНЕНИЕ · АТАКА ПРОПУЩЕНА"
+				dash_status_label.add_theme_color_override("font_color", Color(0.58, 1.0, 0.91))
+			_update_hud()
+		return
 	if damage_cooldown > 0.0 or null_shift_timer > 0.0:
 		return
 	damage_cooldown = 0.5
@@ -1830,6 +1889,7 @@ func _create_ui() -> void:
 	credits_label = _label(status_stack, "РЕЙД  000  ·  КАРЬЕРА  000", 12, Color(1.0, 0.77, 0.39))
 	threat_label = _label(status_stack, "УГРОЗА: ВЫСОКАЯ", 11, Color(1.0, 0.3, 0.38))
 	hazard_status_label = _label(status_stack, "ЭНЕРГОКОНТУРЫ · СТАБИЛЬНО", 9, Color(0.38, 0.9, 0.82))
+	dash_status_label = _label(status_stack, "РЫВОК ГОТОВ · SPACE", 9, Color(0.38, 0.9, 0.82))
 	phase_lane_status_row = HBoxContainer.new()
 	phase_lane_status_row.name = "PhaseLaneStatus"
 	phase_lane_status_row.add_theme_constant_override("separation", 4)
@@ -2389,7 +2449,7 @@ func _create_mobile_controls(parent: Control) -> void:
 			button.button_down.connect(_set_mobile_action.bind(action, true))
 			button.button_up.connect(_set_mobile_action.bind(action, false))
 			mobile_move_buttons.append(button)
-	mobile_action_panel = _make_panel(parent, Control.PRESET_BOTTOM_RIGHT, Rect2(-222.0, -252.0, 206.0, 236.0))
+	mobile_action_panel = _make_panel(parent, Control.PRESET_BOTTOM_RIGHT, Rect2(-222.0, -286.0, 206.0, 270.0))
 	var action_stack := _panel_stack(mobile_action_panel)
 	_label(action_stack, "COMBAT / СИСТЕМЫ", 9, Color(0.38, 0.9, 0.82))
 	var action_grid := GridContainer.new()
@@ -2401,13 +2461,17 @@ func _create_mobile_controls(parent: Control) -> void:
 		{"key": "fire", "label": "ОГОНЬ"},
 		{"key": "use", "label": "ДЕЙСТВИЕ"},
 		{"key": "pulse", "label": "ИМПУЛЬС"},
-		{"key": "shift", "label": "СДВИГ"}
+		{"key": "shift", "label": "СДВИГ"},
+		{"key": "dash", "label": "РЫВОК"}
 	]
 	for item in combat_actions:
 		var action_button := _add_button(action_grid, item["label"], func(): pass, Vector2(84.0, 38.0))
 		action_button.button_down.connect(_set_mobile_action.bind(item["key"], true))
 		action_button.button_up.connect(_set_mobile_action.bind(item["key"], false))
 		mobile_action_buttons.append(action_button)
+		if str(item["key"]) == "dash":
+			mobile_dash_button = action_button
+			mobile_dash_button.add_theme_font_size_override("font_size", 8)
 	var utility_row := HBoxContainer.new()
 	utility_row.add_theme_constant_override("separation", 4)
 	action_stack.add_child(utility_row)
@@ -2434,6 +2498,8 @@ func _set_mobile_action(action: String, pressed: bool) -> void:
 					_deploy_pulse()
 				"shift":
 					_shift_layer()
+				"dash":
+					_try_dash()
 
 func _update_mobile_layout() -> void:
 	# Godot may dispatch a first layout frame before the platform reports a valid viewport.
@@ -2467,7 +2533,7 @@ func _update_mobile_layout() -> void:
 		status_panel.offset_left = 10.0
 		status_panel.offset_top = 10.0
 		status_panel.offset_right = width - 10.0
-		status_panel.offset_bottom = 126.0
+		status_panel.offset_bottom = 140.0
 		status_title.add_theme_font_size_override("font_size", 18)
 		status_subtitle.visible = false
 		status_shortcuts.visible = false
@@ -2480,8 +2546,8 @@ func _update_mobile_layout() -> void:
 		objective_panel.anchor_bottom = 0.0
 		objective_panel.offset_left = 10.0
 		objective_panel.offset_right = -10.0
-		objective_panel.offset_top = 134.0
-		objective_panel.offset_bottom = 204.0
+		objective_panel.offset_top = 148.0
+		objective_panel.offset_bottom = 218.0
 		objective_title.visible = false
 		telemetry_label.visible = false
 		objective_actions.visible = false
@@ -2495,7 +2561,7 @@ func _update_mobile_layout() -> void:
 		status_panel.offset_left = 18.0
 		status_panel.offset_top = 18.0
 		status_panel.offset_right = 334.0
-		status_panel.offset_bottom = 208.0
+		status_panel.offset_bottom = 224.0
 		status_title.add_theme_font_size_override("font_size", 22)
 		status_subtitle.visible = true
 		status_shortcuts.visible = true
@@ -2543,7 +2609,7 @@ func _layout_compact_controls(viewport_size: Vector2) -> void:
 	mobile_move_panel.offset_bottom = -8.0
 	mobile_action_panel.offset_left = -8.0 - action_width
 	mobile_action_panel.offset_right = -8.0
-	mobile_action_panel.offset_top = -244.0
+	mobile_action_panel.offset_top = -286.0
 	mobile_action_panel.offset_bottom = -8.0
 	var move_size: float = 36.0 if width < 400.0 else (44.0 if width < 520.0 else 52.0)
 	var move_button_height: float = 32.0 if width < 400.0 else 36.0
@@ -2625,6 +2691,19 @@ func _update_hud() -> void:
 	threat_label.text = "УГРОЗА: %s" % ("КРИТИЧЕСКАЯ" if alarm_active else ("ВЫСОКАЯ" if not guards.is_empty() else "НИЗКАЯ"))
 	threat_label.add_theme_color_override("font_color", Color(1.0, 0.25, 0.34) if alarm_active else Color(0.95, 0.72, 0.39) if not guards.is_empty() else Color(0.35, 1.0, 0.81))
 	objective_label.text = objective_text
+	if is_instance_valid(dash_status_label):
+		if dash_timer > 0.0:
+			dash_status_label.text = "РЫВОК АКТИВЕН · %.1f С" % dash_timer
+			dash_status_label.add_theme_color_override("font_color", Color(0.38, 1.0, 0.86))
+		elif dash_cooldown > 0.02:
+			dash_status_label.text = "РЫВОК · ПЕРЕЗАРЯДКА %.1f С" % dash_cooldown
+			dash_status_label.add_theme_color_override("font_color", Color(1.0, 0.72, 0.34))
+		else:
+			dash_status_label.text = "РЫВОК ГОТОВ · SPACE"
+			dash_status_label.add_theme_color_override("font_color", Color(0.38, 1.0, 0.82))
+	if is_instance_valid(mobile_dash_button):
+		mobile_dash_button.text = "РЫВОК" if dash_cooldown <= 0.02 else "РЫВОК %.1f" % dash_cooldown
+		mobile_dash_button.disabled = dash_cooldown > 0.02 or paused_game or mission_finished or terminal_active or briefing_visible
 	telemetry_label.text = "HOSTILES %02d  ·  DEVICES %02d  ·  CONTRACT %02d" % [guards.size(), _living_device_count(), current_contract + 1]
 	if diagnostics_enabled:
 		var samples := frame_samples.duplicate()
@@ -2635,10 +2714,10 @@ func _update_hud() -> void:
 		fps_p95_ms = p95
 		var draw_calls := int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
 		var profile: String = "PERFORMANCE" if performance_quality else ("BALANCED" if not cinematic_quality else ("AUTO-OPTIMIZED" if adaptive_quality_degraded else "CINEMATIC"))
-		diagnostics_label.text = "LIVE DIAGNOSTICS\nFPS        %02d\nFRAME P95  %.1f ms\nFRAME NOW  %.1f ms\nDRAW CALLS %d\nFX ACTIVE  %02d\nFX POOLS   %02d BEAM / %02d RING\nFX DROPPED %d\nGUARDS     %d\nDEVICES    %d\nPROFILE    %s" % [
+		diagnostics_label.text = "LIVE DIAGNOSTICS\nFPS        %02d\nFRAME P95  %.1f ms\nFRAME NOW  %.1f ms\nDRAW CALLS %d\nFX ACTIVE  %02d\nFX POOLS   %02d BEAM / %02d RING\nFX DROPPED %d\nGUARDS     %d\nDEVICES    %d\nDASH EVADES %d\nDASH CD    %.1f s\nPROFILE    %s" % [
 			Engine.get_frames_per_second(), fps_p95_ms, current_frame_ms, draw_calls,
 			effects.size(), beam_pool.size(), ring_pool.size(), effect_pool_exhaustions,
-			guards.size(), _living_device_count(), profile
+			guards.size(), _living_device_count(), dash_evasions, dash_cooldown, profile
 		]
 
 func _living_device_count() -> int:
@@ -2679,6 +2758,8 @@ func _update_player_material() -> void:
 		operator_suit.material_override = materials["red"]
 	elif null_shift_timer > 0.0:
 		operator_suit.material_override = materials["violet"]
+	elif dash_timer > 0.0:
+		operator_suit.material_override = materials["white"]
 	else:
 		operator_suit.material_override = materials["cyan"]
 
@@ -2695,7 +2776,8 @@ func _animate_world(delta: float) -> void:
 			operator_rig.rotation.y = lerp_angle(operator_rig.rotation.y, target_yaw, smoothing)
 		weapon_recoil = move_toward(weapon_recoil, 0.0, delta * 10.5)
 		operator_rig.rotation.x = lerpf(operator_rig.rotation.x, -weapon_recoil * 0.035, smoothing)
-		var target_lean: float = clampf(-player.velocity.x / PLAYER_SPEED * 0.045, -0.055, 0.055)
+		var dash_lean: float = -dash_direction.x * 0.12 if dash_timer > 0.0 else 0.0
+		var target_lean: float = clampf(-player.velocity.x / PLAYER_SPEED * 0.045 + dash_lean, -0.16, 0.16)
 		operator_rig.rotation.z = lerpf(operator_rig.rotation.z, target_lean, smoothing)
 		for leg_index in range(operator_leg_pivots.size()):
 			var leg: Node3D = operator_leg_pivots[leg_index]
