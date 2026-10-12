@@ -54,6 +54,10 @@ check('Game launch has loading, fullscreen and standalone fallback controls', ()
   for (const token of ['gh-game-loading', 'requestFullscreen()', 'Open game separately', 'game.href']) assert.ok(hub.includes(token), token)
 })
 check('Browser share has a clipboard fallback', () => assert.ok(hub.includes('navigator.share') && hub.includes('navigator.clipboard?.writeText')))
+check('Search shortcut is wired and failed iframe shell can be detected', () => {
+  assert.ok(hub.includes('event.metaKey || event.ctrlKey') && hub.includes('searchRef.current?.focus()'))
+  assert.ok(hub.includes('const validTitle') && hub.includes('setFrameError(true)'))
+})
 check('All ten cross-promotion links are present', () => {
   for (const domain of ['osgardbewworld.com','o2system.art','senjorio.com','superday.run','marcosa.club','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio']) assert.ok(hub.includes(domain), domain)
 })
@@ -65,6 +69,10 @@ check('Contact addresses and lead form are wired', () => {
 check('Lead form states that server delivery is not connected', () => assert.ok(hub.includes('server-side form delivery is not connected yet') && hub.includes('Серверное хранение заявок пока не подключено')))
 check('Game detail pages include control/support/features sections', () => {
   for (const token of ['gh-detail-info-grid', 'controlsRu', 'supportRu', 'featuresRu']) assert.ok(hub.includes(token), token)
+})
+check('Catalog and game pages expose dynamic SEO metadata/schema', () => {
+  assert.ok(hub.includes("'@type': 'CollectionPage'") && hub.includes("'@type': 'VideoGame'"))
+  assert.ok(hub.includes('meta[property="og:title"]') && hub.includes('meta[name="twitter:title"]'))
 })
 check('Responsive breakpoints and reduced-motion handling exist', () => {
   assert.ok(css.includes('@media (max-width: 760px)') && css.includes('@media (max-width: 380px)') && css.includes('prefers-reduced-motion: reduce') && css.includes(':focus-visible'))
