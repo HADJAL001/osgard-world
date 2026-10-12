@@ -62,7 +62,7 @@ assert.ok(platform.includes("if (consent !== 'analytics') return"), 'Optional ga
 assert.ok(events.includes('function recordOsgardEvent'), 'Existing first-party event queue should be reused')
 assert.ok(platform.includes('function readHistory()') && platform.includes('Number.isFinite(entry.at)'), 'History storage must be sanitized')
 assert.ok(platform.includes('OSGARD_GAMES.map((game, index)'), 'The actual manifest should be the game catalogue source')
-assert.ok(!/5-star|five stars|\\b[0-9,.]+\\s*(?:million|тыс\\.? игроков|игроков онлайн)/i.test(platform), 'Avoid fabricated ratings or player counts')
+assert.ok(!/5-star|five stars|\b[0-9,.]+\s*(?:million|тыс\.? игроков|игроков онлайн)/i.test(platform), 'Avoid fabricated ratings or player counts')
 assert.ok(platform.includes('Локально') || platform.includes('локально'), 'Explain local-only player preferences')
 assert.ok(detail.includes('GAME_DETAILS[gameEntry.id]') && detail.includes('Игра запускается по настроенному веб-маршруту'), 'Dedicated game profile must use manifest metadata and clarify launch routing')
 assert.ok(player.includes('watchdog') && player.includes('toggleFullscreen') && player.includes('game_session_started') && player.includes('elapsedSeconds') && player.includes('fallbackUsedRef'), 'Player must track opt-in session duration and implement timeout/fullscreen/Godot fallback')
