@@ -2,6 +2,10 @@ import { assessReport } from './games-lighthouse-report.mjs'
 import assert from 'node:assert/strict'
 import { readFileSync, existsSync } from 'node:fs'
 import { resolve } from 'node:path'
+const entertainmentAlias = readFileSync(resolve('public/entertainment/index.html'),'utf8')
+const rootIndex = readFileSync(resolve('index.html'),'utf8')
+const mainSource = readFileSync(resolve('src/main.tsx'),'utf8')
+const sectionSource = readFileSync(resolve('src/Sections.tsx'),'utf8')
 const root=resolve('public/games')
 const html=readFileSync(resolve(root,'index.html'),'utf8')
 const lifecycle=readFileSync(resolve(root,'player-lifecycle.js'),'utf8')
@@ -77,3 +81,9 @@ assert.ok(js.includes('frame.requestFullscreen()'),'Fullscreen action missing')
 assert.ok(!/https?:\/\/(?:fonts\.googleapis\.com|fonts\.gstatic\.com|cdn\.jsdelivr\.net|unpkg\.com)/i.test(html),'External asset CDN found')
 for(const host of ['osgardbewworld.com','o2system.art','senjorio.com','superday.run','marcosa.club','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio']) assert.ok(html.includes('utm_source=osgard_games')&&html.includes(host),'Cross-promo UTM missing for '+host)
 console.log('PASS OSGARD GAMES HUB: five actual game routes, search/filters, local favorites/history, embedded player/fullscreen/share, consent-gated authenticated analytics, cross-promotion, contact form, SEO, mobile/reduced-motion styling and legal documents.')
+
+assert.ok(entertainmentAlias.includes('content="0;url=/games/"') && entertainmentAlias.includes("window.location.replace('/games/')"), 'Legacy /entertainment path must forward to the canonical Games hub')
+assert.ok(mainSource.includes("function EntertainmentRedirect()") && mainSource.includes("path === '/entertainment' ? <EntertainmentRedirect />") && !mainSource.includes("import { EntertainmentCatalog }"), 'React /entertainment route must forward to the canonical Games hub')
+assert.ok(sectionSource.includes("['Entertainment', '/games/']"), 'Secondary OSGARD navigation must link Entertainment directly to Games hub')
+assert.ok(rootIndex.includes('href="/osgard-mark.svg"') && rootIndex.includes('"logo":"https://osgard.world/osgard-mark.svg"'), 'Root page must use the original OSGARD brand mark for favicon and organization schema')
+assert.ok(existsSync(resolve('public/osgard-mark.svg')), 'Original OSGARD brand mark is present')

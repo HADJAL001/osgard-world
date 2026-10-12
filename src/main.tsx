@@ -20,7 +20,6 @@ import './stream.css'
 import App from './App'
 import MiniApp from './MiniApp'
 import { AurumPage, CatalogPage, ChroniclePage, ClubPage, DevelopmentPage, MastersPage, TimeCoinPage, WorldsPage } from './Sections'
-import { EntertainmentCatalog } from './EntertainmentCatalog'
 import { ResultPage } from './ResultPage'
 import { BusinessDiagnostic } from './BusinessDiagnostic'
 import { CreatePrototype } from './CreatePrototype'
@@ -91,6 +90,18 @@ function Seo({ path }: { path: string }) {
 }
 
 const path = location.pathname.replace(/\/+$/, '') || '/'
+
+function EntertainmentRedirect() {
+  React.useEffect(() => {
+    window.location.replace('/games/')
+  }, [])
+  return <main className="standalone" style={{ minHeight: '55vh', display: 'grid', placeContent: 'center', padding: '32px', color: '#e9e5d8', background: '#080a0b' }} role="status">
+    <p style={{ color: '#d3ff69', letterSpacing: '.16em', fontSize: '11px' }}>OSGARD / ENTERTAINMENT</p>
+    <h1 style={{ fontWeight: 400, fontSize: 'clamp(28px, 5vw, 48px)' }}>Игровая платформа переехала.</h1>
+    <p>Открываем единый каталог игр OSGARD.</p>
+    <a href="/games/" style={{ color: '#d3ff69' }}>Открыть каталог игр →</a>
+  </main>
+}
 function RoutedRoot() {
   const [locale, setLocale] = React.useState<'ru' | 'en'>('ru')
   if (path === '/miniapp') return <MiniApp />
@@ -106,7 +117,7 @@ function RoutedRoot() {
   if (path === '/community') return <CommunitySurface />
   if (path === '/stream') return <StreamSurface />
   if (path === '/archive') return <ArchiveSurface />
-  const page = path === '/marcosa' ? <EcosystemSurface kind="marcosa" /> : path === '/media' ? <EcosystemSurface kind="media" /> : path === '/core-events' ? <CoreEvents /> : path === '/mobility' ? <MobilityPrototype /> : path === '/create' ? <CreatePrototype /> : path === '/business' ? <BusinessDiagnostic /> : path.startsWith('/r/') ? <ResultPage id={path.split('/')[2] || '1842'} /> : path === '/worlds' ? <WorldsPage locale={locale} setLocale={setLocale} /> : path === '/aurum' ? <AurumPage locale={locale} setLocale={setLocale} /> : path === '/timecoin' ? <TimeCoinPage locale={locale} setLocale={setLocale} /> : path === '/development' ? <DevelopmentPage locale={locale} setLocale={setLocale} /> : path === '/catalog' ? <CatalogPage locale={locale} setLocale={setLocale} /> : path === '/chronicle' ? <EcosystemSurface kind="chronicle" /> : path === '/masters' ? <MastersPage locale={locale} setLocale={setLocale} /> : path === '/club' ? <ClubPage locale={locale} setLocale={setLocale} /> : path === '/entertainment' ? <EntertainmentCatalog locale={locale} setLocale={setLocale} /> : <App />
+  const page = path === '/marcosa' ? <EcosystemSurface kind="marcosa" /> : path === '/media' ? <EcosystemSurface kind="media" /> : path === '/core-events' ? <CoreEvents /> : path === '/mobility' ? <MobilityPrototype /> : path === '/create' ? <CreatePrototype /> : path === '/business' ? <BusinessDiagnostic /> : path.startsWith('/r/') ? <ResultPage id={path.split('/')[2] || '1842'} /> : path === '/worlds' ? <WorldsPage locale={locale} setLocale={setLocale} /> : path === '/aurum' ? <AurumPage locale={locale} setLocale={setLocale} /> : path === '/timecoin' ? <TimeCoinPage locale={locale} setLocale={setLocale} /> : path === '/development' ? <DevelopmentPage locale={locale} setLocale={setLocale} /> : path === '/catalog' ? <CatalogPage locale={locale} setLocale={setLocale} /> : path === '/chronicle' ? <EcosystemSurface kind="chronicle" /> : path === '/masters' ? <MastersPage locale={locale} setLocale={setLocale} /> : path === '/club' ? <ClubPage locale={locale} setLocale={setLocale} /> : path === '/entertainment' ? <EntertainmentRedirect /> : <App />
   return <><Seo path={path} />{page}</>
 }
 createRoot(document.getElementById('root')!).render(<StrictMode><RoutedRoot /></StrictMode>)
