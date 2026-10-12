@@ -157,6 +157,7 @@ export function GamesHub() {
   const [search, setSearch] = useState('')
   const [genre, setGenre] = useState<Genre>('Все')
   const [favorites, setFavorites] = useState<string[]>(() => readStringArray(FAVORITES_KEY))
+  const [showFavorites, setShowFavorites] = useState(false)
   const [history, setHistory] = useState<GameId[]>(() => readStringArray(HISTORY_KEY).filter((id): id is GameId => GAMES.some((game) => game.id === id)))
   const [consent, setConsent] = useState<AnalyticsConsent>(readConsent)
   const [mobileMenu, setMobileMenu] = useState(false)
@@ -171,6 +172,7 @@ export function GamesHub() {
   const didTrackView = useRef(false)
   const featured = GAMES.find((game) => game.id === featuredId) ?? GAMES[0]
   const lastPlayed = GAMES.find((game) => game.id === history[0])
+  const continueTarget = lastPlayed ?? featured
 
   useEffect(() => {
     if (consent !== 'accepted' || didTrackView.current) return
@@ -184,9 +186,10 @@ export function GamesHub() {
     return GAMES.filter((game) => {
       const matchesSearch = !normalized || [game.title, game.genre, game.mode, game.description].join(' ').toLocaleLowerCase('ru').includes(normalized)
       const matchesGenre = genre === 'Все' || game.genre === genre || (genre === 'Стратегия' && game.genre === 'Стратегия / симуляция') || (genre === 'Тактика' && game.id === 'null-shift') || (genre === 'Кооператив' && game.id === 'null-shift')
-      return matchesSearch && matchesGenre
+      const matchesFavorites = !showFavorites || favorites.includes(game.id)
+      return matchesSearch && matchesGenre && matchesFavorites
     })
-  }, [search, genre])
+  }, [search, genre, showFavorites, favorites])
 
   function openGame(game: GameEntry) {
     const nextHistory = [game.id, ...history.filter((id) => id !== game.id)].slice(0, 8)
@@ -312,7 +315,7 @@ export function GamesHub() {
           <h1>Войди в мир.<br /><em>Оставь след.</em></h1>
           <p className="gh-hero-lead">Игры OSGARD — отдельные игровые миры в одной экосистеме. Выбирайте, пробуйте, возвращайтесь к последней игре и делитесь ссылкой без навязчивых рекламных окон.</p>
           <div className="gh-hero-actions">
-            <a className="gh-button gh-button-primary" href={featured.href} onClick={() => openGame(featured)}><Gamepad2 size={17} /> {lastPlayed ? 'Продолжить: ' + lastPlayed.title : 'Запустить первую игру'} <ArrowUpRight size={16} /></a>
+            <a className="gh-button gh-button-primary" href={continueTarget.href} onClick={() => openGame(continueTarget)}><Gamepad2 size={17} /> {lastPlayed ? 'Продолжить: ' + lastPlayed.title : 'Запустить первую игру'} <ArrowUpRight size={16} /></a>
             <a className="gh-button gh-button-quiet" href="#games">Исследовать каталог <ArrowRight size={16} /></a>
           </div>
           <div className="gh-hero-metrics" aria-label="Состав каталога">
@@ -337,7 +340,7 @@ export function GamesHub() {
         <div className="gh-controls">
           <label className="gh-search"><Search size={18} /><span className="gh-visually-hidden">Поиск игр</span><input value={search} onChange={(event) => { setSearch(event.target.value); trackLocal('catalog_search_used', { queryLength: event.target.value.length }) }} placeholder="Название, жанр или механика…" /><kbd>/</kbd></label>
           <div className="gh-filters" role="group" aria-label="Фильтр жанра">{(['Все', 'Стратегия', 'Тактика', 'Кооператив', 'Создание'] as Genre[]).map((item) => <button key={item} type="button" className={genre === item ? 'is-active' : ''} aria-pressed={genre === item} onClick={() => { setGenre(item); trackLocal('catalog_filter_used', { genre: item }) }}>{item}</button>)}</div>
-          <button className="gh-favorites-filter" type="button" onClick={() => { setGenre('Все'); setSearch(favorites.length ? GAMES.filter((game) => favorites.includes(game.id)).map((game) => game.title).join(' ') : '___нет избранного___'); trackLocal('favorites_filter_used', { favorites: favorites.length }) }}><Heart size={15} /> Избранное <span>{favorites.length}</span></button>
+          <button className={showFavorites ? "gh-favorites-filter is-active" : "gh-favorites-filter"} type="button" aria-pressed={showFavorites} onClick={() => { setGenre('Все'); setSearch(''); setShowFavorites((value) => !value); trackLocal('favorites_filter_used', { favorites: favorites.length, enabled: !showFavorites }) }}><Heart size={15} /> Избранное <span>{favorites.length}</span></button>
         </div>
         {notice && <div className="gh-notice" role="status"><Check size={15} />{notice}<button aria-label="Закрыть сообщение" onClick={() => setNotice('')}><X size={15} /></button></div>}
         <div className="gh-game-grid">
@@ -357,7 +360,7 @@ export function GamesHub() {
               </div>
             </article>
           ))}
-          {!filteredGames.length && <div className="gh-empty"><Search size={26} /><h3>Ничего не найдено</h3><p>Измени поиск или выбери другой жанр.</p><button className="gh-button gh-button-quiet" type="button" onClick={() => { setSearch(''); setGenre('Все') }}>Сбросить фильтры</button></div>}
+          {!filteredGames.length && <div className="gh-empty"><Search size={26} /><h3>Ничего не найдено</h3><p>Измени поиск или выбери другой жанр.</p><button className="gh-button gh-button-quiet" type="button" onClick={() => { setSearch(''); setGenre('Все'); setShowFavorites(false) }}>Сбросить фильтры</button></div>}
         </div>
       </section>
 
