@@ -42,6 +42,8 @@ jobs:
         run: npm run check
       - name: Build the production site
         run: npm run build
+      - name: Verify games catalogue routing, consent, outbound links and fallback assets
+        run: npm run qa:games-platform
       - name: Verify live SkillCred page wiring
         run: npm run qa:skillcred
       - name: Verify Imperium of Time game systems and visual diagnostics
