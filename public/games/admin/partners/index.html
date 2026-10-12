@@ -33,7 +33,7 @@
 'use strict';
 const $=selector=>document.querySelector(selector);
 const MAX_PLACEMENTS=12;
-let inventory=null,originJson='';
+let inventory=null;
 const requiredStrings=['id','number','title','where','description','bestFor','statusLabel','frequencyCap','measurement'];
 const limits={id:40,number:4,title:100,where:240,description:600,bestFor:120,statusLabel:50,frequencyCap:240,measurement:600};
 const statusNode=$('#status');
@@ -71,25 +71,21 @@ function render(){
   const fields=document.createElement('div');fields.className='fields';
   const id=input(item.id,limits.id,true);fields.append(label('СИСТЕМНЫЙ ID / НЕ МЕНЯЕТСЯ',id));
   const number=input(item.number,limits.number,true);fields.append(label('НОМЕР / НЕ МЕНЯЕТСЯ',number));
+  let statusLabelInput=null;
   for(const [key,caption] of [['title','НАЗВАНИЕ'],['where','РАСПОЛОЖЕНИЕ'],['bestFor','ЦЕЛЬ ИНТЕГРАЦИИ'],['statusLabel','ПУБЛИЧНАЯ МЕТКА СТАТУСА'],['frequencyCap','ЛИМИТ ЧАСТОТЫ / УСЛОВИЯ']]){
-   const el=input(item[key],limits[key]);el.addEventListener('input',()=>{update(index,key,el.value);title.textContent=inventory.placements[index].title||'Новый формат';sub.textContent='PLACEMENT / '+item.number+' · '+item.id});fields.append(label(caption,el))
+   const el=input(item[key],limits[key]);if(key==='statusLabel')statusLabelInput=el;el.addEventListener('input',()=>{update(index,key,el.value);title.textContent=inventory.placements[index].title||'Новый формат';sub.textContent='PLACEMENT / '+item.number+' · '+item.id});fields.append(label(caption,el))
   }
   const desc=textarea(item.description,limits.description);desc.addEventListener('input',()=>update(index,'description',desc.value));fields.append(label('ОПИСАНИЕ ФОРМАТА',desc,true));
   const measure=textarea(item.measurement,limits.measurement);measure.addEventListener('input',()=>update(index,'measurement',measure.value));fields.append(label('ИЗМЕРЕНИЕ / КРИТЕРИЙ РЕЗУЛЬТАТА',measure,true));
-  const statusLabel=document.createElement('select');for(const [value,text] of [['planned','planned — планируется'],['inquiry','inquiry — по запросу']]){const option=document.createElement('option');option.value=value;option.textContent=text;statusLabel.append(option)}statusLabel.value=item.status;statusLabel.addEventListener('change',()=>{update(index,'status',statusLabel.value);item.statusLabel=statusLabel.value==='planned'?'Предложение':'Запрос предложения';const inputField=Array.from(card.querySelectorAll('input')).find(el=>el.value===item.statusLabel||el.maxLength===limits.statusLabel);if(inputField)inputField.value=item.statusLabel});fields.append(label('ВНУТРЕННИЙ СТАТУС',statusLabel));
+  const statusLabel=document.createElement('select');for(const [value,text] of [['planned','planned — планируется'],['inquiry','inquiry — по запросу']]){const option=document.createElement('option');option.value=value;option.textContent=text;statusLabel.append(option)}statusLabel.value=item.status;statusLabel.addEventListener('change',()=>{update(index,'status',statusLabel.value);item.statusLabel=statusLabel.value==='planned'?'Предложение':'Запрос предложения';if(statusLabelInput)statusLabelInput.value=item.statusLabel;state.textContent='Публичный статус: '+item.statusLabel});fields.append(label('ВНУТРЕННИЙ СТАТУС',statusLabel));
   const foot=document.createElement('div');foot.className='status-line';const forced=document.createElement('span');forced.className='lock';forced.textContent='LOCKED · active: false · sponsorLabelRequired: true';const state=document.createElement('span');state.textContent='Публичный статус: '+item.statusLabel;foot.append(forced,state);card.append(head,fields,foot);root.append(card);
  });
  const issues=validate(inventory);$('#download').disabled=issues.length>0;$('#add').disabled=inventory.placements.length>=MAX_PLACEMENTS;
 }
 function normalizeNumbers(){inventory.placements.forEach((item,index)=>{item.number=String(index+1).padStart(2,'0')})}
-function tidy(data){
- const clone=JSON.parse(JSON.stringify(data));clone.schemaVersion=1;clone.currency='EUR';clone.commercialStatus='inquiry_only';
- clone.placements=clone.placements.map((item,index)=>({...item,number:String(index+1).padStart(2,'0'),active:false,sponsorLabelRequired:true}));
- return clone;
-}
 async function loadPublished(){
  $('#reload').disabled=true;message('Загружаю опубликованный inventory.json…');
- try{const response=await fetch('/games/partners/inventory.json',{cache:'no-store',credentials:'same-origin',redirect:'error'});if(!response.ok)throw new Error('HTTP '+response.status);const data=await response.json();const issues=validate(data);if(issues.length)throw new Error(issues.slice(0,3).join(' '));inventory=data;originJson=JSON.stringify(data);render();$('#add').disabled=inventory.placements.length>=MAX_PLACEMENTS;message('Опубликованная конфигурация загружена. Правки остаются локальными до экспорта.','success')}
+ try{const response=await fetch('/games/partners/inventory.json',{cache:'no-store',credentials:'same-origin',redirect:'error'});if(!response.ok)throw new Error('HTTP '+response.status);const data=await response.json();const issues=validate(data);if(issues.length)throw new Error(issues.slice(0,3).join(' '));inventory=data;render();$('#add').disabled=inventory.placements.length>=MAX_PLACEMENTS;message('Опубликованная конфигурация загружена. Правки остаются локальными до экспорта.','success')}
  catch(error){inventory=null;render();message('Не удалось загрузить JSON: '+(error instanceof Error?error.message:'ошибка')+'. Используйте «Импорт JSON», если файл у вас есть.','error')}
  finally{$('#reload').disabled=false}
 }
