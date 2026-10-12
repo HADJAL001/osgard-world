@@ -42,6 +42,11 @@ func _run_smoke() -> void:
 	game._screen_impulse(0.2, 0.25)
 	if not _expect(game.camera_shake_timer > 0.0 and game.camera_shake_strength >= 0.2, "camera impact response must be measurable"):
 		return
+	game._layout_compact_controls(Vector2(320.0, 640.0))
+	if not _expect(is_equal_approx(game.mobile_move_panel.offset_right - game.mobile_move_panel.offset_left, 142.0), "320px layout must constrain the movement panel"):
+		return
+	if not _expect(is_equal_approx(game.mobile_action_panel.offset_right - game.mobile_action_panel.offset_left, 150.0) and is_equal_approx(game.mobile_action_buttons[0].custom_minimum_size.x, 59.0), "320px layout must size combat buttons to the viewport"):
+		return
 	var saved_position: Vector3 = game.player.global_position
 	game.player.global_position = Vector3(0.0, 0.82, 0.0)
 	var clear_lane: Array = [{"from": Vector3(0.0, 1.0, -10.0), "to": Vector3(0.0, 1.0, 0.0)}]

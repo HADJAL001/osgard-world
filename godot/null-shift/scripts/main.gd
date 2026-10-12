@@ -94,6 +94,21 @@ var crosshair_parts: Array[ColorRect] = []
 var local_lights: Array[OmniLight3D] = []
 var fill_light: OmniLight3D
 var sound_button: Button
+var status_panel: PanelContainer
+var objective_panel: PanelContainer
+var mid_panel: PanelContainer
+var bottom_hint: Label
+var status_title: Label
+var status_subtitle: Label
+var status_shortcuts: Label
+var objective_title: Label
+var objective_actions: HBoxContainer
+var mobile_move_buttons: Array[Button] = []
+var mobile_move_spacers: Array[Control] = []
+var mobile_action_buttons: Array[Button] = []
+var touch_assisted_aim := false
+var last_layout_size := Vector2(-1.0, -1.0)
+var last_layout_touch := false
 var briefing_panel: PanelContainer
 var briefing_visible := false
 var briefing_scroll: ScrollContainer
@@ -1262,30 +1277,30 @@ func _create_ui() -> void:
 	hud_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(hud_root)
 
-	var status_panel := _make_panel(hud_root, Control.PRESET_TOP_LEFT, Rect2(18.0, 18.0, 316.0, 190.0))
+	status_panel = _make_panel(hud_root, Control.PRESET_TOP_LEFT, Rect2(18.0, 18.0, 316.0, 190.0))
 	var status_stack := _panel_stack(status_panel)
-	_label(status_stack, "NULL//SHIFT", 22, Color(0.38, 1.0, 0.86))
-	_label(status_stack, "PHASE TRANSIT  /  TACTICAL RAID", 9, Color(0.49, 0.67, 0.69))
+	status_title = _label(status_stack, "NULL//SHIFT", 22, Color(0.38, 1.0, 0.86))
+	status_subtitle = _label(status_stack, "PHASE TRANSIT  /  TACTICAL RAID", 9, Color(0.49, 0.67, 0.69))
 	health_label = _label(status_stack, "ВИТАЛЬНОСТЬ  100 / 100", 13, Color(0.86, 1.0, 0.97))
 	credits_label = _label(status_stack, "РЕЙД  000  ·  КАРЬЕРА  000", 12, Color(1.0, 0.77, 0.39))
 	threat_label = _label(status_stack, "УГРОЗА: ВЫСОКАЯ", 11, Color(1.0, 0.3, 0.38))
-	_label(status_stack, "ПОМОЩЬ / H  ·  FPS / F3  ·  ГРАФИКА / F2", 8, Color(0.48, 0.6, 0.62))
+	status_shortcuts = _label(status_stack, "ПОМОЩЬ / H  ·  FPS / F3  ·  ГРАФИКА / F2", 8, Color(0.48, 0.6, 0.62))
 
-	var objective_panel := _make_panel(hud_root, Control.PRESET_TOP_RIGHT, Rect2(-334.0, 18.0, 316.0, 178.0))
+	objective_panel = _make_panel(hud_root, Control.PRESET_TOP_RIGHT, Rect2(-334.0, 18.0, 316.0, 178.0))
 	var objective_stack := _panel_stack(objective_panel)
-	_label(objective_stack, "MISSION CONTROL", 11, Color(1.0, 0.77, 0.39))
+	objective_title = _label(objective_stack, "MISSION CONTROL", 11, Color(1.0, 0.77, 0.39))
 	objective_label = _label(objective_stack, objective_text, 12, Color(0.88, 0.96, 0.95))
 	objective_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	objective_label.custom_minimum_size = Vector2(285.0, 64.0)
 	telemetry_label = _label(objective_stack, "HOSTILES 03  ·  DEVICES 03  ·  CONTRACT 01", 10, Color(0.48, 0.72, 0.72))
-	var button_row := HBoxContainer.new()
-	button_row.add_theme_constant_override("separation", 6)
-	objective_stack.add_child(button_row)
-	_add_button(button_row, "DIAG / F3", func(): _toggle_diagnostics(), Vector2(88.0, 32.0))
-	_add_button(button_row, "QUALITY / F2", func(): _toggle_quality(), Vector2(115.0, 32.0))
-	_add_button(button_row, "PAUSE / ESC", func(): _set_pause(not paused_game), Vector2(88.0, 32.0))
+	objective_actions = HBoxContainer.new()
+	objective_actions.add_theme_constant_override("separation", 6)
+	objective_stack.add_child(objective_actions)
+	_add_button(objective_actions, "DIAG / F3", func(): _toggle_diagnostics(), Vector2(88.0, 32.0))
+	_add_button(objective_actions, "QUALITY / F2", func(): _toggle_quality(), Vector2(115.0, 32.0))
+	_add_button(objective_actions, "PAUSE / ESC", func(): _set_pause(not paused_game), Vector2(88.0, 32.0))
 
-	var mid_panel := _make_panel(hud_root, Control.PRESET_CENTER_TOP, Rect2(-225.0, 98.0, 450.0, 68.0))
+	mid_panel = _make_panel(hud_root, Control.PRESET_CENTER_TOP, Rect2(-225.0, 98.0, 450.0, 68.0))
 	mid_panel.modulate = Color(1.0, 1.0, 1.0, 0.92)
 	var mid_stack := _panel_stack(mid_panel)
 	_label(mid_stack, "TACTICAL TELEMETRY  /  LOCAL SESSION", 9, Color(0.34, 0.86, 0.8))
@@ -1301,7 +1316,7 @@ func _create_ui() -> void:
 	diagnostics_label.visible = false
 	diagnostics_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
-	var bottom_hint := _label(hud_root, "WASD / СТРЕЛКИ · ЛКМ ОГОНЬ · E ДЕЙСТВИЕ · Q ИМПУЛЬС · SHIFT NULL SHIFT", 10, Color(0.54, 0.71, 0.7))
+	bottom_hint = _label(hud_root, "WASD / СТРЕЛКИ · ЛКМ ОГОНЬ · E ДЕЙСТВИЕ · Q ИМПУЛЬС · SHIFT NULL SHIFT", 10, Color(0.54, 0.71, 0.7))
 	bottom_hint.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
 	bottom_hint.offset_left = 20.0
 	bottom_hint.offset_top = -45.0
@@ -1436,7 +1451,7 @@ func _create_crosshair() -> void:
 func _update_crosshair() -> void:
 	if not is_instance_valid(crosshair_root) or crosshair_parts.size() < 5:
 		return
-	var allowed := not mobile_controls_visible and not paused_game and not terminal_active and not mission_finished and not briefing_visible
+	var allowed := not touch_assisted_aim and not paused_game and not terminal_active and not mission_finished and not briefing_visible
 	allowed = allowed and not (is_instance_valid(loadout_panel) and loadout_panel.visible)
 	allowed = allowed and not (is_instance_valid(keypad_panel) and keypad_panel.visible)
 	crosshair_root.visible = allowed
@@ -1560,11 +1575,13 @@ func _create_mobile_controls(parent: Control) -> void:
 			var spacer := Control.new()
 			spacer.custom_minimum_size = Vector2(52.0, 38.0)
 			grid.add_child(spacer)
+			mobile_move_spacers.append(spacer)
 		else:
 			var arrow := "↑" if action == "up" else ("↓" if action == "down" else ("←" if action == "left" else "→"))
 			var button := _add_button(grid, arrow, func(): pass, Vector2(52.0, 38.0))
 			button.button_down.connect(_set_mobile_action.bind(action, true))
 			button.button_up.connect(_set_mobile_action.bind(action, false))
+			mobile_move_buttons.append(button)
 	mobile_action_panel = _make_panel(parent, Control.PRESET_BOTTOM_RIGHT, Rect2(-222.0, -218.0, 206.0, 202.0))
 	var action_stack := _panel_stack(mobile_action_panel)
 	_label(action_stack, "COMBAT / СИСТЕМЫ", 9, Color(0.38, 0.9, 0.82))
@@ -1583,6 +1600,7 @@ func _create_mobile_controls(parent: Control) -> void:
 		var action_button := _add_button(action_grid, item["label"], func(): pass, Vector2(84.0, 38.0))
 		action_button.button_down.connect(_set_mobile_action.bind(item["key"], true))
 		action_button.button_up.connect(_set_mobile_action.bind(item["key"], false))
+		mobile_action_buttons.append(action_button)
 	_add_button(action_stack, "МОДУЛИ", _toggle_loadout, Vector2(176.0, 31.0))
 	sound_button = _add_button(action_stack, "ЗВУК / ВКЛ" if sound_enabled else "ЗВУК / ВЫКЛ", _toggle_sound, Vector2(176.0, 29.0))
 
@@ -1605,8 +1623,15 @@ func _set_mobile_action(action: String, pressed: bool) -> void:
 
 func _update_mobile_layout() -> void:
 	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+	var touch_device: bool = DisplayServer.is_touchscreen_available()
+	if viewport_size.is_equal_approx(last_layout_size) and last_layout_touch == touch_device:
+		return
+	last_layout_size = viewport_size
+	last_layout_touch = touch_device
 	var width: float = viewport_size.x
-	mobile_controls_visible = width < 880.0 or DisplayServer.is_touchscreen_available()
+	var compact: bool = width < 880.0 or touch_device
+	mobile_controls_visible = compact
+	touch_assisted_aim = touch_device
 	if is_instance_valid(briefing_panel):
 		var panel_width: float = maxf(280.0, minf(620.0, viewport_size.x - 24.0))
 		var panel_height: float = maxf(260.0, minf(466.0, viewport_size.y - 24.0))
@@ -1614,10 +1639,95 @@ func _update_mobile_layout() -> void:
 		briefing_panel.offset_right = panel_width * 0.5
 		briefing_panel.offset_top = -panel_height * 0.5
 		briefing_panel.offset_bottom = panel_height * 0.5
-	if is_instance_valid(mobile_move_panel):
-		mobile_move_panel.visible = mobile_controls_visible
-	if is_instance_valid(mobile_action_panel):
-		mobile_action_panel.visible = mobile_controls_visible
+	if compact:
+		status_panel.offset_left = 10.0
+		status_panel.offset_top = 10.0
+		status_panel.offset_right = width - 10.0
+		status_panel.offset_bottom = 126.0
+		status_title.add_theme_font_size_override("font_size", 18)
+		status_subtitle.visible = false
+		status_shortcuts.visible = false
+		health_label.add_theme_font_size_override("font_size", 11)
+		credits_label.add_theme_font_size_override("font_size", 10)
+		threat_label.add_theme_font_size_override("font_size", 10)
+		objective_panel.anchor_left = 0.0
+		objective_panel.anchor_right = 1.0
+		objective_panel.anchor_top = 0.0
+		objective_panel.anchor_bottom = 0.0
+		objective_panel.offset_left = 10.0
+		objective_panel.offset_right = -10.0
+		objective_panel.offset_top = 134.0
+		objective_panel.offset_bottom = 204.0
+		objective_title.visible = false
+		telemetry_label.visible = false
+		objective_actions.visible = false
+		objective_label.add_theme_font_size_override("font_size", 11)
+		objective_label.custom_minimum_size = Vector2(maxf(240.0, width - 52.0), 34.0)
+		mid_panel.visible = false
+		bottom_hint.visible = false
+		_layout_compact_controls(viewport_size)
+	else:
+		status_panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+		status_panel.offset_left = 18.0
+		status_panel.offset_top = 18.0
+		status_panel.offset_right = 334.0
+		status_panel.offset_bottom = 208.0
+		status_title.add_theme_font_size_override("font_size", 22)
+		status_subtitle.visible = true
+		status_shortcuts.visible = true
+		health_label.add_theme_font_size_override("font_size", 13)
+		credits_label.add_theme_font_size_override("font_size", 12)
+		threat_label.add_theme_font_size_override("font_size", 11)
+		objective_panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+		objective_panel.offset_left = -334.0
+		objective_panel.offset_top = 18.0
+		objective_panel.offset_right = -18.0
+		objective_panel.offset_bottom = 196.0
+		objective_title.visible = true
+		telemetry_label.visible = true
+		objective_actions.visible = true
+		objective_label.add_theme_font_size_override("font_size", 12)
+		objective_label.custom_minimum_size = Vector2(285.0, 64.0)
+		mid_panel.visible = true
+		bottom_hint.visible = true
+		mobile_move_panel.offset_left = 16.0
+		mobile_move_panel.offset_right = 234.0
+		mobile_move_panel.offset_top = -218.0
+		mobile_move_panel.offset_bottom = -16.0
+		mobile_action_panel.offset_left = -222.0
+		mobile_action_panel.offset_right = -16.0
+		mobile_action_panel.offset_top = -218.0
+		mobile_action_panel.offset_bottom = -16.0
+		for button in mobile_move_buttons:
+			button.custom_minimum_size = Vector2(52.0, 38.0)
+		for spacer in mobile_move_spacers:
+			spacer.custom_minimum_size = Vector2(52.0, 38.0)
+		for button in mobile_action_buttons:
+			button.custom_minimum_size = Vector2(84.0, 38.0)
+	mobile_move_panel.visible = compact
+	mobile_action_panel.visible = compact
+
+func _layout_compact_controls(viewport_size: Vector2) -> void:
+	var width: float = viewport_size.x
+	var move_width: float = clampf(width * 0.44, 142.0, 218.0)
+	var action_width: float = clampf(width * 0.47, 150.0, 206.0)
+	mobile_move_panel.offset_left = 8.0
+	mobile_move_panel.offset_right = 8.0 + move_width
+	mobile_move_panel.offset_top = -178.0
+	mobile_move_panel.offset_bottom = -8.0
+	mobile_action_panel.offset_left = -8.0 - action_width
+	mobile_action_panel.offset_right = -8.0
+	mobile_action_panel.offset_top = -202.0
+	mobile_action_panel.offset_bottom = -8.0
+	var move_size: float = 36.0 if width < 400.0 else (44.0 if width < 520.0 else 52.0)
+	var move_button_height: float = 32.0 if width < 400.0 else 36.0
+	for button in mobile_move_buttons:
+		button.custom_minimum_size = Vector2(move_size, move_button_height)
+	for spacer in mobile_move_spacers:
+		spacer.custom_minimum_size = Vector2(move_size, move_button_height)
+	var action_button_width: float = floor((action_width - 32.0) * 0.5)
+	for button in mobile_action_buttons:
+		button.custom_minimum_size = Vector2(action_button_width, 34.0)
 
 func _refresh_loadout() -> void:
 	if not is_instance_valid(loadout_panel):
@@ -1662,8 +1772,18 @@ func _update_camera(delta: float) -> void:
 	if not is_instance_valid(player) or not is_instance_valid(camera):
 		return
 	var target := player.global_position + Vector3(0.0, 23.5, 24.5)
-	camera.global_position = camera.global_position.lerp(target, clampf(delta * 3.6, 0.0, 1.0))
-	camera.look_at(player.global_position + Vector3(0.0, 0.55, 0.0), Vector3.UP)
+	var follow_weight: float = 1.0 - exp(-delta * 4.25)
+	camera_follow_position = camera_follow_position.lerp(target, clampf(follow_weight, 0.0, 1.0))
+	var shake_fade: float = clampf(camera_shake_timer / maxf(0.001, camera_shake_duration), 0.0, 1.0)
+	var shake_amount: float = camera_shake_strength * shake_fade
+	var shake := Vector3(
+		sin(scene_clock * 53.0) * shake_amount,
+		sin(scene_clock * 37.0) * shake_amount * 0.42,
+		cos(scene_clock * 43.0) * shake_amount * 0.62
+	)
+	camera.global_position = camera_follow_position + shake
+	var aim_lead := Vector3(player_aim.x, 0.0, player_aim.z).normalized() * 0.7
+	camera.look_at(player.global_position + Vector3(0.0, 0.55, 0.0) + aim_lead, Vector3.UP)
 
 func _update_player_material() -> void:
 	if not is_instance_valid(player):
@@ -1679,6 +1799,12 @@ func _update_player_material() -> void:
 		suit.material_override = materials["cyan"]
 
 func _animate_world(delta: float) -> void:
+	if is_instance_valid(operator_rig) and is_instance_valid(player):
+		var walking: float = player.velocity.length()
+		var bob_speed: float = 10.0 if walking > 0.35 else 1.8
+		var bob_amount: float = 0.042 if walking > 0.35 else 0.012
+		operator_rig.position.y = sin(scene_clock * bob_speed) * bob_amount
+		operator_rig.rotation.z = clampf(-player.velocity.x / PLAYER_SPEED * 0.045, -0.055, 0.055)
 	if is_instance_valid(core_ring) and quantum_core.visible:
 		core_ring.rotate_y(delta * 1.2)
 		core_ring.rotate_x(sin(scene_clock * 0.8) * delta * 0.25)

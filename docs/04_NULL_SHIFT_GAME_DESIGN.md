@@ -129,3 +129,12 @@ The command npm run qa:null-shift checks required game assets, script syntax, co
 - A cinematic mission card explains the actual three-step raid before engine startup; the start button provides a deliberate user gesture and avoids surprise fullscreen or autoplay audio.
 - The loading bar is driven by Godot's `Engine.startGame({ onProgress })` callback and becomes indeterminate only when the engine cannot report a total. The shell checks WebGL 2 support before launch, includes a real fullscreen control, respects reduced-motion preference and links to the lighter Canvas edition if the device cannot run the 3D build.
 - The shell is fully self-hosted and uses no font, analytics or asset CDN. Export smoke now asserts that the generated `index.html` contains the custom shell marker and engine progress/capability checks.
+
+
+## Responsive HUD and operator feel — follow-up pass
+
+- Godot HUD panels reflow when the viewport changes. Compact screens receive a full-width status panel and actionable objective strip; desktop-only telemetry chrome is hidden rather than overlapping the arena.
+- Movement and combat controls resize to the available width. The 320 px profile uses a 142 px movement panel, a 150 px combat panel and 59 px action targets; desktop dimensions return when the viewport grows.
+- Reticle visibility distinguishes touch-assisted aiming from a narrow mouse-driven desktop window.
+- Camera follow uses exponential damping and bounded screen impulses. The operator rig has restrained walk/breath movement without moving its physics capsule.
+- Runtime smoke asserts the 320 px panel/button dimensions. Static and headless checks guard the responsive layout before Web export.
