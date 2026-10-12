@@ -50,6 +50,11 @@ for (const feature of [
 ]) assert.ok((js + html).includes(feature), 'Combat upgrade missing: ' + feature)
 assert.ok(html.includes('class="raid-intel"'), 'Tactical telemetry HUD missing')
 assert.ok(css.includes('.raid-intel'), 'Tactical telemetry presentation missing')
+for (const feature of ['premiumHazardMode','premiumApplyHazards','premiumDrawPolish','premiumDrawArenaFloor','5.4-h.t','premiumFloorCacheReady','floorHazards','hazard-state','hazard-clock']) {
+  assert.ok((js + html + css).toLowerCase().includes(feature.toLowerCase()), 'Environment / hazard feature missing: ' + feature)
+}
+assert.ok(html.includes('id="hazard-state"'), 'Live electrical hazard status missing')
+assert.ok(css.includes('.hazard-banner[data-state="warning"]'), 'Warning state styling missing')
 
 assert.ok(!js.includes("if(premiumAimHeld&&S.p)"), 'Manual aim stick must not be overwritten by auto-aim')
 

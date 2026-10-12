@@ -14,7 +14,7 @@ function update(dt){if(S.done)return;let p=S.p,v=220*dt,dx=(keys.has('d')||keys.
 for(let e of S.enemies){if(!e.on)continue;if(e.stun>0){e.stun-=dt;continue}let D=Math.hypot(p.x-e.x,p.y-e.y),hot=S.alarm;if(D<(hot?430:330)){let a=Math.atan2(p.y-e.y,p.x-e.x);mv(e,Math.cos(a)*(hot?92:58)*dt,Math.sin(a)*(hot?92:58)*dt,14);if(Math.random()<dt*(hot?4:2))S.enemyShots.push({x:e.x,y:e.y,vx:Math.cos(a)*(hot?340:260),vy:Math.sin(a)*(hot?340:260),l:2})}else{e.q+=dt;mv(e,Math.cos(e.q)*(hot?42:24)*dt,Math.sin(e.q*.8)*(hot?42:24)*dt,14)}for(let b of S.shots)if(Math.hypot(b.x-e.x,b.y-e.y)<22){e.hp--;b.l=0;if(e.hp<1){e.on=0;p.credits+=100}}}
 S.enemyShots.forEach(b=>{b.x+=b.vx*dt;b.y+=b.vy*dt;b.l-=dt;if(Math.hypot(b.x-p.x,b.y-p.y)<18&&p.inv<=0){p.hp-=10;p.inv=.45;b.l=0}});S.enemyShots=S.enemyShots.filter(b=>b.l>0&&!walls.some(w=>hit(b.x,b.y,3,w)));p.inv-=dt;if(p.hp<=0)finish(0);hud()}
 function dot(a,b,r,col){x.fillStyle=col;x.beginPath();x.arc(a,b,r,0,7);x.fill()}function txt(t,a,b,col){x.fillStyle=col;x.font='12px ui-monospace';x.fillText(t,a,b)}
-function draw(){x.clearRect(0,0,W,H);x.strokeStyle='#123136';for(let a=0;a<W;a+=40){x.beginPath();x.moveTo(a,0);x.lineTo(a,H);x.stroke()}for(let b=0;b<H;b+=40){x.beginPath();x.moveTo(0,b);x.lineTo(W,b);x.stroke()}x.fillStyle='#0b1e21';walls.forEach(w=>x.fillRect(w.x,w.y,w.w,w.h));let p=S.p;
+function draw(){x.clearRect(0,0,W,H);premiumDrawArenaFloor();let p=S.p;
 x.fillStyle=S.core.taken?'#195540':'#233136';x.fillRect(S.exit.x-35,S.exit.y-35,70,70);x.strokeStyle=S.core.taken?'#64f7dc':'#668';x.strokeRect(S.exit.x-35,S.exit.y-35,70,70);txt('EXFIL',S.exit.x-17,S.exit.y+4,S.core.taken?'#64f7dc':'#8b9a9b');x.fillStyle=S.term.ok?'#17473e':'#38291c';x.fillRect(S.term.x-21,S.term.y-21,42,42);x.strokeStyle='#ffbd60';x.strokeRect(S.term.x-21,S.term.y-21,42,42);txt(S.term.ok?'NODE OPEN':'TERMINAL',S.term.x-31,S.term.y-30,'#ffbd60');if(!S.kit.taken){x.fillStyle='#d8f8ff';x.fillRect(S.kit.x-13,S.kit.y-13,26,26);x.fillStyle='#64f7dc';x.fillRect(S.kit.x-4,S.kit.y-10,8,20);x.fillRect(S.kit.x-10,S.kit.y-4,20,8);txt('MEDKIT',S.kit.x-23,S.kit.y-23,'#bafff3')}if(!S.core.taken){dot(S.core.x,S.core.y,15,'#ffbd60');dot(S.core.x,S.core.y,7,'#fff4d0');txt('QUANTUM CORE',S.core.x-45,S.core.y-25,'#ffbd60')}S.enemies.forEach(e=>{if(!e.on)return;dot(e.x,e.y,15,'#ff697a');x.fillStyle='#ff697a';x.fillRect(e.x-17,e.y-25,34*e.hp/3,5);txt('GUARD',e.x-20,e.y+32,'#ff8594')});S.shots.forEach(b=>dot(b.x,b.y,3,'#64f7dc'));S.enemyShots.forEach(b=>dot(b.x,b.y,3,'#ff697a'));x.save();x.translate(p.x,p.y);x.rotate(p.a);x.fillStyle=p.inv>0?'#fff':'#64f7dc';x.fillRect(-11,-11,22,22);x.fillStyle='#dffff9';x.fillRect(4,-3,25,6);x.restore();txt('YOU',p.x-12,p.y+31,'#b7fff4')}
 const baseHackKey=hackKey,basePulse=pulse,baseUpdate=update,baseDraw=draw;
 function summonWarden(){if(S.warden)return;S.warden={x:1080,y:350,hp:10,q:0,on:1};S.enemies.push({x:S.warden.x,y:S.warden.y,hp:10,q:0,on:1,warden:1});S.alarm=1;S.moment={text:'THE BUILDING REMEMBERS',until:performance.now()+5200};$('#objective').textContent='WARDEN ACTIVE: the facility has learned your instability.'}
@@ -134,6 +134,42 @@ premiumSyncHud=function(now){premiumSyncCombatBase(now);if(!S||now-premiumLastCo
 const premiumFireOriginal=shoot;
 shoot=function(){if(!S||S.done||S.paused)return;const stamp=S.p.shot,now=performance.now();premiumFireOriginal();if(S.p.shot!==stamp)premiumCombat.muzzleAt=now};
 document.documentElement.classList.add('premium-combat-layer');
+
+/* NULL//SHIFT 0.4 — cached industrial floor, charged conduits and combat readability. */
+let premiumFloorCache=null,premiumFloorCacheReady=false;
+function premiumDrawArenaFloor(){
+ if(!premiumFloorCache){premiumFloorCache=document.createElement('canvas');premiumFloorCache.width=W;premiumFloorCache.height=H}
+ if(!premiumFloorCacheReady){
+  const z=premiumFloorCache.getContext('2d'),floor=z.createLinearGradient(0,0,W,H);floor.addColorStop(0,'#0c1a20');floor.addColorStop(.48,'#071116');floor.addColorStop(1,'#10191e');z.fillStyle=floor;z.fillRect(0,0,W,H);
+  for(let py=34,row=0;py<H;py+=72,row++)for(let px=34,col=0;px<W;px+=80,col++){const tone=(row+col)%3;z.fillStyle=tone===0?'rgba(94,155,158,.025)':tone===1?'rgba(0,0,0,.07)':'rgba(107,154,157,.016)';z.fillRect(px,py,75,67);z.strokeStyle='rgba(127,187,184,.045)';z.strokeRect(px+.5,py+.5,74,66);if(tone===0){z.fillStyle='rgba(100,247,220,.09)';z.fillRect(px+7,py+7,2,2)}}
+  z.strokeStyle='#123136';for(let a=0;a<W;a+=40){z.beginPath();z.moveTo(a,0);z.lineTo(a,H);z.stroke()}for(let b=0;b<H;b+=40){z.beginPath();z.moveTo(0,b);z.lineTo(W,b);z.stroke()}
+  for(const w of walls){const metal=z.createLinearGradient(w.x,w.y,w.x+w.w,w.y+w.h);metal.addColorStop(0,'#193037');metal.addColorStop(.35,'#0b1c22');metal.addColorStop(1,'#071015');z.fillStyle=metal;z.fillRect(w.x,w.y,w.w,w.h);z.strokeStyle='rgba(100,247,220,.19)';z.beginPath();z.moveTo(w.x+1,w.y+w.h-1);z.lineTo(w.x+1,w.y+1);z.lineTo(w.x+w.w-1,w.y+1);z.stroke();z.strokeStyle='rgba(0,0,0,.62)';z.beginPath();z.moveTo(w.x+w.w-1,w.y+1);z.lineTo(w.x+w.w-1,w.y+w.h-1);z.lineTo(w.x+1,w.y+w.h-1);z.stroke();if(w.w<60&&w.h>80){z.fillStyle='rgba(100,247,220,.07)';z.fillRect(w.x+5,w.y+8,2,Math.max(12,w.h-16));for(let sy=w.y+16;sy<w.y+w.h-10;sy+=24){z.fillStyle='rgba(144,190,190,.11)';z.fillRect(w.x+w.w-8,sy,3,5)}}}
+  premiumFloorCacheReady=true;
+ }
+ x.drawImage(premiumFloorCache,0,0);
+}
+function premiumHazardMode(h){if(h.t>=5.4&&h.t<7.1)return 'live';if(h.t>=4.1&&h.t<5.4)return 'warning';return 'safe'}
+function premiumApplyHazards(dt){
+ if(!S||!S.floorHazards)return;const now=performance.now();
+ for(const h of S.floorHazards){h.t=(h.t+dt)%h.period;if(premiumHazardMode(h)!=='live')continue;
+  for(const o of [S.p,S.p2]){if(!o||o.down)continue;if(Math.abs(o.x-h.x)<h.w*.5&&Math.abs(o.y-h.y)<h.h*.5&&now-(o.premiumHazardAt||0)>820){o.premiumHazardAt=now;o.hp=Math.max(0,o.hp-7);premiumBurst(o.x,o.y,'#ffbd60',11,125);premiumCombat.flash=Math.max(premiumCombat.flash,.15);premiumCombat.shake=Math.max(premiumCombat.shake,.07);if(o===S.p)$('#objective').textContent='ЭЛЕКТРИЧЕСКИЙ РАЗРЯД: покиньте светящуюся зону!';else if(o.hp<=0)o.down=1;hud();if(o===S.p&&o.hp<=0)finish(0)}}
+ }
+}
+function premiumDrawPolish(){
+ if(!S)return;const now=performance.now(),balanced=premiumQuality==='balanced';
+ if(S.floorHazards)S.floorHazards.forEach(h=>{const mode=premiumHazardMode(h),pulse=.5+.5*Math.sin(now/95+h.x),col=mode==='live'?'#ff697a':mode==='warning'?'#ffbd60':'#64f7dc';x.save();x.globalAlpha=mode==='live'?.34:mode==='warning'?.22:.08;x.fillStyle=col;x.fillRect(h.x-h.w/2,h.y-h.h/2,h.w,h.h);x.globalAlpha=mode==='live'?.96:mode==='warning'?.65:.33;x.strokeStyle=col;x.lineWidth=mode==='live'?2:1;x.setLineDash(mode==='safe'?[3,8]:[7,4]);x.strokeRect(h.x-h.w/2,h.y-h.h/2,h.w,h.h);x.setLineDash([]);x.beginPath();for(let i=-1;i<=1;i++){const px=h.x+i*h.w*.24;x.moveTo(px,h.y-h.h/2+4);x.lineTo(px+(mode==='live'?(Math.random()-.5)*9:0),h.y+h.h/2-4)}x.stroke();if(mode!=='safe'||!balanced){x.font='9px ui-monospace';x.textAlign='center';x.fillStyle=col;x.fillText(mode==='live'?'ARC LIVE':mode==='warning'?'CHARGE '+Math.max(0,5.4-h.t).toFixed(1)+'s':h.name,h.x,h.y-h.h/2-7)}if(mode==='live'&&!balanced){x.globalAlpha=.07+.025*pulse;x.fillStyle=col;x.fillRect(h.x-h.w/2-8,0,h.w+16,H)}x.restore()});
+ if(S.shots){x.save();x.lineWidth=2;x.lineCap='round';for(const b of S.shots){if(!(b.l>0))continue;x.globalAlpha=Math.min(.72,b.l/.65);x.strokeStyle='#a8fff2';x.beginPath();x.moveTo(b.x-b.vx*.026,b.y-b.vy*.026);x.lineTo(b.x,b.y);x.stroke()}x.restore()}
+ if(S.enemyShots){x.save();x.lineWidth=2;x.lineCap='round';for(const b of S.enemyShots){x.globalAlpha=Math.min(.68,b.l/.6);x.strokeStyle=b.premiumKind==='heavy'||b.premiumKind==='warden'?'#ffbd60':'#ff697a';x.beginPath();x.moveTo(b.x-b.vx*.035,b.y-b.vy*.035);x.lineTo(b.x,b.y);x.stroke()}x.restore()}
+ if(!premiumCoarse&&m){x.save();x.translate(m.x,m.y);x.strokeStyle='rgba(191,255,247,.83)';x.lineWidth=1;x.beginPath();x.arc(0,0,8,0,Math.PI*2);x.moveTo(-14,0);x.lineTo(-4,0);x.moveTo(4,0);x.lineTo(14,0);x.moveTo(0,-14);x.lineTo(0,-4);x.moveTo(0,4);x.lineTo(0,14);x.stroke();x.fillStyle='#e6fffb';x.fillRect(-1,-1,2,2);x.restore()}
+}
+const premiumPolishBaseUpdate=update;
+update=function(dt){premiumPolishBaseUpdate(dt);if(!S||S.done||S.paused)return;if(premiumCombat.owner===S&&premiumCombat.polishedState!==S){premiumCombat.polishedState=S;S.floorHazards=[{x:456,y:348,w:70,h:38,t:0,period:9,name:'NORTH ARC'},{x:760,y:400,w:72,h:38,t:2.7,period:9,name:'SOUTH ARC'}]}premiumApplyHazards(Math.min(.05,Math.max(0,dt||0)))};
+const premiumPolishBaseDraw=draw;
+draw=function(){const start=performance.now();premiumPolishBaseDraw();premiumDrawPolish();const now=performance.now();premiumRenderMs=now-start;premiumPaintDiagnostics(now,false)};
+const premiumPolishBaseSync=premiumSyncHud;let premiumPolishHudAt=0;
+premiumSyncHud=function(now){premiumPolishBaseSync(now);if(!S||now-premiumPolishHudAt<160)return;premiumPolishHudAt=now;const hazards=S.floorHazards||[],live=hazards.filter(h=>premiumHazardMode(h)==='live'),warning=hazards.filter(h=>premiumHazardMode(h)==='warning'),banner=$('#hazard-state');if(!banner)return;if(live.length){banner.dataset.state='live';$('#hazard-copy').textContent='ОПАСНО: ЭЛЕКТРИЧЕСКИЙ РАЗРЯД';$('#hazard-clock').textContent='АКТИВНЫХ ЗОН: '+live.length}else if(warning.length){banner.dataset.state='warning';$('#hazard-copy').textContent='ВНИМАНИЕ: ЗАРЯД НА КОНТУРАХ';$('#hazard-clock').textContent='ОТВЕДИТЕ ОПЕРАТОРА'}else{banner.dataset.state='safe';$('#hazard-copy').textContent='ЭЛЕКТРИЧЕСКИЕ КОНТУРЫ: СТАБИЛЬНО';$('#hazard-clock').textContent='РАЗРЯД: ОЖИДАНИЕ'}};
+document.documentElement.classList.add('null-shift-v04');
+
 
 
 /* Measure presentation cadence from real requestAnimationFrame timestamps, not draw-call duration. */

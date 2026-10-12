@@ -67,3 +67,11 @@ The command npm run qa:null-shift checks required game assets, script syntax, co
 - Combat feedback includes layered suit detailing, muzzle flash, directional hit sparks, debris fragments, camera impulse and phase-transition bursts. A particle cap bounds effects on slower devices.
 - A dedicated tactical telemetry strip reports remaining hostiles, remaining field devices and eliminations from the current raid. Data stays local.
 - The existing 16:9 canvas, reduced-motion preference, cinematic/balanced switch, mobile sticks and local diagnostics remain. Automated smoke tests verify source contracts and syntax; they do not replace real-device tests or prove native 8K rendering.
+
+
+## Release 0.4 — environmental depth and readable timed hazards
+
+- The industrial arena now uses a cached metallic floor layer with tonal panel variation, seam reflections and beveled wall edges. Static geometry is drawn once to an offscreen canvas instead of rebuilding the texture every frame.
+- Two electrical floor conduits cycle through stable, charging and active states. Their in-world markings and matching status banner warn the player before discharge. Standing in an active zone drains health, adding timing and positioning to the raid.
+- Friendly and hostile projectiles have directional trails; the desktop aiming reticle follows the pointer. Effects remain within the responsive Canvas renderer and respect the reduced-motion preference.
+- Automated smoke/build/deploy checks verify that the update is shipped; manual hardware tests are still needed to evaluate frame pacing on specific devices. This is not native 8K rendering.
