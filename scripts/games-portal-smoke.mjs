@@ -1,3 +1,4 @@
+import { assessReport } from './games-lighthouse-report.mjs'
 import assert from 'node:assert/strict'
 import { readFileSync, existsSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -7,6 +8,17 @@ const lifecycle=readFileSync(resolve(root,'player-lifecycle.js'),'utf8')
 const required=['data-game="null-shift"','data-game="time"','data-game="swarm"','data-game="inherit"','data-game="remix"','id="games-grid"','id="game-search"','data-filter="tactical"','id="player-dialog"','id="player-share"','id="player-fullscreen"','id="analytics-toggle"','id="project-form"','https://wa.me/79640027222','osgardbewworld.com','o2system.art','senjorio.com','superday.run','marcosa.club','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio','/games/favicon.svg','/privacy/','/terms/']
 for(const item of required) assert.ok(html.includes(item),'Games hub missing: '+item)
 for(const path of ['public/games/index.html','public/games/favicon.svg','public/games/player-lifecycle.js','public/privacy/index.html','public/terms/index.html']) assert.ok(existsSync(resolve(path)),'Missing file: '+path)
+for(const path of ['scripts/games-lighthouse-report.mjs','.github/workflows/games-lighthouse.yml']) assert.ok(existsSync(resolve(path)),'Missing games performance monitoring file: '+path)
+const lighthouseScript=readFileSync(resolve('scripts/games-lighthouse-report.mjs'),'utf8')
+const lighthouseWorkflow=readFileSync(resolve('.github/workflows/games-lighthouse.yml'),'utf8')
+assert.ok(lighthouseWorkflow.includes('https://osgard.world/games/')&&lighthouseWorkflow.includes('--preset=desktop')&&lighthouseWorkflow.includes('actions/upload-artifact@v4'),'Games Lighthouse workflow must audit mobile/desktop and preserve reports')
+assert.ok(lighthouseWorkflow.includes('workflow_run')&&lighthouseWorkflow.includes('OSGARD frontend deploy'),'Games Lighthouse audit should run after successful publication')
+const healthyScores={performance:.95,accessibility:1,'best-practices':1,seo:1}
+const fixture=(scores,tbt,lcp)=>({finalDisplayedUrl:'https://osgard.world/games/',categories:Object.fromEntries(Object.entries(scores).map(([key,score])=>[key,{score}])),audits:{'total-blocking-time':{numericValue:tbt},'largest-contentful-paint':{numericValue:lcp}}})
+assert.equal(assessReport(fixture(healthyScores,250,2500),'mobile').pass,true,'Healthy mobile Lighthouse report should pass guardrails')
+assert.equal(assessReport(fixture({...healthyScores,performance:.84},501,4001),'mobile').pass,false,'Poor mobile scores/TBT/LCP should fail guardrails')
+assert.equal(assessReport(fixture({...healthyScores,performance:.89},100,1500),'desktop').pass,false,'Desktop performance below guardrail should fail')
+assert.ok(lighthouseScript.includes('maxTbtMs')&&lighthouseScript.includes('maxLcpMs'),'Lighthouse report must enforce Core Web Vitals guardrails')
 assert.ok(html.includes('type="application/ld+json"'),'SEO ItemList JSON-LD missing')
 assert.ok(html.includes('<meta name="description"'),'SEO description missing')
 assert.ok(html.includes('prefers-reduced-motion:reduce'),'Reduced motion CSS missing')
