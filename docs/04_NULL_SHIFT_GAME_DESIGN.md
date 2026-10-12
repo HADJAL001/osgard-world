@@ -164,3 +164,11 @@ The command npm run qa:null-shift checks required game assets, script syntax, co
 - This improves responsiveness under variable hardware load but does not create native 8K output or replace testing on real phones, tablets and desktop GPUs.
 
 - Follow-up guard: initialized the WebGL statistics ticker and render-cost accumulator in strict-mode scope; smoke and production-route checks now require both declarations so a missing counter cannot silently force the 2D fallback.
+
+
+## Release 0.9 — grounded characters and soft contact shadows
+
+- Added a feathered procedural shadow mesh with per-vertex opacity and a radial fade. Operators, guards, extraction, terminal, recovery kit, quantum core and active field devices now have contact shadows that visually anchor their silhouettes and props to the arena floor.
+- The instanced WebGL path carries vertex alpha as an eighth attribute, allowing the shadow gradient to fade smoothly instead of ending in a hard circular decal. Every other mesh defaults to full vertex alpha; the compatible non-instanced path remains available.
+- Smoke and production-route checks require the shadow mesh, vertex-alpha shader path and use of grounded shadows in the published game engine.
+- This adds real geometry/shader behavior rather than a static mockup. It is a lightweight contact-shadow solution, not a full shadow-map system or native 8K rendering; device performance still needs observation on physical hardware.
