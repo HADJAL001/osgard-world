@@ -1,6 +1,6 @@
 const base = process.env.OSGARD_BASE_URL || 'https://osgard.world'
 const expectCurrentDesign = process.env.SKILLCRED_EXPECT_CURRENT_DESIGN === '1'
-const routes = ['/','/skillcred/','/skillcred-api/health','/skillcred-api/ready','/skillcred-api/issuer','/entertainment','/community','/stream','/archive','/profile','/r/1842','/games','/games/catalog.json','/games/time','/games/null-shift/','/games/null-shift/index.html','/games/null-shift-godot/','/games/null-shift-godot/index.html','/play/swarm','/play/null-shift','/play/inherit','/play/remix','/media','/business','/create','/mobility']
+const routes = ['/','/skillcred/','/skillcred-api/health','/skillcred-api/ready','/skillcred-api/issuer','/entertainment','/community','/stream','/archive','/profile','/r/1842','/games','/games/catalog.json','/games/privacy.html','/games/time','/games/null-shift/','/games/null-shift/index.html','/games/null-shift-godot/','/games/null-shift-godot/index.html','/play/swarm','/play/null-shift','/play/inherit','/play/remix','/media','/business','/create','/mobility']
 const agents = { desktop: 'OSGARD-Route-Matrix/1.1 Desktop', mobile: 'OSGARD-Route-Matrix/1.1 Mobile' }
 const results = []
 for (const [device, userAgent] of Object.entries(agents)) for (const route of routes) {
@@ -37,11 +37,13 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
             ? text.includes('id="osgard-games-app"') && text.includes('id="game-grid"') && text.includes('/games/catalog.json')
             : route === '/games/catalog.json'
               ? (() => { try { const catalog = JSON.parse(text); return catalog.schemaVersion === 1 && Array.isArray(catalog.games) && catalog.games.length === 5 } catch { return false } })()
-              : route === '/entertainment'
+               : route === '/games/privacy.html'
+                 ? text.includes('id="privacy"') && text.includes('id="terms"') && text.includes('OSGARD GAMES')
+                 : route === '/entertainment'
                 ? text.includes('<title>OSGARD Entertainment</title>')
                 : text.includes('<div id="root">')
     const isGodot = route.startsWith('/games/null-shift-godot')
-    const assetPaths = route === '/games' ? ['/games/hub.css', '/games/hub.js', '/games/catalog.json'] : route === '/skillcred/' ? ['/skillcred/styles.css', '/skillcred/app.js', '/skillcred/fonts/InterVariable.woff2', '/skillcred/fonts/InstrumentSerif-Italic.woff2', '/skillcred/fonts/JetBrainsMono-Regular.woff2'] : isGodot ? ['/games/null-shift-godot/index.js', '/games/null-shift-godot/index.wasm', '/games/null-shift-godot/index.pck'] : route.startsWith('/games/null-shift') ? ['/games/null-shift/styles.css', '/games/null-shift/game.js', '/games/null-shift/engine-3d.js'] : []
+    const assetPaths = (route === '/games' || route === '/games/privacy.html') ? ['/games/hub.css', ...(route === '/games' ? ['/games/hub.js', '/games/catalog.json'] : [])] : route === '/skillcred/' ? ['/skillcred/styles.css', '/skillcred/app.js', '/skillcred/fonts/InterVariable.woff2', '/skillcred/fonts/InstrumentSerif-Italic.woff2', '/skillcred/fonts/JetBrainsMono-Regular.woff2'] : isGodot ? ['/games/null-shift-godot/index.js', '/games/null-shift-godot/index.wasm', '/games/null-shift-godot/index.pck'] : route.startsWith('/games/null-shift') ? ['/games/null-shift/styles.css', '/games/null-shift/game.js', '/games/null-shift/engine-3d.js'] : []
     const assetChecks = await Promise.all(assetPaths.map(async path => {
       const expectedType = path.endsWith('.css') ? 'text/css' : path.endsWith('.js') ? 'javascript' : path.endsWith('.wasm') ? 'wasm' : path.endsWith('.pck') ? 'pack' : path.endsWith('.json') ? 'json' : 'font'
       const asset = await fetch(new URL(path, base), { headers: { 'user-agent': userAgent } })
