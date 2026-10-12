@@ -148,7 +148,7 @@
   document.addEventListener('keydown', event => {
     const target = event.target
     const typing = target && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
-    if (typing || event.metaKey || event.ctrlKey || event.altKey || $('#player-dialog')?.open) return
+    if ((typing && !(event.key === 'Escape' && target === search)) || event.metaKey || event.ctrlKey || event.altKey || $('#player-dialog')?.open) return
 
     if (event.key === '/') {
       event.preventDefault()
