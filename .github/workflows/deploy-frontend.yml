@@ -33,6 +33,7 @@ on:
       - "scripts/null-shift-premium-smoke.mjs"
       - "scripts/games-portal-smoke.mjs"
       - "scripts/games-detail-smoke.mjs"
+      - "scripts/games-monetization-smoke.mjs"
       - "scripts/ecosystem-integrity-smoke.mjs"
       - "docs/09_OSGARD_GAMES_PLATFORM_AUDIT.md"
       - "docs/04_NULL_SHIFT_GAME_DESIGN.md"

@@ -7,15 +7,15 @@ const root = process.cwd();
 const pagePath = resolve(root, 'public/games/monetization/index.html');
 const appPath = resolve(root, 'public/games/monetization/app.js');
 const modelPath = resolve(root, 'public/games/monetization/model.js');
-const fallbackPath = resolve(root, 'public/games/null-shift-godot/index.html');
+const hubPath = resolve(root, 'public/games/index.html');
 
-for (const path of [pagePath, appPath, modelPath, fallbackPath]) {
+for (const path of [pagePath, appPath, modelPath, hubPath]) {
   assert.ok(existsSync(path), 'Expected gaming-platform artifact missing: ' + path);
 }
 
 const page = readFileSync(pagePath, 'utf8');
 const app = readFileSync(appPath, 'utf8');
-const fallback = readFileSync(fallbackPath, 'utf8');
+const hub = readFileSync(hubPath, 'utf8');
 assert.ok(page.includes('data-estimate="not-live-data"'), 'Financial planner must label the numbers as modelled assumptions');
 assert.ok(page.includes('id="assumptions-form"') && page.includes('id="scenario-results"'), 'Financial planner is missing its input/output interface');
 assert.ok(page.includes('id="export-json"') && page.includes('id="reset-model"'), 'Financial planner reset/JSON export controls missing');
@@ -23,7 +23,7 @@ assert.ok(page.includes('prefers-reduced-motion:reduce'), 'Reduced-motion suppor
 assert.ok(!/https?:\/\/(?:fonts\.googleapis\.com|fonts\.gstatic\.com|cdn\.jsdelivr\.net|unpkg\.com)/i.test(page), 'Financial planner unexpectedly depends on a remote asset CDN');
 assert.ok(app.includes('URL.createObjectURL') && app.includes('osgard-games-model.json'), 'Local JSON export not implemented');
 assert.ok(app.includes('Пересчёт выполнен локально') && app.includes('не отправляются на сервер'), 'Local-only privacy status missing');
-assert.ok(fallback.includes('data-godot-fallback="webgl"') && fallback.includes('href="/games/null-shift/"'), 'Unavailable Godot export must have a truthful browser-game fallback');
+assert.ok(hub.includes('href="/games/null-shift-godot/"') && hub.includes('href="/games/null-shift/"'), 'The catalogue must show the Godot build and the distinct browser WebGL alternative');
 
 assert.deepEqual(SCENARIOS.map((scenario) => scenario.id), ['conservative', 'base', 'optimistic']);
 const actual = calculateScenario(DEFAULT_INPUTS, 'base');
