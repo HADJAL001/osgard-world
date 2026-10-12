@@ -4,8 +4,9 @@ import { resolve } from 'node:path';
 
 const root = process.cwd();
 const project = resolve(root, 'godot/null-shift');
-const outputDir = resolve(root, 'public/games/null-shift-godot');
+const outputDir = resolve(root, process.env.OSGARD_GODOT_OUTPUT_DIR || 'dist/games/null-shift-godot');
 const outputHtml = resolve(outputDir, 'index.html');
+const fallbackHtml = resolve(root, 'public/games/null-shift-godot/index.html');
 const requireExport = process.env.OSGARD_REQUIRE_GODOT_EXPORT === '1';
 
 function probe(executable, args, timeout = 12000) {
@@ -37,10 +38,10 @@ for (const candidate of candidates) {
 
 if (!engine) {
   if (requireExport) fail('Godot executable not found. Install Godot 4.7+ or set GODOT_BIN to its executable path.');
-  if (!existsSync(outputHtml)) fail('Godot is not installed and the tracked fallback route is missing: ' + outputHtml);
-  const fallback = readFileSync(outputHtml, 'utf8');
+  if (!existsSync(fallbackHtml)) fail('Godot is not installed and the tracked fallback route is missing: ' + fallbackHtml);
+  const fallback = readFileSync(fallbackHtml, 'utf8');
   if (!fallback.includes('data-godot-fallback="webgl"') || !fallback.includes('href="/games/null-shift/"')) {
-    fail('Godot is not installed and the route does not contain the honest WebGL fallback.');
+    fail('Godot is not installed and the tracked route does not contain the honest WebGL fallback.');
   }
   console.warn('[godot-web-export] Godot executable not found; keeping the tracked WebGL fallback. This is not a Godot export. Set GODOT_BIN or OSGARD_REQUIRE_GODOT_EXPORT=1 for a strict native release.');
   process.exit(0);
