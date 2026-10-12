@@ -318,10 +318,17 @@ func _run_smoke() -> void:
 	game.player.global_position = Vector3(-3.0, 0.82, 0.0)
 	game.player.velocity = Vector3.ZERO
 	game.player_aim = Vector3.RIGHT
-	game.mobile_actions["right"] = true
+	game.mobile_actions["up"] = false
+	game.mobile_actions["down"] = false
+	game.mobile_actions["left"] = false
+	game.mobile_actions["right"] = false
 	game.dash_timer = 0.0
 	game.dash_cooldown = 0.0
 	game.damage_flash_timer = 0.0
+	# Let the physics server observe the teleported body before measuring motion.
+	await physics_frame
+	await physics_frame
+	game.mobile_actions["right"] = true
 	var evades_before: int = game.dash_evasions
 	game._set_mobile_action("dash", true)
 	if not _expect(game.dash_timer >= game.DASH_DURATION - 0.001 and game.dash_cooldown >= game.DASH_COOLDOWN - 0.001 and game.dash_direction.is_equal_approx(Vector3.RIGHT), "touch dash must start in the held movement direction and start its cooldown"):
@@ -331,8 +338,10 @@ func _run_smoke() -> void:
 	if not _expect(is_equal_approx(game.dash_cooldown, dash_cooldown_before), "dash cooldown must prevent a second dash exploit"):
 		return
 	var dash_move_origin: Vector3 = game.player.global_position
-	game._move_player(0.016)
-	if not _expect(game.player.global_position.x > dash_move_origin.x + 0.12, "dash must move the real CharacterBody3D faster than a normal step"):
+	# Exercise the real CharacterBody3D from the active physics loop, not a direct method call.
+	await physics_frame
+	await physics_frame
+	if not _expect(game.player.global_position.x > dash_move_origin.x + 0.12, "dash must move the real CharacterBody3D during physics updates"):
 		return
 	game.damage_cooldown = 0.0
 	game.null_shift_timer = 0.0
