@@ -119,6 +119,8 @@ export function GamePlayer({ gameId }: { gameId: string }) {
   const frameRef = useRef<HTMLIFrameElement>(null)
   const frameShellRef = useRef<HTMLDivElement>(null)
   const startedAtRef = useRef<number | null>(null)
+  const visibleSinceRef = useRef<number | null>(null)
+  const activeDurationMsRef = useRef(0)
   const fallbackUsedRef = useRef(false)
   const verifyTimerRef = useRef<number | null>(null)
 
@@ -162,13 +164,35 @@ export function GamePlayer({ gameId }: { gameId: string }) {
     return () => window.clearTimeout(watchdog)
   }, [status, source, frameKey])
 
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (startedAtRef.current === null) return
+      if (document.hidden) {
+        if (visibleSinceRef.current !== null) {
+          activeDurationMsRef.current += Math.max(0, Date.now() - visibleSinceRef.current)
+          visibleSinceRef.current = null
+        }
+      } else if (visibleSinceRef.current === null) {
+        visibleSinceRef.current = Date.now()
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange)
+  }, [])
+
   useEffect(() => () => {
     if (verifyTimerRef.current !== null) window.clearTimeout(verifyTimerRef.current)
     const startedAt = startedAtRef.current
     if (startedAt !== null) {
+      const endedAt = Date.now()
+      if (visibleSinceRef.current !== null) {
+        activeDurationMsRef.current += Math.max(0, endedAt - visibleSinceRef.current)
+        visibleSinceRef.current = null
+      }
       track('game_session_completed', {
         game: id,
-        elapsedSeconds: Math.max(0, Math.round((Date.now() - startedAt) / 1000))
+        durationSeconds: Math.max(0, Math.round(activeDurationMsRef.current / 1000)),
+        elapsedSeconds: Math.max(0, Math.round((endedAt - startedAt) / 1000))
       })
       startedAtRef.current = null
     }
@@ -192,9 +216,15 @@ export function GamePlayer({ gameId }: { gameId: string }) {
   const finishSession = () => {
     const startedAt = startedAtRef.current
     if (startedAt !== null) {
+      const endedAt = Date.now()
+      if (visibleSinceRef.current !== null) {
+        activeDurationMsRef.current += Math.max(0, endedAt - visibleSinceRef.current)
+        visibleSinceRef.current = null
+      }
       track('game_session_completed', {
         game: id,
-        elapsedSeconds: Math.max(0, Math.round((Date.now() - startedAt) / 1000))
+        durationSeconds: Math.max(0, Math.round(activeDurationMsRef.current / 1000)),
+        elapsedSeconds: Math.max(0, Math.round((endedAt - startedAt) / 1000))
       })
       startedAtRef.current = null
     }
@@ -202,7 +232,10 @@ export function GamePlayer({ gameId }: { gameId: string }) {
 
   const beginSession = () => {
     if (startedAtRef.current !== null) return
-    startedAtRef.current = Date.now()
+    const startedAt = Date.now()
+    startedAtRef.current = startedAt
+    activeDurationMsRef.current = 0
+    visibleSinceRef.current = document.hidden ? null : startedAt
     rememberGame(id)
     track('game_session_started', { game: id, source, route: window.location.pathname })
   }
