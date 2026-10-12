@@ -1154,7 +1154,7 @@ func _load_career() -> void:
 	current_contract = int(career.get_value("raid", "contract", 0)) % career_names.size()
 	player_max_health = 100.0 + armor_level * 20.0
 	player_health = player_max_health
-	var compact_profile := get_viewport_rect().size.x < 920.0 or DisplayServer.is_touchscreen_available()
+	var compact_profile := get_viewport().get_visible_rect().size.x < 920.0 or DisplayServer.is_touchscreen_available()
 	cinematic_quality = bool(career.get_value("settings", "cinematic_quality", not compact_profile))
 	sound_enabled = bool(career.get_value("settings", "sound_enabled", true))
 

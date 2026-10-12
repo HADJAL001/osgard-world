@@ -29,6 +29,7 @@ for (const feature of [
   'user://null_shift_career.cfg', 'KEY_F2', 'KEY_F3', 'dash_windup', 'dash_timer', 'HEAVY', 'STALKER', 'camera_shake_timer', 'fog_enabled', 'current_frame_ms'
 ]) assert.ok(game.includes(feature), 'Missing Godot gameplay/diagnostic feature: ' + feature)
 assert.ok(game.length > 25000, 'Godot gameplay source unexpectedly small')
+assert.ok(game.includes('get_viewport().get_visible_rect().size.x') && !game.includes('get_viewport_rect()'), 'Godot Node3D responsive profile must use the active viewport API')
 assert.ok(!/https?:\/\/(?:fonts\.googleapis|cdn\.jsdelivr|unpkg\.com)/i.test(game), 'Unexpected external runtime dependency in game source')
 console.log('PASS NULL//SHIFT Godot source contract: project, renderer, gameplay systems, touch controls, saves and real diagnostics')
 if (process.argv[2] === '--export-check') {
