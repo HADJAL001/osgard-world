@@ -42,6 +42,8 @@ for (const url of ['https://osgardbewworld.com/','https://o2system.art/','https:
 assert.ok(html.includes('osman.osmanov0099@gmail.com'))
 assert.ok(html.includes('https://wa.me/79640027222'))
 assert.ok(html.includes('mailto:osman.osmanov0099@gmail.com?subject='))
+assert.ok(html.includes("launch:'/games/remix/player/index.html'") && html.includes('frame.src=g.launch||g.href'), 'REMIX must open the Unity WebGL player directly, not only its intro page')
+assert.ok(html.includes('СТРАНИЦА ИГРЫ ЗАГРУЖЕНА · ПРОВЕРЬТЕ ЕЁ СОБСТВЕННЫЙ СТАТУС'), 'iframe load must not be described as confirmed gameplay readiness')
 assert.ok(html.includes('Ничего не отправляется автоматически'), 'Lead form must disclose mailto behavior')
 assert.ok(html.includes('PARTNER INTEGRATION / RESERVED · INACTIVE'), 'Sponsor inventory must remain explicitly inactive until configured')
 assert.ok(html.includes('NO CHECKOUT CONNECTED'), 'No connected payments disclaimer missing')
