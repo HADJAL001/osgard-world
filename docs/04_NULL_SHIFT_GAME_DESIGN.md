@@ -58,3 +58,12 @@ The existing localStorage career save, contract rotation, credit rewards, suit/p
 ## Quality gate
 
 The command npm run qa:null-shift checks required game assets, script syntax, controls, core interactions, diagnostics, responsive rules and reduced-motion support. The production route matrix also checks the published page, CSS and JS on desktop and mobile agents.
+
+
+## Release 0.3 — combat readability and destructible field devices
+
+- Three shootable field devices add tactical choices: an EMP relay stuns nearby guards and clears projectiles; a supply cell restores health and resets pulse cooldown; a phase anchor disrupts hostiles but raises instability. Each has health, damage feedback, a distinct silhouette and a scorch mark for the current raid.
+- Enemy archetypes are telegraphed: stalkers warn before a fast dash, heavies aim and fire a three-shot volley, and the Warden warns before a radial projectile pulse. Their visual language uses distinct outlines, colors and wind-up indicators.
+- Combat feedback includes layered suit detailing, muzzle flash, directional hit sparks, debris fragments, camera impulse and phase-transition bursts. A particle cap bounds effects on slower devices.
+- A dedicated tactical telemetry strip reports remaining hostiles, remaining field devices and eliminations from the current raid. Data stays local.
+- The existing 16:9 canvas, reduced-motion preference, cinematic/balanced switch, mobile sticks and local diagnostics remain. Automated smoke tests verify source contracts and syntax; they do not replace real-device tests or prove native 8K rendering.
