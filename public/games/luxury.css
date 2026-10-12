@@ -2,7 +2,7 @@
 .luxury-entertainment{--acid:#e2c783;--metal:#d8cdb4;--line:rgba(226,199,131,.2);--panel:#11110e;background:radial-gradient(ellipse at 76% 2%,rgba(195,155,77,.11),transparent 38%),#080907;color:#f1eee5}
 .luxury-entertainment>header{border-bottom-color:rgba(226,199,131,.2)!important;background:rgba(8,9,7,.86)!important;box-shadow:0 14px 42px rgba(0,0,0,.25)}
 .luxury-entertainment>.hero{position:relative;background:radial-gradient(ellipse at 76% 44%,rgba(197,159,86,.075),transparent 35%);border-bottom:1px solid rgba(226,199,131,.18)}
-.luxury-entertainment>.hero:after{position:absolute;left:clamp(22px,4vw,58px);right:clamp(22px,4vw,58px);bottom:0;height:1px;content:"";background:linear-gradient(90deg,transparent,rgba(226,199,131,.45),transparent)}
+.luxury-entertainment .hero:after{position:absolute;left:clamp(22px,4vw,58px);right:clamp(22px,4vw,58px);bottom:0;height:1px;content:"";background:linear-gradient(90deg,transparent,rgba(226,199,131,.45),transparent)}
 .luxury-entertainment .eyebrow{color:#e2c783}
 .luxury-entertainment .hero h1{font-family:"Cormorant Garamond",Georgia,serif;font-weight:300;letter-spacing:-.055em;line-height:.91}
 .luxury-entertainment .hero h1 em,.luxury-entertainment .title h2 em,.luxury-entertainment .sponsor h2 em,.luxury-entertainment .contact h2 em{color:#ead6a0;text-shadow:0 0 34px rgba(226,199,131,.08)}
@@ -65,9 +65,9 @@
 .luxury-entertainment .consent[aria-pressed=true]{border-color:rgba(226,199,131,.65)}
 .luxury-entertainment .consent i:after{background:#ded2b0}
 .luxury-entertainment .consent[aria-pressed=true] i:after{background:#e2c783}
-.luxury-entertainment>footer{border-top-color:rgba(226,199,131,.17)}
-.luxury-entertainment>footer .brand svg{color:#e2c783}
-.luxury-entertainment>footer>nav a:hover{color:#ead6a0}
+.luxury-entertainment footer{border-top-color:rgba(226,199,131,.17)}
+.luxury-entertainment footer .brand svg{color:#e2c783}
+.luxury-entertainment footer>nav a:hover{color:#ead6a0}
 .luxury-tools{display:flex;align-items:center;justify-content:space-between;gap:9px;flex-wrap:wrap;padding-top:2px}
 .luxury-tools select{min-height:35px;max-width:200px;padding:0 30px 0 11px;border:1px solid rgba(226,199,131,.22);border-radius:2px;appearance:none;background:#0d0e0b;color:#d9d2bd;font-size:10px;cursor:pointer}
 .luxury-sort{position:relative;display:flex;align-items:center;gap:8px;color:#a6a38f;font-size:10px}
@@ -79,7 +79,7 @@
 .luxury-status{width:100%;min-height:1em;margin:0;color:#e2c783;font-size:10px}
 .luxury-shortcuts{margin:0;color:#858879;font:9px ui-monospace,Consolas,monospace;letter-spacing:.035em}
 @media(max-width:760px){
- .luxury-entertainment>.hero:after{left:22px;right:22px}
+ .luxury-entertainment .hero:after{left:22px;right:22px}
  .luxury-entertainment .hero h1{font-size:clamp(46px,11vw,74px)}
  .luxury-entertainment .art strong{font-size:clamp(30px,9vw,48px)}
  .luxury-tools{justify-content:flex-start}
