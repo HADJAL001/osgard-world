@@ -17,6 +17,7 @@ const main = await read('src/main.tsx')
 const manifest = await read('src/core/manifest.ts')
 const html = await read('index.html')
 const legal = await read('src/LegalPage.tsx')
+const sitemap = await read('public/sitemap.xml')
 
 for (const [name, path] of [
   ['time strategy', 'src/TimePrototype.tsx'],
@@ -61,7 +62,7 @@ check('Contact addresses and lead form are wired', () => {
   assert.ok(hub.includes('osman.osmanov0099@gmail.com') && hub.includes('https://wa.me/79640027222'))
   assert.ok(hub.includes('handleLead') && hub.includes('mailto:'))
 })
-check('Lead form states that server delivery is not connected', () => assert.ok(hub.includes('Server-side form delivery is not connected yet') && hub.includes('Серверное хранение заявок пока не подключено')))
+check('Lead form states that server delivery is not connected', () => assert.ok(hub.includes('server-side form delivery is not connected yet') && hub.includes('Серверное хранение заявок пока не подключено')))
 check('Game detail pages include control/support/features sections', () => {
   for (const token of ['gh-detail-info-grid', 'controlsRu', 'supportRu', 'featuresRu']) assert.ok(hub.includes(token), token)
 })
@@ -73,8 +74,7 @@ check('Legal routes and honest scope limitations exist', () => {
   assert.ok(legal.includes('рабочий черновик') && legal.includes('не сохраняет заявку на сервере'))
 })
 check('Favicon no longer uses a photographic JPG', () => assert.ok(html.includes('/osgard-mark.svg') && !html.includes('rel="icon" href="/assets/hero-mobility.jpg"')))
-check('Sitemap file parses and lists new catalogue pages', async () => {
-  const sitemap=await read('public/sitemap.xml')
+check('Sitemap lists new catalogue pages and has balanced URL elements', () => {
   assert.ok(sitemap.includes('https://osgard.world/games') && sitemap.includes('https://osgard.world/game/null-shift'))
   assert.equal((sitemap.match(/<url>/g)||[]).length, (sitemap.match(/<\/url>/g)||[]).length)
 })
