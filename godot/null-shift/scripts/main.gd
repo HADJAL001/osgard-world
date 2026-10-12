@@ -1576,15 +1576,15 @@ func _near(first: Node3D, second: Node3D, distance: float) -> bool:
 	return is_instance_valid(first) and is_instance_valid(second) and first.global_position.distance_to(second.global_position) < distance
 
 func _damage_player(amount: float, attacker: Node3D = null) -> void:
-	if dash_timer > 0.0:
-		if not dash_evasion_registered:
-			dash_evasion_registered = true
-			dash_evasions += 1
-			_play_sfx(820.0, 0.065, 0.045)
-			if is_instance_valid(dash_status_label):
-				dash_status_label.text = "УКЛОНЕНИЕ · АТАКА ПРОПУЩЕНА"
-				dash_status_label.add_theme_color_override("font_color", Color(0.58, 1.0, 0.91))
-			_update_hud()
+	# A dash evades exactly one damage event. Further hits during the movement burst still hurt.
+	if dash_timer > 0.0 and not dash_evasion_registered:
+		dash_evasion_registered = true
+		dash_evasions += 1
+		_play_sfx(820.0, 0.065, 0.045)
+		if is_instance_valid(dash_status_label):
+			dash_status_label.text = "УКЛОНЕНИЕ · АТАКА ПРОПУЩЕНА"
+			dash_status_label.add_theme_color_override("font_color", Color(0.58, 1.0, 0.91))
+		_update_hud()
 		return
 	if damage_cooldown > 0.0 or null_shift_timer > 0.0:
 		return

@@ -233,3 +233,5 @@ This pass removes recurring allocations from the firefight path: beams and ring 
 - The dash triggers pooled cyan/violet ring and trail effects, a small camera impulse, a synthesized sound and a temporary suit flash/lean. HUD feedback shows active/recharge/ready state; diagnostics count successful evades and report the cooldown.
 - The compact mobile action panel grows to fit its fifth action without reusing movement or aim surface. Headless smoke checks exercise touch triggering, movement direction, real CharacterBody movement, cooldown rejection, one-hit immunity, suit feedback, and diagnostics rows.
 - CI remains responsible for official Godot 4.7.2 installation/templates, headless gameplay tests, WebAssembly/PCK export and published Godot route checks.
+
+- Balance guard: the evade window now absorbs only the first incoming damage event for each dash; subsequent damage during the same burst still applies. The headless smoke test asserts this explicitly.

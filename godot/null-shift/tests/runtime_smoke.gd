@@ -340,8 +340,9 @@ func _run_smoke() -> void:
 	if not _expect(is_equal_approx(game.player_health, dash_saved_health) and game.dash_evasions == evades_before + 1, "dash must grant a measurable one-hit evade without subtracting health"):
 		return
 	game._damage_player(10.0)
-	if not _expect(game.dash_evasions == evades_before + 1, "one dash can count at most one evaded hit"):
+	if not _expect(game.dash_evasions == evades_before + 1 and is_equal_approx(game.player_health, dash_saved_health - 10.0), "a second hit during one dash must damage the operator without adding a second evade"):
 		return
+	game.damage_flash_timer = 0.0
 	game._update_player_material()
 	if not _expect(game.operator_suit.material_override == game.materials["white"], "dash must create a visible suit flash during its active window"):
 		return
