@@ -602,7 +602,7 @@ export function GameDetailPage({ slug }: { slug: string }) {
                 setFrameError(true)
                 return
               }
-              track('game_session_started', { game: game.id, surface: 'games-iframe' }, consent)
+              // The player lifecycle reports real session starts; iframe load alone is not gameplay.
             } catch {
               setFrameError(true)
             }
