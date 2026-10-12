@@ -47,6 +47,8 @@ func _run_smoke() -> void:
 		return
 	if not _expect(is_equal_approx(game.mobile_action_panel.offset_right - game.mobile_action_panel.offset_left, 150.0) and is_equal_approx(game.mobile_action_buttons[0].custom_minimum_size.x, 59.0), "320px layout must size combat buttons to the viewport"):
 		return
+	if not _expect(game.mobile_modules_button.custom_minimum_size.x <= 126.0 and game.sound_button.custom_minimum_size.x <= 126.0, "320px utility buttons must not overflow the action panel"):
+		return
 	var saved_position: Vector3 = game.player.global_position
 	game.player.global_position = Vector3(0.0, 0.82, 0.0)
 	var clear_lane: Array = [{"from": Vector3(0.0, 1.0, -10.0), "to": Vector3(0.0, 1.0, 0.0)}]

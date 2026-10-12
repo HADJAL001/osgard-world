@@ -94,6 +94,7 @@ var crosshair_parts: Array[ColorRect] = []
 var local_lights: Array[OmniLight3D] = []
 var fill_light: OmniLight3D
 var sound_button: Button
+var mobile_modules_button: Button
 var status_panel: PanelContainer
 var objective_panel: PanelContainer
 var mid_panel: PanelContainer
@@ -1601,7 +1602,7 @@ func _create_mobile_controls(parent: Control) -> void:
 		action_button.button_down.connect(_set_mobile_action.bind(item["key"], true))
 		action_button.button_up.connect(_set_mobile_action.bind(item["key"], false))
 		mobile_action_buttons.append(action_button)
-	_add_button(action_stack, "МОДУЛИ", _toggle_loadout, Vector2(176.0, 31.0))
+	mobile_modules_button = _add_button(action_stack, "МОДУЛИ", _toggle_loadout, Vector2(176.0, 31.0))
 	sound_button = _add_button(action_stack, "ЗВУК / ВКЛ" if sound_enabled else "ЗВУК / ВЫКЛ", _toggle_sound, Vector2(176.0, 29.0))
 
 func _set_mobile_action(action: String, pressed: bool) -> void:
@@ -1704,6 +1705,8 @@ func _update_mobile_layout() -> void:
 			spacer.custom_minimum_size = Vector2(52.0, 38.0)
 		for button in mobile_action_buttons:
 			button.custom_minimum_size = Vector2(84.0, 38.0)
+		mobile_modules_button.custom_minimum_size = Vector2(176.0, 31.0)
+		sound_button.custom_minimum_size = Vector2(176.0, 29.0)
 	mobile_move_panel.visible = compact
 	mobile_action_panel.visible = compact
 
@@ -1728,6 +1731,8 @@ func _layout_compact_controls(viewport_size: Vector2) -> void:
 	var action_button_width: float = floor((action_width - 32.0) * 0.5)
 	for button in mobile_action_buttons:
 		button.custom_minimum_size = Vector2(action_button_width, 34.0)
+	mobile_modules_button.custom_minimum_size = Vector2(action_width - 24.0, 28.0)
+	sound_button.custom_minimum_size = Vector2(action_width - 24.0, 28.0)
 
 func _refresh_loadout() -> void:
 	if not is_instance_valid(loadout_panel):
