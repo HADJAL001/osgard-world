@@ -721,7 +721,7 @@ func _update_guards(delta: float) -> void:
 		var distance := to_player.length()
 		if distance > 0.01:
 			body.look_at(Vector3(player.global_position.x, body.global_position.y, player.global_position.z), Vector3.UP)
-		var role := str(guard.get("role", "RANGER"))
+		var role: String = str(guard.get("role", "RANGER"))
 		if role == "STALKER":
 			var dash_windup := maxf(0.0, float(guard.get("dash_windup", 0.0)) - delta)
 			var dash_timer := maxf(0.0, float(guard.get("dash_timer", 0.0)) - delta)
@@ -1553,7 +1553,7 @@ func _animate_world(delta: float) -> void:
 			var role := str(guard.get("role", "RANGER"))
 			var role_material: Material = materials["cyan"] if float(guard["stun"]) > 0.0 else (materials["red"] if role in ["WARDEN", "RANGER"] else (materials["violet"] if role == "STALKER" else materials["amber"]))
 			armor.material_override = role_material
-			var body_speed := body.velocity.length()
+			var body_speed: float = body.velocity.length()
 			armor.position.y = sin(scene_clock * (9.0 if body_speed > 0.2 else 1.6) + float(guard["phase"])) * (0.035 if body_speed > 0.2 else 0.012)
 
 func _update_effect_expiry() -> void:
