@@ -51,6 +51,10 @@ jobs:
       - run: npm run qa:null-shift
       - name: Smoke-test the OSGARD Games hub
         run: npm run qa:games-portal
+      - name: Smoke-test individual game pages and SEO routes
+        run: npm run qa:games-detail
+      - name: Test monetization scenarios and formula bounds
+        run: npm run qa:games-model
       - name: Verify ecosystem links, claims, contacts and privacy boundaries
         run: npm run qa:ecosystem
 
