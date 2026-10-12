@@ -19,11 +19,11 @@
 | REMIX | `/games/remix/index.html` | Standalone web entry; network features depend on the Remix backend/API. |
 
 ## Concrete issue found
-The original `OSGARD_GAMES` manifest pointed NULL//SHIFT to `/games/null-shift-godot/index.html`, while the checked-in public game is `public/games/null-shift/index.html`. This branch corrects the catalogue manifest to point at the present web build. A legacy page at /games/null-shift-godot/ now forwards to that browser build instead of implying that Godot .wasm/.pck export files are published. A separate export should be linked only when its actual artifacts are present and tested.
+The original `OSGARD_GAMES` manifest and static portal pointed NULL//SHIFT at `/games/null-shift-godot/`, while the checked-in public game is `public/games/null-shift/index.html`. The manifest, main launch CTA and lifecycle controller now use the browser build. Nginx redirects old Godot paths to that build; a static fallback page does the same on hosts without those Nginx rules. The repository has Godot project source, but no published `.wasm/.pck` export at the old public path; a separate export should only be linked after its actual artifacts are present and tested.
 
 ## Implemented in this feature branch
-- Shared premium Games catalogue at `/games` and details at `/game/:slug`.
-- Legacy `/entertainment`, `/entertainment/` and `/entertainment/index.html` converge on `/games`: the SPA handles the alias and exact Nginx locations return a permanent redirect while leaving unrelated nested assets untouched.
+- The canonical catalogue is the existing static portal `public/games/index.html` served at `/games/`; it remains static because Nginx serves files before React SPA fallback. React renders shared detail pages at `/game/:slug` from `src/GamesHub.tsx`.
+- Legacy `/entertainment`, `/entertainment/` and `/entertainment/index.html` permanently redirect to `/games/` through exact Nginx locations; unrelated nested assets are not redirected.
 - Search by title/genre/mechanic, category/device filters, locally stored favourites and recent game.
 - Game details with controls, platform notes, features, launch iframe, full-screen control, standalone fallback and related games.
 - Consent-gated optional catalogue events, clear local data behavior, sharing and separate outbound ecosystem project links.
