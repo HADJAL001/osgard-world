@@ -3,7 +3,7 @@
 const $=s=>document.querySelector(s),dialog=$('#player-dialog'),frame=$('#player-frame'),status=$('#player-status'),title=$('#player-title'),direct=$('#player-direct-link');
 if(!dialog||!frame||!status)return;
 const games={
- 'null-shift':{title:'NULL//SHIFT',url:'/games/null-shift-godot/'},
+ 'null-shift':{title:'NULL//SHIFT',url:'/games/null-shift/'},
  time:{title:'Империя времени',url:'/games/time'},
  swarm:{title:'SWARM',url:'/games/swarm/'},
  inherit:{title:'INHERIT',url:'/games/inherit/'},
