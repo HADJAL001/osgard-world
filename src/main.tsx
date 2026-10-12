@@ -37,19 +37,6 @@ import { EcosystemSurface } from './EcosystemSurfaces'
 import { CommunitySurface } from './CommunitySurface'
 import { StreamSurface } from './StreamSurface'
 
-const seo: Record<string, { title: string; description: string }> = {
-  '/': { title: 'OSGARD WORLD � �������� ����������', description: 'OSGARD WORLD ���������� �������� ��� ������, �����������, �������, ������� � �������� �������� �������.' },
-  '/worlds': { title: '���� OSGARD � ���� ��������� ����� ����������', description: '���� ������� ����� OSGARD: ������, �����������, ������, ���� ��� � ������ ����� ���������.' },
-  '/catalog': { title: '������� OSGARD � ����������� � ���������', description: '������� �������� ������������ � ���������� OSGARD � ��������� ���������� � �������.' },
-  '/chronicle': { title: '������� OSGARD � ������� ����������', description: '������� �������, ��������� � ������ �������� ���������� OSGARD.' },
-  '/masters': { title: '���������� OSGARD � ����, ��������� ������', description: '���������� OSGARD � �� ������� � ������, ���������, �������� � ��������.' },
-  '/club': { title: '���� OSGARD � �������� ������ �������', description: '�������� ���� OSGARD ��� ������� �������, ������ ����������� � ������� ������� � ��������.' },
-  '/aurum': { title: 'AURUM � ����������� ���������� OSGARD', description: 'AURUM ��������� �������� OSGARD � ������ ������� � �������� ������� ��������� ���.' },
-  '/timecoin': { title: 'TimeCoin OSGARD � ������ � �������', description: 'TimeCoin � ���������� ������� ����������, ������� � ����������� ������� OSGARD.' },
-  '/development': { title: 'OSGARD Development � ���������� �������� ���������', description: '���������� ������, �������� � �������� ��������� OSGARD: �� ������ �� �������.' },
-  '/entertainment': { title: 'OSGARD Entertainment � ������������� ����', description: '������������� ������� ��� OSGARD. �������� ���� � ��������� � ��� ��������� ���.' },
-}
-
 const cleanSeo: Record<string, { title: string; description: string }> = {
   '/': { title: 'OSGARD WORLD — цифровая экосистема', description: 'OSGARD объединяет продукты для защиты, мобильности, бизнеса, времени и создания цифровых решений.' },
   '/worlds': { title: 'Миры OSGARD — семь самостоятельных продуктов', description: 'Выберите мир OSGARD: защита, мобильность, бизнес, время и создание цифровых продуктов.' },
