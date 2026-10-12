@@ -1,0 +1,217 @@
+{
+  "schemaVersion": 1,
+  "games": [
+    {
+      "id": "time",
+      "title": "Империя времени",
+      "titleEn": "Empire of Time",
+      "mark": "ET",
+      "genre": "Стратегия",
+      "genreEn": "Strategy",
+      "summary": "Городская стратегия о ресурсах, районах, совете и последствиях решений.",
+      "summaryEn": "A city strategy about resources, districts, the council and the consequences of your decisions.",
+      "description": "Изучай районы, строй, выбирай курс управления и продвигай время. Первый ход включает краткое обучение.",
+      "descriptionEn": "Inspect districts, build, choose a policy and advance the turn. A short first-turn guide is built in.",
+      "controls": "Мышь или касание: карта, панели района, совет, стройка и кнопка продвижения такта.",
+      "controlsEn": "Mouse or touch: city map, district panels, council, construction and advance-turn control.",
+      "launchUrl": "/games/time",
+      "buildType": "React / TypeScript",
+      "availability": "Браузер",
+      "availabilityEn": "Browser",
+      "tags": [
+        "strategy",
+        "simulation"
+      ],
+      "devices": [
+        "desktop",
+        "mobile"
+      ],
+      "featured": true,
+      "instructionsAvailable": true
+    },
+    {
+      "id": "swarm",
+      "title": "SWARM",
+      "titleEn": "SWARM",
+      "mark": "SW",
+      "genre": "Кооператив",
+      "genreEn": "Co-op",
+      "summary": "Управляй одной ролью в общем теле, координируй действия и добудь ядро.",
+      "summaryEn": "Control one role in a shared body, coordinate actions and extract the core.",
+      "description": "Выбери роль и выполни её уникальное действие. Командные шаги, таймер и устойчивость определяют исход.",
+      "descriptionEn": "Choose a role and perform its unique action. Team steps, the timer and stability shape the outcome.",
+      "controls": "Клавиши A/D или ←/→ для движения; Space/W/↑ — действие в зависимости от роли. В компактном режиме есть сенсорные кнопки.",
+      "controlsEn": "A/D or ←/→ to move; Space/W/↑ performs the role action. Touch buttons are available in compact mode.",
+      "launchUrl": "/games/swarm/index.html",
+      "buildType": "HTML / Canvas / JavaScript",
+      "availability": "Браузер; онлайн зависит от сервиса комнат",
+      "availabilityEn": "Browser; online play depends on room service",
+      "tags": [
+        "co-op",
+        "simulation"
+      ],
+      "devices": [
+        "desktop",
+        "mobile"
+      ],
+      "featured": true,
+      "instructionsAvailable": true
+    },
+    {
+      "id": "null-shift",
+      "title": "NULL//SHIFT",
+      "titleEn": "NULL//SHIFT",
+      "mark": "NS",
+      "genre": "Тактика",
+      "genreEn": "Tactical action",
+      "summary": "Проникни в нестабильный объект, взломай узлы, смени фазу и эвакуируй ядро.",
+      "summaryEn": "Infiltrate an unstable facility, hack nodes, shift phases and extract the core.",
+      "description": "Браузерная 3D/Canvas-версия с диагностической панелью, звуком и сенсорным интерфейсом. Исходники Godot также хранятся в репозитории, но отдельный опубликованный Godot-export здесь не заявляется.",
+      "descriptionEn": "Browser 3D/Canvas build with a diagnostics panel, sound and touch controls. Godot source also exists in the repository; a separate published Godot export is not claimed here.",
+      "controls": "W/A/S/D или стрелки для движения; используй кнопки действий и сенсорные контролы внутри игры.",
+      "controlsEn": "W/A/S/D or arrow keys to move; use the in-game action buttons and touch controls.",
+      "launchUrl": "/games/null-shift/index.html",
+      "buildType": "HTML / WebGL / JavaScript",
+      "availability": "Браузер",
+      "availabilityEn": "Browser",
+      "tags": [
+        "action",
+        "tactical"
+      ],
+      "devices": [
+        "desktop",
+        "mobile"
+      ],
+      "featured": true,
+      "instructionsAvailable": true
+    },
+    {
+      "id": "inherit",
+      "title": "INHERIT",
+      "titleEn": "INHERIT",
+      "mark": "IN",
+      "genre": "Симуляция",
+      "genreEn": "Simulation",
+      "summary": "Мир и его история меняются от поколения к поколению.",
+      "summaryEn": "A world and its history change from one generation to the next.",
+      "description": "Самостоятельная браузерная игра с интерфейсом поколения, решениями и сохранением локального состояния.",
+      "descriptionEn": "A standalone browser game with generation UI, choices and local-state persistence.",
+      "controls": "Следуй подсказкам интерфейса и используй доступные действия. На узком экране игра использует мобильную компоновку.",
+      "controlsEn": "Follow the interface prompts and use the available actions. The game includes a compact layout for narrow screens.",
+      "launchUrl": "/games/inherit/index.html",
+      "buildType": "Standalone HTML / JavaScript",
+      "availability": "Браузер",
+      "availabilityEn": "Browser",
+      "tags": [
+        "simulation",
+        "narrative"
+      ],
+      "devices": [
+        "desktop",
+        "mobile"
+      ],
+      "featured": false,
+      "instructionsAvailable": true
+    },
+    {
+      "id": "remix",
+      "title": "REMIX",
+      "titleEn": "REMIX",
+      "mark": "RX",
+      "genre": "Создание",
+      "genreEn": "Creation",
+      "summary": "Создавай испытания и проходи браузерные сборки, оставляя свой результат.",
+      "summaryEn": "Create challenges and play browser builds while leaving your result.",
+      "description": "Каталожная страница ведёт к самостоятельной Unity WebGL-сборке. Успешная загрузка зависит от браузера, WebGL и размера ресурсов.",
+      "descriptionEn": "The landing page opens a separate Unity WebGL build. Successful startup depends on browser support, WebGL and asset download.",
+      "controls": "Открой испытание из страницы REMIX; следуй управлению, показанному самой игрой.",
+      "controlsEn": "Open the challenge from the REMIX page and follow the controls shown inside the game.",
+      "launchUrl": "/games/remix/index.html",
+      "buildType": "HTML landing + Unity WebGL",
+      "availability": "Браузер; WebGL",
+      "availabilityEn": "Browser; WebGL",
+      "tags": [
+        "creation",
+        "challenge"
+      ],
+      "devices": [
+        "desktop",
+        "mobile"
+      ],
+      "featured": false,
+      "instructionsAvailable": true
+    }
+  ],
+  "ecosystem": [
+    {
+      "id": "create",
+      "name": "OSGARD BEW WORLD",
+      "description": "Создание проектов и приложений",
+      "url": "https://osgardbewworld.com",
+      "mark": "CR"
+    },
+    {
+      "id": "o2",
+      "name": "O2 SYSTEM",
+      "description": "Учёт кассы обменников",
+      "url": "https://o2system.art",
+      "mark": "O2"
+    },
+    {
+      "id": "taxi",
+      "name": "SENJORIO",
+      "description": "Премиальное такси",
+      "url": "https://senjorio.com",
+      "mark": "SJ"
+    },
+    {
+      "id": "superday",
+      "name": "SUPERDAY",
+      "description": "Умная карта и планировщик дня",
+      "url": "https://superday.run",
+      "mark": "SD"
+    },
+    {
+      "id": "marcosa",
+      "name": "MARCOSA",
+      "description": "Социальная платформа",
+      "url": "https://marcosa.club",
+      "mark": "MC"
+    },
+    {
+      "id": "myosa",
+      "name": "MYOSA",
+      "description": "Платформа искусственного интеллекта",
+      "url": "https://myosa.world",
+      "mark": "MY"
+    },
+    {
+      "id": "gold",
+      "name": "GOLD GLAMOUR",
+      "description": "Премиальные услуги и выездной сервис",
+      "url": "https://gold-glamour.online",
+      "mark": "GG"
+    },
+    {
+      "id": "vpn",
+      "name": "GARD VPN",
+      "description": "VPN-сервис",
+      "url": "https://gardvpn.is",
+      "mark": "GV"
+    },
+    {
+      "id": "business",
+      "name": "OSGARD OS",
+      "description": "Инструменты развития бизнеса",
+      "url": "https://osgardos.com",
+      "mark": "OB"
+    },
+    {
+      "id": "studio",
+      "name": "VANGUARD STUDIO",
+      "description": "Создание видео",
+      "url": "https://osgardvanguard.studio",
+      "mark": "VS"
+    }
+  ]
+}
