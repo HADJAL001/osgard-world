@@ -12,6 +12,7 @@ async function check(name, command, args, shell = process.platform === 'win32') 
 }
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm'
 await check('typecheck', npm, ['run', 'check'])
+await check('games-platform-smoke', npm, ['run', 'qa:games'])
 await check('dependency-audit', npm, ['audit', '--audit-level=high'])
 await check('core-state-smoke', npm, ['run', 'qa:core'])
 await check('event-queue-smoke', npm, ['run', 'qa:queue'])
