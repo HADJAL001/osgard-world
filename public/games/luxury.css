@@ -1,0 +1,91 @@
+/* Luxury polish for the canonical OSGARD PLAY / Entertainment catalogue. */
+.luxury-entertainment{--acid:#e2c783;--metal:#d8cdb4;--line:rgba(226,199,131,.2);--panel:#11110e;background:radial-gradient(ellipse at 76% 2%,rgba(195,155,77,.11),transparent 38%),#080907;color:#f1eee5}
+.luxury-entertainment>header{border-bottom-color:rgba(226,199,131,.2)!important;background:rgba(8,9,7,.86)!important;box-shadow:0 14px 42px rgba(0,0,0,.25)}
+.luxury-entertainment>.hero{position:relative;background:radial-gradient(ellipse at 76% 44%,rgba(197,159,86,.075),transparent 35%);border-bottom:1px solid rgba(226,199,131,.18)}
+.luxury-entertainment>.hero:after{position:absolute;left:clamp(22px,4vw,58px);right:clamp(22px,4vw,58px);bottom:0;height:1px;content:"";background:linear-gradient(90deg,transparent,rgba(226,199,131,.45),transparent)}
+.luxury-entertainment .eyebrow{color:#e2c783}
+.luxury-entertainment .hero h1{font-family:"Cormorant Garamond",Georgia,serif;font-weight:300;letter-spacing:-.055em;line-height:.91}
+.luxury-entertainment .hero h1 em,.luxury-entertainment .title h2 em,.luxury-entertainment .sponsor h2 em,.luxury-entertainment .contact h2 em{color:#ead6a0;text-shadow:0 0 34px rgba(226,199,131,.08)}
+.luxury-entertainment .lede{max-width:520px;color:#c1bdaf;font-size:clamp(15px,1.35vw,17px)}
+.luxury-entertainment .hero-art svg{filter:drop-shadow(0 0 40px rgba(226,199,131,.18))}
+.luxury-entertainment .orbit{border-color:rgba(226,199,131,.26)}
+.luxury-entertainment .btn.primary{background:linear-gradient(112deg,#c7a95f,#f0dba4 52%,#cfb16a);color:#15130e;box-shadow:0 14px 32px -21px rgba(226,199,131,.85)}
+.luxury-entertainment .btn.primary:hover{background:linear-gradient(112deg,#d7bd78,#ffebbd 52%,#dfc27f)}
+.luxury-entertainment .btn.quiet{border-color:rgba(226,199,131,.26);background:rgba(255,255,255,.015)}
+.luxury-entertainment .btn.quiet:hover{border-color:rgba(226,199,131,.63);background:rgba(226,199,131,.07)}
+.luxury-entertainment .section{scroll-margin-top:95px}
+.luxury-entertainment .catalog{border-bottom:1px solid rgba(226,199,131,.14)}
+.luxury-entertainment .title h2,.luxury-entertainment .sponsor h2,.luxury-entertainment .contact h2{font-family:"Cormorant Garamond",Georgia,serif;font-weight:300;letter-spacing:-.045em}
+.luxury-entertainment .title>div>p:last-child{max-width:570px;color:#b7b5a7}
+.luxury-entertainment .index-note{border-left-color:rgba(226,199,131,.35)}
+.luxury-entertainment .index-note b{color:#ead6a0}
+.luxury-entertainment .filters{padding:19px 0;border-top-color:rgba(226,199,131,.22);border-bottom-color:rgba(226,199,131,.22)}
+.luxury-entertainment .search{min-height:43px;border-color:rgba(226,199,131,.22);background:rgba(255,255,255,.02)}
+.luxury-entertainment .search:focus-within{border-color:rgba(226,199,131,.7);box-shadow:0 0 0 3px rgba(226,199,131,.07)}
+.luxury-entertainment .search input{font-size:12px}
+.luxury-entertainment .search kbd{border-color:rgba(226,199,131,.24);color:#d3c29a}
+.luxury-entertainment .chip{border-color:rgba(226,199,131,.12);background:rgba(255,255,255,.01);color:#b2af9e}
+.luxury-entertainment .chip:hover{border-color:rgba(226,199,131,.52);color:#f1ead6}
+.luxury-entertainment .chip.active{border-color:#e2c783;background:linear-gradient(112deg,#c7a95f,#f0dba4);color:#15130e}
+.luxury-entertainment .fav-filter.active{border-color:rgba(226,199,131,.72);background:rgba(226,199,131,.09);color:#f0daa0}
+.luxury-entertainment .result-line{color:#a4a18f}
+.luxury-entertainment .result-line span:first-child{color:#e2c783}
+.luxury-entertainment .card{border-color:rgba(226,199,131,.18);background:linear-gradient(153deg,rgba(255,255,255,.04),rgba(255,255,255,.008) 60%),#0d0e0b;box-shadow:0 26px 60px -53px #000;transition:transform .28s ease,border-color .28s ease,box-shadow .28s ease}
+.luxury-entertainment .card:hover{border-color:rgba(226,199,131,.58);box-shadow:0 30px 70px -45px #000,0 0 28px -24px rgba(226,199,131,.45)}
+.luxury-entertainment .art{isolation:isolate;background-color:#0d110e}
+.luxury-entertainment .art:before{opacity:.88;filter:saturate(.82)}
+.luxury-entertainment .art:after{background:linear-gradient(180deg,rgba(0,0,0,.28),transparent 35%,rgba(0,0,0,.68))}
+.luxury-entertainment .art strong{font-family:"Cormorant Garamond",Georgia,serif;font-weight:400;letter-spacing:-.06em;text-shadow:0 8px 38px rgba(0,0,0,.55)}
+.luxury-entertainment .art em{color:#e0d6b9}
+.luxury-entertainment .art .launch{border-color:rgba(226,199,131,.48);background:rgba(6,8,6,.4);color:var(--accent,#e2c783)}
+.luxury-entertainment .copy{background:linear-gradient(145deg,rgba(255,255,255,.012),transparent)}
+.luxury-entertainment .game-title h3{font-family:"Cormorant Garamond",Georgia,serif;font-weight:400;letter-spacing:-.025em}
+.luxury-entertainment .copy>p{color:#b3b1a4}
+.luxury-entertainment .tags span{border-color:rgba(226,199,131,.18);background:rgba(226,199,131,.025);color:#b8b29f}
+.luxury-entertainment .play-link{color:#ebd291}
+.luxury-entertainment .play-link:hover{color:#fff0c7}
+.luxury-entertainment .favorite[aria-pressed=true]{border-color:rgba(226,199,131,.8);background:rgba(226,199,131,.09);color:#ebd291}
+.luxury-entertainment .empty{border-color:rgba(226,199,131,.28);background:rgba(226,199,131,.025)}
+.luxury-entertainment .empty strong{font-family:"Cormorant Garamond",Georgia,serif;font-size:28px;font-weight:400}
+.luxury-entertainment .recent a{border-color:rgba(226,199,131,.16);background:linear-gradient(135deg,rgba(255,255,255,.025),rgba(255,255,255,0))}
+.luxury-entertainment .recent a:hover{border-color:rgba(226,199,131,.55);background:rgba(226,199,131,.055)}
+.luxury-entertainment .ecosystem{background:radial-gradient(ellipse at 18% 50%,rgba(226,199,131,.045),transparent 44%),#0b0d0a;border-color:rgba(226,199,131,.14)}
+.luxury-entertainment .project-grid>a{border-color:rgba(226,199,131,.15)}
+.luxury-entertainment .project-grid>a:hover{background:rgba(226,199,131,.05)}
+.luxury-entertainment .project-grid i,.luxury-entertainment .project-grid>a:hover em{color:#e2c783}
+.luxury-entertainment .project-grid b{font-weight:500}
+.luxury-entertainment .sponsor{border-bottom:1px solid rgba(226,199,131,.14)}
+.luxury-entertainment .sponsor-mark:before,.luxury-entertainment .sponsor-mark:after{border-color:rgba(226,199,131,.5)}
+.luxury-entertainment .sponsor-mark b{border-color:#e2c783;color:#ead6a0;box-shadow:0 0 45px rgba(226,199,131,.08)}
+.luxury-entertainment .sponsor-status i{background:#e2c783}
+.luxury-entertainment .contact-wrap{background:radial-gradient(ellipse at 100% 30%,rgba(226,199,131,.055),transparent 35%),#0a0c09;border-top-color:rgba(226,199,131,.17)}
+.luxury-entertainment .form{border-color:rgba(226,199,131,.24);background:linear-gradient(145deg,rgba(255,255,255,.025),transparent 55%),#10110e}
+.luxury-entertainment .form input,.luxury-entertainment .form textarea,.luxury-entertainment .form select{border-color:rgba(226,199,131,.19);background:#090a08}
+.luxury-entertainment .consent-row{border-top-color:rgba(226,199,131,.17)}
+.luxury-entertainment .consent[aria-pressed=true]{border-color:rgba(226,199,131,.65)}
+.luxury-entertainment .consent i:after{background:#ded2b0}
+.luxury-entertainment .consent[aria-pressed=true] i:after{background:#e2c783}
+.luxury-entertainment>footer{border-top-color:rgba(226,199,131,.17)}
+.luxury-entertainment>footer .brand svg{color:#e2c783}
+.luxury-entertainment>footer>nav a:hover{color:#ead6a0}
+.luxury-tools{display:flex;align-items:center;justify-content:space-between;gap:9px;flex-wrap:wrap;padding-top:2px}
+.luxury-tools select{min-height:35px;max-width:200px;padding:0 30px 0 11px;border:1px solid rgba(226,199,131,.22);border-radius:2px;appearance:none;background:#0d0e0b;color:#d9d2bd;font-size:10px;cursor:pointer}
+.luxury-sort{position:relative;display:flex;align-items:center;gap:8px;color:#a6a38f;font-size:10px}
+.luxury-sort:after{position:absolute;right:10px;content:"⌄";color:#e2c783;pointer-events:none}
+.luxury-action{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:35px;padding:0 12px;border:1px solid rgba(226,199,131,.23);background:rgba(226,199,131,.035);color:#e1d6b6;font-size:10px;transition:background .2s ease,border-color .2s ease,color .2s ease}
+.luxury-action:hover{border-color:rgba(226,199,131,.7);background:rgba(226,199,131,.1);color:#ffedbf}
+.luxury-action:disabled{opacity:.4;cursor:not-allowed}
+.luxury-action[hidden]{display:none}
+.luxury-status{width:100%;min-height:1em;margin:0;color:#e2c783;font-size:10px}
+.luxury-shortcuts{margin:0;color:#858879;font:9px ui-monospace,Consolas,monospace;letter-spacing:.035em}
+@media(max-width:760px){
+ .luxury-entertainment>.hero:after{left:22px;right:22px}
+ .luxury-entertainment .hero h1{font-size:clamp(46px,11vw,74px)}
+ .luxury-entertainment .art strong{font-size:clamp(30px,9vw,48px)}
+ .luxury-tools{justify-content:flex-start}
+ .luxury-tools .luxury-sort{flex:1;min-width:145px}
+ .luxury-tools select{width:100%;max-width:none}
+ .luxury-tools .luxury-action{flex:1}
+ .luxury-shortcuts{width:100%;line-height:1.7}
+}
+@media(prefers-reduced-motion:reduce){.luxury-entertainment *, .luxury-entertainment *:before,.luxury-entertainment *:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
