@@ -29,7 +29,7 @@
       <span><span class="brand-name">OSGARD WORLD</span><span class="brand-sub">PLAY / DIGITAL WORLDS</span></span>
     </a>
     <nav class="topnav" aria-label="Навигация"><a href="#library">Игры</a><a href="#ecosystem">Экосистема</a><a href="#business">Разработка</a><a href="#contact">Контакты</a></nav>
-    <div class="top-right"><button class="lang" id="locale-toggle" type="button" aria-label="Change language">RU / EN</button><a class="primary" href="#library">Играть <span aria-hidden="true">↗</span></a></div>
+    <div class="top-right"><a class="primary" href="#library">Играть <span aria-hidden="true">↗</span></a></div>
   </header>
   <main>
     <section class="hero" aria-labelledby="hero-title">
@@ -118,7 +118,7 @@ const safeRead=(key,fallback)=>{try{const v=localStorage.getItem(key);return v==
 const safeWrite=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));return true}catch(_){return false}};
 const escapeHtml=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const consentKey='osgard.games.analytics.consent.v1',favoritesKey='osgard.games.favorites.v1',recentKey='osgard.games.recent.v1',eventsKey='osgard.games.analytics.events.v1';
-let category='all',favorites=new Set(Array.isArray(safeRead(favoritesKey,[]))?safeRead(favoritesKey,[]):[]),recent=safeRead(recentKey,[]),selected=null,playing=false,locale='ru',sessionStarted=0;
+let category='all',favorites=new Set(Array.isArray(safeRead(favoritesKey,[]))?safeRead(favoritesKey,[]):[]),recentRaw=safeRead(recentKey,[]),recent=Array.isArray(recentRaw)?recentRaw:[],selected=null,playing=false,sessionStarted=0;
 function currentConsent(){try{return localStorage.getItem(consentKey)==='accepted'}catch(_){return false}}
 function track(name,props){if(!currentConsent())return;const events=safeRead(eventsKey,[]);events.push({event_id:Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,9),name:name,at:new Date().toISOString(),path:location.pathname,game:props&&props.game||null,source:props&&props.source||'games_hub',duration_ms:props&&props.duration_ms||null,detail:props&&props.detail||null});safeWrite(eventsKey,events.slice(-1000))}
 function gameById(id){return GAMES.find(g=>g.id===id)}
@@ -148,9 +148,6 @@ function updateProjectCards(){const root=$('#project-grid');root.innerHTML=PROJE
 function trackLinkWithCampaign(anchor,projectId){try{const url=new URL(anchor.href);url.searchParams.set('utm_source','osgard.world');url.searchParams.set('utm_medium','games');url.searchParams.set('utm_campaign','osgard_ecosystem');url.searchParams.set('utm_content',projectId);anchor.href=url.toString()}catch(_){}}
 function csvExport(){const events=safeRead(eventsKey,[]);if(!events.length){alert('Локальных событий пока нет. Они начнут записываться после согласия на аналитику.');return}const cols=['event_id','name','at','path','game','source','duration_ms','detail'];const csv=[cols.join(','),...events.map(e=>cols.map(k=>'"'+String(e[k]??'').replace(/"/g,'""')+'"').join(','))].join('\r\n');const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='osgard-games-analytics-local.csv';a.click();URL.revokeObjectURL(a.href)}
 function setConsent(value){try{localStorage.setItem(consentKey,value)}catch(_){}$('#consent').hidden=true;if(value==='accepted'){track('analytics_consent_granted',{source:'consent_banner'});track('games_page_view',{source:'games_hub'})}}
-function applyLocale(){const en=locale==='en';document.documentElement.lang=en?'en':'ru';$('#hero-title').innerHTML=en?'Not just games.<br><em>Entire new worlds.</em>':'Не просто игры.<br><em>Новые миры.</em>';$('#locale-toggle').textContent=en?'EN / RU':'RU / EN';$('#library-title').textContent=en?'Choose your world':'Выберите свой мир';}
-function setLanguage(){locale=locale==='ru'?'en':'ru';applyLocale();track('language_toggle',{source:locale})}
-
 $('#search').addEventListener('input',()=>{renderCards();track('catalog_search',{detail:$('#search').value.slice(0,80)})});
 $$('[data-filter]').forEach(b=>b.addEventListener('click',()=>{category=b.dataset.filter;renderCards();track('catalog_filter',{detail:category})}));
 $('#game-grid').addEventListener('click',event=>{const t=event.target.closest('button');if(!t)return;if(t.dataset.favorite){const id=t.dataset.favorite;if(favorites.has(id))favorites.delete(id);else favorites.add(id);safeWrite(favoritesKey,Array.from(favorites));renderCards();track('favorite_toggled',{game:id,detail:favorites.has(id)?'on':'off'});return}if(t.dataset.play){addRecent(t.dataset.play);openDetails(t.dataset.play,true);return}if(t.dataset.detail){openDetails(t.dataset.detail,false);return}});
@@ -162,7 +159,7 @@ $('#game-dialog').addEventListener('click',event=>{if(event.target===$('#game-di
 $('#project-grid').addEventListener('click',event=>{const a=event.target.closest('a[data-project]');if(!a)return;const p=a.dataset.project;track('cross_promo_clicked',{detail:p});trackLinkWithCampaign(a,p)});
 $('#lead-form').addEventListener('submit',event=>{event.preventDefault();const d=new FormData(event.currentTarget);const body=['Тип проекта: '+d.get('type'),'Бюджет: '+(d.get('budget')||'не указан'),'Контакт: '+d.get('contact'),'Имя / команда: '+(d.get('name')||'не указано'),'Описание: '+d.get('description')].join('\n');const subject='OSGARD — заявка на цифровой продукт';track('lead_mailto_opened',{source:'contact_form'});$('#form-status').textContent='Подготовлено письмо. Проверьте его и нажмите «Отправить» в почтовом приложении.';location.href='mailto:osman.osmanov0099@gmail.com?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body)});
 $('#copy-email').addEventListener('click',async()=>{const text='osman.osmanov0099@gmail.com';try{await navigator.clipboard.writeText(text);$('#copy-status').textContent='Email скопирован.'}catch(_){window.prompt('Скопируйте email',text)}});
-$('#export-events').addEventListener('click',csvExport);$('#consent-accept').addEventListener('click',()=>setConsent('accepted'));$('#consent-reject').addEventListener('click',()=>setConsent('rejected'));$('#locale-toggle').addEventListener('click',setLanguage);
+$('#export-events').addEventListener('click',csvExport);$('#consent-accept').addEventListener('click',()=>setConsent('accepted'));$('#consent-reject').addEventListener('click',()=>setConsent('rejected'));
 updateProjectCards();PROJECTS.forEach(p=>{const el=$('[data-project="'+p.id+'"]');if(el)trackLinkWithCampaign(el,p.id)});renderCards();updateContinue();
 if(!currentConsent()&&safeRead(consentKey,null)===null)$('#consent').hidden=false;
 const deepLink=new URLSearchParams(location.search).get('game');if(deepLink&&gameById(deepLink))openDetails(deepLink,false);
