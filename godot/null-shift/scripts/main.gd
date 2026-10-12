@@ -59,6 +59,10 @@ var frame_samples: Array[float] = []
 var fps_p95_ms := 0.0
 var diagnostics_enabled := false
 var cinematic_quality := true
+var adaptive_quality_degraded := false
+var adaptive_quality_clock := 0.0
+var adaptive_slow_windows := 0
+var adaptive_fast_windows := 0
 var terminal_active := false
 var terminal_unlocked := false
 var terminal_progress := 0
@@ -147,6 +151,10 @@ func _process(delta: float) -> void:
 	frame_samples.append(current_frame_ms)
 	if frame_samples.size() > 120:
 		frame_samples.pop_front()
+	adaptive_quality_clock += maxf(0.0, delta)
+	if adaptive_quality_clock >= 1.25:
+		adaptive_quality_clock = fmod(adaptive_quality_clock, 1.25)
+		_update_adaptive_quality()
 	_update_camera(dt)
 	_animate_world(dt)
 	_update_effect_expiry()
@@ -1210,17 +1218,58 @@ func _toggle_quality() -> void:
 	_update_hud()
 
 func _apply_quality_mode() -> void:
+	if not cinematic_quality:
+		adaptive_quality_degraded = false
+		adaptive_slow_windows = 0
+		adaptive_fast_windows = 0
+	var cinematic_effects := cinematic_quality and not adaptive_quality_degraded
 	if is_instance_valid(world_environment) and is_instance_valid(world_environment.environment):
-		world_environment.environment.glow_enabled = cinematic_quality
+		world_environment.environment.glow_enabled = cinematic_effects
 	if is_instance_valid(key_light):
-		key_light.shadow_enabled = cinematic_quality
+		key_light.shadow_enabled = cinematic_effects
 	if is_instance_valid(fill_light):
-		fill_light.visible = cinematic_quality
+		fill_light.visible = cinematic_effects
 	for light in local_lights:
 		if is_instance_valid(light):
-			light.visible = cinematic_quality
+			light.visible = cinematic_effects
+	if is_instance_valid(status_subtitle):
+		status_subtitle.text = "PHASE TRANSIT / AUTO-OPTIMIZED" if adaptive_quality_degraded else ("PHASE TRANSIT / CINEMATIC" if cinematic_quality else "PHASE TRANSIT / BALANCED")
 	if is_instance_valid(sound_button):
 		sound_button.text = "ЗВУК / ВКЛ" if sound_enabled else "ЗВУК / ВЫКЛ"
+
+
+func _update_adaptive_quality() -> void:
+	if not cinematic_quality or frame_samples.size() < 45:
+		return
+	var samples: Array[float] = frame_samples.duplicate()
+	var total_ms := 0.0
+	for sample in samples:
+		total_ms += sample
+	var mean_ms := total_ms / float(samples.size())
+	samples.sort()
+	var p95_index := clampi(int(ceil(float(samples.size() - 1) * 0.95)), 0, samples.size() - 1)
+	_evaluate_adaptive_quality(mean_ms, samples[p95_index])
+
+func _evaluate_adaptive_quality(mean_ms: float, p95_ms: float) -> void:
+	if not cinematic_quality:
+		adaptive_slow_windows = 0
+		adaptive_fast_windows = 0
+		return
+	if mean_ms >= 20.0 or p95_ms >= 28.0:
+		adaptive_slow_windows += 1
+		adaptive_fast_windows = 0
+		if adaptive_slow_windows >= 2 and not adaptive_quality_degraded:
+			adaptive_quality_degraded = true
+			_apply_quality_mode()
+	elif mean_ms <= 16.8 and p95_ms <= 21.0:
+		adaptive_fast_windows += 1
+		adaptive_slow_windows = 0
+		if adaptive_fast_windows >= 4 and adaptive_quality_degraded:
+			adaptive_quality_degraded = false
+			_apply_quality_mode()
+	else:
+		adaptive_slow_windows = 0
+		adaptive_fast_windows = 0
 
 func _toggle_sound() -> void:
 	sound_enabled = not sound_enabled
@@ -1787,8 +1836,9 @@ func _update_hud() -> void:
 			p95 = samples[clampi(int(ceil(float(samples.size() - 1) * 0.95)), 0, samples.size() - 1)]
 		fps_p95_ms = p95
 		var draw_calls := int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
+		var profile := "BALANCED" if not cinematic_quality else ("AUTO-OPTIMIZED" if adaptive_quality_degraded else "CINEMATIC")
 		diagnostics_label.text = "LIVE DIAGNOSTICS\nFPS        %02d\nFRAME P95  %.1f ms\nFRAME NOW  %.1f ms\nDRAW CALLS %d\nGUARDS     %d\nDEVICES    %d\nPROFILE    %s" % [
-			Engine.get_frames_per_second(), fps_p95_ms, current_frame_ms, draw_calls, guards.size(), _living_device_count(), "CINEMATIC" if cinematic_quality else "BALANCED"
+			Engine.get_frames_per_second(), fps_p95_ms, current_frame_ms, draw_calls, guards.size(), _living_device_count(), profile
 		]
 
 func _living_device_count() -> int:

@@ -172,3 +172,11 @@ The command npm run qa:null-shift checks required game assets, script syntax, co
 - The instanced WebGL path carries vertex alpha as an eighth attribute, allowing the shadow gradient to fade smoothly instead of ending in a hard circular decal. Every other mesh defaults to full vertex alpha; the compatible non-instanced path remains available.
 - Smoke and production-route checks require the shadow mesh, vertex-alpha shader path and use of grounded shadows in the published game engine.
 - This adds real geometry/shader behavior rather than a static mockup. It is a lightweight contact-shadow solution, not a full shadow-map system or native 8K rendering; device performance still needs observation on physical hardware.
+
+
+## Godot follow-up — measured adaptive cinematic quality
+
+- The native Godot 4.7 game now evaluates a rolling sample of real frame times every 1.25 seconds while the Cinematic profile is selected. It uses mean frame duration and P95, not invented GPU-time estimates.
+- After two consecutive slow windows (mean >= 20 ms or P95 >= 28 ms), the runtime temporarily disables glow, key-light shadows, fill lighting and local accent lights. It restores those effects only after four consecutive stable windows (mean <= 16.8 ms and P95 <= 21 ms), avoiding quality flicker around a threshold.
+- The HUD subtitle and live diagnostics report when the runtime is auto-optimizing. The manual Balanced profile remains respected and is not silently overridden.
+- Runtime smoke drives synthetic slow and stable timing windows against the actual Godot scene and asserts that effects switch off and restore. These controlled tests verify the adaptation logic; they do not claim a specific FPS on every physical device.

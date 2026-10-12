@@ -31,6 +31,25 @@ func _run_smoke() -> void:
 		return
 	game.sound_enabled = false
 
+	print("RUNTIME_STAGE: adaptive graphics quality")
+	game.cinematic_quality = true
+	game.adaptive_quality_degraded = false
+	game.adaptive_slow_windows = 0
+	game.adaptive_fast_windows = 0
+	game._apply_quality_mode()
+	game._evaluate_adaptive_quality(25.0, 34.0)
+	if not _expect(not game.adaptive_quality_degraded, "adaptive quality must require sustained slow windows"):
+		return
+	game._evaluate_adaptive_quality(25.0, 34.0)
+	if not _expect(game.adaptive_quality_degraded, "sustained frame-time pressure must enable the optimized profile"):
+		return
+	if not _expect(not game.world_environment.environment.glow_enabled and not game.key_light.shadow_enabled and not game.fill_light.visible, "optimized profile must lower expensive cinematic effects"):
+		return
+	for _window in range(4):
+		game._evaluate_adaptive_quality(15.5, 19.5)
+	if not _expect(not game.adaptive_quality_degraded and game.world_environment.environment.glow_enabled and game.key_light.shadow_enabled and game.fill_light.visible, "stable frame pacing must restore cinematic effects"):
+		return
+
 	if not _expect(is_instance_valid(game.player), "operator must instantiate"):
 		return
 	if not _expect(is_instance_valid(game.operator_rig), "operator rig must instantiate"):
