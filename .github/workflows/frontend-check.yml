@@ -5,6 +5,17 @@ on:
     branches: [master]
     paths:
       - "src/**"
+      - "public/games/**"
+      - "public/privacy/**"
+      - "public/terms/**"
+      - "public/sitemap.xml"
+      - "public/osgard-mark.svg"
+      - "nginx.conf"
+      - "scripts/games-portal-smoke.mjs"
+      - "scripts/games-platform-smoke.mjs"
+      - "scripts/production-route-matrix.mjs"
+      - "scripts/release-readiness.mjs"
+      - "docs/GAMES_*.md"
       - "scripts/skillcred-page-smoke.mjs"
       - "scripts/time-prototype-smoke.mjs"
       - "docs/02_IMPERIUM_OF_TIME_GAME_DESIGN.md"
@@ -42,6 +53,10 @@ jobs:
         run: npm run check
       - name: Build the production site
         run: npm run build
+      - name: Verify OSGARD Games portal and game lifecycle
+        run: npm run qa:games-portal
+      - name: Verify OSGARD Games integration and detail routes
+        run: npm run qa:games-platform
       - name: Verify live SkillCred page wiring
         run: npm run qa:skillcred
       - name: Verify Imperium of Time game systems and visual diagnostics
