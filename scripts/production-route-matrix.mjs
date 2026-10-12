@@ -65,7 +65,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         const content = await asset.text()
         const normalized = content.toLowerCase()
         nonEmpty = isPartnerPage
-          ? path.endsWith('.json') ? content.includes('"schemaVersion": 1') && content.includes('"active": false') && content.includes('"sponsorLabelRequired": true') : content.includes("fetch('./inventory.json'") && content.includes('item.active === false') && content.includes("sendLink.href = 'https://wa.me/79640027222?text='")
+          ? path.endsWith('.json') ? /"schemaVersion"\s*:\s*1/.test(content) && /"placements"\s*:\s*\[/.test(content) && /"active"\s*:\s*false/.test(content) && /"sponsorLabelRequired"\s*:\s*true/.test(content) : content.includes("fetch('./inventory.json'") && content.includes('item.active === false') && content.includes("sendLink.href = 'https://wa.me/79640027222?text='")
           : isGodot
           ? content.length > 100000
           : path.startsWith('/games/null-shift/')
