@@ -6,7 +6,7 @@ This is the engine-backed 3D branch of NULL//SHIFT. The production game remains 
 
 - Godot 4.7.2 stable, GDScript, Compatibility renderer. The browser build is the preferred 3D entry; the earlier Canvas version remains available as fallback.
 - Browser export uses the single-threaded Web template to avoid SharedArrayBuffer and cross-origin-isolation requirements.
-- Procedural 3D arena with corner signal pylons and inlaid energy rails, distinct Stalker/Heavy/Ranger/Warden behavior with dodgeable telegraphed attack lanes and line-of-sight checks, layered operator armor and guard helmets, physics collisions, terminal, quantum core, extraction pad, metallic/emissive materials, fog, dynamic lighting, shadows, configurable glow, reticle, camera impact response, particles, and synthesized sound.
+- Procedural 3D arena with corner signal pylons, inlaid energy rails and three timed phase conduits. Amber warning bands charge before the red active phase; the operator takes real damage while standing in an active lane and can dodge or use NULL Shift to avoid it. Distinct Stalker/Heavy/Ranger/Warden behavior has dodgeable telegraphed attacks and line-of-sight checks, layered operator armor and guard helmets, physics collisions, terminal, quantum core, extraction pad, metallic/emissive materials, fog, dynamic lighting, shadows, configurable glow, reticle, camera impact response, particles, and synthesized sound.
 - No third-party runtime assets, remote fonts or external image dependencies.
 
 ## First-run briefing

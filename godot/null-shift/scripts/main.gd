@@ -37,6 +37,9 @@ var mobile_actions: Dictionary = {"up": false, "down": false, "left": false, "ri
 var materials: Dictionary = {}
 var guards: Array[Dictionary] = []
 var devices: Array[Dictionary] = []
+var phase_lanes: Array[Dictionary] = []
+var phase_clock := 0.0
+var hazard_status_label: Label
 var effects: Array[Node] = []
 var career := ConfigFile.new()
 var career_credits := 0
@@ -140,6 +143,8 @@ func _process(delta: float) -> void:
 	current_frame_ms = maxf(0.0, delta * 1000.0)
 	elapsed += dt
 	scene_clock += dt
+	if not paused_game and not mission_finished:
+		_update_phase_lanes(dt)
 	damage_flash_timer = maxf(0.0, damage_flash_timer - dt)
 	camera_shake_timer = maxf(0.0, camera_shake_timer - dt)
 	impact_flash_timer = maxf(0.0, impact_flash_timer - dt)
@@ -179,6 +184,7 @@ func _physics_process(delta: float) -> void:
 		instability = maxf(0.0, instability - dt * 3.0)
 	_move_player(dt)
 	_update_guards(dt)
+	_check_phase_lane_damage()
 	if touch_firing or mouse_firing:
 		_fire_weapon()
 	if player_health <= 0.0:
@@ -346,6 +352,97 @@ func _create_arena_props() -> void:
 		_make_box_mesh("PowerRail_Z_%s" % str(rail_z), Vector3(0.0, -0.024, rail_z), Vector3(43.5, 0.018, 0.045), materials["cyan_dark"])
 	for bar_z in [5.9, 9.1]:
 		_make_box_mesh("GateWarning_%s" % str(bar_z), Vector3(9.2, -0.012, bar_z), Vector3(0.8, 0.02, 0.055), materials["amber"])
+	_create_phase_lanes()
+
+func _create_phase_lanes() -> void:
+	# Three independent floor conduits cycle through safe, warning and active states.
+	# Their staggered timing requires timing and movement, not simply absorbing damage.
+	var lane_positions: Array[float] = [-8.2, 0.0, 8.2]
+	for index in range(lane_positions.size()):
+		var lane_z: float = lane_positions[index]
+		var prefix: String = "PhaseConduit_%02d_" % (index + 1)
+		_make_box_mesh(prefix + "Base", Vector3(0.0, -0.034, lane_z), Vector3(43.5, 0.024, 0.94), materials["black"])
+		for marker_index in range(11):
+			var marker_x: float = -20.0 + float(marker_index) * 4.0
+			_make_box_mesh(prefix + "Marker_%02d" % marker_index, Vector3(marker_x, -0.017, lane_z), Vector3(0.045, 0.012, 0.68), materials["wall_trim"])
+		var warning_material: StandardMaterial3D = _material(Color(1.0, 0.47, 0.1), Color(1.0, 0.22, 0.035), 1.1, 0.18, 0.26)
+		var active_material: StandardMaterial3D = _material(Color(1.0, 0.12, 0.2), Color(1.0, 0.025, 0.055), 1.8, 0.12, 0.22)
+		var warning_mesh: MeshInstance3D = _make_box_mesh(prefix + "Warning", Vector3(0.0, -0.014, lane_z), Vector3(43.1, 0.018, 0.56), warning_material)
+		warning_mesh.visible = false
+		var active_mesh: MeshInstance3D = _make_box_mesh(prefix + "Active", Vector3(0.0, -0.003, lane_z), Vector3(42.8, 0.022, 0.34), active_material)
+		active_mesh.visible = false
+		phase_lanes.append({
+			"z": lane_z,
+			"offset": float(index) * 2.8,
+			"state": "safe",
+			"warning_mesh": warning_mesh,
+			"active_mesh": active_mesh,
+			"warning_material": warning_material,
+			"active_material": active_material
+		})
+
+func _update_phase_lanes(delta: float) -> void:
+	phase_clock += maxf(0.0, delta)
+	var active_count: int = 0
+	var warning_count: int = 0
+	for index in range(phase_lanes.size()):
+		var lane: Dictionary = phase_lanes[index]
+		var cycle: float = fposmod(phase_clock + float(lane["offset"]), 8.4)
+		var next_state: String = "safe"
+		if cycle >= 4.95 and cycle < 6.3:
+			next_state = "warning"
+		elif cycle >= 6.3 and cycle < 7.22:
+			next_state = "active"
+		var old_state: String = str(lane["state"])
+		lane["state"] = next_state
+		var warning_mesh: MeshInstance3D = lane["warning_mesh"]
+		var active_mesh: MeshInstance3D = lane["active_mesh"]
+		warning_mesh.visible = next_state == "warning"
+		active_mesh.visible = next_state == "active"
+		var pulse: float = 0.65 + absf(sin(scene_clock * 11.5 + float(index))) * 0.95
+		var warning_material: StandardMaterial3D = lane["warning_material"]
+		var active_material: StandardMaterial3D = lane["active_material"]
+		warning_material.emission_energy_multiplier = pulse if next_state == "warning" else 0.8
+		active_material.emission_energy_multiplier = 2.0 + pulse if next_state == "active" else 1.8
+		if next_state == "warning":
+			warning_count += 1
+		elif next_state == "active":
+			active_count += 1
+		if next_state != old_state and next_state == "warning":
+			_play_sfx(340.0 + float(index) * 45.0, 0.07, 0.045)
+		phase_lanes[index] = lane
+	if not is_instance_valid(hazard_status_label):
+		return
+	if active_count > 0:
+		hazard_status_label.text = "ОПАСНО · ЭНЕРГОКОНТУР АКТИВЕН"
+		hazard_status_label.add_theme_color_override("font_color", Color(1.0, 0.27, 0.34))
+	elif warning_count > 0:
+		hazard_status_label.text = "ВНИМАНИЕ · КОНТУР ЗАРЯЖАЕТСЯ"
+		hazard_status_label.add_theme_color_override("font_color", Color(1.0, 0.72, 0.34))
+	else:
+		hazard_status_label.text = "ЭНЕРГОКОНТУРЫ · СТАБИЛЬНО"
+		hazard_status_label.add_theme_color_override("font_color", Color(0.38, 0.9, 0.82))
+
+func _is_player_inside_phase_lane(lane_z: float, half_width: float = 0.72) -> bool:
+	if not is_instance_valid(player):
+		return false
+	return absf(player.global_position.z - lane_z) <= half_width and absf(player.global_position.x) <= 21.7
+
+func _check_phase_lane_damage() -> bool:
+	if paused_game or mission_finished or not is_instance_valid(player):
+		return false
+	for lane in phase_lanes:
+		if str(lane["state"]) != "active":
+			continue
+		if not _is_player_inside_phase_lane(float(lane["z"])):
+			continue
+		var health_before: float = player_health
+		_damage_player(13.0)
+		if player_health < health_before:
+			objective_text = "ЭНЕРГОКОНТУР · ПОКИНЬ ПОЛОСУ · ЗДОРОВЬЕ %d%%" % int(player_health)
+			_update_hud()
+			return true
+	return false
 
 func _make_grid() -> void:
 	var mesh := ImmediateMesh.new()
@@ -1359,6 +1456,7 @@ func _create_ui() -> void:
 	health_label = _label(status_stack, "ВИТАЛЬНОСТЬ  100 / 100", 13, Color(0.86, 1.0, 0.97))
 	credits_label = _label(status_stack, "РЕЙД  000  ·  КАРЬЕРА  000", 12, Color(1.0, 0.77, 0.39))
 	threat_label = _label(status_stack, "УГРОЗА: ВЫСОКАЯ", 11, Color(1.0, 0.3, 0.38))
+	hazard_status_label = _label(status_stack, "ЭНЕРГОКОНТУРЫ · СТАБИЛЬНО", 9, Color(0.38, 0.9, 0.82))
 	status_shortcuts = _label(status_stack, "ПОМОЩЬ / H  ·  FPS / F3  ·  ГРАФИКА / F2", 8, Color(0.48, 0.6, 0.62))
 
 	objective_panel = _make_panel(hud_root, Control.PRESET_TOP_RIGHT, Rect2(-334.0, 18.0, 316.0, 178.0))
@@ -1481,7 +1579,7 @@ func _create_briefing_panel() -> void:
 	var intro := _label(stack, "Ты в закрытом комплексе. Охрана реагирует на взлом — сначала изучи путь, затем действуй.", 11, Color(0.76, 0.88, 0.87))
 	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_add_briefing_step(stack, "01", "ВЗЛОМАТЬ ТЕРМИНАЛ", "Подойди к панели и нажми E. Введи шифр: ↑ ← ↓ →.", Color(0.36, 1.0, 0.83))
-	_add_briefing_step(stack, "02", "ЗАБРАТЬ ЯДРО", "Используй укрытия, стреляй по угрозам. Затем забери золотое ядро.", Color(1.0, 0.74, 0.36))
+	_add_briefing_step(stack, "02", "ЗАБРАТЬ ЯДРО", "Используй укрытия и стреляй по угрозам. Янтарная полоса заряжается перед красной опасной фазой: уходи с линии или активируй NULL Shift. Затем забери золотое ядро.", Color(1.0, 0.74, 0.36))
 	_add_briefing_step(stack, "03", "ЭВАКУИРОВАТЬСЯ", "Доберись до бирюзовой площадки и нажми E, чтобы завершить рейд.", Color(0.56, 0.57, 1.0))
 	var controls := _label(stack, "КОМПЬЮТЕР   WASD / стрелки · мышь + ЛКМ · Q импульс · SHIFT сдвиг", 10, Color(0.48, 0.74, 0.73))
 	controls.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

@@ -180,3 +180,11 @@ The command npm run qa:null-shift checks required game assets, script syntax, co
 - After two consecutive slow windows (mean >= 20 ms or P95 >= 28 ms), the runtime temporarily disables glow, key-light shadows, fill lighting and local accent lights. It restores those effects only after four consecutive stable windows (mean <= 16.8 ms and P95 <= 21 ms), avoiding quality flicker around a threshold.
 - The HUD subtitle and live diagnostics report when the runtime is auto-optimizing. The manual Balanced profile remains respected and is not silently overridden.
 - Runtime smoke drives synthetic slow and stable timing windows against the actual Godot scene and asserts that effects switch off and restore. These controlled tests verify the adaptation logic; they do not claim a specific FPS on every physical device.
+
+
+## Godot gameplay pass — timed Phase Conduits
+
+- The Godot 4.7.2 3D arena now has three staggered energy lanes along the floor. Each cycles through safe, amber charging and red active phases; uniquely duplicated emissive materials pulse during warning/active windows.
+- The HUD exposes live hazard state: stable, charging or active. The cycle pauses during pause/briefing and resumes with the simulation.
+- Active lanes inflict actual 13-point player damage through the game's damage pipeline, camera/screen feedback, sound and HUD updates. Leaving the lane avoids damage, and the existing NULL Shift invulnerability window can safely cross an active lane.
+- The first-run briefing teaches how to read and evade the warning. Runtime smoke deterministically exercises warning visibility, active visibility, HUD state, actual damage, dodge avoidance and phase-shift protection. Source QA requires the new gameplay methods and visual objects before Godot export/deploy.

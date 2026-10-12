@@ -31,6 +31,44 @@ func _run_smoke() -> void:
 		return
 	game.sound_enabled = false
 
+	print("RUNTIME_STAGE: phase-conduit warning, hazard and dodge")
+	if not _expect(game.phase_lanes.size() == 3 and is_instance_valid(game.hazard_status_label), "three timed energy lanes and a HUD status label must instantiate"):
+		return
+	var lane_saved_position: Vector3 = game.player.global_position
+	var lane_saved_health: float = game.player_health
+	game.phase_clock = 5.8
+	game._update_phase_lanes(0.0)
+	var first_lane: Dictionary = game.phase_lanes[0]
+	if not _expect(first_lane["state"] == "warning" and first_lane["warning_mesh"].visible and not first_lane["active_mesh"].visible, "energy lane must visibly warn before activating"):
+		return
+	if not _expect(game.hazard_status_label.text.contains("ЗАРЯЖАЕТСЯ"), "HUD must report an approaching energy discharge"):
+		return
+	game.phase_clock = 6.6
+	game._update_phase_lanes(0.0)
+	first_lane = game.phase_lanes[0]
+	if not _expect(first_lane["state"] == "active" and first_lane["active_mesh"].visible and not first_lane["warning_mesh"].visible, "warning lane must transition into the damaging phase"):
+		return
+	game.player.global_position = Vector3(0.0, 0.82, float(first_lane["z"]))
+	game.damage_cooldown = 0.0
+	game.null_shift_timer = 0.0
+	if not _expect(game._check_phase_lane_damage() and game.player_health < lane_saved_health, "standing in an active lane must inflict real player damage"):
+		return
+	var injured_health: float = game.player_health
+	game.damage_cooldown = 0.0
+	game.player.global_position.z = float(first_lane["z"]) + 3.0
+	if not _expect(not game._check_phase_lane_damage() and is_equal_approx(game.player_health, injured_health), "leaving the active lane must avoid further damage"):
+		return
+	game.damage_cooldown = 0.0
+	game.player.global_position.z = float(first_lane["z"])
+	game.null_shift_timer = 1.0
+	if not _expect(not game._check_phase_lane_damage() and is_equal_approx(game.player_health, injured_health), "NULL shift must protect the operator from the energy lane"):
+		return
+	game.null_shift_timer = 0.0
+	game.damage_cooldown = 0.0
+	game.player.global_position = lane_saved_position
+	game.player_health = lane_saved_health
+	game.phase_clock = 0.0
+
 	print("RUNTIME_STAGE: adaptive graphics quality")
 	game.cinematic_quality = true
 	game.adaptive_quality_degraded = false
