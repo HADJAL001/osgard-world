@@ -18,6 +18,8 @@ const manifest = await read('src/core/manifest.ts')
 const html = await read('index.html')
 const legal = await read('src/LegalPage.tsx')
 const sitemap = await read('public/sitemap.xml')
+const nginx = await read('nginx.conf')
+const routeMatrix = await read('scripts/production-route-matrix.mjs')
 
 for (const [name, path] of [
   ['time strategy', 'src/TimePrototype.tsx'],
@@ -82,6 +84,13 @@ check('Legal routes and honest scope limitations exist', () => {
   assert.ok(legal.includes('рабочий черновик') && legal.includes('не сохраняет заявку на сервере'))
 })
 check('Favicon no longer uses a photographic JPG', () => assert.ok(html.includes('/osgard-mark.svg') && !html.includes('rel="icon" href="/assets/hero-mobility.jpg"')))
+check('Legacy entertainment URLs resolve to the canonical Games hub', () => {
+  assert.ok(main.includes("path === '/games' || path === '/entertainment'"), 'SPA should render GamesHub on both current and legacy paths')
+  for (const path of ["location = /entertainment {", "location = /entertainment/ {", "location = /entertainment/index.html {"]) assert.ok(nginx.includes(path), path)
+  assert.ok(nginx.includes('return 301 /games;'), 'Legacy route redirects must be permanent and visible')
+  assert.ok(routeMatrix.includes("'/entertainment/index.html'") && routeMatrix.includes("response.redirected") && routeMatrix.includes("=== '/games'"), 'Production route matrix must assert redirect target')
+})
+
 check('Sitemap lists new catalogue pages and has balanced URL elements', () => {
   assert.ok(sitemap.includes('https://osgard.world/games') && sitemap.includes('https://osgard.world/game/null-shift'))
   assert.equal((sitemap.match(/<url>/g)||[]).length, (sitemap.match(/<\/url>/g)||[]).length)
