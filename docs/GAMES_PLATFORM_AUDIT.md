@@ -19,7 +19,7 @@
 | REMIX | `/games/remix/index.html` | Standalone web entry; network features depend on the Remix backend/API. |
 
 ## Concrete issue found
-The original `OSGARD_GAMES` manifest pointed NULL//SHIFT to `/games/null-shift-godot/index.html`, while the checked-in public game is `public/games/null-shift/index.html`. This branch corrects the catalogue manifest to point at the present web build. It leaves the separate Godot build route intact for deployments that actually contain its exported assets.
+The original `OSGARD_GAMES` manifest pointed NULL//SHIFT to `/games/null-shift-godot/index.html`, while the checked-in public game is `public/games/null-shift/index.html`. This branch corrects the catalogue manifest to point at the present web build. A legacy page at /games/null-shift-godot/ now forwards to that browser build instead of implying that Godot .wasm/.pck export files are published. A separate export should be linked only when its actual artifacts are present and tested.
 
 ## Implemented in this feature branch
 - Shared premium Games catalogue at `/games` and details at `/game/:slug`.
