@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const root = process.cwd();
@@ -83,4 +83,10 @@ const smoke = spawnSync(process.execPath, ['scripts/null-shift-godot-smoke.mjs',
   cwd: root, stdio: 'inherit', timeout: 120000, windowsHide: true,
 });
 if (smoke.error || smoke.status !== 0) fail('Exported Godot build did not pass the export smoke test.', String(smoke.error || smoke.status));
+const hubPath = resolve(root, 'dist/games/index.html')
+if (existsSync(hubPath)) {
+  const hub = readFileSync(hubPath, 'utf8')
+  const nativeLabel = hub.replace('<small>FIELD 01 <b>BROWSER / WEBGL</b></small>', '<small>FIELD 01 <b>GODOT / WEB</b></small>')
+  if (nativeLabel !== hub) writeFileSync(hubPath, nativeLabel)
+}
 console.log('[godot-web-export] PASS — real Web export generated and validated in ' + outputDir);
