@@ -21,6 +21,8 @@ docker compose -f docker-compose.production.yml up -d --build
 
 6. SWARM is served at `https://osgard.world/games/swarm/`. Its same-origin `/rooms`, `/health`, `/ready`, `/metrics`, `/matches`, and `/players` requests are proxied to the authoritative `swarm-api` container; WebSocket and SSE upgrades use the same route. The worker is configured with an explicit browser origin allowlist.
 
+INHERIT shared-generation sync is disabled by default unless `<meta name="osgard-inherit-api-base" content="...">` is set to a deployed API implementing the expected world read and generation-write contract. The shipped client no longer calls `127.0.0.1` from visitors' browsers. Without the setting, the game remains playable and saves locally; passing a generation is explicitly local, not shared. Do not point this setting at the generic game API until an adapter for the expected `GET {base}` and `POST {base}/generations` payload schema is deployed and tested.
+
 The OSGARD production build runs `npm run sync:swarm` first, copying `index.html`, `game.js`, and `styles.css` from the sibling `/opt/swarm-mvp` source. Keep both source directories present on the build host so the portal cannot silently ship a stale SWARM client.
 
 ## Safe frontend replacement
