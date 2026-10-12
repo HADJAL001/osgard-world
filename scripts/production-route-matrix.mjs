@@ -1,7 +1,7 @@
 import { isValidPartnerInventoryText } from './partner-inventory-contract.mjs'
 const base = process.env.OSGARD_BASE_URL || 'https://osgard.world'
 const expectCurrentDesign = process.env.SKILLCRED_EXPECT_CURRENT_DESIGN === '1'
-const routes = ['/','/skillcred/','/skillcred-api/health','/skillcred-api/ready','/skillcred-api/issuer','/entertainment','/games/','/games/index.html','/games/partners/','/games/favicon.svg','/privacy/','/terms/','/community','/stream','/archive','/profile','/r/1842','/games/time','/games/null-shift/','/games/null-shift/index.html','/games/null-shift-godot/','/games/null-shift-godot/index.html','/play/swarm','/play/null-shift','/play/inherit','/play/remix','/media','/business','/create','/mobility']
+const routes = ['/','/skillcred/','/skillcred-api/health','/skillcred-api/ready','/skillcred-api/issuer','/entertainment','/games/','/games/index.html','/games/partners/','/games/favicon.svg','/privacy/','/terms/','/community','/stream','/archive','/profile','/api/v1/player/profile','/api/v1/analytics/summary?from=0&to=1','/r/1842','/games/time','/games/null-shift/','/games/null-shift/index.html','/games/null-shift-godot/','/games/null-shift-godot/index.html','/play/swarm','/play/null-shift','/play/inherit','/play/remix','/media','/business','/create','/mobility']
 const agents = { desktop: 'OSGARD-Route-Matrix/1.1 Desktop', mobile: 'OSGARD-Route-Matrix/1.1 Mobile' }
 const results = []
 for (const [device, userAgent] of Object.entries(agents)) for (const route of routes) {
@@ -9,7 +9,9 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
   try {
     const response = await fetch(new URL(route, base), { headers: { 'user-agent': userAgent } })
     const text = await response.text()
-    const shellOk = route === '/skillcred/'
+    const shellOk = route.startsWith('/api/v1/')
+      ? [401, 403].includes(response.status) && /application\\/json/i.test(response.headers.get('content-type') || '') && (() => { try { JSON.parse(text); return true } catch { return false } })()
+      : route === '/skillcred/'
       ? text.includes('id="issueBtn"') &&
         text.includes('id="verifyBtn"') &&
         text.includes('id="revokeBtn"') &&
@@ -84,7 +86,8 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
       return { path, status: asset.status, contentType, ok: asset.status === 200 && typeOk && nonEmpty }
     }))
     const assetsOk = assetChecks.every(asset => asset.ok)
-    results.push({ device, route, status: response.status, assets: assetChecks, ok: response.status === 200 && shellOk && assetsOk, durationMs: Date.now() - started })
+    const statusOk = route.startsWith('/api/v1/') ? [401, 403].includes(response.status) : response.status === 200
+    results.push({ device, route, status: response.status, assets: assetChecks, ok: statusOk && shellOk && assetsOk, durationMs: Date.now() - started })
   } catch (error) { results.push({ device, route, status: 0, ok: false, error: String(error), durationMs: Date.now() - started }) }
 }
 const failed = results.filter(item => !item.ok)
