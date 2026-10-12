@@ -445,7 +445,7 @@ export function GameDetailPage({ slug }: { slug: string }) {
   const game = GAMES.find(item => item.id === slug)
   const [locale, setLocale] = useState<Locale>('ru')
   const ru = locale === 'ru'
-  const { favorites, recent, consent, remember, toggleFavorite, chooseConsent } = useLocalCatalogState()
+  const { favorites, consent, remember, toggleFavorite, chooseConsent } = useLocalCatalogState()
   const [playing, setPlaying] = useState(() => new URLSearchParams(window.location.search).get('launch') === '1')
   const [loadingGame, setLoadingGame] = useState(true)
   const [frameError, setFrameError] = useState(false)
