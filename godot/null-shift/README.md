@@ -129,3 +129,5 @@ The deployment workflow downloads official Godot 4.7.2 and matching web template
 
 - Moved the complete HUD construction body back into `_create_ui()`. The vignette shader's frame update now only updates shader parameters; it no longer constructs the status panel, phase chips, utility controls or objective HUD every frame.
 - This fixes the root cause of phase labels accumulating across frames and prevents repeated allocation of interactive UI controls. Static smoke checks function boundaries and fails if HUD creation is accidentally nested in a per-frame shader update.
+
+- Follow-up integrity fix: HUD construction no longer clears the operator's pre-built leg-pivot list. Those pivots are created in the gameplay rig before the HUD is built, and clearing them in UI setup silently disabled the procedural walking gait.

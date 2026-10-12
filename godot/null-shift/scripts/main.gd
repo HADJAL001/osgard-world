@@ -1762,7 +1762,6 @@ func _create_ui() -> void:
 	if is_instance_valid(hud_root):
 		return
 	phase_lane_labels.clear()
-	operator_leg_pivots.clear()
 	mobile_move_buttons.clear()
 	mobile_move_spacers.clear()
 	mobile_action_buttons.clear()
