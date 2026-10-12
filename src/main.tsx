@@ -97,7 +97,7 @@ const path = location.pathname.replace(/\/+$/, '') || '/'
 function RoutedRoot() {
   const [locale, setLocale] = React.useState<'ru' | 'en'>('ru')
   if (path === '/miniapp') return <MiniApp />
-  if (path === '/games') return <><Seo path="/games" /><GamesHub locale={locale} setLocale={setLocale} /></>
+  if (path === '/games' || path === '/entertainment') return <><Seo path="/games" /><GamesHub locale={locale} setLocale={setLocale} /></>
   if (path === '/privacy') return <LegalPage kind="privacy" />
   if (path === '/terms') return <LegalPage kind="terms" />
   const gameMatch = path.match(/^\/game\/([a-z0-9-]+)$/)
