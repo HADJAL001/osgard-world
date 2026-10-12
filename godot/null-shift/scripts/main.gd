@@ -899,7 +899,7 @@ func _destroy_device(index: int) -> void:
 
 func _deploy_pulse() -> void:
 	if pulse_cooldown > 0.0 or paused_game or mission_finished:
-		objective_text = "ИМПУЛЬС ПЕРЕЗАРЯЖАЕТСЯ · %.1F С" % pulse_cooldown
+		objective_text = "ИМПУЛЬС ПЕРЕЗАРЯЖАЕТСЯ · %.1f С" % pulse_cooldown
 		return
 	pulse_cooldown = maxf(2.0, 5.0 - float(pulse_level) * 0.7)
 	var count := 0
@@ -912,7 +912,7 @@ func _deploy_pulse() -> void:
 	_spawn_ring_burst(player.global_position + Vector3.UP * 0.2, materials["cyan"])
 	_screen_impulse(0.095, 0.17)
 	phase_flash_timer = maxf(phase_flash_timer, 0.14)
-	objective_text = "ИМПУЛЬС: %d ЦЕЛЕЙ НАРУШЕНО · ПЕРЕЗАРЯДКА %.1F С" % [count, pulse_cooldown]
+	objective_text = "ИМПУЛЬС: %d ЦЕЛЕЙ НАРУШЕНО · ПЕРЕЗАРЯДКА %.1f С" % [count, pulse_cooldown]
 	_play_sfx(95.0, 0.55, 0.16)
 	_update_hud()
 

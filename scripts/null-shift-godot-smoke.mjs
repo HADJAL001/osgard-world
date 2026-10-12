@@ -33,6 +33,7 @@ assert.ok(game.includes('get_viewport().get_visible_rect().size.x') && !game.inc
 assert.ok(game.includes('var role: String = str(guard.get("role", "RANGER"))') && game.includes('var body_speed: float = body.velocity.length()'), 'Godot dictionaries must not rely on ambiguous inferred local types')
 assert.ok(!game.includes('var role := str(guard.get("role", "RANGER"))'), 'Every role read from an untyped dictionary must have an explicit String type')
 assert.ok(!game.includes('var role :='), 'All Godot role local variables must declare an explicit type')
+assert.ok(!game.includes('%.1F'), 'Godot float formatting tokens must use supported lowercase specifiers')
 assert.ok(!/https?:\/\/(?:fonts\.googleapis|cdn\.jsdelivr|unpkg\.com)/i.test(game), 'Unexpected external runtime dependency in game source')
 console.log('PASS NULL//SHIFT Godot source contract: project, renderer, gameplay systems, touch controls, saves and real diagnostics')
 if (process.argv[2] === '--export-check') {
