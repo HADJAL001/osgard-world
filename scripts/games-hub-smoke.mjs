@@ -46,6 +46,7 @@ assert.ok(html.includes('Ничего не отправляется автома
 assert.ok(html.includes('PARTNER INTEGRATION / RESERVED · INACTIVE'), 'Sponsor inventory must remain explicitly inactive until configured')
 assert.ok(html.includes('NO CHECKOUT CONNECTED'), 'No connected payments disclaimer missing')
 assert.ok(html.includes('if(!currentConsent())return'), 'Analytics events must require explicit local consent')
+assert.ok(html.includes("if(value!=='accepted')localStorage.removeItem(eventsKey)"), 'Withdrawing analytics consent must remove the optional local event log')
 assert.ok(html.includes('if(!currentConsent()&&safeRead(consentKey,null)===null)'), 'First-run consent UI missing')
 assert.ok(html.includes('/games/privacy.html') && html.includes('/games/terms.html'))
 for (const path of ['public/games/privacy.html','public/games/terms.html']) {
