@@ -239,6 +239,7 @@ export function GamesHub({ locale, setLocale }: { locale: Locale, setLocale: (va
   const [notice, setNotice] = useState('')
   const [consentPanelOpen, setConsentPanelOpen] = useState(() => readConsent() === null)
   const pageTracked = useRef(false)
+  const searchRef = useRef<HTMLInputElement>(null)
   const categories: Array<{ id: Category, ru: string, en: string }> = [
     { id: 'all', ru: 'Все игры', en: 'All games' },
     { id: 'strategy', ru: 'Стратегия', en: 'Strategy' },
@@ -294,6 +295,21 @@ export function GamesHub({ locale, setLocale }: { locale: Locale, setLocale: (va
       track('portal_opened', { surface: 'games-catalog' }, consent)
     }
   }, [consent])
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        searchRef.current?.focus()
+        searchRef.current?.select()
+      } else if (event.key === 'Escape' && document.activeElement === searchRef.current) {
+        setQuery('')
+        searchRef.current?.blur()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
 
   const handleShare = async () => {
     const shareData = { title: 'OSGARD WORLD Games', text: ru ? 'Выбери свой игровой мир OSGARD.' : 'Choose your OSGARD game world.', url: window.location.origin + '/games' }
@@ -383,7 +399,7 @@ export function GamesHub({ locale, setLocale }: { locale: Locale, setLocale: (va
         <div className="gh-count"><strong>{String(filteredGames.length).padStart(2, '0')}</strong><span>{ru ? 'НАЙДЕНО' : 'FOUND'}</span></div>
       </div>
       <div className="gh-toolbar">
-        <label className="gh-search"><Search size={17} /><input value={query} onChange={event => setQuery(event.target.value)} placeholder={ru ? 'Поиск по названию, жанру или механике…' : 'Search by title, genre or mechanic…'} aria-label={ru ? 'Поиск игр' : 'Search games'} /><kbd>⌘ / Ctrl K</kbd></label>
+        <label className="gh-search"><Search size={17} /><input ref={searchRef} value={query} onChange={event => setQuery(event.target.value)} placeholder={ru ? 'Поиск по названию, жанру или механике…' : 'Search by title, genre or mechanic…'} aria-label={ru ? 'Поиск игр' : 'Search games'} /><kbd>⌘ / Ctrl K</kbd></label>
         <div className="gh-toolbar-tools">
           <label className="gh-device-select"><Monitor size={15} /><select value={device} onChange={event => setDevice(event.target.value as DeviceFilter)} aria-label={ru ? 'Фильтр устройства' : 'Device filter'}><option value="all">{ru ? 'Все устройства' : 'All devices'}</option><option value="desktop">{ru ? 'Компьютер' : 'Desktop'}</option><option value="mobile">{ru ? 'Телефон / планшет' : 'Phone / tablet'}</option></select></label>
           <button className={'gh-filter-switch' + (showFavorites ? ' is-active' : '')} type="button" onClick={() => setShowFavorites(value => !value)} aria-pressed={showFavorites}><Heart size={15} fill={showFavorites ? 'currentColor' : 'none'} />{ru ? 'Избранное' : 'Favorites'} <span>{favorites.length}</span></button>
@@ -570,7 +586,26 @@ export function GameDetailPage({ slug }: { slug: string }) {
         <div className="gh-play-toolbar"><div><span className="gh-play-live" /><strong>{gameTitle(game, locale)}</strong><small>{ru ? 'Игровая сессия' : 'Game session'}</small></div><div><a href={game.href} target="_blank" rel="noopener noreferrer">{ru ? 'Открыть в отдельной вкладке' : 'Open in new tab'}<ExternalLink size={14} /></a><button type="button" onClick={toggleFullscreen}><Maximize2 size={15} />{ru ? 'На весь экран' : 'Fullscreen'}</button><button type="button" onClick={() => setPlaying(false)}><X size={15} />{ru ? 'Закрыть игру' : 'Close game'}</button></div></div>
         <div className="gh-game-stage" ref={stageRef}>
           {loadingGame && !frameError && <div className="gh-game-loading"><span className="gh-loader" /><p>{ru ? 'Подключаем игровой мир…' : 'Loading game world…'}</p></div>}
-          {frameError ? <div className="gh-game-error"><p>{ru ? 'Не удалось загрузить встроенную игру.' : 'The embedded game could not be loaded.'}</p><a className="gh-primary" href={game.href} target="_blank" rel="noopener noreferrer">{ru ? 'Открыть игру отдельно' : 'Open game separately'}<ExternalLink size={15} /></a></div> : <iframe title={gameTitle(game, locale)} src={game.href} onLoad={() => { setLoadingGame(false); track('game_session_started', { game: game.id, surface: 'games-iframe' }, consent) }} onError={() => { setLoadingGame(false); setFrameError(true) }} allow="fullscreen; gamepad; clipboard-write" allowFullScreen loading="eager" referrerPolicy="strict-origin-when-cross-origin" />}
+          {frameError ? <div className="gh-game-error"><p>{ru ? 'Не удалось загрузить встроенную игру.' : 'The embedded game could not be loaded.'}</p><a className="gh-primary" href={game.href} target="_blank" rel="noopener noreferrer">{ru ? 'Открыть игру отдельно' : 'Open game separately'}<ExternalLink size={15} /></a></div> : <iframe title={gameTitle(game, locale)} src={game.href} onLoad={() => {
+            setLoadingGame(false)
+            try {
+              const frameTitle = stageRef.current?.querySelector('iframe')?.contentDocument?.title ?? ''
+              const validTitle = {
+                time: /империя времени|empire of time/i.test(frameTitle),
+                swarm: /swarm/i.test(frameTitle),
+                'null-shift': /null\s*\/\/\s*shift|null\s*shift/i.test(frameTitle),
+                inherit: /inherit/i.test(frameTitle),
+                remix: /remix/i.test(frameTitle),
+              }[game.id]
+              if (!validTitle) {
+                setFrameError(true)
+                return
+              }
+              track('game_session_started', { game: game.id, surface: 'games-iframe' }, consent)
+            } catch {
+              setFrameError(true)
+            }
+          }} onError={() => { setLoadingGame(false); setFrameError(true) }} allow="fullscreen; gamepad; clipboard-write" allowFullScreen loading="eager" referrerPolicy="strict-origin-when-cross-origin" />}
         </div>
         <p className="gh-play-note">{ru ? 'Игра выполняется в отдельном встроенном окне. Если управление или сетевой режим работают некорректно, откройте её в отдельной вкладке.' : 'The game runs in an embedded frame. If controls or network play do not work correctly, open it in a separate tab.'}</p>
       </section>}
