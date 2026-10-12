@@ -148,70 +148,80 @@
       "name": "OSGARD BEW WORLD",
       "description": "Создание проектов и приложений",
       "url": "https://osgardbewworld.com",
-      "mark": "CR"
+      "mark": "CR",
+      "descriptionEn": "Build websites, apps and digital products."
     },
     {
       "id": "o2",
       "name": "O2 SYSTEM",
       "description": "Учёт кассы обменников",
       "url": "https://o2system.art",
-      "mark": "O2"
+      "mark": "O2",
+      "descriptionEn": "Cash desk accounting for currency exchange offices."
     },
     {
       "id": "taxi",
       "name": "SENJORIO",
       "description": "Премиальное такси",
       "url": "https://senjorio.com",
-      "mark": "SJ"
+      "mark": "SJ",
+      "descriptionEn": "Premium taxi and ride service."
     },
     {
       "id": "superday",
       "name": "SUPERDAY",
       "description": "Умная карта и планировщик дня",
       "url": "https://superday.run",
-      "mark": "SD"
+      "mark": "SD",
+      "descriptionEn": "Smart map and daily planner."
     },
     {
       "id": "marcosa",
       "name": "MARCOSA",
       "description": "Социальная платформа",
       "url": "https://marcosa.club",
-      "mark": "MC"
+      "mark": "MC",
+      "descriptionEn": "Next-generation social platform."
     },
     {
       "id": "myosa",
       "name": "MYOSA",
       "description": "Платформа искусственного интеллекта",
       "url": "https://myosa.world",
-      "mark": "MY"
+      "mark": "MY",
+      "descriptionEn": "Next-generation AI platform."
     },
     {
       "id": "gold",
       "name": "GOLD GLAMOUR",
       "description": "Премиальные услуги и выездной сервис",
       "url": "https://gold-glamour.online",
-      "mark": "GG"
+      "mark": "GG",
+      "descriptionEn": "Premium services and on-site appointments."
     },
     {
       "id": "vpn",
       "name": "GARD VPN",
       "description": "VPN-сервис",
       "url": "https://gardvpn.is",
-      "mark": "GV"
+      "mark": "GV",
+      "descriptionEn": "VPN service."
     },
     {
       "id": "business",
       "name": "OSGARD OS",
       "description": "Инструменты развития бизнеса",
       "url": "https://osgardos.com",
-      "mark": "OB"
+      "mark": "OB",
+      "descriptionEn": "Business development tools."
     },
     {
       "id": "studio",
       "name": "VANGUARD STUDIO",
       "description": "Создание видео",
       "url": "https://osgardvanguard.studio",
-      "mark": "VS"
+      "mark": "VS",
+      "descriptionEn": "Video production."
     }
   ]
 }
