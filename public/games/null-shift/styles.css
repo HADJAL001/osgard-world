@@ -66,3 +66,10 @@ html.webgl-active #game{opacity:0!important;pointer-events:auto}
 .engine-world-label{position:absolute;z-index:4;transform:translate(-50%,-100%);padding:4px 7px;border:1px solid rgba(100,247,220,.24);border-radius:5px;background:rgba(4,12,15,.84);color:#d8fffa;font-size:8px;font-weight:800;letter-spacing:.08em;white-space:nowrap;pointer-events:none}.engine-world-label.label-core{border-color:rgba(255,189,96,.32);color:#ffdc9a}
 @media(max-width:760px),(pointer:coarse){#engine-toggle{display:none}.engine-minimap{right:6px;bottom:6px;width:clamp(116px,38vw,168px);padding:5px;border-radius:7px}.engine-minimap-title{font-size:6px;letter-spacing:.06em}.engine-render-badge{left:6px;bottom:6px;padding:5px 6px;font-size:6px}.engine-action-hint{bottom:48px;font-size:8px;padding:7px 9px}.engine-pause-overlay>div{padding:22px}.engine-world-label{font-size:6px;padding:3px 4px}}
 @media(max-width:380px){.engine-minimap{width:116px}.engine-minimap-title{font-size:5px}.engine-action-hint{max-width:calc(100% - 16px);font-size:7px}}
+
+
+/* Godot engine beta entry: visually integrated with the existing premium control rail. */
+.top-actions .top-link{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 11px;border:1px solid rgba(100,247,220,.32);border-radius:9px;color:var(--cyan);background:rgba(12,23,27,.76);font-size:10px;font-weight:800;letter-spacing:.075em;text-decoration:none;white-space:nowrap;transition:background .22s var(--ease),border-color .22s var(--ease),transform .22s var(--ease)}
+.top-actions .top-link:hover{border-color:rgba(100,247,220,.72);background:rgba(21,44,47,.92);transform:translateY(-1px)}
+.top-actions .top-link:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+@media(max-width:760px),(pointer:coarse){.top-actions .top-link{min-height:34px;padding:0 9px;font-size:9px}}

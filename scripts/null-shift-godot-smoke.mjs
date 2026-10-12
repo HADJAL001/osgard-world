@@ -1,0 +1,46 @@
+import assert from 'node:assert/strict'
+import { readFileSync, existsSync, statSync } from 'node:fs'
+import { join, resolve } from 'node:path'
+
+const root = 'godot/null-shift'
+const required = ['project.godot','export_presets.cfg','scenes/main.tscn','scripts/main.gd','README.md']
+for (const path of required) assert.ok(existsSync(join(root, path)), 'Missing Godot project file: ' + path)
+const project = readFileSync(join(root, 'project.godot'), 'utf8')
+const preset = readFileSync(join(root, 'export_presets.cfg'), 'utf8')
+const scene = readFileSync(join(root, 'scenes/main.tscn'), 'utf8')
+const game = readFileSync(join(root, 'scripts/main.gd'), 'utf8')
+const oldPage = readFileSync('public/games/null-shift/index.html', 'utf8')
+const packageJson = JSON.parse(readFileSync('package.json', 'utf8'))
+assert.match(project, /config\/name="NULL SHIFT"/, 'Safe Godot export project name missing')
+assert.match(project, /config\/features=PackedStringArray\("4\.7", "GL Compatibility"\)/, 'Godot 4.7 compatibility renderer target missing')
+assert.match(project, /renderer\/rendering_method="gl_compatibility"/, 'Web-compatible renderer missing')
+assert.match(preset, /name="Web"/, 'Web export preset missing')
+assert.match(preset, /platform="Web"/, 'Web export target missing')
+assert.match(preset, /variant\/thread_support=false/, 'Single-thread web export must remain enabled for ordinary hosting')
+assert.match(scene, /type="Node3D"/, '3D root scene missing')
+assert.equal(packageJson.scripts['qa:null-shift-godot'], 'node scripts/null-shift-godot-smoke.mjs', 'Godot smoke command not registered')
+assert.ok(oldPage.includes('id="godot-preview"') && oldPage.includes('../null-shift-godot/'), 'Legacy game must link to the isolated Godot beta route')
+for (const feature of [
+  '_create_arena(', '_create_player(', '_create_initial_guards(', '_fire_weapon(',
+  '_submit_cipher_key(', '_destroy_device(', '_deploy_pulse(', '_shift_layer(',
+  '_finish_mission(', '_create_mobile_controls(', '_update_hud(',
+  'Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME', 'AudioStreamWAV.new()',
+  'CPUParticles3D.new()', 'TorusMesh.new()', 'glow_enabled', 'shadow_enabled',
+  'user://null_shift_career.cfg', 'KEY_F2', 'KEY_F3'
+]) assert.ok(game.includes(feature), 'Missing Godot gameplay/diagnostic feature: ' + feature)
+assert.ok(game.length > 25000, 'Godot gameplay source unexpectedly small')
+assert.ok(!/https?:\/\/(?:fonts\.googleapis|cdn\.jsdelivr|unpkg\.com)/i.test(game), 'Unexpected external runtime dependency in game source')
+console.log('PASS NULL//SHIFT Godot source contract: project, renderer, gameplay systems, touch controls, saves and real diagnostics')
+if (process.argv[2] === '--export-check') {
+  const dir = resolve(process.argv[3] || 'public/games/null-shift-godot')
+  for (const name of ['index.html','index.js','index.wasm','index.pck']) {
+    const path = join(dir, name)
+    assert.ok(existsSync(path), 'Missing exported Godot web file: ' + name)
+    const min = name.endsWith('.wasm') ? 100000 : name.endsWith('.pck') ? 10000 : name.endsWith('.js') ? 100000 : 1000
+    assert.ok(statSync(path).size > min, 'Exported Godot file is unexpectedly small: ' + name)
+  }
+  const exportedHtml = readFileSync(join(dir, 'index.html'), 'utf8')
+  assert.ok(/canvas/i.test(exportedHtml), 'Exported HTML canvas was not found')
+  assert.ok(/index\.wasm/i.test(exportedHtml) && /index\.pck/i.test(exportedHtml), 'Exported HTML does not refer to matching engine assets')
+  console.log('PASS NULL//SHIFT Godot export files: HTML, JS, WebAssembly and PCK payload are present')
+}

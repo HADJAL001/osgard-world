@@ -11,6 +11,10 @@ on:
       - "src/**"
       - "public/skillcred/**"
       - "public/games/null-shift/**"
+      - "godot/null-shift/**"
+      - "scripts/null-shift-godot-smoke.mjs"
+      - "public/games/null-shift-godot/**"
+      - ".gitignore"
       - "index.html"
       - "nginx.conf"
       - "package.json"
@@ -31,7 +35,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -40,6 +44,40 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm run qa:null-shift
+
+      - name: Validate the Godot game project contract
+        run: npm run qa:null-shift-godot
+      - name: Cache Godot 4.7.2 and web export templates
+        id: godot-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            /tmp/osgard-godot
+            /home/runner/.local/share/godot/export_templates/4.7.2.stable
+          key: osgard-godot-4.7.2-web-templates-v1-${{ runner.os }}
+      - name: Install official Godot 4.7.2 engine and web templates
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/osgard-godot "$HOME/.local/share/godot/export_templates/4.7.2.stable"
+          curl -L --fail --retry 3 https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip -o /tmp/osgard-godot/engine.zip
+          unzip -q /tmp/osgard-godot/engine.zip -d /tmp/osgard-godot/
+          curl -L --fail --retry 3 https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_export_templates.tpz -o /tmp/osgard-godot/templates.tpz
+          mkdir -p /tmp/osgard-godot/unpacked-templates
+          unzip -q /tmp/osgard-godot/templates.tpz -d /tmp/osgard-godot/unpacked-templates
+          cp -a /tmp/osgard-godot/unpacked-templates/templates/. "$HOME/.local/share/godot/export_templates/4.7.2.stable/"
+      - name: Verify Godot installation
+        run: |
+          chmod +x /tmp/osgard-godot/Godot_v4.7.2-stable_linux.x86_64
+          /tmp/osgard-godot/Godot_v4.7.2-stable_linux.x86_64 --version
+          test -s "$HOME/.local/share/godot/export_templates/4.7.2.stable/web_nothreads_release.zip"
+      - name: Import and parse the Godot project
+        run: /tmp/osgard-godot/Godot_v4.7.2-stable_linux.x86_64 --headless --editor --path godot/null-shift --quit
+      - name: Export Godot Web game
+        run: |
+          mkdir -p public/games/null-shift-godot
+          /tmp/osgard-godot/Godot_v4.7.2-stable_linux.x86_64 --headless --path godot/null-shift --export-release Web "$GITHUB_WORKSPACE/public/games/null-shift-godot/index.html"
+          node scripts/null-shift-godot-smoke.mjs --export-check public/games/null-shift-godot
       - run: npm run build
       - name: Subset self-hosted Inter and minify SkillCred assets
         run: |
