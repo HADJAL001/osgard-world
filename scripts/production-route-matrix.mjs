@@ -25,19 +25,15 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         ? route.endsWith('/health') ? /"service"\s*:\s*"skillcred"/.test(text) && /"version"\s*:\s*"0\.3\.0"/.test(text)
           : route.endsWith('/ready') ? /"ready"\s*:\s*true/.test(text)
             : /"id"\s*:/.test(text) && /"name"\s*:/.test(text)
-        : route.startsWith('/games/null-shift-godot')
-          ? /<canvas/i.test(text) && /godot/i.test(text) && text.includes('index.wasm') && text.includes('index.pck') &&
-            text.includes('data-nullshift-shell="premium-v1"') &&
-            text.includes('Engine.isWebGLAvailable(2)') &&
-            text.includes('onProgress') &&
-            text.includes('НАЧАТЬ ОПЕРАЦИЮ')
+          : route.startsWith('/games/null-shift-godot')
+            ? text.includes('url=/games/null-shift/index.html') || (response.redirected && new URL(response.url).pathname === '/games/null-shift/index.html')
           : route.startsWith('/games/null-shift')
             ? text.includes('id="game"') && text.includes('id="mobile-ui"') && text.includes('id="diag-panel"') && text.includes('id="sound-toggle"') && text.includes('id="touch-sound"') && text.includes('./styles.css') && text.includes('./game.js') && text.includes('./engine-3d.js') && text.includes('id="engine-toggle"') && text.includes('id="touch-engine"') && text.includes('id="godot-preview"')
           : route.startsWith('/entertainment')
             ? response.redirected && new URL(response.url).pathname.replace(/\/+$/, '') === '/games' && text.includes('<div id="root">')
             : text.includes('<div id="root">')
-    const isGodot = route.startsWith('/games/null-shift-godot')
-    const assetPaths = route === '/skillcred/' ? ['/skillcred/styles.css', '/skillcred/app.js', '/skillcred/fonts/InterVariable.woff2', '/skillcred/fonts/InstrumentSerif-Italic.woff2', '/skillcred/fonts/JetBrainsMono-Regular.woff2'] : isGodot ? ['/games/null-shift-godot/index.js', '/games/null-shift-godot/index.wasm', '/games/null-shift-godot/index.pck'] : route.startsWith('/games/null-shift') ? ['/games/null-shift/styles.css', '/games/null-shift/game.js', '/games/null-shift/engine-3d.js'] : []
+    const legacyGodotRoute = route.startsWith('/games/null-shift-godot')
+    const assetPaths = route === '/skillcred/' ? ['/skillcred/styles.css', '/skillcred/app.js', '/skillcred/fonts/InterVariable.woff2', '/skillcred/fonts/InstrumentSerif-Italic.woff2', '/skillcred/fonts/JetBrainsMono-Regular.woff2'] : legacyGodotRoute ? [] : route.startsWith('/games/null-shift') ? ['/games/null-shift/styles.css', '/games/null-shift/game.js', '/games/null-shift/engine-3d.js'] : []
     const assetChecks = await Promise.all(assetPaths.map(async path => {
       const expectedType = path.endsWith('.css') ? 'text/css' : path.endsWith('.js') ? 'javascript' : path.endsWith('.wasm') ? 'wasm' : path.endsWith('.pck') ? 'pack' : 'font'
       const asset = await fetch(new URL(path, base), { headers: { 'user-agent': userAgent } })
@@ -52,7 +48,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
       } else {
         const content = await asset.text()
         const normalized = content.toLowerCase()
-        nonEmpty = isGodot
+        nonEmpty = legacyGodotRoute
           ? content.length > 100000
           : path.startsWith('/games/null-shift/')
             ? path.endsWith('engine-3d.js')
