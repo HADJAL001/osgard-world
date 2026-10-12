@@ -9,6 +9,7 @@
     *{box-sizing:border-box}body{margin:0;background:#050914;color:var(--ink);font:14px Inter,Arial,sans-serif}
     header{height:74px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 clamp(18px,6vw,88px);letter-spacing:.16em;color:#9eb2c8}
     header a{color:var(--gold);text-decoration:none;font-weight:700}header span{font-size:10px}
+    .games-hub-link{display:inline-flex;flex-wrap:wrap;gap:5px 14px;align-items:center;margin-top:18px;padding:10px 13px;border:1px solid rgba(243,215,149,.38);color:#f3d795;text-decoration:none;font:10px monospace;letter-spacing:.1em;transition:background .2s,border-color .2s}.games-hub-link span{color:#eaf2ff}.games-hub-link:hover{background:rgba(243,215,149,.07);border-color:rgba(243,215,149,.7)}
     .wrap{max-width:1320px;margin:auto;padding:clamp(64px,10vw,130px) clamp(18px,6vw,88px) 100px}
     .hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:48px;align-items:end;padding-bottom:58px;border-bottom:1px solid var(--line)}
     .eyebrow{color:var(--gold);font-size:10px;letter-spacing:.22em}.hero h1{font:300 clamp(46px,7vw,94px)/.94 Georgia,serif;margin:18px 0;color:#f4f0e7}.hero p{max-width:560px;color:var(--muted);line-height:1.8}
@@ -21,7 +22,7 @@
 <body>
   <header><a href="/">OSGARD WORLD</a><span>05 / ENTERTAINMENT</span></header>
   <main class="wrap">
-    <section class="hero"><div><div class="eyebrow">OSGARD / PLAYABLE WORLDS</div><h1>Выбери мир.<br>Начни игру.</h1><p>Пять самостоятельных игр. У каждой свой ритм, правила и визуальный язык. Выбери карточку, чтобы войти в мир.</p></div><div class="count"><b>05</b><span>PLAYABLE WORLDS</span></div></section>
+    <section class="hero"><div><div class="eyebrow">OSGARD / PLAYABLE WORLDS</div><h1>Выбери мир.<br>Начни игру.</h1><p>Пять самостоятельных игр. У каждой свой ритм, правила и визуальный язык. Выбери карточку, чтобы войти в мир.</p><a class="games-hub-link" href="/games">OSGARD PLAY <span>Открыть игровую витрину ↗</span></a></div><div class="count"><b>05</b><span>PLAYABLE WORLDS</span></div></section>
     <section class="grid" aria-label="Все игры OSGARD">
       <a class="card time" href="/games/time-empire/"><div class="art"><small>01 / LIVE WORLD</small><b>ET</b></div><div class="copy"><h2>Империя времени</h2><p>Город, нефть, фракции и решения.</p><span class="launch">Войти в игру &#8599;</span></div></a>
       <a class="card swarm" href="/games/swarm/index.html"><div class="art"><small>02 / LIVE WORLD</small><b>SW</b></div><div class="copy"><h2>SWARM</h2><p>Синхронно добудьте ядро и выйдите до тревоги.</p><span class="launch">Войти в игру &#8599;</span></div></a>
