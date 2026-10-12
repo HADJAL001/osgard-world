@@ -58,10 +58,14 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         const normalized = content.toLowerCase()
         nonEmpty = expectedType === 'json'
           ? (() => { try { const parsed = JSON.parse(content); return parsed.schemaVersion === 1 && Array.isArray(parsed.games) && parsed.games.length === 5 } catch { return false } })()
-          : isGodot
-            ? content.length > 100000
-          : path.startsWith('/games/null-shift/')
-            ? path.endsWith('engine-3d.js')
+          : path === '/games/hub.css'
+            ? content.includes('.game-grid') && content.includes('prefers-reduced-motion')
+            : path === '/games/hub.js'
+              ? content.includes('function loadCatalog()') && content.includes('/api/v1/player/events')
+              : isGodot
+                ? content.length > 100000
+                : path.startsWith('/games/null-shift/')
+                  ? path.endsWith('engine-3d.js')
               ? content.includes("getContext('webgl'") && content.includes('NULL_SHIFT_GET_SCENE_STATE') && content.includes('function cube(){') && content.includes('NULL_SHIFT_SCREEN_TO_WORLD') && content.includes('drawParticles') && content.includes('ANGLE_instanced_arrays') && content.includes('renderInstanced') && content.includes('gpuFrameStats.triangles') && content.includes('function updateAdaptiveResolution(') && content.includes('adaptiveScale') && content.includes('renderCost.toFixed(1)') && content.includes('lastStats=0') && content.includes('renderCost=0') && content.includes('function softShadow(') && content.includes('aVertexAlpha') && content.includes('G.shadow')
               : path.endsWith('.css')
                 ? content.includes('.mobile-ui') && content.includes('prefers-reduced-motion') && content.includes('.engine-minimap')
