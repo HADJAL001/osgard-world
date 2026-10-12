@@ -37,7 +37,7 @@ for (const id of ['time','swarm','null-shift','inherit','remix']) {
   assert.ok(html.includes("id:'"+id+"'"), 'Missing catalog game: '+id)
   assert.ok(html.includes("data-play"), 'Game play controls missing')
 }
-for (const feature of ['data-filter','favoritesKey','recentKey','game_session_started','game_session_completed','game_fullscreen_requested','cross_promo_clicked','utm_source','utm_medium','utm_campaign','navigator.share','requestFullscreen','osgard-games-analytics-local.csv']) assert.ok(html.includes(feature), 'Catalog feature/measurement missing: '+feature)
+for (const feature of ['data-filter','favoritesKey','recentKey','game_frame_loaded','game_player_closed','game_fullscreen_requested','cross_promo_clicked','utm_source','utm_medium','utm_campaign','navigator.share','requestFullscreen','osgard-games-analytics-local.csv']) assert.ok(html.includes(feature), 'Catalog feature/measurement missing: '+feature)
 for (const url of ['https://osgardbewworld.com/','https://o2system.art/','https://senjorio.com/','https://superday.run/','https://marcosa.club/','https://myosa.world/','https://gold-glamour.online/','https://gardvpn.is/','https://osgardos.com/','https://osgardvanguard.studio/']) assert.ok(html.includes(url), 'Missing user-specified ecosystem URL: '+url)
 assert.ok(html.includes('osman.osmanov0099@gmail.com'))
 assert.ok(html.includes('https://wa.me/79640027222'))
