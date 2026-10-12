@@ -46,6 +46,8 @@ jobs:
         run: npm run qa:skillcred
       - name: Verify OSGARD PLAY catalog, game links and consent-gated analytics
         run: npm run qa:games-hub
+      - name: Guard against unsupported quantitative marketing claims
+        run: npm run qa:marketing-claims
       - name: Verify NULL SHIFT browser game and WebGL contracts
         run: npm run qa:null-shift
       - name: Verify Godot project and published game routing contract
