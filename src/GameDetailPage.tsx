@@ -70,7 +70,7 @@ export function GameDetailPage({ slug }: { slug: string }) {
           <p className="owg-detail-description">{game.description}</p>
           <div className="owg-detail-tags">{game.tags.map(tag => <span key={tag}>{tag}</span>)}</div>
           <div className="owg-detail-actions">
-            <a className="owg-button owg-button-primary" href={gameEntry.href} onClick={() => recordLaunch(gameEntry.id)}>Играть сейчас <ArrowUpRight size={17} /></a>
+            <a className="owg-button owg-button-primary" href={'/games/play/' + gameEntry.id} onClick={() => recordLaunch(gameEntry.id)}>Играть сейчас <ArrowUpRight size={17} /></a>
             <button className="owg-button owg-button-quiet" type="button" onClick={() => void share()}><Share2 size={15} /> Поделиться</button>
           </div>
           <p className="owg-detail-caveat">Игра запускается по настроенному веб-маршруту. Доступность сборки зависит от текущего релиза; сведения о платежах и рейтингах здесь не подразумеваются.</p>
