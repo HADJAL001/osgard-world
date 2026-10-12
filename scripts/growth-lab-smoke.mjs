@@ -10,7 +10,7 @@ for (const token of [
   'data-preset="optimistic"', 'id="visits"', 'id="launchRate"', 'id="fillRate"',
   'id="ecpm"', 'id="subscriptionRate"', 'id="purchaseRate"', 'id="leadRate"',
   'id="projectMargin"', 'id="operatingCosts"', 'id="netOut"', 'id="exportCsv"',
-  'id="copySummary"', 'osgard-growth-scenario.csv', 'не фактическая выручка',
+  'id="copySummary"', 'osgard-growth-scenario.csv', 'допущениями пользователя, а не фактической выручкой',
   'не чистая прибыль', 'не отправляются', 'prefers-reduced-motion:reduce',
   'max-width:360px', 'osman.osmanov0099@gmail.com', 'https://wa.me/79640027222',
   '/games/', 'robots" content="noindex,follow"'
