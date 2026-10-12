@@ -19,6 +19,15 @@ assert.ok(vignetteUpdateStart >= 0 && vignetteUpdateEnd > vignetteUpdateStart &&
 const radar = readFileSync(join(root, 'scripts/tactical_radar.gd'), 'utf8')
 const runtime = readFileSync(join(root, 'tests/runtime_smoke.gd'), 'utf8')
 const oldPage = readFileSync('public/games/null-shift/index.html', 'utf8')
+const godotWebRoot = resolve('public/games/null-shift-godot')
+const godotExportFiles = ['index.js', 'index.wasm', 'index.pck']
+const hasTrackedGodotExport = godotExportFiles.every(name => existsSync(join(godotWebRoot, name)))
+const godotRouteHtml = readFileSync(join(godotWebRoot, 'index.html'), 'utf8')
+if (!hasTrackedGodotExport) {
+  assert.ok(godotRouteHtml.includes('data-godot-fallback="webgl"') && godotRouteHtml.includes('href="/games/null-shift/"'), 'The published route must have an explicit WebGL fallback when a native Web export is not checked in.')
+} else {
+  assert.ok(godotRouteHtml.includes('data-nullshift-shell="premium-v1"'), 'A complete Godot export must use the premium launch shell.')
+}
 const portalApp = readFileSync('src/App.tsx', 'utf8')
 const gameManifest = readFileSync('src/core/manifest.ts', 'utf8')
 const entertainmentCatalog = readFileSync('src/EntertainmentCatalog.tsx', 'utf8')
