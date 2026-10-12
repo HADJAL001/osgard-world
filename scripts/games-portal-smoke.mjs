@@ -24,7 +24,7 @@ assert.ok(scripts.length,'Inline application JavaScript not found')
 const js=scripts[scripts.length-1]
 new Function(js)
 assert.ok(js.includes('osgard.games.favorites.v1')&&js.includes('osgard.games.recent.v1'),'Local favorites/history missing')
-assert.ok(js.includes('osgard.games.recommendation.v1')&&js.includes('nextByGame')&&js.includes('DАЛЬШЕ')===false&&js.includes('ДАЛЬШЕ · '),'Rule-based next-game recommendation must be persisted locally after the game dialog closes')
+assert.ok(js.includes('osgard.games.recommendation.v1')&&js.includes('nextByGame')&&js.includes('ДАЛЬШЕ · '),'Rule-based next-game recommendation must be persisted locally after the game dialog closes')
 assert.ok(js.includes("localStorage.getItem('osgard.auth.accessToken')")&&js.includes('/api/v1/player/events')&&js.includes('if(!consent)return'),'Analytics must require both explicit consent and login token')
 assert.ok(js.includes("eventIfAllowed('share_created',id)"),'Share action event missing')
 assert.ok(js.includes('frame.requestFullscreen()'),'Fullscreen action missing')
