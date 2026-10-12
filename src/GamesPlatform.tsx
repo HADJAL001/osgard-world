@@ -215,6 +215,8 @@ export function GamesPlatform({ locale, setLocale }: { locale: Locale; setLocale
   const frameRef = useRef<HTMLIFrameElement>(null)
   const searchRef = useRef<HTMLInputElement>(null)
   const sessionRecorded = useRef(false)
+  const sessionStartedAt = useRef<number | null>(null)
+  const sessionEnded = useRef(false)
 
   useEffect(() => {
     try { localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites)) } catch { /* browser storage is optional */ }
@@ -261,6 +263,25 @@ export function GamesPlatform({ locale, setLocale }: { locale: Locale; setLocale
       setRecent((current) => [activeGame.id, ...current.filter((id) => id !== activeGame.id)].slice(0, 5))
       recordOsgardEvent('game_opened', { game: activeGame.id, href: activeGame.href, source: 'osgard_games_embedded' })
     }
+  }, [pageMode, activeGame])
+
+  useEffect(() => {
+    if (pageMode !== 'play' || !activeGame) return
+    const finishSession = () => {
+      const startedAt = sessionStartedAt.current
+      if (startedAt === null || sessionEnded.current) return
+      sessionEnded.current = true
+      const endedAt = Date.now()
+      recordOsgardEvent('game_session_completed', {
+        game: activeGame.id,
+        durationSeconds: Math.max(0, Math.round((endedAt - startedAt) / 1000)),
+        startedAt: new Date(startedAt).toISOString(),
+        endedAt: new Date(endedAt).toISOString(),
+        source: 'osgard_games_embedded',
+      })
+    }
+    window.addEventListener('pagehide', finishSession)
+    return () => window.removeEventListener('pagehide', finishSession)
   }, [pageMode, activeGame])
 
   useEffect(() => {
@@ -463,7 +484,19 @@ export function GamesPlatform({ locale, setLocale }: { locale: Locale; setLocale
             <div className="osg-game-player-top"><a className="osg-games-back" href={infoHref(activeGame.id)}><ArrowLeft size={16} />{t('Об игре', 'Game details')}</a><div><p className="osg-games-eyebrow">OSGARD PLAY / SESSION</p><h1>{activeGame.title}</h1></div><div className="osg-game-player-actions"><button className="osg-games-secondary" onClick={() => void fullscreen()}><Expand size={15} />{t('На весь экран', 'Fullscreen')}</button><a className="osg-games-secondary" href={activeGame.href} target="_blank" rel="noreferrer">{t('Открыть отдельно', 'Open separately')}<ExternalLink size={14} /></a></div></div>
             <div className="osg-game-frame-shell">
               {!frameLoaded && <div className="osg-game-frame-loading"><span className="osg-game-loading-ring" /><strong>{t('Открываем игровую страницу', 'Opening game page')}</strong><span>{t('Если движок не запустится, воспользуйся ссылкой «Открыть отдельно».', 'If the engine does not start, use “Open separately”.')}</span></div>}
-              <iframe ref={frameRef} className="osg-game-iframe" src={activeGame.href} title={activeGame.title} allow="fullscreen; autoplay; gamepad; clipboard-read; clipboard-write" allowFullScreen onLoad={() => setFrameLoaded(true)} />
+              <iframe ref={frameRef} className="osg-game-iframe" src={activeGame.href} title={activeGame.title} allow="fullscreen; autoplay; gamepad; clipboard-read; clipboard-write" allowFullScreen onLoad={() => {
+                setFrameLoaded(true)
+                if (sessionStartedAt.current === null && activeGame) {
+                  const startedAt = Date.now()
+                  sessionStartedAt.current = startedAt
+                  recordOsgardEvent('game_session_started', {
+                    game: activeGame.id,
+                    href: activeGame.href,
+                    startedAt: new Date(startedAt).toISOString(),
+                    source: 'osgard_games_embedded',
+                  })
+                }
+              }} />
             </div>
             <div className="osg-game-player-footer"><span className={'osg-game-status-pill osg-game-status-pill--' + selectedState}>{statusText(selectedState, isRu)}</span><span>{t('Измеряется наличие точки входа, а не успешность запуска игрового движка.', 'The check measures entry-point availability, not successful startup of the game engine.')}</span><button onClick={() => void shareGame(activeGame)}><Share2 size={14} />{t('Поделиться', 'Share')}</button></div>
           </section>
