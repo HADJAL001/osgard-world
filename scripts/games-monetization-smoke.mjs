@@ -30,6 +30,7 @@ const actual = calculateScenario(DEFAULT_INPUTS, 'base');
 assert.equal(actual.visitors, 10000);
 assert.equal(actual.gameStarts, 3000);
 assert.equal(actual.sessions, 9000);
+assert.equal(actual.potentialAdImpressions, 18000);
 assert.equal(actual.filledAdImpressions, 9900);
 assert.equal(actual.adRevenueUsd, 12.375);
 assert.equal(actual.paidCustomers, 25);
