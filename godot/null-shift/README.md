@@ -81,3 +81,10 @@ The deployment workflow downloads official Godot 4.7.2 and matching web template
 - Guard-originated hits show a directional damage arrow on the HUD edge. The direction is projected from the actual attacking 3D node through the camera, fades over 0.62 seconds, reflects remaining health and hides while blocking menus/pause cover play. Environmental phase-lane damage remains distinct because it has no attacker direction.
 - Headless runtime smoke checks exercise the FOV widen/return and verify that a real damaging hit creates and expires the directional marker.
 - This is engine-native gameplay/UI work, not native 8K output. The Web build remains constrained by browser/GPU support and uses the Compatibility renderer for broad reach.
+
+
+## Release 1.1 — animated security gate
+
+- The security gate now has procedural jambs, red/cyan lock indicators and a local status light that pulses red while locked and transitions to cyan after a successful cipher.
+- A correct code disables collision immediately, then animates the gate upward with a cubic-eased Tween over 780 ms before hiding it. That gives a clear physical response while preventing the operator from getting trapped during the animation.
+- Headless Godot runtime smoke covers the visible opening state, immediate collision deactivation, upward movement, final hidden state and lock-indicator colour change. The mechanism uses engine-created geometry and no downloaded runtime assets.

@@ -438,7 +438,17 @@ func _run_smoke() -> void:
 		game._submit_cipher_key(key)
 	if not _expect(game.terminal_unlocked, "correct cipher must unlock the gate"):
 		return
-	if not _expect(not game.security_gate.visible, "successful hack must open the security gate"):
+	if not _expect(game.security_gate.visible and game.gate_motion_tween != null and game.gate_motion_tween.is_running(), "successful hack must trigger a visible gate-opening animation"):
+		return
+	if not _expect(game.security_gate.collision_layer == 0 and game.security_gate.collision_mask == 0, "gate collision must disable immediately so the operator cannot get trapped"):
+		return
+	var gate_start_y: float = game.security_gate.position.y
+	game.paused_game = true
+	await create_timer(0.9).timeout
+	if not _expect(not game.security_gate.visible and game.security_gate.position.y > gate_start_y + 2.0, "security gate must slide upward and hide only after the animation finishes"):
+		return
+	game.paused_game = false
+	if not _expect(game.gate_indicator_strip.material_override == game.materials["cyan"], "unlocked gate lock indicator must switch from red to cyan"):
 		return
 
 	print("RUNTIME_STAGE: core and extraction")

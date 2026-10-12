@@ -17,6 +17,10 @@ var quantum_core: Node3D
 var extraction: Node3D
 var medkit: Node3D
 var security_gate: StaticBody3D
+var gate_indicator_strip: MeshInstance3D
+var gate_status_light: OmniLight3D
+var gate_motion_tween: Tween
+var gate_open_started := false
 var core_ring: MeshInstance3D
 var extraction_ring: MeshInstance3D
 var terminal_light: OmniLight3D
@@ -367,6 +371,11 @@ func _create_arena() -> void:
 	_make_box_mesh("CoverEastTrim", Vector3(17.3, 1.62, 0.0), Vector3(5.25, 0.06, 0.9), materials["wall_trim"])
 	security_gate = _make_solid_box("SecurityGate", Vector3(9.2, 1.05, 7.5), Vector3(0.55, 2.1, 5.5), materials["red"])
 	_make_box_mesh("GateHeader", Vector3(9.2, 2.24, 7.5), Vector3(0.85, 0.12, 5.8), materials["amber"])
+	_make_box_mesh("GateJamb_North", Vector3(9.2, 1.18, 4.62), Vector3(0.82, 2.36, 0.2), materials["wall"])
+	_make_box_mesh("GateJamb_South", Vector3(9.2, 1.18, 10.38), Vector3(0.82, 2.36, 0.2), materials["wall"])
+	gate_indicator_strip = _make_box_mesh("GateLockIndicator", Vector3(9.2, 1.9, 4.62), Vector3(0.085, 0.52, 0.09), materials["red"])
+	_make_box_mesh("GateLockIndicator_South", Vector3(9.2, 1.9, 10.38), Vector3(0.085, 0.52, 0.09), materials["red"])
+	gate_status_light = _make_omni_light(self, Vector3(9.2, 2.25, 7.5), Color(1.0, 0.12, 0.2), 0.78, 5.6)
 
 func _create_arena_props() -> void:
 	# Procedural landmarks, inlaid energy rails, and gate markers give the arena scale.
@@ -1385,6 +1394,31 @@ func _interact() -> void:
 	else:
 		objective_text = _nearest_prompt()
 
+func _animate_security_gate_open() -> void:
+	if not is_instance_valid(security_gate) or gate_open_started:
+		return
+	gate_open_started = true
+	if is_instance_valid(gate_indicator_strip):
+		gate_indicator_strip.material_override = materials["cyan"]
+	if is_instance_valid(gate_status_light):
+		gate_status_light.light_color = Color(0.08, 1.0, 0.74)
+		gate_status_light.light_energy = 2.4
+	var target_position: Vector3 = security_gate.position + Vector3.UP * 2.65
+	gate_motion_tween = create_tween()
+	gate_motion_tween.set_parallel(true)
+	gate_motion_tween.set_trans(Tween.TRANS_CUBIC)
+	gate_motion_tween.set_ease(Tween.EASE_IN_OUT)
+	gate_motion_tween.tween_property(security_gate, "position", target_position, 0.78)
+	gate_motion_tween.tween_property(security_gate, "scale", Vector3(1.0, 0.42, 1.0), 0.78)
+	gate_motion_tween.finished.connect(_finish_security_gate_open)
+	_play_sfx(260.0, 0.34, 0.11)
+
+func _finish_security_gate_open() -> void:
+	if is_instance_valid(security_gate):
+		security_gate.visible = false
+	if is_instance_valid(gate_status_light):
+		gate_status_light.light_energy = 0.22
+
 func _submit_cipher_key(key: int) -> void:
 	if not terminal_active or terminal_unlocked:
 		return
@@ -1402,11 +1436,12 @@ func _submit_cipher_key(key: int) -> void:
 		keypad_panel.visible = false
 		alarm_active = true
 		if is_instance_valid(security_gate):
-			security_gate.visible = false
 			security_gate.collision_layer = 0
+			security_gate.collision_mask = 0
 			for child in security_gate.get_children():
 				if child is CollisionShape3D:
 					(child as CollisionShape3D).disabled = true
+			_animate_security_gate_open()
 		_spawn_guard(Vector3(18.0, 0.82, 5.5), false)
 		objective_text = "СИСТЕМА ВЗЛОМАНА · ОХРАНА ПЕРЕШЛА В РЕЖИМ ТРЕВОГИ"
 		_play_sfx(110.0, 0.7, 0.16)
@@ -2529,6 +2564,13 @@ func _animate_world(delta: float) -> void:
 		terminal_light.light_energy = 1.45 + sin(scene_clock * 3.0) * 0.25
 	if is_instance_valid(core_light) and quantum_core.visible:
 		core_light.light_energy = 2.0 + sin(scene_clock * 4.0) * 0.38
+	if is_instance_valid(gate_status_light):
+		if terminal_unlocked:
+			gate_status_light.light_color = Color(0.08, 1.0, 0.74)
+			gate_status_light.light_energy = 0.28 + (1.15 if is_instance_valid(security_gate) and security_gate.visible else 0.0) + absf(sin(scene_clock * 5.2)) * 0.12
+		else:
+			gate_status_light.light_color = Color(1.0, 0.12, 0.2)
+			gate_status_light.light_energy = 0.72 + absf(sin(scene_clock * 3.7)) * 0.28
 	for guard in guards:
 		var body: Node3D = guard["node"]
 		if not is_instance_valid(body):
