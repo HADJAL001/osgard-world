@@ -26,7 +26,7 @@ assert.ok(!html.includes('/games/null-shift-godot/'),'Public Games hub must not 
 assert.ok(lifecycle.includes("url:'/games/null-shift/'"),'Lifecycle launch route must match the existing NULL SHIFT browser build')
 assert.ok(manifest.includes("href: '/games/null-shift/index.html'"),'Game manifest must route NULL SHIFT to the existing browser build')
 assert.ok(homepage.includes('href="/games/null-shift/"'),'Homepage feature must launch the browser build')
-assert.ok(legacyReactCatalog.includes("'/games/null-shift/index.html'"),'Legacy React catalogue must launch the browser build')
+assert.ok(legacyReactCatalog.includes("window.location.replace('/games/')")&&!legacyReactCatalog.includes('/games/null-shift-godot/'),'Legacy React catalogue must redirect to the single Games hub')
 assert.ok(legacyGodot.includes('url=/games/null-shift/')&&legacyGodot.includes("window.location.replace('/games/null-shift/')"),'Legacy Godot URL must have a browser fallback')
 for(const id of ['null-shift','time','swarm','inherit','remix']) assert.ok(html.includes('href="/game/'+id+'"'),'Missing detail-page link for '+id)
 assert.ok(mainApp.includes("const gameDetailMatch = path.match(/^\\/game\\/([^/]+)$/)")&&mainApp.includes('<GameDetailPage slug={gameDetailMatch[1]} />'),'SPA must route /game/:slug to its individual detail page')
