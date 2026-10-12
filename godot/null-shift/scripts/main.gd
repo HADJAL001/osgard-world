@@ -2342,7 +2342,13 @@ func _set_mobile_action(action: String, pressed: bool) -> void:
 					_shift_layer()
 
 func _update_mobile_layout() -> void:
+	# Godot may dispatch a first layout frame before the platform reports a valid viewport.
+	# Do not touch controls until the full HUD tree and viewport have been constructed.
+	if not is_instance_valid(status_panel) or not is_instance_valid(objective_panel) or not is_instance_valid(mobile_move_panel) or not is_instance_valid(mobile_action_panel):
+		return
 	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+	if viewport_size.x <= 1.0 or viewport_size.y <= 1.0:
+		return
 	var touch_device: bool = DisplayServer.is_touchscreen_available()
 	if viewport_size.is_equal_approx(last_layout_size) and last_layout_touch == touch_device:
 		return

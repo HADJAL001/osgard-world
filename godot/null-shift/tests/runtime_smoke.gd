@@ -123,8 +123,13 @@ func _run_smoke() -> void:
 		return
 	var lock_guard: Node3D = game.guards[0]["node"]
 	var lock_saved_position: Vector3 = lock_guard.global_position
+	var lock_saved_camera_transform: Transform3D = game.camera.global_transform
 	lock_guard.global_position = game.player.global_position + Vector3(0.0, 0.0, -4.0)
 	await process_frame
+	# Aim the camera directly at the seeded test target so headless window size and camera easing
+	# cannot clip the projected lock marker against the viewport edge.
+	game.camera.global_position = lock_guard.global_position + Vector3(0.0, 8.0, 12.0)
+	game.camera.look_at(lock_guard.global_position + Vector3.UP * 2.25, Vector3.UP)
 	game.aim_target_node = lock_guard
 	game._update_target_lock_ui(0.016)
 	if not _expect(game.target_lock_root.visible and game.target_lock_brackets.size() == 8, "visible hostile must produce a smoothed eight-corner screen-space target marker"):
@@ -135,6 +140,7 @@ func _run_smoke() -> void:
 	game._update_target_lock_ui(0.016)
 	if not _expect(not game.target_lock_root.visible, "target marker must disappear when there is no selected hostile"):
 		return
+	game.camera.global_transform = lock_saved_camera_transform
 	lock_guard.global_position = lock_saved_position
 
 	print("RUNTIME_STAGE: tactical radar mapping and live entity feed")
