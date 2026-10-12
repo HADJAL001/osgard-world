@@ -7,6 +7,7 @@ on:
       - "src/**"
       - "scripts/skillcred-page-smoke.mjs"
       - "scripts/time-prototype-smoke.mjs"
+      - "scripts/games-platform-smoke.mjs"
       - "docs/02_IMPERIUM_OF_TIME_GAME_DESIGN.md"
       - "public/skillcred/**"
       - "package.json"
@@ -46,5 +47,7 @@ jobs:
         run: npm run qa:skillcred
       - name: Verify Imperium of Time game systems and visual diagnostics
         run: npm run qa:time-ui
+      - name: Verify OSGARD game catalog routes, controls and accessibility wiring
+        run: npm run qa:games-platform
       - name: Validate static archive and HTML
         run: npm run preflight:frontend
