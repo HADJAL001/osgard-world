@@ -138,3 +138,10 @@ The command npm run qa:null-shift checks required game assets, script syntax, co
 - Reticle visibility distinguishes touch-assisted aiming from a narrow mouse-driven desktop window.
 - Camera follow uses exponential damping and bounded screen impulses. The operator rig has restrained walk/breath movement without moving its physics capsule.
 - Runtime smoke asserts the 320 px panel/button dimensions. Static and headless checks guard the responsive layout before Web export.
+
+
+### Combat readability follow-up
+
+- Floating world-space health readouts display the correct remaining/max HP when an enemy takes damage. Readouts on regular hostiles fade out after 1.8 seconds; the elite Warden keeps its status visible.
+- Fixed the suit-material state lookup to target `operator_suit` inside the new `OperatorRig`, so damage and phase-shift colors affect the model that is actually rendered.
+- Added runtime smoke assertions for the hit-triggered health readout and the nested suit damage material, extending the test from scene startup to the live visual/game-state connection.

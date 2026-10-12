@@ -42,6 +42,12 @@ func _run_smoke() -> void:
 	game._screen_impulse(0.2, 0.25)
 	if not _expect(game.camera_shake_timer > 0.0 and game.camera_shake_strength >= 0.2, "camera impact response must be measurable"):
 		return
+	game.damage_flash_timer = 0.1
+	game._update_player_material()
+	if not _expect(game.operator_suit.material_override == game.materials["red"], "operator damage shader state must target the nested visual rig"):
+		return
+	game.damage_flash_timer = 0.0
+	game._update_player_material()
 	game._layout_compact_controls(Vector2(320.0, 640.0))
 	if not _expect(is_equal_approx(game.mobile_move_panel.offset_right - game.mobile_move_panel.offset_left, 142.0), "320px layout must constrain the movement panel"):
 		return
@@ -66,7 +72,11 @@ func _run_smoke() -> void:
 	print("RUNTIME_STAGE: guard/device combat")
 	var guard_node: Node3D = game.guards[0]["node"]
 	var guard_hp := int(game.guards[0]["hp"])
-	for _hit in range(guard_hp):
+	game._damage_target(guard_node)
+	var health_readout := guard_node.get_node_or_null("HealthReadout") as Label3D
+	if not _expect(is_instance_valid(health_readout) and health_readout.visible and health_readout.text.contains(str(guard_hp - 1)), "damage must expose the correct floating enemy health readout"):
+		return
+	for _hit in range(guard_hp - 1):
 		game._damage_target(guard_node)
 	if not _expect(game.guards.size() == 2, "weapon damage must eliminate a guard"):
 		return

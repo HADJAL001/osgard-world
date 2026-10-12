@@ -641,6 +641,19 @@ func _spawn_guard(at: Vector3, is_warden: bool) -> void:
 	_add_cube(body, Vector3(0.35, 0.34, -0.02), Vector3(0.2, 0.22, 0.28), role_material)
 	_add_cube(body, Vector3(0.0, 0.16, -0.31), Vector3(0.5, 0.28, 0.075), materials["wall_trim"])
 	_add_sphere_mesh(body, "GuardHelmet", Vector3(0.0, 0.67, -0.025), 0.23 if not is_warden else 0.28, 0.44 if not is_warden else 0.52, materials["black"])
+	var health_readout := Label3D.new()
+	health_readout.name = "HealthReadout"
+	health_readout.text = "HP 10 / 10" if is_warden else "HP 3 / 3"
+	health_readout.font_size = 22
+	health_readout.pixel_size = 0.012
+	health_readout.outline_size = 8
+	health_readout.outline_modulate = Color(0.004, 0.012, 0.016, 0.98)
+	health_readout.modulate = Color(1.0, 0.38, 0.42) if is_warden else Color(0.65, 1.0, 0.93)
+	health_readout.position = Vector3(0.0, 2.62 if is_warden else 2.22, 0.0)
+	health_readout.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	health_readout.no_depth_test = true
+	health_readout.visible = is_warden
+	body.add_child(health_readout)
 	_add_cube(body, Vector3(0.0, 0.69, -0.24), Vector3(0.29, 0.065, 0.035), role_material)
 	_add_cube(body, Vector3(0.0, 0.43, 0.28), Vector3(0.34, 0.38, 0.17), materials["black"])
 	_add_cube(body, Vector3(-0.13, 0.43, 0.375), Vector3(0.05, 0.24, 0.025), role_material)
@@ -663,6 +676,7 @@ func _spawn_guard(at: Vector3, is_warden: bool) -> void:
 		"role": role,
 		"hp": 10 if is_warden else (4 if current_contract == 2 else 3),
 		"max_hp": 10 if is_warden else (4 if current_contract == 2 else 3),
+		"health_timer": 0.0,
 		"speed": 3.25 if is_warden else (3.0 if role == "STALKER" else (1.6 if role == "HEAVY" else (2.25 if current_contract == 2 else 1.9))),
 		"damage": 18 if is_warden else (16 if role == "HEAVY" else 10),
 		"warden": is_warden,
@@ -740,6 +754,11 @@ func _update_guards(delta: float) -> void:
 		if not is_instance_valid(body):
 			guards.remove_at(index)
 			continue
+		var health_timer: float = maxf(0.0, float(guard.get("health_timer", 0.0)) - delta)
+		guard["health_timer"] = health_timer
+		var health_readout := body.get_node_or_null("HealthReadout") as Label3D
+		if is_instance_valid(health_readout):
+			health_readout.visible = bool(guard["warden"]) or health_timer > 0.0
 		var stun := maxf(0.0, float(guard["stun"]) - delta)
 		guard["stun"] = stun
 		if stun > 0.0:
@@ -899,6 +918,12 @@ func _damage_target(target: Node) -> void:
 		var guard: Dictionary = guards[index]
 		if guard["node"] == target:
 			guard["hp"] = int(guard["hp"]) - 1
+			guard["health_timer"] = 1.8
+			var max_hp: int = int(guard.get("max_hp", 3))
+			var health_readout := target.get_node_or_null("HealthReadout") as Label3D
+			if is_instance_valid(health_readout):
+				health_readout.text = "HP %d / %d" % [maxi(0, int(guard["hp"])), max_hp]
+				health_readout.visible = true
 			_spawn_hit_sparks(target.global_position + Vector3.UP * 0.7, materials["amber"])
 			if int(guard["hp"]) <= 0:
 				var body: Node3D = guard["node"]
@@ -1791,17 +1816,15 @@ func _update_camera(delta: float) -> void:
 	camera.look_at(player.global_position + Vector3(0.0, 0.55, 0.0) + aim_lead, Vector3.UP)
 
 func _update_player_material() -> void:
-	if not is_instance_valid(player):
-		return
-	var suit := player.get_node_or_null("OperatorSuit") as MeshInstance3D
-	if not suit:
+	# The suit is a child of the articulated visual rig, not the physics root.
+	if not is_instance_valid(operator_suit):
 		return
 	if damage_flash_timer > 0.0:
-		suit.material_override = materials["red"]
+		operator_suit.material_override = materials["red"]
 	elif null_shift_timer > 0.0:
-		suit.material_override = materials["violet"]
+		operator_suit.material_override = materials["violet"]
 	else:
-		suit.material_override = materials["cyan"]
+		operator_suit.material_override = materials["cyan"]
 
 func _animate_world(delta: float) -> void:
 	if is_instance_valid(operator_rig) and is_instance_valid(player):
