@@ -303,3 +303,6 @@ header nav .nav-skillcred svg{width:14px}
 @media(prefers-reduced-motion:reduce){.skillcred-teaser *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 
 @media(max-width:1050px) and (min-width:761px){header nav .nav-skillcred{display:none}}
+
+
+.development-contact-links{display:flex;flex-wrap:wrap;gap:14px;margin-top:16px}.development-contact-links a{color:var(--gold,#d3ff69);font-size:12px;text-decoration:underline;text-underline-offset:4px;overflow-wrap:anywhere}.development-contact-links a:hover{filter:brightness(1.2)}@media(max-width:520px){.development-contact-links{display:grid;gap:10px}}
