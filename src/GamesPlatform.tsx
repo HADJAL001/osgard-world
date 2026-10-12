@@ -108,6 +108,27 @@ function readConsent(): AnalyticsConsent {
   }
 }
 
+function readFavorites(): OsgardGameId[] {
+  const value = readStorage<unknown>(FAVORITES_KEY, [])
+  if (!Array.isArray(value)) return []
+  return value.filter((item): item is OsgardGameId =>
+    typeof item === 'string' && OSGARD_GAMES.some(game => game.id === item)
+  )
+}
+
+function readHistory(): PlayedGame[] {
+  const value = readStorage<unknown>(HISTORY_KEY, [])
+  if (!Array.isArray(value)) return []
+  return value.filter((item): item is PlayedGame => {
+    if (!item || typeof item !== 'object') return false
+    const entry = item as Partial<PlayedGame>
+    return typeof entry.id === 'string'
+      && OSGARD_GAMES.some(game => game.id === entry.id)
+      && typeof entry.at === 'number'
+      && Number.isFinite(entry.at)
+  }).slice(0, 12)
+}
+
 function trackedProjectUrl(url: string, projectId: string) {
   const target = new URL(url)
   target.searchParams.set('utm_source', 'osgard.world')
@@ -121,8 +142,8 @@ export function GamesPlatform() {
   const [search, setSearch] = useState('')
   const [genre, setGenre] = useState<Genre>('all')
   const [sort, setSort] = useState<SortMode>('featured')
-  const [favorites, setFavorites] = useState<OsgardGameId[]>(() => readStorage(FAVORITES_KEY, []))
-  const [history, setHistory] = useState<PlayedGame[]>(() => readStorage(HISTORY_KEY, []))
+  const [favorites, setFavorites] = useState<OsgardGameId[]>(readFavorites)
+  const [history, setHistory] = useState<PlayedGame[]>(readHistory)
   const [consent, setConsent] = useState<AnalyticsConsent>(readConsent)
   const [toast, setToast] = useState('')
   const [mobileMenu, setMobileMenu] = useState(false)
