@@ -15,6 +15,7 @@ assert.ok(css.includes('@media(max-width:760px)'),'Responsive/mobile layout miss
 assert.ok(css.includes('.player-view')&&css.includes('dialog::backdrop'),'Game dialog style missing')
 assert.ok(html.includes('src="./player-lifecycle.js"'),'Self-hosted lifecycle module must be included')
 assert.ok(lifecycle.includes('function markSessionStarted(')&&lifecycle.includes('game_session_completed'),'Actual session lifecycle tracking missing')
+assert.ok(lifecycle.includes('event.preventDefault();event.stopPropagation();launch(id,link.href,false)'),'Launch capture must prevent the legacy card handler from opening the same iframe twice')
 assert.ok(lifecycle.includes('clientReadyMs')&&lifecycle.includes('durationSeconds')&&lifecycle.includes('launchFailure'),'Launch timing and failure recovery missing')
 assert.ok(lifecycle.includes('osgard:game-lifecycle')&&lifecycle.includes('event.origin!==location.origin')&&lifecycle.includes('event.source!==frame.contentWindow'),'Lifecycle message must validate same-origin iframe/source')
 assert.ok(lifecycle.includes('if(!consent||!token)return'),'Lifecycle analytics must require consent and authentication')
