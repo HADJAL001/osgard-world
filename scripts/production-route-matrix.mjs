@@ -53,7 +53,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
           : route === '/entertainment'
             ? response.redirected &&
               new URL(response.url).pathname === '/games/' &&
-              text.includes('<title>OSGARD PLAY — Игровая платформа</title>') &&
+              text.includes('<title>OSGARD WORLD GAMING — Игровая платформа</title>') &&
               text.includes('id="games-grid"') &&
               text.includes('data-game="null-shift"') &&
               text.includes('data-game="remix"')
