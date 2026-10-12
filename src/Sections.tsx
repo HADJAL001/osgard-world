@@ -7,13 +7,13 @@ import { OsgardLogo } from './OsgardLogo'
 type Locale = 'ru' | 'en'
 const botUrl = 'https://t.me/OSGARD_world_bot'
 const products = [
-  ['GARD VPN', 'gardvpn.is', '99.9%', 'Protection without noise.'],
-  ['SENJOR', 'senjorio.com', '7 min', 'Mobility shaped around your time.'],
-  ['OSGARD BUSINESS', 'osgardos.com', '360пїЅ', 'One view for the decisions that matter.'],
-  ['SUPER DAY', 'superday.run', '+2 h', 'A calmer operating rhythm for the day.'],
-  ['NEW WORLD', 'osgardnewworld.com', '2 min', 'From a thought to a working product.'],
-  ['O2 SYSTEM', 'o2system.art', '0.0%', 'Precision for every transaction.'],
-  ['VANGUARD STUDIO', 'osgardvanguard.studio', '4K', 'A finished visual language, on demand.'],
+  ['GARD VPN', 'gardvpn.is', 'VPN', 'A VPN service. Review available capabilities and terms.'],
+  ['SENJORIO', 'senjorio.com', 'TAXI', 'Premium taxi service. Check service area and booking terms.'],
+  ['OSGARD BUSINESS', 'osgardos.com', 'BUSINESS', 'Tools for business development. Review product details.'],
+  ['SUPER DAY', 'superday.run', 'PLANNER', 'A smart map and planner for the day.'],
+  ['NEW WORLD', 'osgardnewworld.com', 'CREATE', 'A platform to explore digital product creation.'],
+  ['O2 SYSTEM', 'o2system.art', 'ACCOUNTING', 'Accounting workflows for exchange offices.'],
+  ['VANGUARD STUDIO', 'osgardvanguard.studio', 'VIDEO', 'Video production and visual content.'],
 ]
 
 const sectionLinks = [['Worlds', '/worlds'], ['Catalog', '/catalog'], ['Chronicle', '/chronicle'], ['Founders', '/masters'], ['Entertainment', '/entertainment'], ['SkillCred', '/skillcred/'], ['Club', '/club']]
@@ -26,7 +26,7 @@ function SectionNav({ locale }: { locale: Locale }) {
 export function EntertainmentPage({ locale, setLocale }: { locale: Locale, setLocale: (v: Locale) => void }) {
   const ru = locale === 'ru'
   const liveGames = [
-    { title: 'ИМПЕРИЯ ВРЕМЕНИ', genre: ru ? 'СЮЖЕТНАЯ СТРАТЕГИЯ' : 'STORY STRATEGY', text: ru ? 'Город, нефть, фракции и решения с последствиями.' : 'A living city shaped by oil, factions and consequential decisions.', href: '/games/time-empire/' },
+    { title: 'ИМПЕРИЯ ВРЕМЕНИ', genre: ru ? 'СЮЖЕТНАЯ СТРАТЕГИЯ' : 'STORY STRATEGY', text: ru ? 'Город, нефть, фракции и решения с последствиями.' : 'A living city shaped by oil, factions and consequential decisions.', href: '/games/time' },
     { title: 'SWARM', genre: ru ? 'КО-ОП СИМУЛЯЦИЯ' : 'CO-OP SIMULATION', text: ru ? 'Выберите роль, синхронизируйте команду и добудьте ядро.' : 'Choose a role, sync the crew and extract the core.', href: '/games/swarm/index.html' },
     { title: 'NULL//SHIFT', genre: ru ? 'КО-ОП RAID' : 'CO-OP RAID', text: ru ? 'Проникновение, терминал, охрана и совместная экстракция.' : 'Infiltration, terminal breach, guards and team extraction.', href: '/games/null-shift/index.html' },
     { title: 'INHERIT', genre: ru ? 'НАСЛЕДИЕ МИРА' : 'LEGACY WORLD', text: ru ? 'Остров меняется от поколения к поколению. Оставьте след.' : 'An island changes from generation to generation. Leave a trace.', href: '/games/inherit/index.html' },
