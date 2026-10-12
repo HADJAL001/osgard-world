@@ -16,8 +16,8 @@ const products = [
   ['VANGUARD STUDIO', 'osgardvanguard.studio', '4K', 'A finished visual language, on demand.'],
 ]
 
-const sectionLinks = [['Worlds', '/worlds'], ['Catalog', '/catalog'], ['Chronicle', '/chronicle'], ['Founders', '/masters'], ['Entertainment', '/entertainment'], ['SkillCred', '/skillcred/'], ['Club', '/club']]
-const ruSectionLabels: Record<string, string> = { Worlds: 'Миры', Catalog: 'Каталог', Chronicle: 'Хроника', Founders: 'Основатели', Entertainment: 'Развлечения', SkillCred: 'SkillCred', Club: 'Клуб' }
+const sectionLinks = [['Worlds', '/worlds'], ['Catalog', '/catalog'], ['Chronicle', '/chronicle'], ['Founders', '/masters'], ['Games', '/games'], ['SkillCred', '/skillcred/'], ['Club', '/club']]
+const ruSectionLabels: Record<string, string> = { Worlds: 'Миры', Catalog: 'Каталог', Chronicle: 'Хроника', Founders: 'Основатели', Games: 'Игры', SkillCred: 'SkillCred', Club: 'Клуб' }
 
 function SectionNav({ locale }: { locale: Locale }) {
   return <nav className="section-nav" aria-label="OSGARD sections">{sectionLinks.map(([label, path], index) => <a href={path} key={path}><small>0{index + 1}</small><span>{locale === 'ru' ? ruSectionLabels[label] : label}</span></a>)}</nav>
