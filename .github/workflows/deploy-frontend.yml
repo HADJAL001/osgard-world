@@ -173,6 +173,25 @@ jobs:
           OSGARD_BASE_URL: https://osgard.world
           SKILLCRED_EXPECT_CURRENT_DESIGN: "1"
         run: npm run qa:production-routes
+      - name: Diagnose API upstream after post-deploy route failure
+        if: failure()
+        env:
+          HOST: ${{ secrets.OSGARD_DEPLOY_HOST }}
+          USER: ${{ secrets.OSGARD_DEPLOY_USER }}
+        run: |
+          set +e
+          ssh -i ~/.ssh/osgard_deploy "$USER@$HOST" '
+            echo "=== container status ==="
+            docker ps --format "{{.Names}} {{.Status}} {{.Ports}}"
+            echo "=== frontend network ==="
+            docker inspect -f "{{.State.Status}} {{json .NetworkSettings.Networks}}" osgard-world
+            echo "=== game API network ==="
+            docker inspect -f "{{.State.Status}} {{json .NetworkSettings.Networks}}" osgard-game-api
+            echo "=== upstream health from frontend container ==="
+            docker exec osgard-world sh -lc "getent hosts osgard-game-api 2>&1 || true; wget -S -T 4 -O- http://osgard-game-api:4317/health 2>&1 || true; tail -n 60 /var/log/nginx/error.log 2>&1 || true"
+            echo "=== host-local API health ==="
+            curl -i --max-time 4 http://127.0.0.1:4317/health 2>&1 || true
+          '
       - name: Test real issue, verify and revoke through OSGARD proxy
         env:
           OSGARD_BASE_URL: https://osgard.world
