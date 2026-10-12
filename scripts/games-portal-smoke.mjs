@@ -3,7 +3,7 @@ import { readFileSync, existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 const root=resolve('public/games')
 const html=readFileSync(resolve(root,'index.html'),'utf8')
-const required=['data-game="null-shift"','data-game="time"','data-game="swarm"','data-game="inherit"','data-game="remix"','id="games-grid"','id="game-search"','data-filter="tactical"','id="player-dialog"','id="player-share"','id="player-fullscreen"','id="analytics-toggle"','id="project-form"','https://wa.me/79640027222','osgardbewworld.com','o2system.art','senjorio.com','superday.run','marcosa.club','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio','href="/games/monetization/"','/games/favicon.svg','/privacy/','/terms/']
+const required=['data-game="null-shift"','data-game="time"','data-game="swarm"','data-game="inherit"','data-game="remix"','id="games-grid"','id="game-search"','data-filter="tactical"','id="player-dialog"','id="player-share"','id="player-fullscreen"','id="analytics-toggle"','id="project-form"','https://wa.me/79640027222','osman.osmanov0099@gmail.com','osgardbewworld.com','o2system.art','senjorio.com','superday.run','marcosa.club','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio','href="/games/monetization/"','/games/favicon.svg','/privacy/','/terms/']
 for(const item of required) assert.ok(html.includes(item),'Games hub missing: '+item)
 for(const path of ['public/games/index.html','public/games/favicon.svg','public/privacy/index.html','public/terms/index.html','public/games/null-shift-godot/index.html','public/games/monetization/index.html','public/games/monetization/app.js','public/games/monetization/model.js']) assert.ok(existsSync(resolve(path)),'Missing file: '+path)
 assert.ok(html.includes('type="application/ld+json"'),'SEO ItemList JSON-LD missing')
@@ -30,5 +30,9 @@ assert.ok(js.includes("localStorage.getItem('osgard.auth.accessToken')")&&js.inc
 assert.ok(js.includes("eventIfAllowed('share_created',id)"),'Share action event missing')
 assert.ok(js.includes('frame.requestFullscreen()'),'Fullscreen action missing')
 assert.ok(!/https?:\/\/(?:fonts\.googleapis\.com|fonts\.gstatic\.com|cdn\.jsdelivr\.net|unpkg\.com)/i.test(html),'External asset CDN found')
-for(const host of ['osgardbewworld.com','o2system.art','senjorio.com','superday.run','marcosa.club','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio']) assert.ok(html.includes('utm_source=osgard_games')&&html.includes(host),'Cross-promo UTM missing for '+host)
+for(const host of ['osgardbewworld.com','o2system.art','senjorio.com','superday.run','marcosa.club','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio']) {
+  const hostPattern = new RegExp('href="https://' + host.replace(/\./g, '\\.') + '[^"]+"', 'g')
+  const links = Array.from(html.matchAll(hostPattern), match => match[0])
+  assert.ok(links.some(link => link.includes('utm_source=osgard_games') && link.includes('utm_medium=cross_promo') && link.includes('utm_campaign=games_hub')), 'Cross-promo URL is missing its UTM campaign parameters for ' + host)
+}
 console.log('PASS OSGARD GAMES HUB: five actual game routes, search/filters, local favorites/history, embedded player/fullscreen/share, consent-gated authenticated analytics, cross-promotion, contact form, SEO, mobile/reduced-motion styling and legal documents.')
