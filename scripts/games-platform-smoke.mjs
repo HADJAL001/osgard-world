@@ -20,6 +20,7 @@ const legal = await read('src/LegalPage.tsx')
 const sitemap = await read('public/sitemap.xml')
 const nginx = await read('nginx.conf')
 const routeMatrix = await read('scripts/production-route-matrix.mjs')
+const legacyGodotEntry = await read('public/games/null-shift-godot/index.html')
 
 for (const [name, path] of [
   ['time strategy', 'src/TimePrototype.tsx'],
@@ -89,6 +90,12 @@ check('Legacy entertainment URLs resolve to the canonical Games hub', () => {
   for (const path of ["location = /entertainment {", "location = /entertainment/ {", "location = /entertainment/index.html {"]) assert.ok(nginx.includes(path), path)
   assert.ok(nginx.includes('return 301 /games;'), 'Legacy route redirects must be permanent and visible')
   assert.ok(routeMatrix.includes("'/entertainment/index.html'") && routeMatrix.includes("response.redirected") && routeMatrix.includes("=== '/games'"), 'Production route matrix must assert redirect target')
+})
+
+check('Legacy NULL//SHIFT Godot URL forwards to existing browser build', () => {
+  assert.ok(legacyGodotEntry.includes('url=/games/null-shift/index.html'))
+  assert.ok(legacyGodotEntry.includes("window.location.replace('/games/null-shift/index.html')"))
+  assert.ok(routeMatrix.includes("legacyGodotRoute ? []"), 'Production checks must not require missing Godot export binaries')
 })
 
 check('Sitemap lists new catalogue pages and has balanced URL elements', () => {
