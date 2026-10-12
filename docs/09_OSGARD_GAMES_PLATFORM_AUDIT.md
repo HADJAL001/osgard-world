@@ -126,3 +126,16 @@
 - Новый smoke test подключён к frontend validation и deploy workflow. Это source/CI-проверка; внешние домены по-прежнему не считаются проверенными по доступности или безопасности без отдельной live-проверки.
 
 Открытые ограничения: серверная аналитика для анонимных посетителей, рекламная сеть/rewarded video, безопасный checkout и административная CMS по-прежнему не подключены. Их нельзя считать реализованными только из-за наличия блоков витрины.
+
+
+## 7. Operator console and API routing — follow-up iteration
+
+The feature branch `fix/osgard-api-proxy-and-admin-analytics-checks` adds a missing Nginx route for the documented internal `osgard-game-api` service and a non-indexed `/games/admin/` LiveOps page.
+
+- Nginx routes `/api/v1/*` to `osgard-game-api:4317` before the SPA fallback. Requests are limited per client IP (15 requests/second with a burst of 30; HTTP 429 on excess), bodies are capped at 256 KiB and upstream connect/read/write times are bounded.
+- The API response is explicitly non-cacheable. Nginx never injects a bearer or moderation token; existing API-side authentication/authorization remains the decision point.
+- The LiveOps page accepts the existing `MODERATION_ADMIN_TOKEN` through an operator-controlled password field. It sends that token only as `X-Moderation-Token`, keeps it in JavaScript memory for that tab, and does not write it to localStorage/sessionStorage.
+- It reads the documented protected endpoints for aggregate summary, cohorts, snapshots and anonymized JSONL export. The page states that it does **not** measure anonymous site visits, ad impressions/eCPM, contact leads, purchases or revenue. No metrics are fabricated.
+- CI/source checks now require the proxy route and protective limits, check the admin page's no-index/token-storage contract, and extend the post-deploy route matrix to require JSON 401/403 responses from protected endpoints when no credentials are sent. This detects an API silently falling through to the SPA and returning HTML with HTTP 200.
+
+**Release condition:** the Nginx route is source-validated in CI; the authenticated production endpoint still needs to be exercised against the real API deployment after publication, including a negative test with no token and a successful request with the correct operator token. The operator must separately provision a strong `MODERATION_ADMIN_TOKEN` in server environment configuration. The value must never be committed or embedded in this page.
