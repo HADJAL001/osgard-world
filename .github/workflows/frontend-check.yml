@@ -8,6 +8,7 @@ on:
       - "scripts/skillcred-page-smoke.mjs"
       - "scripts/time-prototype-smoke.mjs"
       - "scripts/games-portal-smoke.mjs"
+      - "scripts/entertainment-catalog-smoke.mjs"
       - "scripts/games-lighthouse-report.mjs"
       - ".github/workflows/games-lighthouse.yml"
       - "public/games/**"
@@ -52,6 +53,8 @@ jobs:
         run: npm run qa:time-ui
       - name: Verify OSGARD Games portal and Lighthouse guardrails
         run: npm run qa:games-portal
+      - name: Verify OSGARD Entertainment premium catalogue
+        run: npm run qa:entertainment
       - name: Verify partner inventory and enquiry form
         run: npm run qa:partners-page
       - name: Verify ecosystem links, claims, contacts and privacy boundaries
