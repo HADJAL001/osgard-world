@@ -84,3 +84,13 @@ The command npm run qa:null-shift checks required game assets, script syntax, co
 - Render cost measures the final drawing stack; FPS and frame P95 use requestAnimationFrame timestamps. Measurements remain local.
 - Desktop gets a sound toggle in the top controls; touch screens get one in the action strip. Balanced graphics mode remains the fallback for lower-power devices.
 - Automated checks cover source contracts and syntax; they do not replace real-device testing or certify native 8K rendering.
+
+
+## Release 0.6 — WebGL 1.0 renderer
+
+- Added a self-hosted GPU renderer in \`public/games/null-shift/engine-3d.js\`. Procedural meshes and a perspective camera render the arena, raised walls, security gate, terminal, recovery kit, quantum core, extraction pad, destructible field devices, layered operator/guard models, projectiles, electrical hazard telegraphs and particle bursts.
+- The current combat simulation remains authoritative for collisions, health, contracts, upgrades, local career data and objectives. A small state bridge exposes the active scene locally to the renderer; no gameplay data is sent to a server.
+- A separate transparent WebGL canvas renders the scene with perspective projection, directional lighting, specular/rim response, emissive materials, depth testing, translucent effects and GPU-rendered particles. The 2D Canvas is hidden only while WebGL is active; an engine switch and fallback restore it if WebGL is unavailable or the GPU context is lost.
+- Mouse aiming now uses a perspective camera ray intersected with the game plane. The WebGL view retains a tactical minimap, projected objective labels, contextual interaction prompts and a pause overlay.
+- Smoke tests and production route checks now include the renderer asset and the game/renderer bridge.
+- This is procedural WebGL 1.0 3D rendering, not native 8K output. Imported high-resolution art, shadow maps, skeletal animation and a full post-processing bloom pipeline remain future production work.

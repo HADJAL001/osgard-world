@@ -5,16 +5,20 @@ const root = 'public/games/null-shift/'
 const pagePath = root + 'index.html'
 const cssPath = root + 'styles.css'
 const jsPath = root + 'game.js'
-for (const path of [pagePath, cssPath, jsPath]) assert.ok(existsSync(path), 'Missing required game file: ' + path)
+const enginePath = root + 'engine-3d.js'
+for (const path of [pagePath, cssPath, jsPath, enginePath]) assert.ok(existsSync(path), 'Missing required game file: ' + path)
 
 const html = readFileSync(pagePath, 'utf8')
 const css = readFileSync(cssPath, 'utf8')
 const js = readFileSync(jsPath, 'utf8')
+const engine = readFileSync(enginePath, 'utf8')
 
 assert.match(html, /<html lang="ru">/i, 'Game page must declare Russian language')
 assert.match(html, /name="viewport" content="width=device-width,initial-scale=1"/, 'Mobile viewport metadata missing')
 assert.ok(html.includes('href="./styles.css"'), 'Game CSS must be self-hosted')
 assert.ok(html.includes('src="./game.js"'), 'Game JavaScript must be self-hosted')
+assert.ok(html.includes('src="./engine-3d.js"'), 'WebGL engine must be self-hosted')
+assert.ok(html.includes('id="engine-toggle"') && html.includes('id="touch-engine"'), 'Engine switch must exist on desktop and touch')
 assert.ok(!/fonts\.googleapis\.com|fonts\.gstatic\.com|<script[^>]+src=["']https?:/i.test(html), 'External font or script CDN found')
 assert.ok(!/url\(["']?https?:/i.test(css), 'External CSS asset found')
 
@@ -63,4 +67,7 @@ assert.ok(js.includes("localStorage.setItem('null-shift-sound'"), 'Sound prefere
 assert.ok(js.includes('shot:[') && js.includes('shift:[') && js.includes('blast:['), 'Core gameplay sound cues missing')
 
 new Function(js)
-console.log('PASS NULL//SHIFT: standalone assets, core mechanics, touch input, diagnostics, motion preference and JS syntax')
+new Function(engine)
+for (const feature of ["getContext('webgl'",'uMVP','function cube(){','function sphere(','function cylinder(','function ring(','NULL_SHIFT_GET_SCENE_STATE','NULL_SHIFT_SCREEN_TO_WORLD','NULL_SHIFT_TOGGLE_ENGINE','drawParticles']) assert.ok(engine.includes(feature), 'WebGL engine feature missing: ' + feature)
+assert.ok(js.includes('NULL_SHIFT_GET_SCENE_STATE') && js.includes('NULL_SHIFT_SET_RENDER_MODE'), 'Game/WebGL bridge missing')
+console.log('PASS NULL//SHIFT: standalone assets, WebGL renderer, core mechanics, touch input, diagnostics, motion preference and JS syntax')
