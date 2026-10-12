@@ -36,9 +36,9 @@ assert.ok(lifecycle.includes("if(id==='civic-cascade')return !!doc.querySelector
 assert.ok(manifest.includes("'civic-cascade'")&&manifest.includes("title: 'CIVIC CASCADE'")&&manifest.includes("href: '/games/civic-cascade/'"),'Core manifest must register CIVIC CASCADE')
 assert.ok(civic.includes('id="cc-game-root"')&&civic.includes('id="cc-map"')&&civic.includes('id="cc-status"'),'CIVIC CASCADE playable entry point or diagnostics are missing')
 for(const action of ['data-action="pump"','data-action="grid"','data-action="route"','data-action="repair"'])assert.ok(civic.includes(action),'CIVIC CASCADE tactical action missing: '+action)
-for(const feature of ['function riskValue()','function objectiveState()','function checkFinish()','function sendLifecycle(status)','window.requestAnimationFrame(frame)','prefers-reduced-motion:reduce'])assert.ok(civic.includes(feature),'CIVIC CASCADE simulation feature missing: '+feature)
+for(const feature of ['function riskValue()','function objectiveState()','function checkFinish()','function sendLifecycle(status)','requestAnimationFrame(frame)','prefers-reduced-motion:reduce'])assert.ok(civic.includes(feature),'CIVIC CASCADE simulation feature missing: '+feature)
 assert.ok(civic.includes("game:'civic-cascade'")&&civic.includes("type:'osgard:game-lifecycle'"),'CIVIC CASCADE must handshake with the host game-session lifecycle')
-const civicInline=(civic.match(/<script>([\\s\\S]*?)<\\/script>/)||[])[1]
+const civicInline=(civic.match(/<script>([\s\S]*?)<\/script>/)||[])[1]
 assert.ok(civicInline&&civicInline.length>5000,'CIVIC CASCADE self-contained game script missing')
 new Function(civicInline)
 
