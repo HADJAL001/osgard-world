@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark"><meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="no-referrer"><meta name="theme-color" content="#080a0b">
+<link rel="icon" href="/games/favicon.svg" type="image/svg+xml">
+<title>OSGARD Partner Inventory Editor</title>
+<style>
+:root{color-scheme:dark;--bg:#080a0b;--panel:#111517;--ink:#f3f1e8;--muted:#a0a69b;--line:#ffffff20;--accent:#d3ff69;--metal:#d2c9b4;--bad:#ff958e;--good:#b4e98b}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 80% 0,#26342148,transparent 45%),var(--bg);color:var(--ink);font:14px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif}a{color:var(--accent);text-underline-offset:3px}button,input,select,textarea{font:inherit}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:3px}.wrap{width:min(1080px,calc(100% - 32px));margin:auto}.top{height:70px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:16px}.brand{display:flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none;font:600 12px ui-monospace,monospace;letter-spacing:.12em}.brand img{width:32px;height:32px}.brand small{display:block;color:var(--accent);font-size:9px;letter-spacing:.16em;margin-top:4px}.eyebrow{color:var(--accent);font:10px ui-monospace,monospace;letter-spacing:.17em;margin:38px 0 9px}.hero{display:grid;grid-template-columns:1fr .7fr;gap:30px;align-items:end;padding-bottom:24px;border-bottom:1px solid var(--line)}h1{font:400 clamp(38px,6vw,65px)/.98 Georgia,serif;letter-spacing:-.045em;margin:0}.hero p,.intro{color:var(--muted);font-size:12px;max-width:620px}.note{border:1px solid #d3ff6944;background:#d3ff6908;color:#c2c8bb;border-radius:9px;padding:14px;font-size:11px}.note b{color:var(--accent)}.toolbar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:20px 0}.btn{border:1px solid var(--accent);background:var(--accent);color:#11140b;border-radius:6px;padding:11px 14px;font-size:11px;font-weight:700;cursor:pointer}.btn.secondary{background:#ffffff06;border-color:#ffffff35;color:var(--ink)}.btn.danger{border-color:#ff958e66;background:#ff958e0d;color:#ffb2ac}.btn:disabled{opacity:.45;cursor:not-allowed}.status{min-height:20px;color:var(--muted);font-size:11px;overflow-wrap:anywhere}.status[data-kind=error]{color:var(--bad)}.status[data-kind=success]{color:var(--good)}.inventory-head{display:flex;justify-content:space-between;gap:15px;align-items:center;margin:28px 0 12px;flex-wrap:wrap}.inventory-head h2{font:400 27px Georgia,serif;margin:0}.inventory-head small{color:var(--muted);font-size:10px}.editor-list{display:grid;gap:13px}.item{border:1px solid var(--line);border-radius:12px;background:linear-gradient(140deg,#ffffff05,transparent 70%),var(--panel);padding:18px}.item-head{display:flex;align-items:start;justify-content:space-between;gap:12px;margin-bottom:16px}.item-head h3{font:400 24px Georgia,serif;margin:0}.item-head p{font:9px ui-monospace,monospace;color:var(--accent);margin:4px 0 0;letter-spacing:.12em}.fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field{display:grid;gap:5px;min-width:0}.field.full{grid-column:1/-1}.field label{color:var(--muted);font:10px ui-monospace,monospace;letter-spacing:.06em}.field input,.field select,.field textarea{width:100%;min-width:0;border:1px solid #ffffff24;border-radius:6px;background:#080b09;color:var(--ink);padding:10px 11px;font-size:12px}.field textarea{min-height:72px;resize:vertical}.field input[readonly]{color:#7f877b}.status-line{display:flex;justify-content:space-between;gap:12px;margin-top:13px;padding-top:12px;border-top:1px solid var(--line);flex-wrap:wrap}.status-line span{font-size:10px;color:var(--muted)}.lock{color:var(--accent)!important}.empty{border:1px dashed var(--line);border-radius:10px;padding:28px;text-align:center;color:var(--muted)}.foot{border-top:1px solid var(--line);margin-top:40px;padding:22px 0 35px;display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap;font-size:10px;color:var(--muted)}.foot div{display:flex;gap:14px;flex-wrap:wrap}@media(max-width:680px){.hero{grid-template-columns:1fr;gap:10px}.eyebrow{margin-top:27px}.fields{grid-template-columns:1fr}.field.full{grid-column:auto}.item{padding:14px}.item-head h3{font-size:21px}.toolbar .btn{flex:1}.top{height:62px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top"><a class="brand" href="/games/"><img src="/games/favicon.svg" alt=""><span>OSGARD WORLD<small>PARTNER INVENTORY / EDITOR</small></span></a><a href="/games/partners/">← Partner Studio</a></header>
+<p class="eyebrow">COMMERCIAL OPS / CONTENT TOOLING</p>
+<section class="hero"><div><h1>Редактор<br>партнёрских форматов.</h1><p>Редактируйте описания, статус и ограничения размещений в форме, затем скачайте проверенный JSON для публикации. Исходный код страницы менять не требуется.</p></div><aside class="note"><b>Важно: реклама не активируется из этого редактора.</b><br>Экспорт принудительно сохраняет <code>active: false</code> и обязательную маркировку спонсорства. Для реальных показов нужны договор, одобренный провайдер, серверные события и отдельная техническая интеграция.</aside></section>
+<p class="intro">Источник данных — текущий <code>/games/partners/inventory.json</code>. Этот инструмент работает локально в текущей вкладке: он не загружает изменённый файл на сервер и не отправляет ваши правки наружу. После экспорта замените файл в репозитории и опубликуйте изменение через обычный CI.</p>
+<div class="toolbar">
+<button class="btn" id="download" type="button" disabled>Скачать inventory.json ↓</button>
+<button class="btn secondary" id="add" type="button" disabled>+ Добавить формат</button>
+<button class="btn secondary" id="import-button" type="button">Импорт JSON</button>
+<button class="btn secondary" id="reload" type="button">Сбросить к опубликованной версии ↻</button>
+<input id="file" type="file" accept=".json,application/json" hidden>
+</div>
+<p id="status" class="status" role="status">Загружаю текущую конфигурацию…</p>
+<div class="inventory-head"><h2>Рекламный инвентарь</h2><small id="item-count">0 форматов</small></div>
+<div class="editor-list" id="editor-list" aria-live="polite"><div class="empty">Загрузка схемы…</div></div>
+<footer class="foot"><span>OSGARD PARTNER OPS · SCHEMA v1 · NO ACTIVE AD DELIVERY</span><div><a href="/games/admin/">LiveOps</a><a href="/games/privacy.html">Конфиденциальность</a><a href="mailto:osman.osmanov0099@gmail.com?subject=OSGARD%20Partner%20Inventory">Поддержка</a></div></footer>
+</div>
+<script>
+(function(){
+'use strict';
+const $=selector=>document.querySelector(selector);
+const MAX_PLACEMENTS=12;
+let inventory=null;
+const requiredStrings=['id','number','title','where','description','bestFor','statusLabel','frequencyCap','measurement'];
+const limits={id:40,number:4,title:100,where:240,description:600,bestFor:120,statusLabel:50,frequencyCap:240,measurement:600};
+const statusNode=$('#status');
+function message(value,kind=''){statusNode.textContent=value;statusNode.dataset.kind=kind}
+function safeField(value,max){return typeof value==='string'&&value.trim().length>0&&value.length<=max}
+function validate(data){
+ const issues=[];
+ if(!data||typeof data!=='object'||data.schemaVersion!==1)issues.push('schemaVersion должен равняться 1.');
+ if(data?.currency!=='EUR')issues.push('В этой версии разрешена только валюта EUR.');
+ if(data?.commercialStatus!=='inquiry_only')issues.push('commercialStatus должен оставаться inquiry_only.');
+ if(!Array.isArray(data?.placements)||data.placements.length<1||data.placements.length>MAX_PLACEMENTS)issues.push('Число форматов должно быть от 1 до '+MAX_PLACEMENTS+'.');
+ const seen=new Set();
+ for(const [index,item] of (Array.isArray(data?.placements)?data.placements:[]).entries()){
+  for(const key of requiredStrings)if(!safeField(item?.[key],limits[key]))issues.push('Формат '+(index+1)+': проверьте поле '+key+' (лимит '+limits[key]+').');
+  if(typeof item?.id==='string'&&!/^[a-z0-9-]{1,40}$/.test(item.id))issues.push('Формат '+(index+1)+': id должен содержать только a-z, 0-9 и дефис.');
+  if(item&&typeof item.id==='string'){if(seen.has(item.id))issues.push('ID формата повторяется: '+item.id);seen.add(item.id)}
+  if(!['planned','inquiry'].includes(item?.status))issues.push('Формат '+(index+1)+': допустим только статус planned или inquiry.');
+  if(item?.active!==false)issues.push('Формат '+(index+1)+': active обязан быть false до отдельного запуска рекламы.');
+  if(item?.sponsorLabelRequired!==true)issues.push('Формат '+(index+1)+': маркировка спонсорства обязательна.');
+ }
+ return issues;
+}
+function label(text,control,full=false){const wrap=document.createElement('label');wrap.className='field'+(full?' full':'');const name=document.createElement('span');name.textContent=text;wrap.append(name,control);return wrap}
+function input(value,max,readonly=false){const el=document.createElement('input');el.value=String(value??'');el.maxLength=max;el.readOnly=readonly;return el}
+function textarea(value,max){const el=document.createElement('textarea');el.value=String(value??'');el.maxLength=max;return el}
+function update(index,key,value){inventory.placements[index][key]=value;const issues=validate(inventory);$('#download').disabled=issues.length>0;message(issues.length?'Нужны исправления: '+issues.slice(0,2).join(' '):'Изменения готовы к проверке и экспорту.','success')}
+function render(){
+ const root=$('#editor-list');root.replaceChildren();
+ if(!inventory){root.innerHTML='<div class="empty">Сначала загрузите inventory.json.</div>';return}
+ $('#item-count').textContent=inventory.placements.length+' / '+MAX_PLACEMENTS+' форматов';
+ inventory.placements.forEach((item,index)=>{
+  const card=document.createElement('article');card.className='item';
+  const head=document.createElement('div');head.className='item-head';const titleWrap=document.createElement('div'),title=document.createElement('h3'),sub=document.createElement('p');title.textContent=item.title||'Новый формат';sub.textContent='PLACEMENT / '+String(item.number||String(index+1).padStart(2,'0'))+' · '+String(item.id||'draft');titleWrap.append(title,sub);
+  const remove=document.createElement('button');remove.type='button';remove.className='btn danger';remove.textContent='Удалить';remove.disabled=inventory.placements.length<=1;remove.addEventListener('click',()=>{if(!confirm('Удалить формат «'+item.title+'» из будущей версии инвентаря?'))return;inventory.placements.splice(index,1);normalizeNumbers();render();message('Формат удалён локально. Скачайте JSON, чтобы опубликовать это изменение.','success')});head.append(titleWrap,remove);
+  const fields=document.createElement('div');fields.className='fields';
+  const id=input(item.id,limits.id,true);fields.append(label('СИСТЕМНЫЙ ID / НЕ МЕНЯЕТСЯ',id));
+  const number=input(item.number,limits.number,true);fields.append(label('НОМЕР / НЕ МЕНЯЕТСЯ',number));
+  let statusLabelInput=null;
+  for(const [key,caption] of [['title','НАЗВАНИЕ'],['where','РАСПОЛОЖЕНИЕ'],['bestFor','ЦЕЛЬ ИНТЕГРАЦИИ'],['statusLabel','ПУБЛИЧНАЯ МЕТКА СТАТУСА'],['frequencyCap','ЛИМИТ ЧАСТОТЫ / УСЛОВИЯ']]){
+   const el=input(item[key],limits[key]);if(key==='statusLabel')statusLabelInput=el;el.addEventListener('input',()=>{update(index,key,el.value);title.textContent=inventory.placements[index].title||'Новый формат';sub.textContent='PLACEMENT / '+item.number+' · '+item.id});fields.append(label(caption,el))
+  }
+  const desc=textarea(item.description,limits.description);desc.addEventListener('input',()=>update(index,'description',desc.value));fields.append(label('ОПИСАНИЕ ФОРМАТА',desc,true));
+  const measure=textarea(item.measurement,limits.measurement);measure.addEventListener('input',()=>update(index,'measurement',measure.value));fields.append(label('ИЗМЕРЕНИЕ / КРИТЕРИЙ РЕЗУЛЬТАТА',measure,true));
+  const statusLabel=document.createElement('select');for(const [value,text] of [['planned','planned — планируется'],['inquiry','inquiry — по запросу']]){const option=document.createElement('option');option.value=value;option.textContent=text;statusLabel.append(option)}statusLabel.value=item.status;statusLabel.addEventListener('change',()=>{update(index,'status',statusLabel.value);item.statusLabel=statusLabel.value==='planned'?'Предложение':'Запрос предложения';if(statusLabelInput)statusLabelInput.value=item.statusLabel;state.textContent='Публичный статус: '+item.statusLabel});fields.append(label('ВНУТРЕННИЙ СТАТУС',statusLabel));
+  const foot=document.createElement('div');foot.className='status-line';const forced=document.createElement('span');forced.className='lock';forced.textContent='LOCKED · active: false · sponsorLabelRequired: true';const state=document.createElement('span');state.textContent='Публичный статус: '+item.statusLabel;foot.append(forced,state);card.append(head,fields,foot);root.append(card);
+ });
+ const issues=validate(inventory);$('#download').disabled=issues.length>0;$('#add').disabled=inventory.placements.length>=MAX_PLACEMENTS;
+}
+function normalizeNumbers(){inventory.placements.forEach((item,index)=>{item.number=String(index+1).padStart(2,'0')})}
+async function loadPublished(){
+ $('#reload').disabled=true;message('Загружаю опубликованный inventory.json…');
+ try{const response=await fetch('/games/partners/inventory.json',{cache:'no-store',credentials:'same-origin',redirect:'error'});if(!response.ok)throw new Error('HTTP '+response.status);const data=await response.json();const issues=validate(data);if(issues.length)throw new Error(issues.slice(0,3).join(' '));inventory=data;render();$('#add').disabled=inventory.placements.length>=MAX_PLACEMENTS;message('Опубликованная конфигурация загружена. Правки остаются локальными до экспорта.','success')}
+ catch(error){inventory=null;render();message('Не удалось загрузить JSON: '+(error instanceof Error?error.message:'ошибка')+'. Используйте «Импорт JSON», если файл у вас есть.','error')}
+ finally{$('#reload').disabled=false}
+}
+$('#add').addEventListener('click',()=>{
+ if(!inventory||inventory.placements.length>=MAX_PLACEMENTS)return;
+ const existing=new Set(inventory.placements.map(item=>item.id));let n=1,id='';
+ do{id='custom-placement-'+String(n++).padStart(2,'0')}while(existing.has(id));
+ inventory.placements.push({id,number:String(inventory.placements.length+1).padStart(2,'0'),title:'Новый партнёрский формат',where:'Страница /games/ вне игрового поля',description:'Явно маркированное предложение. Не перекрывает игровое поле и элементы управления.',bestFor:'Уточнить задачу партнёра',statusLabel:'Запрос предложения',status:'inquiry',active:false,sponsorLabelRequired:true,frequencyCap:'Утвердить до публикации',measurement:'Определить событие и критерий результата до запуска.'});render();message('Добавлен черновик. Изменения ещё не опубликованы.','success');
+});
+$('#download').addEventListener('click',()=>{
+ if(!inventory)return;inventory.lastReviewed=new Date().toISOString().slice(0,10);
+ inventory.placements=inventory.placements.map((item,index)=>({...item,number:String(index+1).padStart(2,'0'),active:false,sponsorLabelRequired:true}));
+ const issues=validate(inventory);if(issues.length){message('Экспорт остановлен: '+issues.slice(0,4).join(' '),'error');return}
+ const data=JSON.stringify(inventory,null,2)+'\n';const blob=new Blob([data],{type:'application/json;charset=utf-8'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='inventory.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);message('JSON прошёл проверку и скачан. Чтобы опубликовать: замените public/games/partners/inventory.json в репозитории и пропустите обычный CI/deploy. Активные показы не включены.','success');
+});
+$('#import-button').addEventListener('click',()=>$('#file').click());
+$('#file').addEventListener('change',async event=>{const file=event.target.files?.[0];if(!file)return;if(file.size>128*1024){message('Файл больше 128 KiB — импорт отклонён.','error');return}try{const data=JSON.parse(await file.text()),issues=validate(data);if(issues.length)throw new Error(issues.slice(0,5).join(' '));inventory=data;render();message('JSON импортирован и прошёл проверку. Публикации не произошло.','success')}catch(error){message('Импорт отклонён: '+(error instanceof Error?error.message:'некорректный JSON'),'error')}finally{event.target.value=''}});
+$('#reload').addEventListener('click',loadPublished);
+loadPublished();
+})();
+</script>
+</body>
+</html>
