@@ -213,6 +213,7 @@ export function GamesPlatform({ locale, setLocale }: { locale: Locale; setLocale
   const [notice, setNotice] = useState('')
   const [frameLoaded, setFrameLoaded] = useState(false)
   const frameRef = useRef<HTMLIFrameElement>(null)
+  const searchRef = useRef<HTMLInputElement>(null)
   const sessionRecorded = useRef(false)
 
   useEffect(() => {
@@ -241,6 +242,17 @@ export function GamesPlatform({ locale, setLocale }: { locale: Locale; setLocale
     }
     void runProbes()
     return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
+    const onShortcut = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        searchRef.current?.focus()
+      }
+    }
+    window.addEventListener('keydown', onShortcut)
+    return () => window.removeEventListener('keydown', onShortcut)
   }, [])
 
   useEffect(() => {
@@ -377,7 +389,7 @@ export function GamesPlatform({ locale, setLocale }: { locale: Locale; setLocale
                 <p>{t('Ищи по названию, отбирай по жанру, сохраняй избранное. Состояние хранится в этом браузере.', 'Search by name, filter by genre and save favourites. Your library settings stay in this browser.')}</p>
               </div>
               <div className="osg-games-tools">
-                <label className="osg-games-search"><Search size={18} /><span className="osg-games-visually-hidden">{t('Поиск игр', 'Search games')}</span><input value={search} onChange={(event) => setSearch(event.currentTarget.value)} placeholder={t('Название, жанр или описание…', 'Title, genre or description…')} type="search" /><kbd>⌘ / Ctrl K</kbd></label>
+                <label className="osg-games-search"><Search size={18} /><span className="osg-games-visually-hidden">{t('Поиск игр', 'Search games')}</span><input ref={searchRef} value={search} onChange={(event) => setSearch(event.currentTarget.value)} placeholder={t('Название, жанр или описание…', 'Title, genre or description…')} type="search" /><kbd>⌘ / Ctrl K</kbd></label>
                 <div className="osg-games-shelves" role="group" aria-label={t('Раздел каталога', 'Library shelf')}>
                   <button className={shelf === 'all' ? 'is-active' : ''} onClick={() => setShelf('all')}><Gamepad2 size={15} />{t('Все игры', 'All games')}<span>{CATALOG.length}</span></button>
                   <button className={shelf === 'favorites' ? 'is-active' : ''} onClick={() => setShelf('favorites')}><Heart size={15} />{t('Избранное', 'Favourites')}<span>{favorites.length}</span></button>
