@@ -4,9 +4,11 @@ import { resolve } from 'node:path'
 const root=resolve('public/games')
 const html=readFileSync(resolve(root,'index.html'),'utf8')
 const lifecycle=readFileSync(resolve(root,'player-lifecycle.js'),'utf8')
-const required=['data-game="null-shift"','data-game="time"','data-game="swarm"','data-game="inherit"','data-game="remix"','id="games-grid"','id="game-search"','data-filter="tactical"','id="player-dialog"','id="player-share"','id="player-fullscreen"','id="analytics-toggle"','id="project-form"','https://wa.me/79640027222','osgardbewworld.com','o2system.art','senjorio.com','superday.run','marcosa.club','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio','/games/favicon.svg','/privacy/','/terms/']
+const details=readFileSync(resolve(root,'game-details.js'),'utf8')
+const detailsCss=readFileSync(resolve(root,'game-details.css'),'utf8')
+const required=['data-game="null-shift"','data-game="time"','data-game="swarm"','data-game="inherit"','data-game="remix"','id="games-grid"','id="game-search"','data-filter="tactical"','id="player-dialog"','id="post-run-recommendations"','game-details.css','game-details.js','id="player-share"','id="player-fullscreen"','id="analytics-toggle"','id="project-form"','https://wa.me/79640027222','osgardbewworld.com','o2system.art','senjorio.com','superday.run','marcosa.club','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio','/games/favicon.svg','/privacy/','/terms/']
 for(const item of required) assert.ok(html.includes(item),'Games hub missing: '+item)
-for(const path of ['public/games/index.html','public/games/favicon.svg','public/games/player-lifecycle.js','public/privacy/index.html','public/terms/index.html']) assert.ok(existsSync(resolve(path)),'Missing file: '+path)
+for(const path of ['public/games/index.html','public/games/favicon.svg','public/games/player-lifecycle.js','public/games/game-details.js','public/games/game-details.css','public/privacy/index.html','public/terms/index.html']) assert.ok(existsSync(resolve(path)),'Missing file: '+path)
 assert.ok(html.includes('type="application/ld+json"'),'SEO ItemList JSON-LD missing')
 assert.ok(html.includes('<meta name="description"'),'SEO description missing')
 assert.ok(html.includes('prefers-reduced-motion:reduce'),'Reduced motion CSS missing')
@@ -21,6 +23,12 @@ assert.ok(lifecycle.includes('osgard:game-lifecycle')&&lifecycle.includes('event
 assert.ok(lifecycle.includes('if(!consent||!token)return'),'Lifecycle analytics must require consent and authentication')
 new Function(lifecycle)
 assert.ok(lifecycle.includes('dialog#player-dialog{width:100vw'),'Mobile CSS selector must match actual dialog id')
+assert.ok(details.includes('game-details-dialog')&&details.includes('Сведения ↗')&&details.includes('data-field="controls"'),'Per-game details dialog missing')
+assert.ok(details.includes('osgard:game-launching')&&details.includes('osgard:game-completed')&&details.includes('post-run-recommendations'),'Completion-only recommendations and reset events missing')
+assert.ok(!details.includes('localStorage')&&!details.includes('fetch('),'Game details must not write account data or make unapproved network calls')
+new Function(details)
+assert.ok(detailsCss.includes('.game-details-dialog')&&detailsCss.includes('.post-run-recommendations')&&detailsCss.includes('prefers-reduced-motion:reduce'),'Details/recommendation styling or reduced-motion support missing')
+assert.ok(lifecycle.includes("document.dispatchEvent(new Event('osgard:game-launching'))")&&lifecycle.includes("document.dispatchEvent(new CustomEvent('osgard:game-completed'"),'Session lifecycle events are not wired to recommendations')
 const scripts=Array.from(html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)).map(m=>m[1]).filter(s=>s.trim()&&!s.trim().startsWith('{'))
 assert.ok(scripts.length,'Inline application JavaScript not found')
 const js=scripts[scripts.length-1]
@@ -31,4 +39,4 @@ assert.ok(js.includes("eventIfAllowed('share_created',id)"),'Share action event 
 assert.ok(js.includes('frame.requestFullscreen()'),'Fullscreen action missing')
 assert.ok(!/https?:\/\/(?:fonts\.googleapis\.com|fonts\.gstatic\.com|cdn\.jsdelivr\.net|unpkg\.com)/i.test(html),'External asset CDN found')
 for(const host of ['osgardbewworld.com','o2system.art','senjorio.com','superday.run','marcosa.club','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio']) assert.ok(html.includes('utm_source=osgard_games')&&html.includes(host),'Cross-promo UTM missing for '+host)
-console.log('PASS OSGARD GAMES HUB: five actual game routes, search/filters, local favorites/history, embedded player/fullscreen/share, consent-gated authenticated analytics, cross-promotion, contact form, SEO, mobile/reduced-motion styling and legal documents.')
+console.log('PASS OSGARD GAMES HUB: five real game routes, search/filters, local favorites/history, per-game technical details, confirmed-completion recommendations, embedded player/fullscreen/share, consent-gated authenticated analytics, cross-promotion, contact form, SEO, mobile/reduced-motion styling and legal documents.')

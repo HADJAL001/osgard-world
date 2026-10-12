@@ -14,6 +14,7 @@ const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm'
 await check('typecheck', npm, ['run', 'check'])
 await check('dependency-audit', npm, ['audit', '--audit-level=high'])
 await check('core-state-smoke', npm, ['run', 'qa:core'])
+await check('games-portal-smoke', npm, ['run', 'qa:games-portal'])
 await check('event-queue-smoke', npm, ['run', 'qa:queue'])
 await check('api-smoke', npm, ['run', 'qa:api'])
 await check('production-api-probe', npm, ['run', 'qa:production-api'])
