@@ -154,11 +154,23 @@ export function GamesPlatform() {
   const [formNotice, setFormNotice] = useState('')
   const [onlyFavorites, setOnlyFavorites] = useState(false)
   const viewTracked = useRef(false)
+  const searchRef = useRef<HTMLInputElement>(null)
 
   const track = (name: 'portal_opened' | 'game_opened' | 'share_created', payload: Record<string, unknown> = {}) => {
     if (consent !== 'analytics') return
     recordOsgardEvent(name, { ...payload, surface: 'games-platform' })
   }
+
+  useEffect(() => {
+    const onSearchShortcut = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        searchRef.current?.focus()
+      }
+    }
+    window.addEventListener('keydown', onSearchShortcut)
+    return () => window.removeEventListener('keydown', onSearchShortcut)
+  }, [])
 
   useEffect(() => {
     document.title = 'OSGARD PLAY — игровые миры'
@@ -326,7 +338,7 @@ export function GamesPlatform() {
           <div className="owg-catalog-count"><strong>{String(filteredGames.length).padStart(2, '0')}</strong><span>из {String(OSGARD_GAMES.length).padStart(2, '0')}</span></div>
         </div>
         <div className="owg-tools">
-          <label className="owg-search"><Search size={18} /><input value={search} onChange={event => setSearch(event.target.value)} type="search" placeholder="Поиск игр, жанров и механик" aria-label="Поиск игр" />{search && <button type="button" aria-label="Очистить поиск" onClick={() => setSearch('')}><X size={15} /></button>}</label>
+          <label className="owg-search"><Search size={18} /><input ref={searchRef} value={search} onChange={event => setSearch(event.target.value)} type="search" placeholder="Поиск игр, жанров и механик" aria-label="Поиск игр" />{search && <button type="button" aria-label="Очистить поиск" onClick={() => setSearch('')}><X size={15} /></button>}</label>
           <div className="owg-sort-wrap"><label htmlFor="owg-sort">Сортировка</label><select id="owg-sort" value={sort} onChange={event => setSort(event.target.value as SortMode)}><option value="featured">Рекомендуем</option><option value="recent">Недавно открытые</option><option value="az">По алфавиту</option></select></div>
         </div>
         <div className="owg-filter-row" role="group" aria-label="Фильтр по жанрам">{genreOptions.map(item => <button key={item.id} type="button" className={genre === item.id ? 'is-selected' : ''} aria-pressed={genre === item.id} onClick={() => setGenre(item.id)}>{item.label}</button>)}<button type="button" className={'owg-fav-filter' + (onlyFavorites ? ' is-selected' : '')} aria-pressed={onlyFavorites} onClick={() => setOnlyFavorites(value => !value)}><Heart size={14} /> Избранное <span>{favorites.length}</span></button></div>
