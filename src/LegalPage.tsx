@@ -6,7 +6,6 @@ import './games-hub.css'
 type LegalKind = 'privacy' | 'terms'
 
 export function LegalPage({ kind }: { kind: LegalKind }) {
-  const ru = true
   const privacy = kind === 'privacy'
   useEffect(() => {
     document.title = privacy ? 'Конфиденциальность — OSGARD WORLD' : 'Условия использования — OSGARD WORLD'
