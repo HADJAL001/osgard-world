@@ -3,7 +3,7 @@ import { readFileSync, existsSync, statSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
 const root = 'godot/null-shift'
-const required = ['project.godot','export_presets.cfg','scenes/main.tscn','scripts/main.gd','README.md']
+const required = ['project.godot','export_presets.cfg','scenes/main.tscn','scripts/main.gd','tests/runtime_smoke.gd','README.md']
 for (const path of required) assert.ok(existsSync(join(root, path)), 'Missing Godot project file: ' + path)
 const project = readFileSync(join(root, 'project.godot'), 'utf8')
 const preset = readFileSync(join(root, 'export_presets.cfg'), 'utf8')

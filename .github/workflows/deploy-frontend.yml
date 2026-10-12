@@ -73,6 +73,11 @@ jobs:
           test -s "$HOME/.local/share/godot/export_templates/4.7.2.stable/web_nothreads_release.zip"
       - name: Import and parse the Godot project
         run: /tmp/osgard-godot/Godot_v4.7.2-stable_linux.x86_64 --headless --editor --path godot/null-shift --quit
+      - name: Runtime-smoke gameplay state transitions in headless Godot
+        run: |
+          set -euo pipefail
+          /tmp/osgard-godot/Godot_v4.7.2-stable_linux.x86_64 --headless --path godot/null-shift --script res://tests/runtime_smoke.gd 2>&1 | tee /tmp/null-shift-godot-runtime.log
+          ! grep -E 'SCRIPT ERROR:|Parse Error:|RUNTIME_SMOKE_FAILURE:' /tmp/null-shift-godot-runtime.log
       - name: Export Godot Web game
         run: |
           mkdir -p public/games/null-shift-godot
