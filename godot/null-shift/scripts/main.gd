@@ -183,26 +183,49 @@ func _ready() -> void:
 
 func _reset_runtime_collections() -> void:
 	# Array/Dictionary values declared with literals can be shared as script defaults.
-	# Every gameplay instance must own fresh transient state, especially in tests/reloads.
-	materials = {}
-	guards = []
-	devices = []
-	phase_lanes = []
-	phase_lane_labels = []
-	effects = []
-	beam_pool = []
-	beam_effects = []
-	ring_pool = []
-	ring_effects = []
-	operator_leg_pivots = []
-	frame_samples = []
-	local_lights = []
-	mobile_move_buttons = []
-	mobile_move_spacers = []
-	mobile_action_buttons = []
-	crosshair_parts = []
-	target_lock_brackets = []
-	mobile_actions = {"up": false, "down": false, "left": false, "right": false}
+	# Duplicate each collection before clearing it so repeated scene instances cannot cross-contaminate.
+	materials = materials.duplicate()
+	materials.clear()
+	guards = guards.duplicate()
+	guards.clear()
+	devices = devices.duplicate()
+	devices.clear()
+	phase_lanes = phase_lanes.duplicate()
+	phase_lanes.clear()
+	phase_lane_labels = phase_lane_labels.duplicate()
+	phase_lane_labels.clear()
+	effects = effects.duplicate()
+	effects.clear()
+	beam_pool = beam_pool.duplicate()
+	beam_pool.clear()
+	beam_effects = beam_effects.duplicate()
+	beam_effects.clear()
+	ring_pool = ring_pool.duplicate()
+	ring_pool.clear()
+	ring_effects = ring_effects.duplicate()
+	ring_effects.clear()
+	operator_leg_pivots = operator_leg_pivots.duplicate()
+	operator_leg_pivots.clear()
+	frame_samples = frame_samples.duplicate()
+	frame_samples.clear()
+	local_lights = local_lights.duplicate()
+	local_lights.clear()
+	mobile_move_buttons = mobile_move_buttons.duplicate()
+	mobile_move_buttons.clear()
+	mobile_move_spacers = mobile_move_spacers.duplicate()
+	mobile_move_spacers.clear()
+	mobile_action_buttons = mobile_action_buttons.duplicate()
+	mobile_action_buttons.clear()
+	crosshair_parts = crosshair_parts.duplicate()
+	crosshair_parts.clear()
+	target_lock_brackets = target_lock_brackets.duplicate()
+	target_lock_brackets.clear()
+	mobile_actions = mobile_actions.duplicate()
+	mobile_actions.clear()
+	mobile_actions["up"] = false
+	mobile_actions["down"] = false
+	mobile_actions["left"] = false
+	mobile_actions["right"] = false
 
 func _process(delta: float) -> void:
 	var dt := minf(delta, 0.06)

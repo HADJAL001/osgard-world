@@ -117,3 +117,9 @@ The deployment workflow downloads official Godot 4.7.2 and matching web template
 
 - Each Godot game instance now allocates fresh runtime arrays and dictionaries in `_ready()`. This avoids accumulated references across repeated scene instances, test harnesses or scene reloads, including guard/device lists, effect pools, phase HUD chips, operator pivots, mobile controls and target-lock corners.
 - The runtime smoke checks still require exactly three phase-lane indicators and exactly eight target-lock corners; the source-contract test now guards the per-instance collection reset explicitly.
+
+
+## Release 1.6 — isolate reference-backed runtime state
+
+- Fixed the root cause of duplicated phase HUD-chip references: GDScript Arrays and Dictionaries are reference-backed, and assigning empty literal defaults did not reliably isolate multiple scene instances in the headless runtime harness. Every transient array/dictionary is now duplicated before being cleared and reused by a fresh game instance.
+- Removed temporary phase-HUD debug printing. The runtime smoke retains the strict requirement of exactly three live phase-lane labels and exactly eight target-lock corner pieces.
