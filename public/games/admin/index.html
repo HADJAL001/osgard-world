@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#080a0b">
+<link rel="icon" href="/games/favicon.svg" type="image/svg+xml">
+<title>OSGARD LIVEOPS — операторская аналитика</title>
+<style>
+:root{color-scheme:dark;--bg:#080a0b;--panel:#101315;--panel2:#161b18;--line:#ffffff20;--accent:#d3ff69;--metal:#d2c9b4;--ink:#f2f0e8;--muted:#a0a69b;--bad:#ff958e;--good:#b4e98b}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 85% 0,#27312350,transparent 42%),var(--bg);color:var(--ink);font:14px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}a{color:var(--accent);text-underline-offset:4px}button,input{font:inherit}button,a,input{outline-offset:3px}button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--accent)}.wrap{width:min(1120px,calc(100% - 32px));margin:auto}.top{height:72px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:20px}.brand{display:flex;gap:10px;align-items:center;text-decoration:none;color:var(--ink);font:600 12px ui-monospace,monospace;letter-spacing:.13em}.brand img{width:32px;height:32px}.top small{display:block;color:var(--accent);font-size:9px;margin-top:4px;letter-spacing:.14em}.kicker{margin:42px 0 9px;color:var(--accent);font:10px ui-monospace,monospace;letter-spacing:.17em}.hero{display:grid;grid-template-columns:1fr .75fr;gap:34px;align-items:end;padding:12px 0 28px}.hero h1{font:400 clamp(40px,6vw,64px)/.98 Georgia,serif;letter-spacing:-.045em;margin:0}.hero p{color:var(--muted);max-width:620px;font-size:12px}.state{font:10px ui-monospace,monospace;color:var(--muted);border-left:2px solid var(--accent);padding:10px 14px;background:#d3ff6908}.panel{border:1px solid var(--line);background:linear-gradient(145deg,#ffffff06,transparent 55%),var(--panel);border-radius:13px;padding:20px;margin:16px 0}.panel h2{font:400 25px Georgia,serif;margin:0 0 10px}.small{font-size:11px;color:var(--muted)}.auth-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;margin-top:15px}.input{width:100%;min-width:0;background:#080b09;border:1px solid #ffffff2d;border-radius:7px;color:var(--ink);padding:12px}.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--accent);border-radius:7px;background:var(--accent);color:#12150c;font-weight:700;padding:11px 15px;cursor:pointer;font-size:11px}.btn.secondary{border-color:#ffffff30;color:var(--ink);background:#ffffff06}.btn:disabled{opacity:.55;cursor:wait}.message{font-size:12px;min-height:20px;color:var(--muted);overflow-wrap:anywhere}.message[data-kind=error]{color:var(--bad)}.message[data-kind=success]{color:var(--good)}.dashboard[hidden]{display:none}.controls{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto auto;gap:9px;align-items:end}.field{display:grid;gap:5px}.field label{font-size:10px;letter-spacing:.07em;color:var(--muted)}.field input{font-size:12px}.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:15px}.metric{padding:15px;border:1px solid var(--line);border-radius:9px;background:#ffffff03;min-width:0}.metric span{display:block;font-size:10px;color:var(--muted)}.metric strong{display:block;font:400 clamp(22px,3vw,34px)/1.2 Georgia,serif;margin-top:6px;overflow-wrap:anywhere}.data{background:#080b09;border:1px solid var(--line);border-radius:8px;padding:13px;overflow:auto;max-height:320px;color:#ccd0c5;font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere}.columns{display:grid;grid-template-columns:1fr 1fr;gap:14px}.row{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}.notice{border-left:2px solid #d7b978;padding:12px 14px;background:#d7b97809;color:#b4b8ac;font-size:11px;margin-top:14px}.notice strong{color:var(--metal)}.footer{padding:28px 0 40px;border-top:1px solid var(--line);margin-top:38px;color:var(--muted);font-size:10px;display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap}.footer-links{display:flex;gap:15px;flex-wrap:wrap}@media(max-width:760px){.hero{grid-template-columns:1fr;gap:10px;padding-top:20px}.kicker{margin-top:29px}.controls{grid-template-columns:1fr 1fr}.controls .btn{min-height:42px}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.columns{grid-template-columns:1fr}.panel{padding:15px}.auth-form{grid-template-columns:1fr}.auth-form .btn{width:100%}.top{height:64px}}@media(max-width:410px){.controls{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.metric{padding:12px}.metric strong{font-size:25px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+<a class="brand" href="/games/"><img src="/games/favicon.svg" alt=""><span>OSGARD WORLD<small>LIVEOPS / GAMES</small></span></a>
+<a href="/games/">← К каталогу игр</a>
+</header>
+<p class="kicker">PRIVATE OPERATIONS / API AGGREGATES</p>
+<section class="hero"><div><h1>Операторская<br>панель.</h1><p>Сводные игровые события, игроки, результаты и когортная активность из защищённого API OSGARD. Панель не собирает статистику сама и не создаёт фиктивные цифры.</p></div><div class="state" id="connection-state" role="status">API STATUS / НЕ ПОДКЛЮЧЁН</div></section>
+<section class="panel" id="access-panel">
+<h2>Доступ оператора</h2>
+<p class="small">Введите серверный MODERATION_ADMIN_TOKEN. Он хранится только в памяти этой вкладки и передаётся в заголовке X-Moderation-Token на same-origin API. Не вводите Supabase user token, пароль или платёжный ключ. При перезагрузке страницы поле потребуется заполнить снова.</p>
+<form id="access-form" class="auth-form"><label class="field"><span>ОПЕРАТОРСКИЙ ТОКЕН</span><input class="input" id="operator-token" type="password" required minlength="8" maxlength="512" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Вставьте токен из серверного secret store"></label><button class="btn" id="connect-button" type="submit">Подключить API ↗</button></form>
+<p class="message" id="access-status" role="status"></p>
+</section>
+<section class="dashboard" id="dashboard" hidden>
+<div class="panel">
+<div class="row"><div><h2>Обзор API</h2><p class="small">Период применяется к сводке и выгрузке событий. Время вводится локально и передаётся API как epoch milliseconds.</p></div><button id="disconnect" class="btn secondary" type="button">Отключить токен</button></div>
+<div class="controls">
+<label class="field"><span>С НАЧАЛА</span><input class="input" id="from-date" type="datetime-local" required></label>
+<label class="field"><span>ПО</span><input class="input" id="to-date" type="datetime-local" required></label>
+<button class="btn" id="refresh" type="button">Обновить ↻</button>
+<button class="btn secondary" id="export" type="button">Экспорт JSONL ↓</button>
+</div>
+<p class="message" id="refresh-status" role="status"></p>
+<div class="metrics" id="metrics" aria-live="polite"><article class="metric"><span>Статус</span><strong>Ожидание</strong></article></div>
+<div class="notice"><strong>Граница данных.</strong> API учитывает только события/результаты, реально записанные игровым backend. Эта панель не показывает все анонимные посещения сайта, рекламные показы/eCPM, заявки, выручку или платёжную конверсию: соответствующие серверные контуры пока не подключены.</div>
+</div>
+<div class="columns">
+<section class="panel"><h2>Когорты</h2><p class="small">Агрегаты активности игроков по первому дню появления. Сырые идентификаторы игроков здесь не отображаются.</p><pre class="data" id="cohorts-data">Нет данных</pre></section>
+<section class="panel"><h2>Снимки аналитики</h2><p class="small">Сохранённые агрегатные snapshots, если операторское расписание/cron уже было настроено.</p><pre class="data" id="snapshots-data">Нет данных</pre></section>
+</div>
+<section class="panel"><div class="row"><h2>Последний ответ API</h2><span class="small">JSON · защищённый контур</span></div><pre class="data" id="summary-data">Нет данных</pre></section>
+</section>
+<footer class="footer"><span>OSGARD LIVEOPS · Только агрегированная служебная аналитика</span><div class="footer-links"><a href="/games/privacy.html">Конфиденциальность</a><a href="mailto:osman.osmanov0099@gmail.com?subject=OSGARD%20LiveOps">Поддержка</a></div></footer>
+</div>
+<script>
+(function(){
+'use strict';
+const $=selector=>document.querySelector(selector);
+let operatorToken='';
+const state=$('#connection-state');
+const setMessage=(node,message,kind='')=>{node.textContent=message;node.dataset.kind=kind};
+const escapeText=value=>String(value??'');
+const dateInputValue=date=>{const offset=date.getTimezoneOffset();return new Date(date.getTime()-offset*60000).toISOString().slice(0,16)};
+const tokenHeaders=()=>({'X-Moderation-Token':operatorToken,'Accept':'application/json','Cache-Control':'no-store'});
+async function readApi(path,options={}){
+ const response=await fetch(path,{...options,headers:{...tokenHeaders(),...(options.headers||{})},cache:'no-store',credentials:'same-origin',redirect:'error'});
+ const body=await response.text();
+ let data;
+ try{data=body?JSON.parse(body):{}}catch(_){throw new Error('API вернул не JSON. Проверьте Nginx /api/v1 и состояние сервиса.')}
+ if(!response.ok){
+  if(response.status===401||response.status===403)throw new Error('Доступ отклонён: токен не принят или у него нет прав (HTTP '+response.status+').');
+  if(response.status===429)throw new Error('Слишком много запросов (HTTP 429). Подождите и обновите один раз.');
+  throw new Error('API ответил HTTP '+response.status+': '+String(data.detail||data.error||data.message||'запрос не выполнен').slice(0,220));
+ }
+ return data;
+}
+const labels={events:'Игровые события',eventCount:'Игровые события',distinctPlayers:'Уникальные игроки',players:'Игроки',playerCount:'Игроки',results:'Результаты',resultCount:'Результаты',games:'Игры с активностью',reports:'Жалобы',openReports:'Открытые жалобы',sessions:'Сессии'};
+function collectMetrics(source){
+ const found=[],seen=new Set();
+ function visit(value,path,depth){
+  if(!value||typeof value!=='object'||depth>3)return;
+  if(Array.isArray(value))return;
+  for(const [key,item] of Object.entries(value)){
+   const nice=labels[key]||labels[key[0]?.toLowerCase()+key.slice(1)];
+   if(nice&&typeof item==='number'&&Number.isFinite(item)&&!seen.has(nice)){seen.add(nice);found.push({label:nice,value:item})}
+   else if(item&&typeof item==='object')visit(item,path?path+'.'+key:key,depth+1);
+  }
+ }
+ visit(source,'',0);return found.slice(0,9);
+}
+function paintMetrics(data){
+ const root=$('#metrics');root.replaceChildren();
+ const rows=collectMetrics(data);
+ if(!rows.length){const card=document.createElement('article');card.className='metric';const l=document.createElement('span'),v=document.createElement('strong');l.textContent='Сводка';v.textContent='Полный JSON ниже';card.append(l,v);root.append(card);return}
+ for(const row of rows){const card=document.createElement('article');card.className='metric';const label=document.createElement('span'),value=document.createElement('strong');label.textContent=row.label;value.textContent=new Intl.NumberFormat('ru-RU').format(row.value);card.append(label,value);root.append(card)}
+}
+function setJson(selector,data){$(selector).textContent=JSON.stringify(data,null,2).slice(0,12000)}
+function dateRange(){
+ const fromValue=$('#from-date').value,toValue=$('#to-date').value;
+ const from=Date.parse(fromValue),to=Date.parse(toValue);
+ if(!Number.isFinite(from)||!Number.isFinite(to)||from>=to)throw new Error('Укажите корректный диапазон: начало раньше конца.');
+ return {from,to};
+}
+async function refresh(){
+ if(!operatorToken)return;
+ const button=$('#refresh');button.disabled=true;setMessage($('#refresh-status'),'Запрашиваю защищённые агрегаты…');
+ try{
+  const {from,to}=dateRange();
+  const [summary,cohorts,snapshots]=await Promise.all([
+   readApi('/api/v1/analytics/summary?from='+encodeURIComponent(from)+'&to='+encodeURIComponent(to)),
+   readApi('/api/v1/analytics/cohorts'),
+   readApi('/api/v1/analytics/snapshots')
+  ]);
+  paintMetrics(summary);setJson('#summary-data',summary);setJson('#cohorts-data',cohorts);setJson('#snapshots-data',snapshots);
+  state.textContent='API STATUS / ПОДКЛЮЧЁН';setMessage($('#refresh-status'),'Обновлено '+new Date().toLocaleString('ru-RU'),'success');
+ }catch(error){setMessage($('#refresh-status'),error instanceof Error?error.message:'Ошибка API','error');state.textContent='API STATUS / ОШИБКА'}
+ finally{button.disabled=false}
+}
+$('#access-form').addEventListener('submit',async event=>{
+ event.preventDefault();operatorToken=$('#operator-token').value.trim();
+ if(operatorToken.length<8){setMessage($('#access-status'),'Введите токен оператора.','error');return}
+ $('#connect-button').disabled=true;setMessage($('#access-status'),'Проверка доступа к API…');
+ try{
+  // The protected summary endpoint validates the secret; it is never stored in local/session storage.
+  const {from,to}=dateRange();
+  const data=await readApi('/api/v1/analytics/summary?from='+encodeURIComponent(from)+'&to='+encodeURIComponent(to));
+  $('#dashboard').hidden=false;$('#operator-token').value='';$('#access-panel').hidden=true;
+  paintMetrics(data);setJson('#summary-data',data);state.textContent='API STATUS / ПОДКЛЮЧЁН';
+  setMessage($('#refresh-status'),'Токен принят. Загружаются дополнительные агрегаты…','success');
+  await refresh();
+ }catch(error){operatorToken='';setMessage($('#access-status'),error instanceof Error?error.message:'Ошибка API','error');state.textContent='API STATUS / ДОСТУП НЕ ПОДТВЕРЖДЁН'}
+ finally{$('#connect-button').disabled=false}
+});
+$('#refresh').addEventListener('click',refresh);
+$('#from-date').addEventListener('change',()=>{if(operatorToken)refresh()});
+$('#to-date').addEventListener('change',()=>{if(operatorToken)refresh()});
+$('#disconnect').addEventListener('click',()=>{operatorToken='';$('#dashboard').hidden=true;$('#access-panel').hidden=false;$('#operator-token').value='';$('#summary-data').textContent='Нет данных';$('#cohorts-data').textContent='Нет данных';$('#snapshots-data').textContent='Нет данных';$('#metrics').replaceChildren();state.textContent='API STATUS / ОТКЛЮЧЁН';setMessage($('#access-status'),'Токен очищен из памяти вкладки.');});
+$('#export').addEventListener('click',async()=>{
+ if(!operatorToken)return;
+ const button=$('#export');button.disabled=true;
+ try{
+  const {from,to}=dateRange();const text=await fetch('/api/v1/analytics/export?from='+encodeURIComponent(from)+'&to='+encodeURIComponent(to),{headers:tokenHeaders(),cache:'no-store',credentials:'same-origin',redirect:'error'}).then(async r=>{const body=await r.text();if(!r.ok)throw new Error('Экспорт не выполнен (HTTP '+r.status+').');return body});
+  const lines=text.split(/\r?\n/).filter(Boolean);for(const line of lines)JSON.parse(line);
+  const blob=new Blob([text],{type:'application/x-ndjson;charset=utf-8'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='osgard-games-aggregate-events.jsonl';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);setMessage($('#refresh-status'),'Агрегатный JSONL экспортирован. Строк: '+lines.length,'success');
+ }catch(error){setMessage($('#refresh-status'),error instanceof Error?error.message:'Ошибка экспорта','error')}
+ finally{button.disabled=false}
+});
+const now=new Date(),monthAgo=new Date(now.getTime()-30*24*60*60*1000);$('#from-date').value=dateInputValue(monthAgo);$('#to-date').value=dateInputValue(now);
+})();
+</script>
+</body>
+</html>
