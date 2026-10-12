@@ -23,6 +23,7 @@ const portalApp = readFileSync('src/App.tsx', 'utf8')
 const gameManifest = readFileSync('src/core/manifest.ts', 'utf8')
 const entertainmentCatalog = readFileSync('src/EntertainmentCatalog.tsx', 'utf8')
 const staticEntertainment = readFileSync('public/entertainment/index.html', 'utf8')
+const gamesHub = readFileSync('public/games/index.html', 'utf8')
 const packageJson = JSON.parse(readFileSync('package.json', 'utf8'))
 assert.match(project, /config\/name="NULL SHIFT"/, 'Safe Godot export project name missing')
 assert.match(project, /config\/features=PackedStringArray\("4\.7", "GL Compatibility"\)/, 'Godot 4.7 compatibility renderer target missing')
@@ -40,7 +41,8 @@ assert.ok(oldPage.includes('id="godot-preview"') && oldPage.includes('../null-sh
 assert.ok(portalApp.includes('href="/games/null-shift-godot/"'), 'The OSGARD featured-game gateway must launch Godot by default')
 assert.ok(gameManifest.includes("href: '/games/null-shift-godot/index.html'"), 'The game manifest must route NULL SHIFT to Godot')
 assert.ok(entertainmentCatalog.includes("'/games/null-shift-godot/index.html'"), 'The React entertainment catalogue must route NULL SHIFT to Godot')
-assert.ok(staticEntertainment.includes('href="/games/null-shift-godot/index.html"'), 'The static entertainment catalogue must route NULL SHIFT to Godot')
+assert.ok(staticEntertainment.includes('content="0;url=/games/"') && staticEntertainment.includes("window.location.replace('/games/')"), 'The legacy static entertainment route must forward to the canonical Games hub')
+assert.ok(gamesHub.includes('data-game="null-shift"') && gamesHub.includes('href="/games/null-shift-godot/"'), 'The canonical Games hub must route NULL SHIFT to the Godot build')
 for (const feature of [
   '_create_arena(', '_create_arena_props(', '_update_objective_compass(', '_create_damage_direction_ui(', '_update_damage_direction_ui(', '_show_damage_direction(', 'damage_direction_timer', 'damage_direction_arrow', 'CAMERA_BASE_FOV', 'var target_fov: float', 'camera.fov = lerpf(', 'objective_compass_arrow', 'objective_compass_text', '_create_phase_lanes(', '_update_phase_lanes(', 'phase_lane_labels', 'phase_lane_status_row', 'health_bar_fill', 'ProgressBar.new()', 'SurgeHead', 'SurgeRing', 'SurgeWake', 'pulse_wake.position.x = travel_x - 0.58', 'К%d · ОПАСНО', '_check_phase_lane_damage(', '_is_player_inside_phase_lane(', '_create_player(', '_create_initial_guards(', '_select_aim_target(', '_has_clear_path_to_aim_target(', '_update_target_lock_ui(', '_create_target_lock_ui(', 'target_lock_health_bar', 'target_lock_brackets', 'aim_target_node', 'camera.unproject_position(world_anchor)', 'query.collision_mask = 3', '_fire_weapon(',
   '_submit_cipher_key(', '_animate_security_gate_open(', '_finish_security_gate_open(', 'gate_motion_tween', 'gate_indicator_strip', 'gate_status_light', 'GateJamb_North', '_destroy_device(', '_deploy_pulse(', '_shift_layer(',
