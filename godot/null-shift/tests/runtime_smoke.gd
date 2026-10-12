@@ -21,6 +21,14 @@ func _run_smoke() -> void:
 	await process_frame
 	await process_frame
 	print("RUNTIME_STAGE: scene ready")
+	if not _expect(is_instance_valid(game.briefing_panel), "first-run briefing panel must instantiate"):
+		return
+	game._show_briefing()
+	if not _expect(game.briefing_visible and game.paused_game and game.briefing_panel.visible, "opening the briefing must pause the combat simulation"):
+		return
+	game._dismiss_briefing()
+	if not _expect(not game.briefing_visible and not game.paused_game and bool(game.career.get_value("settings", "briefing_seen", false)), "dismissing briefing must resume gameplay and persist completion"):
+		return
 	game.sound_enabled = false
 
 	if not _expect(is_instance_valid(game.player), "operator must instantiate"):

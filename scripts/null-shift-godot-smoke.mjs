@@ -23,10 +23,10 @@ assert.ok(oldPage.includes('id="godot-preview"') && oldPage.includes('../null-sh
 for (const feature of [
   '_create_arena(', '_create_arena_props(', '_create_player(', '_create_initial_guards(', '_fire_weapon(',
   '_submit_cipher_key(', '_destroy_device(', '_deploy_pulse(', '_shift_layer(',
-  '_finish_mission(', '_create_mobile_controls(', '_update_hud(', '_create_crosshair(', '_update_crosshair(', '_screen_impulse(', '_add_sphere_mesh(',
+  '_finish_mission(', '_create_mobile_controls(', '_update_hud(', '_create_crosshair(', '_update_crosshair(', '_create_briefing_panel(', '_add_briefing_step(', '_dismiss_briefing(', '_show_briefing(', '_screen_impulse(', '_add_sphere_mesh(',
   'Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME', 'AudioStreamWAV.new()',
   'CPUParticles3D.new()', 'TorusMesh.new()', 'glow_enabled', 'shadow_enabled',
-  'user://null_shift_career.cfg', 'KEY_F2', 'KEY_F3', 'dash_windup', 'dash_timer', 'HEAVY', 'STALKER', 'camera_shake_timer', 'fog_enabled', 'current_frame_ms'
+  'user://null_shift_career.cfg', 'KEY_F2', 'KEY_F3', 'dash_windup', 'dash_timer', 'HEAVY', 'STALKER', 'camera_shake_timer', 'fog_enabled', 'current_frame_ms', 'briefing_seen', 'ПОМОЩЬ / H'
 ]) assert.ok(game.includes(feature), 'Missing Godot gameplay/diagnostic feature: ' + feature)
 assert.ok(game.length > 25000, 'Godot gameplay source unexpectedly small')
 assert.ok(game.includes('get_viewport().get_visible_rect().size.x') && !game.includes('get_viewport_rect()'), 'Godot Node3D responsive profile must use the active viewport API')
