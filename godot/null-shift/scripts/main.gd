@@ -584,7 +584,7 @@ func _create_initial_guards() -> void:
 			entry["speed"] = float(entry["speed"]) * 1.12
 
 func _spawn_guard(at: Vector3, is_warden: bool) -> void:
-	var role := "WARDEN" if is_warden else (["STALKER", "HEAVY", "RANGER"][guards.size() % 3])
+	var role: String = "WARDEN" if is_warden else (["STALKER", "HEAVY", "RANGER"][guards.size() % 3])
 	var role_material: Material = materials["red"] if role in ["WARDEN", "RANGER"] else (materials["violet"] if role == "STALKER" else materials["amber"])
 	var body := CharacterBody3D.new()
 	body.name = "Warden" if is_warden else "Security_" + role
