@@ -7,6 +7,10 @@ on:
       - "src/**"
       - "scripts/skillcred-page-smoke.mjs"
       - "scripts/time-prototype-smoke.mjs"
+      - "scripts/games-portal-smoke.mjs"
+      - "scripts/games-lighthouse-report.mjs"
+      - ".github/workflows/games-lighthouse.yml"
+      - "public/games/**"
       - "docs/02_IMPERIUM_OF_TIME_GAME_DESIGN.md"
       - "public/skillcred/**"
       - "package.json"
@@ -46,5 +50,7 @@ jobs:
         run: npm run qa:skillcred
       - name: Verify Imperium of Time game systems and visual diagnostics
         run: npm run qa:time-ui
+      - name: Verify OSGARD Games portal and Lighthouse guardrails
+        run: npm run qa:games-portal
       - name: Validate static archive and HTML
         run: npm run preflight:frontend

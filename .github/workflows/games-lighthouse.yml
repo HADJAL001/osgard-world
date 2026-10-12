@@ -1,0 +1,38 @@
+name: OSGARD Games Lighthouse Audit
+
+on:
+  workflow_run:
+    workflows: ["OSGARD frontend deploy"]
+    types: [completed]
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lighthouse:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Audit OSGARD Games on mobile
+        run: npx --yes lighthouse@12.8.2 https://osgard.world/games/ --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" --only-categories=performance,accessibility,best-practices,seo --output=json --output-path=/tmp/osgard-games-lighthouse-mobile.json --quiet
+      - name: Audit OSGARD Games on desktop
+        run: npx --yes lighthouse@12.8.2 https://osgard.world/games/ --preset=desktop --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" --only-categories=performance,accessibility,best-practices,seo --output=json --output-path=/tmp/osgard-games-lighthouse-desktop.json --quiet
+      - name: Report scores and enforce stable quality guardrails
+        run: node scripts/games-lighthouse-report.mjs /tmp/osgard-games-lighthouse-mobile.json /tmp/osgard-games-lighthouse-desktop.json
+      - name: Preserve raw Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: osgard-games-lighthouse-reports
+          path: /tmp/osgard-games-lighthouse-*.json
+          if-no-files-found: warn
+          retention-days: 14
