@@ -111,3 +111,9 @@ The deployment workflow downloads official Godot 4.7.2 and matching web template
 - The headless runtime test retains the deterministic camera pose and asserts one visible target lock made of exactly eight corners, with live identity and health.
 
 - Follow-up hardening: made the whole HUD builder idempotent, preventing duplicated CanvasLayers or accumulators if setup is re-entered. Collection arrays are reset only when a fresh HUD is constructed.
+
+
+## Release 1.5 — per-instance mutable state isolation
+
+- Each Godot game instance now allocates fresh runtime arrays and dictionaries in `_ready()`. This avoids accumulated references across repeated scene instances, test harnesses or scene reloads, including guard/device lists, effect pools, phase HUD chips, operator pivots, mobile controls and target-lock corners.
+- The runtime smoke checks still require exactly three phase-lane indicators and exactly eight target-lock corners; the source-contract test now guards the per-instance collection reset explicitly.

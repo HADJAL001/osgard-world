@@ -164,6 +164,7 @@ var briefing_visible := false
 var briefing_scroll: ScrollContainer
 
 func _ready() -> void:
+	_reset_runtime_collections()
 	_load_career()
 	_create_materials()
 	_create_lighting()
@@ -179,6 +180,29 @@ func _ready() -> void:
 		_show_briefing()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	print("NULL//SHIFT Godot prototype ready")
+
+func _reset_runtime_collections() -> void:
+	# Array/Dictionary values declared with literals can be shared as script defaults.
+	# Every gameplay instance must own fresh transient state, especially in tests/reloads.
+	materials = {}
+	guards = []
+	devices = []
+	phase_lanes = []
+	phase_lane_labels = []
+	effects = []
+	beam_pool = []
+	beam_effects = []
+	ring_pool = []
+	ring_effects = []
+	operator_leg_pivots = []
+	frame_samples = []
+	local_lights = []
+	mobile_move_buttons = []
+	mobile_move_spacers = []
+	mobile_action_buttons = []
+	crosshair_parts = []
+	target_lock_brackets = []
+	mobile_actions = {"up": false, "down": false, "left": false, "right": false}
 
 func _process(delta: float) -> void:
 	var dt := minf(delta, 0.06)
