@@ -11,6 +11,8 @@ A search-index sweep produced limited third-party information:
 
 The searches did not yield sufficient reliable current page-content evidence for the remaining provided domains to label their operation as independently verified. Their card descriptions in the Games hub are based on the project purposes supplied by the owner, not independently audited claims.
 
+The existing `Development.tsx` and home `Sections.tsx` still contain `osgardnewworld.com`, while this Games catalogue uses the owner-provided `osgardbewworld.com`. I have not changed the older links because the two domains could be distinct or one could be an alias. Confirm the canonical domain before consolidating links across the portal.
+
 ## Manual verification before campaigns
 For every domain, confirm:
 1. DNS A/AAAA/CNAME and HTTP/HTTPS responses for both apex and `www`.
