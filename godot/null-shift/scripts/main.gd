@@ -77,26 +77,53 @@ var contract_bonus := [0, 350, 550]
 var objective_text := "ВЗЛОМАТЬ ТЕРМИНАЛ → ЗАБРАТЬ ЯДРО → ЭВАКУИРОВАТЬСЯ"
 var eliminations := 0
 var scene_clock := 0.0
+var operator_rig: Node3D
+var operator_suit: MeshInstance3D
+var camera_follow_position := Vector3.ZERO
+var camera_shake_timer := 0.0
+var camera_shake_duration := 0.0
+var camera_shake_strength := 0.0
+var current_frame_ms := 0.0
+var impact_flash_timer := 0.0
+var phase_flash_timer := 0.0
+var crosshair_kick := 0.0
+var crosshair_hit_timer := 0.0
+var impact_overlay: ColorRect
+var crosshair_root: Control
+var crosshair_parts: Array[ColorRect] = []
+var local_lights: Array[OmniLight3D] = []
+var fill_light: OmniLight3D
+var sound_button: Button
 
 func _ready() -> void:
 	_load_career()
 	_create_materials()
 	_create_lighting()
 	_create_arena()
+	_create_arena_props()
 	_create_interactables()
 	_create_player()
 	_create_initial_guards()
 	_create_ui()
+	_apply_quality_mode()
 	_update_hud()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	print("NULL//SHIFT Godot prototype ready")
 
 func _process(delta: float) -> void:
 	var dt := minf(delta, 0.06)
+	current_frame_ms = maxf(0.0, delta * 1000.0)
 	elapsed += dt
 	scene_clock += dt
 	damage_flash_timer = maxf(0.0, damage_flash_timer - dt)
-	frame_samples.append(dt * 1000.0)
+	camera_shake_timer = maxf(0.0, camera_shake_timer - dt)
+	impact_flash_timer = maxf(0.0, impact_flash_timer - dt)
+	phase_flash_timer = maxf(0.0, phase_flash_timer - dt)
+	crosshair_kick = move_toward(crosshair_kick, 0.0, dt * 5.6)
+	crosshair_hit_timer = maxf(0.0, crosshair_hit_timer - dt)
+	if camera_shake_timer <= 0.0:
+		camera_shake_strength = 0.0
+	frame_samples.append(current_frame_ms)
 	if frame_samples.size() > 120:
 		frame_samples.pop_front()
 	_update_camera(dt)
@@ -104,6 +131,8 @@ func _process(delta: float) -> void:
 	_update_effect_expiry()
 	_update_mobile_layout()
 	_update_player_material()
+	_update_crosshair()
+	_update_screen_overlay()
 	hud_clock += dt
 	if hud_clock >= 0.12:
 		hud_clock = 0.0
@@ -166,6 +195,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		KEY_3:
 			if loadout_panel.visible:
 				_buy_upgrade("weapon")
+		KEY_M:
+			_toggle_sound()
 
 func _create_materials() -> void:
 	materials["floor"] = _material(Color(0.035, 0.063, 0.071), Color(0.02, 0.12, 0.12), 0.15, 0.28, 0.82)
@@ -204,8 +235,16 @@ func _create_lighting() -> void:
 	environment.ambient_light_energy = 0.52
 	environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	environment.glow_enabled = true
-	environment.glow_intensity = 0.62
-	environment.glow_bloom = 0.08
+	environment.glow_intensity = 0.72
+	environment.glow_bloom = 0.10
+	environment.fog_enabled = true
+	environment.fog_light_color = Color(0.018, 0.038, 0.045)
+	environment.fog_density = 0.0085
+	environment.fog_sky_affect = 0.12
+	environment.adjustment_enabled = true
+	environment.adjustment_brightness = 1.025
+	environment.adjustment_contrast = 1.08
+	environment.adjustment_saturation = 0.92
 	world_environment.environment = environment
 	add_child(world_environment)
 
@@ -218,14 +257,14 @@ func _create_lighting() -> void:
 	key_light.directional_shadow_max_distance = 48.0
 	add_child(key_light)
 
-	var fill := OmniLight3D.new()
-	fill.name = "ColdFill"
-	fill.position = Vector3(-10.0, 8.0, 4.0)
-	fill.light_color = Color(0.1, 0.64, 0.67)
-	fill.light_energy = 2.2
-	fill.omni_range = 19.0
-	fill.shadow_enabled = false
-	add_child(fill)
+	fill_light = OmniLight3D.new()
+	fill_light.name = "ColdFill"
+	fill_light.position = Vector3(-10.0, 8.0, 4.0)
+	fill_light.light_color = Color(0.1, 0.64, 0.67)
+	fill_light.light_energy = 2.2
+	fill_light.omni_range = 19.0
+	fill_light.shadow_enabled = false
+	add_child(fill_light)
 
 func _create_arena() -> void:
 	_make_solid_box("ArenaDeck", Vector3(0.0, -0.3, 0.0), Vector3(48.0, 0.5, 30.0), materials["floor"])
@@ -244,6 +283,31 @@ func _create_arena() -> void:
 	_make_box_mesh("CoverEastTrim", Vector3(17.3, 1.62, 0.0), Vector3(5.25, 0.06, 0.9), materials["wall_trim"])
 	security_gate = _make_solid_box("SecurityGate", Vector3(9.2, 1.05, 7.5), Vector3(0.55, 2.1, 5.5), materials["red"])
 	_make_box_mesh("GateHeader", Vector3(9.2, 2.24, 7.5), Vector3(0.85, 0.12, 5.8), materials["amber"])
+
+func _create_arena_props() -> void:
+	# Procedural landmarks, inlaid energy rails, and gate markers give the arena scale.
+	var pylon_positions: Array[Vector3] = [
+		Vector3(-20.8, 0.0, -11.7), Vector3(20.8, 0.0, -11.7),
+		Vector3(-20.8, 0.0, 11.7), Vector3(20.8, 0.0, 11.7)
+	]
+	for index in range(pylon_positions.size()):
+		var pylon := Node3D.new()
+		pylon.name = "SignalPylon_%02d" % (index + 1)
+		pylon.position = pylon_positions[index]
+		add_child(pylon)
+		_add_cube(pylon, Vector3.ZERO, Vector3(0.78, 0.18, 0.78), materials["black"])
+		_add_cube(pylon, Vector3(0.0, 0.9, 0.0), Vector3(0.42, 1.72, 0.42), materials["wall"])
+		_add_cube(pylon, Vector3(0.0, 1.56, 0.0), Vector3(0.56, 0.12, 0.56), materials["wall_trim"])
+		_add_cube(pylon, Vector3(0.0, 1.16, -0.225), Vector3(0.13, 0.52, 0.035), materials["cyan"])
+		_add_cube(pylon, Vector3(0.0, 0.54, -0.225), Vector3(0.18, 0.075, 0.04), materials["amber"] if index == 3 else materials["cyan_dark"])
+		if index in [0, 3]:
+			_make_omni_light(pylon, Vector3(0.0, 1.8, 0.0), Color(0.08, 0.9, 0.78) if index == 0 else Color(1.0, 0.34, 0.12), 0.78, 4.8)
+	for rail_x in [-14.0, -4.0, 6.0, 15.0]:
+		_make_box_mesh("PowerRail_X_%s" % str(rail_x), Vector3(rail_x, -0.025, -0.4), Vector3(0.045, 0.018, 23.0), materials["cyan_dark"])
+	for rail_z in [-7.8, 7.8]:
+		_make_box_mesh("PowerRail_Z_%s" % str(rail_z), Vector3(0.0, -0.024, rail_z), Vector3(43.5, 0.018, 0.045), materials["cyan_dark"])
+	for bar_z in [5.9, 9.1]:
+		_make_box_mesh("GateWarning_%s" % str(bar_z), Vector3(9.2, -0.012, bar_z), Vector3(0.8, 0.02, 0.055), materials["amber"])
 
 func _make_grid() -> void:
 	var mesh := ImmediateMesh.new()
@@ -395,6 +459,20 @@ func _add_cube(parent: Node3D, local_position: Vector3, size: Vector3, material:
 	visual.mesh = mesh
 	visual.material_override = material
 	visual.position = local_position
+	visual.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	parent.add_child(visual)
+	return visual
+
+func _add_sphere_mesh(parent: Node3D, node_name: String, at: Vector3, radius: float, height: float, material: Material) -> MeshInstance3D:
+	var mesh := SphereMesh.new()
+	mesh.radius = radius
+	mesh.height = height
+	var visual := MeshInstance3D.new()
+	visual.name = node_name
+	visual.mesh = mesh
+	visual.material_override = material
+	visual.position = at
+	visual.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	parent.add_child(visual)
 	return visual
 
@@ -406,6 +484,7 @@ func _make_omni_light(parent: Node3D, at: Vector3, color: Color, energy: float, 
 	light.omni_range = radius
 	light.shadow_enabled = false
 	parent.add_child(light)
+	local_lights.append(light)
 	return light
 
 func _create_device(at: Vector3, kind: String, label: String) -> void:
@@ -445,18 +524,36 @@ func _create_player() -> void:
 	capsule.height = 1.6
 	shape.shape = capsule
 	player.add_child(shape)
+	operator_rig = Node3D.new()
+	operator_rig.name = "OperatorRig"
+	player.add_child(operator_rig)
 	var body_mesh := CapsuleMesh.new()
 	body_mesh.radius = 0.43
 	body_mesh.height = 1.6
-	var body_visual := MeshInstance3D.new()
-	body_visual.name = "OperatorSuit"
-	body_visual.mesh = body_mesh
-	body_visual.material_override = materials["cyan"]
-	player.add_child(body_visual)
-	_add_cube(player, Vector3(0.0, 0.25, -0.1), Vector3(0.72, 0.3, 0.76), materials["wall"])
-	_add_cube(player, Vector3(0.0, 0.72, -0.08), Vector3(0.48, 0.16, 0.5), materials["white"])
-	_add_cube(player, Vector3(0.0, 0.07, -0.72), Vector3(0.18, 0.18, 0.76), materials["black"])
-	_add_cube(player, Vector3(0.0, 0.1, -1.1), Vector3(0.22, 0.12, 0.32), materials["amber"])
+	operator_suit = MeshInstance3D.new()
+	operator_suit.name = "OperatorSuit"
+	operator_suit.mesh = body_mesh
+	operator_suit.material_override = materials["cyan"]
+	operator_rig.add_child(operator_suit)
+	_add_cube(operator_rig, Vector3(0.0, 0.25, -0.1), Vector3(0.72, 0.3, 0.76), materials["wall"])
+	_add_cube(operator_rig, Vector3(0.0, 0.72, -0.08), Vector3(0.48, 0.16, 0.5), materials["white"])
+	_add_cube(operator_rig, Vector3(0.0, 0.07, -0.72), Vector3(0.18, 0.18, 0.76), materials["black"])
+	_add_cube(operator_rig, Vector3(0.0, 0.1, -1.1), Vector3(0.22, 0.12, 0.32), materials["amber"])
+	_add_cube(operator_rig, Vector3(0.0, 0.16, -0.43), Vector3(0.57, 0.42, 0.16), materials["wall_trim"])
+	_add_cube(operator_rig, Vector3(0.0, 0.17, -0.525), Vector3(0.23, 0.12, 0.035), materials["cyan"])
+	_add_cube(operator_rig, Vector3(-0.38, 0.34, -0.02), Vector3(0.23, 0.25, 0.32), materials["cyan_dark"])
+	_add_cube(operator_rig, Vector3(0.38, 0.34, -0.02), Vector3(0.23, 0.25, 0.32), materials["cyan_dark"])
+	_add_cube(operator_rig, Vector3(-0.31, 0.08, -0.29), Vector3(0.16, 0.2, 0.26), materials["wall_trim"])
+	_add_cube(operator_rig, Vector3(0.31, 0.08, -0.29), Vector3(0.16, 0.2, 0.26), materials["wall_trim"])
+	_add_cube(operator_rig, Vector3(-0.19, -0.59, -0.02), Vector3(0.23, 0.2, 0.32), materials["black"])
+	_add_cube(operator_rig, Vector3(0.19, -0.59, -0.02), Vector3(0.23, 0.2, 0.32), materials["black"])
+	_add_cube(operator_rig, Vector3(0.0, 0.12, 0.31), Vector3(0.42, 0.45, 0.2), materials["black"])
+	_add_cube(operator_rig, Vector3(-0.15, 0.15, 0.42), Vector3(0.06, 0.31, 0.035), materials["cyan"])
+	_add_cube(operator_rig, Vector3(0.15, 0.15, 0.42), Vector3(0.06, 0.31, 0.035), materials["cyan"])
+	var helmet := _add_sphere_mesh(operator_rig, "OperatorHelmet", Vector3(0.0, 0.69, -0.02), 0.245, 0.48, materials["black"])
+	helmet.scale = Vector3(1.0, 1.0, 0.92)
+	_add_cube(operator_rig, Vector3(0.0, 0.72, -0.235), Vector3(0.31, 0.075, 0.04), materials["cyan"])
+	_add_cube(operator_rig, Vector3(0.0, 0.56, -0.21), Vector3(0.2, 0.04, 0.035), materials["amber"])
 	add_child(player)
 
 	camera_rig = Node3D.new()
@@ -471,6 +568,7 @@ func _create_player() -> void:
 	camera_rig.add_child(camera)
 	camera_rig.global_position = player.global_position
 	camera.global_position = player.global_position + Vector3(0.0, 23.5, 24.5)
+	camera_follow_position = camera.global_position
 	camera.look_at(player.global_position + Vector3(0.0, 0.6, 0.0), Vector3.UP)
 
 func _create_initial_guards() -> void:
@@ -486,38 +584,64 @@ func _create_initial_guards() -> void:
 			entry["speed"] = float(entry["speed"]) * 1.12
 
 func _spawn_guard(at: Vector3, is_warden: bool) -> void:
+	var role := "WARDEN" if is_warden else (["STALKER", "HEAVY", "RANGER"][guards.size() % 3])
+	var role_material: Material = materials["red"] if role in ["WARDEN", "RANGER"] else (materials["violet"] if role == "STALKER" else materials["amber"])
 	var body := CharacterBody3D.new()
-	body.name = "Warden" if is_warden else "SecurityGuard"
+	body.name = "Warden" if is_warden else "Security_" + role
 	body.position = at
 	body.collision_layer = 2
 	body.collision_mask = 1
 	var shape := CollisionShape3D.new()
 	var capsule := CapsuleShape3D.new()
-	capsule.radius = 0.49 if is_warden else 0.4
-	capsule.height = 1.9 if is_warden else 1.55
+	capsule.radius = 0.49 if is_warden else (0.36 if role == "STALKER" else (0.46 if role == "HEAVY" else 0.4))
+	capsule.height = 1.9 if is_warden else (1.5 if role == "STALKER" else (1.72 if role == "HEAVY" else 1.55))
 	shape.shape = capsule
 	body.add_child(shape)
 	var mesh := CapsuleMesh.new()
-	mesh.radius = 0.49 if is_warden else 0.4
-	mesh.height = 1.9 if is_warden else 1.55
+	mesh.radius = capsule.radius
+	mesh.height = capsule.height
 	var visual := MeshInstance3D.new()
 	visual.name = "Armor"
 	visual.mesh = mesh
-	visual.material_override = materials["red"] if is_warden else materials["wall"]
+	visual.material_override = role_material
 	body.add_child(visual)
-	_add_cube(body, Vector3(0.0, 0.27, -0.04), Vector3(0.68, 0.3, 0.58), materials["red"] if is_warden else materials["black"])
-	_add_cube(body, Vector3(0.0, 0.56, -0.28), Vector3(0.42, 0.12, 0.1), materials["amber"] if is_warden else materials["red"])
+	_add_cube(body, Vector3(0.0, 0.27, -0.04), Vector3(0.68, 0.3, 0.58), materials["black"])
+	_add_cube(body, Vector3(0.0, 0.56, -0.28), Vector3(0.42, 0.12, 0.1), role_material)
+	_add_cube(body, Vector3(-0.35, 0.34, -0.02), Vector3(0.2, 0.22, 0.28), role_material)
+	_add_cube(body, Vector3(0.35, 0.34, -0.02), Vector3(0.2, 0.22, 0.28), role_material)
+	_add_cube(body, Vector3(0.0, 0.16, -0.31), Vector3(0.5, 0.28, 0.075), materials["wall_trim"])
+	_add_sphere_mesh(body, "GuardHelmet", Vector3(0.0, 0.67, -0.025), 0.23 if not is_warden else 0.28, 0.44 if not is_warden else 0.52, materials["black"])
+	_add_cube(body, Vector3(0.0, 0.69, -0.24), Vector3(0.29, 0.065, 0.035), role_material)
+	_add_cube(body, Vector3(0.0, 0.43, 0.28), Vector3(0.34, 0.38, 0.17), materials["black"])
+	_add_cube(body, Vector3(-0.13, 0.43, 0.375), Vector3(0.05, 0.24, 0.025), role_material)
+	_add_cube(body, Vector3(0.13, 0.43, 0.375), Vector3(0.05, 0.24, 0.025), role_material)
+	var tag := Label3D.new()
+	tag.name = "CombatRole"
+	tag.text = "WARDEN / ELITE" if is_warden else role
+	tag.font_size = 20
+	tag.pixel_size = 0.014
+	tag.outline_size = 7
+	tag.outline_modulate = Color(0.006, 0.018, 0.022, 0.98)
+	tag.modulate = (role_material as StandardMaterial3D).albedo_color
+	tag.position = Vector3(0.0, 2.25 if is_warden else 1.95, 0.0)
+	tag.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	tag.no_depth_test = true
+	body.add_child(tag)
 	add_child(body)
 	guards.append({
 		"node": body,
+		"role": role,
 		"hp": 10 if is_warden else (4 if current_contract == 2 else 3),
 		"max_hp": 10 if is_warden else (4 if current_contract == 2 else 3),
-		"speed": 3.25 if is_warden else (2.25 if current_contract == 2 else 1.9),
-		"damage": 18 if is_warden else 10,
+		"speed": 3.25 if is_warden else (3.0 if role == "STALKER" else (1.6 if role == "HEAVY" else (2.25 if current_contract == 2 else 1.9))),
+		"damage": 18 if is_warden else (16 if role == "HEAVY" else 10),
 		"warden": is_warden,
 		"stun": 0.0,
 		"windup": 0.0,
 		"cooldown": randf_range(0.8, 1.8),
+		"dash_windup": 0.0,
+		"dash_timer": 0.0,
+		"dash_cooldown": randf_range(1.4, 2.4),
 		"phase": randf_range(0.0, TAU)
 	})
 
@@ -597,23 +721,74 @@ func _update_guards(delta: float) -> void:
 		var distance := to_player.length()
 		if distance > 0.01:
 			body.look_at(Vector3(player.global_position.x, body.global_position.y, player.global_position.z), Vector3.UP)
+		var role := str(guard.get("role", "RANGER"))
+		if role == "STALKER":
+			var dash_windup := maxf(0.0, float(guard.get("dash_windup", 0.0)) - delta)
+			var dash_timer := maxf(0.0, float(guard.get("dash_timer", 0.0)) - delta)
+			var dash_cooldown := maxf(0.0, float(guard.get("dash_cooldown", 1.0)) - delta)
+			guard["dash_cooldown"] = dash_cooldown
+			if float(guard.get("dash_windup", 0.0)) > 0.0:
+				guard["dash_windup"] = dash_windup
+				if dash_windup <= 0.0:
+					guard["dash_timer"] = 0.34
+					_play_sfx(135.0, 0.12, 0.06)
+				body.velocity = Vector3.ZERO
+				guards[index] = guard
+				continue
+			if float(guard.get("dash_timer", 0.0)) > 0.0:
+				guard["dash_timer"] = dash_timer
+				body.velocity = to_player.normalized() * float(guard["speed"]) * 3.4
+				body.move_and_slide()
+				if body.global_position.distance_to(player.global_position) < 2.15 and damage_cooldown <= 0.0:
+					_damage_player(14.0)
+				guards[index] = guard
+				continue
+			if dash_cooldown <= 0.0 and distance > 4.5 and distance < 12.8:
+				guard["dash_windup"] = 0.42
+				guard["dash_cooldown"] = 3.7
+				_spawn_beam(body.global_position + Vector3.UP * 0.9, player.global_position + Vector3.UP * 0.6, materials["violet"], 0.46)
+				body.velocity = Vector3.ZERO
+				guards[index] = guard
+				continue
 		var windup := float(guard["windup"])
 		if windup > 0.0:
 			windup -= delta
 			guard["windup"] = windup
 			body.velocity = Vector3.ZERO
 			if windup <= 0.0:
-				if distance < 14.5 and damage_cooldown <= 0.0:
+				if role == "WARDEN":
+					_spawn_ring_burst(body.global_position + Vector3.UP * 0.12, materials["red"])
+					_screen_impulse(0.13, 0.24)
+					if distance < 17.0 and damage_cooldown <= 0.0:
+						_damage_player(float(guard["damage"]) * 1.35)
+				elif role == "HEAVY":
+					_screen_impulse(0.055, 0.12)
+					if distance < 14.5 and damage_cooldown <= 0.0:
+						_damage_player(float(guard["damage"]) * 1.3)
+				elif distance < 14.5 and damage_cooldown <= 0.0:
 					_damage_player(float(guard["damage"]))
-				guard["cooldown"] = randf_range(1.45, 2.15)
+				guard["cooldown"] = randf_range(1.45, 2.15) if role == "RANGER" else randf_range(2.0, 3.0)
 			guards[index] = guard
 			continue
 		var cooldown := maxf(0.0, float(guard["cooldown"]) - delta)
 		guard["cooldown"] = cooldown
 		if distance < 13.5 and cooldown <= 0.0:
-			guard["windup"] = 0.62 if not bool(guard["warden"]) else 0.85
-			_draw_beam(body.global_position + Vector3.UP * 1.0, player.global_position + Vector3.UP * 0.8, materials["telegraph"], 0.66)
-			_play_sfx(230.0 if not bool(guard["warden"]) else 115.0, 0.18, 0.08)
+			guard["windup"] = 0.92 if role == "WARDEN" else (0.82 if role == "HEAVY" else 0.62)
+			var aim_from := body.global_position + Vector3.UP * 1.0
+			var aim_to := player.global_position + Vector3.UP * 0.8
+			var role_material: StandardMaterial3D = materials["amber"] if role == "HEAVY" else (materials["red"] if role == "WARDEN" else materials["telegraph"])
+			if role == "HEAVY":
+				var side := Vector3(-to_player.z, 0.0, to_player.x).normalized()
+				for lane in [-1.0, 0.0, 1.0]:
+					_spawn_beam(aim_from, aim_to + side * lane * 1.45, role_material, 0.82)
+			elif role == "WARDEN":
+				for ray_index in range(8):
+					var ray_angle := TAU * float(ray_index) / 8.0
+					var ray_direction := Vector3(cos(ray_angle), 0.0, sin(ray_angle))
+					_spawn_beam(aim_from, body.global_position + Vector3.UP * 0.8 + ray_direction * 5.6, role_material, 0.92)
+			else:
+				_spawn_beam(aim_from, aim_to, role_material, 0.66)
+			_play_sfx(230.0 if role != "WARDEN" else 115.0, 0.18, 0.08)
 			body.velocity = Vector3.ZERO
 		elif distance > 2.7 and distance < 22.0:
 			body.velocity = to_player.normalized() * float(guard["speed"])
@@ -640,6 +815,10 @@ func _fire_weapon() -> void:
 			_damage_target(collider as Node)
 	_spawn_beam(from, beam_end, materials["cyan"], 0.09)
 	_spawn_hit_sparks(beam_end, materials["cyan"])
+	_screen_impulse(0.018, 0.055)
+	crosshair_kick = 1.0
+	if not hit.is_empty():
+		crosshair_hit_timer = 0.12
 	_play_sfx(680.0, 0.055, 0.08)
 
 func _damage_target(target: Node) -> void:
@@ -676,6 +855,10 @@ func _destroy_device(index: int) -> void:
 	device["destroyed"] = true
 	var body: Node3D = device["node"]
 	var kind: String = device["kind"]
+	_spawn_ring_burst(body.global_position + Vector3.UP * 0.15, materials["amber"] if kind == "CELL" else (materials["violet"] if kind == "ANCHOR" else materials["cyan"]))
+	_spawn_hit_sparks(body.global_position + Vector3.UP * 0.7, materials["amber"])
+	_screen_impulse(0.17, 0.28)
+	phase_flash_timer = maxf(phase_flash_timer, 0.22)
 	body.visible = false
 	body.collision_layer = 0
 	for child in body.get_children():
@@ -713,6 +896,8 @@ func _deploy_pulse() -> void:
 			guard["windup"] = 0.0
 			count += 1
 	_spawn_ring_burst(player.global_position + Vector3.UP * 0.2, materials["cyan"])
+	_screen_impulse(0.095, 0.17)
+	phase_flash_timer = maxf(phase_flash_timer, 0.14)
 	objective_text = "ИМПУЛЬС: %d ЦЕЛЕЙ НАРУШЕНО · ПЕРЕЗАРЯДКА %.1F С" % [count, pulse_cooldown]
 	_play_sfx(95.0, 0.55, 0.16)
 	_update_hud()
@@ -722,6 +907,8 @@ func _shift_layer() -> void:
 		return
 	null_shift_timer = 3.8
 	instability = minf(100.0, instability + 24.0)
+	phase_flash_timer = maxf(phase_flash_timer, 0.34)
+	_screen_impulse(0.105, 0.2)
 	_spawn_ring_burst(player.global_position + Vector3.UP * 0.1, materials["violet"])
 	_play_sfx(160.0, 0.4, 0.13)
 	objective_text = "NULL SHIFT АКТИВЕН · НЕСТАБИЛЬНОСТЬ %d%%" % int(instability)
@@ -819,6 +1006,8 @@ func _damage_player(amount: float) -> void:
 		return
 	damage_cooldown = 0.5
 	damage_flash_timer = 0.2
+	impact_flash_timer = maxf(impact_flash_timer, 0.28)
+	_screen_impulse(0.24, 0.32)
 	player_health = maxf(0.0, player_health - amount)
 	_spawn_hit_sparks(player.global_position + Vector3.UP * 0.8, materials["red"])
 	_play_sfx(85.0, 0.24, 0.14)
@@ -916,9 +1105,34 @@ func _buy_upgrade(which: String) -> void:
 
 func _toggle_quality() -> void:
 	cinematic_quality = not cinematic_quality
-	world_environment.environment.glow_enabled = cinematic_quality
-	key_light.shadow_enabled = cinematic_quality
+	_apply_quality_mode()
+	career.set_value("settings", "cinematic_quality", cinematic_quality)
+	_save_career()
 	objective_text = "ГРАФИКА: КИНОРЕЖИМ" if cinematic_quality else "ГРАФИКА: СБАЛАНСИРОВАННЫЙ РЕЖИМ"
+	_update_hud()
+
+func _apply_quality_mode() -> void:
+	if is_instance_valid(world_environment) and is_instance_valid(world_environment.environment):
+		world_environment.environment.glow_enabled = cinematic_quality
+	if is_instance_valid(key_light):
+		key_light.shadow_enabled = cinematic_quality
+	if is_instance_valid(fill_light):
+		fill_light.visible = cinematic_quality
+	for light in local_lights:
+		if is_instance_valid(light):
+			light.visible = cinematic_quality
+	if is_instance_valid(sound_button):
+		sound_button.text = "ЗВУК / ВКЛ" if sound_enabled else "ЗВУК / ВЫКЛ"
+
+func _toggle_sound() -> void:
+	sound_enabled = not sound_enabled
+	career.set_value("settings", "sound_enabled", sound_enabled)
+	_save_career()
+	if is_instance_valid(sound_button):
+		sound_button.text = "ЗВУК / ВКЛ" if sound_enabled else "ЗВУК / ВЫКЛ"
+	objective_text = "ЗВУКОВЫЕ ЭФФЕКТЫ ВКЛЮЧЕНЫ" if sound_enabled else "ЗВУКОВЫЕ ЭФФЕКТЫ ОТКЛЮЧЕНЫ"
+	if sound_enabled:
+		_play_sfx(520.0, 0.08, 0.055)
 	_update_hud()
 
 func _toggle_diagnostics() -> void:
@@ -940,6 +1154,9 @@ func _load_career() -> void:
 	current_contract = int(career.get_value("raid", "contract", 0)) % career_names.size()
 	player_max_health = 100.0 + armor_level * 20.0
 	player_health = player_max_health
+	var compact_profile := get_viewport_rect().size.x < 920.0 or DisplayServer.is_touchscreen_available()
+	cinematic_quality = bool(career.get_value("settings", "cinematic_quality", not compact_profile))
+	sound_enabled = bool(career.get_value("settings", "sound_enabled", true))
 
 func _save_career() -> void:
 	career.set_value("career", "credits", career_credits)
@@ -1055,6 +1272,73 @@ func _create_ui() -> void:
 	_add_button(result_stack, "МОДУЛИ КАРЬЕРЫ", _show_loadout_from_result, Vector2(220.0, 42.0))
 
 	_create_mobile_controls(hud_root)
+	impact_overlay = ColorRect.new()
+	impact_overlay.name = "CinematicImpactOverlay"
+	impact_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	impact_overlay.color = Color(0.9, 0.025, 0.065, 0.0)
+	impact_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	impact_overlay.visible = false
+	hud_root.add_child(impact_overlay)
+	_create_crosshair()
+
+func _create_crosshair() -> void:
+	crosshair_root = Control.new()
+	crosshair_root.name = "TacticalCrosshair"
+	crosshair_root.custom_minimum_size = Vector2(28.0, 28.0)
+	crosshair_root.size = Vector2(28.0, 28.0)
+	crosshair_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	crosshair_root.z_index = 24
+	hud_root.add_child(crosshair_root)
+	for index in range(5):
+		var part := ColorRect.new()
+		part.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		part.color = Color(0.48, 1.0, 0.88, 0.94) if index < 4 else Color(0.94, 1.0, 0.95, 1.0)
+		crosshair_root.add_child(part)
+		crosshair_parts.append(part)
+	_update_crosshair()
+
+func _update_crosshair() -> void:
+	if not is_instance_valid(crosshair_root) or crosshair_parts.size() < 5:
+		return
+	var allowed := not mobile_controls_visible and not paused_game and not terminal_active and not mission_finished
+	allowed = allowed and not (is_instance_valid(loadout_panel) and loadout_panel.visible)
+	allowed = allowed and not (is_instance_valid(keypad_panel) and keypad_panel.visible)
+	crosshair_root.visible = allowed
+	if not allowed:
+		return
+	crosshair_root.position = get_viewport().get_mouse_position() - Vector2(14.0, 14.0)
+	var spread := 5.0 + crosshair_kick * 7.0
+	crosshair_parts[0].position = Vector2(13.0, 13.0 - spread - 5.0)
+	crosshair_parts[0].size = Vector2(2.0, 5.0)
+	crosshair_parts[1].position = Vector2(13.0, 15.0 + spread)
+	crosshair_parts[1].size = Vector2(2.0, 5.0)
+	crosshair_parts[2].position = Vector2(13.0 - spread - 5.0, 13.0)
+	crosshair_parts[2].size = Vector2(5.0, 2.0)
+	crosshair_parts[3].position = Vector2(15.0 + spread, 13.0)
+	crosshair_parts[3].size = Vector2(5.0, 2.0)
+	crosshair_parts[4].position = Vector2(13.0, 13.0)
+	crosshair_parts[4].size = Vector2(2.0, 2.0)
+	var reticle_color := Color(1.0, 0.71, 0.29, 1.0) if crosshair_hit_timer > 0.0 else Color(0.48, 1.0, 0.88, 0.94)
+	for index in range(4):
+		crosshair_parts[index].color = reticle_color
+
+func _update_screen_overlay() -> void:
+	if not is_instance_valid(impact_overlay):
+		return
+	var tint := Color(0.95, 0.025, 0.07, 1.0)
+	var alpha := 0.0
+	if impact_flash_timer > 0.0:
+		alpha = minf(0.22, impact_flash_timer * 0.72)
+	elif phase_flash_timer > 0.0:
+		tint = Color(0.54, 0.09, 0.76, 1.0)
+		alpha = minf(0.09, phase_flash_timer * 0.3)
+	impact_overlay.color = Color(tint.r, tint.g, tint.b, alpha)
+	impact_overlay.visible = alpha > 0.004
+
+func _screen_impulse(strength: float, duration: float) -> void:
+	camera_shake_strength = maxf(camera_shake_strength, strength)
+	camera_shake_timer = maxf(camera_shake_timer, duration)
+	camera_shake_duration = maxf(camera_shake_duration, duration)
 
 func _make_panel(parent: Control, preset: int, rect: Rect2) -> PanelContainer:
 	var panel := PanelContainer.new()
@@ -1067,7 +1351,10 @@ func _make_panel(parent: Control, preset: int, rect: Rect2) -> PanelContainer:
 	style.bg_color = Color(0.012, 0.035, 0.043, 0.92)
 	style.border_color = Color(0.12, 0.46, 0.45, 0.8)
 	style.set_border_width_all(1)
-	style.set_corner_radius_all(9)
+	style.set_corner_radius_all(11)
+	style.shadow_color = Color(0.0, 0.0, 0.0, 0.34)
+	style.shadow_size = 12
+	style.shadow_offset = Vector2(0.0, 5.0)
 	style.content_margin_left = 12.0
 	style.content_margin_right = 12.0
 	style.content_margin_top = 10.0
@@ -1160,7 +1447,8 @@ func _create_mobile_controls(parent: Control) -> void:
 		var action_button := _add_button(action_grid, item["label"], func(): pass, Vector2(84.0, 38.0))
 		action_button.button_down.connect(_set_mobile_action.bind(item["key"], true))
 		action_button.button_up.connect(_set_mobile_action.bind(item["key"], false))
-	_add_button(action_stack, "МОДУЛИ", _toggle_loadout, Vector2(176.0, 33.0))
+	_add_button(action_stack, "МОДУЛИ", _toggle_loadout, Vector2(176.0, 31.0))
+	sound_button = _add_button(action_stack, "ЗВУК / ВКЛ" if sound_enabled else "ЗВУК / ВЫКЛ", _toggle_sound, Vector2(176.0, 29.0))
 
 func _set_mobile_action(action: String, pressed: bool) -> void:
 	match action:
@@ -1212,11 +1500,11 @@ func _update_hud() -> void:
 		samples.sort()
 		var p95 := 0.0
 		if not samples.is_empty():
-			p95 = samples[clampi(int(floor(float(samples.size() - 1) * 0.95)), 0, samples.size() - 1)]
+			p95 = samples[clampi(int(ceil(float(samples.size() - 1) * 0.95)), 0, samples.size() - 1)]
 		fps_p95_ms = p95
 		var draw_calls := int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
 		diagnostics_label.text = "LIVE DIAGNOSTICS\nFPS        %02d\nFRAME P95  %.1f ms\nFRAME NOW  %.1f ms\nDRAW CALLS %d\nGUARDS     %d\nDEVICES    %d\nPROFILE    %s" % [
-			Engine.get_frames_per_second(), fps_p95_ms, get_process_delta_time() * 1000.0, draw_calls, guards.size(), _living_device_count(), "CINEMATIC" if cinematic_quality else "BALANCED"
+			Engine.get_frames_per_second(), fps_p95_ms, current_frame_ms, draw_calls, guards.size(), _living_device_count(), "CINEMATIC" if cinematic_quality else "BALANCED"
 		]
 
 func _living_device_count() -> int:
@@ -1262,7 +1550,11 @@ func _animate_world(delta: float) -> void:
 			continue
 		var armor := body.get_node_or_null("Armor") as MeshInstance3D
 		if armor:
-			armor.material_override = materials["cyan"] if float(guard["stun"]) > 0.0 else (materials["red"] if bool(guard["warden"]) else materials["wall"])
+			var role := str(guard.get("role", "RANGER"))
+			var role_material: Material = materials["cyan"] if float(guard["stun"]) > 0.0 else (materials["red"] if role in ["WARDEN", "RANGER"] else (materials["violet"] if role == "STALKER" else materials["amber"]))
+			armor.material_override = role_material
+			var body_speed := body.velocity.length()
+			armor.position.y = sin(scene_clock * (9.0 if body_speed > 0.2 else 1.6) + float(guard["phase"])) * (0.035 if body_speed > 0.2 else 0.012)
 
 func _update_effect_expiry() -> void:
 	for index in range(effects.size() - 1, -1, -1):

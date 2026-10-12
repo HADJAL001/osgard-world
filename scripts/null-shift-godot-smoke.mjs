@@ -21,12 +21,12 @@ assert.match(scene, /type="Node3D"/, '3D root scene missing')
 assert.equal(packageJson.scripts['qa:null-shift-godot'], 'node scripts/null-shift-godot-smoke.mjs', 'Godot smoke command not registered')
 assert.ok(oldPage.includes('id="godot-preview"') && oldPage.includes('../null-shift-godot/'), 'Legacy game must link to the isolated Godot beta route')
 for (const feature of [
-  '_create_arena(', '_create_player(', '_create_initial_guards(', '_fire_weapon(',
+  '_create_arena(', '_create_arena_props(', '_create_player(', '_create_initial_guards(', '_fire_weapon(',
   '_submit_cipher_key(', '_destroy_device(', '_deploy_pulse(', '_shift_layer(',
-  '_finish_mission(', '_create_mobile_controls(', '_update_hud(',
+  '_finish_mission(', '_create_mobile_controls(', '_update_hud(', '_create_crosshair(', '_update_crosshair(', '_screen_impulse(', '_add_sphere_mesh(',
   'Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME', 'AudioStreamWAV.new()',
   'CPUParticles3D.new()', 'TorusMesh.new()', 'glow_enabled', 'shadow_enabled',
-  'user://null_shift_career.cfg', 'KEY_F2', 'KEY_F3'
+  'user://null_shift_career.cfg', 'KEY_F2', 'KEY_F3', 'dash_windup', 'dash_timer', 'HEAVY', 'STALKER', 'camera_shake_timer', 'fog_enabled', 'current_frame_ms'
 ]) assert.ok(game.includes(feature), 'Missing Godot gameplay/diagnostic feature: ' + feature)
 assert.ok(game.length > 25000, 'Godot gameplay source unexpectedly small')
 assert.ok(!/https?:\/\/(?:fonts\.googleapis|cdn\.jsdelivr|unpkg\.com)/i.test(game), 'Unexpected external runtime dependency in game source')

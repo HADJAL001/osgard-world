@@ -94,3 +94,14 @@ The command npm run qa:null-shift checks required game assets, script syntax, co
 - Mouse aiming now uses a perspective camera ray intersected with the game plane. The WebGL view retains a tactical minimap, projected objective labels, contextual interaction prompts and a pause overlay.
 - Smoke tests and production route checks now include the renderer asset and the game/renderer bridge.
 - This is procedural WebGL 1.0 3D rendering, not native 8K output. Imported high-resolution art, shadow maps, skeletal animation and a full post-processing bloom pipeline remain future production work.
+
+
+## Godot 4.7.2 — tactical feel and premium presentation pass
+
+- The official Godot 4.7.2 stable engine and matching single-thread web templates are downloaded by the existing CI workflow; it parses the native project, runs headless gameplay state-transition tests, exports the browser build, validates the generated files and deploys the export to `/games/null-shift-godot/`.
+- Added corner signal pylons, inlaid power rails, gate warning bars, distance fog and a filmic color response.
+- The operator has a layered procedural rig with torso plate, helmet/visor, shoulders, forearms, boots, power backpack and weapon details. A walk/breath cycle animates the rig without moving the collision capsule.
+- Guards now spawn as Stalker, Heavy, Ranger or Warden roles with different material/silhouette cues. Stalker telegraphs a high-speed dash; Heavy telegraphs a three-lane attack; Warden telegraphs a slower radial strike; Ranger keeps the standard shot pattern.
+- Added a desktop recoil reticle, collision hit tint, damage/phase overlay, smooth camera follow and short camera impulses for firing, damage, device destruction and special abilities.
+- FPS/P95 diagnostics use the actual frame interval before the simulation delta is clamped. Quality and sound preferences persist locally. Compact/touch layouts default to Balanced unless a preference is saved.
+- This is an upgraded procedural Godot 3D build, not native 8K/finished AAA artwork. Authored high-resolution models, material maps, skeletal animation and a richer post stack remain separate production work.

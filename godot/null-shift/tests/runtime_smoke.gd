@@ -22,6 +22,15 @@ func _run_smoke() -> void:
 
 	if not _expect(is_instance_valid(game.player), "operator must instantiate"):
 		return
+	if not _expect(is_instance_valid(game.operator_rig), "operator rig must instantiate"):
+		return
+	if not _expect(is_instance_valid(game.operator_suit) and game.operator_rig.get_node_or_null("OperatorHelmet") != null, "operator helmet and armor must instantiate"):
+		return
+	if not _expect(game.guards[0].get("role", "") == "STALKER" and game.guards[1].get("role", "") == "HEAVY" and game.guards[2].get("role", "") == "RANGER", "enemy archetypes must be distinct"):
+		return
+	game._screen_impulse(0.2, 0.25)
+	if not _expect(game.camera_shake_timer > 0.0 and game.camera_shake_strength >= 0.2, "camera impact response must be measurable"):
+		return
 	if not _expect(game.guards.size() >= 3, "initial hostiles must spawn"):
 		return
 	if not _expect(game.devices.size() == 3, "three destructible devices must spawn"):
@@ -61,7 +70,7 @@ func _run_smoke() -> void:
 	game._update_hud()
 	if not _expect(game.diagnostics_label.visible, "diagnostics panel must open"):
 		return
-	if not _expect(game.frame_samples.size() > 0, "frame times must be measured live"):
+	if not _expect(game.frame_samples.size() > 0 and game.current_frame_ms >= 0.0, "frame times must be measured live"):
 		return
 	if not _expect(game.diagnostics_label.text.contains("DRAW CALLS"), "diagnostics must expose renderer counters"):
 		return

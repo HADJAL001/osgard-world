@@ -4,9 +4,9 @@ This is the engine-backed 3D branch of NULL//SHIFT. The production game remains 
 
 ## Engine and rendering
 
-- Godot 4.7.2 stable, GDScript, Compatibility renderer.
+- Godot 4.7.2 stable, GDScript, Compatibility renderer. The browser build is the preferred 3D entry; the earlier Canvas version remains available as fallback.
 - Browser export uses the single-threaded Web template to avoid SharedArrayBuffer and cross-origin-isolation requirements.
-- Procedural 3D arena, physics collisions, operator and guards, terminal, quantum core, extraction pad, metallic/emissive materials, dynamic lighting, shadows, optional glow, particles, and impact effects.
+- Procedural 3D arena with corner signal pylons and inlaid energy rails, distinct Stalker/Heavy/Ranger/Warden behavior, layered operator armor and guard helmets, physics collisions, terminal, quantum core, extraction pad, metallic/emissive materials, fog, dynamic lighting, shadows, configurable glow, reticle, camera impact response, particles, and synthesized sound.
 - No third-party runtime assets, remote fonts or external image dependencies.
 
 ## Raid loop
@@ -22,13 +22,13 @@ This is the engine-backed 3D branch of NULL//SHIFT. The production game remains 
 - WASD or arrow keys: move.
 - Mouse: aim; hold left mouse button: fire.
 - E: interact; Q: pulse; Shift: phase shift.
-- F2: cinematic/balanced graphics; F3: live diagnostics; Esc: pause.
+- F2: cinematic/balanced graphics; F3: live diagnostics; M: toggle and persist sound; Esc: pause.
 - C: rotate contract; U: loadout; 1/2/3: buy upgrades in the loadout.
 - Narrow/touch screens show on-screen movement and combat controls with assisted aiming.
 
 ## Live diagnostics
 
-The game reads the current engine frame rate, rolling 95th percentile of recent frame times, current frame interval, draw calls, hostiles and remaining devices. Values are calculated in the running game, not demonstration placeholders. Career and upgrades are saved locally by the engine.
+The game reads the current engine frame rate, rolling 95th percentile of uncapped frame intervals, actual frame interval, draw calls, hostiles and remaining devices. The reticle follows desktop aim and hides during touch-assisted aiming; damage and phase changes trigger brief camera and screen feedback. Values are calculated in the running game, not demonstration placeholders. Career and upgrades are saved locally by the engine.
 
 ## Browser export
 
