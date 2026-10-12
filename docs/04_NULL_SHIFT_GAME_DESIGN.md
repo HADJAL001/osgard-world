@@ -145,3 +145,11 @@ The command npm run qa:null-shift checks required game assets, script syntax, co
 - Floating world-space health readouts display the correct remaining/max HP when an enemy takes damage. Readouts on regular hostiles fade out after 1.8 seconds; the elite Warden keeps its status visible.
 - Fixed the suit-material state lookup to target `operator_suit` inside the new `OperatorRig`, so damage and phase-shift colors affect the model that is actually rendered.
 - Added runtime smoke assertions for the hit-triggered health readout and the nested suit damage material, extending the test from scene startup to the live visual/game-state connection.
+
+
+## Release 0.7 — instanced GPU submission and atmospheric lighting
+
+- Added an optional \`ANGLE_instanced_arrays\` WebGL path. Objects are grouped by shared mesh and submitted as instanced draws instead of one draw call per object. The compatible non-instanced renderer remains as a fallback when the extension or required vertex attributes are unavailable.
+- Instance attributes carry world position, scale, rotation, albedo/opacity, emissive contribution and material response. The instancing shader performs per-instance transforms and adds specular/rim lighting plus restrained depth fog.
+- Live diagnostics now report draw packets, instances, triangles and CPU-side submit time. CPU submission duration is explicitly not described as GPU execution time because a portable GPU timer is unavailable in this WebGL 1.0 path.
+- The production smoke test and public-route matrix now require the GPU instancing path to be present in the shipped resource.
