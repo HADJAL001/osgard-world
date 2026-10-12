@@ -60,7 +60,7 @@ check('ecosystem CTA included', html.includes('Своя игра, сайт ил�
 check('contact routes included', html.includes('osman.osmanov0099@gmail.com') && html.includes('wa.me/79640027222'))
 check('privacy and terms page is linked and present', html.includes('href="/games/privacy.html"') && privacy.includes('id="privacy"') && privacy.includes('id="terms"'))
 check('sponsor CTA is transparent and not a fake ad', html.includes('Платные рекламные показы и спонсоры сейчас не активированы.') && html.includes('subject=OSGARD%20Games%20Sponsorship'))
-check('catalog does not fabricate ratings or counts', !/playerCount|reviewCount|rating\\s*:/.test(JSON.stringify(catalog)))
+check('catalog does not fabricate ratings or counts', !catalog.games.some(game => ['playerCount','players','rating','reviewCount'].some(key => Object.prototype.hasOwnProperty.call(game, key))))
 check('legacy entertainment route points to new hub', oldHub.includes('http-equiv="refresh"') && oldHub.includes('url=/games'))
 check('SEO sitemap lists new games hub', sitemap.includes('https://osgard.world/games'))
 const manifest = await read('src/core/manifest.ts')
