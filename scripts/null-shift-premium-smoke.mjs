@@ -68,6 +68,7 @@ assert.ok(js.includes('shot:[') && js.includes('shift:[') && js.includes('blast:
 
 new Function(js)
 new Function(engine)
-for (const feature of ["getContext('webgl'",'uMVP','function cube(){','function sphere(','function cylinder(','function ring(','NULL_SHIFT_GET_SCENE_STATE','NULL_SHIFT_SCREEN_TO_WORLD','NULL_SHIFT_TOGGLE_ENGINE','drawParticles','ANGLE_instanced_arrays','renderInstanced','gpuFrameStats.triangles','aInstancePosScale','uFogColor']) assert.ok(engine.includes(feature), 'WebGL engine feature missing: ' + feature)
+assert.ok(!engine.includes('renderMs.toFixed(1)'), 'WebGL diagnostics must not show a stale render-time variable')
+for (const feature of ["getContext('webgl'",'uMVP','function cube(){','function sphere(','function cylinder(','function ring(','NULL_SHIFT_GET_SCENE_STATE','NULL_SHIFT_SCREEN_TO_WORLD','NULL_SHIFT_TOGGLE_ENGINE','drawParticles','ANGLE_instanced_arrays','renderInstanced','gpuFrameStats.triangles','aInstancePosScale','uFogColor','function updateAdaptiveResolution(','adaptiveScale','renderCost.toFixed(1)']) assert.ok(engine.includes(feature), 'WebGL engine feature missing: ' + feature)
 assert.ok(js.includes('NULL_SHIFT_GET_SCENE_STATE') && js.includes('NULL_SHIFT_SET_RENDER_MODE'), 'Game/WebGL bridge missing')
 console.log('PASS NULL//SHIFT: standalone assets, WebGL renderer, core mechanics, touch input, diagnostics, motion preference and JS syntax')

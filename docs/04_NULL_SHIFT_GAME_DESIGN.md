@@ -153,3 +153,12 @@ The command npm run qa:null-shift checks required game assets, script syntax, co
 - Instance attributes carry world position, scale, rotation, albedo/opacity, emissive contribution and material response. The instancing shader performs per-instance transforms and adds specular/rim lighting plus restrained depth fog.
 - Live diagnostics now report draw packets, instances, triangles and CPU-side submit time. CPU submission duration is explicitly not described as GPU execution time because a portable GPU timer is unavailable in this WebGL 1.0 path.
 - The production smoke test and public-route matrix now require the GPU instancing path to be present in the shipped resource.
+
+
+## Release 0.8 — adaptive rendering and truthful telemetry
+
+- Fixed the WebGL diagnostics label: the CPU build/submission value now displays the same live timing measurement used for the render-cost cell, instead of a stale, never-updated variable.
+- Added a hysteresis-based dynamic render scale. Sustained slow frame intervals lower the internal resolution in controlled 10% steps down to 62%; sustained headroom restores it in gentler 5% steps. The governor keeps existing Cinematic/Balanced limits and never increases scale above the selected device/quality cap.
+- The render badge shows the current adaptive scale. The diagnostic note distinguishes CPU scene-build/API-submission time from GPU execution, which is not directly measurable in this portable WebGL 1.0 path; adaptation uses requestAnimationFrame frame pacing rather than claiming a GPU timer.
+- The smoke test now guards the adaptive governor and rejects the stale diagnostics variable; the production-route matrix requires the governor and corrected measurement to exist in the published engine asset.
+- This improves responsiveness under variable hardware load but does not create native 8K output or replace testing on real phones, tablets and desktop GPUs.
