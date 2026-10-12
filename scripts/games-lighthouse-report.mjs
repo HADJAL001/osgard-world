@@ -51,7 +51,7 @@ export function assessReport(json, label) {
   const lcpMs = typeof lcp === 'number' ? lcp : null
 
   if (tbtMs === null) issues.push('Total Blocking Time metric is missing')
-  else if (tbtMs > limits.maxTbtMs) issues.push('Total Blocking Time above guardrail: ' + Math.round(tbtMs) + ' ms (maximum ' + limits.maxTbtMs + ' ms')
+  else if (tbtMs > limits.maxTbtMs) issues.push('Total Blocking Time above guardrail: ' + Math.round(tbtMs) + ' ms (maximum ' + limits.maxTbtMs + ' ms)')
 
   if (lcpMs === null) issues.push('Largest Contentful Paint metric is missing')
   else if (lcpMs > limits.maxLcpMs) issues.push('Largest Contentful Paint above guardrail: ' + (lcpMs / 1000).toFixed(2) + ' s (maximum ' + (limits.maxLcpMs / 1000).toFixed(1) + ' s)')
