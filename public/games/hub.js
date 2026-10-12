@@ -98,10 +98,14 @@ function record(name, payload = {}) {
   const events = readLocal(STORAGE.analytics, []);
   events.push(event);
   if (!writeLocal(STORAGE.analytics, events.slice(-300))) return;
-  const pending = readLocal(STORAGE.pending, []);
-  pending.push(event);
-  writeLocal(STORAGE.pending, pending.slice(-50));
-  void flushPendingEvents();
+  // Only the event names in the shared OSGARD event contract are eligible for authenticated sync.
+  const serverEventNames = ["portal_opened", "game_opened", "game_session_started", "game_session_completed", "score_submitted", "share_created"];
+  if (serverEventNames.includes(name)) {
+    const pending = readLocal(STORAGE.pending, []);
+    pending.push(event);
+    writeLocal(STORAGE.pending, pending.slice(-50));
+    void flushPendingEvents();
+  }
 }
 async function flushPendingEvents() {
   if (!hasConsent()) return;
@@ -461,7 +465,7 @@ async function loadCatalog() {
     applyLocale();
     renderEcosystem();
     updateContinue();
-    record("games_hub_opened", {gameCount:payload.games.length});
+    record("portal_opened", {surface:"games", gameCount:payload.games.length});
   } catch (error) {
     $("#catalog-error").hidden = false;
     $("#game-grid").innerHTML = "";
