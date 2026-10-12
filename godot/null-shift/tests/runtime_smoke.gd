@@ -331,7 +331,9 @@ func _run_smoke() -> void:
 	if not _expect(is_equal_approx(game.dash_cooldown, dash_cooldown_before), "dash cooldown must prevent a second dash exploit"):
 		return
 	var dash_move_origin: Vector3 = game.player.global_position
-	game._move_player(0.016)
+	# CharacterBody3D.move_and_slide() must be exercised by real physics ticks; direct calls from SceneTree are not a valid movement-step test.
+	for _physics_tick in range(4):
+		await physics_frame
 	if not _expect(game.player.global_position.x > dash_move_origin.x + 0.12, "dash must move the real CharacterBody3D faster than a normal step"):
 		return
 	game.damage_cooldown = 0.0
