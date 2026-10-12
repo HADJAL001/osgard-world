@@ -162,3 +162,5 @@ The command npm run qa:null-shift checks required game assets, script syntax, co
 - The render badge shows the current adaptive scale. The diagnostic note distinguishes CPU scene-build/API-submission time from GPU execution, which is not directly measurable in this portable WebGL 1.0 path; adaptation uses requestAnimationFrame frame pacing rather than claiming a GPU timer.
 - The smoke test now guards the adaptive governor and rejects the stale diagnostics variable; the production-route matrix requires the governor and corrected measurement to exist in the published engine asset.
 - This improves responsiveness under variable hardware load but does not create native 8K output or replace testing on real phones, tablets and desktop GPUs.
+
+- Follow-up guard: initialized the WebGL statistics ticker and render-cost accumulator in strict-mode scope; smoke and production-route checks now require both declarations so a missing counter cannot silently force the 2D fallback.
