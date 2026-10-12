@@ -41,7 +41,8 @@ assert.ok(css.includes('@media(prefers-reduced-motion:reduce)'), 'Reduced-motion
 assert.ok(css.includes('.frame:fullscreen'), 'Fullscreen presentation rules missing')
 assert.ok(css.includes('.diag-panel'), 'Diagnostics presentation missing')
 assert.ok(js.includes('premiumRafSamples') && js.includes('requestAnimationFrame timestamps'), 'Diagnostics must use requestAnimationFrame timestamps')
-assert.ok(css.includes('#fullscreen-toggle,#contract-toggle,#loadout-toggle{display:none}'), 'Mobile users must retain access to the quality selector')
+assert.ok(css.includes('#fullscreen-toggle,#contract-toggle,#loadout-toggle,#sound-toggle{display:none}'), 'Desktop sound toggle should yield to mobile sound control')
+assert.ok(html.includes('id="sound-toggle"') && html.includes('id="touch-sound"'), 'Sound control must be reachable on desktop and touch screens')
 
 for (const feature of [
   'premiumCombatAI','premiumProcessDeviceHits','premiumDrawCombat','premiumBurst',
@@ -57,6 +58,9 @@ assert.ok(html.includes('id="hazard-state"'), 'Live electrical hazard status mis
 assert.ok(css.includes('.hazard-banner[data-state="warning"]'), 'Warning state styling missing')
 
 assert.ok(!js.includes("if(premiumAimHeld&&S.p)"), 'Manual aim stick must not be overwritten by auto-aim')
+for (const feature of ['premiumV05ArmAudio','premiumV05Sound','premiumV05SetSound','premiumV05DrawMotion','premiumV05DrawRails','premiumV05UpdateMotion','AudioContext','premiumV05Trails']) assert.ok(js.includes(feature), 'Release 0.5 feature missing: ' + feature)
+assert.ok(js.includes("localStorage.setItem('null-shift-sound'"), 'Sound preference must persist locally')
+assert.ok(js.includes("case 'shot'") && js.includes("case 'shift'") && js.includes("case 'blast'"), 'Core gameplay sound cues missing')
 
 new Function(js)
 console.log('PASS NULL//SHIFT: standalone assets, core mechanics, touch input, diagnostics, motion preference and JS syntax')

@@ -75,3 +75,12 @@ The command npm run qa:null-shift checks required game assets, script syntax, co
 - Two electrical floor conduits cycle through stable, charging and active states. Their in-world markings and matching status banner warn the player before discharge. Standing in an active zone drains health, adding timing and positioning to the raid.
 - Friendly and hostile projectiles have directional trails; the desktop aiming reticle follows the pointer. Effects remain within the responsive Canvas renderer and respect the reduced-motion preference.
 - Automated smoke/build/deploy checks verify that the update is shipped; manual hardware tests are still needed to evaluate frame pacing on specific devices. This is not native 8K rendering.
+
+
+## Release 0.5 — motion and sound layer
+
+- Added procedural, no-download sound cues for shots, pulse, phase shift, successful/failed terminal input, damage, eliminations, device destruction, and extraction/failure. Audio is created only after user interaction, can be switched off, and the choice is stored locally.
+- Added per-actor motion sampling with smoothed velocity and stride phase, articulated boot/armor detailing, phase/ghost afterimages, and animated low-cost power-conduit pulses. The existing 1280 × 720 world coordinate system is retained and the trail list is bounded.
+- Render cost measures the final drawing stack; FPS and frame P95 use requestAnimationFrame timestamps. Measurements remain local.
+- Desktop gets a sound toggle in the top controls; touch screens get one in the action strip. Balanced graphics mode remains the fallback for lower-power devices.
+- Automated checks cover source contracts and syntax; they do not replace real-device testing or certify native 8K rendering.
