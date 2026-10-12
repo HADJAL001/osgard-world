@@ -1,6 +1,6 @@
 const base = process.env.OSGARD_BASE_URL || 'https://osgard.world'
 const expectCurrentDesign = process.env.SKILLCRED_EXPECT_CURRENT_DESIGN === '1'
-const routes = ['/','/skillcred/','/skillcred-api/health','/skillcred-api/ready','/skillcred-api/issuer','/entertainment','/games/','/games/index.html','/games/favicon.svg','/privacy/','/terms/','/community','/stream','/archive','/profile','/r/1842','/games/time','/game/time','/game/swarm','/game/null-shift','/game/inherit','/game/remix','/games/null-shift/','/games/null-shift/index.html','/games/null-shift-godot/','/games/null-shift-godot/index.html','/play/swarm','/play/null-shift','/play/inherit','/play/remix','/media','/business','/create','/mobility']
+const routes = ['/','/skillcred/','/skillcred-api/health','/skillcred-api/ready','/skillcred-api/issuer','/entertainment','/games/','/games/index.html','/games/favicon.svg','/privacy/','/terms/','/community','/stream','/archive','/profile','/r/1842','/games/time','/games/swarm/','/games/inherit/','/games/remix/','/game/time','/game/swarm','/game/null-shift','/game/inherit','/game/remix','/games/null-shift/','/games/null-shift/index.html','/games/null-shift-godot/','/games/null-shift-godot/index.html','/play/swarm','/play/null-shift','/play/inherit','/play/remix','/media','/business','/create','/mobility']
 const agents = { desktop: 'OSGARD-Route-Matrix/1.1 Desktop', mobile: 'OSGARD-Route-Matrix/1.1 Mobile' }
 const results = []
 for (const [device, userAgent] of Object.entries(agents)) for (const route of routes) {
@@ -33,6 +33,12 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
           ? text.includes('<title>Условия использования OSGARD PLAY</title>') && text.includes('прототип')
         : (route === '/games/' || route === '/games/index.html')
           ? text.includes('id="games-grid"') && text.includes('data-game="null-shift"') && text.includes('data-game="time"') && text.includes('data-game="swarm"') && text.includes('data-game="inherit"') && text.includes('data-game="remix"') && text.includes('id="player-dialog"') && text.includes('id="player-share"') && text.includes('player-lifecycle.js') && text.includes('id="project-form"') && text.includes('id="analytics-toggle"') && text.includes('osgardvanguard.studio')
+        : route === '/games/swarm/'
+          ? text.includes('id="game"') && text.includes('id="start"') && text.includes('id="objective-status"')
+        : route === '/games/inherit/'
+          ? text.includes('id="world"') && text.includes('id="pass"')
+        : route === '/games/remix/'
+          ? text.includes('id="arena"') && text.includes('id="start-match"') && text.includes('id="match-status"')
         : route.startsWith('/games/null-shift-godot')
           ? (response.redirected && new URL(response.url).pathname === '/games/null-shift/')
             || (text.includes('url=/games/null-shift/') && text.includes("window.location.replace('/games/null-shift/')"))
@@ -44,7 +50,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
             : text.includes('<div id="root">')
     const isGamesHub = route === '/games/' || route === '/games/index.html'
     const isLegacyGodotRoute = route.startsWith('/games/null-shift-godot')
-    const assetPaths = route === '/games/favicon.svg' || route === '/privacy/' || route === '/terms/' ? [] : isGamesHub ? ['/games/player-lifecycle.js'] : route === '/skillcred/' ? ['/skillcred/styles.css', '/skillcred/app.js', '/skillcred/fonts/InterVariable.woff2', '/skillcred/fonts/InstrumentSerif-Italic.woff2', '/skillcred/fonts/JetBrainsMono-Regular.woff2'] : isLegacyGodotRoute ? [] : route.startsWith('/games/null-shift') ? ['/games/null-shift/styles.css', '/games/null-shift/game.js', '/games/null-shift/engine-3d.js'] : []
+    const assetPaths = route === '/games/favicon.svg' || route === '/privacy/' || route === '/terms/' ? [] : route === '/games/swarm/' ? ['/games/swarm/game.js'] : isGamesHub ? ['/games/player-lifecycle.js'] : route === '/skillcred/' ? ['/skillcred/styles.css', '/skillcred/app.js', '/skillcred/fonts/InterVariable.woff2', '/skillcred/fonts/InstrumentSerif-Italic.woff2', '/skillcred/fonts/JetBrainsMono-Regular.woff2'] : isLegacyGodotRoute ? [] : route.startsWith('/games/null-shift') ? ['/games/null-shift/styles.css', '/games/null-shift/game.js', '/games/null-shift/engine-3d.js'] : []
     const assetChecks = await Promise.all(assetPaths.map(async path => {
       const expectedType = path.endsWith('.css') ? 'text/css' : path.endsWith('.js') ? 'javascript' : path.endsWith('.wasm') ? 'wasm' : path.endsWith('.pck') ? 'pack' : 'font'
       const asset = await fetch(new URL(path, base), { headers: { 'user-agent': userAgent } })
@@ -65,6 +71,8 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
               : path.endsWith('.css')
                 ? content.includes('.mobile-ui') && content.includes('prefers-reduced-motion') && content.includes('.engine-minimap')
                 : content.includes('premiumAtmosphere') && content.includes('PerformanceObserver') && content.includes('premiumV05DrawMotion') && content.includes('premiumV05ArmAudio') && content.includes('premiumV05UpdateMotion') && content.includes('NULL_SHIFT_GET_SCENE_STATE')
+            : path === '/games/swarm/game.js'
+              ? content.includes('function startLocal(') && content.includes("state:'started'") && content.includes("state:'completed'")
             : path === '/games/player-lifecycle.js'
               ? content.includes('function startSession(') && content.includes('game_session_completed') && content.includes('osgard:game-lifecycle') && content.includes('event.source!==frame.contentWindow')
               : path.endsWith('.css')
