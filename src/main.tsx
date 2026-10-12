@@ -18,6 +18,7 @@ import './profile.css'
 import './community.css'
 import './stream.css'
 import './games-platform.css'
+import './game-player.css'
 import './legal.css'
 import App from './App'
 import MiniApp from './MiniApp'
@@ -40,6 +41,7 @@ import { CommunitySurface } from './CommunitySurface'
 import { StreamSurface } from './StreamSurface'
 import { GAME_DETAILS, GamesPlatform } from './GamesPlatform'
 import { GameDetailPage } from './GameDetailPage'
+import { GamePlayer } from './GamePlayer'
 import { LegalPage } from './LegalPages'
 
 const seo: Record<string, { title: string; description: string }> = {
@@ -75,9 +77,10 @@ const cleanSeo: Record<string, { title: string; description: string }> = {
 
 function Seo({ path }: { path: string }) {
   React.useEffect(() => {
-    const gameSlug = path.startsWith('/games/info/') ? path.split('/')[3] : ''
+    const gameSlug = path.startsWith('/games/info/') || path.startsWith('/games/play/') ? path.split('/')[3] : ''
     const gameMeta = gameSlug && Object.prototype.hasOwnProperty.call(GAME_DETAILS, gameSlug) ? GAME_DETAILS[gameSlug as keyof typeof GAME_DETAILS] : null
-    const data = cleanSeo[path] ?? (gameMeta ? { title: `${gameMeta.title} | OSGARD PLAY`, description: `${gameMeta.tagline} ${gameMeta.description}` } : cleanSeo['/'])
+    const detailTitle = path.startsWith('/games/play/') ? `${gameMeta?.title ?? 'Игра'} — игровая сессия | OSGARD PLAY` : `${gameMeta?.title ?? 'Игровой мир'} | OSGARD PLAY`
+    const data = cleanSeo[path] ?? (gameMeta ? { title: detailTitle, description: `${gameMeta.tagline} ${gameMeta.description}` } : cleanSeo['/'])
     const canonical = `https://osgard.world${path === '/' ? '/' : path}`
     document.title = data.title
     const setMeta = (selector: string, attribute: string, value: string) => {
@@ -104,6 +107,7 @@ const path = location.pathname.replace(/\/+$/, '') || '/'
 function RoutedRoot() {
   const [locale, setLocale] = React.useState<'ru' | 'en'>('ru')
   if (path === '/games') return <><Seo path="/games" /><GamesPlatform /></>
+  if (path.startsWith('/games/play/')) return <><Seo path={path} /><GamePlayer gameId={path.split('/')[3] || ''} /></>
   if (path.startsWith('/games/info/')) return <><Seo path={path} /><GameDetailPage slug={path.split('/')[3] || ''} /></>
   if (path === '/privacy') return <><Seo path="/privacy" /><LegalPage kind="privacy" /></>
   if (path === '/terms') return <><Seo path="/terms" /><LegalPage kind="terms" /></>
