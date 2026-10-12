@@ -35,5 +35,6 @@ upload-dist.cmd
 osgard_deploy_ci
 osgard_deploy_ci.pub
 
-/public/games/null-shift-godot/
+/public/games/null-shift-godot/*
+!/public/games/null-shift-godot/index.html
 godot/null-shift/.godot/
