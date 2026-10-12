@@ -3,13 +3,17 @@
 **Obsidian systems / quiet signal / precise play.** The Games catalogue reuses the portal's restrained editorial tone while giving game discovery a distinct cyan-mint signal over graphite and antique gold. Avoid copied publisher marks, generic game storefront patterns, flashing elements and misleading "live" counters.
 
 ## Core palette
-- Obsidian background: `#070B0E`
-- Deep panel: `#0C1316`
-- Antique gold: `#D8BD83`
-- Signal mint: `#76E6CE`
-- Body text: `#EEF0EE`
-- Secondary text: `#A2AAA9`
-- Hairline borders: `rgba(184,202,198,0.15)`
+The shipped static Games portal currently uses the following actual tokens. Do not copy the older mint/gold concept values into the live CSS without a deliberate design review.
+
+- Obsidian background: `#080A0B`
+- Main panel: `#101315`
+- Signal lime: `#D3FF69`
+- Metal/neutral accent: `#D2C9B4`
+- Main text: `#F2F0E8`
+- Secondary text: `#A0A49B`
+- Border: `#FFFFFF20`
+
+The separate reusable favicon mark at `/osgard-mark.svg` adds restrained antique gold and teal; `/games/favicon.svg` remains the Games portal's specific favicon. Treat this as a mark variation, not permission to introduce a third competing palette.
 
 ## Typography
 The existing portal imports Cormorant Garamond, Jost, Inter, Playfair Display and JetBrains Mono in different surfaces. Games uses Inter for operational labels and Playfair/Cormorant-style serif headlines, with JetBrains Mono for indices and telemetry. Before global typography refactoring, consolidate font loading to avoid duplicate Google Fonts requests and define fallbacks.
@@ -19,7 +23,7 @@ The existing portal imports Cormorant Garamond, Jost, Inter, Playfair Display an
 2. **OS monogram in a metal frame:** compact and corporate, but too close to a generic SaaS mark and less distinctive across game covers.
 3. **Split axis / two-world glyph:** good for the reality-switching game, but too tied to NULL//SHIFT to represent the whole portfolio.
 
-The selected north-star/orbit direction is implemented as the original SVG favicon below; the other two are documented design routes, not shipped logo files.
+The selected north-star/orbit direction is implemented in `public/osgard-mark.svg` for the main portal. `public/games/favicon.svg` is a separate existing OSGARD PLAY catalogue icon; the other two concepts are documented directions, not shipped logo files.
 
 ## Mark and use
 `public/osgard-mark.svg` introduces an original star/orbit mark sized for favicon use: dark rounded field, fine gold circle, subtle mint ring, geometric star and mint core. Existing `OsgardLogo` remains the main wordmark. Use the SVG mark for compact contexts, not as a substitute for the full wordmark.
