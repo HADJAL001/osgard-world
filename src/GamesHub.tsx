@@ -270,7 +270,23 @@ export function GamesHub({ locale, setLocale }: { locale: Locale, setLocale: (va
     let canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
     if (!canonical) { canonical = document.createElement('link'); canonical.rel = 'canonical'; document.head.appendChild(canonical) }
     canonical.href = 'https://osgard.world/games'
-  }, [ru])
+    const setMeta = (selector: string, value: string) => {
+      let element = document.head.querySelector<HTMLMetaElement>(selector)
+      if (!element) { element = document.createElement('meta'); document.head.appendChild(element) }
+      element.setAttribute('content', value)
+    }
+    const title = ru ? 'Игры OSGARD WORLD — каталог игровых миров' : 'OSGARD WORLD Games — playable worlds'
+    const siteUrl = 'https://osgard.world/games'
+    setMeta('meta[property="og:title"]', title)
+    setMeta('meta[property="og:description"]', description)
+    setMeta('meta[property="og:url"]', siteUrl)
+    setMeta('meta[name="twitter:title"]', title)
+    setMeta('meta[name="twitter:description"]', description)
+    const schema = { '@context': 'https://schema.org', '@type': 'CollectionPage', name: title, description, url: siteUrl, isPartOf: { '@type': 'WebSite', name: 'OSGARD WORLD', url: 'https://osgard.world/' }, mainEntity: { '@type': 'ItemList', numberOfItems: GAMES.length, itemListElement: GAMES.map((item, index) => ({ '@type': 'ListItem', position: index + 1, name: gameTitle(item, locale), url: 'https://osgard.world/game/' + item.id })) } }
+    let script = document.head.querySelector<HTMLScriptElement>('script[data-games-schema]')
+    if (!script) { script = document.createElement('script'); script.type = 'application/ld+json'; script.dataset.gamesSchema = 'true'; document.head.appendChild(script) }
+    script.textContent = JSON.stringify(schema)
+  }, [ru, locale])
 
   useEffect(() => {
     if (consent === 'granted' && !pageTracked.current) {
@@ -465,7 +481,24 @@ export function GameDetailPage({ slug }: { slug: string }) {
     if (meta) meta.content = gameDescription(game, locale)
     let canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
     if (!canonical) { canonical = document.createElement('link'); canonical.rel = 'canonical'; document.head.appendChild(canonical) }
-    canonical.href = 'https://osgard.world/game/' + game.id
+    const canonicalUrl = 'https://osgard.world/game/' + game.id
+    const description = gameDescription(game, locale)
+    canonical.href = canonicalUrl
+    const setMeta = (selector: string, value: string) => {
+      let element = document.head.querySelector<HTMLMetaElement>(selector)
+      if (!element) { element = document.createElement('meta'); document.head.appendChild(element) }
+      element.setAttribute('content', value)
+    }
+    setMeta('meta[name="description"]', description)
+    setMeta('meta[property="og:title"]', title)
+    setMeta('meta[property="og:description"]', description)
+    setMeta('meta[property="og:url"]', canonicalUrl)
+    setMeta('meta[name="twitter:title"]', title)
+    setMeta('meta[name="twitter:description"]', description)
+    const schema = { '@context': 'https://schema.org', '@type': 'VideoGame', name: gameTitle(game, locale), description, genre: locale === 'ru' ? game.genreRu : game.genreEn, gamePlatform: 'Web browser', applicationCategory: 'Game', url: canonicalUrl, publisher: { '@type': 'Organization', name: 'OSGARD WORLD', url: 'https://osgard.world/' } }
+    let script = document.head.querySelector<HTMLScriptElement>('script[data-game-schema]')
+    if (!script) { script = document.createElement('script'); script.type = 'application/ld+json'; script.dataset.gameSchema = 'true'; document.head.appendChild(script) }
+    script.textContent = JSON.stringify(schema)
   }, [game?.id, locale])
 
   useEffect(() => {
