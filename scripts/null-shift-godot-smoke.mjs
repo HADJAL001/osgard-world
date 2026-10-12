@@ -40,7 +40,7 @@ const legacyPage = readFileSync('public/games/null-shift-godot/index.html', 'utf
 assert.ok(oldPage.includes('id="godot-preview"') && !oldPage.includes('href="../null-shift-godot/'), 'Browser game must not advertise an unavailable Godot export')
 assert.ok(portalApp.includes('href="/games/null-shift/"'), 'The OSGARD featured-game gateway must launch the browser build')
 assert.ok(gameManifest.includes("href: '/games/null-shift/index.html'"), 'The game manifest must route NULL SHIFT to the browser build')
-assert.ok(entertainmentCatalog.includes("'/games/null-shift/index.html'"), 'The React entertainment catalogue must route NULL SHIFT to the browser build')
+assert.ok(entertainmentCatalog.includes("window.location.replace('/games/')") && !entertainmentCatalog.includes('/games/null-shift-godot/'), 'The legacy React entertainment catalogue must redirect to the single Games hub')
 assert.ok(!staticEntertainment.includes('/games/null-shift-godot/index.html'), 'Legacy entertainment archive must not link to a missing Godot export')
 assert.ok(legacyPage.includes('url=/games/null-shift/') && legacyPage.includes("window.location.replace('/games/null-shift/')"), 'Legacy Godot route must forward to the available browser build')
 for (const feature of [
