@@ -228,7 +228,7 @@ export function GamesPlatform() {
     const next = [{ id, at: Date.now() }, ...history.filter(item => item.id !== id)].slice(0, 12)
     setHistory(next)
     try { window.localStorage.setItem(HISTORY_KEY, JSON.stringify(next)) } catch { /* history is optional */ }
-    track('game_opened', { game: id, placement, href: OSGARD_GAMES.find(game => game.id === id)?.href })
+    track('game_opened', { game: id, placement, href: '/games/play/' + id })
   }
 
   const toggleFavorite = (id: OsgardGameId) => {
@@ -240,7 +240,7 @@ export function GamesPlatform() {
     const game = OSGARD_GAMES.find(item => item.id === id)
     if (!game) return
     const details = GAME_DETAILS[id]
-    const url = new URL(game.href, window.location.origin).toString()
+    const url = new URL('/games/info/' + id, window.location.origin).toString()
     track('share_created', { kind: 'game', game: id })
     try {
       if (navigator.share) {
@@ -328,7 +328,7 @@ export function GamesPlatform() {
         <section className="owg-continue" aria-label="Продолжить игру">
           <div className="owg-continue-icon" data-accent={lastDetails.accent}>{lastDetails.mark}</div>
           <div className="owg-continue-copy"><span>ВАШ ПОСЛЕДНИЙ МИР</span><h2>{lastDetails.title}</h2><p>{lastDetails.tagline}</p></div>
-          <a className="owg-button owg-button-primary" href={lastPlayed.href} onClick={() => launchGame(lastPlayed.id, 'continue')}>Вернуться <ArrowRight size={16} /></a>
+          <a className="owg-button owg-button-primary" href={'/games/play/' + lastPlayed.id} onClick={() => launchGame(lastPlayed.id, 'continue')}>Вернуться <ArrowRight size={16} /></a>
         </section>
       )}
 
