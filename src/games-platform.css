@@ -242,3 +242,34 @@
 @media (prefers-reduced-motion: reduce) {
   .owg-page *, .owg-page *::before, .owg-page *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }
+
+/* Individual game profile pages */
+.owg-detail-page .owg-detail-breadcrumb { max-width: 1480px; margin: 0 auto; padding: 24px 0 6px; display: flex; align-items: center; gap: 9px; color: #718297; font: 10px monospace; letter-spacing: .07em; }
+.owg-detail-breadcrumb a { color: #d4bf8c; }.owg-detail-breadcrumb span { color: #b7c3cf; }
+.owg-detail-hero { max-width: 1480px; margin: 0 auto; padding: clamp(34px,5vw,68px) 0 72px; display: grid; grid-template-columns: minmax(290px,.88fr) minmax(0,1.12fr); gap: clamp(28px,6vw,88px); align-items: center; }
+.owg-detail-hero-art { min-height: 490px; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden; border: 1px solid rgba(172,194,218,.17); background: radial-gradient(ellipse at 48% 50%,rgba(142,175,201,.18),transparent 45%),linear-gradient(145deg,#132536,#080c12 82%); }
+.owg-detail-hero-art[data-accent="amber"] { background: radial-gradient(ellipse at 48% 50%,rgba(218,179,104,.22),transparent 45%),linear-gradient(145deg,#2d2114,#080c12 82%); }
+.owg-detail-hero-art[data-accent="mint"] { background: radial-gradient(ellipse at 48% 50%,rgba(98,228,210,.2),transparent 45%),linear-gradient(145deg,#10302f,#080c12 82%); }
+.owg-detail-hero-art[data-accent="fern"] { background: radial-gradient(ellipse at 48% 50%,rgba(167,213,129,.2),transparent 45%),linear-gradient(145deg,#192c20,#080c12 82%); }
+.owg-detail-hero-art[data-accent="rose"] { background: radial-gradient(ellipse at 48% 50%,rgba(242,123,169,.2),transparent 45%),linear-gradient(145deg,#351927,#080c12 82%); }
+.owg-detail-hero-art[data-accent="violet"] { background: radial-gradient(ellipse at 48% 50%,rgba(155,133,231,.2),transparent 45%),linear-gradient(145deg,#261d3a,#080c12 82%); }
+.owg-detail-hero-art .owg-game-art-orbit { width: 65%; aspect-ratio: 1; }.owg-detail-hero-art .owg-game-art-halo { width: 36%; }.owg-detail-hero-art > strong { position: relative; z-index: 2; color: #f3f0e8; font: 400 clamp(66px,8vw,112px)/.85 'Cormorant Garamond',Georgia,serif; text-shadow: 0 0 30px rgba(0,0,0,.65); }
+.owg-detail-intro .owg-kicker { margin-bottom: 16px; }.owg-detail-intro h1 { margin: 0; font: 400 clamp(50px,6vw,82px)/.95 'Cormorant Garamond',Georgia,serif; letter-spacing: -.035em; overflow-wrap: anywhere; }
+.owg-detail-tagline { margin: 22px 0 0; color: #e0d2ad; font-size: clamp(16px,1.6vw,20px); }
+.owg-detail-description { max-width: 670px; margin: 15px 0 0; color: #9aa8b9; font-size: 14px; line-height: 1.85; }
+.owg-detail-tags { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 21px; }.owg-detail-tags span { padding: 6px 9px; border: 1px solid var(--owg-line); color: #9cabbc; font: 10px monospace; }
+.owg-detail-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 29px; }.owg-detail-actions button { cursor: pointer; }
+.owg-detail-caveat { max-width: 570px; margin: 23px 0 0; color: #718194; font-size: 10px; line-height: 1.7; }
+.owg-detail-info { max-width: 1480px; margin: 0 auto; padding: 55px 0 68px; display: grid; grid-template-columns: minmax(260px,.72fr) minmax(0,1.28fr); gap: clamp(25px,6vw,80px); border-top: 1px solid var(--owg-line); }
+.owg-detail-info-heading .owg-kicker { margin-bottom: 12px; }.owg-detail-info-heading h2,.owg-detail-bottom h2 { margin: 0; font: 400 clamp(35px,4vw,51px)/1 'Cormorant Garamond',Georgia,serif; }.owg-detail-info-heading > p:last-child,.owg-detail-bottom > div > p:last-child { max-width: 460px; margin: 14px 0 0; color: #8d9cad; font-size: 12px; line-height: 1.8; }
+.owg-detail-facts { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }.owg-detail-facts article { display: flex; gap: 13px; padding: 18px 15px; border: 1px solid var(--owg-line); background: rgba(16,23,32,.6); }
+.owg-detail-fact-icon { flex: 0 0 37px; height: 37px; display: grid; place-items: center; color: #d1bc8b; border: 1px solid rgba(205,180,125,.3); }
+.owg-detail-facts article small { color: #8b9aac; font: 9px monospace; letter-spacing: .1em; }.owg-detail-facts article strong { display: block; margin-top: 6px; color: #e6ebef; font-size: 13px; font-weight: 500; }.owg-detail-facts article p { margin: 5px 0 0; color: #7e8d9e; font-size: 10px; line-height: 1.6; }
+.owg-detail-bottom { max-width: 1480px; margin: 0 auto; padding: 28px; display: flex; justify-content: space-between; align-items: center; gap: 28px; border: 1px solid rgba(205,180,125,.22); background: linear-gradient(100deg,rgba(205,180,125,.05),rgba(255,255,255,.012)); }
+.owg-detail-bottom .owg-kicker { margin-bottom: 9px; }.owg-detail-bottom h2 { font-size: clamp(28px,3.6vw,43px); }
+.owg-detail-not-found { max-width: 1480px; margin: 0 auto; padding: 120px 0; }.owg-detail-not-found h1 { font: 400 clamp(44px,7vw,80px)/1 'Cormorant Garamond',Georgia,serif; }.owg-detail-not-found p:not(.owg-kicker) { color: var(--owg-muted); }
+.owg-details-link { display: inline-flex; align-items: center; gap: 6px; color: #b6c1cd !important; font-size: 10px; white-space: nowrap; }.owg-details-link:hover { color: #ecd9ad !important; }
+.owg-game-actions .owg-details-link { padding: 8px 0; }
+@media(max-width:900px) { .owg-detail-hero { grid-template-columns: minmax(0,.84fr) minmax(0,1.16fr); gap: 28px; }.owg-detail-hero-art { min-height: 380px; }.owg-detail-info { grid-template-columns: 1fr; gap: 25px; } }
+@media(max-width:650px) { .owg-detail-page { padding-inline: 16px; }.owg-detail-page .owg-header .owg-nav { display:none; }.owg-detail-breadcrumb { padding-top: 16px; font-size: 9px; }.owg-detail-hero { padding: 25px 0 45px; grid-template-columns: 1fr; gap: 27px; }.owg-detail-hero-art { min-height: 270px; }.owg-detail-intro h1 { font-size: clamp(47px,12vw,68px); }.owg-detail-description { font-size: 13px; }.owg-detail-info { padding-block: 42px; }.owg-detail-facts { grid-template-columns: 1fr; }.owg-detail-bottom { align-items: stretch; flex-direction: column; padding: 20px; }.owg-detail-bottom > .owg-button { width: 100%; }.owg-detail-not-found { padding: 75px 0; } }
+@media (prefers-reduced-motion: reduce) { .owg-detail-page *,.owg-detail-page *::before,.owg-detail-page *::after { animation-duration:.01ms!important;transition-duration:.01ms!important; } }
