@@ -1,0 +1,38 @@
+name: OSGARD PLAY QA
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master, "feat/osgard-play-partner-studio-2026"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: osgard-play-qa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web-and-games:
+    name: Typecheck, build, portal and partner studio
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install exact lockfile dependencies
+        run: npm ci
+      - name: TypeScript check
+        run: npm run check
+      - name: Build production bundle
+        run: npm run build
+      - name: Existing Games portal smoke test
+        run: npm run qa:games-portal
+      - name: Partner studio smoke test
+        run: npm run qa:partner-studio
