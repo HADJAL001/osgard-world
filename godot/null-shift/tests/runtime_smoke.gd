@@ -34,6 +34,24 @@ func _run_smoke() -> void:
 	print("RUNTIME_STAGE: phase-conduit warning, hazard and dodge")
 	if not _expect(game.phase_lanes.size() == 3 and is_instance_valid(game.hazard_status_label), "three timed energy lanes and a HUD status label must instantiate"):
 		return
+	if not _expect(game.phase_lane_labels.size() == 3 and is_instance_valid(game.phase_lane_status_row), "three per-lane HUD indicators must instantiate"):
+		return
+	if not _expect(is_instance_valid(game.health_bar) and is_instance_valid(game.health_bar_fill), "premium health bar and its stateful fill material must instantiate"):
+		return
+	var hud_saved_health: float = game.player_health
+	var hud_saved_max_health: float = game.player_max_health
+	game.player_max_health = 100.0
+	game.player_health = 70.0
+	game._update_hud()
+	if not _expect(is_equal_approx(game.health_bar.value, 70.0) and game.health_bar_fill.bg_color.g > 0.8, "health UI must show a live numeric value and healthy-state colour"):
+		return
+	game.player_health = 20.0
+	game._update_hud()
+	if not _expect(is_equal_approx(game.health_bar.value, 20.0) and game.health_bar_fill.bg_color.g < 0.3, "low health must update the live bar and switch to critical red"):
+		return
+	game.player_health = hud_saved_health
+	game.player_max_health = hud_saved_max_health
+	game._update_hud()
 	var lane_saved_position: Vector3 = game.player.global_position
 	var lane_saved_health: float = game.player_health
 	game.phase_clock = 5.8
@@ -41,12 +59,24 @@ func _run_smoke() -> void:
 	var first_lane: Dictionary = game.phase_lanes[0]
 	if not _expect(first_lane["state"] == "warning" and first_lane["warning_mesh"].visible and not first_lane["active_mesh"].visible, "energy lane must visibly warn before activating"):
 		return
+	if not _expect(is_instance_valid(first_lane["pulse_head"]) and is_instance_valid(first_lane["pulse_ring"]) and is_instance_valid(first_lane["pulse_wake"]) and first_lane["pulse_rig"].visible, "warning phase must show the moving 3D surge head, ring and wake"):
+		return
+	var pulse_start_x: float = first_lane["pulse_head"].position.x
+	game.phase_clock = 5.95
+	game._update_phase_lanes(0.0)
+	first_lane = game.phase_lanes[0]
+	if not _expect(float(first_lane["pulse_head"].position.x) > pulse_start_x and first_lane["pulse_wake"].position.x < first_lane["pulse_head"].position.x, "energy surge must travel down the conduit with a trailing wake"):
+		return
+	if not _expect(game.phase_lane_labels[0].text.contains("ЗАРЯД"), "lane HUD chip must reflect the charging state"):
+		return
 	if not _expect(game.hazard_status_label.text.contains("ЗАРЯЖАЕТСЯ"), "HUD must report an approaching energy discharge"):
 		return
 	game.phase_clock = 6.6
 	game._update_phase_lanes(0.0)
 	first_lane = game.phase_lanes[0]
 	if not _expect(first_lane["state"] == "active" and first_lane["active_mesh"].visible and not first_lane["warning_mesh"].visible, "warning lane must transition into the damaging phase"):
+		return
+	if not _expect(first_lane["pulse_rig"].visible and first_lane["pulse_head"].material_override == first_lane["active_material"] and game.phase_lane_labels[0].text.contains("ОПАСНО"), "active phase must recolour the moving surge and the per-lane HUD warning"):
 		return
 	game.player.global_position = Vector3(0.0, 0.82, float(first_lane["z"]))
 	game.damage_cooldown = 0.0

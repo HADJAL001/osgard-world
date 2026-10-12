@@ -25,7 +25,7 @@ assert.match(scene, /type="Node3D"/, '3D root scene missing')
 assert.equal(packageJson.scripts['qa:null-shift-godot'], 'node scripts/null-shift-godot-smoke.mjs', 'Godot smoke command not registered')
 assert.ok(oldPage.includes('id="godot-preview"') && oldPage.includes('../null-shift-godot/'), 'Legacy game must link to the isolated Godot beta route')
 for (const feature of [
-  '_create_arena(', '_create_arena_props(', '_create_phase_lanes(', '_update_phase_lanes(', '_check_phase_lane_damage(', '_is_player_inside_phase_lane(', '_create_player(', '_create_initial_guards(', '_fire_weapon(',
+  '_create_arena(', '_create_arena_props(', '_create_phase_lanes(', '_update_phase_lanes(', 'phase_lane_labels', 'phase_lane_status_row', 'health_bar_fill', 'ProgressBar.new()', 'SurgeHead', 'SurgeRing', 'SurgeWake', 'pulse_wake.position.x = travel_x - 0.58', 'К%d · ОПАСНО', '_check_phase_lane_damage(', '_is_player_inside_phase_lane(', '_create_player(', '_create_initial_guards(', '_fire_weapon(',
   '_submit_cipher_key(', '_destroy_device(', '_deploy_pulse(', '_shift_layer(',
   '_finish_mission(', '_create_mobile_controls(', '_update_hud(', '_create_crosshair(', '_update_crosshair(', '_create_briefing_panel(', '_add_briefing_step(', '_dismiss_briefing(', '_show_briefing(', '_screen_impulse(', '_add_sphere_mesh(',
   'Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME', 'AudioStreamWAV.new()', 'HealthReadout', 'health_timer', 'operator_suit.material_override',

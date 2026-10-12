@@ -38,8 +38,12 @@ var materials: Dictionary = {}
 var guards: Array[Dictionary] = []
 var devices: Array[Dictionary] = []
 var phase_lanes: Array[Dictionary] = []
+var phase_lane_labels: Array[Label] = []
+var phase_lane_status_row: HBoxContainer
 var phase_clock := 0.0
 var hazard_status_label: Label
+var health_bar: ProgressBar
+var health_bar_fill: StyleBoxFlat
 var effects: Array[Node] = []
 var career := ConfigFile.new()
 var career_credits := 0
@@ -371,6 +375,43 @@ func _create_phase_lanes() -> void:
 		warning_mesh.visible = false
 		var active_mesh: MeshInstance3D = _make_box_mesh(prefix + "Active", Vector3(0.0, -0.003, lane_z), Vector3(42.8, 0.022, 0.34), active_material)
 		active_mesh.visible = false
+		# Reused 3D surge head, orbit ring and trailing wake; no per-frame allocations.
+		var pulse_rig := Node3D.new()
+		pulse_rig.name = prefix + "PulseRig"
+		pulse_rig.position = Vector3(0.0, 0.0, lane_z)
+		pulse_rig.visible = false
+		add_child(pulse_rig)
+		var pulse_head := MeshInstance3D.new()
+		pulse_head.name = prefix + "SurgeHead"
+		var pulse_sphere := SphereMesh.new()
+		pulse_sphere.radius = 0.15
+		pulse_sphere.height = 0.3
+		pulse_sphere.radial_segments = 16
+		pulse_sphere.rings = 8
+		pulse_head.mesh = pulse_sphere
+		pulse_head.material_override = warning_material
+		pulse_head.position = Vector3(-20.5, 0.11, 0.0)
+		pulse_rig.add_child(pulse_head)
+		var pulse_ring := MeshInstance3D.new()
+		pulse_ring.name = prefix + "SurgeRing"
+		var pulse_torus := TorusMesh.new()
+		pulse_torus.inner_radius = 0.18
+		pulse_torus.outer_radius = 0.23
+		pulse_torus.rings = 18
+		pulse_torus.ring_segments = 8
+		pulse_ring.mesh = pulse_torus
+		pulse_ring.material_override = warning_material
+		pulse_ring.rotation.x = PI * 0.5
+		pulse_ring.position = Vector3(-20.5, 0.075, 0.0)
+		pulse_rig.add_child(pulse_ring)
+		var pulse_wake := MeshInstance3D.new()
+		pulse_wake.name = prefix + "SurgeWake"
+		var wake_mesh := BoxMesh.new()
+		wake_mesh.size = Vector3(1.2, 0.024, 0.055)
+		pulse_wake.mesh = wake_mesh
+		pulse_wake.material_override = warning_material
+		pulse_wake.position = Vector3(-21.05, 0.038, 0.0)
+		pulse_rig.add_child(pulse_wake)
 		phase_lanes.append({
 			"z": lane_z,
 			"offset": float(index) * 2.8,
@@ -378,7 +419,11 @@ func _create_phase_lanes() -> void:
 			"warning_mesh": warning_mesh,
 			"active_mesh": active_mesh,
 			"warning_material": warning_material,
-			"active_material": active_material
+			"active_material": active_material,
+			"pulse_rig": pulse_rig,
+			"pulse_head": pulse_head,
+			"pulse_ring": pulse_ring,
+			"pulse_wake": pulse_wake
 		})
 
 func _update_phase_lanes(delta: float) -> void:
@@ -399,6 +444,25 @@ func _update_phase_lanes(delta: float) -> void:
 		var active_mesh: MeshInstance3D = lane["active_mesh"]
 		warning_mesh.visible = next_state == "warning"
 		active_mesh.visible = next_state == "active"
+		var pulse_rig: Node3D = lane["pulse_rig"]
+		var pulse_head: MeshInstance3D = lane["pulse_head"]
+		var pulse_ring: MeshInstance3D = lane["pulse_ring"]
+		var pulse_wake: MeshInstance3D = lane["pulse_wake"]
+		pulse_rig.visible = next_state != "safe"
+		var travel: float = clampf((cycle - 4.95) / 2.27, 0.0, 1.0)
+		var travel_x: float = lerpf(-20.5, 20.5, travel)
+		var surge_scale: float = 1.0 + absf(sin(scene_clock * 12.0 + float(index))) * 0.13
+		pulse_head.position.x = travel_x
+		pulse_head.scale = Vector3.ONE * surge_scale
+		pulse_ring.position.x = travel_x
+		pulse_ring.scale = Vector3.ONE * (0.92 + surge_scale * 0.13)
+		pulse_ring.rotation.y += delta * 4.2
+		pulse_wake.position.x = travel_x - 0.58
+		pulse_wake.scale.x = 0.78 + absf(sin(scene_clock * 9.0 + float(index))) * 0.24
+		var surge_material: Material = active_material if next_state == "active" else warning_material
+		pulse_head.material_override = surge_material
+		pulse_ring.material_override = surge_material
+		pulse_wake.material_override = surge_material
 		var pulse: float = 0.65 + absf(sin(scene_clock * 11.5 + float(index))) * 0.95
 		var warning_material: StandardMaterial3D = lane["warning_material"]
 		var active_material: StandardMaterial3D = lane["active_material"]
@@ -408,6 +472,18 @@ func _update_phase_lanes(delta: float) -> void:
 			warning_count += 1
 		elif next_state == "active":
 			active_count += 1
+		if phase_lane_labels.size() > index and (next_state != old_state or phase_lane_labels[index].text.is_empty()):
+			var lane_label: Label = phase_lane_labels[index]
+			match next_state:
+				"warning":
+					lane_label.text = "К%d · ЗАРЯД" % [index + 1]
+					lane_label.add_theme_color_override("font_color", Color(1.0, 0.72, 0.34))
+				"active":
+					lane_label.text = "К%d · ОПАСНО" % [index + 1]
+					lane_label.add_theme_color_override("font_color", Color(1.0, 0.3, 0.36))
+				_:
+					lane_label.text = "К%d · НОРМА" % [index + 1]
+					lane_label.add_theme_color_override("font_color", Color(0.38, 0.9, 0.82))
 		if next_state != old_state and next_state == "warning":
 			_play_sfx(340.0 + float(index) * 45.0, 0.07, 0.045)
 		phase_lanes[index] = lane
@@ -1454,9 +1530,36 @@ func _create_ui() -> void:
 	status_title = _label(status_stack, "NULL//SHIFT", 22, Color(0.38, 1.0, 0.86))
 	status_subtitle = _label(status_stack, "PHASE TRANSIT  /  TACTICAL RAID", 9, Color(0.49, 0.67, 0.69))
 	health_label = _label(status_stack, "ВИТАЛЬНОСТЬ  100 / 100", 13, Color(0.86, 1.0, 0.97))
+	health_bar = ProgressBar.new()
+	health_bar.name = "HealthBar"
+	health_bar.min_value = 0.0
+	health_bar.max_value = player_max_health
+	health_bar.value = player_health
+	health_bar.show_percentage = false
+	health_bar.custom_minimum_size = Vector2(272.0, 7.0)
+	health_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var health_bar_background := StyleBoxFlat.new()
+	health_bar_background.bg_color = Color(0.035, 0.078, 0.086, 0.98)
+	health_bar_background.set_corner_radius_all(3)
+	health_bar.add_theme_stylebox_override("background", health_bar_background)
+	health_bar_fill = StyleBoxFlat.new()
+	health_bar_fill.bg_color = Color(0.38, 0.96, 0.76)
+	health_bar_fill.set_corner_radius_all(3)
+	health_bar.add_theme_stylebox_override("fill", health_bar_fill)
+	status_stack.add_child(health_bar)
 	credits_label = _label(status_stack, "РЕЙД  000  ·  КАРЬЕРА  000", 12, Color(1.0, 0.77, 0.39))
 	threat_label = _label(status_stack, "УГРОЗА: ВЫСОКАЯ", 11, Color(1.0, 0.3, 0.38))
 	hazard_status_label = _label(status_stack, "ЭНЕРГОКОНТУРЫ · СТАБИЛЬНО", 9, Color(0.38, 0.9, 0.82))
+	phase_lane_status_row = HBoxContainer.new()
+	phase_lane_status_row.name = "PhaseLaneStatus"
+	phase_lane_status_row.add_theme_constant_override("separation", 4)
+	status_stack.add_child(phase_lane_status_row)
+	for lane_index in range(3):
+		var lane_chip: Label = _label(phase_lane_status_row, "К%d · НОРМА" % [lane_index + 1], 8, Color(0.38, 0.9, 0.82))
+		lane_chip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lane_chip.custom_minimum_size = Vector2(82.0, 16.0)
+		lane_chip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		phase_lane_labels.append(lane_chip)
 	status_shortcuts = _label(status_stack, "ПОМОЩЬ / H  ·  FPS / F3  ·  ГРАФИКА / F2", 8, Color(0.48, 0.6, 0.62))
 
 	objective_panel = _make_panel(hud_root, Control.PRESET_TOP_RIGHT, Rect2(-334.0, 18.0, 316.0, 178.0))
@@ -1812,6 +1915,8 @@ func _update_mobile_layout() -> void:
 		briefing_panel.offset_right = panel_width * 0.5
 		briefing_panel.offset_top = -panel_height * 0.5
 		briefing_panel.offset_bottom = panel_height * 0.5
+	if is_instance_valid(phase_lane_status_row):
+		phase_lane_status_row.visible = not compact
 	if compact:
 		status_panel.offset_left = 10.0
 		status_panel.offset_top = 10.0
@@ -1921,6 +2026,11 @@ func _update_hud() -> void:
 	if not is_instance_valid(objective_label):
 		return
 	health_label.text = "ВИТАЛЬНОСТЬ  %d / %d" % [int(ceil(player_health)), int(player_max_health)]
+	if is_instance_valid(health_bar):
+		health_bar.max_value = maxf(1.0, player_max_health)
+		health_bar.value = clampf(player_health, 0.0, player_max_health)
+		var health_ratio: float = health_bar.value / health_bar.max_value
+		health_bar_fill.bg_color = Color(0.38, 0.96, 0.76) if health_ratio > 0.55 else (Color(1.0, 0.68, 0.25) if health_ratio > 0.25 else Color(1.0, 0.22, 0.31))
 	credits_label.text = "РЕЙД  %03d  ·  КАРЬЕРА  %05d" % [run_credits, career_credits]
 	threat_label.text = "УГРОЗА: %s" % ("КРИТИЧЕСКАЯ" if alarm_active else ("ВЫСОКАЯ" if not guards.is_empty() else "НИЗКАЯ"))
 	threat_label.add_theme_color_override("font_color", Color(1.0, 0.25, 0.34) if alarm_active else Color(0.95, 0.72, 0.39) if not guards.is_empty() else Color(0.35, 1.0, 0.81))

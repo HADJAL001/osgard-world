@@ -188,3 +188,12 @@ The command npm run qa:null-shift checks required game assets, script syntax, co
 - The HUD exposes live hazard state: stable, charging or active. The cycle pauses during pause/briefing and resumes with the simulation.
 - Active lanes inflict actual 13-point player damage through the game's damage pipeline, camera/screen feedback, sound and HUD updates. Leaving the lane avoids damage, and the existing NULL Shift invulnerability window can safely cross an active lane.
 - The first-run briefing teaches how to read and evade the warning. Runtime smoke deterministically exercises warning visibility, active visibility, HUD state, actual damage, dodge avoidance and phase-shift protection. Source QA requires the new gameplay methods and visual objects before Godot export/deploy.
+
+
+## Godot release 0.4 — Phase Surge and Vitality HUD
+
+- Added one preallocated 3D surge rig per timed conduit (emissive sphere head, rotating torus ring and short energy wake). During the amber warning phase the pulse advances along the floor; when the conduit activates it turns red and continues through the lane. The rigs are reused instead of allocating particle systems every frame.
+- Added three compact per-lane HUD chips on desktop that mirror NORMAL / CHARGING / ACTIVE. The row hides in compact/touch layouts to protect the play area; the existing top-line alert remains visible.
+- Added a real ProgressBar health readout whose value is bound to runtime player health and whose fill changes between cyan, amber and red thresholds.
+- Godot runtime smoke now exercises health values/colours, pulse visibility and travel, wake position, active material transition and the matching HUD state. The project source-contract smoke requires the new nodes and UI.
+- This is a procedural Godot Web/3D improvement, not native 8K rendering; real device profiling remains required.
