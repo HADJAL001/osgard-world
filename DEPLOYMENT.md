@@ -15,7 +15,7 @@ docker compose -f docker-compose.production.yml up -d --build
 
 3. Add `osgard.world` and `www.osgard.world` to the existing reverse proxy, forwarding to `127.0.0.1:4189`. Issue TLS certificates after DNS propagation.
 
-4. Verify desktop and mobile interaction, all product links, `https://t.me/OSGARD_world_bot`, and the TimeCoin Rules page.
+4. Verify desktop and mobile interaction, all product links, `https://t.me/OSGARD_world_bot`, and the TimeCoin Rules page. For the OSGARD PLAY branch, also verify `/games`, `/games/info/time`, `/games/info/swarm`, `/games/info/null-shift`, `/games/info/inherit`, `/games/info/remix`, `/privacy`, and `/terms` using the production route matrix.
 
 5. REMIX browser matches use the same origin endpoint `https://osgard.world/api/remix`. The compose stack starts the API and Nginx proxies `/api/remix/` to it.
 
@@ -28,6 +28,10 @@ The OSGARD production build runs `npm run sync:swarm` first, copying `index.html
 Before replacing the running frontend, build and verify the complete archive locally:
 
 ```sh
+npm run check
+npm run qa:games
+npm run build
+npm run preflight:frontend
 npm run qa:release
 tar -tzf osgard-world-dist.tgz >/tmp/osgard-world-files.txt
 grep -Fx 'index.html' /tmp/osgard-world-files.txt
