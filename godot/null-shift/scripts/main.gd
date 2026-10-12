@@ -1,6 +1,7 @@
 extends Node3D
 
 const PLAYER_SPEED := 7.4
+const CAMERA_BASE_FOV := 49.0
 const CIPHER := [KEY_UP, KEY_LEFT, KEY_DOWN, KEY_RIGHT]
 const SAVE_PATH := "user://null_shift_career.cfg"
 const MAX_BEAM_POOL := 28
@@ -106,12 +107,18 @@ var camera_follow_position := Vector3.ZERO
 var camera_shake_timer := 0.0
 var camera_shake_duration := 0.0
 var camera_shake_strength := 0.0
+var damage_direction_timer := 0.0
+var damage_direction_duration := 0.62
+var damage_direction_source: Node3D
+var damage_direction_fallback := Vector2.UP
 var current_frame_ms := 0.0
 var impact_flash_timer := 0.0
 var phase_flash_timer := 0.0
 var crosshair_kick := 0.0
 var crosshair_hit_timer := 0.0
 var impact_overlay: ColorRect
+var damage_direction_root: Control
+var damage_direction_arrow: Label
 var crosshair_root: Control
 var crosshair_parts: Array[ColorRect] = []
 var aim_target_node: Node3D
@@ -177,6 +184,7 @@ func _process(delta: float) -> void:
 	damage_flash_timer = maxf(0.0, damage_flash_timer - dt)
 	camera_shake_timer = maxf(0.0, camera_shake_timer - dt)
 	impact_flash_timer = maxf(0.0, impact_flash_timer - dt)
+	damage_direction_timer = maxf(0.0, damage_direction_timer - dt)
 	phase_flash_timer = maxf(0.0, phase_flash_timer - dt)
 	crosshair_kick = move_toward(crosshair_kick, 0.0, dt * 5.6)
 	crosshair_hit_timer = maxf(0.0, crosshair_hit_timer - dt)
@@ -198,6 +206,7 @@ func _process(delta: float) -> void:
 	_update_target_lock_ui(dt)
 	_update_objective_compass(dt)
 	_update_screen_overlay()
+	_update_damage_direction_ui()
 	hud_clock += dt
 	if hud_clock >= 0.12:
 		hud_clock = 0.0
@@ -828,7 +837,7 @@ func _create_player() -> void:
 	add_child(camera_rig)
 	camera = Camera3D.new()
 	camera.name = "PerspectiveCamera"
-	camera.fov = 49.0
+	camera.fov = CAMERA_BASE_FOV
 	camera.near = 0.08
 	camera.far = 130.0
 	camera.position = Vector3(0.0, 23.5, 24.5)
@@ -1117,13 +1126,13 @@ func _update_guards(delta: float) -> void:
 					_spawn_ring_burst(body.global_position + Vector3.UP * 0.12, materials["red"])
 					_screen_impulse(0.13, 0.24)
 					if distance < 7.6 and damage_cooldown <= 0.0 and _has_clear_path_to_player(body.global_position + Vector3.UP * 0.8, body):
-						_damage_player(float(guard["damage"]) * 1.35)
+						_damage_player(float(guard["damage"]) * 1.35, body)
 				elif role == "HEAVY":
 					_screen_impulse(0.055, 0.12)
 					if _player_inside_lanes(stored_lanes, 14.5, 0.88, body) and damage_cooldown <= 0.0:
-						_damage_player(float(guard["damage"]) * 1.3)
+						_damage_player(float(guard["damage"]) * 1.3, body)
 				elif _player_inside_lanes(stored_lanes, 14.5, 0.62, body) and damage_cooldown <= 0.0:
-					_damage_player(float(guard["damage"]))
+					_damage_player(float(guard["damage"]), body)
 				guard["attack_lanes"] = []
 				guard["cooldown"] = randf_range(1.45, 2.15) if role == "RANGER" else randf_range(2.0, 3.0)
 			guards[index] = guard
@@ -1428,7 +1437,7 @@ func _nearest_prompt() -> String:
 func _near(first: Node3D, second: Node3D, distance: float) -> bool:
 	return is_instance_valid(first) and is_instance_valid(second) and first.global_position.distance_to(second.global_position) < distance
 
-func _damage_player(amount: float) -> void:
+func _damage_player(amount: float, attacker: Node3D = null) -> void:
 	if damage_cooldown > 0.0 or null_shift_timer > 0.0:
 		return
 	damage_cooldown = 0.5
@@ -1436,6 +1445,8 @@ func _damage_player(amount: float) -> void:
 	impact_flash_timer = maxf(impact_flash_timer, 0.28)
 	_screen_impulse(0.24, 0.32)
 	player_health = maxf(0.0, player_health - amount)
+	if is_instance_valid(attacker):
+		_show_damage_direction(attacker)
 	_spawn_hit_sparks(player.global_position + Vector3.UP * 0.8, materials["red"])
 	_play_sfx(85.0, 0.24, 0.14)
 	objective_text = "ПОПАДАНИЕ · ЗДОРОВЬЕ %d%%" % int(player_health)
@@ -1821,6 +1832,7 @@ func _create_ui() -> void:
 	impact_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	impact_overlay.visible = false
 	hud_root.add_child(impact_overlay)
+	_create_damage_direction_ui()
 	_create_crosshair()
 	_create_target_lock_ui()
 	_create_briefing_panel()
@@ -1877,6 +1889,63 @@ func _add_briefing_step(parent: VBoxContainer, number: String, title_text: Strin
 	var detail := _label(text_column, detail_text, 10, Color(0.79, 0.89, 0.87))
 	detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	detail.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+func _create_damage_direction_ui() -> void:
+	damage_direction_root = Control.new()
+	damage_direction_root.name = "DamageDirectionIndicator"
+	damage_direction_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	damage_direction_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	damage_direction_root.z_index = 26
+	damage_direction_root.visible = false
+	hud_root.add_child(damage_direction_root)
+	damage_direction_arrow = Label.new()
+	damage_direction_arrow.name = "IncomingHitArrow"
+	damage_direction_arrow.text = "▲"
+	damage_direction_arrow.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	damage_direction_arrow.size = Vector2(44.0, 44.0)
+	damage_direction_arrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	damage_direction_arrow.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	damage_direction_arrow.add_theme_font_size_override("font_size", 30)
+	damage_direction_arrow.add_theme_color_override("font_color", Color(1.0, 0.24, 0.31, 0.0))
+	damage_direction_arrow.add_theme_color_override("font_outline_color", Color(0.025, 0.008, 0.012, 0.96))
+	damage_direction_arrow.add_theme_constant_override("outline_size", 5)
+	damage_direction_arrow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	damage_direction_root.add_child(damage_direction_arrow)
+
+func _show_damage_direction(source: Node3D) -> void:
+	if not is_instance_valid(source):
+		return
+	damage_direction_source = source
+	damage_direction_timer = damage_direction_duration
+	_update_damage_direction_ui()
+
+func _update_damage_direction_ui() -> void:
+	if not is_instance_valid(damage_direction_root) or not is_instance_valid(damage_direction_arrow):
+		return
+	var overlays_blocked := paused_game or mission_finished or briefing_visible or terminal_active
+	if damage_direction_timer <= 0.0 or overlays_blocked or not is_instance_valid(player) or not is_instance_valid(camera):
+		damage_direction_root.visible = false
+		return
+	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+	var center: Vector2 = viewport_size * 0.5
+	var direction := damage_direction_fallback
+	if is_instance_valid(damage_direction_source):
+		var source_anchor: Vector3 = damage_direction_source.global_position + Vector3.UP * 0.82
+		var projected: Vector2 = camera.unproject_position(source_anchor) - center
+		if camera.is_position_behind(source_anchor):
+			projected = -projected
+		if projected.length_squared() > 0.001:
+			direction = projected.normalized()
+	damage_direction_fallback = direction
+	var radius: float = minf(viewport_size.x, viewport_size.y) * 0.34
+	damage_direction_arrow.position = center + direction * radius - damage_direction_arrow.size * 0.5
+	damage_direction_arrow.rotation = direction.angle() + PI * 0.5
+	var strength: float = clampf(damage_direction_timer / maxf(0.001, damage_direction_duration), 0.0, 1.0)
+	var danger_color := Color(1.0, 0.2, 0.28, 0.96 * strength)
+	if player_health / maxf(1.0, player_max_health) > 0.35:
+		danger_color = Color(1.0, 0.49, 0.27, 0.93 * strength)
+	damage_direction_arrow.add_theme_color_override("font_color", danger_color)
+	damage_direction_root.visible = true
 
 func _create_crosshair() -> void:
 	crosshair_root = Control.new()
@@ -2408,6 +2477,12 @@ func _update_camera(delta: float) -> void:
 	camera.global_position = camera_follow_position + shake
 	var aim_lead := Vector3(player_aim.x, 0.0, player_aim.z).normalized() * 0.7
 	camera.look_at(player.global_position + Vector3(0.0, 0.55, 0.0) + aim_lead, Vector3.UP)
+	var horizontal_speed := Vector2(player.velocity.x, player.velocity.z).length()
+	var movement_fov := clampf(horizontal_speed / PLAYER_SPEED, 0.0, 1.0) * 1.35
+	var shift_fov := 3.1 if null_shift_timer > 0.0 else 0.0
+	var recoil_fov := clampf(weapon_recoil, 0.0, 1.0) * 0.85
+	var target_fov: float = CAMERA_BASE_FOV + movement_fov + shift_fov + recoil_fov
+	camera.fov = lerpf(camera.fov, target_fov, 1.0 - exp(-maxf(delta, 0.0) * 4.8))
 
 func _update_player_material() -> void:
 	# The suit is a child of the articulated visual rig, not the physics root.

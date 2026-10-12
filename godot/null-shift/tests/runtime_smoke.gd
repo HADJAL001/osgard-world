@@ -54,6 +54,50 @@ func _run_smoke() -> void:
 	game.terminal_unlocked = compass_saved_terminal
 	game.core_secured = compass_saved_core
 
+	print("RUNTIME_STAGE: cinematic camera response and incoming-damage direction")
+	if not _expect(is_instance_valid(game.damage_direction_root) and is_instance_valid(game.damage_direction_arrow), "directional damage indicator must instantiate as a native HUD control"):
+		return
+	var saved_fov: float = game.camera.fov
+	var saved_shift_timer: float = game.null_shift_timer
+	var saved_recoil: float = game.weapon_recoil
+	var saved_velocity: Vector3 = game.player.velocity
+	game.null_shift_timer = 1.0
+	game.weapon_recoil = 0.0
+	game.player.velocity = Vector3.ZERO
+	game._update_camera(0.12)
+	if not _expect(game.camera.fov > saved_fov, "NULL SHIFT must smoothly widen the cinematic camera FOV"):
+		return
+	game.null_shift_timer = 0.0
+	for _settle in range(12):
+		game._update_camera(0.12)
+	if not _expect(absf(game.camera.fov - 49.0) < 0.25, "camera FOV must smoothly return to baseline after the shift"):
+		return
+	game.null_shift_timer = saved_shift_timer
+	game.weapon_recoil = saved_recoil
+	game.player.velocity = saved_velocity
+	var direction_guard: Node3D = game.guards[0]["node"]
+	var saved_guard_position: Vector3 = direction_guard.global_position
+	var saved_health_direction: float = game.player_health
+	var saved_damage_cooldown: float = game.damage_cooldown
+	game.damage_cooldown = 0.0
+	game.null_shift_timer = 0.0
+	direction_guard.global_position = game.player.global_position + Vector3(0.0, 0.0, -4.0)
+	game._damage_player(5.0, direction_guard)
+	game._update_damage_direction_ui()
+	if not _expect(game.damage_direction_timer > 0.0 and game.damage_direction_root.visible, "incoming hostile damage must show a fading direction marker"):
+		return
+	if not _expect(game.damage_direction_arrow.position.distance_to(get_viewport().get_visible_rect().size * 0.5) > 50.0, "damage arrow must anchor to the viewport edge, not the screen centre"):
+		return
+	game.damage_direction_timer = 0.0
+	game._update_damage_direction_ui()
+	if not _expect(not game.damage_direction_root.visible, "damage direction marker must hide when its timer expires"):
+		return
+	game.player_health = saved_health_direction
+	game.damage_cooldown = saved_damage_cooldown
+	game.damage_direction_source = null
+	direction_guard.global_position = saved_guard_position
+	game._update_hud()
+
 	print("RUNTIME_STAGE: assisted targeting and projected lock reticle")
 	if not _expect(is_instance_valid(game.target_lock_root) and is_instance_valid(game.target_lock_health_bar), "target lock reticle and live target health bar must instantiate"):
 		return

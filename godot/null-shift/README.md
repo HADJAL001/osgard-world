@@ -72,3 +72,12 @@ The deployment workflow downloads official Godot 4.7.2 and matching web template
 - Added a live objective compass to the Godot HUD. It projects the active mission node through the current camera, smoothly rotates the arrow, shows measured in-game distance, and switches from terminal to quantum core to extraction as objectives are completed.
 - When the operator reaches an objective, the compass changes to a direct interaction prompt. The same responsive HUD supports desktop and compact/touch layouts.
 - Runtime smoke tests exercise all mission stages and guard the compass direction against invalid values. CI installs the official Godot 4.7.2 engine and matching single-threaded web export templates, runs headless gameplay tests, exports the WebAssembly/PCK build and verifies published routes.
+
+
+## Release 1.0 — cinematic camera and directional damage readability
+
+- Godot remains the primary NULL SHIFT runtime. The repository CI installs Godot 4.7.2 and web export templates, runs headless gameplay smoke, exports the browser build and checks the released routes; no local installation is required just to publish changes.
+- Added smooth camera FOV breathing: movement adds a restrained 1.35° response, firing recoil adds up to 0.85°, and NULL SHIFT temporarily adds 3.1°. Exponential easing avoids abrupt zoom cuts.
+- Guard-originated hits show a directional damage arrow on the HUD edge. The direction is projected from the actual attacking 3D node through the camera, fades over 0.62 seconds, reflects remaining health and hides while blocking menus/pause cover play. Environmental phase-lane damage remains distinct because it has no attacker direction.
+- Headless runtime smoke checks exercise the FOV widen/return and verify that a real damaging hit creates and expires the directional marker.
+- This is engine-native gameplay/UI work, not native 8K output. The Web build remains constrained by browser/GPU support and uses the Compatibility renderer for broad reach.
