@@ -41,7 +41,7 @@ All figures below are **hypothetical assumptions**, not estimates derived from a
 | Won-client rate | 10% | 15% | 20% |
 | Contribution per won client | €300 | €700 | €1,000 |
 | Fixed costs assumed | €50 | €150 | €500 |
-| **Illustrative monthly operating result** | **€194.41** | **€5,603.30** | **€77,323.25** |
+| **Illustrative monthly operating result** | **€189.76** | **€5,603.30** | **€77,323.25** |
 
 *Conservative sales are calculated from 1,250 × 0.2% × €4 = €10 (before fees). Expected counts are fractional averages; real orders/clients are discrete and highly variable.
 
