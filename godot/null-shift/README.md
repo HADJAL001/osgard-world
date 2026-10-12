@@ -64,3 +64,11 @@ The deployment workflow downloads official Godot 4.7.2 and matching web template
 - The radar reads live player, guard archetype, destructible-device, terminal, quantum-core, extraction and medkit state. Objective markers update as the mission progresses, with distinct colours for Warden, Heavy, Stalker and Ranger contacts.
 - The radar hides automatically for compact/touch layouts so it cannot compete with movement/action pads or the objective strip. It uses local data and redraws at a bounded 8.3 Hz.
 - The headless runtime smoke validates world-to-map boundaries, coordinate clamping, hazard colours and wiring to live combat data.
+
+
+## Release 0.9 — objective compass and Godot-first launch
+
+- The OSGARD portal and both entertainment catalogues now launch the Godot 4.7.2 build by default. The previous lightweight browser build remains available as a compatibility fallback from the Godot launch shell.
+- Added a live objective compass to the Godot HUD. It projects the active mission node through the current camera, smoothly rotates the arrow, shows measured in-game distance, and switches from terminal to quantum core to extraction as objectives are completed.
+- When the operator reaches an objective, the compass changes to a direct interaction prompt. The same responsive HUD supports desktop and compact/touch layouts.
+- Runtime smoke tests exercise all mission stages and guard the compass direction against invalid values. CI installs the official Godot 4.7.2 engine and matching single-threaded web export templates, runs headless gameplay tests, exports the WebAssembly/PCK build and verifies published routes.

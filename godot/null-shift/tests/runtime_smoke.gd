@@ -33,6 +33,27 @@ func _run_smoke() -> void:
 		return
 	game.sound_enabled = false
 
+	print("RUNTIME_STAGE: live objective compass and mission progression")
+	if not _expect(is_instance_valid(game.objective_compass_arrow) and is_instance_valid(game.objective_compass_text), "objective compass arrow and label must instantiate"):
+		return
+	var compass_saved_terminal: bool = game.terminal_unlocked
+	var compass_saved_core: bool = game.core_secured
+	game.terminal_unlocked = false
+	game.core_secured = false
+	game._update_objective_compass(0.016)
+	if not _expect(game.objective_compass_text.text.contains("ТЕРМИНАЛ"), "first compass stage must point to the security terminal"):
+		return
+	game.terminal_unlocked = true
+	game._update_objective_compass(0.016)
+	if not _expect(game.objective_compass_text.text.contains("КВАНТОВОЕ ЯДРО"), "successful hack must change the compass to the quantum core"):
+		return
+	game.core_secured = true
+	game._update_objective_compass(0.016)
+	if not _expect(game.objective_compass_text.text.contains("ЭВАКУАЦИЯ") and absf(game.objective_compass_arrow.rotation) < 10.0, "secured core must point toward extraction with a finite, animated direction"):
+		return
+	game.terminal_unlocked = compass_saved_terminal
+	game.core_secured = compass_saved_core
+
 	print("RUNTIME_STAGE: assisted targeting and projected lock reticle")
 	if not _expect(is_instance_valid(game.target_lock_root) and is_instance_valid(game.target_lock_health_bar), "target lock reticle and live target health bar must instantiate"):
 		return

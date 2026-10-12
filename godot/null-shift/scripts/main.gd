@@ -137,6 +137,8 @@ var status_title: Label
 var status_subtitle: Label
 var status_shortcuts: Label
 var objective_title: Label
+var objective_compass_arrow: Label
+var objective_compass_text: Label
 var objective_actions: HBoxContainer
 var mobile_move_buttons: Array[Button] = []
 var mobile_move_spacers: Array[Control] = []
@@ -194,6 +196,7 @@ func _process(delta: float) -> void:
 	_update_player_material()
 	_update_crosshair()
 	_update_target_lock_ui(dt)
+	_update_objective_compass(dt)
 	_update_screen_overlay()
 	hud_clock += dt
 	if hud_clock >= 0.12:
@@ -1724,7 +1727,17 @@ func _create_ui() -> void:
 	mid_panel = _make_panel(hud_root, Control.PRESET_CENTER_TOP, Rect2(-225.0, 98.0, 450.0, 68.0))
 	mid_panel.modulate = Color(1.0, 1.0, 1.0, 0.92)
 	var mid_stack := _panel_stack(mid_panel)
-	_label(mid_stack, "TACTICAL TELEMETRY  /  LOCAL SESSION", 9, Color(0.34, 0.86, 0.8))
+	var compass_row := HBoxContainer.new()
+	compass_row.name = "ObjectiveCompassRow"
+	compass_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	compass_row.add_theme_constant_override("separation", 8)
+	mid_stack.add_child(compass_row)
+	objective_compass_arrow = _label(compass_row, "▲", 17, Color(0.38, 1.0, 0.86))
+	objective_compass_arrow.custom_minimum_size = Vector2(28.0, 22.0)
+	objective_compass_arrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	objective_compass_arrow.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	objective_compass_text = _label(compass_row, "ЦЕЛЬ / ТЕРМИНАЛ · -- М", 10, Color(0.34, 0.86, 0.8))
+	objective_compass_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	var subtitle := _label(mid_stack, "ТЕРМИНАЛ → КВАНТОВОЕ ЯДРО → ЭВАКУАЦИЯ", 11, Color(0.91, 0.98, 0.96))
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
@@ -2301,6 +2314,47 @@ func _refresh_loadout() -> void:
 					var stack := inner as VBoxContainer
 					(stack.get_child(1) as Label).text = "КРЕДИТЫ: %d · БРОНЯ %d/3 · PULSE %d/3 · ARC-9 %d/3" % [career_credits, armor_level, pulse_level, weapon_level]
 					return
+
+func _update_objective_compass(delta: float = 0.016) -> void:
+	if not is_instance_valid(player) or not is_instance_valid(camera):
+		return
+	if not is_instance_valid(objective_compass_arrow) or not is_instance_valid(objective_compass_text):
+		return
+	var destination: Node3D
+	var objective_name: String
+	var objective_color := Color(0.38, 1.0, 0.86)
+	if not terminal_unlocked:
+		destination = terminal
+		objective_name = "ТЕРМИНАЛ"
+	elif not core_secured:
+		destination = quantum_core
+		objective_name = "КВАНТОВОЕ ЯДРО"
+		objective_color = Color(1.0, 0.72, 0.34)
+	else:
+		destination = extraction
+		objective_name = "ЭВАКУАЦИЯ"
+		objective_color = Color(0.42, 1.0, 0.78)
+	if not is_instance_valid(destination):
+		return
+	var to_objective: Vector3 = destination.global_position - player.global_position
+	to_objective.y = 0.0
+	var distance: float = to_objective.length()
+	if distance <= 3.2:
+		objective_compass_text.text = "%s · НАЖМИ E" % objective_name
+	else:
+		objective_compass_text.text = "%s · %.1f М" % [objective_name, distance]
+	var anchor: Vector3 = destination.global_position + Vector3.UP * 0.55
+	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+	var screen_direction: Vector2 = camera.unproject_position(anchor) - viewport_size * 0.5
+	if camera.is_position_behind(anchor):
+		screen_direction = -screen_direction
+	if screen_direction.length_squared() < 0.001:
+		screen_direction = Vector2.UP
+	var desired_rotation: float = atan2(screen_direction.y, screen_direction.x) + PI * 0.5
+	var follow: float = 1.0 - exp(-maxf(0.0, delta) * 16.0)
+	objective_compass_arrow.rotation = lerp_angle(objective_compass_arrow.rotation, desired_rotation, clampf(follow, 0.0, 1.0))
+	objective_compass_arrow.add_theme_color_override("font_color", objective_color)
+	objective_compass_text.add_theme_color_override("font_color", objective_color)
 
 func _update_hud() -> void:
 	if not is_instance_valid(objective_label):
