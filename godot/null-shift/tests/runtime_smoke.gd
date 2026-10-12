@@ -170,6 +170,7 @@ func _run_smoke() -> void:
 	print("RUNTIME_STAGE: phase-conduit warning, hazard and dodge")
 	if not _expect(game.phase_lanes.size() == 3 and is_instance_valid(game.hazard_status_label), "three timed energy lanes and a HUD status label must instantiate"):
 		return
+	print("PHASE_UI_DEBUG: labels=", game.phase_lane_labels.size(), " row_valid=", is_instance_valid(game.phase_lane_status_row), " row_children=", game.phase_lane_status_row.get_child_count() if is_instance_valid(game.phase_lane_status_row) else -1, " status_valid=", is_instance_valid(game.status_panel), " hud_valid=", is_instance_valid(game.hud_root), " status_children=", game.status_panel.get_child_count() if is_instance_valid(game.status_panel) else -1)
 	if not _expect(game.phase_lane_labels.size() == 3 and is_instance_valid(game.phase_lane_status_row), "three per-lane HUD indicators must instantiate"):
 		return
 	if not _expect(is_instance_valid(game.health_bar) and is_instance_valid(game.health_bar_fill), "premium health bar and its stateful fill material must instantiate"):
