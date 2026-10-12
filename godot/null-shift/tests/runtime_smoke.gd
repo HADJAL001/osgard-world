@@ -51,7 +51,7 @@ func _run_smoke() -> void:
 	if not _expect(float(game.guards[0]["stun"]) > 0.0, "pulse must stun a nearby hostile"):
 		return
 
-	var before_rotation := game.core_ring.rotation.y
+	var before_rotation: float = float(game.core_ring.rotation.y)
 	await process_frame
 	await process_frame
 	if not _expect(absf(game.core_ring.rotation.y - before_rotation) > 0.0001, "core orbit must animate"):

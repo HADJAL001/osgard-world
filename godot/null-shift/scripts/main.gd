@@ -70,6 +70,7 @@ var mission_finished := false
 var paused_game := false
 var mouse_firing := false
 var touch_firing := false
+var sound_enabled := true
 var player_aim := Vector3.FORWARD
 var career_names := ["STANDARD RAID", "BLACKOUT RUN", "IRON VEIL"]
 var contract_bonus := [0, 350, 550]
