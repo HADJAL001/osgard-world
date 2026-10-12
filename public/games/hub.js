@@ -74,6 +74,7 @@ const STORAGE = {
   favorites: "osgard.games.favorites.v1",
   recent: "osgard.games.recent.v1",
   analytics: "osgard.games.analytics.v1",
+  pending: "osgard.games.pending.v1",
   consent: "osgard.games.analytics-consent.v1"
 };
 const state = { locale: "ru", catalog: null, filter: "all", search: "", genre: "all", activeGame: null, loadTimer: null, toastTimer: null };
@@ -90,10 +91,46 @@ function escapeHtml(value) {
 }
 function record(name, payload = {}) {
   if (!hasConsent()) return;
+  const event = {
+    id: (crypto.randomUUID && crypto.randomUUID()) || (Date.now() + "-" + Math.random().toString(16).slice(2)),
+    name, payload, occurredAt: new Date().toISOString(), schemaVersion: 1
+  };
   const events = readLocal(STORAGE.analytics, []);
-  const id = (crypto.randomUUID && crypto.randomUUID()) || (Date.now() + "-" + Math.random().toString(16).slice(2));
-  events.push({ id, name, payload, occurredAt: new Date().toISOString(), schemaVersion: 1 });
-  writeLocal(STORAGE.analytics, events.slice(-300));
+  events.push(event);
+  if (!writeLocal(STORAGE.analytics, events.slice(-300))) return;
+  const pending = readLocal(STORAGE.pending, []);
+  pending.push(event);
+  writeLocal(STORAGE.pending, pending.slice(-50));
+  void flushPendingEvents();
+}
+async function flushPendingEvents() {
+  if (!hasConsent()) return;
+  let accessToken = "";
+  try { accessToken = localStorage.getItem("osgard.auth.accessToken") || ""; } catch { return; }
+  if (!accessToken) return;
+  const pending = readLocal(STORAGE.pending, []);
+  const sentIds = new Set();
+  for (const event of pending) {
+    if (!hasConsent()) break;
+    try {
+      const response = await fetch("/api/v1/player/events", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "authorization": "Bearer " + accessToken, "content-type": "application/json" },
+        body: JSON.stringify({ event })
+      });
+      if (!response.ok) break;
+      sentIds.add(event.id);
+    } catch {
+      break;
+    }
+  }
+  if (!hasConsent()) {
+    try { localStorage.removeItem(STORAGE.pending); } catch {}
+    return;
+  }
+  const latest = readLocal(STORAGE.pending, []);
+  writeLocal(STORAGE.pending, latest.filter(event => !sentIds.has(event.id)).slice(-50));
 }
 function toast(message) {
   const node = $("#toast");
@@ -362,7 +399,12 @@ function bindEvents() {
   $("#analytics-consent").addEventListener("change", event => {
     try {
       localStorage.setItem(STORAGE.consent, event.target.checked ? "yes" : "no");
-      if (!event.target.checked) localStorage.removeItem(STORAGE.analytics);
+      if (!event.target.checked) {
+        localStorage.removeItem(STORAGE.analytics);
+        localStorage.removeItem(STORAGE.pending);
+      } else {
+        void flushPendingEvents();
+      }
       toast(t(event.target.checked ? "analytics-on" : "analytics-off"));
     } catch { toast(state.locale === "ru" ? "Хранилище браузера недоступно." : "Browser storage is unavailable."); }
   });
@@ -428,6 +470,11 @@ async function loadCatalog() {
     console.error("OSGARD Games catalogue failed:", error);
   }
 }
+window.addEventListener("online", () => { void flushPendingEvents(); });
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") void flushPendingEvents();
+});
 bindEvents();
 applyLocale();
 loadCatalog();
+void flushPendingEvents();
