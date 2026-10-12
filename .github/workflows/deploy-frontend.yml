@@ -56,8 +56,6 @@ jobs:
         run: npm run qa:games-portal
       - name: Smoke-test individual game pages and SEO routes
         run: npm run qa:games-detail
-      - name: Test monetization scenarios and formula bounds
-        run: npm run qa:games-model
       - name: Verify ecosystem links, claims, contacts and privacy boundaries
         run: npm run qa:ecosystem
 
@@ -99,6 +97,8 @@ jobs:
           mkdir -p public/games/null-shift-godot
           /tmp/osgard-godot/Godot_v4.7.2-stable_linux.x86_64 --headless --path godot/null-shift --export-release Web "$GITHUB_WORKSPACE/public/games/null-shift-godot/index.html"
           node scripts/null-shift-godot-smoke.mjs --export-check public/games/null-shift-godot
+      - name: Test monetization scenarios and formula bounds
+        run: npm run qa:games-model
       - run: npm run build
       - name: Subset self-hosted Inter and minify SkillCred assets
         run: |
