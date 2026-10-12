@@ -1,8 +1,8 @@
 name: OSGARD frontend deploy
 
 concurrency:
-  group: osgard-frontend-deploy
-  cancel-in-progress: ${{ contains(github.event.head_commit.message, '[supersede]') }}
+  group: ${{ contains(github.event.head_commit.message, '[supersede]') && 'osgard-frontend-deploy-recovery' || 'osgard-frontend-deploy' }}
+  cancel-in-progress: false
 
 on:
   push:
