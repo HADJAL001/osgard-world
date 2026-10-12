@@ -39,6 +39,69 @@ func _run_smoke() -> void:
 		return
 	if not _expect(game.guards[0].get("role", "") == "STALKER" and game.guards[1].get("role", "") == "HEAVY" and game.guards[2].get("role", "") == "RANGER", "enemy archetypes must be distinct"):
 		return
+
+	# Exercise the Stalker's full telegraph -> dash-start -> movement transition.
+	var stalker_state: Dictionary = game.guards[0]
+	var stalker_body: CharacterBody3D = stalker_state["node"]
+	var stalker_origin: Vector3 = stalker_body.global_position
+	stalker_body.global_position = game.player.global_position + Vector3(0.0, 0.0, -8.0)
+	stalker_state["stun"] = 0.0
+	stalker_state["windup"] = 0.0
+	stalker_state["dash_windup"] = 0.0
+	stalker_state["dash_timer"] = 0.0
+	stalker_state["dash_cooldown"] = 0.01
+	game.guards[0] = stalker_state
+	game.guards[1]["cooldown"] = 12.0
+	game.guards[2]["cooldown"] = 12.0
+	game._update_guards(0.016)
+	stalker_state = game.guards[0]
+	if not _expect(float(stalker_state["dash_windup"]) > 0.0, "Stalker must telegraph before its dash"):
+		return
+	stalker_state["dash_windup"] = 0.01
+	game.guards[0] = stalker_state
+	var stalker_dash_origin: Vector3 = stalker_body.global_position
+	game._update_guards(0.02)
+	stalker_state = game.guards[0]
+	if not _expect(float(stalker_state["dash_timer"]) > 0.0, "Stalker telegraph must transition into a dash"):
+		return
+	game._update_guards(0.04)
+	if not _expect(stalker_body.global_position.distance_to(stalker_dash_origin) > 0.01, "Stalker dash must move the 3D body"):
+		return
+	stalker_body.global_position = stalker_origin
+	stalker_state = game.guards[0]
+	stalker_state["dash_timer"] = 0.0
+	stalker_state["dash_windup"] = 0.0
+	stalker_state["dash_cooldown"] = 12.0
+	game.guards[0] = stalker_state
+
+	# Heavy's three attack lanes should be readable and genuinely dodgeable.
+	var heavy_state: Dictionary = game.guards[1]
+	var heavy_body: CharacterBody3D = heavy_state["node"]
+	var heavy_origin: Vector3 = heavy_body.global_position
+	heavy_body.global_position = game.player.global_position + Vector3(0.0, 0.0, -8.0)
+	heavy_state["stun"] = 0.0
+	heavy_state["windup"] = 0.0
+	heavy_state["cooldown"] = 0.016
+	heavy_state["attack_lanes"] = []
+	game.guards[1] = heavy_state
+	game._update_guards(0.016)
+	heavy_state = game.guards[1]
+	var heavy_lanes: Array = heavy_state.get("attack_lanes", [])
+	if not _expect(heavy_lanes.size() == 3, "Heavy must telegraph three distinct attack lanes"):
+		return
+	if not _expect(game._player_inside_lanes(heavy_lanes, 14.5, 0.88, heavy_body), "Heavy centre lane must hit a stationary player"):
+		return
+	var heavy_test_position: Vector3 = game.player.global_position
+	game.player.global_position += Vector3(4.0, 0.0, 0.0)
+	if not _expect(not game._player_inside_lanes(heavy_lanes, 14.5, 0.88, heavy_body), "Heavy's telegraphed lane must be dodgeable with lateral movement"):
+		return
+	game.player.global_position = heavy_test_position
+	heavy_body.global_position = heavy_origin
+	heavy_state = game.guards[1]
+	heavy_state["cooldown"] = 12.0
+	heavy_state["windup"] = 0.0
+	heavy_state["attack_lanes"] = []
+	game.guards[1] = heavy_state
 	game._screen_impulse(0.2, 0.25)
 	if not _expect(game.camera_shake_timer > 0.0 and game.camera_shake_strength >= 0.2, "camera impact response must be measurable"):
 		return
