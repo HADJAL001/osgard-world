@@ -38,7 +38,7 @@ import { CoreEvents } from './CoreEvents'
 import { EcosystemSurface } from './EcosystemSurfaces'
 import { CommunitySurface } from './CommunitySurface'
 import { StreamSurface } from './StreamSurface'
-import { GamesPlatform } from './GamesPlatform'
+import { GAME_DETAILS, GamesPlatform } from './GamesPlatform'
 import { GameDetailPage } from './GameDetailPage'
 import { LegalPage } from './LegalPages'
 
@@ -75,7 +75,9 @@ const cleanSeo: Record<string, { title: string; description: string }> = {
 
 function Seo({ path }: { path: string }) {
   React.useEffect(() => {
-    const data = cleanSeo[path] ?? (path.startsWith('/games/info/') ? { title: 'Игровой мир OSGARD PLAY | OSGARD WORLD', description: 'Паспорт игры OSGARD: описание, жанр, тип веб-сборки, управление и переход к запуску.' } : cleanSeo['/'])
+    const gameSlug = path.startsWith('/games/info/') ? path.split('/')[3] : ''
+    const gameMeta = gameSlug && Object.prototype.hasOwnProperty.call(GAME_DETAILS, gameSlug) ? GAME_DETAILS[gameSlug as keyof typeof GAME_DETAILS] : null
+    const data = cleanSeo[path] ?? (gameMeta ? { title: `${gameMeta.title} | OSGARD PLAY`, description: `${gameMeta.tagline} ${gameMeta.description}` } : cleanSeo['/'])
     const canonical = `https://osgard.world${path === '/' ? '/' : path}`
     document.title = data.title
     const setMeta = (selector: string, attribute: string, value: string) => {
