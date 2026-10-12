@@ -338,6 +338,7 @@ async function start() {
 function finish(success) {
   if(game.finished) return;
   game.active=false; game.finished=true;
+  try { if(window.parent!==window) window.parent.postMessage({type:'osgard:game-lifecycle',game:'swarm',state:'completed',result:success?'success':'failure',at:Date.now()},window.location.origin); } catch {}
   document.querySelector('#result-kicker').textContent=success?'OBJECTIVE COMPLETE':'THE BODY COLLAPSED';
   document.querySelector('#result-title').innerHTML=success?'CORE<br><em>SECURED.</em>':'SIGNAL<br><em>LOST.</em>';
   document.querySelector('#result-copy').textContent=success?'The team hauled the core to extraction. One body, eight minds.':'The core was not extracted in time. Coordinate, stabilize, try again.';
