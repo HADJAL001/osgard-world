@@ -5,6 +5,10 @@ on:
     branches: [master]
     paths:
       - "src/**"
+      - "public/games/**"
+      - "scripts/games-portal-smoke.mjs"
+      - "scripts/growth-lab-smoke.mjs"
+      - "docs/OSGARD_GAMES_MONETIZATION_ROADMAP.md"
       - "scripts/skillcred-page-smoke.mjs"
       - "scripts/time-prototype-smoke.mjs"
       - "docs/02_IMPERIUM_OF_TIME_GAME_DESIGN.md"
@@ -48,3 +52,7 @@ jobs:
         run: npm run qa:time-ui
       - name: Validate static archive and HTML
         run: npm run preflight:frontend
+      - name: Verify OSGARD Games portal contract
+        run: npm run qa:games-portal
+      - name: Verify the local revenue scenario model
+        run: npm run qa:growth-lab

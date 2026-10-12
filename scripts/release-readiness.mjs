@@ -22,6 +22,8 @@ await check('production-build', npm, ['run', 'build'])
 await check('frontend-archive-preflight', npm, ['run', 'preflight:frontend'])
 await check('production-route-matrix', npm, ['run', 'qa:production-routes'])
 await check('live-bundle-audit', npm, ['run', 'qa:live-bundle'])
+await check('games-portal-smoke', npm, ['run', 'qa:games-portal'])
+await check('growth-lab-smoke', npm, ['run', 'qa:growth-lab'])
 const briefPath = process.env.OSGARD_BRIEF_PATH || 'A:\\HADJAL\\Рабочий стол\\игры ОСГАРД.txt'
 if (existsSync(briefPath)) await check('brief-source-audit', process.execPath, ['scripts/brief-coverage-audit.mjs', briefPath], false)
 else checks.push({ name: 'brief-source-audit', status: 'skipped', output: `Source not present at ${briefPath}; repository-only CI continues without external brief file.` })
