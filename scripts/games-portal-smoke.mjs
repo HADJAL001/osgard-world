@@ -3,10 +3,17 @@ import { readFileSync, existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 const root=resolve('public/games')
 const html=readFileSync(resolve(root,'index.html'),'utf8')
-const required=['data-game="null-shift"','data-game="time"','data-game="swarm"','data-game="inherit"','data-game="remix"','id="games-grid"','id="game-search"','data-filter="tactical"','id="player-dialog"','id="player-share"','id="player-fullscreen"','id="analytics-toggle"','id="project-form"','https://wa.me/79640027222','osgardbewworld.com','o2system.art','senjorio.com','superday.run','marcosa.club','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio','/games/favicon.svg','/privacy/','/terms/']
+const required=['data-game="null-shift"','data-game="time"','data-game="swarm"','data-game="inherit"','data-game="remix"','id="games-grid"','id="game-search"','data-filter="tactical"','id="player-dialog"','id="player-share"','id="player-fullscreen"','id="analytics-toggle"','id="project-form"','https://wa.me/79640027222','osgardbewworld.com','o2system.art','senjorio.com','superday.run','marcosa.club','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio','href="/games/monetization/"','/games/favicon.svg','/privacy/','/terms/']
 for(const item of required) assert.ok(html.includes(item),'Games hub missing: '+item)
-for(const path of ['public/games/index.html','public/games/favicon.svg','public/privacy/index.html','public/terms/index.html']) assert.ok(existsSync(resolve(path)),'Missing file: '+path)
+for(const path of ['public/games/index.html','public/games/favicon.svg','public/privacy/index.html','public/terms/index.html','public/games/null-shift-godot/index.html','public/games/monetization/index.html','public/games/monetization/app.js','public/games/monetization/model.js']) assert.ok(existsSync(resolve(path)),'Missing file: '+path)
 assert.ok(html.includes('type="application/ld+json"'),'SEO ItemList JSON-LD missing')
+const fallback=readFileSync(resolve(root,'null-shift-godot/index.html'),'utf8')
+assert.ok(fallback.includes('data-godot-fallback="webgl"')&&fallback.includes('href="/games/null-shift/"'),'Godot route must fail over honestly to the tracked WebGL game when export assets are absent')
+const modelPage=readFileSync(resolve(root,'monetization/index.html'),'utf8')
+assert.ok(modelPage.includes('data-estimate="not-live-data"')&&modelPage.includes('id="assumptions-form"')&&modelPage.includes('id="scenario-results"')&&modelPage.includes('id="export-json"'),'Financial scenario planner must distinguish its estimates from live analytics')
+const modelSource=readFileSync(resolve(root,'monetization/model.js'),'utf8')
+assert.ok(modelSource.includes('calculateScenario')&&modelSource.includes('SCENARIOS')&&modelSource.includes('normalizeInputs'),'Finance model calculation functions missing')
+assert.ok(!/https?:\/\/(?:fonts\.googleapis\.com|fonts\.gstatic\.com|cdn\.jsdelivr\.net|unpkg\.com)/i.test(modelPage),'Monetization page must not depend on remote asset CDNs')
 assert.ok(html.includes('<meta name="description"'),'SEO description missing')
 assert.ok(html.includes('prefers-reduced-motion:reduce'),'Reduced motion CSS missing')
 const css=html.match(/<style>([\s\S]*?)<\/style>/)?.[1]||''
