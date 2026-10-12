@@ -10,7 +10,9 @@ on:
     paths:
       - "src/**"
       - "public/skillcred/**"
-      - "public/games/null-shift/**"
+      - "public/games/**"
+      - "public/privacy/**"
+      - "public/terms/**"
       - "godot/null-shift/**"
       - "scripts/null-shift-godot-smoke.mjs"
       - "public/games/null-shift-godot/**"
@@ -27,6 +29,8 @@ on:
       - "scripts/skillcred-page-smoke.mjs"
       - "scripts/time-prototype-smoke.mjs"
       - "scripts/null-shift-premium-smoke.mjs"
+      - "scripts/games-portal-smoke.mjs"
+      - "docs/09_OSGARD_GAMES_PLATFORM_AUDIT.md"
       - "docs/04_NULL_SHIFT_GAME_DESIGN.md"
       - "docs/02_IMPERIUM_OF_TIME_GAME_DESIGN.md"
       - ".github/workflows/deploy-frontend.yml"
@@ -44,6 +48,8 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm run qa:null-shift
+      - name: Smoke-test the OSGARD Games hub
+        run: npm run qa:games-portal
 
       - name: Validate the Godot game project contract
         run: npm run qa:null-shift-godot
