@@ -86,7 +86,7 @@ func _run_smoke() -> void:
 	game._update_damage_direction_ui()
 	if not _expect(game.damage_direction_timer > 0.0 and game.damage_direction_root.visible, "incoming hostile damage must show a fading direction marker"):
 		return
-	if not _expect(game.damage_direction_arrow.position.distance_to(get_viewport().get_visible_rect().size * 0.5) > 50.0, "damage arrow must anchor to the viewport edge, not the screen centre"):
+	if not _expect(game.damage_direction_arrow.position.distance_to(game.get_viewport().get_visible_rect().size * 0.5) > 50.0, "damage arrow must anchor to the viewport edge, not the screen centre"):
 		return
 	game.damage_direction_timer = 0.0
 	game._update_damage_direction_ui()
