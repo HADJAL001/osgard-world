@@ -22,7 +22,8 @@
     "qa:live-bundle": "node scripts/live-bundle-audit.mjs",
     "qa:time-ui": "node scripts/time-prototype-smoke.mjs",
     "qa:null-shift": "node scripts/null-shift-premium-smoke.mjs",
-    "qa:null-shift-godot": "node scripts/null-shift-godot-smoke.mjs"
+    "qa:null-shift-godot": "node scripts/null-shift-godot-smoke.mjs",
+    "qa:games": "node scripts/games-platform-smoke.mjs"
   },
   "dependencies": {
     "@types/three": "^0.186.0",
