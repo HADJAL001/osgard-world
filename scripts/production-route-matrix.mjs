@@ -25,7 +25,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         ? route.endsWith('/health') ? /"service"\s*:\s*"skillcred"/.test(text) && /"version"\s*:\s*"0\.3\.0"/.test(text)
           : route.endsWith('/ready') ? /"ready"\s*:\s*true/.test(text)
             : /"id"\s*:/.test(text) && /"name"\s*:/.test(text)
-          : route.startsWith('/games/null-shift-godot')
+           : route.startsWith('/games/null-shift-godot')
             ? text.includes('url=/games/null-shift/index.html') || (response.redirected && new URL(response.url).pathname === '/games/null-shift/index.html')
           : route.startsWith('/games/null-shift')
             ? text.includes('id="game"') && text.includes('id="mobile-ui"') && text.includes('id="diag-panel"') && text.includes('id="sound-toggle"') && text.includes('id="touch-sound"') && text.includes('./styles.css') && text.includes('./game.js') && text.includes('./engine-3d.js') && text.includes('id="engine-toggle"') && text.includes('id="touch-engine"') && text.includes('id="godot-preview"')
