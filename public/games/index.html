@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#080d13">
+  <meta name="description" content="Игровая витрина OSGARD WORLD: браузерные игры, стратегия, тактика и творческие испытания.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="OSGARD WORLD">
+  <meta property="og:title" content="OSGARD WORLD GAMES — выбирай свой мир">
+  <meta property="og:description" content="Пять игровых миров. Выбирай, запускай, возвращайся.">
+  <meta property="og:url" content="https://osgard.world/games">
+  <link rel="canonical" href="https://osgard.world/games">
+  <link rel="icon" href="/osgard-mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/games/hub.css">
+  <title>OSGARD WORLD GAMES — выбирай свой мир</title>
+  <script type="module" src="/games/hub.js"></script>
+</head>
+<body>
+  <div class="ambient" aria-hidden="true"><i></i><i></i><i></i></div>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="OSGARD WORLD — на главную">
+      <svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="23" fill="none" stroke="currentColor" stroke-opacity=".35"/><ellipse cx="32" cy="32" rx="23" ry="10" fill="none" stroke="#d6ba78" stroke-width="1.5" transform="rotate(-42 32 32)"/><path d="M32 10 36.2 26.4 52 20 39.4 32 52 44 36.2 37.6 32 54 27.8 37.6 12 44 24.6 32 12 20 27.8 26.4Z" fill="#d6ba78"/><circle cx="32" cy="32" r="4" fill="#49d9ce"/></svg>
+      <span><strong>OSGARD</strong><small>WORLD / GAMES</small></span>
+    </a>
+    <nav class="main-nav" aria-label="Главная навигация">
+      <a href="/worlds" data-i18n="nav-worlds">Миры</a>
+      <a href="/development" data-i18n="nav-development">Разработка</a>
+      <a class="nav-current" href="/games" aria-current="page" data-i18n="nav-games">Игры</a>
+    </nav>
+    <div class="header-actions">
+      <button class="button button-quiet" id="locale-toggle" type="button" aria-label="Switch language">RU / EN</button>
+      <a class="button button-gold" href="/development" data-i18n="nav-build">Создать свой продукт ↗</a>
+    </div>
+  </header>
+
+  <main id="osgard-games-app">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="pulse"></span><span data-i18n="eyebrow">OSGARD PLAY / ИГРОВАЯ ЭКОСИСТЕМА</span></p>
+        <h1><span data-i18n="hero-line-one">Не просто запускай игру.</span><br><em data-i18n="hero-line-two">Войди в другой мир.</em></h1>
+        <p class="hero-lead" data-i18n="hero-copy">Пять разных игровых опытов — от управления живым городом до тактического рейда и творческих испытаний. Выбирай свой ритм и продолжай исследовать.</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#game-catalog" data-i18n="browse-games">Выбрать игру ↓</a>
+          <button class="button button-quiet" id="continue-game" type="button" disabled data-i18n="continue-game">Открыть последнюю игру</button>
+        </div>
+        <div class="hero-meta"><span data-i18n="build-note">Браузерные сборки · Запуск без отдельной установки</span><span class="meta-dot"></span><span id="catalog-count">Загрузка каталога…</span></div>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="hero-orbit orbit-outer"></div><div class="hero-orbit orbit-middle"></div><div class="hero-orbit orbit-inner"></div>
+        <div class="hero-core"><span>O</span><i></i></div>
+        <div class="hero-coordinate coordinate-top">WORLD / 001</div><div class="hero-coordinate coordinate-bottom">PLAY SIGNAL / ACTIVE</div>
+        <div class="hero-satellite satellite-one"></div><div class="hero-satellite satellite-two"></div>
+      </div>
+    </section>
+
+    <section class="continue-strip" id="continue-strip" hidden>
+      <div><p class="eyebrow" data-i18n="last-session">ПОСЛЕДНЯЯ СЕССИЯ</p><strong id="last-game-title">—</strong><span id="last-game-summary"></span></div>
+      <button class="button button-quiet" id="continue-strip-button" type="button" data-i18n="return-to-game">Вернуться ↗</button>
+    </section>
+
+    <section class="catalog-section" id="game-catalog">
+      <div class="section-heading">
+        <div><p class="eyebrow">01 / OSGARD PLAY</p><h2 data-i18n="catalog-title">Найди свой следующий мир.</h2><p data-i18n="catalog-subtitle">Ищи по названию, отбирай по жанру и сохраняй игры в свою коллекцию.</p></div>
+        <div class="editorial-stamp"><span>OSGARD</span><strong>SELECT</strong><small>CURATED WORLDS</small></div>
+      </div>
+
+      <div class="catalog-tools">
+        <label class="search-field"><span class="search-icon" aria-hidden="true">⌕</span><span class="sr-only" data-i18n="search-label">Поиск игр</span><input id="game-search" type="search" autocomplete="off" placeholder="Название, жанр или описание…" data-i18n-placeholder="search-placeholder"><kbd>/</kbd></label>
+        <label class="filter-field"><span data-i18n="genre-label">ЖАНР</span><select id="genre-filter"><option value="all" data-i18n="genre-all">Все жанры</option><option value="strategy" data-i18n="genre-strategy">Стратегия</option><option value="co-op" data-i18n="genre-coop">Кооператив</option><option value="tactical" data-i18n="genre-tactical">Тактика</option><option value="simulation" data-i18n="genre-simulation">Симуляция</option><option value="creation" data-i18n="genre-creation">Создание</option><option value="narrative" data-i18n="genre-narrative">История</option></select></label>
+        <div class="filter-pills" role="group" aria-label="Быстрые фильтры"><button type="button" class="filter-pill is-active" data-filter="all" aria-pressed="true" data-i18n="filter-all">Все</button><button type="button" class="filter-pill" data-filter="featured" aria-pressed="false" data-i18n="filter-featured">Выбор редакции</button><button type="button" class="filter-pill" data-filter="favorites" aria-pressed="false" data-i18n="filter-favorites">Избранное</button></div>
+      </div>
+
+      <div id="search-results" class="search-result-count" aria-live="polite"></div>
+      <div id="catalog-error" class="notice notice-error" role="alert" hidden><strong data-i18n="catalog-error-title">Каталог не загрузился.</strong><span data-i18n="catalog-error-copy">Проверь соединение и повтори попытку. Ссылки на игры не заменяются фиктивными данными.</span><button class="button button-quiet" id="retry-catalog" type="button" data-i18n="retry">Повторить</button></div>
+      <div id="game-grid" class="game-grid" aria-live="polite"></div>
+      <div id="empty-state" class="empty-state" hidden><span class="empty-symbol">∅</span><h3 data-i18n="empty-title">Здесь пока нет подходящих игр.</h3><p data-i18n="empty-copy">Измени запрос или выбери другой жанр.</p><button class="button button-quiet" id="reset-filters" type="button" data-i18n="reset-filters">Сбросить фильтры</button></div>
+    </section>
+
+    <section class="ecosystem-section">
+      <div class="section-heading compact"><div><p class="eyebrow">02 / WORLDS BEYOND PLAY</p><h2 data-i18n="ecosystem-title">Игры — часть большего мира.</h2><p data-i18n="ecosystem-copy">Открой другие проекты экосистемы OSGARD. Каждая ссылка ведёт на самостоятельный сайт.</p></div></div>
+      <div class="ecosystem-grid" id="ecosystem-grid"></div>
+      <p class="verification-note" data-i18n="ecosystem-note">Ссылки приведены как официальные адреса проектов; доступность каждого внешнего сайта может меняться.</p>
+    </section>
+
+    <section class="developer-cta">
+      <div class="cta-sigil" aria-hidden="true"><span>O</span></div>
+      <div class="developer-copy"><p class="eyebrow">OSGARD / DIGITAL STUDIO</p><h2 data-i18n="developer-title">Своя игра, сайт или приложение?</h2><p data-i18n="developer-copy">Обсуди идею с OSGARD. Поможем пройти путь от задачи до цифрового продукта — без выдуманных кейсов и обещаний до оценки.</p><div class="cta-actions"><a class="button button-primary" href="/development" data-i18n="discuss-project">Обсудить разработку ↗</a><button class="button button-quiet" id="contact-open" type="button" data-i18n="send-brief">Оставить краткую заявку</button></div></div>
+      <div class="contact-links"><a href="mailto:osman.osmanov0099@gmail.com">osman.osmanov0099@gmail.com</a><a href="https://wa.me/79640027222" target="_blank" rel="noopener noreferrer">WhatsApp ↗</a></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <a class="brand brand-small" href="/"><span class="footer-mark">O</span><span><strong>OSGARD</strong><small>WORLD / GAMES</small></span></a>
+    <div class="footer-links"><a href="/worlds" data-i18n="nav-worlds">Миры</a><a href="/development" data-i18n="nav-development">Разработка</a><a href="mailto:osman.osmanov0099@gmail.com">Email</a><a href="https://wa.me/79640027222" target="_blank" rel="noopener noreferrer">WhatsApp</a></div>
+    <div class="analytics-tools"><label class="consent-toggle"><input id="analytics-consent" type="checkbox"><span data-i18n="analytics-consent">Разрешить локальную аналитику на этом устройстве</span></label><button id="export-analytics" class="text-button" type="button" data-i18n="export-analytics">Экспорт событий</button></div>
+    <p class="footer-note" data-i18n="analytics-note">Аналитика по желанию сохраняется только в этом браузере и в этой версии не отправляется на сервер. История игр и избранное также хранятся локально.</p>
+    <small class="copyright">© OSGARD WORLD · <span data-i18n="footer-note">Игры и цифровые миры</span></small>
+  </footer>
+
+  <dialog id="game-details" class="modal detail-modal" aria-labelledby="detail-title">
+    <button class="icon-button modal-close" id="detail-close" type="button" aria-label="Close details">×</button>
+    <div class="detail-visual" id="detail-visual"><span id="detail-mark">OS</span></div>
+    <div class="detail-body"><p class="eyebrow" id="detail-kicker">OSGARD PLAY</p><h2 id="detail-title">Game title</h2><p id="detail-description" class="detail-description"></p><div class="detail-facts"><div><span data-i18n="detail-genre">ЖАНР</span><strong id="detail-genre"></strong></div><div><span data-i18n="detail-build">СБОРКА</span><strong id="detail-build"></strong></div><div><span data-i18n="detail-status">ЗАПУСК</span><strong id="detail-status"></strong></div></div><div class="controls-note"><span class="controls-icon">⌘</span><div><strong data-i18n="controls-title">Управление</strong><p id="detail-controls"></p></div></div><div class="detail-actions"><button class="button button-primary" id="detail-play" type="button" data-i18n="play-now">Играть сейчас ↗</button><button class="button button-quiet" id="detail-share" type="button" data-i18n="share-game">Поделиться</button></div></div>
+  </dialog>
+
+  <dialog id="game-dialog" class="modal game-modal" aria-labelledby="launcher-title">
+    <div class="launcher-bar"><div><p class="eyebrow" data-i18n="active-session">OSGARD PLAY / СЕССИЯ</p><h2 id="launcher-title">Game title</h2><p id="launcher-status" role="status" aria-live="polite" data-i18n="launcher-loading">Подготавливаем игровую страницу…</p></div><div class="launcher-actions"><button id="launcher-fullscreen" class="button button-quiet" type="button" data-i18n="fullscreen">На весь экран</button><a id="launcher-new-tab" class="button button-quiet" href="#" target="_blank" rel="noopener noreferrer" data-i18n="open-tab">Открыть отдельно ↗</a><button id="launcher-close" class="icon-button" type="button" aria-label="Close game">×</button></div></div>
+    <div class="game-frame-wrap" id="game-frame-wrap"><div class="frame-loading" id="frame-loading"><span class="spinner"></span><strong data-i18n="launcher-loading">Подготавливаем игровую страницу…</strong></div><iframe id="game-frame" title="OSGARD game" allow="fullscreen; autoplay; gamepad; clipboard-write; pointer-lock" referrerpolicy="same-origin"></iframe><div id="launcher-error" class="launcher-error" role="alert" hidden><strong data-i18n="launcher-error-title">Страница игры не загрузилась.</strong><p data-i18n="launcher-error-copy">Открой игру отдельно, чтобы увидеть подробности ошибки загрузки.</p><a id="launcher-retry" class="button button-primary" href="#" data-i18n="retry">Повторить</a></div></div>
+    <div class="launcher-foot"><span data-i18n="measurement-note">Страница игры может загружать собственные ресурсы. Статус загрузки не гарантирует успешный запуск игрового движка.</span><span id="launcher-game-id"></span></div>
+  </dialog>
+
+  <dialog id="contact-dialog" class="modal contact-modal" aria-labelledby="contact-title">
+    <form id="contact-form" class="contact-form">
+      <button class="icon-button modal-close" type="button" id="contact-close" aria-label="Close form">×</button>
+      <p class="eyebrow">OSGARD / PROJECT BRIEF</p><h2 id="contact-title" data-i18n="form-title">Расскажи о своей идее.</h2><p data-i18n="form-copy">Форма подготовит письмо в твоём почтовом приложении. Данные не отправляются на этот сайт.</p>
+      <label><span data-i18n="form-type">Тип проекта</span><select name="projectType" required><option value="game" data-i18n="form-game">Игра</option><option value="website" data-i18n="form-website">Сайт</option><option value="app" data-i18n="form-app">Приложение</option><option value="platform" data-i18n="form-platform">Цифровая платформа</option><option value="other" data-i18n="form-other">Другое</option></select></label>
+      <label><span data-i18n="form-budget">Бюджет (по желанию)</span><input name="budget" type="text" maxlength="100" placeholder="Например, пока оцениваю"></label>
+      <label><span data-i18n="form-contact">Как с тобой связаться</span><input name="contact" type="text" maxlength="160" placeholder="Email, Telegram или телефон" required></label>
+      <label><span data-i18n="form-description">Кратко об идее</span><textarea name="description" rows="4" maxlength="2000" placeholder="Какая задача и какой результат нужен?" required></textarea></label>
+      <button class="button button-primary" type="submit" data-i18n="form-submit">Подготовить письмо ↗</button><p class="form-disclaimer" data-i18n="form-disclaimer">Нажатие откроет почтовое приложение. Форма не отправляет данные на сервер OSGARD.</p>
+    </form>
+  </dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
