@@ -130,8 +130,12 @@ func _run_smoke() -> void:
 	# cannot clip the projected lock marker against the viewport edge.
 	game.camera.global_position = lock_guard.global_position + Vector3(0.0, 8.0, 12.0)
 	game.camera.look_at(lock_guard.global_position + Vector3.UP * 2.25, Vector3.UP)
+	game.camera.force_update_transform()
+	var lock_anchor: Vector3 = lock_guard.global_position + Vector3.UP * 2.25
+	print("TARGET_LOCK_PRECHECK: valid=", is_instance_valid(lock_guard), " paused=", game.paused_game, " terminal=", game.terminal_active, " finished=", game.mission_finished, " briefing=", game.briefing_visible, " behind=", game.camera.is_position_behind(lock_anchor), " screen=", game.camera.unproject_position(lock_anchor), " viewport=", game.get_viewport().get_visible_rect().size)
 	game.aim_target_node = lock_guard
 	game._update_target_lock_ui(0.016)
+	print("TARGET_LOCK_POSTCHECK: visible=", game.target_lock_root.visible, " pos=", game.target_lock_root.position, " brackets=", game.target_lock_brackets.size())
 	if not _expect(game.target_lock_root.visible and game.target_lock_brackets.size() == 8, "visible hostile must produce a smoothed eight-corner screen-space target marker"):
 		return
 	if not _expect(game.target_lock_label.text.contains(str(game.guards[0]["role"])) and is_equal_approx(game.target_lock_health_bar.value, float(game.guards[0]["hp"])), "target identity and health must reflect the live hostile state"):
