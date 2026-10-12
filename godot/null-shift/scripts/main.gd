@@ -448,6 +448,8 @@ func _update_phase_lanes(delta: float) -> void:
 		var pulse_head: MeshInstance3D = lane["pulse_head"]
 		var pulse_ring: MeshInstance3D = lane["pulse_ring"]
 		var pulse_wake: MeshInstance3D = lane["pulse_wake"]
+		var warning_material: StandardMaterial3D = lane["warning_material"]
+		var active_material: StandardMaterial3D = lane["active_material"]
 		pulse_rig.visible = next_state != "safe"
 		var travel: float = clampf((cycle - 4.95) / 2.27, 0.0, 1.0)
 		var travel_x: float = lerpf(-20.5, 20.5, travel)
@@ -464,8 +466,6 @@ func _update_phase_lanes(delta: float) -> void:
 		pulse_ring.material_override = surge_material
 		pulse_wake.material_override = surge_material
 		var pulse: float = 0.65 + absf(sin(scene_clock * 11.5 + float(index))) * 0.95
-		var warning_material: StandardMaterial3D = lane["warning_material"]
-		var active_material: StandardMaterial3D = lane["active_material"]
 		warning_material.emission_energy_multiplier = pulse if next_state == "warning" else 0.8
 		active_material.emission_energy_multiplier = 2.0 + pulse if next_state == "active" else 1.8
 		if next_state == "warning":

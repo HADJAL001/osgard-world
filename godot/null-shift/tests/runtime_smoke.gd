@@ -21,6 +21,8 @@ func _run_smoke() -> void:
 	await process_frame
 	await process_frame
 	print("RUNTIME_STAGE: scene ready")
+	if not _expect(game.get_script() != null, "main scene script must load without GDScript parse errors"):
+		return
 	if not _expect(is_instance_valid(game.briefing_panel), "first-run briefing panel must instantiate"):
 		return
 	game._show_briefing()

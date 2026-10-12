@@ -197,3 +197,9 @@ The command npm run qa:null-shift checks required game assets, script syntax, co
 - Added a real ProgressBar health readout whose value is bound to runtime player health and whose fill changes between cyan, amber and red thresholds.
 - Godot runtime smoke now exercises health values/colours, pulse visibility and travel, wake position, active material transition and the matching HUD state. The project source-contract smoke requires the new nodes and UI.
 - This is a procedural Godot Web/3D improvement, not native 8K rendering; real device profiling remains required.
+
+
+## Godot release 0.4.1 — runtime parse guard
+
+- Fixed the phase-surge update order so lane-specific warning/active materials are read from the lane state before the pulse visuals use them.
+- The headless test now checks that the main scene actually attached its GDScript after instantiation, and exits immediately with a clear failure rather than continuing to access missing game properties when a script parse error occurs.
