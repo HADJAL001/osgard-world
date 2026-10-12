@@ -7,13 +7,13 @@ import { OsgardLogo } from './OsgardLogo'
 type Locale = 'ru' | 'en'
 const botUrl = 'https://t.me/OSGARD_world_bot'
 const products = [
-  ['GARD VPN', 'gardvpn.is', '99.9%', 'Protection without noise.'],
-  ['SENJOR', 'senjorio.com', '7 min', 'Mobility shaped around your time.'],
-  ['OSGARD BUSINESS', 'osgardos.com', '360пїЅ', 'One view for the decisions that matter.'],
-  ['SUPER DAY', 'superday.run', '+2 h', 'A calmer operating rhythm for the day.'],
-  ['NEW WORLD', 'osgardnewworld.com', '2 min', 'From a thought to a working product.'],
-  ['O2 SYSTEM', 'o2system.art', '0.0%', 'Precision for every transaction.'],
-  ['VANGUARD STUDIO', 'osgardvanguard.studio', '4K', 'A finished visual language, on demand.'],
+  ['GARD VPN', 'gardvpn.is', 'VPN', 'Review the service and its current terms.'],
+  ['SENJOR', 'senjorio.com', 'MOBILITY', 'Review the available premium mobility services.'],
+  ['OSGARD BUSINESS', 'osgardos.com', 'BUSINESS', 'Explore tools and services for business development.'],
+  ['SUPER DAY', 'superday.run', 'DAY PLANNING', 'Explore day planning and smart-map features.'],
+  ['OSGARD NEW WORLD', 'osgardbewworld.com', 'CREATE', 'Explore project and app creation tools.'],
+  ['O2 SYSTEM', 'o2system.art', 'ACCOUNTING', 'Review cash-accounting tools for exchange offices.'],
+  ['VANGUARD STUDIO', 'osgardvanguard.studio', 'VIDEO', 'Explore available video-creation services.'],
 ]
 
 const sectionLinks = [['Worlds', '/worlds'], ['Catalog', '/catalog'], ['Chronicle', '/chronicle'], ['Founders', '/masters'], ['Entertainment', '/entertainment'], ['SkillCred', '/skillcred/'], ['Club', '/club']]
@@ -98,10 +98,10 @@ function LegacyClubPage({ locale, setLocale }: { locale: Locale, setLocale: (v: 
 const catalogue = [
   { id: '01', name: 'AURUM CORE', type: 'ARCHIVE OBJECT', metric: '07 THREADS', mark: 4, tone: 'artifact-gold' },
   { id: '02', name: 'TIMECOIN', type: 'ACCESS TOKEN', metric: '2026 EDITION', mark: 5, tone: 'artifact-silver' },
-  { id: '03', name: 'GARD SHIELD', type: 'PRIVATE PROTOCOL', metric: '99.9% QUIET', mark: 0, tone: 'artifact-wine' },
-  { id: '04', name: 'SUPER DAY', type: 'RHYTHM ENGINE', metric: '+02 HOURS', mark: 3, tone: 'artifact-blue' },
-  { id: '05', name: 'VANGUARD FRAME', type: 'VISUAL COMMISSION', metric: '4K MASTER', mark: 6, tone: 'artifact-amber' },
-  { id: '06', name: 'O2 LEDGER', type: 'PRECISION SYSTEM', metric: '0.0% NOISE', mark: 2, tone: 'artifact-green' },
+  { id: '03', name: 'GARD SHIELD', type: 'PRIVATE PROTOCOL', metric: 'PRIVATE CONNECTION', mark: 0, tone: 'artifact-wine' },
+  { id: '04', name: 'SUPER DAY', type: 'RHYTHM ENGINE', metric: 'DAY PLANNER', mark: 3, tone: 'artifact-blue' },
+  { id: '05', name: 'VANGUARD FRAME', type: 'VISUAL COMMISSION', metric: 'VIDEO STUDIO', mark: 6, tone: 'artifact-amber' },
+  { id: '06', name: 'O2 LEDGER', type: 'PRECISION SYSTEM', metric: 'ACCOUNTING', mark: 2, tone: 'artifact-green' },
 ]
 
 export function CatalogPage({ locale, setLocale }: { locale: Locale, setLocale: (v: Locale) => void }) {
