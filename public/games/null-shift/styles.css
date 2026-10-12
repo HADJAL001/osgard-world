@@ -19,3 +19,15 @@ button{font:inherit}button:focus-visible,a:focus-visible,canvas:focus-visible,[t
 @media(min-width:761px) and (pointer:fine){.mobile-ui{display:none!important}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}.phase-readout i{animation:none}}
 .frame:fullscreen{display:grid;place-items:center;width:100vw;height:100vh;border-radius:0;border:0;background:#05090b}.frame:fullscreen #game{width:100%;height:100%;max-height:100vh;object-fit:contain}
+
+/* Release 0.3 — tactical telemetry. */
+.raid-intel{position:relative;overflow:hidden;margin:10px 0 12px;padding:10px 12px;border:1px solid rgba(149,223,219,.15);border-radius:12px;background:linear-gradient(115deg,rgba(13,28,32,.91),rgba(5,12,15,.97));box-shadow:0 14px 35px rgba(0,0,0,.18)}
+.raid-intel:before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.45;background:linear-gradient(100deg,transparent,rgba(100,247,220,.035),transparent)}
+.intel-title{display:flex;justify-content:space-between;gap:12px;margin-bottom:8px;color:#789396;font-size:8px;letter-spacing:.17em;font-weight:800}.intel-title span:first-child{color:#bfe2df}
+.intel-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.intel-card{position:relative;display:grid;grid-template-columns:1fr auto;align-items:center;gap:3px 10px;min-height:48px;padding:8px 10px;border:1px solid rgba(149,223,219,.11);border-radius:8px;background:rgba(4,12,15,.54)}
+.intel-card>span{color:#7e989a;font-size:8px;letter-spacing:.12em;font-weight:800}.intel-card strong{grid-row:span 2;color:#edf8f6;font-size:22px;line-height:1;font-weight:800;font-variant-numeric:tabular-nums}.intel-card i{width:28px;height:2px;border-radius:2px;background:#789396;box-shadow:0 0 10px currentColor}
+.intel-card .intel-red{background:#ff697a;color:#ff697a}.intel-card .intel-cyan{background:#64f7dc;color:#64f7dc}.intel-card .intel-amber{background:#ffbd60;color:#ffbd60}
+.premium-combat-layer .frame{box-shadow:0 34px 100px rgba(0,0,0,.52),0 0 0 1px rgba(100,247,220,.035) inset}.performance-mode .raid-intel:before{display:none}
+@media(max-width:760px){.raid-intel{margin:8px 0 10px;padding:8px;border-radius:10px}.intel-title{font-size:7px;margin-bottom:6px}.intel-card{padding:7px;gap:3px 5px;min-height:42px}.intel-card>span{font-size:7px;letter-spacing:.06em}.intel-card strong{font-size:19px}.intel-card i{width:20px}}
+@media(max-width:380px){.intel-grid{gap:4px}.intel-card{padding:6px 5px}.intel-card>span{font-size:6px;letter-spacing:.025em}.intel-card strong{font-size:17px}.intel-title{letter-spacing:.08em}}
