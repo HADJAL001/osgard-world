@@ -40,6 +40,8 @@ assert.ok(css.includes('@media(max-width:380px)'), 'Narrow 320px layout rules mi
 assert.ok(css.includes('@media(prefers-reduced-motion:reduce)'), 'Reduced-motion support missing')
 assert.ok(css.includes('.frame:fullscreen'), 'Fullscreen presentation rules missing')
 assert.ok(css.includes('.diag-panel'), 'Diagnostics presentation missing')
+assert.ok(js.includes('premiumRafSamples') && js.includes('requestAnimationFrame timestamps'), 'Diagnostics must use requestAnimationFrame timestamps')
+assert.ok(css.includes('#fullscreen-toggle,#contract-toggle,#loadout-toggle{display:none}'), 'Mobile users must retain access to the quality selector')
 
 for (const feature of [
   'premiumCombatAI','premiumProcessDeviceHits','premiumDrawCombat','premiumBurst',
