@@ -1711,6 +1711,16 @@ func _save_career() -> void:
 		push_warning("Could not write local career save: %s" % error_string(err))
 
 func _create_ui() -> void:
+	# UI construction can be re-entered by scene reload or test harnesses; don't stack layers.
+	if is_instance_valid(hud_root):
+		return
+	phase_lane_labels.clear()
+	operator_leg_pivots.clear()
+	mobile_move_buttons.clear()
+	mobile_move_spacers.clear()
+	mobile_action_buttons.clear()
+	crosshair_parts.clear()
+	target_lock_brackets.clear()
 	var layer := CanvasLayer.new()
 	layer.name = "TacticalInterface"
 	layer.layer = 8

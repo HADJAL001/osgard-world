@@ -109,3 +109,5 @@ The deployment workflow downloads official Godot 4.7.2 and matching web template
 
 - Made target-lock construction idempotent. If the UI setup routine runs again, it no longer appends another copy of the eight corner pieces or creates a second marker tree; the tracked array is reset before first construction.
 - The headless runtime test retains the deterministic camera pose and asserts one visible target lock made of exactly eight corners, with live identity and health.
+
+- Follow-up hardening: made the whole HUD builder idempotent, preventing duplicated CanvasLayers or accumulators if setup is re-entered. Collection arrays are reset only when a fresh HUD is constructed.
