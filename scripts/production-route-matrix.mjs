@@ -26,7 +26,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
           : route.endsWith('/ready') ? /"ready"\s*:\s*true/.test(text)
             : /"id"\s*:/.test(text) && /"name"\s*:/.test(text)
         : route.startsWith('/games/null-shift')
-          ? text.includes('id="game"') && text.includes('id="mobile-ui"') && text.includes('id="diag-panel"') && text.includes('./styles.css') && text.includes('./game.js')
+          ? text.includes('id="game"') && text.includes('id="mobile-ui"') && text.includes('id="diag-panel"') && text.includes('id="sound-toggle"') && text.includes('id="touch-sound"') && text.includes('./styles.css') && text.includes('./game.js')
           : route === '/entertainment'
             ? text.includes('<title>OSGARD Entertainment</title>')
             : text.includes('<div id="root">')
@@ -45,7 +45,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         const content = await asset.text()
         const normalized = content.toLowerCase()
         nonEmpty = path.startsWith('/games/null-shift/')
-          ? (path.endsWith('.css') ? content.includes('.mobile-ui') && content.includes('prefers-reduced-motion') : content.includes('premiumAtmosphere') && content.includes('PerformanceObserver'))
+          ? (path.endsWith('.css') ? content.includes('.mobile-ui') && content.includes('prefers-reduced-motion') && content.includes('.mobile-actions button[aria-pressed="true"]') : content.includes('premiumAtmosphere') && content.includes('PerformanceObserver') && content.includes('premiumV05DrawMotion') && content.includes('premiumV05ArmAudio') && content.includes('premiumV05UpdateMotion') && content.includes('null-shift-v05'))
           : path.endsWith('.css')
           ? normalized.includes('--acid:#c8ff3d') &&
             normalized.includes('/skillcred/fonts/intervariable.woff2') &&
