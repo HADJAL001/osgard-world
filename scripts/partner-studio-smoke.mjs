@@ -9,14 +9,14 @@ for (const path of ["index.html", "styles.css", "app.js", "model.js"]) {
 }
 const html = readFileSync(resolve(root, "index.html"), "utf8");
 const app = readFileSync(resolve(root, "app.js"), "utf8");
-const player = readFileSync(resolve("public/games/player-lifecycle.js"), "utf8");
+const hub = readFileSync(resolve("public/games/index.html"), "utf8");
 assert.ok(html.includes("id=\"forecast-form\""), "Interactive forecast form missing");
 assert.ok(html.includes("id=\"lead-form\""), "Partner lead form missing");
 assert.ok(html.includes("data-preset=\"conservative\"") && html.includes("data-preset=\"base\"") && html.includes("data-preset=\"optimistic\""), "Three editable scenario presets missing");
 assert.ok(html.includes("id=\"export-json\"") && html.includes("id=\"export-csv\""), "Forecast export options missing");
 assert.ok(html.includes("osgardbewworld.com") && html.includes("o2system.art") && html.includes("senjorio.com") && html.includes("superday.run") && html.includes("marcosa.club") && html.includes("myosa.world") && html.includes("gold-glamour.online") && html.includes("gardvpn.is") && html.includes("osgardos.com") && html.includes("osgardvanguard.studio"), "Owned-project network is incomplete");
-assert.ok(html.includes("Не подключена") && html.includes("не подключена"), "Ad/checkout state must be represented truthfully");
-assert.ok(player.includes("/games/partners/"), "Existing Games hub must link to Partner Studio");
+assert.ok(html.includes("РЕКЛАМНЫЙ ПРОВАЙДЕР НЕ ПОДКЛЮЧЁН") && html.includes("Не подключено"), "Ad/checkout state must be represented truthfully");
+assert.ok(hub.includes('href="/games/partners/"') && hub.includes("Открыть партнёрскую студию"), "Existing Games hub must link to Partner Studio");
 assert.ok(app.includes("if (!allowed || !token) return"), "Analytics must require consent and an authenticated session");
 assert.ok(app.includes("window.open(\"https://wa.me/79640027222?text=\""), "Lead flow must open WhatsApp for a human-confirmed send");
 assert.ok(app.includes("localStorage.setItem(\"osgard.games.partner-model.v1\""), "Local model save must be supported");
