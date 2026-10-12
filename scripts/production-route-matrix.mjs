@@ -38,8 +38,9 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
             || (text.includes('url=/games/null-shift/') && text.includes("window.location.replace('/games/null-shift/')"))
           : route.startsWith('/games/null-shift')
             ? text.includes('id="game"') && text.includes('id="mobile-ui"') && text.includes('id="diag-panel"') && text.includes('id="sound-toggle"') && text.includes('id="touch-sound"') && text.includes('./styles.css') && text.includes('./game.js') && text.includes('./engine-3d.js') && text.includes('id="engine-toggle"') && text.includes('id="touch-engine"') && text.includes('id="godot-preview"')
-          : route === '/entertainment'
-            ? text.includes('<title>OSGARD Entertainment</title>')
+          : route.startsWith('/entertainment')
+            ? (response.redirected && new URL(response.url).pathname === '/games/')
+              || (text.includes('url=/games/') && text.includes("window.location.replace('/games/')"))
             : text.includes('<div id="root">')
     const isGamesHub = route === '/games/' || route === '/games/index.html'
     const isLegacyGodotRoute = route.startsWith('/games/null-shift-godot')
