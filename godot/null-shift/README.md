@@ -123,3 +123,9 @@ The deployment workflow downloads official Godot 4.7.2 and matching web template
 
 - Fixed the root cause of duplicated phase HUD-chip references: GDScript Arrays and Dictionaries are reference-backed, and assigning empty literal defaults did not reliably isolate multiple scene instances in the headless runtime harness. Every transient array/dictionary is now duplicated before being cleared and reused by a fresh game instance.
 - Removed temporary phase-HUD debug printing. The runtime smoke retains the strict requirement of exactly three live phase-lane labels and exactly eight target-lock corner pieces.
+
+
+## Release 1.7 — fix HUD lifecycle placement
+
+- Moved the complete HUD construction body back into `_create_ui()`. The vignette shader's frame update now only updates shader parameters; it no longer constructs the status panel, phase chips, utility controls or objective HUD every frame.
+- This fixes the root cause of phase labels accumulating across frames and prevents repeated allocation of interactive UI controls. Static smoke checks function boundaries and fails if HUD creation is accidentally nested in a per-frame shader update.
