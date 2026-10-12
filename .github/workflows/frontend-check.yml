@@ -46,6 +46,12 @@ jobs:
         run: npm run qa:skillcred
       - name: Verify OSGARD PLAY catalog, game links and consent-gated analytics
         run: npm run qa:games-hub
+      - name: Verify NULL SHIFT browser game and WebGL contracts
+        run: npm run qa:null-shift
+      - name: Verify Godot project and published game routing contract
+        run: npm run qa:null-shift-godot
+      - name: Syntax-check the production route matrix
+        run: node --check scripts/production-route-matrix.mjs
       - name: Verify Imperium of Time game systems and visual diagnostics
         run: npm run qa:time-ui
       - name: Validate static archive and HTML
