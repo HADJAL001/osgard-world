@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import {
-  ArrowRight, ArrowUpRight, Check, Clock3, ExternalLink, Gamepad2, Heart,
+  ArrowRight, ArrowUpRight, Check, ExternalLink, Gamepad2, Heart,
   Mail, Monitor, Search, Send, Share2, ShieldCheck, Smartphone, Sparkles, X, Zap
 } from 'lucide-react'
 import { OsgardLogo } from './OsgardLogo'
