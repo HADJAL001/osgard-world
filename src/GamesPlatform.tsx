@@ -34,7 +34,7 @@ const gameDetails: Record<OsgardGameId, {
     tagline: 'Город — это система решений.',
     description: 'Развивайте город, распоряжайтесь ресурсами и наблюдайте, как выбор меняет его будущее.',
     controls: 'Клавиатура и мышь', platform: 'Браузерная стратегия', accent: 'amber',
-    tags: ['Город', 'Менеджмент', 'Решения'], featured: true
+    tags: ['Город', 'Менеджмент', 'Решения']
   },
   swarm: {
     title: 'SWARM', mark: 'SW', genre: 'coop', genreLabel: 'Кооператив',
@@ -180,7 +180,7 @@ export function GamesPlatform() {
       .filter(game => !onlyFavorites || favorites.includes(game.id))
       .filter(game => {
         if (!normalized) return true
-        const corpus = [game.title, game.tagline, game.description, game.genreLabel, game.platform, ...game.tags, ...game.reason].join(' ').toLocaleLowerCase('ru-RU')
+        const corpus = [game.title, game.tagline, game.description, game.genreLabel, game.platform, ...game.tags, game.reason].join(' ').toLocaleLowerCase('ru-RU')
         return corpus.includes(normalized)
       })
     if (sort === 'az') return list.sort((a, b) => a.title.localeCompare(b.title, 'ru'))
@@ -343,7 +343,7 @@ export function GamesPlatform() {
 
       <section className="owg-ecosystem" id="ecosystem" aria-labelledby="owg-ecosystem-title">
         <div className="owg-section-heading"><div><p className="owg-kicker">03 / THE NETWORK</p><h2 id="owg-ecosystem-title">Игры — вход в экосистему.</h2><p>Десять собственных направлений OSGARD. Переходы помечаются UTM-метками, чтобы отделять источники трафика.</p></div><a className="owg-text-link" href="https://osgard.world/worlds">Изучить миры <ArrowUpRight size={16} /></a></div>
-        <div className="owg-project-grid">{projects.map(project => <a className={'owg-project-card owg-project-' + project.accent} key={project.id} href={trackedProjectUrl(project.url, project.id)} target="_blank" rel="noopener noreferrer" onClick={() => track('share_created', { kind: 'cross-promotion', project: project.id, destination: project.url })}><span className="owg-project-symbol">{project.symbol}</span><span className="owg-project-category">{project.category}</span><h3>{project.name}</h3><p>{project.description}</p><span className="owg-project-link">Открыть сайт <ExternalLink size={13} /></span></a>)}</div>
+        <div className="owg-project-grid">{projects.map(project => <a className={'owg-project-card owg-project-' + project.accent} key={project.id} href={trackedProjectUrl(project.url, project.id)} target="_blank" rel="noopener noreferrer" ><span className="owg-project-symbol">{project.symbol}</span><span className="owg-project-category">{project.category}</span><h3>{project.name}</h3><p>{project.description}</p><span className="owg-project-link">Открыть сайт <ExternalLink size={13} /></span></a>)}</div>
       </section>
 
       <section className="owg-studio" id="studio" aria-labelledby="owg-studio-title">
@@ -361,7 +361,7 @@ export function GamesPlatform() {
 
       <footer className="owg-footer">
         <div className="owg-footer-brand"><a href="/" aria-label="OSGARD WORLD — главная"><OsgardLogo variant="footer" /></a><p>OSGARD WORLD GAMING<br />Своя игра. Свой мир. Своя система.</p></div>
-        <div className="owg-footer-links"><a href="/games">Игры</a><a href="/entertainment">Архив игр</a><a href="/development">Разработка</a><a href="mailto:osman.osmanov0099@gmail.com">Контакты</a></div>
+        <div className="owg-footer-links"><a href="/games">Игры</a><a href="/entertainment">Архив игр</a><a href="/development">Разработка</a><a href="/privacy">Конфиденциальность</a><a href="/terms">Условия</a><a href="mailto:osman.osmanov0099@gmail.com">Контакты</a></div>
         <div className="owg-footer-policy"><span>© OSGARD WORLD · 2026</span><button type="button" onClick={() => setToast(consent === 'analytics' ? 'Продуктовая аналитика включена' : 'Продуктовая аналитика отключена')}>Настройки данных</button><p>Избранное и история хранятся локально на этом устройстве.</p></div>
       </footer>
 
