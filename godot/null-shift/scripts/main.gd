@@ -2073,6 +2073,10 @@ func _update_crosshair() -> void:
 		crosshair_parts[index].color = reticle_color
 
 func _create_target_lock_ui() -> void:
+	# Keep HUD construction idempotent: repeated layout/setup calls must not stack reticle corners.
+	if is_instance_valid(target_lock_root):
+		return
+	target_lock_brackets.clear()
 	target_lock_root = Control.new()
 	target_lock_root.name = "TargetLockOverlay"
 	target_lock_root.size = Vector2(112.0, 88.0)

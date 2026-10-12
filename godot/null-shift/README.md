@@ -103,3 +103,9 @@ The deployment workflow downloads official Godot 4.7.2 and matching web template
 - Hardened responsive layout against the early startup frame where a headless/browser viewport or HUD element may not yet be valid. The layout controller now waits until the HUD hierarchy exists and the viewport has a usable size before changing panel anchors.
 - Stabilized the headless target-lock test by pointing the test camera at the test hostile before projecting the eight-corner marker, then restoring the camera transform. This prevents the assertion from depending on incidental camera smoothing or test viewport geometry.
 - These guards improve startup robustness and make the runtime test exercise the actual lock UI rather than an uncontrolled camera pose.
+
+
+## Release 1.4 — idempotent target-lock HUD
+
+- Made target-lock construction idempotent. If the UI setup routine runs again, it no longer appends another copy of the eight corner pieces or creates a second marker tree; the tracked array is reset before first construction.
+- The headless runtime test retains the deterministic camera pose and asserts one visible target lock made of exactly eight corners, with live identity and health.

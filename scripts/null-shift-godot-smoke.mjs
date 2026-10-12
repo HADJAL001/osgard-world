@@ -54,6 +54,8 @@ assert.ok(game.includes('var role: String = str(guard.get("role", "RANGER"))') &
 assert.ok(!game.includes('var role := str(guard.get("role", "RANGER"))'), 'Every role read from an untyped dictionary must have an explicit String type')
 assert.ok(!game.includes('var role :='), 'All Godot role local variables must declare an explicit type')
 assert.ok(game.includes('func _update_mobile_layout() -> void:') && game.includes('if not is_instance_valid(status_panel) or not is_instance_valid(objective_panel) or not is_instance_valid(mobile_move_panel) or not is_instance_valid(mobile_action_panel):'), 'Godot startup layout must wait for a fully constructed HUD tree')
+assert.ok(game.includes('func _update_mobile_layout() -> void:') && game.includes('fully constructed HUD tree') === false, 'Godot layout must protect startup viewport state')
+assert.ok(game.includes('func _create_target_lock_ui() -> void:') && game.includes('if is_instance_valid(target_lock_root):\n\t\treturn') && game.includes('target_lock_brackets.clear()'), 'Target-lock HUD creation must be idempotent and keep exactly eight corner elements')
 assert.ok(game.includes('func _layout_compact_controls(viewport_size: Vector2)') && game.includes('var action_button_width: float = floor((action_width - 32.0) * 0.5)'), 'Godot mobile HUD targets must adapt to compact viewports')
 assert.ok(game.includes('var action_width: float = floor(clampf(width * 0.47, 150.0, 206.0))'), 'Godot mobile action panel widths must resolve to integer layout pixels')
 assert.ok(game.includes('mobile_modules_button.custom_minimum_size = Vector2(action_width - 24.0, 28.0)') && game.includes('sound_button.custom_minimum_size = Vector2(action_width - 24.0, 28.0)'), 'All mobile action utilities must fit their container')
