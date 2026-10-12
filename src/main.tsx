@@ -21,6 +21,7 @@ import App from './App'
 import MiniApp from './MiniApp'
 import { AurumPage, CatalogPage, ChroniclePage, ClubPage, DevelopmentPage, MastersPage, TimeCoinPage, WorldsPage } from './Sections'
 import { EntertainmentCatalog } from './EntertainmentCatalog'
+import { GamesHub } from './GamesHub'
 import { ResultPage } from './ResultPage'
 import { BusinessDiagnostic } from './BusinessDiagnostic'
 import { CreatePrototype } from './CreatePrototype'
@@ -61,6 +62,7 @@ const cleanSeo: Record<string, { title: string; description: string }> = {
   '/timecoin': { title: 'TimeCoin OSGARD — правила и условия', description: 'Правила внутренней бонусной единицы OSGARD для доступа, статуса и специальных условий.' },
   '/development': { title: 'OSGARD Development — создание цифровых продуктов', description: 'Разработка сайтов, приложений и MVP-платформ от идеи до запуска.' },
   '/entertainment': { title: 'OSGARD Entertainment — интерактивные игры', description: 'Игры OSGARD: выбирайте мир, запускайте сессию и сохраняйте результат.' },
+  '/games': { title: 'OSGARD WORLD GAMING — игровые миры', description: 'Каталог игровых миров OSGARD: запускайте браузерные прототипы, сохраняйте избранное и исследуйте цифровую экосистему.' },
   '/skillcred': { title: 'SkillCred — навыки, которые остаются с вами | OSGARD', description: 'Переносимые цифровые подтверждения навыков. Проверка Ed25519 в браузере.' },
   '/games/time': { title: 'Империя времени — стратегия живого города | OSGARD PLAY', description: 'Управляйте казной, энергией, районами и политическими фракциями. Каждое решение меняет летопись города.' },
 }
@@ -94,6 +96,7 @@ const path = location.pathname.replace(/\/+$/, '') || '/'
 function RoutedRoot() {
   const [locale, setLocale] = React.useState<'ru' | 'en'>('ru')
   if (path === '/miniapp') return <MiniApp />
+  if (path === '/games') return <><Seo path="/games" /><GamesHub /></>
   if (path === '/games/time' || path === '/games/time-empire') return <><Seo path="/games/time" /><TimePrototype /></>
   if (path === '/play/swarm') return <OnlineGamePrototype game="swarm" />
   if (path === '/play/null-shift') return <OnlineGamePrototype game="null" />
