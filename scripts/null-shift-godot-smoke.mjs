@@ -3,13 +3,15 @@ import { readFileSync, existsSync, statSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
 const root = 'godot/null-shift'
-const required = ['project.godot','export_presets.cfg','scenes/main.tscn','scripts/main.gd','tests/runtime_smoke.gd','README.md','web/boot_shell.html']
+const required = ['project.godot','export_presets.cfg','scenes/main.tscn','scripts/main.gd','scripts/tactical_radar.gd','tests/runtime_smoke.gd','README.md','web/boot_shell.html']
 for (const path of required) assert.ok(existsSync(join(root, path)), 'Missing Godot project file: ' + path)
 const project = readFileSync(join(root, 'project.godot'), 'utf8')
 const preset = readFileSync(join(root, 'export_presets.cfg'), 'utf8')
 const scene = readFileSync(join(root, 'scenes/main.tscn'), 'utf8')
 const shell = readFileSync(join(root, 'web/boot_shell.html'), 'utf8')
 const game = readFileSync(join(root, 'scripts/main.gd'), 'utf8')
+const radar = readFileSync(join(root, 'scripts/tactical_radar.gd'), 'utf8')
+const runtime = readFileSync(join(root, 'tests/runtime_smoke.gd'), 'utf8')
 const oldPage = readFileSync('public/games/null-shift/index.html', 'utf8')
 const packageJson = JSON.parse(readFileSync('package.json', 'utf8'))
 assert.match(project, /config\/name="NULL SHIFT"/, 'Safe Godot export project name missing')
@@ -33,6 +35,9 @@ for (const feature of [
   'user://null_shift_career.cfg', 'KEY_F2', 'KEY_F3', 'dash_windup', 'dash_timer', 'HEAVY', 'STALKER', 'PhaseConduit_', 'ЭНЕРГОКОНТУР', 'hazard_status_label', 'active_material.emission_energy_multiplier', '_player_inside_lanes(', '_has_clear_path_to_player(', 'attacker: PhysicsBody3D', 'for lane_variant: Variant in lanes', 'attack_lanes', 'camera_shake_timer', 'fog_enabled', 'current_frame_ms', 'briefing_seen', 'ПОМОЩЬ / H'
 ]) assert.ok(game.includes(feature), 'Missing Godot gameplay/diagnostic feature: ' + feature)
 assert.ok(game.length > 25000, 'Godot gameplay source unexpectedly small')
+assert.ok(game.includes('tactical_radar_panel = _make_panel') && game.includes('tactical_radar_map.call("configure", self)') && game.includes('tactical_radar_panel.visible = not compact'), 'Tactical radar must integrate into desktop HUD and hide in compact/touch layout')
+for (const feature of ['func configure(', 'func _draw()', 'func world_to_radar(', 'func state_color(', 'draw_circle(', 'draw_line(', 'phase_lanes', 'terminal_unlocked', 'core_secured', 'guards', 'devices']) assert.ok(radar.includes(feature), 'Missing tactical radar feature: ' + feature)
+assert.ok(runtime.includes('tactical radar mapping and live entity feed') && runtime.includes('radar projection must map arena bounds') && runtime.includes('state_color'), 'Godot runtime smoke must test radar projection and hazard colors')
 assert.ok(game.includes('get_viewport().get_visible_rect().size.x') && !game.includes('get_viewport_rect()'), 'Godot Node3D responsive profile must use the active viewport API')
 assert.ok(game.includes('var role: String = str(guard.get("role", "RANGER"))') && game.includes('var body_speed: float = body.velocity.length()'), 'Godot dictionaries must not rely on ambiguous inferred local types')
 assert.ok(!game.includes('var role := str(guard.get("role", "RANGER"))'), 'Every role read from an untyped dictionary must have an explicit String type')

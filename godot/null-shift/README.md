@@ -56,3 +56,11 @@ The deployment workflow downloads official Godot 4.7.2 and matching web template
 - Confirmed hits now flash the primary armor shell white for 140 ms, pop it slightly in scale, and show a compact floating −1 label which eases upward and fades over 520 ms. The readout is created once per guard and reused on subsequent hits instead of spawning a new UI node per shot.
 - Eliminations now trigger a pooled ring burst, a brief white impact particle burst and a restrained camera impulse; elite Warden kills use a stronger amber response. Existing bounded ring and particle budgets still cap cosmetic allocations.
 - Godot runtime smoke now checks the actual hit label, live feedback timers, armor flash/scale, and pooled elimination effect in the combat loop.
+
+
+## Release 0.8 — tactical radar HUD
+
+- Added a GDScript-drawn live minimap to the Godot HUD on desktop. It projects the real 3D arena coordinates into a compact tactical map, including cover, security gate, three phase conduits and their live safe/warning/active states.
+- The radar reads live player, guard archetype, destructible-device, terminal, quantum-core, extraction and medkit state. Objective markers update as the mission progresses, with distinct colours for Warden, Heavy, Stalker and Ranger contacts.
+- The radar hides automatically for compact/touch layouts so it cannot compete with movement/action pads or the objective strip. It uses local data and redraws at a bounded 8.3 Hz.
+- The headless runtime smoke validates world-to-map boundaries, coordinate clamping, hazard colours and wiring to live combat data.

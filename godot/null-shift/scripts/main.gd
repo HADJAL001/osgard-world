@@ -120,6 +120,8 @@ var sound_button: Button
 var mobile_modules_button: Button
 var status_panel: PanelContainer
 var objective_panel: PanelContainer
+var tactical_radar_panel: PanelContainer
+var tactical_radar_map: Control
 var mid_panel: PanelContainer
 var bottom_hint: Label
 var status_title: Label
@@ -1725,6 +1727,17 @@ func _create_ui() -> void:
 	_add_button(result_stack, "НОВЫЙ РЕЙД", _restart_game, Vector2(220.0, 46.0))
 	_add_button(result_stack, "МОДУЛИ КАРЬЕРЫ", _show_loadout_from_result, Vector2(220.0, 42.0))
 
+	tactical_radar_panel = _make_panel(hud_root, Control.PRESET_TOP_RIGHT, Rect2(-264.0, 210.0, 246.0, 194.0))
+	var radar_stack: VBoxContainer = _panel_stack(tactical_radar_panel)
+	_label(radar_stack, "TACTICAL RADAR  /  LIVE", 9, Color(0.38, 1.0, 0.86))
+	tactical_radar_map = Control.new()
+	tactical_radar_map.name = "TacticalRadarMap"
+	tactical_radar_map.custom_minimum_size = Vector2(220.0, 142.0)
+	tactical_radar_map.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tactical_radar_map.set_script(load("res://scripts/tactical_radar.gd"))
+	tactical_radar_map.call("configure", self)
+	radar_stack.add_child(tactical_radar_map)
+
 	_create_mobile_controls(hud_root)
 	impact_overlay = ColorRect.new()
 	impact_overlay.name = "CinematicImpactOverlay"
@@ -1988,6 +2001,8 @@ func _update_mobile_layout() -> void:
 	var width: float = viewport_size.x
 	var compact: bool = width < 880.0 or touch_device
 	mobile_controls_visible = compact
+	if is_instance_valid(tactical_radar_panel):
+		tactical_radar_panel.visible = not compact
 	touch_assisted_aim = touch_device
 	if is_instance_valid(briefing_panel):
 		var panel_width: float = maxf(280.0, minf(620.0, viewport_size.x - 24.0))

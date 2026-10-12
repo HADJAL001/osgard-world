@@ -208,3 +208,11 @@ The command npm run qa:null-shift checks required game assets, script syntax, co
 ## Godot runtime refinement — Release 0.6
 
 This pass removes recurring allocations from the firefight path: beams and ring bursts now use bounded reusable node/mesh pools with deterministic frame-delta expiry rather than a new scene node and timer for each effect. Operator facing follows aim direction smoothly; leg pivots animate in opposing phases according to movement speed, and firing adds a short emissive muzzle flash plus recoil. Diagnostics expose active effects, pool capacity and dropped cosmetic effects. The pinned Godot 4.7.2 CI/export workflow remains the engine installation and web-export authority; no manual local installation or third-party runtime assets were required.
+
+
+## Release 0.8 — tactical radar and compact HUD
+
+- Added a GDScript-drawn radar to the Godot port. It maps authoritative arena coordinates to screen space and draws cover, security gate, timed phase conduits, player aim, hostile archetypes, destructible devices, terminal, core, extraction and the healing item.
+- Objective markers use real gameplay state and update when the cipher is unlocked and the core secured. The implementation uses procedural control drawing only, without stock art or remote assets, and redraws on a bounded timer.
+- The radar is shown on desktop and hidden on compact/touch layouts to preserve movement/action safe zones.
+- Static project checks and Godot headless smoke tests cover projected coordinate bounds, clamping, hazard colours and live game-state wiring.

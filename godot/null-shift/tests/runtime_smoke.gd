@@ -33,6 +33,28 @@ func _run_smoke() -> void:
 		return
 	game.sound_enabled = false
 
+	print("RUNTIME_STAGE: tactical radar mapping and live entity feed")
+	if not _expect(is_instance_valid(game.tactical_radar_panel) and is_instance_valid(game.tactical_radar_map), "tactical radar panel and drawing canvas must instantiate"):
+		return
+	var radar_map: Control = game.tactical_radar_map
+	if not _expect(radar_map.get_script() != null and radar_map.get_script().resource_path.ends_with("tactical_radar.gd"), "radar must use engine-backed GDScript"):
+		return
+	var radar_area := Rect2(Vector2(8.0, 6.0), Vector2(200.0, 100.0))
+	var radar_nw: Vector2 = radar_map.call("world_to_radar", Vector3(-24.5, 0.0, -15.5), radar_area)
+	var radar_se: Vector2 = radar_map.call("world_to_radar", Vector3(24.5, 0.0, 15.5), radar_area)
+	if not _expect(radar_nw.is_equal_approx(radar_area.position) and radar_se.is_equal_approx(radar_area.position + radar_area.size), "radar projection must map arena bounds to exact display bounds"):
+		return
+	var radar_clamped: Vector2 = radar_map.call("world_to_radar", Vector3(900.0, 0.0, -900.0), radar_area)
+	if not _expect(radar_clamped.x <= radar_area.end.x and radar_clamped.y >= radar_area.position.y, "radar markers must stay within the map rectangle"):
+		return
+	var active_color: Color = radar_map.call("state_color", "active")
+	var warning_color: Color = radar_map.call("state_color", "warning")
+	if not _expect(active_color.r > active_color.g and warning_color.r > warning_color.g, "radar hazard states must use critical/warning colors"):
+		return
+	if not _expect(game.devices.size() == 3 and game.guards.size() >= 3, "radar must receive live combatants and destructible devices"):
+		return
+	radar_map.queue_redraw()
+
 	print("RUNTIME_STAGE: phase-conduit warning, hazard and dodge")
 	if not _expect(game.phase_lanes.size() == 3 and is_instance_valid(game.hazard_status_label), "three timed energy lanes and a HUD status label must instantiate"):
 		return
