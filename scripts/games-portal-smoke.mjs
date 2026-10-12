@@ -3,15 +3,23 @@ import { readFileSync, existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 const root=resolve('public/games')
 const html=readFileSync(resolve(root,'index.html'),'utf8')
+const lifecycle=readFileSync(resolve(root,'player-lifecycle.js'),'utf8')
 const required=['data-game="null-shift"','data-game="time"','data-game="swarm"','data-game="inherit"','data-game="remix"','id="games-grid"','id="game-search"','data-filter="tactical"','id="player-dialog"','id="player-share"','id="player-fullscreen"','id="analytics-toggle"','id="project-form"','https://wa.me/79640027222','osgardbewworld.com','o2system.art','senjorio.com','superday.run','marcosa.club','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio','/games/favicon.svg','/privacy/','/terms/']
 for(const item of required) assert.ok(html.includes(item),'Games hub missing: '+item)
-for(const path of ['public/games/index.html','public/games/favicon.svg','public/privacy/index.html','public/terms/index.html']) assert.ok(existsSync(resolve(path)),'Missing file: '+path)
+for(const path of ['public/games/index.html','public/games/favicon.svg','public/games/player-lifecycle.js','public/privacy/index.html','public/terms/index.html']) assert.ok(existsSync(resolve(path)),'Missing file: '+path)
 assert.ok(html.includes('type="application/ld+json"'),'SEO ItemList JSON-LD missing')
 assert.ok(html.includes('<meta name="description"'),'SEO description missing')
 assert.ok(html.includes('prefers-reduced-motion:reduce'),'Reduced motion CSS missing')
 const css=html.match(/<style>([\s\S]*?)<\/style>/)?.[1]||''
 assert.ok(css.includes('@media(max-width:760px)'),'Responsive/mobile layout missing')
 assert.ok(css.includes('.player-view')&&css.includes('dialog::backdrop'),'Game dialog style missing')
+assert.ok(html.includes('src="./player-lifecycle.js"'),'Self-hosted lifecycle module must be included')
+assert.ok(lifecycle.includes('function markSessionStarted(')&&lifecycle.includes('game_session_completed'),'Actual session lifecycle tracking missing')
+assert.ok(lifecycle.includes('clientReadyMs')&&lifecycle.includes('durationSeconds')&&lifecycle.includes('launchFailure'),'Launch timing and failure recovery missing')
+assert.ok(lifecycle.includes('osgard:game-lifecycle')&&lifecycle.includes('event.origin!==location.origin')&&lifecycle.includes('event.source!==frame.contentWindow'),'Lifecycle message must validate same-origin iframe/source')
+assert.ok(lifecycle.includes('if(!consent||!token)return'),'Lifecycle analytics must require consent and authentication')
+new Function(lifecycle)
+assert.ok(lifecycle.includes('dialog#player-dialog{width:100vw'),'Mobile CSS selector must match actual dialog id')
 const scripts=Array.from(html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)).map(m=>m[1]).filter(s=>s.trim()&&!s.trim().startsWith('{'))
 assert.ok(scripts.length,'Inline application JavaScript not found')
 const js=scripts[scripts.length-1]

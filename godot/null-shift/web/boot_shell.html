@@ -185,6 +185,7 @@
         led.dataset.state = state || "ready";
       }
       function showError(message) {
+        try { if (window.parent !== window) window.parent.postMessage({ type: "osgard:game-lifecycle", game: "null-shift", state: "error", message: String(message || "Godot start failed").slice(0, 180), at: Date.now() }, window.location.origin); } catch (_) {}
         error.textContent = message;
         error.style.display = "block";
         fallback.style.display = "inline";
@@ -235,6 +236,7 @@
         }).then(function () {
           document.documentElement.classList.add("is-started");
           setStatus("СИСТЕМА АКТИВНА", "ready");
+          try { if (window.parent !== window) window.parent.postMessage({ type: "osgard:game-lifecycle", game: "null-shift", state: "started", at: Date.now() }, window.location.origin); } catch (_) {}
           canvas.focus();
           window.setTimeout(function () {
             launch.disabled = false;

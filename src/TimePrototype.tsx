@@ -114,7 +114,9 @@ export function TimePrototype() {
   useEffect(() => {
     let alive = true
     void startPlayerSession('time', { surface: 'time', schemaVersion: 2, entry: 'imperium-of-time' }).then((value) => {
-      if (!alive || !value?.id) return
+      if (!alive) return
+      try { if (window.parent !== window) window.parent.postMessage({ type: 'osgard:game-lifecycle', game: 'time', state: 'started', at: Date.now() }, window.location.origin) } catch { /* embedded lifecycle is optional */ }
+      if (!value?.id) return
       session.current = value.id
       if (stateRef.current.status !== 'ACTIVE' && !completed.current) {
         completed.current = true

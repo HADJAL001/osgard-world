@@ -303,6 +303,7 @@ function startLocal(assignedRole, body) {
   const roleIndex={locomotion:0,jump:1,left_arm:2,right_arm:3,head:4,core:5,tail:6,special:7}[assignedRole];
   if(Number.isInteger(roleIndex)) selectRole(roleIndex);
   hydrateBody(body);
+  try { if(window.parent!==window) window.parent.postMessage({type:'osgard:game-lifecycle',game:'swarm',state:'started',at:Date.now()},window.location.origin); } catch {}
 }
 function renderResultTeam(players=[]) {
   resultTeam ||= Object.assign(document.createElement('div'), { id:'result-team', ariaLive:'polite' });

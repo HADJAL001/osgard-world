@@ -33,6 +33,7 @@ assert.match(preset, /variant\/thread_support=false/, 'Single-thread web export 
 assert.match(preset, /html\/custom_html_shell="res:\/\/web\/boot_shell\.html"/, 'Custom premium loading shell must be exported')
 for (const feature of ['data-nullshift-shell="premium-v1"', '$GODOT_URL', '$GODOT_CONFIG', 'Engine.isWebGLAvailable(2)', 'onProgress:', 'НАЧАТЬ ОПЕРАЦИЮ', 'requestFullscreen()', 'else if (canvas.requestFullscreen)', '../null-shift/']) assert.ok(shell.includes(feature), 'Missing premium Godot loading-shell feature: ' + feature)
 assert.ok(!/https?:\/\//i.test(shell), 'Premium Godot shell must not load remote assets')
+assert.ok(shell.includes('osgard:game-lifecycle') && shell.includes('state: "started"') && shell.includes('state: "error"'), 'Godot shell must report actual engine start and errors to the OSGARD player host')
 assert.match(scene, /type="Node3D"/, '3D root scene missing')
 assert.equal(packageJson.scripts['qa:null-shift-godot'], 'node scripts/null-shift-godot-smoke.mjs', 'Godot smoke command not registered')
 assert.ok(oldPage.includes('id="godot-preview"') && oldPage.includes('../null-shift-godot/'), 'Legacy game must link to the isolated Godot beta route')
