@@ -68,6 +68,7 @@ assert.ok(platform.includes('Локально') || platform.includes('локал
 assert.ok(detail.includes('GAME_DETAILS[gameEntry.id]') && detail.includes('Игра запускается по настроенному веб-маршруту'), 'Dedicated game profile must use manifest metadata and clarify launch routing')
 assert.ok(player.includes('watchdog') && player.includes('toggleFullscreen') && player.includes('game_session_started') && player.includes('elapsedSeconds') && player.includes('fallbackUsedRef'), 'Player must track opt-in session duration and implement timeout/fullscreen/Godot fallback')
 assert.ok(player.includes("source: '/games/remix/player/index.html'"), 'REMIX must launch the Unity WebGL player rather than the legacy landing page')
+assert.ok(player.includes("querySelector<HTMLElement>('#unity-loading-container')") && player.includes("display === 'none'") && player.includes('Unity WebGL загружается'), 'Unity iframe must not be marked ready before its runtime is loaded')
 assert.ok(platform.includes("href={'/games/play/' + lastPlayed.id}"), 'Continue must route through the player shell')
 assert.ok(platform.includes("new URL('/games/info/' + id, window.location.origin)"), 'Game sharing must use a stable public profile link')
 for (const slug of ['time','swarm','null-shift','inherit','remix']) assert.ok(sitemap.includes('https://osgard.world/games/info/' + slug), 'Missing game profile in sitemap: ' + slug)
