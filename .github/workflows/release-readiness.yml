@@ -7,7 +7,7 @@ on:
     types: [completed]
     branches: [master]
   pull_request:
-    branches: [main]
+    branches: [master]
 
 jobs:
   readiness:
@@ -26,6 +26,10 @@ jobs:
         run: npm run check
       - name: Validate NULL SHIFT standalone game
         run: npm run qa:null-shift
+      - name: Verify OSGARD Games portal
+        run: npm run qa:games-portal
+      - name: Verify partner inventory and enquiry form
+        run: npm run qa:partners-page
       - name: Build and archive preflight
         run: npm run build && npm run preflight:frontend
       - name: Verify Imperium of Time gameplay and diagnostics
