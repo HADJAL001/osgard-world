@@ -57,7 +57,7 @@ const baseTool=tool;tool=function(key){if(key==='null'){let t=ensureTools(),p=S.
 
 /* NULL//SHIFT premium runtime: touch controls, local performance telemetry and procedural atmosphere. */
 const premiumFrame=document.querySelector('#game-frame');
-let premiumQuality='cinematic';try{premiumQuality=localStorage.getItem('null-shift-quality')==='balanced'?'balanced':'cinematic'}catch{}
+let premiumQuality='cinematic';try{const savedQuality=localStorage.getItem('null-shift-quality');premiumQuality=savedQuality==='balanced'?'balanced':savedQuality==='cinematic'?'cinematic':((window.matchMedia('(pointer: coarse)').matches||window.matchMedia('(max-width: 760px)').matches)?'balanced':'cinematic')}catch{premiumQuality=(window.matchMedia('(pointer: coarse)').matches||window.matchMedia('(max-width: 760px)').matches)?'balanced':'cinematic'}
 let premiumDiagVisible=false,premiumLastFrame=0,premiumLastDiagPaint=0,premiumLastHudPaint=0,premiumLastPhase='',premiumLastInstability=-1,premiumLastCipher=null,premiumFrameSamples=[],premiumLongTasks=0,premiumRenderMs=0,premiumFireHeld=false,premiumAimHeld=false;
 const premiumLowMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches,premiumCoarse=window.matchMedia('(pointer: coarse)').matches||window.matchMedia('(max-width: 760px)').matches;
 const premiumDust=Array.from({length:36},(_,i)=>({x:(i*197+83)%W,y:(i*113+47)%H,r:.5+(i%4)*.22,speed:3+(i%5)*2}));
@@ -134,6 +134,13 @@ premiumSyncHud=function(now){premiumSyncCombatBase(now);if(!S||now-premiumLastCo
 const premiumFireOriginal=shoot;
 shoot=function(){if(!S||S.done||S.paused)return;const stamp=S.p.shot,now=performance.now();premiumFireOriginal();if(S.p.shot!==stamp)premiumCombat.muzzleAt=now};
 document.documentElement.classList.add('premium-combat-layer');
+
+
+/* Measure presentation cadence from real requestAnimationFrame timestamps, not draw-call duration. */
+const premiumRafSamples=[];let premiumRafLast=0;
+const premiumLoopBeforeTelemetry=loop;
+loop=function(timestamp){if(premiumRafLast){const frameMs=timestamp-premiumRafLast;if(frameMs>0&&frameMs<1000){premiumRafSamples.push(frameMs);if(premiumRafSamples.length>180)premiumRafSamples.shift()}}premiumRafLast=timestamp;premiumLoopBeforeTelemetry(timestamp)};
+premiumPaintDiagnostics=function(now,force){if(!premiumDiagVisible||(!force&&now-premiumLastDiagPaint<320))return;premiumLastDiagPaint=now;const avg=premiumRafSamples.length?premiumRafSamples.reduce((a,b)=>a+b,0)/premiumRafSamples.length:0;$('#diag-fps').textContent=avg?String(Math.round(1000/avg)):'—';$('#diag-p95').textContent=premiumRafSamples.length?premiumP95(premiumRafSamples).toFixed(1):'—';$('#diag-render').textContent=premiumRenderMs.toFixed(1);$('#diag-tasks').textContent=String(premiumLongTasks);$('#diag-note').textContent=(premiumQuality==='cinematic'?'Кинематографические эффекты включены. ':'Облегчённый режим включён. ')+(premiumCoarse?'Сенсорный режим. ':'')+'FPS/P95 — по временным меткам requestAnimationFrame; render cost — замер текущего draw-прохода. Данные остаются на устройстве.'};
 
 premiumSetQuality();document.documentElement.classList.add('premium-runtime');
 
