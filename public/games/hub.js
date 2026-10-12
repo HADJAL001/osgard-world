@@ -85,7 +85,7 @@ const readLocal = (key, fallback) => { try { const value = JSON.parse(localStora
 const writeLocal = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch { toast(state.locale === "ru" ? "Не удалось сохранить локальные данные." : "Could not save local data."); return false; } };
 const favorites = () => readLocal(STORAGE.favorites, []);
 const recents = () => readLocal(STORAGE.recent, []);
-const hasConsent = () => localStorage.getItem(STORAGE.consent) === "yes";
+const hasConsent = () => { try { return localStorage.getItem(STORAGE.consent) === "yes"; } catch { return false; } };
 function escapeHtml(value) {
   return String(value == null ? "" : value).replace(/[&<>"']/g, char => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[char]));
 }
@@ -206,7 +206,7 @@ function renderEcosystem() {
   $("#ecosystem-grid").innerHTML = state.catalog.ecosystem.map(project =>
     '<a class="ecosystem-card" href="' + escapeHtml(project.url) + '" target="_blank" rel="noopener noreferrer" data-project-id="' + escapeHtml(project.id) + '">' +
     '<span class="ecosystem-mark">' + escapeHtml(project.mark) + '</span><span><strong>' + escapeHtml(project.name) + '</strong>' +
-    '<p>' + escapeHtml(project.description) + '</p><span class="ecosystem-link">' + escapeHtml(t("ecosystem-open")) + '</span></span></a>'
+    '<p>' + escapeHtml(state.locale === "ru" ? project.description : (project.descriptionEn || project.description)) + '</p><span class="ecosystem-link">' + escapeHtml(t("ecosystem-open")) + '</span></span></a>'
   ).join("");
 }
 function updateContinue() {
@@ -281,7 +281,9 @@ function openGame(id) {
     if (state.activeGame && state.activeGame.id === id && $("#game-dialog").open && $("#frame-loading").classList.contains("is-hidden")) {
       $("#launcher-status").textContent = t("play-shell-loaded");
     } else if (state.activeGame && state.activeGame.id === id && $("#game-dialog").open) {
-      $("#launcher-status").textContent = t("launcher-error-copy");
+      $("#frame-loading").classList.add("is-hidden");
+      $("#launcher-error").hidden = false;
+      $("#launcher-status").textContent = t("iframe-error");
     }
   }, 12000);
 }
@@ -362,6 +364,17 @@ function bindEvents() {
   $("#reset-filters").addEventListener("click", resetFilters);
   $("#continue-game").addEventListener("click", () => { const last = recents()[0]; if (last) openGame(last.gameId); });
   $("#continue-strip-button").addEventListener("click", () => { const last = recents()[0]; if (last) openGame(last.gameId); });
+  $("#ecosystem-grid").addEventListener("click", event => {
+    const link = event.target.closest("a[data-project-id]");
+    if (link) record("cross_promo_clicked", {projectId:link.dataset.projectId, source:"games_hub"});
+  });
+  $(".sponsor-cta").addEventListener("click", event => {
+    if (event.target.closest("a")) record("sponsorship_inquiry_prepared", {source:"games_hub"});
+  });
+  $(".developer-cta").addEventListener("click", event => {
+    if (event.target.closest("a,button")) record("development_cta_clicked", {source:"games_hub"});
+  });
+  $("#contact-open").addEventListener("click", () => record("development_brief_opened", {source:"games_hub"}));
   $("#detail-close").addEventListener("click", () => $("#game-details").close());
   $("#detail-play").addEventListener("click", () => {
     const id = $("#detail-play").dataset.id;
