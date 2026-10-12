@@ -39,7 +39,7 @@ assert.ok(admin.includes('href="/games/admin/partners/"'), 'LiveOps must link to
 assert.match(partnerEditor, /<meta name="robots" content="noindex,nofollow,noarchive">/, 'Sponsor editor must not be indexed')
 assert.ok(partnerEditor.includes('id="editor-list"') && partnerEditor.includes('id="download"') && partnerEditor.includes('id="import-button"'), 'Sponsor editor UI actions are incomplete')
 assert.ok(partnerEditor.includes("active:false,sponsorLabelRequired:true") || partnerEditor.includes('active:false,sponsorLabelRequired:true'), 'New inventory rows must be forced inactive and sponsor-labelled')
-assert.ok(partnerEditor.includes("item.active!==false") && partnerEditor.includes("item.sponsorLabelRequired!==true"), 'Export validation must refuse any activated or unlabelled sponsor placement')
+assert.ok(partnerEditor.includes("item?.active!==false") && partnerEditor.includes("item?.sponsorLabelRequired!==true"), 'Export validation must refuse any activated or unlabelled sponsor placement')
 assert.ok(partnerEditor.includes('commercialStatus!==\'inquiry_only\'') && partnerEditor.includes("data.currency!=='EUR'"), 'Sponsor editor must preserve commercial status and currency contract')
 const editorScriptBody=partnerEditor.split('<script>')[1]?.split('</script>')[0]||''
 assert.ok(editorScriptBody.length>1000, 'Sponsor inventory editor script missing')
