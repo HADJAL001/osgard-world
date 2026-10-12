@@ -16,7 +16,7 @@ const FAVORITES_KEY = 'osgard.games.favorites.v1'
 const HISTORY_KEY = 'osgard.games.history.v1'
 const CONSENT_KEY = 'osgard.games.analytics-consent.v1'
 
-const gameDetails: Record<OsgardGameId, {
+export const GAME_DETAILS: Record<OsgardGameId, {
   title: string
   mark: string
   genre: Exclude<Genre, 'all'>
@@ -196,7 +196,7 @@ export function GamesPlatform() {
 
   const filteredGames = useMemo(() => {
     const normalized = search.trim().toLocaleLowerCase('ru-RU')
-    const list = OSGARD_GAMES.map((game, index) => ({ ...game, ...gameDetails[game.id], index }))
+    const list = OSGARD_GAMES.map((game, index) => ({ ...game, ...GAME_DETAILS[game.id], index }))
       .filter(game => genre === 'all' || game.genre === genre)
       .filter(game => !onlyFavorites || favorites.includes(game.id))
       .filter(game => {
@@ -210,7 +210,7 @@ export function GamesPlatform() {
   }, [search, genre, sort, onlyFavorites, favorites, history])
 
   const lastPlayed = history.length ? OSGARD_GAMES.find(game => game.id === history[0].id) : undefined
-  const lastDetails = lastPlayed ? gameDetails[lastPlayed.id] : undefined
+  const lastDetails = lastPlayed ? GAME_DETAILS[lastPlayed.id] : undefined
 
   const launchGame = (id: OsgardGameId, placement: string) => {
     const next = [{ id, at: Date.now() }, ...history.filter(item => item.id !== id)].slice(0, 12)
@@ -227,7 +227,7 @@ export function GamesPlatform() {
   const shareGame = async (id: OsgardGameId) => {
     const game = OSGARD_GAMES.find(item => item.id === id)
     if (!game) return
-    const details = gameDetails[id]
+    const details = GAME_DETAILS[id]
     const url = new URL(game.href, window.location.origin).toString()
     track('share_created', { kind: 'game', game: id })
     try {
@@ -345,6 +345,7 @@ export function GamesPlatform() {
                 <div className="owg-game-tags">{game.tags.map(tag => <span key={tag}>{tag}</span>)}</div>
                 <div className="owg-game-controls"><span><Monitor size={13} /> {game.platform}</span><span>{game.controls}</span></div>
                 <div className="owg-game-actions">
+                  <a className="owg-details-link" href={'/games/info/' + game.id}>Подробнее <ArrowRight size={15} /></a>
                   <a className="owg-button owg-button-primary" href={game.href} onClick={() => launchGame(game.id, 'catalog-card')}>Играть <ArrowUpRight size={16} /></a>
                   <button className="owg-icon-button" type="button" aria-label={'Поделиться игрой ' + game.title} onClick={() => void shareGame(game.id)}><Share2 size={16} /></button>
                 </div>
