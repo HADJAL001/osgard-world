@@ -45,7 +45,7 @@ for (const feature of [
   "'/games/info/' + game.id",
   'localStorage.setItem(HISTORY_KEY', "value === 'analytics'", 'setAnalyticsConsent',
   'navigator.share', 'navigator.clipboard', "utm_source", "utm_medium", "utm_campaign", "utm_content",
-  "url: 'https://osgardbewworld.com'"', "url: 'https://o2system.art'", "url: 'https://senjorio.com'",
+  "url: 'https://osgardbewworld.com'", "url: 'https://o2system.art'", "url: 'https://senjorio.com'",
   "url: 'https://superday.run'", "url: 'https://marcosa.club'", "url: 'https://myosa.world'", "url: 'https://gold-glamour.online'",
   "url: 'https://gardvpn.is'", "url: 'https://osgardos.com'", "url: 'https://osgardvanguard.studio'",
   'mailto:osman.osmanov0099@gmail.com', 'https://wa.me/79640027222',
