@@ -113,3 +113,11 @@ The command npm run qa:null-shift checks required game assets, script syntax, co
 - Enter/Space or the primary action starts the raid; Escape and H dismiss it while open. H reopens the guide on demand, and completion is saved with local settings.
 - A scroll container and viewport-aware panel fit narrow screens. The aiming reticle stays hidden while instructions are open.
 - The Godot headless smoke test exercises opening the briefing, pausing, dismissing it and persisting completion before testing combat and extraction.
+
+
+## Combat interaction pass — telegraphs are now playable signals
+
+- Enemy wind-ups snapshot the attack lane rather than applying unconditional proximity damage at the end of the timer. Rangers fire along one narrow line; Heavy guards project three wider amber lanes; players can dodge by leaving those lanes before the strike resolves.
+- The Warden's radial attack has a 7.6-unit danger radius matching its ring telegraph instead of the previous oversized proximity range. Wall/obstacle ray checks allow hard cover to interrupt direct attacks.
+- A stun clears a pending wind-up and stored lanes, so an EMP relay or pulse reliably interrupts an enemy attack rather than letting it resolve immediately after recovery.
+- Godot runtime smoke checks both inside-lane and outside-lane cases. Source smoke checks that lane storage, geometry tests, line-of-sight query and typed PhysicsBody3D access remain present.

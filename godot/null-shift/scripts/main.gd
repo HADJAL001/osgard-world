@@ -821,11 +821,11 @@ func _update_guards(delta: float) -> void:
 			body.velocity = Vector3.ZERO
 		guards[index] = guard
 
-func _player_inside_lanes(lanes: Array, max_distance: float, half_width: float, attacker: Node3D = null) -> bool:
+func _player_inside_lanes(lanes: Array, max_distance: float, half_width: float, attacker: PhysicsBody3D = null) -> bool:
 	if not is_instance_valid(player):
 		return false
 	var player_point := Vector2(player.global_position.x, player.global_position.z)
-	for lane_variant in lanes:
+	for lane_variant: Variant in lanes:
 		if not lane_variant is Dictionary:
 			continue
 		var lane: Dictionary = lane_variant
@@ -845,7 +845,7 @@ func _player_inside_lanes(lanes: Array, max_distance: float, half_width: float, 
 				return true
 	return false
 
-func _has_clear_path_to_player(from_world: Vector3, attacker: Node3D) -> bool:
+func _has_clear_path_to_player(from_world: Vector3, attacker: PhysicsBody3D) -> bool:
 	if not is_instance_valid(player):
 		return false
 	var query := PhysicsRayQueryParameters3D.create(from_world, player.global_position + Vector3.UP * 0.72)
