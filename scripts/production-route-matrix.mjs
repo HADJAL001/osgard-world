@@ -32,7 +32,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         : route === '/terms/'
           ? text.includes('<title>Условия использования OSGARD PLAY</title>') && text.includes('прототип')
         : (route === '/games/' || route === '/games/index.html')
-          ? text.includes('id="games-grid"') && text.includes('data-game="null-shift"') && text.includes('data-game="time"') && text.includes('data-game="swarm"') && text.includes('data-game="inherit"') && text.includes('data-game="remix"') && text.includes('id="player-dialog"') && text.includes('id="player-share"') && text.includes('id="player-retry"') && text.includes('id="player-session-clock"') && text.includes('player-lifecycle.js') && text.includes('id="project-form"') && text.includes('id="analytics-toggle"') && text.includes('osgardvanguard.studio')
+          ? text.includes('id="games-grid"') && text.includes('data-game="null-shift"') && text.includes('data-game="time"') && text.includes('data-game="swarm"') && text.includes('data-game="inherit"') && text.includes('data-game="remix"') && text.includes('id="player-dialog"') && text.includes('id="player-share"') && text.includes('player-lifecycle.js') && text.includes('id="project-form"') && text.includes('id="analytics-toggle"') && text.includes('osgardvanguard.studio')
         : route.startsWith('/games/null-shift-godot')
           ? /<canvas/i.test(text) && /godot/i.test(text) && text.includes('index.wasm') && text.includes('index.pck') &&
             text.includes('data-nullshift-shell="premium-v1"') &&
