@@ -123,6 +123,7 @@ export function GamePlayer({ gameId }: { gameId: string }) {
   const activeDurationMsRef = useRef(0)
   const fallbackUsedRef = useRef(false)
   const verifyTimerRef = useRef<number | null>(null)
+  const verifyStartedAtRef = useRef<number | null>(null)
 
   useEffect(() => {
     if (!game) return
@@ -254,32 +255,49 @@ export function GamePlayer({ gameId }: { gameId: string }) {
   }
 
   const verifyFrame = () => {
+    if (verifyStartedAtRef.current === null) verifyStartedAtRef.current = Date.now()
     if (verifyTimerRef.current !== null) window.clearTimeout(verifyTimerRef.current)
     verifyTimerRef.current = window.setTimeout(() => {
       const frame = frameRef.current
       if (!frame) return
       let title = ''
+      let unityRuntimeReady = id !== 'remix'
       try {
-        title = (frame.contentDocument?.title ?? '').toLocaleLowerCase('ru-RU')
+        const doc = frame.contentDocument
+        title = (doc?.title ?? '').toLocaleLowerCase('ru-RU')
+        if (id === 'remix' && doc) {
+          const loading = doc.querySelector<HTMLElement>('#unity-loading-container')
+          const canvas = doc.querySelector<HTMLCanvasElement>('#unity-canvas')
+          const display = loading ? frame.contentWindow?.getComputedStyle(loading).display : 'block'
+          // The iframe load event only confirms that HTML arrived. Unity must finish its own build loading.
+          unityRuntimeReady = Boolean(canvas && canvas.width > 0 && canvas.height > 0 && loading && display === 'none')
+        }
       } catch {
-        // If browser policy changes, the frame still can be considered loaded by its load event.
+        // A cross-origin embed may not allow DOM inspection. Only title-based verification is possible there.
         title = game.title.toLocaleLowerCase('ru-RU')
+        unityRuntimeReady = id !== 'remix'
       }
       const expected = game.expectedTitle.some(token => title.includes(token))
-      if (expected) {
+      if (expected && unityRuntimeReady) {
         setStatus('ready')
         setMessage('Игровой экран загружен. Удачной сессии.')
+        verifyStartedAtRef.current = null
         beginSession()
+      } else if (expected && id === 'remix' && Date.now() - (verifyStartedAtRef.current ?? Date.now()) < 32000) {
+        setMessage('Unity WebGL загружается…')
+        verifyFrame()
       } else {
-        failOrFallback('Игровая страница не подтвердила свою загрузку. Повторите попытку или откройте сборку отдельно.')
+        verifyStartedAtRef.current = null
+        failOrFallback('Игровая страница не подтвердила готовность. Повторите попытку или откройте сборку отдельно.')
       }
-    }, id === 'time' ? 1600 : 350)
+    }, id === 'time' ? 1600 : id === 'remix' ? 1200 : 350)
   }
 
   const handleFrameError = () => failOrFallback('Не удалось загрузить игровую сборку. Проверьте соединение и попробуйте ещё раз.')
 
   const retry = () => {
     finishSession()
+    verifyStartedAtRef.current = null
     setStatus('loading')
     setMessage('Повторно загружаем игру…')
     setFrameKey(key => key + 1)
