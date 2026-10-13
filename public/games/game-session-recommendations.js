@@ -166,19 +166,93 @@ function buildShareUrl(gameId){
  url.searchParams.set('utm_content',gameId);
  return url.href;
 }
+const SHARE_REWARD_KEY='osgard.games.reward-wallet.v1';
+function grantShareReward(gameId){
+ const today=new Date().toISOString().slice(0,10);
+ try{
+  let wallet;
+  try{wallet=JSON.parse(localStorage.getItem(SHARE_REWARD_KEY)||'null')}catch{wallet=null}
+  if(!wallet||typeof wallet!=='object'||!Array.isArray(wallet.entries))wallet={version:1,balance:0,entries:[]};
+  wallet.balance=Math.max(0,Math.floor(Number(wallet.balance)||0));
+  if(wallet.entries.some(entry=>entry&&entry.gameId===gameId&&entry.day===today&&entry.kind==='share-invite')){
+   return {ok:false,reason:'already',balance:wallet.balance};
+  }
+  const todayCount=wallet.entries.filter(entry=>entry&&entry.day===today&&entry.kind==='share-invite').length;
+  if(todayCount>=3)return {ok:false,reason:'daily-cap',balance:wallet.balance};
+  const reward={id:'shard_'+token(),kind:'share-invite',item:'signal-shard',amount:1,gameId,day:today,grantedAt:new Date().toISOString(),validation:'client-side-share-action'};
+  wallet.version=1;
+  wallet.balance+=1;
+  wallet.entries=wallet.entries.concat(reward).slice(-250);
+  localStorage.setItem(SHARE_REWARD_KEY,JSON.stringify(wallet));
+  notifyGameFrame(gameId,reward,wallet.balance);
+  return {ok:true,reward,balance:wallet.balance};
+ }catch{
+  return {ok:false,reason:'storage-unavailable',balance:0};
+ }
+}
+function notifyGameFrame(gameId,reward,balance){
+ const frame=document.querySelector('#player-frame');
+ if(!frame)return false;
+ let delivered=false;
+ try{
+  if(frame.contentWindow)frame.contentWindow.postMessage({type:'osgard:share-reward-granted',version:1,gameId,reward,balance},location.origin);
+ }catch{}
+ try{
+  const doc=frame.contentDocument;
+  if(!doc||!doc.body)return false;
+  let style=doc.getElementById('osgard-share-reward-style');
+  if(!style){
+   style=doc.createElement('style');style.id='osgard-share-reward-style';
+   style.textContent='#osgard-share-reward-toast{position:fixed;z-index:2147483647;top:max(14px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100% - 24px);padding:13px 17px;border:1px solid #e4cb8a;background:linear-gradient(120deg,#d4b56b,#f0dda5);color:#10130d;font:700 11px/1.5 system-ui,sans-serif;letter-spacing:.055em;box-shadow:0 14px 48px #0009;border-radius:4px;text-align:center}#osgard-share-reward-toast small{display:block;margin-top:3px;font-size:9px;font-weight:500;letter-spacing:0}';
+   (doc.head||doc.documentElement).append(style);
+  }
+  let toast=doc.getElementById('osgard-share-reward-toast');
+  if(toast)toast.remove();
+  toast=doc.createElement('div');toast.id='osgard-share-reward-toast';toast.setAttribute('role','status');toast.setAttribute('aria-live','polite');
+  const title=doc.createElement('span');title.textContent='OSGARD BONUS · +1 SIGNAL SHARD';
+  const detail=doc.createElement('small');detail.textContent='Коллекция жетонов: '+balance;
+  toast.append(title,detail);doc.body.append(toast);delivered=true;
+  setTimeout(()=>{if(toast.isConnected)toast.remove()},6500);
+ }catch{}
+ return delivered;
+}
+function reportShareReward(result,status,claimButton){
+ if(!result||!status)return;
+ if(result.ok){
+  status.textContent='Награда получена: +1 Signal Shard. Баланс в этом браузере: '+result.balance+'. В игре показано уведомление, если игровой клиент разрешил доступ.';
+  if(claimButton){claimButton.disabled=true;claimButton.textContent='Получено · +1 Signal Shard';}
+ }else if(result.reason==='already'){
+  status.textContent='За эту игру сегодня уже начислялся Signal Shard. Награда — не более одного раза на игру и трёх раз в день.';
+  if(claimButton){claimButton.disabled=true;claimButton.textContent='Сегодня уже получено';}
+ }else if(result.reason==='daily-cap'){
+  status.textContent='Дневной лимит Signal Shard исчерпан: максимум три награды в день.';
+  if(claimButton){claimButton.disabled=true;claimButton.textContent='Лимит на сегодня';}
+ }else{
+  status.textContent='Браузер не сохранил награду. Разреши локальное хранилище и попробуй снова.';
+ }
+}
 function addPostSessionActions(gameId){
  const game=games[gameId];if(!game)return;
  root.querySelector('.og-growth')?.remove();ensureStyles();
- const section=make('section','og-growth');section.setAttribute('aria-label','Приглашение друга и создание собственной игры');
- const top=make('div','og-growth-top');top.append(make('span','og-growth-label','PLAY TOGETHER / PASS IT ON'));
- top.append(make('p','og-growth-copy','Понравилась игра? Передай другу ссылку на тот же игровой мир.'));
+ const section=make('section','og-growth');section.setAttribute('aria-label','Приглашение друга, бонус за распространение и проекты OSGARD');
+ const top=make('div','og-growth-top');top.append(make('span','og-growth-label','PLAY TOGETHER / EARN A SHARD'));
+ top.append(make('p','og-growth-copy','Поделись приглашением, чтобы получить +1 Signal Shard. Лимит — три награды в день; фактическую публикацию соцсеть не подтверждает.'));
  const actions=make('div','og-growth-actions');
- const inviteButton=make('button','og-share-friend','Пригласить друга ↗');inviteButton.type='button';
+ const inviteButton=make('button','og-share-friend','Поделиться · получить +1 ✦');inviteButton.type='button';
+ const inviteUrl=buildShareUrl(gameId);
+ const inviteText='Пойдём сыграем в '+game.title+' в OSGARD PLAY: '+inviteUrl;
+ const whatsApp=make('a','og-create-game','WhatsApp ↗');
+ whatsApp.href='https://wa.me/?text='+encodeURIComponent(inviteText);whatsApp.target='_blank';whatsApp.rel='noopener noreferrer';
+ const telegram=make('a','og-create-game','Telegram ↗');
+ telegram.href='https://t.me/share/url?url='+encodeURIComponent(inviteUrl)+'&text='+encodeURIComponent('Пойдём сыграем в '+game.title+' в OSGARD PLAY');
+ telegram.target='_blank';telegram.rel='noopener noreferrer';
+ const claimButton=make('button','og-share-reward-claim','Я отправил · забрать +1 Signal Shard');claimButton.type='button';claimButton.hidden=true;
  const createLink=make('a','og-create-game','Создать свою игру с OSGARD ↗');
  createLink.href='https://osgardbewworld.com/?utm_source=osgard_games&utm_medium=cross_promo&utm_campaign=after_game&utm_content='+encodeURIComponent(gameId);
  createLink.target='_blank';createLink.rel='noopener noreferrer';
  const status=make('p','og-growth-status');status.setAttribute('role','status');status.setAttribute('aria-live','polite');
- const fallback=make('a','og-create-game','Отправить в WhatsApp ↗');fallback.hidden=true;fallback.target='_blank';fallback.rel='noopener noreferrer';
+ const disclosure=make('p','og-reward-disclosure','Бонус — локальный коллекционный жетон, не деньги и не платная валюта. Для WhatsApp/Telegram подтверждение отправки — самоотчёт; серверной проверки поста нет.');
+ const fallback=make('a','og-create-game','Открыть WhatsApp ↗');fallback.hidden=true;fallback.target='_blank';fallback.rel='noopener noreferrer';
  const partnerCta=make('a','og-partner-cta');
  partnerCta.href='/games/partners/?utm_source=osgard_play&utm_medium=post_game&utm_campaign=partner_studio&utm_content='+encodeURIComponent(gameId);
  partnerCta.target='_blank';partnerCta.rel='noopener noreferrer';
@@ -189,7 +263,23 @@ function addPostSessionActions(gameId){
  partnerCopy.append(make('span','og-partner-description','Спонсорское событие или заказная мини-игра. Только по согласованию — без рекламы поверх активного раунда.'));
  partnerCta.append(partnerCopy,make('span','og-partner-action','Обсудить проект ↗'));
  partnerCta.addEventListener('click',()=>{void sendEvent('cross_promo_clicked',gameId,'post-game-partner-studio')});
- actions.append(inviteButton,createLink,fallback);section.append(top,actions,status,partnerCta);root.append(section);
+ actions.append(inviteButton,whatsApp,telegram,claimButton,createLink,fallback);
+ section.append(top,actions,status,disclosure,partnerCta);root.append(section);
+ let pendingSocialChannel='';
+ function prepareSelfReportedClaim(channel){
+  pendingSocialChannel=channel;
+  claimButton.hidden=false;claimButton.disabled=false;claimButton.textContent='Я отправил · забрать +1 Signal Shard';
+  status.textContent='В открывшейся вкладке отправь приглашение. Вернись сюда и подтверди, что поделился: браузер не может проверить публикацию в соцсети.';
+ }
+ whatsApp.addEventListener('click',()=>prepareSelfReportedClaim('whatsapp'));
+ telegram.addEventListener('click',()=>prepareSelfReportedClaim('telegram'));
+ fallback.addEventListener('click',()=>prepareSelfReportedClaim('whatsapp'));
+ claimButton.addEventListener('click',()=>{
+  if(!pendingSocialChannel)return;
+  const result=grantShareReward(gameId);
+  reportShareReward(result,status,claimButton);
+  pendingSocialChannel='';
+ });
  inviteButton.addEventListener('click',async()=>{
   inviteButton.disabled=true;status.textContent='Готовим персональную ссылку…';
   const url=buildShareUrl(gameId),inviteCode=new URL(url,location.origin).searchParams.get('og_ref')||'',message='Пойдём сыграем в '+game.title+' в OSGARD PLAY: '+url;
@@ -199,31 +289,32 @@ function addPostSessionActions(gameId){
     await navigator.share({title:'OSGARD PLAY · '+game.title,text:'Пойдём сыграем вместе.',url});
     shareCompleted=true;
     status.textContent='Ссылка передана в системное меню отправки.';
-   } else if(navigator.clipboard?.writeText){
+   }else if(navigator.clipboard?.writeText){
     await navigator.clipboard.writeText(message);
     shareCompleted=true;
     status.textContent='Текст приглашения скопирован.';
-   } else {
+   }else{
     fallback.href='https://wa.me/?text='+encodeURIComponent(message);
     fallback.hidden=false;
-    status.textContent='Открой WhatsApp, проверь приглашение и отправь его другу.';
+    prepareSelfReportedClaim('whatsapp');
+    status.textContent='Открой WhatsApp, отправь приглашение и вернись, чтобы подтвердить действие.';
    }
-  } catch(error){
+  }catch(error){
    if(error instanceof Error&&error.name==='AbortError'){
-    status.textContent='Отправка отменена. Действие не засчитано как успешное приглашение.';
+    status.textContent='Отправка отменена. Награда не начислена.';
     return;
    }
-   status.textContent='Не удалось открыть отправку. Можно попробовать WhatsApp или скопировать ссылку из адресной строки: '+url;
-   fallback.href='https://wa.me/?text='+encodeURIComponent(message);
-   fallback.hidden=false;
+   status.textContent='Не удалось открыть системную отправку. Выбери WhatsApp или Telegram.';
+   fallback.href='https://wa.me/?text='+encodeURIComponent(message);fallback.hidden=false;
+   prepareSelfReportedClaim('whatsapp');
    return;
-  } finally {
-   inviteButton.disabled=false;
+  }finally{inviteButton.disabled=false}
+  // The browser confirms that the share workflow finished or the link was copied.
+  // It cannot prove a public social post; this local cosmetic reward is disclosed as such.
+  if(shareCompleted){
+   void sendEvent('share_created',gameId,'game-invite:'+gameId+':'+inviteCode);
+   reportShareReward(grantShareReward(gameId),status,claimButton);
   }
-  // Count only an action the browser confirmed: the native share promise resolved
-  // or the invite text was successfully copied. A visible fallback link or a
-  // dismissed share sheet is not counted as a successful share.
-  if(shareCompleted)void sendEvent('share_created',gameId,'game-invite:'+gameId+':'+inviteCode);
  });
 }
 document.addEventListener('osgard:game-completed',event=>{const id=event.detail&&event.detail.game;addPostSessionActions(id)});
