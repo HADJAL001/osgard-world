@@ -56,6 +56,8 @@ jobs:
         run: npm run check
       - name: Build the production site
         run: npm run build
+      - name: Verify homepage Three.js is loaded lazily
+        run: npm run qa:globe-bundle
       - name: Verify live SkillCred page wiring
         run: npm run qa:skillcred
       - name: Verify Imperium of Time game systems and visual diagnostics

@@ -109,6 +109,8 @@ jobs:
       - name: Test monetization scenarios and formula bounds
         run: npm run qa:games-model
       - run: npm run build
+      - name: Verify homepage 3D code-splitting
+        run: npm run qa:globe-bundle
       - name: Subset self-hosted Inter and minify SkillCred assets
         run: |
           python -m pip install --quiet fonttools brotli

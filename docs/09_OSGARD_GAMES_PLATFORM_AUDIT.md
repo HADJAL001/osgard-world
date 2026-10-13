@@ -184,3 +184,11 @@ A new Godot-native growth slice is implemented and covered by the headless runti
 2. Add server-verified invite rewards after a referred player completes a real mission, not after a click.
 3. Test a one-time cosmetic supporter pack only after checkout, signed webhooks, entitlement persistence and refunds are operational.
 4. Measure net revenue after fees/refunds and acquisition cost. A million-dollar outcome is a goal, not a forecast or promise.
+
+
+## Homepage Three.js lazy loading
+
+- The homepage previously statically imported `LivingGlobe`, so the Three.js-powered 3D model was part of the application dependency graph for every route.
+- `LivingGlobe` now uses React `lazy` + `Suspense` and is mounted only after the existing preloader completes. A lightweight CSS orbital fallback preserves the premium hero composition while the asynchronous chunk loads.
+- A production bundle smoke test checks that the globe implementation is isolated in a separate chunk, the app entry imports it dynamically, and the Three.js chunk is not a static dependency of the entry. The check is wired into frontend CI, deployment preflight and release readiness.
+- This is a source/build-level performance safeguard, not a claim of an already measured Lighthouse improvement. Re-measure `/` and `/games/` after deployment on real desktop and mobile profiles.
