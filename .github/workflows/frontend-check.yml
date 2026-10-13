@@ -8,6 +8,7 @@ on:
       - "scripts/skillcred-page-smoke.mjs"
       - "scripts/time-prototype-smoke.mjs"
       - "scripts/games-portal-smoke.mjs"
+      - "scripts/games-viral-loop-smoke.mjs"
       - "scripts/activate-frontend-remote.sh"
       - "scripts/games-lighthouse-report.mjs"
       - ".github/workflows/games-lighthouse.yml"
@@ -57,6 +58,8 @@ jobs:
         run: npm run qa:time-ui
       - name: Verify OSGARD Games portal and Lighthouse guardrails
         run: npm run qa:games-portal
+      - name: Verify consent-aware viral invite loop
+        run: npm run qa:games-viral
       - name: Validate NULL//SHIFT Godot source contract
         run: npm run qa:null-shift-godot
       - name: Verify game detail pages and SEO
