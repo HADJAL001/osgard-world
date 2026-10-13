@@ -4,7 +4,7 @@ import vm from 'node:vm';
 
 const source = readFileSync('public/games/consented-analytics.js', 'utf8');
 
-function createQueue(apiBaseUrl) {
+function createQueue(apiBaseUrl, origin = 'https://osgard.world') {
   const values = new Map([['osgard.games.analytics-consent.v1', 'yes']]);
   const localStorage = {
     getItem: key => values.has(key) ? values.get(key) : null,
@@ -38,7 +38,7 @@ function createQueue(apiBaseUrl) {
     postedEvents.push(...body.events);
     return { ok: true, status: 202, json: async () => ({ accepted: body.events.length, inserted: body.events.length }) };
   };
-  vm.runInNewContext(source, { window, document, localStorage, fetch, AbortController, URL, Date, Math, JSON, Set, Map, Number, String, Array, Object });
+  vm.runInNewContext(source, { window, document, localStorage, fetch, AbortController, URL, location: { origin }, Date, Math, JSON, Set, Map, Number, String, Array, Object });
   return { queue: window.OSGARD_CONSENTED_ANALYTICS, values, listeners, postedEvents, requestedUrls,
     get eventPosts(){ return eventPosts; }, set offline(value){ offline=value; } };
 }
@@ -64,6 +64,19 @@ assert.equal(JSON.parse(unconfigured.values.get('osgard.games.analytics-pending.
 unconfigured.values.set('osgard.games.analytics-consent.v1', 'no');
 unconfigured.listeners.get('storage')?.({ key: 'osgard.games.analytics-consent.v1' });
 assert.equal(unconfigured.values.has('osgard.games.analytics-pending.v1'), false, 'Consent withdrawal must remove the local retry queue');
+
+// Arbitrary third-party URL paths are not accepted as a trusted API base.
+const invalidPath = createQueue('https://attacker.example/collect');
+assert.equal(await invalidPath.queue.enqueue(event), true, 'Invalid API configuration may retain a consented event locally');
+assert.equal(await invalidPath.queue.flush(), false, 'An untrusted API path must not receive analytics');
+assert.equal(invalidPath.eventPosts, 0, 'An untrusted URL path must not be called');
+
+// The first-party reverse proxy works only when explicitly selected in public config.
+const firstPartyProxy = createQueue('https://osgard.world/commerce-api');
+firstPartyProxy.offline = false;
+assert.equal(await firstPartyProxy.queue.enqueue(event), true, 'A consented event should queue when the same-origin API prefix is explicitly configured');
+assert.equal(await firstPartyProxy.queue.flush(), true, 'An explicit same-origin API proxy should accept the event');
+assert.ok(firstPartyProxy.requestedUrls.includes('https://osgard.world/commerce-api/v1/events'), 'Configured same-origin proxy prefix must be preserved');
 
 // With an explicit API origin, retry semantics remain stable and only server acknowledgement drains events.
 const configured = createQueue('https://commerce.example.test');
