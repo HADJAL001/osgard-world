@@ -58,6 +58,39 @@ const timeout = await checkProject(PROJECTS[3], { fetchImpl: fakeFetch, now: fix
 assert.equal(timeout.outcome, 'timeout')
 assert.equal(timeout.attempts, 2, 'A timeout gets one retry')
 
+let oversizedStreamCancelled = false
+const oversizedFetch = async url => new Response(new ReadableStream({
+  pull(controller) { controller.enqueue(new Uint8Array(80).fill(65)) },
+  cancel() { oversizedStreamCancelled = true },
+}), { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } })
+const oversized = await checkProject(PROJECTS[0], {
+  fetchImpl: oversizedFetch,
+  now: fixedNow,
+  maxAttempts: 1,
+  maxResponseBytes: 128,
+})
+assert.equal(oversized.outcome, 'reachable_body_too_large', 'A large 2xx response is still reachable, not an outage')
+assert.equal(oversized.statusCode, 200)
+assert.equal(oversized.reachable, true)
+assert.equal(oversized.bodyTooLarge, true)
+assert.equal(oversized.bodyLimitBytes, 128)
+assert.ok(oversized.bodyBytesRead > 128, 'The reader should detect crossing the cap without buffering the full body')
+assert.equal(oversized.pageTitle, null, 'Oversized pages must not be parsed')
+assert.equal(oversizedStreamCancelled, true, 'The oversized response stream must be cancelled after crossing the byte cap')
+
+const oversizedError = await checkProject(PROJECTS[1], {
+  fetchImpl: async () => new Response(new ReadableStream({
+    pull(controller) { controller.enqueue(new Uint8Array(80).fill(66)) },
+  }), { status: 503, headers: { 'content-type': 'text/html' } }),
+  now: fixedNow,
+  maxAttempts: 1,
+  maxResponseBytes: 128,
+})
+assert.equal(oversizedError.outcome, 'http_error', 'An oversized HTTP error must remain classified as an HTTP error')
+assert.equal(oversizedError.statusCode, 503)
+assert.equal(oversizedError.reachable, false)
+assert.equal(oversizedError.bodyTooLarge, true)
+
 const report = await runAudit({ fetchImpl: fakeFetch, now: fixedNow })
 assert.equal(report.projectCount, 10)
 assert.equal(report.results.length, 10)
@@ -72,4 +105,4 @@ assert.equal(report.results.find(result => result.id === 'senjorio').attempts, 2
 assert.equal(report.results.find(result => result.id === 'myosa').attempts, 2, 'A 5xx response gets one retry before classification')
 assert.ok(report.results.every(result => result.note.includes('HTTP homepage check only') || result.note.includes('does not by itself prove')))
 
-console.log('PASS external project healthcheck: 10 URL registry entries, HTML metadata, bounded GET requests, HTTP/network/timeout classification, and report boundaries.')
+console.log('PASS external project healthcheck: 10 URL registry entries, bounded streaming reads, size-safe classification, HTML metadata, HTTP/network/timeout handling, and report boundaries.')

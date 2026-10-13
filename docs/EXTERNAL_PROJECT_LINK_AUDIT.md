@@ -17,6 +17,6 @@ A HTTP 403 or a network error from one CI region does not prove that a service i
 
 ## Boundaries
 
-The intended product roles shown in the report are owner-provided descriptions, not independently verified capabilities. The audit makes one GET request to each homepage. It does not sign in, submit forms, probe protected APIs, test payments, verify security, or crawl private data. It does not add analytics to visitors' browsers or send secrets.
+The intended product roles shown in the report are owner-provided descriptions, not independently verified capabilities. The audit makes one bounded GET request to each homepage. Response bodies are capped at 1 MiB and the stream is cancelled as soon as the cap is crossed. A successful HTTP response that exceeds the cap is reported as `reachable_body_too_large` (not as an outage); an oversized HTTP error remains `http_error`. In either case, title/description metadata is not parsed. The audit does not sign in, submit forms, probe protected APIs, test payments, verify security, or crawl private data. It does not add analytics to visitors' browsers or send secrets.
 
 Homepage checks run daily, manually, and on pull requests that change this audit. External service failures are reported but do not block website deployment. Use `--strict` only in an environment where third-party homepage uptime is deliberately intended to be a release gate.

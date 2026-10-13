@@ -17,6 +17,7 @@ export const PROJECTS = [
 
 const USER_AGENT = 'OSGARD-External-Project-Health/1.0 (+https://osgard.world/games/)'
 const MAX_ERROR_LENGTH = 240
+const MAX_RESPONSE_BYTES = 1024 * 1024
 
 function htmlText(value) {
   return String(value || '')
@@ -58,10 +59,49 @@ function classifyHttp(status, isHtml, title) {
   return 'reachable'
 }
 
+async function readLimitedText(response, maxBytes = MAX_RESPONSE_BYTES) {
+  const body = response.body
+  if (!body || typeof body.getReader !== 'function') {
+    const text = await response.text()
+    const bytesRead = new TextEncoder().encode(text).byteLength
+    return bytesRead > maxBytes
+      ? { text: '', tooLarge: true, bytesRead }
+      : { text, tooLarge: false, bytesRead }
+  }
+
+  const reader = body.getReader()
+  const chunks = []
+  let bytesRead = 0
+  try {
+    while (true) {
+      const part = await reader.read()
+      if (part.done) break
+      const chunk = part.value instanceof Uint8Array ? part.value : new Uint8Array(part.value)
+      bytesRead += chunk.byteLength
+      if (bytesRead > maxBytes) {
+        try { await reader.cancel() } catch {}
+        return { text: '', tooLarge: true, bytesRead }
+      }
+      chunks.push(chunk)
+    }
+  } finally {
+    try { reader.releaseLock() } catch {}
+  }
+
+  const bytes = new Uint8Array(bytesRead)
+  let offset = 0
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+  return { text: new TextDecoder('utf-8').decode(bytes), tooLarge: false, bytesRead }
+}
+
 export async function checkProject(project, {
   fetchImpl = globalThis.fetch,
   timeoutMs = 12000,
   maxAttempts = 2,
+  maxResponseBytes = MAX_RESPONSE_BYTES,
   retryDelayMs = 250,
   now = () => new Date(),
 } = {}) {
@@ -84,12 +124,41 @@ export async function checkProject(project, {
         continue
       }
       const contentType = responseHeader(response, 'content-type').split(';')[0].trim().toLowerCase()
-      const body = await response.text()
+      const limitBytes = Number.isSafeInteger(maxResponseBytes) && maxResponseBytes > 0 ? maxResponseBytes : MAX_RESPONSE_BYTES
+      const bodyRead = await readLimitedText(response, limitBytes)
       const isHtml = contentType === 'text/html' || contentType === 'application/xhtml+xml'
-      const title = isHtml ? extractPageTitle(body) : null
+      const body = bodyRead.text
       const finalUrl = response.url || project.url
       let finalHost = null
       try { finalHost = new URL(finalUrl).hostname } catch {}
+      const reachable = response.status >= 200 && response.status < 400
+      if (bodyRead.tooLarge) {
+        return {
+          id: project.id,
+          name: project.name,
+          intendedRole: project.intendedRole,
+          requestedUrl: project.url,
+          finalUrl,
+          finalHost,
+          redirected: Boolean(response.redirected) || finalUrl.replace(/\/$/, '') !== project.url.replace(/\/$/, ''),
+          statusCode: response.status,
+          contentType: contentType || null,
+          pageTitle: null,
+          metaDescription: null,
+          outcome: reachable ? 'reachable_body_too_large' : 'http_error',
+          reachable,
+          bodyTooLarge: true,
+          bodyLimitBytes: limitBytes,
+          bodyBytesRead: bodyRead.bytesRead,
+          responseMs: Math.max(0, Date.now() - started),
+          attempts: attempt,
+          checkedAt,
+          note: reachable
+            ? 'Homepage responded successfully, but its body exceeded the metadata audit size limit; this is not an availability failure.'
+            : 'An HTTP error response exceeded the metadata audit size limit; its body was not parsed.',
+        }
+      }
+      const title = isHtml ? extractPageTitle(body) : null
       const outcome = classifyHttp(response.status, isHtml, title)
       return {
         id: project.id,
@@ -104,7 +173,10 @@ export async function checkProject(project, {
         pageTitle: title,
         metaDescription: isHtml ? extractMetaDescription(body) : null,
         outcome,
-        reachable: response.status >= 200 && response.status < 400,
+        reachable,
+        bodyTooLarge: false,
+        bodyLimitBytes: limitBytes,
+        bodyBytesRead: bodyRead.bytesRead,
         responseMs: Math.max(0, Date.now() - started),
         attempts: attempt,
         checkedAt,
@@ -153,10 +225,12 @@ export async function runAudit({
   projects = PROJECTS,
   fetchImpl = globalThis.fetch,
   timeoutMs = 12000,
+  maxResponseBytes = MAX_RESPONSE_BYTES,
   now = () => new Date(),
 } = {}) {
   const checkedAt = now().toISOString()
-  const results = await Promise.all(projects.map(project => checkProject(project, { fetchImpl, timeoutMs, now })))
+  const limitBytes = Number.isSafeInteger(maxResponseBytes) && maxResponseBytes > 0 ? maxResponseBytes : MAX_RESPONSE_BYTES
+  const results = await Promise.all(projects.map(project => checkProject(project, { fetchImpl, timeoutMs, maxResponseBytes: limitBytes, now })))
   const outcomeCounts = results.reduce((counts, result) => {
     counts[result.outcome] = (counts[result.outcome] || 0) + 1
     return counts
@@ -165,7 +239,8 @@ export async function runAudit({
   return {
     schemaVersion: 1,
     checkedAt,
-    scope: 'Homepage HTTP reachability and visible HTML metadata only',
+    scope: 'Homepage HTTP reachability and visible HTML metadata only; response body cap is applied before parsing',
+    maxResponseBytes: limitBytes,
     projectCount: results.length,
     reachableCount,
     unavailableCount: results.length - reachableCount,
@@ -184,7 +259,7 @@ async function appendStepSummary(report) {
   const rows = report.results.map(result => {
     const status = result.statusCode === null ? '—' : String(result.statusCode)
     const host = result.finalHost || '—'
-    const title = result.pageTitle || result.error || 'No title returned'
+    const title = result.pageTitle || result.error || (result.bodyTooLarge ? result.note : 'No title returned')
     return '| ' + mdCell(result.name) + ' | ' + mdCell(result.outcome) + ' | ' + status + ' | ' + result.responseMs + ' ms | ' + mdCell(host) + ' | ' + mdCell(title) + ' |'
   })
   const content = [
@@ -193,6 +268,7 @@ async function appendStepSummary(report) {
     'Checked at: ' + report.checkedAt,
     '',
     'Reachable homepages: **' + report.reachableCount + '/' + report.projectCount + '**. Unavailable or HTTP-error results: **' + report.unavailableCount + '**.',
+    'Per-response body cap: **' + Number(report.maxResponseBytes || MAX_RESPONSE_BYTES).toLocaleString('en-US') + ' bytes**. Reachable pages skipped for size: **' + report.results.filter(result => result.outcome === 'reachable_body_too_large').length + '**.',
     '',
     '> Intended roles are owner-provided descriptions. A 2xx response checks only that a homepage responded; it does not verify product capabilities, security, service reliability or purchase flows.',
     '',
@@ -221,6 +297,7 @@ export async function main(argv = process.argv.slice(2)) {
     reachableCount: report.reachableCount,
     unavailableCount: report.unavailableCount,
     outcomeCounts: report.outcomeCounts,
+    maxResponseBytes: report.maxResponseBytes,
     reportPath: outPath,
   }, null, 2))
   for (const result of report.results) {
