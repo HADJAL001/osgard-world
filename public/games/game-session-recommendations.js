@@ -259,7 +259,8 @@ const services=[
  ['osgard-business','09','OSGARD BUSINESS','BUSINESS INTELLIGENCE','Диагностика бизнеса, развитие и рекомендации по росту','https://osgardos.com/'],
  ['vanguard','10','OSGARD VANGUARD','VIDEO STUDIO','Создание видео и визуальных проектов','https://osgardvanguard.studio/']
 ];
-const walletKey='osgard.games.shards-wallet.v1',dailyReward=50;
+const WALLET_KEY='osgard.games.referral-wallet-token.v1';
+const INVITES_KEY='osgard.games.referral-issued-invites.v1';
 const servicePreferencesKey='osgard.games.postgame-service-preferences.v1';
 const serviceProgressKey='osgard.games.postgame-service-progress.v1';
 const availableServiceIds=services.filter(item=>item[7]!==false).map(item=>item[0]);
@@ -300,14 +301,18 @@ function frequencySummary(preferences,completedCount){
  if(preferences.frequency==='every3')return 'Подборка появляется раз в три завершённых раунда. Следующий показ: через '+(3-(completedCount%3))+' раунд(а).';
  return 'Подборка появится после завершённой игры. Можно изменить частоту в настройках.';
 }
-function inviteFor(id){
- try{const candidate=window.OSGARDInvite?.createLink?.(id);if(candidate){const u=new URL(candidate,location.origin);if(u.origin===location.origin&&u.pathname==='/games/invite/'+id+'/'&&u.searchParams.get('og_game')===id&&/^og_[a-f0-9]{8}$/.test(u.searchParams.get('og_ref')||''))return u.href}}catch{}
- const bytes=new Uint8Array(4);if(globalThis.crypto?.getRandomValues)globalThis.crypto.getRandomValues(bytes);else for(let i=0;i<bytes.length;i++)bytes[i]=Math.floor(Math.random()*256);
- const u=new URL('/games/invite/'+encodeURIComponent(id)+'/',location.origin);u.searchParams.set('og_ref','og_'+Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join(''));u.searchParams.set('og_game',id);
- u.searchParams.set('utm_source','osgard_play');u.searchParams.set('utm_medium','referral');u.searchParams.set('utm_campaign','play_with_friends');u.searchParams.set('utm_content',id);return u.href;
-}
-function getWallet(){try{const w=JSON.parse(localStorage.getItem(walletKey)||'{}');return{balance:Number.isSafeInteger(w.balance)&&w.balance>=0?Math.min(w.balance,1e9):0,day:typeof w.lastRewardDay==='string'?w.lastRewardDay:''}}catch{return{balance:0,day:''}}}
-function award(source){const current=getWallet(),day=new Date().toISOString().slice(0,10);if(current.day===day)return{ok:false,already:true,balance:current.balance};const next={balance:Math.min(1e9,current.balance+dailyReward),lastRewardDay:day,lastSource:String(source||'share').slice(0,60),updatedAt:new Date().toISOString()};try{localStorage.setItem(walletKey,JSON.stringify(next));return{ok:true,balance:next.balance}}catch{return{ok:false,balance:current.balance}}}
+function cryptoHex(bytes){const a=new Uint8Array(bytes);if(globalThis.crypto?.getRandomValues)globalThis.crypto.getRandomValues(a);else for(let i=0;i<a.length;i++)a[i]=Math.floor(Math.random()*256);return Array.from(a,b=>b.toString(16).padStart(2,'0')).join('')}
+function getWalletToken(create){try{let value=localStorage.getItem(WALLET_KEY)||'';if(/^rw_[a-f0-9]{64}$/.test(value))return value;if(!create)return '';value='rw_'+cryptoHex(32);localStorage.setItem(WALLET_KEY,value);return value}catch{return ''}}
+function consented(){try{return localStorage.getItem(CONSENT_KEY)==='yes'}catch{return false}}
+function eventSessionId(){try{let value=sessionStorage.getItem('osgard.games.growth-session.v1');if(value&&/^session_[a-f0-9]{24}$/.test(value))return value;value='session_'+cryptoHex(12);sessionStorage.setItem('osgard.games.growth-session.v1',value);return value}catch{return 'session_'+cryptoHex(12)}}
+async function getApiBase(){try{const r=await fetch('/games/commerce-config.json',{cache:'no-store'});const c=r.ok?await r.json():{};return String(c.apiBaseUrl||'/commerce-api').replace(/\/+$/,'')}catch{return '/commerce-api'}}
+async function postApi(path,payload){const base=await getApiBase();const r=await fetch(base+path,{method:'POST',cache:'no-store',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});let data={};try{data=await r.json()}catch{}if(!r.ok)throw new Error(data.message||data.error||'HTTP_'+r.status);return data}
+async function sendEvent(name,gameId,source){if(!consented())return false;try{await postApi('/v1/events',{consent:true,events:[{eventId:'evt_'+cryptoHex(16),name,sessionId:eventSessionId(),gameId:titles[gameId]?gameId:'unknown',source:String(source||'post-game').slice(0,80),path:location.pathname,durationSeconds:0}]});return true}catch{return false}}
+function inviteFor(gameId,code){const u=new URL('/games/invite/'+encodeURIComponent(gameId)+'/',location.origin);u.searchParams.set('og_ref',code);u.searchParams.set('og_game',gameId);u.searchParams.set('utm_source','osgard_play');u.searchParams.set('utm_medium','referral');u.searchParams.set('utm_campaign','play_with_friends');u.searchParams.set('utm_content',gameId);return u.href}
+function loadInviteMap(){const v=read(INVITES_KEY,{});return v&&typeof v==='object'&&!Array.isArray(v)?v:{}}
+function saveInvite(gameId,invite){const all=loadInviteMap();all[gameId]=invite;try{localStorage.setItem(INVITES_KEY,JSON.stringify(all))}catch{}}
+async function createInvite(gameId){const token=getWalletToken(true);if(!token)throw new Error('Не удалось сохранить ключ локального бонусного кошелька. Проверь настройки приватности браузера.');const result=await postApi('/v1/referrals/issue',{walletToken:token,gameId,rewardConsent:true});if(!/^og_[a-f0-9]{8}$/.test(result.inviteCode||''))throw new Error('Сервер не вернул корректный код приглашения.');const item={code:result.inviteCode,url:inviteFor(gameId,result.inviteCode),gameId,createdAt:new Date().toISOString()};saveInvite(gameId,item);return{...item,balance:Number(result.balance||0),rewards:Number(result.rewards||0)}}
+async function currentWallet(){const token=getWalletToken(false);if(!token)return{balance:0,rewards:0,dailyRewardLimit:5};return postApi('/v1/referrals/wallet',{walletToken:token,rewardConsent:true})}
 function servicesShelf(gameId,showPromos,completedCount){
  const preferences=readServicePreferences();
  const section=make('section','og-postgame-services'),head=make('div','og-postgame-service-head'),intro=make('div');
