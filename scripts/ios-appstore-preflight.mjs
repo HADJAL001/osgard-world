@@ -33,6 +33,15 @@ for (const version of ['@capacitor/core@8.5.3', '@capacitor/cli@8.5.3', '@capaci
   assert.ok(codemagic.includes(version), 'Pinned native dependency missing: ' + version);
 }
 assert.ok(codemagic.includes('xcode-project build-ipa'), 'IPA archive stage missing.');
+for (const command of [
+  'npm run qa:games-portal',
+  'npm run qa:games-detail',
+  'npm run qa:null-shift',
+  'npm run qa:games-model',
+  'npm run qa:osgard-select',
+  'npm run qa:consented-analytics-queue',
+  'npm run qa:ecosystem'
+]) assert.ok(codemagic.includes(command), 'TestFlight must run the required game/growth smoke: ' + command);
 assert.ok(guide.includes('TestFlight') && guide.includes('capacitor://localhost') && guide.includes('App Review Guidelines'), 'Release guide is missing signing, CORS, or Apple-review notes.');
 assert.ok(privacy.includes('<key>NSPrivacyTracking</key>') && privacy.includes('<false/>'), 'Privacy manifest must declare tracking state.');
 assert.ok(commerceServer.includes('capacitor://localhost'), 'Default Commerce API CORS must allow the Capacitor local origin.');
