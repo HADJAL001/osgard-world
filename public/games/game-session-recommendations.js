@@ -467,7 +467,10 @@ function servicesShelf(gameId,showPromos,completedCount){
  const spotlightOptions=[...relevantOrder,...selectedIds.filter(id=>!relevantOrder.includes(id))];
  const roundForSpotlight=preferences.frequency==='every3'?completedCount:(readServiceProgress().byGame[gameId]||1);
  let spotlightServiceId=chooseSpotlightService(spotlightOptions,preferred,roundForSpotlight,preferences.frequency)||spotlightId||'';
- let spotlightVariant='a';
+ // Keep the CTA experiment assignment stable for this page session. Re-rendering the same
+ // spotlight must not move a visitor between variants and contaminate click-through data.
+ const sessionSpotlightVariant=Math.random()<0.5?'a':'b';
+ let spotlightVariant=sessionSpotlightVariant;
  const spotlight=make('article','og-postgame-spotlight');
  spotlight.setAttribute('aria-label','Персональная рекомендация OSGARD');
  const spotlightStatus=make('p','og-postgame-spotlight-status');
@@ -508,7 +511,7 @@ function servicesShelf(gameId,showPromos,completedCount){
  }
  function renderSpotlight(serviceId){
   stopSpotlightWatcher();
-  spotlightVariant=Math.random()<0.5?'a':'b';
+  spotlightVariant=sessionSpotlightVariant;
   const variant=spotlightVariant;
   const item=services.find(entry=>entry[0]===serviceId&&entry[7]!==false);
   if(!item||!showPromos||!activeSelected.length){spotlight.hidden=true;return}
