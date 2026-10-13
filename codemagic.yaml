@@ -50,7 +50,7 @@ workflows:
       - name: Configure automatic App Store signing
         script: xcode-project use-profiles
       - name: Build signed iOS IPA
-        script: xcode-project build-ipa --project ios/App/App.xcodeproj --scheme App
+        script: xcode-project build-ipa --project ios/App/App.xcodeproj --scheme App --archive-directory ios/App/build/ios/xcarchive --ipa-directory ios/App/build/ios/ipa
     artifacts:
       - ios/App/build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
