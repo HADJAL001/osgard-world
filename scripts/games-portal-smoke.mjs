@@ -10,6 +10,7 @@ const appSource = readFileSync(resolve('src/App.tsx'),'utf8')
 const appStyles = readFileSync(resolve('src/styles.css'),'utf8')
 const root=resolve('public/games')
 const html=readFileSync(resolve(root,'index.html'),'utf8')
+const deployWorkflow=readFileSync(resolve('.github/workflows/deploy-frontend.yml'),'utf8')
 const launchMapStart=html.indexOf('games={')
 const launchMapEnd=html.indexOf('},read=',launchMapStart)
 assert.ok(launchMapStart>=0&&launchMapEnd>launchMapStart,'Games launch registry is missing or malformed')
@@ -56,6 +57,10 @@ const lighthouseScript=readFileSync(resolve('scripts/games-lighthouse-report.mjs
 const lighthouseWorkflow=readFileSync(resolve('.github/workflows/games-lighthouse.yml'),'utf8')
 assert.ok(lighthouseWorkflow.includes('https://osgard.world/games/')&&lighthouseWorkflow.includes('--preset=desktop')&&lighthouseWorkflow.includes('actions/upload-artifact@v4'),'Games Lighthouse workflow must audit mobile/desktop and preserve reports')
 assert.ok(lighthouseWorkflow.includes('workflow_run')&&lighthouseWorkflow.includes('OSGARD frontend deploy'),'Games Lighthouse audit should run after successful publication')
+assert.ok(html.includes('<meta name="osgard-build" content="__OSGARD_BUILD_VERSION__">'),'Games hub must carry a release marker that is stamped at packaging time')
+assert.ok(html.includes('game-session-recommendations.css?v=__OSGARD_BUILD_VERSION__')&&html.includes('game-session-recommendations.js?v=__OSGARD_BUILD_VERSION__'),'All secondary Games hub assets must use the release version')
+assert.ok(deployWorkflow.includes('s|__OSGARD_BUILD_VERSION__|$ASSET_VERSION|g')&&deployWorkflow.includes('grep -Fq "<meta name=\\"osgard-build\\" content=\\"$ASSET_VERSION\\">"'),'Deploy packaging must stamp and verify the Games build marker')
+assert.ok(lighthouseWorkflow.includes('EXPECTED_DEPLOY_SHA')&&lighthouseWorkflow.includes('osgard-build')&&lighthouseWorkflow.includes('luxury.css?v=$expected'),'Games Lighthouse must wait for the matching release before scoring')
 const healthyScores={performance:.95,accessibility:1,'best-practices':1,seo:1}
 const fixture=(scores,tbt,lcp)=>({finalDisplayedUrl:'https://osgard.world/games/',categories:Object.fromEntries(Object.entries(scores).map(([key,score])=>[key,{score}])),audits:{'total-blocking-time':{numericValue:tbt},'largest-contentful-paint':{numericValue:lcp}}})
 assert.equal(assessReport(fixture(healthyScores,250,2500),'mobile').pass,true,'Healthy mobile Lighthouse report should pass guardrails')
@@ -117,7 +122,7 @@ assert.ok(html.includes('prefers-reduced-motion:reduce'),'Reduced motion CSS mis
 const css=html.match(/<style>([\s\S]*?)<\/style>/)?.[1]||''
 assert.ok(css.includes('@media(max-width:760px)'),'Responsive/mobile layout missing')
 assert.ok(css.includes('.player-view')&&css.includes('dialog::backdrop'),'Game dialog style missing')
-assert.ok(html.includes('src="./player-lifecycle.js"'),'Self-hosted lifecycle module must be included')
+assert.ok(html.includes('src="./player-lifecycle.js?v=__OSGARD_BUILD_VERSION__"'),'Self-hosted lifecycle module must be included and versioned')
 assert.ok(html.includes('aria-label="OSGARD WORLD PLAY"'),'Brand accessible name must include visible PLAY label')
 for(const label of ['NULL//SHIFT — играть на Godot','TIME / EMPIRE — играть в Империю времени','SWARM — играть','INHERIT — играть','REMIX / ARENA — открыть REMIX']) assert.ok(html.includes('aria-label="'+label+'"'),'Game art accessible name must include the visible label: '+label)
 for(const lowContrast of ['#656c61','#6f796b','#6d756a','#71796c','#737a70','#737b70','#697168']) assert.ok(!html.toLowerCase().includes(lowContrast),'Low-contrast secondary color remains: '+lowContrast)
@@ -198,8 +203,8 @@ assert.ok(existsSync(resolve('public/osgard-mark.svg')), 'Original OSGARD brand 
 
 const luxuryCss = readFileSync(resolve(root,'luxury.css'),'utf8')
 const luxuryJs = readFileSync(resolve(root,'luxury.js'),'utf8')
-assert.ok(html.includes('href="./luxury.css"'), 'Premium OSGARD PLAY theme must be linked')
-assert.ok(html.includes('src="./luxury.js" defer'), 'Premium catalogue interactions must be loaded')
+assert.ok(html.includes('href="./luxury.css?v=__OSGARD_BUILD_VERSION__"'), 'Premium OSGARD PLAY theme must be linked and versioned')
+assert.ok(html.includes('src="./luxury.js?v=__OSGARD_BUILD_VERSION__" defer'), 'Premium catalogue interactions must be loaded and versioned')
 assert.ok(html.includes('<body class="luxury-entertainment">'), 'Premium body theme class is missing')
 for (const feature of ['sortCards','launchRandom','updateResumeButton','navigator.share',"event.key === '/'","event.key.toLowerCase() === 'r'","event.key.toLowerCase() === 'f'"]) {
   assert.ok(luxuryJs.includes(feature), 'Premium catalogue action missing: '+feature)
