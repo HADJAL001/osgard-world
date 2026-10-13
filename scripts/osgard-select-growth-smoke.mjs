@@ -47,9 +47,10 @@ assert.ok(entertainmentGateway.includes("value === 'every3'") && entertainmentGa
   entertainmentGateway.includes("После каждой завершённой игры") && entertainmentGateway.includes("Не показывать межигровую подборку"),
   'Entertainment must expose each-game, every-third-game and off preferences');
 assert.ok(entertainmentGateway.includes("aria-controls=\"play-select-preferences-panel\"") &&
-  entertainmentGateway.includes("disabled={unavailable}") &&
+  entertainmentGateway.includes("const unverified = service.id === 'gardvpn'") &&
+  entertainmentGateway.includes("Availability not verified; opens the project site") &&
   entertainmentGateway.includes('osgard:service-preferences-updated'),
-  'The settings panel must be accessible and notify same-page consumers when preferences change');
+  'The settings panel must be accessible, disclose unverified VPN availability, and notify same-page consumers when preferences change');
 for (const selector of ['.play-select-preferences-panel','.play-select-preference-grid','.play-select-preference-option','.play-select-preferences-status']) {
   assert.ok(entertainmentStyles.includes(selector), 'Premium responsive preferences style missing: ' + selector);
 }
