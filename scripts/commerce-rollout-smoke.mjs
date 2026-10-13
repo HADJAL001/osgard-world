@@ -59,7 +59,7 @@ const overviewQueryOrder = [
   "WITH recent_events AS (",
   "SELECT\n          network,",
   "SELECT attribution_game_id AS",
-  'SELECT COUNT(*)::int AS \\"qualifiedReferrals\\"',
+  'SELECT COUNT(*)::int AS "qualifiedReferrals"',
 ];
 const overviewPositions = overviewQueryOrder.map((needle) => overviewQueries.indexOf(needle));
 assert.ok(overviewPositions.every((position) => position >= 0), "Admin overview is missing one or more expected query slots.");
