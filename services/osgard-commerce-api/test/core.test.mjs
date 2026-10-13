@@ -55,6 +55,8 @@ test("analytics is disabled unless consent is explicit and event names are allow
     "ANALYTICS_CONSENT_REQUIRED",
   );
   for (const [name, source] of [
+    ["owned_promo_intermission_skipped", "osgard-select:skip:12"],
+    ["owned_promo_preferences_saved", "osgard-select:preferences:each:7"],
     ["social_share_intent", "osgard-social-share:telegram:swarm"],
     ["social_reward_claimed", "osgard-social-reward:telegram:swarm"],
   ]) {
