@@ -151,15 +151,3 @@ dialog#player-dialog[data-postgame-intermission="1"] .player-view iframe{display
 dialog#player-dialog[data-postgame-intermission="1"] .player-foot{display:none!important}
 dialog#player-dialog[data-postgame-intermission="1"] .post-run-recommendations{max-height:min(78svh,760px);overflow:auto}
 @media(prefers-reduced-motion:reduce){dialog#player-dialog[data-postgame-intermission="1"] *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
-
-
-/* OSGARD SELECT usability: service rotation, clear skip and accessible feedback. */
-.og-postgame-service-spotlight{display:inline-flex;align-items:center;align-self:flex-start;margin-bottom:2px;padding:4px 6px;border:1px solid rgba(218,192,133,.38);border-radius:4px;color:#ead7a2;font:7px/1.4 ui-monospace,Consolas,monospace;letter-spacing:.10em;text-transform:uppercase}
-.og-postgame-service-filters[hidden]{display:none}
-.og-postgame-service-decision{display:flex;justify-content:flex-end;gap:10px;align-items:center;margin-top:2px}
-.og-postgame-skip{min-height:34px;padding:7px 11px;border:1px solid #ffffff24;border-radius:7px;background:#ffffff03;color:#a8aaa0;font-size:9px;cursor:pointer}
-.og-postgame-skip:hover,.og-postgame-skip:focus-visible{border-color:#d8c28f;color:#e4d2a3;outline:2px solid transparent}
-.og-postgame-skip-status{margin:0;color:#b3b3a6;font-size:9px;line-height:1.6;text-align:right}
-.og-postgame-skip-status[hidden],.og-postgame-skip[hidden]{display:none}
-@media(max-width:760px){.og-postgame-service-decision{justify-content:stretch}.og-postgame-skip{width:100%;min-height:40px}.og-postgame-skip-status{text-align:left}}
-@media(prefers-reduced-motion:reduce){.og-postgame-service-card{transition:none}}
