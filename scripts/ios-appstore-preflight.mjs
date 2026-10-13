@@ -58,7 +58,7 @@ assert.ok(!/submit_to_app_store\s*:\s*true/.test(codemagic), 'Public App Review 
 for (const version of ['@capacitor/core@8.5.3', '@capacitor/cli@8.5.3', '@capacitor/ios@8.5.3', '@capacitor/share@8.0.1']) {
   assert.ok(codemagic.includes(version), 'Pinned native dependency missing: ' + version);
 }
-const xcodeSelector = codemagic.match(/^\\s+xcode:\\s*([^\\s#]+)/m)?.[1];
+const xcodeSelector = codemagic.match(/^\s+xcode:\s*([^\s#]+)/m)?.[1];
 assert.ok(xcodeSelector === 'latest' || Number.parseInt(String(xcodeSelector || '').split('.')[0], 10) >= 26,
   'App Store uploads require Xcode 26 or later with the iOS 26 SDK; do not pin an older Codemagic runner.');
 assert.ok(codemagic.includes('xcode-project build-ipa'), 'IPA archive stage missing.');
