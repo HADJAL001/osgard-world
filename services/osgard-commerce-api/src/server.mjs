@@ -373,7 +373,7 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
         invite_shares AS (
           SELECT DISTINCT split_part(source, ':', 3) AS invite_code
           FROM recent_events
-          WHERE event_name = 'share_created'
+          WHERE event_name IN ('invite_link_prepared', 'share_created')
             AND source LIKE 'game-invite:%'
             AND split_part(source, ':', 3) ~ '^(og_[a-f0-9]{8}|[a-f0-9]{12})$'
         ),
