@@ -399,7 +399,7 @@ assert.ok(serviceCards.filter(node=>node.dataset.category!=='social').every(node
 serviceFilters.children.find(node=>node.dataset.osgardServiceFilter==='all').click()
 assert.ok(serviceCards.every(node=>!node.hidden),'All services should return when the all-category filter is selected')
 assert.ok(recommendationScript.includes('Выбери категорию и сервис, который хочешь посмотреть. Автозапуска нет'),'Service promotion must remain user-selected and must not autoplay')
-assert.ok(recommendationScript.includes("pending='native-share'") && recommendationScript.includes("award('user-confirmed-social-publication:'+network)"),'Post-game native share must wait for an explicit user confirmation before awarding SHARDS')
+assert.ok(recommendationScript.includes("method='native-share';pending=method;claim.hidden=false") && recommendationScript.includes("award('user-confirmed-social-publication:'+network)"),'Post-game native share must wait for an explicit user confirmation before awarding SHARDS')
 assert.ok(!recommendationScript.includes("show(award(source+':'+gameId))") && recommendationScript.includes('Копирование само по себе не считается репостом и не даёт награду'),'Post-game clipboard fallback must not grant a share reward')
 assert.ok(recommendationScript.includes('после отдельного подтверждения публикации игроком') && recommendationScript.includes('не передают OSGARD подтверждение публикации'),'Reward UI must disclose player attestation and lack of automatic social verification')
 const rewardSection=mockSuite.children.find(node=>node.className==='og-postgame-reward')
