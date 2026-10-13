@@ -207,6 +207,31 @@ const visibleFilters=new Set([...html.matchAll(/<button\b[^>]*data-filter="([^"]
 const cardGenres=[...new Set(catalogCards.flatMap(card=>card.genres))].sort()
 assert.ok(cardGenres.every(genre=>visibleFilters.has(genre)),'Every card genre must have a visible catalog filter: '+cardGenres.filter(genre=>!visibleFilters.has(genre)).join(', '))
 assert.ok(visibleFilters.has('arcade'),'The catalog must expose the Arcade genre filter')
+
+const artworkIds=['null-shift','time','swarm','inherit','remix','civic-cascade','patina','signal-run','cascade-lab','afterimage-run']
+const artCardMatches=[]
+for(const marker of html.matchAll(/<a class="art /g)){
+ const start=marker.index,openEnd=html.indexOf('>',start)+1,closeStart=html.indexOf('</a>',openEnd)
+ if(openEnd<=0||closeStart<0)continue
+ const opening=html.slice(start,openEnd),content=html.slice(openEnd,closeStart)
+ const classValue=opening.match(/class="([^"]+)"/)?.[1]||''
+ const artClass=classValue.split(/\s+/).find(value=>value.startsWith('art-'))
+ if(artClass)artCardMatches.push({artClass,content})
+}
+assert.equal(artCardMatches.length,10,'All ten cards must retain one art link')
+assert.equal(artCardMatches.filter(card=>card.content.includes('<svg')).length,0,'Decorative art SVGs must not remain in the initial catalogue DOM')
+const artClassToId={'art-null':'null-shift','art-time':'time','art-swarm':'swarm','art-inherit':'inherit','art-remix':'remix','art-civic':'civic-cascade','art-patina':'patina','art-signal':'signal-run','art-cascade-lab':'cascade-lab','art-afterimage':'afterimage-run'}
+for(const [artClass,id] of Object.entries(artClassToId)){
+ const card=artCardMatches.find(item=>item.artClass===artClass)
+ assert.ok(card,'Missing art card '+artClass)
+ assert.ok(card.content.includes('src="/games/art/'+id+'.svg"')&&card.content.includes('loading="lazy"')&&card.content.includes('decoding="async"'),'Art image must be lazy and async-decoded: '+id)
+ const file='public/games/art/'+id+'.svg'
+ assert.ok(existsSync(resolve(file)),'Missing extracted art file: '+file)
+ const svg=readFileSync(resolve(file),'utf8')
+ assert.ok(svg.includes('<svg xmlns="http://www.w3.org/2000/svg"')&&svg.includes('viewBox="'),'Standalone SVG is malformed: '+id)
+}
+assert.ok(html.includes('.art-illustration{position:absolute')&&html.includes('object-fit:contain'),'External art must keep card sizing behavior')
+
 const required=['data-game="null-shift"','data-game="time"','data-game="swarm"','data-game="inherit"','data-game="remix"','data-game="civic-cascade"','data-game="patina"','data-game="signal-run"','data-game="cascade-lab"','data-game="afterimage-run"','id="games-grid"','id="game-search"','data-filter="tactical"','data-filter="arcade"','id="player-dialog"','id="player-share"','id="player-fullscreen"','id="analytics-toggle"','id="project-form"','https://wa.me/79640027222','osgardbewworld.com','o2system.art','senjorio.com','superday.run','marcosa.club','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio','href="/games/ecosystem/"','/games/favicon.svg','/privacy/','/terms/']
 for(const item of required) assert.ok(html.includes(item),'Games hub missing: '+item)
 assert.ok(appSource.includes('className="play-catalog-link" href="/games/"')&&appSource.includes('<em>OSGARD WORLD GAMING</em>')&&appSource.includes("'Открыть игровой портал'"),'Homepage entertainment gateway must promote OSGARD WORLD GAMING and open the canonical /games/ hub')
