@@ -21,14 +21,15 @@ check('premium responsive page and reduced-motion support', () => {
 check('all nine existing game identifiers are available', () => {
   for (const id of ['signal-run','remix','null-shift','time','swarm','inherit','civic-cascade','patina','cascade-lab']) assert.ok(page.includes('value="'+id+'"'), id);
 });
-check('invite URL follows catalog challenge/ref/UTM contract', () => {
-  for (const item of ["url.searchParams.set('challenge',game)", "url.searchParams.set('ref',code)", "url.searchParams.set('utm_source','osgard_games')", "url.searchParams.set('utm_medium','referral')", "url.searchParams.set('utm_campaign','play_with_a_friend')", "url.searchParams.set('utm_content',game)"]) assert.ok(page.includes(item), item);
+check('invite URL follows canonical catalogue og_ref/og_game contract', () => {
+  for (const item of ["function inviteCode()", "url.searchParams.set('og_ref'", "url.searchParams.set('og_game',game)", "url.searchParams.set('utm_source','osgard_play')", "url.searchParams.set('utm_medium','referral')", "url.searchParams.set('utm_campaign','play_with_friends')", "url.searchParams.set('utm_content',game)]) assert.ok(page.includes(item), item);
+  assert.ok(!page.includes("url.searchParams.set('challenge',game)"), 'Campaign builder should not emit legacy challenge/ref links');
 });
 check('analytics checks existing consent and sends only the allowlisted share event', () => {
   assert.ok(page.includes("localStorage.getItem(CONSENT_KEY)==='yes'"));
   assert.ok(page.includes("name:'share_created'"));
   assert.ok(page.includes("'/v1/events'"));
-  assert.ok(page.includes("source:'growth-studio:'+state.game"));
+  assert.ok(page.includes("source:'game-invite:'+state.game+':'+state.code"));
   assert.ok(page.includes("if(!state.game||!getConsent())return false"));
 });
 check('share flow does not count cancellation and supports explicit clipboard action', () => {
