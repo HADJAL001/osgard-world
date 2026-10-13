@@ -11,3 +11,15 @@ dialog#player-dialog.has-recommendations .player-view{height:min(46vh,470px);min
 dialog#player-dialog.has-recommendations .player-view iframe{min-height:180px}
 @media(max-width:760px){.post-run-recommendations{max-height:180px;padding:10px}.post-run-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.post-run-link{padding:8px}.post-run-link strong{font-size:10px}.post-run-link span{font-size:9px}dialog#player-dialog.has-recommendations .player-view{height:min(40svh,350px);min-height:160px}dialog#player-dialog.has-recommendations .player-view iframe{min-height:160px}}
 @media(prefers-reduced-motion:reduce){.post-run-link{transition:none}}
+
+
+.post-run-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center}
+.post-run-share,.post-run-support{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:39px;padding:9px 12px;border:1px solid #d3ff6980;background:#d3ff690d;color:#e5f7cb;text-decoration:none;font-size:10px;line-height:1.4;cursor:pointer}
+.post-run-share{font:600 10px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
+.post-run-share:hover,.post-run-share:focus-visible,.post-run-support:hover,.post-run-support:focus-visible{border-color:#d3ff69;background:#d3ff6919;outline:2px solid #d3ff6980;outline-offset:2px}
+.post-run-share:disabled{opacity:.55;cursor:wait}
+.post-run-support{border-color:#ffffff25;background:#ffffff04;color:#a9b0a3}
+.post-run-share-status{min-height:0;margin:7px 0 0;color:#9aa493;font-size:10px;line-height:1.5;overflow-wrap:anywhere}
+.post-run-share-status:empty{display:none}
+@media(max-width:760px){.post-run-actions{display:grid;grid-template-columns:1fr}.post-run-share,.post-run-support{width:100%;min-height:42px}}
+@media(prefers-reduced-motion:reduce){.post-run-share,.post-run-support{transition:none}}
