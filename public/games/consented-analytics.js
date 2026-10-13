@@ -9,7 +9,7 @@
   const BATCH_SIZE = 20;
   const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
   const ALLOWED_EVENTS = new Set([
-    'premium_page_view', 'catalog_viewed', 'partners_page_viewed',
+    'premium_page_view', 'catalog_viewed', 'partners_page_viewed', 'ecosystem_directory_viewed',
     'share_created', 'referral_link_opened', 'game_session_started',
     'checkout_started', 'checkout_paid', 'cross_promo_clicked',
     'owned_promo_impression', 'owned_promo_intermission_skipped',
