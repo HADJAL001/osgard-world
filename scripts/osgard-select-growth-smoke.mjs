@@ -89,12 +89,12 @@ assert.ok(source.includes("const INVITE_CODES_KEY='osgard.games.shards-invite-co
   source.includes("base+'/v1/referrals/reward-status'"),
   'The invite programme must use server-side registration and balance endpoints');
 assert.ok(reward.includes("consentToggle.type='checkbox'") &&
-  reward.includes("REWARD_CONSENT_KEY='osgard.games.referral-reward-consent.v1'") &&
-  reward.includes("if(!hasConsent()||!hasRewardConsent()||!titles[gameId]"),
+  source.includes("REWARD_CONSENT_KEY='osgard.games.referral-reward-consent.v1'") &&
+  source.includes("if(!hasConsent()||!hasRewardConsent()||!titles[gameId]"),
   'Reward eligibility must require separate analytics and reward consent');
 assert.ok(reward.includes('Копирование само по себе не считается репостом') &&
-  reward.includes('не имеют денежной стоимости'),
-  'SHARDS must be described as non-cash and not awarded for a click or self-asserted post');
+  reward.includes('не имеют денежной стоимости') && reward.includes('60 секунд'),
+  'SHARDS must be non-cash and not awarded for a click or self-asserted post');
 assert.ok(core.includes('export function validateReferralRewardRegistration') &&
   core.includes('export function parseReferralRewardEvent') &&
   core.includes('REFERRAL_MIN_SESSION_SECONDS = 60'),
