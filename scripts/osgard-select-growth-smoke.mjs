@@ -7,6 +7,7 @@ const source = read('public/games/game-session-recommendations.js');
 const css = read('public/games/game-session-recommendations.css');
 const core = read('services/osgard-commerce-api/src/core.mjs');
 const signalRun = read('public/games/signal-run/game.js');
+const lifecycle = read('public/games/player-lifecycle.js');
 
 new vm.Script(source, { filename: 'game-session-recommendations.js' });
 new vm.Script(signalRun, { filename: 'signal-run/game.js' });
@@ -94,6 +95,12 @@ assert.ok(reward.includes('Копирование само по себе не с
 assert.ok(source.includes("const walletKey='osgard.games.shards-wallet.v1',dailyReward=50") &&
   source.includes('current.day===day'),
   'Local SHARDS reward must be capped to one claim per UTC day and device wallet');
+assert.ok(lifecycle.includes("activeSessionId='session_'+id+'_'+sequence+'_'+launchAt") && lifecycle.includes('sessionId:activeSessionId') && lifecycle.includes('detail:{game:activeGame,sessionId:activeSessionId}'),
+  'The same stable ID must be sent with gameplay completion and post-session return events');
+assert.ok(source.includes('function recordCompletedRound(gameId,sessionId)') && source.includes('current.sessions.includes(key)') && source.includes('slice(-100)'),
+  'Post-game promotion cadence must deduplicate session IDs, not rely only on a 2.5-second timing window');
+assert.ok(source.includes('const isSpotlight=id===spotlightServiceId') && source.includes("cards.forEach(card=>card.classList.toggle('is-featured',card.dataset.service===spotlightServiceId))"),
+  'The featured directory card must always match the personalized spotlight, including after rotation');
 
 const claimSignal = signalRun.indexOf("claimShare.addEventListener('click'");
 const shareSignal = signalRun.indexOf("$('share').addEventListener('click',async()=>{");
@@ -110,6 +117,6 @@ console.log(JSON.stringify({
   status: 'passed',
   serviceDestinations: services.length,
   gameContexts: 9,
-  checks: 30,
+  checks: 33,
   notes: 'Source-level guardrails; social publication is self-confirmed, not verified by social-network APIs.'
 }));
