@@ -1183,6 +1183,17 @@ function createAnalyticsClient(options = {}) {
 /** First-party OSGARD campaigns. Product cards without a confirmed deep link go to the public catalog. */
 const OSGARD_CATALOG_URL = 'https://osgard.world/worlds';
 const OSGARD_OS_URL = 'https://osgardos.com';
+const OSGARD_SERVICE_DESTINATIONS = Object.freeze({
+  'marcosa': 'https://marcosa.club/',
+  'taxi': 'https://senjorio.com/',
+  'smart-map': 'https://superday.run/',
+  'business': OSGARD_OS_URL + '/',
+  'creator-studio': 'https://osgardvanguard.studio/',
+  'project-builder': 'https://osgardbewworld.com/',
+  'worlds': OSGARD_CATALOG_URL,
+  'osgard-os': OSGARD_OS_URL + '/'
+});
+const OSGARD_OWNED_ORIGINS = new Set(Object.values(OSGARD_SERVICE_DESTINATIONS).map(value => new URL(value).origin));
 
 const OSGARD_CAMPAIGNS = Object.freeze([
   {
@@ -1190,61 +1201,74 @@ const OSGARD_CAMPAIGNS = Object.freeze([
     title: 'Твой мир. Твои люди. Твои правила.',
     description: 'MARCOSA — проект социальной платформы следующего поколения для общения, сообществ и личных цифровых миров.',
     stage: 'Проект экосистемы OSgard', accent: 'violet',
-    cta: 'Исследовать в каталоге', destinationLabel: 'Каталог OSgard Worlds', url: OSGARD_CATALOG_URL
+    cta: 'Открыть MARCOSA', destinationLabel: 'marcosa.club', url: OSGARD_SERVICE_DESTINATIONS.marcosa
   },
   {
     id: 'taxi', number: '02', brand: 'OSGARD MOBILITY', category: 'URBAN MOBILITY',
     title: 'Город движется. Ты задаёшь направление.',
     description: 'Проект городской мобильности OSgard. Открой каталог и узнай о доступности сервиса и его развитии.',
     stage: 'Сервис экосистемы · проверяй доступность', accent: 'gold',
-    cta: 'Открыть каталог', destinationLabel: 'Каталог OSgard Worlds', url: OSGARD_CATALOG_URL
+    cta: 'Открыть SENJORIO', destinationLabel: 'senjorio.com', url: OSGARD_SERVICE_DESTINATIONS.taxi
   },
   {
     id: 'smart-map', number: '03', brand: 'OSGARD SMART MAP', category: 'LIVE ROUTES',
     title: 'Не просто карта. Следующий ход.',
     description: 'Концепция умной карты с маршрутами и навигацией в экосистеме OSgard.',
     stage: 'Проект экосистемы OSgard', accent: 'cyan',
-    cta: 'Исследовать в каталоге', destinationLabel: 'Каталог OSgard Worlds', url: OSGARD_CATALOG_URL
+    cta: 'Открыть SUPERDAY', destinationLabel: 'superday.run', url: OSGARD_SERVICE_DESTINATIONS['smart-map']
   },
   {
     id: 'business', number: '04', brand: 'OSGARD BUSINESS', category: 'BUSINESS INTELLIGENCE',
     title: 'Меньше догадок. Больше точных решений.',
     description: 'Инструменты для диагностики бизнеса, анализа конкурентов и поиска возможностей роста.',
     stage: 'Бизнес-инструменты OSgard', accent: 'gold',
-    cta: 'Открыть каталог', destinationLabel: 'Каталог OSgard Worlds', url: OSGARD_CATALOG_URL
+    cta: 'Открыть OSGARD OS', destinationLabel: 'osgardos.com', url: OSGARD_SERVICE_DESTINATIONS.business
   },
   {
     id: 'creator-studio', number: '05', brand: 'OSGARD CREATIVE STUDIO', category: 'MAKE IT MOVING',
     title: 'Преврати идею в визуальную историю.',
     description: 'Творческая студия для создания видео и цифрового контента в экосистеме OSgard.',
     stage: 'Проект экосистемы OSgard', accent: 'violet',
-    cta: 'Исследовать в каталоге', destinationLabel: 'Каталог OSgard Worlds', url: OSGARD_CATALOG_URL
+    cta: 'Открыть OSGARD VANGUARD', destinationLabel: 'osgardvanguard.studio', url: OSGARD_SERVICE_DESTINATIONS['creator-studio']
   },
   {
     id: 'project-builder', number: '06', brand: 'OSGARD BUILD LAB', category: 'IDEA → PRODUCT',
     title: 'От идеи — к собственному цифровому продукту.',
     description: 'Проект среды для упрощённого создания сайтов, приложений и цифровых продуктов.',
     stage: 'Проект экосистемы OSgard', accent: 'cyan',
-    cta: 'Исследовать в каталоге', destinationLabel: 'Каталог OSgard Worlds', url: OSGARD_CATALOG_URL
+    cta: 'Открыть OSGARD BEW WORLD', destinationLabel: 'osgardbewworld.com', url: OSGARD_SERVICE_DESTINATIONS['project-builder']
   },
   {
     id: 'worlds', number: '07', brand: 'OSGARD WORLDS', category: 'DISCOVER THE ECOSYSTEM',
     title: 'Одна точка входа. Больше цифровых миров.',
     description: 'Исследуй каталог платформ, продуктов и цифровых проектов экосистемы OSgard.',
     stage: 'Открыть опубликованный каталог', accent: 'cyan',
-    cta: 'Открыть OSgard Worlds', destinationLabel: 'OSgard Worlds', url: OSGARD_CATALOG_URL
+    cta: 'Открыть OSgard Worlds', destinationLabel: 'osgard.world/worlds', url: OSGARD_SERVICE_DESTINATIONS.worlds
   },
   {
     id: 'osgard-os', number: '08', brand: 'OSGARD OS', category: 'DIGITAL EXPERIENCE',
     title: 'Посмотри на OSgard с другой стороны.',
     description: 'Открой сайт OSgard OS и познакомься с проектом непосредственно на его сайте.',
     stage: 'Открыть официальный сайт', accent: 'gold',
-    cta: 'Перейти на osgardos.com', destinationLabel: 'osgardos.com', url: OSGARD_OS_URL
+    cta: 'Перейти на osgardos.com', destinationLabel: 'osgardos.com', url: OSGARD_SERVICE_DESTINATIONS['osgard-os']
   }
 ]);
 
 const CAMPAIGNS_BY_ID = new Map(OSGARD_CAMPAIGNS.map(item => [item.id, item]));
 function getOsgardCampaign(id) { return CAMPAIGNS_BY_ID.get(id) || OSGARD_CAMPAIGNS[0]; }
+function buildOsgardCampaignUrl(campaignId, medium = 'between_levels') {
+  const campaign = CAMPAIGNS_BY_ID.get(campaignId);
+  if (!campaign) throw new TypeError('a known OSGARD campaign is required');
+  const destination = new URL(campaign.url);
+  if (destination.protocol !== 'https:' || !OSGARD_OWNED_ORIGINS.has(destination.origin)) {
+    throw new TypeError('campaign destination is not an approved OSGARD origin');
+  }
+  destination.searchParams.set('utm_source', 'osgard_games');
+  destination.searchParams.set('utm_medium', medium);
+  destination.searchParams.set('utm_campaign', 'cascade_lab_osgard_select');
+  destination.searchParams.set('utm_content', campaign.id);
+  return destination.href;
+}
 
 const SOCIAL_PLATFORMS = Object.freeze([
   { id: 'telegram', name: 'Telegram' },
@@ -1257,7 +1281,7 @@ const SOCIAL_PLATFORMS = Object.freeze([
 function buildSocialShareUrl(platform, campaign) {
   const item = CAMPAIGNS_BY_ID.get(campaign?.id);
   if (!item || typeof platform !== 'string') throw new TypeError('a known campaign and social platform are required');
-  const url = item.url;
+  const url = buildOsgardCampaignUrl(item.id, 'social_share');
   const text = `${item.brand}: ${item.title} — проект экосистемы OSgard`;
   const u = encodeURIComponent(url), t = encodeURIComponent(text), combined = encodeURIComponent(`${text} ${url}`);
   const destinations = {
@@ -1543,7 +1567,10 @@ function openSelectedService() {
   const campaign = getOsgardCampaign(selectedServiceCampaignId);
   analytics.track('service_ad_clicked', { levelId: level.id, mode: analyticsMode(), campaignId: campaign.id });
   economyProfile = recordGrowthAction(economyProfile, 'serviceAdClicks'); saveProgress(); updateInterface();
-  window.open(campaign.url, '_blank', 'noopener,noreferrer');
+  let destination;
+  try { destination = buildOsgardCampaignUrl(campaign.id, 'between_levels'); }
+  catch { showToast('Не удалось проверить адрес сервиса. Открой каталог OSgard Worlds.'); return; }
+  window.open(destination, '_blank', 'noopener,noreferrer');
   showToast(`Открываем ${campaign.destinationLabel} в новой вкладке.`);
 }
 function shareSelectedService(platform) {
