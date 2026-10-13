@@ -625,9 +625,9 @@ function servicesShelf(gameId,showPromos,completedCount){
  else section.append(state,foot);
  // Count owned-service exposure only when a clickable card is at least half visible for a full second.
  // This remains consent-gated first-party measurement, not a third-party ad-network impression.
+ let cardObserver=null;
  if(typeof IntersectionObserver==='function'){
   const observed=new Set();
-  let cardObserver=null;
  const observer=new IntersectionObserver(entries=>{
    entries.forEach(entry=>{
     const card=entry.target;
