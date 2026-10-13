@@ -342,11 +342,12 @@ function servicesShelf(gameId,showPromos,completedCount){
  settings.append(settingsHeading,settingsDescription,frequencyLabel,choicesHeading,choices,presetActions,saveButton,preferencesStatus);
 
  const categoryByService={projects:'studio',vanguard:'studio','o2-system':'business','osgard-business':'business',senjorio:'life',superday:'life',myosa:'tech',gardvpn:'tech',marcosa:'social','gold-glamour':'luxury'};
- const filterDefs=[['all','Все выбранные'],['studio','Разработка'],['business','Бизнес'],['life','Город и жизнь'],['tech','Технологии'],['social','Социальные'],['luxury','Luxury']];
+ const filterDefs=[['all','Все сервисы · 10'],['studio','Разработка · 2'],['business','Бизнес · 2'],['life','Город и жизнь · 2'],['tech','Технологии · 2'],['social','Социальные · 1'],['luxury','Luxury · 1']];
  const filters=make('div','og-postgame-service-filters');filters.setAttribute('role','group');filters.setAttribute('aria-label','Выбрать категорию сервиса OSGARD');
  const filterButtons=[];
  filterDefs.forEach(([id,labelText])=>{const button=make('button','og-postgame-service-filter',labelText);button.type='button';button.dataset.osgardServiceFilter=id;button.setAttribute('aria-pressed',String(id==='all'));filters.append(button);filterButtons.push(button)});
  const activeSelected=services.filter(([id,,,,,,featured=false,active=true])=>active!==false&&preferences.selected.includes(id));
+ collapseToggle.hidden=!(showPromos&&activeSelected.length);
  const visible=activeSelected.length?services.filter(([id,,,,,,featured=false,active=true])=>active===false||preferences.selected.includes(id)):[];
  const grid=make('div','og-postgame-service-grid'),cards=[];
  if(showPromos&&activeSelected.length){
@@ -361,7 +362,7 @@ function servicesShelf(gameId,showPromos,completedCount){
   filterButtons.forEach(button=>{
    const id=button.dataset.osgardServiceFilter||'all';
    const count=id==='all'?cards.length:cards.filter(card=>card.dataset.category===id).length;
-   const base=filterDefs.find(item=>item[0]===id)?.[1]||id;
+   const base=(filterDefs.find(item=>item[0]===id)?.[1]||id).replace(/ · \d+$/,'');
    button.textContent=base+' · '+count;
    button.disabled=id!=='all'&&count===0;
    if(id==='all')button.disabled=cards.length===0;
