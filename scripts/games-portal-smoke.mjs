@@ -406,7 +406,7 @@ assert.equal(serviceCards.find(node=>node.dataset.service==='marcosa').hidden,fa
 assert.ok(serviceCards.filter(node=>node.dataset.category!=='social').every(node=>node.hidden),'Non-selected service categories should be hidden')
 serviceFilters.children.find(node=>node.dataset.osgardServiceFilter==='all').click()
 assert.ok(serviceCards.every(node=>!node.hidden),'All services should return when the all-category filter is selected')
-assert.ok(recommendationScript.includes('Выбери категорию и сервис, который хочешь посмотреть. Автозапуска нет'),'Service promotion must remain user-selected and must not autoplay')
+assert.ok(recommendationScript.includes('Сначала — одна рекомендация под игру')&&recommendationScript.includes('Никакого автоперехода.'),'Service promotion must remain contextual, user-selected and must not autoplay')
 const rewardSection=mockSuite.children.find(node=>node.className==='og-postgame-reward')
 const socialGrid=rewardSection.children.find(node=>node.className==='og-postgame-networks')
 assert.deepEqual(socialGrid.children.map(node=>node.textContent),['Telegram ↗','WhatsApp ↗','VK ↗','X ↗','Facebook ↗'],'Share reward must offer the five requested social destinations')
