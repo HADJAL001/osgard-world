@@ -176,10 +176,22 @@ var last_layout_touch := false
 var briefing_panel: PanelContainer
 var briefing_visible := false
 var briefing_scroll: ScrollContainer
+var operator_style := "cyan"
+var owns_amber_style := false
+var owns_violet_style := false
+var daily_challenge_active := false
+var daily_challenge_code := ""
+var daily_claimed_date := ""
+var result_reward_label: Label
+var result_share_label: Label
+var amber_style_button: Button
+var violet_style_button: Button
+var daily_challenge_button: Button
 
 func _ready() -> void:
 	_reset_runtime_collections()
 	_load_career()
+	_resolve_shared_challenge()
 	_create_materials()
 	_create_lighting()
 	_create_arena()
@@ -1606,20 +1618,127 @@ func _finish_mission(success: bool) -> void:
 	mission_finished = true
 	paused_game = false
 	if success:
-		var payout := run_credits + int(contract_bonus[current_contract])
+		var daily_bonus := _claim_daily_challenge_reward()
+		var payout := run_credits + int(contract_bonus[current_contract]) + daily_bonus
 		career_credits += payout
+		career.set_value("career", "completed_runs", int(career.get_value("career", "completed_runs", 0)) + 1)
+		career.set_value("career", "best_eliminations", maxi(eliminations, int(career.get_value("career", "best_eliminations", 0))))
+		career.set_value("career", "total_eliminations", int(career.get_value("career", "total_eliminations", 0)) + eliminations)
 		_save_career()
 		_set_result_title("ЭВАКУАЦИЯ УСПЕШНА", "РЕЙД ЗАВЕРШЁН · +%d КРЕДИТОВ ЗАНЕСЕНО В КАРЬЕРУ" % payout, Color(0.38, 1.0, 0.85))
+		if is_instance_valid(result_reward_label):
+			var daily_suffix := " · DAILY +%d" % daily_bonus if daily_bonus > 0 else ""
+			result_reward_label.text = "УСТРАНЕНИЙ %d · НАГРАДА %d%s · ПОБЕД %d" % [eliminations, payout, daily_suffix, int(career.get_value("career", "completed_runs", 0))]
+		if is_instance_valid(result_share_label):
+			result_share_label.text = "КОД ВЫЗОВА: %s · ПОДЕЛИСЬ И ПРИГЛАСИ ДРУГА" % _today_challenge_code()
 		objective_text = "МИССИЯ ВЫПОЛНЕНА · КАРЬЕРНЫЙ БАЛАНС %d" % career_credits
 		_play_sfx(920.0, 0.6, 0.13)
 	else:
 		_set_result_title("ОПЕРАТОР ПОТЕРЯН", "КОНТРАКТ ПРОВАЛЕН · БАЛАНС КАРЬЕРЫ НЕ ИЗМЕНЁН", Color(1.0, 0.25, 0.34))
+		if is_instance_valid(result_reward_label):
+			result_reward_label.text = "РЕЗУЛЬТАТ: %d УСТРАНЕНИЙ · ПОПРОБУЙ ЕЩЁ РАЗ" % eliminations
+		if is_instance_valid(result_share_label):
+			result_share_label.text = "ВЫЗОВ ДРУГУ: %s" % _today_challenge_code()
 		objective_text = "ОПЕРАТОР НЕ ВЕРНУЛСЯ · ПЕРЕЗАПУСТИТЕ РЕЙД"
 		_play_sfx(70.0, 0.9, 0.18)
 	result_panel.visible = true
 	if OS.has_feature("web"):
 		JavaScriptBridge.eval("if (window.parent !== window) { window.parent.postMessage({type: 'osgard:game-lifecycle', game: 'null-shift', state: 'completed', at: Date.now()}, window.location.origin); }")
 	_update_hud()
+
+func _today_date_code() -> String:
+	return Time.get_date_string_from_system(true).replace("-", "")
+
+func _contract_index_for_date(date_code: String) -> int:
+	if date_code.length() != 8:
+		return 0
+	var month := int(date_code.substr(4, 2))
+	var day := int(date_code.substr(6, 2))
+	return (month + day) % career_names.size()
+
+func _today_challenge_code() -> String:
+	var date_code := _today_date_code()
+	return "NS-%s-C%d" % [date_code, _contract_index_for_date(date_code) + 1]
+
+func _contract_index_from_challenge_code(code: String) -> int:
+	var pattern := RegEx.new()
+	if pattern.compile("^NS-([0-9]{8})-C([1-3])$") != OK:
+		return -1
+	var matched := pattern.search(code)
+	if matched == null:
+		return -1
+	var date_code := matched.get_string(1)
+	var contract_index := int(matched.get_string(2)) - 1
+	if contract_index != _contract_index_for_date(date_code):
+		return -1
+	return contract_index
+
+func _resolve_shared_challenge() -> void:
+	if not OS.has_feature("web"):
+		return
+	var shared_code := str(JavaScriptBridge.eval("new URLSearchParams(window.location.search).get('challenge') || ''"))
+	var challenge_contract := _contract_index_from_challenge_code(shared_code)
+	if challenge_contract < 0:
+		return
+	daily_challenge_active = true
+	daily_challenge_code = shared_code
+	current_contract = challenge_contract
+	_save_career()
+
+func _start_daily_challenge() -> void:
+	daily_challenge_code = _today_challenge_code()
+	daily_challenge_active = true
+	current_contract = _contract_index_from_challenge_code(daily_challenge_code)
+	_save_career()
+	objective_text = "DAILY OP · КОНТРАКТ %02d · ПОВТОРИ ЕГО С ДРУЗЬЯМИ" % (current_contract + 1)
+	_play_sfx(610.0, 0.18, 0.08)
+	_restart_game()
+
+func _claim_daily_challenge_reward() -> int:
+	var today := _today_date_code()
+	if not daily_challenge_active or daily_challenge_code != _today_challenge_code() or daily_claimed_date == today:
+		return 0
+	daily_claimed_date = today
+	return 400
+
+func _share_run() -> void:
+	var code := _today_challenge_code()
+	var link := "https://osgard.world/games/null-shift-godot/?challenge=" + code
+	var result_text := "эвакуировался" if mission_finished and core_secured else "проверил свои силы"
+	var note := "NULL//SHIFT · Я %s в %s. Устранений: %d. Повтори ежедневный контракт %s." % [result_text, career_names[current_contract], eliminations, code]
+	if is_instance_valid(result_share_label):
+		result_share_label.text = "ГОТОВЬ ССЫЛКУ · " + code
+	if OS.has_feature("web"):
+		var js := "(async()=>{const title='NULL//SHIFT';const text=" + JSON.stringify(note) + ";const url=" + JSON.stringify(link) + ";try{if(navigator.share){await navigator.share({title,text,url})}else if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(text+' | '+url);window.alert('Ссылка вызова скопирована. Пригласи друга пройти тот же контракт.')}else{window.prompt('Скопируй ссылку на ежедневный контракт:',url)}}catch(error){if(error&&error.name!=='AbortError'){try{await navigator.clipboard.writeText(text+' | '+url);window.alert('Ссылка вызова скопирована.')}catch(_){window.prompt('Скопируй ссылку на ежедневный контракт:',url)}}}})();"
+		JavaScriptBridge.eval(js)
+	else:
+		DisplayServer.clipboard_set(note + "\n" + link)
+		if is_instance_valid(result_share_label):
+			result_share_label.text = "ОТЧЁТ И ССЫЛКА СКОПИРОВАНЫ · " + code
+
+func _buy_cosmetic(style: String) -> void:
+	if style not in ["amber", "violet"]:
+		return
+	var owned := owns_amber_style if style == "amber" else owns_violet_style
+	if not owned:
+		var cost := 450 if style == "amber" else 750
+		if career_credits < cost:
+			objective_text = "НЕДОСТАТОЧНО КРЕДИТОВ · НУЖНО %d" % cost
+			_update_hud()
+			return
+		career_credits -= cost
+		if style == "amber":
+			owns_amber_style = true
+		else:
+			owns_violet_style = true
+	operator_style = style
+	_update_player_material()
+	_save_career()
+	objective_text = "КОСМЕТИКА ЭКИПИРОВАНА · БОЕВЫЕ ХАРАКТЕРИСТИКИ НЕ МЕНЯЮТСЯ"
+	_play_sfx(760.0, 0.2, 0.08)
+	_refresh_loadout()
+	_update_hud()
+
 
 func _set_result_title(title_text: String, body_text: String, tint: Color) -> void:
 	for child in result_panel.get_children():
@@ -1635,6 +1754,10 @@ func _set_result_title(title_text: String, body_text: String, tint: Color) -> vo
 
 func _cycle_contract() -> void:
 	current_contract = (current_contract + 1) % career_names.size()
+	daily_challenge_active = false
+	daily_challenge_code = ""
+	career.set_value("daily", "active", false)
+	career.set_value("daily", "code", "")
 	career.set_value("raid", "contract", current_contract)
 	_save_career()
 	objective_text = "КОНТРАКТ: " + career_names[current_contract] + " · ПЕРЕЗАПУСТИТЕ РЕЙД ДЛЯ ПРИМЕНЕНИЯ"
@@ -1833,6 +1956,14 @@ func _load_career() -> void:
 	if performance_quality:
 		cinematic_quality = false
 	sound_enabled = bool(career.get_value("settings", "sound_enabled", true))
+	operator_style = str(career.get_value("cosmetics", "operator_style", "cyan"))
+	if operator_style not in ["cyan", "amber", "violet"]:
+		operator_style = "cyan"
+	owns_amber_style = bool(career.get_value("cosmetics", "owns_amber", false))
+	owns_violet_style = bool(career.get_value("cosmetics", "owns_violet", false))
+	daily_challenge_active = bool(career.get_value("daily", "active", false))
+	daily_challenge_code = str(career.get_value("daily", "code", ""))
+	daily_claimed_date = str(career.get_value("daily", "claimed_date", ""))
 
 func _save_career() -> void:
 	career.set_value("career", "credits", career_credits)
@@ -1840,6 +1971,12 @@ func _save_career() -> void:
 	career.set_value("upgrades", "pulse", pulse_level)
 	career.set_value("upgrades", "weapon", weapon_level)
 	career.set_value("raid", "contract", current_contract)
+	career.set_value("cosmetics", "operator_style", operator_style)
+	career.set_value("cosmetics", "owns_amber", owns_amber_style)
+	career.set_value("cosmetics", "owns_violet", owns_violet_style)
+	career.set_value("daily", "active", daily_challenge_active)
+	career.set_value("daily", "code", daily_challenge_code)
+	career.set_value("daily", "claimed_date", daily_claimed_date)
 	var err := career.save(SAVE_PATH)
 	if err != OK:
 		push_warning("Could not write local career save: %s" % error_string(err))
@@ -1968,16 +2105,28 @@ func _create_ui() -> void:
 	_add_button(code_row, "→", _submit_cipher_key.bind(KEY_RIGHT), Vector2(70.0, 48.0))
 	_add_button(keypad_stack, "ОТКЛЮЧИТЬСЯ", _close_keypad, Vector2(168.0, 38.0))
 
-	loadout_panel = _make_panel(hud_root, Control.PRESET_CENTER, Rect2(-256.0, -186.0, 512.0, 372.0))
+	var loadout_viewport := get_viewport().get_visible_rect().size
+	var loadout_width: float = minf(512.0, maxf(288.0, loadout_viewport.x - 24.0))
+	var loadout_height: float = minf(490.0, maxf(420.0, loadout_viewport.y - 24.0))
+	var loadout_button_width: float = minf(300.0, loadout_width - 48.0)
+	loadout_panel = _make_panel(hud_root, Control.PRESET_CENTER, Rect2(-loadout_width * 0.5, -loadout_height * 0.5, loadout_width, loadout_height))
 	loadout_panel.visible = false
 	var loadout_stack := _panel_stack(loadout_panel)
-	_label(loadout_stack, "LOADOUT TERMINAL", 20, Color(0.4, 1.0, 0.85))
-	_label(loadout_stack, "ПОСТОЯННЫЕ МОДУЛИ · ЛОКАЛЬНОЕ СОХРАНЕНИЕ", 10, Color(0.55, 0.72, 0.72))
-	_add_button(loadout_stack, "[1] БРОНЯ · +20 HP", _buy_upgrade.bind("armor"), Vector2(300.0, 42.0))
-	_add_button(loadout_stack, "[2] PULSE · БЫСТРЕЕ ПЕРЕЗАРЯДКА", _buy_upgrade.bind("pulse"), Vector2(300.0, 42.0))
-	_add_button(loadout_stack, "[3] ARC-9 · СКОРОСТРЕЛЬНОСТЬ", _buy_upgrade.bind("weapon"), Vector2(300.0, 42.0))
-	_add_button(loadout_stack, "КОНТРАКТ / C", _cycle_contract, Vector2(200.0, 36.0))
-	_add_button(loadout_stack, "ЗАКРЫТЬ / U", _close_loadout, Vector2(160.0, 36.0))
+	_label(loadout_stack, "LOADOUT / STYLE VAULT", 20, Color(0.4, 1.0, 0.85))
+	_label(loadout_stack, "МОДУЛИ И КОСМЕТИКА · ЛОКАЛЬНОЕ СОХРАНЕНИЕ", 10, Color(0.55, 0.72, 0.72))
+	_add_button(loadout_stack, "[1] БРОНЯ · +20 HP", _buy_upgrade.bind("armor"), Vector2(loadout_button_width, 38.0))
+	_add_button(loadout_stack, "[2] PULSE · БЫСТРЕЕ ПЕРЕЗАРЯДКА", _buy_upgrade.bind("pulse"), Vector2(loadout_button_width, 38.0))
+	_add_button(loadout_stack, "[3] ARC-9 · СКОРОСТРЕЛЬНОСТЬ", _buy_upgrade.bind("weapon"), Vector2(loadout_button_width, 38.0))
+	_label(loadout_stack, "STYLE VAULT · ТОЛЬКО ВНЕШНИЙ ВИД", 10, Color(1.0, 0.77, 0.39))
+	var style_row := HBoxContainer.new()
+	style_row.add_theme_constant_override("separation", 6)
+	loadout_stack.add_child(style_row)
+	var style_button_width: float = maxf(108.0, (loadout_button_width - 6.0) * 0.5)
+	amber_style_button = _add_button(style_row, "AMBER · 450 CR", _buy_cosmetic.bind("amber"), Vector2(style_button_width, 36.0))
+	violet_style_button = _add_button(style_row, "VIOLET · 750 CR", _buy_cosmetic.bind("violet"), Vector2(style_button_width, 36.0))
+	daily_challenge_button = _add_button(loadout_stack, "DAILY OP / СЕГОДНЯ · +400 CR", _start_daily_challenge, Vector2(loadout_button_width, 38.0))
+	_add_button(loadout_stack, "КОНТРАКТ / C", _cycle_contract, Vector2(loadout_button_width, 34.0))
+	_add_button(loadout_stack, "ЗАКРЫТЬ / U", _close_loadout, Vector2(loadout_button_width, 34.0))
 
 	pause_panel = _make_panel(hud_root, Control.PRESET_CENTER, Rect2(-220.0, -138.0, 440.0, 276.0))
 	pause_panel.visible = false
@@ -1988,13 +2137,22 @@ func _create_ui() -> void:
 	_add_button(pause_stack, "ПЕРЕЗАПУСТИТЬ РЕЙД", _restart_game, Vector2(210.0, 44.0))
 	_add_button(pause_stack, "ЗАКРЫТЬ МОДУЛИ", _close_loadout, Vector2(210.0, 36.0))
 
-	result_panel = _make_panel(hud_root, Control.PRESET_CENTER, Rect2(-272.0, -172.0, 544.0, 344.0))
+	var result_viewport := get_viewport().get_visible_rect().size
+	var result_width: float = minf(600.0, maxf(288.0, result_viewport.x - 24.0))
+	var result_height: float = minf(470.0, maxf(390.0, result_viewport.y - 24.0))
+	var result_button_width: float = minf(300.0, result_width - 48.0)
+	result_panel = _make_panel(hud_root, Control.PRESET_CENTER, Rect2(-result_width * 0.5, -result_height * 0.5, result_width, result_height))
 	result_panel.visible = false
 	var result_stack := _panel_stack(result_panel)
 	_label(result_stack, "ЭВАКУАЦИЯ УСПЕШНА", 25, Color(0.4, 1.0, 0.85))
 	_label(result_stack, "РЕЙД ЗАВЕРШЁН · КАРЬЕРА ОБНОВЛЕНА", 12, Color(0.82, 0.92, 0.9))
-	_add_button(result_stack, "НОВЫЙ РЕЙД", _restart_game, Vector2(220.0, 46.0))
-	_add_button(result_stack, "МОДУЛИ КАРЬЕРЫ", _show_loadout_from_result, Vector2(220.0, 42.0))
+	result_reward_label = _label(result_stack, "УСТРАНЕНИЙ 0 · DAILY OPS · КАРЬЕРА", 10, Color(1.0, 0.77, 0.39))
+	result_reward_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	result_share_label = _label(result_stack, "ЕЖЕДНЕВНЫЙ КОД ВЫЗОВА ГОТОВ", 10, Color(0.38, 1.0, 0.86))
+	result_share_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_add_button(result_stack, "ПОДЕЛИТЬСЯ РЕЗУЛЬТАТОМ / ВЫЗВАТЬ ДРУГА", _share_run, Vector2(result_button_width, 40.0))
+	_add_button(result_stack, "НОВЫЙ РЕЙД", _restart_game, Vector2(result_button_width, 42.0))
+	_add_button(result_stack, "МОДУЛИ И КОСМЕТИКА", _show_loadout_from_result, Vector2(result_button_width, 38.0))
 
 	tactical_radar_panel = _make_panel(hud_root, Control.PRESET_TOP_RIGHT, Rect2(-264.0, 210.0, 246.0, 194.0))
 	var radar_stack: VBoxContainer = _panel_stack(tactical_radar_panel)
@@ -2631,12 +2789,28 @@ func _layout_compact_controls(viewport_size: Vector2) -> void:
 func _refresh_loadout() -> void:
 	if not is_instance_valid(loadout_panel):
 		return
+	if is_instance_valid(amber_style_button):
+		if operator_style == "amber":
+			amber_style_button.text = "AMBER · НАДЕТО"
+		elif owns_amber_style:
+			amber_style_button.text = "ЭКИПИРОВАТЬ AMBER"
+		else:
+			amber_style_button.text = "AMBER · 450 CR"
+	if is_instance_valid(violet_style_button):
+		if operator_style == "violet":
+			violet_style_button.text = "VIOLET · НАДЕТО"
+		elif owns_violet_style:
+			violet_style_button.text = "ЭКИПИРОВАТЬ VIOLET"
+		else:
+			violet_style_button.text = "VIOLET · 750 CR"
+	if is_instance_valid(daily_challenge_button):
+		daily_challenge_button.text = "DAILY OP · КОД %s · +400 CR" % _today_challenge_code().get_slice("-C", 1)
 	for child in loadout_panel.get_children():
 		if child is MarginContainer:
 			for inner in child.get_children():
 				if inner is VBoxContainer and inner.get_child_count() >= 2:
 					var stack := inner as VBoxContainer
-					(stack.get_child(1) as Label).text = "КРЕДИТЫ: %d · БРОНЯ %d/3 · PULSE %d/3 · ARC-9 %d/3" % [career_credits, armor_level, pulse_level, weapon_level]
+					(stack.get_child(1) as Label).text = "КРЕДИТЫ %d · БРОНЯ %d/3 · PULSE %d/3 · ARC-9 %d/3 · STYLE %s" % [career_credits, armor_level, pulse_level, weapon_level, operator_style.to_upper()]
 					return
 
 func _update_objective_compass(delta: float = 0.016) -> void:
@@ -2763,7 +2937,7 @@ func _update_player_material() -> void:
 	elif dash_timer > 0.0:
 		operator_suit.material_override = materials["white"]
 	else:
-		operator_suit.material_override = materials["cyan"]
+		operator_suit.material_override = materials.get(operator_style, materials["cyan"])
 
 func _animate_world(delta: float) -> void:
 	if is_instance_valid(operator_rig) and is_instance_valid(player):
