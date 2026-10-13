@@ -1,6 +1,5 @@
 (() => {
   'use strict';
-  const API_FALLBACK = '/commerce-api';
   const configPromise = fetch('/games/commerce-config.json', { cache: 'no-store', credentials: 'same-origin' })
     .then((response) => response.ok ? response.json() : {})
     .catch(() => ({}));
@@ -71,6 +70,7 @@
     if (status) status.textContent = 'Проверяем подключение безопасной формы…';
     try {
       const base = await apiBase();
+      if (!base) throw new Error('COMMERCE_API_NOT_CONFIGURED');
       const response = await fetch(base + '/v1/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -139,12 +139,12 @@
       return;
     }
     // Compatibility fallback for pages served without the shared queue asset.
-    void apiBase().then((base) => fetch(base + '/v1/events', {
+    void apiBase().then((base) => base ? fetch(base + '/v1/events', {
       method: 'POST',
       credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ consent: true, events: [event] }),
-    })).catch(() => {});
+    }) : null).catch(() => {});
   }
   let pageViewTracked = false;
   function trackCurrentPageView() {
