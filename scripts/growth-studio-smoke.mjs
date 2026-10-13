@@ -31,6 +31,7 @@ check('analytics checks existing consent and sends only the allowlisted share ev
   assert.ok(page.includes("'/v1/events'"));
   assert.ok(page.includes("source:'game-invite:'+state.game+':'+state.code"));
   assert.ok(page.includes("if(!state.game||!getConsent())return false"));
+  assert.ok(page.includes("if(!getConsent())return false;"), 'Consent must be rechecked after asynchronous config/event requests');
 });
 check('share flow does not count cancellation and supports explicit clipboard action', () => {
   assert.ok(page.includes('async function shareInvite()'));
