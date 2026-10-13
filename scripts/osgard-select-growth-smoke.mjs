@@ -90,6 +90,16 @@ assert.ok(css.includes('.og-postgame-spotlight{') &&
   css.includes('@media(max-width:760px)') && css.includes('prefers-reduced-motion:reduce'),
   'Premium spotlight styling must support mobile and reduced-motion settings');
 
+assert.ok(source.includes("const quickPickIds=[spotlightServiceId,...spotlightOptions.filter(id=>id!==spotlightServiceId)].slice(0,3)") &&
+  source.includes("button.setAttribute('aria-pressed',String(serviceId===spotlightServiceId))") &&
+  source.includes("quickPickButtons.forEach(choice=>choice.setAttribute('aria-pressed',String(choice.dataset.service===serviceId)))"),
+  'Intermission must show up to three contextual service choices immediately and keep their selected state synchronized');
+assert.ok(source.includes("section.append(spotlight,quickPickHeading,quickPicks)") &&
+  css.includes('.og-postgame-quick-picks{') &&
+  css.includes('.og-postgame-quick-pick[aria-pressed="true"]') &&
+  css.includes('@media(prefers-reduced-motion:reduce){.og-postgame-quick-pick'),
+  'Quick choices must be visible in the default intermission with luxury styling, responsive layout and reduced-motion support');
+
 const rewardStart = source.indexOf('function rewardShelf(gameId){');
 const rewardEnd = source.indexOf('function renderOutsideIntermission(detail)', rewardStart);
 assert.ok(rewardStart >= 0 && rewardEnd > rewardStart, 'Social reward section must remain independently testable');
@@ -140,6 +150,6 @@ console.log(JSON.stringify({
   status: 'passed',
   serviceDestinations: services.length,
   gameContexts: 9,
-  checks: 33,
+  checks: 35,
   notes: 'Source-level guardrails; social publication is self-confirmed, not verified by social-network APIs.'
 }));
