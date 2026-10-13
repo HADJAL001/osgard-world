@@ -57,7 +57,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
       : route === '/games/admin/partners/'
           ? text.includes('<meta name="robots" content="noindex,nofollow,noarchive">') && text.includes('id="editor-list"') && text.includes('id="download"') && text.includes('inventory.json')
       : route === '/games/invite/invite-landing.js'
-           ? text.includes("osgard.games.referral-attribution.v1") && text.includes("name: 'referral_link_opened'")
+           ? text.includes("osgard.games.referral-attribution.v1") && text.includes("name: 'referral_link_opened'") && text.includes("const afterimageChallenge = game === 'afterimage-run'") && text.includes("target.searchParams.set('seed', requestedDay)") && text.includes("target.searchParams.set('score', String(scoreValue))")
                  : route === '/games/invite/afterimage-run/'
            ? text.includes('property="og:title" content="AFTERIMAGE//RUN — OSGARD PLAY"') && text.includes('property="og:image" content="https://osgard.world/games/share-cards/afterimage-run.png"') && text.includes('id="play-link"') && text.includes('noindex,follow')
          : route.startsWith('/games/invite/')
@@ -98,7 +98,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         : route === '/games/signal-run/'
           ? text.includes('<title>SIGNAL RUN — OSGARD WORLD</title>') && text.includes('id="arena"') && text.includes('game.js')
                 : route === '/games/afterimage-run/'
-          ? text.includes('<title>AFTERIMAGE//RUN — OSGARD PLAY</title>') && text.includes('id="runnerCanvas"') && text.includes('id="run-start"') && text.includes('id="daily-seed"') && text.includes('id="share-telegram"') && text.includes('osgard:game-lifecycle')
+          ? text.includes('<title>AFTERIMAGE//RUN — OSGARD PLAY</title>') && text.includes('id="runnerCanvas"') && text.includes('id="run-start"') && text.includes('id="daily-seed"') && text.includes('id="share-telegram"') && text.includes('id="claim-share-reward"') && text.includes('function resizeCanvas()') && text.includes('const validUtcDate=value=>') && text.includes('visualRng') && text.includes('osgard:game-lifecycle')
         : route === '/games/cascade-lab/'
           ? text.includes('<title>CASCADE LAB — Premium Physics Lab 0.13.0</title>') &&
             text.includes('name="osgard-game-version" content="0.13.0-osgard-cross-promo"') &&
