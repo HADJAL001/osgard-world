@@ -193,3 +193,14 @@ A new Godot-native growth slice is implemented and covered by the headless runti
 - Сохранение указано как локальное; облачная синхронизация и глобальный серверный рейтинг не обещаются.
 - Карточка использует отдельный URL «Подробнее» `/game/afterimage-run`, запуск остаётся на `/games/afterimage-run/`.
 - Расширены `qa:games-detail`, production route matrix и sitemap; iframe readiness распознаёт реальный title AFTERIMAGE//RUN.
+
+
+## Post-deploy performance comparison — Daily Circuit lazy load
+
+Checked against the published `/games/` route using the repository's version-gated Lighthouse workflow.
+
+- Before the Daily Circuit critical-path change, run [38356044249](https://github.com/HADJAL001/osgard-world/actions/runs/38356044249) reported mobile Performance 84/100, Total Blocking Time 620 ms and LCP 1.40 s. The run failed the mobile Performance (minimum 85) and TBT (maximum 500 ms) guardrails. Desktop was 99/100, TBT 0 ms and LCP 0.48 s.
+- After commit `527f54ffee00b9fda78f57b8b93d3819108d0e21` deferred Daily Circuit from the initial catalogue path, the current deployed build at `c95dbac3bbc842190f5a509106754066c3ea4704` passed [run 38356786995](https://github.com/HADJAL001/osgard-world/actions/runs/38356786995). Mobile: Performance 91/100, Accessibility 96/100, Best Practices 100/100, SEO 100/100, TBT 362 ms, LCP 1.61 s. Desktop: all four category scores 100/100, TBT 0 ms, LCP 0.42 s.
+- In these two individual runs, mobile Performance improved by 7 points and TBT fell by 258 ms; LCP increased by 0.21 s. Lighthouse varies by runner conditions, so this is evidence for those builds, not a guarantee of identical future scores.
+
+This comparison supports keeping Daily Circuit's versioned lazy loader in place. The three-round OSGARD SELECT default in PR #204 is separate from this already-published performance improvement.
