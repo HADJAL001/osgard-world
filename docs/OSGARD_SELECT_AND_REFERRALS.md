@@ -6,6 +6,8 @@ Updated: 2026-10-13.
 - The Games hub shows the OSGARD SELECT intermission after every game completion or a launched session returning to the catalog by default.
 - The intermission is a clearly labelled house promotion: "РЕКЛАМА · СОБСТВЕННЫЕ ПРОЕКТЫ OSGARD". It does not simulate third-party ads or autoplay a service.
 - Players can select services, filter by category, choose every game / every third game / off, or skip the current promotion. These preferences are local to their browser.
+- The main Entertainment gateway exposes the same preference editor and writes the exact same localStorage contract, so choices carry between `/entertainment` and `/games/` in that browser.
+- GARD VPN remains selectable with an explicit availability warning because its live status has not been independently confirmed; do not treat it as a verified operational destination.
 - Only services marked available and selected by the player appear as clickable promotion cards. GARD VPN remains out of the live promotional deck pending availability confirmation.
 - The highlighted service rotates through selected available services from one distinct game session to the next; other selected services remain available to explore.
 - Links use UTM source/medium/campaign/content tags. Clicks and owned-promotion impressions are submitted only when analytics consent is enabled. Preference-save and skip events use the same consent gate.

@@ -12,10 +12,31 @@ const services = [
   { id: 'superday', name: 'SUPERDAY', category: 'MAP / DAILY PLANNING', ru: 'Умная карта и планировщик дня.', en: 'Smart map and day planner.', url: 'https://superday.run/' },
   { id: 'myosa', name: 'MYOSA', category: 'AI PLATFORM', ru: 'Платформа искусственного интеллекта.', en: 'AI platform.', url: 'https://myosa.world/' },
   { id: 'gold-glamour', name: 'GOLD GLAMOUR', category: 'PREMIUM SERVICES', ru: 'Премиальные услуги с золотом и выездным обслуживанием.', en: 'Premium gold-related and mobile services.', url: 'https://gold-glamour.online/' },
-  { id: 'gardvpn', name: 'GARD VPN', category: 'PRIVACY / VPN', ru: 'VPN-сервис; проверьте доступность и условия на сайте проекта. Доступность домена не подтверждена независимо.', en: 'VPN service; check the project site for availability and terms. The domain has not been independently verified.', url: 'https://gardvpn.is/' },
+  { id: 'gardvpn', name: 'GARD VPN', category: 'PRIVACY / VPN', ru: 'VPN-сервис; проверьте доступность и условия на сайте проекта. Доступность домена не подтверждена независимо. Ссылка доступна для выбора, но её работу нужно проверить.', en: 'VPN service; check availability and terms on the project site. The domain has not been independently verified, so between-game promotion is disabled.', url: 'https://gardvpn.is/' },
   { id: 'osgard-business', name: 'OSGARD OS', category: 'BUSINESS DEVELOPMENT', ru: 'Направление развития бизнеса.', en: 'Business development.', url: 'https://osgardos.com/' },
   { id: 'vanguard', name: 'OSGARD VANGUARD STUDIO', category: 'VIDEO STUDIO', ru: 'Создание видео для цифровых продуктов и кампаний.', en: 'Video production for digital products and campaigns.', url: 'https://osgardvanguard.studio/' },
 ] as const
+
+type PromoFrequency = 'each' | 'every3' | 'off'
+type PromoPreferences = { frequency: PromoFrequency; selected: string[] }
+const PROMO_PREFERENCES_KEY = 'osgard.games.postgame-service-preferences.v1'
+const PROMOTABLE_SERVICE_IDS = services.map(service => service.id)
+
+function readPromoPreferences(): PromoPreferences {
+  if (typeof window === 'undefined') return { frequency: 'each', selected: [...PROMOTABLE_SERVICE_IDS] }
+  try {
+    const value = JSON.parse(window.localStorage.getItem(PROMO_PREFERENCES_KEY) || 'null')
+    if (!value || typeof value !== 'object') return { frequency: 'each', selected: [...PROMOTABLE_SERVICE_IDS] }
+    const frequency: PromoFrequency = value.frequency === 'every3' || value.frequency === 'off' ? value.frequency : 'each'
+    const selected = Array.isArray(value.selected)
+      ? PROMOTABLE_SERVICE_IDS.filter(id => value.selected.includes(id))
+      : [...PROMOTABLE_SERVICE_IDS]
+    return { frequency, selected }
+  } catch {
+    return { frequency: 'each', selected: [...PROMOTABLE_SERVICE_IDS] }
+  }
+}
+
 function readWallet(): Wallet {
   if (typeof window === 'undefined') return { balance: 0, day: '' }
   try {
@@ -52,17 +73,62 @@ export function PlaySelectLoop({ locale }: { locale: Locale }) {
   const [balance, setBalance] = useState(() => readWallet().balance)
   const [status, setStatus] = useState('')
   const [pendingNetwork, setPendingNetwork] = useState('')
+  const [promoPreferences, setPromoPreferences] = useState<PromoPreferences>(readPromoPreferences)
+  const [promoSettingsOpen, setPromoSettingsOpen] = useState(false)
+  const [draftFrequency, setDraftFrequency] = useState<PromoFrequency>(() => readPromoPreferences().frequency)
+  const [draftSelected, setDraftSelected] = useState<string[]>(() => readPromoPreferences().selected)
+  const [promoStatus, setPromoStatus] = useState('')
   const message = ru ? 'Пойдём сыграем в OSGARD PLAY. Выбирай свой мир:' : 'Let’s play OSGARD PLAY. Choose your world:'
+  const frequencyDescription = promoPreferences.frequency === 'each'
+    ? (ru ? 'После каждой завершённой игры' : 'After every completed game')
+    : promoPreferences.frequency === 'every3'
+      ? (ru ? 'Раз в три завершённых игры' : 'Every third completed game')
+      : (ru ? 'Межигровое промо отключено' : 'Between-game promotions disabled')
 
   useEffect(() => {
     const refresh = () => setBalance(readWallet().balance)
+    const refreshPromoPreferences = () => {
+      const next = readPromoPreferences()
+      setPromoPreferences(next)
+      setDraftFrequency(next.frequency)
+      setDraftSelected(next.selected)
+    }
     window.addEventListener('storage', refresh)
     window.addEventListener('osgard:shards-updated', refresh)
+    window.addEventListener('storage', refreshPromoPreferences)
+    window.addEventListener('osgard:service-preferences-updated', refreshPromoPreferences)
     return () => {
       window.removeEventListener('storage', refresh)
       window.removeEventListener('osgard:shards-updated', refresh)
+      window.removeEventListener('storage', refreshPromoPreferences)
+      window.removeEventListener('osgard:service-preferences-updated', refreshPromoPreferences)
     }
   }, [])
+
+  const savePromoPreferences = () => {
+    const next: PromoPreferences = {
+      frequency: draftFrequency,
+      selected: PROMOTABLE_SERVICE_IDS.filter(id => draftSelected.includes(id)),
+    }
+    try {
+      window.localStorage.setItem(PROMO_PREFERENCES_KEY, JSON.stringify(next))
+      setPromoPreferences(next)
+      setDraftSelected(next.selected)
+      setPromoStatus(ru
+        ? 'Настройки сохранены и будут использоваться в межигровой подборке.'
+        : 'Saved. These preferences will also be used between games.')
+      window.dispatchEvent(new CustomEvent('osgard:service-preferences-updated'))
+    } catch {
+      setPromoStatus(ru
+        ? 'Не удалось сохранить настройки браузера. Попробуй ещё раз.'
+        : 'The browser could not save these preferences. Please try again.')
+    }
+  }
+
+  const setAllPromoServices = (selected: boolean) => {
+    setDraftSelected(selected ? [...PROMOTABLE_SERVICE_IDS] : [])
+    setPromoStatus('')
+  }
 
   const social = [
     { name: 'Telegram', href: 'https://t.me/share/url?url=' + encodeURIComponent(inviteUrl) + '&text=' + encodeURIComponent(message) },
@@ -132,6 +198,71 @@ export function PlaySelectLoop({ locale }: { locale: Locale }) {
       </div>
       <span className="play-select-disclosure">{ru ? 'РЕКЛАМА · СОБСТВЕННЫЕ ПРОЕКТЫ' : 'ADVERTISING · OSGARD OWNED PROJECTS'}</span>
     </div>
+    <div className="play-select-preferences">
+      <div className="play-select-preferences-bar">
+        <div>
+          <strong>{ru ? 'Межигровые предложения' : 'Between-game offers'}</strong>
+          <span>{frequencyDescription} · {promoPreferences.selected.length} / {PROMOTABLE_SERVICE_IDS.length} {ru ? 'сервисов выбрано' : 'services selected'}</span>
+        </div>
+        <button
+          type="button"
+          className="play-select-preferences-toggle"
+          aria-expanded={promoSettingsOpen}
+          aria-controls="play-select-preferences-panel"
+          onClick={() => {
+            if (!promoSettingsOpen) {
+              const latest = readPromoPreferences()
+              setPromoPreferences(latest)
+              setDraftFrequency(latest.frequency)
+              setDraftSelected(latest.selected)
+            }
+            setPromoSettingsOpen(!promoSettingsOpen)
+            setPromoStatus('')
+          }}
+        >{promoSettingsOpen ? (ru ? 'Закрыть настройки' : 'Close preferences') : (ru ? 'Настроить предложения ↗' : 'Customize offers ↗')}</button>
+      </div>
+      {promoSettingsOpen && <div className="play-select-preferences-panel" id="play-select-preferences-panel">
+        <label className="play-select-frequency">
+          <span>{ru ? 'Как часто показывать между играми' : 'How often to show between games'}</span>
+          <select value={draftFrequency} onChange={event => setDraftFrequency(event.target.value as PromoFrequency)}>
+            <option value="each">{ru ? 'После каждой завершённой игры' : 'After every completed game'}</option>
+            <option value="every3">{ru ? 'Раз в три завершённых игры' : 'Every third completed game'}</option>
+            <option value="off">{ru ? 'Не показывать межигровую подборку' : 'Turn off between-game offers'}</option>
+          </select>
+        </label>
+        <div className="play-select-preference-heading">
+          <strong>{ru ? 'Выбери проекты для подборки' : 'Choose projects for the intermission'}</strong>
+          <span>{ru ? 'Изменения применятся и на странице игр.' : 'Changes also apply on the Games page.'}</span>
+        </div>
+        <div className="play-select-preference-grid">
+          {services.map(service => {
+            const unverified = service.id === 'gardvpn'
+            return <label className={'play-select-preference-option' + (unverified ? ' is-unverified' : '')} key={service.id}>
+              <input
+                type="checkbox"
+                checked={draftSelected.includes(service.id)}
+                onChange={event => {
+                  setDraftSelected(current => event.target.checked
+                    ? [...new Set([...current, service.id])]
+                    : current.filter(id => id !== service.id))
+                  setPromoStatus('')
+                }}
+              />
+              <span><strong>{service.name}</strong><small>{unverified ? (ru ? 'Доступность не подтверждена; откроется сайт проекта' : 'Availability not verified; opens the project site') : service.category}</small></span>
+            </label>
+          })}
+        </div>
+        <div className="play-select-preference-actions">
+          <button type="button" onClick={() => setAllPromoServices(true)}>{ru ? 'Все доступные' : 'Select all available'}</button>
+          <button type="button" onClick={() => setAllPromoServices(false)}>{ru ? 'Ничего не показывать' : 'Select none'}</button>
+          <button type="button" className="is-save" onClick={savePromoPreferences}>{ru ? 'Сохранить настройки' : 'Save preferences'}</button>
+        </div>
+        <p className="play-select-preferences-status" role="status" aria-live="polite">{promoStatus}</p>
+        <small className="play-select-preferences-note">{ru
+          ? 'Это настройки саморекламы OSGARD, а не сторонней рекламной сети. Полный каталог собственных проектов остаётся доступен ниже.'
+          : 'These preferences control OSGARD’s own cross-promotion, not a third-party ad network. The full owned-project directory remains below.'}</small>
+      </div>}
+    </div>
     <div className="play-select-layout">
       <div className="play-select-service-grid">
         {services.map((service, index) => {
@@ -144,6 +275,7 @@ export function PlaySelectLoop({ locale }: { locale: Locale }) {
             <span>{String(index + 1).padStart(2, '0')} / {service.category}</span>
             <strong>{service.name}</strong>
             <p>{ru ? service.ru : service.en}</p>
+            {service.id === 'gardvpn' && <small className="play-select-service-note">{ru ? 'СТАТУС ССЫЛКИ НЕ ПОДТВЕРЖДЁН' : 'LINK STATUS NOT VERIFIED'}</small>}
             <em>{ru ? 'Открыть проект ↗' : 'Explore project ↗'}</em>
           </a>
         })}
