@@ -50,6 +50,49 @@ func _run_smoke() -> void:
 		return
 	game.sound_enabled = false
 
+	print("RUNTIME_STAGE: live 3D objective beacon route guidance")
+	if not _expect(is_instance_valid(game.objective_beacon) and is_instance_valid(game.objective_beacon_beam) and is_instance_valid(game.objective_beacon_ring) and is_instance_valid(game.objective_beacon_top_ring) and is_instance_valid(game.objective_beacon_core) and is_instance_valid(game.objective_beacon_light), "procedural objective beacon must create its beam, two rings, signal core and light"):
+		return
+	var beacon_saved_terminal: bool = game.terminal_unlocked
+	var beacon_saved_core: bool = game.core_secured
+	var beacon_saved_player_position: Vector3 = game.player.global_position
+	var beacon_saved_motion: bool = game.reduced_motion
+	game.reduced_motion = false
+	game.terminal_unlocked = false
+	game.core_secured = false
+	game.player.global_position = Vector3(-19.0, 0.82, 10.2)
+	game._update_objective_beacon(0.10)
+	if not _expect(game.objective_beacon_stage == "terminal" and game.objective_beacon_target == game.terminal, "first objective beacon stage must point at the security terminal"):
+		return
+	if not _expect(game.objective_beacon_ring.material_override == game.materials["cyan"] and game.objective_beacon_beam.visible, "terminal beacon must use cyan and show its vertical beam at a distance"):
+		return
+	var beacon_child_count: int = game.objective_beacon.get_child_count()
+	var pulse_scale_before: Vector3 = game.objective_beacon_ring.scale
+	game._update_objective_beacon(0.42)
+	if not _expect(not game.objective_beacon_ring.scale.is_equal_approx(pulse_scale_before), "objective floor ring must pulse with a real frame-time update"):
+		return
+	game.player.global_position = game.terminal.global_position + Vector3(0.0, 0.82, 2.0)
+	game._update_objective_beacon(0.016)
+	if not _expect(not game.objective_beacon_beam.visible and game.objective_beacon_ring.visible, "vertical beacon beam must clear away at close range while retaining the interaction ring"):
+		return
+	game.player.global_position = beacon_saved_player_position
+	game.terminal_unlocked = true
+	game._update_objective_beacon(0.016)
+	if not _expect(game.objective_beacon_stage == "core" and game.objective_beacon_target == game.quantum_core and game.objective_beacon_ring.material_override == game.materials["gold"], "successful hack must retarget and recolour the beacon for the quantum core"):
+		return
+	game.core_secured = true
+	game._update_objective_beacon(0.016)
+	if not _expect(game.objective_beacon_stage == "extraction" and game.objective_beacon_target == game.extraction and game.objective_beacon_ring.material_override == game.materials["objective_exit"], "securing the core must retarget the beacon to extraction with its green stage colour"):
+		return
+	game._update_objective_beacon(0.016)
+	if not _expect(game.objective_beacon.get_child_count() == beacon_child_count, "live beacon updates must reuse one fixed set of meshes without creating runtime nodes"):
+		return
+	game.terminal_unlocked = beacon_saved_terminal
+	game.core_secured = beacon_saved_core
+	game.reduced_motion = beacon_saved_motion
+	game.player.global_position = beacon_saved_player_position
+	game._update_objective_beacon(0.016)
+
 	print("RUNTIME_STAGE: live objective compass and mission progression")
 	if not _expect(is_instance_valid(game.objective_compass_arrow) and is_instance_valid(game.objective_compass_text), "objective compass arrow and label must instantiate"):
 		return
