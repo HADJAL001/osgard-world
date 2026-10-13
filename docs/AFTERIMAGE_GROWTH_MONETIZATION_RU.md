@@ -69,6 +69,7 @@ The current implementation adds these reliability and measurement safeguards:
 - Challenge URLs use the canonical invite landing and keep a validated UTC day, target score, referral code and UTM campaign. The invite landing forwards a valid AFTERIMAGE challenge into the game instead of dropping the target.
 - The host session lifecycle records allowlisted challenge metadata on start and completion: target, score, win/loss, shard count, daily seed, referral code and dash count. Embedded share events avoid duplicate direct analytics from the game frame.
 - Open Graph/Twitter summary-card metadata is present for the result URL. A result-card image uses a short route label to avoid overflowing with long referral URLs.
+- On browsers supporting native file sharing, the share action attaches the generated 1200×630 PNG result card plus the challenge URL. If file sharing is unavailable, it falls back to text + URL. Cancelling the native share sheet does not grant the cosmetic reward.
 
 ### Funnel to report (do not conflate these events)
 
