@@ -34,6 +34,7 @@ export const ALLOWED_EVENTS = new Set([
   "checkout_started",
   "checkout_paid",
   "cross_promo_clicked",
+  "owned_promo_impression",
   "game_launched",
   "game_session_completed",
   "lead_submitted",
