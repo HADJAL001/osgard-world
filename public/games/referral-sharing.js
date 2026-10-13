@@ -55,7 +55,8 @@
       && params.get('utm_source') === 'osgard_games'
       && params.get('utm_medium') === 'friend_invite'
       && params.get('utm_campaign') === 'player_invite'
-      && validGame(params.get('utm_content') || '');
+      && validGame(params.get('utm_content') || '')
+      && params.get('play') === params.get('utm_content');
     if (!invite) return null;
     return {
       referralCode,
