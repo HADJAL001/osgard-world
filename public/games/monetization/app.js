@@ -31,7 +31,9 @@ function render() {
       '<div class="scenario-breakdown">' +
       '<div><span>Расчётная выручка</span><b>' + money(result.totalRevenueUsd) + '</b></div>' +
       '<div><span>Реклама · условно</span><b>' + money(result.adRevenueUsd) + '</b></div>' +
-      '<div><span>Покупки / первый платёж</span><b>' + money(result.paidRevenueUsd) + '</b></div>'
+      '<div><span>Разовые покупки / первый платёж</span><b>' + money(result.paidRevenueUsd) + '</b></div>' +
+      '<div><span>Premium подписка · средний месяц 1-го года</span><b>' + money(result.subscriptionRevenueUsd) + '</b></div>' +
+      '<div><span>Premium активны к месяцу 12 / MRR</span><b>' + count(result.subscriptionSubscribersMonth12) + ' / ' + money(result.subscriptionMrrMonth12Usd) + '</b></div>'
       + '<div><span>Новые посетители (допущение)</span><b>' + count(result.newVisitors) + '</b></div>' +
       '<div><span>Оплаченные проекты</span><b>' + money(result.servicesRevenueUsd) + '</b></div>' +
       '<div><span>Спонсорские размещения (модель)</span><b>' + money(result.sponsorRevenueUsd) + '</b></div>' +
@@ -74,6 +76,7 @@ function render() {
   document.getElementById('target-mix-total').textContent = targetScenario ? money(targetScenario.totalRevenueUsd) : '—';
   document.getElementById('target-mix-ads').textContent = targetScenario ? money(targetScenario.adRevenueUsd) : '—';
   document.getElementById('target-mix-paid').textContent = targetScenario ? money(targetScenario.paidRevenueUsd) : '—';
+  document.getElementById('target-mix-subscriptions').textContent = targetScenario ? money(targetScenario.subscriptionRevenueUsd) : '—';
   document.getElementById('target-mix-services').textContent = targetScenario ? money(targetScenario.servicesRevenueUsd) : '—';
   document.getElementById('target-mix-sponsors').textContent = targetScenario ? money(targetScenario.sponsorRevenueUsd) : '—';
   document.getElementById('target-mix-leads-contracts').textContent = targetScenario
@@ -105,8 +108,8 @@ exportButton.addEventListener('click', () => {
   const inputs = readInputs();
   const payload = {
     kind: 'osgard-games-business-model',
-    modelVersion: 4,
-    note: 'Illustrative scenario estimate only; referral loop is capped at five generations; required visitors are a bounded reverse calculation; not live analytics or guaranteed revenue.',
+    modelVersion: 5,
+    note: 'Illustrative scenario only. Subscriptions are calculated as first-year monthly cohorts with churn, separate from one-time purchases; month-12 MRR is shown separately. Checkout, Premium sales and ads are not activated by this model.',
     currency: 'USD',
     generatedAt: new Date().toISOString(),
     inputs,
