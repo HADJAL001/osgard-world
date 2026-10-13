@@ -1,7 +1,7 @@
 import { isValidPartnerInventoryText } from './partner-inventory-contract.mjs'
 const base = process.env.OSGARD_BASE_URL || 'https://osgard.world'
 const expectCurrentDesign = process.env.SKILLCRED_EXPECT_CURRENT_DESIGN === '1'
-const routes = ['/','/skillcred/','/skillcred-api/health','/skillcred-api/ready','/skillcred-api/issuer','/entertainment','/entertainment/','/games/','/games/index.html','/games/civic-cascade/','/games/patina/','/games/cascade-lab/','/games/partners/','/games/monetization/','/games/admin/','/games/admin/partners/','/games/favicon.svg','/privacy/','/terms/','/community','/stream','/archive','/profile','/api/v1/player/profile','/api/v1/analytics/summary?from=0&to=1','/r/1842','/games/time','/game/time','/game/swarm','/game/null-shift','/game/inherit','/game/remix','/game/signal-run','/game/civic-cascade','/game/patina','/game/cascade-lab','/games/signal-run/','/games/null-shift/','/games/null-shift/index.html','/games/null-shift-godot/','/games/null-shift-godot/index.html','/play/swarm','/play/null-shift','/play/inherit','/play/remix','/media','/business','/create','/mobility']
+const routes = ['/','/skillcred/','/skillcred-api/health','/skillcred-api/ready','/skillcred-api/issuer','/entertainment','/entertainment/','/games/','/games/index.html','/games/civic-cascade/','/games/patina/','/games/cascade-lab/','/games/partners/','/games/monetization/','/games/premium/','/games/premium/success/','/games/commerce-admin/','/games/commerce-config.json','/games/commerce-client.js','/games/admin/','/games/admin/partners/','/games/favicon.svg','/privacy/','/terms/','/community','/stream','/archive','/profile','/api/v1/player/profile','/api/v1/analytics/summary?from=0&to=1','/r/1842','/games/time','/game/time','/game/swarm','/game/null-shift','/game/inherit','/game/remix','/game/signal-run','/game/civic-cascade','/game/patina','/game/cascade-lab','/games/signal-run/','/games/null-shift/','/games/null-shift/index.html','/games/null-shift-godot/','/games/null-shift-godot/index.html','/play/swarm','/play/null-shift','/play/inherit','/play/remix','/media','/business','/create','/mobility']
 const agents = { desktop: 'OSGARD-Route-Matrix/1.1 Desktop', mobile: 'OSGARD-Route-Matrix/1.1 Mobile' }
 const results = []
 for (const [device, userAgent] of Object.entries(agents)) for (const route of routes) {
@@ -28,6 +28,16 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         ? route.endsWith('/health') ? /"service"\s*:\s*"skillcred"/.test(text) && /"version"\s*:\s*"0\.3\.0"/.test(text)
           : route.endsWith('/ready') ? /"ready"\s*:\s*true/.test(text)
             : /"id"\s*:/.test(text) && /"name"\s*:/.test(text)
+        : route === '/games/premium/'
+          ? text.includes('id="products"') && text.includes('id="buyer-email"') && text.includes('id="terms-accepted"') && text.includes('/games/premium/app.js')
+        : route === '/games/premium/success/'
+          ? text.includes('/v1/checkout/status') && text.includes('result.paid===true') && text.includes("result.orderStatus==='refunded'")
+        : route === '/games/commerce-admin/'
+          ? text.includes('<meta name="robots" content="noindex,nofollow,noarchive">') && text.includes('id="token"') && text.includes('ADMIN_API_TOKEN') && text.includes('/v1/admin/orders')
+        : route === '/games/commerce-config.json'
+          ? (() => { try { const config = JSON.parse(text); return typeof config.apiBaseUrl === 'string' && !/(sk_(?:live|test)_|whsec_)/i.test(text) } catch { return false } })()
+        : route === '/games/commerce-client.js'
+          ? text.includes('/v1/leads') && text.includes('wa.me/79640027222') && !/(sk_(?:live|test)_|whsec_)/i.test(text)
         : route === '/games/admin/'
           ? text.includes('<meta name="robots" content="noindex,nofollow,noarchive">') && text.includes('id="access-form"') && text.includes('X-Moderation-Token') && text.includes('/api/v1/analytics/summary')
       : route === '/games/admin/partners/'
