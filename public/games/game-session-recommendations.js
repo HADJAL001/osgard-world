@@ -477,7 +477,15 @@ function rewardShelf(gameId){
  const grid=make('div','og-postgame-networks'),claim=make('button','og-postgame-claim','Я опубликовал — получить +50 SHARDS');claim.type='button';claim.hidden=true;let pending='';
  const show=result=>{balance.textContent='OSGARD SHARDS · '+getWallet().balance;status.textContent=result.ok?'+50 SHARDS начислено. Баланс: '+result.balance+'.':result.already?'Дневная награда уже получена. Баланс: '+result.balance+'.':'Не удалось сохранить награду в этом браузере.'};
  networks.forEach(([name,href])=>{const link=make('a','og-postgame-network',name+' ↗');link.href=href;link.target='_blank';link.rel='noopener noreferrer';link.setAttribute('aria-label','Открыть форму публикации в '+name+' в новой вкладке');link.addEventListener('click',()=>{pending=name;claim.hidden=false;claim.textContent='Я опубликовал в '+name+' — получить +50 SHARDS';status.textContent='Откроется форма публикации. После отправки вернись и подтверди действие. Соцсеть не сообщает сайту подтверждение публикации.';void sendSelectEvent('social_share_intent',gameId,'osgard-social-share:'+name.toLowerCase()+':'+gameId)});grid.append(link)});
- claim.addEventListener('click',()=>{if(!pending)return;const network=pending,result=award('social-confirmation:'+network);show(result);if(result.ok)void sendSelectEvent('social_reward_claimed',gameId,'osgard-social-reward:'+network.toLowerCase()+':'+gameId);pending='';claim.hidden=true});
+ claim.addEventListener('click',()=>{
+  if(!pending)return;
+  const network=pending,result=award('social-confirmation:'+network);
+  show(result);
+  const inviteCode=new URL(url,location.origin).searchParams.get('og_ref')||'';
+  void sendSelectEvent('share_created',gameId,'game-invite:'+gameId+':'+inviteCode);
+  if(result.ok)void sendSelectEvent('social_reward_claimed',gameId,'osgard-social-reward:'+network.toLowerCase()+':'+gameId);
+  pending='';claim.hidden=true;
+ });
  primary.addEventListener('click',async()=>{
   primary.disabled=true;
   status.textContent='Готовим приглашение…';
@@ -489,13 +497,13 @@ function rewardShelf(gameId){
     claim.textContent='Я действительно опубликовал — получить +50 SHARDS';
     status.textContent='Меню отправки завершено. Если ты действительно опубликовал приглашение, подтверди ниже. OSGARD не может проверить публикацию автоматически.';
     void sendSelectEvent('social_share_intent',gameId,'osgard-social-share:native-share:'+gameId);
-    void sendSelectEvent('share_created',gameId,'game-invite:'+gameId+':'+(new URL(url,location.origin).searchParams.get('og_ref')||''));
+    
    } else if(navigator.clipboard?.writeText){
     await navigator.clipboard.writeText(message+' '+url);
     pending='';
     claim.hidden=true;
     status.textContent='Ссылка скопирована. Копирование само по себе не считается репостом и не даёт награду. Опубликуй приглашение через одну из соцсетей ниже, затем вернись и подтверди.';
-    void sendSelectEvent('share_created',gameId,'game-invite:'+gameId+':'+(new URL(url,location.origin).searchParams.get('og_ref')||''));
+    
    } else {
     pending='';
     claim.hidden=true;
