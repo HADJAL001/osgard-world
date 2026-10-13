@@ -78,6 +78,7 @@ const css=html.match(/<style>([\s\S]*?)<\/style>/)?.[1]||''
 assert.ok(css.includes('@media(max-width:760px)'),'Responsive/mobile layout missing')
 assert.ok(css.includes('.player-view')&&css.includes('dialog::backdrop'),'Game dialog style missing')
 assert.ok(html.includes('src="./player-lifecycle.js"'),'Self-hosted lifecycle module must be included')
+assert.ok(html.includes("s.textContent=id==='null-shift'?'Browser build'"), 'Recent shelf must label the opened NULL//SHIFT browser fallback accurately')
 assert.ok(html.includes('aria-label="OSGARD WORLD PLAY"'),'Brand accessible name must include visible PLAY label')
 for(const label of ['NULL//SHIFT — играть на Godot','TIME / EMPIRE — играть в Империю времени','SWARM — играть','INHERIT — играть','REMIX / ARENA — открыть REMIX']) assert.ok(html.includes('aria-label="'+label+'"'),'Game art accessible name must include the visible label: '+label)
 for(const lowContrast of ['#656c61','#6f796b','#6d756a','#71796c','#737a70','#737b70','#697168']) assert.ok(!html.toLowerCase().includes(lowContrast),'Low-contrast secondary color remains: '+lowContrast)
