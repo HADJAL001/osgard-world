@@ -328,6 +328,10 @@ assert.ok(html.includes('.consent-row p{max-width:710px;color:#7f877c;font-size:
 assert.ok(html.includes('.note{margin:16px 0 0;color:#8b9387;font-size:12px;line-height:1.7}')&&html.includes('.privacy-note{color:#8b9387;font-size:12px;line-height:1.65}'),'Notes must remain readable on mobile')
 assert.ok(nginx.includes('gzip_types text/plain text/css text/javascript application/json application/javascript'),'Nginx should gzip text/javascript assets')
 assert.ok(lifecycle.includes('function startSession(')&&lifecycle.includes('game_session_completed'),'Actual session lifecycle tracking missing')
+assert.ok(lifecycle.includes('function openBetweenWorlds(')&&lifecycle.includes("osgard:request-postgame")&&lifecycle.includes("osgard:game-session-ended"),'Active game returns must open the between-worlds chooser')
+assert.ok(html.includes("osgard:request-postgame")&&html.includes("postgameReady==='1'"),'Close action must open the chooser before leaving an active game')
+assert.ok(lifecycle.includes("dialog.addEventListener('cancel'")&&lifecycle.includes('event.preventDefault()'),'Escape must open the chooser during a confirmed game session')
+assert.ok(recommendationStyles.includes('data-postgame-intermission')&&recommendationStyles.includes('.player-view iframe{display:none'),'Intermission must hide the game iframe while offers and rewards are shown')
 assert.ok(lifecycle.includes('event.preventDefault();event.stopPropagation();launch(id,link.href,false)'),'Launch capture must prevent the legacy card handler from opening the same iframe twice')
 assert.ok(lifecycle.includes('clientReadyMs')&&lifecycle.includes('durationSeconds')&&lifecycle.includes('function fail('),'Launch timing and failure recovery missing')
 assert.ok(lifecycle.includes('osgard:game-lifecycle')&&lifecycle.includes('event.origin!==location.origin')&&lifecycle.includes('event.source!==frame.contentWindow'),'Lifecycle message must validate same-origin iframe/source')
@@ -357,6 +361,7 @@ const mockDocument={head:mockHead,querySelector(selector){return selector==='#po
 new Function('document','window','location',recommendationScript)(mockDocument,{}, {search:'',origin:'https://osgard.world',pathname:'/games/'})
 mockDocument.dispatch('osgard:game-completed',{detail:{game:'swarm'}})
 assert.equal(mockHandlers['osgard:game-completed'].length,3,'Recommendation, invite and OSGARD SELECT modules must subscribe to completed sessions')
+assert.equal(mockHandlers['osgard:game-session-ended'].length,4,'Recommendations, invites, OSGARD SELECT and fallback intermission must subscribe to session returns')
 assert.equal(mockHost.hidden,false,'Completed SWARM session should show recommendations')
 assert.equal(mockClasses.has('has-recommendations'),true,'The player layout should adapt after completion')
 const mockGrid=mockHost.children.find(node=>node.className==='post-run-grid');
