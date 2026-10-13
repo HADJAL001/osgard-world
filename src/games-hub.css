@@ -360,3 +360,7 @@
 @media (prefers-reduced-motion: reduce) {
   .gh-page *, .gh-page *::before, .gh-page *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+.gh-detail--signal .gh-detail-art { background: radial-gradient(circle, rgba(211,255,105,.16), transparent 52%), #0b1710; }
+.gh-detail--signal .gh-detail-ring { border-color: rgba(211,255,105,.38); }
+.gh-detail--signal .gh-detail-mark { color: #d3ff69; text-shadow: 0 0 28px rgba(211,255,105,.24); }

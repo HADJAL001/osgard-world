@@ -136,6 +136,26 @@ const GAMES: GameDefinition[] = [
     featuresEn: ['Challenge builder', 'Player scenarios', 'Result history'],
     theme: 'remix',
   },
+  {
+    id: 'signal-run',
+    mark: 'SR',
+    titleRu: 'SIGNAL RUN',
+    titleEn: 'SIGNAL RUN',
+    category: 'creative',
+    genreRu: 'Аркада на реакцию',
+    genreEn: 'Reflex arcade',
+    descriptionRu: 'Управляй сигналом на трёх полосах, собирай световые фрагменты и избегай цифровых помех. Импульс помогает очистить маршрут и пережить опасный момент.',
+    descriptionEn: 'Steer your signal across three lanes, collect bright shards and dodge digital hazards. The pulse clears nearby danger and helps you survive a tight moment.',
+    href: '/games/signal-run/',
+    devices: ['desktop', 'mobile'],
+    controlsRu: 'Стрелки влево/вправо или A/D меняют полосу. Q или кнопка импульса активирует щит. На телефоне доступны крупные сенсорные кнопки.',
+    controlsEn: 'Left/right arrows or A/D change lanes. Q or the Pulse button triggers a shield. Large touch controls are available on phones.',
+    supportRu: 'Самостоятельная браузерная Canvas-игра без внешних библиотек. Личный рекорд хранится локально в этом браузере; сетевой рейтинг не заявлен.',
+    supportEn: 'A standalone Canvas browser game with no external libraries. Your personal best is stored locally; no online leaderboard is claimed.',
+    featuresRu: ['Три полосы и растущая скорость', 'Щит-импульс с перезарядкой', 'Локальный рекорд и короткие забеги'],
+    featuresEn: ['Three lanes and rising speed', 'Pulse shield with cooldown', 'Local best and short runs'],
+    theme: 'signal',
+  },
 ]
 
 
