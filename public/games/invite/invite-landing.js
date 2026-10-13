@@ -10,7 +10,7 @@
   const campaign = params.get('utm_campaign') || '';
   const content = params.get('utm_content') || '';
   const sameGame = game ? requestedGame === game : requestedGame === '';
-  const valid = /^og_[a-f0-9]{8}$/.test(code) &&
+  const valid = /^og_(?:[a-f0-9]{8}|[a-f0-9]{32})$/.test(code) &&
     sameGame &&
     (!requestedGame || validGameIds.has(requestedGame)) &&
     source === 'osgard_play' &&
@@ -60,19 +60,109 @@
   }
   if (!valid) return;
   let consent = false;
-  try { consent = localStorage.getItem('osgard.games.analytics-consent.v1') === 'yes'; } catch {}
-  if (!consent) return;
+  let rewardConsent = false;
+  if (/^og_[a-f0-9]{32}$/.test(code) && play) {
+    try {
+      consent = localStorage.getItem('osgard.games.analytics-consent.v1') === 'yes';
+      rewardConsent = localStorage.getItem('osgard.games.referral-reward-consent.v1') === 'yes';
+    } catch {}
+    const panel = document.createElement('section');
+    panel.className = 'osgard-referral-consent';
+    panel.setAttribute('aria-labelledby', 'osgard-referral-consent-title');
+    const style = document.createElement('style');
+    style.textContent = '.osgard-referral-consent{margin:18px 0;padding:15px;border:1px solid #d8c28f55;border-radius:10px;background:linear-gradient(140deg,#d8c28f12,transparent 65%),#101312;color:#f2f0e8;text-align:left}.osgard-referral-consent h2{margin:0 0 7px;font:400 21px/1.15 Georgia,serif}.osgard-referral-consent p{margin:7px 0;color:#adb0a4;font:12px/1.65 system-ui,sans-serif}.osgard-referral-choice{display:flex;gap:10px;align-items:flex-start;margin:12px 0;color:#e8e6dc;font:12px/1.65 system-ui,sans-serif}.osgard-referral-choice input{flex:0 0 auto;width:17px;height:17px;margin:2px 0 0;accent-color:#d8c28f}.osgard-referral-choice input:focus-visible{outline:2px solid #e8d5a1;outline-offset:3px}.osgard-referral-status{min-height:18px;color:#d8c28f!important;font-size:11px!important}.osgard-referral-consent a{color:#e8d5a1;text-underline-offset:3px}@media(prefers-reduced-motion:reduce){.osgard-referral-consent *{animation:none!important;transition:none!important}}';
+    document.head.append(style);
+    const heading = document.createElement('h2');
+    heading.id = 'osgard-referral-consent-title';
+    heading.textContent = 'Игра с другом · программа SHARDS';
+    const intro = document.createElement('p');
+    intro.textContent = 'Играть можно без согласия. Для учёта приглашения включи необязательную аналитику; участие в SHARDS — отдельное добровольное решение.';
+    const analyticsLabel = document.createElement('label');
+    analyticsLabel.className = 'osgard-referral-choice';
+    const analyticsToggle = document.createElement('input');
+    analyticsToggle.type = 'checkbox';
+    analyticsToggle.checked = consent;
+    const analyticsText = document.createElement('span');
+    analyticsText.textContent = 'Разрешаю необязательную аналитику OSGARD для записи открытия приглашения и игровых сессий. Это не реклама и не подтверждение репоста.';
+    analyticsLabel.append(analyticsToggle, analyticsText);
+    const rewardLabel = document.createElement('label');
+    rewardLabel.className = 'osgard-referral-choice';
+    const rewardToggle = document.createElement('input');
+    rewardToggle.type = 'checkbox';
+    rewardToggle.checked = rewardConsent && consent;
+    rewardToggle.disabled = !consent;
+    const rewardText = document.createElement('span');
+    rewardText.textContent = 'Отдельно участвую в программе наград: +50 SHARDS за квалифицированную сессию приглашённого игрока в этой игре длительностью не менее 60 секунд. SHARDS не имеют денежной стоимости и не обмениваются на товары.';
+    rewardLabel.append(rewardToggle, rewardText);
+    const status = document.createElement('p');
+    status.className = 'osgard-referral-status';
+    status.setAttribute('role', 'status');
+    status.setAttribute('aria-live', 'polite');
+    status.textContent = consent && rewardToggle.checked
+      ? 'Аналитика и участие в SHARDS включены на этом устройстве.'
+      : 'Обе опции выключены по умолчанию.';
+    analyticsToggle.addEventListener('change', () => {
+      consent = analyticsToggle.checked;
+      try {
+        if (consent) localStorage.setItem('osgard.games.analytics-consent.v1', 'yes');
+        else {
+          localStorage.removeItem('osgard.games.analytics-consent.v1');
+          localStorage.removeItem('osgard.games.referral-reward-consent.v1');
+          sessionStorage.removeItem('osgard.games.referral-attribution.v1');
+          sessionStorage.removeItem('osgard.games.referral-opened.' + code);
+          rewardConsent = false;
+          rewardToggle.checked = false;
+        }
+      } catch {}
+      rewardToggle.disabled = !consent;
+      status.textContent = consent
+        ? 'Аналитика включена. Отдельно выбери, участвовать ли в программе SHARDS.'
+        : 'Аналитика выключена. Приглашение остаётся рабочим, но наградные события не учитываются.';
+    });
+    rewardToggle.addEventListener('change', () => {
+      if (!analyticsToggle.checked) {
+        rewardToggle.checked = false;
+        status.textContent = 'Сначала нужно отдельно разрешить необязательную аналитику.';
+        return;
+      }
+      rewardConsent = rewardToggle.checked;
+      try {
+        if (rewardConsent) localStorage.setItem('osgard.games.referral-reward-consent.v1', 'yes');
+        else localStorage.removeItem('osgard.games.referral-reward-consent.v1');
+      } catch {}
+      status.textContent = rewardConsent
+        ? 'Участие включено. Сервер начислит SHARDS только после квалифицированной сессии; не за клик по соцсети.'
+        : 'Участие выключено. Играть и делиться ссылкой по-прежнему можно.';
+    });
+    panel.append(heading, intro, analyticsLabel, rewardLabel, status);
+    play.insertAdjacentElement('beforebegin', panel);
+  }
+  try {
+    consent = localStorage.getItem('osgard.games.analytics-consent.v1') === 'yes';
+    rewardConsent = localStorage.getItem('osgard.games.referral-reward-consent.v1') === 'yes';
+  } catch {}
+  if (!consent || (/^og_[a-f0-9]{32}$/.test(code) && !rewardConsent)) return;
   const attributionKey = 'osgard.games.referral-attribution.v1';
   const marker = 'osgard.games.referral-opened.' + code;
+  const visitorTokenKey = 'osgard.games.referral-owner-token.v1';
   function randomHex(bytes = 12) {
-    const data = new Uint8Array(bytes);
-    if (globalThis.crypto?.getRandomValues) globalThis.crypto.getRandomValues(data);
-    else for (let i = 0; i < data.length; i++) data[i] = Math.floor(Math.random() * 256);
-    return Array.from(data, value => value.toString(16).padStart(2, '0')).join('');
+    if (!globalThis.crypto || typeof globalThis.crypto.getRandomValues !== 'function') return '';
+    try {
+      const data = new Uint8Array(bytes);
+      globalThis.crypto.getRandomValues(data);
+      return Array.from(data, value => value.toString(16).padStart(2, '0')).join('');
+    } catch { return ''; }
   }
   let state = '';
+  let visitorToken = '';
   try {
-    sessionStorage.setItem(attributionKey, JSON.stringify({ code, game: requestedGame, at: Date.now() }));
+    visitorToken = localStorage.getItem(visitorTokenKey) || '';
+    if (!/^[a-f0-9]{12}$/.test(visitorToken)) {
+      visitorToken = randomHex(6);
+      if (!/^[a-f0-9]{12}$/.test(visitorToken)) return;
+      localStorage.setItem(visitorTokenKey, visitorToken);
+    }
+    sessionStorage.setItem(attributionKey, JSON.stringify({ code, game: requestedGame, visitorToken, at: Date.now() }));
     state = sessionStorage.getItem(marker) || '';
     if (state === 'yes' || state === 'pending') return;
     sessionStorage.setItem(marker, 'pending');
@@ -82,7 +172,7 @@
     name: 'referral_link_opened',
     sessionId: 'session_' + randomHex(),
     gameId: validGameIds.has(requestedGame) ? requestedGame : 'unknown',
-    source: 'referral-link:' + code,
+    source: /^og_[a-f0-9]{32}$/.test(code) ? 'referral-link:' + code + ':' + requestedGame + ':' + visitorToken : 'referral-link:' + code,
     path: location.pathname,
     durationSeconds: 0,
   };
