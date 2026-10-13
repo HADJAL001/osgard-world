@@ -1,4 +1,4 @@
-import { DEFAULT_INPUTS, SCENARIOS, calculateScenario, normalizeInputs } from './model.js';
+import { DEFAULT_INPUTS, SCENARIOS, calculateScenario, calculateViralReach, normalizeInputs } from './model.js';
 
 const form = document.getElementById('assumptions-form');
 const resultsNode = document.getElementById('scenario-results');
@@ -20,7 +20,9 @@ function count(value) { return number.format(Number.isFinite(value) ? value : 0)
 function percent(value) { return decimal.format(Number.isFinite(value) ? value : 0) + '%'; }
 function render() {
   const inputs = readInputs();
-  const results = SCENARIOS.map((scenario) => ({ scenario, result: calculateScenario(inputs, scenario.id) }));
+  const viral = calculateViralReach(inputs);
+  const effectiveInputs = { ...inputs, monthlyVisitors: viral.totalVisitors };
+  const results = SCENARIOS.map((scenario) => ({ scenario, result: calculateScenario(effectiveInputs, scenario.id) }));
   resultsNode.innerHTML = results.map(({ scenario, result }) => {
     const netClass = result.netOperatingUsd < 0 ? 'loss' : 'profit';
     return '<article class="scenario-card scenario-' + scenario.id + '">' +
@@ -45,6 +47,25 @@ function render() {
   document.getElementById('base-visitors').textContent = count(results[1].result.visitors);
   document.getElementById('base-sessions').textContent = count(results[1].result.sessions);
   document.getElementById('base-ad-impressions').textContent = count(results[1].result.filledAdImpressions);
+
+  const base = results[1].result;
+  const annualGross = base.totalRevenueUsd * 12;
+  const target = inputs.annualRevenueTargetUsd;
+  const revenuePerVisitor = base.visitors > 0 ? base.totalRevenueUsd / base.visitors : 0;
+  const requiredMonthlyVisits = revenuePerVisitor > 0 ? (target / 12) / revenuePerVisitor : null;
+  const requiredSeedVisits = requiredMonthlyVisits !== null && viral.viralMultiplier > 0
+    ? Math.ceil(requiredMonthlyVisits / viral.viralMultiplier)
+    : null;
+  document.getElementById('viral-k-factor').textContent = viral.kFactor.toFixed(3);
+  document.getElementById('viral-invites').textContent = count(viral.referralVisits);
+  document.getElementById('annual-gross').textContent = money(annualGross);
+  document.getElementById('annual-target-gap').textContent = (annualGross >= target ? '+' : '−') + money(Math.abs(target - annualGross));
+  document.getElementById('seed-visitors-target').textContent = requiredSeedVisits === null ? '—' : count(requiredSeedVisits);
+  document.getElementById('growth-target-status').textContent = requiredSeedVisits === null
+    ? 'При текущих нулевых доходах цель не рассчитывается. Сначала проверь цены, конверсии и модель выручки.'
+    : annualGross >= target
+      ? 'В этой модели цель по валовой годовой выручке достигнута. Это сценарий, а не подтверждённые продажи.'
+      : 'До цели по валовой годовой выручке не хватает ' + money(target - annualGross) + ' в год; ориентир стартового трафика — ' + count(requiredSeedVisits) + ' посещений/мес при текущих допущениях и цикле приглашений.';
 }
 
 form.addEventListener('input', render);

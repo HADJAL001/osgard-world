@@ -11,3 +11,7 @@ dialog#player-dialog.has-recommendations .player-view{height:min(46vh,470px);min
 dialog#player-dialog.has-recommendations .player-view iframe{min-height:180px}
 @media(max-width:760px){.post-run-recommendations{max-height:180px;padding:10px}.post-run-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.post-run-link{padding:8px}.post-run-link strong{font-size:10px}.post-run-link span{font-size:9px}dialog#player-dialog.has-recommendations .player-view{height:min(40svh,350px);min-height:160px}dialog#player-dialog.has-recommendations .player-view iframe{min-height:160px}}
 @media(prefers-reduced-motion:reduce){.post-run-link{transition:none}}
+
+.post-run-share{display:inline-flex;align-items:center;justify-content:center;min-height:37px;margin-top:11px;padding:0 13px;border:1px solid #d3ff6970;background:#d3ff690e;color:#eaf7ce;font:600 10px/1.4 ui-monospace,Consolas,monospace;letter-spacing:.04em;cursor:pointer}
+.post-run-share:hover,.post-run-share:focus-visible{border-color:#d3ff69;background:#d3ff6918;outline:2px solid transparent}
+.post-run-share-status{margin:7px 0 0;color:#aab3a0;font-size:10px;line-height:1.5;overflow-wrap:anywhere}

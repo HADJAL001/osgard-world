@@ -32,6 +32,9 @@ export const ALLOWED_EVENTS = new Set([
   "cross_promo_clicked",
   "game_launched",
   "game_session_completed",
+  "game_invite_link_created",
+  "game_invite_opened",
+  "game_invite_accepted",
   "lead_submitted",
   "partner_inquiry",
 ]);

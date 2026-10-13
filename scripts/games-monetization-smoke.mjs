@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { calculateScenario, DEFAULT_INPUTS, normalizeInputs, SCENARIOS } from '../public/games/monetization/model.js';
+import { calculateScenario, calculateViralReach, DEFAULT_INPUTS, normalizeInputs, SCENARIOS } from '../public/games/monetization/model.js';
 
 const root = process.cwd();
 const pagePath = resolve(root, 'public/games/monetization/index.html');
@@ -19,6 +19,9 @@ const hub = readFileSync(hubPath, 'utf8');
 assert.ok(page.includes('data-estimate="not-live-data"'), 'Financial planner must label the numbers as modelled assumptions');
 assert.ok(page.includes('id="assumptions-form"') && page.includes('id="scenario-results"'), 'Financial planner is missing its input/output interface');
 assert.ok(page.includes('id="export-json"') && page.includes('id="reset-model"'), 'Financial planner reset/JSON export controls missing');
+for (const id of ['inviteShareRatePct','invitesPerSharer','inviteClickRatePct','inviteStartRatePct','inviteGenerations','annualRevenueTargetUsd','viral-k-factor','viral-invites','annual-gross','annual-target-gap','seed-visitors-target','growth-target-status']) assert.ok(page.includes('id="'+id+'"') || page.includes('name="'+id+'"'), 'Growth loop control/output missing: '+id);
+assert.ok(app.includes('calculateViralReach') && app.includes('requiredSeedVisits') && app.includes('annualGross'), 'Growth model must calculate invite reach and seed traffic for annual target');
+assert.ok(page.includes('Цель валовой выручки за год') && page.includes('не прогноз с гарантированным доходом'), 'Million-dollar objective must remain labelled as a scenario, never a guarantee');
 assert.ok(page.includes('prefers-reduced-motion:reduce'), 'Reduced-motion support missing');
 assert.ok(!/https?:\/\/(?:fonts\.googleapis\.com|fonts\.gstatic\.com|cdn\.jsdelivr\.net|unpkg\.com)/i.test(page), 'Financial planner unexpectedly depends on a remote asset CDN');
 assert.ok(app.includes('URL.createObjectURL') && app.includes('osgard-games-model.json'), 'Local JSON export not implemented');
@@ -56,5 +59,18 @@ assert.equal(bounded.monthlyVisitors, 0, 'Negative visitor assumptions must clam
 assert.equal(bounded.adFillRate, 100, 'Percent input must be bounded at 100');
 assert.equal(bounded.ecpmUsd, DEFAULT_INPUTS.ecpmUsd, 'Non-finite inputs must fall back to documented defaults');
 assert.equal(bounded.gameStartRate, DEFAULT_INPUTS.gameStartRate, 'Infinite values must fall back to documented defaults');
+assert.equal(bounded.inviteShareRatePct, DEFAULT_INPUTS.inviteShareRatePct, 'Unknown/invalid share assumptions must fall back to defaults');
+assert.equal(normalizeInputs({ invitesPerSharer: 999 }).invitesPerSharer, 20, 'Invites per player must have a conservative UI/QA bound');
+assert.equal(normalizeInputs({ inviteGenerations: 999 }).inviteGenerations, 8, 'Invite propagation must be finite and bounded');
 
-console.log('PASS OSGARD games economics model: UI contract, transparent fallback, scenario formulas, bounds and conservative/base/optimistic sensitivity.');
+const viral = calculateViralReach(DEFAULT_INPUTS);
+assert.ok(Math.abs(viral.kFactor - 0.03) < 1e-12, 'K-factor formula must multiply share, invites, click-through and activation');
+assert.equal(viral.seedVisitors, 10000);
+assert.equal(viral.totalVisitors, 10186, 'Default invite loop should estimate a finite four-generation reach');
+assert.equal(viral.referralVisits, 186, 'Referral reach should be separately visible from seed visits');
+assert.ok(viral.viralMultiplier > 1 && viral.viralMultiplier < 1.02, 'Default viral multiplier should be plausible and finite');
+assert.equal(calculateViralReach({ ...DEFAULT_INPUTS, inviteShareRatePct: 0 }).totalVisitors, 10000, 'No shares must yield zero referral visits');
+assert.equal(calculateViralReach({ ...DEFAULT_INPUTS, monthlyVisitors: 0 }).totalVisitors, 0, 'Zero seed visitors must not invent organic reach');
+assert.equal(calculateViralReach({ ...DEFAULT_INPUTS, inviteShareRatePct: 100, invitesPerSharer: 20, inviteClickRatePct: 100, inviteStartRatePct: 100, inviteGenerations: 8 }).totalVisitors, 1000000000, 'The viral estimator must cap runaway theoretical reach');
+
+console.log('PASS OSGARD games economics model: revenue scenarios, bounded invite K-factor, finite viral generations, zero-seed safety and annual target UI.');
