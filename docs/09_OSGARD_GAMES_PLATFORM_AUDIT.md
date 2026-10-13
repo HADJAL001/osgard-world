@@ -203,3 +203,8 @@ A new Godot-native growth slice is implemented and covered by the headless runti
 - A blank apiBaseUrl in commerce-config.json is surfaced as a warning, not as working payments or revenue. A configured HTTPS URL still does not prove that the API, checkout or payment webhooks work.
 - Added scripts/games-operations-smoke.mjs, npm run qa:games-operations, a pre-deploy check, and /games/operations/ to the production route matrix. A pull-request CI workflow also type-checks and runs the Games smoke suite before merge.
 - This improves release observability, not the currently documented commercial limitations: ad network approval, production checkout/payment webhooks, a server-backed CMS and manual physical-device gameplay verification remain separate release tasks.
+
+
+## Дополнение — отложенная загрузка обложек игр
+
+Десять SVG-иллюстраций игровых карточек вынесены в самостоятельные файлы `public/games/art/*.svg`; оригинальные рисунки сохранены. HTML использует изображения с явными размерами, `loading="lazy"`, `decoding="async"` и номером текущего релиза для обновления кэша. Это сокращает количество inline SVG-узлов начального DOM и позволяет отложить загрузку/декодирование обложек вне экрана. Сохранены фоновые градиенты и hover-масштаб. `qa:games-portal` проверяет соответствие всех десяти карточек файлам, а production route matrix проверяет SVG MIME и структуру ответа. Эффект на Lighthouse пока не измерен и должен быть подтверждён отдельным прогоном после публикации.
