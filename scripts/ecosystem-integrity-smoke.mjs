@@ -69,6 +69,10 @@ assert.ok(nginx.indexOf('limit_req_zone $binary_remote_addr zone=osgard_player_a
 assert.ok(apiProxy.includes('resolver 127.0.0.11 valid=30s ipv6=off;') && apiProxy.includes('set $osgard_game_api_host osgard-game-api;') && apiProxy.includes('proxy_pass http://$osgard_game_api_host:4317;'), 'Protected API proxy must use Docker DNS at request time so Nginx can start before the API alias resolves')
 const activator = read('scripts/activate-frontend-remote.sh')
 assert.ok(activator.includes('http://osgard-game-api:4317/health') && activator.includes('NetworkSettings.Networks') && activator.includes('nginx.runtime.conf') && activator.includes('OSGARD game API upstream selected'), 'Activation must verify the API from the frontend container and select a healthy reachable upstream before switching the site')
+assert.ok(activator.includes('Detected Docker gateway candidates:') && activator.includes('wget -S -T 3 -O- http://$gateway:4317/health'), 'Activation must log gateway candidates and the failed HTTP probe before refusing activation')
+const deployWorkflow = read('.github/workflows/deploy-frontend.yml')
+assert.ok(deployWorkflow.includes('gateway="${gateway_values%% *}"') && !deployWorkflow.includes("awk '{print $1}'"), 'Post-failure diagnostics must extract the Docker gateway without the broken nested awk quoting')
+assert.ok(deployWorkflow.includes('iptables -vnL INPUT') && deployWorkflow.includes('iptables -vnL DOCKER-USER') && deployWorkflow.includes('ufw status verbose'), 'Deployment failure diagnostics must inspect host firewall state read-only')
 assert.ok(apiProxy.includes('limit_req zone=osgard_player_api burst=30 nodelay;') && apiProxy.includes('limit_req_status 429;'), 'API route must enforce an explicit per-client rate limit')
 assert.ok(apiProxy.includes('add_header Cache-Control "no-store" always;'), 'Player and admin analytics responses must not be cached by shared browsers/proxies')
 assert.ok(apiProxy.includes('proxy_read_timeout 10s;') && apiProxy.includes('client_max_body_size 256k;'), 'API proxy needs bounded request size and upstream timeout')
@@ -76,9 +80,9 @@ assert.ok(!apiProxy.includes('proxy_set_header Authorization "Bearer'), 'API cre
 
 console.log(JSON.stringify({
   status: 'PASS',
-  checks: 45,
+  checks: 48,
   projects: projectHosts.length,
   claimsGuarded: unsupportedClaims.length,
   contacts: 3,
-  verifiedInSource: ['game route wiring', 'honest monetization status', 'consent/auth-gated event capture', 'cross-frame origin validation', 'contact routing'],
+  verifiedInSource: ['game route wiring', 'honest monetization status', 'consent/auth-gated event capture', 'cross-frame origin validation', 'contact routing', 'API bridge diagnostics'],
 }, null, 2))
