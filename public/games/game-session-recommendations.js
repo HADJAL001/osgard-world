@@ -240,7 +240,7 @@ captureInvite();installInviteBanner();
 })();
 
 
-/* OSGARD SELECT — owned-service showcase and local share reward after every completed game. */
+/* OSGARD SELECT v2 — contextual service choice, transparent local rewards and consent-aware attribution. */
 (() => {
 'use strict';
 const root=document.querySelector('#post-run-recommendations');
@@ -255,55 +255,97 @@ const services=[
  ['superday','04','SUPERDAY','MAP / DAILY PLANNING','Умная карта и планировщик дня','https://superday.run/'],
  ['myosa','06','MYOSA','AI PLATFORM','Платформа искусственного интеллекта','https://myosa.world/'],
  ['gold-glamour','07','GOLD GLAMOUR','LUXURY SERVICES','Премиальные услуги с золотом и выездным обслуживанием','https://gold-glamour.online/'],
- ['gardvpn','08','GARD VPN','PRIVACY / VPN','Временно не включён в промо-переходы, пока доступность не подтверждена','https://gardvpn.is/',false,false],
+ ['gardvpn','08','GARD VPN','PRIVACY / VPN','VPN-сервис. Проверь возможности и условия на официальном сайте','https://gardvpn.is/',false,true],
  ['osgard-business','09','OSGARD BUSINESS','BUSINESS INTELLIGENCE','Диагностика бизнеса, развитие и рекомендации по росту','https://osgardos.com/'],
  ['vanguard','10','OSGARD VANGUARD','VIDEO STUDIO','Создание видео и визуальных проектов','https://osgardvanguard.studio/']
 ];
-const walletKey='osgard.games.shards-wallet.v1',dailyReward=50;
+const recommendationByGame={'null-shift':'gardvpn',time:'superday',swarm:'marcosa',inherit:'myosa',remix:'projects','civic-cascade':'osgard-business',patina:'gold-glamour','signal-run':'vanguard','cascade-lab':'projects'};
+const walletKey='osgard.games.shards-wallet.v1',preferredKey='osgard.games.preferred-service.v1',dailyReward=50;
 const make=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n};
+const hasConsent=()=>{try{return localStorage.getItem('osgard.games.analytics-consent.v1')==='yes'}catch{return false}};
+function randomHex(bytes=12){const data=new Uint8Array(bytes);if(globalThis.crypto?.getRandomValues)globalThis.crypto.getRandomValues(data);else for(let i=0;i<data.length;i++)data[i]=Math.floor(Math.random()*256);return Array.from(data,b=>b.toString(16).padStart(2,'0')).join('')}
+function sendSelectEvent(name,gameId,source){
+ if(!hasConsent())return;
+ const event={eventId:'evt_'+randomHex(),name,sessionId:'session_'+randomHex(),gameId:titles[gameId]?gameId:'unknown',source:String(source||'osgard-select').slice(0,80),path:location.pathname,durationSeconds:0};
+ fetch('/games/commerce-config.json',{cache:'no-store'}).then(r=>r.ok?r.json():{}).catch(()=>({})).then(config=>{
+  if(!hasConsent())return;
+  const base=String(config.apiBaseUrl||'/commerce-api').replace(/\/+$/,'');
+  return fetch(base+'/v1/events',{method:'POST',keepalive:true,headers:{'content-type':'application/json'},body:JSON.stringify({consent:true,events:[event]})});
+ }).catch(()=>{});
+}
 function inviteFor(id){
  try{const candidate=window.OSGARDInvite?.createLink?.(id);if(candidate){const u=new URL(candidate,location.origin);if(u.origin===location.origin&&u.pathname==='/games/invite/'+id+'/'&&u.searchParams.get('og_game')===id&&/^og_[a-f0-9]{8}$/.test(u.searchParams.get('og_ref')||''))return u.href}}catch{}
- const bytes=new Uint8Array(4);if(globalThis.crypto?.getRandomValues)globalThis.crypto.getRandomValues(bytes);else for(let i=0;i<bytes.length;i++)bytes[i]=Math.floor(Math.random()*256);
- const u=new URL('/games/invite/'+encodeURIComponent(id)+'/',location.origin);u.searchParams.set('og_ref','og_'+Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join(''));u.searchParams.set('og_game',id);
+ const u=new URL('/games/invite/'+encodeURIComponent(id)+'/',location.origin);u.searchParams.set('og_ref','og_'+randomHex(4));u.searchParams.set('og_game',id);
  u.searchParams.set('utm_source','osgard_play');u.searchParams.set('utm_medium','referral');u.searchParams.set('utm_campaign','play_with_friends');u.searchParams.set('utm_content',id);return u.href;
 }
 function getWallet(){try{const w=JSON.parse(localStorage.getItem(walletKey)||'{}');return{balance:Number.isSafeInteger(w.balance)&&w.balance>=0?Math.min(w.balance,1e9):0,day:typeof w.lastRewardDay==='string'?w.lastRewardDay:''}}catch{return{balance:0,day:''}}}
-function award(source){const current=getWallet(),day=new Date().toISOString().slice(0,10);if(current.day===day)return{ok:false,already:true,balance:current.balance};const next={balance:Math.min(1e9,current.balance+dailyReward),lastRewardDay:day,lastSource:String(source||'share').slice(0,60),updatedAt:new Date().toISOString()};try{localStorage.setItem(walletKey,JSON.stringify(next));return{ok:true,balance:next.balance}}catch{return{ok:false,balance:current.balance}}}
+function award(source){
+ const current=getWallet(),day=new Date().toISOString().slice(0,10);
+ if(current.day===day)return{ok:false,already:true,balance:current.balance};
+ const next={balance:Math.min(1e9,current.balance+dailyReward),lastRewardDay:day,lastSource:String(source||'share').slice(0,60),updatedAt:new Date().toISOString(),scope:'local-device-only'};
+ try{localStorage.setItem(walletKey,JSON.stringify(next));return{ok:true,balance:next.balance}}catch{return{ok:false,balance:current.balance}}
+}
+function serviceUrl(service,gameId){
+ const u=new URL(service[5]);u.searchParams.set('utm_source','osgard_games');u.searchParams.set('utm_medium','post_game');u.searchParams.set('utm_campaign','after_game');u.searchParams.set('utm_content',service[0]+'_'+gameId);return u.href;
+}
+function readPreferred(){
+ try{const id=localStorage.getItem(preferredKey)||'';return services.some(s=>s[0]===id&&s[7]!==false)?id:''}catch{return''}
+}
+function savePreferred(id){
+ try{localStorage.setItem(preferredKey,id);return true}catch{return false}
+}
 function servicesShelf(gameId){
  const section=make('section','og-postgame-services'),head=make('div','og-postgame-service-head'),intro=make('div');
- intro.append(make('p','og-postgame-eyebrow','OSGARD SELECT / BETWEEN WORLDS'),make('p','og-postgame-disclosure','РЕКЛАМА · СОБСТВЕННЫЕ ПРОЕКТЫ OSGARD'),make('h3','og-postgame-title','Мир не заканчивается после раунда.'),make('p','og-postgame-copy','Выбери категорию и сервис, который хочешь посмотреть. Автозапуска нет — переход откроется только по твоему нажатию.'));
- const toggle=make('button','og-postgame-toggle','Свернуть подборку');toggle.type='button';toggle.setAttribute('aria-expanded','true');head.append(intro,toggle);
- const filters=make('div','og-postgame-service-filters');filters.setAttribute('role','group');filters.setAttribute('aria-label','Выбрать категорию сервиса OSGARD');
+ intro.append(make('p','og-postgame-eyebrow','OSGARD SELECT / BETWEEN WORLDS'),make('p','og-postgame-disclosure','РЕКЛАМА · СОБСТВЕННЫЕ ПРОЕКТЫ OSGARD'),make('h3','og-postgame-title','Мир не заканчивается после раунда.'),make('p','og-postgame-copy','Начни с персональной рекомендации или сам выбери любой проект OSGARD. Ничего не запускается автоматически; внешняя ссылка откроется по твоему нажатию.'));
+ const toggle=make('button','og-postgame-toggle','Выбрать из 10 сервисов');toggle.type='button';toggle.setAttribute('aria-expanded','false');head.append(intro,toggle);
+ const spotlight=make('article','og-postgame-spotlight');spotlight.setAttribute('aria-label','Персональная рекомендация OSGARD');
+ const filters=make('div','og-postgame-service-filters');filters.setAttribute('role','group');filters.setAttribute('aria-label','Выбрать категорию сервиса OSGARD');filters.hidden=true;
  const filterDefs=[['all','Все сервисы · 10'],['studio','Разработка · 2'],['business','Бизнес · 2'],['life','Город и жизнь · 2'],['tech','Технологии · 2'],['social','Социальные · 1'],['luxury','Luxury · 1']];
  const filterButtons=[],cards=[];
  filterDefs.forEach(([id,label])=>{const button=make('button','og-postgame-service-filter',label);button.type='button';button.dataset.osgardServiceFilter=id;button.setAttribute('aria-pressed',String(id==='all'));filters.append(button);filterButtons.push(button)});
  const categoryByService={projects:'studio',vanguard:'studio','o2-system':'business','osgard-business':'business',senjorio:'life',superday:'life',myosa:'tech',gardvpn:'tech',marcosa:'social','gold-glamour':'luxury'};
- const grid=make('div','og-postgame-service-grid');
+ const grid=make('div','og-postgame-service-grid');grid.hidden=true;
  services.forEach(([id,num,title,category,description,href,featured=false,active=true])=>{
   const card=make(active===false?'article':'a','og-postgame-service-card'+(featured?' is-featured':'')+(active===false?' is-unavailable':''));
   card.dataset.service=id;card.dataset.game=gameId;card.dataset.category=categoryByService[id]||'other';cards.push(card);
-  if(active!==false){const u=new URL(href);u.searchParams.set('utm_source','osgard_games');u.searchParams.set('utm_medium','post_game');u.searchParams.set('utm_campaign','after_game');u.searchParams.set('utm_content',id+'_'+gameId);card.href=u.href;card.target='_blank';card.rel='noopener noreferrer';card.setAttribute('aria-label','Открыть '+title+' в новой вкладке')}
+  if(active!==false){card.href=serviceUrl([id,num,title,category,description,href,featured,active],gameId);card.target='_blank';card.rel='noopener noreferrer';card.setAttribute('aria-label','Открыть '+title+' в новой вкладке');card.addEventListener('click',()=>sendSelectEvent('cross_promo_clicked',gameId,'post-game:'+id))}
   card.append(make('span','og-postgame-service-code','OSG / '+num+' · '+category),make('strong','og-postgame-service-name',title),make('span','og-postgame-service-description',description),make('span','og-postgame-service-action',active===false?'Пока не продвигается':'Открыть проект ↗'));grid.append(card);
  });
- const foot=make('p','og-postgame-service-foot','Переход добровольный, откроется в отдельной вкладке. Текущий результат игры сохранится.');
+ function renderSpotlight(id){
+  const service=services.find(s=>s[0]===id&&s[7]!==false)||services.find(s=>s[0]===recommendationByGame[gameId])||services[0];
+  spotlight.replaceChildren();
+  const copy=make('div','og-postgame-spotlight-copy');
+  copy.append(make('span','og-postgame-spotlight-label','РЕКОМЕНДАЦИЯ ДЛЯ '+(titles[gameId]||'ТВОЕЙ ИГРЫ')),make('span','og-postgame-service-code','OSG / '+service[1]+' · '+service[3]),make('strong','og-postgame-spotlight-name',service[2]),make('span','og-postgame-spotlight-description',service[4]));
+  const actions=make('div','og-postgame-spotlight-actions');
+  const open=make('a','og-postgame-spotlight-open','Изучить проект ↗');open.href=serviceUrl(service,gameId);open.target='_blank';open.rel='noopener noreferrer';open.addEventListener('click',()=>sendSelectEvent('cross_promo_clicked',gameId,'post-game-spotlight:'+service[0]));
+  const next=make('button','og-postgame-spotlight-next','Другой проект');next.type='button';next.addEventListener('click',()=>{const active=services.filter(s=>s[7]!==false);const index=active.findIndex(s=>s[0]===service[0]);const chosen=active[(index+1)%active.length];renderSpotlight(chosen[0]);sendSelectEvent('service_recommendation_changed',gameId,'select:'+chosen[0])});
+  const preferred=make('button','og-postgame-spotlight-preferred',readPreferred()===service[0]?'✓ Основной выбор':'Запомнить мой выбор');preferred.type='button';preferred.addEventListener('click',()=>{if(savePreferred(service[0])){preferred.textContent='✓ Основной выбор';status.textContent='Выбор сохранён на этом устройстве.';spotlight.querySelectorAll('.og-postgame-spotlight-preferred').forEach(n=>n.textContent=n===preferred?'✓ Основной выбор':'Запомнить мой выбор')}else status.textContent='Не удалось сохранить выбор. Проверь настройки браузера.'});
+  actions.append(open,next,preferred);copy.append(actions);
+  spotlight.append(copy);
+ }
+ const initial=readPreferred()||recommendationByGame[gameId]||'marcosa';
+ renderSpotlight(initial);
+ const foot=make('p','og-postgame-service-foot','Ссылки ведут на официальные сайты проектов. Наличие ссылки не означает, что функции или доступность сервиса проверены в реальном времени.');
  filterButtons.forEach(button=>button.addEventListener('click',()=>{const selected=button.dataset.osgardServiceFilter||'all';filterButtons.forEach(item=>item.setAttribute('aria-pressed',String(item===button)));cards.forEach(card=>{card.hidden=selected!=='all'&&card.dataset.category!==selected})}));
- toggle.addEventListener('click',()=>{const collapsed=!grid.hidden;grid.hidden=collapsed;filters.hidden=collapsed;toggle.textContent=collapsed?'Показать проекты · 10':'Свернуть подборку';toggle.setAttribute('aria-expanded',String(!collapsed))});
- section.append(head,filters,grid,foot);return section;
+ toggle.addEventListener('click',()=>{const opened=grid.hidden;grid.hidden=!opened;filters.hidden=!opened;toggle.textContent=opened?'Свернуть каталог':'Выбрать из 10 сервисов';toggle.setAttribute('aria-expanded',String(opened))});
+ section.append(head,spotlight,filters,grid,foot);
+ const status=make('p','og-postgame-status');status.setAttribute('role','status');status.setAttribute('aria-live','polite');section.append(status);
+ return section;
 }
 function rewardShelf(gameId){
  const section=make('section','og-postgame-reward'),head=make('div','og-postgame-reward-head'),intro=make('div');
- intro.append(make('p','og-postgame-eyebrow','COMMUNITY REWARD / OSGARD PLAY'),make('h3','og-postgame-title','Передай приглашение дальше.'),make('p','og-postgame-copy','Поделись игровым миром с другом. За одно действие в сутки можно получить +50 SHARDS.'));
+ intro.append(make('p','og-postgame-eyebrow','COMMUNITY REWARD / OSGARD PLAY'),make('h3','og-postgame-title','Поделись игровым миром.'),make('p','og-postgame-copy','Отправь приглашение другу. За одно действие в сутки можно получить +50 локальных SHARDS.'));
  const balance=make('strong','og-postgame-wallet','OSGARD SHARDS · '+getWallet().balance);head.append(intro,balance);
  const status=make('p','og-postgame-status');status.setAttribute('role','status');status.setAttribute('aria-live','polite');
  const primary=make('button','og-postgame-share-primary','Поделиться приглашением · +50 SHARDS');primary.type='button';const actions=make('div','og-postgame-share-actions');actions.append(primary);
  const url=inviteFor(gameId),message='Пойдём сыграем в '+titles[gameId]+' в OSGARD PLAY.',eu=encodeURIComponent(url),et=encodeURIComponent(message);
  const networks=[['Telegram','https://t.me/share/url?url='+eu+'&text='+et],['WhatsApp','https://wa.me/?text='+encodeURIComponent(message+' '+url)],['VK','https://vk.com/share.php?url='+eu+'&title='+encodeURIComponent('OSGARD PLAY · '+titles[gameId])+'&comment='+et],['X','https://twitter.com/intent/tweet?url='+eu+'&text='+et],['Facebook','https://www.facebook.com/sharer/sharer.php?u='+eu]];
- const grid=make('div','og-postgame-networks'),claim=make('button','og-postgame-claim','Я опубликовал — получить +50 SHARDS');claim.type='button';claim.hidden=true;let pending='';
- const show=result=>{balance.textContent='OSGARD SHARDS · '+getWallet().balance;status.textContent=result.ok?'+50 SHARDS начислено. Баланс: '+result.balance+'.':result.already?'Дневная награда уже получена. Баланс: '+result.balance+'.':'Не удалось сохранить награду в этом браузере.'};
- networks.forEach(([name,href])=>{const link=make('a','og-postgame-network',name+' ↗');link.href=href;link.target='_blank';link.rel='noopener noreferrer';link.setAttribute('aria-label','Открыть форму публикации в '+name+' в новой вкладке');link.addEventListener('click',()=>{pending=name;claim.hidden=false;claim.textContent='Я опубликовал в '+name+' — получить +50 SHARDS';status.textContent='Откроется форма публикации. После отправки вернись и подтверди действие. Соцсеть не сообщает сайту подтверждение публикации.'});grid.append(link)});
- claim.addEventListener('click',()=>{if(!pending)return;show(award('social-confirmation:'+pending));pending='';claim.hidden=true});
- primary.addEventListener('click',async()=>{primary.disabled=true;status.textContent='Готовим приглашение…';let done=false,source='share';try{if(typeof navigator.share==='function'){await navigator.share({title:'OSGARD PLAY · '+titles[gameId],text:message,url});done=true;source='native-share'}else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(message+' '+url);done=true;source='clipboard'}else{status.textContent='Быстрая отправка недоступна. Выбери соцсеть ниже.';return}}catch(error){status.textContent=error instanceof Error&&error.name==='AbortError'?'Отправка отменена — награда не начислена.':'Не удалось отправить приглашение. Выбери соцсеть ниже.';return}finally{primary.disabled=false}if(done)show(award(source+':'+gameId))});
- const note=make('p','og-postgame-reward-note','Награда: +50 локальных SHARDS, не чаще раза в сутки на этом устройстве. Для отдельных соцсетей публикацию подтверждает игрок: соцсети не возвращают сайту надёжный статус опубликованного поста. Очки не имеют денежной стоимости, не привязаны к аккаунту и не являются платёжным средством.');
+ const grid=make('div','og-postgame-networks'),claim=make('button','og-postgame-claim','Я отправил ссылку — получить локальный бонус');claim.type='button';claim.hidden=true;let pending='';
+ const show=result=>{balance.textContent='OSGARD SHARDS · '+getWallet().balance;status.textContent=result.ok?'+50 SHARDS начислено локально. Баланс: '+result.balance+'.':result.already?'Дневная награда уже использована на этом устройстве. Баланс: '+result.balance+'.':'Не удалось сохранить награду в этом браузере.'};
+ networks.forEach(([name,href])=>{const link=make('a','og-postgame-network',name+' ↗');link.href=href;link.target='_blank';link.rel='noopener noreferrer';link.setAttribute('aria-label','Открыть форму отправки приглашения в '+name+' в новой вкладке');link.addEventListener('click',()=>{pending=name;claim.hidden=false;claim.textContent='Я отправил ссылку через '+name+' — получить локальный бонус';status.textContent='Откроется форма отправки. После отправки вернись и подтверди действие. Соцсеть не передаёт сайту надёжного подтверждения публикации.';sendSelectEvent('share_dialog_opened',gameId,'social-share:'+name)});grid.append(link)});
+ claim.addEventListener('click',()=>{if(!pending)return;show(award('self-attested:'+pending));if(!getWallet().day||getWallet().day!==new Date().toISOString().slice(0,10))status.textContent+=' Это не проверка опубликованного поста.';pending='';claim.hidden=true});
+ primary.addEventListener('click',async()=>{primary.disabled=true;status.textContent='Готовим приглашение…';let done=false,source='share';try{if(typeof navigator.share==='function'){await navigator.share({title:'OSGARD PLAY · '+titles[gameId],text:message,url});done=true;source='native-share'}else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(message+' '+url);done=true;source='clipboard-copy'}else{status.textContent='Быстрая отправка недоступна. Выбери социальную сеть ниже.';return}}catch(error){status.textContent=error instanceof Error&&error.name==='AbortError'?'Отправка отменена — локальная награда не начислена.':'Не удалось отправить приглашение. Выбери социальную сеть ниже.';return}finally{primary.disabled=false}if(done){const result=award(source+':'+gameId);show(result);sendSelectEvent(source==='clipboard-copy'?'share_link_copied':'share_created',gameId,'game-invite:'+gameId)}});
+ const note=make('p','og-postgame-reward-note','SHARDS — только локальные игровые очки на этом устройстве: не деньги, не платёжное средство и не привилегия аккаунта. Лимит: одна награда в сутки в этом браузере. При отправке через соцсеть подтверждение кнопкой основано на честном слове игрока; пост не проверяется, а очки легко потерять или сбросить. Для защищённой награды за реально пришедшего и сыгравшего друга потребуется аккаунт и серверный журнал начислений.');
  section.append(head,actions,grid,claim,status,note);return section;
 }
 function renderOutsideIntermission(detail){
@@ -314,22 +356,13 @@ function renderOutsideIntermission(detail){
  const intro=make('div','og-postgame-outside-intro');
  intro.append(make('p','og-postgame-eyebrow','OSGARD SELECT / BETWEEN WORLDS'));
  intro.append(make('h2','og-postgame-title','Раунд окончен. Выбери следующий шаг.'));
- intro.append(make('p','og-postgame-copy','Ты завершил сессию '+titles[id]+'. Выбери один из собственных проектов OSGARD, поделись приглашением или сразу вернись к каталогу.'));
- const back=make('a','og-postgame-back','Выбрать следующую игру ↗');
- back.href='#catalog';
+ intro.append(make('p','og-postgame-copy','Ты завершил сессию '+titles[id]+'. Выбери следующий игровой мир, открой собственный проект OSGARD или пригласи друга.'));
+ const back=make('a','og-postgame-back','Выбрать следующую игру ↗');back.href='#catalog';
  suite.append(intro,back,servicesShelf(id),rewardShelf(id));
- outsideRoot.append(suite);
- outsideRoot.hidden=false;
- if(typeof outsideRoot.scrollIntoView==='function'){
-  const reduced=typeof window.matchMedia==='function'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  outsideRoot.scrollIntoView({behavior:reduced?'auto':'smooth',block:'start'});
- }
+ outsideRoot.append(suite);outsideRoot.hidden=false;
+ if(typeof outsideRoot.scrollIntoView==='function'){const reduced=typeof window.matchMedia==='function'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;outsideRoot.scrollIntoView({behavior:reduced?'auto':'smooth',block:'start'})}
 }
 document.addEventListener('osgard:game-session-ended',event=>renderOutsideIntermission(event.detail));
-document.addEventListener('osgard:game-launching',()=>{
- if(!outsideRoot)return;
- outsideRoot.replaceChildren();
- outsideRoot.hidden=true;
-});
+document.addEventListener('osgard:game-launching',()=>{if(!outsideRoot)return;outsideRoot.replaceChildren();outsideRoot.hidden=true});
 document.addEventListener('osgard:game-completed',event=>{const id=event.detail&&event.detail.game;if(!titles[id])return;root.querySelector('.og-postgame-suite')?.remove();const suite=make('section','og-postgame-suite');suite.append(servicesShelf(id),rewardShelf(id));root.append(suite)});
 })();
