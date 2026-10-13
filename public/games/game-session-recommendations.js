@@ -80,6 +80,7 @@ async function sendEvent(name,gameId,source){
   return response.ok;
  }catch{return false}finally{if(controller)pendingTelemetry.delete(controller)}
 }
+window.OSGARDGrowthTelemetry=Object.freeze({sendEvent});
 function incomingInvite(){
  const params=new URLSearchParams(location.search);
  const source=params.get('utm_source')||'',medium=params.get('utm_medium')||'',campaign=params.get('utm_campaign')||'';
