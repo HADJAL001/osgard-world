@@ -8,6 +8,7 @@ const resetButton = document.getElementById('reset-model');
 const usd = new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 const number = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 });
 const decimal = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 });
+const coefficient = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 3 });
 
 function readInputs() {
   const data = new FormData(form);
@@ -34,13 +35,19 @@ function render() {
       '<div><span>Оплаченные проекты</span><b>' + money(result.servicesRevenueUsd) + '</b></div>' +
       '<div><span>Спонсорство · модель</span><b>' + money(result.sponsorshipRevenueUsd) + ' (' + decimal.format(result.sponsorCampaigns) + ' камп.)</b></div>' +
       '<div><span>Расходы и комиссии</span><b>' + money(result.operatingCostUsd + result.paymentFeesUsd) + '</b></div>' +
-      '<div><span>Посещения</span><b>' + count(result.visitors) + '</b></div>' +
+      '<div><span>Исходные посещения</span><b>' + count(result.sourceVisitors) + '</b></div>' +
+      '<div><span>Посещения от приглашений · 4 поколения</span><b>' + count(result.referralVisitors) + '</b></div>' +
+      '<div><span>Эффект приглашений / K</span><b>+' + percent(result.viralLiftPct) + ' / ' + coefficient.format(result.viralCoefficient) + (result.viralCoefficient >= 1 ? ' · нестабильно' : '') + '</b></div>' +
+      '<div><span>Всего посещений</span><b>' + count(result.visitors) + '</b></div>' +
+      '<div><span>Созданные приглашения · модель</span><b>' + count(result.inviteLinksCreated) + '</b></div>' +
       '<div><span>Игровые сессии</span><b>' + count(result.sessions) + '</b></div>' +
       '<div><span>Заполненные рекламные показы</span><b>' + count(result.filledAdImpressions) + '</b></div>' +
       '<div><span>Заявки / оплаченные проекты</span><b>' + count(result.leads) + ' / ' + decimal.format(result.closedProjects) + '</b></div>' +
       '</div></article>';
   }).join('');
-  statusNode.textContent = 'Пересчёт выполнен локально. Никакие введённые значения не отправляются на сервер.';
+  statusNode.textContent = results.some((item) => item.result.viralCoefficient >= 1)
+    ? 'Внимание: K ≥ 1 в одном из сценариев — вирусная модель неустойчива. Это не прогноз и не гарантированный доход. Расчёт локальный; данные не отправляются.'
+    : 'Пересчёт выполнен локально. Никакие введённые значения не отправляются на сервер.';
   const netValues = results.map((item) => item.result.netOperatingUsd);
   document.getElementById('base-net').textContent = money(netValues[1]);
   document.getElementById('base-visitors').textContent = count(results[1].result.visitors);
@@ -60,7 +67,7 @@ exportButton.addEventListener('click', () => {
   const inputs = readInputs();
   const payload = {
     kind: 'osgard-games-business-model',
-    modelVersion: 1,
+    modelVersion: 2,
     note: 'Illustrative scenario estimate only; not live analytics or guaranteed revenue.',
     currency: 'USD',
     generatedAt: new Date().toISOString(),
