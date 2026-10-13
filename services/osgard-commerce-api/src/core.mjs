@@ -41,6 +41,7 @@ export const ALLOWED_EVENTS = new Set([
   "social_reward_claimed",
   "daily_play_reward_claimed",
   "referral_welcome_reward_claimed",
+  "shards_cosmetic_unlocked",
   "game_launched",
   "game_session_completed",
   "lead_submitted",
