@@ -115,6 +115,24 @@ export function validateLeadPayload(body) {
   return { ok: true, bot: false, projectType, budget, contact, description };
 }
 
+export const LEAD_STATUSES = Object.freeze(["new", "contacted", "qualified", "won", "lost", "spam"]);
+const LEAD_STATUS_SET = new Set(LEAD_STATUSES);
+
+export function validateLeadStatusPayload(body) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return { ok: false, status: 400, code: "LEAD_STATUS_PAYLOAD_INVALID" };
+  }
+  const keys = Object.keys(body);
+  if (keys.length !== 1 || keys[0] !== "status") {
+    return { ok: false, status: 400, code: "LEAD_STATUS_FIELDS_INVALID" };
+  }
+  const status = cleanText(body.status, 32).toLowerCase();
+  if (!LEAD_STATUS_SET.has(status)) {
+    return { ok: false, status: 400, code: "LEAD_STATUS_INVALID" };
+  }
+  return { ok: true, status };
+}
+
 export function validateEventBatch(body) {
   const input = body && typeof body === "object" && !Array.isArray(body) ? body : {};
   if (input.consent !== true) return { ok: false, status: 400, code: "ANALYTICS_CONSENT_REQUIRED" };
