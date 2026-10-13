@@ -5,16 +5,16 @@ import vm from 'node:vm';
 const source = readFileSync('public/games/consented-analytics.js', 'utf8');
 const commerceCore = readFileSync('services/osgard-commerce-api/src/core.mjs', 'utf8');
 
-function extractGameIds(source, label) {
-  const match = source.match(/const GAME_IDS = new Set\\(\\[([\\s\\S]*?)\\]\\)/);
-  assert.ok(match, label + ' must declare a game-ID allow-list');
-  return [...match[1].matchAll(/['"]([a-z0-9-]+)['"]/g)].map(item => item[1]).sort();
+function extractStringSet(source, declaration, label) {
+  const start = source.indexOf(declaration);
+  assert.ok(start >= 0, label + ' must declare its allow-list');
+  const end = source.indexOf(']);', start);
+  assert.ok(end > start, label + ' must close its allow-list');
+  const block = source.slice(start, end);
+  return [...block.matchAll(/['"]([a-z0-9_-]+)['"]/g)].map(item => item[1]).sort();
 }
-function extractEventNames(source, label) {
-  const match = source.match(/const ALLOWED_EVENTS = new Set\\(\\[([\\s\\S]*?)\\]\\)/);
-  assert.ok(match, label + ' must declare an event-name allow-list');
-  return [...match[1].matchAll(/['"]([a-z0-9_-]+)['"]/g)].map(item => item[1]).sort();
-}
+const extractGameIds = (text, label) => extractStringSet(text, 'const GAME_IDS = new Set([', label + ' game-ID');
+const extractEventNames = (text, label) => extractStringSet(text, 'const ALLOWED_EVENTS = new Set([', label + ' event-name');
 
 const actualGameIds = extractGameIds(source, 'Browser analytics queue');
 assert.deepEqual(
