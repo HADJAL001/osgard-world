@@ -81,7 +81,7 @@ async function sendEvent(name,gameId,source){
    let parsedBase;
    try{parsedBase=new URL(rawBase,location.origin)}catch{return false}
    const localApi=['localhost','127.0.0.1'].includes(parsedBase.hostname);
-   const allowedPath=parsedBase.pathname==='/'||(parsedBase.origin===location.origin&&parsedBase.pathname==='/commerce-api');
+   const allowedPath=parsedBase.pathname==='/'||(parsedBase.pathname==='/commerce-api'&&(parsedBase.origin===location.origin||parsedBase.origin==='https://osgard.world'));
    if((parsedBase.protocol!=='https:'&&!(localApi&&parsedBase.protocol==='http:'))||parsedBase.username||parsedBase.password||!allowedPath||parsedBase.search||parsedBase.hash)return false;
    const base=parsedBase.origin+(parsedBase.pathname==='/'?'':parsedBase.pathname);
   const request={method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({consent:true,events:[event]})};
@@ -333,7 +333,7 @@ async function sendSelectEvent(name,gameId,source){
   let parsedBase;
   try{parsedBase=new URL(rawBase,location.origin)}catch{return false}
   const localApi=['localhost','127.0.0.1'].includes(parsedBase.hostname);
-  const allowedPath=parsedBase.pathname==='/'||(parsedBase.origin===location.origin&&parsedBase.pathname==='/commerce-api');
+  const allowedPath=parsedBase.pathname==='/'||(parsedBase.pathname==='/commerce-api'&&(parsedBase.origin===location.origin||parsedBase.origin==='https://osgard.world'));
   if((parsedBase.protocol!=='https:'&&!(localApi&&parsedBase.protocol==='http:'))||parsedBase.username||parsedBase.password||!allowedPath||parsedBase.search||parsedBase.hash)return false;
   const base=parsedBase.origin+(parsedBase.pathname==='/'?'':parsedBase.pathname);
   const request={method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({consent:true,events:[event]})};
