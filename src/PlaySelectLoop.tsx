@@ -6,13 +6,16 @@ const WALLET_KEY = 'osgard.games.shards-wallet.v1'
 
 const services = [
   { id: 'marcosa', name: 'MARCOSA', category: 'SOCIAL / COMMUNITY', ru: 'Социальная сеть, сообщества и цифровые миры.', en: 'Social networking, communities and digital worlds.', url: 'https://marcosa.club/' },
-  { id: 'projects', name: 'OSGARD PROJECTS', category: 'DIGITAL STUDIO', ru: 'Сайты, приложения и цифровые продукты.', en: 'Websites, apps and digital products.', url: 'https://osgardbewworld.com/' },
-  { id: 'o2-system', name: 'O2 SYSTEM', category: 'BUSINESS OPERATIONS', ru: 'Инструменты учёта для обменных пунктов.', en: 'Accounting tools for exchange offices.', url: 'https://o2system.art/' },
-  { id: 'senjorio', name: 'SENJORIO', category: 'PREMIUM MOBILITY', ru: 'Премиальный сервис такси.', en: 'Premium mobility and taxi service.', url: 'https://senjorio.com/' },
+  { id: 'projects', name: 'OSGARD BEW WORLD', category: 'DIGITAL STUDIO', ru: 'Создание игр, сайтов, приложений и цифровых продуктов.', en: 'Games, websites, apps and digital product development.', url: 'https://osgardbewworld.com/' },
+  { id: 'o2-system', name: 'O2 SYSTEM', category: 'BUSINESS OPERATIONS', ru: 'Система учёта кассы обменников.', en: 'Cash and transaction accounting for exchange offices.', url: 'https://o2system.art/' },
+  { id: 'senjorio', name: 'SENJORIO', category: 'PREMIUM MOBILITY', ru: 'Премиальный сервис такси.', en: 'Premium taxi service.', url: 'https://senjorio.com/' },
   { id: 'superday', name: 'SUPERDAY', category: 'MAP / DAILY PLANNING', ru: 'Умная карта и планировщик дня.', en: 'Smart map and day planner.', url: 'https://superday.run/' },
-  { id: 'myosa', name: 'MYOSA', category: 'AI PLATFORM', ru: 'Инструменты на базе искусственного интеллекта.', en: 'An AI-powered product platform.', url: 'https://myosa.world/' },
+  { id: 'myosa', name: 'MYOSA', category: 'AI PLATFORM', ru: 'Платформа искусственного интеллекта.', en: 'AI platform.', url: 'https://myosa.world/' },
+  { id: 'gold-glamour', name: 'GOLD GLAMOUR', category: 'PREMIUM SERVICES', ru: 'Премиальные услуги с золотом и выездным обслуживанием.', en: 'Premium gold-related and mobile services.', url: 'https://gold-glamour.online/' },
+  { id: 'gardvpn', name: 'GARD VPN', category: 'PRIVACY / VPN', ru: 'VPN-сервис; проверьте доступность и условия на сайте проекта. Доступность домена не подтверждена независимо.', en: 'VPN service; check the project site for availability and terms. The domain has not been independently verified.', url: 'https://gardvpn.is/' },
+  { id: 'osgard-business', name: 'OSGARD OS', category: 'BUSINESS DEVELOPMENT', ru: 'Направление развития бизнеса.', en: 'Business development.', url: 'https://osgardos.com/' },
+  { id: 'vanguard', name: 'OSGARD VANGUARD STUDIO', category: 'VIDEO STUDIO', ru: 'Создание видео для цифровых продуктов и кампаний.', en: 'Video production for digital products and campaigns.', url: 'https://osgardvanguard.studio/' },
 ] as const
-
 function readWallet(): Wallet {
   if (typeof window === 'undefined') return { balance: 0, day: '' }
   try {
@@ -137,7 +140,7 @@ export function PlaySelectLoop({ locale }: { locale: Locale }) {
           url.searchParams.set('utm_medium', 'entertainment_select')
           url.searchParams.set('utm_campaign', 'between_worlds')
           url.searchParams.set('utm_content', service.id)
-          return <a key={service.id} className={'play-select-service' + (index === 0 ? ' is-featured' : '')} href={url.href} target="_blank" rel="noopener noreferrer">
+          return <a key={service.id} className={'play-select-service' + (index === 0 ? ' is-featured' : '')} href={url.href} target="_blank" rel="noopener noreferrer" aria-label={ru ? 'Открыть ' + service.name + ' — ' + service.category : 'Open ' + service.name + ' — ' + service.category}>
             <span>{String(index + 1).padStart(2, '0')} / {service.category}</span>
             <strong>{service.name}</strong>
             <p>{ru ? service.ru : service.en}</p>
