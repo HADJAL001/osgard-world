@@ -344,6 +344,8 @@ header nav .nav-skillcred svg{width:14px}
 
 /* Shared OSGARD SELECT preferences — used by the Entertainment gateway and in-game intermission. */
 .play-select-service-note{margin-top:-2px;color:#e7c879;font:8px/1.5 'JetBrains Mono',monospace;letter-spacing:.08em}
+.play-select-service.is-limited-verification{border-style:dashed;border-color:rgba(215,185,120,.28);background:rgba(12,16,22,.55);opacity:.72;cursor:not-allowed;transition:none}
+.play-select-service.is-limited-verification:hover{transform:none;border-color:rgba(215,185,120,.38);background:rgba(12,16,22,.55)}
 .play-select-preferences{margin:0 0 20px;border-top:1px solid rgba(215,185,120,.22);border-bottom:1px solid rgba(215,185,120,.22);background:rgba(5,10,18,.68)}
 .play-select-preferences-bar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:13px 0}
 .play-select-preferences-bar>div{display:grid;gap:4px;min-width:0}
