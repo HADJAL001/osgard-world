@@ -56,26 +56,32 @@ const games={
 const CONSENT_KEY='osgard.games.analytics-consent.v1';
 const ATTR_KEY='osgard.games.referral-attribution.v1';
 const SESSION_KEY='osgard.games.growth-session.v1';
+const OWNER_TOKEN_KEY='osgard.games.referral-owner-token.v1';
+const REWARD_CONSENT_KEY='osgard.games.referral-reward-consent.v1';
 const make=(tag,cls,value)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(value!==undefined)n.textContent=value;return n};
 const consented=()=>{try{return localStorage.getItem(CONSENT_KEY)==='yes'}catch{return false}};
 function token(){const bytes=new Uint8Array(6);if(globalThis.crypto?.getRandomValues)globalThis.crypto.getRandomValues(bytes);else for(let i=0;i<bytes.length;i++)bytes[i]=Math.floor(Math.random()*256);return Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('')}
+function rewardConsented(){try{return localStorage.getItem(REWARD_CONSENT_KEY)==='yes'}catch{return false}}
+function secureHex(bytes=12){if(!globalThis.crypto||typeof globalThis.crypto.getRandomValues!=='function')return '';try{const data=new Uint8Array(bytes);globalThis.crypto.getRandomValues(data);return Array.from(data,b=>b.toString(16).padStart(2,'0')).join('')}catch{return ''}}
+function ownerToken(){try{let value=localStorage.getItem(OWNER_TOKEN_KEY)||'';if(/^[a-f0-9]{12}$/.test(value))return value;value=secureHex(6);if(!value)return '';localStorage.setItem(OWNER_TOKEN_KEY,value);return value}catch{return ''}}
 function sessionId(){try{let value=sessionStorage.getItem(SESSION_KEY);if(value&&/^session_[a-f0-9]{24}$/.test(value))return value;value='session_'+token()+token();sessionStorage.setItem(SESSION_KEY,value);return value}catch{return 'session_'+token()+token()}}
 const pendingTelemetry=new Set();
 function cancelPendingTelemetry(){for(const controller of pendingTelemetry){try{controller.abort()}catch{}}pendingTelemetry.clear()}
 async function sendEvent(name,gameId,source){
- if(!consented())return false;
+ const consentOk=()=>consented()||(name==='referral_link_opened'&&rewardConsented());
+ if(!consentOk())return false;
  const event={eventId:'evt_'+token()+token(),name,sessionId:sessionId(),gameId:games[gameId]?gameId:'unknown',source:String(source||'games-hub').slice(0,80),path:location.pathname,durationSeconds:0};
  const queue=window.OSGARD_CONSENTED_ANALYTICS;
- if(queue&&typeof queue.enqueue==='function')return queue.enqueue(event);
+ if(consented()&&queue&&typeof queue.enqueue==='function')return queue.enqueue(event);
  const controller=typeof AbortController==='function'?new AbortController():null;
  if(controller)pendingTelemetry.add(controller);
  try{
   const configOptions={cache:'no-store'};
   if(controller)configOptions.signal=controller.signal;
   const configResponse=await fetch('/games/commerce-config.json',configOptions);
-  if(!consented()||(controller&&controller.signal.aborted))return false;
+  if(!consentOk()||(controller&&controller.signal.aborted))return false;
   const config=configResponse.ok?await configResponse.json().catch(()=>({})):{};
-  if(!consented()||(controller&&controller.signal.aborted))return false;
+  if(!consentOk()||(controller&&controller.signal.aborted))return false;
    const rawBase=typeof config.apiBaseUrl==='string'?config.apiBaseUrl.trim():'';
    if(!rawBase)return false;
    let parsedBase;
@@ -87,7 +93,7 @@ async function sendEvent(name,gameId,source){
   const request={method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({consent:true,events:[event]})};
   if(controller)request.signal=controller.signal;
   const response=await fetch(base+'/v1/events',request);
-  if(!consented()||(controller&&controller.signal.aborted))return false;
+  if(!consentOk()||(controller&&controller.signal.aborted))return false;
   return response.ok;
  }catch{return false}finally{if(controller)pendingTelemetry.delete(controller)}
 }
@@ -103,9 +109,10 @@ function incomingInvite(){
  return null;
 }
 async function recordInviteOpen(invite){
- if(!invite||!consented())return false;
+ if(!invite)return false;
  const rewardCode=/^og_[a-f0-9]{32}$/.test(invite.code);
- if(rewardCode&&!hasRewardConsent())return false;
+ if(rewardCode&&!rewardConsented())return false;
+ if(!rewardCode&&!consented())return false;
  let visitorToken='';
  if(rewardCode){visitorToken=ownerToken();if(!visitorToken)return false}
  const marker='osgard.games.referral-opened.'+invite.code;
@@ -127,7 +134,7 @@ async function recordInviteOpen(invite){
 }
 function handleConsentToggle(){
  setTimeout(()=>{
-  if(consented()){captureInvite();return}
+  if(consented()||(rewardConsented()&&/^og_[a-f0-9]{32}$/.test(incomingInvite()?.code||''))){captureInvite();return}
   cancelPendingTelemetry();
   try{
    sessionStorage.removeItem(ATTR_KEY);
