@@ -240,7 +240,9 @@ function readStringList(key: string): string[] {
 function readConsent(): Consent {
   try {
     const value = localStorage.getItem(ANALYTICS_CONSENT_KEY)
-    return value === 'granted' || value === 'denied' ? value : null
+    if (value === 'granted' || value === 'yes') return 'granted'
+    if (value === 'denied' || value === 'no') return 'denied'
+    return null
   } catch {
     return null
   }
