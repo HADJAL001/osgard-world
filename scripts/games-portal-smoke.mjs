@@ -362,7 +362,7 @@ assert.ok(html.includes('"numberOfItems":11')&&html.includes('"name":"CIVIC CASC
 assert.ok(html.includes('class="art art-civic"')&&html.includes('data-favorite="civic-cascade"')&&html.includes('href="/games/civic-cascade/" data-play="civic-cascade"'),'CIVIC CASCADE card must support the existing play and favorites UI')
 assert.ok(html.includes('href="/game/civic-cascade"'),'CIVIC CASCADE secondary action must open its detail page, not relaunch the game')
 assert.ok(lifecycle.includes("'civic-cascade':{title:'CIVIC CASCADE',url:'/games/civic-cascade/'}"),'Player lifecycle registry must include CIVIC CASCADE')
-assert.ok(lifecycle.includes("if(id==='civic-cascade')return !!doc.querySelector('#cc-game-root')&&!!doc.querySelector('#cc-status')"),'Player lifecycle must detect a ready CIVIC CASCADE client')
+assert.ok(lifecycle.includes("if(id==='civic-cascade')return !!doc.querySelector('#cityCanvas')&&!!doc.querySelector('#startBtn')&&doc.querySelector('meta[name=\"osgard-game-version\"]')?.content==='1.6.0'"),'Player lifecycle must detect a ready CIVIC CASCADE 1.6.0 client')
 assert.ok(manifest.includes("'civic-cascade'")&&manifest.includes("title: 'CIVIC CASCADE'")&&manifest.includes("href: '/games/civic-cascade/'"),'Core manifest must register CIVIC CASCADE')
 assert.ok(sitemap.includes('<loc>https://osgard.world/games/civic-cascade/</loc>'),'CIVIC CASCADE must be present in the XML sitemap')
 assert.ok(manifest.includes("'afterimage-run'")&&manifest.includes("title: 'AFTERIMAGE//RUN'")&&manifest.includes("href: '/games/afterimage-run/'"),'AFTERIMAGE must be registered in core manifest')
