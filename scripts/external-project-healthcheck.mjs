@@ -259,7 +259,7 @@ async function appendStepSummary(report) {
   const rows = report.results.map(result => {
     const status = result.statusCode === null ? '—' : String(result.statusCode)
     const host = result.finalHost || '—'
-    const title = result.pageTitle || result.error || (result.outcome === 'reachable_body_too_large' ? result.note : 'No title returned')
+    const title = result.pageTitle || result.error || (result.bodyTooLarge ? result.note : 'No title returned')
     return '| ' + mdCell(result.name) + ' | ' + mdCell(result.outcome) + ' | ' + status + ' | ' + result.responseMs + ' ms | ' + mdCell(host) + ' | ' + mdCell(title) + ' |'
   })
   const content = [
