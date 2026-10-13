@@ -652,6 +652,11 @@ function rewardShelf(gameId){
  const balance=make('strong','og-postgame-wallet','OSGARD SHARDS · '+getWallet().balance);head.append(intro,balance);
  const status=make('p','og-postgame-status');status.setAttribute('role','status');status.setAttribute('aria-live','polite');
  const primary=make('button','og-postgame-share-primary','Поделиться приглашением ↗');primary.type='button';const actions=make('div','og-postgame-share-actions');actions.append(primary);
+ const signalLink=make('a','og-postgame-signal-cta','Использовать SHARDS в SIGNAL RUN ↗');
+ const signalUrl=new URL('/games/signal-run/',location.origin);signalUrl.searchParams.set('utm_source','osgard_games');signalUrl.searchParams.set('utm_medium','post_game_reward');signalUrl.searchParams.set('utm_campaign','shards_cosmetic');signalUrl.searchParams.set('utm_content',gameId);
+ signalLink.href=signalUrl.href;signalLink.target='_blank';signalLink.rel='noopener noreferrer';
+ signalLink.addEventListener('click',()=>void sendSelectEvent('cross_promo_clicked',gameId,'osgard-select:shards-sink:signal-run'));
+ actions.append(signalLink);
  const url=inviteFor(gameId),message='Пойдём сыграем в '+titles[gameId]+' в OSGARD PLAY.',eu=encodeURIComponent(url),et=encodeURIComponent(message);
  const networks=[['Telegram','https://t.me/share/url?url='+eu+'&text='+et],['WhatsApp','https://wa.me/?text='+encodeURIComponent(message+' '+url)],['VK','https://vk.com/share.php?url='+eu+'&title='+encodeURIComponent('OSGARD PLAY · '+titles[gameId])+'&comment='+et],['X','https://twitter.com/intent/tweet?url='+eu+'&text='+et],['Facebook','https://www.facebook.com/sharer/sharer.php?u='+eu]];
  const grid=make('div','og-postgame-networks'),claim=make('button','og-postgame-claim','Я опубликовал — получить +50 SHARDS');claim.type='button';claim.hidden=true;let pending='';
@@ -695,7 +700,7 @@ function rewardShelf(gameId){
    status.textContent=error instanceof Error&&error.name==='AbortError'?'Отправка отменена — награда не начислена.':'Не удалось отправить приглашение. Выбери соцсеть ниже.';
   } finally {primary.disabled=false}
  });
- const note=make('p','og-postgame-reward-note','Награда: +50 локальных SHARDS не чаще раза в UTC-день на этом устройстве. Копирование ссылки само по себе не даёт награду. После публикации из социальной сети или системного меню игрок подтверждает действие самостоятельно: OSGARD не получает надёжный сигнал о факте публикации. SHARDS хранятся в этом браузере, не имеют денежной стоимости, не являются платёжным средством и могут быть сброшены очисткой данных браузера.');
+ const note=make('p','og-postgame-reward-note','Награда: +50 локальных SHARDS не чаще раза в UTC-день на этом устройстве. Копирование ссылки само по себе не даёт награду. После публикации из социальной сети или системного меню игрок подтверждает действие самостоятельно: OSGARD не получает надёжный сигнал о факте публикации. SHARDS хранятся в этом браузере, не имеют денежной стоимости, не являются платёжным средством и могут быть сброшены очисткой данных браузера. В SIGNAL RUN их можно потратить на косметический профиль GOLD SIGNAL за 100 SHARDS; он меняет только цвета и не влияет на счёт или сложность.');
  section.append(head,actions,grid,claim,status,note);return section;
 }
 function renderOutsideIntermission(detail){
