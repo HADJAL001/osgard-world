@@ -119,6 +119,8 @@ assert.ok(html.includes('href="/games/monetization/"'), 'Economics planner link 
 console.log('PASS OSGARD GAMES HUB: eight actual game routes, search/filters, local favorites/history, embedded player/fullscreen/share, consent-gated authenticated analytics, cross-promotion, contact form, SEO, mobile/reduced-motion styling and legal documents.')
 
 assert.ok(entertainmentAlias.includes('content="0;url=/games/"') && entertainmentAlias.includes("window.location.replace('/games/')"), 'Legacy /entertainment path must forward to the canonical Games hub')
+assert.ok(nginx.includes('location = /entertainment {') && nginx.includes('location = /entertainment/ {'), 'Both legacy Entertainment URL variants need server-side redirects')
+assert.ok(nginx.split("return 301 /games/;").length >= 3, 'Entertainment redirects must target the canonical /games/ route')
 assert.ok(mainSource.includes("function EntertainmentRedirect()") && mainSource.includes("path === '/entertainment' ? <EntertainmentRedirect />") && !mainSource.includes("import { EntertainmentCatalog }"), 'React /entertainment route must forward to the canonical Games hub')
 assert.ok(sectionSource.includes("['Entertainment', '/games/']"), 'Secondary OSGARD navigation must link Entertainment directly to Games hub')
 assert.ok(rootIndex.includes('href="/osgard-mark.svg"') && rootIndex.includes('"logo":"https://osgard.world/osgard-mark.svg"'), 'Root page must use the original OSGARD brand mark for favicon and organization schema')
