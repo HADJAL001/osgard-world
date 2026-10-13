@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080b0e">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="AETHER GRID — ежедневная браузерная головоломка OSGARD. Соедини источник с ядром, уложись в меньшее число ходов и брось вызов другу.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="OSGARD WORLD GAMING">
+<meta property="og:title" content="AETHER GRID — ежедневный сетевой вызов">
+<meta property="og:description" content="Одинаковая головоломка для всех сегодня. Проложи сигнал и сравни количество ходов с другом.">
+<meta property="og:url" content="https://osgard.world/games/aether-grid/">
+<link rel="canonical" href="https://osgard.world/games/aether-grid/">
+<link rel="icon" href="/games/favicon.svg" type="image/svg+xml">
+<title>AETHER GRID — OSGARD WORLD GAMING</title>
+<style>
+:root{color-scheme:dark;--bg:#080b0e;--panel:#0e151a;--panel2:#121c22;--ink:#eff5f5;--muted:#a1b0b3;--soft:#71848b;--line:#ffffff1b;--gold:#dfc783;--cyan:#77e9e6;--green:#c6ff91;--danger:#ffab9b;--mono:ui-monospace,SFMono-Regular,Consolas,monospace;--sans:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;--serif:Georgia,"Times New Roman",serif}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 75% 7%,#58d8e413,transparent 34%),radial-gradient(ellipse at 5% 75%,#c6ff910a,transparent 30%),var(--bg);color:var(--ink);font:14px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}button{font:inherit;color:inherit;cursor:pointer}button:focus-visible,a:focus-visible{outline:2px solid var(--gold);outline-offset:4px}
+.skip{position:fixed;top:8px;left:8px;z-index:100;padding:10px 14px;transform:translateY(-150%);background:var(--gold);color:#101312}.skip:focus{transform:none}
+header{height:74px;position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:0 max(20px,calc((100vw - 1180px)/2));border-bottom:1px solid var(--line);background:#080b0ee5;backdrop-filter:blur(18px)}
+.brand{display:flex;align-items:center;gap:10px}.brand-mark{display:grid;place-items:center;width:32px;height:32px;border:1px solid #77e9e66b;color:var(--cyan);font:22px var(--serif)}.brand-text{display:flex;flex-direction:column;gap:2px}.brand-text b{font-size:11px;letter-spacing:.17em}.brand-text small{color:var(--gold);font:8px var(--mono);letter-spacing:.15em}.head-nav{display:flex;align-items:center;gap:24px;color:#9fadae;font-size:11px}.head-nav a:hover{color:var(--cyan)}.head-nav .live{color:var(--cyan)}
+.wrap{width:min(1180px,calc(100% - 40px));margin:0 auto}
+.hero{display:grid;grid-template-columns:minmax(0,1fr) 265px;gap:26px;align-items:end;padding:54px 0 28px;border-bottom:1px solid var(--line)}
+.eyebrow{margin:0 0 12px;color:var(--cyan);font:9px var(--mono);letter-spacing:.19em;text-transform:uppercase}.eyebrow:before{content:"";display:inline-block;width:6px;height:6px;margin:0 8px 1px 0;border-radius:50%;background:var(--cyan);box-shadow:0 0 14px #77e9e66b}
+h1,h2,h3,p{margin-top:0}h1{max-width:760px;margin-bottom:18px;font:400 clamp(54px,7.3vw,91px)/.9 var(--serif);letter-spacing:-.065em}h1 em{color:var(--cyan);font-weight:400;font-style:normal}.lead{max-width:650px;margin:0;color:#afbdbe;font-size:14px;line-height:1.85}
+.day-card{position:relative;overflow:hidden;padding:20px;border:1px solid #77e9e633;background:linear-gradient(145deg,#77e9e60b,transparent 58%),var(--panel)}.day-card:after{position:absolute;right:-45px;bottom:-76px;width:180px;height:180px;border:1px solid #77e9e62e;border-radius:50%;box-shadow:0 0 0 16px #77e9e606,0 0 0 33px #77e9e604;content:""}
+.day-card small{display:block;color:#81969a;font:8px var(--mono);letter-spacing:.13em}.day-card strong{display:block;margin:12px 0 7px;color:var(--gold);font:400 29px var(--serif)}.day-card span{color:#b0c1c2;font-size:11px}.day-code{display:inline-flex!important;align-items:center;gap:8px;margin-top:15px;color:var(--cyan)!important;font:10px var(--mono)!important;letter-spacing:.08em}
+.game-layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:17px;align-items:start;padding:24px 0 55px}
+.board-panel{min-width:0;padding:clamp(13px,2.5vw,25px);border:1px solid var(--line);background:linear-gradient(140deg,#ffffff04,transparent 38%),var(--panel);box-shadow:0 22px 80px -60px #000}
+.board-head{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:15px}.board-head h2{margin:0;font:400 28px var(--serif);letter-spacing:-.03em}.legend{display:flex;flex-wrap:wrap;gap:11px;color:#94a6aa;font:8px var(--mono)}.legend span{display:inline-flex;align-items:center;gap:6px}.legend i{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--cyan)}.legend .goal-dot{background:var(--gold)}
+.board-wrap{position:relative;width:min(100%,640px);margin:0 auto}.board-wrap:before{position:absolute;z-index:0;inset:-5px;content:"";background:radial-gradient(ellipse at center,#77e9e609,transparent 76%);pointer-events:none}
+.board{position:relative;z-index:1;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;aspect-ratio:1;padding:9px;border:1px solid #77e9e622;background:linear-gradient(#ffffff03 1px,transparent 1px),linear-gradient(90deg,#ffffff03 1px,transparent 1px),#080e12;background-size:20% 20%;touch-action:manipulation}
+.tile{position:relative;display:grid;place-items:center;min-width:0;min-height:0;padding:0;border:1px solid #b9d4d50d;background:linear-gradient(135deg,#ffffff05,transparent 68%),#0d171c;transition:border-color .13s ease,background .13s ease,transform .13s ease;isolation:isolate}
+.tile:hover{border-color:#77e9e64f;background:#15242a}.tile:active{transform:scale(.97)}.tile svg{display:block;width:100%;height:100%;overflow:visible}.tile .wire{fill:none;stroke:#48666d;stroke-width:5.5;stroke-linecap:round;transition:stroke .14s,filter .14s}.tile .hub{fill:#29454d;stroke:#61838a;stroke-width:1.3}.tile.connected .wire{stroke:var(--cyan);filter:drop-shadow(0 0 3px #77e9e65e)}.tile.connected .hub{fill:#77e9e6;stroke:#d7ffff}.tile.source{border-color:#77e9e674;box-shadow:inset 0 0 0 1px #77e9e620}.tile.goal{border-color:#dfc78370;box-shadow:inset 0 0 0 1px #dfc78320}.tile.hint-pulse{animation:hintPulse .9s ease-in-out 2}.tile:disabled{cursor:default}.tile .cell-tag{position:absolute;left:4px;top:3px;color:#81989b;font:7px var(--mono);pointer-events:none}.tile.source .cell-tag{color:var(--cyan)}.tile.goal .cell-tag{color:var(--gold)}
+.controls{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:9px;margin-top:16px}.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:42px;padding:0 13px;border:1px solid var(--line);background:#ffffff04;font-size:11px;transition:background .16s,border-color .16s,transform .16s}.btn:hover{border-color:#77e9e663;background:#77e9e60b}.btn.primary{border-color:var(--cyan);background:var(--cyan);color:#081212;font-weight:700}.btn.primary:hover{background:#a1ffff}.btn.gold{border-color:#dfc78365;color:var(--gold);background:#dfc78308}.btn:disabled{opacity:.35;cursor:not-allowed}.hint-note{min-height:1.5em;margin:11px 0 0;text-align:center;color:#9aabae;font-size:10px}
+.side{display:grid;gap:12px}.side-card{padding:19px;border:1px solid var(--line);background:var(--panel)}.side-card h2{margin:0 0 10px;font:400 26px var(--serif)}.side-card p{margin:0;color:#a0b0b2;font-size:11px;line-height:1.8}.metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:18px}.metric{padding:12px;border:1px solid #ffffff12;background:#ffffff02}.metric small{display:block;color:#829496;font:8px var(--mono);letter-spacing:.1em}.metric b{display:block;margin-top:5px;color:#ecf7f4;font:400 29px var(--serif)}.metric b em{color:var(--gold);font-size:19px;font-style:normal}
+.best{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:14px;margin-top:14px;border-top:1px solid var(--line)}.best span{color:#8c9d9e;font-size:10px}.best b{color:var(--gold);font:400 20px var(--serif)}.result{display:none;margin-top:14px;padding:15px;border:1px solid #c6ff9142;background:#c6ff9109}.result.is-visible{display:block}.result .eyebrow{color:var(--green)}.result h3{margin:4px 0 5px;font:400 26px var(--serif)}.result p{margin:0 0 12px;color:#a9b9b1;font-size:11px}.result .btn{width:100%}
+.instructions{margin:0;padding-left:18px;color:#9fadaf;font-size:10px;line-height:1.9}.instructions li+li{margin-top:5px}.mini-meta{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;padding-top:13px;border-top:1px solid var(--line);color:#7a8b8f;font:8px var(--mono);letter-spacing:.06em}.mini-meta span:last-child{color:var(--cyan)}
+.bottom{display:grid;grid-template-columns:1fr auto;align-items:center;gap:20px;padding:18px 0 26px;border-top:1px solid var(--line);color:#75858a;font:9px var(--mono);letter-spacing:.07em}.bottom nav{display:flex;flex-wrap:wrap;gap:16px}.bottom a:hover{color:var(--cyan)}.toast{position:fixed;z-index:80;left:50%;bottom:20px;transform:translate(-50%,20px);max-width:calc(100vw - 30px);padding:11px 15px;border:1px solid #77e9e65c;background:#111c21;color:#e8ffff;font-size:11px;box-shadow:0 16px 40px #000b;opacity:0;pointer-events:none;transition:opacity .18s,transform .18s}.toast.on{opacity:1;transform:translate(-50%,0)}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+@keyframes hintPulse{0%,100%{box-shadow:inset 0 0 0 1px #dfc78320}50%{border-color:var(--gold);box-shadow:inset 0 0 0 2px #dfc783aa,0 0 18px #dfc78332}}
+@media(max-width:900px){.hero{grid-template-columns:minmax(0,1fr) 230px}.game-layout{grid-template-columns:minmax(0,1fr) 260px;gap:12px}.side-card{padding:15px}.board{gap:4px;padding:6px}}
+@media(max-width:720px){header{height:64px;padding:0 16px}.head-nav{gap:13px;font-size:9px}.head-nav a:nth-child(2){display:none}.wrap{width:min(100% - 28px,600px)}.hero{grid-template-columns:1fr;gap:19px;padding:39px 0 22px}.hero h1{font-size:clamp(55px,13vw,78px)}.day-card{padding:14px 17px}.day-card strong{display:inline-block;margin:5px 12px 0 0;font-size:25px}.day-card .day-code{margin-top:8px}.game-layout{grid-template-columns:1fr;padding-top:14px}.board-panel{padding:12px}.board-head{align-items:flex-start;flex-direction:column;gap:8px}.board-head h2{font-size:25px}.board{gap:4px;padding:5px}.tile .cell-tag{font-size:6px;left:3px;top:2px}.controls .btn{flex:1;min-width:115px}.side{grid-template-columns:1fr 1fr}.side-card{padding:14px}.side-card:first-child{grid-column:1/-1}.metrics{margin-top:12px}.metric{padding:9px}.metric b{font-size:26px}.bottom{grid-template-columns:1fr;gap:12px}.bottom nav{gap:15px}}
+@media(max-width:420px){.head-nav a:first-child{display:none}.wrap{width:calc(100% - 20px)}.board{gap:3px;padding:4px}.side{grid-template-columns:1fr}.side-card:first-child{grid-column:auto}.tile .cell-tag{font-size:5px}.controls .btn{font-size:10px;min-height:39px;padding:0 8px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<a class="skip" href="#board">Перейти к головоломке</a>
+<header>
+  <a class="brand" href="/games/" aria-label="OSGARD WORLD GAMING — каталог игр"><span class="brand-mark">⌁</span><span class="brand-text"><b>OSGARD WORLD</b><small>GAMING / AETHER GRID</small></span></a>
+  <nav class="head-nav" aria-label="Навигация"><a href="/games/">Все игры ↗</a><a class="live" href="#daily">Ежедневный вызов</a><a href="/games/partners/">Партнёрам ↗</a></nav>
+</header>
+<div class="wrap">
+  <section class="hero" id="daily">
+    <div><p class="eyebrow">FIELD 10 / DAILY PUZZLE</p><h1>AETHER<br><em>GRID.</em></h1><p class="lead">Собери маршрут сигнала через сеть узлов. Одна головоломка на день — один и тот же вызов для всех. Реши её за меньшее число ходов и отправь результат другу.</p></div>
+    <aside class="day-card"><small>UTC DAILY SEED / SHARED BOARD</small><strong id="day-label">Загрузка дня…</strong><span>Ежедневная сетка едина для всех игроков.</span><span class="day-code" id="challenge-code">AG / —</span></aside>
+  </section>
+
+  <main class="game-layout">
+    <section class="board-panel" aria-labelledby="board-title">
+      <div class="board-head"><div><p class="eyebrow">01 / ROUTE THE SIGNAL</p><h2 id="board-title">Проложи путь к ядру.</h2></div><div class="legend"><span><i></i> ИСТОЧНИК</span><span><i class="goal-dot"></i> ЯДРО</span></div></div>
+      <div class="board-wrap"><div class="board" id="board" role="group" aria-label="Сетка головоломки 5 на 5"></div></div>
+      <div class="controls">
+        <button class="btn gold" id="hint-button" type="button">⌁ Подсказка <span>+3 хода</span></button>
+        <button class="btn" id="reset-button" type="button">↺ Сбросить сетку</button>
+        <button class="btn primary" id="share-button" type="button">Вызвать друга ↗</button>
+      </div>
+      <p class="hint-note" id="hint-note" role="status" aria-live="polite">Нажимай на узлы, чтобы поворачивать соединения по часовой стрелке.</p>
+    </section>
+
+    <aside class="side">
+      <section class="side-card"><p class="eyebrow">02 / YOUR RUN</p><h2>Текущая попытка</h2><p>Результат хранится в этом браузере. Общего рейтинга пока нет — сравнивай ходы напрямую с друзьями.</p>
+        <div class="metrics"><div class="metric"><small>ХОДЫ</small><b id="moves">00</b></div><div class="metric"><small>ВРЕМЯ</small><b id="timer">00<em>s</em></b></div></div>
+        <div class="best"><span>Лучший результат сегодня</span><b id="best-score">—</b></div>
+        <div class="result" id="result"><p class="eyebrow">SIGNAL CONNECTED</p><h3 id="result-title">Маршрут собран.</h3><p id="result-copy">Твой результат готов к сравнению.</p><button class="btn primary" id="share-result" type="button">Поделиться результатом ↗</button></div>
+      </section>
+      <section class="side-card"><p class="eyebrow">03 / HOW TO PLAY</p><h2>Правила</h2><ol class="instructions"><li>Каждый узел поворачивается на 90° по нажатию.</li><li>Соедини внешний источник слева с ядром справа внизу.</li><li>Подсказка исправляет один узел, но добавляет 3 хода.</li><li>Сброс возвращает исходную одинаковую сетку дня.</li></ol><div class="mini-meta"><span>5 × 5 NODES</span><span>NO INSTALL / NO LOGIN</span></div></section>
+    </aside>
+  </main>
+  <footer class="bottom"><span>© OSGARD WORLD · AETHER GRID · DAILY SKILL PUZZLE</span><nav><a href="/games/">Каталог игр</a><a href="/games/monetization/">Экономика платформы</a><a href="/games/premium/">Поддержать разработку</a><a href="/privacy/">Конфиденциальность</a></nav></footer>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
+  const DIRECTIONS = ['n', 'e', 's', 'w'];
+  const VECTORS = { n: [-1,0], e: [0,1], s: [1,0], w: [0,-1] };
+  const OPPOSITE = { n:'s', e:'w', s:'n', w:'e' };
+  const DELTA = { n:0, e:1, s:2, w:3 };
+  const FNV_OFFSET = 2166136261;
+  function notify(state, extra = {}) { try { if (window.parent !== window) window.parent.postMessage({ type: 'osgard:game-lifecycle', state, game: 'aether-grid', at: Date.now(), ...extra }, location.origin); } catch {} }
+  let seedState = 0, day = '', moves = 0, startedAt = 0, timerHandle = 0, hintsUsed = 0, won = false, toastHandle = 0;
+  let solutionPath = [], correct = [], original = [], turns = [], bestKey = '';
+
+  function validDay(value) {
+    if (typeof value !== 'string' || !DAY_RE.test(value)) return false;
+    const date = new Date(value + 'T00:00:00.000Z');
+    return Number.isFinite(date.getTime()) && date.toISOString().slice(0,10) === value;
+  }
+  function utcDay() { return new Date().toISOString().slice(0,10); }
+  function hash(value) {
+    let h = FNV_OFFSET;
+    for (let i = 0; i < value.length; i++) { h ^= value.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  }
+  function random() {
+    seedState ^= seedState << 13; seedState ^= seedState >>> 17; seedState ^= seedState << 5;
+    return (seedState >>> 0) / 4294967296;
+  }
+  function shuffled(values) {
+    const result = values.slice();
+    for (let i=result.length-1;i>0;i--) { const j=Math.floor(random()*(i+1)); [result[i],result[j]]=[result[j],result[i]]; }
+    return result;
+  }
+  function rotate(connections, amount) {
+    return connections.map(dir => DIRECTIONS[(DELTA[dir] + amount) % 4]);
+  }
+  function sameConnections(a,b) {
+    return a.length === b.length && a.every(direction => b.includes(direction));
+  }
+  function buildPuzzle() {
+    seedState = hash('OSGARD-AETHER-GRID-v1-' + day) || 1;
+    const route = [[0,0]];
+    let row=0,col=0;
+    while (row<4 || col<4) {
+      const canDown = row<4, canRight = col<4;
+      let next;
+      if (canDown && canRight) next = random()<0.5 ? 'e' : 's';
+      else next = canRight ? 'e' : 's';
+      const delta=VECTORS[next]; row+=delta[0]; col+=delta[1]; route.push([row,col]);
+    }
+    solutionPath = route.map(([r,c])=>r*5+c);
+    correct = Array.from({length:25},()=> {
+      const pairs=[['n','s'],['e','w'],['n','e'],['e','s'],['s','w'],['w','n']];
+      return pairs[Math.floor(random()*pairs.length)].slice();
+    });
+    for(let i=0;i<solutionPath.length;i++) {
+      const index=solutionPath[i], r=Math.floor(index/5), c=index%5;
+      let entry,exit;
+      if(i===0) entry='w'; else { const prev=solutionPath[i-1]; entry = directionBetween(index,prev); }
+      if(i===solutionPath.length-1) exit='e'; else { const next=solutionPath[i+1]; exit=directionBetween(index,next); }
+      correct[index]=[entry,exit];
+    }
+    original = correct.map(connections => {
+      let amount=Math.floor(random()*4);
+      return amount;
+    });
+    // Keep the daily scramble nontrivial without making the opening state solved.
+    for(let attempt=0;attempt<8;attempt++) {
+      turns = original.slice();
+      if(!isSolved()) break;
+      original[0]=(original[0]+1)%4;
+    }
+    moves=0;hintsUsed=0;won=false;startedAt=0;
+    window.clearInterval(timerHandle);timerHandle=0;
+    $('result').classList.remove('is-visible');
+    $('hint-button').disabled=false;
+    renderBoard();updateStats();loadBest();
+    $('hint-note').textContent='Нажимай на узлы, чтобы поворачивать соединения по часовой стрелке.';
+  }
+  function directionBetween(index,other) {
+    const difference=other-index;
+    if(difference===-5)return 'n';if(difference===1)return 'e';if(difference===5)return 's';if(difference===-1)return 'w';
+    throw new Error('The daily route contains a non-adjacent segment.');
+  }
+  function currentConnections(index) { return rotate(correct[index],turns[index]); }
+  function tileSvg(connections) {
+    const points={n:[30,5],e:[55,30],s:[30,55],w:[5,30]};
+    return '<svg viewBox="0 0 60 60" aria-hidden="true" focusable="false">'+connections.map(dir=>'<path class="wire" d="M30 30 L'+points[dir][0]+' '+points[dir][1]+'"></path>').join('')+'<circle class="hub" cx="30" cy="30" r="4.5"></circle></svg>';
+  }
+  function renderBoard() {
+    const board=$('board');board.replaceChildren();
+    for(let index=0;index<25;index++) {
+      const button=document.createElement('button');
+      button.type='button';button.className='tile';button.dataset.index=String(index);
+      const source=index===0,goal=index===24;
+      if(source)button.classList.add('source');if(goal)button.classList.add('goal');
+      button.setAttribute('aria-label',(source?'Источник, ':goal?'Ядро, ':'Узел, ')+'строка '+(Math.floor(index/5)+1)+', столбец '+(index%5+1)+'. Повернуть соединение.');
+      const tag=document.createElement('span');tag.className='cell-tag';tag.textContent=source?'IN':goal?'CORE':String(index+1).padStart(2,'0');
+      button.append(tag,document.createRange().createContextualFragment(tileSvg(currentConnections(index))));
+      button.addEventListener('click',()=>rotateTile(index));
+      board.append(button);
+    }
+    updateConnectivity();
+  }
+  function isSolved() {
+    const active=turns.map((turn,index)=>rotate(correct[index],turn));
+    // A puzzle is complete only when a valid pipe path reaches the outside source and the target core.
+    if(!active[0].includes('w')||!active[24].includes('e'))return false;
+    const queue=[0],seen=new Set([0]);
+    for(let cursor=0;cursor<queue.length;cursor++) {
+      const index=queue[cursor];
+      if(index===24&&active[index].includes('e'))return true;
+      for(const direction of active[index]) {
+        const [dr,dc]=VECTORS[direction],r=Math.floor(index/5)+dr,c=index%5+dc;
+        if(r<0||r>4||c<0||c>4)continue;
+        const next=r*5+c;
+        if(!active[next].includes(OPPOSITE[direction])||seen.has(next))continue;
+        seen.add(next);queue.push(next);
+      }
+    }
+    return false;
+  }
+  function connectedCells() {
+    const active=turns.map((turn,index)=>rotate(correct[index],turn)),seen=new Set(),queue=[];
+    if(active[0].includes('w')){queue.push(0);seen.add(0);}
+    for(let cursor=0;cursor<queue.length;cursor++){
+      const index=queue[cursor];
+      for(const direction of active[index]){
+        const [dr,dc]=VECTORS[direction],r=Math.floor(index/5)+dr,c=index%5+dc;
+        if(r<0||r>4||c<0||c>4)continue;
+        const next=r*5+c;
+        if(!active[next].includes(OPPOSITE[direction])||seen.has(next))continue;
+        seen.add(next);queue.push(next);
+      }
+    }
+    return seen;
+  }
+  function updateConnectivity() {
+    const connected=connectedCells();
+    document.querySelectorAll('.tile').forEach((tile,index)=>{
+      tile.classList.toggle('connected',connected.has(index));
+      tile.disabled=won;
+      const connections=currentConnections(index);
+      const svg=tile.querySelector('svg');if(svg)svg.innerHTML=connections.map(dir=>{
+        const point={n:[30,5],e:[55,30],s:[30,55],w:[5,30]}[dir];
+        return '<path class="wire" d="M30 30 L'+point[0]+' '+point[1]+'"></path>';
+      }).join('')+'<circle class="hub" cx="30" cy="30" r="4.5"></circle>';
+    });
+  }
+  function rotateTile(index) {
+    if(won)return;
+    if(!startedAt){startedAt=Date.now();timerHandle=window.setInterval(updateTimer,250);notify('started');}
+    turns[index]=(turns[index]+1)%4;moves++;updateStats();updateConnectivity();
+    $('hint-note').textContent='Узел '+(index+1)+' повёрнут. Продолжай искать непрерывный путь к ядру.';
+    if(isSolved())finishPuzzle();
+  }
+  function updateTimer() {
+    const seconds=startedAt?Math.max(0,Math.floor((Date.now()-startedAt)/1000)):0;
+    $('timer').innerHTML=String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0')+'<em>s</em>';
+  }
+  function updateStats() {
+    $('moves').textContent=String(moves).padStart(2,'0');updateTimer();
+  }
+  function loadBest() {
+    bestKey='osgard.aether-grid.best.v1.'+day;
+    try{
+      const best=JSON.parse(localStorage.getItem(bestKey)||'null');
+      $('best-score').textContent=best&&Number.isInteger(best.moves)?best.moves+' ход.':'—';
+    }catch{$('best-score').textContent='—';}
+  }
+  function finishPuzzle() {
+    won=true;window.clearInterval(timerHandle);timerHandle=0;updateTimer();updateConnectivity();
+    const seconds=startedAt?Math.max(0,Math.floor((Date.now()-startedAt)/1000)):0;
+    let personalBest=false;
+    try{
+      const previous=JSON.parse(localStorage.getItem(bestKey)||'null');
+      if(!previous||moves<previous.moves||(moves===previous.moves&&seconds<previous.seconds)){
+        localStorage.setItem(bestKey,JSON.stringify({moves,seconds,day}));personalBest=true;
+      }
+    }catch{}
+    loadBest();$('result').classList.add('is-visible');$('hint-button').disabled=true;
+    $('result-title').textContent=personalBest?'Новый личный рекорд.':'Маршрут собран.';
+    $('result-copy').textContent='Вызов '+day+': '+moves+' ходов за '+formatTime(seconds)+(hintsUsed?' · подсказок: '+hintsUsed:'')+'. '+(personalBest?'Рекорд сохранён на этом устройстве.':'Сохрани результат и проверь, кто справится лучше.');
+    $('hint-note').textContent='Сигнал достиг ядра. Теперь твоя очередь передать вызов.';
+    toast(personalBest?'Новый личный рекорд!':'Сигнал успешно соединён.');
+    notify('completed',{durationSeconds:seconds,moves});
+  }
+  function formatTime(seconds){return Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');}
+  function inviteCode(){
+    const key='osgard.games.invite-code.v1';
+    try{
+      let code=localStorage.getItem(key)||'';
+      if(!/^og_[a-f0-9]{8}$/.test(code)){
+        const bytes=new Uint8Array(4);
+        if(crypto.getRandomValues)crypto.getRandomValues(bytes);else for(let i=0;i<bytes.length;i++)bytes[i]=Math.floor(Math.random()*256);
+        code='og_'+Array.from(bytes,value=>value.toString(16).padStart(2,'0')).join('');
+        localStorage.setItem(key,code);
+      }
+      return code;
+    }catch{return 'og_'+Math.floor(Math.random()*0xffffffff).toString(16).padStart(8,'0');}
+  }
+  function inviteUrl(){
+    const url=new URL('/games/invite/aether-grid/',location.origin);
+    url.searchParams.set('og_ref',inviteCode());url.searchParams.set('og_game','aether-grid');
+    url.searchParams.set('utm_source','osgard_play');url.searchParams.set('utm_medium','referral');
+    url.searchParams.set('utm_campaign','play_with_friends');url.searchParams.set('utm_content','aether-grid');
+    url.searchParams.set('og_day',day);return url.href;
+  }
+  async function shareResult() {
+    const seconds=startedAt?Math.max(0,Math.floor((Date.now()-startedAt)/1000)):0;
+    const text='AETHER GRID / '+day+' — '+(won?'собрал сигнал за '+moves+' ходов и '+formatTime(seconds):'мой вызов на сегодня')+'. Сможешь лучше?';
+    const url=inviteUrl();
+    try{
+      let method='clipboard';
+      if(navigator.share){method='web-share';await navigator.share({title:'AETHER GRID — ежедневный вызов',text,url});}
+      else if(navigator.clipboard&&navigator.clipboard.writeText)await navigator.clipboard.writeText(text+' '+url);
+      else throw new Error('Share API unavailable');
+      notify('share_created',{shareMethod:method});
+      toast('Приглашение готово. Отправь его другу.');$('hint-note').textContent='Ссылка скопирована или передана в меню отправки.';
+    }catch(error){
+      if(error instanceof Error&&error.name==='AbortError'){toast('Отправка отменена.');return;}
+      toast('Не удалось открыть отправку. Скопируй ссылку из адресной строки.');
+      $('hint-note').textContent=url;
+    }
+  }
+  function toast(message){
+    const element=$('toast');element.textContent=message;element.classList.add('on');
+    window.clearTimeout(toastHandle);toastHandle=window.setTimeout(()=>element.classList.remove('on'),3000);
+  }
+  function resetPuzzle(){buildPuzzle();toast('Исходная сетка дня восстановлена.');}
+  function useHint(){
+    if(won||!solutionPath.length)return;
+    const current=solutionPath.find(index=>!sameConnections(currentConnections(index),correct[index]));
+    if(current===undefined){toast('Путь уже собран.');return;}
+    const currentSet=currentConnections(current);
+    let clicks=0;
+    for(let offset=0;offset<4;offset++){if(sameConnections(rotate(currentSet,offset),correct[current])){clicks=offset;break;}}
+    if(clicks===0){const tile=document.querySelector('.tile[data-index="'+current+'"]');tile?.classList.add('hint-pulse');window.setTimeout(()=>tile?.classList.remove('hint-pulse'),1800);$('hint-note').textContent='Подсказка: узел '+(current+1)+' уже ориентирован правильно.';return;}
+    turns[current]=(turns[current]+clicks)%4;moves+=3;hintsUsed++;updateStats();updateConnectivity();
+    const tile=$('.tile[data-index="'+current+'"]');tile?.classList.add('hint-pulse');window.setTimeout(()=>tile?.classList.remove('hint-pulse'),1800);
+    $('hint-note').textContent='Подсказка исправила один узел и добавила 3 хода к результату.';
+    if(isSolved())finishPuzzle();
+  }
+  function init(){
+    const requested=new URLSearchParams(location.search).get('day');
+    day=validDay(requested)?requested:utcDay();
+    $('day-label').textContent=day;
+    $('challenge-code').textContent='AG-'+day.replaceAll('-','')+' / DAILY';
+    buildPuzzle();
+    $('reset-button').addEventListener('click',resetPuzzle);
+    $('hint-button').addEventListener('click',useHint);
+    $('share-button').addEventListener('click',shareResult);
+    $('share-result').addEventListener('click',shareResult);
+    document.addEventListener('keydown',event=>{
+      const target=event.target;
+      if(target&&(target.isContentEditable||['INPUT','TEXTAREA','SELECT'].includes(target.tagName)))return;
+      if(event.metaKey||event.ctrlKey||event.altKey)return;
+      if(event.key.toLowerCase()==='r'){event.preventDefault();resetPuzzle();}
+      if(event.key.toLowerCase()==='h'){event.preventDefault();useHint();}
+      if(event.key.toLowerCase()==='s'){event.preventDefault();shareResult();}
+      if(['ArrowRight','ArrowLeft','ArrowDown','ArrowUp'].includes(event.key)&&target?.classList?.contains('tile')){
+        const i=Number(target.dataset.index),step=event.key==='ArrowRight'?1:event.key==='ArrowLeft'?-1:event.key==='ArrowDown'?5:-5;
+        const next=i+step;if(next>=0&&next<25&&!(Math.abs(step)===1&&Math.floor(next/5)!==Math.floor(i/5))){document.querySelector('.tile[data-index="'+next+'"]')?.focus();event.preventDefault();}
+      }
+    });
+    notify('ready');
+  }
+  document.addEventListener('visibilitychange',()=>{if(!startedAt||won)return;notify(document.hidden?'paused':'resumed');});
+  init();
+})();
+</script>
+</body>
+</html>
