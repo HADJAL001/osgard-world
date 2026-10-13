@@ -10,7 +10,7 @@
   const campaign = params.get('utm_campaign') || '';
   const content = params.get('utm_content') || '';
   const sameGame = game ? requestedGame === game : requestedGame === '';
-  const valid = /^og_[a-f0-9]{8}$/.test(code) &&
+  const valid = /^og_[a-f0-9]{8}(?:[a-f0-9]{8})?$/.test(code) &&
     sameGame &&
     (!requestedGame || validGameIds.has(requestedGame)) &&
     source === 'osgard_play' &&
