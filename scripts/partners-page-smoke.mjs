@@ -39,6 +39,12 @@ assert.ok(commerceClient.indexOf("if (!response.ok || result.accepted !== true)"
 new Function(commerceClient)
 assert.ok(!/googletagmanager|google-analytics|doubleclick|adsbygoogle|clarity\.ms/i.test(html + js), 'Unapproved analytics or ad network must not be injected')
 assert.ok(!/innerHTML\s*=/.test(js), 'Remote/config values must not be inserted as HTML')
+const prefillPosition = html.indexOf("if (params.get('utm_campaign') !== 'daily_challenge'");
+assert.ok(prefillPosition >= 0 && html.includes("format.value = 'Спонсорское событие или уровень'") && html.includes('AETHER GRID'), 'AETHER GRID sponsorship referral should prefill an editable partner brief')
+const prefillStart = html.lastIndexOf('<script>', prefillPosition)
+const prefillEnd = html.indexOf('</script>', prefillPosition)
+assert.ok(prefillStart >= 0 && prefillEnd > prefillStart, 'AETHER GRID referral prefill script must be a self-contained inline script')
+new Function(html.slice(prefillStart + '<script>'.length, prefillEnd))
 new Function(js)
 console.log('OSGARD_PARTNER_PAGE_SMOKE_OK')
 
