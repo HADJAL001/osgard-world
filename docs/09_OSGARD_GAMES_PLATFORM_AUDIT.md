@@ -184,3 +184,14 @@ A new Godot-native growth slice is implemented and covered by the headless runti
 2. Add server-verified invite rewards after a referred player completes a real mission, not after a click.
 3. Test a one-time cosmetic supporter pack only after checkout, signed webhooks, entitlement persistence and refunds are operational.
 4. Measure net revenue after fees/refunds and acquisition cost. A million-dollar outcome is a goal, not a forecast or promise.
+
+
+## Retention rewards and cosmetic SHARDS Vault — 13 October 2026
+
+- OSGARD SELECT keeps voluntary, clearly labelled between-game cards for first-party projects. The player can choose services, save a preferred service and control promotion frequency; there is no autoplay or active-round interruption.
+- Direct compensation for reposts/self-confirmed shares has been removed from the intermission reward shelf. Social buttons for Telegram, WhatsApp, VK, X and Facebook remain available; the catalogue records a share intent only with explicit analytics consent, not as verified public distribution.
+- The reward path is +50 local SHARDS for a completed game session once per UTC day, plus one welcome bonus on a browser arriving through a valid invite and completing the first referred session. This is a local prototype reward, not a unique-person-verified or server-authoritative referral payout.
+- SHARDS can unlock three cosmetic-only intermission accents in the local Vault (NORTHSTAR 100, ECLIPSE 250, AURORA 400). They have no cash value, do not unlock combat advantages, are not shared across devices, and can be cleared with browser storage. This is not a financial wallet.
+- Signal Run grants its daily bonus on completed run and no longer uses the self-confirmed share-reward button. Parent lifecycle and consented analytics queue record daily_play_reward_claimed, referral_welcome_reward_claimed and social_share_intent only when analytics consent is enabled.
+- The Commerce API allow-list and tests include new aggregate event names. The admin overview now separates daily gameplay bonuses and referral welcome bonuses from legacy historical repost-reward events.
+- These events do not transfer monetary value, trigger paid entitlements or prove that an invitee is a unique person. A production-grade referral programme still needs server-side invite claims, idempotent completion rules, abuse limits and authoritative entitlements before any cash-equivalent reward is offered.
