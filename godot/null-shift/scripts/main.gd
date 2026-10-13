@@ -1617,6 +1617,8 @@ func _finish_mission(success: bool) -> void:
 		objective_text = "ОПЕРАТОР НЕ ВЕРНУЛСЯ · ПЕРЕЗАПУСТИТЕ РЕЙД"
 		_play_sfx(70.0, 0.9, 0.18)
 	result_panel.visible = true
+	if OS.has_feature("web"):
+		JavaScriptBridge.eval("if (window.parent !== window) { window.parent.postMessage({type: 'osgard:game-lifecycle', game: 'null-shift', state: 'completed', at: Date.now()}, window.location.origin); }")
 	_update_hud()
 
 func _set_result_title(title_text: String, body_text: String, tint: Color) -> void:

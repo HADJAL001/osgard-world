@@ -53,3 +53,8 @@ Use `-Activate` only after reviewing the verified staging output. The activation
 GitHub also contains a manual `OSGARD frontend deploy` workflow. It requires repository secrets `OSGARD_DEPLOY_HOST`, `OSGARD_DEPLOY_USER`, and a dedicated least-privilege `OSGARD_DEPLOY_KEY`. Do not reuse a personal root key; the workflow is intentionally manual until that dedicated key is provisioned.
 
 Do not direct production traffic to the server until the reverse proxy has a valid TLS certificate.
+
+
+## INHERIT shared-world setting
+
+The public INHERIT client no longer targets `127.0.0.1` in a visitor's browser. Shared-world synchronization is disabled by default. To enable it, set `<meta name="osgard-inherit-api-base" content="...">` to a deployed API compatible with the existing world read and generation-write payloads, then test that contract. Until then, the game remains usable with device-local saves. Do not configure a guessed endpoint.
