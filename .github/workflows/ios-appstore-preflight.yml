@@ -1,0 +1,104 @@
+name: OSGARD iOS App Store preflight
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - ".github/workflows/ios-appstore-preflight.yml"
+      - "codemagic.yaml"
+      - "capacitor.config.json"
+      - "mobile/**"
+      - "public/games/**"
+      - "public/support/**"
+      - "public/privacy/**"
+      - "public/terms/**"
+      - "src/**"
+      - "package.json"
+      - "package-lock.json"
+      - "scripts/ios-appstore-preflight.mjs"
+      - "scripts/ios-release-*.mjs"
+      - "scripts/prepare-ios-app.mjs"
+      - "scripts/generate-ios-app-icon.mjs"
+  pull_request:
+    paths:
+      - ".github/workflows/ios-appstore-preflight.yml"
+      - "codemagic.yaml"
+      - "capacitor.config.json"
+      - "mobile/**"
+      - "public/games/**"
+      - "public/support/**"
+      - "public/privacy/**"
+      - "public/terms/**"
+      - "src/**"
+      - "package.json"
+      - "package-lock.json"
+      - "scripts/ios-appstore-preflight.mjs"
+      - "scripts/ios-release-*.mjs"
+      - "scripts/prepare-ios-app.mjs"
+      - "scripts/generate-ios-app-icon.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: osgard-ios-preflight-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ios-preflight:
+    name: Build and verify iOS web payload
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Typecheck and verify App Store source contract
+        run: |
+          npm run check
+          npm run qa:ios-appstore
+
+      - name: Run core game release smoke tests
+        run: |
+          npm run qa:games-portal
+          npm run qa:games-detail
+          npm run qa:null-shift
+          npm run qa:games-model
+          npm run qa:osgard-select
+          npm run qa:consented-analytics-queue
+          npm run qa:ecosystem
+
+      - name: Build production web application
+        run: npm run build
+
+      - name: Install pinned Capacitor build dependencies
+        run: |
+          npm install --no-save --package-lock=false \
+            @capacitor/core@8.5.3 \
+            @capacitor/cli@8.5.3 \
+            @capacitor/ios@8.5.3 \
+            @capacitor/share@8.0.1
+
+      - name: Build native-share bridge into packaged game assets
+        run: npx vite build --config mobile/vite.config.mjs
+
+      - name: Prepare the local-first iOS web bundle
+        run: node scripts/prepare-ios-app.mjs --web-only
+
+      - name: Verify all local game assets, app shell, icon, and support URLs
+        run: node scripts/ios-appstore-preflight.mjs --built-web
+
+      - name: Explain signing boundary
+        run: |
+          echo "PASS: iOS source, web payload, local game routes, native-share bridge and App Store metadata preflight passed."
+          echo "This Linux workflow intentionally does not sign an IPA. Codemagic uses macOS + Apple credentials for TestFlight."
