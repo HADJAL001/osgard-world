@@ -279,3 +279,9 @@ main{position:relative;isolation:isolate}
 .trust-spine-progress{transition:none!important}
 .hero-visual::before{animation:none!important}
 }
+
+
+/* MOBILE FONT BUDGET — use system serif/mono on small/coarse-pointer screens to avoid two extra font downloads and late text work. */
+@media(max-width:820px),(pointer:coarse){
+:root{--serif:Georgia,serif;--mono:ui-monospace,SFMono-Regular,Consolas,monospace}
+}
