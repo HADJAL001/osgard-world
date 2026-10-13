@@ -6,6 +6,8 @@ const read = (path) => readFileSync(path, 'utf8');
 const source = read('public/games/game-session-recommendations.js');
 const css = read('public/games/game-session-recommendations.css');
 const core = read('services/osgard-commerce-api/src/core.mjs');
+const referralApi = read('services/osgard-commerce-api/src/server.mjs');
+const inviteLanding = read('public/games/invite/invite-landing.js');
 const signalRun = read('public/games/signal-run/game.js');
 const lifecycle = read('public/games/player-lifecycle.js')
 const entertainmentGateway = read('src/PlaySelectLoop.tsx')
@@ -35,7 +37,7 @@ assert.ok(entertainmentGateway.includes("const PROMO_PREFERENCES_KEY = 'osgard.g
   source.includes("const servicePreferencesKey='osgard.games.postgame-service-preferences.v1'"),
   'The Entertainment gateway and between-game intermission must use one shared preferences key');
 assert.ok(entertainmentGateway.includes("const PROMOTABLE_SERVICE_IDS = services.map(service => service.id)") &&
-  source.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN','VPN-сервис. Описание и условия доступны на сайте проекта; доступность домена не была подтверждена проверкой.','https://gardvpn.is/',false,true]") &&
+  source.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN','VPN-сервис. Описание и условия доступны на сайте проекта; доступность домена не была подтверждена проверкой.','https://gardvpn.is/',false,false]") &&
   entertainmentGateway.includes("const unverified = service.id === 'gardvpn'") &&
   entertainmentGateway.includes("Availability not verified; opens the project site"),
   'GARD VPN remains selectable like the other owner projects, with an explicit warning that its availability is unverified');
@@ -104,7 +106,7 @@ assert.ok(source.includes("u.searchParams.set('utm_source','osgard_games')") &&
   'Each service link needs source, placement and campaign attribution');
 assert.ok(source.includes("РЕКЛАМА · СОБСТВЕННЫЕ ПРОЕКТЫ OSGARD") &&
   source.includes('Автозапуска нет'), 'Self-promotion must be labelled and never autoplay');
-assert.ok(source.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN','VPN-сервис. Описание и условия доступны на сайте проекта; доступность домена не была подтверждена проверкой.','https://gardvpn.is/',false,true]"),
+assert.ok(source.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN','VPN-сервис. Описание и условия доступны на сайте проекта; доступность домена не была подтверждена проверкой.','https://gardvpn.is/',false,false]"),
   'GARD VPN must remain selectable but clearly disclosed as not independently verified');
 assert.ok(source.includes("const availableServiceIds=services.filter(item=>item[7]!==false).map(item=>item[0])") &&
   source.includes("input.disabled=active===false"),
@@ -153,37 +155,50 @@ assert.ok(source.includes("section.append(spotlight,quickPickHeading,quickPicks)
 
 const rewardStart = source.indexOf('function rewardShelf(gameId){');
 const rewardEnd = source.indexOf('function renderOutsideIntermission(detail)', rewardStart);
-assert.ok(rewardStart >= 0 && rewardEnd > rewardStart, 'Social reward section must remain independently testable');
+assert.ok(rewardStart >= 0 && rewardEnd > rewardStart, 'Post-game reward module must remain independently testable');
 const reward = source.slice(rewardStart, rewardEnd);
-const primaryStart = reward.indexOf("primary.addEventListener('click',async()=>{");
-const primaryEnd = reward.indexOf("const note=make('p','og-postgame-reward-note'", primaryStart);
-assert.ok(primaryStart >= 0 && primaryEnd > primaryStart, 'Share intent handler boundaries are required');
-const primaryHandler = reward.slice(primaryStart, primaryEnd);
-assert.ok(!primaryHandler.includes("sendSelectEvent('share_created'"),
-  'Opening the system share sheet or copying a link must not count as a completed share');
-const claimStart = reward.indexOf("claim.addEventListener('click'");
-const claimEnd = reward.indexOf("primary.addEventListener('click',async()=>{", claimStart);
-assert.ok(claimStart >= 0 && claimEnd > claimStart, 'Explicit share confirmation handler is required');
-const claimHandler = reward.slice(claimStart, claimEnd);
-assert.ok(claimHandler.includes("award('social-confirmation:'+network)") &&
-  claimHandler.includes("sendSelectEvent('share_created',gameId,'game-invite:'") &&
-  claimHandler.includes("sendSelectEvent('social_reward_claimed'"),
-  'The local daily reward and completed-share event must happen only after a separate confirmation');
-assert.ok(reward.includes('Копирование само по себе не считается репостом') &&
-  reward.includes('OSGARD не получает надёжный сигнал о факте публикации') &&
-  reward.includes('не имеют денежной стоимости'),
-  'SHARDS must disclose that social posts are self-confirmed and have no cash value');
-assert.ok(source.includes("const walletKey='osgard.games.shards-wallet.v1',dailyReward=50") &&
-  source.includes('current.day===day'),
-  'Local SHARDS reward must be capped to one claim per UTC day and device wallet');
+assert.ok(reward.includes("consentToggle.addEventListener('change'") && reward.includes("localStorage.setItem(REWARD_CONSENT_KEY,'yes')"),
+  'Referral reward tracking requires separate explicit opt-in');
+assert.ok(reward.includes('await registerInvite(gameId,code)') && reward.includes('reportInviteShareCreated(gameId,code)') &&
+  reward.includes("sendSelectEvent('share_created',gameId,'game-invite:'"),
+  'Referral links must be registered and attributed through the consent-gated server analytics');
+assert.ok(reward.includes('refreshShardsBalance(gameId,balance,status)') && reward.includes('/v1/referrals/reward-status'),
+  'The visible SHARDS amount must come from the server reward-status endpoint');
+assert.ok(reward.includes('не короче 60 секунд') && reward.includes('Публикацию поста соцсеть не подтверждает'),
+  'Reward copy must explain the 60-second game-session condition and that social posts are not verified');
+assert.ok(!source.includes("const walletKey='osgard.games.shards-wallet.v1',dailyReward=50") &&
+  !source.includes('function award(source){') && !source.includes("award('social-confirmation:"),
+  'The between-game reward system must not mint a client-editable SHARDS wallet');
+assert.ok(core.includes('REFERRAL_REWARD_POINTS = 50') && core.includes('REFERRAL_MIN_SESSION_SECONDS = 60') &&
+  core.includes('validateReferralRewardRegistration') && core.includes('parseReferralRewardEvent'),
+  'Reward policy and referral event validation must be defined in server-side core code');
+assert.ok(referralApi.includes('CREATE TABLE IF NOT EXISTS game_referral_invites') &&
+  referralApi.includes('CREATE TABLE IF NOT EXISTS game_referral_visits') &&
+  referralApi.includes('CREATE TABLE IF NOT EXISTS game_referral_rewards') &&
+  referralApi.includes('async function processReferralRewardEvent') &&
+  referralApi.includes('app.post("/v1/referrals/register"') &&
+  referralApi.includes('app.post("/v1/referrals/reward-status"'),
+  'Referrals need a persistent, idempotent server ledger and protected status endpoint');
+assert.ok(referralApi.includes('ON CONFLICT(invite_code,visitor_token) DO NOTHING') &&
+  referralApi.includes("start.received_at <= finish.received_at - ($2 * INTERVAL '1 second')"),
+  'The same referred visitor can earn only once, after a server-timed session of at least 60 seconds');
+assert.ok(inviteLanding.includes("localStorage.getItem('osgard.games.referral-reward-consent.v1') === 'yes'") &&
+  inviteLanding.includes("source: rewardableInvite ? 'referral-link:' + code + ':' + requestedGame + ':' + visitorToken : 'referral-link:' + code"),
+  'Rewardable invitation landing records matching visitor attribution only after separate opt-in');
+assert.ok(lifecycle.includes("return 'referral:'+code+':'+activeGame+':'+value.visitorToken") &&
+  lifecycle.includes("localStorage.getItem('osgard.games.referral-reward-consent.v1')==='yes'"),
+  'Only consented play sessions matching the canonical invite and visitor token can qualify');
+assert.ok(!entertainmentGateway.includes("const WALLET_KEY = 'osgard.games.shards-wallet.v1'") &&
+  !entertainmentGateway.includes('const grantReward ='),
+  'The Entertainment homepage must not mint rewards from a self-confirmed social post');
 assert.ok(lifecycle.includes("activeSessionId='session_'+id+'_'+sequence+'_'+launchAt") && lifecycle.includes('sessionId:activeSessionId') && lifecycle.includes('detail:{game:activeGame,sessionId:activeSessionId}'),
-  'The same stable ID must be sent with gameplay completion and post-session return events');
+  'The same stable game session ID must be sent with gameplay completion and post-game return events');
 assert.ok(source.includes("byGame[gameId]=Math.min((byGame[gameId]||0)+1,1000000000)") &&
   source.includes("const roundForSpotlight=preferences.frequency==='every3'?completedCount:(readServiceProgress().byGame[gameId]||1)"),
   'Spotlight should rotate by repetitions of the same game while promo frequency remains global');
 assert.ok(source.includes('function recordCompletedRound(gameId,sessionId)') && source.includes('current.sessions.includes(key)') && source.includes('slice(-100)'),
-  'Post-game promotion cadence must deduplicate session IDs, not rely only on a 2.5-second timing window');
-assert.ok(source.includes('const isSpotlight=id===spotlightServiceId') && source.includes("cards.forEach(card=>card.classList.toggle('is-featured',card.dataset.service===spotlightServiceId))"),
+  'Post-game promotion cadence must deduplicate session IDs, not rely only on a short timing window');
+assert.ok(source.includes('const isSpotlight=id===spotlightServiceId') && source.includes("cards.forEach(card=>card.classList.toggle('is-featured',card.dataset.service===spotlightServiceId))'),
   'The featured directory card must always match the personalized spotlight, including after rotation');
 
 const claimSignal = signalRun.indexOf("claimShare.addEventListener('click'");
