@@ -11,6 +11,10 @@ import {
   resolveCheckoutPaymentState,
   verifyStripeSignature,
   safeEqual,
+  parseReferralRewardEvent,
+  validateReferralRewardStatus,
+  REFERRAL_REWARD_POINTS,
+  REFERRAL_MIN_SESSION_SECONDS,
 } from "../src/core.mjs";
 
 test("catalog is a fixed server-side allow-list", () => {
@@ -137,4 +141,57 @@ test("checkout status cannot resurrect a refunded, expired, or cancelled order",
   assert.deepEqual(resolveCheckoutPaymentState("unpaid", "pending"), {
     paid: false, orderStatus: "pending", updateOrderToPaid: false,
   });
+});
+
+test("server-verified SHARDS require a canonical invite and one matching game session", () => {
+  const inviteCode = "og_" + "ab".repeat(16);
+  const ownerToken = "123456abcdef";
+  const visitorToken = "987654fedcba";
+  const registered = parseReferralRewardEvent({
+    name: "share_created",
+    gameId: "swarm",
+    source: "game-invite:swarm:" + inviteCode + ":" + ownerToken,
+  });
+  assert.deepEqual(registered, {
+    type: "invite_created", inviteCode, gameId: "swarm", ownerToken,
+  });
+  const opened = parseReferralRewardEvent({
+    name: "referral_link_opened",
+    gameId: "swarm",
+    source: "referral-link:" + inviteCode + ":swarm:" + visitorToken,
+  });
+  assert.deepEqual(opened, {
+    type: "invite_opened", inviteCode, gameId: "swarm", visitorToken,
+  });
+  assert.equal(parseReferralRewardEvent({
+    name: "referral_link_opened",
+    gameId: "signal-run",
+    source: "referral-link:" + inviteCode + ":swarm:" + visitorToken,
+  }), null, "Referral opening must match the server-validated game ID");
+  const qualified = parseReferralRewardEvent({
+    name: "game_session_completed",
+    gameId: "swarm",
+    source: "referral:" + inviteCode + ":swarm:" + visitorToken,
+    durationSeconds: 60,
+  });
+  assert.deepEqual(qualified, {
+    type: "invite_qualified", inviteCode, gameId: "swarm", visitorToken,
+    durationSeconds: 60, points: REFERRAL_REWARD_POINTS,
+  });
+  assert.equal(REFERRAL_REWARD_POINTS, 50);
+  assert.equal(REFERRAL_MIN_SESSION_SECONDS, 60);
+  assert.equal(parseReferralRewardEvent({
+    name: "game_session_completed", gameId: "swarm",
+    source: "referral:" + inviteCode + ":swarm:" + visitorToken, durationSeconds: 59,
+  }), null, "Short/bounced sessions must not award SHARDS");
+  assert.equal(parseReferralRewardEvent({
+    name: "game_session_completed", gameId: "signal-run",
+    source: "referral:" + inviteCode + ":swarm:" + visitorToken, durationSeconds: 120,
+  }), null, "The referral game must match the completed game");
+  assert.equal(parseReferralRewardEvent({
+    name: "share_created", gameId: "swarm",
+    source: "game-invite:swarm:og_abcd:" + ownerToken,
+  }), null, "Short legacy codes stay compatible but are not rewardable");
+  assert.equal(validateReferralRewardStatus({ code: inviteCode }).ok, true);
+  assert.equal(validateReferralRewardStatus({ code: "og_bad" }).code, "REFERRAL_CODE_INVALID");
 });
