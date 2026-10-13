@@ -239,7 +239,8 @@ const GAMES: GameDefinition[] = [
     featuresEn: ['Shared daily seed', 'Ghost route and friend challenge', 'PHASE DASH and touch jump'],
     theme: 'afterimage-run',
   },
-  {    id: 'aether-grid',
+  {
+    id: 'aether-grid',
     mark: 'AG',
     titleRu: 'AETHER GRID',
     titleEn: 'AETHER GRID',
