@@ -93,8 +93,8 @@ async function processReferralRewardEvent(client, event) {
   }
   if (parsed.type === "invite_opened") {
     await client.query(
-      "INSERT INTO game_referral_visits(invite_code,visitor_token) SELECT $1,$2 FROM game_referral_invites i WHERE i.invite_code=$1 AND i.inviter_token<>$2 ON CONFLICT(invite_code,visitor_token) DO NOTHING",
-      [parsed.inviteCode, parsed.visitorToken],
+      "INSERT INTO game_referral_visits(invite_code,visitor_token) SELECT $1,$2 FROM game_referral_invites i WHERE i.invite_code=$1 AND i.game_id=$3 AND i.inviter_token<>$2 ON CONFLICT(invite_code,visitor_token) DO NOTHING",
+      [parsed.inviteCode, parsed.visitorToken, parsed.gameId],
     );
     return;
   }
@@ -105,7 +105,7 @@ async function processReferralRewardEvent(client, event) {
     );
     if (!verifiedSession.rowCount) return;
     await client.query(
-      "INSERT INTO game_referral_rewards(invite_code,visitor_token,game_id,duration_seconds,points) SELECT v.invite_code,v.visitor_token,$3,$4,$5 FROM game_referral_visits v JOIN game_referral_invites i USING(invite_code) WHERE v.invite_code=$1 AND v.visitor_token=$2 AND i.inviter_token<>v.visitor_token ON CONFLICT(invite_code,visitor_token) DO NOTHING",
+      "INSERT INTO game_referral_rewards(invite_code,visitor_token,game_id,duration_seconds,points) SELECT v.invite_code,v.visitor_token,$3,$4,$5 FROM game_referral_visits v JOIN game_referral_invites i USING(invite_code) WHERE v.invite_code=$1 AND v.visitor_token=$2 AND i.game_id=$3 AND i.inviter_token<>v.visitor_token ON CONFLICT(invite_code,visitor_token) DO NOTHING",
       [parsed.inviteCode, parsed.visitorToken, parsed.gameId, parsed.durationSeconds, parsed.points],
     );
   }
