@@ -16,6 +16,7 @@ const css = read('src/games-hub.css')
 const civicGame = read('public/games/civic-cascade/index.html')
 const cascadeGame = read('public/games/cascade-lab/index.html')
 const aetherGame = read('public/games/aether-grid/index.html')
+const aetherGame = read('public/games/aether-grid/index.html')
 
 const games = [
   { id: 'time', href: '/games/time' },
@@ -27,6 +28,7 @@ const games = [
   { id: 'civic-cascade', href: '/games/civic-cascade/' },
   { id: 'patina', href: '/games/patina/' },
   { id: 'cascade-lab', href: '/games/cascade-lab/' },
+  { id: 'aether-grid', href: '/games/aether-grid/' },
   { id: 'aether-grid', href: '/games/aether-grid/' },
 
 ]
@@ -48,7 +50,7 @@ assert.ok(detail.includes("querySelector('.time-game')"), 'Strategy-game readine
 assert.ok(detail.includes("track('game_opened', { game: game.id, surface: 'game-detail' }, consent)"), 'Detail views are logged once with consent')
 assert.ok(!detail.includes("surface: 'games-iframe'"), 'Iframe load must not duplicate a detail-view event')
 assert.ok(!detail.includes("track('game_session_started', { game: game.id, surface: 'games-iframe' }"), 'Iframe HTML load is not proof a session started')
-for (const route of ['/games/', '/games/monetization/', '/game/time', '/game/swarm', '/game/null-shift', '/game/inherit', '/game/remix', '/games/signal-run/', '/game/signal-run', '/games/civic-cascade/', '/games/patina/', '/game/civic-cascade', '/game/patina', '/games/cascade-lab/', '/game/cascade-lab', '/games/aether-grid/', '/game/aether-grid']) assert.ok(sitemap.includes(`https://osgard.world${route}`), `Sitemap is missing ${route}`)
+for (const route of ['/games/', '/games/monetization/', '/game/time', '/game/swarm', '/game/null-shift', '/game/inherit', '/game/remix', '/games/signal-run/', '/game/signal-run', '/games/civic-cascade/', '/games/patina/', '/game/civic-cascade', '/game/patina', '/games/cascade-lab/', '/game/cascade-lab', '/games/aether-grid/', '/game/aether-grid', '/games/aether-grid/', '/game/aether-grid']) assert.ok(sitemap.includes(`https://osgard.world${route}`), `Sitemap is missing ${route}`)
 assert.ok(css.includes('@media') && css.includes('prefers-reduced-motion'), 'Responsive and reduced-motion styles must be defined')
 for (const p of ['public/games/index.html','public/games/cascade-lab/index.html','public/games/aether-grid/index.html','godot/null-shift/project.godot','public/privacy/index.html','public/terms/index.html','public/osgard-mark.svg']) {
   assert.ok(existsSync(p), `Required publication asset missing: ${p}`)
