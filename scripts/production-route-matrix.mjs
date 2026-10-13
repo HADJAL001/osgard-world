@@ -35,7 +35,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         : route === '/games/premium/success/'
           ? text.includes('/v1/checkout/status') && text.includes('result.paid===true') && text.includes("result.orderStatus==='refunded'")
         : route === '/games/commerce-admin/'
-          ? text.includes('<meta name="robots" content="noindex,nofollow,noarchive">') && text.includes('id="token"') && text.includes('ADMIN_API_TOKEN') && text.includes('/v1/admin/orders')
+          ? text.includes('<meta name="robots" content="noindex,nofollow,noarchive">') && text.includes('id="token"') && text.includes('ADMIN_API_TOKEN') && text.includes('/v1/admin/orders') && text.includes('id="social-network-table"') && text.includes('id="social-network-body")
         : route === '/games/commerce-config.json'
           ? (() => { try { const config = JSON.parse(text); return typeof config.apiBaseUrl === 'string' && !/(sk_(?:live|test)_|whsec_)/i.test(text) } catch { return false } })()
         : route === '/games/commerce-client.js'
