@@ -131,3 +131,12 @@ The deployment workflow downloads official Godot 4.7.2 and matching web template
 - This fixes the root cause of phase labels accumulating across frames and prevents repeated allocation of interactive UI controls. Static smoke checks function boundaries and fails if HUD creation is accidentally nested in a per-frame shader update.
 
 - Follow-up integrity fix: HUD construction no longer clears the operator's pre-built leg-pivot list. Those pivots are created in the gameplay rig before the HUD is built, and clearing them in UI setup silently disabled the procedural walking gait.
+
+
+## Daily challenge, sharing and cosmetic vault
+
+- Every UTC date selects one deterministic contract code in the form NS-YYYYMMDD-Cn. The code is validated against the date-derived contract before it can select a mission. A shared link opens the same daily contract in the Godot Web export.
+- Completing the current day's challenge awards +400 career credits once per UTC date in the local save. Older challenge codes remain playable but cannot claim today's reward.
+- The result card exposes the native share sheet where supported, with clipboard/prompt fallback. The shared text includes the challenge link; the share button itself does not award currency.
+- Style Vault sells Amber (450 credits) and Violet (750 credits) suit looks. Ownership and selected style persist locally. The looks do not change combat statistics.
+- Real-money checkout, server-side purchase verification, cross-device ownership, referral attribution and global leaderboards are not connected in this prototype. Do not present a paid supporter pack as purchasable until server-side payment/entitlement checks and refund handling are implemented.

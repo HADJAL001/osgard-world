@@ -590,5 +590,52 @@ func _run_smoke() -> void:
 	if not _expect(game.career.get_value("upgrades", "weapon", 0) == 1, "upgrade must persist in the career save"):
 		return
 
-	print("PASS NULL//SHIFT runtime: aim-facing operator, gait, muzzle recoil, pooled beam/ring effects, combat damage, dodgeable phase lanes, enemy roles, eliminations, destructible devices, pulse, animated core, camera response, live telemetry, cipher hack, extraction, credits and persistent upgrades")
+	print("RUNTIME_STAGE: daily challenge and cosmetic vault")
+	var saved_credits: int = game.career_credits
+	var saved_style: String = game.operator_style
+	var saved_owns_amber: bool = game.owns_amber_style
+	var saved_owns_violet: bool = game.owns_violet_style
+	var saved_daily_active: bool = game.daily_challenge_active
+	var saved_daily_code: String = game.daily_challenge_code
+	var saved_daily_claim: String = game.daily_claimed_date
+	game.career_credits = 5000
+	game.operator_style = "cyan"
+	game.owns_amber_style = false
+	game.owns_violet_style = false
+	game.damage_flash_timer = 0.0
+	game.null_shift_timer = 0.0
+	game.dash_timer = 0.0
+	game._buy_cosmetic("amber")
+	if not _expect(game.operator_style == "amber" and game.owns_amber_style and game.operator_suit.material_override == game.materials["amber"], "earned-credit cosmetic purchase must unlock and apply the amber suit style"):
+		return
+	game._buy_cosmetic("violet")
+	if not _expect(game.operator_style == "violet" and game.owns_violet_style and game.operator_suit.material_override == game.materials["violet"], "second cosmetic purchase must persist and apply violet without changing combat levels"):
+		return
+	if not _expect(game.career_credits == 3800, "cosmetic vault must charge the stated 450 + 750 soft-currency prices"):
+		return
+	var daily_code: String = game._today_challenge_code()
+	if not _expect(game._contract_index_from_challenge_code(daily_code) in [0, 1, 2], "daily challenge code must resolve to one of the three fixed contracts"):
+		return
+	if not _expect(game._contract_index_from_challenge_code("not-a-challenge") == -1, "malformed share codes must not select a contract"):
+		return
+	game.daily_challenge_active = true
+	game.daily_challenge_code = daily_code
+	game.daily_claimed_date = ""
+	var daily_reward: int = game._claim_daily_challenge_reward()
+	if not _expect(daily_reward == 400 and game.daily_claimed_date == game._today_date_code(), "a completed current-day challenge must award 400 credits once"):
+		return
+	if not _expect(game._claim_daily_challenge_reward() == 0, "daily completion must not farm the reward twice on the same UTC date"):
+		return
+	game.career_credits = saved_credits
+	game.operator_style = saved_style
+	game.owns_amber_style = saved_owns_amber
+	game.owns_violet_style = saved_owns_violet
+	game.daily_challenge_active = saved_daily_active
+	game.daily_challenge_code = saved_daily_code
+	game.daily_claimed_date = saved_daily_claim
+	game._save_career()
+	game._update_player_material()
+	game._refresh_loadout()
+
+	print("PASS NULL//SHIFT runtime: combat, extraction, persistent upgrades, daily reward guard, challenge-link validation and earned-credit cosmetics")
 	quit(0)

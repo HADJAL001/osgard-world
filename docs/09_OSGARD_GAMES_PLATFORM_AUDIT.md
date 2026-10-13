@@ -166,3 +166,21 @@ The export path forces `active: false), `sponsorLabelRequired: true), `commercia
 - Рекомендации в игровом окне отображаются только после same-origin сообщения `completed` от активного iframe. Закрытие окна и ошибка загрузки не приравниваются к завершению.
 - Сигналы завершения добавлены в Godot-клиент NULL//SHIFT, его резервную WebGL-версию, SWARM, серверный результат REMIX, терминальное состояние «Империи времени» и передачу поколения INHERIT; остальные игры используют собственные lifecycle-сигналы.
 - Добавлены поведенческий smoke-тест рекомендаций и проверка доставки двух новых self-hosted ресурсов в production route matrix.
+
+
+## NULL//SHIFT — daily challenges, sharing and cosmetic economy
+
+A new Godot-native growth slice is implemented and covered by the headless runtime test:
+
+- The daily challenge identifier encodes the UTC date and its deterministic contract. The game validates the code before applying the contract, then includes it in a shareable URL to the Godot route.
+- A successful current-day challenge completion grants 400 local career credits once for that UTC date. Old links remain playable without the current-day reward. Pressing Share itself grants nothing.
+- The result card reports mission output and exposes the Web Share API plus clipboard/prompt fallback.
+- The local Style Vault sells two suit looks for earned credits: Amber 450 and Violet 750. They only alter the operator material and do not affect health, weapon damage, pulse, dash or enemy behavior.
+- The prototype does not pretend to have payments, purchase verification, referral conversion accounting or global leaderboards. Those need an authoritative service and actual provider integration before cash sales.
+
+### Commercial sequence
+
+1. Measure first-run start, successful extraction, D1/D7 retention, challenge completion and share-link opens; only aggregate analytics with the appropriate consent.
+2. Add server-verified invite rewards after a referred player completes a real mission, not after a click.
+3. Test a one-time cosmetic supporter pack only after checkout, signed webhooks, entitlement persistence and refunds are operational.
+4. Measure net revenue after fees/refunds and acquisition cost. A million-dollar outcome is a goal, not a forecast or promise.
