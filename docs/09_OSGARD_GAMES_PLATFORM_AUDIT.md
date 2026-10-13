@@ -184,3 +184,27 @@ A new Godot-native growth slice is implemented and covered by the headless runti
 2. Add server-verified invite rewards after a referred player completes a real mission, not after a click.
 3. Test a one-time cosmetic supporter pack only after checkout, signed webhooks, entitlement persistence and refunds are operational.
 4. Measure net revenue after fees/refunds and acquisition cost. A million-dollar outcome is a goal, not a forecast or promise.
+
+
+## AETHER GRID — daily challenge and measured growth loop · 13 October 2026
+
+AETHER GRID is a deterministic, static-browser 5×5 signal-routing puzzle added to the canonical Games catalogue. The board is derived from a UTC date seed so players opening the daily challenge receive the same starting layout. Tapping a node rotates it; a hint makes progress explicit and adds a three-move penalty; success records a device-local best score and can share the day and result.
+
+### Product and sharing contract
+
+- Canonical game route: `/games/aether-grid/`; detail page: `/game/aether-grid`.
+- Invite previews use the existing self-hosted share-card generator and route contract. The invite landing carries a strictly validated UTC date into the game; it does not accept arbitrary navigation destinations.
+- The main portal, manifest, sitemap, embedded-player readiness checks, post-session recommendation graph, route matrix and smoke tests all include the game.
+- Session lifecycle events stay within the existing same-origin player bridge. Server analytics remain gated by the existing user consent/auth requirements. The puzzle itself requires no account or backend.
+- Personal records are stored locally. There is no global leaderboard, server-verified score, multiplayer sync or proof of invite conversion in this static game.
+
+### Monetization and virality — what can be measured honestly
+
+1. **Share → open → first play → completion.** With valid consent and a configured authenticated event pipeline, count distinct invite codes and the stages actually observed. A generated link, a share sheet, or a social-compose window alone does not prove that a recipient received or opened the link.
+2. **Daily return.** Track first play and completed daily challenge by UTC date; report D1/D7 retention only where the same consented pseudonymous identifier can legitimately support the measurement. Local scores do not establish cross-device retention.
+3. **Partner lead path.** The game includes a clearly voluntary, UTM-attributed link to Partner Studio that preselects a sponsorship inquiry for the AETHER GRID daily challenge. The user must review and submit the form. A click is not a booked sponsorship or revenue.
+4. **Commercial checkout.** The existing Premium page continues to gate purchases until real provider credentials, server-side price validation, signed webhooks, persistent entitlements, refunds and support are operational. No ad SDK, rewarded ad or paid AETHER GRID placement is enabled by this change.
+
+### $1 million annual revenue target
+
+The existing `/games/monetization/` page is a scenario calculator, not a forecast. AETHER GRID creates another acquisition and retention surface, but its actual traffic, retention, referral coefficient, sponsor close rate and net revenue must be measured before using it as a revenue assumption. Report net revenue after provider fees, refunds and acquisition cost. A million-dollar outcome remains a goal, never a promise.
