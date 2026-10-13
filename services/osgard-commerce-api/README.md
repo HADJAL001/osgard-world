@@ -25,25 +25,40 @@ Backend for OSGARD PLAY checkout sessions, signed Stripe webhooks, request leads
 
 The API boots in degraded mode without secrets so /healthz remains observable, but checkout is disabled until database, Stripe key, webhook secret and prices are configured.
 
-## Render deployment
+## Deploy on the existing OSGARD Docker host (without Render)
 
-Create a Web Service from the GitHub repository. Set Root Directory to services/osgard-commerce-api, Runtime to Docker, Dockerfile path to Dockerfile and Health Check Path to /healthz. Attach a Render PostgreSQL database and set DATABASE_URL to its private connection URL. Use PostgreSQL; the service filesystem is not an order database.
+The repository already has an Nginx frontend container and a deployment pipeline. Run Commerce API as a separate Node.js 22 container on the **same private Docker network** as the frontend. Do not publish port 8080 to the public internet.
 
-Configure in the hosting dashboard, never in Git:
-- PUBLIC_BASE_URL=https://osgard.world
-- ALLOWED_ORIGINS=https://osgard.world,https://www.osgard.world
-- DATABASE_URL=<private PostgreSQL URL>
-- STRIPE_SECRET_KEY=<Stripe test secret key first>
-- STRIPE_WEBHOOK_SECRET=<endpoint signing secret>
-- STRIPE_PRICE_SUPPORT_OSGARD=<one-time Stripe Price ID>
-- STRIPE_PRICE_DEVELOPMENT_DEPOSIT=<one-time Stripe Price ID agreed with the client>
-- STRIPE_PRICE_OSGARD_PREMIUM_MONTHLY=<recurring Price ID, only after benefits are ready>
-- ENABLE_LIVE_PAYMENTS=false
-- ENABLE_OSGARD_PREMIUM_SALES=false
-- ADMIN_API_TOKEN=<random secret of at least 32 characters>
-- DATABASE_SSL=true only if the database's TLS certificate chain is trusted in this runtime.
+1. On the OSGARD host, determine the actual network of the existing frontend instead of guessing the name:
+   ```sh
+   docker inspect osgard-world --format '{{json .NetworkSettings.Networks}}'
+   docker network ls
+   ```
+2. Build the service image from the repository:
+   ```sh
+   docker build -t osgard-commerce-api:2026-10-13 -f services/osgard-commerce-api/Dockerfile services/osgard-commerce-api
+   ```
+3. Store the production environment file outside the website and source tree, owned by the deployment operator, with mode 600. Start from `.env.example`, set a reachable PostgreSQL `DATABASE_URL`, Stripe **test-mode** credentials, real test Price IDs and a random `ADMIN_API_TOKEN` of at least 32 characters. Keep `ENABLE_LIVE_PAYMENTS=false` and `ENABLE_OSGARD_PREMIUM_SALES=false`.
+4. Start Commerce API on the network identified in step 1. Substitute the actual network name and secure environment file path:
+   ```sh
+   docker run -d --name osgard-commerce-api --restart unless-stopped \
+     --network <actual-osgard-frontend-network> \
+     --env-file /secure/path/osgard-commerce.env \
+     -e PORT=8080 -e TRUST_PROXY=true \
+     osgard-commerce-api:2026-10-13
+   ```
+   Do not use `-p 8080:8080`: Nginx is the public gateway. `TRUST_PROXY=true` is appropriate only when requests always pass through the single trusted OSGARD Nginx hop.
+5. Verify that the frontend container resolves and reaches the API, then test the public gateway:
+   ```sh
+   docker exec osgard-world wget -qO- http://osgard-commerce-api:8080/healthz
+   curl -fsS https://osgard.world/commerce-api/healthz
+   ```
+   `/healthz` may return 200 in degraded mode. Inspect `/readyz` as well; it must not be treated as ready until the database, Stripe test credentials, webhook and prices are configured.
+6. Deploy the reviewed `nginx.conf` with the frontend release and validate it using `nginx -t` before reloading/activating the configuration. The `/commerce-api/` route is defined in the repository and uses Docker DNS at request time.
+7. Run checkout success, decline, cancellation, delayed-payment, duplicate-webhook, refund and subscription-cancellation cases using Stripe test mode. Verify both the order state and the protected commerce dashboard.
+8. Only after seller identity, taxes, refunds, privacy, support and provider eligibility are reviewed should live processing be considered. Do not enable OSGARD PREMIUM until its benefits, cancellation and account entitlement/revocation flow are implemented.
 
-Register a Stripe webhook endpoint at https://YOUR-API-HOST/v1/stripe/webhook and subscribe to checkout.session.completed, checkout.session.async_payment_succeeded, checkout.session.async_payment_failed, checkout.session.expired, charge.refunded, invoice.paid, invoice.payment_failed and customer.subscription.deleted. Copy the endpoint signing secret into STRIPE_WEBHOOK_SECRET.
+Never commit Stripe secrets, database URLs, or the admin token. Never embed them in HTML or `commerce-config.json`.
 
 ## Static-site configuration
 

@@ -42,3 +42,13 @@ Run services/osgard-commerce-api/npm test and npm run check, plus node scripts/c
 ## Commercial priority
 
 First: connect lead storage, run a test-mode payment from the deployed storefront and measure actual traffic only with consent. Next: prove repeat play and sponsor inquiry interest. Do not prioritize a paid subscription until users can see exact recurring benefits and the app can safely apply and revoke access.
+
+
+## Additional integration hardening
+
+- The existing Nginx source now includes a same-origin `/commerce-api/` reverse proxy to the private `osgard-commerce-api:8080` Docker service. The API port is not intended to be publicly mapped.
+- The production route matrix verifies the commerce storefront, server-verified payment-result page, noindex commerce admin, public config and shared contact/lead client without falsely assuming the external API is already configured.
+- Checkout polling now uses a compare-and-set status update. Re-opening an old success URL cannot silently return an order from `refunded`, `expired`, `payment_failed` or `cancelled` back to `paid`; a concurrent refund wins over a stale poll.
+- Admin and checkout-status JSON responses set `Cache-Control: no-store` so customer/order data and payment state are not retained by intermediaries.
+- CI includes regression tests for refunded/cancelled payment states and smoke checks for the private reverse-proxy route.
+- The changes remain in an open pull request. No payment API/database credentials were supplied and no checkout API deployment or real transaction is claimed. The live website changes only after the reviewed branch is merged and the host deployment succeeds.
