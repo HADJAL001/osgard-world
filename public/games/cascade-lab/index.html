@@ -1553,7 +1553,6 @@ function incrementCompletedInterstitialCount() {
 }
 function renderServiceAdCampaign(campaignId = selectedServiceCampaignId) {
   const campaign = visibleServiceCampaigns.find(item => item.id === campaignId) || visibleServiceCampaigns[0] || getOsgardCampaign(campaignId);
-  selectedServiceCampaignId = campaign.id;
   if (campaign.id !== selectedServiceCampaignId && serviceSharePending) { serviceSharePending = false; pendingShareCampaignId = null; }
   selectedServiceCampaignId = campaign.id;
   const choices = $('serviceAdChoices');
