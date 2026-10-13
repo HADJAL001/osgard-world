@@ -8,7 +8,7 @@ const resetButton = document.getElementById('reset-model');
 const usd = new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 const number = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 });
 const decimal = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 });
-const factor = new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+const factor = new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 3, maximumFractionDigits: 4 });
 
 function readInputs() {
   const data = new FormData(form);
@@ -37,7 +37,7 @@ function render() {
       '<div><span>Расходы и комиссии</span><b>' + money(result.operatingCostUsd + result.paymentFeesUsd) + '</b></div>' +
       '<div><span>Посещения всего</span><b>' + count(result.visitors) + '</b></div>' +
       '<div><span>В том числе приглашения</span><b>' + count(result.viralVisitors) + '</b></div>' +
-      '<div><span>K-factor</span><b>' + factor.format(result.kFactor) + '</b></div>' +
+      '<div><span>Effective active-player K</span><b>' + factor.format(result.activePlayerKFactor) + '</b></div>' +
       '<div><span>Игровые сессии</span><b>' + count(result.sessions) + '</b></div>' +
       '<div><span>Заполненные рекламные показы</span><b>' + count(result.filledAdImpressions) + '</b></div>' +
       '<div><span>Заявки / оплаченные проекты</span><b>' + count(result.leads) + ' / ' + decimal.format(result.closedProjects) + '</b></div>' +
@@ -57,7 +57,11 @@ function render() {
     ? null
     : calculateScenario({ ...inputs, monthlyVisitors: requiredMonthlyVisitors }, 'base');
   document.getElementById('base-viral-visitors').textContent = count(base.viralVisitors);
-  document.getElementById('base-k-factor').textContent = factor.format(base.kFactor);
+  document.getElementById('base-k-factor').textContent = factor.format(base.activePlayerKFactor);
+  const activeKStatus = document.getElementById('active-k-factor-status');
+  activeKStatus.textContent = base.activePlayerKFactor < 1
+    ? 'K < 1: каждый следующий круг активных игроков затухает в этой модели. Для роста нужны внешний трафик или улучшение доли приглашений, открытия ссылок и запуска игры.'
+    : 'K ≥ 1: модель допускает неубывающие приглашённые когорты, но устойчивый рост нужно подтвердить реальными когортными данными.';
   document.getElementById('base-annual-revenue').textContent = money(annualRevenue);
   document.getElementById('annual-target-heading').textContent = money(target);
   document.getElementById('monthly-target-value').textContent = money(target / 12);
