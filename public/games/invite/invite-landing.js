@@ -34,7 +34,7 @@
     (validDailyMode || validOrdinaryMode);
   const play = document.querySelector('#play-link');
   if (play) {
-    const target = new URL(game === 'aether-grid' ? '/games/aether-grid/' : '/games/', location.origin);
+    const target = new URL(game === 'aether-grid' ? '/games/aether-grid/' : game === 'afterimage-run' ? '/games/afterimage-run/' : '/games/', location.origin);
     const aetherDay = params.get('og_day') || '';
     const validAetherDay = /^\\d{4}-\\d{2}-\\d{2}$/.test(aetherDay) && (() => {
       const date = new Date(aetherDay + 'T00:00:00.000Z');
@@ -49,6 +49,12 @@
       target.searchParams.set('utm_medium', medium);
       target.searchParams.set('utm_campaign', campaign);
       target.searchParams.set('utm_content', content);
+      if (game === 'afterimage-run' && params.get('og_challenge') === 'afterimage-run' && Number.isSafeInteger(scoreValue) && scoreValue >= 0 && scoreValue <= 99999999 && validDailyMode) {
+        target.searchParams.set('score', String(scoreValue));
+        target.searchParams.set('seed', requestedDay);
+        target.searchParams.set('og_challenge', 'afterimage-run');
+        target.searchParams.set('mode', 'daily');
+      }
     }
     else if (legacySignalRun) {
       // Keep only the validated SIGNAL RUN challenge contract when leaving the social preview.
