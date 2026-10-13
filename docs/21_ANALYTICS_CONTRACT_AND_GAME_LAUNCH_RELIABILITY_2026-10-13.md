@@ -13,6 +13,7 @@ A second usability gap existed in the React game detail player: the frame had a 
 - Add `scripts/analytics-contract-smoke.mjs` to require equality between browser/API event allowlists, browser/API game identifiers, and the canonical `OsgardGameId` union (except the analytics-only `unknown` identifier).
 - Register the analytics contract smoke test in the npm scripts, release-readiness checks, and frontend CI workflow.
 - Add a 15-second wall-clock watchdog to the React game iframe. A stuck launch now reaches the existing recovery screen.
+- Normalize the explicit analytics consent vocabulary across the React detail page (`granted`/`denied`) and static Games hub (`yes`/`no`). Either page now respects a decision made on the other, including clearing the pending queue after denial.
 - Add a real retry button that increments the iframe key, forcing the browser to recreate the embedded game instead of merely hiding the error.
 
 ## Validation scope
