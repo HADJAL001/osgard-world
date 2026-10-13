@@ -36,6 +36,24 @@ assert.ok(appStyles.includes('.premium-game-card--afterimage-run'), 'The React E
 assert.ok(routeEntries.every(x=>x.url.startsWith('/games/')),'Every launch entry must use a same-origin game route')
 const inviteLandingScript=readFileSync(resolve(root,'invite/invite-landing.js'),'utf8')
 assert.ok(inviteLandingScript.includes("localStorage.getItem('osgard.games.analytics-consent.v1') === 'yes'") && inviteLandingScript.includes("name: 'referral_link_opened'") && inviteLandingScript.includes("source: 'referral-link:' + code"),'Invite preview must preserve consent-gated referral attribution')
+assert.ok(inviteLandingScript.includes("const afterimageChallenge = game === 'afterimage-run'")&&inviteLandingScript.includes("new URL('/games/afterimage-run/', location.origin)")&&inviteLandingScript.includes("target.searchParams.set('seed', requestedDay)")&&inviteLandingScript.includes("target.searchParams.set('score', String(scoreValue))"),'AFTERIMAGE invite must preserve validated daily seed and target score when a friend accepts')
+{
+  const playLink={href:''};
+  const fakeDocument={body:{dataset:{game:'afterimage-run'}},querySelector(selector){return selector==='#play-link'?playLink:null}};
+  const fakeLocation={origin:'https://osgard.world',search:'?og_challenge=afterimage-run&challenge=2468&day=2026-10-13&mode=daily'};
+  new Function('document','location','URL',inviteLandingScript)(fakeDocument,fakeLocation,URL);
+  const target=new URL(playLink.href);
+  assert.equal(target.pathname,'/games/afterimage-run/','Valid AFTERIMAGE invitation should launch the game directly');
+  assert.equal(target.searchParams.get('seed'),'2026-10-13','AFTERIMAGE invitation should retain the shared daily seed');
+  assert.equal(target.searchParams.get('score'),'2468','AFTERIMAGE invitation should retain the friend target score');
+}
+{
+  const playLink={href:''};
+  const fakeDocument={body:{dataset:{game:'afterimage-run'}},querySelector(selector){return selector==='#play-link'?playLink:null}};
+  const fakeLocation={origin:'https://osgard.world',search:'?og_challenge=afterimage-run&challenge=2468&day=not-a-date&mode=daily'};
+  new Function('document','location','URL',inviteLandingScript)(fakeDocument,fakeLocation,URL);
+  assert.equal(new URL(playLink.href).pathname,'/games/','Invalid-date AFTERIMAGE challenge must fall back to catalogue rather than trust unchecked params');
+}
 const productionMatrix = readFileSync(resolve('scripts/production-route-matrix.mjs'),'utf8')
 assert.ok(productionMatrix.includes("path === '/games/invite/invite-landing.js'") && productionMatrix.includes("target.searchParams.set('utm_campaign', campaign)"), 'Production route matrix must validate the invitation script with its own content contract, not unrelated SkillCred markers')
 for(const game of routeEntries){
@@ -164,6 +182,8 @@ assert.ok(afterimageGame.includes('<title>AFTERIMAGE//RUN — OSGARD PLAY</title
 assert.ok(!/<script[^>]+src=/i.test(afterimageGame)&&!/<link[^>]+href=["']https?:/i.test(afterimageGame),'AFTERIMAGE//RUN must remain self-contained')
 assert.ok(afterimageGame.includes("extra||{}),location.origin)")&&!afterimageGame.includes("extra||{}),'*')"),'AFTERIMAGE lifecycle messages must stay same-origin')
 assert.ok(afterimageGame.includes('incomingSeed=params.get(\'seed\')')&&afterimageGame.includes('Number.isFinite(rawTarget)')&&afterimageGame.includes('if(r[today])'),'AFTERIMAGE challenge/reward safety checks missing')
+assert.ok(afterimageGame.includes("new URL('/games/invite/afterimage-run/',location.origin)")&&afterimageGame.includes("u.searchParams.set('og_challenge','afterimage-run')")&&afterimageGame.includes("osgard.games.invite-code.v1"),'AFTERIMAGE social links should use rich invitation preview and attach a valid existing referral code when available')
+assert.ok(afterimageGame.includes('property="og:image" content="https://osgard.world/games/share-cards/afterimage-run.png"')&&afterimageGame.includes('name="twitter:card" content="summary_large_image"'),'AFTERIMAGE direct page should expose its generated large share card to social crawlers')
 assert.ok(afterimageGame.includes("opened.opener=null")&&afterimageGame.includes("prepareShareReward('share-intent-'+kind)"),'Social share must detach opener and require a separate reward confirmation')
 assert.ok(afterimageGame.includes('id="claim-share-reward"')&&afterimageGame.includes("rewardShare('player-confirmed:'+method)"),'AFTERIMAGE reward must require a separate player confirmation')
 const afterimageShareStart=afterimageGame.indexOf('async function shareNative()')
