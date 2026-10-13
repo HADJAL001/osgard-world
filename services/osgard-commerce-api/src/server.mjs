@@ -423,12 +423,34 @@ app.post("/v1/events", async (req, res) => {
     try {
       await client.query("BEGIN");
       let insertedCount = 0;
+      let referralRewardsAwarded = 0;
       for (const event of batch.events) {
         const inserted = await client.query(
           "INSERT INTO commerce_events(event_id,event_name,session_id,game_id,source,path,duration_seconds) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT DO NOTHING RETURNING event_id",
           [event.eventId || crypto.randomUUID(), event.name, event.sessionId, event.gameId, event.source, event.path, event.durationSeconds],
         );
+        if (!inserted.rowCount) continue;
         insertedCount += Number(inserted.rowCount || 0);
+        if (event.name !== "game_session_completed" || event.durationSeconds < 60) continue;
+        const match = /^referral:(og_[a-f0-9]{8}):([a-z-]+)$/.exec(event.source);
+        if (!match || match[2] !== event.gameId) continue;
+        const invite = await client.query(
+          "SELECT wallet_token_hash FROM commerce_referral_invites WHERE invite_code=$1 AND game_id=$2",
+          [match[1], event.gameId],
+        );
+        if (!invite.rowCount) continue;
+        const walletHash = invite.rows[0].wallet_token_hash;
+        await client.query("SELECT wallet_token_hash FROM commerce_referral_wallets WHERE wallet_token_hash=$1 FOR UPDATE", [walletHash]);
+        const dailyRewards = await client.query(
+          "SELECT COUNT(*)::int AS count FROM commerce_referral_rewards WHERE wallet_token_hash=$1 AND created_at >= NOW() - INTERVAL '24 hours'",
+          [walletHash],
+        );
+        if (Number(dailyRewards.rows[0]?.count || 0) >= 5) continue;
+        const reward = await client.query(
+          "INSERT INTO commerce_referral_rewards(reward_id,invite_code,wallet_token_hash,referred_session_id,game_id,points) VALUES($1,$2,$3,$4,$5,50) ON CONFLICT DO NOTHING RETURNING reward_id",
+          [crypto.randomUUID(), match[1], walletHash, event.sessionId, event.gameId],
+        );
+        if (reward.rowCount) referralRewardsAwarded += 1;
       }
       await client.query("COMMIT");
     } catch (error) {
@@ -437,7 +459,7 @@ app.post("/v1/events", async (req, res) => {
     } finally {
       client.release();
     }
-    return res.status(202).json({ accepted: batch.events.length, inserted: insertedCount });
+    return res.status(202).json({ accepted: batch.events.length, inserted: insertedCount, referralRewardsAwarded });
   } catch (error) {
     console.error("Analytics insert failed:", error?.message || "unknown error");
     return res.status(503).json({ error: "EVENT_STORAGE_UNAVAILABLE" });
