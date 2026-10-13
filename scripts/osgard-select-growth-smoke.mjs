@@ -51,8 +51,8 @@ assert.ok(entertainmentGateway.includes("value.frequency === 'every3'") && enter
   entertainmentGateway.includes("После каждой завершённой игры") && entertainmentGateway.includes("Не показывать межигровую подборку"),
   'Entertainment must expose each-game, every-third-game and off preferences');
 assert.ok(entertainmentGateway.includes("aria-controls=\"play-select-preferences-panel\"") &&
-  entertainmentGateway.includes("const unverified = service.id === 'gardvpn'") &&
-  entertainmentGateway.includes("Availability not verified; opens the project site") &&
+  entertainmentGateway.includes("const limitedVerification = service.id === 'gardvpn'") &&
+  entertainmentGateway.includes("VPN connectivity not tested") &&
   entertainmentGateway.includes('osgard:service-preferences-updated'),
   'The settings panel must be accessible, disclose unverified VPN availability, and notify same-page consumers when preferences change');
 for (const selector of ['.play-select-preferences-panel','.play-select-preference-grid','.play-select-preference-option','.play-select-preferences-status']) {
@@ -107,7 +107,7 @@ assert.ok(source.includes("u.searchParams.set('utm_source','osgard_games')") &&
   'Each service link needs source, placement and campaign attribution');
 assert.ok(source.includes("РЕКЛАМА · СОБСТВЕННЫЕ ПРОЕКТЫ OSGARD") &&
   source.includes('Автозапуска нет'), 'Self-promotion must be labelled and never autoplay');
-assert.ok(source.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN','VPN-сервис. Описание и условия доступны на сайте проекта; доступность домена не была подтверждена проверкой.','https://gardvpn.is/',false,true]"),
+assert.ok(source.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN','Главная страница ответила HTTP 200 при проверке 13 октября 2026 года; работоспособность VPN-подключения не проверялась.','https://gardvpn.is/',false,true]"),
   'GARD VPN must remain selectable but clearly disclosed as not independently verified');
 assert.ok(source.includes("const availableServiceIds=services.filter(item=>item[7]!==false).map(item=>item[0])") &&
   source.includes("input.disabled=active===false"),
