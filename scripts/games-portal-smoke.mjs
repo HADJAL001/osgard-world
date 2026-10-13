@@ -757,3 +757,16 @@ assert.ok(appSource.includes('href="/games/?utm_source=osgard_world&amp;utm_medi
 assert.ok(appSource.includes('href="/games/monetization/?utm_source=osgard_world&amp;utm_medium=entertainment&amp;utm_campaign=economy_model"'), 'Entertainment gateway must link to the scenario economy model')
 assert.ok(appSource.includes('публикацию нельзя проверить автоматически') && appSource.includes('Это не деньги'), 'SHARDS must be disclosed as non-monetary with social-post verification limits')
 assert.ok(appStyles.includes('.play-economy-strip') && appStyles.includes('@media(max-width:760px)') && appStyles.includes('prefers-reduced-motion:reduce'), 'Entertainment economy teaser needs responsive and reduced-motion styling')
+
+
+const serverVerifiedReferralSource = readFileSync(resolve('services/osgard-commerce-api/src/server.mjs'),'utf8')
+assert.ok(recommendationScript.includes("const INVITE_CODES_KEY='osgard.games.shards-invite-codes.v1'") && recommendationScript.includes("const REWARD_CONSENT_KEY='osgard.games.referral-reward-consent.v1'"), 'Referral codes and reward consent must be kept separate')
+assert.ok(recommendationScript.includes('function secureReferralHex(bytes)') && recommendationScript.includes("og_[a-f0-9]{32}"), 'Reward invite codes must use secure 128-bit randomness')
+assert.ok(recommendationScript.includes("base+'/v1/referrals/register'") && recommendationScript.includes("base+'/v1/referrals/reward-status'") && recommendationScript.includes('refreshShardsBalance'), 'The intermission must register referral links and fetch server-calculated rewards')
+assert.ok(!recommendationScript.includes('function award(source)') && !recommendationScript.includes('social_reward_claimed'), 'The intermission must not mint points or self-report a reward')
+assert.ok(serverVerifiedReferralSource.includes('game_referral_invites') && serverVerifiedReferralSource.includes('game_referral_visits') && serverVerifiedReferralSource.includes('game_referral_rewards'), 'Referral events must be backed by durable server tables')
+assert.ok(serverVerifiedReferralSource.includes('REFERRAL_MIN_SESSION_SECONDS') && serverVerifiedReferralSource.includes('processReferralRewardEvent') && serverVerifiedReferralSource.includes('ON CONFLICT(invite_code,visitor_token) DO NOTHING'), 'Server must reject self-referrals, require qualified play and deduplicate rewards')
+assert.ok(serverVerifiedReferralSource.includes('/v1/referrals/register') && serverVerifiedReferralSource.includes('/v1/referrals/reward-status'), 'Server referral registration and balance endpoints must exist')
+assert.ok(referralCoreSource.includes('REFERRAL_REWARD_POINTS') && referralCoreSource.includes('validateReferralRewardRegistration') && referralCoreSource.includes('validateReferralRewardStatus'), 'Referral validators and fixed point value must exist in commerce core')
+assert.ok(!signalJs.includes('awardShareShards') && signalJs.includes("window.top.location.assign(destination)") && signalJs.includes('60 секунд'), 'SIGNAL RUN must redirect to the server-verified referral programme, not issue local SHARDS')
+assert.ok(playSelectSource.includes("base + '/v1/referrals/register'") && playSelectSource.includes("base + '/v1/referrals/reward-status'") && !playSelectSource.includes('grantReward('), 'Homepage OSGARD SELECT must use verified referral endpoints, not a local wallet')
