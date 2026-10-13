@@ -466,7 +466,7 @@ async function registerInvite(gameId,code){
  }catch{return false}
 }
 async function refreshShardsBalance(gameId,balance,status){
- const code=inviteCode(gameId);
+ const code=inviteCode(gameId),owner=ownerToken();
  if(!hasRewardConsent()){
   balance.textContent='OSGARD SHARDS · —';
   status.textContent=!hasConsent()
@@ -474,14 +474,14 @@ async function refreshShardsBalance(gameId,balance,status){
    : 'Включи участие в программе наград ниже, чтобы учитывать приглашённые игровые сессии.';
   return;
  }
- if(!code){balance.textContent='OSGARD SHARDS · недоступно';status.textContent='Браузер не разрешил создать защищённый код приглашения.';return}
+ if(!code||!owner){balance.textContent='OSGARD SHARDS · недоступно';status.textContent='Не удалось создать защищённый код приглашения/владельца в этом браузере.';return}
  status.textContent='Проверяем серверный баланс приглашений…';
  try{
   let base='/commerce-api';
   const configResponse=await fetch('/games/commerce-config.json',{cache:'no-store'});
   if(configResponse.ok){const config=await configResponse.json().catch(()=>({}));base=String(config.apiBaseUrl||base)}
   while(base.endsWith('/'))base=base.slice(0,-1);
-  const response=await fetch(base+'/v1/referrals/reward-status',{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({code})});
+  const response=await fetch(base+'/v1/referrals/reward-status',{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,ownerToken:owner})});
   const result=await response.json().catch(()=>({}));
   if(!response.ok)throw new Error(result.error||'REFERRAL_STATUS_UNAVAILABLE');
   balance.textContent='OSGARD SHARDS · '+String(result.pointsEarned||0);
@@ -731,8 +731,17 @@ function rewardShelf(gameId){
  });
  consentToggle.addEventListener('change',()=>{
   try{if(consentToggle.checked)localStorage.setItem(REWARD_CONSENT_KEY,'yes');else localStorage.removeItem(REWARD_CONSENT_KEY)}catch{}
-  status.textContent=consentToggle.checked?'Участие в программе наград включено. Для подтверждения сессии друга будут отправляться минимальные данные: код приглашения, игра и события старта/завершения.':'Участие отключено. Ссылками можно делиться без учёта наград.';
-  if(consentToggle.checked)captureInvite();
+  if(!consentToggle.checked){
+   try{
+    const raw=sessionStorage.getItem('osgard.games.referral-attribution.v1');
+    const attribution=raw?JSON.parse(raw):null;
+    if(attribution&&/^og_[a-f0-9]{32}$/.test(String(attribution.code||''))){
+     sessionStorage.removeItem('osgard.games.referral-attribution.v1');
+     sessionStorage.removeItem('osgard.games.referral-opened.'+attribution.code);
+    }
+   }catch{}
+  }
+  status.textContent=consentToggle.checked?'Участие в программе наград включено. Для подтверждения сессии друга будут отправляться минимальные данные: код приглашения, игра и события старта/завершения.':'Участие отключено. Ссылками можно делиться без учёта наград; атрибуция текущего приглашения очищена.';
   void refreshShardsBalance(gameId,balance,status);
  });
  primary.addEventListener('click',async()=>{
