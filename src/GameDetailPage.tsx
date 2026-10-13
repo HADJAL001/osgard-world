@@ -218,6 +218,26 @@ const GAMES: GameDefinition[] = [
     featuresEn: ['Six interactive devices', 'Daily challenges and score duels', 'OSGARD service showcase and social sharing', 'Local reward after manual share confirmation'],
     theme: 'cascade-lab',
   },
+  {
+    id: 'afterimage-run',
+    mark: 'AR',
+    titleRu: 'AFTERIMAGE//RUN',
+    titleEn: 'AFTERIMAGE//RUN',
+    category: 'creative',
+    genreRu: 'Ежедневный sci-fi speedrun',
+    genreEn: 'Daily sci-fi speedrun',
+    descriptionRu: 'Пробегите ежедневный sci-fi маршрут, уклоняйтесь от препятствий, собирайте SIGNAL SHARDS и используйте PHASE DASH. У игроков один daily seed; отправьте вызов другу, чтобы он попробовал пройти тот же маршрут.',
+    descriptionEn: 'Run the daily sci-fi route, dodge hazards, collect SIGNAL SHARDS and trigger PHASE DASH. Players share the daily seed; invite a friend to attempt the same route.',
+    href: '/games/afterimage-run/',
+    devices: ['desktop', 'mobile'],
+    controlsRu: 'Прыжок: пробел, стрелка вверх или касание игровой арены. PHASE DASH: Shift или экранная кнопка. Escape ставит игру на паузу.',
+    controlsEn: 'Jump: Space, Arrow Up or tap the arena. PHASE DASH: Shift or the on-screen button. Escape pauses the run.',
+    supportRu: 'Самостоятельная HTML5 Canvas-игра. Лучший результат и призрачный маршрут сохраняются локально в этом браузере; облачное сохранение и глобальный серверный рейтинг не заявлены.',
+    supportEn: 'A standalone HTML5 Canvas game. Best score and ghost route are stored locally in this browser; cloud saves and a global server leaderboard are not claimed.',
+    featuresRu: ['Общий ежедневный seed', 'Призрачный маршрут и вызов другу', 'PHASE DASH и сенсорный прыжок'],
+    featuresEn: ['Shared daily seed', 'Ghost route and friend challenge', 'PHASE DASH and touch jump'],
+    theme: 'afterimage-run',
+  },
 ]
 
 
@@ -433,6 +453,7 @@ export function GameDetailPage({ slug }: { slug: string }) {
                   'signal-run': /signal\s*run/i,
                   'civic-cascade': /civic\s*cascade/i,
                   patina: /patina\s*atelier/i,
+                  'afterimage-run': /afterimage\s*\/\s*\/\s*run/i,
                 }
                 const validTitle = game.id === 'time'
                   ? Boolean(frameDocument?.querySelector('.time-game'))
