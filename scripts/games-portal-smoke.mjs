@@ -1,4 +1,5 @@
 import { assessReport } from './games-lighthouse-report.mjs'
+import { gunzipSync } from 'node:zlib'
 import assert from 'node:assert/strict'
 import { readFileSync, existsSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -17,14 +18,18 @@ const civic=readFileSync(resolve(root,'civic-cascade/index.html'),'utf8')
 const patina=readFileSync(resolve(root,'patina/index.html'),'utf8')
 const signalRun=readFileSync(resolve(root,'signal-run/index.html'),'utf8')
 const signalJs=readFileSync(resolve(root,'signal-run/game.js'),'utf8')
+const cascadeWrapper=readFileSync(resolve(root,'cascade-lab/index.html'),'utf8')
+const cascadePayloadNames=['payload-01.txt','payload-02.txt','payload-03.txt','payload-04.txt','payload-05.txt','payload-06.txt','payload-07.txt','payload-07b.txt','payload-08.txt']
+for(const part of cascadePayloadNames)assert.ok(existsSync(resolve(root,'cascade-lab',part)),'Missing CASCADE LAB payload: '+part)
+const cascadeBundle=gunzipSync(Buffer.from(cascadePayloadNames.map(name=>readFileSync(resolve(root,'cascade-lab',name),'utf8').trim()).join(''),'base64')).toString('utf8')
 const manifest=readFileSync(resolve('src/core/manifest.ts'),'utf8')
 const sitemap=readFileSync(resolve('public/sitemap.xml'),'utf8')
-const required=['data-game="null-shift"','data-game="time"','data-game="swarm"','data-game="inherit"','data-game="remix"','data-game="civic-cascade"','data-game="patina"','data-game="signal-run"','id="games-grid"','id="game-search"','data-filter="tactical"','id="player-dialog"','id="player-share"','id="player-fullscreen"','id="analytics-toggle"','id="project-form"','https://wa.me/79640027222','osgardbewworld.com','o2system.art','senjorio.com','superday.run','marcosa.club','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio','/games/favicon.svg','/privacy/','/terms/']
+const required=['data-game="null-shift"','data-game="time"','data-game="swarm"','data-game="inherit"','data-game="remix"','data-game="civic-cascade"','data-game="patina"','data-game="signal-run"','data-game="cascade-lab"','data-favorite="cascade-lab"','id="games-grid"','id="game-search"','data-filter="tactical"','id="player-dialog"','id="player-share"','id="player-fullscreen"','id="analytics-toggle"','id="project-form"','https://wa.me/79640027222','osgardbewworld.com','o2system.art','senjorio.com','superday.run','marcosa.club','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio','/games/favicon.svg','/privacy/','/terms/']
 for(const item of required) assert.ok(html.includes(item),'Games hub missing: '+item)
 assert.ok(appSource.includes('className="play-catalog-link" href="/games/"')&&appSource.includes('<em>OSGARD WORLD GAMING</em>')&&appSource.includes("'Открыть игровой портал'"),'Homepage entertainment gateway must promote OSGARD WORLD GAMING and open the canonical /games/ hub')
 assert.ok(html.includes('<title>OSGARD WORLD GAMING — Игровая платформа</title>')&&html.includes('og:title" content="OSGARD WORLD GAMING — игровые миры')&&html.includes('"name":"OSGARD WORLD GAMING"'),'Gaming hub identity must be consistent in title, social metadata and structured data')
 assert.ok(html.includes('OSGARD WORLD GAMING <span>/</span> DIGITAL WORLDS')&&html.includes('быстрый возврат к недавним сессиям'),'Gaming hub hero must describe the branded portal and its actual navigation features')
-for(const path of ['public/games/index.html','public/games/favicon.svg','public/games/player-lifecycle.js','public/games/admin/index.html','public/games/admin/partners/index.html','public/games/civic-cascade/index.html','public/games/patina/index.html','public/games/signal-run/index.html','public/games/signal-run/game.js','public/privacy/index.html','public/terms/index.html']) assert.ok(existsSync(resolve(path)),'Missing file: '+path)
+for(const path of ['public/games/index.html','public/games/favicon.svg','public/games/player-lifecycle.js','public/games/admin/index.html','public/games/admin/partners/index.html','public/games/civic-cascade/index.html','public/games/patina/index.html','public/games/signal-run/index.html','public/games/signal-run/game.js','public/games/cascade-lab/index.html','public/privacy/index.html','public/terms/index.html']) assert.ok(existsSync(resolve(path)),'Missing file: '+path)
 for(const path of ['scripts/games-lighthouse-report.mjs','.github/workflows/games-lighthouse.yml']) assert.ok(existsSync(resolve(path)),'Missing games performance monitoring file: '+path)
 const lighthouseScript=readFileSync(resolve('scripts/games-lighthouse-report.mjs'),'utf8')
 const lighthouseWorkflow=readFileSync(resolve('.github/workflows/games-lighthouse.yml'),'utf8')
@@ -37,8 +42,10 @@ assert.equal(assessReport(fixture({...healthyScores,performance:.84},501,4001),'
 assert.equal(assessReport(fixture({...healthyScores,performance:.89},100,1500),'desktop').pass,false,'Desktop performance below guardrail should fail')
 assert.ok(lighthouseScript.includes('maxTbtMs')&&lighthouseScript.includes('maxLcpMs'),'Lighthouse report must enforce Core Web Vitals guardrails')
 assert.ok(html.includes('type="application/ld+json"'),'SEO ItemList JSON-LD missing')
-assert.ok(html.includes('"numberOfItems":8')&&html.includes('"name":"CIVIC CASCADE","url":"https://osgard.world/games/civic-cascade/"')&&html.includes('"name":"PATINA Atelier","url":"https://osgard.world/games/patina/"')&&html.includes('"name":"SIGNAL RUN","url":"https://osgard.world/games/signal-run/"'),'CIVIC CASCADE must appear in the canonical Games ItemList')
+assert.ok(html.includes('"numberOfItems":9')&&html.includes('"name":"CIVIC CASCADE","url":"https://osgard.world/games/civic-cascade/"')&&html.includes('"name":"PATINA Atelier","url":"https://osgard.world/games/patina/"')&&html.includes('"name":"SIGNAL RUN","url":"https://osgard.world/games/signal-run/"')&&html.includes('"name":"CASCADE LAB","url":"https://osgard.world/games/cascade-lab/"'),'Canonical Games ItemList must include all nine games')
 assert.ok(html.includes('class="art art-civic"')&&html.includes('data-favorite="civic-cascade"')&&html.includes('href="/games/civic-cascade/" data-play="civic-cascade"'),'CIVIC CASCADE card must support the existing play and favorites UI')
+assert.ok(html.includes('class="art art-cascade"')&&html.includes('data-favorite="cascade-lab"')&&html.includes('href="/games/cascade-lab/" data-play="cascade-lab"')&&html.includes('href="/game/cascade-lab"'),'CASCADE LAB card must link to its player, detail and favorites')
+assert.ok(html.includes('id="result-count" aria-live="polite">9 игровых проектов</span>'),'Visible game count must match the catalog')
 assert.ok(lifecycle.includes("'civic-cascade':{title:'CIVIC CASCADE',url:'/games/civic-cascade/'}"),'Player lifecycle registry must include CIVIC CASCADE')
 assert.ok(lifecycle.includes("if(id==='civic-cascade')return !!doc.querySelector('#cc-game-root')&&!!doc.querySelector('#cc-status')"),'Player lifecycle must detect a ready CIVIC CASCADE client')
 assert.ok(manifest.includes("'civic-cascade'")&&manifest.includes("title: 'CIVIC CASCADE'")&&manifest.includes("href: '/games/civic-cascade/'"),'Core manifest must register CIVIC CASCADE')
@@ -91,7 +98,7 @@ assert.ok(css.includes('@media(max-width:760px)'),'Responsive/mobile layout miss
 assert.ok(css.includes('.player-view')&&css.includes('dialog::backdrop'),'Game dialog style missing')
 assert.ok(html.includes('src="./player-lifecycle.js"'),'Self-hosted lifecycle module must be included')
 assert.ok(html.includes('aria-label="OSGARD WORLD PLAY"'),'Brand accessible name must include visible PLAY label')
-for(const label of ['NULL//SHIFT — играть на Godot','TIME / EMPIRE — играть в Империю времени','SWARM — играть','INHERIT — играть','REMIX / ARENA — открыть REMIX']) assert.ok(html.includes('aria-label="'+label+'"'),'Game art accessible name must include the visible label: '+label)
+for(const label of ['NULL//SHIFT — играть на Godot','TIME / EMPIRE — играть в Империю времени','SWARM — играть','INHERIT — играть','REMIX / ARENA — открыть REMIX','CASCADE LAB — запустить физическую головоломку']) assert.ok(html.includes('aria-label="'+label+'"'),'Game art accessible name must include the visible label: '+label)
 for(const lowContrast of ['#656c61','#6f796b','#6d756a','#71796c','#737a70','#737b70','#697168']) assert.ok(!html.toLowerCase().includes(lowContrast),'Low-contrast secondary color remains: '+lowContrast)
 assert.ok(html.includes('.consent-row p{max-width:710px;color:#7f877c;font-size:12px;line-height:1.7}'),'Analytics consent copy must reach a legible 12px size')
 assert.ok(html.includes('.note{margin:16px 0 0;color:#8b9387;font-size:12px;line-height:1.7}')&&html.includes('.privacy-note{color:#8b9387;font-size:12px;line-height:1.65}'),'Notes must remain readable on mobile')
@@ -115,7 +122,25 @@ assert.ok(!/https?:\/\/(?:fonts\.googleapis\.com|fonts\.gstatic\.com|cdn\.jsdeli
 for(const host of ['osgardbewworld.com','o2system.art','senjorio.com','superday.run','marcosa.club','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio']) assert.ok(html.includes('utm_source=osgard_games')&&html.includes(host),'Cross-promo UTM missing for '+host)
 for (const slug of ['time','swarm','null-shift','inherit','remix','signal-run','civic-cascade','patina']) assert.ok(html.includes('href="/game/' + slug + '"'), 'Missing detail link: ' + slug)
 assert.ok(html.includes('href="/games/monetization/"'), 'Economics planner link missing')
-console.log('PASS OSGARD GAMES HUB: eight actual game routes, search/filters, local favorites/history, embedded player/fullscreen/share, consent-gated authenticated analytics, cross-promotion, contact form, SEO, mobile/reduced-motion styling and legal documents.')
+
+assert.ok(cascadeWrapper.includes('<title>CASCADE LAB — Chain Reaction | OSGARD PLAY</title>')&&cascadeWrapper.includes("'payload-07b.txt'")&&cascadeWrapper.includes('DecompressionStream'),'CASCADE LAB launcher must reference the full compressed bundle')
+assert.ok(cascadeWrapper.includes("game:'cascade-lab'")&&cascadeWrapper.includes("type:'osgard:game-lifecycle'")&&cascadeWrapper.includes("send('completed'"),'CASCADE LAB must report shared player lifecycle')
+assert.ok(cascadeBundle.length>100000&&cascadeBundle.includes('<title>CASCADE LAB — Chain Reaction</title>')&&cascadeBundle.includes('id="game"')&&cascadeBundle.includes('id="launchMain"')&&cascadeBundle.includes('id="physicsSettings"')&&cascadeBundle.includes('id="exportRunReport"'),'GZIP payload must expand to the original playable game')
+assert.ok(!/src=["']https?:/i.test(cascadeBundle)&&!/<link[^>]*rel=["']stylesheet["'][^>]*href=["']https?:/i.test(cascadeBundle),'CASCADE LAB must not rely on remote runtime dependencies')
+const cascadeLoaderScript=(cascadeWrapper.match(/<script>([\s\S]*?)<\/script>/)||[])[1]
+assert.ok(cascadeLoaderScript&&cascadeLoaderScript.includes('DecompressionStream'),'CASCADE LAB loader script missing')
+new Function(cascadeLoaderScript)
+const cascadeScriptStart=cascadeBundle.indexOf('<script>')+'<script>'.length
+const cascadeScriptEnd=cascadeBundle.indexOf('</script>',cascadeScriptStart)
+const cascadeGameScript=cascadeBundle.slice(cascadeScriptStart,cascadeScriptEnd)
+assert.ok(cascadeGameScript.length>50000,'CASCADE LAB inline game code missing')
+new Function(cascadeGameScript)
+assert.ok(lifecycle.includes("'cascade-lab':{title:'CASCADE LAB',url:'/games/cascade-lab/'}")&&lifecycle.includes("if(id==='cascade-lab')return !!doc.querySelector('#game')&&!!doc.querySelector('#launchMain')"),'Shared player readiness contract missing')
+assert.ok(manifest.includes("'cascade-lab'")&&manifest.includes("title: 'CASCADE LAB'")&&manifest.includes("href: '/games/cascade-lab/'"),'Typed game manifest missing CASCADE LAB')
+assert.ok(sitemap.includes('<loc>https://osgard.world/games/cascade-lab/</loc>')&&sitemap.includes('<loc>https://osgard.world/game/cascade-lab</loc>'),'Both CASCADE LAB routes must be discoverable')
+assert.ok(luxuryCss.includes('.art-cascade'),'CASCADE LAB branded card style missing')
+
+console.log('PASS OSGARD GAMES HUB: nine game routes, original CASCADE LAB payload and lifecycle, search/filters, favorites/history, embedded player/fullscreen/share, consent-gated analytics, cross-promotion, contacts, SEO and legal documents.')
 
 assert.ok(entertainmentAlias.includes('content="0;url=/games/"') && entertainmentAlias.includes("window.location.replace('/games/')"), 'Legacy /entertainment path must forward to the canonical Games hub')
 assert.ok(mainSource.includes("function EntertainmentRedirect()") && mainSource.includes("path === '/entertainment' ? <EntertainmentRedirect />") && !mainSource.includes("import { EntertainmentCatalog }"), 'React /entertainment route must forward to the canonical Games hub')
