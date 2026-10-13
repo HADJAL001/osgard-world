@@ -271,7 +271,18 @@ const serviceProgressKey='osgard.games.postgame-service-progress.v1';
 const availableServiceIds=services.filter(item=>item[7]!==false).map(item=>item[0]);
 const frequencyValues=['each','every3','off'];
 const preferredServiceKey='osgard.games.preferred-service.v1';
-const recommendationByGame={'null-shift':'projects','time':'superday','swarm':'marcosa','inherit':'myosa','remix':'projects','civic-cascade':'osgard-business','patina':'gold-glamour','signal-run':'vanguard','cascade-lab':'projects'};
+const recommendationByGame={
+ 'null-shift':['myosa','osgard-business','projects','superday'],
+ time:['o2-system','osgard-business','superday','projects'],
+ swarm:['marcosa','superday','projects'],
+ inherit:['marcosa','myosa','projects'],
+ remix:['marcosa','vanguard','projects'],
+ 'civic-cascade':['osgard-business','superday','o2-system'],
+ patina:['gold-glamour','vanguard','projects'],
+ 'signal-run':['myosa','projects','superday'],
+ 'cascade-lab':['projects','myosa','vanguard'],
+ 'afterimage-run':['superday','projects','vanguard']
+};
 function readPreferredService(){try{const id=localStorage.getItem(preferredServiceKey)||'';return availableServiceIds.includes(id)?id:''}catch{return''}}
 function savePreferredService(id){if(!availableServiceIds.includes(id))return false;try{localStorage.setItem(preferredServiceKey,id);return true}catch{return false}}
 let memoryServicePreferences=null;
@@ -402,10 +413,11 @@ function servicesShelf(gameId,showPromos,completedCount){
  const activeSelected=services.filter(([id,,,,,,featured=false,active=true])=>active!==false&&preferences.selected.includes(id));
  const spotlightId=activeSelected.length?activeSelected[(Math.max(0,completedCount-1)%activeSelected.length)][0]:null;
  const preferred=readPreferredService();
- const contextual=recommendationByGame[gameId]||'marcosa';
- let spotlightServiceId=activeSelected.some(item=>item[0]===preferred)?preferred:
-   activeSelected.some(item=>item[0]===contextual)?contextual:
-   (activeSelected.length?activeSelected[Math.max(0,completedCount-1)%activeSelected.length][0]:'');
+ const contextualOrder=recommendationByGame[gameId]||['marcosa'];
+ const selectedIds=activeSelected.map(item=>item[0]);
+ const relevantOrder=contextualOrder.filter(id=>selectedIds.includes(id));
+ const spotlightOptions=[...relevantOrder,...selectedIds.filter(id=>!relevantOrder.includes(id))];
+ let spotlightServiceId=selectedIds.includes(preferred)?preferred:(spotlightOptions[0]||'');
  const spotlight=make('article','og-postgame-spotlight');
  spotlight.setAttribute('aria-label','Персональная рекомендация OSGARD');
  const spotlightStatus=make('p','og-postgame-spotlight-status');
@@ -445,8 +457,8 @@ function servicesShelf(gameId,showPromos,completedCount){
   const next=make('button','og-postgame-spotlight-next','Другой проект ↻');next.type='button';
   next.addEventListener('click',()=>{
    if(activeSelected.length<2){spotlightStatus.textContent='В настройках выбери ещё один проект, чтобы сменить рекомендацию.';return}
-   const currentIndex=activeSelected.findIndex(entry=>entry[0]===spotlightServiceId);
-   spotlightServiceId=activeSelected[(Math.max(0,currentIndex)+1)%activeSelected.length][0];
+   const currentIndex=spotlightOptions.indexOf(spotlightServiceId);
+   spotlightServiceId=spotlightOptions[(currentIndex+1+spotlightOptions.length)%spotlightOptions.length];
    renderSpotlight(spotlightServiceId);watchSpotlight();
   });
   const save=make('button','og-postgame-spotlight-preferred',preferred===item[0]?'★ Мой выбор сохранён':'☆ Запомнить мой выбор');save.type='button';
