@@ -21,7 +21,7 @@ assert.ok(page.includes('id="assumptions-form"') && page.includes('id="scenario-
 assert.ok(page.includes('id="export-json"') && page.includes('id="reset-model"'), 'Financial planner reset/JSON export controls missing');
 for (const id of ['inviteShareRatePct','invitesPerSharer','inviteClickRatePct','inviteStartRatePct','inviteGenerations','annualRevenueTargetUsd','viral-k-factor','viral-invites','annual-gross','annual-target-gap','seed-visitors-target','growth-target-status']) assert.ok(page.includes('id="'+id+'"') || page.includes('name="'+id+'"'), 'Growth loop control/output missing: '+id);
 assert.ok(app.includes('calculateViralReach') && app.includes('requiredSeedVisits') && app.includes('annualGross'), 'Growth model must calculate invite reach and seed traffic for annual target');
-assert.ok(page.includes('Цель валовой выручки за год') && page.includes('не гарантия дохода'), 'Million-dollar objective must remain labelled as a scenario, never a guarantee');
+assert.ok(page.includes('Цель валовой выручки за год') && page.includes('не прогноз с гарантированным доходом'), 'Million-dollar objective must remain labelled as a scenario, never a guarantee');
 assert.ok(page.includes('prefers-reduced-motion:reduce'), 'Reduced-motion support missing');
 assert.ok(!/https?:\/\/(?:fonts\.googleapis\.com|fonts\.gstatic\.com|cdn\.jsdelivr\.net|unpkg\.com)/i.test(page), 'Financial planner unexpectedly depends on a remote asset CDN');
 assert.ok(app.includes('URL.createObjectURL') && app.includes('osgard-games-model.json'), 'Local JSON export not implemented');
