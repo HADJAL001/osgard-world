@@ -20,6 +20,7 @@ const consentedAnalytics = read('public/games/consented-analytics.js');
 const referralAnalytics = read('public/games/game-session-recommendations.js');
 const lifecycleAnalytics = read('public/games/player-lifecycle.js');
 const guide = read('docs/IOS_APP_STORE_CODEMAGIC_RU.md');
+const supportPage = read('public/support/osgard-play/index.html');
 const releaseTagPreflight = read('scripts/ios-release-tag-preflight.mjs');
 
 assert.equal(config.appId, 'com.osgardworld.play');
@@ -57,6 +58,8 @@ for (const command of [
   'npm run qa:ecosystem'
 ]) assert.ok(codemagic.includes(command), 'TestFlight must run the required game/growth smoke: ' + command);
 assert.ok(guide.includes('TestFlight') && guide.includes('capacitor://localhost') && guide.includes('App Review Guidelines'), 'Release guide is missing signing, CORS, or Apple-review notes.');
+assert.ok(supportPage.includes('mailto:osman.osmanov0099@gmail.com') && supportPage.includes('https://osgard.world/privacy/'), 'App Store Support URL must provide a real contact and privacy-policy link.');
+assert.ok(read('docs/IOS_APP_STORE_LISTING_RU.md').includes('https://osgard.world/support/osgard-play/'), 'App Store listing draft must point to the published app-support page.');
 assert.ok(privacy.includes('<key>NSPrivacyTracking</key>') && privacy.includes('<false/>'), 'Privacy manifest must declare tracking state.');
 assert.ok(commerceServer.includes('capacitor://localhost'), 'Default Commerce API CORS must allow the Capacitor local origin.');
 for (const [label, source] of [['consented analytics', consentedAnalytics], ['referral analytics', referralAnalytics], ['game lifecycle', lifecycleAnalytics]]) {
@@ -83,7 +86,7 @@ try {
 
 if (builtWeb) {
   for (const path of [
-    'dist/index.html', 'dist/games/index.html', 'dist/games/osgard-native-share.js',
+    'dist/index.html', 'dist/games/index.html', 'dist/support/osgard-play/index.html', 'dist/games/osgard-native-share.js',
     'dist/games/commerce-config.json', 'dist/games/null-shift/index.html',
     'dist/games/time/index.html', 'dist/games/swarm/index.html',
     'dist/games/inherit/index.html', 'dist/games/remix/index.html',
