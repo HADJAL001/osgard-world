@@ -211,3 +211,10 @@ A new Godot-native growth slice is implemented and covered by the headless runti
 - Production consent analytics validation now checks stable public markers that survive minification (queue/consent keys, allowed event names, API endpoint and exported surface). The detailed unit smoke continues to test the original queue limits and acknowledgement/retry/consent behavior.
 - The route-matrix smoke suite asserts that the production checker recognizes Operations explicitly and does not regress to minifier-fragile formatting assertions.
 - The server activation step completed, but that release's production route verification failed on the six checks above. The follow-up CI and deployment must pass the full desktop/mobile matrix before this release can be treated as verified. This correction is a release-pipeline repair, not a claim that all production checks have already passed.
+
+
+## Дополнение — настройки управляемого каталога игр
+
+Добавлен отдельный контур управляемого контента для десяти известных игр: видимость, порядок, до трёх пометок OSGARD PICK и короткие текстовые overrides. Настройки хранятся в таблице PostgreSQL Commerce API и изменяются только через серверную проверку `ADMIN_API_TOKEN`. Сохранения используют ожидаемую ревизию; устаревшая запись получает конфликт, а не перезаписывает изменения другого оператора.
+
+Публичный runtime выводит значения через `textContent`; схема не разрешает добавлять произвольные ID, URL запуска, HTML/скрипты, цены или рекламные места. Публичный клиент читает настройки только при непустом `apiBaseUrl` в `/games/commerce-config.json`. Пока адрес пуст, используется прежний статический каталог, поэтому этот исходный код не означает, что Commerce API/БД уже развёрнуты.
