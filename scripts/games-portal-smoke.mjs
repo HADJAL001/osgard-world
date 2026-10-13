@@ -249,7 +249,6 @@ for(const path of gameDocumentPages){
     assert.doesNotThrow(()=>new Function(scriptBody),path+' classic inline script #'+(index+1)+' must parse')
   }
 }
-}
 assert.equal(html.split('</body>').length-1,1,'Games hub must close body exactly once')
 assert.equal(html.split('</html>').length-1,1,'Games hub must close html exactly once')
 assert.ok(appSource.includes('className="play-catalog-link" href="/games/"')&&appSource.includes('<em>OSGARD WORLD GAMING</em>')&&appSource.includes("'Открыть игровой портал'"),'Homepage entertainment gateway must promote OSGARD WORLD GAMING and open the canonical /games/ hub')
