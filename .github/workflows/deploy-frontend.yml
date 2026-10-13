@@ -59,6 +59,8 @@ jobs:
       - run: npm run qa:null-shift
       - name: Smoke-test the OSGARD Games hub
         run: npm run qa:games-portal
+      - name: Verify Player Passport, local progression and share safety
+        run: npm run qa:player-passport
       - name: Smoke-test read-only Games operations diagnostics
         run: npm run qa:games-operations
       - name: Verify Games minification and gzip integrity
