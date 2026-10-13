@@ -135,8 +135,8 @@ func _run_smoke() -> void:
 	warning_lane["state"] = "warning"
 	game.phase_lanes[0] = warning_lane
 	game._update_operator_lighting(1.0)
-	var warning_color: Color = game.operator_rim_light.light_color
-	if not _expect(game.operator_rim_light.light_energy > calm_rim_energy and (warning_color.r > 0.35 or warning_color.g > 0.7), "nearby charging conduit must warm and brighten the operator rim"):
+	var operator_warning_color: Color = game.operator_rim_light.light_color
+	if not _expect(game.operator_rim_light.light_energy > calm_rim_energy and (operator_warning_color.r > 0.35 or operator_warning_color.g > 0.7), "nearby charging conduit must warm and brighten the operator rim"):
 		return
 	var active_lane: Dictionary = game.phase_lanes[0]
 	active_lane["state"] = "active"
