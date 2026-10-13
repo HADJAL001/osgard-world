@@ -109,7 +109,7 @@
           localStorage.removeItem('osgard.games.analytics-consent.v1');
           localStorage.removeItem('osgard.games.referral-reward-consent.v1');
           sessionStorage.removeItem('osgard.games.referral-attribution.v1');
-          sessionStorage.removeItem(marker);
+          sessionStorage.removeItem('osgard.games.referral-opened.' + code);
           rewardConsent = false;
           rewardToggle.checked = false;
         }
