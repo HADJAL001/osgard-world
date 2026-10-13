@@ -20,7 +20,7 @@ Backend for OSGARD PLAY checkout sessions, signed Stripe webhooks, request leads
 1. Install Node.js 22 or newer.
 2. Run npm install in this folder.
 3. Copy .env.example to .env and configure PostgreSQL plus Stripe test keys and Price IDs.
-4. Run npm test, npm run check and npm start.
+4. Run npm test, npm run check and npm run start:local (uses Node's built-in .env loader).
 5. Configure a Stripe test webhook to POST to /v1/stripe/webhook. For Stripe CLI, forward events to localhost:8080/v1/stripe/webhook and copy the generated whsec_ value into STRIPE_WEBHOOK_SECRET.
 
 The API boots in degraded mode without secrets so /healthz remains observable, but checkout is disabled until database, Stripe key, webhook secret and prices are configured.
