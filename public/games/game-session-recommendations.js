@@ -581,7 +581,7 @@ function rewardShelf(gameId){
     pending='';
     claim.hidden=true;
     status.textContent='Ссылка скопирована. Копирование само по себе не считается репостом и не даёт награду. Опубликуй приглашение через одну из соцсетей ниже, затем вернись и подтверди.';
-    void sendSelectEvent('share_created',gameId,'game-invite:'+gameId+':'+(new URL(url,location.origin).searchParams.get('og_ref')||''));
+    
    } else {
     pending='';
     claim.hidden=true;
