@@ -53,6 +53,9 @@ const html = readFileSync(resolve("public/games/index.html"), "utf8");
 assert.ok(html.includes("id=\"project-form\""), "Existing project form must remain in the games hub.");
 assert.ok(existsSync(resolve("public/games/commerce-client.js")), "Existing contact forms need a shared API/fallback client.");
 const sharedClient = readFileSync(resolve("public/games/commerce-client.js"), "utf8");
+const consentQueue = readFileSync(resolve("public/games/consented-analytics.js"), "utf8");
+assert.ok(existsSync(resolve("public/games/consented-analytics.js")), "Consent-gated delivery queue is missing.");
+new Function(consentQueue);
 const playerLifecycle = readFileSync(resolve("public/games/player-lifecycle.js"), "utf8");
 const partners = readFileSync(resolve("public/games/partners/index.html"), "utf8");
 const privacy = readFileSync(resolve("public/privacy/index.html"), "utf8");
@@ -64,6 +67,17 @@ for (const value of ['id="campaign-form"', 'name="consent"', 'src="/games/commer
   assert.ok(partners.includes(value), "Partner page missing lead integration: " + value);
 }
 assert.ok(sharedClient.includes("/v1/leads") && sharedClient.includes("wa.me/79640027222"), "Lead API and manual fallback must both exist.");
+for (const [label, page] of [["Games", html], ["Partners", partners], ["Premium", store]]) {
+  const queueTag = page.indexOf('src="/games/consented-analytics.js?v=__OSGARD_BUILD_VERSION__"');
+  const clientTag = page.indexOf('src="/games/commerce-client.js"');
+  assert.ok(queueTag >= 0 && clientTag > queueTag, label + " must load consent queue before sending analytics.");
+}
+for (const value of ["window.OSGARD_CONSENTED_ANALYTICS", "MAX_PENDING = 100", "MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000", "result?.accepted", "clearQueue()"]) {
+  assert.ok(consentQueue.includes(value), "Consent-aware retry queue is missing: " + value);
+}
+assert.ok(sharedClient.includes("queue.enqueue(event)"), "Website analytics must use the retry queue when available.");
+assert.ok(playerLifecycle.includes("queue.enqueue(event)"), "Game-session analytics must use the retry queue when available.");
+
 const ecosystemDomains = ["osgardbewworld.com","o2system.art","senjorio.com","superday.run","marcosa.club","myosa.world","gold-glamour.online","gardvpn.is","osgardos.com","osgardvanguard.studio"];
 for (const domain of ecosystemDomains) assert.ok(html.includes(domain), "Games hub missing owned ecosystem link: " + domain);
 assert.ok(html.includes("utm_source=osgard_games") && html.includes("utm_medium=cross_promo"), "Owned-platform links must include source attribution.");
@@ -100,5 +114,6 @@ for (const value of ['id="analytics-retention"', 'id="game-analytics-table"', "a
 }
 assert.ok(readFileSync(resolve("public/games/premium/index.html"), "utf8").includes('src="/games/commerce-client.js"'), "Premium page view analytics must use the shared consent gate.");
 assert.ok(privacy.includes("ANALYTICS_RETENTION_DAYS") && privacy.includes("90 дней") && privacy.includes("не отправляется автоматически"), "Privacy page must document consented analytics retention and manual WhatsApp fallback.");
+assert.ok(privacy.includes("100 событий") && privacy.includes("7 дней") && privacy.includes("отзыве согласия"), "Privacy page must disclose local analytics queue bounds and withdrawal behavior.");
 
 console.log("Commerce rollout smoke: all static integration checks passed.");
