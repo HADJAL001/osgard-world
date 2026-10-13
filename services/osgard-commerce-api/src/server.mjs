@@ -354,12 +354,21 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
         SELECT
           split_part(source, ':', 3) AS "serviceId",
           game_id AS "gameId",
-          COUNT(*) FILTER (WHERE event_name = 'owned_promo_impression')::int AS impressions,
-          COUNT(*) FILTER (WHERE event_name = 'cross_promo_clicked')::int AS clicks
+          COUNT(*) FILTER (
+            WHERE event_name = 'owned_promo_impression'
+              AND source ~ '^osgard-select:spotlight:[a-z0-9-]{1,40}:[ab]$'
+          )::int AS impressions,
+          COUNT(*) FILTER (
+            WHERE event_name = 'cross_promo_clicked'
+              AND source ~ '^osgard-select:click:[a-z0-9-]{1,40}(:[ab])?$'
+          )::int AS clicks
         FROM commerce_events
         WHERE received_at >= NOW() - INTERVAL '30 days'
-          AND source LIKE 'osgard-select:%'
-          AND split_part(source, ':', 3) ~ '^[a-z0-9-]{1,40}$'
+          AND (
+            (event_name = 'owned_promo_impression' AND source ~ '^osgard-select:spotlight:[a-z0-9-]{1,40}:[ab]$')
+            OR
+            (event_name = 'cross_promo_clicked' AND source ~ '^osgard-select:click:[a-z0-9-]{1,40}(:[ab])?$')
+          )
         GROUP BY split_part(source, ':', 3), game_id
         ORDER BY impressions DESC, clicks DESC, "serviceId" ASC
         LIMIT 50
