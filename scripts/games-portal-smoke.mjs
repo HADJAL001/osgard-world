@@ -1,6 +1,7 @@
 import { assessReport } from './games-lighthouse-report.mjs'
 import assert from 'node:assert/strict'
 import { readFileSync, existsSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
 import { runInNewContext } from 'node:vm'
 import { resolve } from 'node:path'
 const entertainmentAlias = readFileSync(resolve('public/entertainment/index.html'),'utf8')
@@ -10,6 +11,7 @@ const sectionSource = readFileSync(resolve('src/Sections.tsx'),'utf8')
 const appSource = readFileSync(resolve('src/App.tsx'),'utf8')
 const appStyles = readFileSync(resolve('src/styles.css'),'utf8')
 const root=resolve('public/games')
+execFileSync(process.execPath,[resolve('scripts/generate-games-share-cards.mjs')],{stdio:'ignore'})
 const html=readFileSync(resolve(root,'index.html'),'utf8')
 const catalogCards=[...html.matchAll(/<article\b[^>]*\bdata-game="([^"]+)"[^>]*\bdata-genres="([^"]+)"[^>]*>/g)].map(match=>({id:match[1],genres:match[2].trim().split(/\s+/).filter(Boolean)}))
 const deployWorkflow=readFileSync(resolve('.github/workflows/deploy-frontend.yml'),'utf8')
@@ -22,6 +24,23 @@ const expectedLaunchIds=['null-shift','time','swarm','inherit','remix','civic-ca
 assert.equal(routeEntries.length,9,'Launch registry must contain exactly nine game entries')
 assert.deepEqual(routeEntries.map(x=>x.id).sort(),expectedLaunchIds,'Every visible game must have exactly one unique launch route')
 assert.ok(routeEntries.every(x=>x.url.startsWith('/games/')),'Every launch entry must use a same-origin game route')
+const inviteLandingScript=readFileSync(resolve(root,'invite/invite-landing.js'),'utf8')
+assert.ok(inviteLandingScript.includes("localStorage.getItem('osgard.games.analytics-consent.v1') === 'yes'") && inviteLandingScript.includes("name: 'referral_link_opened'") && inviteLandingScript.includes("source: 'referral-link:' + code"),'Invite preview must preserve consent-gated referral attribution')
+for(const game of routeEntries){
+ const invitePage=readFileSync(resolve(root,'invite',game.id,'index.html'),'utf8')
+ const card=readFileSync(resolve(root,'share-cards',game.id+'.png'))
+ assert.ok(invitePage.includes('<meta property="og:title" content="'+game.title+' — OSGARD PLAY">'),'Game-specific Open Graph title missing for '+game.id)
+ assert.ok(invitePage.includes('property="og:image" content="https://osgard.world/games/share-cards/'+game.id+'.png"'),'Game-specific social card URL missing for '+game.id)
+ assert.ok(invitePage.includes('name="twitter:card" content="summary_large_image"') && invitePage.includes('id="play-link"') && invitePage.includes('/games/invite/invite-landing.js'),'Invite page metadata, CTA or attribution bridge missing for '+game.id)
+ assert.ok(card.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])),'Share card must be a real PNG for '+game.id)
+ assert.equal(card.readUInt32BE(16),1200,'Share card width must be 1200 for '+game.id)
+ assert.equal(card.readUInt32BE(20),630,'Share card height must be 630 for '+game.id)
+ assert.ok(card.length<300*1024,'Share card should stay below the messaging-preview size budget for '+game.id)
+}
+const catalogInvitePage=readFileSync(resolve(root,'invite/index.html'),'utf8')
+const catalogInviteCard=readFileSync(resolve(root,'share-cards/catalog.png'))
+assert.ok(catalogInvitePage.includes('property="og:title" content="OSGARD PLAY — OSGARD PLAY"') && catalogInvitePage.includes('id="play-link"'),'Generic catalogue invitation page missing')
+assert.ok(catalogInviteCard.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])),'Generic catalogue share card must be a PNG')
 
 const lifecycle=readFileSync(resolve(root,'player-lifecycle.js'),'utf8')
 const recommendationScript=readFileSync(resolve(root,'game-session-recommendations.js'),'utf8')
@@ -405,6 +424,7 @@ new Function(catalogRuntime)
 for(const marker of ["og_ref","og_game","utm_source","utm_medium","utm_campaign","utm_content","function createInviteLink","function renderInviteRibbon","source:'referral_link'","referralCode:invite.code","if(!consent)return","if(!token)return"]) assert.ok(catalogRuntime.includes(marker),'Referral / privacy contract missing: '+marker)
 assert.ok(catalogRuntime.includes("navigator.share({title:games[id].title+' — OSGARD PLAY'") && catalogRuntime.includes("url=createInviteLink(id)"),'Player-share action must produce a game-specific invite link')
 assert.ok(catalogRuntime.includes('window.OSGARDInvite={createLink:(id)=>createInviteLink(id)') && luxury.includes('window.OSGARDInvite?.createLink()') && luxury.includes('window.OSGARDInvite?.trackShare?.()'),'Catalogue share control must use the same invite-link builder')
+assert.ok(catalogRuntime.includes("const route=games[id]?'/games/invite/'+id+'/':'/games/invite/'"),'Every share should use a game-specific preview route before entering the catalogue')
 assert.ok(luxuryCss.includes('.invite-ribbon') && luxuryCss.includes('@media(max-width:620px)') && luxuryCss.includes('prefers-reduced-motion:reduce'),'Referral invitation ribbon must be responsive and respect reduced motion')
 assert.ok(catalogRuntime.includes("sessionStorage.setItem('osgard.games.invite-dismissed.v1',key)"),'Invite dismissal should be local to this browser session')
 console.log('PASS OSGARD referral loop: game-specific invite deep links, consent-gated authenticated attribution, responsive invite ribbon and script syntax.')
@@ -414,6 +434,7 @@ const referralCoreSource=readFileSync(resolve('services/osgard-commerce-api/src/
 const referralApiSource=readFileSync(resolve('services/osgard-commerce-api/src/server.mjs'),'utf8')
 const referralAdminSource=readFileSync(resolve('public/games/commerce-admin/index.html'),'utf8')
 assert.ok(recommendationScript.includes('osgard.games.referral-attribution.v1') && recommendationScript.includes('game-invite:') && recommendationScript.includes('play_with_friends'), 'Post-session invite link and referral attribution missing')
+assert.ok(recommendationScript.includes("shared.pathname==='/games/invite/'+gameId+'/" ) && recommendationScript.includes("new URL('/games/invite/'+encodeURIComponent(gameId)+'/'"),'Post-session sharing must validate and fallback to the game-specific preview route')
 assert.ok(recommendationScript.includes("params.get('og_game')") && recommendationScript.includes("params.get('og_ref')") && recommendationScript.includes("shared.searchParams.get('og_game')===gameId"), 'Post-session invites must use the canonical og_game/og_ref URL contract')
 assert.ok(recommendationScript.includes('!invite.legacy') && recommendationScript.includes("params.get('challenge')"), 'Canonical links must use one ribbon while legacy invite links remain supported')
 assert.ok(recommendationScript.includes("sendEvent('referral_link_opened'") && recommendationScript.includes("sendEvent('share_created'"), 'Invite opens and generated links must use the consented event API')
@@ -439,7 +460,7 @@ assert.ok(lifecycle.includes('function analyticsSource()') && lifecycle.includes
 assert.ok(referralCoreSource.includes('"referral_link_opened"') && referralCoreSource.includes('"share_created"'), 'Commerce API must explicitly allowlist invite events')
 for(const metric of ['inviteShares','referralOpens','referredStarts','referredCompletions']) assert.ok(referralApiSource.includes(metric), 'Commerce analytics response lacks referral metric '+metric)
 const inviteSqlStart=referralApiSource.indexOf('invite_shares AS')
-const inviteSqlEnd=referralApiSource.indexOf('SELECT\\n          COUNT(*) FILTER',inviteSqlStart)
+const inviteSqlEnd=referralApiSource.indexOf('SELECT\n          COUNT(*) FILTER',inviteSqlStart)
 const inviteSql=referralApiSource.slice(inviteSqlStart,inviteSqlEnd)
 assert.equal(inviteSql.split("~ '^(og_[a-f0-9]{8}|[a-f0-9]{12})$'").length-1,4,'All four share/open/start/completion SQL stages must accept canonical and legacy invite codes')
 for(const metric of ['analytics-invites','analytics-referral-opens','analytics-referred-starts','analytics-referred-completions']) assert.ok(referralAdminSource.includes('id="'+metric+'"'), 'Commerce admin is missing referral metric '+metric)
