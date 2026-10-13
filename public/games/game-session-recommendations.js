@@ -153,6 +153,7 @@ function addPostSessionActions(gameId){
  inviteButton.addEventListener('click',async()=>{
   inviteButton.disabled=true;status.textContent='Готовим персональную ссылку…';
   const code=token(),url=buildShareUrl(gameId,code),message='Пойдём сыграем в '+game.title+' в OSGARD PLAY: '+url;
+  void sendEvent('share_created',gameId,'game-invite:'+gameId+':'+code);
   let shared=false;
   try{
    if(typeof navigator.share==='function'){await navigator.share({title:'OSGARD PLAY · '+game.title,text:'Пойдём сыграем вместе.',url});shared=true}
@@ -160,7 +161,6 @@ function addPostSessionActions(gameId){
    else {fallback.href='https://wa.me/?text='+encodeURIComponent(message);fallback.hidden=false;status.textContent='Открой WhatsApp, чтобы отправить ссылку другу.'}
    if(shared){
     status.textContent=navigator.share?'Ссылка передана в системное меню отправки.':'Текст приглашения скопирован.';
-    void sendEvent('share_created',gameId,'game-invite:'+gameId+':'+code);
    }
   }catch(error){
    if(error instanceof Error&&error.name==='AbortError'){status.textContent='Отправка отменена.'}
