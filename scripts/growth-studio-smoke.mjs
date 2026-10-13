@@ -43,6 +43,7 @@ check('offline branded card is a local 1200x630 canvas export', () => {
   assert.ok(page.includes("toDataURL('image/png')"));
   assert.ok(page.includes("canvas.getContext('2d')"));
   assert.ok(page.includes('OSGARD PLAY  /  CHALLENGE'));
+  assert.ok(page.includes("$('poster-placeholder').hidden=Boolean(state.url)"), 'Placeholder should remain until an invite is generated');
 });
 check('model calculator exposes full referral funnel and labels assumptions', () => {
   for (const id of ['cohort-size','share-rate','invites-per-sharer','open-rate','start-rate','complete-rate','m-shares','m-opens','m-starts','m-k']) assert.ok(page.includes('id="'+id+'"'), id);
