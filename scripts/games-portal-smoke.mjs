@@ -598,7 +598,7 @@ function createCosmeticHarness(initialWallet,failedWrites=[]){
   'function hud(){}',
   cosmeticFunctions,
   'globalThis.cosmeticTest={readShards,readGoldSignal,updateCosmeticShop,purchaseGoldSignal,awardShareShards,get unlocked(){return goldSignalUnlocked},button:elements[\'buy-gold-signal\'],status:cosmeticStatus};'
- ].join('\\n');
+ ].join('\n');
  const context={localStorage,elements,Date,JSON,Math,Number,String,Error};
  runInNewContext(harness,context);
  return {api:context.cosmeticTest,store};
