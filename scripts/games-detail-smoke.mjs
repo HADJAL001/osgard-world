@@ -53,5 +53,5 @@ console.log('PASS OSGARD GAME DETAIL: eight routes, details, SEO sitemap, safe l
 
 assert.ok(civicGame.includes('id="cc-save"') && civicGame.includes('id="cc-load"') && civicGame.includes('function saveCheckpoint()') && civicGame.includes('function restoreCheckpoint()'), 'CIVIC CASCADE must provide working local operation checkpoints')
 assert.ok(civicGame.includes("osgard-civic-cascade-checkpoint-v1") && civicGame.includes("localStorage.setItem(CHECKPOINT_KEY") && civicGame.includes("schemaVersion!==1"), 'CIVIC CASCADE checkpoint storage must be versioned and validated')
-assert.ok(civicGame.includes('id="cc-forecast"') && civicGame.includes('function updateForecast()') && civicGame.includes('30 игровых секунд'), 'CIVIC CASCADE must render its approximate 30-second risk outlook')
+assert.ok(civicGame.includes('id="cc-forecast"') && civicGame.includes('function updateForecast()') && /30\s+игровых\s+секунд/i.test(civicGame), 'CIVIC CASCADE must render its approximate 30-second risk outlook')
 assert.ok(hub.includes('8 игровых проектов') && hub.includes('Запустить CIVIC CASCADE') && hub.includes('cc-release-strip'), 'Entertainment hub must accurately count and visibly promote CIVIC CASCADE')
