@@ -271,18 +271,24 @@ function getWallet(){try{const w=JSON.parse(localStorage.getItem(walletKey)||'{}
 function award(source){const current=getWallet(),day=new Date().toISOString().slice(0,10);if(current.day===day)return{ok:false,already:true,balance:current.balance};const next={balance:Math.min(1e9,current.balance+dailyReward),lastRewardDay:day,lastSource:String(source||'share').slice(0,60),updatedAt:new Date().toISOString()};try{localStorage.setItem(walletKey,JSON.stringify(next));return{ok:true,balance:next.balance}}catch{return{ok:false,balance:current.balance}}}
 function servicesShelf(gameId){
  const section=make('section','og-postgame-services'),head=make('div','og-postgame-service-head'),intro=make('div');
- intro.append(make('p','og-postgame-eyebrow','OSGARD SELECT / BETWEEN WORLDS'),make('h3','og-postgame-title','Мир не заканчивается после раунда.'),make('p','og-postgame-copy','Выбери следующий продукт экосистемы. Это собственные сервисы OSGARD, а не сторонняя рекламная сеть.'));
+ intro.append(make('p','og-postgame-eyebrow','OSGARD SELECT / BETWEEN WORLDS'),make('p','og-postgame-disclosure','РЕКЛАМА · СОБСТВЕННЫЕ ПРОЕКТЫ OSGARD'),make('h3','og-postgame-title','Мир не заканчивается после раунда.'),make('p','og-postgame-copy','Выбери направление или отдельный проект. Это самореклама экосистемы OSGARD; переход добровольный и откроется в новой вкладке.'));
  const toggle=make('button','og-postgame-toggle','Свернуть подборку');toggle.type='button';toggle.setAttribute('aria-expanded','true');head.append(intro,toggle);
+ const filters=make('div','og-postgame-service-filters');filters.setAttribute('role','group');filters.setAttribute('aria-label','Выбрать категорию сервиса OSGARD');
+ const filterDefs=[['all','Все сервисы · 10'],['studio','Разработка · 2'],['business','Бизнес · 2'],['life','Город и жизнь · 2'],['tech','Технологии · 2'],['social','Социальные · 1'],['luxury','Luxury · 1']];
+ const filterButtons=[],cards=[];
+ filterDefs.forEach(([id,label])=>{const button=make('button','og-postgame-service-filter',label);button.type='button';button.dataset.osgardServiceFilter=id;button.setAttribute('aria-pressed',String(id==='all'));filters.append(button);filterButtons.push(button)});
+ const categoryByService={projects:'studio',vanguard:'studio','o2-system':'business','osgard-business':'business',senjorio:'life',superday:'life',myosa:'tech',gardvpn:'tech',marcosa:'social','gold-glamour':'luxury'};
  const grid=make('div','og-postgame-service-grid');
  services.forEach(([id,num,title,category,description,href,featured=false,active=true])=>{
   const card=make(active===false?'article':'a','og-postgame-service-card'+(featured?' is-featured':'')+(active===false?' is-unavailable':''));
-  card.dataset.service=id;card.dataset.game=gameId;
+  card.dataset.service=id;card.dataset.game=gameId;card.dataset.category=categoryByService[id]||'other';cards.push(card);
   if(active!==false){const u=new URL(href);u.searchParams.set('utm_source','osgard_games');u.searchParams.set('utm_medium','post_game');u.searchParams.set('utm_campaign','after_game');u.searchParams.set('utm_content',id+'_'+gameId);card.href=u.href;card.target='_blank';card.rel='noopener noreferrer';card.setAttribute('aria-label','Открыть '+title+' в новой вкладке')}
   card.append(make('span','og-postgame-service-code','OSG / '+num+' · '+category),make('strong','og-postgame-service-name',title),make('span','og-postgame-service-description',description),make('span','og-postgame-service-action',active===false?'Пока не продвигается':'Открыть проект ↗'));grid.append(card);
  });
  const foot=make('p','og-postgame-service-foot','Переход добровольный, откроется в отдельной вкладке. Текущий результат игры сохранится.');
- toggle.addEventListener('click',()=>{grid.hidden=!grid.hidden;toggle.textContent=grid.hidden?'Показать все проекты · 10':'Свернуть подборку';toggle.setAttribute('aria-expanded',String(!grid.hidden))});
- section.append(head,grid,foot);return section;
+ filterButtons.forEach(button=>button.addEventListener('click',()=>{const selected=button.dataset.osgardServiceFilter||'all';filterButtons.forEach(item=>item.setAttribute('aria-pressed',String(item===button)));cards.forEach(card=>{card.hidden=selected!=='all'&&card.dataset.category!==selected})}));
+ toggle.addEventListener('click',()=>{const collapsed=!grid.hidden;grid.hidden=collapsed;filters.hidden=collapsed;toggle.textContent=collapsed?'Показать проекты · 10':'Свернуть подборку';toggle.setAttribute('aria-expanded',String(!collapsed))});
+ section.append(head,filters,grid,foot);return section;
 }
 function rewardShelf(gameId){
  const section=make('section','og-postgame-reward'),head=make('div','og-postgame-reward-head'),intro=make('div');
