@@ -31,8 +31,12 @@ workflows:
         script: |
           npm run check
           npm run qa:games-portal
+          npm run qa:games-detail
+          npm run qa:null-shift
           npm run qa:games-model
           npm run qa:osgard-select
+          npm run qa:consented-analytics-queue
+          npm run qa:ecosystem
       - name: Build all local web game assets
         script: npm run build
       - name: Bundle native iOS sharing bridge

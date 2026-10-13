@@ -208,6 +208,28 @@ assert.ok(source.includes('function recordCompletedRound(gameId,sessionId)') && 
 assert.ok(source.includes('const isSpotlight=id===spotlightServiceId') && source.includes("cards.forEach(card=>card.classList.toggle('is-featured',card.dataset.service===spotlightServiceId))"),
   'The featured directory card must always match the personalized spotlight, including after rotation');
 
+const disposerMatch = source.match(/function disposePostgameTree\(node\)\{[^\n]*\}/);
+assert.ok(disposerMatch, 'Intermission DOM teardown helper must be independently testable');
+const disposePostgameTree = vm.runInNewContext('(' + disposerMatch[0] + ')');
+const disposalCalls = [];
+const mockPostgameTree = {
+  __osgardDispose: () => disposalCalls.push('root'),
+  children: [{ __osgardDispose: () => disposalCalls.push('child'), children: [] }]
+};
+disposePostgameTree(mockPostgameTree);
+disposePostgameTree(mockPostgameTree);
+assert.deepEqual(disposalCalls.sort(), ['child', 'root'],
+  'Every intermission teardown callback must run exactly once, including nested service shelves');
+assert.ok(source.includes("document.dispatchEvent(new CustomEvent('osgard:dispose-postgame'))") &&
+  source.includes("document.addEventListener('osgard:dispose-postgame',disposeCurrentPostgame)") &&
+  source.includes('section.__osgardDispose=()=>{') &&
+  source.includes('cards.forEach(card=>{if(card.__osgardImpressionTimer)'),
+  'Replacing or closing the intermission must disconnect observers and clear impression timers');
+assert.ok(source.includes('disposePostgameTree(section);section.replaceWith(replacement)') &&
+  source.includes('disposePostgameTree(previousSuite);previousSuite.remove()') &&
+  source.includes('disposeCurrentPostgame();'),
+  'Cleanup must run when saving preferences, refreshing a round or launching the next game');
+
 const claimSignal = signalRun.indexOf("claimShare.addEventListener('click'");
 const shareSignal = signalRun.indexOf("$('share').addEventListener('click',async()=>{");
 const shareSignalEnd = signalRun.indexOf("});document.addEventListener('keydown'", shareSignal);
@@ -223,5 +245,5 @@ console.log(JSON.stringify({
   status: 'passed',
   serviceDestinations: services.length,
   gameContexts: 9,
-  checks: 48, notes: 'Source-level guardrails; social publication is self-confirmed, not verified by social-network APIs.'
+  checks: 52, notes: 'Source-level guardrails; social publication is self-confirmed, not verified by social-network APIs.'
 }));
