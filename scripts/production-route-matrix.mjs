@@ -55,13 +55,18 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         : /^\/game\/(time|swarm|null-shift|inherit|remix|signal-run|civic-cascade|patina|cascade-lab)$/.test(route)
           ? text.includes('<div id="root">') && text.includes('type="module"')
         : (route === '/games/' || route === '/games/index.html')
-          ? text.includes('id="games-grid"') && text.includes('data-game="null-shift"') && text.includes('data-game="time"') && text.includes('data-game="swarm"') && text.includes('data-game="inherit"') && text.includes('data-game="remix"') && text.includes('data-game="civic-cascade"') && text.includes('data-game="patina"') && text.includes('data-game="signal-run"') && text.includes('data-game="cascade-lab"') && text.includes('"numberOfItems":9') && text.includes('id="player-dialog"') && text.includes('id="player-share"') && text.includes('player-lifecycle.js') && text.includes('id="project-form"') && text.includes('id="analytics-toggle"') && text.includes('osgardvanguard.studio')
+          ? text.includes('id="games-grid"') && text.includes('data-game="null-shift"') && text.includes('data-game="time"') && text.includes('data-game="swarm"') && text.includes('data-game="inherit"') && text.includes('data-game="remix"') && text.includes('data-game="civic-cascade"') && text.includes('data-game="patina"') && text.includes('data-game="signal-run"') && text.includes('data-genres="arcade creative"') && text.includes('data-filter="arcade"') && text.includes('Все игры <b>09</b>') && text.includes('data-game="cascade-lab"') && text.includes('"numberOfItems":9') && text.includes('id="player-dialog"') && text.includes('id="player-share"') && text.includes('player-lifecycle.js') && text.includes('id="project-form"') && text.includes('id="analytics-toggle"') && text.includes('osgardvanguard.studio')
         : route === '/games/civic-cascade/'
           ? text.includes('<title>CIVIC CASCADE — кризисная стратегия | OSGARD PLAY</title>') && text.includes('id=\"cc-game-root\"') && text.includes('id=\"cc-status\"')
         : route === '/games/patina/'
           ? text.includes('<title>PATINA Atelier — OSGARD WORLD GAMING</title>') && text.includes('id="patina-workbench"') && text.includes('data-patina-ready="true"') && text.includes('id="diagnose"') && text.includes('id="finish-case"') && text.includes('id="export-case"')
         : route === '/games/signal-run/'
-          ? text.includes('<title>SIGNAL RUN — OSGARD WORLD</title>') && text.includes('id="arena"') && text.includes('game.js')
+          ? text.includes('<title>SIGNAL RUN — OSGARD WORLD</title>') && text.includes('id="arena"') && text.includes('game.js') &&
+            text.includes('<link rel="canonical" href="https://osgard.world/games/signal-run/">') &&
+            text.includes('<meta property="og:type" content="website">') &&
+            text.includes('<meta property="og:site_name" content="OSGARD WORLD">') &&
+            text.includes('<meta property="og:url" content="https://osgard.world/games/signal-run/">') &&
+            text.includes('<meta name="twitter:card" content="summary">')
         : route === '/games/cascade-lab/'
           ? text.includes('<title>CASCADE LAB — OSGARD PLAY</title>') && text.includes('data-cascade-lab-ready="true"') && text.includes('id="launchMain"') && text.includes('id="exportRunReport"') && text.includes("notifyOsgardLifecycle('started'")
         : route.startsWith('/games/null-shift-godot')
