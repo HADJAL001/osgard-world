@@ -126,6 +126,16 @@ if (builtWeb) {
     'Standalone catalogue route should not go through the React web SPA.');
   const shell = read('dist/index.html');
   assert.ok(shell.includes('OSGARD PLAY') && shell.includes('location.replace("/games/")'), 'App shell must land directly in the local Games hub.');
+  const localOriginSharePattern = /new URL\(((?:'\/games\/[^']*'|"\/games\/[^"]*")(?:\s*\+\s*[^,\r\n]+)*),\s*location\.origin\s*\)/;
+  for (const path of [
+    'dist/games/game-session-recommendations.js',
+    'dist/games/signal-run/game.js',
+    'dist/games/aether-grid/index.html',
+  ]) {
+    const asset = read(path);
+    assert.ok(asset.includes('OSGARD_PUBLIC_ORIGIN'), 'Public URL origin bridge missing from share-capable asset: ' + path);
+    assert.ok(!localOriginSharePattern.test(asset), 'Share URL must not resolve against capacitor://localhost: ' + path);
+  }
   const gamePage = read('dist/games/null-shift/index.html');
   assert.ok(gamePage.includes('osgard-native-share.js'), 'Native share bridge must be loaded on the local game.');
   const configText = readFileSync(join(root, 'dist/games/commerce-config.json'), 'utf8');
