@@ -8,6 +8,7 @@ const css = read('public/games/game-session-recommendations.css');
 const core = read('services/osgard-commerce-api/src/core.mjs');
 const signalRun = read('public/games/signal-run/game.js');
 const lifecycle = read('public/games/player-lifecycle.js');
+const serverSource = read('services/osgard-commerce-api/src/server.mjs');
 
 new vm.Script(source, { filename: 'game-session-recommendations.js' });
 new vm.Script(signalRun, { filename: 'signal-run/game.js' });
@@ -80,21 +81,14 @@ assert.ok(primaryStart >= 0 && primaryEnd > primaryStart, 'Share intent handler 
 const primaryHandler = reward.slice(primaryStart, primaryEnd);
 assert.ok(!primaryHandler.includes("sendSelectEvent('share_created'"),
   'Opening the system share sheet or copying a link must not count as a completed share');
-const claimStart = reward.indexOf("claim.addEventListener('click'");
-const claimEnd = reward.indexOf("primary.addEventListener('click',async()=>{", claimStart);
-assert.ok(claimStart >= 0 && claimEnd > claimStart, 'Explicit share confirmation handler is required');
-const claimHandler = reward.slice(claimStart, claimEnd);
-assert.ok(claimHandler.includes("award('social-confirmation:'+network)") &&
-  claimHandler.includes("sendSelectEvent('share_created',gameId,'game-invite:'") &&
-  claimHandler.includes("sendSelectEvent('social_reward_claimed'"),
-  'The local daily reward and completed-share event must happen only after a separate confirmation');
-assert.ok(reward.includes('Копирование само по себе не считается репостом') &&
-  reward.includes('OSGARD не получает надёжный сигнал о факте публикации') &&
-  reward.includes('не имеют денежной стоимости'),
-  'SHARDS must disclose that social posts are self-confirmed and have no cash value');
-assert.ok(source.includes("const walletKey='osgard.games.shards-wallet.v1',dailyReward=50") &&
-  source.includes('current.day===day'),
-  'Local SHARDS reward must be capped to one claim per UTC day and device wallet');
+assert.ok(reward.includes('og-postgame-reward-consent') && reward.includes('hasRewardConsent()'), 'Referral rewards must require separate opt-in');
+assert.ok(!reward.includes("claim.addEventListener('click'") && !reward.includes("award('social-confirmation:'), 'The intermission must not award SHARDS for self-confirmed posts');
+assert.ok(reward.includes('registerInvite(gameId,code)') && reward.includes('refreshShardsBalance') && reward.includes('60 секунд'), 'Referral rewards must be registered and calculated by the server after qualified play');
+assert.ok(reward.includes('Публикацию поста соцсеть не подтверждает') && reward.includes('не имеют денежной стоимости'), 'SHARDS must be disclosed as non-cash with no false claim of social-post verification');
+assert.ok(source.includes("const REWARD_CONSENT_KEY='osgard.games.referral-reward-consent.v1'") &&
+  source.includes("base+'/v1/referrals/register'") && source.includes("base+'/v1/referrals/reward-status'"),
+  'Reward balances must be retrieved through the commerce API, not a local daily wallet');
+assert.ok(!source.includes("const walletKey='osgard.games.shards-wallet.v1',dailyReward=50") && !source.includes('function award(source)'), 'Legacy local SHARDS minting must be removed from OSGARD SELECT');
 assert.ok(lifecycle.includes("activeSessionId='session_'+id+'_'+sequence+'_'+launchAt") && lifecycle.includes('sessionId:activeSessionId') && lifecycle.includes('detail:{game:activeGame,sessionId:activeSessionId}'),
   'The same stable ID must be sent with gameplay completion and post-session return events');
 assert.ok(source.includes('function recordCompletedRound(gameId,sessionId)') && source.includes('current.sessions.includes(key)') && source.includes('slice(-100)'),
@@ -110,8 +104,9 @@ assert.ok(claimSignal >= 0 && shareSignal >= 0 && shareSignalEnd > shareSignal,
 const signalShareHandler = signalRun.slice(shareSignal, shareSignalEnd);
 assert.ok(!signalShareHandler.includes("life('share_created'"),
   'SIGNAL RUN must not report a completed share before the player confirms it');
-assert.ok(signalRun.slice(claimSignal).includes("life('share_created',{shareMethod:method,dailyMode,dailyDate:dailyMode?dailyDate:null,rewardConfirmedByPlayer:true})"),
-  'SIGNAL RUN completed-share analytics must follow the explicit reward confirmation');
+assert.ok(!signalRun.includes('awardShareShards') && signalRun.slice(claimSignal).includes("window.top.location.assign(destination)") &&
+  signalRun.slice(claimSignal).includes('60 секунд'),
+  'SIGNAL RUN must route to the verified invite program and never mint local rewards');
 
 console.log(JSON.stringify({
   status: 'passed',
@@ -120,3 +115,8 @@ console.log(JSON.stringify({
   checks: 33,
   notes: 'Source-level guardrails; social publication is self-confirmed, not verified by social-network APIs.'
 }));
+
+assert.ok(core.includes('REFERRAL_REWARD_POINTS') && core.includes('REFERRAL_MIN_SESSION_SECONDS = 60') && core.includes('parseReferralRewardEvent'), 'Commerce core must validate server-verified referral sessions and fixed rewards');
+assert.ok(serverSource.includes('game_referral_rewards') && serverSource.includes('processReferralRewardEvent') && serverSource.includes('game_referral_visits'), 'Commerce API must persist referral qualification and deduplicate awards');
+assert.ok(lifecycle.includes('og_[a-f0-9]{32}') && lifecycle.includes('value.visitorToken'), 'Gameplay events must preserve the secure referral code and invited-player token');
+assert.ok(!signalRun.includes('awardShareShards') && !signalRun.includes("life('share_created',{shareMethod:method,dailyMode,dailyDate:dailyMode?dailyDate:null,rewardConfirmedByPlayer:true})"), 'SIGNAL RUN must never mint referral rewards from an unverified post');
