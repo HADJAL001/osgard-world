@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { getRelatedGames } from '../src/core/gameRecommendations.mjs';
 
 const games = [
@@ -12,14 +13,30 @@ const games = [
   { id: 'patina', category: 'creative' },
   { id: 'cascade-lab', category: 'creative' },
   { id: 'afterimage-run', category: 'creative' },
+  { id: 'aether-grid', category: 'creative' },
 ];
 
 const find = id => games.find(game => game.id === id);
+const gameDetailSource = readFileSync(new URL('../src/GameDetailPage.tsx', import.meta.url), 'utf8');
+const detailIds = [...gameDetailSource.matchAll(/^\s*id: '([a-z0-9-]+)'/gm)].map(match => match[1]);
+assert.deepEqual([...new Set(detailIds)].sort(), games.map(game => game.id).sort(),
+  'Contextual recommendations must cover the same game IDs as the individual game pages');
+for (const game of games) {
+  const related = getRelatedGames(game, games);
+  assert.ok(related.some(item => item.reason === 'curated'),
+    'Every published game must have at least one curated recommendation: ' + game.id);
+  assert.ok(related.every(item => item.game.id !== game.id), 'A game must not recommend itself: ' + game.id);
+}
 const base = getRelatedGames(find('civic-cascade'), games);
 assert.deepEqual(base.map(item => item.game.id), ['time', 'null-shift', 'inherit']);
 assert.equal(new Set(base.map(item => item.game.id)).size, base.length, 'recommendations must not duplicate games');
 assert.ok(!base.some(item => item.game.id === 'civic-cascade'), 'the current game must be excluded');
 assert.equal(base[0].reason, 'curated');
+
+const aether = getRelatedGames(find('aether-grid'), games);
+assert.deepEqual(aether.map(item => item.game.id), ['cascade-lab', 'afterimage-run', 'signal-run'],
+  'AETHER GRID must get curated related games, not generic category-order fallbacks');
+assert.ok(aether.every(item => item.reason === 'curated'), 'AETHER GRID recommendations must be explicitly curated');
 
 const favorite = getRelatedGames(find('civic-cascade'), games, { favorites: ['patina'] });
 assert.equal(favorite[2].game.id, 'patina', 'a saved favorite may enter the visible top three');
