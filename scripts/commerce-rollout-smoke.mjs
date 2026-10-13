@@ -22,10 +22,12 @@ for (const value of [
   "stripe.checkout.sessions.create", "stripe.webhooks.constructEvent",
   "express.raw", "commerce_stripe_events", "ON CONFLICT DO NOTHING",
   "ENABLE_LIVE_PAYMENTS", "ADMIN_API_TOKEN", "/v1/admin/overview",
-  "/v1/checkout/status", "validateEventBatch", "validateLeadPayload",
+  "/v1/checkout/status", "validateEventBatch", "validateLeadPayload", "validateLeadStatusPayload",
+  'app.patch("/v1/admin/leads/:leadId"', "UPDATE commerce_leads SET status=$1, updated_at=NOW() WHERE lead_id=$2",
+  "LEAD_ID_INVALID", "LEAD_NOT_FOUND", "ADMIN_LEAD_UPDATE_UNAVAILABLE",
   "resolveCheckoutPaymentState", "no-store, private", "paidRevenueByAttribution", "attribution_game_id", "attribution_source", "attribution_campaign",
 ]) assert.ok(server.includes(value), "Commerce API missing required feature: " + value);
-for (const value of ["PRODUCT_DEFS", "termsAccepted", "verifyStripeSignature", "paymentsModeAllowed"]) {
+for (const value of ["PRODUCT_DEFS", "termsAccepted", "verifyStripeSignature", "paymentsModeAllowed", "LEAD_STATUSES", "validateLeadStatusPayload"]) {
   assert.ok(core.includes(value), "Core validation missing: " + value);
 }
 for (const value of ["id=\"products\"", "id=\"buyer-email\"", "id=\"terms-accepted\""]) {
@@ -37,7 +39,7 @@ for (const value of ["no-store", "Деньги не списаны", "termsAccep
 for (const value of ["/v1/products", "/v1/checkout/session", "https:", "checkout_started", "checkoutAttribution()", "attribution: checkoutAttribution()"]) {
   assert.ok(app.includes(value), "Storefront code missing: " + value);
 }
-for (const value of ["type=\"password\"", "ADMIN_API_TOKEN", "/v1/admin/leads", "noindex,nofollow"]) {
+for (const value of ["type=\"password\"", "ADMIN_API_TOKEN", "/v1/admin/leads", "noindex,nofollow", "lead-search", "lead-status-filter", "lead-list-status", "LEAD_STATUS_LABELS", "Сохранить статус", "method: 'PATCH'"]) {
   assert.ok(admin.includes(value), "Admin UI missing: " + value);
 }
 assert.equal(config.apiBaseUrl, "", "No production API hostname should be assumed without deployment confirmation.");
