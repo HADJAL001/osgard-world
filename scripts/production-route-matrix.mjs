@@ -2,7 +2,7 @@ import { isValidPartnerInventoryText } from './partner-inventory-contract.mjs'
 const base = process.env.OSGARD_BASE_URL || 'https://osgard.world'
 const expectCurrentDesign = process.env.SKILLCRED_EXPECT_CURRENT_DESIGN === '1'
 const ROUTE_TIMEOUT_MS = 10000
-const routes = ['/','/skillcred/','/skillcred-api/health','/skillcred-api/ready','/skillcred-api/issuer','/entertainment','/entertainment/','/games/','/games/index.html','/games/civic-cascade/','/games/patina/','/games/cascade-lab/','/games/afterimage-run/','/games/afterimage-run/','/games/partners/','/games/growth-studio/','/games/monetization/','/games/premium/','/games/premium/success/','/games/commerce-admin/','/games/commerce-config.json','/games/commerce-client.js','/games/admin/','/games/admin/partners/','/games/invite/','/games/invite/null-shift/','/games/invite/time/','/games/invite/swarm/','/games/invite/inherit/','/games/invite/remix/','/games/invite/civic-cascade/','/games/invite/patina/','/games/invite/signal-run/','/games/invite/cascade-lab/','/games/invite/afterimage-run/','/games/invite/afterimage-run/','/games/invite/invite-landing.js','/games/share-cards/catalog.png','/games/share-cards/null-shift.png','/games/favicon.svg','/privacy/','/terms/','/community','/stream','/archive','/profile','/api/v1/player/profile','/api/v1/analytics/summary?from=0&to=1','/r/1842','/games/time','/game/time','/game/swarm','/game/null-shift','/game/inherit','/game/remix','/game/signal-run','/game/civic-cascade','/game/patina','/game/cascade-lab','/games/signal-run/','/games/null-shift/','/games/null-shift/index.html','/games/null-shift-godot/','/games/null-shift-godot/index.html','/play/swarm','/play/null-shift','/play/inherit','/play/remix','/media','/business','/create','/mobility']
+const routes = ['/','/skillcred/','/skillcred-api/health','/skillcred-api/ready','/skillcred-api/issuer','/entertainment','/entertainment/','/games/','/games/index.html','/games/civic-cascade/','/games/patina/','/games/cascade-lab/','/games/afterimage-run/','/games/partners/','/games/growth-studio/','/games/monetization/','/games/premium/','/games/premium/success/','/games/commerce-admin/','/games/commerce-config.json','/games/commerce-client.js','/games/admin/','/games/admin/partners/','/games/invite/','/games/invite/null-shift/','/games/invite/time/','/games/invite/swarm/','/games/invite/inherit/','/games/invite/remix/','/games/invite/civic-cascade/','/games/invite/patina/','/games/invite/signal-run/','/games/invite/cascade-lab/','/games/invite/afterimage-run/','/games/invite/invite-landing.js','/games/share-cards/catalog.png','/games/share-cards/null-shift.png','/games/share-cards/afterimage-run.png','/games/favicon.svg','/privacy/','/terms/','/community','/stream','/archive','/profile','/api/v1/player/profile','/api/v1/analytics/summary?from=0&to=1','/r/1842','/games/time','/game/time','/game/swarm','/game/null-shift','/game/inherit','/game/remix','/game/signal-run','/game/civic-cascade','/game/patina','/game/cascade-lab','/games/signal-run/','/games/null-shift/','/games/null-shift/index.html','/games/null-shift-godot/','/games/null-shift-godot/index.html','/play/swarm','/play/null-shift','/play/inherit','/play/remix','/media','/business','/create','/mobility']
 const agents = { desktop: 'OSGARD-Route-Matrix/1.1 Desktop', mobile: 'OSGARD-Route-Matrix/1.1 Mobile' }
 const results = []
 for (const [device, userAgent] of Object.entries(agents)) for (const route of routes) {
@@ -35,7 +35,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         : route === '/games/premium/success/'
           ? text.includes('/v1/checkout/status') && text.includes('result.paid===true') && text.includes("result.orderStatus==='refunded'")
         : route === '/games/commerce-admin/'
-          ? text.includes('<meta name="robots" content="noindex,nofollow,noarchive">') && text.includes('id="token"') && text.includes('ADMIN_API_TOKEN') && text.includes('/v1/admin/orders')
+          ? text.includes('<meta name="robots" content="noindex,nofollow,noarchive">') && text.includes('id="token"') && text.includes('ADMIN_API_TOKEN') && text.includes('/v1/admin/orders') && text.includes('id="social-network-table"') && text.includes('id="social-network-body"')
         : route === '/games/commerce-config.json'
           ? (() => { try { const config = JSON.parse(text); return typeof config.apiBaseUrl === 'string' && !/(sk_(?:live|test)_|whsec_)/i.test(text) } catch { return false } })()
         : route === '/games/commerce-client.js'
@@ -46,7 +46,9 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
           ? text.includes('<meta name="robots" content="noindex,nofollow,noarchive">') && text.includes('id="editor-list"') && text.includes('id="download"') && text.includes('inventory.json')
       : route === '/games/invite/invite-landing.js'
            ? text.includes("osgard.games.referral-attribution.v1") && text.includes("name: 'referral_link_opened'")
-        : route.startsWith('/games/invite/')
+                 : route === '/games/invite/afterimage-run/'
+           ? text.includes('property="og:title" content="AFTERIMAGE//RUN — OSGARD PLAY"') && text.includes('property="og:image" content="https://osgard.world/games/share-cards/afterimage-run.png"') && text.includes('id="play-link"') && text.includes('noindex,follow')
+         : route.startsWith('/games/invite/')
           ? text.includes('property="og:title"') && text.includes('property="og:image"') && text.includes('name="twitter:card" content="summary_large_image"') && text.includes('id="play-link"') && text.includes('noindex,follow')
         : route.startsWith('/games/share-cards/')
           ? (response.headers.get('content-type') || '').toLowerCase().includes('image/png') && responseBody[0]===137 && responseBody[1]===80 && responseBody[2]===78 && responseBody[3]===71 && responseBody.length>5000 && new DataView(responseBody.buffer,responseBody.byteOffset,responseBody.byteLength).getUint32(16)===1200 && new DataView(responseBody.buffer,responseBody.byteOffset,responseBody.byteLength).getUint32(20)===630
@@ -72,10 +74,18 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
           ? text.includes('<title>PATINA Atelier — OSGARD WORLD GAMING</title>') && text.includes('id="patina-workbench"') && text.includes('data-patina-ready="true"') && text.includes('id="diagnose"') && text.includes('id="finish-case"') && text.includes('id="export-case"')
         : route === '/games/signal-run/'
           ? text.includes('<title>SIGNAL RUN — OSGARD WORLD</title>') && text.includes('id="arena"') && text.includes('game.js')
-        : route === '/games/afterimage-run/'
+                : route === '/games/afterimage-run/'
           ? text.includes('<title>AFTERIMAGE//RUN — OSGARD PLAY</title>') && text.includes('id="runnerCanvas"') && text.includes('id="run-start"') && text.includes('id="daily-seed"') && text.includes('id="share-telegram"') && text.includes('osgard:game-lifecycle')
         : route === '/games/cascade-lab/'
-          ? text.includes('<title>CASCADE LAB — OSGARD PLAY</title>') && text.includes('data-cascade-lab-ready="true"') && text.includes('id="launchMain"') && text.includes('id="exportRunReport"') && text.includes("notifyOsgardLifecycle('started'")
+          ? text.includes('<title>CASCADE LAB — Premium Physics Lab 0.13.0</title>') &&
+            text.includes('name="osgard-game-version" content="0.13.0-osgard-cross-promo"') &&
+            text.includes('data-cascade-lab-ready="true"') &&
+            text.includes('id="runButton"') && text.includes('id="exportTelemetryButton"') &&
+            text.includes('id="exportGrowthButton"') && text.includes('id="serviceAdDialog"') &&
+            text.includes('id="serviceAdChoices"') && text.includes('Я поделился — получить +10 LC') &&
+            text.includes("notifyOsgardLifecycle('ready'") && text.includes("notifyOsgardLifecycle('started'") &&
+            text.includes("notifyOsgardLifecycle('paused'") && text.includes("notifyOsgardLifecycle('resumed'") &&
+            text.includes("notifyOsgardLifecycle('completed'")
         : route.startsWith('/games/null-shift-godot')
           ? /<canvas/i.test(text) && /godot/i.test(text) && text.includes('index.wasm') && text.includes('index.pck') &&
             text.includes('data-nullshift-shell="premium-v1"') &&
@@ -94,14 +104,13 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
               text.includes('data-game="civic-cascade"') &&
               text.includes('data-game="patina"') &&
               text.includes('data-game="signal-run"') &&
-              text.includes('data-game="cascade-lab"') &&
-              text.includes('data-game="afterimage-run"') &&
-              text.includes('"numberOfItems":9')
+              text.includes('data-game="cascade-lab"') && text.includes('data-game="afterimage-run"') &&
+              text.includes('"numberOfItems":10')
             : text.includes('<div id="root">')
     const isGamesHub = route === '/games/' || route === '/games/index.html'
     const isPartnerPage = route === '/games/partners/'
     const isGodot = route.startsWith('/games/null-shift-godot')
-    const assetPaths = route === '/games/favicon.svg' || route === '/privacy/' || route === '/terms/' ? [] : isPartnerPage ? ['/games/partners/partners.js', '/games/partners/inventory.json'] : isGamesHub ? ['/games/player-lifecycle.js','/games/game-session-recommendations.js','/games/game-session-recommendations.css','/games/daily-circuit.js','/games/daily-circuit.css'] : route === '/skillcred/' ? ['/skillcred/styles.css', '/skillcred/app.js', '/skillcred/fonts/InterVariable.woff2', '/skillcred/fonts/InstrumentSerif-Italic.woff2', '/skillcred/fonts/JetBrainsMono-Regular.woff2'] : route === '/games/signal-run/' ? ['/games/signal-run/game.js'] : isGodot ? ['/games/null-shift-godot/index.js', '/games/null-shift-godot/index.wasm', '/games/null-shift-godot/index.pck'] : route.startsWith('/games/null-shift') ? ['/games/null-shift/styles.css', '/games/null-shift/game.js', '/games/null-shift/engine-3d.js'] : route.startsWith('/games/invite/') && route !== '/games/invite/invite-landing.js' ? ['/games/invite/invite-landing.js', '/games/share-cards/' + (route.split('/')[3] || 'catalog') + '.png'] : []
+    const assetPaths = route === '/games/favicon.svg' || route === '/privacy/' || route === '/terms/' ? [] : isPartnerPage ? ['/games/partners/partners.js', '/games/partners/inventory.json'] : isGamesHub ? ['/games/consented-analytics.js','/games/player-lifecycle.js','/games/game-session-recommendations.js','/games/game-session-recommendations.css','/games/daily-circuit.js','/games/daily-circuit.css'] : route === '/skillcred/' ? ['/skillcred/styles.css', '/skillcred/app.js', '/skillcred/fonts/InterVariable.woff2', '/skillcred/fonts/InstrumentSerif-Italic.woff2', '/skillcred/fonts/JetBrainsMono-Regular.woff2'] : route === '/games/signal-run/' ? ['/games/signal-run/game.js'] : isGodot ? ['/games/null-shift-godot/index.js', '/games/null-shift-godot/index.wasm', '/games/null-shift-godot/index.pck'] : route.startsWith('/games/null-shift') ? ['/games/null-shift/styles.css', '/games/null-shift/game.js', '/games/null-shift/engine-3d.js'] : route.startsWith('/games/invite/') && route !== '/games/invite/invite-landing.js' ? ['/games/invite/invite-landing.js', '/games/share-cards/' + (route.split('/')[3] || 'catalog') + '.png'] : []
     const assetChecks = await Promise.all(assetPaths.map(async path => {
       const expectedType = path.endsWith('.css') ? 'text/css' : path.endsWith('.json') ? 'json' : path.endsWith('.js') ? 'javascript' : path.endsWith('.png') ? 'png' : path.endsWith('.wasm') ? 'wasm' : path.endsWith('.pck') ? 'pack' : 'font'
       const asset = await fetch(new URL(path, base), { headers: { 'user-agent': userAgent }, signal: AbortSignal.timeout(ROUTE_TIMEOUT_MS) })
@@ -145,6 +154,8 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
                ? content.includes('OSGARDDailyCircuitCore') && content.includes('navigator.share') && content.includes('daily_circuit')
              : path === '/games/daily-circuit.css'
                ? content.includes('.daily-circuit-grid') && content.includes('prefers-reduced-motion:reduce')
+             : path === '/games/consented-analytics.js'
+              ? content.includes('window.OSGARD_CONSENTED_ANALYTICS') && content.includes('MAX_PENDING = 100') && content.includes('MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000') && content.includes('result?.accepted')
              : path === '/games/player-lifecycle.js'
               ? content.includes('function startSession(') && content.includes('game_session_completed') && content.includes('osgard:game-lifecycle') && content.includes('event.source!==frame.contentWindow')
               : path.endsWith('.css')
