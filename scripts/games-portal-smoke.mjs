@@ -912,3 +912,13 @@ assert.ok(appSource.includes('href="/games/?utm_source=osgard_world&amp;utm_medi
 assert.ok(appSource.includes('href="/games/monetization/?utm_source=osgard_world&amp;utm_medium=entertainment&amp;utm_campaign=economy_model"'), 'Entertainment gateway must link to the scenario economy model')
 assert.ok(appSource.includes('публикацию нельзя проверить автоматически') && appSource.includes('Это не деньги'), 'SHARDS must be disclosed as non-monetary with social-post verification limits')
 assert.ok(appStyles.includes('.play-economy-strip') && appStyles.includes('@media(max-width:760px)') && appStyles.includes('prefers-reduced-motion:reduce'), 'Entertainment economy teaser needs responsive and reduced-motion styling')
+
+
+const promoVariantSource=readFileSync(resolve('public/games/game-session-recommendations.js'),'utf8')
+const promoVariantApi=readFileSync(resolve('services/osgard-commerce-api/src/server.mjs'),'utf8')
+const promoVariantAdmin=readFileSync(resolve('public/games/commerce-admin/index.html'),'utf8')
+assert.ok(promoVariantSource.includes("spotlightVariant=Math.random()<0.5?'a':'b'"), 'OSGARD SELECT must randomly assign CTA variants')
+assert.ok(promoVariantSource.includes("variant==='a'?'Открыть официальный сайт ↗':'Изучить сервис ↗'"), 'A/B experiment must compare the two intended Russian CTA labels')
+assert.ok(promoVariantSource.includes("'osgard-select:spotlight:'+serviceId+':'+variant") && promoVariantSource.includes("'osgard-select:click:'+item[0]+':'+variant"), 'Experiment impressions and CTA clicks must carry the same variant label')
+assert.ok(promoVariantApi.includes('ownedPromoVariantStats') && promoVariantApi.includes("source ~ '^osgard-select:(spotlight|click):[a-z0-9-]{1,40}:[ab]$'"), 'Commerce API must aggregate only well-formed A/B experiment events')
+assert.ok(promoVariantAdmin.includes('id="owned-promo-variant-table"') && promoVariantAdmin.includes('renderPromoVariants(overview.ownedPromoVariantStats || [])'), 'Protected admin dashboard must render experiment results')
