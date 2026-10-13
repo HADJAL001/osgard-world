@@ -360,6 +360,7 @@ const mockDocument={head:mockHead,querySelector(selector){return selector==='#po
 new Function('document','window','location',recommendationScript)(mockDocument,{}, {search:'',origin:'https://osgard.world',pathname:'/games/'})
 mockDocument.dispatch('osgard:game-completed',{detail:{game:'swarm'}})
 assert.equal(mockHandlers['osgard:game-completed'].length,3,'Recommendation, invite and OSGARD SELECT modules must subscribe to completed sessions')
+assert.equal(mockHandlers['osgard:game-session-ended'].length,4,'Three growth modules and the outside chooser must subscribe to session returns')
 assert.equal(mockHost.hidden,false,'Completed SWARM session should show recommendations')
 assert.equal(mockClasses.has('has-recommendations'),true,'The player layout should adapt after completion')
 const mockGrid=mockHost.children.find(node=>node.className==='post-run-grid');
