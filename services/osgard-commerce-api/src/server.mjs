@@ -7,7 +7,8 @@ import Stripe from "stripe";
 import pg from "pg";
 import {
   catalogConfiguration, validateCheckoutPayload, validateLeadPayload,
-  validateEventBatch, paymentsModeAllowed, resolveCheckoutPaymentState, safeEqual,
+  validateEventBatch, validateReferralIssuePayload, validateReferralWalletPayload,
+  validateReferralDisablePayload, resolveReferralCompletion, paymentsModeAllowed, resolveCheckoutPaymentState, safeEqual,
 } from "./core.mjs";
 
 const { Pool } = pg;
@@ -45,6 +46,7 @@ app.use(cors({
 app.use("/v1/checkout", rateLimit({ windowMs: 15 * 60 * 1000, limit: 20, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/leads", rateLimit({ windowMs: 60 * 60 * 1000, limit: 8, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/events", rateLimit({ windowMs: 5 * 60 * 1000, limit: 60, standardHeaders: "draft-8", legacyHeaders: false }));
+app.use("/v1/referrals", rateLimit({ windowMs: 60 * 60 * 1000, limit: 80, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/admin", rateLimit({ windowMs: 5 * 60 * 1000, limit: 120, standardHeaders: "draft-8", legacyHeaders: false }));
 
 async function ensureSchema() {
@@ -57,7 +59,13 @@ async function ensureSchema() {
     "CREATE INDEX IF NOT EXISTS commerce_leads_created_idx ON commerce_leads(created_at DESC);\n" +
     "CREATE TABLE IF NOT EXISTS commerce_events (event_id TEXT PRIMARY KEY, event_name TEXT NOT NULL, session_id TEXT NOT NULL, game_id TEXT NOT NULL, source TEXT NOT NULL, path TEXT NOT NULL, duration_seconds INTEGER NOT NULL DEFAULT 0, received_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
     "CREATE INDEX IF NOT EXISTS commerce_events_name_received_idx ON commerce_events(event_name, received_at DESC);\n" +
-    "CREATE INDEX IF NOT EXISTS commerce_events_game_received_idx ON commerce_events(game_id, received_at DESC);");
+    "CREATE INDEX IF NOT EXISTS commerce_events_game_received_idx ON commerce_events(game_id, received_at DESC);\n" +
+    "CREATE TABLE IF NOT EXISTS commerce_referral_wallets (wallet_token_hash TEXT PRIMARY KEY, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
+    "CREATE TABLE IF NOT EXISTS commerce_referral_invites (invite_code TEXT PRIMARY KEY, wallet_token_hash TEXT NOT NULL REFERENCES commerce_referral_wallets(wallet_token_hash) ON DELETE CASCADE, game_id TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
+    "CREATE INDEX IF NOT EXISTS commerce_referral_invites_owner_created_idx ON commerce_referral_invites(wallet_token_hash, created_at DESC);\n" +
+    "CREATE TABLE IF NOT EXISTS commerce_referral_rewards (reward_id TEXT PRIMARY KEY, invite_code TEXT NOT NULL UNIQUE, wallet_token_hash TEXT NOT NULL REFERENCES commerce_referral_wallets(wallet_token_hash) ON DELETE CASCADE, referred_session_id TEXT NOT NULL UNIQUE, game_id TEXT NOT NULL, points INTEGER NOT NULL CHECK (points = 50), created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
+    "CREATE INDEX IF NOT EXISTS commerce_referral_rewards_owner_created_idx ON commerce_referral_rewards(wallet_token_hash, created_at DESC);\n" +
+    "ALTER TABLE commerce_referral_rewards DROP CONSTRAINT IF EXISTS commerce_referral_rewards_invite_code_fkey;");
   dbReady = true;
   return true;
 }
@@ -66,6 +74,14 @@ async function purgeExpiredAnalytics() {
   if (!pool || !dbReady) return 0;
   const result = await pool.query(
     "DELETE FROM commerce_events WHERE received_at < NOW() - ($1 * INTERVAL '1 day')",
+    [analyticsRetentionDays],
+  );
+  await pool.query(
+    "DELETE FROM commerce_referral_invites WHERE created_at < NOW() - ($1 * INTERVAL '1 day')",
+    [analyticsRetentionDays],
+  );
+  await pool.query(
+    "DELETE FROM commerce_referral_wallets w WHERE w.updated_at < NOW() - ($1 * INTERVAL '1 day') AND NOT EXISTS (SELECT 1 FROM commerce_referral_invites i WHERE i.wallet_token_hash=w.wallet_token_hash) AND NOT EXISTS (SELECT 1 FROM commerce_referral_rewards r WHERE r.wallet_token_hash=w.wallet_token_hash)",
     [analyticsRetentionDays],
   );
   return Number(result.rowCount || 0);
@@ -305,6 +321,108 @@ app.post("/v1/leads", async (req, res) => {
   }
 });
 
+app.post("/v1/referrals/issue", async (req, res) => {
+  const input = validateReferralIssuePayload(req.body);
+  if (!input.ok) return res.status(input.status).json({ error: input.code });
+  if (!requireDatabase(res)) return;
+  const walletHash = crypto.createHash("sha256").update(input.walletToken).digest("hex");
+  res.set("Cache-Control", "no-store, private");
+  let client;
+  try {
+    client = await pool.connect();
+    await client.query("BEGIN");
+    await client.query(
+      "INSERT INTO commerce_referral_wallets(wallet_token_hash) VALUES($1) ON CONFLICT(wallet_token_hash) DO UPDATE SET updated_at=NOW()",
+      [walletHash],
+    );
+    await client.query("SELECT wallet_token_hash FROM commerce_referral_wallets WHERE wallet_token_hash=$1 FOR UPDATE", [walletHash]);
+    const issued = await client.query(
+      "SELECT COUNT(*)::int AS count FROM commerce_referral_invites WHERE wallet_token_hash=$1 AND created_at >= NOW() - INTERVAL '24 hours'",
+      [walletHash],
+    );
+    if (Number(issued.rows[0]?.count || 0) >= 20) {
+      await client.query("ROLLBACK");
+      return res.status(429).json({ error: "REFERRAL_DAILY_ISSUE_LIMIT" });
+    }
+    let inviteCode = "";
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const candidate = "og_" + crypto.randomBytes(4).toString("hex");
+      const inserted = await client.query(
+        "INSERT INTO commerce_referral_invites(invite_code,wallet_token_hash,game_id) VALUES($1,$2,$3) ON CONFLICT DO NOTHING RETURNING invite_code",
+        [candidate, walletHash, input.gameId],
+      );
+      if (inserted.rowCount) { inviteCode = candidate; break; }
+    }
+    if (!inviteCode) throw new Error("REFERRAL_CODE_COLLISION");
+    const wallet = await client.query(
+      "SELECT COALESCE(SUM(points),0)::int AS balance, COUNT(*)::int AS rewards FROM commerce_referral_rewards WHERE wallet_token_hash=$1",
+      [walletHash],
+    );
+    await client.query("COMMIT");
+    return res.status(201).json({
+      inviteCode,
+      gameId: input.gameId,
+      rewardPoints: 50,
+      minimumSessionSeconds: 60,
+      dailyRewardLimit: 5,
+      balance: Number(wallet.rows[0]?.balance || 0),
+      rewards: Number(wallet.rows[0]?.rewards || 0),
+      message: "Приглашение создано. SHARDS начисляются один раз за ссылку, только после завершения приглашённым игроком сессии длительностью от 60 секунд.",
+    });
+  } catch (error) {
+    if (client) { try { await client.query("ROLLBACK"); } catch {} }
+    console.error("Referral issue failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "REFERRAL_SERVICE_UNAVAILABLE" });
+  } finally {
+    client?.release();
+  }
+});
+
+app.post("/v1/referrals/wallet", async (req, res) => {
+  const input = validateReferralWalletPayload(req.body);
+  if (!input.ok) return res.status(input.status).json({ error: input.code });
+  if (!requireDatabase(res)) return;
+  const walletHash = crypto.createHash("sha256").update(input.walletToken).digest("hex");
+  res.set("Cache-Control", "no-store, private");
+  try {
+    await pool.query(
+      "INSERT INTO commerce_referral_wallets(wallet_token_hash) VALUES($1) ON CONFLICT(wallet_token_hash) DO UPDATE SET updated_at=NOW()",
+      [walletHash],
+    );
+    const [wallet, issued] = await Promise.all([
+      pool.query("SELECT COALESCE(SUM(points),0)::int AS balance, COUNT(*)::int AS rewards FROM commerce_referral_rewards WHERE wallet_token_hash=$1", [walletHash]),
+      pool.query("SELECT COUNT(*)::int AS count FROM commerce_referral_invites WHERE wallet_token_hash=$1 AND created_at >= NOW() - INTERVAL '24 hours'", [walletHash]),
+    ]);
+    return res.set("Cache-Control", "no-store, private").json({
+      balance: Number(wallet.rows[0]?.balance || 0),
+      rewards: Number(wallet.rows[0]?.rewards || 0),
+      invitesLast24Hours: Number(issued.rows[0]?.count || 0),
+      rewardPoints: 50,
+      minimumSessionSeconds: 60,
+      dailyRewardLimit: 5,
+      redemption: "disabled",
+    });
+  } catch (error) {
+    console.error("Referral wallet read failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "REFERRAL_WALLET_UNAVAILABLE" });
+  }
+});
+
+app.post("/v1/referrals/disable", async (req, res) => {
+  const input = validateReferralDisablePayload(req.body);
+  if (!input.ok) return res.status(input.status).json({ error: input.code });
+  if (!requireDatabase(res)) return;
+  const walletHash = crypto.createHash("sha256").update(input.walletToken).digest("hex");
+  res.set("Cache-Control", "no-store, private");
+  try {
+    await pool.query("DELETE FROM commerce_referral_wallets WHERE wallet_token_hash=$1", [walletHash]);
+    return res.json({ disabled: true, message: "Бонусный кошелёк и связанные коды приглашений удалены." });
+  } catch (error) {
+    console.error("Referral opt-out failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "REFERRAL_OPT_OUT_UNAVAILABLE" });
+  }
+});
+
 app.post("/v1/events", async (req, res) => {
   const batch = validateEventBatch(req.body);
   if (!batch.ok) return res.status(batch.status).json({ error: batch.code });
@@ -314,12 +432,33 @@ app.post("/v1/events", async (req, res) => {
     try {
       await client.query("BEGIN");
       let insertedCount = 0;
+      let referralRewardsAwarded = 0;
       for (const event of batch.events) {
         const inserted = await client.query(
           "INSERT INTO commerce_events(event_id,event_name,session_id,game_id,source,path,duration_seconds) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT DO NOTHING RETURNING event_id",
           [event.eventId || crypto.randomUUID(), event.name, event.sessionId, event.gameId, event.source, event.path, event.durationSeconds],
         );
+        if (!inserted.rowCount) continue;
         insertedCount += Number(inserted.rowCount || 0);
+        const referral = resolveReferralCompletion(event);
+        if (!referral) continue;
+        const invite = await client.query(
+          "SELECT wallet_token_hash FROM commerce_referral_invites WHERE invite_code=$1 AND game_id=$2",
+          [referral.inviteCode, referral.gameId],
+        );
+        if (!invite.rowCount) continue;
+        const walletHash = invite.rows[0].wallet_token_hash;
+        await client.query("SELECT wallet_token_hash FROM commerce_referral_wallets WHERE wallet_token_hash=$1 FOR UPDATE", [walletHash]);
+        const dailyRewards = await client.query(
+          "SELECT COUNT(*)::int AS count FROM commerce_referral_rewards WHERE wallet_token_hash=$1 AND created_at >= NOW() - INTERVAL '24 hours'",
+          [walletHash],
+        );
+        if (Number(dailyRewards.rows[0]?.count || 0) >= 5) continue;
+        const reward = await client.query(
+          "INSERT INTO commerce_referral_rewards(reward_id,invite_code,wallet_token_hash,referred_session_id,game_id,points) VALUES($1,$2,$3,$4,$5,50) ON CONFLICT DO NOTHING RETURNING reward_id",
+          [crypto.randomUUID(), referral.inviteCode, walletHash, event.sessionId, event.gameId],
+        );
+        if (reward.rowCount) referralRewardsAwarded += 1;
       }
       await client.query("COMMIT");
     } catch (error) {
@@ -328,7 +467,7 @@ app.post("/v1/events", async (req, res) => {
     } finally {
       client.release();
     }
-    return res.status(202).json({ accepted: batch.events.length, inserted: insertedCount });
+    return res.status(202).json({ accepted: batch.events.length, inserted: insertedCount, referralRewardsAwarded });
   } catch (error) {
     console.error("Analytics insert failed:", error?.message || "unknown error");
     return res.status(503).json({ error: "EVENT_STORAGE_UNAVAILABLE" });
