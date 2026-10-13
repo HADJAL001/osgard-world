@@ -1,7 +1,8 @@
 name: OSGARD frontend deploy
 
+# All deploys touch the same live container and rollback paths. Serialize normal and recovery commits.
 concurrency:
-  group: ${{ contains(github.event.head_commit.message, '[supersede]') && 'osgard-frontend-deploy-recovery' || 'osgard-frontend-deploy' }}
+  group: osgard-frontend-deploy
   cancel-in-progress: false
 
 on:
@@ -177,18 +178,20 @@ jobs:
           HOST: ${{ secrets.OSGARD_DEPLOY_HOST }}
           USER: ${{ secrets.OSGARD_DEPLOY_USER }}
         run: |
+          REMOTE_STAGE="/tmp/osgard-gh-release-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           sha256sum osgard-world-release.tgz | tee local.sha256
-          ssh -i ~/.ssh/osgard_deploy "$USER@$HOST" 'rm -rf /tmp/osgard-gh-release && mkdir -p /tmp/osgard-gh-release'
-          scp -i ~/.ssh/osgard_deploy osgard-world-release.tgz "$USER@$HOST:/tmp/osgard-gh-release/"
-          scp -i ~/.ssh/osgard_deploy local.sha256 "$USER@$HOST:/tmp/osgard-gh-release/"
-          ssh -i ~/.ssh/osgard_deploy "$USER@$HOST" 'cd /tmp/osgard-gh-release && sha256sum -c local.sha256'
+          ssh -i ~/.ssh/osgard_deploy "$USER@$HOST" "rm -rf '$REMOTE_STAGE' && mkdir -p '$REMOTE_STAGE'"
+          scp -i ~/.ssh/osgard_deploy osgard-world-release.tgz "$USER@$HOST:$REMOTE_STAGE/"
+          scp -i ~/.ssh/osgard_deploy local.sha256 "$USER@$HOST:$REMOTE_STAGE/"
+          ssh -i ~/.ssh/osgard_deploy "$USER@$HOST" "cd '$REMOTE_STAGE' && sha256sum -c local.sha256"
       - name: Activate verified archive with config rollback
         env:
           HOST: ${{ secrets.OSGARD_DEPLOY_HOST }}
           USER: ${{ secrets.OSGARD_DEPLOY_USER }}
         run: |
           scp -i ~/.ssh/osgard_deploy scripts/activate-frontend-remote.sh "$USER@$HOST:/tmp/activate-frontend-remote.sh"
-          ssh -i ~/.ssh/osgard_deploy "$USER@$HOST" 'docker cp /tmp/osgard-gh-release/osgard-world-release.tgz osgard-world:/tmp/osgard-gh-release.tgz && chmod 700 /tmp/activate-frontend-remote.sh && OSGARD_ARCHIVE=/tmp/osgard-gh-release.tgz OSGARD_CONTAINER=osgard-world /tmp/activate-frontend-remote.sh'
+          REMOTE_STAGE="/tmp/osgard-gh-release-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          ssh -i ~/.ssh/osgard_deploy "$USER@$HOST" "docker cp '$REMOTE_STAGE/osgard-world-release.tgz' osgard-world:/tmp/osgard-gh-release.tgz && chmod 700 /tmp/activate-frontend-remote.sh && OSGARD_ARCHIVE=/tmp/osgard-gh-release.tgz OSGARD_CONTAINER=osgard-world /tmp/activate-frontend-remote.sh; status=\$?; rm -rf '$REMOTE_STAGE'; exit \$status"
       - name: Verify published routes and same-origin API proxy
         env:
           OSGARD_BASE_URL: https://osgard.world
