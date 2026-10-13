@@ -505,10 +505,9 @@ assert.ok(civic.includes("sendLifecycle('completed'"),'CIVIC CASCADE must emit c
 assert.ok(patina.includes("signal('completed'"),'PATINA must emit completion')
 assert.ok(signalJs.includes("life('completed'"),'SIGNAL RUN must emit completion')
 
-assert.ok(signalRun.includes('id="shards"')&&signalRun.includes('OSGARD SHARDS')&&signalRun.includes('публикацию в соцсети')&&signalRun.includes('не имеют денежной стоимости'),'SIGNAL RUN must disclose the local SHARDS wallet and social-share verification limits');
-assert.ok(signalJs.includes("SHARDS_KEY='osgard.games.shards-wallet.v1'")&&signalJs.includes('function awardShareShards')&&signalJs.includes('event.key===SHARDS_KEY'),'SIGNAL RUN must use the same local SHARDS wallet as the postgame reward panel');
-assert.ok(signalJs.includes("bonus.ok?' · +50 SHARDS'")&&signalJs.includes('current.day===day'),'SIGNAL RUN must show the +50 local invitation reward and prevent duplicate grants within one UTC day');
-assert.ok(signalRun.includes('id="claim-share-reward"')&&signalRun.includes('Копирование ссылки само по себе не даёт награду'),'SIGNAL RUN must offer an explicit share-reward confirmation and disclose that copying does not earn a reward');
+assert.ok(signalRun.includes('id="shards"')&&signalRun.includes('НАГРАДА')&&signalRun.includes('IN HUB')&&signalRun.includes('не начисляет SHARDS'),'SIGNAL RUN must direct players to the server-verified intermission reward flow');
+assert.ok(!signalJs.includes("SHARDS_KEY='osgard.games.shards-wallet.v1'")&&!signalJs.includes('function awardShareShards')&&!signalJs.includes("awardShareShards('user-confirmed:"),'SIGNAL RUN must not mint locally stored SHARDS');
+assert.ok(!signalRun.includes('id="claim-share-reward"')&&!signalJs.includes('claimShare.addEventListener'),'SIGNAL RUN must not expose a self-confirmed reward claim');
 const signalShareStart=signalJs.indexOf("$('share').addEventListener('click',async()=>{");
 const signalShareEnd=signalJs.indexOf("});document.addEventListener('keydown'",signalShareStart);
 assert.ok(signalShareStart>=0&&signalShareEnd>signalShareStart,'SIGNAL RUN share handler boundaries are required');
