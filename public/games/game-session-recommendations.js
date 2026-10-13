@@ -72,7 +72,7 @@ async function sendEvent(name,gameId,source){
   if(!consented()||(controller&&controller.signal.aborted))return false;
   const config=configResponse.ok?await configResponse.json().catch(()=>({})):{};
   if(!consented()||(controller&&controller.signal.aborted))return false;
-  const base=String(config.apiBaseUrl||'/commerce-api').replace(/\/+$/,'');
+   const base=String(config.apiBaseUrl||'/commerce-api').replace(/\/+$/,'');
   const request={method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({consent:true,events:[event]})};
   if(controller)request.signal=controller.signal;
   const response=await fetch(base+'/v1/events',request);
