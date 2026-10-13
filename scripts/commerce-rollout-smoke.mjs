@@ -45,6 +45,7 @@ const html = readFileSync(resolve("public/games/index.html"), "utf8");
 assert.ok(html.includes("id=\"project-form\""), "Existing project form must remain in the games hub.");
 assert.ok(existsSync(resolve("public/games/commerce-client.js")), "Existing contact forms need a shared API/fallback client.");
 const sharedClient = readFileSync(resolve("public/games/commerce-client.js"), "utf8");
+const playerLifecycle = readFileSync(resolve("public/games/player-lifecycle.js"), "utf8");
 const partners = readFileSync(resolve("public/games/partners/index.html"), "utf8");
 const privacy = readFileSync(resolve("public/privacy/index.html"), "utf8");
 const terms = readFileSync(resolve("public/terms/index.html"), "utf8");
@@ -55,6 +56,7 @@ for (const value of ['id="campaign-form"', 'name="consent"', 'src="/games/commer
   assert.ok(partners.includes(value), "Partner page missing lead integration: " + value);
 }
 assert.ok(sharedClient.includes("/v1/leads") && sharedClient.includes("wa.me/79640027222"), "Lead API and manual fallback must both exist.");
+assert.ok(playerLifecycle.includes("sendCommerceEvent(name,payload)") && playerLifecycle.includes("game_session_completed"), "Consented game session metrics must reach commerce analytics.");
 assert.ok(privacy.includes("платёжного провайдера") && privacy.includes("Необязательная аналитика"), "Privacy page missing actual commerce data handling.");
 assert.ok(terms.includes("Покупки и платёжный статус") && terms.includes("Подписка OSGARD PREMIUM выключена"), "Terms must document checkout and disabled recurring sales.");
 const successPage = readFileSync(resolve("public/games/premium/success/index.html"), "utf8");
