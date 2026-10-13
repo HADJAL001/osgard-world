@@ -165,6 +165,13 @@ assert.ok(afterimageGame.includes('<title>AFTERIMAGE//RUN — OSGARD PLAY</title
 assert.ok(!/<script[^>]+src=/i.test(afterimageGame)&&!/<link[^>]+href=["']https?:/i.test(afterimageGame),'AFTERIMAGE//RUN must remain self-contained')
 assert.ok(afterimageGame.includes("extra||{}),location.origin)")&&!afterimageGame.includes("extra||{}),'*')"),'AFTERIMAGE lifecycle messages must stay same-origin')
 assert.ok(afterimageGame.includes('incomingSeed=params.get(\'seed\')')&&afterimageGame.includes('Number.isFinite(rawTarget)')&&afterimageGame.includes('if(r[today])'),'AFTERIMAGE challenge/reward safety checks missing')
+assert.ok(afterimageGame.includes("new URL('/games/invite/afterimage-run/',location.origin)")&&afterimageGame.includes("u.searchParams.set('og_ref',code)")&&afterimageGame.includes("u.searchParams.set('seed',day)")&&afterimageGame.includes("u.searchParams.set('score',String(score))"),'AFTERIMAGE share must use canonical referral links and preserve its daily challenge');
+assert.ok(afterimageGame.includes("candidate.pathname==='/games/invite/afterimage-run/'")&&afterimageGame.includes("candidate.searchParams.get('utm_campaign')==='play_with_friends'"),'AFTERIMAGE must validate invite-link origin, route, code and attribution parameters');
+assert.ok(afterimageGame.includes("BEAT MY ROUTE")&&afterimageGame.includes("GAMES / INVITE / AFTERIMAGE-RUN"),'AFTERIMAGE share card must include a clear challenge CTA');
+assert.ok(inviteLandingScript.includes('const validAfterimageChallenge = valid && game === \\'afterimage-run\\'')&&inviteLandingScript.includes("target.searchParams.set('seed', afterimageSeed)")&&inviteLandingScript.includes("target.searchParams.set('score', String(afterimageScore))"),'AFTERIMAGE invite preview must validate and preserve seed + target score');
+assert.ok(html.includes("const validSeed=/^\\\\d{4}-\\\\d{2}-\\\\d{2}$/.test(seed)")&&html.includes("openGame(invite.game,target)"),'Games hub must pass only validated AFTERIMAGE challenge parameters into the game');
+new Function(inviteLandingScript)
+
 assert.ok(afterimageGame.includes("opened.opener=null")&&afterimageGame.includes("prepareShareReward('share-intent-'+kind)"),'Social share must detach opener and require a separate reward confirmation')
 assert.ok(afterimageGame.includes('id="claim-share-reward"')&&afterimageGame.includes("rewardShare('player-confirmed:'+method)"),'AFTERIMAGE reward must require a separate player confirmation')
 const afterimageShareStart=afterimageGame.indexOf('async function shareNative()')
