@@ -600,7 +600,7 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
         ORDER BY intents DESC, network ASC
       `),
       pool.query("SELECT attribution_game_id AS \"gameId\", attribution_source AS source, NULLIF(attribution_campaign, '') AS campaign, mode, currency, COUNT(*)::int AS orders, COALESCE(SUM(amount_total),0)::text AS \"totalMinor\" FROM commerce_orders WHERE status='paid' AND amount_total IS NOT NULL AND currency IS NOT NULL AND created_at >= NOW() - INTERVAL '30 days' GROUP BY attribution_game_id, attribution_source, attribution_campaign, mode, currency ORDER BY COUNT(*) DESC, attribution_game_id ASC LIMIT 50"),
-      pool.query("SELECT COUNT(*)::int AS \\"qualifiedReferrals\\", COALESCE(SUM(reward_amount),0)::int AS \\"shardsAwarded\\" FROM commerce_referral_invites WHERE reward_claimed_at >= NOW() - INTERVAL '30 days'"),
+      pool.query(`SELECT COUNT(*)::int AS "qualifiedReferrals", COALESCE(SUM(reward_amount),0)::int AS "shardsAwarded" FROM commerce_referral_invites WHERE reward_claimed_at >= NOW() - INTERVAL '30 days'`),
     ]);
     return res.json({
       ordersByStatus: orderStats.rows,
