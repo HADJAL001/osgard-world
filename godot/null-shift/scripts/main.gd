@@ -1618,6 +1618,23 @@ func _finish_mission(success: bool) -> void:
 		_play_sfx(70.0, 0.9, 0.18)
 	result_panel.visible = true
 	_update_hud()
+	_notify_host_mission_completed()
+
+func _notify_host_mission_completed() -> void:
+	if not OS.has_feature("web"):
+		return
+	JavaScriptBridge.eval("""
+		try {
+			if (window.parent !== window) {
+				window.parent.postMessage({
+					type: "osgard:game-lifecycle",
+					game: "null-shift",
+					state: "completed",
+					at: Date.now()
+				}, window.location.origin);
+			}
+		} catch (_) {}
+	""")
 
 func _set_result_title(title_text: String, body_text: String, tint: Color) -> void:
 	for child in result_panel.get_children():
