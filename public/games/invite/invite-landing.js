@@ -17,6 +17,13 @@
     medium === 'referral' &&
     campaign === 'play_with_friends' &&
     content === (requestedGame || 'catalog');
+  const afterimageSeed = params.get('seed') || '';
+  const afterimageScoreRaw = params.get('score');
+  const afterimageScore = Number(afterimageScoreRaw);
+  const validAfterimageSeed = /^\d{4}-\d{2}-\d{2}$/.test(afterimageSeed) &&
+    (() => { const date = new Date(afterimageSeed + 'T00:00:00.000Z'); return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === afterimageSeed; })();
+  const validAfterimageChallenge = valid && game === 'afterimage-run' && validAfterimageSeed &&
+    afterimageScoreRaw !== null && Number.isSafeInteger(afterimageScore) && afterimageScore >= 0 && afterimageScore <= 99999999;
   const scoreValue = Number(params.get('challenge') || 0);
   const requestedDay = params.get('day') || '';
   const validDay = /^\d{4}-\d{2}-\d{2}$/.test(requestedDay) &&
@@ -49,6 +56,10 @@
       target.searchParams.set('utm_medium', medium);
       target.searchParams.set('utm_campaign', campaign);
       target.searchParams.set('utm_content', content);
+      if (validAfterimageChallenge) {
+        target.searchParams.set('seed', afterimageSeed);
+        target.searchParams.set('score', String(afterimageScore));
+      }
     }
     else if (legacySignalRun) {
       // Keep only the validated SIGNAL RUN challenge contract when leaving the social preview.
