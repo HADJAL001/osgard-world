@@ -631,13 +631,7 @@ const rewardPrimaryStart=recommendationScript.indexOf("primary.addEventListener(
 const rewardPrimaryEnd=recommendationScript.indexOf(" const note=make('p','og-postgame-reward-note'",rewardPrimaryStart);
 assert.ok(rewardPrimaryStart>=0&&rewardPrimaryEnd>rewardPrimaryStart,'OSGARD SELECT primary-share handler boundaries are required');
 const rewardPrimaryHandler=recommendationScript.slice(rewardPrimaryStart,rewardPrimaryEnd);
-assert.ok(rewardClaimHandler.includes("sendSelectEvent('share_created',gameId,'game-invite:")&&!rewardPrimaryHandler.includes("sendSelectEvent('share_created'"),'OSGARD SELECT may record share_created only after the confirmation button');
-const rewardPrimaryStart=recommendationScript.indexOf("primary.addEventListener('click',async()=>{",recommendationScript.indexOf('function rewardShelf(gameId){'));
-const rewardPrimaryEnd=recommendationScript.indexOf(" const note=make('p','og-postgame-reward-note'",rewardPrimaryStart);
-assert.ok(rewardPrimaryStart>=0&&rewardPrimaryEnd>rewardPrimaryStart,'OSGARD SELECT reward-share handler boundaries are required');
-const rewardPrimaryHandler=recommendationScript.slice(rewardPrimaryStart,rewardPrimaryEnd);
-assert.ok(!rewardPrimaryHandler.includes('show(award('),'OSGARD SELECT must not award automatically when native share succeeds or a link is copied');
-assert.ok(rewardPrimaryHandler.includes("pending='native-share'")&&rewardPrimaryHandler.includes("claim.hidden=false")&&rewardPrimaryHandler.includes('Копирование само по себе не считается репостом и не даёт награду'),'Native sharing must require confirmation and clipboard copy must not award');
+assert.ok(rewardClaimHandler.includes("sendSelectEvent('share_created',gameId,'game-invite:")&&!rewardPrimaryHandler.includes("sendSelectEvent('share_created'")&&!rewardPrimaryHandler.includes('show(award(')&&rewardPrimaryHandler.includes("pending='native-share'")&&rewardPrimaryHandler.includes('claim.hidden=false')&&rewardPrimaryHandler.includes('Копирование само по себе не считается репостом и не даёт награду'),'OSGARD SELECT may record share_created only after confirmation; native share and copy alone must not award');
 assert.ok(recommendationScript.includes("award('social-confirmation:'+network)")&&recommendationScript.includes('не чаще раза в UTC-день на этом устройстве'),'Social reward is self-confirmed, local and daily-capped');
 assert.ok(recommendationScript.includes("entry.intersectionRatio>=0.5")&&recommendationScript.includes("},1000)")&&recommendationScript.includes('card.isConnected')&&recommendationScript.includes('card.getClientRects().length'),'A promo exposure must require at least 50% visibility for a full second on a connected, visible card');
 assert.ok(referralCoreSource.includes('"owned_promo_impression"'),'Commerce API must allow the explicit owned-promo impression event');
