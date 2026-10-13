@@ -7,6 +7,8 @@ import {
   validateCheckoutPayload,
   validateLeadPayload,
   validateEventBatch,
+  validateReferralRegistrationPayload,
+  validateReferralClaimPayload,
   paymentsModeAllowed,
   resolveCheckoutPaymentState,
   verifyStripeSignature,
@@ -63,6 +65,26 @@ test("lead endpoint requires contact, brief and acknowledgement; honeypot is sil
   const good = validateLeadPayload({ projectType: "Игра", contact: "test@example.com", description: "Нужно разработать мобильную стратегию", consent: true });
   assert.equal(good.ok, true);
   assert.equal(validateLeadPayload({ website: "spam", consent: true }).bot, true);
+});
+
+test("referral registration requires consent, a known game, an invitation code and a random owner token", () => {
+  const base = { consent: true, referralCode: "og_0123abcd", gameId: "swarm", ownerToken: "0123456789abcdef0123456789abcdef" };
+  assert.equal(validateReferralRegistrationPayload({ ...base, consent: false }).code, "ANALYTICS_CONSENT_REQUIRED");
+  assert.equal(validateReferralRegistrationPayload({ ...base, referralCode: "../bad" }).code, "REFERRAL_CODE_INVALID");
+  assert.equal(validateReferralRegistrationPayload({ ...base, gameId: "unknown" }).code, "GAME_ID_INVALID");
+  assert.equal(validateReferralRegistrationPayload({ ...base, ownerToken: "short" }).code, "REFERRAL_OWNER_TOKEN_INVALID");
+  assert.deepEqual(validateReferralRegistrationPayload(base), {
+    ok: true, referralCode: "og_0123abcd", gameId: "swarm", ownerToken: "0123456789abcdef0123456789abcdef",
+  });
+});
+
+test("referral reward claims require explicit consent and a high-entropy owner token", () => {
+  const base = { consent: true, ownerToken: "abcdef0123456789abcdef0123456789" };
+  assert.equal(validateReferralClaimPayload({ ...base, consent: false }).code, "ANALYTICS_CONSENT_REQUIRED");
+  assert.equal(validateReferralClaimPayload({ ...base, ownerToken: "guessable" }).code, "REFERRAL_OWNER_TOKEN_INVALID");
+  assert.deepEqual(validateReferralClaimPayload(base), {
+    ok: true, ownerToken: "abcdef0123456789abcdef0123456789",
+  });
 });
 
 test("analytics is disabled unless consent is explicit and event names are allow-listed", () => {
