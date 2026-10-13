@@ -366,7 +366,7 @@ function servicesShelf(gameId,showPromos,completedCount){
   const copy=make('div','og-postgame-spotlight-copy');
   copy.append(make('span','og-postgame-spotlight-label','РЕКОМЕНДАЦИЯ ДЛЯ '+(titles[gameId]||'ТВОЕЙ ИГРЫ')),make('span','og-postgame-service-code','OSG / '+service[1]+' · '+service[3]),make('strong','og-postgame-spotlight-name',service[2]),make('span','og-postgame-spotlight-description',service[4]));
   const actions=make('div','og-postgame-spotlight-actions');
-  const open=make('a','og-postgame-spotlight-open','Изучить проект ↗');open.href=serviceDestination(service);open.target='_blank';open.rel='noopener noreferrer';open.setAttribute('aria-label','Открыть '+service[2]+' в новой вкладке');open.addEventListener('click',()=>sendSelectEvent('cross_promo_clicked',gameId,'osgard-select:spotlight:'+service[0]));
+  const open=make('a','og-postgame-spotlight-open','Изучить проект ↗');open.href=serviceDestination(service);open.target='_blank';open.rel='noopener noreferrer';open.setAttribute('aria-label','Открыть '+service[2]+' в новой вкладке');open.addEventListener('click',()=>sendEvent('cross_promo_clicked',gameId,'osgard-select:spotlight:'+service[0]));
   const next=make('button','og-postgame-spotlight-next','Другой проект');next.type='button';next.addEventListener('click',()=>{const index=activeSelected.findIndex(item=>item[0]===spotlightServiceId);const chosen=activeSelected[(index+1)%activeSelected.length];renderSpotlight(chosen[0]);spotlightStatus.textContent='Рекомендация изменена. Выбери «Запомнить выбор», если хочешь видеть этот проект первым.'});
   const preferred=make('button','og-postgame-spotlight-preferred',readPreferredService()===service[0]?'✓ Мой выбор':'Запомнить выбор');preferred.type='button';preferred.addEventListener('click',()=>{const saved=writePreferredService(service[0]);preferred.textContent=saved?'✓ Мой выбор':'Не удалось сохранить';spotlightStatus.textContent=saved?'Выбор сохранён на этом устройстве.':'Браузер не разрешил сохранить предпочтение.'});
   actions.append(open,next,preferred);copy.append(actions);spotlight.append(copy,spotlightStatus);
@@ -374,7 +374,7 @@ function servicesShelf(gameId,showPromos,completedCount){
  const preferredId=readPreferredService();
  renderSpotlight(activeSelected.some(item=>item[0]===preferredId)?preferredId:recommendationByGame[gameId]);
  if(showPromos&&activeSelected.length&&typeof IntersectionObserver==='function'){
-  const observer=new IntersectionObserver(entries=>{for(const entry of entries){if(entry.isIntersecting&&entry.intersectionRatio>=0.5){clearTimeout(spotlight.__osgardExposureTimer);spotlight.__osgardExposureTimer=setTimeout(()=>{if(spotlight.isConnected&&!spotlight.hidden&&spotlight.getClientRects().length){sendSelectEvent('owned_promo_impression',gameId,'osgard-select:spotlight:'+spotlightServiceId);observer.disconnect()}},1000)}else{clearTimeout(spotlight.__osgardExposureTimer);delete spotlight.__osgardExposureTimer}}},{threshold:[0,0.5,1]});
+  const observer=new IntersectionObserver(entries=>{for(const entry of entries){if(entry.isIntersecting&&entry.intersectionRatio>=0.5){clearTimeout(spotlight.__osgardExposureTimer);spotlight.__osgardExposureTimer=setTimeout(()=>{if(spotlight.isConnected&&!spotlight.hidden&&spotlight.getClientRects().length){sendEvent('owned_promo_impression',gameId,'osgard-select:spotlight:'+spotlightServiceId);observer.disconnect()}},1000)}else{clearTimeout(spotlight.__osgardExposureTimer);delete spotlight.__osgardExposureTimer}}},{threshold:[0,0.5,1]});
   observer.observe(spotlight);
  }
  collapseToggle.hidden=!(showPromos&&activeSelected.length);
@@ -386,7 +386,7 @@ function servicesShelf(gameId,showPromos,completedCount){
    card.dataset.service=id;card.dataset.game=gameId;card.dataset.category=categoryByService[id]||'other';cards.push(card);
    if(active!==false){
     const u=new URL(href);u.searchParams.set('utm_source','osgard_games');u.searchParams.set('utm_medium','post_game');u.searchParams.set('utm_campaign','after_game');u.searchParams.set('utm_content',id+'_'+gameId);card.href=u.href;card.target='_blank';card.rel='noopener noreferrer';card.setAttribute('aria-label','Открыть '+title+' в новой вкладке');
-    card.addEventListener('click',()=>sendSelectEvent('cross_promo_clicked',gameId,'osgard-select:click:'+id));
+    card.addEventListener('click',()=>sendEvent('cross_promo_clicked',gameId,'osgard-select:click:'+id));
    }
    card.append(make('span','og-postgame-service-code','OSG / '+num+' · '+category),make('strong','og-postgame-service-name',title),make('span','og-postgame-service-description',description),make('span','og-postgame-service-action',active===false?'Пока не продвигается':'Открыть проект ↗'));grid.append(card);
   });
@@ -441,7 +441,7 @@ function servicesShelf(gameId,showPromos,completedCount){
       delete card.__osgardImpressionTimer;
       if(!hasConsent()||!card.isConnected||card.hidden||!card.getClientRects().length)return;
       observed.add(card);
-      sendSelectEvent('owned_promo_impression',gameId,'osgard-select:impression:'+card.dataset.service);
+      sendEvent('owned_promo_impression',gameId,'osgard-select:impression:'+card.dataset.service);
       observer.unobserve(card);
      },1000);
     }else if(card.__osgardImpressionTimer){
