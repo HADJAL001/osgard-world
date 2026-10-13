@@ -239,6 +239,25 @@ const GAMES: GameDefinition[] = [
     featuresEn: ['Shared daily seed', 'Ghost route and friend challenge', 'PHASE DASH and touch jump'],
     theme: 'afterimage-run',
   },
+  {    id: 'aether-grid',
+    mark: 'AG',
+    titleRu: 'AETHER GRID',
+    titleEn: 'AETHER GRID',
+    category: 'creative',
+    genreRu: 'Ежедневная логическая головоломка',
+    genreEn: 'Daily logic puzzle',
+    descriptionRu: 'Соедините источник с ядром в сети из 25 узлов. Ежедневная одинаковая сетка, личный рекорд и вызов другу — без установки и регистрации.',
+    descriptionEn: 'Connect the source to the core through a network of 25 nodes. One shared daily board, a local personal best and a challenge for a friend — no install or account required.',
+    href: '/games/aether-grid/',
+    devices: ['desktop', 'mobile'],
+    controlsRu: 'Нажимайте на узлы, чтобы поворачивать соединения. Подсказка исправляет один узел и добавляет штраф в три хода. На клавиатуре доступны стрелки при фокусе и клавиши R/H/S.',
+    controlsEn: 'Tap nodes to rotate connections. A hint fixes one node and adds a three-move penalty. Keyboard focus navigation and R/H/S shortcuts are available.',
+    supportRu: 'Самостоятельная HTML-головоломка. Ежедневная сетка зависит от UTC-даты, рекорд хранится локально. Общий рейтинг или серверная синхронизация результата не заявлены.',
+    supportEn: 'A self-contained HTML puzzle. The daily board is UTC-date seeded and best scores stay in local browser storage. No global leaderboard or server-side score sync is claimed.',
+    featuresRu: ['Единый ежедневный вызов', 'Путь сигнала и поворот узлов', 'Личный рекорд и приглашение друга'],
+    featuresEn: ['Shared daily challenge', 'Signal routing and node rotation', 'Local best and friend invite'],
+    theme: 'aether-grid',
+  },
 ]
 
 
@@ -476,7 +495,9 @@ export function GameDetailPage({ slug }: { slug: string }) {
                         ? Boolean(frameDocument?.querySelector('#arena') && frameDocument?.querySelector('#start'))
                         : game.id === 'cascade-lab'
                           ? Boolean(frameDocument?.body.dataset.cascadeLabReady === 'true')
-                          : (titleChecks[game.id]?.test(frameTitle) ?? false)
+                          : game.id === 'aether-grid'
+                            ? Boolean(frameDocument?.querySelector('#board') && frameDocument?.querySelector('#challenge-code'))
+                            : (titleChecks[game.id]?.test(frameTitle) ?? false)
                 if (validTitle) {
                   setLoadingGame(false)
                   return
