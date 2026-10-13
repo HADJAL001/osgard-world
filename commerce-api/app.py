@@ -61,6 +61,14 @@ def safe_json(raw: bytes) -> dict[str, Any] | None:
     return value if isinstance(value, dict) else None
 
 
+class ClosingConnection(sqlite3.Connection):
+    def __exit__(self, exc_type, exc_value, traceback):
+        try:
+            return super().__exit__(exc_type, exc_value, traceback)
+        finally:
+            self.close()
+
+
 class ApiError(Exception):
     def __init__(self, status: int, code: str, message: str = ""):
         super().__init__(message or code)
@@ -82,7 +90,7 @@ class CommerceService:
         self.cleanup_old_data(force=True)
 
     def connect(self) -> sqlite3.Connection:
-        db = sqlite3.connect(self.db_path, timeout=5)
+        db = sqlite3.connect(self.db_path, timeout=5, factory=ClosingConnection)
         db.row_factory = sqlite3.Row
         db.execute("PRAGMA foreign_keys=ON")
         db.execute("PRAGMA busy_timeout=5000")
@@ -127,6 +135,7 @@ class CommerceService:
                   fulfillment_mode TEXT NOT NULL,
                   email TEXT NOT NULL,
                   amount_total INTEGER NOT NULL,
+                  amount_refunded INTEGER NOT NULL DEFAULT 0,
                   currency TEXT NOT NULL,
                   stripe_session_id TEXT UNIQUE,
                   stripe_payment_intent_id TEXT,
@@ -143,6 +152,9 @@ class CommerceService:
                   processed_at TEXT NOT NULL
                 );
             """)
+            columns = {row["name"] for row in db.execute("PRAGMA table_info(orders)").fetchall()}
+            if "amount_refunded" not in columns:
+                db.execute("ALTER TABLE orders ADD COLUMN amount_refunded INTEGER NOT NULL DEFAULT 0")
 
     def cleanup_old_data(self, force: bool = False) -> None:
         now = time.time()
@@ -473,9 +485,13 @@ class CommerceService:
             elif event_type == "charge.refunded":
                 payment_intent = clamp_text(obj.get("payment_intent"), 160)
                 if payment_intent:
-                    refunded = db.execute("SELECT * FROM orders WHERE stripe_payment_intent_id=?", (payment_intent,)).fetchall()
-                    for row in refunded:
-                        db.execute("UPDATE orders SET status='refunded',updated_at=? WHERE order_id=?", (utc_now(), row["order_id"]))
+                    rows = db.execute("SELECT * FROM orders WHERE stripe_payment_intent_id=?", (payment_intent,)).fetchall()
+                    for row in rows:
+                        amount_refunded = min(int(row["amount_total"]), max(0, int(obj.get("amount_refunded") or 0)))
+                        new_status = "refunded" if amount_refunded >= int(row["amount_total"]) else ("partially_refunded" if amount_refunded > 0 else row["status"])
+                        db.execute("UPDATE orders SET amount_refunded=?,status=?,updated_at=? WHERE order_id=?", (amount_refunded,new_status,utc_now(),row["order_id"]))
+                        if amount_refunded > int(row["amount_refunded"]):
+                            self._record_server_event(db, "checkout_refunded", row["order_id"] + "_" + event_id, row["product_key"], "stripe-webhook")
             db.execute("INSERT INTO stripe_events(stripe_event_id,event_type,processed_at) VALUES(?,?,?)", (event_id,event_type,utc_now()))
         return {"received": True, "duplicate": False}
 
@@ -560,12 +576,13 @@ class CommerceService:
             total_events = db.execute("SELECT COUNT(*) AS n FROM events WHERE created_at>=?", (self._older_than(30),)).fetchone()["n"]
             event_rows = db.execute("SELECT name,COUNT(*) AS n FROM events WHERE created_at>=? GROUP BY name ORDER BY n DESC LIMIT 12", (self._older_than(30),)).fetchall()
             status_rows = db.execute("SELECT status,COUNT(*) AS n FROM orders GROUP BY status").fetchall()
-            gross_rows = db.execute("SELECT currency,SUM(amount_total) AS total FROM orders WHERE status='paid' GROUP BY currency").fetchall()
+            gross_rows = db.execute("SELECT currency,SUM(amount_total) AS total,SUM(amount_total-amount_refunded) AS net FROM orders WHERE status IN ('paid','partially_refunded','refunded') GROUP BY currency").fetchall()
             orders_total = db.execute("SELECT COUNT(*) AS n FROM orders").fetchone()["n"]
         return {
             "leads": {"total": leads_total, "new": leads_new},
             "ordersByStatus": [{"status": row["status"], "count": row["n"]} for row in status_rows],
             "grossPaidByCurrency": [{"currency": row["currency"], "amountMinor": row["total"] or 0} for row in gross_rows],
+            "netAfterRefundsByCurrency": [{"currency": row["currency"], "amountMinor": row["net"] or 0} for row in gross_rows],
             "analyticsEventsLast30Days": total_events,
             "topEventsLast30Days": [{"name": row["name"], "count": row["n"]} for row in event_rows],
             "ordersTotal": orders_total,
