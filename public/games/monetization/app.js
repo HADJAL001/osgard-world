@@ -32,6 +32,7 @@ function render() {
       '<div><span>Реклама · условно</span><b>' + money(result.adRevenueUsd) + '</b></div>' +
       '<div><span>Покупки / первый платёж</span><b>' + money(result.paidRevenueUsd) + '</b></div>' +
       '<div><span>Оплаченные проекты</span><b>' + money(result.servicesRevenueUsd) + '</b></div>' +
+      '<div><span>Спонсорство · модель</span><b>' + money(result.sponsorshipRevenueUsd) + ' (' + decimal.format(result.sponsorCampaigns) + ' камп.)</b></div>' +
       '<div><span>Расходы и комиссии</span><b>' + money(result.operatingCostUsd + result.paymentFeesUsd) + '</b></div>' +
       '<div><span>Посещения</span><b>' + count(result.visitors) + '</b></div>' +
       '<div><span>Игровые сессии</span><b>' + count(result.sessions) + '</b></div>' +
