@@ -29,6 +29,7 @@ assert.deepEqual(routeEntries.map(x=>x.id).sort(),expectedLaunchIds,'Every visib
 assert.ok(routeEntries.every(x=>x.url.startsWith('/games/')),'Every launch entry must use a same-origin game route')
 const inviteLandingScript=readFileSync(resolve(root,'invite/invite-landing.js'),'utf8')
 assert.ok(inviteLandingScript.includes("localStorage.getItem('osgard.games.analytics-consent.v1') === 'yes'") && inviteLandingScript.includes("name: 'referral_link_opened'") && inviteLandingScript.includes("source: 'referral-link:' + code"),'Invite preview must preserve consent-gated referral attribution')
+assert.ok(inviteLandingScript.includes("game === 'aether-grid' ? '/games/aether-grid/' : '/games/'") && inviteLandingScript.includes("target.searchParams.set('day', aetherDay)"), 'AETHER GRID invite must preserve the shared daily seed')
 const productionMatrix = readFileSync(resolve('scripts/production-route-matrix.mjs'),'utf8')
 assert.ok(productionMatrix.includes("path === '/games/invite/invite-landing.js'") && productionMatrix.includes("target.searchParams.set('utm_campaign', campaign)"), 'Production route matrix must validate the invitation script with its own content contract, not unrelated SkillCred markers')
 for(const game of routeEntries){
@@ -240,7 +241,7 @@ const civicInline=(civic.match(/<script>([\s\S]*?)<\/script>/)||[])[1]
 assert.ok(civicInline&&civicInline.length>5000,'CIVIC CASCADE self-contained game script missing')
 new Function(civicInline)
 assert.ok(lifecycle.includes("'signal-run':{title:'SIGNAL RUN',url:'/games/signal-run/'}"), 'Player lifecycle registry must include SIGNAL RUN')
-assert.ok(luxury.includes("const validIds = new Set(['null-shift', 'time', 'swarm', 'inherit', 'remix', 'civic-cascade', 'patina', 'signal-run', 'cascade-lab'])"), 'Recent history and Resume registry must include all ten current games, including AETHER GRID')
+assert.ok(luxury.includes("const validIds = new Set(['null-shift', 'time', 'swarm', 'inherit', 'remix', 'civic-cascade', 'patina', 'signal-run', 'cascade-lab'])"), 'Recent history and Resume registry must include all nine current games, including CASCADE LAB')
 assert.ok(lifecycle.includes("if(id==='signal-run')return !!doc.querySelector('#arena')&&!!doc.querySelector('#start')"), 'Player lifecycle must detect SIGNAL RUN readiness')
 assert.ok(lifecycle.includes("!['ready','started','paused','resumed','share_created','error','completed'].includes(m.state)"), 'Player lifecycle must accept ready, pause/resume, share_created and terminal states')
 assert.ok(lifecycle.includes("activeGame==='null-shift'") && lifecycle.includes("return 'referral:'+code+':null-shift'") && lifecycle.includes("function shareReferralCode(payload)") && lifecycle.includes("source=name==='share_created'?(shareCode?'game-invite:'+activeGame+':'+shareCode:'game-invite:'+activeGame):analyticsSource()"), 'NULL SHIFT daily challenge invites must retain referral source and count confirmed share actions')
@@ -365,6 +366,20 @@ const mockGrid=mockHost.children.find(node=>node.className==='post-run-grid');
 const mockSuite=mockHost.children.find(node=>node.className==='og-postgame-suite');
 assert.ok(mockSuite,'Post-run service/reward suite should appear after each valid completion');
 assert.equal(mockSuite.children[0].children.find(node=>node.className==='og-postgame-service-grid').children.length,10,'Post-run intermission should list all ten services');
+const postGameServiceShelf=mockSuite.children[0];
+const postGamePreferences=postGameServiceShelf.children.find(node=>node.className==='og-postgame-preferences');
+const postGameServiceOptions=postGamePreferences?.children.find(node=>node.className==='og-postgame-service-options');
+assert.ok(postGamePreferences&&postGamePreferences.hidden,'Service preferences must be available but collapsed by default')
+assert.equal(postGameServiceOptions?.children.length,10,'Service preferences must offer all ten owned projects')
+const servicePreferenceInputs=(postGameServiceOptions?.children||[]).map(option=>option.children[0]);
+assert.equal(servicePreferenceInputs.filter(input=>input.checked&&!input.disabled).length,9,'Default preference selects every service whose availability is confirmed')
+const unavailableServiceChoice=servicePreferenceInputs.find(input=>input.dataset.servicePreference==='gardvpn');
+assert.ok(unavailableServiceChoice?.disabled,'GARD VPN must remain unselectable until service availability is confirmed')
+const frequencyField=postGamePreferences.children.find(node=>node.className==='og-postgame-frequency-label');
+assert.deepEqual(frequencyField.children[0].children.map(option=>option.value),['each','every3','off'],'Players must choose every round, every three rounds, or no promo')
+assert.equal(frequencyField.children[0].value,'each','Service intermission is enabled after every completed game by default')
+assert.ok(mockSuite.children[1]&&mockSuite.children[1].className==='og-postgame-reward','Social-share reward must remain available with or without promotions')
+
 const servicesSection=mockSuite.children.find(node=>node.className==='og-postgame-services')
 const serviceFilters=servicesSection.children.find(node=>node.className==='og-postgame-service-filters')
 const serviceCards=servicesSection.children.find(node=>node.className==='og-postgame-service-grid').children
@@ -449,6 +464,7 @@ assert.ok(!aetherGame.includes('fetch('), 'AETHER GRID must run without a backen
 new Function(aetherInlineScript)
 assert.ok(cascadeGame.includes('<title>CASCADE LAB — OSGARD PLAY</title>') && cascadeGame.includes('data-cascade-lab-ready="true"') && cascadeGame.includes("notifyOsgardLifecycle('ready'") && cascadeGame.includes("notifyOsgardLifecycle('started'") && cascadeGame.includes("notifyOsgardLifecycle('paused'") && cascadeGame.includes("notifyOsgardLifecycle('resumed'") && cascadeGame.includes("notifyOsgardLifecycle('completed'"), 'CASCADE LAB lifecycle contract missing')
 assert.ok(lifecycle.includes("'cascade-lab':{title:'CASCADE LAB',url:'/games/cascade-lab/'}") && lifecycle.includes("if(id==='cascade-lab')return doc.body.dataset.cascadeLabReady==='true'"), 'Game modal must register CASCADE LAB readiness')
+assert.ok(lifecycle.includes("'aether-grid':{title:'AETHER GRID',url:'/games/aether-grid/'}") && lifecycle.includes("if(id==='aether-grid')return !!doc.querySelector('#board')"), 'Game modal must register AETHER GRID readiness')
 assert.ok(manifest.includes("'cascade-lab'") && manifest.includes("title: 'CASCADE LAB'") && sitemap.includes('<loc>https://osgard.world/games/cascade-lab/</loc>'), 'CASCADE LAB must be present in manifest and sitemap')
 assert.ok(manifest.includes("'aether-grid'") && manifest.includes("title: 'AETHER GRID'") && sitemap.includes('<loc>https://osgard.world/games/aether-grid/</loc>') && sitemap.includes('<loc>https://osgard.world/game/aether-grid</loc>'), 'AETHER GRID must be present in manifest and sitemap')
 
@@ -558,6 +574,12 @@ assert.ok(recommendationScript.includes('Я опубликовал — полу�
 assert.ok(recommendationStyles.includes('.og-postgame-services')&&recommendationStyles.includes('.og-postgame-service-grid')&&recommendationStyles.includes('.og-postgame-reward')&&recommendationStyles.includes('@media(max-width:760px)')&&recommendationStyles.includes('prefers-reduced-motion:reduce'),'Postgame UI must be premium, responsive and accessible');
 assert.ok(recommendationScript.includes('РЕКЛАМА · СОБСТВЕННЫЕ ПРОЕКТЫ OSGARD')&&recommendationScript.includes('osgardServiceFilter')&&recommendationScript.includes('categoryByService'),'OSGARD SELECT must disclose self-promotion and let players filter service offers by category');
 assert.ok(recommendationScript.includes("['all','Все сервисы · 10']")&&recommendationScript.includes("['studio','Разработка · 2']")&&recommendationScript.includes("['luxury','Luxury · 1']"),'OSGARD SELECT filters must expose all configured service categories');
+assert.ok(recommendationScript.includes("const servicePreferencesKey='osgard.games.postgame-service-preferences.v1'")&&recommendationScript.includes("frequency:'each'")&&recommendationScript.includes("frequency==='every3'")&&recommendationScript.includes("frequency==='off'"),'Service preferences must persist promo frequency choice')
+assert.ok(recommendationScript.includes('availableServiceIds.filter(id=>Array.isArray(value.selected)&&value.selected.includes(id))')&&recommendationScript.includes('preferences.selected.includes(id)'), 'Only services selected by the player should be actively promoted')
+assert.ok(recommendationScript.includes("localStorage.setItem(serviceProgressKey,JSON.stringify(next))")&&recommendationScript.includes('completedCount%3===0'),'Promo caps must count completed game sessions, not page visits')
+assert.ok(!recommendationScript.includes("sendEvent('partner_impression'"),'Do not synthesize sponsor impressions without an ad measurement signal')
+assert.ok(recommendationStyles.includes('.og-postgame-preferences')&&recommendationStyles.includes('.og-postgame-service-options')&&recommendationStyles.includes('.og-postgame-frequency')&&recommendationStyles.includes('@media(max-width:360px)'),'Promo preference controls must be responsive on mobile')
+
 assert.ok(recommendationStyles.includes('.og-postgame-service-filters')&&recommendationStyles.includes('.og-postgame-service-filter[aria-pressed="true"]')&&recommendationStyles.includes('.og-postgame-service-card[hidden]'),'Service filters need accessible selected states and must reliably hide unmatched cards');
 
 assert.ok(lifecycle.includes('function analyticsSource()') && lifecycle.includes(':analyticsSource()') && lifecycle.includes("return 'referral:'+code+':null-shift'"), 'Actual gameplay sessions must preserve consented invite attribution')
