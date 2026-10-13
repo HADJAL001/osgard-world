@@ -214,6 +214,9 @@ func _run_smoke() -> void:
 		return
 	if not _expect(is_instance_valid(first_lane["pulse_head"]) and is_instance_valid(first_lane["pulse_ring"]) and is_instance_valid(first_lane["pulse_wake"]) and first_lane["pulse_rig"].visible, "warning phase must show the moving 3D surge head, ring and wake"):
 		return
+	var lane_light: OmniLight3D = first_lane["pulse_light"] as OmniLight3D
+	if not _expect(is_instance_valid(lane_light) and lane_light.visible and lane_light.light_color.g > lane_light.light_color.b and lane_light.light_energy > 0.8, "charging energy conduit must cast a moving amber warning light"):
+		return
 	var pulse_start_x: float = first_lane["pulse_head"].position.x
 	game.phase_clock = 5.95
 	game._update_phase_lanes(0.0)
@@ -230,6 +233,9 @@ func _run_smoke() -> void:
 	if not _expect(first_lane["state"] == "active" and first_lane["active_mesh"].visible and not first_lane["warning_mesh"].visible, "warning lane must transition into the damaging phase"):
 		return
 	if not _expect(first_lane["pulse_rig"].visible and first_lane["pulse_head"].material_override == first_lane["active_material"] and game.phase_lane_labels[0].text.contains("ОПАСНО"), "active phase must recolour the moving surge and the per-lane HUD warning"):
+		return
+	lane_light = first_lane["pulse_light"] as OmniLight3D
+	if not _expect(lane_light.visible and lane_light.light_color.r > lane_light.light_color.g and lane_light.light_energy > 1.35 and is_equal_approx(lane_light.position.x, first_lane["pulse_head"].position.x), "active surge must move a stronger red point light with its 3D head"):
 		return
 	game.player.global_position = Vector3(0.0, 0.82, float(first_lane["z"]))
 	game.damage_cooldown = 0.0
@@ -263,6 +269,9 @@ func _run_smoke() -> void:
 	first_lane = game.phase_lanes[0]
 	if not _expect(first_lane["state"] == "disrupted" and not first_lane["active_mesh"].visible and first_lane["pulse_head"].material_override == game.materials["cyan"], "tactical pulse must suppress a nearby active conduit and recolour its 3D surge cyan"):
 		return
+	lane_light = first_lane["pulse_light"] as OmniLight3D
+	if not _expect(lane_light.visible and lane_light.light_color.g > lane_light.light_color.r and lane_light.light_energy < 0.9, "pulse suppression must switch the local conduit light to a restrained cyan response"):
+		return
 	if not _expect(game.phase_lane_disruptions == disruptions_before + 1 and game.phase_lane_labels[0].text.contains("ПОДАВЛЕН") and game.hazard_status_label.text.contains("КОНТУР ПОДАВЛЕН"), "lane suppression must update lifetime telemetry and both HUD state indicators"):
 		return
 	var health_during_suppression: float = game.player_health
@@ -274,6 +283,8 @@ func _run_smoke() -> void:
 	game._update_phase_lanes(0.02)
 	first_lane = game.phase_lanes[0]
 	if not _expect(first_lane["state"] == "active" and first_lane["active_mesh"].visible, "the conduit must resume its timed hazard after the pulse disruption expires"):
+		return
+	if not _expect((first_lane["pulse_light"] as OmniLight3D).light_color.r > (first_lane["pulse_light"] as OmniLight3D).light_color.g, "expired disruption must restore the red active-light state"):
 		return
 	for ring_index in range(game.ring_effects.size() - 1, -1, -1):
 		var ring_state: Dictionary = game.ring_effects[ring_index]
@@ -313,6 +324,17 @@ func _run_smoke() -> void:
 		game._evaluate_adaptive_quality(15.5, 19.5)
 	if not _expect(not game.adaptive_quality_degraded and game.world_environment.environment.glow_enabled and game.key_light.shadow_enabled and game.fill_light.visible and game.atmosphere_particles.emitting and game.atmosphere_particles.amount == 72, "stable frame pacing must restore cinematic effects and atmosphere density"):
 		return
+	game.performance_quality = true
+	game._apply_quality_mode()
+	for lane in game.phase_lanes:
+		if not _expect(not (lane["pulse_light"] as OmniLight3D).visible, "performance graphics preset must turn off travelling conduit lights"):
+			return
+	game.performance_quality = false
+	game.cinematic_quality = true
+	game.adaptive_quality_degraded = false
+	game._apply_quality_mode()
+	game.phase_clock = 0.0
+	game._update_phase_lanes(0.0)
 
 	print("RUNTIME_STAGE: three graphics presets and touch utility buttons")
 	if not _expect(is_instance_valid(game.mobile_quality_button) and is_instance_valid(game.mobile_diagnostics_button), "touch devices must expose dedicated graphics and diagnostics controls"):

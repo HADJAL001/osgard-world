@@ -263,3 +263,11 @@ The Godot build tracks a persistent UTC daily-clear streak, longest streak and l
 - Ribbon width scales gently with beam length and remains capped. The existing `ImmediateMesh` pool, lifetime handling, materials and gameplay remain intact; shots do not allocate new scene nodes.
 - Runtime smoke checks the actual mesh surface count, while the static release contract verifies the triangle-ribbon and core-line primitive declarations. This avoids relying on a surface-inspection method that Godot 4.7 does not expose on ImmediateMesh.
 - This is a geometry-level gameplay presentation improvement, not a claim of native 8K output. It runs through the existing Godot 4.7.2 GL Compatibility Web export pipeline.
+
+
+## Godot release 0.10 — moving hazard illumination
+
+- Each of the three timed phase conduits now owns one `OmniLight3D` parented to its moving surge rig. The light follows the surge head and changes to amber during warning, stronger red while damaging, and restrained cyan while pulse-suppressed.
+- The lighting cue is driven by the same hazard state that controls damage and HUD status, keeping visual telegraphing synchronized with the simulation. The light is disabled in the Performance preset and during adaptive quality degradation.
+- Runtime smoke validates warning/active/disrupted light colors, energy, spatial tracking, expiry behavior and quality-mode suppression. Static Godot smoke also requires the light-state wiring.
+- This adds stateful lighting to the real Godot scene, not just a browser overlay. Frame-rate and shadow behavior still need measurement on physical target devices.

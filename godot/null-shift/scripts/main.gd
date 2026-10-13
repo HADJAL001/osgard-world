@@ -612,6 +612,8 @@ func _create_phase_lanes() -> void:
 		pulse_wake.material_override = warning_material
 		pulse_wake.position = Vector3(-21.05, 0.038, 0.0)
 		pulse_rig.add_child(pulse_wake)
+		# A real local light travels with the surge and communicates its hazard state spatially.
+		var pulse_light := _make_omni_light(pulse_rig, Vector3(-20.5, 0.34, 0.0), Color(1.0, 0.58, 0.2), 0.95, 3.7)
 		phase_lanes.append({
 			"z": lane_z,
 			"offset": float(index) * 2.8,
@@ -624,7 +626,8 @@ func _create_phase_lanes() -> void:
 			"pulse_rig": pulse_rig,
 			"pulse_head": pulse_head,
 			"pulse_ring": pulse_ring,
-			"pulse_wake": pulse_wake
+			"pulse_wake": pulse_wake,
+			"pulse_light": pulse_light
 		})
 
 func _update_phase_lanes(delta: float) -> void:
@@ -667,11 +670,26 @@ func _update_phase_lanes(delta: float) -> void:
 		pulse_ring.rotation.y += delta * 4.2
 		pulse_wake.position.x = travel_x - 0.58
 		pulse_wake.scale.x = 0.78 + absf(sin(scene_clock * 9.0 + float(index))) * 0.24
+		var pulse: float = 0.65 + absf(sin(scene_clock * 11.5 + float(index))) * 0.95
+		var pulse_light: OmniLight3D = lane["pulse_light"]
+		pulse_light.position.x = travel_x
+		pulse_light.visible = next_state != "safe" and not performance_quality and not adaptive_quality_degraded
+		match next_state:
+			"warning":
+				pulse_light.light_color = Color(1.0, 0.58, 0.2)
+				pulse_light.light_energy = 0.82 + pulse * 0.34
+			"active":
+				pulse_light.light_color = Color(1.0, 0.12, 0.19)
+				pulse_light.light_energy = 1.35 + pulse * 0.5
+			"disrupted":
+				pulse_light.light_color = Color(0.16, 1.0, 0.78)
+				pulse_light.light_energy = 0.48 + pulse * 0.18
+			_:
+				pulse_light.light_energy = 0.0
 		var surge_material: Material = materials["cyan"] if next_state == "disrupted" else (active_material if next_state == "active" else warning_material)
 		pulse_head.material_override = surge_material
 		pulse_ring.material_override = surge_material
 		pulse_wake.material_override = surge_material
-		var pulse: float = 0.65 + absf(sin(scene_clock * 11.5 + float(index))) * 0.95
 		warning_material.emission_energy_multiplier = pulse if next_state == "warning" else 0.8
 		active_material.emission_energy_multiplier = 2.0 + pulse if next_state == "active" else 1.8
 		if next_state == "warning":
