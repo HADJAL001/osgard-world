@@ -397,6 +397,43 @@ func _run_smoke() -> void:
 	if not _expect(game.ring_pool.size() == 1 and game.ring_pool[0] == pooled_ring, "successive rings must reuse the same mesh node"):
 		return
 	game._update_effect_expiry(0.5)
+	print("RUNTIME_STAGE: bounded impact spark pool and quality density")
+	game._update_effect_expiry(1.0)
+	var saved_spark_cinematic: bool = game.cinematic_quality
+	var saved_spark_performance: bool = game.performance_quality
+	var saved_spark_degraded: bool = game.adaptive_quality_degraded
+	game.cinematic_quality = true
+	game.performance_quality = false
+	game.adaptive_quality_degraded = false
+	game._spawn_hit_sparks(Vector3(0.0, 1.0, 0.0), game.materials["cyan"])
+	if not _expect(game.spark_pool.size() <= 8 and game.spark_effects.size() == 1, "impact sparks must use a bounded reusable pool"):
+		return
+	var pooled_spark: CPUParticles3D = game.spark_effects[0]["node"]
+	var spark_pool_size: int = game.spark_pool.size()
+	if not _expect(pooled_spark.visible and pooled_spark.emitting and pooled_spark.amount == 14, "cinematic impacts must show the full 14-particle spark burst"):
+		return
+	game._update_effect_expiry(0.35)
+	if not _expect(game.spark_effects.is_empty() and not pooled_spark.visible and not pooled_spark.emitting and not game.effects.has(pooled_spark), "finished impact sparks must return hidden to the pool without freeing the node"):
+		return
+	game._spawn_hit_sparks(Vector3(1.0, 1.0, 0.0), game.materials["amber"])
+	if not _expect(game.spark_pool.size() == spark_pool_size and game.spark_effects.size() == 1 and game.spark_effects[0]["node"] == pooled_spark, "successive impact sparks must reuse the same CPUParticles3D node"):
+		return
+	game._update_effect_expiry(0.35)
+	game.cinematic_quality = false
+	game.performance_quality = false
+	game._spawn_hit_sparks(Vector3.ZERO, game.materials["cyan"])
+	if not _expect(pooled_spark.amount == 9, "balanced mode must reduce impact particle density to 9"):
+		return
+	game._update_effect_expiry(0.35)
+	game.performance_quality = true
+	game._spawn_hit_sparks(Vector3.ZERO, game.materials["amber"])
+	if not _expect(pooled_spark.amount == 5, "performance mode must reduce impact particle density to 5"):
+		return
+	game._update_effect_expiry(0.35)
+	game.cinematic_quality = saved_spark_cinematic
+	game.performance_quality = saved_spark_performance
+	game.adaptive_quality_degraded = saved_spark_degraded
+	game._apply_quality_mode()
 	if not _expect(game.guards[0].get("role", "") == "STALKER" and game.guards[1].get("role", "") == "HEAVY" and game.guards[2].get("role", "") == "RANGER", "enemy archetypes must be distinct"):
 		return
 
