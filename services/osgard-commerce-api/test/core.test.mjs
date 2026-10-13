@@ -198,8 +198,11 @@ test("server-verified SHARDS require a canonical invite and one matching game se
     name: "share_created", gameId: "swarm",
     source: "game-invite:swarm:og_abcd:" + ownerToken,
   }), null, "Short legacy codes stay compatible but are not rewardable");
-  assert.equal(validateReferralRewardStatus({ code: inviteCode }).ok, true);
-  assert.equal(validateReferralRewardStatus({ code: "og_bad" }).code, "REFERRAL_CODE_INVALID");
+  assert.deepEqual(validateReferralRewardStatus({ code: inviteCode, ownerToken }), { ok: true, code: inviteCode, ownerToken });
+  assert.equal(validateReferralRewardStatus({ code: inviteCode }).code, "REFERRAL_OWNER_TOKEN_INVALID",
+    "Reward balance must not be public to anyone who sees the shared invite link");
+  assert.equal(validateReferralRewardStatus({ code: inviteCode, ownerToken: "bad" }).code, "REFERRAL_OWNER_TOKEN_INVALID");
+  assert.equal(validateReferralRewardStatus({ code: "og_bad", ownerToken }).code, "REFERRAL_CODE_INVALID");
 });
 
 test("referral registration requires both analytics and rewards consent plus matching identifiers", () => {
