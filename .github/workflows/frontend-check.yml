@@ -8,6 +8,7 @@ on:
       - "scripts/skillcred-page-smoke.mjs"
       - "scripts/time-prototype-smoke.mjs"
       - "scripts/games-portal-smoke.mjs"
+      - "scripts/osgard-select-growth-smoke.mjs"
       - "scripts/activate-frontend-remote.sh"
       - "scripts/games-lighthouse-report.mjs"
       - "scripts/external-project-healthcheck.mjs"
@@ -60,6 +61,8 @@ jobs:
         run: npm run qa:time-ui
       - name: Verify OSGARD Games portal and Lighthouse guardrails
         run: npm run qa:games-portal
+      - name: Verify OSGARD SELECT luxury spotlight and share-reward guardrails
+        run: npm run qa:osgard-select
       - name: Verify external-project audit contract (network-free)
         run: npm run qa:external-project-healthcheck
       - name: Validate NULL//SHIFT Godot source contract
