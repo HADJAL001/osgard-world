@@ -8,6 +8,7 @@ import {
   validateLeadPayload,
   validateEventBatch,
   paymentsModeAllowed,
+  resolveCheckoutPaymentState,
   verifyStripeSignature,
   safeEqual,
 } from "../src/core.mjs";
@@ -69,4 +70,23 @@ test("constant-time comparison fails closed for empty or unequal strings", () =>
   assert.equal(safeEqual("token-value", "token-value"), true);
   assert.equal(safeEqual("", ""), false);
   assert.equal(safeEqual("a", "ab"), false);
+});
+
+
+test("checkout status cannot resurrect a refunded, expired, or cancelled order", () => {
+  assert.deepEqual(resolveCheckoutPaymentState("paid", "pending"), {
+    paid: true, orderStatus: "paid", updateOrderToPaid: true,
+  });
+  assert.deepEqual(resolveCheckoutPaymentState("paid", "paid"), {
+    paid: true, orderStatus: "paid", updateOrderToPaid: false,
+  });
+  assert.deepEqual(resolveCheckoutPaymentState("paid", "refunded"), {
+    paid: false, orderStatus: "refunded", updateOrderToPaid: false,
+  });
+  assert.deepEqual(resolveCheckoutPaymentState("paid", "cancelled"), {
+    paid: false, orderStatus: "cancelled", updateOrderToPaid: false,
+  });
+  assert.deepEqual(resolveCheckoutPaymentState("unpaid", "pending"), {
+    paid: false, orderStatus: "pending", updateOrderToPaid: false,
+  });
 });

@@ -7,7 +7,7 @@ import Stripe from "stripe";
 import pg from "pg";
 import {
   catalogConfiguration, validateCheckoutPayload, validateLeadPayload,
-  validateEventBatch, paymentsModeAllowed, safeEqual,
+  validateEventBatch, paymentsModeAllowed, resolveCheckoutPaymentState, safeEqual,
 } from "./core.mjs";
 
 const { Pool } = pg;
@@ -72,6 +72,10 @@ function requireDatabase(res) {
   return true;
 }
 function requireAdmin(req, res, next) {
+  // Admin data contains order and contact details: never retain it in shared/proxy caches.
+  res.set("Cache-Control", "no-store, private");
+  res.set("Pragma", "no-cache");
+  res.set("X-Content-Type-Options", "nosniff");
   const configured = process.env.ADMIN_API_TOKEN || "";
   if (configured.length < 32) return res.status(503).json({ error: "ADMIN_NOT_CONFIGURED", message: "Административный доступ не настроен." });
   const header = String(req.get("authorization") || "");
@@ -233,6 +237,8 @@ app.post("/v1/checkout/session", async (req, res) => {
 });
 
 app.get("/v1/checkout/status", async (req, res) => {
+  res.set("Cache-Control", "no-store, private");
+  res.set("Pragma", "no-cache");
   if (!stripe) return res.status(503).json({ error: "PAYMENTS_NOT_READY" });
   if (!requireDatabase(res)) return;
   const sessionId = String(req.query.session_id || "");
@@ -241,12 +247,30 @@ app.get("/v1/checkout/status", async (req, res) => {
     const order = await pool.query("SELECT order_id, product_key, status FROM commerce_orders WHERE stripe_session_id=$1", [sessionId]);
     if (!order.rowCount) return res.status(404).json({ error: "ORDER_NOT_FOUND" });
     const session = await stripe.checkout.sessions.retrieve(sessionId);
-    const paid = session.payment_status === "paid";
-    if (paid && order.rows[0].status !== "refunded") {
-      await pool.query("UPDATE commerce_orders SET status='paid', amount_total=$2, currency=$3, updated_at=NOW() WHERE stripe_session_id=$1", [sessionId, session.amount_total ?? null, session.currency || null]);
+    let storedStatus = order.rows[0].status;
+    let state = resolveCheckoutPaymentState(session.payment_status, storedStatus);
+    if (state.updateOrderToPaid) {
+      // Compare-and-set prevents a concurrent refund/cancellation being overwritten by polling.
+      const updated = await pool.query(
+        "UPDATE commerce_orders SET status='paid', amount_total=$2, currency=$3, updated_at=NOW() WHERE stripe_session_id=$1 AND status='pending' RETURNING status",
+        [sessionId, session.amount_total ?? null, session.currency || null],
+      );
+      if (updated.rowCount) storedStatus = updated.rows[0].status;
+      else {
+        const latest = await pool.query("SELECT status FROM commerce_orders WHERE stripe_session_id=$1", [sessionId]);
+        storedStatus = latest.rows[0]?.status || storedStatus;
+      }
+      state = resolveCheckoutPaymentState(session.payment_status, storedStatus);
     }
-    res.set("Cache-Control", "no-store");
-    return res.json({ orderId: order.rows[0].order_id, productKey: order.rows[0].product_key, orderStatus: paid ? "paid" : order.rows[0].status, paymentStatus: session.payment_status, paid, amountMinor: session.amount_total ?? null, currency: session.currency || null });
+    return res.json({
+      orderId: order.rows[0].order_id,
+      productKey: order.rows[0].product_key,
+      orderStatus: state.orderStatus,
+      paymentStatus: session.payment_status,
+      paid: state.paid,
+      amountMinor: session.amount_total ?? null,
+      currency: session.currency || null,
+    });
   } catch {
     return res.status(502).json({ error: "ORDER_STATUS_UNAVAILABLE", message: "Статус оплаты временно не удалось проверить." });
   }

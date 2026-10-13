@@ -129,6 +129,16 @@ export function paymentsModeAllowed(secretKey, enableLive = false) {
   return false;
 }
 
+export function resolveCheckoutPaymentState(paymentStatus, storedOrderStatus) {
+  const status = cleanText(storedOrderStatus, 40) || "pending";
+  if (status === "refunded") return { paid: false, orderStatus: "refunded", updateOrderToPaid: false };
+  if (paymentStatus !== "paid") return { paid: false, orderStatus: status, updateOrderToPaid: false };
+  if (status === "pending") return { paid: true, orderStatus: "paid", updateOrderToPaid: true };
+  if (status === "paid") return { paid: true, orderStatus: "paid", updateOrderToPaid: false };
+  // A stale Checkout success URL must not revive expired, failed or cancelled orders.
+  return { paid: false, orderStatus: status, updateOrderToPaid: false };
+}
+
 export function verifyStripeSignature(rawBody, header, secret, nowMs = Date.now(), toleranceSeconds = 300) {
   if (!Buffer.isBuffer(rawBody) || typeof header !== "string" || !secret) return false;
   const pieces = header.split(",").map((part) => part.trim());
