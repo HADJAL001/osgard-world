@@ -51,7 +51,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
       : route === '/games/admin/partners/'
           ? text.includes('<meta name="robots" content="noindex,nofollow,noarchive">') && text.includes('id="editor-list"') && text.includes('id="download"') && text.includes('inventory.json')
       : route === '/games/invite/invite-landing.js'
-           ? text.includes("osgard.games.referral-attribution.v1") && text.includes("name: 'referral_link_opened'")
+           ? text.includes("osgard.games.referral-attribution.v1") && text.includes("name:'referral_link_opened'") && text.includes("osgard.games.referral-reward-consent.v1") && text.includes("source:'referral-link:'+code+':'+requestedGame+':'+visitorToken") && text.includes("/^og_(?:[a-f0-9]{8}|[a-f0-9]{32})$/.test(code)")
                  : route === '/games/invite/afterimage-run/'
            ? text.includes('property="og:title" content="AFTERIMAGE//RUN — OSGARD PLAY"') && text.includes('property="og:image" content="https://osgard.world/games/share-cards/afterimage-run.png"') && text.includes('id="play-link"') && text.includes('noindex,follow')
          : route.startsWith('/games/invite/')
