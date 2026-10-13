@@ -49,8 +49,7 @@ const event = {
   durationSeconds: 0,
 };
 assert.equal(await queue.enqueue(event), true, 'An event should be accepted once durably queued even if delivery is temporarily offline');
-await new Promise(resolve => setTimeout(resolve, 0));
-await new Promise(resolve => setTimeout(resolve, 0));
+assert.equal(await queue.flush(), false, 'Offline delivery must finish its attempt and keep the event pending');
 const pending = JSON.parse(values.get('osgard.games.analytics-pending.v1') || '[]');
 assert.equal(pending.length, 1, 'Failed delivery must keep the event in the bounded local queue');
 assert.equal(pending[0].eventId, event.eventId, 'Retry must preserve the idempotency key');
@@ -66,7 +65,7 @@ assert.equal(values.has('osgard.games.analytics-pending.v1'), false, 'Acknowledg
 offline = true;
 const second = { ...event, eventId: 'evt_123456789013', name: 'cross_promo_clicked' };
 assert.equal(await queue.enqueue(second), true, 'Second event should be queued before revocation');
-await new Promise(resolve => setTimeout(resolve, 0));
+assert.equal(await queue.flush(), false, 'Second offline delivery attempt should settle before revocation');
 assert.equal(JSON.parse(values.get('osgard.games.analytics-pending.v1') || '[]').length, 1, 'Second event should be pending while offline');
 values.set('osgard.games.analytics-consent.v1', 'no');
 listeners.get('storage')?.({ key: 'osgard.games.analytics-consent.v1' });
