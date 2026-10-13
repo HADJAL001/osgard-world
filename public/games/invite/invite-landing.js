@@ -32,31 +32,50 @@
     medium === 'share' &&
     campaign === 'challenge' &&
     (validDailyMode || validOrdinaryMode);
+  const afterimageChallenge = game === 'afterimage-run' &&
+    params.get('og_challenge') === 'afterimage-run' &&
+    Number.isSafeInteger(scoreValue) && scoreValue >= 0 && scoreValue <= 99999999 &&
+    validDailyMode;
   const play = document.querySelector('#play-link');
   if (play) {
-    const target = new URL('/games/', location.origin);
-    if (game && validGameIds.has(game)) target.searchParams.set('og_game', game);
-    if (valid) {
-      target.searchParams.set('og_ref', code);
-      if (requestedGame) target.searchParams.set('og_game', requestedGame);
-      target.searchParams.set('utm_source', source);
-      target.searchParams.set('utm_medium', medium);
-      target.searchParams.set('utm_campaign', campaign);
-      target.searchParams.set('utm_content', content);
-    }
-    else if (legacySignalRun) {
-      // Keep only the validated SIGNAL RUN challenge contract when leaving the social preview.
-      // This is a legacy score challenge, not a canonical anonymous invite-open event.
-      for (const key of ['play', 'challenge', 'ref', 'utm_source', 'utm_medium', 'utm_campaign']) {
-        const value = params.get(key);
-        if (value !== null) target.searchParams.set(key, value);
+    if (afterimageChallenge) {
+      // Crawlers render this invite page's generated 1200x630 social card.
+      // When the player accepts, continue directly into the same validated seed and score.
+      const target = new URL('/games/afterimage-run/', location.origin);
+      target.searchParams.set('seed', requestedDay);
+      target.searchParams.set('score', String(scoreValue));
+      if (valid) {
+        for (const key of ['og_ref', 'og_game', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content']) {
+          const value = params.get(key);
+          if (value !== null) target.searchParams.set(key, value);
+        }
       }
-      if (validDailyMode) {
-        target.searchParams.set('mode', 'daily');
-        target.searchParams.set('day', requestedDay);
+      play.href = target.href;
+    } else {
+      const target = new URL('/games/', location.origin);
+      if (game && validGameIds.has(game)) target.searchParams.set('og_game', game);
+      if (valid) {
+        target.searchParams.set('og_ref', code);
+        if (requestedGame) target.searchParams.set('og_game', requestedGame);
+        target.searchParams.set('utm_source', source);
+        target.searchParams.set('utm_medium', medium);
+        target.searchParams.set('utm_campaign', campaign);
+        target.searchParams.set('utm_content', content);
       }
+      else if (legacySignalRun) {
+        // Keep only the validated SIGNAL RUN challenge contract when leaving the social preview.
+        // This is a legacy score challenge, not a canonical anonymous invite-open event.
+        for (const key of ['play', 'challenge', 'ref', 'utm_source', 'utm_medium', 'utm_campaign']) {
+          const value = params.get(key);
+          if (value !== null) target.searchParams.set(key, value);
+        }
+        if (validDailyMode) {
+          target.searchParams.set('mode', 'daily');
+          target.searchParams.set('day', requestedDay);
+        }
+      }
+      play.href = target.href;
     }
-    play.href = target.href;
   }
   if (!valid) return;
   let consent = false;
