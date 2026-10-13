@@ -72,7 +72,7 @@ check('new events are typed in the shared OSGARD analytics contract',()=>{
 });
 check('partner brief preselects format and preserves UTM fields',()=>{
   for(const marker of ['campaignParams','formatParam','utm_source','utm_medium','utm_campaign','utm_content','attribution.join'])assert.ok(partners.includes(marker),marker);
-  assert.ok(partners.includes('option.value === formatParam'));
+  assert.ok(partners.includes('item.value === formatParam'));
 });
 check('existing Unity player route remains intact',()=>{
   assert.ok(remix.includes('href="/games/remix/player/index.html"'));
