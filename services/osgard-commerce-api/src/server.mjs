@@ -63,8 +63,9 @@ async function ensureSchema() {
     "CREATE TABLE IF NOT EXISTS commerce_referral_wallets (wallet_token_hash TEXT PRIMARY KEY, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
     "CREATE TABLE IF NOT EXISTS commerce_referral_invites (invite_code TEXT PRIMARY KEY, wallet_token_hash TEXT NOT NULL REFERENCES commerce_referral_wallets(wallet_token_hash) ON DELETE CASCADE, game_id TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
     "CREATE INDEX IF NOT EXISTS commerce_referral_invites_owner_created_idx ON commerce_referral_invites(wallet_token_hash, created_at DESC);\n" +
-    "CREATE TABLE IF NOT EXISTS commerce_referral_rewards (reward_id TEXT PRIMARY KEY, invite_code TEXT NOT NULL UNIQUE REFERENCES commerce_referral_invites(invite_code) ON DELETE CASCADE, wallet_token_hash TEXT NOT NULL REFERENCES commerce_referral_wallets(wallet_token_hash) ON DELETE CASCADE, referred_session_id TEXT NOT NULL UNIQUE, game_id TEXT NOT NULL, points INTEGER NOT NULL CHECK (points = 50), created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
-    "CREATE INDEX IF NOT EXISTS commerce_referral_rewards_owner_created_idx ON commerce_referral_rewards(wallet_token_hash, created_at DESC);");
+    "CREATE TABLE IF NOT EXISTS commerce_referral_rewards (reward_id TEXT PRIMARY KEY, invite_code TEXT NOT NULL UNIQUE, wallet_token_hash TEXT NOT NULL REFERENCES commerce_referral_wallets(wallet_token_hash) ON DELETE CASCADE, referred_session_id TEXT NOT NULL UNIQUE, game_id TEXT NOT NULL, points INTEGER NOT NULL CHECK (points = 50), created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
+    "CREATE INDEX IF NOT EXISTS commerce_referral_rewards_owner_created_idx ON commerce_referral_rewards(wallet_token_hash, created_at DESC);\n" +
+    "ALTER TABLE commerce_referral_rewards DROP CONSTRAINT IF EXISTS commerce_referral_rewards_invite_code_fkey;");
   dbReady = true;
   return true;
 }
@@ -80,7 +81,7 @@ async function purgeExpiredAnalytics() {
     [analyticsRetentionDays],
   );
   await pool.query(
-    "DELETE FROM commerce_referral_wallets w WHERE w.updated_at < NOW() - ($1 * INTERVAL '1 day') AND NOT EXISTS (SELECT 1 FROM commerce_referral_invites i WHERE i.wallet_token_hash=w.wallet_token_hash)",
+    "DELETE FROM commerce_referral_wallets w WHERE w.updated_at < NOW() - ($1 * INTERVAL '1 day') AND NOT EXISTS (SELECT 1 FROM commerce_referral_invites i WHERE i.wallet_token_hash=w.wallet_token_hash) AND NOT EXISTS (SELECT 1 FROM commerce_referral_rewards r WHERE r.wallet_token_hash=w.wallet_token_hash)",
     [analyticsRetentionDays],
   );
   return Number(result.rowCount || 0);
