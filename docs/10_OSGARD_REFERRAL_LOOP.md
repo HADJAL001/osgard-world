@@ -36,3 +36,11 @@ The social panel provides share-composer links for Telegram, WhatsApp, VK, X and
 ### Discoverability improvement
 
 The post-game shelf explicitly labels these placements as OSGARD self-promotion. Players can narrow the ten service cards by category (all, development, business, city/lifestyle, technology, social, luxury); the default shows all entries. Filter controls and their selected state are keyboard accessible. These are first-party cross-promotions, not paid ad-network impressions.
+
+
+## Межигровой экран: исправление возврата после результата
+
+- Оболочка сохраняет факт старта сессии отдельно от таймера аналитики. Событие завершения раунда может закрыть таймер, но больше не должно мешать показать экран OSGARD SELECT при следующем нажатии «Вернуться в каталог».
+- Межигровая подборка обрабатывает все пользовательские пути выхода: кнопку возврата, Escape и обычное закрытие.
+- По умолчанию выборка собственных сервисов появляется после каждой завершённой игровой сессии; игрок может оставить только выбранные сервисы, поменять частоту или выключить промо.
+- SHARDS — виртуальные локальные очки без денежной стоимости. Сайт не утверждает, что может проверить публикацию в соцсети; самостоятельное подтверждение игрока не равно проверенной публикации.
