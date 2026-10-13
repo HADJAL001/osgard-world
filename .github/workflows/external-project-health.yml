@@ -1,0 +1,44 @@
+name: OSGARD external project homepage audit
+
+on:
+  schedule:
+    - cron: '17 5 * * *'
+  workflow_dispatch:
+  pull_request:
+    branches: [master]
+    paths:
+      - 'scripts/external-project-healthcheck.mjs'
+      - 'scripts/external-project-healthcheck-smoke.mjs'
+      - '.github/workflows/external-project-health.yml'
+      - 'docs/EXTERNAL_PROJECT_LINK_AUDIT.md'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: osgard-external-project-health-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  homepage-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run contract smoke tests (no external network)
+        run: node scripts/external-project-healthcheck-smoke.mjs
+      - name: Check the ten official homepages
+        run: node scripts/external-project-healthcheck.mjs --out artifacts/external-project-health.json
+      - name: Upload timestamped health report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: osgard-external-project-health-${{ github.run_id }}
+          path: artifacts/external-project-health.json
+          if-no-files-found: warn
+          retention-days: 30
