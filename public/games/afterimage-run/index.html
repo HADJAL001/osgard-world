@@ -21,9 +21,11 @@ let idleTimer=0;
 const params=new URLSearchParams(location.search),today=new Date().toISOString().slice(0,10),incomingSeed=params.get('day')||params.get('seed')||'';
 const validIncomingDay=/^\d{4}-\d{2}-\d{2}$/.test(incomingSeed)&&(()=>{const parsed=new Date(incomingSeed+'T00:00:00.000Z');return Number.isFinite(parsed.getTime())&&parsed.toISOString().slice(0,10)===incomingSeed})();
 const day=validIncomingDay?incomingSeed:today;
-const rawTarget=Number((params.has('challenge')?params.get('challenge'):params.get('score'))||0);
-const targetScore=Number.isSafeInteger(rawTarget)&&rawTarget>=0&&rawTarget<=99999999?rawTarget:0;
-const fromChallenge=params.has('challenge')||params.has('score');
+const rawTargetText=(params.has('challenge')?params.get('challenge'):params.get('score'))||'';
+const rawTarget=Number(rawTargetText||0);
+const targetScoreValid=/^(?:0|[1-9]\\d{0,7})$/.test(rawTargetText)&&Number.isSafeInteger(rawTarget)&&rawTarget>=0&&rawTarget<=99999999;
+const targetScore=targetScoreValid?rawTarget:0;
+const fromChallenge=(params.has('challenge')||params.has('score'))&&validIncomingDay&&targetScoreValid;
 const rawReferralCode=params.get('og_ref')||'';
 const referralCode=/^og_[a-f0-9]{8}$/.test(rawReferralCode)?rawReferralCode:'';let seed=2166136261;for(let i=0;i<day.length;i++){seed^=day.charCodeAt(i);seed=Math.imul(seed,16777619)}seed>>>=0;const cosmeticSeed=(seed^0x9e3779b9)>>>0;
 function makeRng(initialState,multiplier=1664525,increment=1013904223){let state=initialState>>>0;return()=>{state=(Math.imul(state,multiplier)+increment)>>>0;return state/4294967296}}
@@ -31,7 +33,7 @@ let gameplayRandom=makeRng(seed),visualRandom=makeRng(cosmeticSeed,22695477,1);
 function safeRead(k,alt){try{return JSON.parse(localStorage.getItem(k)||'null')||alt}catch{return alt}}function safeWrite(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch{return false}}let shardCosmeticUnlocked=Object.values(safeRead(REWARD,{})).some(record=>record&&record.kind==='cosmetic');
 let db=safeRead(STORE,{}),daily=db[day]||{best:0,ghost:[]},game={running:false,paused:false,ended:false,distance:0,score:0,shards:0,combo:1,comboTimer:0,world:0,speed:410,elapsed:0,spawnAt:350,obstacles:[],items:[],particles:[],ghost:[],dash:0,dashCount:0,cooldown:0,invincible:0,shake:0,lastSample:0},player={x:205,y:FLOOR-54,vy:0,w:34,h:54,ground:true};
 const stars=Array.from({length:150},()=>({x:visualRandom()*W,y:visualRandom()*440,r:.5+visualRandom()*1.4,p:visualRandom()*7,d:.12+visualRandom()*.7}));
-$('daily-seed').textContent=day.replaceAll('-','')+' / '+seed.toString(16).toUpperCase().padStart(8,'0');$('challenge-target').textContent=targetScore?'TARGET SCORE: '+targetScore+' / BEAT YOUR FRIEND':'TARGET SCORE: SET A RECORD';$('best-score').textContent=String(daily.best||0).padStart(4,'0');$('ghost-label').textContent=daily.ghost&&daily.ghost.length?'GHOST: READY':'GHOST: RECORD YOUR RUN';
+$('daily-seed').textContent=day.replaceAll('-','')+' / '+seed.toString(16).toUpperCase().padStart(8,'0');$('challenge-target').textContent=fromChallenge?'TARGET SCORE: '+targetScore+' / BEAT YOUR FRIEND':'TARGET SCORE: SET A RECORD';$('best-score').textContent=String(daily.best||0).padStart(4,'0');$('ghost-label').textContent=daily.ghost&&daily.ghost.length?'GHOST: READY':'GHOST: RECORD YOUR RUN';
 function life(state,extra){if(window.parent===window)return;try{parent.postMessage(Object.assign({type:'osgard:game-lifecycle',game:'afterimage-run',state:state,at:Date.now()},extra||{}),location.origin)}catch{}}
 function track(name,props){try{if(localStorage.getItem('osgard.games.analytics-consent.v1')!=='yes'||!localStorage.getItem('osgard.auth.accessToken'))return;const ev={id:crypto.randomUUID?crypto.randomUUID():name+'-'+Date.now(),name:name,world:'play',game:'afterimage-run',payload:Object.assign({source:'afterimage_run',dailySeed:day},props||{}),occurredAt:new Date().toISOString(),schemaVersion:1};fetch('/api/v1/player/events',{method:'POST',credentials:'same-origin',keepalive:true,headers:{authorization:'Bearer '+localStorage.getItem('osgard.auth.accessToken'),'content-type':'application/json'},body:JSON.stringify({event:ev})}).catch(()=>{})}catch{}}
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.classList.remove('show'),2700)}
