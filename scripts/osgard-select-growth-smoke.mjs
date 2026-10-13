@@ -4,6 +4,7 @@ import vm from 'node:vm'
 
 const read = (path) => readFileSync(path, 'utf8')
 const js = read('public/games/game-session-recommendations.js')
+const lifecycle = read('public/games/player-lifecycle.js')
 const css = read('public/games/game-session-recommendations.css')
 const portalSmoke = read('scripts/games-portal-smoke.mjs')
 const commerceCore = read('services/osgard-commerce-api/src/core.mjs')
@@ -40,7 +41,7 @@ assert.ok(js.includes("if(!hasConsent())return") && js.includes("sendSelectEvent
 assert.ok(commerceCore.includes('"owned_promo_impression"') && commerceCore.includes('"cross_promo_clicked"'), 'Analytics names must be accepted by the existing first-party API contract')
 assert.ok(js.includes("const walletKey='osgard.games.shards-wallet.v1',dailyReward=50") && js.includes('current.day===day'), 'Local invite reward must remain capped to once per UTC day and browser')
 assert.ok(js.includes('Соцсеть не сообщает сайту подтверждение публикации') && js.includes('не являются платёжным средством'), 'Must disclose that social publishing is not verified and SHARDS are non-cash')
-assert.ok(js.includes("function openBetweenWorlds(") && js.includes("event.preventDefault()"), 'The current player lifecycle must preserve the active-session return/Escape intermission')
+assert.ok(lifecycle.includes("function openBetweenWorlds(") && lifecycle.includes("event.preventDefault()"), 'The current player lifecycle must preserve the active-session return/Escape intermission')
 assert.ok(js.includes("detail.sessionStarted!==true") && js.includes("detail.reason!=='closed_by_user'"), 'The outer page intermission must only cover genuine active-session close, not finished-game duplication')
 assert.ok(js.includes("document.addEventListener('osgard:game-session-ended',event=>{if(event.detail&&event.detail.sessionStarted===true)renderOsgardSelect(event.detail.game)})"), 'The in-player recommendation suite must support active-session return')
 assert.ok(css.includes('.og-postgame-spotlight') && css.includes('.og-postgame-spotlight[hidden]') && css.includes('@media(max-width:760px)') && css.includes('prefers-reduced-motion:reduce'), 'Spotlight styles must be responsive, hide correctly and respect reduced motion')
