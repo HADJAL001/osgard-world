@@ -39,7 +39,7 @@ assert.equal(favoriteRecent[0].reason, 'favorite');
 assert.deepEqual(getRelatedGames(find('time'), games, {}, 1).map(item => item.game.id), ['civic-cascade']);
 assert.deepEqual(getRelatedGames(find('time'), games, {}, -2), []);
 assert.equal(getRelatedGames(find('time'), games, {}, 999).length, 5, 'the requested limit must be bounded');
-assert.deepEqual(getRelatedGames(find('not-in-list'), games, {} ).length, 3,
+assert.deepEqual(getRelatedGames({ id: 'not-in-list', category: 'creative' }, games, {}).length, 3,
   'unknown IDs should fail softly and still return deterministic options');
 assert.deepEqual(getRelatedGames(find('time'), games, { favorites: 'not-an-array', recent: null }).map(x => x.game.id),
   getRelatedGames(find('time'), games).map(x => x.game.id), 'malformed preferences must be ignored safely');
