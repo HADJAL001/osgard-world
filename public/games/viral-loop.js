@@ -227,6 +227,8 @@
       inviteId: invite.inviteId,
       sessionId: 'invitevisit_' + randomId(),
       createdAt: Date.now(),
+      started: false,
+      completed: false,
     };
     try { sessionStorage.setItem(ATTRIBUTION_KEY, JSON.stringify(attribution)); } catch (_) {}
     void sendEvent('invite_landing', invite.gameId, 'player-invite:' + invite.inviteId);
@@ -253,16 +255,27 @@
 
   document.addEventListener('osgard:game-session-started', event => {
     const detail = event.detail || {};
-    if (!hasConsent() || !attribution || detail.game !== attribution.gameId) return;
+    if (!hasConsent() || !attribution || detail.game !== attribution.gameId || attribution.started) return;
+    attribution.started = true;
+    try { sessionStorage.setItem(ATTRIBUTION_KEY, JSON.stringify(attribution)); } catch (_) {}
     void sendEvent('invite_game_started', detail.game, 'player-invite:' + attribution.inviteId);
   });
 
   document.addEventListener('osgard:game-session-completed', event => {
     const detail = event.detail || {};
     if (!hasConsent() || !attribution || detail.game !== attribution.gameId) return;
-    if (detail.endReason === 'game_completed') {
-      void sendEvent('invite_game_completed', detail.game, 'player-invite:' + attribution.inviteId);
-      clearAttribution();
+    if (detail.endReason === 'game_completed' && !attribution.completed) {
+      const inviteId = attribution.inviteId;
+      attribution.completed = true;
+      try { sessionStorage.setItem(ATTRIBUTION_KEY, JSON.stringify(attribution)); } catch (_) {}
+      void sendEvent('invite_game_completed', detail.game, 'player-invite:' + inviteId).then(ok => {
+        if (!attribution || attribution.inviteId !== inviteId) return;
+        if (ok) clearAttribution();
+        else {
+          attribution.completed = false;
+          try { sessionStorage.setItem(ATTRIBUTION_KEY, JSON.stringify(attribution)); } catch (_) {}
+        }
+      });
     }
   });
 
