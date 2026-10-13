@@ -21,3 +21,6 @@ jobs:
         run: npm run check
       - name: Static integration checks
         run: node scripts/commerce-rollout-smoke.mjs
+
+      - name: Game catalogue runtime behavior
+        run: node scripts/game-catalog-settings-smoke.mjs

@@ -87,3 +87,14 @@ Open /games/commerce-admin/ and paste ADMIN_API_TOKEN into the in-memory field. 
 - ANALYTICS_RETENTION_DAYS defaults to 90 and accepts integers from 30 to 365. Rows older than this limit are deleted at API startup and then every six hours while the database is ready.
 - The operator dashboard reports only consented server-recorded events. It is not a complete count of anonymous page visits, ad impressions, revenue or conversions. UTM clicks only attribute outbound link clicks.
 - The environment still needs a real database and a deployed API for data to be persisted; this source change does not prove that production has been deployed or is receiving events.
+
+
+## Server-managed game catalogue content
+
+The optional catalogue settings API is separate from the fixed Stripe product allow-list:
+
+- `GET /v1/game-catalog` returns the ten known game IDs, current public copy/order/visibility overrides and a revision. With no database row, it returns the safe defaults; the static catalogue remains authoritative until a row is saved.
+- `GET /v1/admin/game-catalog` and `POST /v1/admin/game-catalog` require the same server-side `ADMIN_API_TOKEN` bearer check as other admin routes. The operator page is `/games/admin/catalog/`.
+- Writes use `expectedRevision` optimistic concurrency. A stale write receives HTTP 409 rather than overwriting a newer edit.
+- The server accepts only the ten shipped game IDs, plain-text title/description overrides, unique order values, at least one visible game and at most three featured entries. The editor cannot create URLs, markup, scripts, ad placements or payment entitlements.
+- The browser applies overrides only when the public `apiBaseUrl` in `/games/commerce-config.json` is explicitly configured. That file remains blank in this repository until a deployed API/database is confirmed. With an empty or unavailable API, the existing static catalogue remains in service.
