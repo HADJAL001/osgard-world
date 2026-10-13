@@ -43,7 +43,8 @@ assert.ok(entertainmentGateway.includes("window.localStorage.setItem(PROMO_PREFE
   entertainmentGateway.includes("frequency: draftFrequency") &&
   entertainmentGateway.includes("selected: PROMOTABLE_SERVICE_IDS.filter(id => draftSelected.includes(id))"),
   'Entertainment preferences must be saved in the same shape as Games intermission preferences');
-assert.ok(entertainmentGateway.includes("value === 'every3'") && entertainmentGateway.includes("value === 'off'") &&
+assert.ok(entertainmentGateway.includes("value.frequency === 'every3'") && entertainmentGateway.includes("value.frequency === 'off'") &&
+  entertainmentGateway.includes('value="each"') && entertainmentGateway.includes('value="every3"') && entertainmentGateway.includes('value="off"') &&
   entertainmentGateway.includes("После каждой завершённой игры") && entertainmentGateway.includes("Не показывать межигровую подборку"),
   'Entertainment must expose each-game, every-third-game and off preferences');
 assert.ok(entertainmentGateway.includes("aria-controls=\"play-select-preferences-panel\"") &&
