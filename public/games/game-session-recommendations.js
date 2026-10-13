@@ -244,6 +244,7 @@ captureInvite();installInviteBanner();
 (() => {
 'use strict';
 const root=document.querySelector('#post-run-recommendations');
+const outsideRoot=document.querySelector('#osgard-aftergame-intermission');
 if(!root||typeof window==='undefined'||typeof location==='undefined')return;
 const titles={'null-shift':'NULL//SHIFT',time:'Империя времени',swarm:'SWARM',inherit:'INHERIT',remix:'REMIX','civic-cascade':'CIVIC CASCADE',patina:'PATINA Atelier','signal-run':'SIGNAL RUN','cascade-lab':'CASCADE LAB'};
 const services=[
@@ -299,5 +300,30 @@ function rewardShelf(gameId){
  const note=make('p','og-postgame-reward-note','Награда: +50 локальных SHARDS, не чаще раза в сутки на этом устройстве. Для отдельных соцсетей публикацию подтверждает игрок: соцсети не возвращают сайту надёжный статус опубликованного поста. Очки не имеют денежной стоимости, не привязаны к аккаунту и не являются платёжным средством.');
  section.append(head,actions,grid,claim,status,note);return section;
 }
+function renderOutsideIntermission(detail){
+ const id=detail&&detail.game;
+ if(!outsideRoot||!titles[id]||!detail||detail.reason!=='closed_by_user')return;
+ outsideRoot.replaceChildren();
+ const suite=make('section','og-postgame-suite og-postgame-outside-suite');
+ const intro=make('div','og-postgame-outside-intro');
+ intro.append(make('p','og-postgame-eyebrow','OSGARD SELECT / BETWEEN WORLDS'));
+ intro.append(make('h2','og-postgame-title','Раунд окончен. Выбери следующий шаг.'));
+ intro.append(make('p','og-postgame-copy','Ты завершил сессию '+titles[id]+'. Выбери один из собственных проектов OSGARD, поделись приглашением или сразу вернись к каталогу.'));
+ const back=make('a','og-postgame-back','Выбрать следующую игру ↗');
+ back.href='#catalog';
+ suite.append(intro,back,servicesShelf(id),rewardShelf(id));
+ outsideRoot.append(suite);
+ outsideRoot.hidden=false;
+ if(typeof outsideRoot.scrollIntoView==='function'){
+  const reduced=typeof window.matchMedia==='function'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  outsideRoot.scrollIntoView({behavior:reduced?'auto':'smooth',block:'start'});
+ }
+}
+document.addEventListener('osgard:game-session-ended',event=>renderOutsideIntermission(event.detail));
+document.addEventListener('osgard:game-launching',()=>{
+ if(!outsideRoot)return;
+ outsideRoot.replaceChildren();
+ outsideRoot.hidden=true;
+});
 document.addEventListener('osgard:game-completed',event=>{const id=event.detail&&event.detail.game;if(!titles[id])return;root.querySelector('.og-postgame-suite')?.remove();const suite=make('section','og-postgame-suite');suite.append(servicesShelf(id),rewardShelf(id));root.append(suite)});
 })();
