@@ -796,8 +796,7 @@ function rewardShelf(gameId){
    const trackRewards=hasConsent()&&hasRewardConsent();
    const registered=trackRewards?await registerInvite(gameId,code):false;
    if(trackRewards&&!registered){
-    status.textContent='Не удалось зарегистрировать приглашение на сервере. Проверь соединение и повтори попытку; награда не начислена.';
-    return;
+    status.textContent='Серверная регистрация недоступна. Приглашение всё равно можно отправить, но SHARDS за него учитываться не будут.';
    }
    if(typeof navigator.share==='function'){
     await navigator.share({title:'OSGARD PLAY · '+titles[gameId],text:'Пойдём сыграем вместе.',url});
@@ -823,7 +822,7 @@ function rewardShelf(gameId){
   try{
    const trackRewards=hasConsent()&&hasRewardConsent();
    const registered=trackRewards?await registerInvite(gameId,code):false;
-   if(trackRewards&&!registered){status.textContent='Не удалось зарегистрировать приглашение на сервере. Повтори попытку; награда не начислена.';return}
+   if(trackRewards&&!registered){status.textContent='Серверная регистрация недоступна. Ссылку можно скопировать, но SHARDS за неё учитываться не будут.'}
    await navigator.clipboard.writeText(message);
    if(registered)void reportInviteShareCreated(gameId,code);
    status.textContent=registered
