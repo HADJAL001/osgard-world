@@ -112,6 +112,7 @@ if (builtWeb) {
     'dist/games/civic-cascade/index.html', 'dist/games/patina/index.html',
     'dist/games/signal-run/index.html', 'dist/games/cascade-lab/index.html',
     'dist/games/afterimage-run/index.html',
+    'dist/games/aether-grid/index.html',
   ]) mustExist(path);
   const catalog = read('dist/games/index.html');
   const apiConfig = JSON.parse(read('dist/games/commerce-config.json'));
@@ -120,7 +121,8 @@ if (builtWeb) {
   assert.ok(catalog.includes('href="/support/osgard-play/"'), 'The packaged Games catalogue must link to the support page.');
   assert.ok(catalog.includes('WEBGL · iOS') || catalog.includes('WEBGL / iOS'), 'Mobile NULL//SHIFT label not updated.');
   assert.ok(catalog.includes('/games/null-shift/index.html'), 'iOS catalogue must open the bundled WebGL version.');
-  assert.ok(!/href=['"]\/game\/(?:null-shift|time|swarm|inherit|remix|civic-cascade|patina|signal-run|cascade-lab|afterimage-run)['"]/.test(catalog),
+  assert.ok(catalog.includes('/games/aether-grid/index.html'), 'iOS catalogue must resolve AETHER GRID to its bundled game page.');
+  assert.ok(!/href=['"]\/game\/(?:null-shift|time|swarm|inherit|remix|civic-cascade|patina|signal-run|cascade-lab|afterimage-run|aether-grid)['"]/.test(catalog),
     'Standalone catalogue route should not go through the React web SPA.');
   const shell = read('dist/index.html');
   assert.ok(shell.includes('OSGARD PLAY') && shell.includes('location.replace("/games/")'), 'App shell must land directly in the local Games hub.');
@@ -128,7 +130,7 @@ if (builtWeb) {
   assert.ok(gamePage.includes('osgard-native-share.js'), 'Native share bridge must be loaded on the local game.');
   const configText = readFileSync(join(root, 'dist/games/commerce-config.json'), 'utf8');
   assert.ok(!/sk_(?:live|test)_|whsec_|-----BEGIN (?:PRIVATE|RSA) KEY-----/.test(configText), 'Client config must not contain payment secrets.');
-  console.log('PASS iOS web bundle: local Games hub, 10 game entrypoints, iOS-safe NULL//SHIFT route, native share, HTTPS API config and no client payment secrets.');
+  console.log('PASS iOS web bundle: local Games hub, 11 game entrypoints, iOS-safe NULL//SHIFT route, native share, HTTPS API config and no client payment secrets.');
 } else {
   console.log('PASS iOS source preflight: Capacitor app identity, TestFlight-only Codemagic workflow, pinned Capacitor 8 packages, privacy manifest, release guide and generated 1024px icon set.');
 }
