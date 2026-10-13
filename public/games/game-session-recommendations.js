@@ -269,6 +269,12 @@ const servicePreferencesKey='osgard.games.postgame-service-preferences.v1';
 const serviceProgressKey='osgard.games.postgame-service-progress.v1';
 const availableServiceIds=services.filter(item=>item[7]!==false).map(item=>item[0]);
 const frequencyValues=['each','every3','off'];
+
+const preferredServiceKey='osgard.games.preferred-service.v1';
+const recommendationByGame={'null-shift':'projects',time:'superday',swarm:'marcosa',inherit:'myosa',remix:'projects','civic-cascade':'osgard-business',patina:'gold-glamour','signal-run':'vanguard','cascade-lab':'projects'};
+function readPreferredService(){try{const id=localStorage.getItem(preferredServiceKey)||'';return availableServiceIds.includes(id)?id:''}catch{return''}}
+function savePreferredService(id){if(!availableServiceIds.includes(id))return false;try{localStorage.setItem(preferredServiceKey,id);return true}catch{return false}}
+
 let memoryServicePreferences=null;
 let memoryServiceProgress={count:0,lastAt:0,lastGame:''};
 const make=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n};
@@ -397,11 +403,72 @@ function servicesShelf(gameId,showPromos,completedCount){
  const activeSelected=services.filter(([id,,,,,,featured=false,active=true])=>active!==false&&preferences.selected.includes(id));
  collapseToggle.hidden=!(showPromos&&activeSelected.length);
  const visible=activeSelected;
- const spotlightId=activeSelected.length?activeSelected[(Math.max(0,completedCount-1)%activeSelected.length)][0]:null;
+ const savedSpotlight=readPreferredService();
+ const contextualSpotlight=recommendationByGame[gameId];
+ let spotlightServiceId=activeSelected.some(item=>item[0]===savedSpotlight)?savedSpotlight:activeSelected.some(item=>item[0]===contextualSpotlight)?contextualSpotlight:activeSelected.length?activeSelected[Math.max(0,completedCount-1)%activeSelected.length][0]:null;
+ const spotlight=make('section','og-postgame-spotlight');
+ const spotlightStatus=make('p','og-postgame-spotlight-status');
+ let spotlightObserver=null,spotlightTimer=0;
+ const observedSpotlights=new Set();
+ function watchSpotlight(){
+  if(spotlightObserver){spotlightObserver.disconnect();spotlightObserver=null}
+  if(spotlightTimer){clearTimeout(spotlightTimer);spotlightTimer=0}
+  if(typeof IntersectionObserver!=='function'||spotlight.hidden)return;
+  spotlightObserver=new IntersectionObserver(entries=>{
+   for(const entry of entries){
+    if(entry.isIntersecting&&entry.intersectionRatio>=0.5){
+     if(spotlightTimer||observedSpotlights.has(spotlight.dataset.service))continue;
+     const serviceId=spotlight.dataset.service;
+     spotlightTimer=setTimeout(()=>{
+      spotlightTimer=0;
+      if(!hasConsent()||!spotlight.isConnected||spotlight.hidden||spotlight.dataset.service!==serviceId||!spotlight.getClientRects().length)return;
+      observedSpotlights.add(serviceId);
+      void sendSelectEvent('owned_promo_impression',gameId,'osgard-select:spotlight:'+serviceId);
+      spotlightObserver?.disconnect();spotlightObserver=null;
+     },1000);
+    }else if(spotlightTimer){clearTimeout(spotlightTimer);spotlightTimer=0}
+   }
+  },{threshold:[0,0.5,1]});
+  spotlightObserver.observe(spotlight);
+ }
+ function renderSpotlight(serviceId){
+  const item=services.find(entry=>entry[0]===serviceId&&entry[7]!==false&&preferences.selected.includes(entry[0]));
+  if(!showPromos||!item){spotlight.hidden=true;return}
+  spotlight.hidden=false;spotlight.dataset.service=item[0];spotlight.replaceChildren();
+  const copy=make('div','og-postgame-spotlight-copy');
+  copy.append(make('span','og-postgame-spotlight-label','OSGARD SELECT / PERSONAL SPOTLIGHT'));
+  copy.append(make('span','og-postgame-spotlight-kicker',item[3]+' · СОВЕТ ДЛЯ '+String(titles[gameId]||'OSGARD PLAY').toUpperCase()));
+  copy.append(make('h4','og-postgame-spotlight-name',item[2]));
+  copy.append(make('p','og-postgame-spotlight-description',item[4]));
+  const actions=make('div','og-postgame-spotlight-actions');
+  const open=make('a','og-postgame-spotlight-open','Открыть официальный сайт ↗');
+  const url=new URL(item[5]);url.searchParams.set('utm_source','osgard_games');url.searchParams.set('utm_medium','post_game');url.searchParams.set('utm_campaign','after_game');url.searchParams.set('utm_content',item[0]+'_'+gameId);
+  open.href=url.href;open.target='_blank';open.rel='noopener noreferrer';open.dataset.service=item[0];open.dataset.game=gameId;
+  open.addEventListener('click',()=>void sendSelectEvent('cross_promo_clicked',gameId,'osgard-select:spotlight:'+item[0]));
+  const next=make('button','og-postgame-spotlight-next','Другой проект ↻');next.type='button';
+  next.addEventListener('click',()=>{
+   const pool=activeSelected.map(entry=>entry[0]).filter(id=>id!==spotlightServiceId);
+   if(!pool.length){spotlightStatus.textContent='В настройках выбери ещё один проект, чтобы сменить рекомендацию.';return}
+   const currentIndex=pool.indexOf(spotlightServiceId);
+   spotlightServiceId=pool[currentIndex<0?0:(currentIndex+1)%pool.length];
+   renderSpotlight(spotlightServiceId);
+  });
+  const save=make('button','og-postgame-spotlight-preferred',savedSpotlight===item[0]?'★ Мой выбор сохранён':'☆ Запомнить мой выбор');save.type='button';
+  save.addEventListener('click',()=>{
+   const ok=savePreferredService(item[0]);
+   spotlightStatus.textContent=ok?'Сохранено. Эта рекомендация будет приоритетной в следующих межигровых подборках.':'Браузер не разрешил сохранить выбор. Текущая рекомендация остаётся доступной.';
+   save.textContent=ok?'★ Мой выбор сохранён':'☆ Повторить сохранение';
+  });
+  actions.append(open,next,save);copy.append(actions);
+  spotlight.append(copy,spotlightStatus);
+  watchSpotlight();
+ }
+ renderSpotlight(spotlightServiceId);
  const grid=make('div','og-postgame-service-grid'),cards=[];
+ grid.hidden=true;filters.hidden=true;collapseToggle.textContent='Выбрать из '+availableServiceIds.length+' сервисов';collapseToggle.setAttribute('aria-expanded','false');
  if(showPromos&&activeSelected.length){
   visible.forEach(([id,num,title,category,description,href,featured=false,active=true])=>{
-   const isSpotlight=id===spotlightId;
+   const isSpotlight=id===spotlightServiceId;
    const card=make('a','og-postgame-service-card'+(isSpotlight?' is-featured':''));
    card.dataset.service=id;card.dataset.game=gameId;card.dataset.category=categoryByService[id]||'other';cards.push(card);
    const u=new URL(href);u.searchParams.set('utm_source','osgard_games');u.searchParams.set('utm_medium','post_game');u.searchParams.set('utm_campaign','after_game');u.searchParams.set('utm_content',id+'_'+gameId);card.href=u.href;card.target='_blank';card.rel='noopener noreferrer';card.setAttribute('aria-label','Открыть '+title+' в новой вкладке');
@@ -434,7 +501,7 @@ function servicesShelf(gameId,showPromos,completedCount){
  const decision=make('div','og-postgame-service-decision');
  const skipButton=make('button','og-postgame-skip','Пропустить подборку');skipButton.type='button';
  const skipStatus=make('p','og-postgame-skip-status','Подборка скрыта. Игровой каталог и награда за приглашение остаются доступны.');skipStatus.hidden=true;skipStatus.setAttribute('role','status');skipStatus.setAttribute('aria-live','polite');
- skipButton.addEventListener('click',()=>{grid.hidden=true;filters.hidden=true;skipButton.hidden=true;skipStatus.hidden=false;void sendSelectEvent('owned_promo_intermission_skipped',gameId,'osgard-select:skip:'+completedCount)});
+ skipButton.addEventListener('click',()=>{grid.hidden=true;filters.hidden=true;spotlight.hidden=true;skipButton.hidden=true;skipStatus.hidden=false;void sendSelectEvent('owned_promo_intermission_skipped',gameId,'osgard-select:skip:'+completedCount)});
  decision.append(skipButton,skipStatus);
  settingsToggle.addEventListener('click',()=>{settings.hidden=!settings.hidden;settingsToggle.textContent=settings.hidden?'Настроить показ':'Закрыть настройки';settingsToggle.setAttribute('aria-expanded',String(!settings.hidden));if(!settings.hidden)frequency.focus()});
  collapseToggle.addEventListener('click',()=>{const collapsed=!grid.hidden;grid.hidden=collapsed;filters.hidden=collapsed;collapseToggle.textContent=collapsed?'Показать подборку · '+cards.length:'Свернуть подборку';collapseToggle.setAttribute('aria-expanded',String(!collapsed))});
@@ -449,7 +516,7 @@ function servicesShelf(gameId,showPromos,completedCount){
   if(nextStatus)nextStatus.textContent=ok?'Настройки сохранены на этом устройстве.':'Настройки действуют в этой вкладке; браузер не разрешил постоянное сохранение.';
  });
  section.append(head,settings);
- if(showPromos&&activeSelected.length)section.append(filters,grid,foot,decision);
+ if(showPromos&&activeSelected.length)section.append(spotlight,filters,grid,foot,decision);
  else section.append(state,foot);
  // Count owned-service exposure only when a clickable card is at least half visible for a full second.
  // This remains consent-gated first-party measurement, not a third-party ad-network impression.
