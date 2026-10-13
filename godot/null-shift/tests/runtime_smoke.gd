@@ -596,7 +596,7 @@ func _run_smoke() -> void:
 	if not _expect(game.ring_pool.size() == expected_ring_pool_count and game.ring_pool[0] == pooled_ring, "successive rings must reuse the same mesh node without growing the pool"):
 		return
 	game._update_effect_expiry(0.5)
-		print("RUNTIME_STAGE: pooled spatial impact lighting")
+	print("RUNTIME_STAGE: pooled spatial impact lighting")
 	game._update_effect_expiry(1.0)
 	var saved_light_cinematic: bool = game.cinematic_quality
 	var saved_light_performance: bool = game.performance_quality
