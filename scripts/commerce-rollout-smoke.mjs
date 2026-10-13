@@ -114,7 +114,7 @@ assert.ok(playerLifecycle.includes("eventId:'evt_'"), "Player lifecycle should a
 for (const value of ['id="social-network-table"', 'id="social-network-body"', "renderSocialChannels", "socialShareByNetwork"]) {
   assert.ok(admin.includes(value), "Social-channel dashboard missing: " + value);
 }
-for (const value of ['id="analytics-retention"', 'id="game-analytics-table"', "analyticsByGame", "analyticsFunnel"]) {
+for (const value of ['id="analytics-retention"', 'id="game-analytics-table"', 'id="analytics-daily-play-rewards"', 'id="analytics-referral-welcome-rewards"', "analyticsByGame", "analyticsFunnel", "dailyPlayRewards", "referralWelcomeRewards"]) {
   assert.ok(admin.includes(value), "Admin analytics dashboard missing: " + value);
 }
 assert.ok(readFileSync(resolve("public/games/premium/index.html"), "utf8").includes('src="/games/commerce-client.js"'), "Premium page view analytics must use the shared consent gate.");
