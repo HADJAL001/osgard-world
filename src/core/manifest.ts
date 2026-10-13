@@ -13,6 +13,13 @@ export type OsgardEventName =
   | 'mobility_route_requested'
   | 'profile_opened'
   | 'share_created'
+  | 'challenge_created'
+  | 'challenge_invite_accepted'
+  | 'share_link_copied'
+  | 'share_dialog_opened'
+  | 'partner_cta_clicked'
+  | 'result_card_exported'
+  | 'result_card_shared'
 
 export interface OsgardEvent<TPayload extends Record<string, unknown> = Record<string, unknown>> {
   id: string
