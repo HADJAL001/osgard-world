@@ -11,6 +11,11 @@ import {
   resolveCheckoutPaymentState,
   verifyStripeSignature,
   safeEqual,
+  REFERRAL_REWARD_POINTS,
+  REFERRAL_MIN_SESSION_SECONDS,
+  validateReferralRewardRegistration,
+  validateReferralRewardStatus,
+  parseReferralRewardEvent,
 } from "../src/core.mjs";
 
 test("catalog is a fixed server-side allow-list", () => {
@@ -142,4 +147,27 @@ test("checkout status cannot resurrect a refunded, expired, or cancelled order",
   assert.deepEqual(resolveCheckoutPaymentState("unpaid", "pending"), {
     paid: false, orderStatus: "pending", updateOrderToPaid: false,
   });
+});
+
+test("server-verified SHARDS require a canonical invite and matching 60-second session",()=>{
+ const code="og_"+"ab".repeat(16),ownerToken="123456abcdef",visitorToken="987654fedcba";
+ assert.deepEqual(parseReferralRewardEvent({name:"share_created",gameId:"swarm",source:"game-invite:swarm:"+code+":"+ownerToken}),{type:"invite_created",inviteCode:code,gameId:"swarm",ownerToken});
+ assert.deepEqual(parseReferralRewardEvent({name:"referral_link_opened",gameId:"swarm",source:"referral-link:"+code+":swarm:"+visitorToken}),{type:"invite_opened",inviteCode:code,gameId:"swarm",visitorToken});
+ assert.equal(parseReferralRewardEvent({name:"referral_link_opened",gameId:"signal-run",source:"referral-link:"+code+":swarm:"+visitorToken}),null);
+ assert.deepEqual(parseReferralRewardEvent({name:"game_session_completed",gameId:"swarm",source:"referral:"+code+":swarm:"+visitorToken,durationSeconds:60}),{type:"invite_qualified",inviteCode:code,gameId:"swarm",visitorToken,durationSeconds:60,points:50});
+ assert.equal(REFERRAL_REWARD_POINTS,50);assert.equal(REFERRAL_MIN_SESSION_SECONDS,60);
+ assert.equal(parseReferralRewardEvent({name:"game_session_completed",gameId:"swarm",source:"referral:"+code+":swarm:"+visitorToken,durationSeconds:59}),null);
+ assert.equal(parseReferralRewardEvent({name:"game_session_completed",gameId:"signal-run",source:"referral:"+code+":swarm:"+visitorToken,durationSeconds:120}),null);
+ assert.equal(parseReferralRewardEvent({name:"share_created",gameId:"swarm",source:"game-invite:swarm:og_abcd:"+ownerToken}),null);
+});
+test("referral registration requires explicit consent and valid pseudonymous identifiers",()=>{
+ const valid={consent:true,rewardConsent:true,code:"og_"+"ab".repeat(16),gameId:"afterimage-run",ownerToken:"123456abcdef"};
+ assert.deepEqual(validateReferralRewardRegistration(valid),{ok:true,...valid});
+ assert.equal(validateReferralRewardRegistration({...valid,consent:false}).code,"REFERRAL_CONSENT_REQUIRED");
+ assert.equal(validateReferralRewardRegistration({...valid,rewardConsent:false}).code,"REFERRAL_CONSENT_REQUIRED");
+ assert.equal(validateReferralRewardRegistration({...valid,code:"og_bad"}).code,"REFERRAL_CODE_INVALID");
+ assert.equal(validateReferralRewardRegistration({...valid,gameId:"made-up"}).code,"GAME_ID_INVALID");
+ assert.equal(validateReferralRewardRegistration({...valid,ownerToken:"short"}).code,"REFERRAL_OWNER_TOKEN_INVALID");
+ assert.equal(validateReferralRewardStatus({code:"og_"+"ab".repeat(16)}).ok,true);
+ assert.equal(validateReferralRewardStatus({code:"og_bad"}).code,"REFERRAL_CODE_INVALID");
 });

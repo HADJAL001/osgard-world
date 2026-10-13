@@ -8,6 +8,8 @@ import pg from "pg";
 import {
   catalogConfiguration, validateCheckoutPayload, validateLeadPayload,
   validateEventBatch, paymentsModeAllowed, resolveCheckoutPaymentState, safeEqual,
+  parseReferralRewardEvent, validateReferralRewardRegistration, validateReferralRewardStatus,
+  REFERRAL_REWARD_POINTS, REFERRAL_MIN_SESSION_SECONDS,
 } from "./core.mjs";
 
 const { Pool } = pg;
@@ -45,6 +47,7 @@ app.use(cors({
 app.use("/v1/checkout", rateLimit({ windowMs: 15 * 60 * 1000, limit: 20, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/leads", rateLimit({ windowMs: 60 * 60 * 1000, limit: 8, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/events", rateLimit({ windowMs: 5 * 60 * 1000, limit: 60, standardHeaders: "draft-8", legacyHeaders: false }));
+app.use("/v1/referrals", rateLimit({ windowMs: 5 * 60 * 1000, limit: 30, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/admin", rateLimit({ windowMs: 5 * 60 * 1000, limit: 120, standardHeaders: "draft-8", legacyHeaders: false }));
 
 async function ensureSchema() {
@@ -57,18 +60,31 @@ async function ensureSchema() {
     "CREATE INDEX IF NOT EXISTS commerce_leads_created_idx ON commerce_leads(created_at DESC);\n" +
     "CREATE TABLE IF NOT EXISTS commerce_events (event_id TEXT PRIMARY KEY, event_name TEXT NOT NULL, session_id TEXT NOT NULL, game_id TEXT NOT NULL, source TEXT NOT NULL, path TEXT NOT NULL, duration_seconds INTEGER NOT NULL DEFAULT 0, received_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
     "CREATE INDEX IF NOT EXISTS commerce_events_name_received_idx ON commerce_events(event_name, received_at DESC);\n" +
-    "CREATE INDEX IF NOT EXISTS commerce_events_game_received_idx ON commerce_events(game_id, received_at DESC);");
+    "CREATE INDEX IF NOT EXISTS commerce_events_game_received_idx ON commerce_events(game_id, received_at DESC);\n" +
+    "CREATE TABLE IF NOT EXISTS game_referral_invites (invite_code TEXT PRIMARY KEY CHECK (invite_code ~ '^og_[a-f0-9]{32}$'), game_id TEXT NOT NULL, inviter_token TEXT NOT NULL CHECK (inviter_token ~ '^[a-f0-9]{12}$'), created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
+    "CREATE INDEX IF NOT EXISTS game_referral_invites_created_idx ON game_referral_invites(created_at DESC);\n" +
+    "CREATE TABLE IF NOT EXISTS game_referral_visits (invite_code TEXT NOT NULL REFERENCES game_referral_invites(invite_code) ON DELETE CASCADE, visitor_token TEXT NOT NULL CHECK (visitor_token ~ '^[a-f0-9]{12}$'), opened_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), PRIMARY KEY(invite_code, visitor_token));\n" +
+    "CREATE TABLE IF NOT EXISTS game_referral_rewards (invite_code TEXT NOT NULL, visitor_token TEXT NOT NULL, game_id TEXT NOT NULL, duration_seconds INTEGER NOT NULL CHECK (duration_seconds >= 60), points INTEGER NOT NULL CHECK (points = 50), qualified_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), PRIMARY KEY(invite_code, visitor_token), FOREIGN KEY(invite_code, visitor_token) REFERENCES game_referral_visits(invite_code, visitor_token) ON DELETE CASCADE);\n" +
+    "CREATE INDEX IF NOT EXISTS game_referral_rewards_qualified_idx ON game_referral_rewards(qualified_at DESC);");
   dbReady = true;
   return true;
 }
 
 async function purgeExpiredAnalytics() {
-  if (!pool || !dbReady) return 0;
-  const result = await pool.query(
-    "DELETE FROM commerce_events WHERE received_at < NOW() - ($1 * INTERVAL '1 day')",
-    [analyticsRetentionDays],
-  );
-  return Number(result.rowCount || 0);
+ if(!pool||!dbReady)return 0;
+ const result=await pool.query("DELETE FROM commerce_events WHERE received_at < NOW() - ($1 * INTERVAL '1 day')",[analyticsRetentionDays]);
+ await pool.query("DELETE FROM game_referral_invites WHERE created_at < NOW() - INTERVAL '365 days'");
+ return Number(result.rowCount||0);
+}
+async function processReferralRewardEvent(client,event){
+ const parsed=parseReferralRewardEvent(event);if(!parsed)return;
+ if(parsed.type==="invite_created"){await client.query("INSERT INTO game_referral_invites(invite_code,game_id,inviter_token) VALUES($1,$2,$3) ON CONFLICT(invite_code) DO NOTHING",[parsed.inviteCode,parsed.gameId,parsed.ownerToken]);return;}
+ if(parsed.type==="invite_opened"){await client.query("INSERT INTO game_referral_visits(invite_code,visitor_token) SELECT $1,$2 FROM game_referral_invites i WHERE i.invite_code=$1 AND i.game_id=$3 AND i.inviter_token<>$2 ON CONFLICT(invite_code,visitor_token) DO NOTHING",[parsed.inviteCode,parsed.visitorToken,parsed.gameId]);return;}
+ if(parsed.type==="invite_qualified"){
+  const verified=await client.query("SELECT 1 FROM commerce_events finish JOIN commerce_events start ON start.session_id=finish.session_id AND start.game_id=finish.game_id AND start.source=finish.source WHERE finish.event_id=$1 AND finish.event_name='game_session_completed' AND start.event_name='game_session_started' AND start.received_at <= finish.received_at - ($2 * INTERVAL '1 second') LIMIT 1",[event.eventId,REFERRAL_MIN_SESSION_SECONDS]);
+  if(!verified.rowCount)return;
+  await client.query("INSERT INTO game_referral_rewards(invite_code,visitor_token,game_id,duration_seconds,points) SELECT $1,$2,$3,$4,$5 FROM game_referral_visits v JOIN game_referral_invites i ON i.invite_code=v.invite_code WHERE v.invite_code=$1 AND v.visitor_token=$2 AND i.game_id=$3 AND i.inviter_token<>$2 ON CONFLICT(invite_code,visitor_token) DO NOTHING",[parsed.inviteCode,parsed.visitorToken,parsed.gameId,parsed.durationSeconds,REFERRAL_REWARD_POINTS]);
+ }
 }
 
 function paymentsAllowed() {
@@ -315,11 +331,13 @@ app.post("/v1/events", async (req, res) => {
       await client.query("BEGIN");
       let insertedCount = 0;
       for (const event of batch.events) {
-        const inserted = await client.query(
+        const persistedEvent={...event,eventId:event.eventId||crypto.randomUUID()};
+        const inserted=await client.query(
           "INSERT INTO commerce_events(event_id,event_name,session_id,game_id,source,path,duration_seconds) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT DO NOTHING RETURNING event_id",
-          [event.eventId || crypto.randomUUID(), event.name, event.sessionId, event.gameId, event.source, event.path, event.durationSeconds],
+          [persistedEvent.eventId,persistedEvent.name,persistedEvent.sessionId,persistedEvent.gameId,persistedEvent.source,persistedEvent.path,persistedEvent.durationSeconds],
         );
-        insertedCount += Number(inserted.rowCount || 0);
+        insertedCount+=Number(inserted.rowCount||0);
+        if(inserted.rowCount)await processReferralRewardEvent(client,persistedEvent);
       }
       await client.query("COMMIT");
     } catch (error) {
@@ -333,6 +351,28 @@ app.post("/v1/events", async (req, res) => {
     console.error("Analytics insert failed:", error?.message || "unknown error");
     return res.status(503).json({ error: "EVENT_STORAGE_UNAVAILABLE" });
   }
+});
+
+app.post("/v1/referrals/register",async(req,res)=>{
+ res.set("Cache-Control","no-store, private");
+ const input=validateReferralRewardRegistration(req.body);if(!input.ok)return res.status(input.status).json({error:input.code});
+ if(!requireDatabase(res))return;
+ try{
+  const inserted=await pool.query("INSERT INTO game_referral_invites(invite_code,game_id,inviter_token) VALUES($1,$2,$3) ON CONFLICT(invite_code) DO NOTHING RETURNING invite_code",[input.code,input.gameId,input.ownerToken]);
+  if(inserted.rowCount)return res.status(201).json({registered:true});
+  const existing=await pool.query("SELECT game_id,inviter_token FROM game_referral_invites WHERE invite_code=$1",[input.code]),r=existing.rows[0];
+  if(r&&r.game_id===input.gameId&&r.inviter_token===input.ownerToken)return res.status(200).json({registered:true,alreadyRegistered:true});
+  return res.status(409).json({error:"REFERRAL_CODE_ALREADY_USED"});
+ }catch(error){console.error("Referral registration failed:",error?.message||"unknown error");return res.status(503).json({error:"REFERRAL_REGISTRATION_UNAVAILABLE"});}
+});
+app.post("/v1/referrals/reward-status",async(req,res)=>{
+ res.set("Cache-Control","no-store, private");
+ const input=validateReferralRewardStatus(req.body);if(!input.ok)return res.status(input.status).json({error:input.code});
+ if(!requireDatabase(res))return;
+ try{
+  const result=await pool.query("SELECT COUNT(*)::int AS qualified_sessions,COALESCE(SUM(points),0)::int AS points_earned FROM game_referral_rewards WHERE invite_code=$1",[input.code]),r=result.rows[0]||{};
+  return res.json({qualifiedSessions:Number(r.qualified_sessions||0),pointsEarned:Number(r.points_earned||0),pointsPerQualifiedSession:REFERRAL_REWARD_POINTS,qualifyingDurationSeconds:REFERRAL_MIN_SESSION_SECONDS,redeemableForCash:false,redeemableForPurchases:false});
+ }catch(error){console.error("Referral status failed:",error?.message||"unknown error");return res.status(503).json({error:"REFERRAL_STATUS_UNAVAILABLE"});}
 });
 
 app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {

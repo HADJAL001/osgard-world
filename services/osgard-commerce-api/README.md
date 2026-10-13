@@ -12,8 +12,12 @@ Backend for OSGARD PLAY checkout sessions, signed Stripe webhooks, request leads
 - OSGARD PREMIUM sales stay disabled unless ENABLE_OSGARD_PREMIUM_SALES=true; do not enable until benefits, cancellation, support and entitlement provisioning are complete.
 - Lead persistence with processing acknowledgement and honeypot.
 - Consent-gated analytics endpoint with an allow-list of events and fields.
+- Server-backed invitation ledger with separate consent, pseudonymous visitor IDs, server-timed 60-second session matching and idempotent +50 SHARDS rewards; social networks are not treated as proof of a published post.
 - Admin overview, order list and lead list require a server-side bearer token of at least 32 characters.
 - No card numbers or CVC values are handled or stored by OSGARD.
+
+## OSGARD PLAY referral SHARDS
+The API exposes `POST /v1/referrals/register` and `POST /v1/referrals/reward-status`. Rewards require explicit consent, a registered `og_<32 hex>` invite, an open from a different pseudonymous browser, and matching-game start/completion events at least 60 seconds apart. A unique (invite code, visitor token) ledger prevents duplicates. SHARDS have no cash value or purchase redemption. Event-backed validation is not tamper-proof anti-cheat; production abuse monitoring remains required. Referral records expire after 365 days.
 
 ## Local run
 
