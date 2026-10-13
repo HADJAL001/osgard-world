@@ -390,6 +390,7 @@ assert.ok(recommendationScript.includes("source==='osgard_play'") && recommendat
 assert.ok(recommendationScript.includes("sessionStorage.setItem(marker,'pending')") && recommendationScript.includes("state==='pending'"), 'Referral-open callbacks must be deduplicated before waiting on the network')
 assert.ok(recommendationScript.includes('const pendingTelemetry=new Set()') && recommendationScript.includes('cancelPendingTelemetry()'), 'In-flight consented analytics must support cancellation on opt-out')
 assert.ok(catalogRuntime.includes("campaign==='play_with_friends'") && catalogRuntime.includes("medium==='referral'"), 'The main catalogue must validate canonical invitation labels before attributing player events')
+assert.ok(html.includes("params.get('utm_campaign')==='play_with_friends'") && html.includes("params.get('challenge')") && html.includes("campaign==='play_with_a_friend'"), 'Both canonical and legacy referral landings must load the invitation handler')
 const postSessionShareStart=recommendationScript.indexOf("inviteButton.addEventListener('click',async()=>{");
 assert.ok(postSessionShareStart>=0,'Post-session invite handler missing')
 const postSessionShareEnd=recommendationScript.indexOf('\n });',postSessionShareStart)
