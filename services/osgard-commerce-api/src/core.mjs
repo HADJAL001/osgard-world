@@ -115,6 +115,29 @@ export function validateLeadPayload(body) {
   return { ok: true, bot: false, projectType, budget, contact, description };
 }
 
+const REFERRAL_CODE_PATTERN = /^og_[a-f0-9]{8}$/;
+const REFERRAL_OWNER_TOKEN_PATTERN = /^[a-f0-9]{32}$/;
+
+export function validateReferralRegistrationPayload(body) {
+  const input = body && typeof body === "object" && !Array.isArray(body) ? body : {};
+  if (input.consent !== true) return { ok: false, status: 400, code: "ANALYTICS_CONSENT_REQUIRED" };
+  const referralCode = cleanText(input.referralCode, 32);
+  const gameId = cleanText(input.gameId, 40);
+  const ownerToken = cleanText(input.ownerToken, 64);
+  if (!REFERRAL_CODE_PATTERN.test(referralCode)) return { ok: false, status: 400, code: "REFERRAL_CODE_INVALID" };
+  if (!GAME_IDS.has(gameId) || gameId === "unknown") return { ok: false, status: 400, code: "GAME_ID_INVALID" };
+  if (!REFERRAL_OWNER_TOKEN_PATTERN.test(ownerToken)) return { ok: false, status: 400, code: "REFERRAL_OWNER_TOKEN_INVALID" };
+  return { ok: true, referralCode, gameId, ownerToken };
+}
+
+export function validateReferralClaimPayload(body) {
+  const input = body && typeof body === "object" && !Array.isArray(body) ? body : {};
+  if (input.consent !== true) return { ok: false, status: 400, code: "ANALYTICS_CONSENT_REQUIRED" };
+  const ownerToken = cleanText(input.ownerToken, 64);
+  if (!REFERRAL_OWNER_TOKEN_PATTERN.test(ownerToken)) return { ok: false, status: 400, code: "REFERRAL_OWNER_TOKEN_INVALID" };
+  return { ok: true, ownerToken };
+}
+
 export function validateEventBatch(body) {
   const input = body && typeof body === "object" && !Array.isArray(body) ? body : {};
   if (input.consent !== true) return { ok: false, status: 400, code: "ANALYTICS_CONSENT_REQUIRED" };
