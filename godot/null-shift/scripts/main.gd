@@ -3379,6 +3379,37 @@ func _spawn_beam(from: Vector3, to: Vector3, material: Material, lifetime: float
 		effect_pool_exhaustions += 1
 		return
 	line_mesh.clear_surfaces()
+	# Two crossed triangle ribbons give the tracer a readable 3D body from elevated
+	# and lateral cameras; the fine center line preserves exact aim readability.
+	# Everything is rebuilt inside the existing bounded pool, with no per-shot node allocation.
+	var beam_axis: Vector3 = to - from
+	if beam_axis.length_squared() < 0.000001:
+		beam_axis = Vector3.FORWARD * 0.001
+	var beam_direction: Vector3 = beam_axis.normalized()
+	var beam_side: Vector3 = beam_direction.cross(Vector3.UP)
+	if beam_side.length_squared() < 0.001:
+		beam_side = beam_direction.cross(Vector3.RIGHT)
+	beam_side = beam_side.normalized()
+	var beam_vertical: Vector3 = beam_direction.cross(beam_side).normalized()
+	var width_factor: float = clampf(sqrt(beam_axis.length()) * 0.72, 0.72, 1.4)
+	var side_extent: Vector3 = beam_side * 0.042 * width_factor
+	var vertical_extent: Vector3 = beam_vertical * 0.032 * width_factor
+	line_mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES, material)
+	# Horizontal ribbon.
+	line_mesh.surface_add_vertex(from - side_extent)
+	line_mesh.surface_add_vertex(from + side_extent)
+	line_mesh.surface_add_vertex(to + side_extent)
+	line_mesh.surface_add_vertex(from - side_extent)
+	line_mesh.surface_add_vertex(to + side_extent)
+	line_mesh.surface_add_vertex(to - side_extent)
+	# Perpendicular ribbon stays visible when viewed edge-on to the first.
+	line_mesh.surface_add_vertex(from - vertical_extent)
+	line_mesh.surface_add_vertex(from + vertical_extent)
+	line_mesh.surface_add_vertex(to + vertical_extent)
+	line_mesh.surface_add_vertex(from - vertical_extent)
+	line_mesh.surface_add_vertex(to + vertical_extent)
+	line_mesh.surface_add_vertex(to - vertical_extent)
+	line_mesh.surface_end()
 	line_mesh.surface_begin(Mesh.PRIMITIVE_LINES, material)
 	line_mesh.surface_add_vertex(from)
 	line_mesh.surface_add_vertex(to)

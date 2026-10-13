@@ -255,3 +255,11 @@ The Godot build tracks a persistent UTC daily-clear streak, longest streak and l
 - Added a persistent Reduced Motion preference, available from F4 on desktop and a dedicated third utility button in the Godot touch HUD. The button shows MOT ON / MOT LOW and describes the setting in its tooltip.
 - Reduced mode clears active camera shake when enabled, scales future screen impulses to 12%, reduces their duration to 70%, limits camera FOV breathing to 18%, and holds the health-vignette pulse at a steady level through a shader uniform. Aim, movement, dash windows, weapons, damage and mission state remain unchanged.
 - The setting is stored in the existing local career settings. Headless runtime smoke measures the difference in FOV response and camera shake, verifies shader pulse suppression, exercises the touch toggle, and confirms persistence; the static source contract requires the F4 path and all mobile utility sizing declarations.
+
+
+## Godot visual pass — volumetric combat tracers
+
+- Replaced the single zero-width line in the bounded beam pool with two crossed 3D triangle ribbons and a precise center line. The beam remains readable from elevated or oblique camera angles and is less dependent on driver-specific line rasterization width.
+- Ribbon width scales gently with beam length and remains capped. The existing `ImmediateMesh` pool, lifetime handling, materials and gameplay remain intact; shots do not allocate new scene nodes.
+- Runtime smoke checks the actual mesh surface count and primitive types. Static release checks reject a regression to the old single-line-only rendering.
+- This is a geometry-level gameplay presentation improvement, not a claim of native 8K output. It runs through the existing Godot 4.7.2 GL Compatibility Web export pipeline.

@@ -187,3 +187,8 @@ This is procedural real-time 3D geometry for the current GL Compatibility/Web ex
 - The moving 3D surge switches to cyan during suppression, the individual lane chip reads `ПОДАВЛЕН`, and the shared hazard status reports the suppressed conduit. The pulse remains useful against nearby guards at the same time, so players must choose when to spend its cooldown.
 - Added a runtime smoke sequence that activates a lane, triggers Q beside it, verifies the visual/HUD/telemetry response, proves no damage is dealt during the suppression window, and confirms that the lane becomes dangerous again when the timer expires.
 - This is engine-native, playable GDScript behavior; it does not depend on external services, assets or network calls.
+
+
+### Visual upgrade: volumetric tracers
+
+Weapon fire and other transient beams use two crossed triangle ribbons plus a crisp center line. This avoids relying on 1-pixel line rasterization on different desktop/mobile GPUs. The effect reuses the existing bounded mesh pool; headless runtime smoke verifies both surface types.

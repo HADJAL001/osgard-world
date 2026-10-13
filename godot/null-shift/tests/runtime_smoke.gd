@@ -494,6 +494,11 @@ func _run_smoke() -> void:
 	if not _expect(game.beam_pool.size() == 1 and game.beam_effects.size() == 1 and game.beam_pool[0].visible, "beam firing must activate one pooled mesh"):
 		return
 	var pooled_beam: MeshInstance3D = game.beam_pool[0]
+	var pooled_beam_mesh: ImmediateMesh = pooled_beam.mesh as ImmediateMesh
+	if not _expect(is_instance_valid(pooled_beam_mesh) and pooled_beam_mesh.get_surface_count() == 2, "pooled beam must contain a crossed triangle-ribbon shell and a crisp center line"):
+		return
+	if not _expect(pooled_beam_mesh.surface_get_primitive_type(0) == Mesh.PRIMITIVE_TRIANGLES and pooled_beam_mesh.surface_get_primitive_type(1) == Mesh.PRIMITIVE_LINES, "beam surfaces must use real 3D triangle ribbons plus a precise core line"):
+		return
 	game._update_effect_expiry(0.11)
 	if not _expect(game.beam_effects.is_empty() and not pooled_beam.visible, "expired beam must return hidden to the pool"):
 		return
