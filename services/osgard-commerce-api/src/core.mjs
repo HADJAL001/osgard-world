@@ -41,6 +41,7 @@ export const ALLOWED_EVENTS = new Set([
   "owned_promo_preferences_saved",
   "social_share_intent",
   "social_reward_claimed",
+  "referral_reward_claimed",
   "game_launched",
   "game_session_completed",
   "lead_submitted",
