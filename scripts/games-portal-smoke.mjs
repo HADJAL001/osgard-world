@@ -579,6 +579,14 @@ for(const provider of ['t.me/share/url','wa.me/?text=','vk.com/share.php','twitt
 assert.ok(recommendationScript.includes("u.searchParams.set('utm_medium','post_game')")&&recommendationScript.includes("u.searchParams.set('utm_campaign','after_game')"),'Post-game links require UTM attribution');
 assert.ok(recommendationScript.includes("const walletKey='osgard.games.shards-wallet.v1',dailyReward=50")&&recommendationScript.includes('current.day===day'),'SHARDS must persist locally and be capped once per UTC day');
 assert.ok(recommendationScript.includes('Я опубликовал — получить +50 SHARDS')&&recommendationScript.includes('Соцсеть не сообщает сайту подтверждение публикации')&&recommendationScript.includes('не являются платёжным средством'),'Social reward must disclose self-confirmation and non-monetary points');
+
+const rewardPrimaryStart=recommendationScript.indexOf("primary.addEventListener('click',async()=>{",recommendationScript.indexOf('function rewardShelf(gameId){'));
+const rewardPrimaryEnd=recommendationScript.indexOf(" const note=make('p','og-postgame-reward-note'",rewardPrimaryStart);
+assert.ok(rewardPrimaryStart>=0&&rewardPrimaryEnd>rewardPrimaryStart,'OSGARD SELECT reward-share handler boundaries are required');
+const rewardPrimaryHandler=recommendationScript.slice(rewardPrimaryStart,rewardPrimaryEnd);
+assert.ok(!rewardPrimaryHandler.includes('show(award(')&&rewardPrimaryHandler.includes("pending='native-share'")&&rewardPrimaryHandler.includes('claim.hidden=false'),'OSGARD SELECT must require a separate claim after native share and not auto-award');
+assert.ok(rewardPrimaryHandler.includes('Копирование само по себе не считается репостом и не даёт награду')&&!rewardPrimaryHandler.includes("show(award(source+':"+'gameId'+"))"),'Clipboard copy alone must never award SHARDS');
+
 assert.ok(recommendationStyles.includes('.og-postgame-services')&&recommendationStyles.includes('.og-postgame-service-grid')&&recommendationStyles.includes('.og-postgame-reward')&&recommendationStyles.includes('@media(max-width:760px)')&&recommendationStyles.includes('prefers-reduced-motion:reduce'),'Postgame UI must be premium, responsive and accessible');
 assert.ok(recommendationScript.includes('РЕКЛАМА · СОБСТВЕННЫЕ ПРОЕКТЫ OSGARD')&&recommendationScript.includes('osgardServiceFilter')&&recommendationScript.includes('categoryByService'),'OSGARD SELECT must disclose self-promotion and let players filter service offers by category');
 assert.ok(recommendationScript.includes("['all','Все сервисы · 10']")&&recommendationScript.includes("['studio','Разработка · 2']")&&recommendationScript.includes("['luxury','Luxury · 1']"),'OSGARD SELECT filters must expose all configured service categories');
@@ -633,4 +641,14 @@ assert.ok(appStyles.includes('.play-select-loop') && appStyles.includes('.play-s
 assert.ok(appSource.includes('href="/games/?utm_source=osgard_world&amp;utm_medium=entertainment&amp;utm_campaign=between_worlds"'), 'Entertainment gateway must link into the playable hub with campaign attribution')
 assert.ok(appSource.includes('href="/games/monetization/?utm_source=osgard_world&amp;utm_medium=entertainment&amp;utm_campaign=economy_model"'), 'Entertainment gateway must link to the scenario economy model')
 assert.ok(appSource.includes('не подтверждается автоматически') && appSource.includes('Это не деньги'), 'SHARDS must be disclosed as non-monetary with social-post verification limits')
+
+const homepageShareStart=playSelectSource.indexOf('  const shareInvite = async () => {');
+const homepageShareEnd=playSelectSource.indexOf('\n  }\n\n  return <section',homepageShareStart);
+assert.ok(homepageShareStart>=0&&homepageShareEnd>homepageShareStart,'Homepage invitation-share handler boundaries are required');
+const homeShareHandler=playSelectSource.slice(homepageShareStart,homepageShareEnd);
+assert.ok(homeShareHandler.includes("setPendingNetwork('native-share')")&&!homeShareHandler.includes("grantReward('homepage-native-share')")&&!homeShareHandler.includes("grantReward('homepage-clipboard')"),'Homepage must not auto-award on a share-sheet return or clipboard copy');
+assert.ok(playSelectSource.includes("grantReward('homepage-social-confirmation:' + pendingNetwork)")&&playSelectSource.includes('Копирование ссылки само по себе не даёт награду'),'Homepage SHARDS must require explicit social-share confirmation');
+assert.ok(signalJs.includes("claimShare.addEventListener('click'")&&signalJs.includes("awardShareShards('user-confirmed:'+method)")&&!signalJs.includes("if(completed){const bonus=awardShareShards(method)"),'SIGNAL RUN share rewards must be claimed explicitly, not automatically');
+assert.ok(signalRun.includes('id="claim-share-reward"')&&signalRun.includes('Копирование ссылки само по себе не даёт награду'),'SIGNAL RUN must show a separate reward claim and disclose the copy limitation');
+
 assert.ok(appStyles.includes('.play-economy-strip') && appStyles.includes('@media(max-width:760px)') && appStyles.includes('prefers-reduced-motion:reduce'), 'Entertainment economy teaser needs responsive and reduced-motion styling')
