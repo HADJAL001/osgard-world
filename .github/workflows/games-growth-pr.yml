@@ -12,6 +12,8 @@ on:
       - "scripts/remix-growth-smoke.mjs"
       - "scripts/ecosystem-integrity-smoke.mjs"
       - "scripts/partners-page-smoke.mjs"
+      - "scripts/consented-analytics-queue-smoke.mjs"
+      - ".github/workflows/frontend-check.yml"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/games-growth-pr.yml"
@@ -40,6 +42,8 @@ jobs:
         run: npm ci
       - name: TypeScript checks
         run: npm run check
+      - name: Consent-aware analytics queue delivery and withdrawal
+        run: npm run qa:consented-analytics-queue
       - name: Games hub and share reward contracts
         run: npm run qa:games-portal
       - name: Game detail routes and player lifecycle
