@@ -156,6 +156,47 @@ const GAMES: GameDefinition[] = [
     featuresEn: ['Three lanes and rising speed', 'Pulse shield with cooldown', 'Local best and short runs'],
     theme: 'signal',
   },
+  {
+    id: 'civic-cascade',
+    mark: 'CC',
+    titleRu: 'CIVIC CASCADE',
+    titleEn: 'CIVIC CASCADE',
+    category: 'strategy',
+    genreRu: 'Кризисная стратегия',
+    genreEn: 'Crisis strategy',
+    descriptionRu: 'Город входит в цепочку отказов. Стабилизируйте энергосеть, удерживайте воду и открывайте безопасные маршруты эвакуации, пока кризисы усиливают друг друга.',
+    descriptionEn: 'A city is entering a chain of system failures. Stabilize the power grid, control flood water and open safe evacuation routes before the crises compound.',
+    href: '/games/civic-cascade/',
+    devices: ['desktop', 'mobile'],
+    controlsRu: 'Выбирайте узлы городской карты касанием или щелчком. Затем разверните насосы, стабилизируйте сеть, откройте эвакуационный путь или отправьте ремонтные бригады.',
+    controlsEn: 'Select city map nodes by click or touch. Then deploy pumps, stabilize the grid, open an evacuation route or dispatch repair crews.',
+    supportRu: 'Самостоятельная HTML-игра с мышью и сенсорным управлением. Показатели моделируются внутри игры, состояние операции локальное и не отправляется на сервер.',
+    supportEn: 'A standalone HTML game with mouse and touch controls. Metrics are simulated in-game; operation state stays local and is not uploaded to a server.',
+    featuresRu: ['Каскадные городские кризисы', 'Ограниченные ресурсы и ремонтные бригады', 'Цели операции и журнал событий'],
+    featuresEn: ['Cascading urban crises', 'Limited resources and repair crews', 'Mission objectives and event log'],
+    theme: 'civic',
+  },
+  {
+    id: 'patina',
+    mark: 'PA',
+    titleRu: 'PATINA ATELIER',
+    titleEn: 'PATINA ATELIER',
+    category: 'creative',
+    genreRu: 'Симуляция консервации',
+    genreEn: 'Conservation puzzle',
+    descriptionRu: 'Исследуйте керамическую плитку 1898 года, отличайте загрязнение от оригинальной глазури и нестабильных солей, выбирая бережное вмешательство.',
+    descriptionEn: 'Study an 1898 ceramic tile, distinguish residue from original glaze and unstable salts, and choose a careful conservation intervention.',
+    href: '/games/patina/',
+    devices: ['desktop', 'mobile'],
+    controlsRu: 'Выберите участок поверхности, проведите диагностику и пробы, затем решите, что стабилизировать или очищать. Итоговое заключение и журнал дела сохраняются локально.',
+    controlsEn: 'Select a surface area, run diagnostics and tests, then decide what to stabilize or clean. The final report and case journal are stored locally.',
+    supportRu: 'Самостоятельная HTML-игра с локальным журналом и экспортом дела в JSON. Показатели — внутренняя игровая модель, не реальные лабораторные измерения и не инструкция для настоящей реставрации.',
+    supportEn: 'A standalone HTML game with a local casebook and JSON export. Metrics are in-game simulation, not real laboratory measurements or real-world conservation advice.',
+    featuresRu: ['Три зоны поверхности', 'Диагностика и ограниченные действия', 'Заключение и локальный экспорт дела'],
+    featuresEn: ['Three surface zones', 'Diagnostics and limited actions', 'Conclusion and local case export'],
+    theme: 'patina',
+  },
+
 ]
 
 
@@ -368,6 +409,9 @@ export function GameDetailPage({ slug }: { slug: string }) {
                   'null-shift': /null\s*\/\/\s*shift|null\s*shift/i,
                   inherit: /inherit/i,
                   remix: /remix/i,
+                  signal: /signal run/i,
+                  'civic-cascade': /civic\\s*cascade/i,
+                  patina: /patina atelier/i,
                 }
                 const validTitle = game.id === 'time'
                   ? Boolean(frameDocument?.querySelector('.time-game'))

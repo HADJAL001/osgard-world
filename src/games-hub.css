@@ -364,3 +364,5 @@
 .gh-detail--signal .gh-detail-art { background: radial-gradient(circle, rgba(211,255,105,.16), transparent 52%), #0b1710; }
 .gh-detail--signal .gh-detail-ring { border-color: rgba(211,255,105,.38); }
 .gh-detail--signal .gh-detail-mark { color: #d3ff69; text-shadow: 0 0 28px rgba(211,255,105,.24); }
+.gh-detail--civic .gh-detail-art { background: radial-gradient(circle, rgba(104,216,210,.18), transparent 50%), #081a19; }
+.gh-detail--patina .gh-detail-art { background: radial-gradient(circle, rgba(226,199,131,.16), transparent 50%), #15140e; }
