@@ -110,4 +110,9 @@ assert.equal(configured.eventPosts, postsBeforeOnline, 'No additional event requ
 configured.values.set('osgard.games.analytics-consent.v1', 'yes');
 assert.equal(await configured.queue.enqueue({ ...event, eventId: 'bad', name: 'catalog_viewed' }), false, 'Malformed idempotency keys must be rejected');
 assert.equal(await configured.queue.enqueue({ ...event, eventId: 'evt_123456789014', name: 'not_allowlisted' }), false, 'Unknown event names must be rejected');
+assert.equal(
+  await configured.queue.enqueue({ ...event, eventId: 'evt_afterimage_123456', gameId: 'afterimage-run', name: 'social_share_intent', source: 'osgard-select:share:telegram' }),
+  true,
+  'AFTERIMAGE//RUN social-share events must pass the client game-ID allow-list',
+);
 console.log('PASS consented analytics queue: fail-closed API configuration, offline persistence, stable IDs, acknowledged retry, consent withdrawal, and schema allowlist.');
