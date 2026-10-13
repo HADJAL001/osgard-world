@@ -376,7 +376,7 @@ assert.equal(postGameServiceOptions?.children.length,10,'Service preferences mus
 const servicePreferenceInputs=(postGameServiceOptions?.children||[]).map(option=>option.children[0]);
 assert.equal(servicePreferenceInputs.filter(input=>input.checked&&!input.disabled).length,9,'Default preference selects every service whose availability is confirmed')
 const unavailableServiceChoice=servicePreferenceInputs.find(input=>input.dataset.servicePreference==='gardvpn');
-assert.ok(unavailableServiceChoice&&!unavailableServiceChoice.disabled,'GARD VPN should be a selectable official-site link without asserting its feature availability')
+assert.ok(unavailableServiceChoice?.disabled,'GARD VPN must remain unselectable until service availability is confirmed')
 const frequencyField=postGamePreferences.children.find(node=>node.className==='og-postgame-frequency-label');
 assert.deepEqual(frequencyField.children[0].children.map(option=>option.value),['each','every3','off'],'Players must choose every round, every three rounds, or no promo')
 assert.equal(frequencyField.children[0].value,'each','Service intermission is enabled after every completed game by default')
