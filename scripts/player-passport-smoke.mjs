@@ -81,6 +81,7 @@ assert.equal(result.added, false, 'Unknown game IDs must not enter a Passport')
 result = core.recordSession(data, {game:'time',sessionStarted:true,sessionId:'session_test_0002',durationSeconds:999999}, fixedNow + 86400000)
 assert.equal(result.added, true, 'A second game session should be accepted')
 assert.equal(result.progress.sessions[1].durationSeconds, 12*60*60, 'Durations must be capped to twelve hours')
+data = result.progress
 const withOld = {schemaVersion:1,sessions:[{gameId:'time',sessionId:'old',at:'2025-01-01T00:00:00.000Z',durationSeconds:10}],invites:[],updatedAt:'2025-01-01T00:00:00.000Z'}
 assert.equal(core.normalizePassport(withOld,fixedNow).sessions.length,0, 'Sessions beyond retention must be pruned')
 const future = {schemaVersion:1,sessions:[{gameId:'time',sessionId:'future',at:new Date(fixedNow+86400000*40).toISOString(),durationSeconds:10}],invites:[],updatedAt:new Date(fixedNow).toISOString()}
