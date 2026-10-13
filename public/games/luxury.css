@@ -118,3 +118,96 @@
  .luxury-entertainment .card,.luxury-entertainment .art svg,.luxury-entertainment .orbit{transition:none}
  .luxury-entertainment .card:hover{transform:none}
 }
+
+
+/* Growth loop + transparent commerce surfaces. */
+.luxury-entertainment .growth-lab{padding-top:clamp(70px,8vw,105px);padding-bottom:clamp(65px,8vw,100px);border-top:1px solid rgba(226,199,131,.12);border-bottom:1px solid rgba(226,199,131,.15);scroll-margin-top:90px}
+.luxury-entertainment .growth-heading{display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,.42fr);align-items:end;gap:30px;margin-bottom:31px}
+.luxury-entertainment .growth-heading h2{margin:0;font:300 clamp(42px,5.6vw,70px)/.93 "Cormorant Garamond",Georgia,serif;letter-spacing:-.045em}
+.luxury-entertainment .growth-heading h2 em{color:#ead6a0;font-style:normal}
+.luxury-entertainment .growth-heading>div>p:last-child{max-width:620px;margin:13px 0 0;color:#b7b5a7;font-size:12px;line-height:1.85}
+.luxury-entertainment .growth-target{display:flex;flex-direction:column;gap:7px;padding:19px 20px;border-left:1px solid rgba(226,199,131,.44);background:linear-gradient(90deg,rgba(226,199,131,.055),transparent)}
+.luxury-entertainment .growth-target small{color:#a69d80;font:9px ui-monospace,Consolas,monospace;letter-spacing:.15em}
+.luxury-entertainment .growth-target b{font:400 28px/1.15 "Cormorant Garamond",Georgia,serif;color:#f0dda8}
+.luxury-entertainment .growth-target span{color:#9b9c8d;font-size:10px;line-height:1.5}
+.luxury-entertainment .growth-referral{position:relative;isolation:isolate;overflow:hidden;display:grid;grid-template-columns:104px minmax(0,1fr) auto;align-items:center;gap:clamp(17px,3vw,34px);padding:clamp(20px,3vw,34px);border:1px solid rgba(226,199,131,.34);background:radial-gradient(ellipse at 5% 50%,rgba(226,199,131,.11),transparent 36%),linear-gradient(120deg,rgba(255,255,255,.023),rgba(255,255,255,.005))}
+.luxury-entertainment .growth-referral:after{position:absolute;z-index:-1;right:-70px;top:-145px;width:280px;aspect-ratio:1;border:1px solid rgba(226,199,131,.12);border-radius:50%;box-shadow:0 0 0 26px rgba(226,199,131,.025),0 0 0 60px rgba(226,199,131,.018);content:"";pointer-events:none}
+.luxury-entertainment .growth-referral-mark{position:relative;display:grid;place-items:center;width:96px;height:96px;border:1px solid rgba(226,199,131,.57);border-radius:50%;color:#f0dda8;font:300 61px/.8 "Cormorant Garamond",Georgia,serif}
+.luxury-entertainment .growth-referral-mark:before{position:absolute;inset:8px;border:1px solid rgba(226,199,131,.24);border-radius:50%;content:""}
+.luxury-entertainment .growth-referral-mark:after{position:absolute;inset:-6px;border:1px dashed rgba(226,199,131,.3);border-radius:50%;content:""}
+.luxury-entertainment .growth-referral-mark i{position:absolute;width:5px;height:5px;right:15px;top:16px;border-radius:50%;background:#f0dda8;box-shadow:0 0 15px #f0dda8}
+.luxury-entertainment .growth-referral-copy{min-width:0}
+.luxury-entertainment .growth-referral-copy .eyebrow{margin-bottom:7px;font-size:8px}
+.luxury-entertainment .growth-referral-copy h3{margin:0;font:400 clamp(27px,3.3vw,39px)/.96 "Cormorant Garamond",Georgia,serif;color:#f0eadb}
+.luxury-entertainment .growth-referral-copy>p{max-width:720px;margin:10px 0 0;color:#b7b5a7;font-size:11px;line-height:1.8}
+.luxury-entertainment .growth-referral-copy>small{display:block;margin-top:8px;color:#8f9284;font-size:9px;line-height:1.6}
+.luxury-entertainment .growth-referral-actions{display:flex;flex-direction:column;align-items:stretch;gap:9px;min-width:180px}
+.luxury-entertainment .growth-referral-actions .btn{width:100%;white-space:nowrap}
+.luxury-entertainment .growth-referral-actions .secondary-link{align-self:center}
+.luxury-entertainment .growth-status{min-height:0;margin:0;color:#f0dda8;font-size:10px;line-height:1.5;text-align:center}
+.luxury-entertainment .growth-status:empty{display:none}
+.luxury-entertainment .growth-referral-banner{display:flex;align-items:center;justify-content:space-between;gap:20px;margin:0 0 22px;padding:14px 17px;border:1px solid rgba(226,199,131,.39);background:linear-gradient(100deg,rgba(226,199,131,.1),rgba(226,199,131,.025));color:#eee2c2}
+.luxury-entertainment .growth-referral-banner>div{display:flex;align-items:center;gap:12px;min-width:0}
+.luxury-entertainment .growth-referral-banner .ref-icon{display:grid;place-items:center;width:35px;height:35px;flex:0 0 auto;border:1px solid rgba(226,199,131,.48);border-radius:50%;color:#e2c783}
+.luxury-entertainment .growth-referral-banner strong{font:400 21px "Cormorant Garamond",Georgia,serif}
+.luxury-entertainment .growth-referral-banner p{margin:3px 0 0;color:#aba896;font-size:10px;line-height:1.6}
+.luxury-entertainment .growth-referral-banner a{display:inline-flex;align-items:center;gap:7px;flex:0 0 auto;color:#ead6a0;font-size:10px;font-weight:500}
+.luxury-entertainment .growth-offers-head{display:flex;align-items:end;justify-content:space-between;gap:20px;margin:47px 0 18px}
+.luxury-entertainment .growth-offers-head .eyebrow{margin-bottom:7px;font-size:8px}
+.luxury-entertainment .growth-offers-head h3{margin:0;font:400 clamp(31px,4vw,43px)/1 "Cormorant Garamond",Georgia,serif;letter-spacing:-.025em}
+.luxury-entertainment .growth-model-link{color:#ead6a0;font-size:10px;text-underline-offset:4px}
+.luxury-entertainment .growth-model-link:hover{color:#fff0c7}
+.luxury-entertainment .growth-offers{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.luxury-entertainment .growth-offer{display:flex;flex-direction:column;min-width:0;min-height:310px;padding:18px 17px 16px;border:1px solid rgba(226,199,131,.17);background:linear-gradient(155deg,rgba(255,255,255,.025),transparent 60%),#0d0e0b}
+.luxury-entertainment .growth-offer:hover{border-color:rgba(226,199,131,.44);background:linear-gradient(155deg,rgba(226,199,131,.06),transparent 65%),#0d0e0b}
+.luxury-entertainment .growth-offer-number{color:#a69d80;font:8px ui-monospace,Consolas,monospace;letter-spacing:.09em}
+.luxury-entertainment .growth-offer-symbol{display:grid;place-items:center;width:40px;height:40px;margin:20px 0 15px;border:1px solid rgba(226,199,131,.35);color:#ead6a0;font:23px "Cormorant Garamond",Georgia,serif;font-style:normal}
+.luxury-entertainment .growth-offer h4{margin:0;font:400 25px/.99 "Cormorant Garamond",Georgia,serif;color:#f0eadb}
+.luxury-entertainment .growth-offer>p{margin:10px 0 15px;color:#a6a796;font-size:10px;line-height:1.8}
+.luxury-entertainment .growth-offer>div{display:flex;flex-direction:column;gap:4px;margin-top:auto;padding:12px 0;border-top:1px solid rgba(226,199,131,.14)}
+.luxury-entertainment .growth-offer>div small{color:#8c8f7f;font:8px ui-monospace,Consolas,monospace;letter-spacing:.1em}
+.luxury-entertainment .growth-offer>div b{color:#e2c783;font-size:10px;font-weight:500;line-height:1.5}
+.luxury-entertainment .growth-offer-cta{display:flex;align-items:center;justify-content:space-between;gap:7px;min-height:35px;padding:0;border:0;border-top:1px solid rgba(226,199,131,.14);background:transparent;color:#e7d29a;font-size:9px;text-align:left}
+.luxury-entertainment .growth-offer-cta:after{content:"↗";font-size:13px}
+.luxury-entertainment .growth-offer-cta:hover{color:#fff0c7}
+.luxury-entertainment .growth-offer-waitlist{border-style:dashed}
+.luxury-entertainment .growth-offer-waitlist .growth-offer-symbol{border-style:dashed}
+.luxury-entertainment .growth-integrity{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:17px;margin-top:15px;padding:15px 17px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.012)}
+.luxury-entertainment .growth-integrity>span{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;color:#aaa58e;font:8px ui-monospace,Consolas,monospace;letter-spacing:.07em}
+.luxury-entertainment .growth-integrity>span i{width:5px;height:5px;border-radius:50%;background:#b9a36c}
+.luxury-entertainment .growth-integrity>p{margin:0;color:#929586;font-size:9px;line-height:1.7}
+.luxury-entertainment .growth-integrity>a{color:#d9c489;font-size:9px;white-space:nowrap}
+.luxury-entertainment .growth-integrity>a:hover{text-decoration:underline;text-underline-offset:4px}
+@media(max-width:1050px){
+ .luxury-entertainment .growth-offers{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .luxury-entertainment .growth-offer{min-height:280px}
+ .luxury-entertainment .growth-referral{grid-template-columns:78px minmax(0,1fr)}
+ .luxury-entertainment .growth-referral-mark{width:72px;height:72px;font-size:48px}
+ .luxury-entertainment .growth-referral-actions{grid-column:2;display:grid;grid-template-columns:1fr 1fr;align-items:center;width:100%;min-width:0}
+ .luxury-entertainment .growth-referral-actions .growth-status{grid-column:1/-1}
+ .luxury-entertainment .growth-referral-actions .secondary-link{justify-self:center}
+ .luxury-entertainment .growth-integrity{grid-template-columns:1fr auto}
+ .luxury-entertainment .growth-integrity>p{grid-column:1/-1;grid-row:2}
+}
+@media(max-width:760px){
+ .luxury-entertainment .growth-heading{grid-template-columns:1fr;gap:18px}
+ .luxury-entertainment .growth-heading h2{font-size:clamp(42px,9vw,58px)}
+ .luxury-entertainment .growth-target{padding:12px 15px}
+ .luxury-entertainment .growth-referral{grid-template-columns:1fr;gap:16px;padding:20px}
+ .luxury-entertainment .growth-referral-mark{width:66px;height:66px;font-size:44px}
+ .luxury-entertainment .growth-referral-copy h3{font-size:32px}
+ .luxury-entertainment .growth-referral-actions{grid-column:auto;grid-template-columns:1fr}
+ .luxury-entertainment .growth-referral-actions .growth-status{grid-column:auto}
+ .luxury-entertainment .growth-offers-head{align-items:flex-start;flex-direction:column;gap:9px;margin-top:35px}
+ .luxury-entertainment .growth-offers{grid-template-columns:1fr}
+ .luxury-entertainment .growth-offer{min-height:0;padding:19px}
+ .luxury-entertainment .growth-offer-symbol{margin:15px 0 11px}
+ .luxury-entertainment .growth-offer>div{margin-top:5px}
+ .luxury-entertainment .growth-offer-cta{margin-top:0;min-height:42px}
+ .luxury-entertainment .growth-integrity{grid-template-columns:1fr;gap:9px}
+ .luxury-entertainment .growth-integrity>p{grid-column:auto;grid-row:auto}
+ .luxury-entertainment .growth-integrity>a{white-space:normal}
+ .luxury-entertainment .growth-referral-banner{align-items:flex-start;flex-direction:column;gap:12px}
+ .luxury-entertainment .growth-referral-banner strong{font-size:19px}
+}
+@media(prefers-reduced-motion:reduce){.luxury-entertainment .growth-offer,.luxury-entertainment .growth-offer-cta{transition:none!important}}
