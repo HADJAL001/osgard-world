@@ -115,6 +115,9 @@ assert.ok(source.includes("const walletKey='osgard.games.shards-wallet.v1',daily
   'Local SHARDS reward must be capped to one claim per UTC day and device wallet');
 assert.ok(lifecycle.includes("activeSessionId='session_'+id+'_'+sequence+'_'+launchAt") && lifecycle.includes('sessionId:activeSessionId') && lifecycle.includes('detail:{game:activeGame,sessionId:activeSessionId}'),
   'The same stable ID must be sent with gameplay completion and post-session return events');
+assert.ok(source.includes("byGame[gameId]=Math.min((byGame[gameId]||0)+1,1000000000)") &&
+  source.includes("const roundForSpotlight=preferences.frequency==='every3'?completedCount:(readServiceProgress().byGame[gameId]||1)"),
+  'Spotlight should rotate by repetitions of the same game while promo frequency remains global');
 assert.ok(source.includes('function recordCompletedRound(gameId,sessionId)') && source.includes('current.sessions.includes(key)') && source.includes('slice(-100)'),
   'Post-game promotion cadence must deduplicate session IDs, not rely only on a 2.5-second timing window');
 assert.ok(source.includes('const isSpotlight=id===spotlightServiceId') && source.includes("cards.forEach(card=>card.classList.toggle('is-featured',card.dataset.service===spotlightServiceId))"),
