@@ -70,10 +70,12 @@
   const marker = 'osgard.games.referral-opened.' + code;
   const visitorTokenKey = 'osgard.games.referral-owner-token.v1';
   function randomHex(bytes = 12) {
-    const data = new Uint8Array(bytes);
-    if (globalThis.crypto?.getRandomValues) globalThis.crypto.getRandomValues(data);
-    else for (let i = 0; i < data.length; i++) data[i] = Math.floor(Math.random() * 256);
-    return Array.from(data, value => value.toString(16).padStart(2, '0')).join('');
+    if (!globalThis.crypto || typeof globalThis.crypto.getRandomValues !== 'function') return '';
+    try {
+      const data = new Uint8Array(bytes);
+      globalThis.crypto.getRandomValues(data);
+      return Array.from(data, value => value.toString(16).padStart(2, '0')).join('');
+    } catch { return ''; }
   }
   let state = '';
   let visitorToken = '';
@@ -81,6 +83,7 @@
     visitorToken = localStorage.getItem(visitorTokenKey) || '';
     if (!/^[a-f0-9]{12}$/.test(visitorToken)) {
       visitorToken = randomHex(6);
+      if (!/^[a-f0-9]{12}$/.test(visitorToken)) return;
       localStorage.setItem(visitorTokenKey, visitorToken);
     }
     sessionStorage.setItem(attributionKey, JSON.stringify({ code, game: requestedGame, visitorToken, at: Date.now() }));
