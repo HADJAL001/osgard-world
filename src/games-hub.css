@@ -366,3 +366,7 @@
 .gh-detail--signal .gh-detail-mark { color: #d3ff69; text-shadow: 0 0 28px rgba(211,255,105,.24); }
 .gh-detail--civic .gh-detail-art { background: radial-gradient(circle, rgba(104,216,210,.18), transparent 50%), #081a19; }
 .gh-detail--patina .gh-detail-art { background: radial-gradient(circle, rgba(226,199,131,.16), transparent 50%), #15140e; }
+
+.gh-detail--cascade .gh-detail-art{background:radial-gradient(circle,rgba(121,234,255,.18),transparent 52%),#0a1518}
+.gh-detail--cascade .gh-detail-ring{border-color:rgba(121,234,255,.38)}
+.gh-detail--cascade .gh-detail-mark{color:#79eaff;text-shadow:0 0 28px rgba(121,234,255,.24)}
