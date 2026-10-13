@@ -406,16 +406,22 @@ export function GameDetailPage({ slug }: { slug: string }) {
                 const titleChecks: Record<string, RegExp> = {
                   time: /империя времени|empire of time/i,
                   swarm: /swarm/i,
-                  'null-shift': /null\s*\/\/\s*shift|null\s*shift/i,
+                  'null-shift': /null\s*\/\s*\/?\s*shift|null\s*shift/i,
                   inherit: /inherit/i,
                   remix: /remix/i,
-                  signal: /signal run/i,
-                  'civic-cascade': /civic\\s*cascade/i,
-                  patina: /patina atelier/i,
+                  'signal-run': /signal\s*run/i,
+                  'civic-cascade': /civic\s*cascade/i,
+                  patina: /patina\s*atelier/i,
                 }
                 const validTitle = game.id === 'time'
                   ? Boolean(frameDocument?.querySelector('.time-game'))
-                  : (titleChecks[game.id]?.test(frameTitle) ?? false)
+                  : game.id === 'civic-cascade'
+                    ? Boolean(frameDocument?.querySelector('#cc-game-root') && frameDocument?.querySelector('#cc-status'))
+                    : game.id === 'patina'
+                      ? Boolean(frameDocument?.body.dataset.patinaReady === 'true' && frameDocument?.querySelector('#patina-workbench'))
+                      : game.id === 'signal-run'
+                        ? Boolean(frameDocument?.querySelector('#arena') && frameDocument?.querySelector('#start'))
+                        : (titleChecks[game.id]?.test(frameTitle) ?? false)
                 if (validTitle) {
                   setLoadingGame(false)
                   return

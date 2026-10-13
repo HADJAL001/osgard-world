@@ -39,6 +39,7 @@ assert.ok(lighthouseScript.includes('maxTbtMs')&&lighthouseScript.includes('maxL
 assert.ok(html.includes('type="application/ld+json"'),'SEO ItemList JSON-LD missing')
 assert.ok(html.includes('"numberOfItems":8')&&html.includes('"name":"CIVIC CASCADE","url":"https://osgard.world/games/civic-cascade/"')&&html.includes('"name":"PATINA Atelier","url":"https://osgard.world/games/patina/"')&&html.includes('"name":"SIGNAL RUN","url":"https://osgard.world/games/signal-run/"'),'CIVIC CASCADE must appear in the canonical Games ItemList')
 assert.ok(html.includes('class="art art-civic"')&&html.includes('data-favorite="civic-cascade"')&&html.includes('href="/games/civic-cascade/" data-play="civic-cascade"'),'CIVIC CASCADE card must support the existing play and favorites UI')
+assert.ok(html.includes('href="/game/civic-cascade"'),'CIVIC CASCADE secondary action must open its detail page, not relaunch the game')
 assert.ok(lifecycle.includes("'civic-cascade':{title:'CIVIC CASCADE',url:'/games/civic-cascade/'}"),'Player lifecycle registry must include CIVIC CASCADE')
 assert.ok(lifecycle.includes("if(id==='civic-cascade')return !!doc.querySelector('#cc-game-root')&&!!doc.querySelector('#cc-status')"),'Player lifecycle must detect a ready CIVIC CASCADE client')
 assert.ok(manifest.includes("'civic-cascade'")&&manifest.includes("title: 'CIVIC CASCADE'")&&manifest.includes("href: '/games/civic-cascade/'"),'Core manifest must register CIVIC CASCADE')
@@ -140,6 +141,7 @@ new Function(luxuryJs)
 
 
 assert.ok(html.includes('"name":"PATINA Atelier","url":"https://osgard.world/games/patina/"') && html.includes('data-game="patina"') && html.includes('data-favorite="patina"'), 'PATINA Atelier must be a first-class catalog game with its own canonical route')
+assert.ok(html.includes('href="/game/patina"'),'PATINA secondary action must open its detail page, not relaunch the game')
 assert.ok(patina.includes('<title>PATINA Atelier — OSGARD WORLD GAMING</title>') && patina.includes('data-patina-ready="true"') && patina.includes('id="patina-workbench"'), 'PATINA Atelier playable route or host handshake marker missing')
 for(const feature of ['id="diagnose"','id="swab"','id="stabilize"','id="polish"','id="preserve"','id="finish-case"','id="export-case"','id="journal-list"','osgard:game-lifecycle','simulationOnly:true','localStorage.setItem(STORAGE_KEY']) assert.ok(patina.includes(feature),'PATINA gameplay feature missing: '+feature)
 assert.ok(lifecycle.includes("patina:{title:'PATINA Atelier',url:'/games/patina/'}") && lifecycle.includes("if(id==='patina')return doc.body.dataset.patinaReady==='true'&&!!doc.querySelector('#patina-workbench')"),'Player lifecycle registry must detect a ready PATINA client')

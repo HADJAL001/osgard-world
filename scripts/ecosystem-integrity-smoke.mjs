@@ -10,6 +10,14 @@ const games = read('public/games/index.html')
 const lifecycle = read('public/games/player-lifecycle.js')
 const sitemap = read('public/sitemap.xml')
 const nginx = read('nginx.conf')
+const legalStart = app.indexOf('function Legal(')
+const legalEnd = app.indexOf('function PlayGateway(', legalStart)
+assert.ok(legalStart >= 0 && legalEnd > legalStart, 'TimeCoin legal component boundaries missing')
+const timeCoinLegal = app.slice(legalStart, legalEnd)
+assert.ok(!/[�]|РџСЂ|РћРіСЂ|����/.test(timeCoinLegal), 'TimeCoin legal copy contains mojibake')
+for (const phrase of ['Правила TimeCoin', '1. Статус единицы', 'Используется исключительно', '3. Ограничения']) {
+  assert.ok(timeCoinLegal.includes(phrase), 'TimeCoin legal copy missing readable Russian phrase: ' + phrase)
+}
 
 const promotionSources = { app, sections, development }
 const unsupportedClaims = [
