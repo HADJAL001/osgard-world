@@ -32,6 +32,7 @@ on:
       - "scripts/time-prototype-smoke.mjs"
       - "scripts/null-shift-premium-smoke.mjs"
       - "scripts/games-portal-smoke.mjs"
+      - "scripts/remix-growth-smoke.mjs"
       - "scripts/games-detail-smoke.mjs"
       - "scripts/games-monetization-smoke.mjs"
       - "scripts/ecosystem-integrity-smoke.mjs"
@@ -57,6 +58,8 @@ jobs:
         run: npm run qa:games-portal
       - name: Smoke-test individual game pages and SEO routes
         run: npm run qa:games-detail
+      - name: Verify REMIX growth funnel, attribution and sponsor safety
+        run: npm run qa:remix-growth
       - name: Verify ecosystem links, claims, contacts and privacy boundaries
         run: npm run qa:ecosystem
 

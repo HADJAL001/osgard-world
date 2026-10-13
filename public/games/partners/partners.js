@@ -6,6 +6,17 @@ const form = $('#campaign-form');
 const status = $('#form-status');
 const sendLink = $('#send-link');
 const safeText = (value, max = 500) => String(value ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, max);
+const campaignParams = new URLSearchParams(location.search);
+const attribution = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content']
+  .map((key) => { const value = safeText(campaignParams.get(key), 120); return value ? key + '=' + value : ''; })
+  .filter(Boolean);
+const formatParam = safeText(campaignParams.get('format'), 120);
+const formatField = form?.elements.namedItem('format');
+if (formatParam && formatField instanceof HTMLSelectElement) {
+  const option = Array.from(formatField.options).find((item) => item.value === formatParam || item.textContent.trim() === formatParam);
+  if (option) formatField.value = option.value;
+}
+
 const isPlacement = (item) => item && /^[a-z0-9-]{1,40}$/.test(item.id) && typeof item.title === 'string' && item.title.length <= 100 && typeof item.description === 'string' && item.description.length <= 600 && item.active === false && item.sponsorLabelRequired === true && ['planned', 'inquiry'].includes(item.status);
 function renderInventory(data) {
   if (!data || data.schemaVersion !== 1 || !Array.isArray(data.placements)) throw new Error('Некорректная схема инвентаря');
@@ -36,7 +47,7 @@ fetch('./inventory.json', { credentials: 'same-origin', cache: 'no-cache' })
 form?.addEventListener('submit', (event) => {
   event.preventDefault(); if (!form.reportValidity()) return;
   const data = new FormData(form);
-  const fields = ['OSGARD PLAY — запрос на партнёрскую интеграцию','Формат: ' + safeText(data.get('format'), 120),'Цель: ' + safeText(data.get('goal'), 120),'География: ' + safeText(data.get('geo'), 80),'Бюджет: ' + safeText(data.get('budget'), 80),'Компания и контакт: ' + safeText(data.get('contact'), 180),'Описание: ' + safeText(data.get('brief'), 1800),'Источник: osgard.world/games/partners/'];
+  const fields = ['OSGARD PLAY — запрос на партнёрскую интеграцию','Формат: ' + safeText(data.get('format'), 120),'Цель: ' + safeText(data.get('goal'), 120),'География: ' + safeText(data.get('geo'), 80),'Бюджет: ' + safeText(data.get('budget'), 80),'Компания и контакт: ' + safeText(data.get('contact'), 180),'Описание: ' + safeText(data.get('brief'), 1800),'Источник: osgard.world/games/partners/' + (attribution.length ? ' · ' + attribution.join(' · ') : '')];
   sendLink.href = 'https://wa.me/79640027222?text=' + encodeURIComponent(fields.join('\n'));
   sendLink.hidden = false;
   status.textContent = 'Черновик подготовлен локально. Откройте ссылку ниже, проверьте сообщение в WhatsApp и отправьте его вручную.';
