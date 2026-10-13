@@ -251,22 +251,26 @@ const outsideRoot=document.querySelector('#osgard-aftergame-intermission');
 if(!root||typeof window==='undefined'||typeof location==='undefined')return;
 const titles={'null-shift':'NULL//SHIFT',time:'Империя времени',swarm:'SWARM',inherit:'INHERIT',remix:'REMIX','civic-cascade':'CIVIC CASCADE',patina:'PATINA Atelier','signal-run':'SIGNAL RUN','cascade-lab':'CASCADE LAB'};
 const services=[
- ['marcosa','05','MARCOSA','SOCIAL / COMMUNITY','Социальная сеть нового поколения — общение, сообщества и цифровые миры','https://marcosa.club/',true],
- ['projects','01','OSGARD PROJECTS','DIGITAL STUDIO','Создание сайтов, приложений и цифровых продуктов','https://osgardbewworld.com/'],
- ['o2-system','02','O2 SYSTEM','BUSINESS OPERATIONS','Инструменты учёта кассы обменников','https://o2system.art/'],
+ ['marcosa','05','MARCOSA','SOCIAL / COMMUNITY','Премиальная социальная сеть нового поколения для общения и сообществ','https://marcosa.club/',true],
+ ['projects','01','OSGARD BEW WORLD','DIGITAL STUDIO','Создание проектов, сайтов и приложений','https://osgardbewworld.com/'],
+ ['o2-system','02','O2 SYSTEM','BUSINESS OPERATIONS','Система учёта кассы обменников','https://o2system.art/'],
  ['senjorio','03','SENJORIO','PREMIUM MOBILITY','Премиальный сервис такси','https://senjorio.com/'],
  ['superday','04','SUPERDAY','MAP / DAILY PLANNING','Умная карта и планировщик дня','https://superday.run/'],
- ['myosa','06','MYOSA','AI PLATFORM','Платформа искусственного интеллекта','https://myosa.world/'],
+ ['myosa','06','MYOSA','AI PLATFORM','Платформа искусственного интеллекта нового поколения','https://myosa.world/'],
  ['gold-glamour','07','GOLD GLAMOUR','LUXURY SERVICES','Премиальные услуги с золотом и выездным обслуживанием','https://gold-glamour.online/'],
  ['gardvpn','08','GARD VPN','PRIVACY / VPN','Временно не включён в промо-переходы, пока доступность не подтверждена','https://gardvpn.is/',false,false],
- ['osgard-business','09','OSGARD BUSINESS','BUSINESS INTELLIGENCE','Диагностика бизнеса, развитие и рекомендации по росту','https://osgardos.com/'],
- ['vanguard','10','OSGARD VANGUARD','VIDEO STUDIO','Создание видео и визуальных проектов','https://osgardvanguard.studio/']
+ ['osgard-business','09','OSGARD OS','BUSINESS INTELLIGENCE','Диагностика бизнеса, развитие и рекомендации по росту','https://osgardos.com/'],
+ ['vanguard','10','OSGARD VANGUARD STUDIO','VIDEO STUDIO','Создание видео и визуальных проектов','https://osgardvanguard.studio/']
 ];
 const walletKey='osgard.games.shards-wallet.v1',dailyReward=50;
 const servicePreferencesKey='osgard.games.postgame-service-preferences.v1';
 const serviceProgressKey='osgard.games.postgame-service-progress.v1';
 const availableServiceIds=services.filter(item=>item[7]!==false).map(item=>item[0]);
 const frequencyValues=['each','every3','off'];
+const preferredServiceKey='osgard.games.preferred-service.v1';
+const recommendationByGame={'null-shift':'projects','time':'superday','swarm':'marcosa','inherit':'myosa','remix':'projects','civic-cascade':'osgard-business','patina':'gold-glamour','signal-run':'vanguard','cascade-lab':'projects'};
+function readPreferredService(){try{const id=localStorage.getItem(preferredServiceKey)||'';return availableServiceIds.includes(id)?id:''}catch{return''}}
+function savePreferredService(id){if(!availableServiceIds.includes(id))return false;try{localStorage.setItem(preferredServiceKey,id);return true}catch{return false}}
 let memoryServicePreferences=null;
 let memoryServiceProgress={count:0,lastAt:0,lastGame:''};
 const make=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n};
