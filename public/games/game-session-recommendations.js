@@ -359,7 +359,27 @@ function servicesShelf(gameId,showPromos,completedCount){
    card.append(make('span','og-postgame-service-code','OSG / '+num+' · '+category),make('strong','og-postgame-service-name',title),make('span','og-postgame-service-description',description),make('span','og-postgame-service-action',active===false?'Пока не продвигается':'Открыть проект ↗'));grid.append(card);
   });
  }
- function updateFilterCounts(){
+ // Count first-party promotion visibility only after real on-screen exposure and explicit consent.
+  if(typeof IntersectionObserver==='function'){
+   const observed=new Set();
+   const observer=new IntersectionObserver(entries=>{
+    entries.forEach(entry=>{
+     const card=entry.target;
+     if(entry.isIntersecting&&entry.intersectionRatio>=0.5&&!observed.has(card)){
+      if(card.__osgardImpressionTimer)return;
+      card.__osgardImpressionTimer=setTimeout(()=>{
+       delete card.__osgardImpressionTimer;
+       if(!consented()||!card.isConnected)return;
+       observed.add(card);
+       void window.OSGARDGrowthTelemetry?.sendEvent?.('owned_promo_impression',gameId,'osgard-select:impression:'+card.dataset.service+':'+gameId);
+       observer.unobserve(card);
+      },1000);
+     }else if(card.__osgardImpressionTimer){clearTimeout(card.__osgardImpressionTimer);delete card.__osgardImpressionTimer}
+    });
+   },{threshold:[0,0.5,1]});
+   cards.filter(card=>card.tagName==='A').forEach(card=>observer.observe(card));
+  }
+  function updateFilterCounts(){
   filterButtons.forEach(button=>{
    const id=button.dataset.osgardServiceFilter||'all';
    const count=id==='all'?cards.length:cards.filter(card=>card.dataset.category===id).length;
