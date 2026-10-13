@@ -67,6 +67,10 @@
           description,
           consent: true,
           website: clean(data.get('website'), 200),
+          sourcePath: location.pathname,
+          campaign: clean(new URLSearchParams(location.search).get('utm_campaign') || '', 80),
+          campaignMedium: clean(new URLSearchParams(location.search).get('utm_medium') || '', 80),
+          campaignContent: clean(new URLSearchParams(location.search).get('utm_content') || '', 80),
         }),
       });
       const result = await response.json().catch(() => ({}));
