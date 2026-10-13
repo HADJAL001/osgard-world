@@ -150,3 +150,10 @@ The page at `/games/monetization/` remains a configurable **scenario model**, no
 Форма Partner Studio использует POST /commerce-api/v1/leads, если API настроен и база готова. Общий клиент сохраняет в описании заявки цель, географию и безопасные UTM-метки (utm_source, utm_medium, utm_campaign, utm_content). Это делает источник видимым в защищённом списке заявок без передачи контактных данных в analytics events.
 
 Событие lead_submitted отправляется отдельно и только после успешного сохранения заявки; сама аналитика требует отдельного согласия. Если сервер недоступен, WhatsApp-черновик сохраняет те же метки, но его создание не считается отправленной заявкой или полученным лидом.
+
+
+## Контекстная расстановка собственных сервисов
+
+OSGARD SELECT prioritizes a service related to the game just completed. After NULL//SHIFT it prioritizes MYOSA, OSGARD OS and the development studio; after the strategy game it prioritizes O2 SYSTEM and planning/business services; after SWARM it prioritizes MARCOSA; after SIGNAL RUN it prioritizes MYOSA, development and SUPERDAY; after AFTERIMAGE//RUN it prioritizes planning, development and video production. If a player saved a preferred service, that preference wins; the “Другой проект” action cycles through relevant offers first and all other services the player has selected second.
+
+All selected services remain available in the full directory. Default cadence stays once after each completed round; users can choose every three rounds or disable the promotion. Analytics remain consent-gated. These cross-promotions are not third-party ad impressions, and clicks must not be reported as paid conversions without validated downstream outcomes.
