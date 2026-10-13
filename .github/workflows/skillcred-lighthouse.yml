@@ -17,9 +17,29 @@ jobs:
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Verify the exact SkillCred release is live before measuring
+        env:
+          EXPECTED_DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          set -euo pipefail
+          expected="${EXPECTED_DEPLOY_SHA:0:12}"
+          for attempt in $(seq 1 18); do
+            page="$(curl -fsSL --max-time 12 https://osgard.world/skillcred/ 2>/dev/null || true)"
+            if printf '%s' "$page" | grep -Fq "/skillcred/styles.css?v=$expected" &&
+               printf '%s' "$page" | grep -Fq "/skillcred/app.js?v=$expected"; then
+              echo "Confirmed deployed SkillCred release $expected"
+              exit 0
+            fi
+            echo "Waiting for SkillCred release $expected (attempt $attempt/18)"
+            sleep 10
+          done
+          echo "Refusing to score stale SkillCred assets; expected release $expected" >&2
+          exit 1
       - name: Audit mobile experience
         run: npx --yes lighthouse@12.8.2 https://osgard.world/skillcred/ --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" --only-categories=performance,accessibility,best-practices,seo --output=json --output-path=/tmp/skillcred-lighthouse-mobile.json --quiet
       - name: Audit desktop experience
