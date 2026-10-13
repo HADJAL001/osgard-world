@@ -52,6 +52,10 @@ assert.ok(server.includes("commerce_referral_wallets") && server.includes("comme
 for (const route of ["/v1/referrals/issue", "/v1/referrals/wallet", "/v1/referrals/disable"]) assert.ok(server.includes(route), "Missing server-side referral route: " + route);
 for (const contract of ["validateReferralIssuePayload", "validateReferralWalletPayload", "validateReferralDisablePayload", "resolveReferralCompletion"]) assert.ok(core.includes(contract), "Referral validation/eligibility contract missing: " + contract);
 assert.ok(server.includes("event.durationSeconds") && server.includes("INSERT INTO commerce_referral_rewards") && server.includes("referralRewardsAwarded"), "SHARDS must be issued by the server only after qualifying session completion");
+assert.ok(server.includes('app.use("/v1/referrals", rateLimit({ windowMs: 60 * 60 * 1000, limit: 80'), "Referral API must be rate-limited");
+assert.ok(server.includes('createHash("sha256").update(input.walletToken).digest("hex")'), "Only a one-way wallet token hash should be stored");
+assert.ok(server.includes("invite_code TEXT NOT NULL UNIQUE") && server.includes("referred_session_id TEXT NOT NULL UNIQUE") && server.includes("dailyRewards.rows[0]?.count || 0) >= 5"), "Referral ledger must deduplicate invite/session awards and enforce daily caps");
+assert.ok(server.includes('DELETE FROM commerce_referral_wallets WHERE wallet_token_hash=$1'), "The user must be able to delete the referral wallet and related reward data");
 assert.ok(!readFileSync(resolve("public/games/game-session-recommendations.js"), "utf8").includes("function award(source)"), "Client must not mint local authoritative referral points");
 
 const html = readFileSync(resolve("public/games/index.html"), "utf8");
