@@ -11,6 +11,14 @@ const appStyles = readFileSync(resolve('src/styles.css'),'utf8')
 const root=resolve('public/games')
 const html=readFileSync(resolve(root,'index.html'),'utf8')
 const lifecycle=readFileSync(resolve(root,'player-lifecycle.js'),'utf8')
+const gameMapStart=html.indexOf("const games={")
+const gameMapEnd=html.indexOf("},read=",gameMapStart)
+assert.ok(gameMapStart>=0&&gameMapEnd>gameMapStart,'Games launch map is missing or malformed')
+const gameMap=html.slice(gameMapStart,gameMapEnd)
+const mappedIds=[...gameMap.matchAll(/['"]?([a-z]+(?:-[a-z]+)*)['"]?\s*:\s*\{\s*title:/g)].map(match=>match[1])
+const expectedIds=['null-shift','time','swarm','inherit','remix','civic-cascade','patina','signal-run','cascade-lab'].sort()
+assert.equal(mappedIds.length,expectedIds.length,'Game launch map must have exactly nine unique entries')
+assert.deepEqual([...new Set(mappedIds)].sort(),expectedIds,'Every catalogue game must map to exactly one valid launch target')
 const luxury=readFileSync(resolve(root,'luxury.js'),'utf8')
 
 const nginx=readFileSync(resolve('nginx.conf'),'utf8')
@@ -124,6 +132,8 @@ assert.ok(js.includes("eventIfAllowed('share_created',id)"),'Share action event 
 assert.ok(js.includes('frame.requestFullscreen()'),'Fullscreen action missing')
 assert.ok(!/https?:\/\/(?:fonts\.googleapis\.com|fonts\.gstatic\.com|cdn\.jsdelivr\.net|unpkg\.com)/i.test(html),'External asset CDN found')
 for(const host of ['osgardbewworld.com','o2system.art','senjorio.com','superday.run','marcosa.club','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio']) assert.ok(html.includes('utm_source=osgard_games')&&html.includes(host),'Cross-promo UTM missing for '+host)
+assert.ok(html.includes("function render(){")&&html.includes("c.dataset.search].join(' ').toLowerCase()"),'Catalog search should use the precomputed search index rather than reading whole card text');
+assert.ok(html.includes("Array.isArray(favStored)")&&html.includes("Array.isArray(recentStored)"),'Corrupted or unexpected localStorage values must not crash catalog initialization');
 for (const slug of ['time','swarm','null-shift','inherit','remix','signal-run','civic-cascade','patina','cascade-lab']) assert.ok(html.includes('href="/game/' + slug + '"'), 'Missing detail link: ' + slug)
 assert.ok(html.includes('href="/games/monetization/"'), 'Economics planner link missing')
 console.log('PASS OSGARD GAMES HUB: nine actual game routes, search/filters, local favorites/history, embedded player/fullscreen/share, consent-gated authenticated analytics, cross-promotion, contact form, SEO, mobile/reduced-motion styling and legal documents.')
