@@ -260,8 +260,10 @@
   document.addEventListener('osgard:game-session-completed', event => {
     const detail = event.detail || {};
     if (!hasConsent() || !attribution || detail.game !== attribution.gameId) return;
-    void sendEvent('invite_game_completed', detail.game, 'player-invite:' + attribution.inviteId);
-    clearAttribution();
+    if (detail.endReason === 'game_completed') {
+      void sendEvent('invite_game_completed', detail.game, 'player-invite:' + attribution.inviteId);
+      clearAttribution();
+    }
   });
 
   document.addEventListener('osgard:analytics-consent-changed', event => {
