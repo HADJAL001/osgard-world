@@ -598,6 +598,10 @@ func _run_smoke() -> void:
 	var saved_daily_active: bool = game.daily_challenge_active
 	var saved_daily_code: String = game.daily_challenge_code
 	var saved_daily_claim: String = game.daily_claimed_date
+	var saved_daily_streak: int = game.daily_streak
+	var saved_daily_longest: int = game.daily_longest_streak
+	var saved_daily_last_date: String = game.daily_last_completed_date
+	var saved_streak_bonus: int = game.last_daily_streak_bonus
 	game.career_credits = 5000
 	game.operator_style = "cyan"
 	game.owns_amber_style = false
@@ -613,19 +617,48 @@ func _run_smoke() -> void:
 		return
 	if not _expect(game.career_credits == 3800, "cosmetic vault must charge the stated 450 + 750 soft-currency prices"):
 		return
+	# Fixed dates make UTC rollover and streak tests deterministic in CI.
 	var daily_code: String = game._today_challenge_code()
 	if not _expect(game._contract_index_from_challenge_code(daily_code) in [0, 1, 2], "daily challenge code must resolve to one of the three fixed contracts"):
 		return
 	if not _expect(game._contract_index_from_challenge_code("not-a-challenge") == -1, "malformed share codes must not select a contract"):
 		return
+	if not _expect(game._previous_date_code("20240301") == "20240229" and game._previous_date_code("20260301") == "20260228", "streak date math must handle leap day and month rollover"):
+		return
 	game.daily_challenge_active = true
-	game.daily_challenge_code = daily_code
+	game.daily_streak = 0
+	game.daily_longest_streak = 0
+	game.daily_last_completed_date = ""
 	game.daily_claimed_date = ""
-	var daily_reward: int = game._claim_daily_challenge_reward()
-	if not _expect(daily_reward == 400 and game.daily_claimed_date == game._today_date_code(), "a completed current-day challenge must award 400 credits once"):
+	var day_one := "20261010"
+	game.daily_challenge_code = game._challenge_code_for_date(day_one)
+	var day_one_reward: int = game._claim_daily_challenge_reward_for_date(day_one)
+	if not _expect(day_one_reward == 400 and game.daily_streak == 1, "first daily clear must grant 400 credits and start a one-day streak"):
 		return
-	if not _expect(game._claim_daily_challenge_reward() == 0, "daily completion must not farm the reward twice on the same UTC date"):
+	if not _expect(game._claim_daily_challenge_reward_for_date(day_one) == 0, "same-day daily reward must not be claimable twice"):
 		return
+	var day_two := "20261011"
+	game.daily_challenge_code = game._challenge_code_for_date(day_two)
+	var day_two_reward: int = game._claim_daily_challenge_reward_for_date(day_two)
+	if not _expect(day_two_reward == 400 and game.daily_streak == 2, "consecutive daily clear must advance the active streak"):
+		return
+	var day_three := "20261012"
+	game.daily_challenge_code = game._challenge_code_for_date(day_three)
+	var day_three_reward: int = game._claim_daily_challenge_reward_for_date(day_three)
+	if not _expect(day_three_reward == 500 and game.daily_streak == 3 and game.last_daily_streak_bonus == 100, "third daily clear must grant the 100-credit milestone"):
+		return
+	game.daily_streak = 6
+	game.daily_last_completed_date = "20261019"
+	game.daily_claimed_date = "20261019"
+	game.daily_challenge_code = game._challenge_code_for_date("20261020")
+	var day_seven_reward: int = game._claim_daily_challenge_reward_for_date("20261020")
+	if not _expect(day_seven_reward == 700 and game.daily_streak == 7 and game.daily_longest_streak == 7, "seventh daily clear must grant the 300-credit weekly milestone"):
+		return
+	game.daily_challenge_code = game._challenge_code_for_date("20261022")
+	var after_gap_reward: int = game._claim_daily_challenge_reward_for_date("20261022")
+	if not _expect(after_gap_reward == 400 and game.daily_streak == 1 and game.daily_longest_streak == 7, "missing a UTC day must reset the active streak but preserve the record"):
+		return
+
 	game.career_credits = saved_credits
 	game.operator_style = saved_style
 	game.owns_amber_style = saved_owns_amber
@@ -633,9 +666,13 @@ func _run_smoke() -> void:
 	game.daily_challenge_active = saved_daily_active
 	game.daily_challenge_code = saved_daily_code
 	game.daily_claimed_date = saved_daily_claim
+	game.daily_streak = saved_daily_streak
+	game.daily_longest_streak = saved_daily_longest
+	game.daily_last_completed_date = saved_daily_last_date
+	game.last_daily_streak_bonus = saved_streak_bonus
 	game._save_career()
 	game._update_player_material()
 	game._refresh_loadout()
 
-	print("PASS NULL//SHIFT runtime: combat, extraction, persistent upgrades, daily reward guard, challenge-link validation and earned-credit cosmetics")
+	print("PASS NULL//SHIFT runtime: combat, extraction, persistent upgrades, daily streak ladder, UTC rollover, challenge-link validation and earned-credit cosmetics")
 	quit(0)

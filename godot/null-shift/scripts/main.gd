@@ -182,6 +182,11 @@ var owns_violet_style := false
 var daily_challenge_active := false
 var daily_challenge_code := ""
 var daily_claimed_date := ""
+var daily_streak := 0
+var daily_longest_streak := 0
+var daily_last_completed_date := ""
+var last_daily_streak_bonus := 0
+var daily_streak_label: Label
 var result_reward_label: Label
 var result_share_label: Label
 var amber_style_button: Button
@@ -200,6 +205,7 @@ func _ready() -> void:
 	_create_player()
 	_create_initial_guards()
 	_create_ui()
+	_refresh_loadout()
 	_apply_quality_mode()
 	_update_hud()
 	if not bool(career.get_value("settings", "briefing_seen", false)):
@@ -1628,7 +1634,8 @@ func _finish_mission(success: bool) -> void:
 		_set_result_title("ЭВАКУАЦИЯ УСПЕШНА", "РЕЙД ЗАВЕРШЁН · +%d КРЕДИТОВ ЗАНЕСЕНО В КАРЬЕРУ" % payout, Color(0.38, 1.0, 0.85))
 		if is_instance_valid(result_reward_label):
 			var daily_suffix := " · DAILY +%d" % daily_bonus if daily_bonus > 0 else ""
-			result_reward_label.text = "УСТРАНЕНИЙ %d · НАГРАДА %d%s · ПОБЕД %d" % [eliminations, payout, daily_suffix, int(career.get_value("career", "completed_runs", 0))]
+			var streak_suffix := " · СЕРИЯ %d ДН." % daily_streak if daily_bonus > 0 else ""
+			result_reward_label.text = "УСТРАНЕНИЙ %d · НАГРАДА %d%s%s · ПОБЕД %d" % [eliminations, payout, daily_suffix, streak_suffix, int(career.get_value("career", "completed_runs", 0))]
 		if is_instance_valid(result_share_label):
 			result_share_label.text = "КОД ВЫЗОВА: %s · ПОДЕЛИСЬ И ПРИГЛАСИ ДРУГА" % _today_challenge_code()
 		objective_text = "МИССИЯ ВЫПОЛНЕНА · КАРЬЕРНЫЙ БАЛАНС %d" % career_credits
@@ -1657,8 +1664,30 @@ func _contract_index_for_date(date_code: String) -> int:
 	return (month + day) % career_names.size()
 
 func _today_challenge_code() -> String:
-	var date_code := _today_date_code()
+	return _challenge_code_for_date(_today_date_code())
+
+func _challenge_code_for_date(date_code: String) -> String:
 	return "NS-%s-C%d" % [date_code, _contract_index_for_date(date_code) + 1]
+
+func _previous_date_code(date_code: String) -> String:
+	if date_code.length() != 8 or not date_code.is_valid_int():
+		return ""
+	var date_parts := {
+		"year": int(date_code.substr(0, 4)),
+		"month": int(date_code.substr(4, 2)),
+		"day": int(date_code.substr(6, 2)),
+		"hour": 12,
+		"minute": 0,
+		"second": 0
+	}
+	if int(date_parts["month"]) < 1 or int(date_parts["month"]) > 12 or int(date_parts["day"]) < 1 or int(date_parts["day"]) > 31:
+		return ""
+	var timestamp := Time.get_unix_time_from_datetime_dict(date_parts)
+	var canonical := Time.get_datetime_dict_from_unix_time(timestamp)
+	if int(canonical["year"]) != int(date_parts["year"]) or int(canonical["month"]) != int(date_parts["month"]) or int(canonical["day"]) != int(date_parts["day"]):
+		return ""
+	var previous := Time.get_datetime_dict_from_unix_time(timestamp - 86400)
+	return "%04d%02d%02d" % [int(previous["year"]), int(previous["month"]), int(previous["day"])]
 
 func _contract_index_from_challenge_code(code: String) -> int:
 	var pattern := RegEx.new()
@@ -1695,11 +1724,31 @@ func _start_daily_challenge() -> void:
 	_restart_game()
 
 func _claim_daily_challenge_reward() -> int:
-	var today := _today_date_code()
-	if not daily_challenge_active or daily_challenge_code != _today_challenge_code() or daily_claimed_date == today:
+	return _claim_daily_challenge_reward_for_date(_today_date_code())
+
+func _claim_daily_challenge_reward_for_date(date_code: String) -> int:
+	if not daily_challenge_active or daily_challenge_code != _challenge_code_for_date(date_code):
 		return 0
-	daily_claimed_date = today
-	return 400
+	if daily_claimed_date == date_code or daily_last_completed_date == date_code:
+		return 0
+	var previous_date := _previous_date_code(date_code)
+	if not previous_date.is_empty() and daily_last_completed_date == previous_date:
+		daily_streak += 1
+	else:
+		daily_streak = 1
+	daily_longest_streak = maxi(daily_longest_streak, daily_streak)
+	daily_last_completed_date = date_code
+	daily_claimed_date = date_code
+	var reward := 400
+	last_daily_streak_bonus = 0
+	if daily_streak == 3:
+		last_daily_streak_bonus = 100
+	elif daily_streak % 7 == 0:
+		last_daily_streak_bonus = 300
+	reward += last_daily_streak_bonus
+	_save_career()
+	_refresh_loadout()
+	return reward
 
 func _share_run() -> void:
 	var code := _today_challenge_code()
@@ -1710,9 +1759,11 @@ func _share_run() -> void:
 		"result": "ЭВАКУАЦИЯ УСПЕШНА" if mission_finished and core_secured else ("ОПЕРАТОР ПОТЕРЯН" if mission_finished else "РЕЙД В ПРОЦЕССЕ"),
 		"eliminations": eliminations,
 		"credits": career_credits,
+		"dailyStreak": daily_streak,
+		"streakBonus": last_daily_streak_bonus if daily_challenge_active and daily_claimed_date == _today_date_code() else 0,
 		"succeeded": mission_finished and core_secured
 	}
-	var note := "NULL//SHIFT · Я %s в %s. Устранений: %d. Повтори ежедневный контракт %s." % [result_text, career_names[current_contract], eliminations, code]
+	var note := "NULL//SHIFT · Я %s в %s. Устранений: %d. Серия ежедневных рейдов: %d дней. Повтори контракт %s." % [result_text, career_names[current_contract], eliminations, daily_streak, code]
 	if is_instance_valid(result_share_label):
 		result_share_label.text = "КАРТОЧКА РЕЗУЛЬТАТА · " + code
 	if OS.has_feature("web"):
@@ -1972,6 +2023,10 @@ func _load_career() -> void:
 	daily_challenge_active = bool(career.get_value("daily", "active", false))
 	daily_challenge_code = str(career.get_value("daily", "code", ""))
 	daily_claimed_date = str(career.get_value("daily", "claimed_date", ""))
+	daily_streak = maxi(0, int(career.get_value("daily", "streak", 0)))
+	daily_longest_streak = maxi(daily_streak, int(career.get_value("daily", "longest_streak", 0)))
+	daily_last_completed_date = str(career.get_value("daily", "last_completed_date", ""))
+	last_daily_streak_bonus = maxi(0, int(career.get_value("daily", "last_streak_bonus", 0)))
 
 func _save_career() -> void:
 	career.set_value("career", "credits", career_credits)
@@ -1985,6 +2040,10 @@ func _save_career() -> void:
 	career.set_value("daily", "active", daily_challenge_active)
 	career.set_value("daily", "code", daily_challenge_code)
 	career.set_value("daily", "claimed_date", daily_claimed_date)
+	career.set_value("daily", "streak", daily_streak)
+	career.set_value("daily", "longest_streak", daily_longest_streak)
+	career.set_value("daily", "last_completed_date", daily_last_completed_date)
+	career.set_value("daily", "last_streak_bonus", last_daily_streak_bonus)
 	var err := career.save(SAVE_PATH)
 	if err != OK:
 		push_warning("Could not write local career save: %s" % error_string(err))
@@ -2132,6 +2191,8 @@ func _create_ui() -> void:
 	var style_button_width: float = maxf(108.0, (loadout_button_width - 6.0) * 0.5)
 	amber_style_button = _add_button(style_row, "AMBER · 450 CR", _buy_cosmetic.bind("amber"), Vector2(style_button_width, 36.0))
 	violet_style_button = _add_button(style_row, "VIOLET · 750 CR", _buy_cosmetic.bind("violet"), Vector2(style_button_width, 36.0))
+	daily_streak_label = _label(loadout_stack, "СЕРИЯ 0 ДНЕЙ · БОНУСЫ ЗА 3 И 7 ДНЕЙ", 9, Color(0.38, 1.0, 0.86))
+	daily_streak_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	daily_challenge_button = _add_button(loadout_stack, "DAILY OP / СЕГОДНЯ · +400 CR", _start_daily_challenge, Vector2(loadout_button_width, 38.0))
 	_add_button(loadout_stack, "КОНТРАКТ / C", _cycle_contract, Vector2(loadout_button_width, 34.0))
 	_add_button(loadout_stack, "ЗАКРЫТЬ / U", _close_loadout, Vector2(loadout_button_width, 34.0))
@@ -2812,7 +2873,18 @@ func _refresh_loadout() -> void:
 		else:
 			violet_style_button.text = "VIOLET · 750 CR"
 	if is_instance_valid(daily_challenge_button):
-		daily_challenge_button.text = "DAILY OP · КОД %s · +400 CR" % _today_challenge_code().get_slice("-C", 1)
+		var next_day := (daily_streak % 7) + 1
+		daily_challenge_button.text = "DAILY OP · ДЕНЬ %d/7 · +400 CR" % next_day
+	if is_instance_valid(daily_streak_label):
+		var next_bonus := ""
+		if daily_streak < 2:
+			next_bonus = "ЕЩЁ %d DAILY OPS ДО +100 CR" % (3 - daily_streak)
+		elif daily_streak == 2:
+			next_bonus = "СЛЕДУЮЩИЙ РЕЙД: +100 CR"
+		else:
+			var until_weekly := 7 - (daily_streak % 7)
+			next_bonus = "БОНУС 7 ДНЕЙ +300 CR ЧЕРЕЗ %d" % until_weekly
+		daily_streak_label.text = "СЕРИЯ %d · РЕКОРД %d · %s" % [daily_streak, daily_longest_streak, next_bonus]
 	for child in loadout_panel.get_children():
 		if child is MarginContainer:
 			for inner in child.get_children():

@@ -235,3 +235,8 @@ This pass removes recurring allocations from the firefight path: beams and ring 
 - CI remains responsible for official Godot 4.7.2 installation/templates, headless gameplay tests, WebAssembly/PCK export and published Godot route checks.
 
 - Balance guard: the evade window now absorbs only the first incoming damage event for each dash; subsequent damage during the same burst still applies. The headless smoke test asserts this explicitly.
+
+
+## Release 1.8 — retention + share conversion loop
+
+The Godot build tracks a persistent UTC daily-clear streak, longest streak and last completion date. Daily rewards remain 400 credits, with +100 on the third consecutive clear and +300 on each seventh consecutive clear. Duplicate claims are blocked. A missed UTC date resets the active streak while retaining the record. The loadout shows streak, record and next milestone; the share card communicates the streak and daily challenge code. The feature is soft-currency only and does not create pay-to-win attributes.

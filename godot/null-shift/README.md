@@ -136,7 +136,15 @@ The deployment workflow downloads official Godot 4.7.2 and matching web template
 ## Daily challenge, sharing and cosmetic vault
 
 - Every UTC date selects one deterministic contract code in the form NS-YYYYMMDD-Cn. The code is validated against the date-derived contract before it can select a mission. A shared link opens the same daily contract in the Godot Web export.
-- Completing the current day's challenge awards +400 career credits once per UTC date in the local save. Older challenge codes remain playable but cannot claim today's reward.
+- Completing the current day's challenge awards +400 career credits once per UTC date in the local save. A consecutive-day streak is persisted: the third consecutive clear grants +100 extra credits and each seventh consecutive clear grants +300 extra credits; missing a UTC day resets the active streak but preserves the record. Older challenge codes remain playable but cannot claim today's reward.
 - The result card exposes the native share sheet where supported, with clipboard/prompt fallback. The shared text includes the challenge link; the share button itself does not award currency.
 - Style Vault sells Amber (450 credits) and Violet (750 credits) suit looks. Ownership and selected style persist locally. The looks do not change combat statistics.
 - Real-money checkout, server-side purchase verification, cross-device ownership, referral attribution and global leaderboards are not connected in this prototype. Do not present a paid supporter pack as purchasable until server-side payment/entitlement checks and refund handling are implemented.
+
+
+## Release 1.8 — daily streak retention and share cards
+
+- Added a persistent UTC daily streak, longest-streak record and last-completed date to the local career save.
+- A successful daily contract pays 400 credits. Day 3 adds 100 credits and every seventh consecutive day adds 300. Same-day duplicates are blocked; missing a UTC date resets the active streak while retaining the record.
+- The Style Vault shows current streak, longest record and the next milestone. Mission results and 1200×630 share cards show streak alongside the daily challenge code while keeping career credits visible.
+- Invite URLs and the existing consent-gated attribution pipeline continue to measure referral opens, game starts and completions. Streaks and credits remain local; they are not presented as verified cross-device progression.
