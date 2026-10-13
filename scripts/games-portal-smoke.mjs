@@ -105,7 +105,9 @@ const publicProxy=readFileSync(resolve('osgard.world.nginx.conf'),'utf8')
 assert.ok(publicProxy.includes('proxy_set_header X-Real-IP $remote_addr;'),'Public host proxy must overwrite X-Real-IP with its actual client address')
 assert.ok(nginx.includes('limit_req_zone $http_x_real_ip zone=osgard_player_api:10m rate=15r/s;'),'Player API throttling must key on the forwarded client identity, not the shared container gateway')
 assert.ok(!nginx.includes('limit_req_zone $binary_remote_addr zone=osgard_player_api:'),'Do not key public client throttling on the shared Docker reverse-proxy address')
-const apiProxy=nginx.match(/location \\^~ \/api\\/v1\\/ \\{([\\s\\S]*?)\\n  \\}/)?.[1]||''
+const apiStart=nginx.indexOf('location ^~ /api/v1/ {')
+const apiEnd=nginx.indexOf('\\n  }',apiStart)
+const apiProxy=apiStart>=0&&apiEnd>apiStart?nginx.slice(apiStart,apiEnd):''
 assert.ok(apiProxy.includes('limit_req zone=osgard_player_api burst=30 nodelay;')&&apiProxy.includes('limit_req_status 429;'),'Player API route must be rate limited and return explicit 429 under burst pressure')
 assert.ok(apiProxy.includes('proxy_pass http://$osgard_game_api_host:4317;')&&!apiProxy.includes('proxy_set_header Authorization ""'),'Player API must preserve the caller Authorization header while routing to the internal API service')
 assert.ok(lifecycle.includes('function startSession(')&&lifecycle.includes('game_session_completed'),'Actual session lifecycle tracking missing')
