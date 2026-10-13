@@ -48,6 +48,34 @@ func _run_smoke() -> void:
 	game._dismiss_briefing()
 	if not _expect(not game.briefing_visible and not game.paused_game and bool(game.career.get_value("settings", "briefing_seen", false)), "dismissing briefing must resume gameplay and persist completion"):
 		return
+
+	print("RUNTIME_STAGE: native gamepad inputs, analog deadzone and aim assist")
+	if not _expect(game._apply_gamepad_deadzone(Vector2(0.06, 0.04)).is_zero_approx(), "gamepad deadzone must filter stick drift below 0.20"):
+		return
+	if not _expect(game._apply_gamepad_deadzone(Vector2.RIGHT).is_equal_approx(Vector2.RIGHT), "full gamepad stick deflection must preserve full speed"):
+		return
+	game.gamepad_device_id = 0
+	game.gamepad_mode_active = true
+	game.gamepad_move = Vector2(0.84, 0.0)
+	if not _expect(game._read_move_input().x > 0.80, "left gamepad stick must drive the real movement input vector"):
+		return
+	game.gamepad_move = Vector2.ZERO
+	var gamepad_start := InputEventJoypadButton.new()
+	gamepad_start.device = 0
+	gamepad_start.button_index = JOY_BUTTON_START
+	gamepad_start.pressed = true
+	game._unhandled_input(gamepad_start)
+	if not _expect(game.paused_game and game.gamepad_mode_active, "gamepad Start must pause the real game and switch the input hint"):
+		return
+	game._unhandled_input(gamepad_start)
+	if not _expect(not game.paused_game, "gamepad Start must resume a paused raid"):
+		return
+	game.gamepad_device_id = -1
+	game.gamepad_mode_active = false
+	game.gamepad_move = Vector2.ZERO
+	game.gamepad_aim = Vector2.ZERO
+	game.gamepad_fire_held = false
+	game._update_input_hint()
 	game.sound_enabled = false
 
 	print("RUNTIME_STAGE: live 3D objective beacon route guidance")
@@ -861,8 +889,12 @@ func _run_smoke() -> void:
 	game._interact()
 	if not _expect(game.terminal_active and game.keypad_panel.visible, "terminal interaction must open the cipher"):
 		return
-	for key in [KEY_UP, KEY_LEFT, KEY_DOWN, KEY_RIGHT]:
-		game._submit_cipher_key(key)
+	for button_index in [JOY_BUTTON_DPAD_UP, JOY_BUTTON_DPAD_LEFT, JOY_BUTTON_DPAD_DOWN, JOY_BUTTON_DPAD_RIGHT]:
+		var dpad_press := InputEventJoypadButton.new()
+		dpad_press.device = 0
+		dpad_press.button_index = button_index
+		dpad_press.pressed = true
+		game._unhandled_input(dpad_press)
 	if not _expect(game.terminal_unlocked, "correct cipher must unlock the gate"):
 		return
 	if not _expect(game.security_gate.visible and game.gate_motion_tween != null and game.gate_motion_tween.is_running(), "successful hack must trigger a visible gate-opening animation"):

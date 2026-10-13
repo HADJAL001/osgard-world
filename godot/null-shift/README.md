@@ -25,6 +25,7 @@ The first launch opens a pausing Russian-language field briefing with the three 
 
 - WASD or arrow keys: move.
 - Mouse: aim; hold left mouse button: fire.
+- Gamepad: left stick moves, right stick aims with restrained target assist, RT/RB fires, A interacts, B dashes, X emits the pulse, Y activates phase shift, Start pauses, Back toggles diagnostics, LB opens loadout. The D-pad enters the terminal cipher; controller hot-plug is detected automatically.
 - E: interact; Q: pulse; Space: tactical dash (short burst with one-hit evade window and 1.65 s cooldown); Shift: phase shift.
 - F2 cycles three persisted graphics profiles: Cinematic (glow + shadows), Balanced (shadows + practical fill lights), and Performance (reduced dynamic lighting). Cinematic mode still adapts down under sustained frame-time pressure and restores effects after stable pacing.
 - F3 toggles live diagnostics; F4 toggles and persists Reduced Motion (less camera shake, field-of-view breathing and vignette pulsing); M toggles and persists sound; Esc pauses; C rotates contracts; U opens loadout; 1/2/3 buy upgrades.

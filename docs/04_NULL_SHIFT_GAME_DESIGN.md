@@ -279,3 +279,12 @@ The Godot build tracks a persistent UTC daily-clear streak, longest streak and l
 - Applied a progressive transparency fade to pooled beams based on normalized remaining lifetime. Transparency is reset on pool expiry/reuse, so weapon tracers, guard telegraphs and dash afterimages fade instead of abruptly popping out.
 - Godot runtime smoke now checks that a real touch/physics dash emits afterimages and that pooled beam opacity advances through a fade, returns to zero, and reuses the same mesh.
 - Godot remains the engine-backed 3D branch; GL Compatibility is retained for Web/mobile export. This is not a claim of native 8K output.
+
+
+## Godot release 0.11 — native gamepad controls
+
+- Added first-class Godot joypad input for connected USB/Bluetooth controllers. Left stick drives the existing CharacterBody3D movement vector; right stick controls aiming, with radial dead-zone remapping and a restrained 14% target-cone assist. Right trigger or RB holds automatic fire.
+- Standard button mapping: A interacts, B tactical dash, X pulse, Y phase shift, Start pause/resume, Back opens diagnostics, LB opens loadout. The D-pad enters the same four-step directional cipher as keyboard arrows. Controller hot-plug updates the active device; mouse motion and keyboard input return the game to desktop controls, while touch input keeps priority on compact/touch layouts.
+- The live bottom hint updates to describe the current control mode. Existing collision, weapon timing, dash cooldown/evade window, mission progression and local save data remain shared with keyboard/touch controls.
+- Headless Godot runtime smoke synthesizes controller events to test analog dead-zone behavior, full stick output, movement-vector integration, pause/resume, and D-pad terminal hacking without requiring a physical controller in CI. The static source contract also requires axis polling, trigger fire, hot-plug handling and adaptive HUD hints.
+- The repository CI already installs the official Godot 4.7.2 engine and Web export templates; no separate local installation is needed for reproducible exports.
