@@ -47,7 +47,7 @@ check('offline branded card is a local 1200x630 canvas export', () => {
 check('model calculator exposes full referral funnel and labels assumptions', () => {
   for (const id of ['cohort-size','share-rate','invites-per-sharer','open-rate','start-rate','complete-rate','m-shares','m-opens','m-starts','m-k']) assert.ok(page.includes('id="'+id+'"'), id);
   assert.ok(page.includes("status:'hypothesis-only'"));
-  assert.ok(page.includes('not real audience measurements'));
+  assert.ok(page.includes('not live audience measurements'));
   assert.ok(page.includes('Числа являются сценарием') || page.includes('сценарий'));
 });
 check('campaign brief and experiment can be exported locally', () => {
