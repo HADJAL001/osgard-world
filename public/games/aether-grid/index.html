@@ -186,12 +186,16 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
       return true;
     } catch { return false; }
   }
-  function snapshotRun(){return {turns:turns.slice(),moves,hintsUsed,elapsedSeconds:runSeconds()};}
+  function snapshotRun(){return {turns:turns.slice(),moves,hintsUsed};}
   function pushHistory(){undoStack.push(snapshotRun());if(undoStack.length>100)undoStack.shift();redoStack=[];updateHistoryControls();}
   function applySnapshot(snapshot){
-    turns=snapshot.turns.slice();moves=snapshot.moves;hintsUsed=snapshot.hintsUsed;elapsedBeforeStart=snapshot.elapsedSeconds;
-    startedAt=0;paused=false;runHasStarted=moves>0;won=false;
+    // History can restore board state, but it must never rewind elapsed time.
+    const elapsed=runSeconds(),hadStarted=runHasStarted;
+    turns=snapshot.turns.slice();moves=snapshot.moves;hintsUsed=snapshot.hintsUsed;elapsedBeforeStart=elapsed;
+    startedAt=0;paused=false;runHasStarted=hadStarted||moves>0;won=false;
+    if(runHasStarted){startedAt=Date.now();if(!timerHandle)timerHandle=window.setInterval(updateTimer,250);}
     $('result').classList.remove('is-visible');$('hint-button').disabled=false;
+    $('pause-button').disabled=false;$('pause-button').textContent='Ⅱ Пауза';$('pause-button').setAttribute('aria-pressed','false');
     updateStats();updateConnectivity();updateHistoryControls();saveRun();
   }
   function updateHistoryControls(){
@@ -203,8 +207,8 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
   function redoMove(){if(paused||won||!redoStack.length)return;undoStack.push(snapshotRun());const next=redoStack.pop();applySnapshot(next);toast('Ход повторён.');}
   function setPaused(value){
     if(won||paused===value)return;
-    if(value){elapsedBeforeStart=runSeconds();startedAt=0;paused=true;$('pause-button').textContent='▶ Продолжить';$('pause-button').setAttribute('aria-pressed','true');$('hint-note').textContent='Игра на паузе. Прогресс сохранён; нажми «Продолжить», чтобы вернуться.';saveRun();toast('Пауза включена.');}
-    else{paused=false;if(runHasStarted)startedAt=Date.now();$('pause-button').textContent='Ⅱ Пауза';$('pause-button').setAttribute('aria-pressed','false');$('hint-note').textContent='Снова в игре. Продолжай соединять сигнал.';toast('Игра продолжается.');}
+    if(value){elapsedBeforeStart=runSeconds();startedAt=0;window.clearInterval(timerHandle);timerHandle=0;paused=true;$('pause-button').textContent='▶ Продолжить';$('pause-button').setAttribute('aria-pressed','true');$('hint-note').textContent='Игра на паузе. Прогресс сохранён; нажми «Продолжить», чтобы вернуться.';saveRun();toast('Пауза включена.');}
+    else{paused=false;if(runHasStarted){startedAt=Date.now();if(!timerHandle)timerHandle=window.setInterval(updateTimer,250)}$('pause-button').textContent='Ⅱ Пауза';$('pause-button').setAttribute('aria-pressed','false');$('hint-note').textContent='Снова в игре. Продолжай соединять сигнал.';toast('Игра продолжается.');}
     updateConnectivity();updateHistoryControls();updateStats();notify(value?'paused':'resumed');
   }
   function playTone(kind='rotate') {
@@ -533,10 +537,10 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
   document.addEventListener('visibilitychange',()=>{
     if(won)return;
     if(document.hidden){
-      if(startedAt){elapsedBeforeStart=runSeconds();startedAt=0;visibilityPaused=true;saveRun();updateTimer();}
+      if(startedAt){elapsedBeforeStart=runSeconds();startedAt=0;window.clearInterval(timerHandle);timerHandle=0;visibilityPaused=true;saveRun();updateTimer();}
       if(runHasStarted)notify('paused');
     }else{
-      if(visibilityPaused){visibilityPaused=false;if(runHasStarted&&!paused)startedAt=Date.now();updateTimer();notify('resumed');}
+      if(visibilityPaused){visibilityPaused=false;if(runHasStarted&&!paused){startedAt=Date.now();if(!timerHandle)timerHandle=window.setInterval(updateTimer,250)}updateTimer();notify('resumed');}
     }
   });
   window.addEventListener('pagehide',saveRun);
