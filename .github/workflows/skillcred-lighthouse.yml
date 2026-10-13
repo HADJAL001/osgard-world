@@ -29,7 +29,9 @@ jobs:
           set -euo pipefail
           expected="${EXPECTED_DEPLOY_SHA:0:12}"
           for attempt in $(seq 1 18); do
-            page="$(curl -fsSL --max-time 12 https://osgard.world/skillcred/ 2>/dev/null || true)"
+            # Bypass browser/CDN caches; keep the exact asset-version gate.
+            cache_buster="__osgard_build_check=$expected-$attempt-$(date +%s%N)"
+            page="$(curl -fsSL --max-time 12 -H 'Cache-Control: no-cache, no-store, max-age=0' -H 'Pragma: no-cache' "https://osgard.world/skillcred/?$cache_buster" 2>/dev/null || true)"
             if printf '%s' "$page" | grep -Fq "/skillcred/styles.css?v=$expected" &&
                printf '%s' "$page" | grep -Fq "/skillcred/app.js?v=$expected"; then
               echo "Confirmed deployed SkillCred release $expected"
