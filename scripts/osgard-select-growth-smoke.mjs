@@ -25,8 +25,8 @@ const projects = [
   ['OSGARD BUSINESS','https://osgardos.com/'],['OSGARD VANGUARD','https://osgardvanguard.studio/'],
 ]
 for (const [name,url] of projects) {
-  assert.ok(select.includes(name), 'Missing OSGARD project: ' + name)
-  assert.ok(select.includes(url), 'Missing project destination: ' + url)
+  assert.ok(js.includes(name), 'Missing OSGARD project: ' + name)
+  assert.ok(js.includes(url), 'Missing project destination: ' + url)
 }
 assert.ok(js.includes("const preferredServiceKey='osgard.games.preferred-service.v1'"), 'Saved preferred service key missing')
 assert.ok(js.includes('const recommendationByGame='), 'Per-game recommendation map missing')
