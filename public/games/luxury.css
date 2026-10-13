@@ -135,3 +135,7 @@
 @media(prefers-reduced-motion:reduce){.invite-action,.invite-dismiss{transition:none}}
 
 .invite-disclosure{display:block;margin-top:3px;color:#727c6f;font-size:9px;line-height:1.6}
+
+/* AETHER GRID — daily signal-routing puzzle */
+.luxury-entertainment .art-aether-grid{--accent:#77e9e6;--glow:rgba(119,233,230,.28);background:linear-gradient(135deg,#10272b,#080d10)}
+.luxury-entertainment .art-aether-grid svg{filter:drop-shadow(0 0 18px rgba(119,233,230,.18))}
