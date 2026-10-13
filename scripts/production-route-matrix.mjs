@@ -76,9 +76,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
           ? text.includes('<title>AFTERIMAGE//RUN — OSGARD PLAY</title>') && text.includes('id="runnerCanvas"') && text.includes('id="run-start"') && text.includes('id="daily-seed"') && text.includes('id="share-telegram"') && text.includes('osgard:game-lifecycle')
         : route === '/games/cascade-lab/'
           ? text.includes('<title>CASCADE LAB — OSGARD PLAY</title>') && text.includes('data-cascade-lab-ready="true"') && text.includes('id="launchMain"') && text.includes('id="exportRunReport"') && text.includes("notifyOsgardLifecycle('started'")
-        : route === '/games/afterimage-run/'
-          ? text.includes('<title>AFTERIMAGE//RUN — OSGARD PLAY</title>') && text.includes('id="runnerCanvas"') && text.includes('id="run-start"') && text.includes('id="daily-seed"') && text.includes('id="share-telegram"') && text.includes('osgard:game-lifecycle')
-                : route.startsWith('/games/null-shift-godot')
+        : route.startsWith('/games/null-shift-godot')
           ? /<canvas/i.test(text) && /godot/i.test(text) && text.includes('index.wasm') && text.includes('index.pck') &&
             text.includes('data-nullshift-shell="premium-v1"') &&
             text.includes('Engine.isWebGLAvailable(2)') &&
@@ -97,6 +95,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
               text.includes('data-game="patina"') &&
               text.includes('data-game="signal-run"') &&
               text.includes('data-game="cascade-lab"') &&
+              text.includes('data-game="afterimage-run"') &&
               text.includes('"numberOfItems":9')
             : text.includes('<div id="root">')
     const isGamesHub = route === '/games/' || route === '/games/index.html'
