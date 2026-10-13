@@ -88,7 +88,7 @@ function incomingInvite(){
  const params=new URLSearchParams(location.search);
  const source=params.get('utm_source')||'',medium=params.get('utm_medium')||'',campaign=params.get('utm_campaign')||'';
  const canonicalGame=params.get('og_game')||'',canonicalCode=params.get('og_ref')||'';
- const canonicalInvite=Boolean(games[canonicalGame]&&/^og_[a-f0-9]{8}$/.test(canonicalCode)&&source==='osgard_play'&&medium==='referral'&&campaign==='play_with_friends');
+ const canonicalInvite=Boolean(games[canonicalGame]&&/^og_(?:[a-f0-9]{8}|[a-f0-9]{32})$/.test(canonicalCode)&&source==='osgard_play'&&medium==='referral'&&campaign==='play_with_friends');
  if(canonicalInvite)return {game:canonicalGame,code:canonicalCode,legacy:false};
  const legacyGame=params.get('challenge')||'',legacyCode=params.get('ref')||'';
  const legacyInvite=Boolean(games[legacyGame]&&/^[a-f0-9]{12}$/.test(legacyCode)&&source==='osgard_games'&&medium==='referral'&&campaign==='play_with_a_friend');
@@ -97,14 +97,19 @@ function incomingInvite(){
 }
 async function recordInviteOpen(invite){
  if(!invite||!consented())return false;
+ const rewardCode=/^og_[a-f0-9]{32}$/.test(invite.code);
+ if(rewardCode&&!hasRewardConsent())return false;
+ let visitorToken='';
+ if(rewardCode){visitorToken=ownerToken();if(!visitorToken)return false}
  const marker='osgard.games.referral-opened.'+invite.code;
  try{
-  sessionStorage.setItem(ATTR_KEY,JSON.stringify({code:invite.code,game:invite.game,at:Date.now()}));
+  sessionStorage.setItem(ATTR_KEY,JSON.stringify({code:invite.code,game:invite.game,visitorToken,at:Date.now()}));
   const state=sessionStorage.getItem(marker);
   if(state==='yes')return true;
   if(state==='pending')return false;
   sessionStorage.setItem(marker,'pending');
-  const sent=await sendEvent('referral_link_opened',invite.game,'referral-link:'+invite.code);
+  const source=rewardCode?'referral-link:'+invite.code+':'+invite.game+':'+visitorToken:'referral-link:'+invite.code;
+  const sent=await sendEvent('referral_link_opened',invite.game,source);
   if(sent)sessionStorage.setItem(marker,'yes');
   else sessionStorage.removeItem(marker);
   return sent;
@@ -379,7 +384,19 @@ function inviteFor(id,code=inviteCode(id)){
 async function registerInvite(gameId,code){
  if(!hasConsent()||!hasRewardConsent()||!titles[gameId]||!/^og_[a-f0-9]{32}$/.test(code))return false;
  const owner=ownerToken();if(!owner)return false;
- return sendSelectEvent('share_created',gameId,'game-invite:'+gameId+':'+code+':'+owner);
+ try{
+  let base='/commerce-api';
+  const configResponse=await fetch('/games/commerce-config.json',{cache:'no-store'});
+  if(configResponse.ok){const config=await configResponse.json().catch(()=>({}));base=String(config.apiBaseUrl||base)}
+  while(base.endsWith('/'))base=base.slice(0,-1);
+  const response=await fetch(base+'/v1/referrals/register',{
+   method:'POST',cache:'no-store',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({consent:true,rewardConsent:true,code,gameId,ownerToken:owner})
+  });
+  if(!response.ok)return false;
+  void sendSelectEvent('share_created',gameId,'game-invite:'+gameId+':'+code+':'+owner);
+  return true;
+ }catch{return false}
 }
 async function refreshShardsBalance(gameId,balance,status){
  const code=inviteCode(gameId);
@@ -586,6 +603,7 @@ function rewardShelf(gameId){
   try{if(consentToggle.checked)localStorage.setItem(REWARD_CONSENT_KEY,'yes');else localStorage.removeItem(REWARD_CONSENT_KEY)}catch{}
   if(consentToggle.checked&&!hasConsent())status.textContent='Сначала включи необязательную аналитику в настройках каталога. Без неё сервер не сможет проверить приглашённую сессию.';
   else status.textContent=consentToggle.checked?'Участие в программе наград включено. SHARDS появятся после подтверждённой игровой сессии друга.':'Участие отключено. Ссылками можно делиться без отслеживания и наград.';
+  if(consentToggle.checked&&hasConsent())captureInvite();
   void refreshShardsBalance(gameId,balance,status);
  });
  primary.addEventListener('click',async()=>{
