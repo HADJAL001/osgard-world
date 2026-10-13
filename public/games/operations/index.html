@@ -132,8 +132,8 @@
       if (target.id === 'catalog') {
         const match = body.match(/<meta[^>]*name=["']osgard-build["'][^>]*content=["']([^"']*)["']/i);
         if (match && match[1] && !match[1].includes('__OSGARD_BUILD_VERSION__')) observedBuild = match[1];
-        else if (match) { state = 'warn'; detail = (detail ? detail + ' ' : '') + 'Идентификатор сборки не заменён deploy pipeline.'; }
-        else { state = 'warn'; detail = (detail ? detail + ' ' : '') + 'В HTML не найден маркер сборки.'; }
+        else if (match) { if (state !== 'fail') state = 'warn'; detail = (detail ? detail + ' ' : '') + 'Идентификатор сборки не заменён deploy pipeline.'; }
+        else { if (state !== 'fail') state = 'warn'; detail = (detail ? detail + ' ' : '') + 'В HTML не найден маркер сборки.'; }
       }
       if (target.id === 'commerce-config' && !issues.length) {
         try {
@@ -182,6 +182,7 @@
   }
   async function runChecks() {
     if (running) return;
+    const startedAt = new Date().toISOString();
     running = true;
     runButton.disabled = true;
     $('#run-status').textContent = 'Проверяем ' + TARGETS.length + ' маршрутов группами по четыре…';
@@ -193,7 +194,7 @@
       results.push(...await Promise.all(batch.map(probe)));
       $('#run-status').textContent = 'Готово ' + results.length + ' из ' + TARGETS.length + ' маршрутов…';
     }
-    lastReport = { schemaVersion:1, reportType:'osgard-games-readonly-route-health', origin:location.origin, startedAt:new Date().toISOString(), finishedAt:new Date().toISOString(), build:observedBuild, privacy:{ cookiesSent:false, credentials:'omit', analyticsEventsCreated:false, externalHostsContacted:false }, results };
+    lastReport = { schemaVersion:1, reportType:'osgard-games-readonly-route-health', origin:location.origin, startedAt, finishedAt:new Date().toISOString(), build:observedBuild, privacy:{ cookiesSent:false, credentials:'omit', analyticsEventsCreated:false, externalHostsContacted:false }, results };
     running = false;
     runButton.disabled = false;
     render();
