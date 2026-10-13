@@ -1,7 +1,7 @@
 export const SCENARIOS = Object.freeze([
-  { id: 'conservative', label: 'Осторожный', note: 'Меньше трафика и конверсии', traffic: 0.6, starts: 0.8, sessions: 0.75, fill: 0.75, ecpm: 0.7, paid: 0.55, leads: 0.65, close: 0.7, costs: 1.1, share: 0.75, inviteConversion: 0.8, sponsors: 0.7 },
-  { id: 'base', label: 'Базовый', note: 'Все допущения без изменений', traffic: 1, starts: 1, sessions: 1, fill: 1, ecpm: 1, paid: 1, leads: 1, close: 1, costs: 1, share: 1, inviteConversion: 1, sponsors: 1 },
-  { id: 'optimistic', label: 'Оптимистичный', note: 'Рост при подтверждённом спросе', traffic: 1.8, starts: 1.15, sessions: 1.3, fill: 1.15, ecpm: 1.3, paid: 1.4, leads: 1.35, close: 1.25, costs: 1.2, share: 1.25, inviteConversion: 1.2, sponsors: 1.25 },
+  { id: 'conservative', label: 'Осторожный', note: 'Меньше трафика и конверсии', traffic: 0.6, starts: 0.8, sessions: 0.75, fill: 0.75, ecpm: 0.7, paid: 0.55, subscription: 0.65, churn: 1.25, leads: 0.65, close: 0.7, costs: 1.1, share: 0.75, inviteConversion: 0.8, sponsors: 0.7 },
+  { id: 'base', label: 'Базовый', note: 'Все допущения без изменений', traffic: 1, starts: 1, sessions: 1, fill: 1, ecpm: 1, paid: 1, subscription: 1, churn: 1, leads: 1, close: 1, costs: 1, share: 1, inviteConversion: 1, sponsors: 1 },
+  { id: 'optimistic', label: 'Оптимистичный', note: 'Рост при подтверждённом спросе', traffic: 1.8, starts: 1.15, sessions: 1.3, fill: 1.15, ecpm: 1.3, paid: 1.4, subscription: 1.4, churn: 0.8, leads: 1.35, close: 1.25, costs: 1.2, share: 1.25, inviteConversion: 1.2, sponsors: 1.25 },
 ]);
 
 export const DEFAULT_INPUTS = Object.freeze({
@@ -14,6 +14,9 @@ export const DEFAULT_INPUTS = Object.freeze({
   paidConversionRate: 0.25,
   newVisitorSharePct: 50,
   paidPaymentUsd: 5.99,
+  subscriptionConversionRatePct: 0.15,
+  subscriptionMonthlyPriceUsd: 2.99,
+  subscriptionMonthlyChurnPct: 8,
   leadRate: 0.15,
   leadCloseRate: 8,
   averageProjectValueUsd: 1200,
@@ -39,6 +42,9 @@ const bounds = {
   paidConversionRate: [0, 100],
   newVisitorSharePct: [0, 100],
   paidPaymentUsd: [0, 10000000],
+  subscriptionConversionRatePct: [0, 100],
+  subscriptionMonthlyPriceUsd: [0, 10000000],
+  subscriptionMonthlyChurnPct: [0, 100],
   leadRate: [0, 100],
   leadCloseRate: [0, 100],
   averageProjectValueUsd: [0, 1000000000],
@@ -64,6 +70,9 @@ export function normalizeInputs(input = {}) {
   normalized.monthlyVisitors = Math.round(normalized.monthlyVisitors);
   normalized.maxLeadsPerMonth = Math.round(normalized.maxLeadsPerMonth);
   normalized.maxProjectsPerMonth = Math.round(normalized.maxProjectsPerMonth);
+  normalized.subscriptionConversionRatePct = Math.round(normalized.subscriptionConversionRatePct * 100) / 100;
+  normalized.subscriptionMonthlyPriceUsd = Math.round(normalized.subscriptionMonthlyPriceUsd * 100) / 100;
+  normalized.subscriptionMonthlyChurnPct = Math.round(normalized.subscriptionMonthlyChurnPct * 100) / 100;
   normalized.newVisitorSharePct = Math.round(normalized.newVisitorSharePct * 100) / 100;
   normalized.sessionsPerPlayer = Math.round(normalized.sessionsPerPlayer * 100) / 100;
   normalized.adSlotsPerSession = Math.round(normalized.adSlotsPerSession * 100) / 100;
@@ -108,6 +117,28 @@ export function calculateScenario(input = {}, scenarioId = 'base') {
   const paidConversionRate = Math.min(100, values.paidConversionRate * scenario.paid);
   const paidCustomers = newVisitors * paidConversionRate / 100;
   const paidRevenueUsd = paidCustomers * values.paidPaymentUsd;
+
+  // Subscriptions are modeled as a separate choice: one-time buyers are excluded
+  // from the subscription acquisition pool to avoid counting the same new visitor twice.
+  const subscriptionConversionRatePct = Math.min(100, values.subscriptionConversionRatePct * scenario.subscription);
+  const subscriptionMonthlyChurnPct = Math.min(100, values.subscriptionMonthlyChurnPct * scenario.churn);
+  const subscriptionRetentionRate = 1 - subscriptionMonthlyChurnPct / 100;
+  const subscriptionEligibleVisitors = newVisitors * Math.max(0, 1 - paidConversionRate / 100);
+  const subscriptionNewCustomersPerMonth = subscriptionEligibleVisitors * subscriptionConversionRatePct / 100;
+  let firstYearPaidSubscriberMonthsPerMonthlyCohort = 0;
+  let month12RetainedSubscriberMultiplier = 0;
+  for (let age = 0; age < 12; age += 1) {
+    const retentionAtAge = subscriptionRetentionRate ** age;
+    month12RetainedSubscriberMultiplier += retentionAtAge;
+    firstYearPaidSubscriberMonthsPerMonthlyCohort += (12 - age) * retentionAtAge;
+  }
+  const subscriptionSubscribersMonth12 = subscriptionNewCustomersPerMonth * month12RetainedSubscriberMultiplier;
+  const subscriptionMrrMonth12Usd = subscriptionSubscribersMonth12 * values.subscriptionMonthlyPriceUsd;
+  const subscriptionAnnualRevenueUsd = subscriptionNewCustomersPerMonth *
+    values.subscriptionMonthlyPriceUsd * firstYearPaidSubscriberMonthsPerMonthlyCohort;
+  // Average monthly recurring revenue across the first 12 months; expose month-12
+  // MRR separately so a mature run-rate is not confused with first-year receipts.
+  const subscriptionRevenueUsd = subscriptionAnnualRevenueUsd / 12;
   const leads = visitors * values.leadRate * scenario.leads / 100;
   const processedLeads = Math.min(leads, values.maxLeadsPerMonth);
   const unprocessedLeads = Math.max(0, leads - processedLeads);
@@ -118,11 +149,11 @@ export function calculateScenario(input = {}, scenarioId = 'base') {
     ? closedProjects / values.maxProjectsPerMonth * 100
     : 0;
   const servicesRevenueUsd = closedProjects * values.averageProjectValueUsd;
-  const paymentFeesUsd = paidRevenueUsd * values.paymentFeeRate / 100;
+  const paymentFeesUsd = (paidRevenueUsd + subscriptionRevenueUsd) * values.paymentFeeRate / 100;
   const sponsorDealsPerMonth = values.sponsorDealsPerMonth * scenario.sponsors;
   const sponsorRevenueUsd = sponsorDealsPerMonth * values.averageSponsorDealUsd;
   const operatingCostUsd = values.monthlyOperatingCostUsd * scenario.costs;
-  const totalRevenueUsd = adRevenueUsd + paidRevenueUsd + servicesRevenueUsd + sponsorRevenueUsd;
+  const totalRevenueUsd = adRevenueUsd + paidRevenueUsd + subscriptionRevenueUsd + servicesRevenueUsd + sponsorRevenueUsd;
   const netOperatingUsd = totalRevenueUsd - paymentFeesUsd - operatingCostUsd;
 
   return {
@@ -146,6 +177,13 @@ export function calculateScenario(input = {}, scenarioId = 'base') {
     paidConversionRate,
     paidCustomers,
     paidRevenueUsd,
+    subscriptionConversionRatePct,
+    subscriptionMonthlyChurnPct,
+    subscriptionNewCustomersPerMonth,
+    subscriptionSubscribersMonth12,
+    subscriptionMrrMonth12Usd,
+    subscriptionAnnualRevenueUsd,
+    subscriptionRevenueUsd,
     leads,
     processedLeads,
     unprocessedLeads,
