@@ -43,7 +43,7 @@ assert.ok(lifecycle.includes("activeGame==='null-shift'") && lifecycle.includes(
 assert.ok(lifecycle.includes("name==='share_created'?'game-invite:'+activeGame") && lifecycle.includes("'game_session_started','game_session_completed','share_created'"), 'Successful in-game shares must flow into the commerce referral counters')
 
 assert.ok(shell.includes('osgard:game-lifecycle') && shell.includes('state: "started"') && shell.includes('state: "error"'), 'Godot shell must report actual engine start and errors to the OSGARD player host')
-assert.ok(game.includes('JavaScriptBridge.eval') && game.includes("game: 'null-shift'") && game.includes("state: 'completed'"), 'Godot mission-result lifecycle message missing')
+assert.ok(game.includes('JavaScriptBridge.eval') && game.includes("game:'null-shift'") && game.includes("state:'completed'") && game.includes('window.OSGARDGameLifecycle'), 'Godot mission-result lifecycle message missing')
 for (const feature of ['_today_challenge_code()', '_contract_index_from_challenge_code(', '_resolve_shared_challenge()', '_start_daily_challenge()', '_claim_daily_challenge_reward()', '_share_run()', 'OSGARDGameShare', 'JSON.stringify(payload)', '_buy_cosmetic(', 'owns_amber_style', 'owns_violet_style', 'result_reward_label', 'result_share_label', 'DAILY OP', 'STYLE VAULT']) assert.ok(game.includes(feature), 'Missing Godot growth/monetization feature: ' + feature)
 assert.ok(game.includes('daily_claimed_date == today') && game.includes('return 400'), 'Daily challenge reward must be once per UTC date and capped at the documented amount')
 assert.ok(game.includes('КОСМЕТИКА ЭКИПИРОВАНА · БОЕВЫЕ ХАРАКТЕРИСТИКИ НЕ МЕНЯЮТСЯ'), 'Cosmetics must not change combat stats')
