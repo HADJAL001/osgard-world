@@ -587,7 +587,7 @@ assert.ok(recommendationScript.includes("'signal-run':['myosa','projects','super
 assert.ok(recommendationScript.includes("const spotlightOptions=[...relevantOrder,...selectedIds.filter(id=>!relevantOrder.includes(id))]"),'The alternate-project control must cycle relevant suggestions first, then all other services selected by the player')
 assert.ok(spotlight.children.some(node=>node.className==='og-postgame-spotlight-copy'),'Spotlight needs an editorial service description and action controls')
 const serviceFilters=servicesSection.children.find(node=>node.className==='og-postgame-service-filters')
-assert.equal(serviceFilters.children[0].textContent,'Все доступные · 10','The all-services filter count must include all ten owner-provided projects')
+assert.equal(serviceFilters.children[0].textContent,'Все доступные · 9','The all-services filter must count only the nine currently eligible promotional projects')
 const serviceGrid=servicesSection.children.find(node=>node.className==='og-postgame-service-grid')
 const serviceCards=serviceGrid.children
 assert.equal(serviceGrid.hidden,true,'The full service directory should be collapsed under the spotlight by default')
@@ -599,7 +599,7 @@ assert.ok(serviceDirectoryToggle&&!serviceDirectoryToggle.hidden,'The player mus
 serviceDirectoryToggle.click()
 assert.equal(serviceGrid.hidden,false,'The service directory toggle should reveal all active service cards')
 assert.equal(serviceFilters.hidden,false,'Opening the directory should reveal category filters');
-assert.equal(serviceFilters.children.length,7,'The luxury intermission should offer explicit categories for all ten service choices')
+assert.equal(serviceFilters.children.length,7,'The luxury intermission should offer explicit categories for every service type, including temporarily unavailable projects')
 const socialFilter=serviceFilters.children.find(node=>node.dataset.osgardServiceFilter==='social')
 socialFilter.click()
 assert.equal(socialFilter.attributes['aria-pressed'],'true','Selected service category must expose accessible pressed state')
@@ -639,7 +639,7 @@ mockDocument.dispatch('osgard:game-session-ended',{detail:{game:'patina',reason:
 assert.equal(mockOutside.hidden,false,'Closing a live PATINA session should show the owned-service intermission outside the player dialog')
 const outsideSuite=mockOutside.children.find(node=>node.className==='og-postgame-suite og-postgame-outside-suite')
 assert.ok(outsideSuite,'Closed-session intermission should contain a standalone service/reward suite')
-assert.equal(outsideSuite.children.find(node=>node.className==='og-postgame-services').children.find(node=>node.className==='og-postgame-service-grid').children.length,10,'Closed-session intermission should show all ten owner-provided projects')
+assert.equal(outsideSuite.children.find(node=>node.className==='og-postgame-services').children.find(node=>node.className==='og-postgame-service-grid').children.length,9,'Closed-session intermission should show only the nine currently eligible projects')
 assert.equal(outsideSuite.children.find(node=>node.className==='og-postgame-back').href,'#catalog','Players must have a clear path back to the next game');
 const outsideCards=outsideSuite.children.find(node=>node.className==='og-postgame-services').children.find(node=>node.className==='og-postgame-service-grid').children;
 assert.equal(outsideCards.find(node=>node.className.includes('is-featured'))?.dataset.service,'gold-glamour','PATINA should highlight its contextual GOLD GLAMOUR service');
