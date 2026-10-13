@@ -74,6 +74,38 @@ assert.ok(html.includes('id="daily-circuit-slot"')&&html.includes('id="daily-cir
 const dailyCircuitLazyLoaderMatch=html.match(/<script id="daily-circuit-lazy-loader">([\s\S]*?)<\/script>/)
 assert.ok(dailyCircuitLazyLoaderMatch,'Daily Circuit lazy loader is missing')
 new Function(dailyCircuitLazyLoaderMatch[1])
+{
+ const loadedDailyAssets=[]
+ let dailyObserverCallback=null
+ const dailyButton={disabled:false,textContent:'Открыть',closest(selector){return selector==='[data-load-daily-circuit]'?this:null}}
+ const dailyStatus={textContent:''}
+ const dailySlot={isConnected:true,dataset:{},setAttribute(){},querySelector(selector){return selector==='[data-load-daily-circuit]'?dailyButton:selector==='#daily-circuit-load-status'?dailyStatus:null}}
+ const dailyHead={append(node){loadedDailyAssets.push(node)}}
+ const dailyListeners={}
+ class DailyCircuitObserver{
+  constructor(callback,options){dailyObserverCallback=callback;this.options=options}
+  observe(target){this.target=target}
+  disconnect(){this.disconnected=true}
+ }
+ const dailyDocument={
+  head:dailyHead,
+  getElementById(id){return id==='daily-circuit-slot'?dailySlot:null},
+  querySelector(selector){return selector==='link[data-daily-circuit-style]'?loadedDailyAssets.find(node=>node.tagName==='LINK'&&node.dataset.dailyCircuitStyle==='true')||null:null},
+  createElement(tag){return{tagName:tag.toUpperCase(),dataset:{},remove(){this.removed=true}}},
+  addEventListener(type,handler){dailyListeners[type]=handler}
+ }
+ runInNewContext(dailyCircuitLazyLoaderMatch[1],{document:dailyDocument,window:{IntersectionObserver:DailyCircuitObserver},IntersectionObserver:DailyCircuitObserver})
+ assert.equal(loadedDailyAssets.length,0,'Daily Circuit CSS and JS must not download before its section approaches the viewport')
+ assert.equal(typeof dailyObserverCallback,'function','Daily Circuit must observe its reserved slot')
+ dailyObserverCallback([{isIntersecting:true}])
+ assert.equal(loadedDailyAssets[0]?.tagName,'LINK','The Daily Circuit stylesheet should load before the script')
+ assert.ok(loadedDailyAssets[0].href.includes('/games/daily-circuit.css?v=__OSGARD_BUILD_VERSION__'),'Daily Circuit CSS must use the release marker')
+ loadedDailyAssets[0].onload()
+ assert.equal(loadedDailyAssets[1]?.tagName,'SCRIPT','Daily Circuit JS should start after stylesheet resolution')
+ assert.ok(loadedDailyAssets[1].src.includes('/games/daily-circuit.js?v=__OSGARD_BUILD_VERSION__'),'Daily Circuit JS must use the release marker')
+ loadedDailyAssets[1].onload()
+ assert.equal(dailySlot.dataset.loaded,'true','Lazy loader must record that the daily engine loaded')
+}
 assert.ok(dailyCircuitScript.includes("const mount=doc.querySelector('#daily-circuit-slot')")&&dailyCircuitScript.includes('if(mount)mount.replaceWith(section)'),'Daily Circuit must mount into its reserved lazy slot without inserting unexpected content at the hero')
 assert.ok(dailyCircuitStyles.includes('.daily-circuit-grid')&&dailyCircuitStyles.includes('@media(max-width:760px)')&&dailyCircuitStyles.includes('prefers-reduced-motion:reduce'),'Daily Circuit must be responsive and respect reduced motion')
 assert.ok(dailyCircuitScript.includes('OSGARDDailyCircuitCore')&&dailyCircuitScript.includes('navigator.share')&&dailyCircuitScript.includes('navigator.clipboard.writeText'),'Daily Circuit must expose deterministic routes and share/copy fallback')
