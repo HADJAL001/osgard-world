@@ -347,6 +347,64 @@ async function sendSelectEvent(name,gameId,source){
   return response.ok;
  }catch{return false}finally{if(controller)pendingSelectTelemetry.delete(controller)}
 }
+const referralOwnerKey='osgard.games.referral-owner.v1';
+function getOrCreateReferralOwnerToken(){
+ try{
+  let token=localStorage.getItem(referralOwnerKey)||'';
+  if(/^[a-f0-9]{32}$/.test(token))return token;
+  const bytes=new Uint8Array(16);
+  if(globalThis.crypto?.getRandomValues)globalThis.crypto.getRandomValues(bytes);
+  else for(let i=0;i<bytes.length;i++)bytes[i]=Math.floor(Math.random()*256);
+  token=Array.from(bytes,value=>value.toString(16).padStart(2,'0')).join('');
+  localStorage.setItem(referralOwnerKey,token);
+  return token;
+ }catch{return ''}
+}
+async function postReferralRequest(path,payload){
+ if(!hasConsent())return{ok:false,reason:'consent'};
+ try{
+  const configResponse=await fetch('/games/commerce-config.json',{cache:'no-store'});
+  const config=configResponse.ok?await configResponse.json().catch(()=>({})):{};
+  const rawBase=typeof config.apiBaseUrl==='string'?config.apiBaseUrl.trim():'';
+  if(!rawBase)return{ok:false,reason:'not-configured'};
+  let parsedBase;
+  try{parsedBase=new URL(rawBase,location.origin)}catch{return{ok:false,reason:'invalid-config'}}
+  const localApi=['localhost','127.0.0.1'].includes(parsedBase.hostname);
+  const allowedPath=parsedBase.pathname==='/'||(parsedBase.pathname==='/commerce-api'&&(parsedBase.origin===location.origin||parsedBase.origin==='https://osgard.world'));
+  if((parsedBase.protocol!=='https:'&&!(localApi&&parsedBase.protocol==='http:'))||parsedBase.username||parsedBase.password||!allowedPath||parsedBase.search||parsedBase.hash)return{ok:false,reason:'invalid-config'};
+  const base=parsedBase.origin+(parsedBase.pathname==='/'?'':parsedBase.pathname);
+  const response=await fetch(base+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),credentials:parsedBase.origin===location.origin?'same-origin':'omit',keepalive:true});
+  const data=await response.json().catch(()=>({}));
+  return{ok:response.ok,status:response.status,data};
+ }catch{return{ok:false,reason:'network'}}
+}
+async function registerReferralInvite(gameId,referralCode){
+ if(!hasConsent()||!titles[gameId]||!/^og_[a-f0-9]{8}$/.test(String(referralCode||'')))return false;
+ const ownerToken=getOrCreateReferralOwnerToken();
+ if(!ownerToken)return false;
+ const result=await postReferralRequest('/v1/referrals/register',{consent:true,referralCode,gameId,ownerToken});
+ return result.ok===true;
+}
+function addQualifiedReferralShards(amount){
+ const safeAmount=Number.isSafeInteger(amount)&&amount>0?Math.min(amount,5000):0;
+ if(!safeAmount)return{ok:false,balance:getWallet().balance};
+ const current=getWallet(),balance=Math.min(1000000000,current.balance+safeAmount);
+ try{
+  localStorage.setItem(walletKey,JSON.stringify({balance,lastRewardDay:current.day,lastSource:'qualified-referral',updatedAt:new Date().toISOString()}));
+  return{ok:true,balance};
+ }catch{return{ok:false,balance:current.balance}}
+}
+async function claimQualifiedReferralShards(){
+ if(!hasConsent())return{ok:false,reason:'consent'};
+ let ownerToken='';
+ try{ownerToken=localStorage.getItem(referralOwnerKey)||''}catch{}
+ if(!/^[a-f0-9]{32}$/.test(ownerToken))return{ok:false,reason:'no-invites'};
+ const result=await postReferralRequest('/v1/referrals/claim',{consent:true,ownerToken});
+ if(!result.ok)return{ok:false,reason:result.reason||result.data?.error||'unavailable'};
+ const count=Number(result.data?.claimedInvites||0),amount=Number(result.data?.shardsAwarded||0);
+ if(!Number.isSafeInteger(count)||count<0||!Number.isSafeInteger(amount)||amount<0||amount>5000||amount!==count*50)return{ok:false,reason:'invalid-response'};
+ return{ok:true,count,amount};
+}
 function readServicePreferences(){
  const fallback={frequency:'each',selected:availableServiceIds.slice()};
  let stored=null;
