@@ -12,7 +12,7 @@ const services = [
   { id: 'superday', name: 'SUPERDAY', category: 'MAP / DAILY PLANNING', ru: 'Умная карта и планировщик дня.', en: 'Smart map and day planner.', url: 'https://superday.run/' },
   { id: 'myosa', name: 'MYOSA', category: 'AI PLATFORM', ru: 'Платформа искусственного интеллекта.', en: 'AI platform.', url: 'https://myosa.world/' },
   { id: 'gold-glamour', name: 'GOLD GLAMOUR', category: 'PREMIUM SERVICES', ru: 'Премиальные услуги с золотом и выездным обслуживанием.', en: 'Premium gold-related and mobile services.', url: 'https://gold-glamour.online/' },
-  { id: 'gardvpn', name: 'GARD VPN', category: 'PRIVACY / VPN', ru: 'VPN-сервис; проверьте доступность и условия на сайте проекта. Доступность домена не подтверждена независимо. Ссылка доступна для выбора, но её работу нужно проверить.', en: 'VPN service; check availability and terms on the project site. The domain has not been independently verified, so between-game promotion is disabled.', url: 'https://gardvpn.is/' },
+  { id: 'gardvpn', name: 'GARD VPN', category: 'PRIVACY / VPN', ru: 'VPN-сервис временно исключён из межигровых предложений до проверки фактического подключения.', en: 'Temporarily excluded from between-game promotion until VPN connectivity is verified.', url: 'https://gardvpn.is/' },
   { id: 'osgard-business', name: 'OSGARD OS', category: 'BUSINESS DEVELOPMENT', ru: 'Направление развития бизнеса.', en: 'Business development.', url: 'https://osgardos.com/' },
   { id: 'vanguard', name: 'OSGARD VANGUARD STUDIO', category: 'VIDEO STUDIO', ru: 'Создание видео для цифровых продуктов и кампаний.', en: 'Video production for digital products and campaigns.', url: 'https://osgardvanguard.studio/' },
 ] as const
@@ -20,7 +20,7 @@ const services = [
 type PromoFrequency = 'each' | 'every3' | 'off'
 type PromoPreferences = { frequency: PromoFrequency; selected: string[] }
 const PROMO_PREFERENCES_KEY = 'osgard.games.postgame-service-preferences.v1'
-const PROMOTABLE_SERVICE_IDS = services.map(service => service.id)
+const PROMOTABLE_SERVICE_IDS = services.filter(service => service.id !== 'gardvpn').map(service => service.id)
 
 function readPromoPreferences(): PromoPreferences {
   if (typeof window === 'undefined') return { frequency: 'each', selected: [...PROMOTABLE_SERVICE_IDS] }
@@ -241,6 +241,7 @@ export function PlaySelectLoop({ locale }: { locale: Locale }) {
               <input
                 type="checkbox"
                 checked={draftSelected.includes(service.id)}
+                disabled={limitedVerification}
                 onChange={event => {
                   setDraftSelected(current => event.target.checked
                     ? [...new Set([...current, service.id])]
@@ -248,7 +249,7 @@ export function PlaySelectLoop({ locale }: { locale: Locale }) {
                   setPromoStatus('')
                 }}
               />
-              <span><strong>{service.name}</strong><small>{limitedVerification ? (ru ? 'Главная страница ответила; VPN-подключение не проверялось' : 'Homepage responded; VPN connectivity not tested') : service.category}</small></span>
+              <span><strong>{service.name}</strong><small>{limitedVerification ? (ru ? 'Временно отключён: VPN-подключение не проверено' : 'Temporarily disabled: VPN connectivity unverified') : service.category}</small></span>
             </label>
           })}
         </div>
@@ -266,18 +267,23 @@ export function PlaySelectLoop({ locale }: { locale: Locale }) {
     <div className="play-select-layout">
       <div className="play-select-service-grid">
         {services.map((service, index) => {
+          const limitedVerification = service.id === 'gardvpn'
           const url = new URL(service.url)
           url.searchParams.set('utm_source', 'osgard_world')
           url.searchParams.set('utm_medium', 'entertainment_select')
           url.searchParams.set('utm_campaign', 'between_worlds')
           url.searchParams.set('utm_content', service.id)
-          return <a key={service.id} className={'play-select-service' + (index === 0 ? ' is-featured' : '')} href={url.href} target="_blank" rel="noopener noreferrer" aria-label={ru ? 'Открыть ' + service.name + ' — ' + service.category : 'Open ' + service.name + ' — ' + service.category}>
+          const content = <>
             <span>{String(index + 1).padStart(2, '0')} / {service.category}</span>
             <strong>{service.name}</strong>
             <p>{ru ? service.ru : service.en}</p>
-            {service.id === 'gardvpn' && <small className="play-select-service-note">{ru ? 'СТАТУС ССЫЛКИ НЕ ПОДТВЕРЖДЁН' : 'LINK STATUS NOT VERIFIED'}</small>}
-            <em>{ru ? 'Открыть проект ↗' : 'Explore project ↗'}</em>
-          </a>
+            {limitedVerification && <small className="play-select-service-note">{ru ? 'VPN-ПОДКЛЮЧЕНИЕ НЕ ПРОВЕРЕНО · ПРОМО ОТКЛЮЧЕНО' : 'VPN CONNECTIVITY UNVERIFIED · PROMOTION DISABLED'}</small>}
+            <em>{limitedVerification ? (ru ? 'Временно недоступен для промо' : 'Temporarily unavailable for promotion') : (ru ? 'Открыть проект ↗' : 'Explore project ↗')}</em>
+          </>
+          if (limitedVerification) {
+            return <article key={service.id} className="play-select-service is-limited-verification" aria-label={ru ? service.name + ' временно отключён до проверки VPN-подключения' : service.name + ' temporarily disabled pending VPN connectivity verification'}>{content}</article>
+          }
+          return <a key={service.id} className={'play-select-service' + (index === 0 ? ' is-featured' : '')} href={url.href} target="_blank" rel="noopener noreferrer" aria-label={ru ? 'Открыть ' + service.name + ' — ' + service.category : 'Open ' + service.name + ' — ' + service.category}>{content}</a>
         })}
         <a className="play-select-service play-select-all" href="/games/?utm_source=osgard_world&amp;utm_medium=entertainment_select&amp;utm_campaign=between_worlds&amp;utm_content=all_services">
           <span>OSG / DIRECTORY</span>
