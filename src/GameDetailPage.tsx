@@ -197,6 +197,26 @@ const GAMES: GameDefinition[] = [
     theme: 'patina',
   },
 
+  {
+    id: 'cascade-lab',
+    mark: 'CL',
+    titleRu: 'CASCADE LAB',
+    titleEn: 'CASCADE LAB',
+    category: 'creative',
+    genreRu: 'Инженерная физическая головоломка',
+    genreEn: 'Physics puzzle',
+    descriptionRu: 'Собирай цепочки из шести механизмов, запускай ядро и исследуй движение. Диагностика, локальные рекорды и схемы сохраняются в этом браузере.',
+    descriptionEn: 'Build chains from six mechanisms, launch a core and study motion. Diagnostics, local bests and layouts stay in this browser.',
+    href: '/games/cascade-lab/',
+    devices: ['desktop', 'mobile'],
+    controlsRu: 'Выбери механизм и нажми или коснись поля, чтобы установить его. Пробел запускает или ставит симуляцию на паузу; клавиши 1–6 выбирают детали.',
+    controlsEn: 'Select a mechanism and tap/click the field to place it. Space starts or pauses the simulation; keys 1–6 select parts.',
+    supportRu: 'Самостоятельная HTML Canvas-игра без внешних библиотек. Прогресс и отчёты хранятся локально; сетевой рейтинг не заявлен.',
+    supportEn: 'Self-contained HTML Canvas game with no external libraries. Progress and reports stay in local browser storage; no online leaderboard is claimed.',
+    featuresRu: ['Шесть интерактивных механизмов', 'Пошаговая физика и векторная диагностика', 'Экспорт CSV и JSON / локальные рекорды'],
+    featuresEn: ['Six interactive mechanisms', 'Step-by-step physics and vector diagnostics', 'CSV/JSON exports and local bests'],
+    theme: 'cascade',
+  },
 ]
 
 
