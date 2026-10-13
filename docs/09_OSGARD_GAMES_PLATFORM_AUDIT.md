@@ -203,3 +203,10 @@ A new Godot-native growth slice is implemented and covered by the headless runti
 - A blank apiBaseUrl in commerce-config.json is surfaced as a warning, not as working payments or revenue. A configured HTTPS URL still does not prove that the API, checkout or payment webhooks work.
 - Added scripts/games-operations-smoke.mjs, npm run qa:games-operations, a pre-deploy check, and /games/operations/ to the production route matrix. A pull-request CI workflow also type-checks and runs the Games smoke suite before merge.
 - This improves release observability, not the currently documented commercial limitations: ad network approval, production checkout/payment webhooks, a server-backed CMS and manual physical-device gameplay verification remain separate release tasks.
+
+
+## Дополнение — настройки управляемого каталога игр
+
+Добавлен отдельный контур управляемого контента для десяти известных игр: видимость, порядок, до трёх пометок OSGARD PICK и короткие текстовые overrides. Настройки хранятся в таблице PostgreSQL Commerce API и изменяются только через серверную проверку `ADMIN_API_TOKEN`. Сохранения используют ожидаемую ревизию; устаревшая запись получает конфликт, а не перезаписывает изменения другого оператора.
+
+Публичный runtime выводит значения через `textContent`; схема не разрешает добавлять произвольные ID, URL запуска, HTML/скрипты, цены или рекламные места. Публичный клиент читает настройки только при непустом `apiBaseUrl` в `/games/commerce-config.json`. Пока адрес пуст, используется прежний статический каталог, поэтому этот исходный код не означает, что Commerce API/БД уже развёрнуты.

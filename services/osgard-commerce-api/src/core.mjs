@@ -187,6 +187,62 @@ export function verifyStripeSignature(rawBody, header, secret, nowMs = Date.now(
   });
 }
 
+
+export const GAME_CATALOG_GAME_IDS = Object.freeze([
+  "null-shift", "time", "swarm", "inherit", "remix",
+  "civic-cascade", "patina", "signal-run", "cascade-lab", "afterimage-run",
+]);
+
+const GAME_CATALOG_ITEM_KEYS = new Set([
+  "id", "visible", "featured", "order", "titleOverride", "descriptionOverride",
+]);
+
+export function defaultGameCatalogSettings() {
+  return {
+    schemaVersion: 1,
+    games: GAME_CATALOG_GAME_IDS.map((id, index) => ({
+      id, visible: true, featured: false, order: index + 1,
+      titleOverride: "", descriptionOverride: "",
+    })),
+  };
+}
+
+export function validateGameCatalogSettings(raw) {
+  const invalid = (code) => ({ ok: false, status: 400, code });
+  if (!raw || typeof raw !== "object" || Array.isArray(raw) || raw.schemaVersion !== 1) return invalid("GAME_CATALOG_CONFIG_INVALID");
+  if (Object.keys(raw).some((key) => !["schemaVersion", "games"].includes(key))) return invalid("GAME_CATALOG_FIELDS_INVALID");
+  if (!Array.isArray(raw.games) || raw.games.length !== GAME_CATALOG_GAME_IDS.length) return invalid("GAME_CATALOG_GAME_SET_INVALID");
+  const normalized = [];
+  const ids = new Set();
+  const orders = new Set();
+  let visibleCount = 0;
+  let featuredCount = 0;
+  for (const item of raw.games) {
+    if (!item || typeof item !== "object" || Array.isArray(item) ||
+        Object.keys(item).some((key) => !GAME_CATALOG_ITEM_KEYS.has(key)) ||
+        Object.keys(item).length !== GAME_CATALOG_ITEM_KEYS.size) return invalid("GAME_CATALOG_ITEM_FIELDS_INVALID");
+    if (typeof item.id !== "string" || !GAME_CATALOG_GAME_IDS.includes(item.id) || ids.has(item.id)) return invalid("GAME_CATALOG_GAME_ID_INVALID");
+    if (typeof item.visible !== "boolean" || typeof item.featured !== "boolean") return invalid("GAME_CATALOG_VISIBILITY_INVALID");
+    if (!Number.isSafeInteger(item.order) || item.order < 1 || item.order > GAME_CATALOG_GAME_IDS.length || orders.has(item.order)) return invalid("GAME_CATALOG_ORDER_INVALID");
+    if (item.featured && !item.visible) return invalid("GAME_CATALOG_HIDDEN_FEATURED");
+    if (typeof item.titleOverride !== "string" || cleanText(item.titleOverride, 101).length > 100) return invalid("GAME_CATALOG_TITLE_INVALID");
+    if (typeof item.descriptionOverride !== "string" || cleanText(item.descriptionOverride, 241).length > 240) return invalid("GAME_CATALOG_DESCRIPTION_INVALID");
+    ids.add(item.id);
+    orders.add(item.order);
+    if (item.visible) visibleCount += 1;
+    if (item.featured) featuredCount += 1;
+    normalized.push({
+      id: item.id, visible: item.visible, featured: item.featured, order: item.order,
+      titleOverride: cleanText(item.titleOverride, 100),
+      descriptionOverride: cleanText(item.descriptionOverride, 240),
+    });
+  }
+  if (GAME_CATALOG_GAME_IDS.some((id) => !ids.has(id))) return invalid("GAME_CATALOG_GAME_SET_INVALID");
+  if (visibleCount < 1) return invalid("GAME_CATALOG_NO_VISIBLE_GAMES");
+  if (featuredCount > 3) return invalid("GAME_CATALOG_TOO_MANY_FEATURED");
+  return { ok: true, config: { schemaVersion: 1, games: normalized.sort((a, b) => a.order - b.order) } };
+}
+
 export function safeEqual(left, right) {
   const a = Buffer.from(String(left ?? ""), "utf8");
   const b = Buffer.from(String(right ?? ""), "utf8");

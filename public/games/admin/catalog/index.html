@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="dark">
+<meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer"><meta name="theme-color" content="#080a0b">
+<link rel="icon" href="/games/favicon.svg" type="image/svg+xml"><title>OSGARD · Управление каталогом игр</title>
+<style>
+:root{color-scheme:dark;--bg:#080a0b;--panel:#111514;--ink:#f2f0e8;--muted:#a5aaa1;--line:#ffffff22;--lime:#d3ff69;--bad:#ff958e;--good:#b4e98b}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 86% 0,#28351f55,transparent 39%),var(--bg);color:var(--ink);font:14px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}a{color:var(--lime)}button,input,textarea{font:inherit}button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--lime);outline-offset:3px}.wrap{width:min(1120px,calc(100% - 28px));margin:auto}.top{min-height:70px;display:flex;align-items:center;justify-content:space-between;gap:16px;border-bottom:1px solid var(--line);flex-wrap:wrap}.brand{font:600 11px ui-monospace,monospace;letter-spacing:.14em;text-decoration:none;color:var(--ink)}.brand small{display:block;color:var(--lime);margin-top:4px;font-weight:400}.eyebrow{margin:34px 0 9px;color:var(--lime);font:10px ui-monospace,monospace;letter-spacing:.15em}.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(250px,.65fr);gap:24px;align-items:end;padding-bottom:24px}.hero h1{font:400 clamp(38px,6vw,68px)/.98 Georgia,serif;letter-spacing:-.05em;margin:0}.hero p,.muted{color:var(--muted);font-size:12px}.notice{padding:14px;border:1px solid #d3ff6940;background:#d3ff6909;font-size:11px;color:#c4c9bd}.notice b{color:var(--lime)}.panel{border:1px solid var(--line);background:linear-gradient(145deg,#ffffff05,transparent 52%),var(--panel);padding:18px;margin:14px 0}.panel h2{font:400 25px Georgia,serif;margin:0 0 8px}.auth{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px}.field{display:grid;gap:6px;font-size:10px;color:var(--muted);letter-spacing:.08em}.field input,.field textarea{width:100%;min-width:0;background:#080b09;border:1px solid var(--line);color:var(--ink);padding:11px;border-radius:3px;font-size:13px;letter-spacing:normal}.field textarea{min-height:68px;resize:vertical}.btn{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 14px;border:1px solid var(--lime);background:var(--lime);color:#10140b;font-weight:700;cursor:pointer}.btn.secondary{background:#ffffff05;color:var(--ink);border-color:#ffffff40}.btn:disabled{opacity:.45;cursor:not-allowed}.toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:14px}.status{min-height:22px;color:var(--muted);font-size:11px}.status[data-kind=error]{color:var(--bad)}.status[data-kind=success]{color:var(--good)}.game-list{display:grid;gap:10px}.game-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(290px,.9fr);gap:16px;padding:16px;border:1px solid var(--line);background:#ffffff03}.game-row h3{font:400 22px Georgia,serif;margin:0 0 5px}.game-row small{color:var(--lime);font:9px ui-monospace,monospace;letter-spacing:.12em}.fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,.8fr);gap:10px}.flags{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:10px 0}.check{display:inline-flex;align-items:center;gap:7px;font-size:11px;color:var(--ink)}.check input{accent-color:var(--lime);width:18px;height:18px}.footer{padding:24px 0 38px;color:var(--muted);font-size:10px;border-top:1px solid var(--line);margin-top:24px}.footer nav{display:flex;gap:15px;flex-wrap:wrap;margin-top:8px}@media(max-width:760px){.hero{grid-template-columns:1fr}.game-row{grid-template-columns:1fr}.fields{grid-template-columns:1fr}.auth{grid-template-columns:1fr}.btn{width:100%}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+</style></head><body><div class="wrap">
+<header class="top"><a href="/games/" class="brand">OSGARD PLAY<small>CATALOG SETTINGS</small></a><nav><a href="/games/admin/">LiveOps</a> · <a href="/games/admin/partners/">Партнёрские форматы</a></nav></header>
+<p class="eyebrow">PRIVATE OPERATIONS / GAME CATALOG</p>
+<section class="hero"><div><h1>Управление<br>каталогом.</h1><p>Порядок игр, видимость, отметка избранного и короткие тексты. Изменения сохраняются в Commerce API, если сервер и база данных настроены. Без подключения сайт остаётся на опубликованном статическом каталоге.</p></div><aside class="notice"><b>Границы безопасности.</b> Игра выбирается только из фиксированного списка. Текст показывается как текст, а не HTML. Эта панель не может включать рекламу, списания или платные права.</aside></section>
+<section class="panel" id="access-panel"><h2>Подключение</h2><p class="muted">Токен проверяется сервером. Он хранится только в памяти этой вкладки и не записывается в localStorage.</p><form id="catalog-form" class="auth"><label class="field">АДМИНИСТРАТИВНЫЙ ТОКЕН<input id="admin-token" type="password" required minlength="32" maxlength="512" autocomplete="off" autocapitalize="off" spellcheck="false"></label><button id="connect" class="btn" type="submit">Подключиться</button></form><p id="api-target" class="muted"></p><p id="access-status" class="status" role="status" aria-live="polite">Ожидает подключения</p></section>
+<section id="dashboard" hidden><div class="panel"><div class="toolbar" style="margin-top:0"><div><h2>Настройки публикации</h2><p id="revision" class="muted">Ревизия —</p></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-left:auto"><button id="reload" class="btn secondary" type="button">Перезагрузить</button><button id="save-config" class="btn" type="button">Сохранить изменения</button></div></div><p class="muted">Сохраняйте не чаще, чем нужно: каждая успешная запись увеличивает ревизию. Если другой оператор уже сохранил новую версию, API отклонит устаревшую запись вместо перезаписи.</p><p id="save-status" class="status" role="status" aria-live="polite"></p><div id="game-list" class="game-list"></div></div></section>
+<footer class="footer">OSGARD CATALOG OPS · SERVER-SAVED CONTENT · NO ACTIVE AD DELIVERY<nav><a href="/games/">Каталог</a><a href="/games/monetization/">Сценарная экономика</a><a href="/games/partners/">Партнёрская страница</a></nav></footer>
+</div>
+<script>
+(() => {
+'use strict';
+const $=selector=>document.querySelector(selector);
+const fallbackNames={'null-shift':'NULL//SHIFT',time:'Империя времени',swarm:'SWARM',inherit:'INHERIT',remix:'REMIX','civic-cascade':'CIVIC CASCADE',patina:'PATINA','signal-run':'SIGNAL RUN','cascade-lab':'CASCADE LAB','afterimage-run':'AFTERIMAGE//RUN'};
+let token='',apiBase='',revision=0,config=null;
+function message(node,text,kind=''){node.textContent=text;node.dataset.kind=kind}
+async function resolveBase(){
+ const response=await fetch('/games/commerce-config.json',{cache:'no-store',credentials:'same-origin',redirect:'error'});
+ if(!response.ok)throw new Error('Не удалось прочитать commerce-config.json (HTTP '+response.status+').');
+ const value=await response.json(),raw=String(value.apiBaseUrl||'').trim();
+ if(!raw)throw new Error('Commerce API не настроен. Сначала разверните API, затем укажите публичный apiBaseUrl в commerce-config.json.');
+ const url=new URL(raw,location.origin);
+ if(url.protocol!=='https:'&&url.hostname!=='localhost'&&url.hostname!=='127.0.0.1')throw new Error('API должен использовать HTTPS.');
+ return url.href.replace(/\/+$/,'');
+}
+async function request(path,options={}){
+ if(!apiBase)apiBase=await resolveBase();
+ const headers=Object.assign({'accept':'application/json','authorization':'Bearer '+token},options.body?{'content-type':'application/json'}:{},options.headers||{});
+ const response=await fetch(apiBase+path,Object.assign({cache:'no-store',credentials:new URL(apiBase).origin===location.origin?'same-origin':'omit',redirect:'error',headers},options));
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok)throw new Error('HTTP '+response.status+': '+String(data.message||data.error||'запрос не выполнен').slice(0,200));
+ return data;
+}
+function field(labelText,value,kind,max){
+ const label=document.createElement('label');label.className='field';label.append(document.createTextNode(labelText));
+ const input=kind==='textarea'?document.createElement('textarea'):document.createElement('input');input.value=value||'';input.maxLength=max;
+ if(kind==='number'){input.type='number';input.min='1';input.max='10';input.step='1'}else if(kind!=='textarea')input.type='text';
+ label.append(input);return {label,input};
+}
+function checkbox(labelText,value){
+ const label=document.createElement('label');label.className='check';const input=document.createElement('input');input.type='checkbox';input.checked=!!value;const text=document.createElement('span');text.textContent=labelText;label.append(input,text);return {label,input};
+}
+function render(){
+ const root=$('#game-list');root.replaceChildren();
+ config.games.slice().sort((a,b)=>a.order-b.order).forEach(item=>{
+  const row=document.createElement('article');row.className='game-row';
+  const meta=document.createElement('div');const title=document.createElement('h3');title.textContent=fallbackNames[item.id]||item.id.toUpperCase();
+  const code=document.createElement('small');code.textContent=item.id.toUpperCase();meta.append(title,code);
+  const flags=document.createElement('div');flags.className='flags';
+  const visible=checkbox('Показывать в каталоге',item.visible),featured=checkbox('OSGARD PICK',item.featured);
+  visible.input.addEventListener('change',()=>{item.visible=visible.input.checked;if(!item.visible){item.featured=false;featured.input.checked=false}});
+  featured.input.addEventListener('change',()=>{item.featured=featured.input.checked;if(item.featured&&!visible.input.checked){visible.input.checked=true;item.visible=true}});
+  flags.append(visible.label,featured.label);
+  const order=field('ПОРЯДОК',String(item.order),'number',3);order.input.addEventListener('input',()=>{item.order=Number(order.input.value)});
+  meta.append(flags,order.label);
+  const fields=document.createElement('div');fields.className='fields';
+  const titleOverride=field('ЗАМЕНА НАЗВАНИЯ · НЕОБЯЗАТЕЛЬНО',item.titleOverride,'text',100);
+  const descOverride=field('КОРОТКОЕ ОПИСАНИЕ · НЕОБЯЗАТЕЛЬНО',item.descriptionOverride,'textarea',240);
+  titleOverride.input.addEventListener('input',()=>{item.titleOverride=titleOverride.input.value});
+  descOverride.input.addEventListener('input',()=>{item.descriptionOverride=descOverride.input.value});
+  fields.append(titleOverride.label,descOverride.label);row.append(meta,fields);root.append(row);
+ });
+}
+async function load(showPanel=true){
+ $('#reload').disabled=true;$('#save-config').disabled=true;message($('#save-status'),'Загружаем серверную ревизию…');
+ try{const data=await request('/v1/admin/game-catalog');if(!data.config||!Array.isArray(data.config.games))throw new Error('API вернул некорректную структуру.');revision=Number(data.revision)||0;config=data.config;$('#revision').textContent='Ревизия '+revision+' · '+(data.updatedAt?'обновлена '+new Date(data.updatedAt).toLocaleString('ru-RU'):'ещё не сохранена');render();$('#dashboard').hidden=false;if(showPanel)$('#access-panel').hidden=true;message($('#save-status'),'Серверные данные загружены. Изменения пока не сохранены.','success')}
+ catch(error){message($('#access-status'),error instanceof Error?error.message:'Не удалось подключиться.','error');message($('#save-status'),error instanceof Error?error.message:'Ошибка API.','error')}
+ finally{$('#reload').disabled=false;$('#save-config').disabled=!config}
+}
+$('#catalog-form').addEventListener('submit',async event=>{
+ event.preventDefault();token=$('#admin-token').value.trim();if(token.length<32){message($('#access-status'),'Токен должен содержать не менее 32 символов.','error');return}
+ $('#connect').disabled=true;message($('#access-status'),'Проверяем серверный токен…');
+ try{apiBase=await resolveBase();$('#api-target').textContent='API: '+new URL(apiBase).origin;await load(true)}
+ catch(error){token='';$('#api-target').textContent='';message($('#access-status'),error instanceof Error?error.message:'Ошибка подключения.','error')}
+ finally{$('#connect').disabled=false}
+});
+$('#reload').addEventListener('click',()=>load(false));
+$('#save-config').addEventListener('click',async()=>{
+ if(!config)return;$('#save-config').disabled=true;message($('#save-status'),'Проверяем конфигурацию и сохраняем…');
+ try{const data=await request('/v1/admin/game-catalog',{method:'POST',body:JSON.stringify({expectedRevision:revision,config})});revision=Number(data.revision)||0;config=data.config;render();$('#revision').textContent='Ревизия '+revision+' · сохранено '+new Date(data.updatedAt).toLocaleString('ru-RU');message($('#save-status'),'Сохранено на сервере. Публичный каталог подхватит настройки при следующем открытии страницы.','success')}
+ catch(error){message($('#save-status'),error instanceof Error?error.message:'Ошибка сохранения.','error')}
+ finally{$('#save-config').disabled=!config}
+});
+window.addEventListener('pagehide',()=>{token='';$('#admin-token').value='';apiBase=''});
+})();
+</script></body></html>

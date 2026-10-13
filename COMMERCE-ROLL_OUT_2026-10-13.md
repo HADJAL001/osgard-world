@@ -80,3 +80,12 @@ The consented analytics retry queue is included in the deployed web revision `19
 - Commerce Checks, frontend validation, deployment and release readiness completed successfully on this revision.
 
 **Activation boundary is unchanged:** the browser queue can retry events, but central analytics are only available when the private Commerce API and its database are online. Production checkout is still disabled until the PostgreSQL and Stripe secrets/prices/webhook configuration are supplied and validated. No ad network, paid reward video, live subscription billing, or real-money SHARDS redemption is claimed as active.
+
+
+## Added: secured game catalogue settings (source change; not yet deployed)
+
+The optional Commerce API settings table stores visibility, order, up to three featured flags and plain-text title/description overrides for the ten known games. `/games/admin/catalog/` reads and writes this configuration through the existing server-side admin authorization. Optimistic revisions prevent accidental lost updates.
+
+The public catalogue loads these overrides only when `apiBaseUrl` in `/games/commerce-config.json` is explicitly configured. The committed value remains blank, so the static catalogue remains the production fallback. This feature does not activate sponsored placements, ad SDKs, Stripe checkout, subscription sales or paid entitlements.
+
+The new validation and route checks must pass in Commerce Checks and the production route matrix. After deployment, test the editor with the real admin token, save a revision, confirm stale revisions return HTTP 409, and reload `/games/` on both desktop and mobile. Database/API deployment and the public config change are still operator steps, not claims made by this source patch.

@@ -10,6 +10,9 @@ const requiredFiles = [
 for (const relative of requiredFiles) assert.ok(existsSync(resolve(root, relative)), "Missing commerce file: " + relative);
 
 const server = readFileSync(resolve(root, "src/server.mjs"), "utf8");
+const catalogCore = readFileSync(resolve(root, "src/core.mjs"), "utf8");
+const catalogAdmin = readFileSync(resolve("public/games/admin/catalog/index.html"), "utf8");
+const catalogClient = readFileSync(resolve("public/games/catalog-settings.js"), "utf8");
 const core = readFileSync(resolve(root, "src/core.mjs"), "utf8");
 const store = readFileSync(resolve("public/games/premium/index.html"), "utf8");
 const app = readFileSync(resolve("public/games/premium/app.js"), "utf8");
@@ -122,4 +125,16 @@ assert.ok(readFileSync(resolve("public/games/premium/index.html"), "utf8").inclu
 assert.ok(privacy.includes("ANALYTICS_RETENTION_DAYS") && privacy.includes("90 дней") && privacy.includes("не отправляется автоматически"), "Privacy page must document consented analytics retention and manual WhatsApp fallback.");
 assert.ok(privacy.includes("100 событий") && privacy.includes("7 дней") && privacy.includes("отзыве согласия"), "Privacy page must disclose local analytics queue bounds and withdrawal behavior.");
 
+
+for (const value of ["commerce_game_catalog_settings", "/v1/game-catalog", "/v1/admin/game-catalog", "REVISION_CONFLICT", "expectedRevision", "requireAdmin"]) {
+  assert.ok(server.includes(value), "Server-side game catalog settings missing: " + value);
+}
+for (const value of ["GAME_CATALOG_GAME_IDS", "defaultGameCatalogSettings", "validateGameCatalogSettings", "GAME_CATALOG_TOO_MANY_FEATURED", "GAME_CATALOG_NO_VISIBLE_GAMES"]) {
+  assert.ok(catalogCore.includes(value), "Game catalog validation missing: " + value);
+}
+for (const value of ['id="catalog-form"', 'id="admin-token"', 'id="save-config"', "noindex,nofollow,noarchive", "Authorization", "expectedRevision"]) {
+  assert.ok(catalogAdmin.includes(value), "Catalog admin UI missing: " + value);
+}
+assert.ok(catalogClient.includes("/games/commerce-config.json") && catalogClient.includes("/v1/game-catalog") && catalogClient.includes("textContent") && catalogClient.includes("data-catalog-admin-hidden"), "Public catalog override must be optional, text-only and safe to fall back.");
+assert.ok(!catalogAdmin.includes("localStorage.setItem") && !catalogAdmin.includes("sessionStorage.setItem"), "Admin token/config must not be persisted in browser storage.");
 console.log("Commerce rollout smoke: all static integration checks passed.");
