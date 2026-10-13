@@ -42,6 +42,28 @@ for (const value of ["type=\"password\"", "ADMIN_API_TOKEN", "/v1/admin/leads", 
 }
 assert.equal(config.apiBaseUrl, "", "No production API hostname should be assumed without deployment confirmation.");
 assert.equal(server.split('app.get("/v1/admin/overview"').length - 1, 1, "Commerce API must have exactly one admin overview handler.");
+
+const overviewStart = server.indexOf("const [orderStats, currencyStats, leadStats, eventStats, topEvents, analyticsByGame, ownedPromoByService, ownedPromoVariantStats, analyticsFunnel, socialShareByNetwork, paidRevenueByAttribution]");
+const overviewEnd = server.indexOf("\n    ]);", overviewStart);
+assert.ok(overviewStart >= 0 && overviewEnd > overviewStart, "Admin overview Promise.all query block missing.");
+const overviewQueries = server.slice(overviewStart, overviewEnd);
+const overviewQueryOrder = [
+  "SELECT status, COUNT(*)::int AS count FROM commerce_orders GROUP BY status",
+  "SELECT currency, SUM(amount_total)",
+  "SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE status='new')::int AS new FROM commerce_leads",
+  "SELECT COUNT(*)::int AS total_30d FROM commerce_events",
+  "SELECT event_name, COUNT(*)::int AS count FROM commerce_events",
+  "SELECT game_id AS",
+  "split_part(source, ':', 3) AS",
+  "split_part(source, ':', 4) AS variant",
+  "WITH recent_events AS (",
+  "SELECT\n          network,",
+  "SELECT attribution_game_id AS",
+];
+const overviewPositions = overviewQueryOrder.map((needle) => overviewQueries.indexOf(needle));
+assert.ok(overviewPositions.every((position) => position >= 0), "Admin overview is missing one or more expected query slots.");
+assert.ok(overviewPositions.every((position, index) => index === 0 || overviewPositions[index - 1] < position), "Admin overview query order must match its destructured response fields.");
+
 assert.ok(!server.includes("sk_live_abc123"), "No live secret may be committed.");
 assert.ok(!admin.includes("Bearer sk_"), "No payment secret may be embedded in admin HTML.");
 assert.ok(nginx.includes("location ^~ /commerce-api/"), "Existing Nginx must expose the same-origin commerce API prefix.");

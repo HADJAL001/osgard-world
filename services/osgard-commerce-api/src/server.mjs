@@ -345,7 +345,6 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
     const [orderStats, currencyStats, leadStats, eventStats, topEvents, analyticsByGame, ownedPromoByService, ownedPromoVariantStats, analyticsFunnel, socialShareByNetwork, paidRevenueByAttribution] = await Promise.all([
       pool.query("SELECT status, COUNT(*)::int AS count FROM commerce_orders GROUP BY status"),
       pool.query("SELECT currency, SUM(amount_total)::bigint AS total_minor, COUNT(*)::int AS count FROM commerce_orders WHERE status='paid' AND currency IS NOT NULL GROUP BY currency"),
-      pool.query("SELECT attribution_game_id AS \"gameId\", attribution_source AS source, NULLIF(attribution_campaign, '') AS campaign, mode, currency, COUNT(*)::int AS orders, COALESCE(SUM(amount_total),0)::text AS \"totalMinor\" FROM commerce_orders WHERE status='paid' AND amount_total IS NOT NULL AND currency IS NOT NULL AND created_at >= NOW() - INTERVAL '30 days' GROUP BY attribution_game_id, attribution_source, attribution_campaign, mode, currency ORDER BY COUNT(*) DESC, attribution_game_id ASC LIMIT 50"),
       pool.query("SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE status='new')::int AS new FROM commerce_leads"),
       pool.query("SELECT COUNT(*)::int AS total_30d FROM commerce_events WHERE received_at >= NOW() - INTERVAL '30 days'"),
       pool.query("SELECT event_name, COUNT(*)::int AS count FROM commerce_events WHERE received_at >= NOW() - INTERVAL '30 days' GROUP BY event_name ORDER BY count DESC LIMIT 12"),
@@ -464,6 +463,7 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
         GROUP BY network
         ORDER BY intents DESC, network ASC
       `),
+      pool.query("SELECT attribution_game_id AS \"gameId\", attribution_source AS source, NULLIF(attribution_campaign, '') AS campaign, mode, currency, COUNT(*)::int AS orders, COALESCE(SUM(amount_total),0)::text AS \"totalMinor\" FROM commerce_orders WHERE status='paid' AND amount_total IS NOT NULL AND currency IS NOT NULL AND created_at >= NOW() - INTERVAL '30 days' GROUP BY attribution_game_id, attribution_source, attribution_campaign, mode, currency ORDER BY COUNT(*) DESC, attribution_game_id ASC LIMIT 50"),
     ]);
     return res.json({
       ordersByStatus: orderStats.rows,
