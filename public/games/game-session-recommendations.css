@@ -22,3 +22,15 @@ dialog#player-dialog.has-recommendations .player-view iframe{min-height:180px}
 .og-partner-cta:hover,.og-partner-cta:focus-visible{border-color:#d3ff69;background:#d3ff6912;outline:2px solid transparent}
 @media(max-width:760px){.og-partner-cta{grid-template-columns:minmax(0,1fr);gap:5px;padding:10px}.og-partner-action{white-space:normal}}
 @media(prefers-reduced-motion:reduce){.og-partner-cta{transition:none}}
+
+
+/* Share rewards are local cosmetic collectibles; they are not paid currency. */
+.og-growth .og-reward-disclosure{margin:0;color:#829083;font-size:9px;line-height:1.65}
+.og-growth .og-share-friend{border-color:#e4cb8a;background:linear-gradient(110deg,#c6a45e,#f0dda5);color:#11150d;font-weight:750}
+.og-growth .og-share-reward-claim{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:9px 12px;border:1px solid #d3ff69;background:#d3ff6910;color:#d3ff69;font-size:10px;cursor:pointer}
+.og-growth .og-share-reward-claim[hidden]{display:none}
+.og-growth .og-share-reward-claim:disabled{opacity:.65;cursor:default}
+.og-growth .og-growth-actions>*{max-width:100%}
+.og-growth .og-growth-actions a:hover,.og-growth .og-growth-actions button:hover{filter:brightness(1.1)}
+@media(max-width:600px){.og-growth .og-growth-actions>*{width:100%;justify-content:center}.og-growth .og-reward-disclosure{font-size:9px}}
+@media(prefers-reduced-motion:reduce){.og-growth .og-share-friend,.og-growth .og-share-reward-claim{transition:none}}
