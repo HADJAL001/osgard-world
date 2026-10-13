@@ -107,7 +107,7 @@ assert.equal(missingQueue.emitted.length, 0);
 
 console.log(JSON.stringify({
   status: 'PASS',
-  checks: 16,
+  checks: 17,
   consentRequired: true,
   outboundEvents: granted.emitted.length,
   destinationUrlStored: false,
