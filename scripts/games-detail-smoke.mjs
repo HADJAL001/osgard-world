@@ -13,6 +13,8 @@ const nginx = read('nginx.conf')
 const sitemap = read('public/sitemap.xml')
 const css = read('src/games-hub.css')
 
+const civicGame = read('public/games/civic-cascade/index.html')
+
 const games = [
   { id: 'time', href: '/games/time' },
   { id: 'swarm', href: '/games/swarm/index.html' },
@@ -48,3 +50,8 @@ for (const p of ['public/games/index.html','godot/null-shift/project.godot','pub
 }
 execFileSync(process.execPath, ['--check', 'scripts/production-route-matrix.mjs'], { stdio: 'pipe' })
 console.log('PASS OSGARD GAME DETAIL: eight routes, details, SEO sitemap, safe legacy fallback, Nginx redirects, asynchronous SPA readiness and honest lifecycle events.')
+
+assert.ok(civicGame.includes('id="cc-save"') && civicGame.includes('id="cc-load"') && civicGame.includes('function saveCheckpoint()') && civicGame.includes('function restoreCheckpoint()'), 'CIVIC CASCADE must provide working local operation checkpoints')
+assert.ok(civicGame.includes("osgard-civic-cascade-checkpoint-v1") && civicGame.includes("localStorage.setItem(CHECKPOINT_KEY") && civicGame.includes("schemaVersion!==1"), 'CIVIC CASCADE checkpoint storage must be versioned and validated')
+assert.ok(civicGame.includes('id="cc-forecast"') && civicGame.includes('function updateForecast()') && civicGame.includes('30 игровых секунд'), 'CIVIC CASCADE must render its approximate 30-second risk outlook')
+assert.ok(hub.includes('8 игровых проектов') && hub.includes('Запустить CIVIC CASCADE') && hub.includes('cc-release-strip'), 'Entertainment hub must accurately count and visibly promote CIVIC CASCADE')
