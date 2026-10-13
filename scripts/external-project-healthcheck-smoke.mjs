@@ -15,6 +15,7 @@ assert.equal(extractMetaDescription('<meta content="A &amp; B" name="description
 assert.equal(extractMetaDescription('<meta name="viewport" content="width=device-width">'), null)
 
 const calls = []
+const myosaAttempts = new Map()
 const fakeFetch = async (url, options) => {
   calls.push({ url, options })
   if (url.includes('o2system')) {
@@ -24,8 +25,9 @@ const fakeFetch = async (url, options) => {
       text: async () => '<title>Forbidden</title>',
     }
   }
-  if (url.includes('senjorio')) throw new TypeError('simulated DNS failure')
+  if (url.includes('senjorio')) throw Object.assign(new TypeError('simulated DNS failure'), { cause: Object.assign(new Error('getaddrinfo ENOTFOUND senjorio.com'), { code: 'ENOTFOUND' }) })
   if (url.includes('superday')) throw Object.assign(new Error('simulated timeout'), { name: 'TimeoutError' })
+  if (url.includes('myosa')) { const count = (myosaAttempts.get(url) || 0) + 1; myosaAttempts.set(url, count); if (count === 1) return { status: 503, url, redirected: false, headers: { get: name => name === 'content-type' ? 'text/html' : null }, text: async () => '<title>Temporary outage</title>' } }
   return {
     status: 200, url, redirected: false,
     headers: { get: name => name === 'content-type' ? 'text/html; charset=utf-8' : null },
@@ -49,8 +51,12 @@ assert.equal(forbidden.reachable, false)
 const network = await checkProject(PROJECTS[2], { fetchImpl: fakeFetch, now: fixedNow })
 assert.equal(network.outcome, 'network_error')
 assert.equal(network.errorName, 'TypeError')
+assert.equal(network.errorCode, 'ENOTFOUND')
+assert.equal(network.attempts, 2)
+assert.equal(calls.filter(call => call.url.includes('senjorio')).length, 2, 'A transient network error gets one retry')
 const timeout = await checkProject(PROJECTS[3], { fetchImpl: fakeFetch, now: fixedNow })
 assert.equal(timeout.outcome, 'timeout')
+assert.equal(timeout.attempts, 2, 'A timeout gets one retry')
 
 const report = await runAudit({ fetchImpl: fakeFetch, now: fixedNow })
 assert.equal(report.projectCount, 10)
@@ -61,6 +67,9 @@ assert.equal(report.outcomeCounts.reachable, 7)
 assert.equal(report.outcomeCounts.http_error, 1)
 assert.equal(report.outcomeCounts.network_error, 1)
 assert.equal(report.outcomeCounts.timeout, 1)
+assert.equal(report.results.find(result => result.id === 'senjorio').errorCode, 'ENOTFOUND')
+assert.equal(report.results.find(result => result.id === 'senjorio').attempts, 2)
+assert.equal(report.results.find(result => result.id === 'myosa').attempts, 2, 'A 5xx response gets one retry before classification')
 assert.ok(report.results.every(result => result.note.includes('HTTP homepage check only') || result.note.includes('does not by itself prove')))
 
 console.log('PASS external project healthcheck: 10 URL registry entries, HTML metadata, bounded GET requests, HTTP/network/timeout classification, and report boundaries.')
