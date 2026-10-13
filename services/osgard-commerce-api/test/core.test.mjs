@@ -7,6 +7,8 @@ import {
   validateCheckoutPayload,
   validateLeadPayload,
   validateEventBatch,
+  validateReferralRegistrationPayload,
+  validateReferralClaimPayload,
   paymentsModeAllowed,
   resolveCheckoutPaymentState,
   verifyStripeSignature,
@@ -65,11 +67,33 @@ test("lead endpoint requires contact, brief and acknowledgement; honeypot is sil
   assert.equal(validateLeadPayload({ website: "spam", consent: true }).bot, true);
 });
 
+test("referral registration requires consent, a known game, an invitation code and a random owner token", () => {
+  const base = { consent: true, referralCode: "og_0123abcd", gameId: "swarm", ownerToken: "0123456789abcdef0123456789abcdef" };
+  assert.equal(validateReferralRegistrationPayload({ ...base, consent: false }).code, "ANALYTICS_CONSENT_REQUIRED");
+  assert.equal(validateReferralRegistrationPayload({ ...base, referralCode: "../bad" }).code, "REFERRAL_CODE_INVALID");
+  assert.equal(validateReferralRegistrationPayload({ ...base, gameId: "unknown" }).code, "GAME_ID_INVALID");
+  assert.equal(validateReferralRegistrationPayload({ ...base, ownerToken: "short" }).code, "REFERRAL_OWNER_TOKEN_INVALID");
+  assert.deepEqual(validateReferralRegistrationPayload(base), {
+    ok: true, referralCode: "og_0123abcd", gameId: "swarm", ownerToken: "0123456789abcdef0123456789abcdef",
+  });
+});
+
+test("referral reward claims require explicit consent and a high-entropy owner token", () => {
+  const base = { consent: true, ownerToken: "abcdef0123456789abcdef0123456789" };
+  assert.equal(validateReferralClaimPayload({ ...base, consent: false }).code, "ANALYTICS_CONSENT_REQUIRED");
+  assert.equal(validateReferralClaimPayload({ ...base, ownerToken: "guessable" }).code, "REFERRAL_OWNER_TOKEN_INVALID");
+  assert.deepEqual(validateReferralClaimPayload(base), {
+    ok: true, ownerToken: "abcdef0123456789abcdef0123456789",
+  });
+});
+
 test("analytics is disabled unless consent is explicit and event names are allow-listed", () => {
   const event = { name: "game_session_started", sessionId: "session_123456789", gameId: "signal-run", source: "catalog", path: "/games/", durationSeconds: 0 };
   assert.equal(validateEventBatch({ consent: false, events: [event] }).code, "ANALYTICS_CONSENT_REQUIRED");
   assert.equal(validateEventBatch({ consent: true, events: [{ ...event, name: "steal_customer_emails" }] }).ok, false);
   assert.equal(validateEventBatch({ consent: true, events: [event] }).ok, true);
+  assert.equal(validateEventBatch({ consent: false, events: [{ ...event, name: "referral_reward_claimed" }] }).code, "ANALYTICS_CONSENT_REQUIRED");
+  assert.equal(validateEventBatch({ consent: true, events: [{ ...event, name: "referral_reward_claimed", source: "osgard-referral-qualified:1:swarm", eventId: "evt_ref_reward_123456" }] }).ok, true);
   assert.equal(validateEventBatch({ consent: true, events: [{ ...event, gameId: "cascade-lab" }] }).ok, true);
   assert.equal(
     validateEventBatch({ consent: true, events: [{ ...event, gameId: "afterimage-run", name: "social_share_intent", source: "osgard-select:share:telegram", eventId: "evt_afterimage_share_123" }] }).ok,
