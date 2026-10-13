@@ -27,8 +27,13 @@ for (const [label, url] of services) {
   assert.ok(source.includes(label), 'Missing official service label: ' + label);
   assert.ok(source.includes(url), 'Missing official destination: ' + url);
 }
-for (const id of ['null-shift','time','swarm','inherit','remix','civic-cascade','patina','signal-run','cascade-lab']) {
-  assert.ok(source.includes("'" + id + "'"), 'Missing game-specific growth context: ' + id);
+const recommendationMapMatch = source.match(/const recommendationByGame=(\{[\s\S]*?\});/);
+assert.ok(recommendationMapMatch, 'Missing game-specific recommendation map');
+const recommendationMap = vm.runInNewContext('(' + recommendationMapMatch[1] + ')');
+for (const id of ['null-shift','time','swarm','inherit','remix','civic-cascade','patina','signal-run','cascade-lab','afterimage-run']) {
+  assert.ok(Object.prototype.hasOwnProperty.call(recommendationMap, id), 'Missing game-specific growth context: ' + id);
+  assert.ok(Array.isArray(recommendationMap[id]) && recommendationMap[id].length > 0,
+    'Game-specific growth context must contain prioritized services: ' + id);
 }
 assert.ok(source.includes("const preferredServiceKey='osgard.games.preferred-service.v1'") &&
   source.includes('function readPreferredService()') && source.includes('function savePreferredService(id)'),
