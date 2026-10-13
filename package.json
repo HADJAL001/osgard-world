@@ -28,7 +28,8 @@
     "qa:null-shift-godot": "node scripts/null-shift-godot-smoke.mjs",
     "qa:partners-page": "node scripts/partners-page-smoke.mjs",
     "qa:ecosystem": "node scripts/ecosystem-integrity-smoke.mjs",
-    "qa:games-referral": "node scripts/games-referral-smoke.mjs"
+    "qa:games-referral": "node scripts/games-referral-smoke.mjs",
+    "qa:commerce-api": "python3 -m unittest discover -s commerce-api -p 'test_*.py' -v"
   },
   "dependencies": {
     "@types/three": "^0.186.0",
