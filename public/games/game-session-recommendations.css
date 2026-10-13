@@ -47,3 +47,5 @@ dialog#player-dialog.has-recommendations .player-view{height:min(35vh,380px);min
 @media(max-width:1000px){.og-service-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.og-service-card{min-height:116px}}
 @media(max-width:620px){.post-run-recommendations{max-height:min(50svh,480px);padding:8px}.og-intermission{padding:12px;gap:11px}.og-service-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.og-service-card{min-height:110px;padding:10px}.og-social-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.og-social-link{padding:8px 5px}.og-social-copy-button{width:100%}.og-intermission-title{font-size:24px}}
 @media(prefers-reduced-motion:reduce){.og-service-card{transition:none;transform:none}.og-service-card:hover{transform:none}}
+
+.og-social-section{margin-top:2px}.og-social-section .og-social-title{margin:0}.og-social-section .og-social-copy{margin:0}
