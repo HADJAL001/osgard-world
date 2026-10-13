@@ -127,6 +127,13 @@
       return Promise.resolve(false);
     }
     if (flushPromise) return flushPromise;
+    // Do not claim the queue while it is empty. In particular, a synchronous
+    // first enqueue must not attach itself to an already-resolved empty flush.
+    const initialQueue = readQueue();
+    if (initialQueue.length === 0) {
+      writeQueue(initialQueue);
+      return Promise.resolve(true);
+    }
     flushPromise = (async () => {
       let queue = readQueue();
       if (!writeQueue(queue)) return false;
