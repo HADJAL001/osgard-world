@@ -18,6 +18,8 @@ workflows:
         - pattern: osgard-play-v*
           include: true
     scripts:
+      - name: Validate release tag and App Store version
+        script: node scripts/ios-release-tag-preflight.mjs
       - name: Install locked web dependencies
         script: npm ci
       - name: Install pinned native build dependencies
@@ -30,6 +32,7 @@ workflows:
       - name: Validate the web application
         script: |
           npm run check
+          npm run qa:ios-appstore
           npm run qa:games-portal
           npm run qa:games-detail
           npm run qa:null-shift
