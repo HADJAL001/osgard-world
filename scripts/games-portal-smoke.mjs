@@ -371,7 +371,7 @@ const postGameSpotlightActions=postGameSpotlightCopy?.children.find(node=>node.c
 assert.deepEqual(postGameSpotlightActions?.children.map(node=>node.textContent),['Изучить проект ↗','Другой проект','Запомнить выбор'],'The premium spotlight must let the player open, cycle and remember a service');
 const initialSpotlightName=postGameSpotlightCopy.children.find(node=>node.className==='og-postgame-spotlight-name').textContent;
 postGameSpotlightActions.children.find(node=>node.className==='og-postgame-spotlight-next').click();
-assert.notEqual(postGameSpotlightCopy.children.find(node=>node.className==='og-postgame-spotlight-name').textContent,initialSpotlightName,'Choosing another service should update the spotlight');
+assert.notEqual(postGameSpotlight.children.find(node=>node.className==='og-postgame-spotlight-copy').children.find(node=>node.className==='og-postgame-spotlight-name').textContent,initialSpotlightName,'Choosing another service should update the spotlight');
 const postGameDirectoryToggle=postGameServiceShelf.children.find(node=>node.className==='og-postgame-service-head').children.find(node=>node.className==='og-postgame-service-head-actions').children.find(node=>node.className==='og-postgame-collapse-toggle');
 const postGameDirectory=postGameServiceShelf.children.find(node=>node.className==='og-postgame-service-grid');
 assert.ok(postGameDirectory.hidden&&postGameServiceShelf.children.find(node=>node.className==='og-postgame-service-filters').hidden,'The full project directory should be opt-in; only one curated promotion appears first');
