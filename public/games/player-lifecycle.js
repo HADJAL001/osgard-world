@@ -11,7 +11,8 @@ const games={
  'civic-cascade':{title:'CIVIC CASCADE',url:'/games/civic-cascade/'},
  patina:{title:'PATINA Atelier',url:'/games/patina/'},
  'signal-run':{title:'SIGNAL RUN',url:'/games/signal-run/'},
- 'cascade-lab':{title:'CASCADE LAB',url:'/games/cascade-lab/'}
+ 'cascade-lab':{title:'CASCADE LAB',url:'/games/cascade-lab/'},
+ 'aether-grid':{title:'AETHER GRID',url:'/games/aether-grid/'}
 };
 const clock=document.createElement('span');clock.id='player-session-clock';clock.className='session-clock';clock.hidden=true;clock.textContent='СЕССИЯ 00:00';status.insertAdjacentElement('afterend',clock);
 const tools=dialog.querySelector('.player-tools');
