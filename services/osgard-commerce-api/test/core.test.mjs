@@ -64,6 +64,9 @@ test("analytics is disabled unless consent is explicit and event names are allow
     ["owned_promo_preferences_saved", "osgard-select:preferences:each:7"],
     ["social_share_intent", "osgard-social-share:telegram:swarm"],
     ["social_reward_claimed", "osgard-social-reward:telegram:swarm"],
+    ["daily_play_reward_claimed", "osgard-daily-play:signal-run"],
+    ["referral_welcome_reward_claimed", "osgard-referral-welcome:og_12ab34cd"],
+    ["shards_cosmetic_unlocked", "cosmetic-unlock:northstar:100"],
   ]) {
     assert.equal(validateEventBatch({ consent: true, events: [{ ...event, name, source, eventId: "evt_social_event_123456" }] }).ok, true,
       name + " should be accepted as a consented event");
