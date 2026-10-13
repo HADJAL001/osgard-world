@@ -1,6 +1,6 @@
 export type OsgardWorldId = 'play' | 'business' | 'create' | 'mobility' | 'media' | 'vpn' | 'marcosa'
 
-export type OsgardGameId = 'time' | 'swarm' | 'null-shift' | 'inherit' | 'remix' | 'civic-cascade' | 'patina' | 'signal-run' | 'cascade-lab' | 'afterimage-run'
+export type OsgardGameId = 'time' | 'swarm' | 'null-shift' | 'inherit' | 'remix' | 'civic-cascade' | 'patina' | 'signal-run' | 'cascade-lab' | 'afterimage-run' | 'aether-grid'
 
 export type OsgardEventName =
   | 'portal_opened'
@@ -53,5 +53,6 @@ export const OSGARD_GAMES: ReadonlyArray<{ id: OsgardGameId, title: string, reas
   { id: 'signal-run', title: 'SIGNAL RUN', reason: 'реагировать', href: '/games/signal-run/' },
   { id: 'cascade-lab', title: 'CASCADE LAB', reason: 'собирать цепные реакции', href: '/games/cascade-lab/' },
   { id: 'afterimage-run', title: 'AFTERIMAGE//RUN', reason: 'пройти daily seed и обогнать призрак', href: '/games/afterimage-run/' },
+  { id: 'aether-grid', title: 'AETHER GRID', reason: 'соединить сигнал в ежедневной головоломке', href: '/games/aether-grid/' },
 ]
 

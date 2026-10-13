@@ -7,7 +7,7 @@
   if (!grid || !filters || !search) return
 
   const RECENT_KEY = 'osgard.games.recent.v1'
-  const validIds = new Set(['null-shift', 'time', 'swarm', 'inherit', 'remix', 'civic-cascade', 'patina', 'signal-run', 'cascade-lab', 'afterimage-run'])
+  const validIds = new Set(['null-shift', 'time', 'swarm', 'inherit', 'remix', 'civic-cascade', 'patina', 'signal-run', 'cascade-lab', 'afterimage-run', 'aether-grid'])
   const originalOrder = new Map(Array.from(grid.querySelectorAll('.card'), (card, index) => [card.dataset.game, index]))
 
   function getRecent() {
