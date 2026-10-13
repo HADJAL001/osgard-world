@@ -88,8 +88,14 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
           ? text.includes('<title>PATINA Atelier — OSGARD WORLD GAMING</title>') && text.includes('id="patina-workbench"') && text.includes('data-patina-ready="true"') && text.includes('id="diagnose"') && text.includes('id="finish-case"') && text.includes('id="export-case"')
         : route === '/games/signal-run/'
           ? text.includes('<title>SIGNAL RUN — OSGARD WORLD</title>') && text.includes('id="arena"') && text.includes('game.js')
-                : route === '/games/afterimage-run/'
-          ? text.includes('<title>AFTERIMAGE//RUN — OSGARD PLAY</title>') && text.includes('id="runnerCanvas"') && text.includes('id="run-start"') && text.includes('id="daily-seed"') && text.includes('id="share-telegram"') && text.includes('osgard:game-lifecycle')
+        : route === '/games/afterimage-run/'
+          ? text.includes('<title>AFTERIMAGE//RUN — OSGARD PLAY</title>') &&
+            text.includes('id="runnerCanvas"') && text.includes('id="run-start"') &&
+            text.includes('id="daily-seed"') && text.includes('id="share-telegram"') &&
+            text.includes("u.searchParams.set('og_ref',ownReferralCode())") &&
+            text.includes("name:'referral_link_opened'") &&
+            text.includes("localStorage.getItem('osgard.games.analytics-consent.v1')==='yes'") &&
+            text.includes('osgard:game-lifecycle')
         : route === '/games/cascade-lab/'
           ? text.includes('<title>CASCADE LAB — Premium Physics Lab 0.13.0</title>') &&
             text.includes('name="osgard-game-version" content="0.13.0-osgard-cross-promo"') &&
