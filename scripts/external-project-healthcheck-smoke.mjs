@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { checkProject, extractMetaDescription, extractPageTitle, isSafePublicHttpsUrl, PROJECTS, runAudit } from './external-project-healthcheck.mjs'
+import { checkProject, extractMetaDescription, extractPageTitle, formatAuditDiagnostic, isSafePublicHttpsUrl, PROJECTS, runAudit } from './external-project-healthcheck.mjs'
 
 assert.equal(PROJECTS.length, 10, 'The audit must include all ten owner-listed projects')
 assert.equal(new Set(PROJECTS.map(project => project.id)).size, 10, 'Project IDs must be unique')
@@ -13,6 +13,23 @@ assert.equal(extractPageTitle('<html><head><title> Example &amp; One </title></h
 assert.equal(extractPageTitle('<html><head></head></html>'), null)
 assert.equal(extractMetaDescription('<meta content="A &amp; B" name="description">'), 'A & B')
 assert.equal(extractMetaDescription('<meta name="viewport" content="width=device-width">'), null)
+
+assert.equal(
+  formatAuditDiagnostic({ errorCode: 'ENOTFOUND', errorCause: 'getaddrinfo ENOTFOUND host.test', error: 'fetch failed' }),
+  'ENOTFOUND · getaddrinfo ENOTFOUND host.test · fetch failed',
+  'The audit summary should preserve the network cause rather than only saying fetch failed',
+)
+assert.equal(
+  formatAuditDiagnostic({ blockedRedirectHost: '127.0.0.1', error: 'blocked redirect' }),
+  'blocked redirect: 127.0.0.1 · blocked redirect',
+  'Blocked redirect diagnostics should retain the attempted host',
+)
+assert.equal(
+  formatAuditDiagnostic({ finalUrl: 'https://good.example.com/' }),
+  'https://good.example.com/',
+  'Successful URL diagnostics should remain concise',
+)
+
 
 const calls = []
 const myosaAttempts = new Map()
