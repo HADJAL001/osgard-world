@@ -37,3 +37,7 @@ osgard_deploy_ci.pub
 
 /public/games/null-shift-godot/
 godot/null-shift/.godot/
+
+# Generated Capacitor/iOS packaging outputs
+/mobile-dist/
+/ios/
