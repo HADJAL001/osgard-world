@@ -6,6 +6,7 @@ import {
   catalogConfiguration,
   validateCheckoutPayload,
   validateLeadPayload,
+  validateGameFeedbackPayload,
   validateEventBatch,
   paymentsModeAllowed,
   resolveCheckoutPaymentState,
@@ -63,6 +64,34 @@ test("lead endpoint requires contact, brief and acknowledgement; honeypot is sil
   const good = validateLeadPayload({ projectType: "Игра", contact: "test@example.com", description: "Нужно разработать мобильную стратегию", consent: true });
   assert.equal(good.ok, true);
   assert.equal(validateLeadPayload({ website: "spam", consent: true }).bot, true);
+});
+
+test("game feedback requires consent, an allow-listed game, bounded rating and safe fixed-choice fields", () => {
+  const base = {
+    gameId: "afterimage-run",
+    rating: 5,
+    wouldPlayAgain: "yes",
+    category: "gameplay",
+    message: "Управление понятное, хочется ещё один уровень.",
+    consent: true,
+  };
+  assert.equal(validateGameFeedbackPayload({ ...base, consent: false }).code, "FEEDBACK_CONSENT_REQUIRED");
+  assert.equal(validateGameFeedbackPayload({ ...base, gameId: "unknown" }).code, "GAME_ID_INVALID");
+  assert.equal(validateGameFeedbackPayload({ ...base, gameId: "https://evil.example" }).code, "GAME_ID_INVALID");
+  for (const rating of [0, 6, 2.5, "NaN"]) {
+    assert.equal(validateGameFeedbackPayload({ ...base, rating }).code, "FEEDBACK_RATING_INVALID");
+  }
+  assert.equal(validateGameFeedbackPayload({ ...base, wouldPlayAgain: "maybe-inject" }).code, "FEEDBACK_RETURN_INTENT_INVALID");
+  assert.equal(validateGameFeedbackPayload({ ...base, category: "sql" }).code, "FEEDBACK_CATEGORY_INVALID");
+  assert.equal(validateGameFeedbackPayload({ ...base, message: "x".repeat(1201) }).code, "FEEDBACK_MESSAGE_TOO_LONG");
+  const safe = validateGameFeedbackPayload({ ...base, message: "  Хорошо\n\tсделано  " });
+  assert.equal(safe.ok, true);
+  assert.deepEqual(
+    { gameId: safe.gameId, rating: safe.rating, wouldPlayAgain: safe.wouldPlayAgain, category: safe.category, message: safe.message },
+    { gameId: "afterimage-run", rating: 5, wouldPlayAgain: "yes", category: "gameplay", message: "Хорошо сделано" },
+  );
+  assert.equal(validateGameFeedbackPayload({ ...base, website: "bot-filled" }).bot, true,
+    "The honeypot must classify bots without storing a feedback record.");
 });
 
 test("analytics is disabled unless consent is explicit and event names are allow-listed", () => {
