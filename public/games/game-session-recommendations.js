@@ -410,7 +410,7 @@ function ownerToken(){
  try{let value=localStorage.getItem(OWNER_TOKEN_KEY)||'';if(/^[a-f0-9]{12}$/.test(value))return value;value=secureReferralHex(6);if(!value)return '';localStorage.setItem(OWNER_TOKEN_KEY,value);return value}catch{return ''}
 }
 function hasRewardConsent(){try{return localStorage.getItem(REWARD_CONSENT_KEY)==='yes'}catch{return false}}
-function inviteFor(id,code=inviteCode(id)){
+function rewardInviteFor(id,code=inviteCode(id)){
  const u=new URL('/games/invite/'+encodeURIComponent(id)+'/',location.origin);
  u.searchParams.set('og_ref',code);u.searchParams.set('og_game',id);
  u.searchParams.set('utm_source','osgard_play');u.searchParams.set('utm_medium','referral');
@@ -430,9 +430,13 @@ async function registerInvite(gameId,code){
    body:JSON.stringify({consent:true,rewardConsent:true,code,gameId,ownerToken:owner})
   });
   if(!response.ok)return false;
-  void sendSelectEvent('share_created',gameId,'game-invite:'+gameId+':'+code+':'+owner);
   return true;
  }catch{return false}
+}
+async function reportInviteShareCreated(gameId,code){
+  if(!hasConsent()||!hasRewardConsent()||!titles[gameId]||!/^og_[a-f0-9]{32}$/.test(code))return false;
+  const owner=ownerToken();if(!owner)return false;
+  return sendSelectEvent('share_created',gameId,'game-invite:'+gameId+':'+code+':'+owner);
 }
 async function refreshShardsBalance(gameId,balance,status){
  const code=inviteCode(gameId);
@@ -663,7 +667,7 @@ function rewardShelf(gameId){
  const copy=make('button','og-postgame-claim','Скопировать ссылку');copy.type='button';
  const refresh=make('button','og-postgame-claim','Обновить баланс');refresh.type='button';
  const actions=make('div','og-postgame-share-actions');actions.append(primary,copy,refresh);
- const code=inviteCode(gameId),url=code?inviteFor(gameId,code):'',message='Пойдём сыграем в '+titles[gameId]+' в OSGARD PLAY: '+url;
+ const code=inviteCode(gameId),url=code?rewardInviteFor(gameId,code):'',message='Пойдём сыграем в '+titles[gameId]+' в OSGARD PLAY: '+url;
  const encodedUrl=encodeURIComponent(url),encodedText=encodeURIComponent(message);
  const networks=[
   ['Telegram','https://t.me/share/url?url='+encodedUrl+'&text='+encodeURIComponent('Пойдём сыграем в '+titles[gameId]+' в OSGARD PLAY')],
@@ -710,18 +714,24 @@ function rewardShelf(gameId){
   if(!url){status.textContent='Браузер не разрешил создать защищённую ссылку. Проверь настройки приватности.';return}
   primary.disabled=true;status.textContent='Готовим приглашение…';
   try{
+   const trackRewards=hasConsent()&&hasRewardConsent();
+   const registered=trackRewards?await registerInvite(gameId,code):false;
+   if(trackRewards&&!registered){
+    status.textContent='Не удалось зарегистрировать приглашение на сервере. Проверь соединение и повтори попытку; награда не начислена.';
+    return;
+   }
    if(typeof navigator.share==='function'){
     await navigator.share({title:'OSGARD PLAY · '+titles[gameId],text:'Пойдём сыграем вместе.',url});
-    const registered=await registerInvite(gameId,code);
+    if(registered)void reportInviteShareCreated(gameId,code);
     status.textContent=registered
-     ? 'Приглашение подготовлено. Публикация соцсетью не подтверждается; награда зависит от реальной игровой сессии друга.'
-     : 'Ссылка передана в меню отправки. Для награды нужно включить аналитику и согласиться на учёт приглашений.';
+     ? 'Приглашение зарегистрировано до отправки. Публикация соцсетью не подтверждается; награда зависит от реальной игровой сессии друга.'
+     : 'Ссылка передана в меню отправки. Для серверного учёта нужны аналитика и согласие на программу наград.';
    }else if(navigator.clipboard?.writeText){
     await navigator.clipboard.writeText(message);
-    const registered=await registerInvite(gameId,code);
+    if(registered)void reportInviteShareCreated(gameId,code);
     status.textContent=registered
-     ? 'Ссылка скопирована. Отправь её другу; +50 SHARDS начислятся после подтверждённой сессии.'
-     : 'Ссылка скопирована. Приглашение работает, но для наград нужна включённая аналитика и согласие на участие.';
+     ? 'Ссылка скопирована и зарегистрирована. Отправь её другу; +50 SHARDS начислятся после подтверждённой сессии.'
+     : 'Ссылка скопирована. Для серверного учёта наград нужны включённая аналитика и согласие на участие.';
    }else{
     status.textContent='Выбери соцсеть ниже, чтобы открыть форму публикации.';
    }
@@ -732,8 +742,11 @@ function rewardShelf(gameId){
  copy.addEventListener('click',async()=>{
   if(!url){status.textContent='Не удалось создать защищённую ссылку.';return}
   try{
+   const trackRewards=hasConsent()&&hasRewardConsent();
+   const registered=trackRewards?await registerInvite(gameId,code):false;
+   if(trackRewards&&!registered){status.textContent='Не удалось зарегистрировать приглашение на сервере. Повтори попытку; награда не начислена.';return}
    await navigator.clipboard.writeText(message);
-   const registered=await registerInvite(gameId,code);
+   if(registered)void reportInviteShareCreated(gameId,code);
    status.textContent=registered
     ? 'Ссылка скопирована и зарегистрирована. Отправь её другу; очки появятся после игровой сессии от 60 секунд.'
     : 'Ссылка скопирована. Для учёта награды нужны включённая аналитика и явное согласие на участие.';
