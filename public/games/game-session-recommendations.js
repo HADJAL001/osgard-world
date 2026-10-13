@@ -64,7 +64,7 @@ async function sendEvent(name,gameId,source){
  try{
   const configResponse=await fetch('/games/commerce-config.json',{cache:'no-store'});
   const config=configResponse.ok?await configResponse.json().catch(()=>({})):{};
-  const base=String(config.apiBaseUrl||'/commerce-api').replace(/\\/+$/,'');
+  const base=String(config.apiBaseUrl||'/commerce-api').replace(/\/+$/,'');
   const response=await fetch(base+'/v1/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({consent:true,events:[event]})});
   return response.ok;
  }catch{return false}
