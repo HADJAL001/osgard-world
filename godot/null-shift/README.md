@@ -200,3 +200,11 @@ Weapon fire and other transient beams use two crossed triangle ribbons plus a cr
 - All pooled tracer beams now fade with their remaining lifetime and reset their transparency before reuse. The same fade applies to weapon tracers, enemy telegraphs and dash trails, reducing harsh cut-offs and improving depth/readability.
 - Runtime smoke verifies dash movement causes actual trail emission, beam opacity changes over time, expired tracers reset, and pooled meshes are reused without growing the pool.
 - This is a native Godot scene/gameplay change tested by the official Godot 4.7.2 headless runtime/export pipeline; the browser Canvas/WebGL prototype remains untouched.
+
+
+## Release 2.3 — live 3D objective beacon
+
+- Added a persistent procedural world-space objective beacon that follows the live mission stage: cyan at the cipher terminal, amber at the quantum core, and green at extraction.
+- The marker combines a tapered emissive beam, a floor ring, an upper orbit ring, a signal core and a local accent light. The beam/orbit disappear when the operator is close to the target, while the ground ring remains as an interaction anchor.
+- The pulse and ring motion respect Reduced Motion; the extra light is disabled by the Performance profile or adaptive degradation. The beacon is built once and reuses the same nodes every frame.
+- The headless Godot runtime smoke now tests target-stage changes, per-stage materials, frame-driven pulse, close-range beam suppression, and stable node count.
