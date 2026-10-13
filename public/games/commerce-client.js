@@ -90,7 +90,7 @@
       if (button) button.disabled = false;
     }
   }
-  function sendAnalytics(name, gameId) {
+  function sendAnalytics(name, gameId, source = 'contact-form') {
     let allowed = false;
     try { allowed = localStorage.getItem('osgard.games.analytics-consent.v1') === 'yes'; } catch {}
     if (!allowed) return;
@@ -98,9 +98,22 @@
     void apiBase().then((base) => fetch(base + '/v1/events', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ consent: true, events: [{ name, sessionId, gameId, source: 'contact-form', path: location.pathname, durationSeconds: 0 }] }),
+      body: JSON.stringify({ consent: true, events: [{ name, sessionId, gameId, source: clean(source, 80), path: location.pathname, durationSeconds: 0 }] }),
     })).catch(() => {});
   }
+  document.addEventListener('click', (event) => {
+    const target = event.target;
+    const anchor = target instanceof Element ? target.closest('a[href]') : null;
+    if (!anchor) return;
+    let url;
+    try { url = new URL(anchor.href, location.href); } catch { return; }
+    if (url.origin === location.origin || url.searchParams.get('utm_source') !== 'osgard_games' || url.searchParams.get('utm_medium') !== 'cross_promo') return;
+    let gameId = 'unknown';
+    const gameCard = anchor.closest('[data-game]');
+    if (gameCard) gameId = clean(gameCard.getAttribute('data-game'), 40);
+    const destination = clean(url.searchParams.get('utm_content'), 40) || 'project';
+    sendAnalytics('cross_promo_clicked', gameId || 'unknown', 'cross-promo:' + destination);
+  }, true);
   document.addEventListener('submit', (event) => {
     const form = event.target;
     if (!(form instanceof HTMLFormElement) || !['project-form', 'campaign-form'].includes(form.id)) return;
