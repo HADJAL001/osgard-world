@@ -366,3 +366,9 @@
 .gh-detail--signal .gh-detail-mark { color: #d3ff69; text-shadow: 0 0 28px rgba(211,255,105,.24); }
 .gh-detail--civic .gh-detail-art { background: radial-gradient(circle, rgba(104,216,210,.18), transparent 50%), #081a19; }
 .gh-detail--patina .gh-detail-art { background: radial-gradient(circle, rgba(226,199,131,.16), transparent 50%), #15140e; }
+
+/* CASCADE LAB — physics-lab identity. */
+.gh-detail--cascade-lab .gh-detail-art{background:radial-gradient(ellipse at 50% 45%,rgba(98,219,255,.18),transparent 44%),linear-gradient(145deg,#10232c,#080d13);border-color:rgba(98,219,255,.24)}
+.gh-detail--cascade-lab .gh-detail-mark{color:#a7efff;text-shadow:0 0 38px rgba(98,219,255,.3)}
+.gh-detail--cascade-lab .gh-detail-ring-one{border-color:rgba(98,219,255,.56)}
+.gh-detail--cascade-lab .gh-detail-ring-two{border-color:rgba(255,198,106,.42)}

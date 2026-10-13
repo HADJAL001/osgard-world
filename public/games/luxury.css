@@ -96,3 +96,8 @@
 .luxury-entertainment .art-patina strong span{color:#e2c783}
 
 .luxury-entertainment .art-signal{--accent:#d3ff69;--glow:#8bc84a29;background:radial-gradient(ellipse at 50% 45%,rgba(139,200,74,.16),transparent 38%),linear-gradient(135deg,#18291d,#090e0b)}
+
+/* CASCADE LAB — chain-reaction laboratory identity */
+.luxury-entertainment .art-cascade-lab{background:radial-gradient(ellipse at 52% 45%,rgba(98,219,255,.16),transparent 48%),linear-gradient(145deg,#0d1d27,#080c11 72%);border-color:rgba(98,219,255,.2)}
+.luxury-entertainment .art-cascade-lab svg{filter:drop-shadow(0 0 13px rgba(98,219,255,.1))}
+.luxury-entertainment .art-cascade-lab strong span{color:#62dbff}
