@@ -50,8 +50,8 @@ assert.ok(source.includes("u.searchParams.set('utm_source','osgard_games')") &&
   'Each service link needs source, placement and campaign attribution');
 assert.ok(source.includes("РЕКЛАМА · СОБСТВЕННЫЕ ПРОЕКТЫ OSGARD") &&
   source.includes('Автозапуска нет'), 'Self-promotion must be labelled and never autoplay');
-assert.ok(source.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN','Временно не включён в промо-переходы, пока доступность не подтверждена','https://gardvpn.is/',false,false]"),
-  'GARD VPN must not be promoted as available until confirmed');
+assert.ok(source.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN','VPN-сервис. Описание и условия доступны на сайте проекта; доступность домена не была подтверждена проверкой.','https://gardvpn.is/',false,true]"),
+  'GARD VPN is selectable, with an explicit disclosure that its live availability was not independently confirmed');
 assert.ok(source.includes("const activeSelected=services.filter(([id,,,,,,featured=false,active=true])=>active!==false&&preferences.selected.includes(id))") &&
   source.includes("const visible=activeSelected;"),
   'Unavailable service IDs must be excluded from the promotable service card grid');
