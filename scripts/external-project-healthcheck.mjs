@@ -69,8 +69,10 @@ function classifyHttp(status, isHtml, title) {
  * local/special-use hostnames are rejected before another network request.
  */
 function isWithinConfiguredHostFamily(candidate, configuredHost) {
-  const candidateHost = String(candidate || '').toLowerCase().replace(/\\.$/, '')
-  const baseHost = String(configuredHost || '').toLowerCase().replace(/\\.$/, '')
+  const candidateValue = String(candidate || '').toLowerCase()
+  const baseValue = String(configuredHost || '').toLowerCase()
+  const candidateHost = candidateValue.endsWith('.') ? candidateValue.slice(0, -1) : candidateValue
+  const baseHost = baseValue.endsWith('.') ? baseValue.slice(0, -1) : baseValue
   return Boolean(candidateHost && baseHost && (candidateHost === baseHost || candidateHost.endsWith('.' + baseHost)))
 }
 
@@ -80,7 +82,8 @@ export function isSafePublicHttpsUrl(value) {
   if (url.protocol !== 'https:' || url.username || url.password) return false
   if (url.port && url.port !== '443') return false
 
-  const hostname = url.hostname.toLowerCase().replace(/\\.$/, '')
+  const rawHostname = url.hostname.toLowerCase()
+  const hostname = rawHostname.endsWith('.') ? rawHostname.slice(0, -1) : rawHostname
   const ipHost = hostname.startsWith('[') && hostname.endsWith(']')
     ? hostname.slice(1, -1)
     : hostname
