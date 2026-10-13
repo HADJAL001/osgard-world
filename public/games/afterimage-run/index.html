@@ -88,7 +88,7 @@ async function shareNative(){
  if(navigator.share){
   try{await navigator.share({title:'AFTERIMAGE//RUN — OSGARD PLAY',text:txt,url:u});prepareShareReward('web-share')}
   catch(e){if(e.name!=='AbortError')toast('Не удалось открыть системное меню публикации.')}
- }else if(await copy(txt+' '+u){
+ }else if(await copy(txt+' '+u)){
   $('reward-status').textContent='Ссылка скопирована. Копирование не даёт награду — отправь вызов через одну из соцсетей и подтверди публикацию.';
   toast('Ссылка с seed и результатом скопирована.');
  }else toast('Скопируй ссылку вручную: '+u);
