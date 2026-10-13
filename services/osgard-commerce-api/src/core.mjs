@@ -50,6 +50,7 @@ const GAME_IDS = new Set([
   "civic-cascade", "patina", "signal-run", "unknown",
 ]);
 GAME_IDS.add("cascade-lab");
+GAME_IDS.add("afterimage-run");
 
 export function cleanText(value, max = 500) {
   return String(value ?? "")
