@@ -71,7 +71,7 @@ const luxury=readFileSync(resolve(root,'luxury.js'),'utf8')
 
 assert.ok(!html.includes('href="./daily-circuit.css?v=__OSGARD_BUILD_VERSION__"')&&!html.includes('<script src="./daily-circuit.js?v=__OSGARD_BUILD_VERSION__"'),'Daily Circuit assets must not block the initial catalogue render')
 assert.ok(html.includes('id="daily-circuit-slot"')&&html.includes('id="daily-circuit-lazy-loader"')&&html.includes('/games/daily-circuit.css?v=__OSGARD_BUILD_VERSION__')&&html.includes('/games/daily-circuit.js?v=__OSGARD_BUILD_VERSION__')&&html.includes("rootMargin: '180px 0px'")&&html.includes('data-load-daily-circuit'),'Daily Circuit must keep a visible manual CTA and lazily load versioned assets near the section')
-const dailyCircuitLazyLoaderMatch=html.match(/<script id="daily-circuit-lazy-loader">([\\s\\S]*?)<\\/script>/)
+const dailyCircuitLazyLoaderMatch=html.match(/<script id="daily-circuit-lazy-loader">([\s\S]*?)<\/script>/)
 assert.ok(dailyCircuitLazyLoaderMatch,'Daily Circuit lazy loader is missing')
 new Function(dailyCircuitLazyLoaderMatch[1])
 assert.ok(dailyCircuitScript.includes("const mount=doc.querySelector('#daily-circuit-slot')")&&dailyCircuitScript.includes('if(mount)mount.replaceWith(section)'),'Daily Circuit must mount into its reserved lazy slot without inserting unexpected content at the hero')
