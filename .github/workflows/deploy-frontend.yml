@@ -57,6 +57,8 @@ jobs:
       - run: npm run qa:null-shift
       - name: Smoke-test the OSGARD Games hub
         run: npm run qa:games-portal
+      - name: Smoke-test read-only Games operations diagnostics
+        run: npm run qa:games-operations
       - name: Verify OSGARD SELECT luxury spotlight and social reward guardrails
         run: npm run qa:osgard-select
       - name: Exercise consented analytics queue during offline/online transitions
