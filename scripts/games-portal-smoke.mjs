@@ -160,7 +160,7 @@ assert.ok(lifecycle.includes("document.dispatchEvent(new Event('osgard:game-laun
 assert.ok(recommendationScript.includes("document.addEventListener('osgard:game-completed'")&&recommendationScript.includes("document.addEventListener('osgard:game-launching'"),'Recommendation module must subscribe to game lifecycle events')
 assert.ok(recommendationStyles.includes('.post-run-recommendations')&&recommendationStyles.includes('prefers-reduced-motion:reduce'),'Recommendation shelf must have responsive/reduced-motion styling')
 new Function(recommendationScript)
-const mockNode=()=>({className:'',textContent:'',hidden:false,dataset:{},attributes:{},children:[],append(...nodes){this.children.push(...nodes)},replaceChildren(...nodes){this.children=nodes},setAttribute(name,value){this.attributes[name]=value},querySelector(selector){return selector.startsWith('.')?this.children.find(node=>node.className===selector.slice(1))||null:null}})
+const mockNode=()=>({className:'',textContent:'',hidden:false,dataset:{},attributes:{},children:[],append(...nodes){this.children.push(...nodes)},replaceChildren(...nodes){this.children=nodes},setAttribute(name,value){this.attributes[name]=value},addEventListener(){},querySelector(selector){return selector.startsWith('.')?this.children.find(node=>node.className===selector.slice(1))||null:null}})
 const mockHost=mockNode();mockHost.hidden=true
 const mockClasses=new Set()
 const mockDialog={classList:{add(name){mockClasses.add(name)},remove(name){mockClasses.delete(name)},contains(name){return mockClasses.has(name)}}}
