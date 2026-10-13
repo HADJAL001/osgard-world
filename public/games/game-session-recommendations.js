@@ -9,13 +9,14 @@ const games={
  'signal-run':{title:'SIGNAL RUN',subtitle:'Динамичная аркада',href:'/games/signal-run/'},
  'civic-cascade':{title:'CIVIC CASCADE',subtitle:'Кризисная стратегия',href:'/games/civic-cascade/'},
  patina:{title:'PATINA Atelier',subtitle:'Реставрационная мастерская',href:'/games/patina/'},
- 'cascade-lab':{title:'CASCADE LAB',subtitle:'Физические головоломки',href:'/games/cascade-lab/'}
+ 'cascade-lab':{title:'CASCADE LAB',subtitle:'Физические головоломки',href:'/games/cascade-lab/'},
+ 'aether-grid':{title:'AETHER GRID',subtitle:'Ежедневная головоломка',href:'/games/aether-grid/'}
 };
 const next={
  'null-shift':['civic-cascade','cascade-lab'],time:['civic-cascade','inherit'],
  swarm:['null-shift','signal-run'],inherit:['patina','time'],remix:['swarm','cascade-lab'],
  'signal-run':['swarm','null-shift'],'civic-cascade':['time','inherit'],patina:['inherit','civic-cascade'],
- 'cascade-lab':['signal-run','null-shift']
+ 'cascade-lab':['signal-run','aether-grid'],'aether-grid':['cascade-lab','signal-run']
 };
 const host=document.querySelector('#post-run-recommendations'),dialog=document.querySelector('#player-dialog');
 if(!host||!dialog)return;
@@ -49,7 +50,8 @@ const games={
  'civic-cascade':{title:'CIVIC CASCADE'},
  patina:{title:'PATINA Atelier'},
  'signal-run':{title:'SIGNAL RUN'},
- 'cascade-lab':{title:'CASCADE LAB'}
+ 'cascade-lab':{title:'CASCADE LAB'},
+ 'aether-grid':{title:'AETHER GRID'}
 };
 const CONSENT_KEY='osgard.games.analytics-consent.v1';
 const ATTR_KEY='osgard.games.referral-attribution.v1';
@@ -354,10 +356,7 @@ function servicesShelf(gameId,showPromos,completedCount){
   visible.forEach(([id,num,title,category,description,href,featured=false,active=true])=>{
    const card=make(active===false?'article':'a','og-postgame-service-card'+(featured?' is-featured':'')+(active===false?' is-unavailable':''));
    card.dataset.service=id;card.dataset.game=gameId;card.dataset.category=categoryByService[id]||'other';cards.push(card);
-   if(active!==false){
-    const u=new URL(href);u.searchParams.set('utm_source','osgard_games');u.searchParams.set('utm_medium','post_game');u.searchParams.set('utm_campaign','after_game');u.searchParams.set('utm_content',id+'_'+gameId);card.href=u.href;card.target='_blank';card.rel='noopener noreferrer';card.setAttribute('aria-label','Открыть '+title+' в новой вкладке');
-    card.addEventListener('click',()=>sendSelectEvent('cross_promo_clicked',gameId,'osgard-select:click:'+id));
-   }
+   if(active!==false){const u=new URL(href);u.searchParams.set('utm_source','osgard_games');u.searchParams.set('utm_medium','post_game');u.searchParams.set('utm_campaign','after_game');u.searchParams.set('utm_content',id+'_'+gameId);card.href=u.href;card.target='_blank';card.rel='noopener noreferrer';card.setAttribute('aria-label','Открыть '+title+' в новой вкладке')}
    card.append(make('span','og-postgame-service-code','OSG / '+num+' · '+category),make('strong','og-postgame-service-name',title),make('span','og-postgame-service-description',description),make('span','og-postgame-service-action',active===false?'Пока не продвигается':'Открыть проект ↗'));grid.append(card);
   });
  }
@@ -396,30 +395,6 @@ function servicesShelf(gameId,showPromos,completedCount){
  section.append(head,settings);
  if(showPromos&&activeSelected.length)section.append(filters,grid,foot);
  else section.append(state,foot);
- // Count owned-service exposure only when a clickable card is at least half visible for a full second.
- // This remains consent-gated first-party measurement, not a third-party ad-network impression.
- if(typeof IntersectionObserver==='function'){
-  const observed=new Set();
-  const observer=new IntersectionObserver(entries=>{
-   entries.forEach(entry=>{
-    const card=entry.target;
-    if(entry.isIntersecting&&entry.intersectionRatio>=0.5&&!card.hidden&&!observed.has(card)){
-     if(card.__osgardImpressionTimer)return;
-     card.__osgardImpressionTimer=setTimeout(()=>{
-      delete card.__osgardImpressionTimer;
-      if(!hasConsent()||!card.isConnected||card.hidden||!card.getClientRects().length)return;
-      observed.add(card);
-      sendSelectEvent('owned_promo_impression',gameId,'osgard-select:impression:'+card.dataset.service);
-      observer.unobserve(card);
-     },1000);
-    }else if(card.__osgardImpressionTimer){
-     clearTimeout(card.__osgardImpressionTimer);
-     delete card.__osgardImpressionTimer;
-    }
-   });
-  },{threshold:[0,0.5,1]});
-  cards.filter(card=>card.tagName==='A'&&!card.classList.contains('is-unavailable')).forEach(card=>observer.observe(card));
- }
  return section;
 }
 function rewardShelf(gameId){
