@@ -32,9 +32,26 @@
     medium === 'share' &&
     campaign === 'challenge' &&
     (validDailyMode || validOrdinaryMode);
+  const afterimageChallenge = game === 'afterimage-run' &&
+    params.get('og_challenge') === 'afterimage-run' &&
+    Number.isSafeInteger(scoreValue) && scoreValue >= 0 && scoreValue <= 99999999 &&
+    validDailyMode;
   const play = document.querySelector('#play-link');
   if (play) {
-    const target = new URL(game === 'aether-grid' ? '/games/aether-grid/' : '/games/', location.origin);
+    if (afterimageChallenge) {
+      // A crawled invite page shows its generated social preview; acceptance resumes the validated run.
+      const target = new URL('/games/afterimage-run/', location.origin);
+      target.searchParams.set('seed', requestedDay);
+      target.searchParams.set('score', String(scoreValue));
+      if (valid) {
+        for (const key of ['og_ref', 'og_game', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content']) {
+          const value = params.get(key);
+          if (value !== null) target.searchParams.set(key, value);
+        }
+      }
+      play.href = target.href;
+    } else {
+      const target = new URL(game === 'aether-grid' ? '/games/aether-grid/' : '/games/', location.origin);
     const aetherDay = params.get('og_day') || '';
     const validAetherDay = /^\\d{4}-\\d{2}-\\d{2}$/.test(aetherDay) && (() => {
       const date = new Date(aetherDay + 'T00:00:00.000Z');
@@ -62,7 +79,8 @@
         target.searchParams.set('day', requestedDay);
       }
     }
-    play.href = target.href;
+      play.href = target.href;
+    }
   }
   if (!valid) return;
   let consent = false;

@@ -5,6 +5,18 @@ import vm from 'node:vm';
 const source = readFileSync('public/games/consented-analytics.js', 'utf8');
 const commerceCore = readFileSync('services/osgard-commerce-api/src/core.mjs', 'utf8');
 
+function extractAllowedEvents(source, label) {
+  const match = source.match(/const ALLOWED_EVENTS = new Set\(\[([\s\S]*?)\]\)/);
+  assert.ok(match, label + ' must declare an event allow-list');
+  return [...match[1].matchAll(/['"]([a-z0-9_]+)['"]/g)].map(item => item[1]).sort();
+}
+
+assert.deepEqual(
+  extractAllowedEvents(source, 'Browser analytics queue'),
+  extractAllowedEvents(commerceCore, 'Commerce API'),
+  'Browser and server analytics must accept the same event names; prepared invite links must not be silently dropped',
+);
+
 function extractGameIds(source, label) {
   const match = source.match(/const GAME_IDS = new Set\(\[([\s\S]*?)\]\)/);
   assert.ok(match, label + ' must declare a game-ID allow-list');
