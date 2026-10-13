@@ -558,3 +558,12 @@ const inviteSqlEnd=referralApiSource.indexOf('SELECT\n          COUNT(*) FILTER'
 const inviteSql=referralApiSource.slice(inviteSqlStart,inviteSqlEnd)
 assert.equal(inviteSql.split("~ '^(og_[a-f0-9]{8}|[a-f0-9]{12})$'").length-1,4,'All four share/open/start/completion SQL stages must accept canonical and legacy invite codes')
 for(const metric of ['analytics-invites','analytics-referral-opens','analytics-referred-starts','analytics-referred-completions']) assert.ok(referralAdminSource.includes('id="'+metric+'"'), 'Commerce admin is missing referral metric '+metric)
+
+ 
+// The root Entertainment gateway must expose the existing OSGARD SELECT cross-promo
+// and the labelled, scenario-based monetisation page without implying live advertising revenue.
+assert.ok(appSource.includes('OSGARD SELECT / BETWEEN WORLDS') && appSource.includes('play-economy-strip'), 'Entertainment gateway must introduce the post-game OSGARD SELECT loop')
+assert.ok(appSource.includes('href="/games/?utm_source=osgard_world&amp;utm_medium=entertainment&amp;utm_campaign=between_worlds"'), 'Entertainment gateway must link into the playable hub with campaign attribution')
+assert.ok(appSource.includes('href="/games/monetization/?utm_source=osgard_world&amp;utm_medium=entertainment&amp;utm_campaign=economy_model"'), 'Entertainment gateway must link to the scenario economy model')
+assert.ok(appSource.includes('не подтверждается автоматически') && appSource.includes('Это не деньги'), 'SHARDS must be disclosed as non-monetary with social-post verification limits')
+assert.ok(appStyles.includes('.play-economy-strip') && appStyles.includes('@media(max-width:760px)') && appStyles.includes('prefers-reduced-motion:reduce'), 'Entertainment economy teaser needs responsive and reduced-motion styling')
