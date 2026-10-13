@@ -20,3 +20,15 @@ A HTTP 403 or a network error from one CI region does not prove that a service i
 The intended product roles shown in the report are owner-provided descriptions, not independently verified capabilities. The audit makes one GET request to each homepage. It does not sign in, submit forms, probe protected APIs, test payments, verify security, or crawl private data. It does not add analytics to visitors' browsers or send secrets.
 
 Homepage checks run daily, manually, and on pull requests that change this audit. External service failures are reported but do not block website deployment. Use `--strict` only in an environment where third-party homepage uptime is deliberately intended to be a release gate.
+
+
+## Safety hardening for the automated checker
+
+The checker follows redirects manually instead of allowing the HTTP client to follow them automatically. A redirect is followed only when the destination:
+- uses HTTPS, contains no embedded username/password, and does not specify a non-standard port;
+- uses a hostname rather than an IP literal or local/special-use hostname;
+- remains on the configured project's hostname or one of its subdomains.
+
+At most five redirects are followed; loops, missing locations, unsafe destinations and redirect chains beyond the limit are reported rather than fetched. HTML response bodies are read as a stream with a 1 MiB cap. Larger responses are cancelled and marked `bodyTruncated: true`, while the checker still extracts title/description from the bounded prefix when present.
+
+This reduces redirect-based SSRF exposure and memory use, but it is not a full security or uptime audit. The checker does not verify product features, authentication, application APIs, payments, DNS ownership or service reliability. Public-looking hostnames are still evaluated from the GitHub Actions runner's network context, and the output must not be treated as a security certification.
