@@ -34,7 +34,8 @@
     "qa:osgard-select": "node scripts/osgard-select-growth-smoke.mjs",
     "predev": "node scripts/generate-games-share-cards.mjs",
     "prebuild": "node scripts/generate-games-share-cards.mjs",
-    "qa:consented-analytics-queue": "node scripts/consented-analytics-queue-smoke.mjs"
+    "qa:consented-analytics-queue": "node scripts/consented-analytics-queue-smoke.mjs",
+    "qa:analytics-contract": "node scripts/analytics-contract-smoke.mjs"
   },
   "dependencies": {
     "@types/three": "^0.186.0",
