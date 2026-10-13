@@ -7,7 +7,9 @@ const source = read('public/games/game-session-recommendations.js');
 const css = read('public/games/game-session-recommendations.css');
 const core = read('services/osgard-commerce-api/src/core.mjs');
 const signalRun = read('public/games/signal-run/game.js');
-const lifecycle = read('public/games/player-lifecycle.js');
+const lifecycle = read('public/games/player-lifecycle.js')
+const entertainmentGateway = read('src/PlaySelectLoop.tsx')
+const entertainmentStyles = read('src/styles.css');
 
 new vm.Script(source, { filename: 'game-session-recommendations.js' });
 new vm.Script(signalRun, { filename: 'signal-run/game.js' });
@@ -28,6 +30,28 @@ for (const [label, url] of services) {
   assert.ok(source.includes(label), 'Missing official service label: ' + label);
   assert.ok(source.includes(url), 'Missing official destination: ' + url);
 }
+
+assert.ok(entertainmentGateway.includes("const PROMO_PREFERENCES_KEY = 'osgard.games.postgame-service-preferences.v1'") &&
+  source.includes("const servicePreferencesKey='osgard.games.postgame-service-preferences.v1'"),
+  'The Entertainment gateway and between-game intermission must use one shared preferences key');
+assert.ok(entertainmentGateway.includes("const PROMOTABLE_SERVICE_IDS = services.filter(service => service.id !== 'gardvpn').map(service => service.id)") &&
+  source.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN','VPN-сервис. Описание и условия доступны на сайте проекта; доступность домена не была подтверждена проверкой.','https://gardvpn.is/',false,false]"),
+  'GARD VPN may remain in the directory but must not appear as an active unverified intermission promotion');
+assert.ok(entertainmentGateway.includes("window.localStorage.setItem(PROMO_PREFERENCES_KEY, JSON.stringify(next))") &&
+  entertainmentGateway.includes("frequency: draftFrequency") &&
+  entertainmentGateway.includes("selected: PROMOTABLE_SERVICE_IDS.filter(id => draftSelected.includes(id))"),
+  'Entertainment preferences must be saved in the same shape as Games intermission preferences');
+assert.ok(entertainmentGateway.includes("value === 'every3'") && entertainmentGateway.includes("value === 'off'") &&
+  entertainmentGateway.includes("После каждой завершённой игры") && entertainmentGateway.includes("Не показывать межигровую подборку"),
+  'Entertainment must expose each-game, every-third-game and off preferences');
+assert.ok(entertainmentGateway.includes("aria-controls=\"play-select-preferences-panel\"") &&
+  entertainmentGateway.includes("disabled={unavailable}") &&
+  entertainmentGateway.includes('osgard:service-preferences-updated'),
+  'The settings panel must be accessible and notify same-page consumers when preferences change');
+for (const selector of ['.play-select-preferences-panel','.play-select-preference-grid','.play-select-preference-option','.play-select-preferences-status']) {
+  assert.ok(entertainmentStyles.includes(selector), 'Premium responsive preferences style missing: ' + selector);
+}
+
 const recommendationMapMatch = source.match(/const recommendationByGame=(\{[\s\S]*?\});/);
 assert.ok(recommendationMapMatch, 'Missing game-specific recommendation map');
 const recommendationMap = vm.runInNewContext('(' + recommendationMapMatch[1] + ')');
