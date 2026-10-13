@@ -22,7 +22,15 @@ for (const [name,url] of services) {
  assert.ok(select.includes(name),'Missing self-promo label: '+name)
  assert.ok(select.includes(url),'Missing official destination: '+url)
 }
-for (const game of ['null-shift','time','swarm','inherit','remix','civic-cascade','patina','signal-run','cascade-lab']) assert.ok(select.includes("'"+game+"'"),'Missing game context: '+game)
+const recommendationStart=source.indexOf('const recommendationByGame=')
+assert.ok(recommendationStart>=0,'Missing game-to-project recommendation map')
+const recommendationEnd=source.indexOf('};',recommendationStart)
+assert.ok(recommendationEnd>recommendationStart,'Recommendation map must have a closed object')
+const recommendationMap=source.slice(recommendationStart,recommendationEnd)
+for (const game of ['null-shift','time','swarm','inherit','remix','civic-cascade','patina','signal-run','cascade-lab']) {
+ const keyPattern = new RegExp("(?:['\"]"+game+"['\"]|\\b"+game+"\\s*:)")
+ assert.ok(keyPattern.test(recommendationMap),'Missing game context: '+game)
+}
 assert.ok(select.includes("const preferredServiceKey='osgard.games.preferred-service.v1'")&&select.includes('function readPreferredService()')&&select.includes('function savePreferredService(id)'), 'Preferred service should persist locally')
 assert.ok(select.includes('function renderSpotlight(serviceId)')&&select.includes('Другой проект')&&select.includes('Запомнить мой выбор'), 'Spotlight needs rotate and save-preference controls')
 assert.ok(select.includes("collapseToggle.textContent='Выбрать из '+availableServiceIds.length+' сервисов'")&&select.includes('grid.hidden=true;filters.hidden=true'), 'Full service catalogue must be compact by default and user-opened')
