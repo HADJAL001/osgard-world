@@ -96,17 +96,27 @@ export function PlaySelectLoop({ locale }: { locale: Locale }) {
   }
 
   const shareInvite = async () => {
+    setPendingNetwork('')
+    setStatus(ru ? 'Готовим приглашение…' : 'Preparing invitation…')
     try {
       if (typeof navigator.share === 'function') {
         await navigator.share({ title: 'OSGARD PLAY', text: message, url: inviteUrl })
-        grantReward('homepage-native-share')
+        setPendingNetwork('native-share')
+        setStatus(ru
+          ? 'Системное меню отправки закрыто. Если ты действительно опубликовал приглашение, подтверди ниже. OSGARD не может автоматически проверить публикацию.'
+          : 'The share sheet closed. If you actually published the invitation, confirm below. OSGARD cannot automatically verify the post.')
       } else if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(message + ' ' + inviteUrl)
-        grantReward('homepage-clipboard')
+        setPendingNetwork('')
+        setStatus(ru
+          ? 'Ссылка скопирована. Копирование само по себе не считается репостом и не даёт награду. Опубликуй приглашение через одну из соцсетей ниже, затем вернись и подтверди.'
+          : 'Link copied. Copying alone is not a repost and earns no reward. Publish the invitation through one of the social networks below, then return and confirm.')
       } else {
+        setPendingNetwork('')
         setStatus(ru ? 'Быстрая отправка недоступна. Выбери соцсеть ниже.' : 'Quick share is unavailable. Choose a network below.')
       }
     } catch (error) {
+      setPendingNetwork('')
       setStatus(error instanceof Error && error.name === 'AbortError'
         ? (ru ? 'Отправка отменена — награда не начислена.' : 'Share cancelled — no reward was granted.')
         : (ru ? 'Не удалось отправить приглашение. Выбери соцсеть ниже.' : 'Share failed. Choose a network below.'))
@@ -147,7 +157,7 @@ export function PlaySelectLoop({ locale }: { locale: Locale }) {
       <aside className="play-select-referral">
         <p className="play-select-referral-eyebrow">OSGARD PLAY / FRIEND INVITE</p>
         <h4>{ru ? 'Твой следующий раунд — с другом.' : 'Your next round is better with a friend.'}</h4>
-        <p>{ru ? 'Поделись приглашением. За успешное действие Web Share или копирование ссылки начисляется +50 SHARDS — не чаще раза в сутки на этом устройстве.' : 'Share an invite. A completed Web Share action or copied link can earn +50 SHARDS, once per day on this device.'}</p>
+        <p>{ru ? 'Поделись приглашением и подтверди публикацию, чтобы запросить +50 локальных SHARDS — не чаще раза в UTC-день на устройстве. Закрытие системного меню и копирование ссылки сами по себе не дают награду.' : 'Share the invitation and explicitly confirm publishing to claim +50 local SHARDS, at most once per UTC day on this device. Closing the share sheet or copying a link alone never grants a reward.'}</p>
         <div className="play-select-wallet"><span>OSGARD SHARDS</span><strong>{balance.toLocaleString(ru ? 'ru-RU' : 'en-US')}</strong></div>
         <button type="button" className="play-select-share-primary" onClick={shareInvite}>{ru ? 'Поделиться приглашением ↗' : 'Share invitation ↗'}</button>
         <div className="play-select-share-networks">
@@ -157,10 +167,12 @@ export function PlaySelectLoop({ locale }: { locale: Locale }) {
           }}>{item.name} ↗</a>)}
         </div>
         {pendingNetwork && <button type="button" className="play-select-share-claim" onClick={() => grantReward('homepage-social-confirmation:' + pendingNetwork)}>
-          {ru ? 'Я отправил в ' + pendingNetwork + ' — получить +50 SHARDS' : 'I shared on ' + pendingNetwork + ' — claim +50 SHARDS'}
+          {ru
+            ? (pendingNetwork === 'native-share' ? 'Я действительно опубликовал приглашение — получить +50 SHARDS' : 'Я опубликовал в ' + pendingNetwork + ' — получить +50 SHARDS')
+            : (pendingNetwork === 'native-share' ? 'I actually published the invitation — claim +50 SHARDS' : 'I published on ' + pendingNetwork + ' — claim +50 SHARDS')}
         </button>}
         <p className="play-select-status" role="status" aria-live="polite">{status}</p>
-        <small>{ru ? 'SHARDS хранятся локально, не являются деньгами и не обмениваются на денежную стоимость. Соцсети не подтверждают публикацию сайту; отправку по кнопке соцсети пользователь подтверждает сам.' : 'SHARDS are local points, not money and not redeemable. Social networks do not verify posts to this site; social-compose sharing uses player confirmation.'}</small>
+        <small>{ru ? 'SHARDS хранятся только в этом браузере, не имеют денежной стоимости, не обмениваются на деньги и могут быть сброшены очисткой данных. Соцсети не передают OSGARD подтверждение публикации: награда выдаётся только после явного подтверждения игрока, не чаще раза в UTC-день на устройстве.' : 'SHARDS are stored only in this browser, have no cash value and may be reset when browser data is cleared. Social networks do not confirm a post to OSGARD: points are granted only after explicit player confirmation, once per UTC day on this device.'}</small>
       </aside>
     </div>
   </section>
