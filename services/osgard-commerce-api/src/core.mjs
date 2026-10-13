@@ -26,6 +26,7 @@ export const PRODUCT_DEFS = Object.freeze([
 
 export const ALLOWED_EVENTS = new Set([
   "premium_page_view",
+  "game_session_started",
   "checkout_started",
   "checkout_paid",
   "cross_promo_clicked",
@@ -37,7 +38,7 @@ export const ALLOWED_EVENTS = new Set([
 
 const GAME_IDS = new Set([
   "null-shift", "time", "swarm", "inherit", "remix",
-  "civic-cascade", "patina", "unknown",
+  "civic-cascade", "patina", "signal-run", "unknown",
 ]);
 
 export function cleanText(value, max = 500) {
