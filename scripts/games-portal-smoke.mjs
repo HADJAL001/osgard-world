@@ -1,6 +1,7 @@
 import { assessReport } from './games-lighthouse-report.mjs'
 import assert from 'node:assert/strict'
 import { readFileSync, existsSync } from 'node:fs'
+import { runInNewContext } from 'node:vm'
 import { resolve } from 'node:path'
 const entertainmentAlias = readFileSync(resolve('public/entertainment/index.html'),'utf8')
 const rootIndex = readFileSync(resolve('index.html'),'utf8')
@@ -39,6 +40,7 @@ const cascadeGame=readFileSync(resolve(root,'cascade-lab/index.html'),'utf8')
 const patina=readFileSync(resolve(root,'patina/index.html'),'utf8')
 const signalRun=readFileSync(resolve(root,'signal-run/index.html'),'utf8')
 const signalJs=readFileSync(resolve(root,'signal-run/game.js'),'utf8')
+const signalDailyJs=readFileSync(resolve(root,'signal-run/daily.js'),'utf8')
 const manifest=readFileSync(resolve('src/core/manifest.ts'),'utf8')
 const sitemap=readFileSync(resolve('public/sitemap.xml'),'utf8')
 const required=['data-game="null-shift"','data-game="time"','data-game="swarm"','data-game="inherit"','data-game="remix"','data-game="civic-cascade"','data-game="patina"','data-game="signal-run"','data-game="cascade-lab"','id="games-grid"','id="game-search"','data-filter="tactical"','id="player-dialog"','id="player-share"','id="player-fullscreen"','id="analytics-toggle"','id="project-form"','https://wa.me/79640027222','osgardbewworld.com','o2system.art','senjorio.com','superday.run','marcosa.club','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio','/games/favicon.svg','/privacy/','/terms/']
@@ -51,7 +53,7 @@ assert.ok(appStyles.includes('.play-quick-picks{display:grid;grid-template-colum
 assert.ok(appStyles.includes('.play-quick-link:focus-visible')&&appStyles.includes('@media(prefers-reduced-motion:reduce){.play-quick-link'),'Quick-launch links must retain keyboard focus and reduced-motion support')
 assert.ok(html.includes('<title>OSGARD WORLD GAMING — Игровая платформа</title>')&&html.includes('og:title" content="OSGARD WORLD GAMING — игровые миры')&&html.includes('"name":"OSGARD WORLD GAMING"'),'Gaming hub identity must be consistent in title, social metadata and structured data')
 assert.ok(html.includes('OSGARD WORLD GAMING <span>/</span> DIGITAL WORLDS')&&html.includes('быстрый возврат к недавним сессиям'),'Gaming hub hero must describe the branded portal and its actual navigation features')
-for(const path of ['public/games/index.html','public/games/favicon.svg','public/games/player-lifecycle.js','public/games/game-session-recommendations.js','public/games/game-session-recommendations.css','public/games/admin/index.html','public/games/admin/partners/index.html','public/games/civic-cascade/index.html','public/games/patina/index.html','public/games/signal-run/index.html','public/games/signal-run/game.js','public/games/cascade-lab/index.html','public/privacy/index.html','public/terms/index.html']) assert.ok(existsSync(resolve(path)),'Missing file: '+path)
+for(const path of ['public/games/index.html','public/games/favicon.svg','public/games/player-lifecycle.js','public/games/game-session-recommendations.js','public/games/game-session-recommendations.css','public/games/admin/index.html','public/games/admin/partners/index.html','public/games/civic-cascade/index.html','public/games/patina/index.html','public/games/signal-run/index.html','public/games/signal-run/game.js','public/games/signal-run/daily.js','public/games/cascade-lab/index.html','public/privacy/index.html','public/terms/index.html']) assert.ok(existsSync(resolve(path)),'Missing file: '+path)
 for(const path of ['scripts/games-lighthouse-report.mjs','.github/workflows/games-lighthouse.yml']) assert.ok(existsSync(resolve(path)),'Missing games performance monitoring file: '+path)
 const lighthouseScript=readFileSync(resolve('scripts/games-lighthouse-report.mjs'),'utf8')
 const lighthouseWorkflow=readFileSync(resolve('.github/workflows/games-lighthouse.yml'),'utf8')
@@ -90,6 +92,23 @@ assert.ok(manifest.includes("'patina' | 'signal-run'") && manifest.includes("hre
 assert.ok(sitemap.includes('<loc>https://osgard.world/games/signal-run/</loc>') && sitemap.includes('<loc>https://osgard.world/game/signal-run</loc>'), 'SIGNAL RUN routes must be present in the XML sitemap')
 assert.ok(signalRun.includes('<title>SIGNAL RUN — OSGARD WORLD</title>') && signalRun.includes('id="arena"') && signalRun.includes('id="fullscreen"'), 'SIGNAL RUN page shell or controls missing')
 assert.ok(signalRun.includes('prefers-reduced-motion:reduce') && signalRun.includes('id="touch-pulse"'), 'SIGNAL RUN mobile/accessibility controls missing')
+assert.ok(signalRun.includes('id="daily-run"')&&signalRun.includes('id="daily-info"')&&signalRun.indexOf('src="./daily.js"')<signalRun.indexOf('src="./game.js"'),'SIGNAL RUN daily controls and utility order missing')
+assert.ok(signalJs.includes('OSGARDSignalDaily')&&signalJs.includes('Daily.createRandom(Daily.seedForDate(dailyDate))')&&signalJs.includes("url.searchParams.set('mode','daily')")&&signalJs.includes('DAILY CONTRACT'),'Deterministic daily run and shareable challenge missing')
+new Function(signalDailyJs)
+const dailySandbox={Date,Math,Number,String,Object,RegExp};runInNewContext(signalDailyJs,dailySandbox)
+const daily=dailySandbox.OSGARDSignalDaily
+assert.ok(daily,'Daily utility public API is missing')
+assert.equal(daily.normalizeDate('2026-02-30','2026-10-13'),'2026-10-13','Impossible dates must fall back to today')
+assert.equal(daily.normalizeDate('2024-02-29','2026-10-13'),'2024-02-29','Valid leap days must be accepted')
+assert.equal(daily.seedForDate('2026-10-13'),daily.seedForDate('2026-10-13'),'Same UTC date must produce the same seed')
+assert.notEqual(daily.seedForDate('2026-10-13'),daily.seedForDate('2026-10-14'),'Different dates must produce different seeds')
+const dailyA=daily.createRandom(daily.seedForDate('2026-10-13')),dailyB=daily.createRandom(daily.seedForDate('2026-10-13'))
+assert.deepEqual(Array.from({length:8},()=>dailyA()),Array.from({length:8},()=>dailyB()),'Same date must produce identical random streams')
+assert.equal(daily.previousUtcDate('2024-03-01'),'2024-02-29','UTC date logic must support leap years')
+assert.equal(daily.nextStreak(null,'2026-10-13').count,1,'New streak starts at one')
+assert.equal(daily.nextStreak({lastDate:'2026-10-13',count:4},'2026-10-13').count,4,'Same-day completions must not inflate streak')
+assert.equal(daily.nextStreak({lastDate:'2026-10-12',count:4},'2026-10-13').count,5,'Consecutive days extend streak')
+assert.equal(daily.nextStreak({lastDate:'2026-10-10',count:4},'2026-10-13').count,1,'Missed day resets streak')
 assert.ok(signalJs.includes("game:'signal-run'") && signalJs.includes("life('ready')") && signalJs.includes("life('completed'") && signalJs.includes('osgard.signal-run.best.v1'), 'SIGNAL RUN lifecycle and local-best contract missing')
 new Function(signalJs)
 
