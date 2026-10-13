@@ -75,6 +75,14 @@ async function purgeExpiredAnalytics() {
     "DELETE FROM commerce_events WHERE received_at < NOW() - ($1 * INTERVAL '1 day')",
     [analyticsRetentionDays],
   );
+  await pool.query(
+    "DELETE FROM commerce_referral_invites WHERE created_at < NOW() - ($1 * INTERVAL '1 day')",
+    [analyticsRetentionDays],
+  );
+  await pool.query(
+    "DELETE FROM commerce_referral_wallets w WHERE w.updated_at < NOW() - ($1 * INTERVAL '1 day') AND NOT EXISTS (SELECT 1 FROM commerce_referral_invites i WHERE i.wallet_token_hash=w.wallet_token_hash)",
+    [analyticsRetentionDays],
+  );
   return Number(result.rowCount || 0);
 }
 
