@@ -5,6 +5,7 @@ import { readFileSync, existsSync } from 'node:fs'
 const read = (path) => readFileSync(path, 'utf8')
 const detail = read('src/GameDetailPage.tsx')
 const app = read('src/main.tsx')
+const sectionsSource = read('src/Sections.tsx')
 const entertainmentCatalog = read('src/EntertainmentCatalog.tsx')
 const hub = read('public/games/index.html')
 const godotProject = read('godot/null-shift/project.godot')
@@ -18,6 +19,12 @@ const routeMatrix = read('scripts/production-route-matrix.mjs')
 
 for (const [label, source] of [['SPA route SEO', app], ['game detail UI', detail], ['legacy game catalogue', entertainmentCatalog]]) {
   assert.ok(!source.includes('�') && !source.includes('пїЅ') && !source.includes('РЎР'), label + ' contains a damaged text-encoding sequence')
+}
+assert.ok(!app.includes('const seo: Record') && app.includes('const cleanSeo: Record'), 'Only the clean, authoritative SPA SEO registry should remain')
+
+
+for (const [label, source] of [['SPA route SEO', app], ['legacy section pages', sectionsSource], ['game detail UI', detail], ['game catalogue', read('src/EntertainmentCatalog.tsx')]]) {
+  assert.ok(!source.includes('�') && !source.includes('пїЅ') && !source.includes('РЎР') && !source.includes('РР'), label + ' contains a damaged text-encoding sequence')
 }
 assert.ok(!app.includes('const seo: Record') && app.includes('const cleanSeo: Record'), 'Only the clean, authoritative SPA SEO registry should remain')
 
