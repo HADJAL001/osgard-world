@@ -18,6 +18,12 @@ export const DEFAULT_INPUTS = Object.freeze({
   averageProjectValueUsd: 1200,
   monthlyOperatingCostUsd: 400,
   paymentFeeRate: 3,
+  inviteShareRatePct: 10,
+  invitesPerSharer: 3,
+  inviteClickRatePct: 20,
+  inviteStartRatePct: 50,
+  inviteGenerations: 4,
+  annualRevenueTargetUsd: 1000000,
 });
 
 const bounds = {
@@ -34,6 +40,12 @@ const bounds = {
   averageProjectValueUsd: [0, 1000000000],
   monthlyOperatingCostUsd: [0, 1000000000],
   paymentFeeRate: [0, 100],
+  inviteShareRatePct: [0, 100],
+  invitesPerSharer: [0, 20],
+  inviteClickRatePct: [0, 100],
+  inviteStartRatePct: [0, 100],
+  inviteGenerations: [1, 8],
+  annualRevenueTargetUsd: [0, 1000000000000],
 };
 
 export function normalizeInputs(input = {}) {
@@ -46,6 +58,9 @@ export function normalizeInputs(input = {}) {
   normalized.monthlyVisitors = Math.round(normalized.monthlyVisitors);
   normalized.sessionsPerPlayer = Math.round(normalized.sessionsPerPlayer * 100) / 100;
   normalized.adSlotsPerSession = Math.round(normalized.adSlotsPerSession * 100) / 100;
+  normalized.invitesPerSharer = Math.round(normalized.invitesPerSharer * 100) / 100;
+  normalized.inviteGenerations = Math.round(normalized.inviteGenerations);
+  normalized.annualRevenueTargetUsd = Math.round(normalized.annualRevenueTargetUsd * 100) / 100;
   return normalized;
 }
 
@@ -95,5 +110,39 @@ export function calculateScenario(input = {}, scenarioId = 'base') {
     operatingCostUsd,
     totalRevenueUsd,
     netOperatingUsd,
+  };
+}
+
+
+/** Estimate finite, consent-dependent referral reach for a configured number of invite generations. */
+export function calculateViralReach(input = {}) {
+  const values = normalizeInputs(input);
+  const shareRate = values.inviteShareRatePct / 100;
+  const clickRate = values.inviteClickRatePct / 100;
+  const startRate = values.inviteStartRatePct / 100;
+  const invites = values.invitesPerSharer;
+  const kFactor = shareRate * invites * clickRate * startRate;
+  const seedVisitors = values.monthlyVisitors;
+  const seedPlayers = seedVisitors * values.gameStartRate / 100;
+  let generationVisits = seedPlayers * shareRate * invites * clickRate;
+  let referralVisits = 0;
+  for (let generation = 0; generation < values.inviteGenerations; generation += 1) {
+    referralVisits += generationVisits;
+    generationVisits *= startRate * shareRate * invites * clickRate;
+    if (referralVisits >= 1000000000) {
+      referralVisits = 1000000000;
+      break;
+    }
+  }
+  const totalVisitors = Math.min(1000000000, Math.round(seedVisitors + referralVisits));
+  return {
+    seedVisitors,
+    seedPlayers,
+    kFactor,
+    inviteGenerations: values.inviteGenerations,
+    referralVisits: Math.max(0, totalVisitors - seedVisitors),
+    totalVisitors,
+    viralMultiplier: seedVisitors > 0 ? totalVisitors / seedVisitors : 1,
+    annualRevenueTargetUsd: values.annualRevenueTargetUsd,
   };
 }
