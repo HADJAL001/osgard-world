@@ -89,6 +89,8 @@ assert.ok(source.includes('function awardReferralWelcomeBonus(gameId)') &&
   source.includes("sendSelectEvent('referral_welcome_reward_claimed'") &&
   source.includes('osgard.games.referral-welcome-reward.v1'),
   'A valid referred player should receive a single local welcome bonus after completing a session');
+assert.ok(source.includes("sendSelectEvent('shards_cosmetic_unlocked',gameId,'cosmetic-unlock:'") && core.includes('"shards_cosmetic_unlocked"'),
+  'Cosmetic unlock actions must be measured only through the consented analytics allow-list');
 assert.ok(reward.includes('og-shards-vault') && reward.includes('NORTHSTAR') && reward.includes('ECLIPSE') && reward.includes('AURORA') &&
   reward.includes('cost:100') && reward.includes('cost:250') && reward.includes('cost:400'),
   'The SHARDS Vault must expose three cosmetic-only unlocks with clear local costs');
