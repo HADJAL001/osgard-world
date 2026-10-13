@@ -171,6 +171,7 @@
     const eventName = path === '/games' ? 'catalog_viewed'
       : path === '/games/premium' ? 'premium_page_view'
       : path === '/games/partners' ? 'partners_page_viewed'
+      : path === '/games/ecosystem' ? 'ecosystem_directory_viewed'
       : '';
     if (!eventName) return;
     pageViewTracked = true;
