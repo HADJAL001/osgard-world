@@ -5,13 +5,14 @@
 <meta name="theme-color" content="#080a0b"><meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
 <title>OSGARD Commerce · закрытая панель</title><link rel="icon" href="/games/favicon.svg" type="image/svg+xml">
 <style>
-:root{color-scheme:dark;--bg:#080a0b;--panel:#111514;--ink:#f2f0e8;--muted:#a5aaa1;--line:#ffffff20;--lime:#d3ff69;--gold:#d5bb82}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 85% 0,#30362155,transparent 35%),var(--bg);color:var(--ink);font:14px/1.6 system-ui,sans-serif}.wrap{width:min(1120px,calc(100% - 28px));margin:auto}.top{padding:20px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}.top a{color:var(--lime)}h1{font:clamp(36px,6vw,64px)/.98 Georgia,serif;font-weight:400;letter-spacing:-.04em;margin:36px 0 12px}.muted{color:var(--muted)}.panel{background:var(--panel);border:1px solid var(--line);padding:18px;margin:14px 0}.auth{display:flex;gap:10px;flex-wrap:wrap}.auth input{flex:1;min-width:220px;background:#070a09;border:1px solid var(--line);padding:13px;color:var(--ink)}button{background:var(--lime);border:1px solid var(--lime);padding:12px 18px;color:#10140b;font-weight:650;cursor:pointer}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.metric,.item{padding:14px;border:1px solid var(--line);overflow-wrap:anywhere}.metric b{display:block;font:27px/1.2 Georgia,serif;color:var(--gold)}.metric span,.item p{font-size:12px;color:var(--muted)}.list{display:grid;gap:8px}.item strong{color:var(--gold)}.item p{margin:4px 0;white-space:pre-wrap}.status{min-height:24px;color:var(--gold)}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;color:var(--muted)}button:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-offset:3px}@media(max-width:680px){.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.panel{padding:13px}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+:root{color-scheme:dark;--bg:#080a0b;--panel:#111514;--ink:#f2f0e8;--muted:#a5aaa1;--line:#ffffff20;--lime:#d3ff69;--gold:#d5bb82}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 85% 0,#30362155,transparent 35%),var(--bg);color:var(--ink);font:14px/1.6 system-ui,sans-serif}.wrap{width:min(1120px,calc(100% - 28px));margin:auto}.top{padding:20px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}.top a{color:var(--lime)}h1{font:clamp(36px,6vw,64px)/.98 Georgia,serif;font-weight:400;letter-spacing:-.04em;margin:36px 0 12px}.muted{color:var(--muted)}.panel{background:var(--panel);border:1px solid var(--line);padding:18px;margin:14px 0}.auth{display:flex;gap:10px;flex-wrap:wrap}.auth input{flex:1;min-width:220px;background:#070a09;border:1px solid var(--line);padding:13px;color:var(--ink)}button{background:var(--lime);border:1px solid var(--lime);padding:12px 18px;color:#10140b;font-weight:650;cursor:pointer}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.metric,.item{padding:14px;border:1px solid var(--line);overflow-wrap:anywhere}.metric b{display:block;font:27px/1.2 Georgia,serif;color:var(--gold)}.metric span,.item p{font-size:12px;color:var(--muted)}.list{display:grid;gap:8px}.item strong{color:var(--gold)}.item p{margin:4px 0;white-space:pre-wrap}.table-wrap{width:100%;overflow-x:auto;border:1px solid var(--line)}.analytics-table{width:100%;min-width:760px;border-collapse:collapse;font-size:11px}.analytics-table th,.analytics-table td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}.analytics-table th{color:var(--gold);font-weight:600;background:#ffffff05}.analytics-table td{color:var(--muted)}.analytics-table tbody tr:last-child td{border-bottom:0}.retention{font-size:11px;color:var(--muted);margin:0 0 14px}.status{min-height:24px;color:var(--gold)}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;color:var(--muted)}button:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-offset:3px}@media(max-width:680px){.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.panel{padding:13px}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
 </style></head>
 <body><div class="wrap">
 <header class="top"><strong>OSGARD WORLD / COMMERCE</strong><a href="/games/">← Игровой каталог</a></header>
 <main><h1>Контроль<br>коммерции.</h1><p class="muted">Закрытая панель заказов и заявок. Введите серверный ADMIN_API_TOKEN. Он хранится только в памяти открытой страницы — не сохраняется в браузере. Не пересылайте списки с контактными данными.</p>
 <section class="panel"><label for="token">Операторский токен</label><div class="auth"><input id="token" type="password" minlength="32" maxlength="512" autocomplete="off" placeholder="Токен из защищённых переменных сервера"><button id="load" type="button">Загрузить</button></div><p id="status" class="status" role="status" aria-live="polite"></p></section>
 <section class="panel"><h2>Сводка</h2><div class="metrics"><div class="metric"><b id="lead-total">—</b><span>Заявки, всего</span></div><div class="metric"><b id="lead-new">—</b><span>Новые заявки</span></div><div class="metric"><b id="order-total">—</b><span>Заказы</span></div><div class="metric"><b id="events-total">—</b><span>События за 30 дней</span></div></div><pre id="money"></pre></section>
+<section class="panel"><h2>Игровая аналитика · 30 дней</h2><p id="analytics-retention" class="retention">Данные появятся после явного согласия игрока и записи событий в настроенный API.</p><div class="metrics"><div class="metric"><b id="analytics-catalog-views">—</b><span>Просмотры каталога</span></div><div class="metric"><b id="analytics-starts">—</b><span>Старты игры</span></div><div class="metric"><b id="analytics-completions">—</b><span>Завершения сессий</span></div><div class="metric"><b id="analytics-outbound-clicks">—</b><span>Переходы к проектам</span></div><div class="metric"><b id="analytics-lead-events">—</b><span>События заявок</span></div><div class="metric"><b id="analytics-premium-views">—</b><span>Просмотры Premium</span></div></div><p class="muted">Только события после согласия. Это не все посещения, не показы рекламы и не подтверждённые продажи. Переход по UTM сам по себе не подтверждает конверсию.</p><div class="table-wrap"><table class="analytics-table" id="game-analytics-table"><thead><tr><th scope="col">Игра</th><th scope="col">События</th><th scope="col">Старты</th><th scope="col">Завершения</th><th scope="col">Средняя длительность завершённой сессии</th><th scope="col">Переходы</th><th scope="col">Сессии</th></tr></thead><tbody id="game-analytics-body"><tr><td colspan="7">Не загружено.</td></tr></tbody></table></div></section>
 <section class="panel"><h2>Последние заявки</h2><div id="leads" class="list"><p class="muted">Не загружено.</p></div></section>
 <section class="panel"><h2>Последние заказы</h2><div id="orders" class="list"><p class="muted">Не загружено.</p></div></section>
 </main></div>
@@ -47,6 +48,28 @@ function list(selector, items, fields) {
     root.append(card);
   }
 }
+const fmt = value => new Intl.NumberFormat('ru-RU').format(Number(value || 0));
+function renderGameAnalytics(rows) {
+  const body = $('#game-analytics-body');
+  body.replaceChildren();
+  if (!Array.isArray(rows) || rows.length === 0) {
+    const row = document.createElement('tr');
+    const cell = text('td', '', 'Пока нет согласованных событий по играм.');
+    cell.colSpan = 7;
+    row.append(cell);
+    body.append(row);
+    return;
+  }
+  for (const game of rows) {
+    const row = document.createElement('tr');
+    const seconds = Number(game.avgCompletionSeconds || 0);
+    const duration = seconds > 0 ? Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0') : '—';
+    for (const value of [game.gameId || 'unknown', fmt(game.events), fmt(game.starts), fmt(game.completions), duration, fmt(game.crossPromoClicks), fmt(game.sessions)]) {
+      row.append(text('td', '', value));
+    }
+    body.append(row);
+  }
+}
 async function load() {
   token = $('#token').value.trim();
   if (token.length < 32) { $('#status').textContent = 'Токен должен содержать не менее 32 символов.'; return; }
@@ -59,6 +82,15 @@ async function load() {
     $('#lead-new').textContent = String(overview.leads?.new ?? 0);
     $('#order-total').textContent = String((overview.ordersByStatus || []).reduce((sum, item) => sum + Number(item.count || 0), 0));
     $('#events-total').textContent = String(overview.analyticsEventsLast30Days ?? 0);
+    const funnel = overview.analyticsFunnel || {};
+    $('#analytics-catalog-views').textContent = fmt(funnel.catalogViews);
+    $('#analytics-starts').textContent = fmt(funnel.gameStarts);
+    $('#analytics-completions').textContent = fmt(funnel.completedSessions);
+    $('#analytics-outbound-clicks').textContent = fmt(funnel.crossPromoClicks);
+    $('#analytics-lead-events').textContent = fmt(funnel.leadSubmittedEvents);
+    $('#analytics-premium-views').textContent = fmt(funnel.premiumPageViews);
+    $('#analytics-retention').textContent = 'Окно аналитики: 30 дней · хранение событий: ' + String(overview.analyticsRetentionDays ?? 90) + ' дней · учитываются только согласованные события.';
+    renderGameAnalytics(overview.analyticsByGame || []);
     $('#money').textContent = JSON.stringify({ordersByStatus:overview.ordersByStatus,grossPaidByCurrency:overview.grossPaidByCurrency,topEventsLast30Days:overview.topEventsLast30Days,note:overview.note},null,2);
     list('#leads',leads.items || [],['project_type','contact','budget','description','status','created_at']);
     list('#orders',orders.items || [],['order_id','product_key','email','status','currency','amount_total','created_at']);
