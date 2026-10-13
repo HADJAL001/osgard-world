@@ -1,7 +1,7 @@
 export const SCENARIOS = Object.freeze([
-  { id: 'conservative', label: 'Осторожный', note: 'Меньше трафика и конверсии', traffic: 0.6, starts: 0.8, sessions: 0.75, fill: 0.75, ecpm: 0.7, paid: 0.55, leads: 0.65, close: 0.7, costs: 1.1 },
-  { id: 'base', label: 'Базовый', note: 'Все допущения без изменений', traffic: 1, starts: 1, sessions: 1, fill: 1, ecpm: 1, paid: 1, leads: 1, close: 1, costs: 1 },
-  { id: 'optimistic', label: 'Оптимистичный', note: 'Рост при подтверждённом спросе', traffic: 1.8, starts: 1.15, sessions: 1.3, fill: 1.15, ecpm: 1.3, paid: 1.4, leads: 1.35, close: 1.25, costs: 1.2 },
+  { id: 'conservative', label: 'Осторожный', note: 'Меньше трафика и конверсии', traffic: 0.6, starts: 0.8, sessions: 0.75, fill: 0.75, ecpm: 0.7, paid: 0.55, sponsors: 0.5, leads: 0.65, close: 0.7, costs: 1.1 },
+  { id: 'base', label: 'Базовый', note: 'Все допущения без изменений', traffic: 1, starts: 1, sessions: 1, fill: 1, ecpm: 1, paid: 1, sponsors: 1, leads: 1, close: 1, costs: 1 },
+  { id: 'optimistic', label: 'Оптимистичный', note: 'Рост при подтверждённом спросе', traffic: 1.8, starts: 1.15, sessions: 1.3, fill: 1.15, ecpm: 1.3, paid: 1.4, sponsors: 1.5, leads: 1.35, close: 1.25, costs: 1.2 },
 ]);
 
 export const DEFAULT_INPUTS = Object.freeze({
@@ -13,6 +13,8 @@ export const DEFAULT_INPUTS = Object.freeze({
   ecpmUsd: 1.25,
   paidConversionRate: 0.25,
   paidPaymentUsd: 5.99,
+  sponsorCampaignsPerMonth: 0,
+  averageSponsorPackageUsd: 2500,
   leadRate: 0.15,
   leadCloseRate: 8,
   averageProjectValueUsd: 1200,
@@ -35,6 +37,8 @@ const bounds = {
   ecpmUsd: [0, 1000],
   paidConversionRate: [0, 100],
   paidPaymentUsd: [0, 10000000],
+  sponsorCampaignsPerMonth: [0, 1000000],
+  averageSponsorPackageUsd: [0, 10000000],
   leadRate: [0, 100],
   leadCloseRate: [0, 100],
   averageProjectValueUsd: [0, 1000000000],
@@ -58,6 +62,7 @@ export function normalizeInputs(input = {}) {
   normalized.monthlyVisitors = Math.round(normalized.monthlyVisitors);
   normalized.sessionsPerPlayer = Math.round(normalized.sessionsPerPlayer * 100) / 100;
   normalized.adSlotsPerSession = Math.round(normalized.adSlotsPerSession * 100) / 100;
+  normalized.sponsorCampaignsPerMonth = Math.round(normalized.sponsorCampaignsPerMonth * 100) / 100;
   normalized.invitesPerSharer = Math.round(normalized.invitesPerSharer * 100) / 100;
   normalized.inviteGenerations = Math.round(normalized.inviteGenerations);
   normalized.annualRevenueTargetUsd = Math.round(normalized.annualRevenueTargetUsd * 100) / 100;
@@ -83,9 +88,11 @@ export function calculateScenario(input = {}, scenarioId = 'base') {
   const closeRate = Math.min(100, values.leadCloseRate * scenario.close);
   const closedProjects = leads * closeRate / 100;
   const servicesRevenueUsd = closedProjects * values.averageProjectValueUsd;
+  const sponsorCampaigns = values.sponsorCampaignsPerMonth * scenario.sponsors;
+  const sponsorshipRevenueUsd = sponsorCampaigns * values.averageSponsorPackageUsd;
   const paymentFeesUsd = paidRevenueUsd * values.paymentFeeRate / 100;
   const operatingCostUsd = values.monthlyOperatingCostUsd * scenario.costs;
-  const totalRevenueUsd = adRevenueUsd + paidRevenueUsd + servicesRevenueUsd;
+  const totalRevenueUsd = adRevenueUsd + paidRevenueUsd + servicesRevenueUsd + sponsorshipRevenueUsd;
   const netOperatingUsd = totalRevenueUsd - paymentFeesUsd - operatingCostUsd;
 
   return {
@@ -106,6 +113,8 @@ export function calculateScenario(input = {}, scenarioId = 'base') {
     closeRate,
     closedProjects,
     servicesRevenueUsd,
+    sponsorCampaigns,
+    sponsorshipRevenueUsd,
     paymentFeesUsd,
     operatingCostUsd,
     totalRevenueUsd,
