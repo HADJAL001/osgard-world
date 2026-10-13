@@ -92,7 +92,18 @@ function eventIfAllowed(name,id,extra={}){if(!consent)return;let token;try{token
 window.OSGARDInvite={createLink:(id)=>createInviteLink(id),trackShare:()=>eventIfAllowed('share_created',undefined,{source:'catalog_toolbar',referralCode:getInviteCode()})};
 window.OSGARDGames=Object.freeze({open:(id,url,attribution)=>openGame(id,url,attribution)});
 window.OSGARDDailyTrackShare=(id,extra={})=>eventIfAllowed('share_created',id,{source:'daily_circuit',...extra});
-function openGame(id,url,attribution={}){if(!games[id])return;if(!dialog.showModal){location.href=url;return}recent=[id,...recent.filter(x=>x!==id)].slice(0,5);write(K.recent,recent);renderRecent();const invite=getInviteContext(),isDaily=attribution&&attribution.source==='daily_circuit',payload=isDaily?{source:'daily_circuit',dailyDate:String(attribution.dailyDate||'').slice(0,10),challengeCode:String(attribution.challengeCode||'').slice(0,32)}:invite.code?{source:'referral_link',referralCode:invite.code,referralGame:invite.game||'catalog',campaignSource:invite.source||'unknown'}:{source:'games_catalog'};eventIfAllowed('game_opened',id,payload);dialog.dataset.game=id;title.textContent=games[id].title;status.textContent='Игровой клиент загружается. Если запуск не завершится, открой игру отдельно.';direct.href=url;frame.src=url;dialog.showModal();frame.addEventListener('load',function done(){frame.removeEventListener('load',done);if(dialog.open)status.textContent='Страница клиента загружена. Скорость старта зависит от устройства и соединения.'})}
+function validatedAfterimageLaunchUrl(id,url){
+ if(id!=='afterimage-run')return url;
+ try{
+  const params=new URLSearchParams(location.search),seed=params.get('seed')||'',rawScore=params.get('score')||'',score=Number(rawScore);
+  const validDate=/^\d{4}-\d{2}-\d{2}$/.test(seed)&&(()=>{const date=new Date(seed+'T00:00:00.000Z');return Number.isFinite(date.getTime())&&date.toISOString().slice(0,10)===seed})();
+  if(!validDate||rawScore===''||!Number.isSafeInteger(score)||score<0||score>99999999)return url;
+  const target=new URL(url,location.origin);
+  if(target.origin!==location.origin||target.pathname!=='/games/afterimage-run/')return url;
+  target.searchParams.set('seed',seed);target.searchParams.set('score',String(score));return target.href;
+ }catch{return url}
+}
+function openGame(id,url,attribution={}){if(!games[id])return;if(!dialog.showModal){location.href=url;return}recent=[id,...recent.filter(x=>x!==id)].slice(0,5);write(K.recent,recent);renderRecent();const invite=getInviteContext(),isDaily=attribution&&attribution.source==='daily_circuit',payload=isDaily?{source:'daily_circuit',dailyDate:String(attribution.dailyDate||'').slice(0,10),challengeCode:String(attribution.challengeCode||'').slice(0,32)}:invite.code?{source:'referral_link',referralCode:invite.code,referralGame:invite.game||'catalog',campaignSource:invite.source||'unknown'}:{source:'games_catalog'};eventIfAllowed('game_opened',id,payload);dialog.dataset.game=id;title.textContent=games[id].title;status.textContent='Игровой клиент загружается. Если запуск не завершится, открой игру отдельно.';const launchUrl=validatedAfterimageLaunchUrl(id,url);direct.href=launchUrl;frame.src=launchUrl;dialog.showModal();frame.addEventListener('load',function done(){frame.removeEventListener('load',done);if(dialog.open)status.textContent='Страница клиента загружена. Скорость старта зависит от устройства и соединения.'})}
 function closeGame(){
  if(dialog.open&&dialog.dataset.game&&dialog.dataset.postgameReady!=='1'){
   window.dispatchEvent(new CustomEvent('osgard:request-postgame'));
