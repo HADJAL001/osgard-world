@@ -15,6 +15,26 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+  osgard-commerce-api:
+    build: ./commerce-api
+    container_name: osgard-commerce-api
+    restart: unless-stopped
+    expose:
+      - "8080"
+    environment:
+      PORT: "8080"
+      OSGARD_COMMERCE_DB: "/var/lib/osgard-commerce/commerce.sqlite3"
+      OSGARD_COMMERCE_ADMIN_TOKEN: "${OSGARD_COMMERCE_ADMIN_TOKEN:-}"
+      OSGARD_COMMERCE_RETENTION_DAYS: "${OSGARD_COMMERCE_RETENTION_DAYS:-180}"
+      OSGARD_ALLOWED_ORIGINS: "https://osgard.world,https://www.osgard.world"
+    volumes:
+      - osgard-commerce-data:/var/lib/osgard-commerce
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
   osgard-world:
     build: .
     container_name: osgard-world
@@ -23,6 +43,8 @@ services:
       swarm-api:
         condition: service_healthy
       osgard-game-api:
+        condition: service_healthy
+      osgard-commerce-api:
         condition: service_healthy
     ports:
       - "127.0.0.1:4189:80"
@@ -58,3 +80,4 @@ services:
 
 volumes:
   osgard-game-data:
+  osgard-commerce-data:
