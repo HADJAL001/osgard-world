@@ -22,11 +22,11 @@ assert.ok(page.includes('id="export-json"') && page.includes('id="reset-model"')
 assert.ok(page.includes('prefers-reduced-motion:reduce'), 'Reduced-motion support missing');
 assert.ok(['shareRatePct','invitesPerSharer','inviteConversionPct'].every((id) => page.includes('id="' + id + '"') && page.includes('name="' + id + '"')), 'Viral-loop assumption inputs missing');
 assert.ok(['base-viral-visitors','base-k-factor','active-k-factor-status','base-annual-revenue','million-gap','annual-target-heading','monthly-target-value','required-base-visitors','growth-target-status'].every((id) => page.includes('id="' + id + '"')), 'Annual target, required traffic and referral outputs missing');
-assert.ok(['target-mix-total','target-mix-ads','target-mix-paid','target-mix-services','target-mix-sponsors','target-mix-leads-contracts','target-mix-lead-overflow','target-mix-capacity'].every((id) => page.includes('id="' + id + '"')), 'Target-scale source mix must be visible in the Growth Lab');
-assert.ok(['target-mix-total','target-mix-ads','target-mix-paid','target-mix-services','target-mix-sponsors','target-mix-leads-contracts','target-mix-lead-overflow','target-mix-capacity'].every((id) => app.includes("getElementById('" + id + "')")), 'Target-scale source mix must be wired to computed target scenario');
+assert.ok(['target-mix-total','target-mix-ads','target-mix-paid','target-mix-subscriptions','target-mix-services','target-mix-sponsors','target-mix-leads-contracts','target-mix-lead-overflow','target-mix-capacity'].every((id) => page.includes('id="' + id + '"')), 'Target-scale source mix must include subscription revenue');
+assert.ok(['target-mix-total','target-mix-ads','target-mix-paid','target-mix-subscriptions','target-mix-services','target-mix-sponsors','target-mix-leads-contracts','target-mix-lead-overflow','target-mix-capacity'].every((id) => app.includes("getElementById('" + id + "')")), 'Target-scale source mix must be wired to computed target scenario');
 assert.ok(page.includes('name="annualRevenueTargetUsd"'), 'Editable annual gross revenue target input missing');
-assert.ok(['newVisitorSharePct','maxLeadsPerMonth','maxProjectsPerMonth'].every((id) => page.includes('id="' + id + '"') && page.includes('name="' + id + '"')), 'New-visitor share, enquiry processing and project capacity inputs are required');
-assert.ok(app.includes('targetScenario.capacityUtilizationPct') && app.includes('targetScenario.unprocessedLeads') && app.includes('modelVersion: 4'), 'Capacity-aware outputs and model export version must be wired');
+assert.ok(['newVisitorSharePct','maxLeadsPerMonth','maxProjectsPerMonth','subscriptionConversionRatePct','subscriptionMonthlyPriceUsd','subscriptionMonthlyChurnPct'].every((id) => page.includes('id="' + id + '"') && page.includes('name="' + id + '"')), 'New-visitor share, subscription assumptions, enquiry processing and project capacity inputs are required');
+assert.ok(app.includes('targetScenario.capacityUtilizationPct') && app.includes('targetScenario.unprocessedLeads') && app.includes('modelVersion: 5') && app.includes('target-mix-subscriptions') && app.includes('subscriptionMrrMonth12Usd'), 'Capacity-aware outputs, cohort subscriptions and model export version must be wired');
 assert.ok(app.includes('calculateRequiredMonthlyVisitors') && app.includes('growthTarget:'), 'Required-traffic calculation must be visible and included in the local export');
 assert.ok(!/https?:\/\/(?:fonts\.googleapis\.com|fonts\.gstatic\.com|cdn\.jsdelivr\.net|unpkg\.com)/i.test(page), 'Financial planner unexpectedly depends on a remote asset CDN');
 assert.ok(app.includes('URL.createObjectURL') && app.includes('osgard-games-model.json'), 'Local JSON export not implemented');
@@ -52,9 +52,9 @@ assert.ok(Math.abs(actual.paidRevenueUsd - 75.2119375) < 1e-8);
 assert.equal(actual.leads, 15.0675);
 assert.ok(Math.abs(actual.closedProjects - 1.2054) < 1e-8);
 assert.ok(Math.abs(actual.servicesRevenueUsd - 1446.48) < 1e-8);
-assert.ok(Math.abs(actual.paymentFeesUsd - 2.256358125) < 1e-8);
+assert.ok(Math.abs(actual.paymentFeesUsd - (2.256358125 + actual.subscriptionRevenueUsd * DEFAULT_INPUTS.paymentFeeRate / 100)) < 1e-8, 'Payment fees must include recurring subscription revenue');
 assert.equal(actual.operatingCostUsd, 400);
-assert.ok(Math.abs(actual.netOperatingUsd - 1131.866266875) < 1e-8, 'Base net result formula drifted');
+assert.ok(Math.abs(actual.netOperatingUsd - (1131.866266875 + actual.subscriptionRevenueUsd * (1 - DEFAULT_INPUTS.paymentFeeRate / 100))) < 1e-8, 'Base net result must include subscription revenue after payment fees');
 assert.equal(actual.viralVisitors, 45, 'Base model must expose the five-generation referral estimate');
 assert.equal(DEFAULT_INPUTS.newVisitorSharePct, 50, 'New-visitor share must be an explicit editable model assumption');
 assert.equal(DEFAULT_INPUTS.maxLeadsPerMonth, 100, 'Lead processing capacity must be explicit');
@@ -101,6 +101,23 @@ const boundedReferral = normalizeInputs({ shareRatePct: 500, invitesPerSharer: 2
 assert.equal(boundedReferral.shareRatePct, 100, 'Share-rate input must be bounded at 100 percent');
 assert.equal(boundedReferral.invitesPerSharer, 20, 'Invite count must be bounded to protect model stability');
 assert.equal(boundedReferral.inviteConversionPct, 0, 'Referral conversion input must be bounded at zero');
+const boundedSubscription = normalizeInputs({ subscriptionConversionRatePct: 150, subscriptionMonthlyPriceUsd: -5, subscriptionMonthlyChurnPct: 120 });
+assert.equal(boundedSubscription.subscriptionConversionRatePct, 100, 'Subscription conversion must be bounded to 100 percent');
+assert.equal(boundedSubscription.subscriptionMonthlyPriceUsd, 0, 'Subscription price cannot be negative');
+assert.equal(boundedSubscription.subscriptionMonthlyChurnPct, 100, 'Monthly subscription churn must be bounded to 100 percent');
+assert.ok(actual.subscriptionRevenueUsd > 0 && actual.subscriptionAnnualRevenueUsd > 0, 'Subscription cohorts must add modeled recurring revenue when assumptions are enabled');
+assert.ok(actual.subscriptionMrrMonth12Usd > actual.subscriptionRevenueUsd, 'Month-12 MRR should be shown separately from the first-year average');
+assert.ok(Math.abs(actual.subscriptionAnnualRevenueUsd - actual.subscriptionRevenueUsd * 12) < 1e-8, 'First-year subscription revenue must reconcile with its average monthly contribution');
+assert.ok(Math.abs(actual.subscriptionNewCustomersPerMonth - (actual.newVisitors - actual.paidCustomers) * DEFAULT_INPUTS.subscriptionConversionRatePct / 100) < 1e-8, 'Subscription acquisition must exclude one-time buyers');
+const noSubscriptions = calculateScenario({ ...DEFAULT_INPUTS, subscriptionConversionRatePct: 0 }, 'base');
+assert.equal(noSubscriptions.subscriptionRevenueUsd, 0, 'Zero subscription conversion must create no recurring revenue');
+assert.equal(noSubscriptions.subscriptionMrrMonth12Usd, 0, 'Zero subscription conversion must create no MRR');
+const noChurn = calculateScenario({ ...DEFAULT_INPUTS, subscriptionMonthlyChurnPct: 0 }, 'base');
+assert.ok(Math.abs(noChurn.subscriptionSubscribersMonth12 - noChurn.subscriptionNewCustomersPerMonth * 12) < 1e-8, 'Zero monthly churn should retain all twelve cohorts by month twelve');
+const fullChurn = calculateScenario({ ...DEFAULT_INPUTS, subscriptionMonthlyChurnPct: 100 }, 'base');
+assert.ok(Math.abs(fullChurn.subscriptionSubscribersMonth12 - fullChurn.subscriptionNewCustomersPerMonth) < 1e-8, '100 percent monthly churn should leave only the latest cohort active');
+assert.ok(noChurn.subscriptionAnnualRevenueUsd > actual.subscriptionAnnualRevenueUsd && actual.subscriptionAnnualRevenueUsd > fullChurn.subscriptionAnnualRevenueUsd, 'Higher churn must reduce first-year subscription revenue');
+
 
 console.log('PASS OSGARD games economics model: invite-visit multiplier, active-player K-factor, five-generation cap, $1M target-scale mix, formulas, bounds and scenario sensitivity.');
 
@@ -109,8 +126,8 @@ assert.ok(app.includes('result.sponsorRevenueUsd') && app.includes("getElementBy
 const sponsorExample = calculateScenario({ ...DEFAULT_INPUTS, sponsorDealsPerMonth: 2, averageSponsorDealUsd: 500 }, 'base')
 assert.equal(sponsorExample.sponsorRevenueUsd, 1000, 'Sponsor revenue should only appear when the user enters real signed-and-paid placements')
 assert.equal(sponsorExample.totalRevenueUsd, actual.totalRevenueUsd + 1000)
-assert.ok(Math.abs(actual.totalRevenueUsd * 12 - 18409.4715) < 1e-7, 'Annual gross turnover target calculation drifted')
-assert.ok(Math.abs(1000000 - actual.totalRevenueUsd * 12 - 981590.5285) < 1e-7, 'Remaining gap to the $1M annual turnover target drifted')
+assert.ok(Math.abs(actual.totalRevenueUsd * 12 - (18409.4715 + actual.subscriptionAnnualRevenueUsd)) < 1e-7, 'Annual gross turnover must include first-year subscription cohorts')
+assert.ok(Math.abs(1000000 - actual.totalRevenueUsd * 12 - (981590.5285 - actual.subscriptionAnnualRevenueUsd)) < 1e-7, 'Remaining gap to the $1M annual turnover target must include the subscription model')
 assert.equal(DEFAULT_INPUTS.annualRevenueTargetUsd, 1000000, 'Default annual gross target must be $1M')
 const requiredVisitors = calculateRequiredMonthlyVisitors(DEFAULT_INPUTS)
 const requiredScaleMix = calculateScenario({ ...DEFAULT_INPUTS, monthlyVisitors: requiredVisitors }, 'base')
@@ -120,7 +137,7 @@ assert.ok(Number.isInteger(requiredVisitors) && requiredVisitors > DEFAULT_INPUT
 assert.ok(calculateScenario({ ...DEFAULT_INPUTS, monthlyVisitors: requiredVisitors }, 'base').totalRevenueUsd * 12 >= DEFAULT_INPUTS.annualRevenueTargetUsd, 'Required seed traffic must reach the annual gross target')
 assert.ok(calculateScenario({ ...DEFAULT_INPUTS, monthlyVisitors: requiredVisitors - 1 }, 'base').totalRevenueUsd * 12 < DEFAULT_INPUTS.annualRevenueTargetUsd, 'Required seed traffic must be the smallest integer estimate that reaches the goal')
 assert.equal(calculateRequiredMonthlyVisitors(DEFAULT_INPUTS, 0), 0, 'A zero annual target requires no starting traffic')
-const impossibleInputs = { ...DEFAULT_INPUTS, adSlotsPerSession: 0, paidConversionRate: 0, leadRate: 0, sponsorDealsPerMonth: 0, averageSponsorDealUsd: 0 }
+const impossibleInputs = { ...DEFAULT_INPUTS, adSlotsPerSession: 0, paidConversionRate: 0, subscriptionConversionRatePct: 0, leadRate: 0, sponsorDealsPerMonth: 0, averageSponsorDealUsd: 0 }
 assert.equal(calculateRequiredMonthlyVisitors(impossibleInputs, 1000000), null, 'A target without any variable revenue stream must be explicitly unreachable')
 const boundedTarget = normalizeInputs({ annualRevenueTargetUsd: 2000000000000 })
 assert.equal(boundedTarget.annualRevenueTargetUsd, 1000000000000, 'Annual target must be bounded');
