@@ -54,7 +54,7 @@ const civicInline=(civic.match(/<script>([\s\S]*?)<\/script>/)||[])[1]
 assert.ok(civicInline&&civicInline.length>5000,'CIVIC CASCADE self-contained game script missing')
 new Function(civicInline)
 assert.ok(lifecycle.includes("'signal-run':{title:'SIGNAL RUN',url:'/games/signal-run/'}"), 'Player lifecycle registry must include SIGNAL RUN')
-assert.ok(luxury.includes("'signal-run']" ) || luxury.includes("'patina', 'signal-run'"), 'SIGNAL RUN must be included in valid recent-game IDs so Resume and recent sorting include all eight titles')
+assert.ok(luxury.includes("const validIds = new Set(['null-shift', 'time', 'swarm', 'inherit', 'remix', 'civic-cascade', 'patina', 'signal-run'])"), 'Recent history and Resume registry must include all eight current games, including SIGNAL RUN')
 assert.ok(lifecycle.includes("if(id==='signal-run')return !!doc.querySelector('#arena')&&!!doc.querySelector('#start')"), 'Player lifecycle must detect SIGNAL RUN readiness')
 assert.ok(lifecycle.includes("!['ready','started','paused','resumed','error','completed'].includes(m.state)"), 'Player lifecycle must support SIGNAL RUN ready and pause/resume states')
 assert.ok(manifest.includes("'patina' | 'signal-run'") && manifest.includes("href: '/games/signal-run/'"), 'Core manifest must register SIGNAL RUN')
