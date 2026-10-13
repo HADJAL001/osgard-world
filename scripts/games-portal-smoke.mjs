@@ -419,9 +419,23 @@ assert.equal(frequencyField.children[0].value,'each','Service intermission is en
 assert.ok(mockSuite.children[1]&&mockSuite.children[1].className==='og-postgame-reward','Social-share reward must remain available with or without promotions')
 
 const servicesSection=mockSuite.children.find(node=>node.className==='og-postgame-services')
+const spotlight=servicesSection.children.find(node=>node.className==='og-postgame-spotlight')
+assert.ok(spotlight&&!spotlight.hidden,'A premium OSGARD SELECT spotlight should appear between game rounds')
+assert.equal(spotlight.dataset.service,'marcosa','SWARM should highlight contextually relevant MARCOSA by default')
+assert.ok(spotlight.children.some(node=>node.className==='og-postgame-spotlight-copy'),'Spotlight needs an editorial service description and action controls')
 const serviceFilters=servicesSection.children.find(node=>node.className==='og-postgame-service-filters')
 assert.equal(serviceFilters.children[0].textContent,'Все доступные · 9','The all-services filter count must exclude the unavailable GARD VPN card')
-const serviceCards=servicesSection.children.find(node=>node.className==='og-postgame-service-grid').children
+const serviceGrid=servicesSection.children.find(node=>node.className==='og-postgame-service-grid')
+const serviceCards=serviceGrid.children
+assert.equal(serviceGrid.hidden,true,'The full service directory should be collapsed under the spotlight by default')
+assert.equal(serviceFilters.hidden,true,'Category filters should stay collapsed until the directory is opened')
+const serviceHead=servicesSection.children.find(node=>node.className==='og-postgame-service-head')
+const headActions=serviceHead.children.find(node=>node.className==='og-postgame-service-head-actions')
+const serviceDirectoryToggle=headActions.children.find(node=>node.className.includes('og-postgame-collapse-toggle'))
+assert.ok(serviceDirectoryToggle&&!serviceDirectoryToggle.hidden,'The player must be able to open the full owned-service directory')
+serviceDirectoryToggle.click()
+assert.equal(serviceGrid.hidden,false,'The service directory toggle should reveal all active service cards')
+assert.equal(serviceFilters.hidden,false,'Opening the directory should reveal category filters');
 assert.equal(serviceFilters.children.length,7,'The luxury intermission should offer explicit categories for all ten service choices')
 const socialFilter=serviceFilters.children.find(node=>node.dataset.osgardServiceFilter==='social')
 socialFilter.click()
@@ -435,6 +449,7 @@ const decisionBar=servicesSection.children.find(node=>node.className==='og-postg
 assert.ok(decisionBar,'A clear skip control should be available in the intermission');
 const skipOffer=decisionBar.children.find(node=>node.className==='og-postgame-skip');
 skipOffer.click();
+assert.equal(spotlight.hidden,true,'Skip should hide the premium spotlight too')
 assert.equal(servicesSection.children.find(node=>node.className==='og-postgame-service-grid').hidden,true,'Skip should hide promo cards without blocking share rewards');
 assert.equal(servicesSection.children.find(node=>node.className==='og-postgame-service-filters').hidden,true,'Skip should hide service categories together with promo cards');
 assert.equal(decisionBar.children.find(node=>node.className==='og-postgame-skip-status').hidden,false,'Skip should provide accessible feedback');
