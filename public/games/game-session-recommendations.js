@@ -9,13 +9,14 @@ const games={
  'signal-run':{title:'SIGNAL RUN',subtitle:'Динамичная аркада',href:'/games/signal-run/'},
  'civic-cascade':{title:'CIVIC CASCADE',subtitle:'Кризисная стратегия',href:'/games/civic-cascade/'},
  patina:{title:'PATINA Atelier',subtitle:'Реставрационная мастерская',href:'/games/patina/'},
- 'cascade-lab':{title:'CASCADE LAB',subtitle:'Физические головоломки',href:'/games/cascade-lab/'}
+ 'cascade-lab':{title:'CASCADE LAB',subtitle:'Физические головоломки',href:'/games/cascade-lab/'},
+ 'aether-grid':{title:'AETHER GRID',subtitle:'Ежедневная головоломка',href:'/games/aether-grid/'}
 };
 const next={
  'null-shift':['civic-cascade','cascade-lab'],time:['civic-cascade','inherit'],
  swarm:['null-shift','signal-run'],inherit:['patina','time'],remix:['swarm','cascade-lab'],
  'signal-run':['swarm','null-shift'],'civic-cascade':['time','inherit'],patina:['inherit','civic-cascade'],
- 'cascade-lab':['signal-run','null-shift']
+ 'cascade-lab':['signal-run','aether-grid'],'aether-grid':['cascade-lab','signal-run']
 };
 const host=document.querySelector('#post-run-recommendations'),dialog=document.querySelector('#player-dialog');
 if(!host||!dialog)return;
@@ -49,7 +50,8 @@ const games={
  'civic-cascade':{title:'CIVIC CASCADE'},
  patina:{title:'PATINA Atelier'},
  'signal-run':{title:'SIGNAL RUN'},
- 'cascade-lab':{title:'CASCADE LAB'}
+ 'cascade-lab':{title:'CASCADE LAB'},
+ 'aether-grid':{title:'AETHER GRID'}
 };
 const CONSENT_KEY='osgard.games.analytics-consent.v1';
 const ATTR_KEY='osgard.games.referral-attribution.v1';
