@@ -22,6 +22,8 @@ assert.ok(page.includes('id="export-json"') && page.includes('id="reset-model"')
 assert.ok(page.includes('prefers-reduced-motion:reduce'), 'Reduced-motion support missing');
 assert.ok(['shareRatePct','invitesPerSharer','inviteConversionPct'].every((id) => page.includes('id="' + id + '"') && page.includes('name="' + id + '"')), 'Viral-loop assumption inputs missing');
 assert.ok(['base-viral-visitors','base-k-factor','base-annual-revenue','million-gap','annual-target-heading','monthly-target-value','required-base-visitors','growth-target-status'].every((id) => page.includes('id="' + id + '"')), 'Annual target, required traffic and referral outputs missing');
+assert.ok(['target-mix-total','target-mix-ads','target-mix-paid','target-mix-services','target-mix-sponsors','target-mix-leads-contracts'].every((id) => page.includes('id="' + id + '"')), 'Target-scale source mix must be visible in the Growth Lab');
+assert.ok(['target-mix-total','target-mix-ads','target-mix-paid','target-mix-services','target-mix-sponsors','target-mix-leads-contracts'].every((id) => app.includes("getElementById('" + id + "')")), 'Target-scale source mix must be wired to computed target scenario');
 assert.ok(page.includes('name="annualRevenueTargetUsd"'), 'Editable annual gross revenue target input missing');
 assert.ok(app.includes('calculateRequiredMonthlyVisitors') && app.includes('growthTarget:'), 'Required-traffic calculation must be visible and included in the local export');
 assert.ok(!/https?:\/\/(?:fonts\.googleapis\.com|fonts\.gstatic\.com|cdn\.jsdelivr\.net|unpkg\.com)/i.test(page), 'Financial planner unexpectedly depends on a remote asset CDN');
@@ -86,6 +88,9 @@ assert.ok(Math.abs(actual.totalRevenueUsd * 12 - 19312.01475) < 1e-7, 'Annual gr
 assert.ok(Math.abs(1000000 - actual.totalRevenueUsd * 12 - 980687.98525) < 1e-7, 'Remaining gap to the $1M annual turnover target drifted')
 assert.equal(DEFAULT_INPUTS.annualRevenueTargetUsd, 1000000, 'Default annual gross target must be $1M')
 const requiredVisitors = calculateRequiredMonthlyVisitors(DEFAULT_INPUTS)
+const requiredScaleMix = calculateScenario({ ...DEFAULT_INPUTS, monthlyVisitors: requiredVisitors }, 'base')
+assert.ok(requiredScaleMix.totalRevenueUsd >= DEFAULT_INPUTS.annualRevenueTargetUsd / 12, 'Target scale mix must reach the monthly gross target')
+assert.equal(requiredScaleMix.sponsorRevenueUsd, 0, 'Sponsor mix must remain zero unless the user enters contracted placements')
 assert.ok(Number.isInteger(requiredVisitors) && requiredVisitors > DEFAULT_INPUTS.monthlyVisitors, 'Current assumptions should require a finite, larger seed-traffic estimate')
 assert.ok(calculateScenario({ ...DEFAULT_INPUTS, monthlyVisitors: requiredVisitors }, 'base').totalRevenueUsd * 12 >= DEFAULT_INPUTS.annualRevenueTargetUsd, 'Required seed traffic must reach the annual gross target')
 assert.ok(calculateScenario({ ...DEFAULT_INPUTS, monthlyVisitors: requiredVisitors - 1 }, 'base').totalRevenueUsd * 12 < DEFAULT_INPUTS.annualRevenueTargetUsd, 'Required seed traffic must be the smallest integer estimate that reaches the goal')
