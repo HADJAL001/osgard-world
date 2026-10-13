@@ -53,6 +53,8 @@ for (const p of ['public/games/index.html','public/games/cascade-lab/index.html'
   assert.ok(existsSync(p), `Required publication asset missing: ${p}`)
 }
 execFileSync(process.execPath, ['--check', 'scripts/production-route-matrix.mjs'], { stdio: 'pipe' })
+assert.ok(routeMatrix.includes("const isGodotDirectory = route === '/games/null-shift-godot/'") && routeMatrix.includes("method: isGodotDirectory ? 'HEAD' : 'GET'") && routeMatrix.includes("isGodotDirectory ? '' : await response.text()"), 'Godot directory availability must be checked without downloading its heavy HTML shell')
+assert.ok(routeMatrix.includes("route.startsWith('/games/null-shift-godot/index.html')") || routeMatrix.includes("route.startsWith('/games/null-shift-godot')") && routeMatrix.includes("text.includes('data-nullshift-shell=\"premium-v1\"')"), 'Godot content contract and asset checks must remain on the explicit index/asset probes')
 console.log('PASS OSGARD GAME DETAIL: nine routes, details, SEO sitemap, safe legacy fallback, Nginx redirects, asynchronous SPA readiness and honest lifecycle events.')
 assert.ok(cascadeGame.includes('id="runButton"') && cascadeGame.includes('id="exportTelemetryButton"') && cascadeGame.includes('id="exportGrowthButton"') && cascadeGame.includes('id="serviceAdDialog"'), 'CASCADE LAB gameplay, diagnostics and promotion controls missing')
 assert.ok(cascadeGame.includes('data-cascade-lab-ready="true"') && cascadeGame.includes('content="0.13.0-osgard-cross-promo"'), 'CASCADE LAB 0.13.0 version and parent iframe-ready contract missing')
