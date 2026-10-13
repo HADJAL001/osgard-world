@@ -2223,7 +2223,7 @@ func _create_ui() -> void:
 		lane_chip.custom_minimum_size = Vector2(82.0, 16.0)
 		lane_chip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		phase_lane_labels.append(lane_chip)
-	status_shortcuts = _label(status_stack, "H HELP · F2 GFX · F3 FPS · F4 MOTION", 8, Color(0.48, 0.6, 0.62))
+	status_shortcuts = _label(status_stack, "ПОМОЩЬ / H · FPS / F3 · ГРАФИКА / F2 · ДВИЖ. / F4", 8, Color(0.48, 0.6, 0.62))
 
 	objective_panel = _make_panel(hud_root, Control.PRESET_TOP_RIGHT, Rect2(-334.0, 18.0, 316.0, 178.0))
 	var objective_stack := _panel_stack(objective_panel)
