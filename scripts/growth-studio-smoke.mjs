@@ -22,7 +22,7 @@ check('all nine existing game identifiers are available', () => {
   for (const id of ['signal-run','remix','null-shift','time','swarm','inherit','civic-cascade','patina','cascade-lab']) assert.ok(page.includes('value="'+id+'"'), id);
 });
 check('invite URL follows canonical catalogue og_ref/og_game contract', () => {
-  for (const item of ["function inviteCode()", "url.searchParams.set('og_ref'", "url.searchParams.set('og_game',game)", "url.searchParams.set('utm_source','osgard_play')", "url.searchParams.set('utm_medium','referral')", "url.searchParams.set('utm_campaign','play_with_friends')", "url.searchParams.set('utm_content',game)]) assert.ok(page.includes(item), item);
+  for (const item of ["function inviteCode()", "url.searchParams.set('og_ref'", "url.searchParams.set('og_game',game)", "url.searchParams.set('utm_source','osgard_play')", "url.searchParams.set('utm_medium','referral')", "url.searchParams.set('utm_campaign','play_with_friends')", "url.searchParams.set('utm_content',game)"]) assert.ok(page.includes(item), item);
   assert.ok(!page.includes("url.searchParams.set('challenge',game)"), 'Campaign builder should not emit legacy challenge/ref links');
 });
 check('analytics checks existing consent and sends only the allowlisted share event', () => {
