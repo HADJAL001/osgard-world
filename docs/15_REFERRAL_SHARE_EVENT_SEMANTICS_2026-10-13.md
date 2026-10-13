@@ -31,3 +31,8 @@ The funnel is consented analytics, not complete traffic measurement. It must not
 ## Monetization relevance
 
 A lower but more truthful share count is preferable to artificially inflated conversion metrics. Sponsorship and revenue forecasts must use confirmed provider/order data and clearly disclosed assumptions; referral events alone never justify claiming a dollar value or “viral coefficient.”
+
+
+## NULL//SHIFT Godot referral cards — 13 October 2026
+
+The Godot result share creates a first-party 1200×630 PNG and a direct same-origin invite URL containing a stable daily challenge code and opaque OSGARD referral code. share_created is emitted only after native-share success or clipboard success. referral_link_opened is emitted only with analytics consent; session-start/completion events preserve the validated referral source. Native share cancellation and manual prompt fallback are not counted as completed shares. These events are funnel stages, not proof of delivery, a referred human identity, revenue or a viral coefficient.

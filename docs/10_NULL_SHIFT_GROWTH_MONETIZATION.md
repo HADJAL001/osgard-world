@@ -47,3 +47,16 @@ First define whether the goal is gross revenue or net contribution and over what
 ## Current limitations
 
 Daily challenges, credits, cosmetic ownership and the daily claim date currently live in local Godot career storage. A knowledgeable user can edit local saves. This is appropriate for prototype validation, but it is not secure remote reward accounting and must not be used for cash-value entitlements. Global rankings, referral verification, payments and cross-device ownership need an authoritative backend.
+
+
+## Release 2026-10-13 — NULL//SHIFT result cards and referral funnel
+
+- The Godot result screen now calls a local first-party share helper in the exported loading shell. It creates a branded 1200×630 PNG result card from the actual run state: result, contract, eliminations, career credits and daily challenge code. No remote images, fonts or analytics SDKs are required.
+- On browsers supporting file sharing, the card is attached to the native share sheet. Other browsers copy the direct challenge URL and download the PNG when supported. Manual prompt fallback remains available but is not recorded as a confirmed share.
+- Invite links preserve the stable daily challenge code and add an opaque OSGARD invite code plus the existing osgard_play / referral / play_with_friends campaign. A recipient opens the same challenge, and the source survives through session start and completion.
+- share_created is reported only after native sharing succeeds or URL copying succeeds. Dismissing the share sheet emits no event. referral_link_opened is emitted only with explicit analytics consent and is de-duplicated per invite/challenge within the current tab. Standalone Godot links use the same consented commerce event contract for started/completed sessions.
+- The measurable chain is share_created → referral_link_opened → game_session_started → game_session_completed. These are funnel stages, not proof of delivery, revenue or a viral coefficient. No share-click credits or pay-to-win rewards were added.
+
+## Monetization scope
+
+This change strengthens attribution and share conversion measurement; it does not enable real-money collection. The cosmetic vault remains earned-credit-only. Do not enable paid supporter packs, ads or sponsored content until checkout/provider configuration, verified server-side entitlements, refund handling, sponsor agreements and consent/legal requirements are live. The $1M target remains a scenario to validate against real retention, cohort and paid-conversion data, not a promised outcome.

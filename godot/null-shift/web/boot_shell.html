@@ -169,6 +169,269 @@
   <script>
     (function () {
       "use strict";
+
+      // Local first-party sharing plus explicit-consent attribution.
+      var growthStyle = document.createElement("style");
+      growthStyle.textContent = ".growth-toast{position:fixed;z-index:30;left:50%;bottom:max(20px,env(safe-area-inset-bottom));width:min(520px,calc(100% - 28px));padding:13px 16px;border:1px solid rgba(100,247,220,.42);border-radius:10px;background:rgba(5,13,16,.96);box-shadow:0 18px 50px rgba(0,0,0,.45);color:#e8fffa;font:600 12px/1.5 ui-sans-serif,system-ui,sans-serif;opacity:0;transform:translate(-50%,10px);pointer-events:none;transition:opacity .22s ease,transform .22s ease}.growth-toast.is-visible{opacity:1;transform:translate(-50%,0)}@media(prefers-reduced-motion:reduce){.growth-toast{transition:none}}";
+      document.head.appendChild(growthStyle);
+      var growthToast = document.createElement("div");
+      growthToast.className = "growth-toast";
+      growthToast.setAttribute("role", "status");
+      growthToast.setAttribute("aria-live", "polite");
+      growthToast.hidden = true;
+      document.body.appendChild(growthToast);
+      var growthToastTimer = 0;
+      function showGrowthToast(message) {
+        growthToast.textContent = message;
+        growthToast.hidden = false;
+        growthToast.classList.add("is-visible");
+        if (growthToastTimer) clearTimeout(growthToastTimer);
+        growthToastTimer = setTimeout(function () {
+          growthToast.classList.remove("is-visible");
+          setTimeout(function () { growthToast.hidden = true; }, 240);
+        }, 4200);
+      }
+      function hasAnalyticsConsent() {
+        try { return localStorage.getItem("osgard.games.analytics-consent.v1") === "yes"; }
+        catch (_) { return false; }
+      }
+      function eventId() {
+        return "evt_" + (window.crypto && typeof window.crypto.randomUUID === "function"
+          ? window.crypto.randomUUID()
+          : Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 15)).replace(/[^a-zA-Z0-9_-]/g, "");
+      }
+      function sendGrowthEvent(name, sessionId, source, durationSeconds) {
+        if (!hasAnalyticsConsent()) return;
+        fetch("/games/commerce-config.json", { cache: "no-store" })
+          .then(function (response) { return response.ok ? response.json() : {}; })
+          .catch(function () { return {}; })
+          .then(function (config) {
+            var base = String(config.apiBaseUrl || "/commerce-api").replace(/\/+$/, "");
+            return fetch(base + "/v1/events", {
+              method: "POST", keepalive: true, headers: { "content-type": "application/json" },
+              body: JSON.stringify({
+                consent: true,
+                events: [{
+                  eventId: eventId(), name: name,
+                  sessionId: String(sessionId || ("ns_" + Date.now().toString(36))).slice(0, 128),
+                  gameId: "null-shift", source: String(source || "godot-web-direct").slice(0, 80),
+                  path: window.location.pathname,
+                  durationSeconds: Math.max(0, Math.min(86400, Math.floor(Number(durationSeconds) || 0)))
+                }]
+              })
+            });
+          }).catch(function () {});
+      }
+      function validReferralContext(url) {
+        var code = url.searchParams.get("ref") || "";
+        var challenge = url.searchParams.get("challenge") || "";
+        var valid = /^og_[a-f0-9]{8}$/.test(code) &&
+          /^NS-[0-9]{8}-C[1-3]$/.test(challenge) &&
+          url.searchParams.get("utm_source") === "osgard_play" &&
+          url.searchParams.get("utm_medium") === "referral" &&
+          url.searchParams.get("utm_campaign") === "play_with_friends" &&
+          (url.pathname === "/games/null-shift-godot/" || url.pathname === "/games/null-shift-godot/index.html");
+        return valid ? { code: code, challenge: challenge } : null;
+      }
+      function referralSource() {
+        try {
+          var ref = validReferralContext(new URL(window.location.href));
+          if (ref) return "referral:" + ref.code + ":null-shift";
+        } catch (_) {}
+        return "godot-web-direct";
+      }
+      function trackReferralOpen() {
+        if (!hasAnalyticsConsent()) return;
+        var context;
+        try { context = validReferralContext(new URL(window.location.href)); } catch (_) { return; }
+        if (!context) return;
+        var sessionKey = "osgard.nullshift.referral-opened.v1:" + context.code + ":" + context.challenge;
+        try {
+          if (sessionStorage.getItem(sessionKey) === "sent") return;
+          sessionStorage.setItem(sessionKey, "sent");
+        } catch (_) {}
+        sendGrowthEvent("referral_link_opened", "invite_" + context.code + "_" + context.challenge, "referral-link:" + context.code + ":null-shift", 0);
+      }
+      var standaloneSessionId = "";
+      var standaloneStartedAt = 0;
+      var standaloneSessionTracked = false;
+      window.OSGARDGameLifecycle = function (message) {
+        if (!message || message.game !== "null-shift") return;
+        if (window.parent !== window) {
+          try { window.parent.postMessage(message, window.location.origin); } catch (_) {}
+          return;
+        }
+        if (message.state === "started") {
+          standaloneStartedAt = Date.now();
+          standaloneSessionId = "session_ns_" + standaloneStartedAt.toString(36);
+          standaloneSessionTracked = hasAnalyticsConsent();
+          if (standaloneSessionTracked) sendGrowthEvent("game_session_started", standaloneSessionId, referralSource(), 0);
+        } else if (message.state === "completed") {
+          if (standaloneSessionTracked && hasAnalyticsConsent()) {
+            sendGrowthEvent("game_session_completed", standaloneSessionId, referralSource(), (Date.now() - standaloneStartedAt) / 1000);
+          }
+          standaloneStartedAt = 0;
+          standaloneSessionId = "";
+          standaloneSessionTracked = false;
+        } else if (message.state === "share_created") {
+          sendGrowthEvent("share_created", standaloneSessionId || ("share_ns_" + Date.now().toString(36)), "game-invite:null-shift", 0);
+        }
+      };
+      function inviteCode() {
+        var code = "";
+        try {
+          if (window.parent !== window && window.parent.OSGARDInvite && typeof window.parent.OSGARDInvite.createLink === "function") {
+            code = new URL(window.parent.OSGARDInvite.createLink(), window.location.origin).searchParams.get("og_ref") || "";
+          }
+        } catch (_) {}
+        try {
+          if (!/^og_[a-f0-9]{8}$/.test(code)) code = localStorage.getItem("osgard.games.invite-code.v1") || "";
+          if (!/^og_[a-f0-9]{8}$/.test(code)) {
+            var bytes = new Uint8Array(4);
+            if (window.crypto && typeof window.crypto.getRandomValues === "function") window.crypto.getRandomValues(bytes);
+            else for (var i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256);
+            code = "og_" + Array.from(bytes).map(function (value) { return value.toString(16).padStart(2, "0"); }).join("");
+            localStorage.setItem("osgard.games.invite-code.v1", code);
+          }
+        } catch (_) {
+          if (!/^og_[a-f0-9]{8}$/.test(code)) code = "og_" + Math.random().toString(16).slice(2, 10).padEnd(8, "0").slice(0, 8);
+        }
+        return code;
+      }
+      function challengeUrl(challengeCode) {
+        var url = new URL("/games/null-shift-godot/", window.location.origin);
+        url.searchParams.set("challenge", String(challengeCode || "").slice(0, 32));
+        url.searchParams.set("ref", inviteCode());
+        url.searchParams.set("utm_source", "osgard_play");
+        url.searchParams.set("utm_medium", "referral");
+        url.searchParams.set("utm_campaign", "play_with_friends");
+        url.searchParams.set("utm_content", "null-shift");
+        return url.href;
+      }
+      function roundedRect(ctx, x, y, width, height, radius) {
+        var r = Math.min(radius, width / 2, height / 2);
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + width - r, y);
+        ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+        ctx.lineTo(x + width, y + height - r);
+        ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+        ctx.lineTo(x + r, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.closePath();
+      }
+      function resultCard(data) {
+        var canvas = document.createElement("canvas");
+        canvas.width = 1200; canvas.height = 630;
+        var ctx = canvas.getContext("2d");
+        if (!ctx) return null;
+        var bg = ctx.createLinearGradient(0, 0, 1200, 630);
+        bg.addColorStop(0, "#080d10"); bg.addColorStop(.56, "#0a1518"); bg.addColorStop(1, "#10110c");
+        ctx.fillStyle = bg; ctx.fillRect(0, 0, 1200, 630);
+        var glow = ctx.createRadialGradient(910, 170, 10, 910, 170, 440);
+        glow.addColorStop(0, "rgba(100,247,220,.16)"); glow.addColorStop(1, "rgba(100,247,220,0)");
+        ctx.fillStyle = glow; ctx.fillRect(400, 0, 800, 580);
+        ctx.strokeStyle = "rgba(159,210,205,.08)"; ctx.lineWidth = 1;
+        for (var gx = 40; gx < 1200; gx += 40) { ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, 630); ctx.stroke(); }
+        for (var gy = 30; gy < 630; gy += 30) { ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(1200, gy); ctx.stroke(); }
+        roundedRect(ctx, 32, 32, 1136, 566, 22);
+        ctx.strokeStyle = "rgba(100,247,220,.24)"; ctx.lineWidth = 2; ctx.stroke();
+        ctx.fillStyle = "#64f7dc"; ctx.font = "700 17px ui-monospace, SFMono-Regular, monospace";
+        ctx.fillText("OSGARD PLAY / AFTER-ACTION REPORT", 76, 92);
+        ctx.fillStyle = "#edf7f4"; ctx.font = "800 62px ui-sans-serif, system-ui, sans-serif";
+        ctx.fillText("NULL//SHIFT", 72, 174);
+        ctx.fillStyle = data.succeeded ? "#64f7dc" : "#ffbd60";
+        ctx.font = "700 21px ui-monospace, SFMono-Regular, monospace";
+        ctx.fillText(String(data.result || "РЕЙД ЗАВЕРШЁН").slice(0, 44), 76, 222);
+        ctx.fillStyle = "#a8b9b9"; ctx.font = "500 20px ui-sans-serif, system-ui, sans-serif";
+        ctx.fillText("КОНТРАКТ  /  " + String(data.contract || "DAILY OP").slice(0, 36), 76, 272);
+        var cards = [
+          { label: "УСТРАНЕНИЙ", value: Math.max(0, Math.floor(Number(data.eliminations) || 0)).toLocaleString("ru-RU"), color: "#edf7f4" },
+          { label: "КРЕДИТЫ В КАРЬЕРЕ", value: Math.max(0, Math.floor(Number(data.credits) || 0)).toLocaleString("ru-RU"), color: "#64f7dc" },
+          { label: "ЕЖЕДНЕВНЫЙ ВЫЗОВ", value: String(data.challengeCode || "NS-DAILY").slice(0, 24), color: "#ffbd60" }
+        ];
+        cards.forEach(function (item, index) {
+          var x = 76 + index * 355;
+          roundedRect(ctx, x, 326, 325, 126, 14);
+          ctx.fillStyle = "rgba(5,12,15,.68)"; ctx.fill();
+          ctx.strokeStyle = "rgba(159,210,205,.17)"; ctx.lineWidth = 1; ctx.stroke();
+          ctx.fillStyle = "#84999b"; ctx.font = "700 12px ui-monospace, SFMono-Regular, monospace"; ctx.fillText(item.label, x + 20, 360);
+          ctx.fillStyle = item.color; ctx.font = index === 2 ? "700 24px ui-monospace, SFMono-Regular, monospace" : "800 38px ui-sans-serif, system-ui, sans-serif";
+          ctx.fillText(item.value, x + 20, 416);
+        });
+        ctx.fillStyle = "#d3ff69"; ctx.font = "700 17px ui-monospace, SFMono-Regular, monospace";
+        ctx.fillText("ТВОЯ ОЧЕРЕДЬ  /  ПРОЙДИ ТОТ ЖЕ КОНТРАКТ", 76, 515);
+        ctx.fillStyle = "#8ea3a5"; ctx.font = "500 17px ui-sans-serif, system-ui, sans-serif";
+        ctx.fillText("osgard.world/games/null-shift-godot/", 76, 551);
+        ctx.fillStyle = "#667c7f"; ctx.font = "600 12px ui-monospace, SFMono-Regular, monospace";
+        ctx.fillText("DAILY OPS  ·  NO PAY-TO-WIN", 76, 576);
+        return canvas;
+      }
+      function cardFile(canvas, challengeCode) {
+        if (!canvas || typeof File !== "function" || typeof canvas.toDataURL !== "function") return null;
+        try {
+          var dataUrl = canvas.toDataURL("image/png"), base64 = dataUrl.split(",")[1] || "";
+          var raw = atob(base64), bytes = new Uint8Array(raw.length);
+          for (var i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+          return new File([bytes], "null-shift-" + String(challengeCode || "result").replace(/[^a-zA-Z0-9-]/g, "") + ".png", { type: "image/png" });
+        } catch (_) { return null; }
+      }
+      function downloadCard(canvas, challengeCode) {
+        if (!canvas) return;
+        try {
+          var link = document.createElement("a");
+          link.href = canvas.toDataURL("image/png");
+          link.download = "null-shift-" + String(challengeCode || "result").replace(/[^a-zA-Z0-9-]/g, "") + ".png";
+          link.hidden = true; document.body.appendChild(link); link.click(); link.remove();
+        } catch (_) {}
+      }
+      window.OSGARDGameShare = Object.freeze({
+        share: async function (input) {
+          var data = input && typeof input === "object" ? input : {};
+          var code = String(data.challengeCode || "");
+          if (!/^NS-[0-9]{8}-C[1-3]$/.test(code)) { showGrowthToast("Код ежедневного вызова не прошёл проверку."); return; }
+          var url = challengeUrl(code), resultText = String(data.result || "проверил свои силы").slice(0, 60);
+          var note = "NULL//SHIFT · " + resultText + " · устранений: " + Math.max(0, Math.floor(Number(data.eliminations) || 0)) + ". Повтори контракт " + code + ".";
+          var canvas = resultCard(data), file = cardFile(canvas, code), method = "";
+          if (typeof navigator.share === "function") {
+            var shareOptions = { title: "NULL//SHIFT · OSGARD PLAY", text: note, url: url };
+            if (file && typeof navigator.canShare === "function" && navigator.canShare({ files: [file] })) shareOptions.files = [file];
+            try {
+              await navigator.share(shareOptions);
+              method = "web-share";
+            } catch (error) {
+              if (error && error.name === "AbortError") return;
+              try {
+                if (navigator.clipboard && window.isSecureContext) {
+                  await navigator.clipboard.writeText(note + "\n" + url);
+                  method = "clipboard";
+                }
+              } catch (_) {}
+            }
+          } else {
+            try {
+              if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(note + "\n" + url);
+                method = "clipboard";
+              }
+            } catch (_) {}
+          }
+          if (!method) {
+            downloadCard(canvas, code);
+            window.prompt("Карточка результата сохранена, скопируй ссылку на ежедневный вызов:", url);
+            showGrowthToast("Карточка результата готова. Ссылка показана для ручного копирования.");
+            return;
+          }
+          if (method === "clipboard") downloadCard(canvas, code);
+          showGrowthToast(method === "web-share" ? "Карточка и вызов переданы в меню отправки." : "Карточка сохранена, ссылка скопирована.");
+          if (typeof window.OSGARDGameLifecycle === "function") {
+            window.OSGARDGameLifecycle({ type: "osgard:game-lifecycle", game: "null-shift", state: "share_created", at: Date.now(), shareMethod: method, challengeScore: Math.max(0, Math.floor(Number(data.eliminations) || 0)) });
+          }
+        }
+      });
+      trackReferralOpen();
       var canvas = document.getElementById("canvas");
       var launch = document.getElementById("launch");
       var launchLabel = document.getElementById("launch-label");
@@ -236,7 +499,7 @@
         }).then(function () {
           document.documentElement.classList.add("is-started");
           setStatus("СИСТЕМА АКТИВНА", "ready");
-          try { if (window.parent !== window) window.parent.postMessage({ type: "osgard:game-lifecycle", game: "null-shift", state: "started", at: Date.now() }, window.location.origin); } catch (_) {}
+          try { if (window.OSGARDGameLifecycle) window.OSGARDGameLifecycle({ type: "osgard:game-lifecycle", game: "null-shift", state: "started", at: Date.now() }); else if (window.parent !== window) window.parent.postMessage({ type: "osgard:game-lifecycle", game: "null-shift", state: "started", at: Date.now() }, window.location.origin); } catch (_) {}
           canvas.focus();
           window.setTimeout(function () {
             launch.disabled = false;

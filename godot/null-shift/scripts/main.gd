@@ -1643,7 +1643,7 @@ func _finish_mission(success: bool) -> void:
 		_play_sfx(70.0, 0.9, 0.18)
 	result_panel.visible = true
 	if OS.has_feature("web"):
-		JavaScriptBridge.eval("if (window.parent !== window) { window.parent.postMessage({type: 'osgard:game-lifecycle', game: 'null-shift', state: 'completed', at: Date.now()}, window.location.origin); }")
+		JavaScriptBridge.eval("if(window.OSGARDGameLifecycle){window.OSGARDGameLifecycle({type:'osgard:game-lifecycle',game:'null-shift',state:'completed',at:Date.now()});}else if(window.parent!==window){window.parent.postMessage({type:'osgard:game-lifecycle',game:'null-shift',state:'completed',at:Date.now()},window.location.origin);}")
 	_update_hud()
 
 func _today_date_code() -> String:
@@ -1703,15 +1703,23 @@ func _claim_daily_challenge_reward() -> int:
 
 func _share_run() -> void:
 	var code := _today_challenge_code()
-	var link := "https://osgard.world/games/null-shift-godot/?challenge=" + code
 	var result_text := "эвакуировался" if mission_finished and core_secured else "проверил свои силы"
+	var payload := {
+		"challengeCode": code,
+		"contract": career_names[current_contract],
+		"result": "ЭВАКУАЦИЯ УСПЕШНА" if mission_finished and core_secured else ("ОПЕРАТОР ПОТЕРЯН" if mission_finished else "РЕЙД В ПРОЦЕССЕ"),
+		"eliminations": eliminations,
+		"credits": career_credits,
+		"succeeded": mission_finished and core_secured
+	}
 	var note := "NULL//SHIFT · Я %s в %s. Устранений: %d. Повтори ежедневный контракт %s." % [result_text, career_names[current_contract], eliminations, code]
 	if is_instance_valid(result_share_label):
-		result_share_label.text = "ГОТОВЬ ССЫЛКУ · " + code
+		result_share_label.text = "КАРТОЧКА РЕЗУЛЬТАТА · " + code
 	if OS.has_feature("web"):
-		var js := "(async()=>{const title='NULL//SHIFT';const text=" + JSON.stringify(note) + ";const url=" + JSON.stringify(link) + ";try{if(navigator.share){await navigator.share({title,text,url})}else if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(text+' | '+url);window.alert('Ссылка вызова скопирована. Пригласи друга пройти тот же контракт.')}else{window.prompt('Скопируй ссылку на ежедневный контракт:',url)}}catch(error){if(error&&error.name!=='AbortError'){try{await navigator.clipboard.writeText(text+' | '+url);window.alert('Ссылка вызова скопирована.')}catch(_){window.prompt('Скопируй ссылку на ежедневный контракт:',url)}}}})();"
+		var js := "if(window.OSGARDGameShare && typeof window.OSGARDGameShare.share === 'function'){window.OSGARDGameShare.share(" + JSON.stringify(payload) + ");}else{window.prompt('Скопируй ссылку на ежедневный контракт:',window.location.href);}"
 		JavaScriptBridge.eval(js)
 	else:
+		var link := "https://osgard.world/games/null-shift-godot/?challenge=" + code
 		DisplayServer.clipboard_set(note + "\n" + link)
 		if is_instance_valid(result_share_label):
 			result_share_label.text = "ОТЧЁТ И ССЫЛКА СКОПИРОВАНЫ · " + code
