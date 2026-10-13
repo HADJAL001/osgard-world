@@ -870,7 +870,14 @@ func _add_cube(parent: Node3D, local_position: Vector3, size: Vector3, material:
 	parent.add_child(visual)
 	return visual
 
-func _add_sphere_mesh(parent: Node3D, node_name: String, at: Vector3, radius: float, height: float, material: Material) -> MeshInstance3D:
+func _add_detail_cube(parent: Node3D, node_name: String, local_position: Vector3, size: Vector3, material: Material, casts_shadow: bool = false) -> MeshInstance3D:
+	var visual: MeshInstance3D = _add_cube(parent, local_position, size, material)
+	visual.name = node_name
+	if casts_shadow:
+		visual.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	return visual
+
+func _add_sphere_mesh(parent: Node3D, node_name: String, at: Vector3, radius: float, height: float, material: Material, casts_shadow: bool = false) -> MeshInstance3D:
 	var mesh := SphereMesh.new()
 	mesh.radius = radius
 	mesh.height = height
@@ -879,7 +886,7 @@ func _add_sphere_mesh(parent: Node3D, node_name: String, at: Vector3, radius: fl
 	visual.mesh = mesh
 	visual.material_override = material
 	visual.position = at
-	visual.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	visual.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if casts_shadow else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	parent.add_child(visual)
 	return visual
 
@@ -952,6 +959,22 @@ func _create_player() -> void:
 	_add_cube(operator_rig, Vector3(0.38, 0.34, -0.02), Vector3(0.23, 0.25, 0.32), materials["cyan_dark"])
 	_add_cube(operator_rig, Vector3(-0.31, 0.08, -0.29), Vector3(0.16, 0.2, 0.26), materials["wall_trim"])
 	_add_cube(operator_rig, Vector3(0.31, 0.08, -0.29), Vector3(0.16, 0.2, 0.26), materials["wall_trim"])
+	# Layered exosuit plates: visual-only geometry leaves collision and combat unchanged.
+	_add_detail_cube(operator_rig, "OperatorChestShell", Vector3(0.0, 0.285, -0.535), Vector3(0.43, 0.19, 0.045), materials["wall_trim"], true)
+	_add_detail_cube(operator_rig, "OperatorChestInset", Vector3(0.0, 0.29, -0.563), Vector3(0.245, 0.105, 0.016), materials["cyan_dark"])
+	_add_detail_cube(operator_rig, "OperatorChestGlyph", Vector3(0.0, 0.29, -0.574), Vector3(0.035, 0.066, 0.009), materials["white"])
+	_add_detail_cube(operator_rig, "OperatorChestWing_L", Vector3(-0.247, 0.29, -0.51), Vector3(0.065, 0.15, 0.035), materials["black"])
+	_add_detail_cube(operator_rig, "OperatorChestWing_R", Vector3(0.247, 0.29, -0.51), Vector3(0.065, 0.15, 0.035), materials["black"])
+	var operator_shoulder_left: MeshInstance3D = _add_sphere_mesh(operator_rig, "OperatorShoulder_L", Vector3(-0.38, 0.37, -0.035), 0.19, 0.29, materials["wall_trim"], true)
+	operator_shoulder_left.scale = Vector3(1.12, 0.7, 1.0)
+	var operator_shoulder_right: MeshInstance3D = _add_sphere_mesh(operator_rig, "OperatorShoulder_R", Vector3(0.38, 0.37, -0.035), 0.19, 0.29, materials["wall_trim"], true)
+	operator_shoulder_right.scale = Vector3(1.12, 0.7, 1.0)
+	_add_detail_cube(operator_rig, "OperatorShoulderSignal_L", Vector3(-0.395, 0.405, -0.16), Vector3(0.12, 0.035, 0.07), materials["cyan"])
+	_add_detail_cube(operator_rig, "OperatorShoulderSignal_R", Vector3(0.395, 0.405, -0.16), Vector3(0.12, 0.035, 0.07), materials["amber"])
+	_add_detail_cube(operator_rig, "OperatorBackpackShell", Vector3(0.0, 0.29, 0.405), Vector3(0.42, 0.42, 0.16), materials["black"], true)
+	_add_detail_cube(operator_rig, "OperatorBackCell_L", Vector3(-0.135, 0.31, 0.5), Vector3(0.075, 0.28, 0.035), materials["cyan"])
+	_add_detail_cube(operator_rig, "OperatorBackCell_R", Vector3(0.135, 0.31, 0.5), Vector3(0.075, 0.28, 0.035), materials["cyan"])
+	_add_detail_cube(operator_rig, "OperatorBackSpine", Vector3(0.0, 0.29, 0.493), Vector3(0.045, 0.31, 0.02), materials["wall_trim"])
 	for leg_index in range(2):
 		var side: float = -1.0 if leg_index == 0 else 1.0
 		var leg_pivot := Node3D.new()
@@ -960,6 +983,8 @@ func _create_player() -> void:
 		operator_rig.add_child(leg_pivot)
 		_add_cube(leg_pivot, Vector3(0.0, -0.27, 0.0), Vector3(0.23, 0.2, 0.32), materials["black"])
 		_add_cube(leg_pivot, Vector3(0.0, -0.365, -0.075), Vector3(0.25, 0.085, 0.42), materials["wall_trim"])
+		_add_detail_cube(leg_pivot, "OperatorKneePlate_L" if leg_index == 0 else "OperatorKneePlate_R", Vector3(0.0, -0.12, -0.15), Vector3(0.19, 0.13, 0.055), materials["cyan_dark"])
+		_add_detail_cube(leg_pivot, "OperatorKneeSignal_L" if leg_index == 0 else "OperatorKneeSignal_R", Vector3(0.0, -0.12, -0.181), Vector3(0.09, 0.025, 0.012), materials["amber"] if leg_index == 1 else materials["cyan"])
 		operator_leg_pivots.append(leg_pivot)
 	_add_cube(operator_rig, Vector3(0.0, 0.12, 0.31), Vector3(0.42, 0.45, 0.2), materials["black"])
 	_add_cube(operator_rig, Vector3(-0.15, 0.15, 0.42), Vector3(0.06, 0.31, 0.035), materials["cyan"])
@@ -1046,6 +1071,26 @@ func _spawn_guard(at: Vector3, is_warden: bool) -> void:
 	_add_cube(body, Vector3(-0.35, 0.34, -0.02), Vector3(0.2, 0.22, 0.28), role_material)
 	_add_cube(body, Vector3(0.35, 0.34, -0.02), Vector3(0.2, 0.22, 0.28), role_material)
 	_add_cube(body, Vector3(0.0, 0.16, -0.31), Vector3(0.5, 0.28, 0.075), materials["wall_trim"])
+	# Role-coded plates make enemies readable at combat distance.
+	var guard_accent: Material = materials["gold"] if is_warden else (materials["cyan"] if role == "RANGER" else (materials["violet"] if role == "STALKER" else materials["amber"]))
+	var guard_plate_scale: float = 1.18 if is_warden or role == "HEAVY" else 1.0
+	_add_detail_cube(body, "GuardChestShell", Vector3(0.0, 0.285, -0.365), Vector3(0.37, 0.19, 0.04), materials["wall"], true)
+	_add_detail_cube(body, "GuardChestCore", Vector3(0.0, 0.29, -0.389), Vector3(0.19, 0.075, 0.014), guard_accent)
+	_add_detail_cube(body, "GuardChestVent_L", Vector3(-0.12, 0.29, -0.39), Vector3(0.025, 0.07, 0.012), materials["black"])
+	_add_detail_cube(body, "GuardChestVent_R", Vector3(0.12, 0.29, -0.39), Vector3(0.025, 0.07, 0.012), materials["black"])
+	var guard_shoulder_left: MeshInstance3D = _add_sphere_mesh(body, "GuardShoulder_L", Vector3(-0.38, 0.37, -0.035), 0.19 * guard_plate_scale, 0.29 * guard_plate_scale, materials["wall_trim"], true)
+	guard_shoulder_left.scale = Vector3(1.12, 0.7, 1.0)
+	var guard_shoulder_right: MeshInstance3D = _add_sphere_mesh(body, "GuardShoulder_R", Vector3(0.38, 0.37, -0.035), 0.19 * guard_plate_scale, 0.29 * guard_plate_scale, materials["wall_trim"], true)
+	guard_shoulder_right.scale = Vector3(1.12, 0.7, 1.0)
+	_add_detail_cube(body, "GuardShoulderSignal_L", Vector3(-0.395, 0.405, -0.16), Vector3(0.12, 0.035, 0.07), guard_accent)
+	_add_detail_cube(body, "GuardShoulderSignal_R", Vector3(0.395, 0.405, -0.16), Vector3(0.12, 0.035, 0.07), materials["wall_trim"] if is_warden else guard_accent)
+	_add_detail_cube(body, "GuardBackpackShell", Vector3(0.0, 0.31, 0.405), Vector3(0.4 * guard_plate_scale, 0.39 * guard_plate_scale, 0.16), materials["black"], true)
+	_add_detail_cube(body, "GuardBackCell_L", Vector3(-0.13, 0.32, 0.5), Vector3(0.075, 0.26, 0.035), guard_accent)
+	_add_detail_cube(body, "GuardBackCell_R", Vector3(0.13, 0.32, 0.5), Vector3(0.075, 0.26, 0.035), guard_accent)
+	_add_detail_cube(body, "GuardBackSpine", Vector3(0.0, 0.31, 0.493), Vector3(0.045, 0.29, 0.02), materials["wall_trim"])
+	_add_detail_cube(body, "GuardUtilityBelt", Vector3(0.0, 0.065, -0.19), Vector3(0.5, 0.095, 0.11), materials["black"])
+	_add_detail_cube(body, "GuardUtilityPouch_L", Vector3(-0.17, 0.055, -0.255), Vector3(0.09, 0.105, 0.055), guard_accent)
+	_add_detail_cube(body, "GuardUtilityPouch_R", Vector3(0.17, 0.055, -0.255), Vector3(0.09, 0.105, 0.055), guard_accent)
 	_add_sphere_mesh(body, "GuardHelmet", Vector3(0.0, 0.67, -0.025), 0.23 if not is_warden else 0.28, 0.44 if not is_warden else 0.52, materials["black"])
 	var hit_feedback := Label3D.new()
 	hit_feedback.name = "HitFeedback"
@@ -1087,6 +1132,8 @@ func _spawn_guard(at: Vector3, is_warden: bool) -> void:
 		_add_cube(leg_pivot, Vector3(0.0, -0.17, 0.025), Vector3(0.19, 0.38, 0.23), materials["black"])
 		_add_cube(leg_pivot, Vector3(0.0, -0.345, -0.075), Vector3(0.23, 0.10, 0.38), materials["wall_trim"] if role != "STALKER" else materials["violet"])
 		_add_cube(leg_pivot, Vector3(0.0, -0.075, -0.105), Vector3(0.205, 0.09, 0.035), role_material)
+		_add_detail_cube(leg_pivot, "GuardKneePlate_L" if leg_index == 0 else "GuardKneePlate_R", Vector3(0.0, -0.12, -0.14), Vector3(0.18, 0.13, 0.055), materials["wall_trim"])
+		_add_detail_cube(leg_pivot, "GuardKneeSignal_L" if leg_index == 0 else "GuardKneeSignal_R", Vector3(0.0, -0.12, -0.171), Vector3(0.09, 0.025, 0.012), guard_accent)
 		leg_pivots.append(leg_pivot)
 	var arm_pivots: Array[Node3D] = []
 	for arm_index in range(2):
