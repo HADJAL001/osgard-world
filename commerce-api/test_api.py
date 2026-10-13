@@ -252,7 +252,7 @@ class CommerceApiTests(unittest.TestCase):
         self.assertEqual(status, 503)
         self.assertEqual(body["error"], "checkout_disabled")
         status, body, _ = self.request("GET", "/v1/checkout/status?session_id=cs_test_notknown123")
-        self.assertEqual(status, 503 if self.service.stripe_ready() is False and "cs_test_notknown123" not in self._stripe_sessions else status)
+        self.assertEqual(status, 404, "A made-up payment session must not be treated as a live or paid order")
 
     def test_checkout_uses_server_price_and_stripe_webhook_is_idempotent(self):
         self._configure_fake_stripe()
