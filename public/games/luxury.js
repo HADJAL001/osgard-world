@@ -118,7 +118,8 @@
       .then(response => response.ok ? response.json() : {})
       .catch(() => ({}))
     const settings = await config
-    const base = String(settings.apiBaseUrl || '/commerce-api').replace(/\\/+$/, '')
+    let base = String(settings.apiBaseUrl || '/commerce-api')
+    while (base.endsWith('/')) base = base.slice(0, -1)
     try {
       await fetch(base + '/v1/events', {
         method: 'POST',
