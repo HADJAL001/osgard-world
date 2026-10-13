@@ -361,7 +361,8 @@ assert.equal(mockClasses.has('has-recommendations'),true,'The player layout shou
 const mockGrid=mockHost.children.find(node=>node.className==='post-run-grid');
 const mockSuite=mockHost.children.find(node=>node.className==='og-postgame-suite');
 assert.ok(mockSuite,'Post-run service/reward suite should appear after each valid completion');
-assert.equal(mockSuite.children[0].children.find(node=>node.className==='og-postgame-service-grid').children.length,10,'Post-run intermission should list all ten services');
+assert.equal(mockSuite.children[0].children.find(node=>node.className==='og-postgame-service-grid').children.length,10,'Post-run intermission should retain ten cards including the inactive VPN disclosure tile');
+assert.ok(mockSuite.children[0].children.find(node=>node.className==='og-postgame-services').children.some(node=>node.className==='og-postgame-preferences'),'Service preferences must be visible after a completed round');
 assert.deepEqual(mockGrid.children.map(node=>node.dataset.play),['null-shift','signal-run'],'SWARM should recommend two related live games')
 assert.deepEqual(mockGrid.children.map(node=>node.href),['/games/null-shift-godot/','/games/signal-run/'],'Recommendations should point to valid game launch routes')
 mockDocument.dispatch('osgard:game-launching')
@@ -526,6 +527,12 @@ assert.ok(recommendationStyles.includes('.og-postgame-services')&&recommendation
 assert.ok(recommendationScript.includes('РЕКЛАМА · СОБСТВЕННЫЕ ПРОЕКТЫ OSGARD')&&recommendationScript.includes('osgardServiceFilter')&&recommendationScript.includes('categoryByService'),'OSGARD SELECT must disclose self-promotion and let players filter service offers by category');
 assert.ok(recommendationScript.includes("['all','Все сервисы · 10']")&&recommendationScript.includes("['studio','Разработка · 2']")&&recommendationScript.includes("['luxury','Luxury · 1']"),'OSGARD SELECT filters must expose all configured service categories');
 assert.ok(recommendationStyles.includes('.og-postgame-service-filters')&&recommendationStyles.includes('.og-postgame-service-filter[aria-pressed="true"]')&&recommendationStyles.includes('.og-postgame-service-card[hidden]'),'Service filters need accessible selected states and must reliably hide unmatched cards');
+assert.ok(recommendationScript.includes("servicePreferencesKey='osgard.games.postgame-service-preferences.v1'")&&recommendationScript.includes("frequency:'each'")&&recommendationScript.includes("frequency==='every3'")&&recommendationScript.includes("frequency==='off'"),'OSGARD SELECT must default to every completed session and support frequency choices');
+assert.ok(recommendationScript.includes('availableServiceIds.filter(id=>Array.isArray(value.selected)&&value.selected.includes(id))')&&recommendationScript.includes('preferences.selected.includes(id)'),'Only selected services should be actively promoted; preferences are saved locally');
+assert.ok(recommendationScript.includes("localStorage.setItem(serviceProgressKey,JSON.stringify(next))")&&recommendationScript.includes('completedCount%3===0'),'Frequency must follow completed sessions, not page views');
+assert.ok(recommendationScript.includes("active===false?'Доступность не подтверждена':category"),'GARD VPN must remain unselectable until availability is verified');
+assert.ok(recommendationStyles.includes('.og-postgame-preferences')&&recommendationStyles.includes('.og-postgame-service-options')&&recommendationStyles.includes('.og-postgame-frequency')&&recommendationStyles.includes('@media(max-width:360px)'),'Service preferences must be accessible and responsive');
+
 
 assert.ok(lifecycle.includes('function analyticsSource()') && lifecycle.includes(':analyticsSource()') && lifecycle.includes("return 'referral:'+code+':null-shift'"), 'Actual gameplay sessions must preserve consented invite attribution')
 assert.ok(referralCoreSource.includes('"referral_link_opened"') && referralCoreSource.includes('"share_created"'), 'Commerce API must explicitly allowlist invite events')
