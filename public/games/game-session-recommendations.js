@@ -336,7 +336,17 @@ function render(event){
  const inviteUrl=canonicalUrl();
  socialNetworks.forEach(([network,label])=>{
   const a=make('a','og-social-link',label+' ↗');a.href=socialHref(network,inviteUrl,gameTitles[id]||id);a.target='_blank';a.rel='noopener noreferrer';
-  a.addEventListener('click',()=>{if(consented())void postEvent('share_created',id,'game-invite:'+id+':'+inviteCodeValue+':'+ownerToken())});
+  a.addEventListener('click',event=>{
+   if(!consented())return;
+   event.preventDefault();
+   const destination=a.href;
+   const popup=window.open('about:blank','_blank');
+   if(popup)popup.opener=null;
+   void postEvent('share_created',id,'game-invite:'+id+':'+inviteCodeValue+':'+ownerToken()).finally(()=>{
+    if(popup&&!popup.closed)popup.location.href=destination;
+    else if(!popup)location.href=destination;
+   });
+  });
   socialGrid.append(a);
  });
  const copyButton=make('button','og-social-copy-button','Скопировать приглашение');
