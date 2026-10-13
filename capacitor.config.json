@@ -1,0 +1,9 @@
+{
+  "appId": "com.osgardworld.play",
+  "appName": "OSGARD PLAY",
+  "webDir": "dist",
+  "ios": {
+    "contentInset": "automatic",
+    "backgroundColor": "#080A0B"
+  }
+}

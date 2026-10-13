@@ -16,6 +16,13 @@ on:
       - "scripts/external-project-healthcheck-smoke.mjs"
       - ".github/workflows/games-lighthouse.yml"
       - "public/games/**"
+      - "capacitor.config.json"
+      - "codemagic.yaml"
+      - "mobile/**"
+      - "scripts/prepare-ios-app.mjs"
+      - "scripts/ios-appstore-preflight.mjs"
+      - "scripts/generate-ios-app-icon.mjs"
+      - "docs/IOS_APP_STORE_CODEMAGIC_RU.md"
       - "services/osgard-commerce-api/**"
       - "godot/null-shift/**"
       - "scripts/null-shift-godot-smoke.mjs"
@@ -54,6 +61,8 @@ jobs:
         run: bash -n scripts/activate-frontend-remote.sh
       - name: Type-check the frontend
         run: npm run check
+      - name: Verify iOS App Store and Codemagic source configuration
+        run: npm run qa:ios-appstore
       - name: Build the production site
         run: npm run build
       - name: Verify live SkillCred page wiring
@@ -82,3 +91,10 @@ jobs:
         run: npm run qa:ecosystem
       - name: Validate static archive and HTML
         run: npm run preflight:frontend
+      - name: Install pinned Capacitor packages for the iOS bundle smoke test
+        run: npm install --no-save --package-lock=false @capacitor/core@8.5.3 @capacitor/cli@8.5.3 @capacitor/ios@8.5.3 @capacitor/share@8.0.1
+      - name: Bundle native share support and prepare the iOS web payload
+        run: |
+          npx vite build --config mobile/vite.config.mjs
+          node scripts/prepare-ios-app.mjs --web-only
+          node scripts/ios-appstore-preflight.mjs --built-web

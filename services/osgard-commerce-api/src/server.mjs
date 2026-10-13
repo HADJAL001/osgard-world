@@ -18,7 +18,7 @@ const analyticsRetentionDays = Number.isInteger(requestedRetentionDays) && reque
   ? requestedRetentionDays
   : 90;
 const PUBLIC_BASE_URL = String(process.env.PUBLIC_BASE_URL || "https://osgard.world").replace(/\/+$/, "");
-const allowedOrigins = new Set(String(process.env.ALLOWED_ORIGINS || "https://osgard.world,https://www.osgard.world,http://localhost:4188").split(",").map((v) => v.trim()).filter(Boolean));
+const allowedOrigins = new Set(String(process.env.ALLOWED_ORIGINS || "https://osgard.world,https://www.osgard.world,http://localhost:4188,capacitor://localhost").split(",").map((v) => v.trim()).filter(Boolean));
 const stripeSecret = process.env.STRIPE_SECRET_KEY || "";
 const stripe = /^sk_(test|live)_/.test(stripeSecret) ? new Stripe(stripeSecret) : null;
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
