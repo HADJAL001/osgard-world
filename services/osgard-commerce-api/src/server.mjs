@@ -477,13 +477,27 @@ app.post("/v1/events", async (req, res) => {
 app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
   if (!requireDatabase(res)) return;
   try {
-    const [orderStats, currencyStats, leadStats, eventStats, topEvents, analyticsByGame, analyticsFunnel] = await Promise.all([
+    const [orderStats, currencyStats, leadStats, eventStats, topEvents, analyticsByGame, ownedPromoByService, analyticsFunnel] = await Promise.all([
       pool.query("SELECT status, COUNT(*)::int AS count FROM commerce_orders GROUP BY status"),
       pool.query("SELECT currency, SUM(amount_total)::bigint AS total_minor, COUNT(*)::int AS count FROM commerce_orders WHERE status='paid' AND currency IS NOT NULL GROUP BY currency"),
       pool.query("SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE status='new')::int AS new FROM commerce_leads"),
       pool.query("SELECT COUNT(*)::int AS total_30d FROM commerce_events WHERE received_at >= NOW() - INTERVAL '30 days'"),
       pool.query("SELECT event_name, COUNT(*)::int AS count FROM commerce_events WHERE received_at >= NOW() - INTERVAL '30 days' GROUP BY event_name ORDER BY count DESC LIMIT 12"),
       pool.query("SELECT game_id AS \"gameId\", COUNT(*)::int AS events, COUNT(DISTINCT session_id)::int AS sessions, COUNT(*) FILTER (WHERE event_name IN ('game_session_started','game_launched'))::int AS starts, COUNT(*) FILTER (WHERE event_name='game_session_completed')::int AS completions, COALESCE(ROUND(AVG(duration_seconds) FILTER (WHERE event_name='game_session_completed' AND duration_seconds > 0))::int,0) AS \"avgCompletionSeconds\", COUNT(*) FILTER (WHERE event_name='cross_promo_clicked')::int AS \"crossPromoClicks\" FROM commerce_events WHERE received_at >= NOW() - INTERVAL '30 days' GROUP BY game_id ORDER BY starts DESC, events DESC LIMIT 20"),
+      pool.query(`
+        SELECT
+          split_part(source, ':', 3) AS "serviceId",
+          game_id AS "gameId",
+          COUNT(*) FILTER (WHERE event_name = 'owned_promo_impression')::int AS impressions,
+          COUNT(*) FILTER (WHERE event_name = 'cross_promo_clicked')::int AS clicks
+        FROM commerce_events
+        WHERE received_at >= NOW() - INTERVAL '30 days'
+          AND source LIKE 'osgard-select:%'
+          AND split_part(source, ':', 3) ~ '^[a-z0-9-]{1,40}$'
+        GROUP BY split_part(source, ':', 3), game_id
+        ORDER BY impressions DESC, clicks DESC, "serviceId" ASC
+        LIMIT 50
+      `),
       pool.query(`
         WITH recent_events AS (
           SELECT event_name, source
@@ -540,6 +554,7 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
       analyticsEventsLast30Days: eventStats.rows[0]?.total_30d || 0,
       topEventsLast30Days: topEvents.rows,
       analyticsByGame: analyticsByGame.rows,
+      ownedPromoByService: ownedPromoByService.rows,
       analyticsFunnel: analyticsFunnel.rows[0] || {},
       analyticsRetentionDays,
       note: "Аналитика включает только согласованные события. Это не все посещения сайта и не рекламные показы. Суммы сгруппированы по валютам и не являются бухгалтерским отчётом.",
