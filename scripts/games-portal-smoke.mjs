@@ -253,3 +253,15 @@ assert.ok(catalogRuntime.includes('window.OSGARDInvite={createLink:()=>createInv
 assert.ok(luxuryCss.includes('.invite-ribbon') && luxuryCss.includes('@media(max-width:620px)') && luxuryCss.includes('prefers-reduced-motion:reduce'),'Referral invitation ribbon must be responsive and respect reduced motion')
 assert.ok(catalogRuntime.includes("sessionStorage.setItem('osgard.games.invite-dismissed.v1',key)"),'Invite dismissal should be local to this browser session')
 console.log('PASS OSGARD referral loop: game-specific invite deep links, consent-gated authenticated attribution, responsive invite ribbon and script syntax.')
+
+
+const referralCoreSource=readFileSync(resolve('services/osgard-commerce-api/src/core.mjs'),'utf8')
+const referralApiSource=readFileSync(resolve('services/osgard-commerce-api/src/server.mjs'),'utf8')
+const referralAdminSource=readFileSync(resolve('public/games/commerce-admin/index.html'),'utf8')
+assert.ok(recommendationScript.includes('osgard.games.referral-attribution.v1') && recommendationScript.includes('game-invite:') && recommendationScript.includes('play_with_a_friend'), 'Post-session invite link and referral attribution missing')
+assert.ok(recommendationScript.includes("sendEvent('referral_link_opened'") && recommendationScript.includes("sendEvent('share_created'"), 'Invite opens and generated links must use the consented event API')
+assert.ok(recommendationScript.includes('osgardbewworld.com/?utm_source=osgard_games&utm_medium=cross_promo&utm_campaign=after_game'), 'Post-session game-creation lead CTA and attribution missing')
+assert.ok(lifecycle.includes('function analyticsSource()') && lifecycle.includes('source:analyticsSource()'), 'Actual gameplay sessions must preserve consented invite attribution')
+assert.ok(referralCoreSource.includes('"referral_link_opened"') && referralCoreSource.includes('"share_created"'), 'Commerce API must explicitly allowlist invite events')
+for(const metric of ['inviteShares','referralOpens','referredStarts','referredCompletions']) assert.ok(referralApiSource.includes(metric), 'Commerce analytics response lacks referral metric '+metric)
+for(const metric of ['analytics-invites','analytics-referral-opens','analytics-referred-starts','analytics-referred-completions']) assert.ok(referralAdminSource.includes('id="'+metric+'"'), 'Commerce admin is missing referral metric '+metric)
