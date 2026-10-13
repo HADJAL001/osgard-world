@@ -64,6 +64,18 @@ Never commit Stripe secrets, database URLs, or the admin token. Never embed them
 
 Edit public/games/commerce-config.json only after the API is running and reachable. Set apiBaseUrl either to the API's HTTPS origin without a trailing slash (for example https://commerce-api.example.com), or to the explicit same-origin prefix https://osgard.world/commerce-api when the Nginx proxy and private container are verified. This setting is public and must never contain secrets. If it is empty or invalid, event delivery and admin requests fail closed; lead forms offer the disclosed manual WhatsApp fallback. Do not interpret local queued events as server analytics.
 
+## Qualified game invitations and cosmetic rewards
+
+The Games intermission has buttons for Telegram, WhatsApp, VK, X, Facebook and the native share sheet. These open a sharing composer; they do **not** prove the user published anything. The current +50 SHARDS reward for a player-confirmed social share remains local-only and is clearly described as self-reported.
+
+A separate referral reward is server-qualified when the API is deployed and configured:
+- `POST /v1/referrals/register` registers `{ consent: true, referralCode, gameId, ownerToken }`. The client creates a random 128-bit owner token only when a sharing action is initiated; the server stores its SHA-256 hash, not the token. A referral code can be registered once and cannot be reassigned to a different owner.
+- `POST /v1/referrals/claim` accepts `{ consent: true, ownerToken }`. It only claims registered codes for which the server has a referral-open event and a same-game referral-attributed session start and completion. The server-received completion must be at least 30 seconds after start, report at least 30 seconds of play and occur within seven days of registration. Rewards are one-time and limited to ten per request.
+- The endpoint returns cosmetic SHARDS only. These points have no cash value and the server event checks help prevent accidental/repeated claims; they are not proof of a unique human or a fully fraud-proof referral. The wallet itself is stored in the browser and can be cleared, so do not use this mechanism for cash, gift cards or valuable paid items.
+- Referral registrations are removed with the same analytics retention job (default 90 days, configurable from 30 to 365 days). Qualified claims are written atomically to prevent repeated claims for the same referral code.
+
+**Deployment prerequisite:** this source change does not deploy/restart the Commerce API container. Build and restart that service with this repository's updated API code, then verify `/healthz` and that `/readyz` reports ready. Only then set the public `apiBaseUrl` in `public/games/commerce-config.json` to the verified same-origin prefix `https://osgard.world/commerce-api` (or a verified HTTPS API origin). It is currently empty by design; while empty, sharing works but server-qualified claims fail closed and will report that Commerce API is not configured. Never put secrets in that public JSON file.
+
 ## Admin
 
 Open /games/commerce-admin/ and paste ADMIN_API_TOKEN into the in-memory field. It is not saved in localStorage. The admin endpoints expose customers' contact details; protect and rotate the token if exposed.
