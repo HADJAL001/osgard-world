@@ -3,6 +3,19 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 
 const source = readFileSync('public/games/consented-analytics.js', 'utf8');
+const commerceCore = readFileSync('services/osgard-commerce-api/src/core.mjs', 'utf8');
+
+function extractGameIds(source, label) {
+  const match = source.match(/const GAME_IDS = new Set\\(\\[([\\s\\S]*?)\\]\\)/);
+  assert.ok(match, label + ' must declare a game-ID allow-list');
+  return [...match[1].matchAll(/['"]([a-z0-9-]+)['"]/g)].map(item => item[1]).sort();
+}
+
+assert.deepEqual(
+  extractGameIds(source, 'Browser analytics queue'),
+  extractGameIds(commerceCore, 'Commerce API'),
+  'Browser and server analytics must accept the same game IDs; drift can silently discard share/promo events',
+);
 
 function createQueue(apiBaseUrl, origin = 'https://osgard.world') {
   const values = new Map([['osgard.games.analytics-consent.v1', 'yes']]);
