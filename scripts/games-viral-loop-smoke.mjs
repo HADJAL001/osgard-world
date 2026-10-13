@@ -42,7 +42,9 @@ const script = viral
 new Function(script)
 new Function(lifecycle)
 new Function(recommendations)
-new Function(hub.match(/<script>([\\s\\S]*?)<\\/script>/)?.[1] || (()=>{throw new Error('inline catalog script missing')})())
+const inlineCatalog = hub.split('<script>')[1]?.split('</script>')[0] || ''
+if (!inlineCatalog) throw new Error('inline catalog script missing')
+new Function(inlineCatalog)
 
 console.log(JSON.stringify({
   status: 'PASS',
