@@ -463,6 +463,7 @@ function servicesShelf(gameId,showPromos,completedCount){
  const spotlightOptions=[...relevantOrder,...selectedIds.filter(id=>!relevantOrder.includes(id))];
  const roundForSpotlight=preferences.frequency==='every3'?completedCount:(readServiceProgress().byGame[gameId]||1);
  let spotlightServiceId=chooseSpotlightService(spotlightOptions,preferred,roundForSpotlight,preferences.frequency)||spotlightId||'';
+ let spotlightVariant='a';
  const spotlight=make('article','og-postgame-spotlight');
  spotlight.setAttribute('aria-label','Персональная рекомендация OSGARD');
  const spotlightStatus=make('p','og-postgame-spotlight-status');
@@ -483,7 +484,7 @@ function servicesShelf(gameId,showPromos,completedCount){
  function watchSpotlight(){
   stopSpotlightWatcher();
   if(typeof IntersectionObserver!=='function'||spotlight.hidden||!spotlight.isConnected)return;
-  const serviceId=spotlightServiceId,seenKey=gameId+':'+serviceId;
+  const serviceId=spotlightServiceId,variant=spotlightVariant,seenKey=gameId+':'+serviceId+':'+variant;
   if(spotlightSeen.has(seenKey))return;
   spotlightObserver=new IntersectionObserver(entries=>{
    entries.forEach(entry=>{
@@ -494,7 +495,7 @@ function servicesShelf(gameId,showPromos,completedCount){
      spotlightImpressionTimer=0;
      if(!canCountSpotlightImpression(spotlightIsVisible,hasConsent(),spotlight.isConnected,spotlight.hidden,document.visibilityState!=='visible',spotlight.dataset.service,serviceId))return;
      spotlightSeen.add(seenKey);
-     void sendSelectEvent('owned_promo_impression',gameId,'osgard-select:spotlight:'+serviceId);
+     void sendSelectEvent('owned_promo_impression',gameId,'osgard-select:spotlight:'+serviceId+':'+variant);
      if(spotlightObserver){spotlightObserver.disconnect();spotlightObserver=null}
     },1000);
    });
@@ -503,19 +504,22 @@ function servicesShelf(gameId,showPromos,completedCount){
  }
  function renderSpotlight(serviceId){
   stopSpotlightWatcher();
+  spotlightVariant=Math.random()<0.5?'a':'b';
+  const variant=spotlightVariant;
   const item=services.find(entry=>entry[0]===serviceId&&entry[7]!==false);
   if(!item||!showPromos||!activeSelected.length){spotlight.hidden=true;return}
-  spotlight.hidden=false;spotlight.dataset.service=item[0];spotlight.replaceChildren();
+  spotlight.hidden=false;spotlight.dataset.service=item[0];spotlight.dataset.promoVariant=variant;spotlight.replaceChildren();
   const copy=make('div','og-postgame-spotlight-copy');
   copy.append(make('span','og-postgame-spotlight-label','OSGARD SELECT / PERSONAL SPOTLIGHT'));
   copy.append(make('span','og-postgame-spotlight-kicker',item[3]+' · СОВЕТ ДЛЯ '+String(titles[gameId]||'OSGARD PLAY').toUpperCase()));
   copy.append(make('h4','og-postgame-spotlight-name',item[2]));
   copy.append(make('p','og-postgame-spotlight-description',item[4]));
   const actions=make('div','og-postgame-spotlight-actions');
-  const open=make('a','og-postgame-spotlight-open','Открыть официальный сайт ↗');
+  const open=make('a','og-postgame-spotlight-open',variant==='a'?'Открыть официальный сайт ↗':'Изучить сервис ↗');
   const url=new URL(item[5]);url.searchParams.set('utm_source','osgard_games');url.searchParams.set('utm_medium','post_game');url.searchParams.set('utm_campaign','after_game');url.searchParams.set('utm_content',item[0]+'_'+gameId);
   open.href=url.href;open.target='_blank';open.rel='noopener noreferrer';open.dataset.service=item[0];open.dataset.game=gameId;
-  open.addEventListener('click',()=>void sendSelectEvent('cross_promo_clicked',gameId,'osgard-select:spotlight:'+item[0]));
+  open.dataset.promoVariant=variant;
+  open.addEventListener('click',()=>void sendSelectEvent('cross_promo_clicked',gameId,'osgard-select:click:'+item[0]+':'+variant));
   const next=make('button','og-postgame-spotlight-next','Другой проект ↻');next.type='button';
   next.addEventListener('click',()=>{
    if(activeSelected.length<2){spotlightStatus.textContent='В настройках выбери ещё один проект, чтобы сменить рекомендацию.';return}
