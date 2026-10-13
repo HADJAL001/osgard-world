@@ -12,7 +12,7 @@ const GAMES = [
   { id: 'inherit', title: 'INHERIT', colour: [120, 228, 255], order: '04 / 09' },
   { id: 'remix', title: 'REMIX', colour: [186, 150, 255], order: '05 / 09' },
   { id: 'civic-cascade', title: 'CIVIC CASCADE', colour: [133, 189, 255], order: '06 / 09' },
-  { id: 'patina', title: 'PATINA ATELIER', colour: [241, 168, 191], order: '07 / 09' },
+  { id: 'patina', title: 'PATINA Atelier', cardTitle: 'PATINA ATELIER', colour: [241, 168, 191], order: '07 / 09' },
   { id: 'signal-run', title: 'SIGNAL RUN', colour: [112, 246, 216], order: '08 / 09' },
   { id: 'cascade-lab', title: 'CASCADE LAB', colour: [158, 255, 190], order: '09 / 09' },
 ];
