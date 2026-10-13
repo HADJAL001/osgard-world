@@ -1,6 +1,6 @@
 export type OsgardWorldId = 'play' | 'business' | 'create' | 'mobility' | 'media' | 'vpn' | 'marcosa'
 
-export type OsgardGameId = 'time' | 'swarm' | 'null-shift' | 'inherit' | 'remix' | 'civic-cascade' | 'patina' | 'signal-run'
+export type OsgardGameId = 'time' | 'swarm' | 'null-shift' | 'inherit' | 'remix' | 'civic-cascade' | 'patina' | 'signal-run' | 'cascade-lab'
 
 export type OsgardEventName =
   | 'portal_opened'
@@ -44,5 +44,6 @@ export const OSGARD_GAMES: ReadonlyArray<{ id: OsgardGameId, title: string, reas
   { id: 'civic-cascade', title: 'CIVIC CASCADE', reason: 'стабилизировать город', href: '/games/civic-cascade/' },
   { id: 'patina', title: 'PATINA ATELIER', reason: 'сохранять историю', href: '/games/patina/' },
   { id: 'signal-run', title: 'SIGNAL RUN', reason: 'реагировать', href: '/games/signal-run/' },
+  { id: 'cascade-lab', title: 'CASCADE LAB', reason: 'изучать движение', href: '/games/cascade-lab/' },
 ]
 
