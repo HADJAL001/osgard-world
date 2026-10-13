@@ -31,7 +31,9 @@ function render(id){
  host.append(list);host.hidden=false;dialog.classList.add('has-recommendations');
 }
 document.addEventListener('osgard:game-launching',clear);
-document.addEventListener('osgard:game-completed',event=>render(event.detail&&event.detail.game));
+const renderSessionRecommendations=event=>render(event.detail&&event.detail.game);
+document.addEventListener('osgard:game-completed',renderSessionRecommendations);
+document.addEventListener('osgard:game-session-ended',renderSessionRecommendations);
 })();
 
 /* OSGARD PLAY growth loop: invite a friend after a real game completion. */
@@ -226,7 +228,9 @@ function addPostSessionActions(gameId){
   if(shareCompleted)void sendEvent('share_created',gameId,'game-invite:'+gameId+':'+inviteCode);
  });
 }
-document.addEventListener('osgard:game-completed',event=>{const id=event.detail&&event.detail.game;addPostSessionActions(id)});
+const renderPostSessionActions=event=>{const id=event.detail&&event.detail.game;addPostSessionActions(id)};
+document.addEventListener('osgard:game-completed',renderPostSessionActions);
+document.addEventListener('osgard:game-session-ended',renderPostSessionActions);
 document.addEventListener('change',event=>{
  const target=event.target;
  if(target&&target.id==='analytics-toggle')handleConsentToggle();
@@ -331,5 +335,7 @@ document.addEventListener('osgard:game-launching',()=>{
  outsideRoot.replaceChildren();
  outsideRoot.hidden=true;
 });
-document.addEventListener('osgard:game-completed',event=>{const id=event.detail&&event.detail.game;if(!titles[id])return;root.querySelector('.og-postgame-suite')?.remove();const suite=make('section','og-postgame-suite');suite.append(servicesShelf(id),rewardShelf(id));root.append(suite)});
+const renderOsgardSelect=event=>{const id=event.detail&&event.detail.game;if(!titles[id])return;root.querySelector('.og-postgame-suite')?.remove();const suite=make('section','og-postgame-suite');suite.append(servicesShelf(id),rewardShelf(id));root.append(suite)};
+document.addEventListener('osgard:game-completed',renderOsgardSelect);
+document.addEventListener('osgard:game-session-ended',renderOsgardSelect);
 })();
