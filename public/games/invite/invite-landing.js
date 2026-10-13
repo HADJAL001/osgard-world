@@ -36,7 +36,7 @@
   if (play) {
     const target = new URL(game === 'aether-grid' ? '/games/aether-grid/' : '/games/', location.origin);
     const requestedDay = params.get('og_day') || '';
-    const validDay = /^\\d{4}-\\d{2}-\\d{2}$/.test(requestedDay) && !Number.isNaN(Date.parse(requestedDay + 'T00:00:00.000Z'));
+    const validDay = /^\d{4}-\d{2}-\d{2}$/.test(requestedDay) && (() => { const date = new Date(requestedDay + 'T00:00:00.000Z'); return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === requestedDay; })();
     if (game === 'aether-grid' && validDay) target.searchParams.set('day', requestedDay);
     if (game && validGameIds.has(game)) target.searchParams.set('og_game', game);
     if (valid) {
