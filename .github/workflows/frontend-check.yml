@@ -57,6 +57,8 @@ jobs:
         run: npm run qa:time-ui
       - name: Verify OSGARD Games portal and Lighthouse guardrails
         run: npm run qa:games-portal
+      - name: Verify friend invites, referral attribution and share cancellation
+        run: npm run qa:games-referral
       - name: Validate NULL//SHIFT Godot source contract
         run: npm run qa:null-shift-godot
       - name: Verify game detail pages and SEO
