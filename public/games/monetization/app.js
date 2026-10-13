@@ -53,6 +53,9 @@ function render() {
   const annualRevenue = base.totalRevenueUsd * 12;
   const target = inputs.annualRevenueTargetUsd;
   const requiredMonthlyVisitors = calculateRequiredMonthlyVisitors(inputs, target);
+  const targetScenario = requiredMonthlyVisitors === null
+    ? null
+    : calculateScenario({ ...inputs, monthlyVisitors: requiredMonthlyVisitors }, 'base');
   document.getElementById('base-viral-visitors').textContent = count(base.viralVisitors);
   document.getElementById('base-k-factor').textContent = factor.format(base.kFactor);
   document.getElementById('base-annual-revenue').textContent = money(annualRevenue);
@@ -61,6 +64,14 @@ function render() {
   document.getElementById('million-gap').textContent = money(Math.max(0, target - annualRevenue));
   document.getElementById('required-base-visitors').textContent =
     requiredMonthlyVisitors === null ? '—' : count(requiredMonthlyVisitors);
+  document.getElementById('target-mix-total').textContent = targetScenario ? money(targetScenario.totalRevenueUsd) : '—';
+  document.getElementById('target-mix-ads').textContent = targetScenario ? money(targetScenario.adRevenueUsd) : '—';
+  document.getElementById('target-mix-paid').textContent = targetScenario ? money(targetScenario.paidRevenueUsd) : '—';
+  document.getElementById('target-mix-services').textContent = targetScenario ? money(targetScenario.servicesRevenueUsd) : '—';
+  document.getElementById('target-mix-sponsors').textContent = targetScenario ? money(targetScenario.sponsorRevenueUsd) : '—';
+  document.getElementById('target-mix-leads-contracts').textContent = targetScenario
+    ? count(targetScenario.leads) + ' заявок / ' + decimal.format(targetScenario.closedProjects) + ' договоров'
+    : '—';
   const targetStatus = document.getElementById('growth-target-status');
   targetStatus.textContent = requiredMonthlyVisitors === null
     ? 'При текущих коэффициентах цели не достичь даже в пределах 1 млрд стартовых посещений в месяц. Проверь доли запуска, eCPM, конверсию покупок, заказы и спонсорские договоры.'
