@@ -70,9 +70,12 @@ async function sendEvent(name,gameId,source){
  }catch{return false}
 }
 function incomingInvite(){
- const params=new URLSearchParams(location.search),game=params.get('challenge'),code=params.get('ref');
- if(!games[game]||!code||!/^[a-f0-9]{12}$/.test(code))return null;
- return {game,code};
+ const params=new URLSearchParams(location.search);
+ const canonicalGame=params.get('og_game')||'',canonicalCode=params.get('og_ref')||'';
+ if(games[canonicalGame]&&/^og_[a-f0-9]{8}$/.test(canonicalCode))return {game:canonicalGame,code:canonicalCode,legacy:false};
+ const game=params.get('challenge')||'',code=params.get('ref')||'';
+ if(!games[game]||!/^[a-f0-9]{12}$/.test(code))return null;
+ return {game,code,legacy:true};
 }
 async function recordInviteOpen(invite){
  if(!invite||!consented())return;
@@ -92,7 +95,9 @@ function ensureStyles(){
 }
 function installInviteBanner(){
  const invite=incomingInvite(),catalog=document.querySelector('#catalog');
- if(!invite||!catalog||catalog.querySelector('.og-invite-banner'))return;
+ // Canonical og_ref/og_game links use the Games hub's existing invitation ribbon.
+ // Keep this secondary banner only for legacy challenge/ref links already shared.
+ if(!invite||!invite.legacy||!catalog||catalog.querySelector('.og-invite-banner'))return;
  ensureStyles();
  const banner=make('aside','og-invite-banner');banner.setAttribute('aria-labelledby','og-invite-title');
  const copy=make('div');copy.append(make('p','og-invite-eyebrow','OSGARD PLAY / ЛИЧНОЕ ПРИГЛАШЕНИЕ'));
@@ -110,11 +115,21 @@ function installInviteBanner(){
   document.querySelector('#games-grid .card[data-game="'+invite.game+'"]')?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'center'});
  });
 }
-function buildShareUrl(gameId,code){
+function buildShareUrl(gameId){
+ try{
+  if(typeof window.OSGARDInvite?.createLink==='function'){
+   const shared=new URL(window.OSGARDInvite.createLink(gameId),location.origin);
+   if(shared.origin===location.origin&&shared.pathname==='/games/'&&shared.searchParams.get('og_game')===gameId&&/^og_[a-f0-9]{8}$/.test(shared.searchParams.get('og_ref')||''))return shared.href;
+  }
+ }catch{}
+ // Fail-soft fallback follows the same public URL contract as the catalogue toolbar.
  const url=new URL('/games/',location.origin);
- url.searchParams.set('challenge',gameId);url.searchParams.set('ref',code);
- url.searchParams.set('utm_source','osgard_games');url.searchParams.set('utm_medium','referral');
- url.searchParams.set('utm_campaign','play_with_a_friend');url.searchParams.set('utm_content',gameId);
+ url.searchParams.set('og_ref','og_'+token().slice(0,8));
+ url.searchParams.set('og_game',gameId);
+ url.searchParams.set('utm_source','osgard_play');
+ url.searchParams.set('utm_medium','referral');
+ url.searchParams.set('utm_campaign','play_with_friends');
+ url.searchParams.set('utm_content',gameId);
  return url.href;
 }
 function addPostSessionActions(gameId){
@@ -133,7 +148,7 @@ function addPostSessionActions(gameId){
  actions.append(inviteButton,createLink,fallback);section.append(top,actions,status);root.append(section);
  inviteButton.addEventListener('click',async()=>{
   inviteButton.disabled=true;status.textContent='Готовим персональную ссылку…';
-  const code=token(),url=buildShareUrl(gameId,code),message='Пойдём сыграем в '+game.title+' в OSGARD PLAY: '+url;
+  const url=buildShareUrl(gameId),inviteCode=new URL(url,location.origin).searchParams.get('og_ref')||'',message='Пойдём сыграем в '+game.title+' в OSGARD PLAY: '+url;
   let shareCompleted=false;
   try{
    if(typeof navigator.share==='function'){
@@ -164,7 +179,7 @@ function addPostSessionActions(gameId){
   // Count only an action the browser confirmed: the native share promise resolved
   // or the invite text was successfully copied. A visible fallback link or a
   // dismissed share sheet is not counted as a successful share.
-  if(shareCompleted)void sendEvent('share_created',gameId,'game-invite:'+gameId+':'+code);
+  if(shareCompleted)void sendEvent('share_created',gameId,'game-invite:'+gameId+':'+inviteCode);
  });
 }
 document.addEventListener('osgard:game-completed',event=>{const id=event.detail&&event.detail.game;addPostSessionActions(id)});
