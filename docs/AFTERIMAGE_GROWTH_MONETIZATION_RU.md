@@ -1,7 +1,7 @@
 # AFTERIMAGE//RUN — growth & monetization plan
 
 ## Product pitch
-A compact sci-fi precision runner in OSGARD PLAY: the same UTC daily seed for everyone, a personal best/ghost, a challenge URL carrying the seed and score, share-result image, and a cosmetic SIGNAL SHARD that can be earned once per UTC day by starting a share flow or copying a challenge link. The game explicitly tells the player that the actual public post is not verified.
+A compact sci-fi precision runner in OSGARD PLAY: the same UTC daily seed for everyone, a personal best/ghost, a challenge URL carrying the seed and score, share-result image, and a cosmetic SIGNAL SHARD that can be claimed once per UTC day after the player explicitly confirms that they published after opening a social share flow. The game states that the public post is not verified.
 
 ## Viral loop to measure
 1. A player starts from the OSGARD games catalog or Entertainment.
@@ -10,7 +10,7 @@ A compact sci-fi precision runner in OSGARD PLAY: the same UTC daily seed for ev
 4. The recipient lands on the same date/seed, plays their run and can share their result.
 5. A non-transferable, cosmetic shard provides a small in-game acknowledgement. It does not alter speed, score, or paid rights.
 
-The share incentive is intentionally a reward for starting the share flow, not a claim that a post was published. Client-only localStorage is easy to reset and is not anti-fraud. Before offering tradable/paid value or a referral payout, implement server-side invite attribution, idempotent referral records, account/abuse controls, and require a qualified referred player's first completed session. The local shard is cosmetic-only.
+The share claim is shown after opening a social share composer/native share flow; copying the URL alone does not award it. The player must then use a separate confirmation button. This is self-reported and cannot prove that a public post actually exists. The client-only localStorage reward is easy to reset and is not anti-fraud; it is cosmetic-only, not tradable, and not a referral payout. Before offering paid or transferable value, implement server-side invite attribution, idempotent reward records, account/abuse controls, and require a qualified referred player's first completed session.
 
 ## Owned-service intermission
 On closing an embedded game session, show one optional luxury cross-promotion panel containing the ten OSGARD-owned products. The player chooses a specific card then explicitly opens that destination, or dismisses the intermission. Each link carries:
