@@ -114,7 +114,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
                 ? content.includes('.mobile-ui') && content.includes('prefers-reduced-motion') && content.includes('.engine-minimap')
                 : content.includes('premiumAtmosphere') && content.includes('PerformanceObserver') && content.includes('premiumV05DrawMotion') && content.includes('premiumV05ArmAudio') && content.includes('premiumV05UpdateMotion') && content.includes('NULL_SHIFT_GET_SCENE_STATE')
             : path === '/games/signal-run/game.js'
-                 ? content.includes("game:'signal-run'") && content.includes("life('ready')") && content.includes("life('completed'") && content.includes('osgard.signal-run.best.v1')
+                 ? content.includes("game:'signal-run'") && content.includes("function life(state,extra={})") && content.includes("life('ready',") && content.includes("life('completed',") && content.includes('dailyMode,dailyDate') && content.includes('osgard.signal-run.best.v1')
                : path === '/games/game-session-recommendations.js'
                ? content.includes("document.addEventListener('osgard:game-completed'") && content.includes("document.addEventListener('osgard:game-launching'") && content.includes('link.dataset.play=nextId')
              : path === '/games/game-session-recommendations.css'
