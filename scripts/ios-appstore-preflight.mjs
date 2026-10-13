@@ -14,6 +14,7 @@ const codemagic = read('codemagic.yaml');
 const prep = read('scripts/prepare-ios-app.mjs');
 const iconGenerator = read('scripts/generate-ios-app-icon.mjs');
 const privacy = read('mobile/PrivacyInfo.xcprivacy');
+const commerceServer = read('services/osgard-commerce-api/src/server.mjs');
 const guide = read('docs/IOS_APP_STORE_CODEMAGIC_RU.md');
 
 assert.equal(config.appId, 'com.osgardworld.play');
@@ -31,6 +32,7 @@ for (const version of ['@capacitor/core@8.5.3', '@capacitor/cli@8.5.3', '@capaci
 assert.ok(codemagic.includes('xcode-project build-ipa'), 'IPA archive stage missing.');
 assert.ok(guide.includes('TestFlight') && guide.includes('capacitor://localhost') && guide.includes('App Review Guidelines'), 'Release guide is missing signing, CORS, or Apple-review notes.');
 assert.ok(privacy.includes('<key>NSPrivacyTracking</key>') && privacy.includes('<false/>'), 'Privacy manifest must declare tracking state.');
+assert.ok(commerceServer.includes('capacitor://localhost'), 'Default Commerce API CORS must allow the Capacitor local origin.');
 assert.ok(prep.includes('IOS_COMMERCE_API_BASE_URL') && prep.includes('OSGARD_PUBLIC_ORIGIN') && prep.includes('/games/null-shift/'), 'Native origin, public share-link and mobile game fixes missing.');
 assert.ok(iconGenerator.includes('AppIcon-1024.png') && iconGenerator.includes('Contents.json'), 'App Store icon generator is incomplete.');
 
