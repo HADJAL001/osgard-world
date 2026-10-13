@@ -44,8 +44,8 @@ assert.equal(calls[0].options.method, 'GET')
 assert.equal(calls[0].options.redirect, 'manual')
 assert.ok(calls[0].options.signal, 'HTTP requests need an explicit timeout signal')
 
-assert.equal(isSafePublicHttpsUrl('https://public.example/'), true)
-assert.equal(isSafePublicHttpsUrl('https://public.example./'), true, 'A trailing DNS dot should not make a public hostname fail validation')
+assert.equal(isSafePublicHttpsUrl('https://public.example.com/'), true)
+assert.equal(isSafePublicHttpsUrl('https://public.example.com./'), true, 'A trailing DNS dot should not make a public hostname fail validation')
 assert.equal(isSafePublicHttpsUrl('https://service.internal./'), false, 'A trailing DNS dot must not bypass internal-host blocking')
 let unsafeInitialCalls = 0
 const unsafeInitial = await checkProject(
@@ -63,8 +63,8 @@ for (const url of [
   'https://[::1]/',
   'https://localhost/',
   'https://private.internal/',
-  'https://public.example:8443/',
-  'https://user:pass@public.example/',
+  'https://public.example.com:8443/',
+  'https://user:pass@public.example.com/',
 ]) assert.equal(isSafePublicHttpsUrl(url), false, 'Unsafe audit target must be rejected: ' + url)
 
 const redirectResponse = (status, location = null, body = '<title>Redirecting</title>') => ({
@@ -82,11 +82,11 @@ const finalResponse = (url, body = '<html><head><title>Canonical OSGARD</title><
 const redirectCalls = []
 const safeRedirectFetch = async (url, options) => {
   redirectCalls.push({ url, options })
-  if (url === 'https://redirect.example/') return redirectResponse(301, 'https://www.redirect.example/home')
+  if (url === 'https://redirect.example.com/') return redirectResponse(301, 'https://www.redirect.example.com/home')
   return finalResponse(url)
 }
 const redirected = await checkProject(
-  { id: 'redirect-test', name: 'Redirect Test', url: 'https://redirect.example/' },
+  { id: 'redirect-test', name: 'Redirect Test', url: 'https://redirect.example.com/' },
   { fetchImpl: safeRedirectFetch, now: fixedNow },
 )
 assert.equal(redirected.outcome, 'reachable')
@@ -98,9 +98,9 @@ assert.ok(redirectCalls.every(call => call.options.redirect === 'manual'), 'Ever
 
 let unsafeTargetRequested = false
 const blockedRedirect = await checkProject(
-  { id: 'unsafe-redirect', name: 'Unsafe Redirect', url: 'https://safe.example/' },
+  { id: 'unsafe-redirect', name: 'Unsafe Redirect', url: 'https://safe.example.com/' },
   { fetchImpl: async (url) => {
-    if (url !== 'https://safe.example/') unsafeTargetRequested = true
+    if (url !== 'https://safe.example.com/') unsafeTargetRequested = true
     return redirectResponse(302, 'http://127.0.0.1:4317/private')
   }, now: fixedNow },
 )
@@ -111,28 +111,28 @@ assert.equal(unsafeTargetRequested, false, 'A local redirect target must never b
 
 let crossDomainRequested = false
 const crossDomain = await checkProject(
-  { id: 'cross-domain', name: 'Cross Domain Redirect', url: 'https://owner.example/' },
+  { id: 'cross-domain', name: 'Cross Domain Redirect', url: 'https://owner.example.com/' },
   { fetchImpl: async url => {
-    if (url !== 'https://owner.example/') crossDomainRequested = true
-    return redirectResponse(302, 'https://unrelated.example/landing')
+    if (url !== 'https://owner.example.com/') crossDomainRequested = true
+    return redirectResponse(302, 'https://unrelated.example.org/landing')
   }, now: fixedNow },
 )
 assert.equal(crossDomain.outcome, 'unsafe_redirect')
 assert.equal(crossDomainRequested, false, 'A redirect outside the configured domain family must be flagged, not fetched')
 
 const loop = await checkProject(
-  { id: 'redirect-loop', name: 'Redirect Loop', url: 'https://loop.example/' },
-  { fetchImpl: async () => redirectResponse(301, 'https://loop.example/'), now: fixedNow },
+  { id: 'redirect-loop', name: 'Redirect Loop', url: 'https://loop.example.com/' },
+  { fetchImpl: async () => redirectResponse(301, 'https://loop.example.com/'), now: fixedNow },
 )
 assert.equal(loop.outcome, 'redirect_loop')
 
 let redirectHop = 0
 const limited = await checkProject(
-  { id: 'redirect-limit', name: 'Redirect Limit', url: 'https://hops.example/' },
+  { id: 'redirect-limit', name: 'Redirect Limit', url: 'https://hops.example.com/' },
   { fetchImpl: async url => {
     const host = new URL(url).hostname
     redirectHop += 1
-    const n = host === 'hops.example' ? 0 : Number(host.startsWith('hop') ? host.slice(3).split('.')[0] : 0)
+    const n = host === 'hops.example.com' ? 0 : Number(host.startsWith('hop') ? host.slice(3).split('.')[0] : 0)
     return redirectResponse(302, 'https://hop' + (n + 1) + '.hops.example/')
   }, now: fixedNow },
 )
@@ -162,7 +162,7 @@ const oversizedResponse = {
   async text() { unboundedTextCalled = true; return '' },
 }
 const bounded = await checkProject(
-  { id: 'large-page', name: 'Large Page', url: 'https://large.example/' },
+  { id: 'large-page', name: 'Large Page', url: 'https://large.example.com/' },
   { fetchImpl: async () => oversizedResponse, now: fixedNow },
 )
 assert.equal(bounded.pageTitle, 'Bounded response', 'Useful metadata should be parsed from the bounded prefix')
