@@ -54,6 +54,15 @@ test("analytics is disabled unless consent is explicit and event names are allow
     validateEventBatch({ consent: false, events: [{ ...event, name: "owned_promo_impression", eventId: "evt_promo_impression_124" }] }).code,
     "ANALYTICS_CONSENT_REQUIRED",
   );
+  for (const [name, source] of [
+    ["social_share_intent", "osgard-social-share:telegram:swarm"],
+    ["social_reward_claimed", "osgard-social-reward:telegram:swarm"],
+  ]) {
+    assert.equal(validateEventBatch({ consent: true, events: [{ ...event, name, source, eventId: "evt_social_event_123456" }] }).ok, true,
+      name + " should be accepted as a consented event");
+    assert.equal(validateEventBatch({ consent: false, events: [{ ...event, name, source }] }).code, "ANALYTICS_CONSENT_REQUIRED",
+      name + " must not bypass explicit analytics consent");
+  }
 });
 
 test("consented analytics accept stable event IDs and new page-view events, while rejecting malformed IDs", () => {
