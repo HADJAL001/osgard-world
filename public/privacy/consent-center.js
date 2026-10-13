@@ -34,12 +34,12 @@
       localStorage.setItem(CONSENT_KEY, enabled ? 'yes' : 'no');
       if (!enabled) localStorage.removeItem(QUEUE_KEY);
     } catch {
+      sync();
       if (state) {
         state.dataset.state = 'error';
         state.textContent = 'Не удалось сохранить выбор';
       }
       if (message) message.textContent = 'Проверьте настройки приватности браузера и попробуйте снова. Аналитика не включается без сохранённого разрешения.';
-      sync();
       return;
     }
     sync(enabled
