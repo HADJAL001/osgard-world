@@ -312,6 +312,108 @@ app.post("/v1/leads", async (req, res) => {
   }
 });
 
+app.post("/v1/referrals/issue", async (req, res) => {
+  const input = validateReferralIssuePayload(req.body);
+  if (!input.ok) return res.status(input.status).json({ error: input.code });
+  if (!requireDatabase(res)) return;
+  const walletHash = crypto.createHash("sha256").update(input.walletToken).digest("hex");
+  res.set("Cache-Control", "no-store, private");
+  let client;
+  try {
+    client = await pool.connect();
+    await client.query("BEGIN");
+    await client.query(
+      "INSERT INTO commerce_referral_wallets(wallet_token_hash) VALUES($1) ON CONFLICT(wallet_token_hash) DO UPDATE SET updated_at=NOW()",
+      [walletHash],
+    );
+    await client.query("SELECT wallet_token_hash FROM commerce_referral_wallets WHERE wallet_token_hash=$1 FOR UPDATE", [walletHash]);
+    const issued = await client.query(
+      "SELECT COUNT(*)::int AS count FROM commerce_referral_invites WHERE wallet_token_hash=$1 AND created_at >= NOW() - INTERVAL '24 hours'",
+      [walletHash],
+    );
+    if (Number(issued.rows[0]?.count || 0) >= 20) {
+      await client.query("ROLLBACK");
+      return res.status(429).json({ error: "REFERRAL_DAILY_ISSUE_LIMIT" });
+    }
+    let inviteCode = "";
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const candidate = "og_" + crypto.randomBytes(4).toString("hex");
+      const inserted = await client.query(
+        "INSERT INTO commerce_referral_invites(invite_code,wallet_token_hash,game_id) VALUES($1,$2,$3) ON CONFLICT DO NOTHING RETURNING invite_code",
+        [candidate, walletHash, input.gameId],
+      );
+      if (inserted.rowCount) { inviteCode = candidate; break; }
+    }
+    if (!inviteCode) throw new Error("REFERRAL_CODE_COLLISION");
+    const wallet = await client.query(
+      "SELECT COALESCE(SUM(points),0)::int AS balance, COUNT(*)::int AS rewards FROM commerce_referral_rewards WHERE wallet_token_hash=$1",
+      [walletHash],
+    );
+    await client.query("COMMIT");
+    return res.status(201).json({
+      inviteCode,
+      gameId: input.gameId,
+      rewardPoints: 50,
+      minimumSessionSeconds: 60,
+      dailyRewardLimit: 5,
+      balance: Number(wallet.rows[0]?.balance || 0),
+      rewards: Number(wallet.rows[0]?.rewards || 0),
+      message: "Приглашение создано. SHARDS начисляются один раз за ссылку, только после завершения приглашённым игроком сессии длительностью от 60 секунд.",
+    });
+  } catch (error) {
+    if (client) { try { await client.query("ROLLBACK"); } catch {} }
+    console.error("Referral issue failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "REFERRAL_SERVICE_UNAVAILABLE" });
+  } finally {
+    client?.release();
+  }
+});
+
+app.post("/v1/referrals/wallet", async (req, res) => {
+  const input = validateReferralWalletPayload(req.body);
+  if (!input.ok) return res.status(input.status).json({ error: input.code });
+  if (!requireDatabase(res)) return;
+  const walletHash = crypto.createHash("sha256").update(input.walletToken).digest("hex");
+  res.set("Cache-Control", "no-store, private");
+  try {
+    await pool.query(
+      "INSERT INTO commerce_referral_wallets(wallet_token_hash) VALUES($1) ON CONFLICT(wallet_token_hash) DO UPDATE SET updated_at=NOW()",
+      [walletHash],
+    );
+    const [wallet, issued] = await Promise.all([
+      pool.query("SELECT COALESCE(SUM(points),0)::int AS balance, COUNT(*)::int AS rewards FROM commerce_referral_rewards WHERE wallet_token_hash=$1", [walletHash]),
+      pool.query("SELECT COUNT(*)::int AS count FROM commerce_referral_invites WHERE wallet_token_hash=$1 AND created_at >= NOW() - INTERVAL '24 hours'", [walletHash]),
+    ]);
+    return res.json({
+      balance: Number(wallet.rows[0]?.balance || 0),
+      rewards: Number(wallet.rows[0]?.rewards || 0),
+      invitesLast24Hours: Number(issued.rows[0]?.count || 0),
+      rewardPoints: 50,
+      minimumSessionSeconds: 60,
+      dailyRewardLimit: 5,
+      redemption: "disabled",
+    });
+  } catch (error) {
+    console.error("Referral wallet read failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "REFERRAL_WALLET_UNAVAILABLE" });
+  }
+});
+
+app.post("/v1/referrals/disable", async (req, res) => {
+  const input = validateReferralDisablePayload(req.body);
+  if (!input.ok) return res.status(input.status).json({ error: input.code });
+  if (!requireDatabase(res)) return;
+  const walletHash = crypto.createHash("sha256").update(input.walletToken).digest("hex");
+  res.set("Cache-Control", "no-store, private");
+  try {
+    await pool.query("DELETE FROM commerce_referral_wallets WHERE wallet_token_hash=$1", [walletHash]);
+    return res.json({ disabled: true, message: "Бонусный кошелёк и связанные коды приглашений удалены." });
+  } catch (error) {
+    console.error("Referral opt-out failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "REFERRAL_OPT_OUT_UNAVAILABLE" });
+  }
+});
+
 app.post("/v1/events", async (req, res) => {
   const batch = validateEventBatch(req.body);
   if (!batch.ok) return res.status(batch.status).json({ error: batch.code });
