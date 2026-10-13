@@ -129,20 +129,69 @@ async function fetchReferralBalance(): Promise<ReferralBalance> {
 export function PlaySelectLoop({ locale }: { locale: Locale }) {
   const ru = locale === 'ru'
   const [inviteUrl] = useState(makeInviteUrl)
-  const [balance, setBalance] = useState(() => readWallet().balance)
+  const [balance, setBalance] = useState<ReferralBalance>(null)
   const [status, setStatus] = useState('')
-  const [pendingNetwork, setPendingNetwork] = useState('')
+  const [analyticsConsent, setAnalyticsConsent] = useState(() => storedConsent(ANALYTICS_KEY))
+  const [rewardConsent, setRewardConsent] = useState(() => storedConsent(REWARD_CONSENT_KEY))
+  const code = useState(() => {
+    try { return new URL(inviteUrl).searchParams.get('og_ref') || '' } catch { return '' }
+  })[0]
   const message = ru ? 'Пойдём сыграем в OSGARD PLAY. Выбирай свой мир:' : 'Let’s play OSGARD PLAY. Choose your world:'
 
+  const updateConsentStorage = (key: string, enabled: boolean) => {
+    try {
+      if (enabled) window.localStorage.setItem(key, 'yes')
+      else window.localStorage.removeItem(key)
+    } catch {}
+  }
+
+  const refreshBalance = async () => {
+    const value = await fetchReferralBalance()
+    setBalance(value)
+    return value
+  }
+
   useEffect(() => {
-    const refresh = () => setBalance(readWallet().balance)
-    window.addEventListener('storage', refresh)
-    window.addEventListener('osgard:shards-updated', refresh)
-    return () => {
-      window.removeEventListener('storage', refresh)
-      window.removeEventListener('osgard:shards-updated', refresh)
+    if (!analyticsConsent || !rewardConsent) {
+      setBalance(null)
+      return
     }
-  }, [])
+    let cancelled = false
+    void (async () => {
+      const registered = await registerInvite(code)
+      const value = await fetchReferralBalance()
+      if (cancelled) return
+      setBalance(value)
+      if (registered && value) {
+        setStatus(ru
+          ? value.pointsEarned + ' SHARDS за ' + value.qualifiedSessions + ' квалифицированных приглашённых сессий. За нового друга начисляется +50 после 60 секунд в той же игре.'
+          : value.pointsEarned + ' SHARDS from ' + value.qualifiedSessions + ' qualified invited sessions. +50 is awarded after a new friend plays the same game for 60 seconds.')
+      } else {
+        setStatus(ru
+          ? 'Сервер пока не подтвердил бонусную программу. Ссылкой можно делиться, но SHARDS начисляются только после регистрации приглашения и проверки игровой сессии.'
+          : 'The server has not confirmed the reward programme. You can still share the link, but SHARDS are granted only after invite registration and session verification.')
+      }
+    })()
+    return () => { cancelled = true }
+  }, [analyticsConsent, rewardConsent, code, ru])
+
+  const onConsentChange = (kind: 'analytics' | 'reward', enabled: boolean) => {
+    if (kind === 'analytics') {
+      updateConsentStorage(ANALYTICS_KEY, enabled)
+      setAnalyticsConsent(enabled)
+      if (!enabled) {
+        setBalance(null)
+        setStatus(ru ? 'Необязательная аналитика и бонусный учёт отключены. Играть и приглашать друзей можно без них.' : 'Optional analytics and reward tracking are disabled. You can still play and invite friends.')
+      }
+    } else {
+      updateConsentStorage(REWARD_CONSENT_KEY, enabled)
+      setRewardConsent(enabled)
+      if (!enabled) {
+        setBalance(null)
+        setStatus(ru ? 'Бонусная программа отключена. Играть и делиться ссылками можно без неё.' : 'The rewards programme is disabled. You can still play and share links.')
+      }
+    }
+  }
 
   const social = [
     { name: 'Telegram', href: 'https://t.me/share/url?url=' + encodeURIComponent(inviteUrl) + '&text=' + encodeURIComponent(message) },
@@ -152,53 +201,33 @@ export function PlaySelectLoop({ locale }: { locale: Locale }) {
     { name: 'Facebook', href: 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(inviteUrl) },
   ]
 
-  const grantReward = (source: string) => {
-    const current = readWallet()
-    const today = new Date().toISOString().slice(0, 10)
-    if (current.day === today) {
-      setBalance(current.balance)
-      setStatus(ru ? 'Сегодня награда уже получена. Баланс: ' + current.balance + ' SHARDS.' : 'Today’s reward is already claimed. Balance: ' + current.balance + ' SHARDS.')
-      setPendingNetwork('')
-      return
-    }
-    const next = {
-      balance: Math.min(1000000000, current.balance + 50),
-      lastRewardDay: today,
-      lastSource: source.slice(0, 60),
-      updatedAt: new Date().toISOString(),
-    }
-    try {
-      window.localStorage.setItem(WALLET_KEY, JSON.stringify(next))
-      setBalance(next.balance)
-      window.dispatchEvent(new CustomEvent('osgard:shards-updated', { detail: { balance: next.balance } }))
-      setStatus(ru ? '+50 SHARDS добавлено. Баланс: ' + next.balance + '. Награда локальная и не имеет денежной стоимости.' : '+50 SHARDS added. Balance: ' + next.balance + '. Local points have no cash value.')
-    } catch {
-      setStatus(ru ? 'Браузер не разрешил сохранить награду на этом устройстве.' : 'The browser could not save the reward on this device.')
-    }
-    setPendingNetwork('')
-  }
-
   const shareInvite = async () => {
-    setPendingNetwork('')
+    if (analyticsConsent && rewardConsent) {
+      const registered = await registerInvite(code)
+      if (!registered) {
+        setStatus(ru
+          ? 'Сервер пока не подтвердил регистрацию приглашения. Ссылка откроется, но награда не будет начислена без серверной проверки.'
+          : 'The server has not confirmed invite registration. The link still works, but rewards require server verification.')
+      }
+    }
     try {
       if (typeof navigator.share === 'function') {
         await navigator.share({ title: 'OSGARD PLAY', text: message, url: inviteUrl })
-        setPendingNetwork('native-share')
+        if (analyticsConsent && rewardConsent) await refreshBalance()
         setStatus(ru
-          ? 'Меню отправки закрыто. Если ты действительно опубликовал приглашение, подтверди ниже. Автоматически проверить публикацию невозможно.'
-          : 'The share sheet closed. If you actually published the invite, confirm below. The post itself cannot be verified automatically.')
+          ? 'Приглашение передано в меню отправки. +50 SHARDS начисляются только после подтверждённой сервером сессии друга не менее 60 секунд. Публикацию поста мы не проверяем.'
+          : 'Invite handed to the share sheet. +50 SHARDS are awarded only after a server-qualified friend session of at least 60 seconds. We do not verify public posts.')
       } else if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(message + ' ' + inviteUrl)
         setStatus(ru
-          ? 'Ссылка скопирована. Копирование само по себе не считается репостом и не даёт награду. Опубликуй её через соцсеть ниже, затем вернись и подтверди.'
-          : 'Link copied. Copying alone is not a repost and earns no reward. Publish it through a social network below, then return and confirm.')
+          ? 'Ссылка скопирована. Копирование само по себе не начисляет SHARDS — награда зависит от игровой сессии приглашённого друга.'
+          : 'Link copied. Copying alone does not grant SHARDS; the reward depends on the invited friend’s play session.')
       } else {
         setStatus(ru ? 'Быстрая отправка недоступна. Выбери соцсеть ниже.' : 'Quick share is unavailable. Choose a network below.')
       }
     } catch (error) {
-      setPendingNetwork('')
       setStatus(error instanceof Error && error.name === 'AbortError'
-        ? (ru ? 'Отправка отменена — награда не начислена.' : 'Share cancelled — no reward was granted.')
+        ? (ru ? 'Отправка отменена. SHARDS не начислены.' : 'Share cancelled. No SHARDS awarded.')
         : (ru ? 'Не удалось отправить приглашение. Выбери соцсеть ниже.' : 'Share failed. Choose a network below.'))
     }
   }
@@ -237,20 +266,21 @@ export function PlaySelectLoop({ locale }: { locale: Locale }) {
       <aside className="play-select-referral">
         <p className="play-select-referral-eyebrow">OSGARD PLAY / FRIEND INVITE</p>
         <h4>{ru ? 'Твой следующий раунд — с другом.' : 'Your next round is better with a friend.'}</h4>
-        <p>{ru ? 'Поделись приглашением. +50 SHARDS доступны после явного подтверждения публикации — не чаще раза в UTC-день на этом устройстве. Копирование ссылки само по себе не награждается.' : 'Share an invite. +50 SHARDS can be claimed after you explicitly confirm publishing the invite, once per UTC day on this device. Copying a link alone earns no reward.'}</p>
-        <div className="play-select-wallet"><span>OSGARD SHARDS</span><strong>{balance.toLocaleString(ru ? 'ru-RU' : 'en-US')}</strong></div>
-        <button type="button" className="play-select-share-primary" onClick={shareInvite}>{ru ? 'Поделиться приглашением ↗' : 'Share invitation ↗'}</button>
+        <p>{ru ? 'Пригласи друга. +50 SHARDS начисляются только после серверной проверки его сессии в этой игре не короче 60 секунд.' : 'Invite a friend. +50 SHARDS are awarded only after the server verifies their session in this game for at least 60 seconds.'}</p>
+        <div className="play-select-consents">
+          <label><input type="checkbox" checked={analyticsConsent} onChange={event => onConsentChange('analytics', event.target.checked)} />{ru ? 'Разрешаю необязательную аналитику игровых событий.' : 'Allow optional gameplay analytics.'}</label>
+          <label><input type="checkbox" checked={rewardConsent} onChange={event => onConsentChange('reward', event.target.checked)} />{ru ? 'Отдельно соглашаюсь на учёт приглашений для начисления SHARDS.' : 'Separately opt in to invitation tracking for SHARDS.'}</label>
+        </div>
+        <div className="play-select-wallet"><span>OSGARD SHARDS</span><strong>{balance ? balance.pointsEarned.toLocaleString(ru ? 'ru-RU' : 'en-US') : '—'}</strong></div>
+        <button type="button" className="play-select-share-primary" onClick={() => void shareInvite()}>{ru ? 'Поделиться приглашением ↗' : 'Share invitation ↗'}</button>
         <div className="play-select-share-networks">
           {social.map(item => <a href={item.href} key={item.name} target="_blank" rel="noopener noreferrer" onClick={() => {
-            setPendingNetwork(item.name)
-            setStatus(ru ? 'Открой публикацию в ' + item.name + ', затем вернись и подтверди действие.' : 'Open the ' + item.name + ' composer, then return and confirm the action.')
+            if (analyticsConsent && rewardConsent) void registerInvite(code)
+            setStatus(ru ? 'Откроется форма публикации в ' + item.name + '. SHARDS начисляются после квалифицированной игровой сессии приглашённого, а не за нажатие кнопки.' : 'Opening the ' + item.name + ' share composer. SHARDS depend on the invited player’s qualified game session, not on clicking this button.')
           }}>{item.name} ↗</a>)}
         </div>
-        {pendingNetwork && <button type="button" className="play-select-share-claim" onClick={() => grantReward('homepage-social-confirmation:' + pendingNetwork)}>
-          {ru ? (pendingNetwork === 'native-share' ? 'Я действительно опубликовал — получить +50 SHARDS' : 'Я отправил в ' + pendingNetwork + ' — получить +50 SHARDS') : (pendingNetwork === 'native-share' ? 'I actually published the invite — claim +50 SHARDS' : 'I shared on ' + pendingNetwork + ' — claim +50 SHARDS')}
-        </button>}
         <p className="play-select-status" role="status" aria-live="polite">{status}</p>
-        <small>{ru ? 'SHARDS хранятся только локально, не являются деньгами и не обмениваются на денежную стоимость. Соцсети не подтверждают публикацию сайту; пользователь подтверждает отправку сам, а копирование ссылки награду не даёт.' : 'SHARDS are local points, not money and not redeemable. Social networks do not verify posts to this site; social-compose sharing uses player confirmation.'}</small>
+        <small>{ru ? 'Без самоподтверждения репоста: сервер награждает только за новый токен приглашённого, отдельное согласие и квалифицированную сессию той же игры. SHARDS не имеют денежной стоимости, не обмениваются на деньги или покупки. Согласия можно отключить в любой момент.' : 'No self-claimed reposts: the server rewards only an invited browser token with separate consent and a qualified session in the same game. SHARDS have no cash value and are not redeemable for money or purchases. You can withdraw consent at any time.'}</small>
       </aside>
     </div>
   </section>
