@@ -49,6 +49,7 @@ assert.ok(catalogInvitePage.includes('property="og:title" content="OSGARD PLAY �
 assert.ok(catalogInviteCard.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])),'Generic catalogue share card must be a PNG')
 
 const lifecycle=readFileSync(resolve(root,'player-lifecycle.js'),'utf8')
+const consentedAnalytics=readFileSync(resolve(root,'consented-analytics.js'),'utf8')
 const recommendationScript=readFileSync(resolve(root,'game-session-recommendations.js'),'utf8')
 const recommendationStyles=readFileSync(resolve(root,'game-session-recommendations.css'),'utf8')
 const dailyCircuitScript=readFileSync(resolve(root,'daily-circuit.js'),'utf8')
@@ -140,7 +141,7 @@ assert.ok(appStyles.includes('.play-quick-picks{display:grid;grid-template-colum
 assert.ok(appStyles.includes('.play-quick-link:focus-visible')&&appStyles.includes('@media(prefers-reduced-motion:reduce){.play-quick-link'),'Quick-launch links must retain keyboard focus and reduced-motion support')
 assert.ok(html.includes('<title>OSGARD WORLD GAMING — Игровая платформа</title>')&&html.includes('og:title" content="OSGARD WORLD GAMING — игровые миры')&&html.includes('"name":"OSGARD WORLD GAMING"'),'Gaming hub identity must be consistent in title, social metadata and structured data')
 assert.ok(html.includes('OSGARD WORLD GAMING <span>/</span> DIGITAL WORLDS')&&html.includes('быстрый возврат к недавним сессиям'),'Gaming hub hero must describe the branded portal and its actual navigation features')
-for(const path of ['public/games/index.html','public/games/favicon.svg','public/games/player-lifecycle.js','public/games/game-session-recommendations.js','public/games/game-session-recommendations.css','public/games/admin/index.html','public/games/admin/partners/index.html','public/games/civic-cascade/index.html','public/games/patina/index.html','public/games/signal-run/index.html','public/games/signal-run/game.js','public/games/signal-run/daily.js','public/games/cascade-lab/index.html','public/privacy/index.html','public/terms/index.html']) assert.ok(existsSync(resolve(path)),'Missing file: '+path)
+for(const path of ['public/games/index.html','public/games/favicon.svg','public/games/player-lifecycle.js','public/games/consented-analytics.js','public/games/game-session-recommendations.js','public/games/game-session-recommendations.css','public/games/admin/index.html','public/games/admin/partners/index.html','public/games/civic-cascade/index.html','public/games/patina/index.html','public/games/signal-run/index.html','public/games/signal-run/game.js','public/games/signal-run/daily.js','public/games/cascade-lab/index.html','public/privacy/index.html','public/terms/index.html']) assert.ok(existsSync(resolve(path)),'Missing file: '+path)
 for(const path of ['scripts/games-lighthouse-report.mjs','.github/workflows/games-lighthouse.yml']) assert.ok(existsSync(resolve(path)),'Missing games performance monitoring file: '+path)
 const lighthouseScript=readFileSync(resolve('scripts/games-lighthouse-report.mjs'),'utf8')
 const lighthouseWorkflow=readFileSync(resolve('.github/workflows/games-lighthouse.yml'),'utf8')
@@ -149,6 +150,10 @@ assert.ok(lighthouseWorkflow.includes('workflow_run')&&lighthouseWorkflow.includ
 assert.ok(html.includes('<meta name="osgard-build" content="__OSGARD_BUILD_VERSION__">'),'Games hub must carry a release marker that is stamped at packaging time')
 assert.ok(!html.includes('<link rel="stylesheet" href="/games/game-session-recommendations.css?v=__OSGARD_BUILD_VERSION__">'),'Recommendation CSS must not block the initial catalogue render')
 assert.ok(!html.includes('<script src="./player-lifecycle.js?v=__OSGARD_BUILD_VERSION__" defer>')&&!html.includes('<script src="./game-session-recommendations.js?v=__OSGARD_BUILD_VERSION__" defer>'),'Gameplay lifecycle and referral modules must not be eagerly downloaded on the landing view')
+assert.ok(html.includes('src="/games/consented-analytics.js?v=__OSGARD_BUILD_VERSION__"'), 'Consent-gated delivery queue must be loaded for the hub.');
+assert.ok(html.indexOf('src="/games/consented-analytics.js') < html.indexOf('src="/games/commerce-client.js"'), 'Shared analytics queue must load before the commerce client.');
+new Function(consentedAnalytics);
+for(const marker of ['window.OSGARD_CONSENTED_ANALYTICS','MAX_PENDING = 100','MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000','if (!consentGranted())','clearQueue()','result?.accepted']) assert.ok(consentedAnalytics.includes(marker), 'Consent queue contract missing: '+marker);
 const lazyRuntimeMatch=html.match(/<script id="games-lazy-runtime">([\s\S]*?)<\/script>/)
 assert.ok(lazyRuntimeMatch,'The Games hub must provide the on-demand runtime loader')
 const lazyRuntime=lazyRuntimeMatch[1]
