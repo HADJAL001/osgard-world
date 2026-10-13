@@ -31,7 +31,9 @@ function render(id){
  host.append(list);host.hidden=false;dialog.classList.add('has-recommendations');
 }
 document.addEventListener('osgard:game-launching',clear);
-document.addEventListener('osgard:game-completed',event=>render(event.detail&&event.detail.game));
+const renderSessionRecommendations=event=>render(event.detail&&event.detail.game);
+document.addEventListener('osgard:game-completed',renderSessionRecommendations);
+document.addEventListener('osgard:game-session-ended',renderSessionRecommendations);
 })();
 
 /* OSGARD PLAY growth loop: invite a friend after a real game completion. */
@@ -226,7 +228,9 @@ function addPostSessionActions(gameId){
   if(shareCompleted)void sendEvent('share_created',gameId,'game-invite:'+gameId+':'+inviteCode);
  });
 }
-document.addEventListener('osgard:game-completed',event=>{const id=event.detail&&event.detail.game;addPostSessionActions(id)});
+const renderPostSessionActions=event=>{const id=event.detail&&event.detail.game;addPostSessionActions(id)};
+document.addEventListener('osgard:game-completed',renderPostSessionActions);
+document.addEventListener('osgard:game-session-ended',renderPostSessionActions);
 document.addEventListener('change',event=>{
  const target=event.target;
  if(target&&target.id==='analytics-toggle')handleConsentToggle();
@@ -299,5 +303,7 @@ function rewardShelf(gameId){
  const note=make('p','og-postgame-reward-note','Награда: +50 локальных SHARDS, не чаще раза в сутки на этом устройстве. Для отдельных соцсетей публикацию подтверждает игрок: соцсети не возвращают сайту надёжный статус опубликованного поста. Очки не имеют денежной стоимости, не привязаны к аккаунту и не являются платёжным средством.');
  section.append(head,actions,grid,claim,status,note);return section;
 }
-document.addEventListener('osgard:game-completed',event=>{const id=event.detail&&event.detail.game;if(!titles[id])return;root.querySelector('.og-postgame-suite')?.remove();const suite=make('section','og-postgame-suite');suite.append(servicesShelf(id),rewardShelf(id));root.append(suite)});
+const renderOsgardSelect=event=>{const id=event.detail&&event.detail.game;if(!titles[id])return;root.querySelector('.og-postgame-suite')?.remove();const suite=make('section','og-postgame-suite');suite.append(servicesShelf(id),rewardShelf(id));root.append(suite)};
+document.addEventListener('osgard:game-completed',renderOsgardSelect);
+document.addEventListener('osgard:game-session-ended',renderOsgardSelect);
 })();

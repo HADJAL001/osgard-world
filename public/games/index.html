@@ -83,7 +83,17 @@ window.OSGARDInvite={createLink:(id)=>createInviteLink(id),trackShare:()=>eventI
 window.OSGARDGames=Object.freeze({open:(id,url,attribution)=>openGame(id,url,attribution)});
 window.OSGARDDailyTrackShare=(id,extra={})=>eventIfAllowed('share_created',id,{source:'daily_circuit',...extra});
 function openGame(id,url,attribution={}){if(!games[id])return;if(!dialog.showModal){location.href=url;return}recent=[id,...recent.filter(x=>x!==id)].slice(0,5);write(K.recent,recent);renderRecent();const invite=getInviteContext(),isDaily=attribution&&attribution.source==='daily_circuit',payload=isDaily?{source:'daily_circuit',dailyDate:String(attribution.dailyDate||'').slice(0,10),challengeCode:String(attribution.challengeCode||'').slice(0,32)}:invite.code?{source:'referral_link',referralCode:invite.code,referralGame:invite.game||'catalog',campaignSource:invite.source||'unknown'}:{source:'games_catalog'};eventIfAllowed('game_opened',id,payload);dialog.dataset.game=id;title.textContent=games[id].title;status.textContent='Игровой клиент загружается. Если запуск не завершится, открой игру отдельно.';direct.href=url;frame.src=url;dialog.showModal();frame.addEventListener('load',function done(){frame.removeEventListener('load',done);if(dialog.open)status.textContent='Страница клиента загружена. Скорость старта зависит от устройства и соединения.'})}
-function closeGame(){if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});if(dialog.open)dialog.close();frame.src='about:blank'}
+function closeGame(){
+ if(dialog.open&&dialog.dataset.game&&dialog.dataset.postgameReady!=='1'){
+  window.dispatchEvent(new CustomEvent('osgard:request-postgame'));
+  if(dialog.dataset.postgameReady==='1')return;
+ }
+ delete dialog.dataset.postgameReady;
+ delete dialog.dataset.postgameIntermission;
+ if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});
+ if(dialog.open)dialog.close();
+ frame.src='about:blank';
+}
 grid.addEventListener('click',e=>{const f=e.target.closest('[data-favorite]');if(f){e.preventDefault();fav.has(f.dataset.favorite)?fav.delete(f.dataset.favorite):fav.add(f.dataset.favorite);renderFav();return}const a=e.target.closest('a[data-play]');if(!a||e.metaKey||e.ctrlKey||e.shiftKey||e.button===1)return;e.preventDefault();openGame(a.dataset.play,a.href)});recentBox.addEventListener('click',e=>{const a=e.target.closest('a[data-play]');if(a){e.preventDefault();openGame(a.dataset.play,a.href)}});
 $$('[data-filter]').forEach(b=>b.addEventListener('click',()=>{filter=b.dataset.filter;$$('[data-filter]').forEach(x=>{const yes=x.dataset.filter===filter;x.classList.toggle('active',yes);x.setAttribute('aria-pressed',yes)});render()}));search.addEventListener('input',render);favToggle.addEventListener('click',()=>{onlyFav=!onlyFav;render()});$('#clear-filters').addEventListener('click',()=>{search.value='';filter='all';onlyFav=false;$$('[data-filter]').forEach(x=>{const yes=x.dataset.filter==='all';x.classList.toggle('active',yes);x.setAttribute('aria-pressed',yes)});render()});
 $('#player-close').addEventListener('click',closeGame);dialog.addEventListener('click',e=>{if(e.target===dialog)closeGame()});dialog.addEventListener('close',()=>{frame.src='about:blank'});$('#player-fullscreen').addEventListener('click',async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await frame.requestFullscreen()}catch{status.textContent='Полноэкранный режим заблокирован. Открой игру отдельно.'}});
