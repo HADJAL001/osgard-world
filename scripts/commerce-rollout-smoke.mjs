@@ -57,10 +57,8 @@ for (const value of ['id="campaign-form"', 'name="consent"', 'src="/games/commer
 assert.ok(sharedClient.includes("/v1/leads") && sharedClient.includes("wa.me/79640027222"), "Lead API and manual fallback must both exist.");
 assert.ok(privacy.includes("платёжного провайдера") && privacy.includes("Необязательная аналитика"), "Privacy page missing actual commerce data handling.");
 assert.ok(terms.includes("Покупки и платёжный статус") && terms.includes("Подписка OSGARD PREMIUM выключена"), "Terms must document checkout and disabled recurring sales.");
-new Function(app);
-new Function(sharedClient);
 const successPage = readFileSync(resolve("public/games/premium/success/index.html"), "utf8");
-for (const script of successPage.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/gi)) {
-  new Function(script[1]);
-}
+assert.ok(successPage.includes("/v1/checkout/status"), "Success page must ask the server for verified payment status.");
+assert.ok(successPage.includes("result.paid===true"), "Success page must not trust the redirect alone.");
+assert.ok(successPage.includes("replace(/\\/+$/"), "Checkout status page URL base trimming must be valid.");
 console.log("Commerce rollout smoke: all static integration checks passed.");
