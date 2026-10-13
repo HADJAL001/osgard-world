@@ -202,7 +202,7 @@ export function derivePassport(raw, favoritesRaw, walletRaw, now = Date.now()) {
     { id: 'streak-three', title: 'Пульс вселенной', description: 'Игровые сессии в три дня подряд', unlocked: daysStreak >= 3 }
   ];
   const missions = [
-    { id: 'play-today', title: 'Войди в игру', detail: 'Запусти один игровой мир сегодня', progress: Math.min(1, todaysSessions.length), goal: 1, complete: todaysSessions.length >= 1 },
+    { id: 'play-today', title: 'Вернись из игры', detail: 'Заверши и закрой одну игровую сессию сегодня', progress: Math.min(1, todaysSessions.length), goal: 1, complete: todaysSessions.length >= 1 },
     { id: 'visit-two', title: 'Смени мир', detail: 'Проведи сессии в двух разных играх сегодня', progress: Math.min(2, uniqueToday.size), goal: 2, complete: uniqueToday.size >= 2 },
     { id: 'favorite-one', title: 'Выбери фаворита', detail: 'Сохрани хотя бы одну игру в избранное', progress: Math.min(1, favorites.length), goal: 1, complete: favorites.length >= 1 },
     { id: 'invite-one', title: 'Передай вызов', detail: 'Подготовь ссылку-приглашение. Публичный пост не проверяется.', progress: Math.min(1, todaysInvites), goal: 1, complete: todaysInvites >= 1 }
