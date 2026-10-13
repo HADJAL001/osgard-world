@@ -109,7 +109,7 @@ assert.equal(daily.nextStreak(null,'2026-10-13').count,1,'New streak starts at o
 assert.equal(daily.nextStreak({lastDate:'2026-10-13',count:4},'2026-10-13').count,4,'Same-day completions must not inflate streak')
 assert.equal(daily.nextStreak({lastDate:'2026-10-12',count:4},'2026-10-13').count,5,'Consecutive days extend streak')
 assert.equal(daily.nextStreak({lastDate:'2026-10-10',count:4},'2026-10-13').count,1,'Missed day resets streak')
-assert.ok(signalJs.includes("game:'signal-run'") && signalJs.includes("life('ready')") && signalJs.includes("life('completed'") && signalJs.includes('osgard.signal-run.best.v1'), 'SIGNAL RUN lifecycle and local-best contract missing')
+assert.ok(signalJs.includes("game:'signal-run'") && signalJs.includes("life('ready'") && signalJs.includes("life('completed'") && signalJs.includes('dailyMode,dailyDate') && signalJs.includes('osgard.signal-run.best.v1'), 'SIGNAL RUN lifecycle, daily metadata and local-best contract missing')
 new Function(signalJs)
 
 assert.match(admin, /<meta name="robots" content="noindex,nofollow,noarchive">/, 'Operator analytics must not be indexed')
