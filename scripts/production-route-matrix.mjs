@@ -73,7 +73,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         : route === '/games/signal-run/'
           ? text.includes('<title>SIGNAL RUN — OSGARD WORLD</title>') && text.includes('id="arena"') && text.includes('game.js')
         : route === '/games/cascade-lab/'
-          ? text.includes('<title>CASCADE LAB — Premium Physics Lab 0.13.0</title>') &&
+          ? text.includes('<title>CASCADE LAB — OSGARD PLAY</title>') &&
             text.includes('name="osgard-game-version" content="0.13.0-osgard-cross-promo"') &&
             text.includes('data-cascade-lab-ready="true"') &&
             text.includes('id="runButton"') && text.includes('id="exportTelemetryButton"') &&
