@@ -70,6 +70,8 @@ assert.ok(apiProxy.includes('resolver 127.0.0.11 valid=30s ipv6=off;') && apiPro
 const activator = read('scripts/activate-frontend-remote.sh')
 assert.ok(activator.includes('http://osgard-game-api:4317/health') && activator.includes('NetworkSettings.Networks') && activator.includes('nginx.runtime.conf') && activator.includes('OSGARD game API upstream selected'), 'Activation must verify the API from the frontend container and select a healthy reachable upstream before switching the site')
 assert.ok(activator.includes('Detected Docker gateway candidates:') && activator.includes('wget -S -T 3 -O- http://$gateway:4317/health'), 'Activation must log gateway candidates and the failed HTTP probe before refusing activation')
+assert.ok(activator.includes("ufw status 2>/dev/null | grep -q '^Status: active'") && activator.includes('ufw allow in on "$bridge_iface" from "$api_container_ip" to "$api_gateway" port 4317 proto tcp'), 'Any firewall adjustment must be limited to active UFW, the current Docker bridge, frontend container IP, gateway IP and TCP/4317')
+assert.ok(activator.includes('Cannot safely derive a Docker bridge interface/IP') && activator.includes('refusing frontend activation'), 'Activation must fail closed if the scoped Docker bridge rule cannot be derived or verified')
 const deployWorkflow = read('.github/workflows/deploy-frontend.yml')
 assert.ok(deployWorkflow.includes('gateway="${gateway_values%% *}"') && !deployWorkflow.includes("awk '{print $1}'"), 'Post-failure diagnostics must extract the Docker gateway without the broken nested awk quoting')
 assert.ok(deployWorkflow.includes('iptables -vnL INPUT') && deployWorkflow.includes('iptables -vnL DOCKER-USER') && deployWorkflow.includes('ufw status verbose'), 'Deployment failure diagnostics must inspect host firewall state read-only')
@@ -80,7 +82,7 @@ assert.ok(!apiProxy.includes('proxy_set_header Authorization "Bearer'), 'API cre
 
 console.log(JSON.stringify({
   status: 'PASS',
-  checks: 48,
+  checks: 50,
   projects: projectHosts.length,
   claimsGuarded: unsupportedClaims.length,
   contacts: 3,
