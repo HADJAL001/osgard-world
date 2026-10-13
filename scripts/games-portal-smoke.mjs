@@ -242,7 +242,7 @@ const lazyRuntimeMatch=html.match(/<script id="games-lazy-runtime">([\s\S]*?)<\/
 assert.ok(lazyRuntimeMatch,'The Games hub must provide the on-demand runtime loader')
 const lazyRuntime=lazyRuntimeMatch[1]
 new Function(lazyRuntime)
-for(const marker of ["function loadPlayerRuntime()","function loadRecommendations()","loadScript('player-lifecycle.js')","loadScript('game-session-recommendations.js')","link.dataset.osgardLazy='recommendations-css'","event.stopImmediatePropagation()","playPending()","playerState==='failed'","meta[name=\"osgard-build\"]"]) assert.ok(lazyRuntime.includes(marker),'Lazy-load contract missing: '+marker)
+for(const marker of ["function loadPlayerRuntime()","function loadRecommendations()","function loadCatalogEnhancements()","function watchCatalogEnhancements()","rootMargin:'360px 0px'","loadScript('luxury.js')","loadScript('player-lifecycle.js')","loadScript('game-session-recommendations.js')","link.dataset.osgardLazy='recommendations-css'","event.stopImmediatePropagation()","playPending()","playerState==='failed'","meta[name=\"osgard-build\"]"]) assert.ok(lazyRuntime.includes(marker),'Lazy-load contract missing: '+marker)
 assert.ok(lazyRuntime.includes("params.get('og_ref')")&&lazyRuntime.includes("loadRecommendations()"),'Invite landings must lazily activate consent-aware referral UI')
 assert.ok(lazyRuntime.includes("script.async=true")&&lazyRuntime.includes("encodeURIComponent(version)"),'On-demand scripts must be asynchronous and release-versioned')
 
@@ -427,6 +427,7 @@ const css=html.match(/<style>([\s\S]*?)<\/style>/)?.[1]||''
 assert.ok(css.includes('@media(max-width:760px)'),'Responsive/mobile layout missing')
 assert.ok(css.includes('.player-view')&&css.includes('dialog::backdrop'),'Game dialog style missing')
 assert.ok(lazyRuntime.includes("loadScript('player-lifecycle.js')")&&lazyRuntime.includes("versioned('/games/'+path)"),'Self-hosted lifecycle module must be loaded on demand with the current release version')
+assert.ok(lazyRuntime.includes("document.querySelector('.filters')")&&lazyRuntime.includes("rootMargin:'360px 0px'")&&lazyRuntime.includes("anchor.addEventListener('focusin',activate"),'Premium noncritical catalog toolbar must load on approach/focus, not during the initial catalogue parse')
 assert.ok(html.includes("$('.card',grid).forEach(c=>")&&!/(^|[^$])\$\('\.card',grid\)\.forEach/.test(html),'Catalog search/filter must iterate over every card; a single-element query caused a render TypeError')
 assert.ok(html.includes('<strong>OSGARD <span>WORLD</span></strong> <em>PLAY</em>')&&!html.includes('aria-label="OSGARD WORLD PLAY"'),'Brand accessible name must preserve the exact visible words')
 assert.ok(!/<a class="art art-[^"]+"[^>]*aria-label=/.test(html),'Artwork links must use their visible content for the accessible name')
@@ -749,7 +750,7 @@ assert.ok(existsSync(resolve('public/osgard-mark.svg')), 'Original OSGARD brand 
 const luxuryCss = readFileSync(resolve(root,'luxury.css'),'utf8')
 const luxuryJs = readFileSync(resolve(root,'luxury.js'),'utf8')
 assert.ok(html.includes('href="./luxury.css?v=__OSGARD_BUILD_VERSION__"'), 'Premium OSGARD PLAY theme must be linked and versioned')
-assert.ok(html.includes('src="./luxury.js?v=__OSGARD_BUILD_VERSION__" defer'), 'Premium catalogue interactions must be loaded and versioned')
+assert.ok(!html.includes('<script src="./luxury.js?v=__OSGARD_BUILD_VERSION__" defer>')&&html.includes('id="luxury-lazy-asset" data-src="/games/luxury.js?v=__OSGARD_BUILD_VERSION__"'), 'Premium catalogue enhancements must keep a versioned asset pointer without loading on initial page entry')
 assert.ok(html.includes('<body class="luxury-entertainment">'), 'Premium body theme class is missing')
 for (const feature of ['sortCards','launchRandom','updateResumeButton','navigator.share',"event.key === '/'","event.key.toLowerCase() === 'r'","event.key.toLowerCase() === 'f'"]) {
   assert.ok(luxuryJs.includes(feature), 'Premium catalogue action missing: '+feature)
