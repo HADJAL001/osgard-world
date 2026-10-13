@@ -68,6 +68,12 @@ function classifyHttp(status, isHtml, title) {
  * hostnames are allowed; literal IPs, credentials, non-standard ports, and
  * local/special-use hostnames are rejected before another network request.
  */
+function isWithinConfiguredHostFamily(candidate, configuredHost) {
+  const candidateHost = String(candidate || '').toLowerCase().replace(/\\.$/, '')
+  const baseHost = String(configuredHost || '').toLowerCase().replace(/\\.$/, '')
+  return Boolean(candidateHost && baseHost && (candidateHost === baseHost || candidateHost.endsWith('.' + baseHost)))
+}
+
 export function isSafePublicHttpsUrl(value) {
   let url
   try { url = new URL(value) } catch { return false }
@@ -228,14 +234,14 @@ export async function checkProject(project, {
           destination.hash = ''
         } catch {}
 
-        if (!destination || !isSafePublicHttpsUrl(destination.href)) {
+        if (!destination || !isSafePublicHttpsUrl(destination.href) || !isWithinConfiguredHostFamily(destination.hostname, new URL(project.url).hostname)) {
           let blockedHost = null
           try { blockedHost = destination?.hostname || new URL(location, currentUrl).hostname } catch {}
           await cancelResponseBody(response)
           return redirectFailure(project, {
             outcome: 'unsafe_redirect', currentUrl, statusCode: response.status,
             started, checkedAt, attempt, blockedHost,
-            note: 'Redirect destination was not requested because it is not a public HTTPS hostname on an allowed port.',
+            note: 'Redirect destination was not requested because it is not a public HTTPS hostname on an allowed port and the original project host family is the only allowed redirect scope.',
           })
         }
 
