@@ -10,7 +10,7 @@
   const campaign = params.get('utm_campaign') || '';
   const content = params.get('utm_content') || '';
   const sameGame = game ? requestedGame === game : requestedGame === '';
-  const valid = /^og_[a-f0-9]{8}$/.test(code) &&
+  const valid = /^og_(?:[a-f0-9]{8}|[a-f0-9]{32})$/.test(code) &&
     sameGame &&
     (!requestedGame || validGameIds.has(requestedGame)) &&
     source === 'osgard_play' &&
@@ -64,6 +64,7 @@
   if (!consent) return;
   const attributionKey = 'osgard.games.referral-attribution.v1';
   const marker = 'osgard.games.referral-opened.' + code;
+  const visitorTokenKey = 'osgard.games.referral-owner-token.v1';
   function randomHex(bytes = 12) {
     const data = new Uint8Array(bytes);
     if (globalThis.crypto?.getRandomValues) globalThis.crypto.getRandomValues(data);
@@ -71,8 +72,14 @@
     return Array.from(data, value => value.toString(16).padStart(2, '0')).join('');
   }
   let state = '';
+  let visitorToken = '';
   try {
-    sessionStorage.setItem(attributionKey, JSON.stringify({ code, game: requestedGame, at: Date.now() }));
+    visitorToken = localStorage.getItem(visitorTokenKey) || '';
+    if (!/^[a-f0-9]{12}$/.test(visitorToken)) {
+      visitorToken = randomHex(6);
+      localStorage.setItem(visitorTokenKey, visitorToken);
+    }
+    sessionStorage.setItem(attributionKey, JSON.stringify({ code, game: requestedGame, visitorToken, at: Date.now() }));
     state = sessionStorage.getItem(marker) || '';
     if (state === 'yes' || state === 'pending') return;
     sessionStorage.setItem(marker, 'pending');
@@ -82,7 +89,7 @@
     name: 'referral_link_opened',
     sessionId: 'session_' + randomHex(),
     gameId: validGameIds.has(requestedGame) ? requestedGame : 'unknown',
-    source: 'referral-link:' + code,
+    source: /^og_[a-f0-9]{32}$/.test(code) ? 'referral-link:' + code + ':' + visitorToken : 'referral-link:' + code,
     path: location.pathname,
     durationSeconds: 0,
   };
