@@ -1,11 +1,14 @@
 export const SCENARIOS = Object.freeze([
-  { id: 'conservative', label: 'Осторожный', note: 'Меньше трафика и конверсии', traffic: 0.6, starts: 0.8, sessions: 0.75, fill: 0.75, ecpm: 0.7, paid: 0.55, sponsors: 0.5, leads: 0.65, close: 0.7, costs: 1.1 },
-  { id: 'base', label: 'Базовый', note: 'Все допущения без изменений', traffic: 1, starts: 1, sessions: 1, fill: 1, ecpm: 1, paid: 1, sponsors: 1, leads: 1, close: 1, costs: 1 },
-  { id: 'optimistic', label: 'Оптимистичный', note: 'Рост при подтверждённом спросе', traffic: 1.8, starts: 1.15, sessions: 1.3, fill: 1.15, ecpm: 1.3, paid: 1.4, sponsors: 1.5, leads: 1.35, close: 1.25, costs: 1.2 },
+  { id: 'conservative', label: 'Осторожный', note: 'Меньше трафика и конверсии', traffic: 0.6, starts: 0.8, sessions: 0.75, fill: 0.75, ecpm: 0.7, paid: 0.55, sponsors: 0.5, leads: 0.65, close: 0.7, share: 0.7, inviteOpen: 0.75, costs: 1.1 },
+  { id: 'base', label: 'Базовый', note: 'Все допущения без изменений', traffic: 1, starts: 1, sessions: 1, fill: 1, ecpm: 1, paid: 1, sponsors: 1, leads: 1, close: 1, share: 1, inviteOpen: 1, costs: 1 },
+  { id: 'optimistic', label: 'Оптимистичный', note: 'Рост при подтверждённом спросе', traffic: 1.8, starts: 1.15, sessions: 1.3, fill: 1.15, ecpm: 1.3, paid: 1.4, sponsors: 1.5, leads: 1.35, close: 1.25, share: 1.25, inviteOpen: 1.15, costs: 1.2 },
 ]);
 
 export const DEFAULT_INPUTS = Object.freeze({
   monthlyVisitors: 10000,
+  inviteShareRate: 0,
+  invitesPerSharer: 2,
+  inviteOpenRate: 20,
   gameStartRate: 30,
   sessionsPerPlayer: 3,
   adSlotsPerSession: 2,
@@ -24,6 +27,9 @@ export const DEFAULT_INPUTS = Object.freeze({
 
 const bounds = {
   monthlyVisitors: [0, 1000000000],
+  inviteShareRate: [0, 100],
+  invitesPerSharer: [0, 10],
+  inviteOpenRate: [0, 100],
   gameStartRate: [0, 100],
   sessionsPerPlayer: [0, 100],
   adSlotsPerSession: [0, 100],
@@ -48,6 +54,7 @@ export function normalizeInputs(input = {}) {
     normalized[key] = Math.min(max, Math.max(min, value));
   }
   normalized.monthlyVisitors = Math.round(normalized.monthlyVisitors);
+  normalized.invitesPerSharer = Math.round(normalized.invitesPerSharer * 100) / 100;
   normalized.sessionsPerPlayer = Math.round(normalized.sessionsPerPlayer * 100) / 100;
   normalized.adSlotsPerSession = Math.round(normalized.adSlotsPerSession * 100) / 100;
   normalized.sponsorCampaignsPerMonth = Math.round(normalized.sponsorCampaignsPerMonth * 100) / 100;
@@ -57,7 +64,20 @@ export function normalizeInputs(input = {}) {
 export function calculateScenario(input = {}, scenarioId = 'base') {
   const values = normalizeInputs(input);
   const scenario = SCENARIOS.find((item) => item.id === scenarioId) ?? SCENARIOS[1];
-  const visitors = Math.round(values.monthlyVisitors * scenario.traffic);
+  const sourceVisitors = Math.round(values.monthlyVisitors * scenario.traffic);
+  const inviteShareRate = Math.min(100, values.inviteShareRate * scenario.share);
+  const inviteOpenRate = Math.min(100, values.inviteOpenRate * scenario.inviteOpen);
+  const viralCoefficient = inviteShareRate / 100 * values.invitesPerSharer * inviteOpenRate / 100;
+  let generationVisitors = sourceVisitors;
+  let referralVisitors = 0;
+  // A bounded four-generation projection avoids an infinite viral multiplier.
+  for (let generation = 0; generation < 4; generation += 1) {
+    generationVisitors *= viralCoefficient;
+    referralVisitors += generationVisitors;
+  }
+  referralVisitors = Math.round(referralVisitors);
+  const visitors = sourceVisitors + referralVisitors;
+  const inviteLinksCreated = Math.round(visitors * inviteShareRate / 100);
   const gameStartRate = Math.min(100, values.gameStartRate * scenario.starts);
   const gameStarts = visitors * gameStartRate / 100;
   const sessions = gameStarts * values.sessionsPerPlayer * scenario.sessions;
@@ -82,7 +102,15 @@ export function calculateScenario(input = {}, scenarioId = 'base') {
 
   return {
     scenarioId: scenario.id,
+    sourceVisitors,
+    referralVisitors,
     visitors,
+    inviteShareRate,
+    invitesPerSharer: values.invitesPerSharer,
+    inviteOpenRate,
+    viralCoefficient,
+    viralLiftPct: sourceVisitors > 0 ? referralVisitors / sourceVisitors * 100 : 0,
+    inviteLinksCreated,
     gameStartRate,
     gameStarts,
     sessions,
