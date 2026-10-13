@@ -40,7 +40,7 @@ function prepareWeb() {
   assertFile(join(gamesDir, 'osgard-native-share.js'), 'Native share bridge bundle');
   assertFile(join(gamesDir, 'commerce-config.json'), 'Commerce config');
 
-  const apiBase = String(process.env.IOS_COMMERCE_API_BASE_URL || 'https://osgard.world/commerce-api').trim();
+  const apiBase = String(process.env.IOS_COMMERCE_API_BASE_URL || 'https://osgard.world/commerce-api').trim().replace(/\/+$/, '');
   let url;
   try { url = new URL(apiBase); } catch { throw new Error('IOS_COMMERCE_API_BASE_URL must be an absolute HTTPS URL.'); }
   if (url.protocol !== 'https:' || url.hostname !== 'osgard.world' ||
