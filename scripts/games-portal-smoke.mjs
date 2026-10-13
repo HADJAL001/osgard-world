@@ -138,6 +138,8 @@ assert.ok(afterimageGame.includes("Копирование не даёт нагр
 assert.ok(afterimageGame.includes("life('share_created',{shareMethod:method==='web-share'?'web-share':'social-share',rewardConfirmedByPlayer:true})")&&!afterimageGame.includes("life('shared'"),'Confirmed share must use the player-lifecycle bridge event accepted by the host')
 assert.ok(afterimageGame.includes('id="share-facebook"')&&afterimageGame.includes("facebook:'https://www.facebook.com/sharer/sharer.php?u='"),'AFTERIMAGE share buttons must expose the configured Facebook share path')
 assert.ok(afterimageGame.includes('SIGNAL SHARD')&&afterimageGame.includes('Публичная публикация поста не проверяется'),'Share reward copy must not claim that a public post was verified')
+const afterimageGrowth=readFileSync(resolve('docs/AFTERIMAGE_GROWTH_MONETIZATION_RU.md'),'utf8')
+assert.ok(afterimageGrowth.includes('copying the URL alone does not award it')&&afterimageGrowth.includes('separate confirmation button')&&afterimageGrowth.includes('cannot prove that a public post actually exists'),'AFTERIMAGE growth documentation must match the explicit, self-reported share reward flow')
 assert.ok(afterimageGame.includes("let shardCosmeticUnlocked=Object.values(safeRead(REWARD,{})).some(record=>record&&record.kind==='cosmetic')"),'Previously claimed SIGNAL SHARD cosmetics must persist across sessions')
 assert.ok(afterimageGame.includes("shardCosmeticUnlocked=true")&&afterimageGame.includes("color:'#ffc86a'")&&afterimageGame.includes("shardCosmeticUnlocked?'#ffe6a8':'#7cecff'"),'Confirmed SIGNAL SHARD reward must unlock an actual in-game gold cosmetic')
 const goldTrailStart=afterimageGame.indexOf('if(shardCosmeticUnlocked&&game.elapsed-(game.cosmeticTrailAt||0)>.06)')
