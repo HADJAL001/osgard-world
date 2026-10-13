@@ -146,6 +146,11 @@ assert.ok(goldTrailStart>=0&&goldTrailEnd>goldTrailStart&&!afterimageGame.slice(
 const afterimageInline=[...afterimageGame.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]).filter(s=>s.trim())
 assert.equal(afterimageInline.length,1,'AFTERIMAGE should have one inline game script')
 new Function(afterimageInline[0])
+assert.ok(afterimageGame.includes('function stopIdle()')&&afterimageGame.includes('function startIdle()')&&afterimageGame.includes('setTimeout(()=>{idleTimer=0;'),'AFTERIMAGE idle scene must use a cancellable throttled timer rather than a permanent animation-frame loop')
+assert.ok(!afterimageGame.includes('function idle(){')&&afterimageGame.includes('clearTimeout(idleTimer)'),'AFTERIMAGE idle animation must be cancellable while gameplay is active')
+assert.ok(afterimageGame.includes("document.addEventListener('visibilitychange'")&&afterimageGame.includes("document.visibilityState==='hidden'")&&afterimageGame.includes('PAUSED · TAB HIDDEN'),'AFTERIMAGE must pause safely when the tab is hidden and expose a clear resume state')
+assert.ok(afterimageGame.includes("window.matchMedia('(prefers-reduced-motion: reduce)')")&&afterimageGame.includes('if(reducedMotion||idleTimer'),'AFTERIMAGE idle animation must respect the reduced-motion preference')
+
 const patina=readFileSync(resolve(root,'patina/index.html'),'utf8')
 const signalRun=readFileSync(resolve(root,'signal-run/index.html'),'utf8')
 const signalJs=readFileSync(resolve(root,'signal-run/game.js'),'utf8')
