@@ -742,7 +742,7 @@ function rewardShelf(gameId){
  const grid=make('div','og-postgame-networks'),claim=make('button','og-postgame-claim','Я опубликовал — получить +50 SHARDS');claim.type='button';claim.hidden=true;let pending='';
  const qualifiedClaim=make('button','og-postgame-qualified-claim','Проверить награду за друга ↗');qualifiedClaim.type='button';
  const qualifiedNote=make('p','og-postgame-qualified-note','Дополнительные +50 SHARDS начисляются за каждую зарегистрированную ссылку, по которой друг открыл приглашение и прошёл игровую сессию не короче 30 секунд. Требуется согласие на аналитику и доступность Commerce API.');
- const qualifiedStatus=make('p','og-postgame-status');qualifiedStatus.setAttribute('role','status');qualifiedStatus.setAttribute('aria-live','polite');
+ const qualifiedStatus=make('p','og-postgame-qualified-status');qualifiedStatus.setAttribute('role','status');qualifiedStatus.setAttribute('aria-live','polite');
  qualifiedClaim.addEventListener('click',async()=>{
   qualifiedClaim.disabled=true;qualifiedStatus.textContent='Проверяем приглашения на сервере…';
   try{
