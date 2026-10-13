@@ -159,8 +159,10 @@ export function parseReferralRewardEvent(value) {
     }
   }
   if (event.name === "referral_link_opened") {
-    const match = /^referral-link:(og_[a-f0-9]{32}):([a-f0-9]{12})$/.exec(source);
-    if (match) return { type: "invite_opened", inviteCode: match[1], visitorToken: match[2] };
+    const match = /^referral-link:(og_[a-f0-9]{32}):([a-z0-9-]{1,40}):([a-f0-9]{12})$/.exec(source);
+    if (match && match[2] === gameId && GAME_IDS.has(gameId)) {
+      return { type: "invite_opened", inviteCode: match[1], gameId, visitorToken: match[3] };
+    }
   }
   if (event.name === "game_session_completed" &&
       Number(event.durationSeconds) >= REFERRAL_MIN_SESSION_SECONDS) {
