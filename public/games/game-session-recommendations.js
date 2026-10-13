@@ -179,7 +179,17 @@ function addPostSessionActions(gameId){
  createLink.target='_blank';createLink.rel='noopener noreferrer';
  const status=make('p','og-growth-status');status.setAttribute('role','status');status.setAttribute('aria-live','polite');
  const fallback=make('a','og-create-game','Отправить в WhatsApp ↗');fallback.hidden=true;fallback.target='_blank';fallback.rel='noopener noreferrer';
- actions.append(inviteButton,createLink,fallback);section.append(top,actions,status);root.append(section);
+ const partnerCta=make('a','og-partner-cta');
+ partnerCta.href='/games/partners/?utm_source=osgard_play&utm_medium=post_game&utm_campaign=partner_studio&utm_content='+encodeURIComponent(gameId);
+ partnerCta.target='_blank';partnerCta.rel='noopener noreferrer';
+ partnerCta.setAttribute('aria-label','OSGARD Partner Studio: обсудить брендированный игровой челлендж после игры '+game.title);
+ const partnerCopy=make('span','og-partner-copy');
+ partnerCopy.append(make('span','og-partner-eyebrow','PARTNER STUDIO / ДЛЯ БРЕНДОВ'));
+ partnerCopy.append(make('strong','og-partner-title','Преврати идею бренда в игру'));
+ partnerCopy.append(make('span','og-partner-description','Спонсорское событие или заказная мини-игра. Только по согласованию — без рекламы поверх активного раунда.'));
+ partnerCta.append(partnerCopy,make('span','og-partner-action','Обсудить проект ↗'));
+ partnerCta.addEventListener('click',()=>{void sendEvent('cross_promo_clicked',gameId,'post-game-partner-studio')});
+ actions.append(inviteButton,createLink,fallback);section.append(top,actions,status,partnerCta);root.append(section);
  inviteButton.addEventListener('click',async()=>{
   inviteButton.disabled=true;status.textContent='Готовим персональную ссылку…';
   const url=buildShareUrl(gameId),inviteCode=new URL(url,location.origin).searchParams.get('og_ref')||'',message='Пойдём сыграем в '+game.title+' в OSGARD PLAY: '+url;

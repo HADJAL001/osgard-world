@@ -11,3 +11,14 @@ dialog#player-dialog.has-recommendations .player-view{height:min(46vh,470px);min
 dialog#player-dialog.has-recommendations .player-view iframe{min-height:180px}
 @media(max-width:760px){.post-run-recommendations{max-height:180px;padding:10px}.post-run-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.post-run-link{padding:8px}.post-run-link strong{font-size:10px}.post-run-link span{font-size:9px}dialog#player-dialog.has-recommendations .player-view{height:min(40svh,350px);min-height:160px}dialog#player-dialog.has-recommendations .player-view iframe{min-height:160px}}
 @media(prefers-reduced-motion:reduce){.post-run-link{transition:none}}
+
+/* Contextual B2B CTA: only shown after a completed game session. */
+.og-partner-cta{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;margin-top:10px;padding:11px 13px;border:1px solid #d3ff6936;background:linear-gradient(110deg,#d3ff690c,transparent 68%),#0d1110;color:#f2f0e8;text-decoration:none}
+.og-partner-copy{display:grid;gap:3px;min-width:0}
+.og-partner-eyebrow{color:#d3ff69;font:8px/1.5 ui-monospace,Consolas,monospace;letter-spacing:.14em}
+.og-partner-title{font-size:11px;font-weight:650;line-height:1.4}
+.og-partner-description{color:#929b90;font-size:10px;line-height:1.5}
+.og-partner-action{color:#d3ff69;font:9px ui-monospace,Consolas,monospace;letter-spacing:.04em;white-space:nowrap}
+.og-partner-cta:hover,.og-partner-cta:focus-visible{border-color:#d3ff69;background:#d3ff6912;outline:2px solid transparent}
+@media(max-width:760px){.og-partner-cta{grid-template-columns:minmax(0,1fr);gap:5px;padding:10px}.og-partner-action{white-space:normal}}
+@media(prefers-reduced-motion:reduce){.og-partner-cta{transition:none}}
