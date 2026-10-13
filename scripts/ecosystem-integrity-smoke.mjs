@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 
 const read = path => readFileSync(path, 'utf8')
@@ -68,7 +69,10 @@ const apiProxy = nginx.slice(apiProxyStart, apiProxyEnd)
 assert.ok(nginx.indexOf('limit_req_zone $binary_remote_addr zone=osgard_player_api:10m rate=15r/s;') < apiProxyStart, 'Nginx API rate-limit zone must be declared in the http context before server blocks')
 assert.ok(apiProxy.includes('resolver 127.0.0.11 valid=30s ipv6=off;') && apiProxy.includes('set $osgard_game_api_host osgard-game-api;') && apiProxy.includes('proxy_pass http://$osgard_game_api_host:4317;'), 'Protected API proxy must use Docker DNS at request time so Nginx can start before the API alias resolves')
 const activator = read('scripts/activate-frontend-remote.sh')
-assert.ok(activator.includes('docker inspect osgard-game-api') && activator.includes('NetworkSettings.Networks') && activator.includes('nginx.runtime.conf') && activator.includes('Using OSGARD game API upstream'), 'Activation must resolve a live API container or fall back to the existing host bridge gateway')
+execFileSync('bash', ['-n', 'scripts/activate-frontend-remote.sh'])
+assert.ok(activator.includes('http://127.0.0.1:4317/health') && activator.includes('http://$gateway:4317/health') && activator.includes('refusing frontend activation'), 'Activation must verify a reachable healthy API upstream before touching the active document root')
+assert.ok(activator.includes("sed 's|osgard-game-api;|$api_host;|'"), 'Runtime Nginx upstream substitution must preserve shell quoting and expand only the validated API host')
+assert.ok(activator.includes('docker inspect osgard-game-api') && activator.includes('NetworkSettings.Networks') && activator.includes('nginx.runtime.conf') && activator.includes('Using OSGARD game API upstream'), 'Activation must resolve a live API container or a verified host bridge gateway')
 assert.ok(apiProxy.includes('limit_req zone=osgard_player_api burst=30 nodelay;') && apiProxy.includes('limit_req_status 429;'), 'API route must enforce an explicit per-client rate limit')
 assert.ok(apiProxy.includes('add_header Cache-Control "no-store" always;'), 'Player and admin analytics responses must not be cached by shared browsers/proxies')
 assert.ok(apiProxy.includes('proxy_read_timeout 10s;') && apiProxy.includes('client_max_body_size 256k;'), 'API proxy needs bounded request size and upstream timeout')
@@ -76,9 +80,9 @@ assert.ok(!apiProxy.includes('proxy_set_header Authorization "Bearer'), 'API cre
 
 console.log(JSON.stringify({
   status: 'PASS',
-  checks: 45,
+  checks: 48,
   projects: projectHosts.length,
   claimsGuarded: unsupportedClaims.length,
   contacts: 3,
-  verifiedInSource: ['game route wiring', 'honest monetization status', 'consent/auth-gated event capture', 'cross-frame origin validation', 'contact routing'],
+  verifiedInSource: ['game route wiring', 'honest monetization status', 'consent/auth-gated event capture', 'cross-frame origin validation', 'contact routing', 'deployment shell syntax', 'healthy API upstream preflight'],
 }, null, 2))
