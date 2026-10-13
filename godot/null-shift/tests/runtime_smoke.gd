@@ -125,7 +125,8 @@ func _run_smoke() -> void:
 	for lane in game.phase_lanes:
 		saved_lane_states.append(str(lane.get("state", "safe")))
 		lane["state"] = "safe"
-	game.player.global_position = Vector3(-19.0, 0.82, 8.2)
+	# Lane 0 is positioned at z = -8.2; place the operator inside its actual influence.
+	game.player.global_position = Vector3(-19.0, 0.82, -8.2)
 	game.player_health = game.player_max_health
 	game.null_shift_timer = 0.0
 	game.dash_timer = 0.0
