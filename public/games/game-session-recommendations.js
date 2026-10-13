@@ -247,6 +247,15 @@ document.addEventListener('click',event=>{
  const target=event.target;
  if(target&&typeof target.closest==='function'&&target.closest('#analytics-toggle'))handleConsentToggle();
 });
+document.addEventListener('osgard:reward-consent-changed',()=>{
+ setTimeout(()=>{
+  const invite=incomingInvite();
+  if(invite&&invite.rewardable===true){
+   if(consented()&&hasRewardConsent())captureInvite();
+   else{try{sessionStorage.removeItem(ATTR_KEY)}catch{}}
+  }else if(consented())captureInvite();
+ },0);
+});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&consented())captureInvite()});
 captureInvite();installInviteBanner();
 })();
