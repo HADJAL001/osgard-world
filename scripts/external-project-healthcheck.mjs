@@ -371,6 +371,19 @@ export async function runAudit({
   }
 }
 
+export function formatAuditDiagnostic(result) {
+  if (!result || typeof result !== 'object') return 'no final URL'
+  if (typeof result.finalUrl === 'string' && result.finalUrl) return result.finalUrl
+  const parts = [
+    result.errorCode,
+    result.errorCause && result.errorCause !== result.error ? result.errorCause : null,
+    result.blockedTargetHost ? 'blocked target: ' + result.blockedTargetHost : null,
+    result.blockedRedirectHost ? 'blocked redirect: ' + result.blockedRedirectHost : null,
+    result.error,
+  ].filter(value => typeof value === 'string' && value.trim())
+  return [...new Set(parts)].join(' · ') || 'no final URL'
+}
+
 function mdCell(value) {
   return String(value ?? '').replace(/[|\r\n]+/g, ' ').slice(0, 180)
 }
@@ -381,7 +394,7 @@ async function appendStepSummary(report) {
   const rows = report.results.map(result => {
     const status = result.statusCode === null ? '—' : String(result.statusCode)
     const host = result.finalHost || '—'
-    const title = result.pageTitle || result.error || 'No title returned'
+    const title = result.pageTitle || formatAuditDiagnostic(result) || 'No title returned'
     const redirects = Number.isFinite(result.redirectsFollowed) ? String(result.redirectsFollowed) : result.redirected ? 'blocked' : '0'
     const truncated = result.bodyTruncated ? 'yes' : 'no'
     return '| ' + mdCell(result.name) + ' | ' + mdCell(result.outcome) + ' | ' + status + ' | ' + result.responseMs + ' ms | ' + redirects + ' | ' + truncated + ' | ' + mdCell(host) + ' | ' + mdCell(title) + ' |'
@@ -424,7 +437,7 @@ export async function main(argv = process.argv.slice(2)) {
   }, null, 2))
   for (const result of report.results) {
     const code = result.statusCode === null ? '—' : result.statusCode
-    console.log('[' + result.outcome + '] ' + result.name + ': HTTP ' + code + '; ' + result.responseMs + ' ms; ' + (result.finalUrl || result.error || 'no final URL'))
+    console.log('[' + result.outcome + '] ' + result.name + ': HTTP ' + code + '; ' + result.responseMs + ' ms; ' + formatAuditDiagnostic(result))
   }
   if (strict && report.unavailableCount > 0) process.exitCode = 1
   return report
