@@ -58,3 +58,16 @@ Minimum useful release experiment:
 
 ## Release boundaries
 The first release uses local personal-best data and a locally stored cosmetic shard. It has no public leaderboard, cross-device save, ad SDK, payment processor or server-backed referral reward. The intermission is owned-service cross-promotion, not third-party ads. Activate server-backed monetization only after accounts, provider approval, webhook/signature validation, consent and refund handling exist.
+## Обновление вирусного перехода: rich preview и атрибуция
+
+- Кнопки AFTERIMAGE теперь формируют ссылку на /games/invite/afterimage-run/, а не на голую игровую страницу. Для приглашения генератор создаёт Open Graph/Twitter preview с реальной PNG-карточкой 1200×630.
+- Кнопка «Принять приглашение» переносит посетителя непосредственно в игру и сохраняет seed и score только после проверки ежедневного режима, даты и допустимого целого значения счёта. Некорректные данные не открывают челлендж и ведут в каталог.
+- Если у автора уже есть код OSGARD приглашения формата og_ + 8 шестнадцатеричных символов, ссылка получает существующие UTM-параметры osgard_play / referral / play_with_friends. Статистика открытия относится к текущему consent-aware referral-потоку.
+- Событие подтверждённого приглашения включает метод публикации, daily seed и целевой счёт. Поддерживаемые каналы хранятся отдельно: web-share, Telegram, VK, X, WhatsApp, Facebook; неизвестное значение нормализуется до social-share.
+- SIGNAL SHARD остаётся локальной косметикой с отдельным подтверждением игрока, лимитом один раз за текущий UTC-день и без влияния на счёт. Открытие компоновщика соцсети не доказывает публикацию; серверной проверки публичного поста в этой версии нет.
+
+### Проверяемая воронка
+
+catalog game open → completed run → share intent → invitation page opened (with consent + valid referral) → accepted invite → new game session → completion
+
+Эти шаги нужно измерять отдельно. Число нажатий Share, открытий invitation URL, завершённых забегов и квалифицированных конверсий сервисов OSGARD — разные метрики; их нельзя суммировать как выручку.
