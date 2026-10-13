@@ -32,6 +32,7 @@ on:
       - "scripts/time-prototype-smoke.mjs"
       - "scripts/null-shift-premium-smoke.mjs"
       - "scripts/games-portal-smoke.mjs"
+      - "scripts/osgard-select-growth-smoke.mjs"
       - "scripts/remix-growth-smoke.mjs"
       - "scripts/games-detail-smoke.mjs"
       - "scripts/games-monetization-smoke.mjs"
@@ -56,6 +57,8 @@ jobs:
       - run: npm run qa:null-shift
       - name: Smoke-test the OSGARD Games hub
         run: npm run qa:games-portal
+      - name: Smoke-test premium between-game promotions and sharing
+        run: npm run qa:osgard-select
       - name: Smoke-test individual game pages and SEO routes
         run: npm run qa:games-detail
       - name: Verify REMIX growth funnel, attribution and sponsor safety
