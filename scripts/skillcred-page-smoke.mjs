@@ -126,6 +126,10 @@ for (const file of files) {
     assert.match(css, /\.artifact-card\[data-phase=["']?issued["']?\]\{animation:artifact-arrive\s+(?:420ms|\.42s)/, file + ': only issued credentials may run the card arrival animation')
   if (file.startsWith('public/skillcred/')) {
      assert.ok(js.includes('function afterFirstPaint(callback)'), file + ': automatic API startup must use a first-paint scheduler')
+     assert.ok(css.includes('@media(max-width:820px),(pointer:coarse)') && css.includes('.pulse-dot{animation:none!important;'), file + ': mobile/coarse-pointer layout must not run paint-bound status-pulse animation')
+     assert.ok(css.includes('.artifact-card,.artifact-card::before,.artifact-card::after{animation:none!important;transition:none!important}'), file + ': mobile must pause paint-bound card sweep and border transitions')
+     assert.ok(css.includes('.thread-flow{transition:none!important;stroke-dashoffset:0!important}') && css.includes('.trust-spine-progress{transition:none!important}'), file + ': mobile must avoid repeated SVG stroke-dashoffset transitions')
+
      assert.ok(js.includes('window.requestAnimationFrame(function(){window.requestAnimationFrame(callback);})'), file + ': automatic API startup must settle two browser frames before network work')
      assert.ok(js.includes('p.setAttribute("stroke-dashoffset",String(100-progress))'), file + ': timeline state must drive SVG progress without inline CSS width')
      assert.ok(js.includes('stamp.textContent=labels[i]'), file + ': demo stamps must follow API state')
