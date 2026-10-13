@@ -6,6 +6,8 @@ const read = (path) => readFileSync(path, 'utf8');
 const source = read('public/games/game-session-recommendations.js');
 const css = read('public/games/game-session-recommendations.css');
 const core = read('services/osgard-commerce-api/src/core.mjs');
+const commerceApi = read('services/osgard-commerce-api/src/server.mjs');
+const commerceAdmin = read('public/games/commerce-admin/index.html');
 const signalRun = read('public/games/signal-run/game.js');
 const lifecycle = read('public/games/player-lifecycle.js')
 const entertainmentGateway = read('src/PlaySelectLoop.tsx')
@@ -137,6 +139,8 @@ assert.ok(source.includes('if(!spotlightIsVisible){clearSpotlightImpression();re
   'The spotlight observer must cancel pending timers when the element leaves view, changes or the tab is backgrounded');
 assert.ok(core.includes('"owned_promo_impression"') && core.includes('"cross_promo_clicked"'),
   'Commerce API must allow only the existing, consented first-party promo events');
+assert.ok(core.includes('"invite_link_prepared"'),
+  'Prepared referral links must use the explicit consented analytics allow-list');
 assert.ok(css.includes('.og-postgame-spotlight{') &&
   css.includes('@media(max-width:760px)') && css.includes('prefers-reduced-motion:reduce'),
   'Premium spotlight styling must support mobile and reduced-motion settings');
@@ -165,6 +169,22 @@ const claimStart = reward.indexOf("claim.addEventListener('click'");
 const claimEnd = reward.indexOf("primary.addEventListener('click',async()=>{", claimStart);
 assert.ok(claimStart >= 0 && claimEnd > claimStart, 'Explicit share confirmation handler is required');
 const claimHandler = reward.slice(claimStart, claimEnd);
+const networkIntentStart = reward.indexOf("networks.forEach(([name,href])=>{");
+const networkIntentEnd = reward.indexOf('grid.append(link)', networkIntentStart);
+assert.ok(networkIntentStart >= 0 && networkIntentEnd > networkIntentStart, 'Social-network action handlers must be testable');
+const networkIntent = reward.slice(networkIntentStart, networkIntentEnd);
+assert.ok(networkIntent.includes("sendSelectEvent('invite_link_prepared',gameId,'game-invite:'+gameId+':'+inviteCode)"),
+  'Opening a social publish form must record the matching invite code before the recipient funnel');
+const nativeShareStart = primaryHandler.indexOf("if(typeof navigator.share==='function')");
+const clipboardStart = primaryHandler.indexOf("else if(navigator.clipboard?.writeText)");
+assert.ok(nativeShareStart >= 0 && clipboardStart > nativeShareStart && primaryHandler.slice(nativeShareStart, clipboardStart).includes("sendSelectEvent('invite_link_prepared'"),
+  'A completed native share action must attach the same referral code to the invite funnel');
+assert.ok(!primaryHandler.slice(clipboardStart).includes("sendSelectEvent('invite_link_prepared'"),
+  'Copy-only fallback must not be counted as a social share intent');
+assert.ok(commerceApi.includes("event_name IN ('invite_link_prepared', 'share_created')") && commerceApi.includes('AS invite_code'),
+  'Referral funnels must include prepared invite links and legacy self-confirmed links without double-counting codes');
+assert.ok(commerceAdmin.includes('Ссылки, подготовленные для публикации') && commerceAdmin.includes('Факт публикации не подтверждается автоматически'),
+  'The admin label must distinguish prepared links from verified social publication');
 assert.ok(claimHandler.includes("award('social-confirmation:'+network)") &&
   claimHandler.includes("sendSelectEvent('share_created',gameId,'game-invite:'") &&
   claimHandler.includes("sendSelectEvent('social_reward_claimed'"),
@@ -201,5 +221,5 @@ console.log(JSON.stringify({
   status: 'passed',
   serviceDestinations: services.length,
   gameContexts: 9,
-  checks: 43, notes: 'Source-level guardrails; social publication is self-confirmed, not verified by social-network APIs.'
+  checks: 48, notes: 'Source-level guardrails; social publication is self-confirmed, not verified by social-network APIs.'
 }));
