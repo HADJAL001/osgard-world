@@ -30,6 +30,9 @@ assert.ok(hub.includes('href="/games/null-shift-godot/"') && hub.includes('href=
 assert.deepEqual(SCENARIOS.map((scenario) => scenario.id), ['conservative', 'base', 'optimistic']);
 const actual = calculateScenario(DEFAULT_INPUTS, 'base');
 assert.equal(actual.visitors, 10000);
+assert.equal(actual.sourceVisitors, 10000);
+assert.equal(actual.referralVisitors, 0, 'Referral lift must default to zero until measured');
+assert.equal(actual.viralCoefficient, 0);
 assert.equal(actual.gameStarts, 3000);
 assert.equal(actual.sessions, 9000);
 assert.equal(actual.potentialAdImpressions, 18000);
@@ -66,5 +69,20 @@ assert.equal(bounded.monthlyVisitors, 0, 'Negative visitor assumptions must clam
 assert.equal(bounded.adFillRate, 100, 'Percent input must be bounded at 100');
 assert.equal(bounded.ecpmUsd, DEFAULT_INPUTS.ecpmUsd, 'Non-finite inputs must fall back to documented defaults');
 assert.equal(bounded.gameStartRate, DEFAULT_INPUTS.gameStartRate, 'Infinite values must fall back to documented defaults');
+const boundedReferral = normalizeInputs({ inviteShareRate: 400, invitesPerSharer: 100, inviteOpenRate: -5 });
+assert.equal(boundedReferral.inviteShareRate, 100, 'Invite-share assumptions must be bounded to a percentage');
+assert.equal(boundedReferral.invitesPerSharer, 10, 'Invites per sharer must be capped at a documented maximum');
+assert.equal(boundedReferral.inviteOpenRate, 0, 'Invitation-open assumptions must be bounded to a percentage');
+const referralCase = calculateScenario({ ...DEFAULT_INPUTS, inviteShareRate: 20, invitesPerSharer: 2, inviteOpenRate: 25 }, 'base');
+assert.equal(referralCase.viralCoefficient, 0.1);
+assert.equal(referralCase.referralVisitors, 1111, 'Four-generation referral visits must use the documented K-series');
+assert.equal(referralCase.visitors, referralCase.sourceVisitors + referralCase.referralVisitors);
+assert.ok(referralCase.sessions > actual.sessions, 'Referral visits must flow into monetization math');
+assert.ok(referralCase.totalRevenueUsd > actual.totalRevenueUsd, 'Referral visits must affect the modeled revenue funnel');
+const unstableReferral = calculateScenario({ ...DEFAULT_INPUTS, inviteShareRate: 100, invitesPerSharer: 10, inviteOpenRate: 100 }, 'base');
+assert.ok(unstableReferral.viralCoefficient >= 1, 'High-K assumptions should be explicitly detectable');
+assert.ok(Number.isFinite(unstableReferral.netOperatingUsd), 'Four-generation modeling should remain finite even when K is unstable');
+assert.ok(page.includes('id="inviteShareRate"') && page.includes('name="invitesPerSharer"') && page.includes('id="inviteOpenRate"'), 'Referral assumption controls missing');
+assert.ok(app.includes('viralCoefficient') && app.includes('Нестабильна') || app.includes('нестабильна'), 'Financial planner must surface referral model instability');
 
 console.log('PASS OSGARD games economics model: UI contract, transparent fallback, scenario formulas, bounds and conservative/base/optimistic sensitivity.');
