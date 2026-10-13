@@ -57,7 +57,7 @@ check('sponsor CTA is inquiry-only and carries campaign UTM',()=>{
 check('first-party event upload is only attempted for authenticated players',()=>{
   const fn=remix.slice(remix.indexOf('function reportEvent(name,payload){'),remix.indexOf('function resetForRematch'));
   assert.ok(fn.includes("localStorage.getItem('osgard.auth.accessToken')"));
-  assert.ok(fn.includes('if(!token)return'));
+  assert.ok(fn.includes('if(!token)return') || fn.includes('if(!consent||!token)return'), 'event uploader must stop unless authentication is present; optional telemetry also needs prior consent');
   assert.ok(fn.includes("fetch('/api/v1/player/events'"));
   assert.ok(fn.includes("credentials:'same-origin'"));
   assert.ok(!/https?:\/\//.test(fn));
