@@ -78,8 +78,9 @@ const CHECKOUT_ATTRIBUTION_SLUG = /^[a-z0-9][a-z0-9_-]{0,47}$/;
 export function normalizeCheckoutAttribution(raw) {
   const input = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
   const gameCandidate = cleanText(input.gameId, 48).toLowerCase();
-  const sourceCandidate = cleanText(input.source, 48).toLowerCase();
-  const campaignCandidate = cleanText(input.campaign, 48).toLowerCase();
+  // Do not truncate: overlong slugs must fail validation instead of becoming valid prefixes.
+  const sourceCandidate = cleanText(input.source, 128).toLowerCase();
+  const campaignCandidate = cleanText(input.campaign, 128).toLowerCase();
   return {
     gameId: GAME_IDS.has(gameCandidate) ? gameCandidate : "unknown",
     source: CHECKOUT_ATTRIBUTION_SLUG.test(sourceCandidate) ? sourceCandidate : "direct",
