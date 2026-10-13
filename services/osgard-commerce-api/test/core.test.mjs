@@ -43,6 +43,7 @@ test("analytics is disabled unless consent is explicit and event names are allow
   assert.equal(validateEventBatch({ consent: false, events: [event] }).code, "ANALYTICS_CONSENT_REQUIRED");
   assert.equal(validateEventBatch({ consent: true, events: [{ ...event, name: "steal_customer_emails" }] }).ok, false);
   assert.equal(validateEventBatch({ consent: true, events: [event] }).ok, true);
+  assert.equal(validateEventBatch({ consent: true, events: [{ ...event, gameId: "cascade-lab" }] }).ok, true);
 });
 
 test("live Stripe keys stay disabled unless explicitly enabled", () => {
