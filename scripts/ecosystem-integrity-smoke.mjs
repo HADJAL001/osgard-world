@@ -8,6 +8,7 @@ const sections = read('src/Sections.tsx')
 const development = read('src/Development.tsx')
 const manifest = read('src/core/manifest.ts')
 const games = read('public/games/index.html')
+const legacyEntertainment = read('public/entertainment/index.html')
 const lifecycle = read('public/games/player-lifecycle.js')
 const sitemap = read('public/sitemap.xml')
 const nginx = read('nginx.conf')
@@ -50,6 +51,7 @@ for (const [path, source] of [['src/App.tsx', app], ['src/Development.tsx', deve
 }
 
 assert.ok(app.includes('href="/games/"'), 'Main navigation must expose the Games hub')
+assert.ok(app.includes('РАЗВЛЕЧЕНИЯ') && legacyEntertainment.includes('content="0;url=/games/"') && legacyEntertainment.includes("window.location.replace('/games/')"), 'The Entertainment navigation and legacy route must open the canonical Games hub')
 assert.ok(app.includes("url: 'https://osgardbewworld.com/'"), 'Main ecosystem must use the supplied digital-development domain')
 assert.ok(sections.includes("href: '/games/time'"), 'Entertainment route must point to the current Time game URL')
 assert.ok(!sections.includes('/games/time-empire/'), 'Legacy Time route must not be used by the current catalog')
@@ -80,7 +82,7 @@ assert.ok(!apiProxy.includes('proxy_set_header Authorization "Bearer'), 'API cre
 
 console.log(JSON.stringify({
   status: 'PASS',
-  checks: 48,
+  checks: 49,
   projects: projectHosts.length,
   claimsGuarded: unsupportedClaims.length,
   contacts: 3,
