@@ -117,6 +117,8 @@ const afterimageGame=readFileSync(resolve(root,'afterimage-run/index.html'),'utf
 assert.ok(afterimageGame.includes('<title>AFTERIMAGE//RUN — OSGARD PLAY</title>')&&afterimageGame.includes('id="runnerCanvas"')&&afterimageGame.includes('id="run-start"')&&afterimageGame.includes('id="daily-seed"')&&afterimageGame.includes('id="share-telegram"')&&afterimageGame.includes('id="record-progress"'),'AFTERIMAGE//RUN interactive/share contract missing')
 assert.ok(!/<script[^>]+src=/i.test(afterimageGame)&&!/<link[^>]+href=["']https?:/i.test(afterimageGame),'AFTERIMAGE//RUN must remain self-contained')
 assert.ok(afterimageGame.includes('incomingSeed=params.get(\'seed\')')&&afterimageGame.includes('Number.isFinite(rawTarget)')&&afterimageGame.includes('if(r[today])'),'AFTERIMAGE challenge/reward safety checks missing')
+assert.ok(afterimageGame.includes("opened.opener=null")&&afterimageGame.includes("share-intent-'+kind"),'Social share must detach opener and only reward after the share flow opens')
+assert.ok(afterimageGame.includes('SIGNAL SHARD')&&afterimageGame.includes('Публичная публикация поста не проверяется'),'Share reward copy must not claim that a public post was verified')
 const afterimageInline=[...afterimageGame.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]).filter(s=>s.trim())
 assert.equal(afterimageInline.length,1,'AFTERIMAGE should have one inline game script')
 new Function(afterimageInline[0])
