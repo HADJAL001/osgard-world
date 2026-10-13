@@ -83,6 +83,6 @@ const unstableReferral = calculateScenario({ ...DEFAULT_INPUTS, inviteShareRate:
 assert.ok(unstableReferral.viralCoefficient >= 1, 'High-K assumptions should be explicitly detectable');
 assert.ok(Number.isFinite(unstableReferral.netOperatingUsd), 'Four-generation modeling should remain finite even when K is unstable');
 assert.ok(page.includes('id="inviteShareRate"') && page.includes('name="invitesPerSharer"') && page.includes('id="inviteOpenRate"'), 'Referral assumption controls missing');
-assert.ok(app.includes('viralCoefficient') && app.includes('Нестабильна') || app.includes('нестабильна'), 'Financial planner must surface referral model instability');
+assert.ok(app.includes('viralCoefficient') && (app.includes('нестабильно') || app.includes('неустойчива')), 'Financial planner must surface referral model instability');
 
 console.log('PASS OSGARD games economics model: UI contract, transparent fallback, scenario formulas, bounds and conservative/base/optimistic sensitivity.');
