@@ -250,6 +250,8 @@ const host=document.querySelector('#post-run-recommendations');
 const dialog=document.querySelector('#player-dialog');
 if(!host||!dialog||typeof location==='undefined')return;
 const CONSENT_KEY='osgard.games.analytics-consent.v1';
+const validGames=new Set(['null-shift','time','swarm','inherit','remix','civic-cascade','patina','signal-run','cascade-lab']);
+const gameTitles={'null-shift':'NULL//SHIFT',time:'Империя времени',swarm:'SWARM',inherit:'INHERIT',remix:'REMIX','civic-cascade':'CIVIC CASCADE',patina:'PATINA Atelier','signal-run':'SIGNAL RUN','cascade-lab':'CASCADE LAB'};
 const services=[
  {id:'create',mark:'CREATE',name:'OSGARD CREATE',headline:'Идея → цифровой продукт',description:'Создание проектов и приложений',url:'https://osgardbewworld.com/'},
  {id:'o2system',mark:'O2',name:'O2 SYSTEM',headline:'Касса под контролем',description:'Система учёта кассы обменников',url:'https://o2system.art/'},
@@ -266,12 +268,11 @@ const make=(tag,cls,value)=>{const node=document.createElement(tag);if(cls)node.
 const consented=()=>{try{return localStorage.getItem(CONSENT_KEY)==='yes'}catch{return false}};
 function inviteCode(){try{if(typeof window.OSGARDInvite?.getCode==='function')return window.OSGARDInvite.getCode();}catch{}const bytes=new Uint8Array(16);try{globalThis.crypto.getRandomValues(bytes)}catch{for(let i=0;i<bytes.length;i++)bytes[i]=Math.floor(Math.random()*256)}const code='og_'+Array.from(bytes,v=>v.toString(16).padStart(2,'0')).join('');try{localStorage.setItem('osgard.games.invite-code.v1',code)}catch{}return code}
 function ownerToken(){try{if(typeof window.OSGARDInvite?.getOwnerToken==='function')return window.OSGARDInvite.getOwnerToken()}catch{}try{let t=localStorage.getItem('osgard.games.referral-owner-token.v1')||'';if(!/^[a-f0-9]{12}$/.test(t)){const bytes=new Uint8Array(6);globalThis.crypto.getRandomValues(bytes);t=Array.from(bytes,v=>v.toString(16).padStart(2,'0')).join('');localStorage.setItem('osgard.games.referral-owner-token.v1',t)}return t}catch{return '000000000000'}}
-function gameId(){const value=dialog.dataset.game||'unknown';return games[value]?value:'unknown'}
-async function apiBase(){try{const r=await fetch('/games/commerce-config.json',{cache:'no-store'});const c=r.ok?await r.json().catch(()=>({})):{};return String(c.apiBaseUrl||'/commerce-api').replace(/\\/+$/,'')}catch{return '/commerce-api'}}
+function gameId(){const value=dialog.dataset.game||'unknown';return validGames.has(value)?value:'unknown'}
+async function apiBase(){try{const r=await fetch('/games/commerce-config.json',{cache:'no-store'});const c=r.ok?await r.json().catch(()=>({})):{};return String(c.apiBaseUrl||'/commerce-api').replace(/\/+$/,'')}catch{return '/commerce-api'}}
 async function postEvent(name,id,source){
  if(!consented())return false;
- const token=source.includes('referral-link:')?sessionToken():ownerToken();
- const event={eventId:'evt_'+randomHex(12),name,sessionId:'session_'+randomHex(12),gameId:games[id]?id:'unknown',source:String(source).slice(0,80),path:location.pathname,durationSeconds:0};
+ const event={eventId:'evt_'+randomHex(12),name,sessionId:'session_'+randomHex(12),gameId:validGames.has(id)?id:'unknown',source:String(source).slice(0,80),path:location.pathname,durationSeconds:0};
  try{const response=await fetch((await apiBase())+'/v1/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({consent:true,events:[event]})});return response.ok}catch{return false}
 }
 function randomHex(bytes=12){const data=new Uint8Array(bytes);try{globalThis.crypto.getRandomValues(data)}catch{for(let i=0;i<data.length;i++)data[i]=Math.floor(Math.random()*256)}return Array.from(data,v=>v.toString(16).padStart(2,'0')).join('')}
@@ -305,7 +306,7 @@ function socialHref(network,url,title){
  return url;
 }
 function render(event){
- const id=event?.detail?.game;if(!games[id])return;
+ const id=event?.detail?.game;if(!validGames.has(id))return;
  host.querySelector('.og-intermission')?.remove();
  const section=make('section','og-intermission');section.setAttribute('aria-labelledby','og-intermission-title');
  const header=make('div','og-intermission-header');
@@ -333,7 +334,7 @@ function render(event){
  const socialNetworks=[['whatsapp','WhatsApp'],['telegram','Telegram'],['vk','VK'],['x','X'],['facebook','Facebook']];
  const inviteUrl=canonicalUrl();
  socialNetworks.forEach(([network,label])=>{
-  const a=make('a','og-social-link',label+' ↗');a.href=socialHref(network,inviteUrl,games[id].title);a.target='_blank';a.rel='noopener noreferrer';
+  const a=make('a','og-social-link',label+' ↗');a.href=socialHref(network,inviteUrl,gameTitles[id]||id);a.target='_blank';a.rel='noopener noreferrer';
   a.addEventListener('click',()=>{if(consented())void postEvent('share_created',id,'game-invite:'+id+':'+new URL(inviteUrl).searchParams.get('og_ref')+':'+ownerToken())});
   socialGrid.append(a);
  });
