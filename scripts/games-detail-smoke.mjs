@@ -17,6 +17,7 @@ const routeMatrix = read('scripts/production-route-matrix.mjs')
 const civicGame = read('public/games/civic-cascade/index.html')
 const cascadeGame = read('public/games/cascade-lab/index.html')
 const afterimageGame = read('public/games/afterimage-run/index.html')
+const aetherGame = read('public/games/aether-grid/index.html')
 
 const games = [
   { id: 'time', href: '/games/time' },
@@ -29,6 +30,7 @@ const games = [
   { id: 'patina', href: '/games/patina/' },
   { id: 'cascade-lab', href: '/games/cascade-lab/' },
   { id: 'afterimage-run', href: '/games/afterimage-run/' },
+  { id: 'aether-grid', href: '/games/aether-grid/' },
 ]
 
 for (const game of games) {
@@ -48,7 +50,7 @@ assert.ok(detail.includes("querySelector('.time-game')"), 'Strategy-game readine
 assert.ok(detail.includes("track('game_opened', { game: game.id, surface: 'game-detail' }, consent)"), 'Detail views are logged once with consent')
 assert.ok(!detail.includes("surface: 'games-iframe'"), 'Iframe load must not duplicate a detail-view event')
 assert.ok(!detail.includes("track('game_session_started', { game: game.id, surface: 'games-iframe' }"), 'Iframe HTML load is not proof a session started')
-for (const route of ['/games/', '/games/monetization/', '/game/time', '/game/swarm', '/game/null-shift', '/game/inherit', '/game/remix', '/games/signal-run/', '/game/signal-run', '/games/civic-cascade/', '/games/patina/', '/game/civic-cascade', '/game/patina', '/games/cascade-lab/', '/game/cascade-lab']) assert.ok(sitemap.includes(`https://osgard.world${route}`), `Sitemap is missing ${route}`)
+for (const route of ['/games/', '/games/monetization/', '/game/time', '/game/swarm', '/game/null-shift', '/game/inherit', '/game/remix', '/games/signal-run/', '/game/signal-run', '/games/civic-cascade/', '/games/patina/', '/game/civic-cascade', '/game/patina', '/games/cascade-lab/', '/game/cascade-lab', '/games/aether-grid/', '/game/aether-grid']) assert.ok(sitemap.includes(`https://osgard.world${route}`), `Sitemap is missing ${route}`)
 assert.ok(css.includes('@media') && css.includes('prefers-reduced-motion'), 'Responsive and reduced-motion styles must be defined')
 for (const p of ['public/games/index.html','public/games/cascade-lab/index.html','public/games/afterimage-run/index.html','godot/null-shift/project.godot','public/privacy/index.html','public/terms/index.html','public/osgard-mark.svg']) {
   assert.ok(existsSync(p), `Required publication asset missing: ${p}`)
@@ -73,6 +75,10 @@ assert.ok(civicGame.includes('id="cc-forecast"') && civicGame.includes('function
 assert.ok(hub.includes('10 игровых проектов') && hub.includes('Запустить CIVIC CASCADE') && hub.includes('cc-release-strip') && hub.includes('data-game="afterimage-run"'), 'Entertainment hub must accurately count ten games and visibly promote CIVIC CASCADE and AFTERIMAGE//RUN')
 assert.ok(afterimageGame.includes('<title>AFTERIMAGE//RUN — OSGARD PLAY</title>') && afterimageGame.includes('id="runnerCanvas"') && afterimageGame.includes('id="daily-seed"') && afterimageGame.includes("game:'afterimage-run'"), 'AFTERIMAGE//RUN standalone play page must provide its daily game shell and lifecycle identity')
 assert.ok(detail.includes("id: 'afterimage-run'") && detail.includes("href: '/games/afterimage-run/'"), 'AFTERIMAGE//RUN needs a dedicated game-detail record with its real launch route')
+assert.ok(aetherGame.includes('<title>AETHER GRID — OSGARD WORLD GAMING</title>') && aetherGame.includes('id="board"') && aetherGame.includes('id="challenge-code"') && aetherGame.includes("notify('ready')") && aetherGame.includes("notify('completed'"), 'AETHER GRID must provide its daily puzzle and lifecycle events')
+assert.ok(aetherGame.includes('/games/invite/aether-grid/') && aetherGame.includes('utm_campaign'), 'AETHER GRID must preserve the friend-invite funnel')
+assert.ok(detail.includes("id: 'aether-grid'") && detail.includes("href: '/games/aether-grid/'"), 'AETHER GRID needs a detail record with the standalone route')
+assert.ok(detail.includes("game.id === 'aether-grid'") && detail.includes("querySelector('#challenge-code')"), 'AETHER GRID embedded readiness must verify its actual puzzle DOM')
 assert.ok(detail.includes("'afterimage-run': /afterimage") && detail.includes("run/i"), 'Embedded readiness must recognize the standalone AFTERIMAGE//RUN page title')
 assert.ok(detail.includes('Space, Arrow Up or tap the arena') && detail.includes('Escape pauses the run'), 'AFTERIMAGE detail must document its actual game controls')
 assert.ok(afterimageGame.includes("e.code==='Space'||e.code==='ArrowUp'") && afterimageGame.includes("e.code==='ShiftLeft'||e.code==='ShiftRight'") && afterimageGame.includes("e.code==='Escape'"), 'Published controls must match the real keyboard handlers')
