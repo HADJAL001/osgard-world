@@ -20,8 +20,33 @@ const retry=document.createElement('button');retry.id='player-retry';retry.type=
 const style=document.createElement('style');style.textContent='#player-status[data-state=error]{color:#ff9c91!important}#player-status[data-state=ready]{color:#c9ff87!important}.session-clock{display:inline-block;margin-top:7px;color:#d3ff69;font:9px ui-monospace,monospace;letter-spacing:.1em}#player-retry{width:35px;min-height:35px;padding:0;border:1px solid #ffffff20;background:#0e1210;color:#d3ff69;font-size:19px;cursor:pointer}#player-retry[hidden]{display:none}@media(max-width:760px){dialog#player-dialog{width:100vw;max-width:100vw;max-height:100svh;height:100svh;border:0;border-radius:0}}';document.head.append(style);
 let activeGame='',activeUrl='',sequence=0,activeSessionId='',attempt=0,launchAt=0,clientReadyAt=0,clientLoaded=false,activeSessionSeen=false,sessionStartedAt=0,sessionElapsed=0,lastTick=0,gamePaused=false,engineBootAt=0,sessionMethod='',loadTimer=0,pollTimer=0,clockTimer=0,commerceSessionId='';
 function setStatus(message,state='loading'){status.textContent=message;status.dataset.state=state}
-function analyticsSource(){try{const url=new URL(activeUrl||location.href,location.origin),code=url.searchParams.get('ref')||'';if(activeGame==='null-shift'&&/^og_[a-f0-9]{8}$/.test(code)&&/^NS-[0-9]{8}-C[1-3]$/.test(url.searchParams.get('challenge')||'')&&(url.pathname==='/games/null-shift-godot/'||url.pathname==='/games/null-shift-godot/index.html')&&url.searchParams.get('utm_source')==='osgard_play'&&url.searchParams.get('utm_medium')==='referral'&&url.searchParams.get('utm_campaign')==='play_with_friends')return 'referral:'+code+':null-shift';if(activeGame==='signal-run'&&url.pathname==='/games/signal-run/'&&/^[a-f0-9]{12}$/.test(code)&&url.searchParams.get('utm_source')==='signal-run'&&url.searchParams.get('utm_medium')==='share'&&url.searchParams.get('utm_campaign')==='challenge')return 'referral:'+code+':signal-run'}catch{}try{const raw=sessionStorage.getItem('osgard.games.referral-attribution.v1');if(raw){const value=JSON.parse(raw);const now=Date.now();if(value&&/^(?:og_[a-f0-9]{8}|[a-f0-9]{12})$/.test(String(value.code||''))&&now>=Number(value.at)&&now-Number(value.at)<=86400000)return 'referral:'+value.code+':'+activeGame}}catch{}return 'games-catalog-player'}
-function shareReferralCode(payload){const supplied=String(payload?.referralCode||'');if(/^(?:og_[a-f0-9]{8}|[a-f0-9]{12})$/.test(supplied))return supplied;try{const url=new URL(activeUrl||location.href,location.origin),candidate=url.searchParams.get('og_ref')||url.searchParams.get('ref')||'';if(/^(?:og_[a-f0-9]{8}|[a-f0-9]{12})$/.test(candidate))return candidate}catch{}try{const raw=sessionStorage.getItem('osgard.games.referral-attribution.v1');if(raw){const value=JSON.parse(raw),candidate=String(value?.code||''),now=Date.now();if(value&&/^(?:og_[a-f0-9]{8}|[a-f0-9]{12})$/.test(candidate)&&now>=Number(value.at)&&now-Number(value.at)<=86400000)return candidate}}catch{}try{const candidate=localStorage.getItem('osgard.games.invite-code.v1')||'';if(/^og_[a-f0-9]{8}$/.test(candidate))return candidate}catch{}return ''}
+function analyticsSource(){
+ try{
+  const url=new URL(activeUrl||location.href,location.origin),code=url.searchParams.get('ref')||url.searchParams.get('og_ref')||'';
+  if(activeGame==='null-shift'&&/^og_[a-f0-9]{8}$/.test(code)&&/^NS-[0-9]{8}-C[1-3]$/.test(url.searchParams.get('challenge')||'')&&(url.pathname==='/games/null-shift-godot/'||url.pathname==='/games/null-shift-godot/index.html')&&url.searchParams.get('utm_source')==='osgard_play'&&url.searchParams.get('utm_medium')==='referral'&&url.searchParams.get('utm_campaign')==='play_with_friends')return 'referral:'+code+':null-shift';
+  if(activeGame==='signal-run'&&url.pathname==='/games/signal-run/'&&/^[a-f0-9]{12}$/.test(code)&&url.searchParams.get('utm_source')==='signal-run'&&url.searchParams.get('utm_medium')==='share'&&url.searchParams.get('utm_campaign')==='challenge')return 'referral:'+code+':signal-run';
+ }catch{}
+ try{
+  const raw=sessionStorage.getItem('osgard.games.referral-attribution.v1');
+  if(raw){
+   const value=JSON.parse(raw),now=Date.now(),code=String(value&&value.code||''),game=String(value&&value.game||''),visitorToken=String(value&&value.visitorToken||'');
+   if(value&&now>=Number(value.at)&&now-Number(value.at)<=86400000&&game===activeGame){
+    if(/^og_[a-f0-9]{32}$/.test(code)&&/^[a-f0-9]{12}$/.test(visitorToken))return 'referral:'+code+':'+activeGame+':'+visitorToken;
+    if(/^(?:og_[a-f0-9]{8}|[a-f0-9]{12})$/.test(code))return 'referral:'+code+':'+activeGame;
+   }
+  }
+ }catch{}
+ return 'games-catalog-player';
+}
+function shareReferralCode(payload){
+ const validCode=value=>/^(?:og_[a-f0-9]{8}|og_[a-f0-9]{32}|[a-f0-9]{12})$/.test(String(value||''));
+ const supplied=String(payload?.referralCode||'');if(validCode(supplied))return supplied;
+ try{const url=new URL(activeUrl||location.href,location.origin),candidate=url.searchParams.get('og_ref')||url.searchParams.get('ref')||'';if(validCode(candidate))return candidate}catch{}
+ try{const raw=sessionStorage.getItem('osgard.games.referral-attribution.v1');if(raw){const value=JSON.parse(raw),candidate=String(value?.code||''),now=Date.now();if(value&&validCode(candidate)&&now>=Number(value.at)&&now-Number(value.at)<=86400000)return candidate}}catch{}
+ try{const values=JSON.parse(localStorage.getItem('osgard.games.shards-invite-codes.v1')||'{}'),candidate=String(values&&values[activeGame]||'');if(/^og_[a-f0-9]{32}$/.test(candidate))return candidate}catch{}
+ try{const candidate=localStorage.getItem('osgard.games.invite-code.v1')||'';if(/^og_[a-f0-9]{8}$/.test(candidate))return candidate}catch{}
+ return '';
+}
 function sendCommerceEvent(name,payload){
  if(!activeGame||!['game_session_started','game_session_completed','share_created'].includes(name))return;
  let consent=false;
@@ -32,7 +57,12 @@ function sendCommerceEvent(name,payload){
  if(name==='game_session_completed')commerceSessionId='';
  const duration=Math.max(0,Math.floor(Number(payload?.durationSeconds||0)));
  const shareCode=name==='share_created'?shareReferralCode(payload):'';
- const source=name==='share_created'?(shareCode?'game-invite:'+activeGame+':'+shareCode:'game-invite:'+activeGame):analyticsSource();
+ let source=analyticsSource();
+ if(name==='share_created'){
+  let owner='';
+  try{owner=localStorage.getItem('osgard.games.referral-owner-token.v1')||''}catch{}
+  source=/^og_[a-f0-9]{32}$/.test(shareCode)&&/^[a-f0-9]{12}$/.test(owner)?'game-invite:'+activeGame+':'+shareCode+':'+owner:(shareCode?'game-invite:'+activeGame+':'+shareCode:'game-invite:'+activeGame);
+ }
  let path=location.pathname;
  try{path=new URL(activeUrl||location.href,location.origin).pathname}catch{}
  const event={eventId:'evt_'+(window.crypto?.randomUUID?.()||Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,15)).replace(/[^a-zA-Z0-9_-]/g,''),name,sessionId:id,gameId:activeGame,source,path,durationSeconds:duration};
