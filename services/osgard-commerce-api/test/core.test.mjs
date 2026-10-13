@@ -112,6 +112,10 @@ test("consented analytics accept stable event IDs and new page-view events, whil
   assert.equal(legacy.ok, true, "Older clients without eventId stay backward-compatible");
   assert.equal(legacy.events[0].eventId, "");
 
+  const ecosystem = validateEventBatch({ consent: true, events: [{ ...baseEvent, name: "ecosystem_directory_viewed", path: "/games/ecosystem/", eventId: "evt_ecosystem_1234567" }] });
+  assert.equal(ecosystem.ok, true, "The ecosystem directory page view is accepted after consent");
+  assert.equal(ecosystem.events[0].path, "/games/ecosystem/");
+
   const inviteShared = validateEventBatch({ consent: true, events: [{
     ...baseEvent, name: "share_created", source: "game-invite:swarm:abcdef012345",
     eventId: "evt_invite_123456789",
