@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent } from 'react'
 import {
   ArrowRight, ArrowUpRight, Check, ExternalLink, Gamepad2, Heart,
   Mail, Monitor, Search, Send, Share2, ShieldCheck, Smartphone, Sparkles, X, Zap
@@ -11,6 +11,28 @@ type Genre = 'all' | 'strategy' | 'coop' | 'action' | 'simulation' | 'creative'
 type SortMode = 'featured' | 'recent' | 'az'
 type AnalyticsConsent = 'unset' | 'necessary' | 'analytics'
 type PlayedGame = { id: OsgardGameId; at: number }
+type PromoFrequency = 'off' | 'every2' | 'every'
+
+const PROMO_FREQUENCY_KEY = 'osgard.games.promo-frequency.v1'
+const LAUNCH_COUNT_KEY = 'osgard.games.launch-count.v1'
+const PROMO_METRICS_KEY = 'osgard.games.promo-metrics.v1'
+
+function readPromoFrequency(): PromoFrequency {
+  const value = readStorage<unknown>(PROMO_FREQUENCY_KEY, 'every2')
+  return value === 'off' || value === 'every' || value === 'every2' ? value : 'every2'
+}
+
+function recordLocalPromoMetric(kind: 'shown' | 'opened', projectId: string) {
+  try {
+    const raw: unknown = JSON.parse(window.localStorage.getItem(PROMO_METRICS_KEY) ?? '{}')
+    const current = raw && typeof raw === 'object' ? raw as Record<string, unknown> : {}
+    const key = kind + ':' + projectId
+    const prior = Number(current[key] ?? 0)
+    current[key] = (Number.isFinite(prior) && prior >= 0 ? prior : 0) + 1
+    current.lastEventAt = new Date().toISOString()
+    window.localStorage.setItem(PROMO_METRICS_KEY, JSON.stringify(current))
+  } catch { /* Local metrics are optional and never block play. */ }
+}
 
 const FAVORITES_KEY = 'osgard.games.favorites.v1'
 const HISTORY_KEY = 'osgard.games.history.v1'
@@ -153,6 +175,9 @@ export function GamesPlatform() {
   const [brief, setBrief] = useState('')
   const [formNotice, setFormNotice] = useState('')
   const [onlyFavorites, setOnlyFavorites] = useState(false)
+  const [promoFrequency, setPromoFrequency] = useState<PromoFrequency>(readPromoFrequency)
+  const [pendingLaunch, setPendingLaunch] = useState<{ id: OsgardGameId; placement: string } | null>(null)
+  const [selectedProjectId, setSelectedProjectId] = useState('development')
   const viewTracked = useRef(false)
   const searchRef = useRef<HTMLInputElement>(null)
 
@@ -186,9 +211,22 @@ export function GamesPlatform() {
   }, [])
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const referralCode = params.get('ref')
+    if (referralCode && /^[a-zA-Z0-9_-]{4,40}$/.test(referralCode)) {
+      try {
+        window.localStorage.setItem('osgard.games.inbound-referral.v1', JSON.stringify({
+          code: referralCode,
+          game: params.get('game') ?? '',
+          receivedAt: Date.now(),
+          source: params.get('utm_source') ?? ''
+        }))
+      } catch { /* Referral storage is optional. */ }
+    }
     if (consent === 'analytics' && !viewTracked.current) {
       viewTracked.current = true
-      recordOsgardEvent('portal_opened', { surface: 'games-platform', gameCount: OSGARD_GAMES.length })
+      const inbound = (() => { try { return JSON.parse(window.localStorage.getItem('osgard.games.inbound-referral.v1') ?? 'null') } catch { return null } })()
+      recordOsgardEvent('portal_opened', { surface: 'games-platform', gameCount: OSGARD_GAMES.length, referralCode: inbound?.code ?? undefined })
     }
   }, [consent])
 
@@ -199,6 +237,10 @@ export function GamesPlatform() {
   useEffect(() => {
     try { window.localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 12))) } catch { /* local history is optional */ }
   }, [history])
+
+  useEffect(() => {
+    try { window.localStorage.setItem(PROMO_FREQUENCY_KEY, promoFrequency) } catch { /* Preference is optional. */ }
+  }, [promoFrequency])
 
   useEffect(() => {
     if (!toast) return
@@ -224,11 +266,58 @@ export function GamesPlatform() {
   const lastPlayed = history.length ? OSGARD_GAMES.find(game => game.id === history[0].id) : undefined
   const lastDetails = lastPlayed ? GAME_DETAILS[lastPlayed.id] : undefined
 
-  const launchGame = (id: OsgardGameId, placement: string) => {
+  const proceedToGame = (id: OsgardGameId, placement: string) => {
     const next = [{ id, at: Date.now() }, ...history.filter(item => item.id !== id)].slice(0, 12)
     setHistory(next)
-    try { window.localStorage.setItem(HISTORY_KEY, JSON.stringify(next)) } catch { /* history is optional */ }
+    try {
+      window.localStorage.setItem(HISTORY_KEY, JSON.stringify(next))
+      const rawCount = Number.parseInt(window.localStorage.getItem(LAUNCH_COUNT_KEY) ?? '0', 10)
+      window.localStorage.setItem(LAUNCH_COUNT_KEY, String((Number.isFinite(rawCount) && rawCount >= 0 ? rawCount : 0) + 1))
+    } catch { /* Local history is optional; never block game launch. */ }
     track('game_opened', { game: id, placement, href: '/games/play/' + id })
+    window.location.assign('/games/play/' + id)
+  }
+
+  const launchGame = (event: MouseEvent<HTMLAnchorElement>, id: OsgardGameId, placement: string) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+    event.preventDefault()
+    let launchCount = 0
+    try {
+      const raw = Number.parseInt(window.localStorage.getItem(LAUNCH_COUNT_KEY) ?? '0', 10)
+      launchCount = Number.isFinite(raw) && raw >= 0 ? raw : 0
+    } catch { /* Continue with an ephemeral counter. */ }
+    const shouldShowOffer = history.length > 0 && (
+      promoFrequency === 'every'
+      || (promoFrequency === 'every2' && launchCount % 2 === 1)
+    )
+    if (shouldShowOffer) {
+      const preferredProject = projects.find(project => project.id === selectedProjectId) ?? projects[0]
+      setPendingLaunch({ id, placement })
+      setSelectedProjectId(preferredProject.id)
+      recordLocalPromoMetric('shown', preferredProject.id)
+      return
+    }
+    proceedToGame(id, placement)
+  }
+
+  const skipOfferAndPlay = () => {
+    if (!pendingLaunch) return
+    const next = pendingLaunch
+    setPendingLaunch(null)
+    proceedToGame(next.id, next.placement)
+  }
+
+  const openSelectedProject = () => {
+    const project = projects.find(item => item.id === selectedProjectId)
+    if (!project) return
+    recordLocalPromoMetric('opened', project.id)
+    const opened = window.open(trackedProjectUrl(project.url, project.id), '_blank')
+    if (opened) {
+      opened.opener = null
+      setToast('Сервис OSGARD открыт в новой вкладке. Игра ждёт здесь.')
+    } else {
+      setToast('Браузер заблокировал новую вкладку. Разрешите открытие ссылки или продолжите игру.')
+    }
   }
 
   const toggleFavorite = (id: OsgardGameId) => {
@@ -301,7 +390,7 @@ export function GamesPlatform() {
           <h1 id="owg-title">Не просто игры.<br /><em>Целые миры.</em></h1>
           <p className="owg-hero-lead">Выберите игровой мир, погрузитесь в сессию и откройте следующий. Единая коллекция OSGARD — с собственным характером каждой игры.</p>
           <div className="owg-hero-actions">
-            <a className="owg-button owg-button-primary" href="/games/play/null-shift" onClick={() => launchGame('null-shift', 'hero')}>Открыть NULL//SHIFT <ArrowRight size={17} /></a>
+            <a className="owg-button owg-button-primary" href="/games/play/null-shift" onClick={event => launchGame(event, 'null-shift', 'hero')}>Открыть NULL//SHIFT <ArrowRight size={17} /></a>
             <a className="owg-button owg-button-quiet" href="#catalog">Вся коллекция <ArrowRight size={16} /></a>
           </div>
           <div className="owg-proofline">
@@ -328,7 +417,7 @@ export function GamesPlatform() {
         <section className="owg-continue" aria-label="Продолжить игру">
           <div className="owg-continue-icon" data-accent={lastDetails.accent}>{lastDetails.mark}</div>
           <div className="owg-continue-copy"><span>ВАШ ПОСЛЕДНИЙ МИР</span><h2>{lastDetails.title}</h2><p>{lastDetails.tagline}</p></div>
-          <a className="owg-button owg-button-primary" href={'/games/play/' + lastPlayed.id} onClick={() => launchGame(lastPlayed.id, 'continue')}>Вернуться <ArrowRight size={16} /></a>
+          <a className="owg-button owg-button-primary" href={'/games/play/' + lastPlayed.id} onClick={event => launchGame(event, lastPlayed.id, 'continue')}>Вернуться <ArrowRight size={16} /></a>
         </section>
       )}
 
@@ -342,6 +431,10 @@ export function GamesPlatform() {
           <div className="owg-sort-wrap"><label htmlFor="owg-sort">Сортировка</label><select id="owg-sort" value={sort} onChange={event => setSort(event.target.value as SortMode)}><option value="featured">Рекомендуем</option><option value="recent">Недавно открытые</option><option value="az">По алфавиту</option></select></div>
         </div>
         <div className="owg-filter-row" role="group" aria-label="Фильтр по жанрам">{genreOptions.map(item => <button key={item.id} type="button" className={genre === item.id ? 'is-selected' : ''} aria-pressed={genre === item.id} onClick={() => setGenre(item.id)}>{item.label}</button>)}<button type="button" className={'owg-fav-filter' + (onlyFavorites ? ' is-selected' : '')} aria-pressed={onlyFavorites} onClick={() => setOnlyFavorites(value => !value)}><Heart size={14} /> Избранное <span>{favorites.length}</span></button></div>
+        <div className="owg-promo-preference">
+          <div><span className="owg-kicker">OSGARD NETWORK / YOUR CHOICE</span><strong>Рекомендации между играми</strong><small>Только собственные проекты OSGARD. Внутри игры экран не появляется.</small></div>
+          <label htmlFor="owg-promo-frequency"><span>Частота</span><select id="owg-promo-frequency" value={promoFrequency} onChange={event => setPromoFrequency(event.target.value as PromoFrequency)}><option value="every2">Раз в 2 перехода</option><option value="every">При каждом переходе</option><option value="off">Не показывать</option></select></label>
+        </div>
         <div className="owg-game-grid">
           {filteredGames.map((game, index) => (
             <article className={'owg-game-card owg-accent-' + game.accent + (index === 0 && sort === 'featured' && genre === 'all' && !search && !onlyFavorites ? ' is-featured' : '')} key={game.id}>
@@ -358,7 +451,7 @@ export function GamesPlatform() {
                 <div className="owg-game-controls"><span><Monitor size={13} /> {game.platform}</span><span>{game.controls}</span></div>
                 <div className="owg-game-actions">
                   <a className="owg-details-link" href={'/games/info/' + game.id}>Подробнее <ArrowRight size={15} /></a>
-                  <a className="owg-button owg-button-primary" href={'/games/play/' + game.id} onClick={() => launchGame(game.id, 'catalog-card')}>Играть <ArrowUpRight size={16} /></a>
+                  <a className="owg-button owg-button-primary" href={'/games/play/' + game.id} onClick={event => launchGame(event, game.id, 'catalog-card')}>Играть <ArrowUpRight size={16} /></a>
                   <button className="owg-icon-button" type="button" aria-label={'Поделиться игрой ' + game.title} onClick={() => void shareGame(game.id)}><Share2 size={16} /></button>
                 </div>
               </div>
@@ -398,6 +491,40 @@ export function GamesPlatform() {
         <div className="owg-footer-links"><a href="/games">Игры</a><a href="/entertainment">Архив игр</a><a href="/development">Разработка</a><a href="/privacy">Конфиденциальность</a><a href="/terms">Условия</a><a href="mailto:osman.osmanov0099@gmail.com">Контакты</a></div>
         <div className="owg-footer-policy"><span>© OSGARD WORLD · 2026</span><button type="button" onClick={() => setAnalyticsConsent(consent === 'analytics' ? 'necessary' : 'analytics')}>Настройки данных</button><p>Избранное и история хранятся локально на этом устройстве.</p></div>
       </footer>
+
+
+      {pendingLaunch && (
+        <div className="owg-intermission-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) skipOfferAndPlay() }}>
+          <section className="owg-intermission" role="dialog" aria-modal="true" aria-labelledby="owg-intermission-title">
+            <button type="button" className="owg-intermission-close" aria-label="Пропустить рекомендацию" onClick={skipOfferAndPlay}><X size={18} /></button>
+            <p className="owg-kicker"><Sparkles size={13} /> OSGARD WORLD / BETWEEN WORLDS</p>
+            <h2 id="owg-intermission-title">Пока открывается следующий мир.</h2>
+            <p className="owg-intermission-lead">Выберите один из собственных сервисов OSGARD, чтобы посмотреть его в отдельной вкладке. Это рекомендация наших проектов, не сторонняя рекламная сеть.</p>
+            <div className="owg-intermission-grid">
+              {projects.map(project => (
+                <button key={project.id} type="button" className={'owg-intermission-project' + (selectedProjectId === project.id ? ' is-selected' : '')} aria-pressed={selectedProjectId === project.id} onClick={() => setSelectedProjectId(project.id)}>
+                  <span className="owg-intermission-symbol">{project.symbol}</span>
+                  <span className="owg-intermission-project-copy"><strong>{project.name}</strong><small>{project.category}</small></span>
+                  <span className="owg-intermission-check">{selectedProjectId === project.id ? <Check size={15} /> : <ArrowUpRight size={14} />}</span>
+                </button>
+              ))}
+            </div>
+            <div className="owg-intermission-footer">
+              <label htmlFor="owg-intermission-frequency">Показывать рекомендации
+                <select id="owg-intermission-frequency" value={promoFrequency} onChange={event => setPromoFrequency(event.target.value as PromoFrequency)}>
+                  <option value="every2">Раз в 2 перехода</option><option value="every">При каждом переходе</option><option value="off">Не показывать</option>
+                </select>
+              </label>
+              <div className="owg-intermission-actions">
+                <button type="button" className="owg-button owg-button-quiet" onClick={skipOfferAndPlay}>Пропустить и играть <ArrowRight size={16} /></button>
+                <button type="button" className="owg-button owg-button-outline" onClick={openSelectedProject}>Посмотреть выбранный сервис <ExternalLink size={15} /></button>
+                <button type="button" className="owg-button owg-button-primary" onClick={skipOfferAndPlay}>Продолжить игру <Gamepad2 size={16} /></button>
+              </div>
+            </div>
+            <p className="owg-intermission-disclosure">Реклама собственных проектов OSGARD · переход добровольный · можно отключить в настройках.</p>
+          </section>
+        </div>
+      )}
 
       {consent === 'unset' && <aside className="owg-consent" aria-label="Настройки продуктовой аналитики"><div className="owg-consent-icon"><ShieldCheck size={20} /></div><div className="owg-consent-copy"><strong>Вы контролируете аналитику.</strong><p>Необязательные продуктовые события выключены. Избранное и история работают локально; согласие можно изменить позже.</p></div><button type="button" className="owg-consent-necessary" onClick={() => setAnalyticsConsent('necessary')}>Только необходимое</button><button type="button" className="owg-consent-allow" onClick={() => setAnalyticsConsent('analytics')}>Разрешить аналитику <Check size={15} /></button></aside>}
       {consent !== 'unset' && <button type="button" className="owg-privacy-toggle" onClick={() => setAnalyticsConsent(consent === 'analytics' ? 'necessary' : 'analytics')}><ShieldCheck size={14} /> Аналитика: {consent === 'analytics' ? 'включена' : 'выключена'}</button>}

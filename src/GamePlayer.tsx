@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import {
-  ArrowLeft, ArrowRight, ArrowUpRight, CircleAlert, ExternalLink, Gamepad2,
-  Maximize2, RotateCcw, Share2, ShieldCheck, Smartphone
+  ArrowLeft, ArrowRight, ArrowUpRight, CircleAlert, Copy, ExternalLink, Gamepad2,
+  Gift, Maximize2, MessageCircle, RotateCcw, Share2, ShieldCheck, Smartphone
 } from 'lucide-react'
 import { OsgardLogo } from './OsgardLogo'
 import { OSGARD_GAMES, type OsgardGameId } from './core/manifest'
@@ -116,6 +116,11 @@ export function GamePlayer({ gameId }: { gameId: string }) {
   const [message, setMessage] = useState('Подготавливаем игровую сборку…')
   const [frameKey, setFrameKey] = useState(0)
   const [toast, setToast] = useState('')
+  const [inviteOpen, setInviteOpen] = useState(false)
+  const [inviteUrl, setInviteUrl] = useState('')
+  const [shareBadgeUnlocked, setShareBadgeUnlocked] = useState(() => {
+    try { return window.localStorage.getItem('osgard.games.share-badge.v1') === 'signal' } catch { return false }
+  })
   const frameRef = useRef<HTMLIFrameElement>(null)
   const frameShellRef = useRef<HTMLDivElement>(null)
   const startedAtRef = useRef<number | null>(null)
@@ -331,6 +336,50 @@ export function GamePlayer({ gameId }: { gameId: string }) {
     }
   }
 
+  const makeInviteUrl = () => {
+    let code = ''
+    try { code = window.localStorage.getItem('osgard.games.invite-code.v1') ?? '' } catch { /* Optional attribution. */ }
+    if (!/^[a-zA-Z0-9_-]{6,32}$/.test(code)) {
+      try {
+        const bytes = new Uint8Array(6)
+        crypto.getRandomValues(bytes)
+        code = Array.from(bytes, value => value.toString(36).padStart(2, '0')).join('').slice(0, 12).toUpperCase()
+      } catch { code = Math.random().toString(36).slice(2, 14).toUpperCase() }
+      try { window.localStorage.setItem('osgard.games.invite-code.v1', code) } catch { /* Optional attribution. */ }
+    }
+    const target = new URL('/games/info/' + id, window.location.origin)
+    target.searchParams.set('ref', code)
+    target.searchParams.set('game', id)
+    target.searchParams.set('utm_source', 'osgard.world')
+    target.searchParams.set('utm_medium', 'social_share')
+    target.searchParams.set('utm_campaign', 'play_invite')
+    target.searchParams.set('utm_content', id)
+    return target.toString()
+  }
+
+  const openInvitePanel = () => {
+    setInviteUrl(makeInviteUrl())
+    setInviteOpen(true)
+  }
+
+  const copyInvite = async () => {
+    const url = inviteUrl || makeInviteUrl()
+    try {
+      await navigator.clipboard.writeText(url)
+      if (analyticsAllowed()) track('share_created', { kind: 'invite_link', game: id })
+      setToast('Пригласительная ссылка скопирована.')
+    } catch {
+      window.prompt('Скопируйте пригласительную ссылку:', url)
+    }
+  }
+
+  const claimShareBadge = () => {
+    try { window.localStorage.setItem('osgard.games.share-badge.v1', 'signal') } catch { /* Cosmetic bonus remains session-local below. */ }
+    setShareBadgeUnlocked(true)
+    setInviteOpen(false)
+    setToast('Косметический бейдж SIGNAL открыт. Публикация не подтверждается соцсетью; бейдж хранится локально и не имеет денежной стоимости.')
+  }
+
   const recommendations = OSGARD_GAMES.filter(entry => entry.id !== id).slice(0, 3)
   const directSource = source || game.source
 
@@ -348,7 +397,7 @@ export function GamePlayer({ gameId }: { gameId: string }) {
       </header>
 
       <section className="ogp-player-intro">
-        <div><p className="owg-kicker">OSGARD PLAY <span>/</span> {game.genre.toUpperCase()}</p><h1>{game.title}</h1><p>{game.tagline}</p></div>
+        <div><p className="owg-kicker">OSGARD PLAY <span>/</span> {game.genre.toUpperCase()}</p><h1>{game.title}</h1><p>{game.tagline}</p>{shareBadgeUnlocked && <span className="ogp-share-badge"><Gift size={13} /> SIGNAL / COMMUNITY BADGE</span>}</div>
         <div className={'ogp-status-pill is-' + status} role="status" aria-live="polite"><span />{status === 'ready' ? 'Игра загружена' : status === 'error' ? 'Проблема загрузки' : 'Загрузка игры'}</div>
       </section>
 
@@ -380,13 +429,33 @@ export function GamePlayer({ gameId }: { gameId: string }) {
 
         <aside className="ogp-player-sidebar">
           <a className="ogp-back-link" href="/games"><ArrowLeft size={15} /> Все игры OSGARD PLAY</a>
-          <div className="ogp-info-card"><p className="owg-kicker">GAME DOSSIER / {game.mark}</p><div className={'ogp-game-mark accent-' + id.replace('-', '')}>{game.mark}</div><p className="ogp-genre">{game.genre}</p><h2>{game.title}</h2><p>{game.description}</p><div className="ogp-control-card"><strong>Управление</strong><p>{game.controls}</p><span><Smartphone size={14} /> Мобильная поддержка зависит от самой игры и браузера.</span></div><div className="ogp-side-actions"><button className="owg-button owg-button-outline" type="button" onClick={() => void share()}><Share2 size={15} /> Поделиться</button><a className="owg-button owg-button-primary" href={directSource} target="_blank" rel="noopener noreferrer">Открыть игру отдельно <ArrowUpRight size={15} /></a></div></div>
+          <div className="ogp-info-card"><p className="owg-kicker">GAME DOSSIER / {game.mark}</p><div className={'ogp-game-mark accent-' + id.replace('-', '')}>{game.mark}</div><p className="ogp-genre">{game.genre}</p><h2>{game.title}</h2><p>{game.description}</p><div className="ogp-control-card"><strong>Управление</strong><p>{game.controls}</p><span><Smartphone size={14} /> Мобильная поддержка зависит от самой игры и браузера.</span></div><div className="ogp-side-actions"><button className="owg-button owg-button-outline" type="button" onClick={() => void share()}><Share2 size={15} /> Поделиться</button><button className="owg-button owg-button-primary" type="button" onClick={openInvitePanel}><Gift size={15} /> Пригласить друга · бейдж</button><a className="owg-button owg-button-quiet" href={directSource} target="_blank" rel="noopener noreferrer">Открыть игру отдельно <ArrowUpRight size={15} /></a></div></div>
           <div className="ogp-commercial-card"><p className="owg-kicker">PARTNER / OSGARD</p><h3>Поддержать игровой мир.</h3><p>Брендированные события и спонсорские уровни обсуждаются отдельно. Здесь пока не подключена рекламная сеть.</p><a href="mailto:osman.osmanov0099@gmail.com?subject=OSGARD%20PLAY%20%E2%80%94%20%D0%BF%D0%B0%D1%80%D1%82%D0%BD%D1%91%D1%80%D1%81%D0%BA%D0%B0%D1%8F%20%D0%B8%D0%BD%D1%82%D0%B5%D0%B3%D1%80%D0%B0%D1%86%D0%B8%D1%8F">Обсудить интеграцию <ArrowUpRight size={14} /></a></div>
         </aside>
       </section>
 
       <section className="ogp-recommendations"><div className="ogp-recommendations-heading"><div><p className="owg-kicker">NEXT WORLD / 01</p><h2>Следующий мир ждёт.</h2></div><a className="owg-text-link" href="/games">Вся коллекция <ArrowRight size={15} /></a></div><div className="ogp-recommendation-grid">{recommendations.map(item => <a key={item.id} className="ogp-recommendation" href={'/games/play/' + item.id}><span>{playerDefinitions[item.id].mark}</span><div><strong>{playerDefinitions[item.id].title}</strong><small>{playerDefinitions[item.id].genre}</small></div><ArrowUpRight size={15} /></a>)}</div></section>
       <footer className="owg-footer ogp-player-footer"><div className="owg-footer-brand"><a href="/games"><OsgardLogo variant="footer" /></a><p>OSGARD WORLD GAMING<br />Своя игра. Свой мир. Своя система.</p></div><div className="owg-footer-links"><a href="/games">Каталог</a><a href="/privacy">Конфиденциальность</a><a href="/terms">Условия</a><a href="mailto:osman.osmanov0099@gmail.com">Контакт</a><a href="https://wa.me/79640027222" target="_blank" rel="noopener noreferrer">WhatsApp</a></div><div className="owg-footer-policy"><span>© OSGARD WORLD · 2026</span><p>Избранное и история хранятся на устройстве.</p></div></footer>
+
+      {inviteOpen && (
+        <div className="ogp-invite-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setInviteOpen(false) }}>
+          <section className="ogp-invite-dialog" role="dialog" aria-modal="true" aria-labelledby="ogp-invite-title">
+            <button className="ogp-invite-close" type="button" aria-label="Закрыть приглашение" onClick={() => setInviteOpen(false)}>×</button>
+            <p className="owg-kicker"><Gift size={14} /> OSGARD PLAY / COMMUNITY</p>
+            <h2 id="ogp-invite-title">Позовите друга в этот мир.</h2>
+            <p>Ссылка содержит код приглашения и метки кампании. Поделитесь ей в привычной соцсети.</p>
+            <div className="ogp-invite-link"><span>{inviteUrl}</span><button className="owg-button owg-button-outline" type="button" onClick={() => void copyInvite()}><Copy size={14} /> Копировать</button></div>
+            <div className="ogp-invite-socials">
+              <a target="_blank" rel="noopener noreferrer" onClick={() => { if (analyticsAllowed()) track('share_created', { kind: 'social-invite', channel: 'telegram', game: id }) }} href={'https://t.me/share/url?url=' + encodeURIComponent(inviteUrl) + '&text=' + encodeURIComponent('Попробуй ' + game.title + ' в OSGARD PLAY')}><Send size={15} /> Telegram</a>
+              <a target="_blank" rel="noopener noreferrer" onClick={() => { if (analyticsAllowed()) track('share_created', { kind: 'social-invite', channel: 'whatsapp', game: id }) }} href={'https://wa.me/?text=' + encodeURIComponent('Попробуй ' + game.title + ' в OSGARD PLAY: ' + inviteUrl)}><MessageCircle size={15} /> WhatsApp</a>
+              <a target="_blank" rel="noopener noreferrer" onClick={() => { if (analyticsAllowed()) track('share_created', { kind: 'social-invite', channel: 'x', game: id }) }} href={'https://twitter.com/intent/tweet?url=' + encodeURIComponent(inviteUrl) + '&text=' + encodeURIComponent('Попробуй ' + game.title + ' в OSGARD PLAY')}><Share2 size={15} /> X / Twitter</a>
+            </div>
+            <button className="owg-button owg-button-primary ogp-invite-claim" type="button" onClick={claimShareBadge}><Gift size={15} /> Я поделился — открыть бейдж SIGNAL</button>
+            <small>Бейдж декоративный, локальный и не имеет денежной стоимости. Публикацию подтверждает только пользователь: API соцсетей не подключены, поэтому факт репоста автоматически не проверяется. Проверяемые награды потребуют серверного учёта и подтверждённой интеграции.</small>
+          </section>
+        </div>
+      )}
+
       {toast && <div className="owg-toast" role="status" aria-live="polite">{toast}</div>}
     </main>
   )

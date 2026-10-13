@@ -35,6 +35,7 @@ const sitemap = read('public/sitemap.xml')
 const nginx = read('nginx.conf')
 const packageJson = JSON.parse(read('package.json'))
 const workflow = read('.github/workflows/frontend-check.yml')
+const playerSource = read('src/GamePlayer.tsx')
 
 for (const id of ['time', 'swarm', 'null-shift', 'inherit', 'remix']) {
   assert.ok(manifest.includes("'" + id + "'"), 'Existing game is missing from manifest: ' + id)
@@ -93,5 +94,24 @@ assert.ok(sitemap.includes('https://osgard.world/entertainment</loc>'), 'Canonic
 assert.ok(main.includes("path === '/games' ? '/entertainment' : path"), 'The /games alias must use /entertainment as canonical URL')
 assert.equal(packageJson.scripts['qa:games'], 'node scripts/games-platform-smoke.mjs', 'Game hub smoke test command is not registered')
 assert.ok(workflow.includes('npm run qa:games'), 'Game hub test is not part of frontend CI')
+
+for (const feature of [
+  "type PromoFrequency = 'off' | 'every2' | 'every'",
+  'PROMO_FREQUENCY_KEY', 'LAUNCH_COUNT_KEY',
+  "recordLocalPromoMetric('shown'", "recordLocalPromoMetric('opened'",
+  'role="dialog" aria-modal="true" aria-labelledby="owg-intermission-title"',
+  'Реклама собственных проектов OSGARD', 'Посмотреть выбранный сервис',
+  'Пропустить и играть', 'value={promoFrequency}'
+]) assert.ok(platform.includes(feature), 'Missing between-game OSGARD promo feature: ' + feature)
+
+for (const feature of [
+  'makeInviteUrl', "utm_medium', 'social_share", "utm_campaign', 'play_invite',
+  'https://t.me/share/url?', 'https://wa.me/?text=', 'twitter.com/intent/tweet',
+  'osgard.games.share-badge.v1', 'claimShareBadge', 'не имеет денежной стоимости',
+  'Публикацию подтверждает только пользователь'
+]) assert.ok(playerSource.includes(feature), 'Missing honest viral invite/reward feature: ' + feature)
+
+assert.ok(css.includes('.owg-intermission-backdrop') && css.includes('.ogp-invite-dialog') && css.includes('@media(max-width:700px)'), 'Intermission and invite dialogs must be responsive')
+assert.ok(platform.includes('Рекомендации между играми'), 'User-controlled promo preference is missing')
 
 console.log('PASS OSGARD PLAY: 5 existing games, hub/routes, privacy/terms drafts, consent-gated events, safe history, UTM cross-promo, project contacts, responsive/accessibility tokens and static archive link')
