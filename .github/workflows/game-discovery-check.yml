@@ -1,0 +1,39 @@
+name: OSGARD game discovery checks
+
+on:
+  pull_request:
+    paths:
+      - "src/GameDetailPage.tsx"
+      - "src/core/gameRecommendations.*"
+      - "src/games-hub.css"
+      - "scripts/game-recommendations-smoke.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/game-discovery-check.yml"
+  push:
+    branches: [master]
+    paths:
+      - "src/GameDetailPage.tsx"
+      - "src/core/gameRecommendations.*"
+      - "src/games-hub.css"
+      - "scripts/game-recommendations-smoke.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/game-discovery-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  contextual-discovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run qa:game-recommendations
