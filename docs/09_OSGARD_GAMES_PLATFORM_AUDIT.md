@@ -196,7 +196,7 @@ A new Godot-native growth slice is implemented and covered by the headless runti
 
 ## Follow-up — read-only Games operations diagnostics (13 October 2026)
 
-- Added /games/operations/, a no-index, read-only operations page with a premium OSGARD interface. It runs 18 same-origin route contracts: the catalogue, ten distinct game entries plus the separate NULL//SHIFT WebGL fallback, the scenario economy page, partner editor, LiveOps page, privacy/terms, public commerce configuration, and the unauthenticated analytics boundary.
+- Added /games/operations/, a no-index, read-only operations page with a premium OSGARD interface. It runs 19 same-origin route contracts: the catalogue, ten distinct game entries plus the separate NULL//SHIFT WebGL fallback, the scenario economy page, partner editor, LiveOps page, privacy/terms, public commerce configuration, and the unauthenticated analytics boundary.
 - Every route probe is a bounded GET with credentials omitted, cache disabled, an eight-second abort timeout and checks for HTTP status, content type and a route-specific marker. This catches common SPA-fallback false positives; it still does not prove runtime playability or correct touch input.
 - The protected analytics probe sends no token and must return JSON HTTP 401/403. An HTML 200 fallback is treated as a failure. No write requests, analytics events, browser storage or third-party assets are used.
 - The operator can download or copy a local JSON report with check timestamp, HTTP status, latency and explanatory status. No report is uploaded by the page.
