@@ -182,3 +182,5 @@ dialog#player-dialog[data-postgame-intermission="1"] .post-run-recommendations{m
 @media(max-width:760px){.og-postgame-spotlight{padding:14px}.og-postgame-spotlight-name{font-size:31px}.og-postgame-spotlight-description{font-size:11px}.og-postgame-spotlight-actions>*{flex:1 1 calc(50% - 8px)}.og-postgame-spotlight-open{flex-basis:100%}.og-postgame-toggle{min-height:40px}}
 @media(max-width:360px){.og-postgame-spotlight-actions>*{width:100%;flex:1 1 100%}}
 @media(prefers-reduced-motion:reduce){.og-postgame-spotlight,.og-postgame-spotlight-actions>*{transition:none;animation:none}}
+
+.og-postgame-reward-consent{display:flex;align-items:flex-start;gap:9px;margin:10px 0;padding:10px 11px;border:1px solid rgba(218,192,133,.25);border-radius:7px;background:#ffffff03;color:#bfbdae;font-size:9px;line-height:1.6;cursor:pointer}.og-postgame-reward-consent input{flex:0 0 auto;margin:2px 0 0;accent-color:#d8c28f}.og-postgame-reward-consent:focus-within{outline:2px solid #f2e4bb;outline-offset:2px}
