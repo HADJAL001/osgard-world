@@ -873,6 +873,7 @@ assert.ok(patinaInline&&patinaInline.length>5000,'PATINA self-contained gameplay
 new Function(patinaInline)
 
 assert.ok(luxuryCss.includes('content-visibility:auto') && luxuryCss.includes('contain-intrinsic-size:auto 500px') && luxuryCss.includes('contain-intrinsic-size:auto 840px'), 'Mobile layout should reserve enough space for off-screen cards and the contact panel')
+assert.ok(luxuryCss.includes('.luxury-entertainment .catalog .grid{content-visibility:auto;contain-intrinsic-size:auto 5700px}') && luxuryCss.includes('.luxury-entertainment .daily-circuit-slot{content-visibility:auto;contain-intrinsic-size:auto 460px}'), 'Mobile first render should defer the eleven-card SVG grid and Daily Circuit panel until they approach the viewport')
 assert.ok(luxuryCss.includes('.luxury-entertainment .hero-art svg{animation:none!important;transform:none!important}'), 'Mobile hero artwork must avoid continuous animation that competes with gameplay startup')
 assert.ok(luxuryCss.includes('luxury-entertainment header{backdrop-filter:none'), 'Mobile layout should avoid expensive header blur')
 
