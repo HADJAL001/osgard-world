@@ -76,6 +76,20 @@ assert.ok(postedEvents.some(item => item.gameId === 'afterimage-run' && item.eve
   'AFTERIMAGE//RUN analytics must not be silently dropped by the client allowlist');
 assert.equal(values.has('osgard.games.analytics-pending.v1'), false, 'Acknowledged AFTERIMAGE//RUN event should drain the queue');
 
+// React game-detail pages persist consent as "granted"/"denied", while the
+// static Games hub historically used "yes"/"no". Both values must mean the
+// same thing on this shared origin without silently turning a denial into consent.
+values.set('osgard.games.analytics-consent.v1', 'granted');
+const detailGranted = { ...event, eventId: 'evt_detail_granted_1234', name: 'catalog_viewed' };
+assert.equal(await queue.enqueue(detailGranted), true, 'An explicit React "granted" decision must permit the queue');
+assert.equal(await queue.flush(), true, 'React "granted" decision should use the existing delivery path');
+assert.ok(postedEvents.some(item => item.eventId === detailGranted.eventId), 'React-granted events should be delivered');
+
+values.set('osgard.games.analytics-consent.v1', 'denied');
+listeners.get('storage')?.({ key: 'osgard.games.analytics-consent.v1' });
+assert.equal(values.has('osgard.games.analytics-pending.v1'), false, 'An explicit React "denied" decision must clear pending analytics');
+
+
 // A consent withdrawal clears pending events and aborts any active request.
 offline = true;
 const second = { ...event, eventId: 'evt_123456789013', name: 'cross_promo_clicked' };
