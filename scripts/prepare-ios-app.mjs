@@ -34,6 +34,7 @@ function prepareWeb() {
   const gamesDir = join(dist, 'games');
   const catalog = join(gamesDir, 'index.html');
   assertFile(join(dist, 'index.html'), 'Vite root bundle');
+  const builtAppIndex = readFileSync(join(dist, 'index.html'), 'utf8');
   assertFile(catalog, 'Games catalogue');
   assertFile(join(gamesDir, 'null-shift', 'index.html'), 'Mobile WebGL NULL//SHIFT game');
   assertFile(join(gamesDir, 'osgard-native-share.js'), 'Native share bridge bundle');
@@ -69,6 +70,7 @@ function prepareWeb() {
     const routes = new Set(['null-shift', 'time', 'swarm', 'inherit', 'remix', 'civic-cascade', 'patina', 'signal-run', 'cascade-lab', 'afterimage-run']);
     text = text.replace(/href=(['"])\/game\/([a-z0-9-]+)\1/gi, (match, quote, slug) =>
       routes.has(slug) ? 'href=' + quote + '/games/' + slug + '/index.html' + quote : match);
+    text = text.replaceAll('href="/games/time"', 'href="/games/time/index.html"');
     return text;
   });
 
@@ -90,6 +92,20 @@ function prepareWeb() {
     apiBaseUrl: apiBase,
     notes: 'OSGARD PLAY iOS bundle. Public HTTPS endpoint only; no secrets. Analytics remains consent-gated.',
   }, null, 2) + '\n');
+
+  // TIME / EMPIRE is a React route in the existing app, not a standalone HTML game.
+  // Preserve its built app entry so the Capacitor file router can launch that route locally.
+  const timeDir = join(gamesDir, 'time');
+  mkdirSync(timeDir, { recursive: true });
+  let timeEntry = builtAppIndex
+    .replace('<title>OSGARD WORLD — цифровая экосистема</title>', '<title>Империя времени — OSGARD PLAY</title>')
+    .replace('href="https://osgard.world/"', 'href="https://osgard.world/games/time"');
+  const timeBootstrap = '<script>window.OSGARD_PUBLIC_ORIGIN = "https://osgard.world"; history.replaceState(null, "", "/games/time");</script>\n' +
+    '<script src="/games/osgard-native-share.js" defer></script>';
+  timeEntry = timeEntry.includes('OSGARDNativeShare')
+    ? timeEntry
+    : timeEntry.replace('</head>', timeBootstrap + '\n</head>');
+  writeFileSync(join(timeDir, 'index.html'), timeEntry);
 
   const appShell = '<!doctype html><html lang="ru"><head><meta charset="utf-8">' +
     '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">' +
