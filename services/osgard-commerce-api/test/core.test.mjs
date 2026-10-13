@@ -74,7 +74,7 @@ test("admin lead status updates accept only allow-listed workflow states", () =>
   }
   assert.equal(validateLeadStatusPayload(null).code, "LEAD_STATUS_PAYLOAD_INVALID");
   assert.equal(validateLeadStatusPayload([]).code, "LEAD_STATUS_PAYLOAD_INVALID");
-  assert.equal(validateLeadStatusPayload({}).code, "LEAD_STATUS_INVALID");
+  assert.equal(validateLeadStatusPayload({}).code, "LEAD_STATUS_FIELDS_INVALID");
   assert.equal(validateLeadStatusPayload({ status: "new", notes: "unexpected field" }).code, "LEAD_STATUS_FIELDS_INVALID");
   assert.equal(validateLeadStatusPayload({ status: "approved<script>" }).code, "LEAD_STATUS_INVALID");
   assert.equal(validateLeadStatusPayload({ status: "unknown" }).code, "LEAD_STATUS_INVALID");
