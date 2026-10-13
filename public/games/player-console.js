@@ -12,6 +12,8 @@
   });
   const MAX_QUEUE = 5;
   const MAX_LOG = 1000;
+  const MAX_ACTIVITY_DAYS = 4000;
+  const MAX_TOTAL_LAUNCHES = 10000000;
   const MAX_IMPORT_BYTES = 100 * 1024;
   const VALID_SCALE = new Set(['0.9', '1', '1.1', '1.2']);
   const $ = (selector, root = document) => root.querySelector(selector);
@@ -25,6 +27,11 @@
     catch { return false; }
   };
   const dateKey = (value = Date.now()) => new Date(value).toISOString().slice(0, 10);
+  function isValidDateKey(value) {
+    if (typeof value !== 'string' || !/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;
+    const date = new Date(value + 'T00:00:00.000Z');
+    return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+  }
   const escapeId = value => String(value || '').replace(/[^a-z0-9-]/gi, '').slice(0, 48);
 
   function getGames() {
@@ -56,6 +63,15 @@
       row && typeof row === 'object' && valid.has(row.game) &&
       typeof row.at === 'string' && Number.isFinite(Date.parse(row.at))
     ).slice(-MAX_LOG) : [];
+    const totalLaunches = Number.isSafeInteger(raw.totalLaunches) && raw.totalLaunches >= 0
+      ? Math.min(MAX_TOTAL_LAUNCHES, Math.max(raw.totalLaunches, launches.length))
+      : launches.length;
+    const gameIdsEver = [...new Set([
+      ...cleanIds(Array.isArray(raw.gameIdsEver) ? raw.gameIdsEver.slice(-valid.size) : [], valid.size),
+      ...launches.map(row => row.game)
+    ])].slice(0, valid.size);
+    const storedDays = Array.isArray(raw.activityDays) ? raw.activityDays.slice(-MAX_ACTIVITY_DAYS).filter(isValidDateKey) : [];
+    const activityDays = [...new Set([...storedDays, ...launches.map(row => dateKey(Date.parse(row.at)))])].sort().slice(-MAX_ACTIVITY_DAYS);
     const secondsByGame = {};
     if (raw.secondsByGame && typeof raw.secondsByGame === 'object' && !Array.isArray(raw.secondsByGame)) {
       for (const [id, value] of Object.entries(raw.secondsByGame)) {
@@ -68,7 +84,7 @@
         if (valid.has(id) && Number.isInteger(value) && value >= 0) completions[id] = Math.min(100000, value);
       }
     }
-    return { schema: 1, launches, secondsByGame, completions };
+    return { schema: 1, launches, totalLaunches, gameIdsEver, activityDays, secondsByGame, completions };
   }
   function loadQueue() { return cleanIds(safeRead(KEY.queue, []), MAX_QUEUE); }
   function loadSettings() {
@@ -150,6 +166,9 @@
   }
   function persistStats() {
     stats.launches = stats.launches.slice(-MAX_LOG);
+    stats.totalLaunches = Math.min(MAX_TOTAL_LAUNCHES, Math.max(Number.isSafeInteger(stats.totalLaunches) ? stats.totalLaunches : 0, stats.launches.length));
+    stats.gameIdsEver = [...new Set([...cleanIds(stats.gameIdsEver, getGames().length), ...stats.launches.map(row => row.game)])].slice(0, getGames().length);
+    stats.activityDays = [...new Set([...(Array.isArray(stats.activityDays) ? stats.activityDays.filter(isValidDateKey).slice(-MAX_ACTIVITY_DAYS) : []), ...stats.launches.map(row => dateKey(Date.parse(row.at)))])].sort().slice(-MAX_ACTIVITY_DAYS);
     if (!safeWrite(KEY.stats, stats)) setStatus('Хранилище браузера недоступно: изменения остаются только до закрытия страницы.', 'warning');
   }
   function persistQueue() {
@@ -175,7 +194,7 @@
     return genres;
   }
   function dateStreak() {
-    const days = [...new Set(stats.launches.map(row => row.at.slice(0, 10)))].sort().reverse();
+    const days = [...stats.activityDays].sort().reverse();
     if (!days.length) return 0;
     const today = dateKey();
     const yesterday = dateKey(Date.now() - 86400000);
@@ -192,10 +211,10 @@
   }
   function localBadgeList(uniqueCount, genreCount) {
     const badges = [
-      { title: 'Первый запуск', detail: 'Открыта хотя бы одна игра', ok: stats.launches.length >= 1 },
+      { title: 'Первый запуск', detail: 'Открыта хотя бы одна игра', ok: stats.totalLaunches >= 1 },
       { title: 'Исследователь', detail: 'Открыты три разные игры', ok: uniqueCount >= 3 },
       { title: 'Разные миры', detail: 'Попробованы три жанра за неделю', ok: genreCount >= 3 },
-      { title: 'Постоянство', detail: 'Активность в три разных календарных дня', ok: new Set(stats.launches.map(row => row.at.slice(0, 10))).size >= 3 },
+      { title: 'Постоянство', detail: 'Активность в три разных календарных дня', ok: stats.activityDays.length >= 3 },
       { title: 'Длинная сессия', detail: '20 минут с открытым игровым окном', ok: Object.values(stats.secondsByGame).reduce((sum, value) => sum + value, 0) >= 1200 }
     ];
     const wrap = $('[data-pc-badges]', dialog);
@@ -253,10 +272,10 @@
     slot.append(copy, open, add);
   }
   function renderOverview() {
-    const unique = new Set(stats.launches.map(row => row.game)).size;
+    const unique = stats.gameIdsEver.length;
     const seconds = Object.values(stats.secondsByGame).reduce((sum, value) => sum + value, 0);
-    const days = new Set(stats.launches.map(row => row.at.slice(0, 10))).size;
-    $('[data-pc-launch-count]', dialog).textContent = String(stats.launches.length);
+    const days = stats.activityDays.length;
+    $('[data-pc-launch-count]', dialog).textContent = String(stats.totalLaunches);
     $('[data-pc-unique-count]', dialog).textContent = String(unique);
     $('[data-pc-time]', dialog).textContent = Math.floor(seconds / 60) + ' мин';
     $('[data-pc-days]', dialog).textContent = String(days);
@@ -471,6 +490,15 @@
     if (!raw || typeof raw !== 'object' || !Array.isArray(raw.launches) || raw.launches.length > MAX_LOG) throw new Error('Некорректная история запусков.');
     const games = gameMap();
     const launches = raw.launches.filter(row => row && games.has(row.game) && typeof row.at === 'string' && Number.isFinite(Date.parse(row.at))).map(row => ({ game: row.game, at: new Date(row.at).toISOString() }));
+    const totalLaunches = Number.isSafeInteger(raw.totalLaunches) && raw.totalLaunches >= 0
+      ? Math.min(MAX_TOTAL_LAUNCHES, Math.max(raw.totalLaunches, launches.length))
+      : launches.length;
+    const gameIdsEver = [...new Set([
+      ...cleanIds(Array.isArray(raw.gameIdsEver) ? raw.gameIdsEver.slice(-games.size) : [], games.size),
+      ...launches.map(row => row.game)
+    ])].slice(0, games.size);
+    const importedDays = Array.isArray(raw.activityDays) ? raw.activityDays.slice(-MAX_ACTIVITY_DAYS).filter(isValidDateKey) : [];
+    const activityDays = [...new Set([...importedDays, ...launches.map(row => dateKey(Date.parse(row.at)))])].sort().slice(-MAX_ACTIVITY_DAYS);
     const secondsByGame = {};
     if (raw.secondsByGame && typeof raw.secondsByGame === 'object' && !Array.isArray(raw.secondsByGame)) {
       for (const [id, value] of Object.entries(raw.secondsByGame)) if (games.has(id) && Number.isFinite(value) && value >= 0 && value <= 30 * 86400) secondsByGame[id] = value;
@@ -479,7 +507,7 @@
     if (raw.completions && typeof raw.completions === 'object' && !Array.isArray(raw.completions)) {
       for (const [id, value] of Object.entries(raw.completions)) if (games.has(id) && Number.isInteger(value) && value >= 0 && value <= 100000) completions[id] = value;
     }
-    return { schema: 1, launches, secondsByGame, completions };
+    return { schema: 1, launches, totalLaunches, gameIdsEver, activityDays, secondsByGame, completions };
   }
   async function importData(file) {
     const output = $('[data-pc-data-status]', dialog);
@@ -514,7 +542,7 @@
     for (const key of [KEY.stats, KEY.queue, KEY.favorites, KEY.recent]) {
       try { localStorage.removeItem(key); } catch {}
     }
-    stats = { schema: 1, launches: [], secondsByGame: {}, completions: {} };
+    stats = { schema: 1, launches: [], totalLaunches: 0, gameIdsEver: [], activityDays: [], secondsByGame: {}, completions: {} };
     queue = [];
     persistSettings();
     renderOverview();
@@ -529,8 +557,8 @@
       currentPath: location.pathname, online: navigator.onLine,
       currentGame: escapeId($('#player-dialog')?.dataset.game || ''),
       gameCount: getGames().length, consoleStats: {
-        launchCount: stats.launches.length,
-        uniqueGames: new Set(stats.launches.map(row => row.game)).size,
+        launchCount: stats.totalLaunches,
+        uniqueGames: stats.gameIdsEver.length,
         localQueueCount: queue.length
       },
       capabilities, routeChecks: currentRouteResults
@@ -627,6 +655,9 @@
         activeGame = id; activeAt = Date.now(); lastTick = activeAt;
         stats.launches.push({ game: id, at: new Date(activeAt).toISOString() });
         stats.launches = stats.launches.slice(-MAX_LOG);
+        stats.totalLaunches = Math.min(MAX_TOTAL_LAUNCHES, stats.totalLaunches + 1);
+        stats.gameIdsEver = [...new Set([...stats.gameIdsEver, id])].slice(0, gameMap().size);
+        stats.activityDays = [...new Set([...stats.activityDays, dateKey(activeAt)])].sort().slice(-MAX_ACTIVITY_DAYS);
         persistStats(); renderOverview(); updateConnectionState();
       });
       observer.observe(player, { attributes: true, attributeFilter: ['open', 'data-game'] });
@@ -695,7 +726,7 @@
   window.OSGARDPlayerConsole = Object.freeze({
     open: openConsole,
     version: '1.0.0',
-    getLocalSnapshot: () => ({ launches: stats.launches.length, uniqueGames: new Set(stats.launches.map(row => row.game)).size, queuedGames: queue.length }),
+    getLocalSnapshot: () => ({ launches: stats.totalLaunches, uniqueGames: stats.gameIdsEver.length, queuedGames: queue.length }),
     scanRoutes,
     exportData
   });
