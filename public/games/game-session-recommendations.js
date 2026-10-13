@@ -403,7 +403,7 @@ function servicesShelf(gameId,showPromos,completedCount){
  const activeSelected=services.filter(([id,,,,,,featured=false,active=true])=>active!==false&&preferences.selected.includes(id));
  collapseToggle.hidden=!(showPromos&&activeSelected.length);
  const visible=activeSelected;
- const savedSpotlight=readPreferredService();
+ let savedSpotlight=readPreferredService();
  const contextualSpotlight=recommendationByGame[gameId];
  let spotlightServiceId=activeSelected.some(item=>item[0]===savedSpotlight)?savedSpotlight:activeSelected.some(item=>item[0]===contextualSpotlight)?contextualSpotlight:activeSelected.length?activeSelected[Math.max(0,completedCount-1)%activeSelected.length][0]:null;
  const spotlight=make('section','og-postgame-spotlight');
@@ -447,15 +447,14 @@ function servicesShelf(gameId,showPromos,completedCount){
   open.addEventListener('click',()=>void sendSelectEvent('cross_promo_clicked',gameId,'osgard-select:spotlight:'+item[0]));
   const next=make('button','og-postgame-spotlight-next','Другой проект ↻');next.type='button';
   next.addEventListener('click',()=>{
-   const pool=activeSelected.map(entry=>entry[0]).filter(id=>id!==spotlightServiceId);
-   if(!pool.length){spotlightStatus.textContent='В настройках выбери ещё один проект, чтобы сменить рекомендацию.';return}
-   const currentIndex=pool.indexOf(spotlightServiceId);
-   spotlightServiceId=pool[currentIndex<0?0:(currentIndex+1)%pool.length];
+   if(activeSelected.length<2){spotlightStatus.textContent='В настройках выбери ещё один проект, чтобы сменить рекомендацию.';return}
+   const currentIndex=activeSelected.findIndex(entry=>entry[0]===spotlightServiceId);
+   spotlightServiceId=activeSelected[(Math.max(0,currentIndex)+1)%activeSelected.length][0];
    renderSpotlight(spotlightServiceId);
   });
   const save=make('button','og-postgame-spotlight-preferred',savedSpotlight===item[0]?'★ Мой выбор сохранён':'☆ Запомнить мой выбор');save.type='button';
   save.addEventListener('click',()=>{
-   const ok=savePreferredService(item[0]);
+   const ok=savePreferredService(item[0]);if(ok)savedSpotlight=item[0];
    spotlightStatus.textContent=ok?'Сохранено. Эта рекомендация будет приоритетной в следующих межигровых подборках.':'Браузер не разрешил сохранить выбор. Текущая рекомендация остаётся доступной.';
    save.textContent=ok?'★ Мой выбор сохранён':'☆ Повторить сохранение';
   });
