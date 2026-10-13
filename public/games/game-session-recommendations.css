@@ -66,6 +66,7 @@ dialog#player-dialog.has-recommendations .player-view iframe{min-height:155px}
 .og-postgame-network:focus-visible,.og-postgame-share-primary:focus-visible,.og-postgame-claim:focus-visible{outline:2px solid #f2e4bb;outline-offset:2px}
 .og-postgame-claim[hidden]{display:none}
 .og-postgame-status{margin:0;color:#d9c997;font-size:10px;line-height:1.6;overflow-wrap:anywhere}
+.og-postgame-qualified-status{margin:0;color:#d9c997;font-size:10px;line-height:1.6;overflow-wrap:anywhere}
 .og-postgame-reward-note{margin:0;color:#777e73;font-size:8px;line-height:1.6}
 @media(max-width:760px){
  .post-run-recommendations{max-height:min(56svh,640px);padding:10px}
