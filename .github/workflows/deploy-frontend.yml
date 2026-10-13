@@ -34,6 +34,7 @@ on:
       - "scripts/games-portal-smoke.mjs"
       - "scripts/remix-growth-smoke.mjs"
       - "scripts/games-detail-smoke.mjs"
+      - "scripts/generate-games-share-cards.mjs"
       - "scripts/games-monetization-smoke.mjs"
       - "scripts/ecosystem-integrity-smoke.mjs"
       - "docs/09_OSGARD_GAMES_PLATFORM_AUDIT.md"
