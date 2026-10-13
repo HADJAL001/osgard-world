@@ -17,6 +17,12 @@ execFileSync(process.execPath,[resolve('scripts/generate-games-share-cards.mjs')
 const shareCardGenerator=readFileSync(resolve('scripts/generate-games-share-cards.mjs'),'utf8')
 assert.ok(shareCardGenerator.includes("id: 'afterimage-run'")&&shareCardGenerator.includes("order: '10 / 10'")&&shareCardGenerator.includes('10 WORLDS / ONE HUB'),'Share-card/invitation generator must include AFTERIMAGE//RUN')
 const html=readFileSync(resolve(root,'index.html'),'utf8')
+
+const baseCardIntrinsic=html.match(/\\.card\\{[^}]*contain-intrinsic-size:auto (\\d+)px\\}/)
+assert.ok(baseCardIntrinsic&&Number(baseCardIntrinsic[1])>=520,'Offscreen game cards must reserve enough vertical space; 430px caused touch targets to overlap the following card')
+const mobileCardIntrinsic=html.match(/@media\\(max-width:760px\\)[\\s\\S]*?\\.card\\{contain-intrinsic-size:auto (\\d+)px\\}\\.card\\.featured\\{grid-column:auto;display:flex;contain-intrinsic-size:auto (\\d+)px\\}/)
+assert.ok(mobileCardIntrinsic&&Number(mobileCardIntrinsic[1])>=540&&Number(mobileCardIntrinsic[2])>=620,'Mobile game cards need conservative intrinsic-size estimates to prevent cards overlapping tap targets')
+
 const catalogCards=[...html.matchAll(/<article\b[^>]*\bdata-game="([^"]+)"[^>]*\bdata-genres="([^"]+)"[^>]*>/g)].map(match=>({id:match[1],genres:match[2].trim().split(/\s+/).filter(Boolean)}))
 const deployWorkflow=readFileSync(resolve('.github/workflows/deploy-frontend.yml'),'utf8')
 const routeMatrix=readFileSync(resolve('scripts/production-route-matrix.mjs'),'utf8')
