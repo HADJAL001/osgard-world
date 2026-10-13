@@ -335,6 +335,11 @@ assert.ok(lifecycle.includes('if(!consent||!token)return'),'Lifecycle analytics 
 new Function(lifecycle)
 assert.ok(lifecycle.includes('dialog#player-dialog{width:100vw'),'Mobile CSS selector must match actual dialog id')
 assert.ok(html.includes('id="post-run-recommendations"')&&lazyRuntime.includes('game-session-recommendations.css')&&lazyRuntime.includes('game-session-recommendations.js'),'The catalogue must mount post-session recommendations through the on-demand loader')
+assert.ok(html.includes('id="osgard-aftergame-intermission"')&&html.includes('aria-label="Подборка между игровыми сессиями"'),'The Games hub must reserve an accessible post-session area outside the player dialog')
+assert.ok(lifecycle.includes("new CustomEvent('osgard:game-session-ended'")&&lifecycle.includes("endReason==='closed_by_user'"),'Closing a live session must dispatch an explicit post-session event')
+assert.ok(recommendationScript.includes("document.addEventListener('osgard:game-session-ended'")&&recommendationScript.includes("detail.reason!=='closed_by_user'")&&recommendationScript.includes('outsideRoot.hidden=false'),'The owned-service intermission must also appear after a player closes an active game')
+assert.ok(recommendationScript.includes("document.addEventListener('osgard:game-launching',()=>{")&&recommendationScript.includes("outsideRoot.hidden=true"),'The outside intermission must clear when the next game launches')
+assert.ok(recommendationStyles.includes('#osgard-aftergame-intermission[hidden]')&&recommendationStyles.includes('.og-postgame-outside-suite'),'Post-session intermission must have a hidden state and standalone layout')
 assert.ok(recommendationScript.includes("document.addEventListener('osgard:game-completed'")&&recommendationScript.includes("document.addEventListener('osgard:game-launching'"),'The deferred recommendation runtime must subscribe to the gameplay lifecycle')
 assert.ok(lifecycle.includes("document.dispatchEvent(new Event('osgard:game-launching'))")&&lifecycle.includes("new CustomEvent('osgard:game-completed'"),'Lifecycle wrapper must clear recommendations on launch and publish confirmed completion')
 assert.ok(recommendationScript.includes("document.addEventListener('osgard:game-completed'")&&recommendationScript.includes("document.addEventListener('osgard:game-launching'"),'Recommendation module must subscribe to game lifecycle events')
@@ -342,11 +347,12 @@ assert.ok(recommendationStyles.includes('.post-run-recommendations')&&recommenda
 new Function(recommendationScript)
 const mockNode=()=>({className:'',textContent:'',hidden:false,dataset:{},attributes:{},children:[],append(...nodes){this.children.push(...nodes)},replaceChildren(...nodes){this.children=nodes},setAttribute(name,value){this.attributes[name]=value},addEventListener(){},querySelector(selector){return selector.startsWith('.')?this.children.find(node=>node.className===selector.slice(1))||null:null}})
 const mockHost=mockNode();mockHost.hidden=true
+const mockOutside=mockNode();mockOutside.hidden=true
 const mockClasses=new Set()
 const mockDialog={classList:{add(name){mockClasses.add(name)},remove(name){mockClasses.delete(name)},contains(name){return mockClasses.has(name)}}}
 const mockHandlers={}
 const mockHead=mockNode()
-const mockDocument={head:mockHead,querySelector(selector){return selector==='#post-run-recommendations'?mockHost:selector==='#player-dialog'?mockDialog:null},createElement(){return mockNode()},addEventListener(name,handler){(mockHandlers[name]??=[]).push(handler)},dispatch(name,event={}){const handlers=mockHandlers[name]||[];assert.ok(handlers.length,'Missing recommendation/growth lifecycle listener: '+name);handlers.forEach(handler=>handler(event))}}
+const mockDocument={head:mockHead,querySelector(selector){return selector==='#post-run-recommendations'?mockHost:selector==='#osgard-aftergame-intermission'?mockOutside:selector==='#player-dialog'?mockDialog:null},createElement(){return mockNode()},addEventListener(name,handler){(mockHandlers[name]??=[]).push(handler)},dispatch(name,event={}){const handlers=mockHandlers[name]||[];assert.ok(handlers.length,'Missing recommendation/growth lifecycle listener: '+name);handlers.forEach(handler=>handler(event))}}
 new Function('document','window','location',recommendationScript)(mockDocument,{}, {search:'',origin:'https://osgard.world',pathname:'/games/'})
 mockDocument.dispatch('osgard:game-completed',{detail:{game:'swarm'}})
 assert.equal(mockHandlers['osgard:game-completed'].length,3,'Recommendation, invite and OSGARD SELECT modules must subscribe to completed sessions')
@@ -364,6 +370,15 @@ assert.equal(mockHost.children.length,0,'Stale recommendation links must be remo
 assert.equal(mockClasses.has('has-recommendations'),false,'The player modal should return to normal layout on relaunch')
 mockDocument.dispatch('osgard:game-completed',{detail:{game:'unknown'}})
 assert.equal(mockHost.hidden,true,'Unknown game IDs must not generate recommendations')
+mockDocument.dispatch('osgard:game-session-ended',{detail:{game:'patina',reason:'closed_by_user',durationSeconds:31}})
+assert.equal(mockOutside.hidden,false,'Closing a live PATINA session should show the owned-service intermission outside the player dialog')
+const outsideSuite=mockOutside.children.find(node=>node.className==='og-postgame-suite og-postgame-outside-suite')
+assert.ok(outsideSuite,'Closed-session intermission should contain a standalone service/reward suite')
+assert.equal(outsideSuite.children.find(node=>node.className==='og-postgame-services').children.find(node=>node.className==='og-postgame-service-grid').children.length,10,'Closed-session intermission must preserve all ten owned service choices')
+assert.equal(outsideSuite.children.find(node=>node.className==='og-postgame-back').href,'#catalog','Players must have a clear path back to the next game')
+mockDocument.dispatch('osgard:game-launching')
+assert.equal(mockOutside.hidden,true,'Starting the next game must dismiss the standalone intermission')
+assert.equal(mockOutside.children.length,0,'Starting the next game must clear stale promoted-service cards')
 assert.ok(recommendationScript.includes("'cascade-lab'")&&recommendationScript.includes("'civic-cascade'")&&recommendationScript.includes("'signal-run'"),'Recommendation map must cover the nine-game catalogue')
 assert.ok(inheritSafeForSmoke.includes('<meta name="osgard-inherit-api-base" content="">'),'INHERIT API must be an explicit deployment setting')
 assert.ok(!inheritSafeForSmoke.includes('http://127.0.0.1:4174')&&!inheritSafeForSmoke.includes('http://127.0.0.1:4175'),'INHERIT public client must not contain localhost endpoints')
