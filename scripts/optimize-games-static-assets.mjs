@@ -11,6 +11,9 @@ const MINIFY_ASSETS = [
   'commerce-client.js',
   'luxury.js',
   'daily-circuit.js',
+  'player-passport.css',
+  'player-passport-core.js',
+  'player-passport.js',
 ]
 
 function walk(directory) {
