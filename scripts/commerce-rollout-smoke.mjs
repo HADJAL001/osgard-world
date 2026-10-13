@@ -77,7 +77,7 @@ for (const [label, page] of [["Games", html], ["Partners", partners], ["Premium"
 }
 for (const value of ["window.OSGARD_CONSENTED_ANALYTICS", "MAX_PENDING = 100", "MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000", "result?.accepted", "clearQueue()"]) {
   assert.ok(consentQueue.includes(value), "Consent-aware retry queue is missing: " + value);
-for (const eventName of ["owned_promo_intermission_skipped", "owned_promo_preferences_saved", "social_share_intent", "social_reward_claimed", "owned_promo_impression"]) assert.ok(consentQueue.includes("'"+eventName+"'"), "Consent queue does not allow OSGARD SELECT event: " + eventName);
+for (const eventName of ["owned_promo_intermission_skipped", "owned_promo_preferences_saved", "social_share_intent", "social_reward_claimed", "daily_play_reward_claimed", "referral_welcome_reward_claimed", "shards_cosmetic_unlocked", "owned_promo_impression"]) assert.ok(consentQueue.includes("'"+eventName+"'"), "Consent queue does not allow OSGARD SELECT event: " + eventName);
 
 }
 assert.ok(sharedClient.includes("queue.enqueue(event)"), "Website analytics must use the retry queue when available.");
@@ -114,7 +114,7 @@ assert.ok(playerLifecycle.includes("eventId:'evt_'"), "Player lifecycle should a
 for (const value of ['id="social-network-table"', 'id="social-network-body"', "renderSocialChannels", "socialShareByNetwork"]) {
   assert.ok(admin.includes(value), "Social-channel dashboard missing: " + value);
 }
-for (const value of ['id="analytics-retention"', 'id="game-analytics-table"', "analyticsByGame", "analyticsFunnel"]) {
+for (const value of ['id="analytics-retention"', 'id="game-analytics-table"', 'id="analytics-daily-play-rewards"', 'id="analytics-referral-welcome-rewards"', 'id="analytics-cosmetic-unlocks"', "analyticsByGame", "analyticsFunnel", "dailyPlayRewards", "referralWelcomeRewards", "cosmeticUnlocks"]) {
   assert.ok(admin.includes(value), "Admin analytics dashboard missing: " + value);
 }
 assert.ok(readFileSync(resolve("public/games/premium/index.html"), "utf8").includes('src="/games/commerce-client.js"'), "Premium page view analytics must use the shared consent gate.");
