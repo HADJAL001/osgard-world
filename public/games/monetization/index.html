@@ -58,6 +58,11 @@
           <div class="group"><h3>Расходы</h3>
             <div class="field"><label for="monthlyOperatingCostUsd">Ежемесячные расходы<small>Серверы, API, инструменты, поддержка</small></label><div class="field-unit"><input id="monthlyOperatingCostUsd" name="monthlyOperatingCostUsd" type="number" min="0" max="1000000000" step="25" value="400" required><span>USD</span></div></div>
           </div>
+          <div class="group"><h3>Спонсорские кампании (сценарий)</h3>
+            <p class="model-note">Это модель заключённых контрактов, не действующая реклама. Начальное число кампаний равно нулю.</p>
+            <div class="field"><label for="sponsorCampaignsPerMonth">Оплаченных кампаний в месяц<small>Среднее число после заключённых контрактов</small></label><input id="sponsorCampaignsPerMonth" name="sponsorCampaignsPerMonth" type="number" min="0" max="1000000" step=".5" value="0" required></div>
+            <div class="field"><label for="averageSponsorPackageUsd">Средний пакет спонсорства<small>Используй фактическую цену контракта</small></label><div class="field-unit"><input id="averageSponsorPackageUsd" name="averageSponsorPackageUsd" type="number" min="0" max="10000000" step="100" value="2500" required><span>USD</span></div></div>
+          </div>
           <div class="group viral-inputs"><h3>Виральность и годовая цель</h3>
             <div class="field"><label for="inviteShareRatePct">Активные игроки, делящиеся вызовом</label><div class="field-unit"><input id="inviteShareRatePct" name="inviteShareRatePct" type="number" min="0" max="100" step="1" value="10" required><span>%</span></div></div>
             <div class="field"><label for="invitesPerSharer">Отправленных приглашений на игрока</label><input id="invitesPerSharer" name="invitesPerSharer" type="number" min="0" max="20" step=".1" value="3" required></div>
