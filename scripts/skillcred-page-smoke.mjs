@@ -104,6 +104,7 @@ for (const file of files) {
   assert.ok(js.includes('IntersectionObserver') && js.includes('trustSpine') && js.includes('stroke-dashoffset'), file + ': scroll-driven trust thread is not wired')
   assert.ok(!/scrollHeight|ResizeObserver/.test(js.slice(js.indexOf('function trustScrollSetup()'), js.indexOf('async function loadHeroArtifact()'))), file + ': trust-thread progress must not force full-document layout')
   assert.ok(js.includes('"hero-title"'), file + ': hero heading must keep its natural wrapping path')
+  assert.ok(js.includes('(max-width: 820px), (pointer: coarse)') && /if\(\w+\)\{\w+\.dataset\.worded=["']true["'];?return;?\}/.test(js), file + ': mobile should retain natural text flow and avoid per-word DOM mutations')
   assert.ok(js.includes("requestAnimationFrame(") && /removeProperty\(["\']--pointer-x["\']\)/.test(js), file + ': cursor depth must be frame-limited and reset on exit');
 
   assert.ok(css.includes('.artifact-statusline{position:relative;z-index:2;gap:9px;margin:15px 0 0;min-height:3em'), file + ': hero status needs reserved height')
@@ -131,6 +132,9 @@ for (const file of files) {
      assert.ok(js.includes('var issuePromise=request("/demo/issue","POST",{})'), file + ': demo issuance should start immediately')
      assert.ok(js.indexOf('await wait(Math.max(0,(reduced?0:1850)-(performance.now()-started)))') < js.indexOf('await renderCredential(issued)'), file + ': update the credential only after the first-paint scene')
      assert.ok(js.includes('function sectionMotionSetup()') && js.includes('section.classList.toggle(pair[1],entry.isIntersecting)'), file + ': off-screen trace animations must remain idle')
+     assert.ok(/function sectionMotionSetup\(\)\{if\(mobileLite\|\|/.test(js), file + ': mobile must skip decorative section-trace observers')
+     assert.ok(js.includes('if(mobileLite||!("IntersectionObserver" in window)||reduced){items.forEach(function(item){item.classList.add("is-visible");});return;}'), file + ': mobile copy must render immediately without per-element reveal observers')
+     assert.ok(js.includes('if(mobileLite||reduced||!("IntersectionObserver" in window))return;'), file + ': mobile must skip scroll-following trust-thread observers')
      assert.ok(!js.includes('window.setTimeout(loadHeroArtifact,1800)'), file + ': automatic API startup must not use a fixed 1.8s delay')
      assert.ok(js.includes('reduced?0:1850'), file + ': reduced-motion must skip the hero scene wait')
    }

@@ -3,6 +3,7 @@
 var API_BASE=(document.querySelector('meta[name="api-base"]')||{}).content||"/skillcred-api";
 var $=function(id){return document.getElementById(id);},credential=null,verified=false,revoked=false,busy=false,events=0,lastJson="",heroStarted=false,inspectorReady=false,eventLogVisible=false,eventScrollPending=false,eventScrollScheduled=false,pendingEvents=[],heroVerifiedAt=0,freshnessTimer=0;
 var reduced=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+var mobileLite=!!(window.matchMedia&&window.matchMedia("(max-width: 820px), (pointer: coarse)").matches);
 var samples={
 curl:{file:"terminal / issue.sh",text:"curl -sS -X POST \\\n  https://osgard.world/skillcred-api/demo/issue \\\n  -H 'Accept: application/json' \\\n  -H 'Content-Type: application/json' \\\n  -d '{}'"},
 node:{file:"node / issue.mjs",text:'const base = "https://osgard.world/skillcred-api";\nconst response = await fetch(base + "/demo/issue", {\n  method: "POST",\n  headers: { "Accept": "application/json", "Content-Type": "application/json" },\n  body: "{}"\n});\nif (!response.ok) throw new Error("HTTP " + response.status);\nconst credential = await response.json();\nconsole.log(credential.id);'},
@@ -184,7 +185,7 @@ var observer=new IntersectionObserver(function(entries){if(entries.some(function
 observer.observe(section);
 }
 
-function sectionMotionSetup(){if(!("IntersectionObserver" in window)||reduced)return;[[".journey-line","is-visible"],[".developers","is-tracing"]].forEach(function(pair){var section=document.querySelector(pair[0]);if(!section)return;var observer=new IntersectionObserver(function(entries){entries.forEach(function(entry){section.classList.toggle(pair[1],entry.isIntersecting);});},{rootMargin:"0px 0px 18% 0px",threshold:.01});observer.observe(section);});}
+function sectionMotionSetup(){if(mobileLite||!("IntersectionObserver" in window)||reduced)return;[[".journey-line","is-visible"],[".developers","is-tracing"]].forEach(function(pair){var section=document.querySelector(pair[0]);if(!section)return;var observer=new IntersectionObserver(function(entries){entries.forEach(function(entry){section.classList.toggle(pair[1],entry.isIntersecting);});},{rootMargin:"0px 0px 18% 0px",threshold:.01});observer.observe(section);});}
 function eventLogVisibilitySetup(){
 var log=$("eventLog");if(!log)return;
 if(!("IntersectionObserver" in window)){eventLogVisible=true;if(pendingEvents.length){pendingEvents.splice(0).forEach(appendEvent);}return;}
@@ -205,6 +206,7 @@ observer.observe(log);
 }
 function wrapHeadingWords(head){
 if(!head||head.dataset.worded==="true")return;
+if(mobileLite){head.dataset.worded="true";return;}
 if(head.classList.contains("hero-title")){head.dataset.worded="true";return;}
 var walker=document.createTreeWalker(head,NodeFilter.SHOW_TEXT,{acceptNode:function(node){return node.nodeValue.trim()&&!node.parentElement.closest("svg,script,style,code")?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT;}});
 var nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
@@ -215,7 +217,8 @@ head.dataset.worded="true";
 }
 function revealSetup(){
 var items=Array.from(document.querySelectorAll(".reveal,.kinetic-heading"));
-if(!("IntersectionObserver" in window)||reduced){items.forEach(function(item){item.classList.add("is-visible");});return;}
+// On small/coarse-pointer devices, render all copy immediately instead of creating dozens of reveal observers.
+if(mobileLite||!("IntersectionObserver" in window)||reduced){items.forEach(function(item){item.classList.add("is-visible");});return;}
 var observer=new IntersectionObserver(function(entries){entries.forEach(function(entry){if(!entry.isIntersecting)return;var target=entry.target;observer.unobserve(target);if(target.classList.contains("kinetic-heading")){window.setTimeout(function(){wrapHeadingWords(target);target.classList.add("is-visible");},0);}else{target.classList.add("is-visible");}});},{threshold:.12,rootMargin:"0px 0px -28px 0px"});
 items.forEach(function(item){observer.observe(item);});
 var heroHead=document.querySelector(".hero .kinetic-heading"),heroCopy=document.querySelector(".hero-copy.reveal");
@@ -237,7 +240,8 @@ var progress=Math.max(0,Math.min(1,(index+Math.max(.08,Math.min(.92,ratio)))/sec
 path.setAttribute("stroke-dashoffset",String(1000*(1-progress)));
 }
 paint(0,0.08);
-if(reduced||!("IntersectionObserver" in window))return;
+// The scroll-following SVG is decorative; do not install seven section observers on mobile.
+if(mobileLite||reduced||!("IntersectionObserver" in window))return;
 var activeIndex=0;
 var observer=new IntersectionObserver(function(entries){
 entries.sort(function(a,b){return a.boundingClientRect.top-b.boundingClientRect.top;});

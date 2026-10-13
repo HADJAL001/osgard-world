@@ -197,6 +197,27 @@ const GAMES: GameDefinition[] = [
     theme: 'patina',
   },
 
+
+  {
+    id: 'cascade-lab',
+    mark: 'CL',
+    titleRu: 'CASCADE LAB',
+    titleEn: 'CASCADE LAB',
+    category: 'creative',
+    genreRu: 'Физическая головоломка',
+    genreEn: 'Physics puzzle',
+    descriptionRu: 'Собирайте цепную реакцию из шести механизмов: рампы, отбойника, пружины, турбины, магнита и переключателя. Исследуйте траекторию, скорость, ускорение и кинетическую энергию.',
+    descriptionEn: 'Build a chain reaction with six devices: ramp, bumper, spring, turbine, magnet and switch. Inspect trajectory, speed, acceleration and kinetic energy.',
+    href: '/games/cascade-lab/',
+    devices: ['desktop', 'mobile'],
+    controlsRu: 'Выберите механизм в панели, размещайте детали касанием или мышью и запускайте испытание. Используйте паузу и пошаговый режим для изучения движения; на телефоне доступен сенсорный интерфейс.',
+    controlsEn: 'Choose a device from the panel, place parts with touch or mouse and launch the experiment. Use pause and step mode to inspect motion; touch controls are available on mobile.',
+    supportRu: 'Самостоятельная HTML-игра с локальным сохранением и диагностическими отчётами. Физика является игровой моделью, а не проверенным инженерным симулятором; сетевой рейтинг не заявлен.',
+    supportEn: 'A self-contained HTML game with local saves and diagnostic exports. Physics is an in-game model, not a validated engineering simulator; no online leaderboard is claimed.',
+    featuresRu: ['Шесть интерактивных механизмов', 'Экспериментальные масса и гравитация', 'Журнал, CSV/JSON и повтор рекорда'],
+    featuresEn: ['Six interactive devices', 'Experimental mass and gravity', 'Event journal, CSV/JSON exports and best-route replay'],
+    theme: 'cascade-lab',
+  },
 ]
 
 
@@ -421,7 +442,9 @@ export function GameDetailPage({ slug }: { slug: string }) {
                       ? Boolean(frameDocument?.body.dataset.patinaReady === 'true' && frameDocument?.querySelector('#patina-workbench'))
                       : game.id === 'signal-run'
                         ? Boolean(frameDocument?.querySelector('#arena') && frameDocument?.querySelector('#start'))
-                        : (titleChecks[game.id]?.test(frameTitle) ?? false)
+                        : game.id === 'cascade-lab'
+                          ? Boolean(frameDocument?.body.dataset.cascadeLabReady === 'true')
+                          : (titleChecks[game.id]?.test(frameTitle) ?? false)
                 if (validTitle) {
                   setLoadingGame(false)
                   return
