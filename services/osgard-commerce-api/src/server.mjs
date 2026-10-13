@@ -8,7 +8,7 @@ import pg from "pg";
 import {
   catalogConfiguration, validateCheckoutPayload, validateLeadPayload,
   validateEventBatch, validateReferralIssuePayload, validateReferralWalletPayload,
-  validateReferralDisablePayload, paymentsModeAllowed, resolveCheckoutPaymentState, safeEqual,
+  validateReferralDisablePayload, resolveReferralCompletion, paymentsModeAllowed, resolveCheckoutPaymentState, safeEqual,
 } from "./core.mjs";
 
 const { Pool } = pg;
@@ -439,12 +439,11 @@ app.post("/v1/events", async (req, res) => {
         );
         if (!inserted.rowCount) continue;
         insertedCount += Number(inserted.rowCount || 0);
-        if (event.name !== "game_session_completed" || event.durationSeconds < 60) continue;
-        const match = /^referral:(og_[a-f0-9]{8}):([a-z-]+)$/.exec(event.source);
-        if (!match || match[2] !== event.gameId) continue;
+        const referral = resolveReferralCompletion(event);
+        if (!referral) continue;
         const invite = await client.query(
           "SELECT wallet_token_hash FROM commerce_referral_invites WHERE invite_code=$1 AND game_id=$2",
-          [match[1], event.gameId],
+          [referral.inviteCode, referral.gameId],
         );
         if (!invite.rowCount) continue;
         const walletHash = invite.rows[0].wallet_token_hash;
@@ -456,7 +455,7 @@ app.post("/v1/events", async (req, res) => {
         if (Number(dailyRewards.rows[0]?.count || 0) >= 5) continue;
         const reward = await client.query(
           "INSERT INTO commerce_referral_rewards(reward_id,invite_code,wallet_token_hash,referred_session_id,game_id,points) VALUES($1,$2,$3,$4,$5,50) ON CONFLICT DO NOTHING RETURNING reward_id",
-          [crypto.randomUUID(), match[1], walletHash, event.sessionId, event.gameId],
+          [crypto.randomUUID(), referral.inviteCode, walletHash, event.sessionId, event.gameId],
         );
         if (reward.rowCount) referralRewardsAwarded += 1;
       }
