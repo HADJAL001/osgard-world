@@ -249,7 +249,7 @@ captureInvite();installInviteBanner();
 })();
 
 
-/* OSGARD SELECT — owned-service showcase and local share reward after every completed game. */
+/* OSGARD SELECT — first-party service showcase, daily gameplay rewards and cosmetic-only SHARDS Vault. */
 (() => {
 'use strict';
 const root=document.querySelector('#post-run-recommendations');
