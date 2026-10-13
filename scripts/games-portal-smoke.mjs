@@ -369,6 +369,18 @@ const mockSuite=mockHost.children.find(node=>node.className==='og-postgame-suite
 assert.ok(mockSuite,'Post-run service/reward suite should appear after each valid completion');
 assert.equal(mockSuite.children[0].children.find(node=>node.className==='og-postgame-service-grid').children.length,10,'Post-run intermission should list all ten services');
 const postGameServiceShelf=mockSuite.children[0];
+const postGameSpotlight=postGameServiceShelf.children.find(node=>node.className==='og-postgame-spotlight');
+assert.ok(postGameSpotlight,'Post-game intermission should show one premium contextual spotlight before the full service directory');
+const postGameSpotlightCopy=postGameSpotlight.children.find(node=>node.className==='og-postgame-spotlight-copy');
+const postGameSpotlightActions=postGameSpotlightCopy?.children.find(node=>node.className==='og-postgame-spotlight-actions');
+assert.deepEqual(postGameSpotlightActions?.children.map(node=>node.textContent),['Изучить проект ↗','Другой проект','Запомнить выбор'],'The premium spotlight must let the player open, cycle and remember a service');
+const initialSpotlightName=postGameSpotlightCopy.children.find(node=>node.className==='og-postgame-spotlight-name').textContent;
+postGameSpotlightActions.children.find(node=>node.className==='og-postgame-spotlight-next').click();
+assert.notEqual(postGameSpotlight.children.find(node=>node.className==='og-postgame-spotlight-copy').children.find(node=>node.className==='og-postgame-spotlight-name').textContent,initialSpotlightName,'Choosing another service should update the spotlight');
+const postGameDirectoryToggle=postGameServiceShelf.children.find(node=>node.className==='og-postgame-service-head').children.find(node=>node.className==='og-postgame-service-head-actions').children.find(node=>node.className==='og-postgame-collapse-toggle');
+const postGameDirectory=postGameServiceShelf.children.find(node=>node.className==='og-postgame-service-grid');
+assert.ok(postGameDirectory.hidden&&postGameServiceShelf.children.find(node=>node.className==='og-postgame-service-filters').hidden,'The full project directory should be opt-in; only one curated promotion appears first');
+assert.equal(postGameDirectoryToggle.textContent,'Выбрать из 10 сервисов','Players must get a clear affordance to open the complete service list');
 const postGamePreferences=postGameServiceShelf.children.find(node=>node.className==='og-postgame-preferences');
 const postGameServiceOptions=postGamePreferences?.children.find(node=>node.className==='og-postgame-service-options');
 assert.ok(postGamePreferences&&postGamePreferences.hidden,'Service preferences must be available but collapsed by default')
@@ -406,6 +418,8 @@ assert.ok(claimReward.textContent.includes('Telegram')&&claimReward.textContent.
 assert.ok(rewardSection.children.find(node=>node.className==='og-postgame-status').textContent.includes('Соцсеть не сообщает сайту подтверждение публикации'),'Manual repost reward must clearly disclose that posting is player-confirmed, not network-verified')
 assert.deepEqual(mockGrid.children.map(node=>node.dataset.play),['null-shift','signal-run'],'SWARM should recommend two related live games')
 assert.deepEqual(mockGrid.children.map(node=>node.href),['/games/null-shift-godot/','/games/signal-run/'],'Recommendations should point to valid game launch routes')
+mockDocument.dispatch('osgard:game-session-ended',{detail:{game:'swarm',reason:'closed_by_user',sessionStarted:false,durationSeconds:42}})
+assert.equal(mockOutside.hidden,true,'A completed game must not create a duplicate outer intermission when its player closes')
 mockDocument.dispatch('osgard:game-launching')
 assert.equal(mockHost.hidden,true,'The next launch must clear recommendations')
 assert.equal(mockHost.children.length,0,'Stale recommendation links must be removed')
