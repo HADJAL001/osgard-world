@@ -48,6 +48,12 @@ assert.ok(nginx.includes("set $osgard_commerce_api_host osgard-commerce-api;"), 
 assert.ok(nginx.includes("proxy_pass http://$osgard_commerce_api_host:8080$uri$is_args$args;"), "Nginx must strip the public prefix and preserve query strings.");
 assert.ok(routeMatrix.includes("'/games/commerce-admin/'") && routeMatrix.includes("'/games/premium/'") && routeMatrix.includes("'/games/premium/success/'"), "Production route matrix must verify commerce pages.");
 assert.ok(!/(sk_(?:live|test)_|whsec_)[A-Za-z0-9_]+/.test(readFileSync(resolve("public/games/commerce-config.json"), "utf8")), "Public config must never contain Stripe secrets.");
+assert.ok(server.includes("commerce_referral_wallets") && server.includes("commerce_referral_invites") && server.includes("commerce_referral_rewards"), "Referral points must use a persistent server ledger");
+for (const route of ["/v1/referrals/issue", "/v1/referrals/wallet", "/v1/referrals/disable"]) assert.ok(server.includes(route), "Missing server-side referral route: " + route);
+for (const contract of ["validateReferralIssuePayload", "validateReferralWalletPayload", "validateReferralDisablePayload", "resolveReferralCompletion"]) assert.ok(core.includes(contract), "Referral validation/eligibility contract missing: " + contract);
+assert.ok(server.includes('app.use("/v1/referrals", rateLimit') && server.includes('createHash("sha256").update(input.walletToken).digest("hex")'), "Referral API must be rate-limited and store a one-way wallet-token hash");
+assert.ok(server.includes("referred_session_id TEXT NOT NULL UNIQUE") && server.includes("event.durationSeconds") && server.includes("INSERT INTO commerce_referral_rewards") && server.includes("referralRewardsAwarded"), "SHARDS must be deduplicated and issued only after qualifying session completion");
+assert.ok(!readFileSync(resolve("public/games/game-session-recommendations.js"), "utf8").includes("function award(source)"), "Client must not mint authoritative referral points");
 
 const html = readFileSync(resolve("public/games/index.html"), "utf8");
 assert.ok(html.includes("id=\"project-form\""), "Existing project form must remain in the games hub.");
