@@ -164,6 +164,11 @@ assert.ok(afterimageGame.includes('<title>AFTERIMAGE//RUN — OSGARD PLAY</title
 assert.ok(!/<script[^>]+src=/i.test(afterimageGame)&&!/<link[^>]+href=["']https?:/i.test(afterimageGame),'AFTERIMAGE//RUN must remain self-contained')
 assert.ok(afterimageGame.includes("extra||{}),location.origin)")&&!afterimageGame.includes("extra||{}),'*')"),'AFTERIMAGE lifecycle messages must stay same-origin')
 assert.ok(afterimageGame.includes('incomingSeed=params.get(\'seed\')')&&afterimageGame.includes('Number.isFinite(rawTarget)')&&afterimageGame.includes('if(r[today])'),'AFTERIMAGE challenge/reward safety checks missing')
+assert.ok(afterimageGame.includes("u.searchParams.set('og_ref',ownReferralCode())")&&afterimageGame.includes("u.searchParams.set('og_game','afterimage-run')")&&afterimageGame.includes("u.searchParams.set('utm_campaign','play_with_friends')"),'AFTERIMAGE challenge URLs must carry the standard OSGARD referral attribution contract')
+assert.ok(afterimageGame.includes("const key='osgard.afterimage.own-ref.v1'")&&afterimageGame.includes("sessionStorage.setItem(attributionKey,JSON.stringify({code,game:gameId,at:Date.now()}))"),'AFTERIMAGE must preserve a stable inviter code and compatible attribution context')
+assert.ok(afterimageGame.includes("name:'referral_link_opened'")&&afterimageGame.includes("sessionStorage.setItem(marker,'pending')")&&afterimageGame.includes("sessionStorage.setItem(marker,'yes')"),'Direct AFTERIMAGE challenge landing must send an idempotent referral-open event')
+assert.ok(afterimageGame.includes("localStorage.getItem('osgard.games.analytics-consent.v1')==='yes'")&&afterimageGame.includes("fetch('/games/commerce-config.json'"),'AFTERIMAGE referral analytics must require opt-in consent and respect the configured commerce API');
+
 assert.ok(afterimageGame.includes("opened.opener=null")&&afterimageGame.includes("prepareShareReward('share-intent-'+kind)"),'Social share must detach opener and require a separate reward confirmation')
 assert.ok(afterimageGame.includes('id="claim-share-reward"')&&afterimageGame.includes("rewardShare('player-confirmed:'+method)"),'AFTERIMAGE reward must require a separate player confirmation')
 const afterimageShareStart=afterimageGame.indexOf('async function shareNative()')
