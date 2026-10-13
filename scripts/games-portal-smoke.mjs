@@ -367,7 +367,10 @@ const mockDialog={classList:{add(name){mockClasses.add(name)},remove(name){mockC
 const mockHandlers={}
 const mockHead=mockNode()
 const mockDocument={head:mockHead,querySelector(selector){return selector==='#post-run-recommendations'?mockHost:selector==='#osgard-aftergame-intermission'?mockOutside:selector==='#player-dialog'?mockDialog:null},createElement(){return mockNode()},addEventListener(name,handler){(mockHandlers[name]??=[]).push(handler)},dispatch(name,event={}){const handlers=mockHandlers[name]||[];assert.ok(handlers.length,'Missing recommendation/growth lifecycle listener: '+name);handlers.forEach(handler=>handler(event))}}
-new Function('document','window','location',recommendationScript)(mockDocument,{}, {search:'',origin:'https://osgard.world',pathname:'/games/'})
+// Keep the smoke-test browser storage isolated from the runner's own persistent Web Storage.
+const mockStorageData=new Map()
+const mockLocalStorage={getItem(key){return mockStorageData.has(key)?mockStorageData.get(key):null},setItem(key,value){mockStorageData.set(key,String(value))},removeItem(key){mockStorageData.delete(key)}}
+new Function('document','window','location','localStorage',recommendationScript)(mockDocument,{}, {search:'',origin:'https://osgard.world',pathname:'/games/'},mockLocalStorage)
 mockDocument.dispatch('osgard:game-completed',{detail:{game:'swarm'}})
 assert.equal(mockHandlers['osgard:game-completed'].length,3,'Recommendation, invite and OSGARD SELECT modules must subscribe to completed sessions')
 assert.equal(mockHandlers['osgard:game-session-ended'].length,4,'Recommendations, invites, OSGARD SELECT and fallback intermission must subscribe to session returns')
