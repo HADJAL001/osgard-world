@@ -137,13 +137,11 @@ assert.ok(source.includes('const isSpotlight=id===spotlightServiceId') && source
 const claimSignal = signalRun.indexOf("claimShare.addEventListener('click'");
 const shareSignal = signalRun.indexOf("$('share').addEventListener('click',async()=>{");
 const shareSignalEnd = signalRun.indexOf("});document.addEventListener('keydown'", shareSignal);
-assert.ok(claimSignal >= 0 && shareSignal >= 0 && shareSignalEnd > shareSignal,
-  'SIGNAL RUN explicit claim and share-intent handlers must be present');
+assert.equal(claimSignal, -1, 'SIGNAL RUN must not mint SHARDS from a local repost confirmation');
+assert.ok(shareSignal >= 0 && shareSignalEnd > shareSignal, 'SIGNAL RUN share handler must remain available');
 const signalShareHandler = signalRun.slice(shareSignal, shareSignalEnd);
-assert.ok(!signalShareHandler.includes("life('share_created'"),
-  'SIGNAL RUN must not report a completed share before the player confirms it');
-assert.ok(signalRun.slice(claimSignal).includes("life('share_created',{shareMethod:method,dailyMode,dailyDate:dailyMode?dailyDate:null,rewardConfirmedByPlayer:true})"),
-  'SIGNAL RUN completed-share analytics must follow the explicit reward confirmation');
+assert.ok(!signalShareHandler.includes("life('share_created'") && !signalShareHandler.includes("awardShareShards") && signalShareHandler.includes('не начисляет SHARDS'),
+  'SIGNAL RUN challenge shares must not claim rewards or emit false completed-share events');
 
 assert.ok(core.includes("REFERRAL_REWARD_POINTS = 50") && core.includes("REFERRAL_MIN_SESSION_SECONDS = 60") && core.includes("validateReferralRewardRegistration"), 'Commerce API defines server-qualified non-cash reward rules');
 assert.ok(core.includes("parseReferralRewardEvent") && core.includes("durationSeconds >= REFERRAL_MIN_SESSION_SECONDS"), 'Only qualified game sessions should enter the referral reward parser');
