@@ -200,6 +200,23 @@ const visibleFilters=new Set([...html.matchAll(/<button\b[^>]*data-filter="([^"]
 const cardGenres=[...new Set(catalogCards.flatMap(card=>card.genres))].sort()
 assert.ok(cardGenres.every(genre=>visibleFilters.has(genre)),'Every card genre must have a visible catalog filter: '+cardGenres.filter(genre=>!visibleFilters.has(genre)).join(', '))
 assert.ok(visibleFilters.has('arcade'),'The catalog must expose the Arcade genre filter')
+
+const artworkIds=['null-shift','time','swarm','inherit','remix','civic-cascade','patina','signal-run','cascade-lab','afterimage-run']
+const artCardMatches=[...html.matchAll(/<a class="art ([^"]+)"[^>]*>([\\s\\S]*?)<\\/a>/g)]
+assert.equal(artCardMatches.length,10,'All ten cards must keep one art link')
+assert.equal(artCardMatches.filter(match=>/<svg\\b/.test(match[2])).length,0,'Decorative art SVGs must not remain in the initial catalogue DOM')
+const artClassToId={'art-null':'null-shift','art-time':'time','art-swarm':'swarm','art-inherit':'inherit','art-remix':'remix','art-civic':'civic-cascade','art-patina':'patina','art-signal':'signal-run','art-cascade-lab':'cascade-lab','art-afterimage':'afterimage-run'}
+for(const [artClass,id] of Object.entries(artClassToId)){
+ const card=artCardMatches.find(match=>match[1]===artClass)
+ assert.ok(card,'Missing game art card '+artClass)
+ assert.ok(card[2].includes('src="/games/art/'+id+'.svg"')&&card[2].includes('loading="lazy"')&&card[2].includes('decoding="async"'),'Extracted artwork must stay lazy and async-decoded: '+id)
+ const file='public/games/art/'+id+'.svg'
+ assert.ok(existsSync(resolve(file)),'Missing extracted artwork file '+file)
+ const artwork=readFileSync(resolve(file),'utf8')
+ assert.ok(artwork.includes('<svg xmlns="http://www.w3.org/2000/svg"')&&artwork.includes('viewBox="'),'Artwork must be a valid standalone SVG: '+id)
+}
+assert.ok(html.includes('.art-illustration{position:absolute')&&html.includes('object-fit:contain'),'External art must preserve the existing card sizing behavior')
+
 const required=['data-game="null-shift"','data-game="time"','data-game="swarm"','data-game="inherit"','data-game="remix"','data-game="civic-cascade"','data-game="patina"','data-game="signal-run"','data-game="cascade-lab"','data-game="afterimage-run"','id="games-grid"','id="game-search"','data-filter="tactical"','data-filter="arcade"','id="player-dialog"','id="player-share"','id="player-fullscreen"','id="analytics-toggle"','id="project-form"','https://wa.me/79640027222','osgardbewworld.com','o2system.art','senjorio.com','superday.run','marcosa.club','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio','href="/games/ecosystem/"','/games/favicon.svg','/privacy/','/terms/']
 for(const item of required) assert.ok(html.includes(item),'Games hub missing: '+item)
 assert.ok(appSource.includes('className="play-catalog-link" href="/games/"')&&appSource.includes('<em>OSGARD WORLD GAMING</em>')&&appSource.includes("'Открыть игровой портал'"),'Homepage entertainment gateway must promote OSGARD WORLD GAMING and open the canonical /games/ hub')
@@ -210,7 +227,7 @@ assert.ok(appStyles.includes('.play-quick-picks{display:grid;grid-template-colum
 assert.ok(appStyles.includes('.play-quick-link:focus-visible')&&appStyles.includes('@media(prefers-reduced-motion:reduce){.play-quick-link'),'Quick-launch links must retain keyboard focus and reduced-motion support')
 assert.ok(html.includes('<title>OSGARD WORLD GAMING — Игровая платформа</title>')&&html.includes('og:title" content="OSGARD WORLD GAMING — игровые миры')&&html.includes('"name":"OSGARD WORLD GAMING"'),'Gaming hub identity must be consistent in title, social metadata and structured data')
 assert.ok(html.includes('OSGARD WORLD GAMING <span>/</span> DIGITAL WORLDS')&&html.includes('быстрый возврат к недавним сессиям'),'Gaming hub hero must describe the branded portal and its actual navigation features')
-for(const path of ['public/games/index.html','public/games/favicon.svg','public/games/player-lifecycle.js','public/games/consented-analytics.js','public/games/game-session-recommendations.js','public/games/game-session-recommendations.css','public/games/admin/index.html','public/games/admin/partners/index.html','public/games/civic-cascade/index.html','public/games/patina/index.html','public/games/signal-run/index.html','public/games/signal-run/game.js','public/games/signal-run/daily.js','public/games/cascade-lab/index.html','public/privacy/index.html','public/terms/index.html']) assert.ok(existsSync(resolve(path)),'Missing file: '+path)
+for(const path of ['public/games/index.html','public/games/favicon.svg','public/games/player-lifecycle.js','public/games/consented-analytics.js','public/games/game-session-recommendations.js','public/games/game-session-recommendations.css','public/games/admin/index.html','public/games/admin/partners/index.html','public/games/civic-cascade/index.html','public/games/patina/index.html','public/games/signal-run/index.html','public/games/signal-run/game.js','public/games/signal-run/daily.js','public/games/cascade-lab/index.html','public/privacy/index.html','public/terms/index.html',...artworkIds.map(id=>'public/games/art/'+id+'.svg')]) assert.ok(existsSync(resolve(path)),'Missing file: '+path)
 for(const path of ['scripts/games-lighthouse-report.mjs','.github/workflows/games-lighthouse.yml']) assert.ok(existsSync(resolve(path)),'Missing games performance monitoring file: '+path)
 const lighthouseScript=readFileSync(resolve('scripts/games-lighthouse-report.mjs'),'utf8')
 const lighthouseWorkflow=readFileSync(resolve('.github/workflows/games-lighthouse.yml'),'utf8')
