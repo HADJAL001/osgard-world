@@ -163,7 +163,7 @@ function redirectFailure(project, {
     responseMs: Math.max(0, Date.now() - started),
     attempts: attempt,
     checkedAt,
-    ...(blockedHost ? { blockedRedirectHost: blockedHost } : {}),
+    ...(blockedHost ? { [outcome === 'unsafe_target' ? 'blockedTargetHost' : 'blockedRedirectHost']: blockedHost } : {}),
     note,
   }
 }
