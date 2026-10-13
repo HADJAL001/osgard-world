@@ -105,13 +105,14 @@ function prepareShareReward(method){
  return true;
 }
 function rewardShare(method){
+ const confirmedMethod=String(method||'social-share').replace(/^player-confirmed:/,'').replace(/^share-intent-/,'').slice(0,40);
  const r=safeRead(REWARD,{});
  if(r[today]){
   $('claim-share-reward').hidden=true;
   $('reward-status').textContent='SIGNAL SHARD за сегодня уже получена. Следующая доступна после смены UTC-даты.';
   return false;
  }
- r[today]={kind:'cosmetic',method:String(method||'social-confirmation').slice(0,40),at:new Date().toISOString()};
+ r[today]={kind:'cosmetic',method:confirmedMethod,at:new Date().toISOString()};
  if(!safeWrite(REWARD,r)||!safeRead(REWARD,{})[today]){
   $('reward-status').textContent='Не удалось сохранить локальную награду в этом браузере. Освободи место в хранилище и попробуй позже.';
   return false;
@@ -119,8 +120,8 @@ function rewardShare(method){
  $('claim-share-reward').hidden=true;
  $('reward-title').textContent='✦ SIGNAL SHARD ПОЛУЧЕНА';
  shardCosmeticUnlocked=true;$('reward-status').textContent='Золотой голографический след разблокирован на этом устройстве. Он не меняет скорость или счёт. Публичная публикация поста не проверяется.';
- track('share_created',{method:method,reward:'signal-shard',rewardConfirmedByPlayer:true});
- const shareUrl=new URL(challenge(),location.href),shareCode=shareUrl.searchParams.get('og_ref')||'';const confirmedChannel=method==='web-share'?'web-share':method.replace(/^share-intent-/,'');const shareMethod=['web-share','telegram','vk','x','whatsapp','facebook'].includes(confirmedChannel)?confirmedChannel:'clipboard';life('share_created',{shareMethod,rewardConfirmedByPlayer:true,flowType:'daily-challenge',challengeScore:Math.max(0,Math.floor(game.score||daily.best||0)),referralCode:shareCode});
+ if(window.parent===window)track('share_created',{method:confirmedMethod,reward:'signal-shard',rewardConfirmedByPlayer:true,flowType:'daily-challenge'});
+ const shareUrl=new URL(challenge(),location.href),shareCode=shareUrl.searchParams.get('og_ref')||'';const shareMethod=['web-share','telegram','vk','x','whatsapp','facebook'].includes(confirmedMethod)?confirmedMethod:'clipboard';life('share_created',{shareMethod,rewardConfirmedByPlayer:true,flowType:'daily-challenge',challengeScore:Math.max(0,Math.floor(game.score||daily.best||0)),challengeSeed:day,referralCode:shareCode});
  toast('SIGNAL SHARD получена — золотой след разблокирован.');
  return true;
 }
