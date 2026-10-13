@@ -1,0 +1,50 @@
+name: OSGARD Games pull-request quality gate
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - "src/**"
+      - "public/games/**"
+      - "public/privacy/**"
+      - "public/terms/**"
+      - "scripts/games-*.mjs"
+      - "scripts/production-route-matrix.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - "docs/09_OSGARD_GAMES_PLATFORM_AUDIT.md"
+      - ".github/workflows/games-quality-pr.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: games-quality-\${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Typecheck and game-platform contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: TypeScript check
+        run: npm run check
+      - name: Games operations route-contract smoke
+        run: npm run qa:games-operations
+      - name: Games catalog and consented analytics regression
+        run: npm run qa:games-portal
+      - name: Game detail and route contract regression
+        run: npm run qa:games-detail
+      - name: Economy model regression
+        run: npm run qa:games-model
