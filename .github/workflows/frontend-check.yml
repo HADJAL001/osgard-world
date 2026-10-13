@@ -12,6 +12,8 @@ on:
       - "scripts/games-lighthouse-report.mjs"
       - ".github/workflows/games-lighthouse.yml"
       - "public/games/**"
+      - "godot/null-shift/**"
+      - "scripts/null-shift-godot-smoke.mjs"
       - "docs/02_IMPERIUM_OF_TIME_GAME_DESIGN.md"
       - "public/skillcred/**"
       - "package.json"
@@ -55,6 +57,8 @@ jobs:
         run: npm run qa:time-ui
       - name: Verify OSGARD Games portal and Lighthouse guardrails
         run: npm run qa:games-portal
+      - name: Validate NULL//SHIFT Godot source contract
+        run: npm run qa:null-shift-godot
       - name: Verify game detail pages and SEO
         run: npm run qa:games-detail
       - name: Verify monetization scenario formulas

@@ -346,6 +346,7 @@ function finish(success) {
   renderResultTeam();
   renderChaosCard({ outcome:success?'complete':'failed', mission:game.mission, modifier:game.modifier, failureReason:success?null:(game.stability<=0?'stability_depleted':'time_expired') });
   result.classList.remove('is-hidden');
+  try { if(window.parent!==window) window.parent.postMessage({type:'osgard:game-lifecycle',game:'swarm',state:'completed',at:Date.now()},window.location.origin); } catch {}
 }
 async function loadMatchResult() {
   if(!roomSession || loadedMatchResult) return;
