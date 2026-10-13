@@ -306,3 +306,6 @@ header nav .nav-skillcred svg{width:14px}
 
 
 .development-contact-links{display:flex;flex-wrap:wrap;gap:14px;margin-top:16px}.development-contact-links a{color:var(--gold,#d3ff69);font-size:12px;text-decoration:underline;text-underline-offset:4px;overflow-wrap:anywhere}.development-contact-links a:hover{filter:brightness(1.2)}@media(max-width:520px){.development-contact-links{display:grid;gap:10px}}
+
+.premium-game-card--civic{--game-accent:#b8f4cf;--game-dark:#102325}.premium-game-card--civic .art-orbit-one{border-radius:50% 24%;transform:rotate(22deg)}
+.premium-game-card--signal{--game-accent:#d3ff69;--game-dark:#18291d}.premium-game-card--signal .art-orbit-one{border-radius:24% 50%;transform:rotate(34deg)}
