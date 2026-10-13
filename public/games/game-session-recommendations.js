@@ -470,17 +470,26 @@ function rewardShelf(gameId){
 }
 function renderOutsideIntermission(detail){
  const id=detail&&detail.game;
- if(!outsideRoot||!titles[id]||!detail||detail.reason!=='closed_by_user'||completedInPlayer===id)return;
- const completedCount=recordCompletedRound(id),preferences=readServicePreferences();
- outsideRoot.replaceChildren();
+ if(!outsideRoot||!titles[id]||!detail||detail.reason!=='closed_by_user')return;
+ const completedSuite=completedInPlayer===id?root.querySelector('.og-postgame-suite'):null;
+ if(completedInPlayer===id&&!completedSuite)return;
+ const completedCount=completedSuite?readServiceProgress().count:recordCompletedRound(id);
+ const preferences=readServicePreferences();
  const suite=make('section','og-postgame-suite og-postgame-outside-suite');
  const intro=make('div','og-postgame-outside-intro');
  intro.append(make('p','og-postgame-eyebrow','OSGARD SELECT / BETWEEN WORLDS'));
  intro.append(make('h2','og-postgame-title','Сессия завершена. Выбери следующий шаг.'));
  intro.append(make('p','og-postgame-copy','Ты вышел из '+titles[id]+'. Выбери следующий игровой мир, открой собственный проект OSGARD или пригласи друга.'));
  const back=make('a','og-postgame-back','Выбрать следующую игру ↗');back.href='#catalog';
- suite.append(intro,back,servicesShelf(id,shouldShowServicePromos(preferences,completedCount),completedCount),rewardShelf(id));
- outsideRoot.append(suite);outsideRoot.hidden=false;
+ if(completedSuite){
+  const existingChildren=Array.from(completedSuite.children);
+  completedSuite.replaceChildren();
+  completedSuite.remove();
+  suite.append(intro,back,...existingChildren);
+ }else{
+  suite.append(intro,back,servicesShelf(id,shouldShowServicePromos(preferences,completedCount),completedCount),rewardShelf(id));
+ }
+ outsideRoot.replaceChildren(suite);outsideRoot.hidden=false;
  if(typeof outsideRoot.scrollIntoView==='function'){
   const reduced=typeof window.matchMedia==='function'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   outsideRoot.scrollIntoView({behavior:reduced?'auto':'smooth',block:'start'});
