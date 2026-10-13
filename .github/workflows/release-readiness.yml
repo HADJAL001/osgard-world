@@ -32,6 +32,8 @@ jobs:
         run: npm run qa:osgard-select
       - name: Verify partner inventory and enquiry form
         run: npm run qa:partners-page
+      - name: Verify first-party ecosystem directory
+        run: npm run qa:ecosystem-directory
       - name: Build and archive preflight
         run: npm run build && npm run preflight:frontend
       - name: Verify Imperium of Time gameplay and diagnostics

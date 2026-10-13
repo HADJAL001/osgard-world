@@ -11,6 +11,7 @@ const commerceClient = readFileSync(resolve('public/games/commerce-client.js'), 
 const analyticsClient = readFileSync(resolve('public/games/consented-analytics.js'), 'utf8');
 const apiCore = readFileSync(resolve('services/osgard-commerce-api/src/core.mjs'), 'utf8');
 const routeMatrix = readFileSync(resolve('scripts/production-route-matrix.mjs'), 'utf8');
+const deployWorkflow = readFileSync(resolve('.github/workflows/deploy-frontend.yml'), 'utf8');
 const sitemap = readFileSync(resolve('public/sitemap.xml'), 'utf8');
 
 assert.ok(html.includes('<title>OSGARD WORLD — Экосистема проектов</title>'), 'Directory needs a route-specific title');
@@ -66,6 +67,7 @@ assert.ok(commerceClient.includes("path === '/games/ecosystem' ? 'ecosystem_dire
 assert.ok(analyticsClient.includes("'ecosystem_directory_viewed'"), 'Browser analytics allow-list must include the new page-view event');
 assert.ok(apiCore.includes('"ecosystem_directory_viewed"'), 'Server analytics allow-list must include the new page-view event');
 assert.ok(routeMatrix.includes("'/games/ecosystem/'") && routeMatrix.includes("directory.css") && routeMatrix.includes("directory.js"), 'Production route matrix must verify page and local assets');
+assert.ok(deployWorkflow.includes('find osgard-release/html/games -type f -name') && deployWorkflow.includes('directory.css?v=$ASSET_VERSION') && deployWorkflow.includes('directory.js?v=$ASSET_VERSION') && deployWorkflow.includes('npm run qa:ecosystem-directory'), 'Production deployment must version the new page assets and run its smoke test');
 
 assert.ok(css.includes('.project-grid{display:grid') && css.includes('@media(max-width:700px)'), 'Directory must have desktop and mobile layouts');
 assert.ok(css.includes('prefers-reduced-motion:reduce') && css.includes(':focus-visible'), 'Accessibility requires focus styles and reduced-motion support');
