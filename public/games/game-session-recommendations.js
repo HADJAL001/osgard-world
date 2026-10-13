@@ -373,6 +373,14 @@ function shouldShowServicePromos(preferences,completedCount){
  if(preferences.frequency==='every3')return completedCount>0&&completedCount%3===0;
  return true;
 }
+function chooseSpotlightService(options,preferred,completedCount,frequency){
+ const candidates=Array.isArray(options)?options.filter(id=>typeof id==='string'&&id.length>0):[];
+ if(!candidates.length)return '';
+ if(candidates.includes(preferred))return preferred;
+ const count=Number.isSafeInteger(completedCount)&&completedCount>0?completedCount:1;
+ const displayNumber=frequency==='every3'?Math.max(1,Math.floor(count/3)):count;
+ return candidates[(displayNumber-1)%candidates.length];
+}
 function frequencySummary(preferences,completedCount){
  if(preferences.frequency==='off')return 'Подборка отключена. Награды за приглашение остаются доступны.';
  if(preferences.frequency==='every3')return 'Подборка появляется раз в три завершённых раунда. Следующий показ: через '+(3-(completedCount%3))+' раунд(а).';
@@ -431,7 +439,7 @@ function servicesShelf(gameId,showPromos,completedCount){
  const selectedIds=activeSelected.map(item=>item[0]);
  const relevantOrder=contextualOrder.filter(id=>selectedIds.includes(id));
  const spotlightOptions=[...relevantOrder,...selectedIds.filter(id=>!relevantOrder.includes(id))];
- let spotlightServiceId=selectedIds.includes(preferred)?preferred:(spotlightOptions[0]||'');
+ let spotlightServiceId=chooseSpotlightService(spotlightOptions,preferred,completedCount,preferences.frequency)||spotlightId||'';
  const spotlight=make('article','og-postgame-spotlight');
  spotlight.setAttribute('aria-label','Персональная рекомендация OSGARD');
  const spotlightStatus=make('p','og-postgame-spotlight-status');
