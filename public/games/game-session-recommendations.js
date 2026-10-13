@@ -346,8 +346,9 @@ function servicesShelf(gameId,showPromos,completedCount){
  settings.append(settingsHeading,settingsDescription,frequencyLabel,choicesHeading,choices,presetActions,saveButton,preferencesStatus);
  const grid=make('div','og-postgame-service-grid');
  const selected=services.filter(([id,,,,,,featured=false,active=true])=>active!==false&&preferences.selected.includes(id));
+ const visible=selected.length?services.filter(([id,,,,,,featured=false,active=true])=>active===false||preferences.selected.includes(id)):[];
  if(showPromos&&selected.length){
-  selected.forEach(([id,num,title,category,description,href,featured=false,active=true])=>{
+  visible.forEach(([id,num,title,category,description,href,featured=false,active=true])=>{
    const card=make('a','og-postgame-service-card'+((featured||selected.length===1)?' is-featured':''));
    card.dataset.service=id;card.dataset.game=gameId;
    const u=new URL(href);u.searchParams.set('utm_source','osgard_games');u.searchParams.set('utm_medium','post_game');u.searchParams.set('utm_campaign','after_game');u.searchParams.set('utm_content',id+'_'+gameId);
