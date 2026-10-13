@@ -248,9 +248,41 @@ func _run_smoke() -> void:
 		return
 	game.null_shift_timer = 0.0
 	game.damage_cooldown = 0.0
+	print("RUNTIME_STAGE: pulse suppression of live energy conduit")
+	game.player.global_position = Vector3(0.0, 0.82, float(first_lane["z"]))
+	game.phase_clock = 6.6
+	game.pulse_cooldown = 0.0
+	game._update_phase_lanes(0.0)
+	first_lane = game.phase_lanes[0]
+	var disruptions_before: int = game.phase_lane_disruptions
+	game._deploy_pulse()
+	game._update_phase_lanes(0.0)
+	first_lane = game.phase_lanes[0]
+	if not _expect(first_lane["state"] == "disrupted" and not first_lane["active_mesh"].visible and first_lane["pulse_head"].material_override == game.materials["cyan"], "tactical pulse must suppress a nearby active conduit and recolour its 3D surge cyan"):
+		return
+	if not _expect(game.phase_lane_disruptions == disruptions_before + 1 and game.phase_lane_labels[0].text.contains("ПОДАВЛЕН") and game.hazard_status_label.text.contains("КОНТУР ПОДАВЛЕН"), "lane suppression must update lifetime telemetry and both HUD state indicators"):
+		return
+	var health_during_suppression: float = game.player_health
+	game.damage_cooldown = 0.0
+	if not _expect(not game._check_phase_lane_damage() and is_equal_approx(game.player_health, health_during_suppression), "a suppressed conduit must stop dealing damage during the disruption window"):
+		return
+	first_lane["disruption_remaining"] = 0.01
+	game.phase_lanes[0] = first_lane
+	game._update_phase_lanes(0.02)
+	first_lane = game.phase_lanes[0]
+	if not _expect(first_lane["state"] == "active" and first_lane["active_mesh"].visible, "the conduit must resume its timed hazard after the pulse disruption expires"):
+		return
+	game.phase_lane_disruptions = disruptions_before
+	for lane_index in range(game.phase_lanes.size()):
+		var reset_lane: Dictionary = game.phase_lanes[lane_index]
+		reset_lane["disruption_remaining"] = 0.0
+		game.phase_lanes[lane_index] = reset_lane
+	game.pulse_cooldown = 0.0
+	game.damage_cooldown = 0.0
 	game.player.global_position = lane_saved_position
 	game.player_health = lane_saved_health
 	game.phase_clock = 0.0
+	game._update_phase_lanes(0.0)
 
 	print("RUNTIME_STAGE: adaptive graphics quality")
 	game.cinematic_quality = true

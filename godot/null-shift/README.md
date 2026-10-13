@@ -17,7 +17,7 @@ The first launch opens a pausing Russian-language field briefing with the three 
 
 1. Reach the terminal and interact with E or the mobile action button.
 2. Enter the directional cipher: up, left, down, right.
-3. Fight or evade guards and destroy the EMP relay, energy cell, or phase anchor for different tactical effects.
+3. Fight or evade guards and destroy the EMP relay, energy cell, or phase anchor for different tactical effects. A pulse (Q) also suppresses a nearby charging/active phase conduit for 1.85 seconds, creating a short safe window at the cost of its cooldown.
 4. Secure the quantum core and reach extraction.
 5. Bank career credits, install persistent local upgrades, and replay one of three contracts.
 
@@ -179,3 +179,11 @@ The deployment workflow downloads official Godot 4.7.2 and matching web template
 The native Godot scene now builds a more readable combat silhouette using named chest shells/insets, shoulder plates, role-coloured signal bars, rear energy cells/backpacks, utility belts and knee plates for both the operator and security units. Major silhouette pieces cast real scene shadows under the existing quality profiles; collision capsules, movement, targeting, health and damage logic remain unchanged. Runtime smoke tests verify that the named meshes exist in the instantiated scene and that the major pieces are configured to cast shadows.
 
 This is procedural real-time 3D geometry for the current GL Compatibility/Web export, not a claim of native 8K assets.
+
+
+## Release 2.1 — pulse-disruptible phase conduits
+
+- The tactical pulse now has a second, deliberate use: when the operator is standing beside a charging or active conduit, Q suppresses that lane for 1.85 seconds. It does not permanently skip the hazard cycle; the timed lane returns to its scheduled state after the suppression expires.
+- The moving 3D surge switches to cyan during suppression, the individual lane chip reads `ПОДАВЛЕН`, and the shared hazard status reports the suppressed conduit. The pulse remains useful against nearby guards at the same time, so players must choose when to spend its cooldown.
+- Added a runtime smoke sequence that activates a lane, triggers Q beside it, verifies the visual/HUD/telemetry response, proves no damage is dealt during the suppression window, and confirms that the lane becomes dangerous again when the timer expires.
+- This is engine-native, playable GDScript behavior; it does not depend on external services, assets or network calls.

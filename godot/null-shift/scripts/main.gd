@@ -10,6 +10,8 @@ const MAX_SPARK_POOL := 8
 const DASH_DURATION := 0.24
 const DASH_COOLDOWN := 1.65
 const DASH_SPEED_MULTIPLIER := 3.05
+const PULSE_LANE_DISRUPTION_SECONDS := 1.85
+const PULSE_LANE_DISRUPTION_RANGE := 1.75
 
 var player: CharacterBody3D
 var camera: Camera3D
@@ -52,6 +54,7 @@ var phase_lanes: Array[Dictionary] = []
 var phase_lane_labels: Array[Label] = []
 var phase_lane_status_row: HBoxContainer
 var phase_clock := 0.0
+var phase_lane_disruptions := 0
 var hazard_status_label: Label
 var health_bar: ProgressBar
 var health_bar_fill: StyleBoxFlat
@@ -230,6 +233,7 @@ func _reset_runtime_collections() -> void:
 	devices.clear()
 	phase_lanes = phase_lanes.duplicate()
 	phase_lanes.clear()
+	phase_lane_disruptions = 0
 	phase_lane_labels = phase_lane_labels.duplicate()
 	phase_lane_labels.clear()
 	effects = effects.duplicate()
@@ -612,6 +616,7 @@ func _create_phase_lanes() -> void:
 			"z": lane_z,
 			"offset": float(index) * 2.8,
 			"state": "safe",
+			"disruption_remaining": 0.0,
 			"warning_mesh": warning_mesh,
 			"active_mesh": active_mesh,
 			"warning_material": warning_material,
@@ -626,6 +631,7 @@ func _update_phase_lanes(delta: float) -> void:
 	phase_clock += maxf(0.0, delta)
 	var active_count: int = 0
 	var warning_count: int = 0
+	var disrupted_count: int = 0
 	for index in range(phase_lanes.size()):
 		var lane: Dictionary = phase_lanes[index]
 		var cycle: float = fposmod(phase_clock + float(lane["offset"]), 8.4)
@@ -634,6 +640,10 @@ func _update_phase_lanes(delta: float) -> void:
 			next_state = "warning"
 		elif cycle >= 6.3 and cycle < 7.22:
 			next_state = "active"
+		var disruption_remaining: float = maxf(0.0, float(lane.get("disruption_remaining", 0.0)) - maxf(delta, 0.0))
+		lane["disruption_remaining"] = disruption_remaining
+		if disruption_remaining > 0.0:
+			next_state = "disrupted"
 		var old_state: String = str(lane["state"])
 		lane["state"] = next_state
 		var warning_mesh: MeshInstance3D = lane["warning_mesh"]
@@ -657,7 +667,7 @@ func _update_phase_lanes(delta: float) -> void:
 		pulse_ring.rotation.y += delta * 4.2
 		pulse_wake.position.x = travel_x - 0.58
 		pulse_wake.scale.x = 0.78 + absf(sin(scene_clock * 9.0 + float(index))) * 0.24
-		var surge_material: Material = active_material if next_state == "active" else warning_material
+		var surge_material: Material = materials["cyan"] if next_state == "disrupted" else (active_material if next_state == "active" else warning_material)
 		pulse_head.material_override = surge_material
 		pulse_ring.material_override = surge_material
 		pulse_wake.material_override = surge_material
@@ -668,6 +678,8 @@ func _update_phase_lanes(delta: float) -> void:
 			warning_count += 1
 		elif next_state == "active":
 			active_count += 1
+		elif next_state == "disrupted":
+			disrupted_count += 1
 		if phase_lane_labels.size() > index and (next_state != old_state or phase_lane_labels[index].text.is_empty()):
 			var lane_label: Label = phase_lane_labels[index]
 			match next_state:
@@ -677,6 +689,9 @@ func _update_phase_lanes(delta: float) -> void:
 				"active":
 					lane_label.text = "К%d · ОПАСНО" % [index + 1]
 					lane_label.add_theme_color_override("font_color", Color(1.0, 0.3, 0.36))
+				"disrupted":
+					lane_label.text = "К%d · ПОДАВЛЕН" % [index + 1]
+					lane_label.add_theme_color_override("font_color", Color(0.38, 1.0, 0.86))
 				_:
 					lane_label.text = "К%d · НОРМА" % [index + 1]
 					lane_label.add_theme_color_override("font_color", Color(0.38, 0.9, 0.82))
@@ -691,6 +706,9 @@ func _update_phase_lanes(delta: float) -> void:
 	elif warning_count > 0:
 		hazard_status_label.text = "ВНИМАНИЕ · КОНТУР ЗАРЯЖАЕТСЯ"
 		hazard_status_label.add_theme_color_override("font_color", Color(1.0, 0.72, 0.34))
+	elif disrupted_count > 0:
+		hazard_status_label.text = "ИМПУЛЬС · КОНТУР ПОДАВЛЕН"
+		hazard_status_label.add_theme_color_override("font_color", Color(0.38, 1.0, 0.86))
 	else:
 		hazard_status_label.text = "ЭНЕРГОКОНТУРЫ · СТАБИЛЬНО"
 		hazard_status_label.add_theme_color_override("font_color", Color(0.38, 0.9, 0.82))
@@ -1590,16 +1608,27 @@ func _deploy_pulse() -> void:
 		return
 	pulse_cooldown = maxf(2.0, 5.0 - float(pulse_level) * 0.7)
 	var count := 0
+	var suppressed_count := 0
+	for lane_index in range(phase_lanes.size()):
+		var lane: Dictionary = phase_lanes[lane_index]
+		var lane_state: String = str(lane["state"])
+		var lane_distance: float = absf(player.global_position.z - float(lane["z"]))
+		if lane_state in ["warning", "active"] and lane_distance <= PULSE_LANE_DISRUPTION_RANGE:
+			lane["disruption_remaining"] = maxf(float(lane.get("disruption_remaining", 0.0)), PULSE_LANE_DISRUPTION_SECONDS)
+			phase_lanes[lane_index] = lane
+			suppressed_count += 1
+			phase_lane_disruptions += 1
 	for guard in guards:
 		var body: Node3D = guard["node"]
 		if player.global_position.distance_to(body.global_position) < 12.5:
 			guard["stun"] = 2.5
 			guard["windup"] = 0.0
 			count += 1
+	_update_phase_lanes(0.0)
 	_spawn_ring_burst(player.global_position + Vector3.UP * 0.2, materials["cyan"])
 	_screen_impulse(0.095, 0.17)
 	phase_flash_timer = maxf(phase_flash_timer, 0.14)
-	objective_text = "ИМПУЛЬС: %d ЦЕЛЕЙ НАРУШЕНО · ПЕРЕЗАРЯДКА %.1f С" % [count, pulse_cooldown]
+	objective_text = "ИМПУЛЬС: %d ЦЕЛЕЙ · КОНТУРЫ ПОДАВЛЕНЫ %d · %.1f С" % [count, suppressed_count, pulse_cooldown] if suppressed_count > 0 else "ИМПУЛЬС: %d ЦЕЛЕЙ НАРУШЕНО · ПЕРЕЗАРЯДКА %.1f С" % [count, pulse_cooldown]
 	_play_sfx(95.0, 0.55, 0.16)
 	_update_hud()
 
@@ -3144,10 +3173,10 @@ func _update_hud() -> void:
 		fps_p95_ms = p95
 		var draw_calls := int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
 		var profile: String = "PERFORMANCE" if performance_quality else ("BALANCED" if not cinematic_quality else ("AUTO-OPTIMIZED" if adaptive_quality_degraded else "CINEMATIC"))
-		diagnostics_label.text = "LIVE DIAGNOSTICS\nFPS        %02d\nFRAME P95  %.1f ms\nFRAME NOW  %.1f ms\nDRAW CALLS %d\nFX ACTIVE  %02d\nFX POOLS   %02d BEAM / %02d RING / %02d SPARK\nFX DROPPED %d\nGUARDS     %d\nDEVICES    %d\nDASH EVADES %d\nDASH CD    %.1f s\nPROFILE    %s" % [
+		diagnostics_label.text = "LIVE DIAGNOSTICS\nFPS        %02d\nFRAME P95  %.1f ms\nFRAME NOW  %.1f ms\nDRAW CALLS %d\nFX ACTIVE  %02d\nFX POOLS   %02d BEAM / %02d RING / %02d SPARK\nFX DROPPED %d\nGUARDS     %d\nDEVICES    %d\nLANE SUPPRESS %03d\nDASH EVADES %d\nDASH CD    %.1f s\nPROFILE    %s" % [
 			Engine.get_frames_per_second(), fps_p95_ms, current_frame_ms, draw_calls,
 			effects.size(), beam_pool.size(), ring_pool.size(), spark_pool.size(), effect_pool_exhaustions,
-			guards.size(), _living_device_count(), dash_evasions, dash_cooldown, profile
+			guards.size(), _living_device_count(), phase_lane_disruptions, dash_evasions, dash_cooldown, profile
 		]
 
 func _living_device_count() -> int:
