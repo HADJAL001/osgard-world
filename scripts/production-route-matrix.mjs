@@ -93,7 +93,6 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
             text.includes("notify('share_created'")
         : route === '/games/civic-cascade/'
           ? text.includes('<title>CIVIC CASCADE — Оперативный центр</title>') && text.includes('name="osgard-game-version" content="1.6.0"') && text.includes('<canvas id="cityCanvas"') && text.includes('id="startBtn"') && text.includes('src="./src/game.js"') && text.includes('osgard-lifecycle-bridge.js')
-          ? text.includes('<title>CIVIC CASCADE — кризисная стратегия | OSGARD PLAY</title>') && text.includes('id=\"cc-game-root\"') && text.includes('id=\"cc-status\"')
         : route === '/games/patina/'
           ? text.includes('<title>PATINA Atelier — OSGARD WORLD GAMING</title>') && text.includes('id="patina-workbench"') && text.includes('data-patina-ready="true"') && text.includes('id="diagnose"') && text.includes('id="finish-case"') && text.includes('id="export-case"')
         : route === '/games/signal-run/'
