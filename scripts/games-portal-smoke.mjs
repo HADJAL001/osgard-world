@@ -36,6 +36,28 @@ assert.ok(appStyles.includes('.premium-game-card--afterimage-run'), 'The React E
 assert.ok(routeEntries.every(x=>x.url.startsWith('/games/')),'Every launch entry must use a same-origin game route')
 const inviteLandingScript=readFileSync(resolve(root,'invite/invite-landing.js'),'utf8')
 assert.ok(inviteLandingScript.includes("localStorage.getItem('osgard.games.analytics-consent.v1') === 'yes'") && inviteLandingScript.includes("name: 'referral_link_opened'") && inviteLandingScript.includes("source: 'referral-link:' + code"),'Invite preview must preserve consent-gated referral attribution')
+{
+ const challengeQuery=new URLSearchParams({og_ref:'og_1234abcd',og_game:'afterimage-run',utm_source:'osgard_play',utm_medium:'referral',utm_campaign:'play_with_friends',utm_content:'afterimage-run',og_challenge:'afterimage-run',challenge:'1500',day:'2026-10-13',mode:'daily'})
+ const playLink={href:''}
+ const inviteDoc={body:{dataset:{game:'afterimage-run'}},querySelector(selector){return selector==='#play-link'?playLink:null}}
+ const inviteStorage={getItem(){return null},setItem(){}}
+ const inviteSandbox={URL,URLSearchParams,document:inviteDoc,location:{origin:'https://osgard.world',pathname:'/games/invite/afterimage-run/',search:'?'+challengeQuery.toString()},localStorage:inviteStorage,Date,Math,Number,String,Object,Array,RegExp,JSON,Uint8Array}
+ runInNewContext(inviteLandingScript,inviteSandbox)
+ const acceptedChallenge=new URL(playLink.href)
+ assert.equal(acceptedChallenge.pathname,'/games/afterimage-run/','A valid AFTERIMAGE invite must launch the game, not the generic catalogue')
+ assert.equal(acceptedChallenge.searchParams.get('seed'),'2026-10-13','Accepted invite must preserve the daily UTC seed')
+ assert.equal(acceptedChallenge.searchParams.get('score'),'1500','Accepted invite must preserve the challenge target')
+ assert.equal(acceptedChallenge.searchParams.get('og_ref'),'og_1234abcd','Accepted invite must preserve the validated referral code')
+ assert.equal(acceptedChallenge.searchParams.get('utm_campaign'),'play_with_friends','Accepted invite must preserve campaign attribution')
+ const invalidQuery=new URLSearchParams(challengeQuery);invalidQuery.set('day','2026-02-30')
+ const invalidLink={href:''};const invalidDoc={body:{dataset:{game:'afterimage-run'}},querySelector(selector){return selector==='#play-link'?invalidLink:null}}
+ runInNewContext(inviteLandingScript,{...inviteSandbox,document:invalidDoc,location:{origin:'https://osgard.world',pathname:'/games/invite/afterimage-run/',search:'?'+invalidQuery.toString()}})
+ assert.notEqual(new URL(invalidLink.href).pathname,'/games/afterimage-run/','An impossible calendar date must not be accepted as a valid daily challenge')
+ const badScoreQuery=new URLSearchParams(challengeQuery);badScoreQuery.set('challenge','1.5')
+ const badScoreLink={href:''};const badScoreDoc={body:{dataset:{game:'afterimage-run'}},querySelector(selector){return selector==='#play-link'?badScoreLink:null}}
+ runInNewContext(inviteLandingScript,{...inviteSandbox,document:badScoreDoc,location:{origin:'https://osgard.world',pathname:'/games/invite/afterimage-run/',search:'?'+badScoreQuery.toString()}})
+ assert.notEqual(new URL(badScoreLink.href).pathname,'/games/afterimage-run/','A fractional score must not be accepted as a challenge target')
+}
 const productionMatrix = readFileSync(resolve('scripts/production-route-matrix.mjs'),'utf8')
 assert.ok(productionMatrix.includes("path === '/games/invite/invite-landing.js'") && productionMatrix.includes("target.searchParams.set('utm_campaign', campaign)"), 'Production route matrix must validate the invitation script with its own content contract, not unrelated SkillCred markers')
 for(const game of routeEntries){
@@ -164,7 +186,13 @@ const aetherGame=readFileSync(resolve(root,'aether-grid/index.html'),'utf8')
 assert.ok(afterimageGame.includes('<title>AFTERIMAGE//RUN — OSGARD PLAY</title>')&&afterimageGame.includes('id="runnerCanvas"')&&afterimageGame.includes('id="run-start"')&&afterimageGame.includes('id="daily-seed"')&&afterimageGame.includes('id="share-telegram"')&&afterimageGame.includes('id="record-progress"'),'AFTERIMAGE//RUN interactive/share contract missing')
 assert.ok(!/<script[^>]+src=/i.test(afterimageGame)&&!/<link[^>]+href=["']https?:/i.test(afterimageGame),'AFTERIMAGE//RUN must remain self-contained')
 assert.ok(afterimageGame.includes("extra||{}),location.origin)")&&!afterimageGame.includes("extra||{}),'*')"),'AFTERIMAGE lifecycle messages must stay same-origin')
-assert.ok(afterimageGame.includes('incomingSeed=params.get(\'seed\')')&&afterimageGame.includes('Number.isFinite(rawTarget)')&&afterimageGame.includes('if(r[today])'),'AFTERIMAGE challenge/reward safety checks missing')
+assert.ok(afterimageGame.includes("incomingSeed=params.get('seed')")&&afterimageGame.includes('Number.isSafeInteger(rawTarget)')&&afterimageGame.includes('validUtcDate(incomingSeed)')&&afterimageGame.includes('if(r[today])'),'AFTERIMAGE challenge/reward safety checks missing')
+assert.ok(afterimageGame.includes('visualRng=(seed^0x9e3779b9)>>>0')&&afterimageGame.includes('const visualRandom=')&&afterimageGame.includes('function spawn()'),'AFTERIMAGE visual effects must use a separate RNG so cosmetic changes cannot alter the daily obstacle sequence')
+assert.ok(afterimageGame.includes('function stopLoop()')&&afterimageGame.includes('function scheduleLoop()')&&afterimageGame.includes('cancelAnimationFrame(loopFrame)'),'AFTERIMAGE gameplay must have one cancellable animation loop')
+assert.ok(afterimageGame.includes('game.score>targetScore')&&afterimageGame.includes('const challengeBeaten=targetScore>0&&game.score>targetScore'),'AFTERIMAGE challenge is won only by beating the target score')
+assert.ok(afterimageGame.includes('property="og:image"')&&afterimageGame.includes('https://osgard.world/games/share-cards/afterimage-run.png'),'AFTERIMAGE must expose the generated rich social-card image URL')
+assert.ok(afterimageGame.includes("inviteHost.OSGARDInvite?.createLink?.('afterimage-run')")&&afterimageGame.includes('/games/invite/afterimage-run/'),'AFTERIMAGE must create canonical referral challenge links through OSGARD invite routing')
+assert.ok(inviteLandingScript.includes("const afterimageChallenge = game === 'afterimage-run'")&&inviteLandingScript.includes("target.searchParams.set('seed', requestedDay)")&&inviteLandingScript.includes("target.searchParams.set('score', String(scoreValue))"),'AFTERIMAGE invite preview must preserve validated daily seed and target score on acceptance')
 assert.ok(afterimageGame.includes("opened.opener=null")&&afterimageGame.includes("prepareShareReward('share-intent-'+kind)"),'Social share must detach opener and require a separate reward confirmation')
 assert.ok(afterimageGame.includes('id="claim-share-reward"')&&afterimageGame.includes("rewardShare('player-confirmed:'+method)"),'AFTERIMAGE reward must require a separate player confirmation')
 const afterimageShareStart=afterimageGame.indexOf('async function shareNative()')
@@ -173,7 +201,7 @@ const afterimageShareFlow=afterimageGame.slice(afterimageShareStart,afterimageSh
 assert.ok(afterimageShareStart>=0&&afterimageShareEnd>afterimageShareStart,'AFTERIMAGE share flow boundaries must remain independently testable')
 assert.ok(!afterimageShareFlow.includes("rewardShare('web-share'")&&!afterimageShareFlow.includes("rewardShare('copy-link'")&&!afterimageShareFlow.includes("rewardShare('share-intent-"),'Opening a share sheet, opening a social composer, or copying a link must not award a shard immediately')
 assert.ok(afterimageGame.includes("Копирование не даёт награду")&&afterimageGame.includes("rewardConfirmedByPlayer:true"),'Copying a link must not reward; analytics must mark a player-confirmed claim')
-assert.ok(afterimageGame.includes("life('share_created',{shareMethod:method==='web-share'?'web-share':'social-share',rewardConfirmedByPlayer:true})")&&!afterimageGame.includes("life('shared'"),'Confirmed share must use the player-lifecycle bridge event accepted by the host')
+assert.ok(afterimageGame.includes("life('share_created',{shareMethod:confirmedMethod,rewardConfirmedByPlayer:true,flowType:'daily-challenge'")&&!afterimageGame.includes("life('shared'"),'Confirmed share must use the host-supported share_created lifecycle event with referral metadata')
 assert.ok(afterimageGame.includes('id="share-facebook"')&&afterimageGame.includes("facebook:'https://www.facebook.com/sharer/sharer.php?u='"),'AFTERIMAGE share buttons must expose the configured Facebook share path')
 assert.ok(afterimageGame.includes('SIGNAL SHARD')&&afterimageGame.includes('Публичная публикация поста не проверяется'),'Share reward copy must not claim that a public post was verified')
 assert.ok(afterimageGame.includes("let shardCosmeticUnlocked=Object.values(safeRead(REWARD,{})).some(record=>record&&record.kind==='cosmetic')"),'Previously claimed SIGNAL SHARD cosmetics must persist across sessions')
@@ -374,6 +402,8 @@ assert.ok(lifecycle.includes("'aether-grid':{title:'AETHER GRID',url:'/games/aet
 assert.ok(manifest.includes("'afterimage-run'")&&manifest.includes("title: 'AFTERIMAGE//RUN'")&&manifest.includes("href: '/games/afterimage-run/'"),'AFTERIMAGE must be registered in the typed manifest')
 assert.ok(sitemap.includes('<loc>https://osgard.world/games/afterimage-run/</loc>'),'AFTERIMAGE must be present in the XML sitemap')
 assert.ok(lifecycle.includes("'afterimage-run':{title:'AFTERIMAGE//RUN',url:'/games/afterimage-run/'}")&&lifecycle.includes("if(id==='afterimage-run')return !!doc.querySelector('#runnerCanvas')&&!!doc.querySelector('#run-start')&&!!doc.querySelector('#daily-seed')"),'AFTERIMAGE must participate in player lifecycle readiness')
+assert.ok(afterimageGame.includes('dailySeed:day')&&lifecycle.includes("endSession('game_completed',result)"),'AFTERIMAGE completion must hand its validated daily seed and run result to lifecycle analytics')
+assert.ok(lifecycle.includes("function endSession(reason,metadata={})")&&lifecycle.includes("allowedEvent('game_session_completed',Object.assign(")&&lifecycle.includes("Number.isSafeInteger(value)")&&lifecycle.includes("result.dailySeed=m.dailySeed")&&lifecycle.includes("result.referralCode=m.referralCode"),'Lifecycle analytics must allowlist integer run metrics and validate daily seed/referral attribution before logging')
 const recommendations=readFileSync(resolve(root,'game-session-recommendations.js'),'utf8')
 assert.ok(recommendations.includes("'afterimage-run':{title:'AFTERIMAGE//RUN',subtitle:'Ежедневный sci-fi speedrun',href:'/games/afterimage-run/'}")&&recommendations.includes("'afterimage-run':['signal-run','cascade-lab']")&&recommendations.includes("'afterimage-run':'AFTERIMAGE//RUN'")&&recommendations.includes("'aether-grid':{title:'AETHER GRID',subtitle:'Ежедневная головоломка',href:'/games/aether-grid/'}")&&recommendations.includes("'aether-grid':'AETHER GRID'"),'AETHER GRID must participate in postgame recommendations, referral share, and OSGARD SELECT')
 assert.ok(recommendations.includes('osgard-aftergame-intermission')&&recommendations.includes('og-postgame-preferences')&&recommendations.includes('Настроить показ')&&recommendations.includes('Автозапуска нет.'),'The existing optional between-game OSGARD SELECT must remain available, user-configurable and must not autoplay')
