@@ -7,19 +7,28 @@ state_file="/tmp/osgard-frontend-activation.state"
 log_file="/tmp/osgard-frontend-activation.log"
 rm -f "$state_file" "$log_file"
 
-# Prefer the API container when it exists. Some production hosts run the API
-# as a host service; in that case use the gateway from this container's Docker network.
-if docker inspect osgard-game-api >/dev/null 2>&1; then
-  api_host="osgard-game-api"
-else
-  networks_json="$(docker inspect "$container_name" --format '{{json .NetworkSettings.Networks}}')"
-  api_host="$(printf '%s' "$networks_json" | python3 -c 'import json,sys; networks=json.load(sys.stdin); print(next((endpoint.get("Gateway", "") for endpoint in networks.values() if endpoint.get("Gateway")), ""))')"
+# Resolve a reachable, healthy API upstream before touching the live document root.
+# Production may run the API as a Docker service or as a host-managed process.
+api_host="osgard-game-api"
+if ! docker exec "$container_name" sh -lc 'wget -q -T 3 -O /dev/null http://osgard-game-api:4317/health' >/dev/null 2>&1; then
+  host_api_health="$(curl --max-time 3 -fsS http://127.0.0.1:4317/health 2>/dev/null || true)"
+  if [[ "$host_api_health" == *'"status":"ok"'* ]]; then
+    gateways="$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.Gateway}} {{end}}' "$container_name" 2>/dev/null || true)"
+    for gateway in $gateways; do
+      if [[ "$gateway" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]] \
+        && docker exec "$container_name" sh -lc "wget -q -T 3 -O /dev/null http://$gateway:4317/health" >/dev/null 2>&1; then
+        api_host="$gateway"
+        echo "Using reachable Docker host gateway for the host-managed OSGARD game API."
+        break
+      fi
+    done
+  fi
+  if [[ "$api_host" == "osgard-game-api" ]]; then
+    echo "ERROR: no reachable, healthy OSGARD game API upstream; refusing frontend activation." >&2
+    exit 1
+  fi
 fi
-if [[ "$api_host" != "osgard-game-api" && ! "$api_host" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
-  echo "Unable to resolve a safe OSGARD game API upstream" >&2
-  exit 1
-fi
-printf 'Using OSGARD game API upstream: %s\n' "$api_host"
+printf 'Using OSGARD game API upstream: %s\\n' "$api_host"
 
 rollback() {
   docker exec "$container_name" sh -lc '
@@ -51,7 +60,7 @@ rollback() {
     test -s /tmp/osgard-gh-next/html/skillcred/styles.css.gz
     test -s /tmp/osgard-gh-next/html/skillcred/app.js.gz
     test -f /tmp/osgard-gh-next/nginx.conf
-    sed "s|osgard-game-api;|$api_host;|" /tmp/osgard-gh-next/nginx.conf > /tmp/osgard-gh-next/nginx.runtime.conf
+    sed 's|osgard-game-api;|$api_host;|' /tmp/osgard-gh-next/nginx.conf > /tmp/osgard-gh-next/nginx.runtime.conf
     test -s /tmp/osgard-gh-next/nginx.runtime.conf
     cp /etc/nginx/conf.d/default.conf /tmp/osgard-nginx-previous.conf
     mv /usr/share/nginx/html /tmp/osgard-gh-previous
