@@ -35,7 +35,7 @@ const remixForSmoke=readFileSync(resolve(root,'remix/index.html'),'utf8')
 const timeForSmoke=readFileSync(resolve('src/TimePrototype.tsx'),'utf8')
 const luxury=readFileSync(resolve(root,'luxury.js'),'utf8')
 
-assert.ok(html.includes('href="./daily-circuit.css"')&&html.includes('src="./daily-circuit.js"'),'Daily Circuit assets must be linked from the Games hub')
+assert.ok(html.includes('href="./daily-circuit.css?v=__OSGARD_BUILD_VERSION__"')&&html.includes('src="./daily-circuit.js?v=__OSGARD_BUILD_VERSION__"'),'Daily Circuit assets must be linked with the release version marker')
 assert.ok(dailyCircuitStyles.includes('.daily-circuit-grid')&&dailyCircuitStyles.includes('@media(max-width:760px)')&&dailyCircuitStyles.includes('prefers-reduced-motion:reduce'),'Daily Circuit must be responsive and respect reduced motion')
 assert.ok(dailyCircuitScript.includes('OSGARDDailyCircuitCore')&&dailyCircuitScript.includes('navigator.share')&&dailyCircuitScript.includes('navigator.clipboard.writeText'),'Daily Circuit must expose deterministic routes and share/copy fallback')
 assert.ok(!dailyCircuitScript.includes('fetch(')&&!dailyCircuitScript.includes('googletagmanager')&&!dailyCircuitScript.includes('doubleclick.net'),'Daily Circuit must not add ad SDKs or unapproved network calls')
@@ -173,7 +173,7 @@ assert.ok(lazyRuntime.includes("script.async=true")&&lazyRuntime.includes("encod
 }
 
 assert.ok(deployWorkflow.includes('s|__OSGARD_BUILD_VERSION__|$ASSET_VERSION|g')&&deployWorkflow.includes('grep -Fq "<meta name=\\"osgard-build\\" content=\\"$ASSET_VERSION\\">"'),'Deploy packaging must stamp and verify the Games build marker')
-assert.ok(lighthouseWorkflow.includes('EXPECTED_DEPLOY_SHA')&&lighthouseWorkflow.includes('osgard-build')&&lighthouseWorkflow.includes('luxury.css?v=$expected'),'Games Lighthouse must wait for the matching release before scoring')
+assert.ok(lighthouseWorkflow.includes('EXPECTED_DEPLOY_SHA')&&lighthouseWorkflow.includes('osgard-build')&&lighthouseWorkflow.includes('luxury.css?v=$expected')&&lighthouseWorkflow.includes('daily-circuit.css?v=$expected')&&lighthouseWorkflow.includes('daily-circuit.js?v=$expected')&&lighthouseWorkflow.includes("versioned('/games/'+path)")&&lighthouseWorkflow.includes("loadScript('player-lifecycle.js')")&&!lighthouseWorkflow.includes('player-lifecycle.js?v=$expected'),'Games Lighthouse must verify versioned assets and the actual lazy-loader contract')
 const healthyScores={performance:.95,accessibility:1,'best-practices':1,seo:1}
 const fixture=(scores,tbt,lcp)=>({finalDisplayedUrl:'https://osgard.world/games/',categories:Object.fromEntries(Object.entries(scores).map(([key,score])=>[key,{score}])),audits:{'total-blocking-time':{numericValue:tbt},'largest-contentful-paint':{numericValue:lcp}}})
 assert.equal(assessReport(fixture(healthyScores,250,2500),'mobile').pass,true,'Healthy mobile Lighthouse report should pass guardrails')
