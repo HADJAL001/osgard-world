@@ -59,6 +59,20 @@ test("consented analytics accept stable event IDs and new page-view events, whil
   const legacy = validateEventBatch({ consent: true, events: [{ ...baseEvent, name: "partners_page_viewed" }] });
   assert.equal(legacy.ok, true, "Older clients without eventId stay backward-compatible");
   assert.equal(legacy.events[0].eventId, "");
+
+  const inviteShared = validateEventBatch({ consent: true, events: [{
+    ...baseEvent, name: "share_created", source: "game-invite:swarm:abcdef012345",
+    eventId: "evt_invite_123456789",
+  }] });
+  assert.equal(inviteShared.ok, true, "Game invitation creation should be accepted");
+  assert.equal(inviteShared.events[0].eventId, "evt_invite_123456789");
+
+  const inviteOpened = validateEventBatch({ consent: true, events: [{
+    ...baseEvent, name: "referral_link_opened", source: "referral-link:abcdef012345",
+    eventId: "evt_open_123456789",
+  }] });
+  assert.equal(inviteOpened.ok, true, "Incoming invitation visits should be accepted");
+  assert.equal(inviteOpened.events[0].name, "referral_link_opened");
 });
 
 test("live Stripe keys stay disabled unless explicitly enabled", () => {
