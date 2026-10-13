@@ -20,6 +20,7 @@
     'patina', 'signal-run', 'cascade-lab', 'unknown'
   ]);
   let flushPromise = null;
+  let activeController = null;
 
   const consentGranted = () => {
     try { return localStorage.getItem(CONSENT_KEY) === 'yes'; }
@@ -82,12 +83,13 @@
   }
 
   function clearQueue() {
+    if (activeController) { try { activeController.abort(); } catch { /* best-effort cancellation */ } }
     try { localStorage.removeItem(QUEUE_KEY); } catch { /* storage is optional */ }
   }
 
-  async function resolveApiBase() {
+  async function resolveApiBase(signal) {
     try {
-      const response = await fetch('/games/commerce-config.json', { cache: 'no-store', credentials: 'same-origin' });
+      const response = await fetch('/games/commerce-config.json', { cache: 'no-store', credentials: 'same-origin', signal });
       const config = response.ok ? await response.json() : {};
       return String(config.apiBaseUrl || '/commerce-api').replace(/\/+$/, '');
     } catch {
@@ -96,17 +98,26 @@
   }
 
   async function postBatch(events) {
-    const base = await resolveApiBase();
-    const response = await fetch(base + '/v1/events', {
-      method: 'POST',
-      credentials: 'same-origin',
-      keepalive: true,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ consent: true, events })
-    });
-    if (!response.ok) return false;
-    const result = await response.json().catch(() => null);
-    return Number(result?.accepted) === events.length;
+    if (!consentGranted()) return false;
+    const controller = typeof AbortController === 'function' ? new AbortController() : null;
+    activeController = controller;
+    try {
+      const base = await resolveApiBase(controller?.signal);
+      if (!consentGranted() || controller?.signal.aborted) return false;
+      const response = await fetch(base + '/v1/events', {
+        method: 'POST',
+        credentials: 'same-origin',
+        keepalive: true,
+        signal: controller?.signal,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ consent: true, events })
+      });
+      if (!consentGranted() || controller?.signal.aborted || !response.ok) return false;
+      const result = await response.json().catch(() => null);
+      return consentGranted() && Number(result?.accepted) === events.length;
+    } finally {
+      if (activeController === controller) activeController = null;
+    }
   }
 
   function flush() {
@@ -141,7 +152,10 @@
     const event = normalizeEvent(raw);
     if (!event) return Promise.resolve(false);
     const queue = readQueue();
-    if (queue.some(item => item.eventId === event.eventId)) return flush();
+    if (queue.some(item => item.eventId === event.eventId)) {
+      void flush();
+      return Promise.resolve(true);
+    }
     queue.push({ ...event, queuedAt: Date.now() });
     const bounded = queue.slice(-MAX_PENDING);
     if (!writeQueue(bounded)) {
@@ -149,7 +163,10 @@
       // retaining events outside this page session.
       return postBatch([event]).catch(() => false);
     }
-    return flush();
+    void flush();
+    // `true` means safely queued, not yet guaranteed delivered. This prevents
+    // callers from generating a second event ID when the network is offline.
+    return Promise.resolve(true);
   }
 
   function syncConsent() {
