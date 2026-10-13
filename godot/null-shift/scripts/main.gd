@@ -468,13 +468,10 @@ func _create_atmosphere_particles() -> void:
 	process_material.scale_max = 1.15
 	process_material.color = Color(0.5, 0.94, 0.88, 0.34)
 	var fade := Gradient.new()
-	fade.offsets = PackedFloat32Array([0.0, 0.14, 0.82, 1.0])
-	fade.colors = PackedColorArray([
-		Color(0.34, 0.88, 0.82, 0.0),
-		Color(0.42, 0.96, 0.88, 0.25),
-		Color(0.3, 0.75, 0.74, 0.16),
-		Color(0.3, 0.75, 0.74, 0.0)
-	])
+	fade.set_color(0, Color(0.34, 0.88, 0.82, 0.0))
+	fade.add_point(0.14, Color(0.42, 0.96, 0.88, 0.25))
+	fade.add_point(0.82, Color(0.3, 0.75, 0.74, 0.16))
+	fade.set_color(fade.get_point_count() - 1, Color(0.3, 0.75, 0.74, 0.0))
 	var fade_texture := GradientTexture1D.new()
 	fade_texture.gradient = fade
 	process_material.color_ramp = fade_texture
