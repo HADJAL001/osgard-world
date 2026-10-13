@@ -350,6 +350,13 @@ assert.ok(lifecycle.includes("document.dispatchEvent(new Event('osgard:game-laun
 assert.ok(recommendationScript.includes("document.addEventListener('osgard:game-completed'")&&recommendationScript.includes("document.addEventListener('osgard:game-launching'"),'Recommendation module must subscribe to game lifecycle events')
 assert.ok(recommendationStyles.includes('.post-run-recommendations')&&recommendationStyles.includes('prefers-reduced-motion:reduce'),'Recommendation shelf must have responsive/reduced-motion styling')
 new Function(recommendationScript)
+assert.ok(recommendationScript.includes('function hasConsent()') && recommendationScript.includes("localStorage.getItem('osgard.games.analytics-consent.v1')==='yes'"), 'OSGARD SELECT should use a defined, explicit-consent gate')
+assert.ok(recommendationScript.includes('async function sendSelectEvent') && recommendationScript.includes("fetch(base+'/v1/events'"), 'OSGARD SELECT impressions/clicks should have a real first-party analytics path')
+assert.ok(recommendationScript.includes("sendSelectEvent('owned_promo_impression'") && recommendationScript.includes("sendSelectEvent('cross_promo_clicked'"), 'Measured visibility and clicks must be separate event types')
+const rewardHandler= recommendationScript.slice(recommendationScript.indexOf("claim.addEventListener('click'"), recommendationScript.indexOf(" const note=make('p','og-postgame-reward-note'"))
+assert.ok(rewardHandler.includes("award('claim:'+claimedSource)") && rewardHandler.includes("sendSelectEvent('share_reward_claimed'"), 'A reward must be issued only by explicit user confirmation, and the claim must be measurable after consent')
+assert.ok(rewardHandler.includes("prepareClaim(source+':'+gameId") && !rewardHandler.includes("show(award(source+':'+gameId))"), 'Opening native share/copy must request a later claim rather than immediately awarding points')
+assert.ok(recommendationScript.includes('Соцсеть не подтверждает сайту факт публикации') && recommendationScript.includes('не денежное'), 'Share rewards must not imply verified posting or cash value')
 const mockNode=()=>({className:'',textContent:'',hidden:false,dataset:{},attributes:{},children:[],handlers:{},append(...nodes){this.children.push(...nodes)},replaceChildren(...nodes){this.children=nodes},setAttribute(name,value){this.attributes[name]=value},addEventListener(name,handler){(this.handlers[name]??=[]).push(handler)},click(){for(const handler of this.handlers.click||[])handler({target:this,button:0})},querySelector(selector){return selector.startsWith('.')?this.children.find(node=>node.className===selector.slice(1))||null:null}})
 const mockHost=mockNode();mockHost.hidden=true
 const mockOutside=mockNode();mockOutside.hidden=true
