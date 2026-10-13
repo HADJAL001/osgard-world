@@ -35,7 +35,6 @@ function challengeUrl(id){
  url.searchParams.set('utm_medium','viral_challenge');
  url.searchParams.set('utm_campaign','post_run');
  url.searchParams.set('utm_content',id);
- url.hash='catalog';
  return url.href;
 }
 function clear(){host.replaceChildren();host.hidden=true;dialog.classList.remove('has-recommendations')}
