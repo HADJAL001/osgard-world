@@ -94,8 +94,8 @@ assert.ok(source.includes('function recordCompletedRound(gameId,sessionId)') && 
   'A completed round and later player return must share one idempotency key, even if the user waits before closing');
 assert.ok(lifecycle.includes("activeSessionId='session_'+id+'_'+sequence+'_'+launchAt") && lifecycle.includes('sessionId:activeSessionId') && lifecycle.includes('detail:{game:activeGame,sessionId:activeSessionId}'),
   'The game player must provide the same stable launch ID to completion and intermission events');
-assert.ok(source.includes('const isSpotlight=id===spotlightServiceId'),
-  'The promoted service card must match the actual personalized spotlight');
+assert.ok(source.includes('const isSpotlight=id===spotlightServiceId') && source.includes("cards.forEach(card=>card.classList.toggle('is-featured',card.dataset.service===spotlightServiceId))"),
+  'The promoted service card must match the actual personalized spotlight, including after rotating it');
 
 const claimSignal = signalRun.indexOf("claimShare.addEventListener('click'");
 const shareSignal = signalRun.indexOf("$('share').addEventListener('click',async()=>{");
