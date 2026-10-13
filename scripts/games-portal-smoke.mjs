@@ -150,6 +150,7 @@ assert.ok(afterimageGame.includes('function stopIdle()')&&afterimageGame.include
 assert.ok(!afterimageGame.includes('function idle(){')&&afterimageGame.includes('clearTimeout(idleTimer)'),'AFTERIMAGE idle animation must be cancellable while gameplay is active')
 assert.ok(afterimageGame.includes("document.addEventListener('visibilitychange'")&&afterimageGame.includes("document.visibilityState==='hidden'")&&afterimageGame.includes('PAUSED · TAB HIDDEN'),'AFTERIMAGE must pause safely when the tab is hidden and expose a clear resume state')
 assert.ok(afterimageGame.includes("window.matchMedia('(prefers-reduced-motion: reduce)')")&&afterimageGame.includes('if(reducedMotion||idleTimer'),'AFTERIMAGE idle animation must respect the reduced-motion preference')
+assert.ok(afterimageGame.includes("$('run-state').textContent='PAUSED';draw();hud()")&&afterimageGame.includes("PAUSED · TAB HIDDEN';hud();draw()"),'AFTERIMAGE pause states must also refresh HUD controls so PHASE DASH cannot remain active while paused')
 
 const patina=readFileSync(resolve(root,'patina/index.html'),'utf8')
 const signalRun=readFileSync(resolve(root,'signal-run/index.html'),'utf8')
