@@ -51,6 +51,10 @@ var mobile_action_panel: PanelContainer
 var mobile_controls_visible := false
 var mobile_actions: Dictionary = {"up": false, "down": false, "left": false, "right": false}
 var materials: Dictionary = {}
+var surface_albedo_texture: Texture2D
+var surface_normal_texture: Texture2D
+var surface_roughness_texture: Texture2D
+var surface_texture_size := 128
 var guards: Array[Dictionary] = []
 var devices: Array[Dictionary] = []
 var phase_lanes: Array[Dictionary] = []
@@ -238,6 +242,7 @@ func _ready() -> void:
 	_load_career()
 	_resolve_shared_challenge()
 	_create_materials()
+	_create_procedural_surface_textures()
 	_create_lighting()
 	_create_impact_light_pool()
 	_create_arena()
@@ -571,6 +576,69 @@ func _create_materials() -> void:
 	materials["objective_exit"] = _material(Color(0.42, 1.0, 0.78), Color(0.16, 1.0, 0.62), 1.55, 0.28, 0.22)
 	materials["grid"] = _material(Color(0.09, 0.31, 0.3, 0.4), Color(0.035, 0.25, 0.24), 0.38, 0.0, 1.0)
 	materials["telegraph"] = _material(Color(1.0, 0.13, 0.2, 0.8), Color(1.0, 0.035, 0.08), 1.8, 0.0, 1.0)
+
+func _create_procedural_surface_textures() -> void:
+	# Generate one seamless surface set in memory: no downloads, binary art assets, or per-frame allocations.
+	var size: int = surface_texture_size
+	var height_image := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	var albedo_image := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	var roughness_image := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	var heights := PackedFloat32Array()
+	heights.resize(size * size)
+	for y in range(size):
+		var v: float = float(y) / float(size)
+		for x in range(size):
+			var u: float = float(x) / float(size)
+			# Integer-frequency waves are periodic at both borders to avoid obvious seams when tiled.
+			var warp: float = sin(TAU * 3.0 * u + sin(TAU * 2.0 * v) * 0.12)
+			var brushed: float = sin(TAU * (23.0 * v + warp * 0.018))
+			var fine_grain: float = sin(TAU * (17.0 * u + 29.0 * v)) * 0.55 + sin(TAU * (41.0 * u - 13.0 * v)) * 0.22
+			var index: int = y * size + x
+			var height_value: float = clampf(0.5 + brushed * 0.075 + fine_grain * 0.018, 0.0, 1.0)
+			heights[index] = height_value
+			var albedo_value: float = clampf(0.91 + brushed * 0.035 + fine_grain * 0.018, 0.80, 0.99)
+			var rough_value: float = clampf(0.72 + absf(brushed) * 0.15 + absf(fine_grain) * 0.06, 0.50, 0.96)
+			albedo_image.set_pixel(x, y, Color(albedo_value, albedo_value, albedo_value, 1.0))
+			roughness_image.set_pixel(x, y, Color(rough_value, rough_value, rough_value, 1.0))
+	for y in range(size):
+		var up_y: int = posmod(y - 1, size)
+		var down_y: int = posmod(y + 1, size)
+		for x in range(size):
+			var left_x: int = posmod(x - 1, size)
+			var right_x: int = posmod(x + 1, size)
+			var left_h: float = heights[y * size + left_x]
+			var right_h: float = heights[y * size + right_x]
+			var up_h: float = heights[up_y * size + x]
+			var down_h: float = heights[down_y * size + x]
+			var tangent_normal := Vector3((left_h - right_h) * 5.8, (up_h - down_h) * 5.8, 1.0).normalized()
+			height_image.set_pixel(
+				x,
+				y,
+				Color(tangent_normal.x * 0.5 + 0.5, tangent_normal.y * 0.5 + 0.5, tangent_normal.z * 0.5 + 0.5, 1.0)
+			)
+	surface_albedo_texture = ImageTexture.create_from_image(albedo_image)
+	surface_normal_texture = ImageTexture.create_from_image(height_image)
+	surface_roughness_texture = ImageTexture.create_from_image(roughness_image)
+	_apply_procedural_surface_materials()
+
+func _apply_procedural_surface_materials() -> void:
+	# Reuse one compact texture set across materials; change tiling and normal strength by surface.
+	var surface_settings: Array[Dictionary] = [
+		{"name": "floor", "uv": Vector3(10.0, 10.0, 1.0), "normal": 0.22},
+		{"name": "wall", "uv": Vector3(4.0, 4.0, 1.0), "normal": 0.16},
+		{"name": "wall_trim", "uv": Vector3(2.5, 2.5, 1.0), "normal": 0.10}
+	]
+	for setting in surface_settings:
+		var surface_material: StandardMaterial3D = materials.get(str(setting["name"])) as StandardMaterial3D
+		if not is_instance_valid(surface_material):
+			continue
+		surface_material.albedo_texture = surface_albedo_texture
+		surface_material.uv1_scale = setting["uv"]
+		surface_material.normal_texture = surface_normal_texture
+		surface_material.normal_scale = float(setting["normal"])
+		surface_material.normal_enabled = true
+		surface_material.roughness_texture = surface_roughness_texture
+
 
 func _material(albedo: Color, emission: Color, energy: float, metal: float, rough: float) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
@@ -2488,6 +2556,7 @@ func _apply_quality_mode() -> void:
 		adaptive_quality_degraded = false
 		adaptive_slow_windows = 0
 		adaptive_fast_windows = 0
+	_apply_surface_detail_quality()
 	var cinematic_effects: bool = cinematic_quality and not adaptive_quality_degraded
 	var balanced_effects: bool = not performance_quality and not adaptive_quality_degraded
 	if is_instance_valid(world_environment) and is_instance_valid(world_environment.environment):
@@ -2520,6 +2589,18 @@ func _apply_quality_mode() -> void:
 	_update_reduced_motion_ui()
 	if is_instance_valid(sound_button):
 		sound_button.text = "ЗВУК / ВКЛ" if sound_enabled else "ЗВУК / ВЫКЛ"
+
+
+func _apply_surface_detail_quality() -> void:
+	# Albedo remains on in all profiles; normal and roughness maps scale with the GPU budget.
+	var use_detail_maps: bool = not performance_quality and not adaptive_quality_degraded
+	for material_name in ["floor", "wall", "wall_trim"]:
+		var surface_material: StandardMaterial3D = materials.get(material_name) as StandardMaterial3D
+		if not is_instance_valid(surface_material):
+			continue
+		surface_material.normal_enabled = use_detail_maps
+		surface_material.normal_texture = surface_normal_texture if use_detail_maps else null
+		surface_material.roughness_texture = surface_roughness_texture if use_detail_maps else null
 
 
 func _update_adaptive_quality() -> void:

@@ -218,3 +218,12 @@ Weapon fire and other transient beams use two crossed triangle ribbons plus a cr
 - Cinematic and Balanced profiles allow these flashes; Performance and automatic degradation hide them. They never cast shadows because short-lived point-light shadows cost too much for this compatibility-rendered browser/mobile build.
 - Headless runtime smoke verifies real light position/energy/range, smooth decay, clean expiry, telemetry, the four-light limit, and Performance-profile gating.
 - This is native Godot lighting behavior, not a baked image or native 8K claim; real-device performance must still be measured.
+
+
+## Release 2.5 — procedural PBR surface detail
+
+- Godot generates a compact, periodic 128×128 albedo, tangent-space normal and roughness texture set at startup using in-memory Images and GDScript. No downloads, imported binary art, or external assets are required.
+- The shared floor, bulkhead and metal-trim materials use the generated detail at different UV scales. The periodic source functions reduce visible borders as textures tile; the normal map is derived from wrapped neighbouring height samples.
+- Cinematic and Balanced profiles use normal/roughness detail maps. Performance and adaptive-degraded profiles keep subtle albedo variation while disabling normal/roughness maps to reduce shader work.
+- Headless runtime smoke checks texture presence, dimensions, spatial variation and Performance/Cinematic map policy. The browser export continues through the existing Godot 4.7.2 CI workflow.
+- This is procedural PBR material detail, not scanned photogrammetry, physically simulated reflections, a new shadow-map system or native 8K rendering; target-device GPU testing remains necessary.

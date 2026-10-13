@@ -23,6 +23,32 @@ func _run_smoke() -> void:
 	print("RUNTIME_STAGE: scene ready")
 	if not _expect(game.get_script() != null, "main scene script must load without GDScript parse errors"):
 		return
+	print("RUNTIME_STAGE: generated PBR surface texture set")
+	var floor_surface: StandardMaterial3D = game.materials.get("floor") as StandardMaterial3D
+	var wall_surface: StandardMaterial3D = game.materials.get("wall") as StandardMaterial3D
+	var trim_surface: StandardMaterial3D = game.materials.get("wall_trim") as StandardMaterial3D
+	if not _expect(is_instance_valid(floor_surface) and is_instance_valid(wall_surface) and is_instance_valid(trim_surface), "floor, bulkhead and metal trim must keep their shared surface materials"):
+		return
+	if not _expect(is_instance_valid(floor_surface.albedo_texture) and is_instance_valid(floor_surface.normal_texture) and is_instance_valid(floor_surface.roughness_texture), "floor must use generated albedo, normal and roughness textures"):
+		return
+	if not _expect(floor_surface.albedo_texture.get_width() == 128 and floor_surface.normal_texture.get_height() == 128 and floor_surface.roughness_texture.get_width() == 128, "generated PBR maps must be compact 128px textures"):
+		return
+	var albedo_image: Image = floor_surface.albedo_texture.get_image()
+	var roughness_image: Image = floor_surface.roughness_texture.get_image()
+	if not _expect(albedo_image.get_pixel(0, 0).r != albedo_image.get_pixel(32, 47).r and roughness_image.get_pixel(4, 11).r != roughness_image.get_pixel(96, 83).r, "procedural albedo and roughness maps must contain actual spatial variation"):
+		return
+	var saved_performance_quality: bool = game.performance_quality
+	var saved_degraded_quality: bool = game.adaptive_quality_degraded
+	game.performance_quality = true
+	game.adaptive_quality_degraded = false
+	game._apply_quality_mode()
+	if not _expect(not floor_surface.normal_enabled and floor_surface.normal_texture == null and floor_surface.roughness_texture == null, "Performance profile must disable expensive surface maps"):
+		return
+	game.performance_quality = saved_performance_quality
+	game.adaptive_quality_degraded = saved_degraded_quality
+	game._apply_quality_mode()
+	if not _expect(floor_surface.normal_enabled == (not game.performance_quality and not game.adaptive_quality_degraded), "restoring graphics profile must restore its surface-map policy"):
+		return
 	print("RUNTIME_STAGE: premium layered operator and guard armour")
 	var operator_chest: MeshInstance3D = game.operator_rig.find_child("OperatorChestShell", true, false) as MeshInstance3D
 	var operator_shoulder: MeshInstance3D = game.operator_rig.find_child("OperatorShoulder_L", true, false) as MeshInstance3D
