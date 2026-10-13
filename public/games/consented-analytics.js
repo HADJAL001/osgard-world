@@ -12,7 +12,8 @@
     'premium_page_view', 'catalog_viewed', 'partners_page_viewed',
     'share_created', 'referral_link_opened', 'game_session_started',
     'checkout_started', 'checkout_paid', 'cross_promo_clicked',
-    'owned_promo_impression', 'social_share_intent', 'social_reward_claimed',
+    'owned_promo_impression', 'owned_promo_intermission_skipped',
+    'owned_promo_preferences_saved', 'social_share_intent', 'social_reward_claimed',
     'game_launched', 'game_session_completed', 'lead_submitted', 'partner_inquiry'
   ]);
   const GAME_IDS = new Set([
