@@ -89,6 +89,7 @@ test("analytics is disabled unless consent is explicit and event names are allow
     ["owned_promo_intermission_skipped", "osgard-select:skip:12"],
     ["owned_promo_preferences_saved", "osgard-select:preferences:each:7"],
     ["social_share_intent", "osgard-social-share:telegram:swarm"],
+  ["invite_link_prepared", "game-invite:swarm:og_abcdef12"],
     ["social_reward_claimed", "osgard-social-reward:telegram:swarm"],
   ]) {
     assert.equal(validateEventBatch({ consent: true, events: [{ ...event, name, source, eventId: "evt_social_event_123456" }] }).ok, true,
