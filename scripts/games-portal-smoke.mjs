@@ -446,7 +446,15 @@ assert.ok(signalJs.includes("life('completed'"),'SIGNAL RUN must emit completion
 
 assert.ok(signalRun.includes('id="shards"')&&signalRun.includes('OSGARD SHARDS')&&signalRun.includes('публикацию в соцсети')&&signalRun.includes('не имеют денежной стоимости'),'SIGNAL RUN must disclose the local SHARDS wallet and social-share verification limits');
 assert.ok(signalJs.includes("SHARDS_KEY='osgard.games.shards-wallet.v1'")&&signalJs.includes('function awardShareShards')&&signalJs.includes('event.key===SHARDS_KEY'),'SIGNAL RUN must use the same local SHARDS wallet as the postgame reward panel');
-assert.ok(signalJs.includes("bonus.ok?' · +50 SHARDS'")&&signalJs.includes('current.day===day'),'SIGNAL RUN must show the +50 local invitation reward and prevent duplicate grants within one UTC day');
+assert.ok(signalJs.includes("SHARDS_KEY='osgard.games.shards-wallet.v1'")&&signalJs.includes('function awardShareShards')&&signalJs.includes('event.key===SHARDS_KEY'),'SIGNAL RUN must use the shared local SHARDS wallet');
+assert.ok(signalRun.includes('id="claim-share-reward"')&&signalRun.includes('Копирование ссылки само по себе не даёт награду'),'SIGNAL RUN must show a separate claim control and disclose that copying alone earns nothing');
+const signalShareStart=signalJs.indexOf("$('share').addEventListener('click',async()=>{');
+const signalShareEnd=signalJs.indexOf("});document.addEventListener('keydown'",signalShareStart);
+assert.ok(signalShareStart>=0&&signalShareEnd>signalShareStart,'SIGNAL RUN share handler boundaries are required');
+const signalShareHandler=signalJs.slice(signalShareStart,signalShareEnd);
+assert.ok(!signalShareHandler.includes('awardShareShards(')&&!signalShareHandler.includes("life('share_created'")&&signalShareHandler.includes("method==='clipboard'")&&signalShareHandler.includes('pendingShareReward={method,challengeScore:target'),'SIGNAL RUN must not award or report a completed share from a share intent/copy');
+assert.ok(signalJs.includes("if(claimShare)claimShare.addEventListener('click'")&&signalJs.includes("awardShareShards('user-confirmed:'+pending.method)")&&signalJs.includes('rewardConfirmedByPlayer:true'),'SIGNAL RUN must award only after a separate player confirmation');
+new Function(signalJs);
 
 assert.ok(cascadeGame.includes("notifyOsgardLifecycle('completed'"),'CASCADE LAB must emit completion after a passed level')
 
@@ -629,6 +637,7 @@ assert.ok(['marcosa.club','osgardbewworld.com','o2system.art','senjorio.com','su
 assert.ok(playSelectSource.includes("const WALLET_KEY = 'osgard.games.shards-wallet.v1'") && playSelectSource.includes('current.day === today') && playSelectSource.includes('current.balance + 50'), 'Homepage must use shared SHARDS wallet and UTC-day cap')
 assert.ok(playSelectSource.includes('navigator.share') && playSelectSource.includes('navigator.clipboard && navigator.clipboard.writeText') && ['Telegram','WhatsApp','VK','X','Facebook'].every(network=>playSelectSource.includes("name: '"+network+"'")), 'Homepage must offer native/clipboard sharing and five social composers')
 assert.ok(playSelectSource.includes('Отправка отменена — награда не начислена.') && playSelectSource.includes('не являются деньгами'), 'Cancelled shares must not earn and SHARDS must be disclosed as non-monetary')
+assert.ok(!playSelectSource.includes("grantReward('homepage-native-share')")&&!playSelectSource.includes("grantReward('homepage-clipboard')")&&playSelectSource.includes("setPendingNetwork('native-share')")&&playSelectSource.includes('Копирование само по себе не считается репостом'), 'Homepage must never auto-award on opening a share sheet or copying a link');
 assert.ok(appStyles.includes('.play-select-loop') && appStyles.includes('.play-select-layout') && appStyles.includes('@media(max-width:600px)') && appStyles.includes('prefers-reduced-motion:reduce'), 'OSGARD SELECT must be responsive and respect reduced motion')
 assert.ok(appSource.includes('href="/games/?utm_source=osgard_world&amp;utm_medium=entertainment&amp;utm_campaign=between_worlds"'), 'Entertainment gateway must link into the playable hub with campaign attribution')
 assert.ok(appSource.includes('href="/games/monetization/?utm_source=osgard_world&amp;utm_medium=entertainment&amp;utm_campaign=economy_model"'), 'Entertainment gateway must link to the scenario economy model')
