@@ -401,6 +401,8 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
           COUNT(*) FILTER (WHERE event_name = 'lead_submitted')::int AS "leadSubmittedEvents",
           COUNT(*) FILTER (WHERE event_name = 'premium_page_view')::int AS "premiumPageViews",
           COUNT(*) FILTER (WHERE event_name = 'partners_page_viewed')::int AS "partnersPageViews",
+          COUNT(*) FILTER (WHERE event_name = 'social_share_intent')::int AS "socialShareIntents",
+          COUNT(*) FILTER (WHERE event_name = 'social_reward_claimed')::int AS "socialRewardClaims",
           (SELECT COUNT(*) FROM invite_shares)::int AS "inviteShares",
           (SELECT COUNT(*) FROM invite_shares s JOIN invite_opens o USING (invite_code))::int AS "referralOpens",
           (SELECT COUNT(*) FROM invite_shares s JOIN invite_starts r USING (invite_code))::int AS "referredStarts",

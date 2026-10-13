@@ -73,7 +73,8 @@ async function sendEvent(name,gameId,source){
   if(!consented()||(controller&&controller.signal.aborted))return false;
   const config=configResponse.ok?await configResponse.json().catch(()=>({})):{};
   if(!consented()||(controller&&controller.signal.aborted))return false;
-  const base=String(config.apiBaseUrl||'/commerce-api').replace(/\/+$/,'');
+   let base=String(config.apiBaseUrl||'/commerce-api');
+   while(base.endsWith('/'))base=base.slice(0,-1);
   const request={method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({consent:true,events:[event]})};
   if(controller)request.signal=controller.signal;
   const response=await fetch(base+'/v1/events',request);
@@ -269,6 +270,33 @@ const frequencyValues=['each','every3','off'];
 let memoryServicePreferences=null;
 let memoryServiceProgress={count:0,lastAt:0,lastGame:''};
 const make=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n};
+const selectConsentKey='osgard.games.analytics-consent.v1';
+const selectSessionKey='osgard.games.growth-session.v1';
+const selectAllowedEvents=new Set(['cross_promo_clicked','owned_promo_impression','social_share_intent','social_reward_claimed','share_created']);
+function hasConsent(){try{return localStorage.getItem(selectConsentKey)==='yes'}catch{return false}}
+function selectSessionId(){
+ try{let value=sessionStorage.getItem(selectSessionKey);if(value&&/^session_[a-f0-9]{24}$/.test(value))return value;value='session_'+makeEventToken()+makeEventToken();sessionStorage.setItem(selectSessionKey,value);return value}
+ catch{return 'session_'+makeEventToken()+makeEventToken()}
+}
+function makeEventToken(){
+ const bytes=new Uint8Array(6);
+ if(globalThis.crypto?.getRandomValues)globalThis.crypto.getRandomValues(bytes);
+ else for(let i=0;i<bytes.length;i++)bytes[i]=Math.floor(Math.random()*256);
+ return Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
+}
+function sendSelectEvent(name,gameId,source){
+ if(!hasConsent()||!selectAllowedEvents.has(name))return Promise.resolve(false);
+ const event={eventId:'evt_'+makeEventToken()+makeEventToken(),name,sessionId:selectSessionId(),gameId:titles[gameId]?gameId:'unknown',source:String(source||'osgard-select').slice(0,80),path:location.pathname,durationSeconds:0};
+ return fetch('/games/commerce-config.json',{cache:'no-store'})
+  .then(r=>r.ok?r.json().catch(()=>({})):({}))
+  .then(config=>{
+   let base=String(config.apiBaseUrl||'/commerce-api');
+   while(base.endsWith('/'))base=base.slice(0,-1);
+   return fetch(base+'/v1/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({consent:true,events:[event]})});
+  })
+  .then(response=>response.ok)
+  .catch(()=>false);
+}
 function readServicePreferences(){
  const fallback={frequency:'each',selected:availableServiceIds.slice()};
  let stored=null;
@@ -434,9 +462,9 @@ function rewardShelf(gameId){
  const networks=[['Telegram','https://t.me/share/url?url='+eu+'&text='+et],['WhatsApp','https://wa.me/?text='+encodeURIComponent(message+' '+url)],['VK','https://vk.com/share.php?url='+eu+'&title='+encodeURIComponent('OSGARD PLAY · '+titles[gameId])+'&comment='+et],['X','https://twitter.com/intent/tweet?url='+eu+'&text='+et],['Facebook','https://www.facebook.com/sharer/sharer.php?u='+eu]];
  const grid=make('div','og-postgame-networks'),claim=make('button','og-postgame-claim','Я опубликовал — получить +50 SHARDS');claim.type='button';claim.hidden=true;let pending='';
  const show=result=>{balance.textContent='OSGARD SHARDS · '+getWallet().balance;status.textContent=result.ok?'+50 SHARDS начислено. Баланс: '+result.balance+'.':result.already?'Дневная награда уже получена. Баланс: '+result.balance+'.':'Не удалось сохранить награду в этом браузере.'};
- networks.forEach(([name,href])=>{const link=make('a','og-postgame-network',name+' ↗');link.href=href;link.target='_blank';link.rel='noopener noreferrer';link.setAttribute('aria-label','Открыть форму публикации в '+name+' в новой вкладке');link.addEventListener('click',()=>{pending=name;claim.hidden=false;claim.textContent='Я опубликовал в '+name+' — получить +50 SHARDS';status.textContent='Откроется форма публикации. После отправки вернись и подтверди действие. Соцсеть не сообщает сайту подтверждение публикации.'});grid.append(link)});
- claim.addEventListener('click',()=>{if(!pending)return;show(award('social-confirmation:'+pending));pending='';claim.hidden=true});
- primary.addEventListener('click',async()=>{primary.disabled=true;status.textContent='Готовим приглашение…';let done=false,source='share';try{if(typeof navigator.share==='function'){await navigator.share({title:'OSGARD PLAY · '+titles[gameId],text:message,url});done=true;source='native-share'}else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(message+' '+url);done=true;source='clipboard'}else{status.textContent='Быстрая отправка недоступна. Выбери соцсеть ниже.';return}}catch(error){status.textContent=error instanceof Error&&error.name==='AbortError'?'Отправка отменена — награда не начислена.':'Не удалось отправить приглашение. Выбери соцсеть ниже.';return}finally{primary.disabled=false}if(done)show(award(source+':'+gameId))});
+ networks.forEach(([name,href])=>{const link=make('a','og-postgame-network',name+' ↗');link.href=href;link.target='_blank';link.rel='noopener noreferrer';link.setAttribute('aria-label','Открыть форму публикации в '+name+' в новой вкладке');link.addEventListener('click',()=>{pending=name;claim.hidden=false;claim.textContent='Я опубликовал в '+name+' — получить +50 SHARDS';status.textContent='Откроется форма публикации. После отправки вернись и подтверди действие. Соцсеть не сообщает сайту подтверждение публикации.';void sendSelectEvent('social_share_intent',gameId,'osgard-social-share:'+name.toLowerCase()+':'+gameId)});grid.append(link)});
+ claim.addEventListener('click',()=>{if(!pending)return;const network=pending,result=award('social-confirmation:'+network);show(result);if(result.ok)void sendSelectEvent('social_reward_claimed',gameId,'osgard-social-reward:'+network.toLowerCase()+':'+gameId);pending='';claim.hidden=true});
+ primary.addEventListener('click',async()=>{primary.disabled=true;status.textContent='Готовим приглашение…';let done=false,source='share';try{if(typeof navigator.share==='function'){await navigator.share({title:'OSGARD PLAY · '+titles[gameId],text:message,url});done=true;source='native-share'}else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(message+' '+url);done=true;source='clipboard'}else{status.textContent='Быстрая отправка недоступна. Выбери соцсеть ниже.';return}}catch(error){status.textContent=error instanceof Error&&error.name==='AbortError'?'Отправка отменена — награда не начислена.':'Не удалось отправить приглашение. Выбери соцсеть ниже.';return}finally{primary.disabled=false}if(done){void sendSelectEvent('share_created',gameId,'game-invite:'+gameId+':'+(new URL(url,location.origin).searchParams.get('og_ref')||''));show(award(source+':'+gameId))}});
  const note=make('p','og-postgame-reward-note','Награда: +50 локальных SHARDS, не чаще раза в сутки на этом устройстве. Для отдельных соцсетей публикацию подтверждает игрок: соцсети не возвращают сайту надёжный статус опубликованного поста. Очки не имеют денежной стоимости, не привязаны к аккаунту и не являются платёжным средством.');
  section.append(head,actions,grid,claim,status,note);return section;
 }
