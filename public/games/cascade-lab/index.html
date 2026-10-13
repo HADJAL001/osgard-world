@@ -1608,7 +1608,9 @@ function renderServiceAdCampaign(campaignId = selectedServiceCampaignId) {
     const arrow = document.createElement('span'); arrow.className = 'service-ad-choice-arrow'; arrow.textContent = item.id === campaign.id ? '✦' : '↗';
     button.append(number, copy, arrow); choices.append(button);
   }
-  $('serviceAdCount').textContent = `${String(visibleServiceCampaigns.length).padStart(2, '0')} / ${String(visibleServiceCampaigns.length).padStart(2, '0')}`;
+  const selectedPosition = visibleServiceCampaigns.findIndex(item => item.id === campaign.id);
+  const displayPosition = selectedPosition >= 0 ? selectedPosition + 1 : 0;
+  $('serviceAdCount').textContent = `${String(displayPosition).padStart(2, '0')} / ${String(visibleServiceCampaigns.length).padStart(2, '0')}`;
   const feature = $('serviceAdFeature');
   feature.dataset.accent = campaign.accent;
   $('serviceAdIndex').textContent = `COLLECTION ${campaign.number} / ${String(OSGARD_CAMPAIGNS.length).padStart(2, '0')}`;
