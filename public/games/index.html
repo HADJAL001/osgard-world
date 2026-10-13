@@ -102,7 +102,7 @@ function renderInviteRibbon(){const invite=getInviteContext();if(!invite.code)re
   let target=games[invite.game].url;
   if(invite.game==='afterimage-run'){
    const params=new URLSearchParams(location.search),seed=params.get('seed')||'',rawScore=params.get('score');
-   const validSeed=/^\\d{4}-\\d{2}-\\d{2}$/.test(seed)&&(()=>{const date=new Date(seed+'T00:00:00.000Z');return Number.isFinite(date.getTime())&&date.toISOString().slice(0,10)===seed})();
+   const validSeed=/^\d{4}-\d{2}-\d{2}$/.test(seed)&&(()=>{const date=new Date(seed+'T00:00:00.000Z');return Number.isFinite(date.getTime())&&date.toISOString().slice(0,10)===seed})();
    const score=Number(rawScore);
    if(validSeed&&rawScore!==null&&Number.isSafeInteger(score)&&score>=0&&score<=99999999){const gameUrl=new URL(target,location.origin);gameUrl.searchParams.set('seed',seed);gameUrl.searchParams.set('score',String(score));target=gameUrl.href}
   }
