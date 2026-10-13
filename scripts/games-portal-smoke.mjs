@@ -650,6 +650,16 @@ assert.ok(!inheritSafeForSmoke.includes('</script></body></html>'+String.fromCha
 assert.ok(!inheritSafeForSmoke.includes('http://127.0.0.1:4174')&&!inheritSafeForSmoke.includes('http://127.0.0.1:4175'),'INHERIT public client must not contain localhost endpoints')
 assert.ok(inheritSafeForSmoke.includes("if(!apiWorld){notice('Общий мир не подключён — локальная летопись активна');return}"),'INHERIT should use local play without a configured shared server')
 assert.ok(inheritSafeForSmoke.includes("game:'inherit',state:'completed'"),'INHERIT generation handoff must publish the completed lifecycle event')
+
+const inheritFinalPassHandlerStart=inheritSafeForSmoke.lastIndexOf("const passForAnalytics=q('#pass').onclick;")
+const inheritCompletedSignal=inheritSafeForSmoke.indexOf("game:'inherit',state:'completed'")
+assert.ok(inheritFinalPassHandlerStart>=0&&inheritCompletedSignal>inheritFinalPassHandlerStart,'INHERIT completion must be sent by the final generation-pass handler, not an overwritten earlier handler')
+const inheritPastStyleAnchor=inheritSafeForSmoke.indexOf("document.head.insertAdjacentHTML('beforeend','<style>.past .app")
+const inheritPastScriptStart=inheritSafeForSmoke.lastIndexOf('<script>',inheritPastStyleAnchor)
+const inheritPastScriptEnd=inheritSafeForSmoke.indexOf('</script>',inheritPastStyleAnchor)
+assert.ok(inheritPastScriptStart>=0&&inheritPastScriptEnd>inheritPastStyleAnchor,'INHERIT past-generation theme injection must stay inside a script element')
+new Function(inheritSafeForSmoke.slice(inheritPastScriptStart+'<script>'.length,inheritPastScriptEnd))
+
 assert.ok(nullShiftForSmoke.includes("game:'null-shift',state:'completed'"),'NULL//SHIFT WebGL fallback must emit completion')
 assert.ok(swarmForSmoke.includes("game:'swarm',state:'completed'"),'SWARM must emit completion from result state')
 assert.ok(remixForSmoke.includes("game:'remix',state:'completed'"),'REMIX must emit completion from server RESULTS')
