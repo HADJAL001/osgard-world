@@ -14,16 +14,22 @@ if ! docker exec "$container_name" sh -lc 'wget -q -T 3 -O /dev/null http://osga
   host_api_health="$(curl --max-time 3 -fsS http://127.0.0.1:4317/health 2>/dev/null || true)"
   if [[ "$host_api_health" == *'"status":"ok"'* ]]; then
     gateways="$(docker inspect -f "{{range .NetworkSettings.Networks}}{{.Gateway}} {{end}}" "$container_name" 2>/dev/null || true)"
+    echo "Detected Docker gateway candidates: ${gateways:-<none>}"
     for gateway in $gateways; do
-      if [[ "$gateway" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]] \
-        && docker exec "$container_name" sh -lc "wget -q -T 3 -O /dev/null http://$gateway:4317/health" >/dev/null 2>&1; then
+      [[ "$gateway" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]] || continue
+      echo "Probing host-managed OSGARD game API through $gateway:4317"
+      if docker exec "$container_name" sh -lc "wget -q -T 3 -O /dev/null http://$gateway:4317/health" >/dev/null 2>&1; then
         api_target="$gateway"
         echo "Using reachable Docker host gateway for the host-managed OSGARD game API."
         break
+      else
+        echo "Gateway health probe failed; collecting bounded HTTP/network diagnostics."
+        docker exec "$container_name" sh -lc "wget -S -T 3 -O- http://$gateway:4317/health 2>&1 || true" || true
       fi
     done
   fi
   if [[ "$api_target" == "osgard-game-api" ]]; then
+    echo "Host API health response: ${host_api_health:-<empty>}" >&2
     echo "ERROR: no reachable, healthy OSGARD game API upstream; refusing frontend activation." >&2
     exit 1
   fi
