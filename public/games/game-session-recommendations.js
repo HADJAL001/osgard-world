@@ -301,6 +301,24 @@ function shouldShowServicePromos(preferences,completedCount){
  if(preferences.frequency==='every3')return completedCount>0&&completedCount%3===0;
  return true;
 }
+const promoConsentKey='osgard.games.analytics-consent.v1';
+const promoSessionKey='osgard.games.growth-session.v1';
+function promoConsented(){try{return localStorage.getItem(promoConsentKey)==='yes'}catch{return false}}
+function promoToken(){const bytes=new Uint8Array(12);if(globalThis.crypto?.getRandomValues)globalThis.crypto.getRandomValues(bytes);else for(let i=0;i<bytes.length;i++)bytes[i]=Math.floor(Math.random()*256);return Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('')}
+function promoSessionId(){try{let value=sessionStorage.getItem(promoSessionKey);if(value&&/^session_[a-f0-9]{24}$/.test(value))return value;value='session_'+promoToken();sessionStorage.setItem(promoSessionKey,value);return value}catch{return'session_'+promoToken()}}
+async function sendPromoEvent(name,gameId,source){
+ if(!promoConsented()||!titles[gameId])return false;
+ const event={eventId:'evt_'+promoToken(),name,sessionId:promoSessionId(),gameId,source:String(source||'post-game-osgard-select').slice(0,80),path:location.pathname,durationSeconds:0};
+ try{
+  const configResponse=await fetch('/games/commerce-config.json',{cache:'no-store'});
+  if(!promoConsented())return false;
+  const config=configResponse.ok?await configResponse.json().catch(()=>({})):{};
+  if(!promoConsented())return false;
+  const base=String(config.apiBaseUrl||'/commerce-api').replace(/\/+$/,'');
+  const response=await fetch(base+'/v1/events',{method:'POST',keepalive:true,headers:{'content-type':'application/json'},body:JSON.stringify({consent:true,events:[event]})});
+  return response.ok;
+ }catch{return false}
+}
 function frequencySummary(preferences,completedCount){
  if(preferences.frequency==='off')return'Подборка собственных сервисов отключена. Вознаграждение за приглашение остаётся доступно.';
  if(preferences.frequency==='every3')return'Подборка показывается раз в три завершённых раунда. Следующий показ — через '+(3-(completedCount%3))+' раунд(а).';
@@ -353,7 +371,7 @@ function servicesShelf(gameId,completedCountOverride){
   services.forEach(([id,num,title,category,description,href,featured=false,active=true])=>{
    const card=make(active===false?'article':'a','og-postgame-service-card'+(featured?' is-featured':'')+(active===false?' is-unavailable':''));
    card.dataset.service=id;card.dataset.game=gameId;card.dataset.category=categoryByService[id]||'other';card.dataset.available=String(active!==false);cards.push(card);
-   if(active!==false){const u=new URL(href);u.searchParams.set('utm_source','osgard_games');u.searchParams.set('utm_medium','post_game');u.searchParams.set('utm_campaign','after_game');u.searchParams.set('utm_content',id+'_'+gameId);card.href=u.href;card.target='_blank';card.rel='noopener noreferrer';card.setAttribute('aria-label','Открыть '+title+' в новой вкладке')}
+   if(active!==false){const u=new URL(href);u.searchParams.set('utm_source','osgard_games');u.searchParams.set('utm_medium','post_game');u.searchParams.set('utm_campaign','after_game');u.searchParams.set('utm_content',id+'_'+gameId);card.href=u.href;card.target='_blank';card.rel='noopener noreferrer';card.setAttribute('aria-label','Открыть '+title+' в новой вкладке');card.addEventListener('click',()=>{void sendPromoEvent('cross_promo_clicked',gameId,'post-game-service:'+id)})}
    card.hidden=active!==false&&!preferences.selected.includes(id);
    card.append(make('span','og-postgame-service-code','OSG / '+num+' · '+category),make('strong','og-postgame-service-name',title),make('span','og-postgame-service-description',description),make('span','og-postgame-service-action',active===false?'Пока не продвигается':'Открыть проект ↗'));grid.append(card);
   });
