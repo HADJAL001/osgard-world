@@ -31,6 +31,7 @@ export const ALLOWED_EVENTS = new Set([
   "share_created",
   "referral_link_opened",
   "share_target_opened",
+  "referral_reward_opted_in",
   "game_session_started",
   "checkout_started",
   "checkout_paid",
