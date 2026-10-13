@@ -29,20 +29,20 @@ assert.equal(config.appName, 'OSGARD PLAY');
 assert.equal(config.webDir, 'dist');
 assert.equal(config.ios.backgroundColor, '#080A0B');
 
-const signingBundleId = codemagic.match(/^\\s+bundle_identifier:\\s*([^\\s#]+)/m)?.[1];
+const signingBundleId = codemagic.match(/^\s+bundle_identifier:\s*([^\s#]+)/m)?.[1];
 assert.equal(signingBundleId, config.appId, 'Codemagic signing Bundle ID must match Capacitor appId.');
-const xcodeSelector = codemagic.match(/^\\s+xcode:\\s*([^\\s#]+)/m)?.[1];
+const xcodeSelector = codemagic.match(/^\s+xcode:\s*([^\s#]+)/m)?.[1];
 assert.ok(
   xcodeSelector === 'latest' || Number.parseInt(String(xcodeSelector || '').split('.')[0], 10) >= 26,
   'App Store submissions after 2026-04-28 require Xcode 26 or later; do not pin an older runner.'
 );
 
-const storeName = listing.match(/Название:\\*\\* `([^`]+)`/)?.[1] || '';
-const storeSubtitle = listing.match(/Подзаголовок:\\*\\* `([^`]+)`/)?.[1] || '';
-const promoText = listing.match(/## Promotional Text\\s+\\d+\\/170 символов:\\s*\\n\\s*>\\s*([^\\n]+)/)?.[1] || '';
-const descriptionBlock = listing.match(/## Description\\s+\\d+\\/4000 символов:\\s*\\n\\n([\\s\\S]*?)\\n\\nПеред отправкой/)?.[1] || '';
-const storeDescription = descriptionBlock.split('\\n').map((line) => line.replace(/^>\\s?/, '')).join('\\n').trim();
-const keywordText = listing.match(/## Keywords\\s+\\d+\\/100 UTF-8 bytes:\\s*\\n\\n`([^`]+)`/)?.[1] || '';
+const storeName = listing.match(/Название:\*\* \`([^\`]+)\`/)?.[1] || '';
+const storeSubtitle = listing.match(/Подзаголовок:\*\* \`([^\`]+)\`/)?.[1] || '';
+const promoText = listing.match(/## Promotional Text\s+\d+\/170 символов:\s*\n\s*>\s*([^\n]+)/)?.[1] || '';
+const descriptionBlock = listing.match(/## Description\s+\d+\/4000 символов:\s*\n\n([\s\S]*?)\n\nПеред отправкой/)?.[1] || '';
+const storeDescription = descriptionBlock.split('\n').map((line) => line.replace(/^>\s?/, '')).join('\n').trim();
+const keywordText = listing.match(/## Keywords\s+\d+\/100 UTF-8 bytes:\s*\n\n\`([^\`]+)\`/)?.[1] || '';
 assert.ok(storeName && storeSubtitle && promoText && storeDescription && keywordText, 'App Store listing draft is missing a required field.');
 assert.ok([...storeName].length <= 30, 'App Store name exceeds 30 characters.');
 assert.ok([...storeSubtitle].length <= 30, 'App Store subtitle exceeds 30 characters.');
