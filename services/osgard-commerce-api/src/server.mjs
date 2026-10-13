@@ -7,7 +7,7 @@ import Stripe from "stripe";
 import pg from "pg";
 import {
   catalogConfiguration, validateCheckoutPayload, validateLeadPayload,
-  validateEventBatch, paymentsModeAllowed, resolveCheckoutPaymentState, safeEqual,
+  validateEventBatch, validateGameFeedbackPayload, paymentsModeAllowed, resolveCheckoutPaymentState, safeEqual,
 } from "./core.mjs";
 
 const { Pool } = pg;
@@ -16,6 +16,10 @@ const PORT = Number(process.env.PORT || 8080);
 const requestedRetentionDays = Number(process.env.ANALYTICS_RETENTION_DAYS);
 const analyticsRetentionDays = Number.isInteger(requestedRetentionDays) && requestedRetentionDays >= 30 && requestedRetentionDays <= 365
   ? requestedRetentionDays
+  : 90;
+const requestedFeedbackRetentionDays = Number(process.env.GAME_FEEDBACK_RETENTION_DAYS);
+const gameFeedbackRetentionDays = Number.isInteger(requestedFeedbackRetentionDays) && requestedFeedbackRetentionDays >= 30 && requestedFeedbackRetentionDays <= 365
+  ? requestedFeedbackRetentionDays
   : 90;
 const PUBLIC_BASE_URL = String(process.env.PUBLIC_BASE_URL || "https://osgard.world").replace(/\/+$/, "");
 const allowedOrigins = new Set(String(process.env.ALLOWED_ORIGINS || "https://osgard.world,https://www.osgard.world,http://localhost:4188").split(",").map((v) => v.trim()).filter(Boolean));
@@ -45,6 +49,7 @@ app.use(cors({
 app.use("/v1/checkout", rateLimit({ windowMs: 15 * 60 * 1000, limit: 20, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/leads", rateLimit({ windowMs: 60 * 60 * 1000, limit: 8, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/events", rateLimit({ windowMs: 5 * 60 * 1000, limit: 60, standardHeaders: "draft-8", legacyHeaders: false }));
+app.use("/v1/feedback", rateLimit({ windowMs: 60 * 60 * 1000, limit: 8, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/admin", rateLimit({ windowMs: 5 * 60 * 1000, limit: 120, standardHeaders: "draft-8", legacyHeaders: false }));
 
 async function ensureSchema() {
@@ -61,7 +66,10 @@ async function ensureSchema() {
     "CREATE INDEX IF NOT EXISTS commerce_leads_created_idx ON commerce_leads(created_at DESC);\n" +
     "CREATE TABLE IF NOT EXISTS commerce_events (event_id TEXT PRIMARY KEY, event_name TEXT NOT NULL, session_id TEXT NOT NULL, game_id TEXT NOT NULL, source TEXT NOT NULL, path TEXT NOT NULL, duration_seconds INTEGER NOT NULL DEFAULT 0, received_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
     "CREATE INDEX IF NOT EXISTS commerce_events_name_received_idx ON commerce_events(event_name, received_at DESC);\n" +
-    "CREATE INDEX IF NOT EXISTS commerce_events_game_received_idx ON commerce_events(game_id, received_at DESC);");
+    "CREATE INDEX IF NOT EXISTS commerce_events_game_received_idx ON commerce_events(game_id, received_at DESC);" +
+    "CREATE TABLE IF NOT EXISTS commerce_game_feedback (feedback_id TEXT PRIMARY KEY, game_id TEXT NOT NULL, rating SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5), would_play_again TEXT NOT NULL CHECK (would_play_again IN ('yes','no','unsure')), category TEXT NOT NULL CHECK (category IN ('gameplay','controls','difficulty','performance','bug','idea','other')), message TEXT NOT NULL DEFAULT '', consent_at TIMESTAMPTZ NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());" +
+    "CREATE INDEX IF NOT EXISTS commerce_game_feedback_created_idx ON commerce_game_feedback(created_at DESC);" +
+    "CREATE INDEX IF NOT EXISTS commerce_game_feedback_game_created_idx ON commerce_game_feedback(game_id, created_at DESC)");
   dbReady = true;
   return true;
 }
@@ -71,6 +79,15 @@ async function purgeExpiredAnalytics() {
   const result = await pool.query(
     "DELETE FROM commerce_events WHERE received_at < NOW() - ($1 * INTERVAL '1 day')",
     [analyticsRetentionDays],
+  );
+  return Number(result.rowCount || 0);
+}
+
+async function purgeExpiredGameFeedback() {
+  if (!pool || !dbReady) return 0;
+  const result = await pool.query(
+    "DELETE FROM commerce_game_feedback WHERE created_at < NOW() - ($1 * INTERVAL '1 day')",
+    [gameFeedbackRetentionDays],
   );
   return Number(result.rowCount || 0);
 }
@@ -309,6 +326,25 @@ app.post("/v1/leads", async (req, res) => {
   }
 });
 
+app.post("/v1/feedback", async (req, res) => {
+  const feedback = validateGameFeedbackPayload(req.body);
+  if (!feedback.ok) return res.status(feedback.status).json({ error: feedback.code });
+  if (feedback.bot) return res.status(202).json({ accepted: true });
+  if (!requireDatabase(res)) return;
+
+  const feedbackId = crypto.randomUUID();
+  try {
+    await pool.query(
+      "INSERT INTO commerce_game_feedback(feedback_id,game_id,rating,would_play_again,category,message,consent_at) VALUES($1,$2,$3,$4,$5,$6,NOW())",
+      [feedbackId, feedback.gameId, feedback.rating, feedback.wouldPlayAgain, feedback.category, feedback.message],
+    );
+    return res.status(201).json({ accepted: true, feedbackId });
+  } catch (error) {
+    console.error("Game feedback insert failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "FEEDBACK_STORAGE_UNAVAILABLE", message: "Отзыв не сохранён. Повторите попытку позже." });
+  }
+});
+
 app.post("/v1/events", async (req, res) => {
   const batch = validateEventBatch(req.body);
   if (!batch.ok) return res.status(batch.status).json({ error: batch.code });
@@ -468,6 +504,26 @@ app.get("/v1/admin/leads", requireAdmin, async (req, res) => {
     return res.status(503).json({ error: "ADMIN_LEADS_UNAVAILABLE" });
   }
 });
+app.get("/v1/admin/feedback", requireAdmin, async (req, res) => {
+  if (!requireDatabase(res)) return;
+  const limit = Math.max(1, Math.min(100, Number.parseInt(String(req.query.limit || "30"), 10) || 30));
+  try {
+    const [summary, latest] = await Promise.all([
+      pool.query("SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days')::int AS \"last30Days\", COALESCE(ROUND(AVG(rating) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days'), 2), 0)::float AS \"averageRating30Days\" FROM commerce_game_feedback"),
+      pool.query("SELECT feedback_id, game_id, rating, would_play_again, category, message, created_at FROM commerce_game_feedback ORDER BY created_at DESC LIMIT $1", [limit]),
+    ]);
+    return res.json({
+      summary: summary.rows[0] || { total: 0, last30Days: 0, averageRating30Days: 0 },
+      items: latest.rows,
+      retentionDays: gameFeedbackRetentionDays,
+      note: "Отзывы добровольные; контакты не собираются. Срок хранения ограничен, а сообщения доступны только авторизованным операторам.",
+    });
+  } catch (error) {
+    console.error("Admin game feedback failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "ADMIN_FEEDBACK_UNAVAILABLE" });
+  }
+});
+
 app.get("/v1/admin/orders", requireAdmin, async (req, res) => {
   if (!requireDatabase(res)) return;
   const limit = Math.max(1, Math.min(100, Number.parseInt(String(req.query.limit || "50"), 10) || 50));
@@ -491,6 +547,9 @@ const analyticsRetentionTimer = setInterval(() => {
   void purgeExpiredAnalytics().catch((error) => {
     console.error("Analytics retention cleanup failed:", error?.message || "unknown error");
   });
+  void purgeExpiredGameFeedback().catch((error) => {
+    console.error("Game feedback retention cleanup failed:", error?.message || "unknown error");
+  });
 }, 6 * 60 * 60 * 1000);
 analyticsRetentionTimer.unref();
 
@@ -504,6 +563,9 @@ const server = app.listen(PORT, "0.0.0.0", async () => {
   if (dbReady) {
     void purgeExpiredAnalytics().catch((error) => {
       console.error("Analytics retention cleanup failed:", error?.message || "unknown error");
+    });
+    void purgeExpiredGameFeedback().catch((error) => {
+      console.error("Game feedback retention cleanup failed:", error?.message || "unknown error");
     });
   }
   console.log("OSGARD Commerce API listening on port " + PORT);
