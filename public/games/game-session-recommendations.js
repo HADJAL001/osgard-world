@@ -458,10 +458,12 @@ document.addEventListener('osgard:game-launching',()=>{
  outsideRoot.replaceChildren();
  outsideRoot.hidden=true;
 });
-document.addEventListener('osgard:game-completed',event=>{
- const id=event.detail&&event.detail.game;if(!titles[id])return;
+function renderOsgardSelect(gameId){
+ const id=gameId;if(!titles[id])return;
  const completedCount=recordCompletedRound(id),preferences=readServicePreferences();
  root.querySelector('.og-postgame-suite')?.remove();
  const suite=make('section','og-postgame-suite');suite.append(servicesShelf(id,shouldShowServicePromos(preferences,completedCount),completedCount),rewardShelf(id));root.append(suite);
-});
+}
+document.addEventListener('osgard:game-completed',event=>renderOsgardSelect(event.detail&&event.detail.game));
+document.addEventListener('osgard:game-session-ended',event=>{if(event.detail&&event.detail.sessionStarted===true)renderOsgardSelect(event.detail.game)});
 })();
