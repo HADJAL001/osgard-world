@@ -1,7 +1,7 @@
 # AFTERIMAGE//RUN — growth & monetization plan
 
 ## Product pitch
-A compact sci-fi precision runner in OSGARD PLAY: the same UTC daily seed for everyone, a personal best/ghost, a challenge URL carrying the seed and score, share-result image, and a cosmetic SIGNAL SHARD that can be earned once per UTC day by starting a share flow or copying a challenge link. The game explicitly tells the player that the actual public post is not verified.
+A compact sci-fi precision runner in OSGARD PLAY: the same UTC daily seed for everyone, a personal best/ghost, a challenge URL carrying the seed and score, share-result image, and a cosmetic SIGNAL SHARD that can be claimed once per UTC day only after the player completes a share action and then explicitly confirms that they posted the challenge. The game explicitly tells the player that the actual public post is not verified.
 
 ## Viral loop to measure
 1. A player starts from the OSGARD games catalog or Entertainment.
@@ -10,10 +10,10 @@ A compact sci-fi precision runner in OSGARD PLAY: the same UTC daily seed for ev
 4. The recipient lands on the same date/seed, plays their run and can share their result.
 5. A non-transferable, cosmetic shard provides a small in-game acknowledgement. It does not alter speed, score, or paid rights.
 
-The share incentive is intentionally a reward for starting the share flow, not a claim that a post was published. Client-only localStorage is easy to reset and is not anti-fraud. Before offering tradable/paid value or a referral payout, implement server-side invite attribution, idempotent referral records, account/abuse controls, and require a qualified referred player's first completed session. The local shard is cosmetic-only.
+The share incentive intentionally requires a post-action self-confirmation; OSGARD cannot independently verify that the destination social network published the post. This is not fraud-proof. The reward is local, non-transferable cosmetics only; never make it a cash-equivalent or a paid entitlement. Client-only localStorage is easy to reset and is not anti-fraud. Before offering tradable/paid value or a referral payout, implement server-side invite attribution, idempotent referral records, account/abuse controls, and require a qualified referred player's first completed session. The local shard is cosmetic-only.
 
 ## Owned-service intermission
-On closing an embedded game session, show one optional luxury cross-promotion panel containing the ten OSGARD-owned products. The player chooses a specific card then explicitly opens that destination, or dismisses the intermission. Each link carries:
+Use the existing OSGARD SELECT after a completed embedded game session. It is one optional luxury cross-promotion panel for the ten OSGARD-owned projects, not a second popup. The player chooses a card and explicitly opens that destination, or skips the panel; the user's saved frequency choice must be respected. Each link carries:
 - \`utm_source=osgard_games\`
 - \`utm_medium=intermission\`
 - \`utm_campaign=ecosystem_cross_promo\`
@@ -24,13 +24,13 @@ The panel is not a third-party advertising network, not a paid impression, and m
 ## Monetization ladder
 1. **Now — owned-service referrals and qualified development inquiries.** Track actual outbound clicks, brief form drafts and submitted/qualified leads separately. A click is not revenue; a mail draft is not a submitted lead. Follow attribution in a CRM and measure closed contracts/contribution margin.
 2. **After a user cohort is observed — clearly labeled partner placements.** Sell a defined campaign, date window, context, geography, frequency cap and report. Separate advertiser creatives from owned-project cards. Do not log fake impressions/clicks.
-3. **After an ad provider approves the property — optional rewarded video on selected browser games.** Prompt only at a safe break, offer a defined non-cash/non-transferable game reward and an equally functional "No thanks" path. Grant the reward only after the provider's signed/server-side completion callback is validated and deduplicated.
+3. **After an ad provider approves the property — optional rewarded web ads, only where the provider's web format is supported.** Prompt at a safe break, offer a defined non-cash/non-transferable reward, and keep an equally functional "No thanks" path. Do not gate core gameplay behind an ad. Implement the provider's completion validation and idempotency appropriate to that format; never treat a client-side button click as proof of a completed paid impression.
 4. **After repeat-use evidence — premium content/one-time unlocks.** Sell additional tracks, game modes, aesthetics or a supporter pack. Store rights/receipts server-side; don't let a client flag confer paid access.
 5. **Only after multiple games and recurring value exist — OSGARD PREMIUM.** Test clear alternatives such as ad-free browser catalogue, premium missions or a cross-game bundle. Prices in test pages are hypotheses, not "market prices". Avoid subscriptions until churn, content cadence, refunds and cancellation are understood.
 
 ### Platform constraints
 - Cross-promoting the owner's own sites is the current model; it is not counted as revenue until a real conversion is attributed.
-- For Google-served rewarded ads, the user must clearly opt in; skipped ads must not block normal use and the promised reward must be delivered. For any rewarded integration, use server-side verification and deduplicate the callback transaction. Official policy/docs: https://support.google.com/admob/answer/7313578 and https://support.google.com/admob/answer/9603226
+- For Google-served rewarded ads, the user must clearly opt in; skipping must not block normal use and the promised non-transferable reward must be delivered. See Google’s rewarded-ad policy: https://support.google.com/admob/answer/7313578. Important: Google Ad Manager's rewarded **web** API documents client-side grant/close events and explicitly says server-side verification is unavailable for web; AdMob SSV is documented for apps. Therefore do not advertise a Google Ad Manager web reward as cryptographically server-verified. Keep any client-trust reward cosmetic/low value, or select a web provider with a suitable server-verification callback before offering a more valuable reward. References: https://support.google.com/admanager/answer/9116812 and https://support.google.com/admob/answer/9603226.
 - Do not ship a paid-ad or rewarded-ad business model inside a Steam build. Steam's rules disallow paid advertising in games, including advertising-based access and rewards for ad engagement; cross-promotion is a different supported category. See https://partner.steamgames.com/doc/marketing/advertising
 
 ## $1,000,000 arithmetic — not a forecast
@@ -57,4 +57,17 @@ Minimum useful release experiment:
 - Keep the promotion-frequency choice test separate from game-balance testing.
 
 ## Release boundaries
-The first release uses local personal-best data and a locally stored cosmetic shard. It has no public leaderboard, cross-device save, ad SDK, payment processor or server-backed referral reward. The intermission is owned-service cross-promotion, not third-party ads. Activate server-backed monetization only after accounts, provider approval, webhook/signature validation, consent and refund handling exist.
+The first release uses local personal-best data and a locally stored cosmetic shard. It has no public leaderboard, cross-device save, ad SDK, payment processor or server-backed referral reward. The intermission is owned-service cross-promotion, not third-party ads. Activate server-backed monetization only after accounts, provider approval, consent, required callback/signature validation, deduplication, refunds and entitlement checks exist.
+
+## Release gates and conversion targets (hypotheses, not promises)
+
+Treat the first 100–300 qualified external sessions as usability evidence, not market validation. Before advertising or payment implementation, record a baseline for: catalogue visit → launch click → successful engine handshake → completed run → replay → share intent → invite landing → referred completed run. Split results by direct, social, and campaign UTM; never infer a person from a URL alone.
+
+Suggested first experiment:
+- **20–30 new playtesters**: at least half should not have watched the creator play. Verify that players understand the daily seed, controls, the target score, and that personal ghosts are local.
+- **Share test**: compare a clear post-run prompt against no prompt. Primary metrics are share intent per completed run and referred-session completion, not raw button clicks.
+- **Owned cross-promotion test**: respect OSGARD SELECT's explicit frequency preference and skip. Compare service-choice CTR and qualified lead rate by service and placement, not CTR alone. Use the existing UTM IDs to attribute conversion on the destination site.
+- **Monetization gate**: do not sell advertising until you can report actual consenting sessions, viewable ad impressions, fill, and net revenue. Do not count a cross-promotion CTA click or a drafted email as revenue.
+- **Premium gate**: show users real offer descriptions and test willingness to pay before implementing checkout; purchases and entitlements must be checked server-side.
+
+A hypothetical $1m target is a long-term arithmetic target, not a plan that the current audience can support yet. The near-term goal is to prove one repeatable loop and one attributable source of contribution margin, then scale only the parts that work.
