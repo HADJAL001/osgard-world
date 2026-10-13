@@ -92,7 +92,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
             text.includes("notify('ready')") && text.includes("notify('completed'") &&
             text.includes("notify('share_created'")
         : route === '/games/civic-cascade/'
-          ? text.includes('<title>CIVIC CASCADE — кризисная стратегия | OSGARD PLAY</title>') && text.includes('id=\"cc-game-root\"') && text.includes('id=\"cc-status\"')
+          ? text.includes('<title>CIVIC CASCADE — Оперативный центр</title>') && text.includes('name="osgard-game-version" content="1.6.0"') && text.includes('<canvas id="cityCanvas"') && text.includes('id="startBtn"') && text.includes('src="./src/game.js"') && text.includes('osgard-lifecycle-bridge.js')
         : route === '/games/patina/'
           ? text.includes('<title>PATINA Atelier — OSGARD WORLD GAMING</title>') && text.includes('id="patina-workbench"') && text.includes('data-patina-ready="true"') && text.includes('id="diagnose"') && text.includes('id="finish-case"') && text.includes('id="export-case"')
         : route === '/games/signal-run/'
@@ -141,9 +141,9 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
     const isPartnerPage = route === '/games/partners/'
     const isEcosystemDirectory = route === '/games/ecosystem/'
     const isGodot = route.startsWith('/games/null-shift-godot')
-    const assetPaths = route === '/games/favicon.svg' || route === '/privacy/' || route === '/terms/' ? [] : isPartnerPage ? ['/games/partners/partners.js', '/games/partners/inventory.json'] : isEcosystemDirectory ? ['/games/ecosystem/directory.css', '/games/ecosystem/directory.js'] : isGamesHub ? ['/games/consented-analytics.js','/games/player-lifecycle.js','/games/game-session-recommendations.js','/games/game-session-recommendations.css','/games/daily-circuit.js','/games/daily-circuit.css'] : route === '/skillcred/' ? ['/skillcred/styles.css', '/skillcred/app.js', '/skillcred/fonts/InterVariable.woff2', '/skillcred/fonts/InstrumentSerif-Italic.woff2', '/skillcred/fonts/JetBrainsMono-Regular.woff2'] : route === '/games/signal-run/' ? ['/games/signal-run/game.js'] : isGodot ? ['/games/null-shift-godot/index.js', '/games/null-shift-godot/index.wasm', '/games/null-shift-godot/index.pck'] : route.startsWith('/games/null-shift') ? ['/games/null-shift/styles.css', '/games/null-shift/game.js', '/games/null-shift/engine-3d.js'] : route.startsWith('/games/invite/') && route !== '/games/invite/invite-landing.js' ? ['/games/invite/invite-landing.js', '/games/share-cards/' + (route.split('/')[3] || 'catalog') + '.png'] : []
+    const assetPaths = route === '/games/favicon.svg' || route === '/privacy/' || route === '/terms/' ? [] : isPartnerPage ? ['/games/partners/partners.js', '/games/partners/inventory.json'] : isEcosystemDirectory ? ['/games/ecosystem/directory.css', '/games/ecosystem/directory.js'] : isGamesHub ? ['/games/consented-analytics.js','/games/player-lifecycle.js','/games/game-session-recommendations.js','/games/game-session-recommendations.css','/games/daily-circuit.js','/games/daily-circuit.css'] : route === '/skillcred/' ? ['/skillcred/styles.css', '/skillcred/app.js', '/skillcred/fonts/InterVariable.woff2', '/skillcred/fonts/InstrumentSerif-Italic.woff2', '/skillcred/fonts/JetBrainsMono-Regular.woff2'] : route === '/games/civic-cascade/' ? ['/games/civic-cascade/styles.css','/games/civic-cascade/manifest.webmanifest','/games/civic-cascade/service-worker.js','/games/civic-cascade/osgard-lifecycle-bridge.js','/games/civic-cascade/src/game.js','/games/civic-cascade/src/simulation.js','/games/civic-cascade/src/visual-settings.js','/games/civic-cascade/src/strategy-lab.js','/games/civic-cascade/src/runtime-lab.js','/games/civic-cascade/src/map-camera.js','/games/civic-cascade/src/atmosphere.js'] : route === '/games/signal-run/' ? ['/games/signal-run/game.js'] : isGodot ? ['/games/null-shift-godot/index.js', '/games/null-shift-godot/index.wasm', '/games/null-shift-godot/index.pck'] : route.startsWith('/games/null-shift') ? ['/games/null-shift/styles.css', '/games/null-shift/game.js', '/games/null-shift/engine-3d.js'] : route.startsWith('/games/invite/') && route !== '/games/invite/invite-landing.js' ? ['/games/invite/invite-landing.js', '/games/share-cards/' + (route.split('/')[3] || 'catalog') + '.png'] : []
     const assetChecks = await Promise.all(assetPaths.map(async path => {
-      const expectedType = path.endsWith('.css') ? 'text/css' : path.endsWith('.json') ? 'json' : path.endsWith('.js') ? 'javascript' : path.endsWith('.png') ? 'png' : path.endsWith('.wasm') ? 'wasm' : path.endsWith('.pck') ? 'pack' : 'font'
+      const expectedType = path.endsWith('.css') ? 'text/css' : path.endsWith('.json') ? 'json' : path.endsWith('.webmanifest') ? 'manifest' : path.endsWith('.js') ? 'javascript' : path.endsWith('.png') ? 'png' : path.endsWith('.wasm') ? 'wasm' : path.endsWith('.pck') ? 'pack' : 'font'
       // Large immutable artifacts only need an existence/MIME/size check. HEAD avoids
       // downloading Godot WebAssembly, PCK and font files for both device profiles.
       const sizeOnlyTypes = new Set(['font','wasm','pack'])
@@ -151,7 +151,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
       const asset = await fetch(new URL(path, base), { method: sizeOnly ? 'HEAD' : 'GET', headers: { 'user-agent': userAgent }, signal: AbortSignal.timeout(ROUTE_TIMEOUT_MS) })
       const contentType = asset.headers.get('content-type') || ''
       const mime = contentType.toLowerCase()
-      const typeOk = expectedType === 'text/css' ? mime.includes('text/css') : expectedType === 'json' ? mime.includes('application/json') || mime.includes('text/json') || mime.includes('text/plain') : expectedType === 'javascript' ? mime.includes('javascript') || mime.includes('ecmascript') : expectedType === 'png' ? mime.includes('image/png') : expectedType === 'wasm' ? mime.includes('wasm') || mime.includes('octet-stream') : expectedType === 'pack' ? mime.length > 0 : mime.includes('font/woff2') || mime.includes('application/octet-stream')
+      const typeOk = expectedType === 'text/css' ? mime.includes('text/css') : expectedType === 'json' ? mime.includes('application/json') || mime.includes('text/json') || mime.includes('text/plain') : expectedType === 'manifest' ? mime.includes('application/manifest+json') || mime.includes('application/json') || mime.includes('text/json') : expectedType === 'javascript' ? mime.includes('javascript') || mime.includes('ecmascript') : expectedType === 'png' ? mime.includes('image/png') : expectedType === 'wasm' ? mime.includes('wasm') || mime.includes('octet-stream') : expectedType === 'pack' ? mime.length > 0 : mime.includes('font/woff2') || mime.includes('application/octet-stream')
       let nonEmpty = false
       if (sizeOnly) {
         const size = Number(asset.headers.get('content-length') || 0)
@@ -166,7 +166,31 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
       } else {
         const content = await asset.text()
         const normalized = content.toLowerCase()
-        nonEmpty = isEcosystemDirectory
+        nonEmpty = path.startsWith('/games/civic-cascade/')
+          ? path.endsWith('/styles.css')
+            ? content.includes('.map-camera-controls') && content.includes('prefers-reduced-motion')
+            : path.endsWith('/manifest.webmanifest')
+              ? content.includes('"start_url": "/games/civic-cascade/"') && content.includes('../favicon.svg')
+              : path.endsWith('/service-worker.js')
+                ? content.includes('civic-cascade-shell-v160') && content.includes("'./src/game.js'") && content.includes("'./osgard-lifecycle-bridge.js'")
+                : path.endsWith('/osgard-lifecycle-bridge.js')
+                  ? content.includes("type: 'osgard:game-lifecycle'") && content.includes("post('completed'")
+                  : path.endsWith('/src/game.js')
+                    ? content.includes("from './simulation.js'") && content.includes('requestAnimationFrame(loop)') && content.includes('MAP_CAMERA_MAX_ZOOM')
+                    : path.endsWith('/src/simulation.js')
+                      ? content.includes('export function tick(') && content.includes('export function finishMission(')
+                      : path.endsWith('/src/visual-settings.js')
+                        ? content.includes('getEffectiveQuality')
+                        : path.endsWith('/src/strategy-lab.js')
+                          ? content.includes('appendStrategyRun')
+                          : path.endsWith('/src/runtime-lab.js')
+                            ? content.includes('createRuntimeReport')
+                            : path.endsWith('/src/map-camera.js')
+                              ? content.includes('zoomMapCameraAtPoint')
+                              : path.endsWith('/src/atmosphere.js')
+                                ? content.includes('getAtmosphereProfile')
+                                : false
+          : isEcosystemDirectory
           ? (path.endsWith('.js') ? content.includes("getElementById('project-search')") && content.includes('aria-pressed') : content.includes('.project-grid{display:grid') && content.includes('prefers-reduced-motion:reduce'))
           : isPartnerPage
           ? path.endsWith('.json') ? isValidPartnerInventoryText(content) : content.includes("fetch('./inventory.json'") && content.includes('item.active === false') && content.includes("sendLink.href = 'https://wa.me/79640027222?text='")

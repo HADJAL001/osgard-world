@@ -1,0 +1,21 @@
+{
+  "id": "./",
+  "name": "CIVIC CASCADE — OSGARD PLAY",
+  "short_name": "CIVIC CASCADE",
+  "description": "Стратегическая симуляция городских кризисов с кинематографическими эффектами, тактической камерой, телеметрией и восстановлением инфраструктуры.",
+  "lang": "ru",
+  "start_url": "/games/civic-cascade/",
+  "scope": "/games/civic-cascade/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#050c12",
+  "theme_color": "#050c12",
+  "icons": [
+    {
+      "src": "../favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
