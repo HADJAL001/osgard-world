@@ -49,8 +49,10 @@ assert.equal(chooseSpotlightService(['myosa','projects','superday'],'',1,'each')
   'First completed round starts with the contextual first-choice service');
 assert.equal(chooseSpotlightService(['myosa','projects','superday'],'',2,'each'),'projects',
   'The primary service should rotate on the next completed round');
-assert.equal(chooseSpotlightService(['myosa','projects','superday'],'',4,'each'),'superday',
-  'Round-by-round rotation should not repeat the first service too early');
+assert.equal(chooseSpotlightService(['myosa','projects','superday'],'',3,'each'),'superday',
+  'The third completed round should feature the third contextual service');
+assert.equal(chooseSpotlightService(['myosa','projects','superday'],'',4,'each'),'myosa',
+  'After all selected services were featured, the rotation should return to the first service');
 assert.equal(chooseSpotlightService(['myosa','projects','superday'],'',3,'every3'),'myosa',
   'Three-round frequency starts its first scheduled spotlight at round three');
 assert.equal(chooseSpotlightService(['myosa','projects','superday'],'',6,'every3'),'projects',
