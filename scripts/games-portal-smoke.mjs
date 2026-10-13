@@ -561,6 +561,10 @@ assert.ok(signalRun.includes('id="shards"')&&signalRun.includes('OSGARD SHARDS')
 assert.ok(signalJs.includes("SHARDS_KEY='osgard.games.shards-wallet.v1'")&&signalJs.includes('function awardShareShards')&&signalJs.includes('event.key===SHARDS_KEY'),'SIGNAL RUN must use the same local SHARDS wallet as the postgame reward panel');
 assert.ok(signalJs.includes("bonus.ok?' · +50 SHARDS'")&&signalJs.includes('current.day===day'),'SIGNAL RUN must show the +50 local invitation reward and prevent duplicate grants within one UTC day');
 assert.ok(signalRun.includes('id="claim-share-reward"')&&signalRun.includes('Копирование ссылки само по себе не даёт награду'),'SIGNAL RUN must offer an explicit share-reward confirmation and disclose that copying does not earn a reward');
+assert.ok(signalRun.includes('id="buy-gold-signal"')&&signalRun.includes('id="cosmetic-status"')&&signalRun.includes('не влияет на скорость, защиту или счёт'),'SIGNAL RUN must expose the cosmetic shop and disclose that it has no gameplay advantage');
+assert.ok(signalJs.includes("GOLD_SIGNAL_KEY='osgard.signal-run.cosmetics.v1'")&&signalJs.includes("GOLD_SIGNAL_COST=100")&&signalJs.includes('function purchaseGoldSignal()')&&signalJs.includes("goldSignalUnlocked?'#e9c66a':'#d3ff69'"),'SIGNAL RUN must persist a 100-SHARDS cosmetic theme that changes visuals only');
+assert.ok(recommendationScript.includes("og-postgame-signal-cta")&&recommendationScript.includes("utm_campaign','shards_cosmetic'")&&recommendationScript.includes('GOLD SIGNAL за 100 SHARDS')&&recommendationStyles.includes('.og-postgame-signal-cta'),'Post-game intermission must show a tracked path from earned SHARDS to the SIGNAL RUN cosmetic');
+
 const signalShareStart=signalJs.indexOf("$('share').addEventListener('click',async()=>{");
 const signalShareEnd=signalJs.indexOf("});document.addEventListener('keydown'",signalShareStart);
 assert.ok(signalShareStart>=0&&signalShareEnd>signalShareStart,'SIGNAL RUN share handler boundaries are required');
