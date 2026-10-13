@@ -84,5 +84,15 @@ npx cap sync ios
 node scripts/ios/install-app-icon.mjs
 npm run qa:ios-package
 
-echo "== Confirm that the App Store release targets the latest available Xcode SDK =="
+echo "== Confirm that the App Store release uses Xcode 26+ and the iOS 26 SDK =="
 xcodebuild -version
+XCODE_VERSION="$(xcodebuild -version | awk '/^Xcode / { print $2; exit }')"
+XCODE_MAJOR="${XCODE_VERSION%%.*}"
+if [[ ! "$XCODE_MAJOR" =~ ^[0-9]+$ ]] || (( XCODE_MAJOR < 26 )); then
+  echo "App Store uploads require Xcode 26 or later; current Xcode is ${XCODE_VERSION:-unknown}." >&2
+  exit 1
+fi
+if ! xcodebuild -showsdks | grep -Eq 'iOS 26([.[:space:]]|$)'; then
+  echo "The selected Xcode does not expose an iOS 26 SDK." >&2
+  exit 1
+fi
