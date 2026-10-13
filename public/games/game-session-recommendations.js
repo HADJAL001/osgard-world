@@ -344,14 +344,14 @@ async function sendSelectEvent(name,gameId,source){
  }catch{return false}finally{if(controller)pendingSelectTelemetry.delete(controller)}
 }
 function readServicePreferences(){
- const fallback={frequency:'every3',selected:availableServiceIds.slice()};
+ const fallback={frequency:'each',selected:availableServiceIds.slice()};
  let stored=null;
  try{const raw=localStorage.getItem(servicePreferencesKey);if(raw)stored=JSON.parse(raw)}catch{return memoryServicePreferences?{frequency:memoryServicePreferences.frequency,selected:memoryServicePreferences.selected.slice()}:fallback}
  if(!stored||typeof stored!=='object')return memoryServicePreferences?{frequency:memoryServicePreferences.frequency,selected:memoryServicePreferences.selected.slice()}:fallback;
- return {frequency:frequencyValues.includes(stored.frequency)?stored.frequency:'every3',selected:Array.isArray(stored.selected)?availableServiceIds.filter(id=>stored.selected.includes(id)):fallback.selected};
+ return {frequency:frequencyValues.includes(stored.frequency)?stored.frequency:'each',selected:Array.isArray(stored.selected)?availableServiceIds.filter(id=>stored.selected.includes(id)):fallback.selected};
 }
 function writeServicePreferences(value){
- const next={frequency:frequencyValues.includes(value.frequency)?value.frequency:'every3',selected:availableServiceIds.filter(id=>Array.isArray(value.selected)&&value.selected.includes(id))};
+ const next={frequency:frequencyValues.includes(value.frequency)?value.frequency:'each',selected:availableServiceIds.filter(id=>Array.isArray(value.selected)&&value.selected.includes(id))};
  memoryServicePreferences=next;
  try{localStorage.setItem(servicePreferencesKey,JSON.stringify(next));return true}catch{return false}
 }
@@ -406,7 +406,7 @@ function chooseSpotlightService(options,preferred,completedCount,frequency){
 function frequencySummary(preferences,completedCount){
  if(preferences.frequency==='off')return 'Подборка отключена. Награды за приглашение остаются доступны.';
  if(preferences.frequency==='every3')return 'Подборка появляется раз в три завершённых раунда. Следующий показ: через '+(3-(completedCount%3))+' раунд(а).';
- return 'Подборка появится после завершённой игры. Можно изменить частоту в настройках.';
+ return 'Подборка появляется после каждой завершённой игры. В настройках можно выбрать другой интервал или отключить показ.';
 }
 function inviteFor(id){
  try{const candidate=window.OSGARDInvite?.createLink?.(id);if(candidate){const u=new URL(candidate,location.origin);if(u.origin===location.origin&&u.pathname==='/games/invite/'+id+'/'&&u.searchParams.get('og_game')===id&&/^og_[a-f0-9]{8}$/.test(u.searchParams.get('og_ref')||''))return u.href}}catch{}
@@ -426,7 +426,7 @@ function servicesShelf(gameId,showPromos,completedCount){
 
  const settings=make('div','og-postgame-preferences');settings.id='og-postgame-preferences';settings.hidden=true;
  const settingsHeading=make('p','og-postgame-settings-heading','ЧАСТОТА И ИНТЕРЕСЫ');
- const settingsDescription=make('p','og-postgame-settings-copy','По умолчанию подборка появляется раз в три завершённых раунда. Выбери нужные проекты, измени частоту или отключи промо-показы.');
+ const settingsDescription=make('p','og-postgame-settings-copy','По умолчанию подборка появляется после каждой завершённой игры. Выбери интересующие проекты, измени частоту или отключи промо-показы.');
  const frequencyLabel=make('label','og-postgame-frequency-label','Как часто показывать');
  const frequency=make('select','og-postgame-frequency');frequency.setAttribute('aria-label','Частота показа сервисов OSGARD');
  [['each','После каждой завершённой игры'],['every3','Раз в три завершённых раунда'],['off','Не показывать подборку']].forEach(([value,labelText])=>{const option=make('option','',labelText);option.value=value;frequency.append(option)});
