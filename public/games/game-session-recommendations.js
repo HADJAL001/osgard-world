@@ -385,6 +385,10 @@ async function registerReferralInvite(gameId,referralCode){
  const result=await postReferralRequest('/v1/referrals/register',{consent:true,referralCode,gameId,ownerToken});
  return result.ok===true;
 }
+function canPersistReferralWallet(){
+ const probe='osgard.games.wallet-probe.'+makeEventToken();
+ try{const current=localStorage.getItem(walletKey);localStorage.setItem(probe,'1');localStorage.removeItem(probe);if(current!==null)localStorage.setItem(walletKey,current);return true}catch{try{localStorage.removeItem(probe)}catch{}return false}
+}
 function addQualifiedReferralShards(amount){
  const safeAmount=Number.isSafeInteger(amount)&&amount>0?Math.min(amount,5000):0;
  if(!safeAmount)return{ok:false,balance:getWallet().balance};
@@ -396,6 +400,7 @@ function addQualifiedReferralShards(amount){
 }
 async function claimQualifiedReferralShards(){
  if(!hasConsent())return{ok:false,reason:'consent'};
+ if(!canPersistReferralWallet())return{ok:false,reason:'wallet-storage'};
  let ownerToken='';
  try{ownerToken=localStorage.getItem(referralOwnerKey)||''}catch{}
  if(!/^[a-f0-9]{32}$/.test(ownerToken))return{ok:false,reason:'no-invites'};
@@ -743,7 +748,7 @@ function rewardShelf(gameId){
   try{
    const result=await claimQualifiedReferralShards();
    if(!result.ok){
-    const messages={consent:'Включи согласие на аналитику, чтобы проверить приглашения. Без согласия игровые ссылки всё равно можно отправлять.', 'no-invites':'Сначала отправь другу приглашение с этого устройства.', 'not-configured':'Сервис вознаграждений пока не подключён к Commerce API. Приглашение всё равно работает.', 'invalid-config':'Адрес Commerce API не настроен корректно.', network:'Не удалось связаться с сервером. Попробуй позже.', 'REFERRAL_REWARD_UNAVAILABLE':'Сервис наград временно недоступен.'};
+    const messages={consent:'Включи согласие на аналитику, чтобы проверить приглашения. Без согласия игровые ссылки всё равно можно отправлять.', 'no-invites':'Сначала отправь другу приглашение с этого устройства.', 'not-configured':'Сервис вознаграждений пока не подключён к Commerce API. Приглашение всё равно работает.', 'invalid-config':'Адрес Commerce API не настроен корректно.', network:'Не удалось связаться с сервером. Попробуй позже.', 'REFERRAL_REWARD_UNAVAILABLE':'Сервис наград временно недоступен.','wallet-storage':'Браузер заблокировал локальное хранилище — награда не запрашивалась.'};
     qualifiedStatus.textContent=messages[result.reason]||'Не удалось проверить приглашения: '+String(result.reason||'ошибка');
     return;
    }
