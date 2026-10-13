@@ -38,6 +38,17 @@
 5. Версия берётся из тега: `osgard-play-v1.2.3` → маркетинговая версия `1.2.3`. Используй только формат `X.Y.Z`; некорректный тег остановит сборку до установки зависимостей. Для ручной сборки без тега можно задать переменную `APP_VERSION`. Build number берётся из системной переменной Codemagic `BUILD_NUMBER`.
 6. Успешный workflow должен прикрепить `.ipa` к сборке и загрузить её в TestFlight. Он **не** публикует приложение для всех пользователей.
 
+## 2.1. Актуальное требование Apple к сборке (проверено 13 октября 2026)
+
+- С 28 апреля 2026 года новые загрузки в App Store Connect должны собираться в **Xcode 26 или новее** с SDK iOS 26 или новее. В `codemagic.yaml` используется `xcode: latest`; перед релизом сверь фактическую версию Xcode в логе Codemagic, а не только YAML.
+- С 9 сентября 2026 года загружаемые приложения должны поддерживать целевую платформу iOS 13 или новее. Скрипт подготовки сейчас ставит deployment target iOS 15.0.
+- Перед публичной отправкой App Store Connect также требует корректную карточку конфиденциальности и актуальную анкету возрастного рейтинга. Privacy manifest в проекте не заменяет ответы в App Store Connect.
+
+Официальные источники:
+- [Apple — upcoming requirements](https://developer.apple.com/news/upcoming-requirements/)
+- [Apple — App Store privacy details](https://developer.apple.com/help/app-store-connect/manage-app-information/manage-app-privacy/)
+- [Apple — age rating questionnaire](https://developer.apple.com/help/app-store-connect/manage-app-information/set-an-app-age-rating/)
+
 ## 3. Что обязательно проверить на реальном iPhone
 
 - Первый запуск, возврат из фона, отсутствие интернета и повторное открытие.
