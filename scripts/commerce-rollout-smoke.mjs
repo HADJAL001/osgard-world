@@ -13,7 +13,7 @@ const server = readFileSync(resolve(root, "src/server.mjs"), "utf8");
 const core = readFileSync(resolve(root, "src/core.mjs"), "utf8");
 const store = readFileSync(resolve("public/games/premium/index.html"), "utf8");
 const app = readFileSync(resolve("public/games/premium/app.js"), "utf8");
-const admin = readFileSync(resolve("public/games/admin/index.html"), "utf8");
+const admin = readFileSync(resolve("public/games/commerce-admin/index.html"), "utf8");
 const config = JSON.parse(readFileSync(resolve("public/games/commerce-config.json"), "utf8"));
 
 for (const value of [
@@ -34,7 +34,7 @@ for (const value of ["no-store", "Деньги не списаны", "termsAccep
 for (const value of ["/v1/products", "/v1/checkout/session", "https:", "checkout_started"]) {
   assert.ok(app.includes(value), "Storefront code missing: " + value);
 }
-for (const value of ["type=\"password\"", "ADMIN_API_TOKEN", "/v1/admin/leads", "noindex,nofollow"]) {
+for (const value of ["type=\"password\"", "operator token", "/v1/admin/leads", "noindex,nofollow"]) {
   assert.ok(admin.includes(value), "Admin UI missing: " + value);
 }
 assert.equal(config.apiBaseUrl, "", "No production API hostname should be assumed without deployment confirmation.");
