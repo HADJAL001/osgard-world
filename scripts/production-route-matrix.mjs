@@ -10,8 +10,12 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
   const started = Date.now()
   try {
     const timeoutMs = route === '/games/null-shift-godot/' ? GODOT_ROUTE_TIMEOUT_MS : ROUTE_TIMEOUT_MS
-    const response = await fetch(new URL(route, base), { headers: { 'user-agent': userAgent }, signal: AbortSignal.timeout(timeoutMs) })
-    const responseBody = route.startsWith('/games/share-cards/') ? new Uint8Array(await response.arrayBuffer()) : await response.text()
+    const isGodotDirectory = route === '/games/null-shift-godot/'
+    // The directory URL can stream a large WebAssembly HTML shell slowly. Probe only
+    // its headers; the explicit index.html route and required binary assets below still
+    // receive content-aware GET checks.
+    const response = await fetch(new URL(route, base), { method: isGodotDirectory ? 'HEAD' : 'GET', headers: { 'user-agent': userAgent }, signal: AbortSignal.timeout(timeoutMs) })
+    const responseBody = route.startsWith('/games/share-cards/') ? new Uint8Array(await response.arrayBuffer()) : isGodotDirectory ? '' : await response.text()
     const text = typeof responseBody === 'string' ? responseBody : ''
     const shellOk = route.startsWith('/api/v1/')
       ? [401, 403].includes(response.status) && (response.headers.get('content-type') || '').toLowerCase().includes('application/json') && (() => { try { JSON.parse(text); return true } catch { return false } })()
@@ -89,11 +93,14 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
             text.includes("notifyOsgardLifecycle('paused'") && text.includes("notifyOsgardLifecycle('resumed'") &&
             text.includes("notifyOsgardLifecycle('completed'")
         : route.startsWith('/games/null-shift-godot')
-          ? /<canvas/i.test(text) && /godot/i.test(text) && text.includes('index.wasm') && text.includes('index.pck') &&
-            text.includes('data-nullshift-shell="premium-v1"') &&
-            text.includes('Engine.isWebGLAvailable(2)') &&
-            text.includes('onProgress') &&
-            text.includes('НАЧАТЬ ОПЕРАЦИЮ') && text.includes('osgard:game-lifecycle')
+          ? isGodotDirectory
+            ? (response.headers.get('content-type') || '').toLowerCase().includes('text/html') &&
+              ['/games/null-shift-godot/', '/games/null-shift-godot/index.html'].includes(new URL(response.url).pathname)
+            : /<canvas/i.test(text) && /godot/i.test(text) && text.includes('index.wasm') && text.includes('index.pck') &&
+              text.includes('data-nullshift-shell="premium-v1"') &&
+              text.includes('Engine.isWebGLAvailable(2)') &&
+              text.includes('onProgress') &&
+              text.includes('НАЧАТЬ ОПЕРАЦИЮ') && text.includes('osgard:game-lifecycle')
           : route.startsWith('/games/null-shift')
             ? text.includes('id="game"') && text.includes('id="mobile-ui"') && text.includes('id="diag-panel"') && text.includes('id="sound-toggle"') && text.includes('id="touch-sound"') && text.includes('./styles.css') && text.includes('./game.js') && text.includes('./engine-3d.js') && text.includes('id="engine-toggle"') && text.includes('id="touch-engine"') && text.includes('id="godot-preview"')
           : route === '/entertainment' || route === '/entertainment/'
