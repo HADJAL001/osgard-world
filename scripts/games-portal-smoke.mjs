@@ -65,6 +65,8 @@ console.log('PASS DAILY CIRCUIT deterministic routes, referral parameters, acces
 const nginx=readFileSync(resolve('nginx.conf'),'utf8')
 const admin=readFileSync(resolve(root,'admin/index.html'),'utf8')
 const partnerEditor=readFileSync(resolve(root,'admin/partners/index.html'),'utf8')
+const partnerLanding=readFileSync(resolve(root,'partners/index.html'),'utf8')
+assert.ok(dailyCircuitScript.includes("format:'Спонсорское событие или уровень'")&&partnerLanding.includes('<option>Спонсорское событие или уровень</option>'),'Daily Circuit sponsor CTA must preselect a real supported Partner Studio format')
 const civic=readFileSync(resolve(root,'civic-cascade/index.html'),'utf8')
 const cascadeGame=readFileSync(resolve(root,'cascade-lab/index.html'),'utf8')
 const patina=readFileSync(resolve(root,'patina/index.html'),'utf8')
