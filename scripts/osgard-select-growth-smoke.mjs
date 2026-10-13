@@ -208,7 +208,7 @@ assert.ok(source.includes('function recordCompletedRound(gameId,sessionId)') && 
 assert.ok(source.includes('const isSpotlight=id===spotlightServiceId') && source.includes("cards.forEach(card=>card.classList.toggle('is-featured',card.dataset.service===spotlightServiceId))"),
   'The featured directory card must always match the personalized spotlight, including after rotation');
 
-const disposerMatch = source.match(/function disposePostgameTree\\(node\\)\\{[^\\n]*\\}/);
+const disposerMatch = source.match(/function disposePostgameTree\(node\)\{[^\n]*\}/);
 assert.ok(disposerMatch, 'Intermission DOM teardown helper must be independently testable');
 const disposePostgameTree = vm.runInNewContext('(' + disposerMatch[0] + ')');
 const disposalCalls = [];
