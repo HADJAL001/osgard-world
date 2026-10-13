@@ -155,7 +155,11 @@ import {
     const link = $('#passport-resume');
     if (!link) return;
     const last = snapshot.progress.sessions[snapshot.progress.sessions.length - 1];
-    const gameId = last && GAME_URLS[last.gameId] ? last.gameId : '';
+    const savedRecent = readJson(RECENT_KEY, []);
+    const recentId = Array.isArray(savedRecent)
+      ? savedRecent.map(item => typeof item === 'string' ? item : item && item.gameId).find(id => typeof id === 'string' && GAME_URLS[id])
+      : '';
+    const gameId = last && GAME_URLS[last.gameId] ? last.gameId : recentId || '';
     link.hidden = !gameId;
     if (gameId) {
       link.href = GAME_URLS[gameId];
