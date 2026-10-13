@@ -90,7 +90,7 @@ function renderLeads(items) {
     head.append(text('strong','',item.project_type || 'Заявка без названия'));
     head.append(text('span','lead-status',LEAD_STATUS_LABELS[item.status] || ('Неизвестный статус: ' + String(item.status ?? '—'))));
     card.append(head);
-    card.append(text('p','lead-detail','Контакт: ' + (item.contact || '—'));
+    card.append(text('p','lead-detail','Контакт: ' + (item.contact || '—')));
     if (item.budget) card.append(text('p','lead-detail','Бюджет: ' + item.budget));
     card.append(text('p','lead-detail',String(item.description || 'Описание не заполнено')));
     const created = new Date(item.created_at);
