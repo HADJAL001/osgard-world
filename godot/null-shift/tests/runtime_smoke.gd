@@ -256,6 +256,9 @@ func _run_smoke() -> void:
 	first_lane = game.phase_lanes[0]
 	var disruptions_before: int = game.phase_lane_disruptions
 	game._deploy_pulse()
+	if not _expect(not game.ring_effects.is_empty(), "pulse suppression feedback must use the reusable ring-effect pool"):
+		return
+	var pulse_effect_ring: MeshInstance3D = game.ring_effects[game.ring_effects.size() - 1]["node"]
 	game._update_phase_lanes(0.0)
 	first_lane = game.phase_lanes[0]
 	if not _expect(first_lane["state"] == "disrupted" and not first_lane["active_mesh"].visible and first_lane["pulse_head"].material_override == game.materials["cyan"], "tactical pulse must suppress a nearby active conduit and recolour its 3D surge cyan"):
@@ -272,6 +275,12 @@ func _run_smoke() -> void:
 	first_lane = game.phase_lanes[0]
 	if not _expect(first_lane["state"] == "active" and first_lane["active_mesh"].visible, "the conduit must resume its timed hazard after the pulse disruption expires"):
 		return
+	for ring_index in range(game.ring_effects.size() - 1, -1, -1):
+		var ring_state: Dictionary = game.ring_effects[ring_index]
+		if ring_state["node"] == pulse_effect_ring:
+			ring_state["remaining"] = 0.0
+			game.ring_effects[ring_index] = ring_state
+	game._update_effect_expiry(0.0)
 	game.phase_lane_disruptions = disruptions_before
 	for lane_index in range(game.phase_lanes.size()):
 		var reset_lane: Dictionary = game.phase_lanes[lane_index]
