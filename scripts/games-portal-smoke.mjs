@@ -351,6 +351,9 @@ assert.ok(lifecycle.includes("document.dispatchEvent(new Event('osgard:game-laun
 assert.ok(recommendationScript.includes("document.addEventListener('osgard:game-completed'")&&recommendationScript.includes("document.addEventListener('osgard:game-launching'"),'Recommendation module must subscribe to game lifecycle events')
 assert.ok(recommendationStyles.includes('.post-run-recommendations')&&recommendationStyles.includes('prefers-reduced-motion:reduce'),'Recommendation shelf must have responsive/reduced-motion styling')
 new Function(recommendationScript)
+const mockStorage=()=>{const values=new Map();return{getItem(key){return values.has(key)?values.get(key):null},setItem(key,value){values.set(key,String(value))},removeItem(key){values.delete(key)},clear(){values.clear()}}}
+const mockLocalStorage=mockStorage(),mockSessionStorage=mockStorage()
+const mockNavigator={share:async()=>{},clipboard:{writeText:async()=>{}}}
 const mockNode=()=>({className:'',textContent:'',hidden:false,dataset:{},attributes:{},children:[],handlers:{},append(...nodes){this.children.push(...nodes)},replaceChildren(...nodes){this.children=nodes},setAttribute(name,value){this.attributes[name]=value},addEventListener(name,handler){(this.handlers[name]??=[]).push(handler)},click(){for(const handler of this.handlers.click||[])handler({target:this,button:0})},querySelector(selector){return selector.startsWith('.')?this.children.find(node=>node.className===selector.slice(1))||null:null}})
 const mockHost=mockNode();mockHost.hidden=true
 const mockOutside=mockNode();mockOutside.hidden=true
@@ -359,7 +362,7 @@ const mockDialog={classList:{add(name){mockClasses.add(name)},remove(name){mockC
 const mockHandlers={}
 const mockHead=mockNode()
 const mockDocument={head:mockHead,querySelector(selector){return selector==='#post-run-recommendations'?mockHost:selector==='#osgard-aftergame-intermission'?mockOutside:selector==='#player-dialog'?mockDialog:null},createElement(){return mockNode()},addEventListener(name,handler){(mockHandlers[name]??=[]).push(handler)},dispatch(name,event={}){const handlers=mockHandlers[name]||[];assert.ok(handlers.length,'Missing recommendation/growth lifecycle listener: '+name);handlers.forEach(handler=>handler(event))}}
-new Function('document','window','location',recommendationScript)(mockDocument,{}, {search:'',origin:'https://osgard.world',pathname:'/games/'})
+new Function('document','window','location','navigator','localStorage','sessionStorage','fetch',recommendationScript)(mockDocument,{}, {search:'',origin:'https://osgard.world',pathname:'/games/',href:'https://osgard.world/games/'},mockNavigator,mockLocalStorage,mockSessionStorage,async()=>({ok:false,json:async()=>({})}))
 mockDocument.dispatch('osgard:game-completed',{detail:{game:'swarm'}})
 assert.equal(mockHandlers['osgard:game-completed'].length,3,'Recommendation, invite and OSGARD SELECT modules must subscribe to completed sessions')
 assert.equal(mockHandlers['osgard:game-session-ended'].length,4,'Recommendations, invites, OSGARD SELECT and fallback intermission must subscribe to session returns')
@@ -404,7 +407,24 @@ const claimReward=rewardSection.children.find(node=>node.className==='og-postgam
 socialGrid.children[0].click()
 assert.equal(claimReward.hidden,false,'Choosing a social destination should reveal the return-to-game reward confirmation')
 assert.ok(claimReward.textContent.includes('Telegram')&&claimReward.textContent.includes('+50 SHARDS'),'Reward confirmation should name the selected destination and show the local reward')
-assert.ok(rewardSection.children.find(node=>node.className==='og-postgame-status').textContent.includes('Соцсеть не сообщает сайту подтверждение публикации'),'Manual repost reward must clearly disclose that posting is player-confirmed, not network-verified')
+const rewardStatus=rewardSection.children.find(node=>node.className==='og-postgame-status')
+assert.ok(rewardStatus.textContent.includes('Соцсеть не сообщает сайту подтверждение публикации'),'Manual repost reward must clearly disclose that posting is player-confirmed, not network-verified')
+const primaryShare=rewardSection.children.find(node=>node.className==='og-postgame-share-primary')
+await primaryShare.handlers.click[0]({target:primaryShare,button:0})
+assert.equal(mockLocalStorage.getItem('osgard.games.shards-wallet.v1'),null,'Opening the native share sheet must not auto-grant SHARDS')
+assert.equal(claimReward.hidden,false,'Native share completion must reveal a separate explicit claim button')
+assert.ok(rewardStatus.textContent.includes('не может проверить публикацию автоматически'),'Native share claim must disclose unverifiable post status')
+claimReward.click()
+assert.equal(JSON.parse(mockLocalStorage.getItem('osgard.games.shards-wallet.v1')).balance,50,'An explicit self-confirmed native share may grant the local daily reward')
+socialGrid.children[0].click()
+claimReward.click()
+assert.equal(JSON.parse(mockLocalStorage.getItem('osgard.games.shards-wallet.v1')).balance,50,'A second self-confirmed share cannot exceed the daily cap')
+mockLocalStorage.removeItem('osgard.games.shards-wallet.v1')
+mockNavigator.share=undefined
+await primaryShare.handlers.click[0]({target:primaryShare,button:0})
+assert.equal(mockLocalStorage.getItem('osgard.games.shards-wallet.v1'),null,'Clipboard copy alone must never grant SHARDS')
+assert.equal(claimReward.hidden,true,'Clipboard copy must not expose a reward-claim button')
+assert.ok(rewardStatus.textContent.includes('Копирование само по себе не считается репостом'),'Clipboard fallback must tell the player that copying is not reposting')
 assert.deepEqual(mockGrid.children.map(node=>node.dataset.play),['null-shift','signal-run'],'SWARM should recommend two related live games')
 assert.deepEqual(mockGrid.children.map(node=>node.href),['/games/null-shift-godot/','/games/signal-run/'],'Recommendations should point to valid game launch routes')
 mockDocument.dispatch('osgard:game-launching')
