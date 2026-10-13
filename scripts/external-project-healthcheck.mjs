@@ -61,71 +61,92 @@ function classifyHttp(status, isHtml, title) {
 export async function checkProject(project, {
   fetchImpl = globalThis.fetch,
   timeoutMs = 12000,
+  maxAttempts = 2,
+  retryDelayMs = 250,
   now = () => new Date(),
 } = {}) {
   const started = Date.now()
   const checkedAt = now().toISOString()
-  try {
-    const response = await fetchImpl(project.url, {
-      method: 'GET',
-      redirect: 'follow',
-      signal: AbortSignal.timeout(timeoutMs),
-      headers: {
-        accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'user-agent': USER_AGENT,
-      },
-    })
-    const contentType = responseHeader(response, 'content-type').split(';')[0].trim().toLowerCase()
-    const body = await response.text()
-    const isHtml = contentType === 'text/html' || contentType === 'application/xhtml+xml'
-    const title = isHtml ? extractPageTitle(body) : null
-    const finalUrl = response.url || project.url
-    let finalHost = null
-    try { finalHost = new URL(finalUrl).hostname } catch {}
-    const outcome = classifyHttp(response.status, isHtml, title)
-    return {
-      id: project.id,
-      name: project.name,
-      intendedRole: project.intendedRole,
-      requestedUrl: project.url,
-      finalUrl,
-      finalHost,
-      redirected: Boolean(response.redirected) || finalUrl.replace(/\/$/, '') !== project.url.replace(/\/$/, ''),
-      statusCode: response.status,
-      contentType: contentType || null,
-      pageTitle: title,
-      metaDescription: isHtml ? extractMetaDescription(body) : null,
-      outcome,
-      reachable: response.status >= 200 && response.status < 400,
-      responseMs: Math.max(0, Date.now() - started),
-      checkedAt,
-      note: 'HTTP homepage check only; it does not confirm product features, login, API, checkout, or service reliability.',
-    }
-  } catch (error) {
-    const name = error && typeof error.name === 'string' ? error.name : 'Error'
-    const message = String(error && error.message ? error.message : error).slice(0, MAX_ERROR_LENGTH)
-    const outcome = name === 'TimeoutError' || name === 'AbortError' ? 'timeout' : 'network_error'
-    return {
-      id: project.id,
-      name: project.name,
-      intendedRole: project.intendedRole,
-      requestedUrl: project.url,
-      finalUrl: null,
-      finalHost: null,
-      redirected: false,
-      statusCode: null,
-      contentType: null,
-      pageTitle: null,
-      metaDescription: null,
-      outcome,
-      reachable: false,
-      responseMs: Math.max(0, Date.now() - started),
-      checkedAt,
-      errorName: name,
-      error: message,
-      note: 'No response received; this does not by itself prove that the product is down for every visitor.',
+  for (let attempt = 1; attempt <= Math.max(1, maxAttempts); attempt++) {
+    try {
+      const response = await fetchImpl(project.url, {
+        method: 'GET',
+        redirect: 'follow',
+        signal: AbortSignal.timeout(timeoutMs),
+        headers: {
+          accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'user-agent': USER_AGENT,
+        },
+      })
+      if (response.status >= 500 && attempt < maxAttempts) {
+        try { await response.body?.cancel() } catch {}
+        await new Promise(resolve => setTimeout(resolve, retryDelayMs * attempt))
+        continue
+      }
+      const contentType = responseHeader(response, 'content-type').split(';')[0].trim().toLowerCase()
+      const body = await response.text()
+      const isHtml = contentType === 'text/html' || contentType === 'application/xhtml+xml'
+      const title = isHtml ? extractPageTitle(body) : null
+      const finalUrl = response.url || project.url
+      let finalHost = null
+      try { finalHost = new URL(finalUrl).hostname } catch {}
+      const outcome = classifyHttp(response.status, isHtml, title)
+      return {
+        id: project.id,
+        name: project.name,
+        intendedRole: project.intendedRole,
+        requestedUrl: project.url,
+        finalUrl,
+        finalHost,
+        redirected: Boolean(response.redirected) || finalUrl.replace(/\\/$/, '') !== project.url.replace(/\\/$/, ''),
+        statusCode: response.status,
+        contentType: contentType || null,
+        pageTitle: title,
+        metaDescription: isHtml ? extractMetaDescription(body) : null,
+        outcome,
+        reachable: response.status >= 200 && response.status < 400,
+        responseMs: Math.max(0, Date.now() - started),
+        attempts: attempt,
+        checkedAt,
+        note: 'HTTP homepage check only; it does not confirm product features, login, API, checkout, or service reliability.',
+      }
+    } catch (error) {
+      const name = error && typeof error.name === 'string' ? error.name : 'Error'
+      if (attempt < maxAttempts && (name === 'TypeError' || name === 'TimeoutError' || name === 'AbortError')) {
+        await new Promise(resolve => setTimeout(resolve, retryDelayMs * attempt))
+        continue
+      }
+      const message = String(error && error.message ? error.message : error).slice(0, MAX_ERROR_LENGTH)
+      const cause = error && error.cause ? error.cause : null
+      const causeMessage = cause && (cause.message || cause.code) ? String(cause.message || cause.code).slice(0, MAX_ERROR_LENGTH) : null
+      const errorCode = cause && typeof cause.code === 'string' ? cause.code : null
+      const outcome = name === 'TimeoutError' || name === 'AbortError' ? 'timeout' : 'network_error'
+      return {
+        id: project.id,
+        name: project.name,
+        intendedRole: project.intendedRole,
+        requestedUrl: project.url,
+        finalUrl: null,
+        finalHost: null,
+        redirected: false,
+        statusCode: null,
+        contentType: null,
+        pageTitle: null,
+        metaDescription: null,
+        outcome,
+        reachable: false,
+        responseMs: Math.max(0, Date.now() - started),
+        attempts: attempt,
+        checkedAt,
+        errorName: name,
+        errorCode,
+        errorCause: causeMessage,
+        error: message,
+        note: 'No response received; this does not by itself prove that the product is down for every visitor.',
+      }
     }
   }
+  throw new Error('Healthcheck completed without a response or classified error.')
 }
 
 export async function runAudit({
