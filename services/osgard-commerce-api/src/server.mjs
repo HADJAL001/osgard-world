@@ -469,7 +469,7 @@ app.post("/v1/referrals/claim", async (req, res) => {
 app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
   if (!requireDatabase(res)) return;
   try {
-    const [orderStats, currencyStats, leadStats, eventStats, topEvents, analyticsByGame, ownedPromoByService, ownedPromoVariantStats, analyticsFunnel, socialShareByNetwork, paidRevenueByAttribution] = await Promise.all([
+    const [orderStats, currencyStats, leadStats, eventStats, topEvents, analyticsByGame, ownedPromoByService, ownedPromoVariantStats, analyticsFunnel, socialShareByNetwork, paidRevenueByAttribution, referralRewardStats] = await Promise.all([
       pool.query("SELECT status, COUNT(*)::int AS count FROM commerce_orders GROUP BY status"),
       pool.query("SELECT currency, SUM(amount_total)::bigint AS total_minor, COUNT(*)::int AS count FROM commerce_orders WHERE status='paid' AND currency IS NOT NULL GROUP BY currency"),
       pool.query("SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE status='new')::int AS new FROM commerce_leads"),
@@ -591,6 +591,7 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
         ORDER BY intents DESC, network ASC
       `),
       pool.query("SELECT attribution_game_id AS \"gameId\", attribution_source AS source, NULLIF(attribution_campaign, '') AS campaign, mode, currency, COUNT(*)::int AS orders, COALESCE(SUM(amount_total),0)::text AS \"totalMinor\" FROM commerce_orders WHERE status='paid' AND amount_total IS NOT NULL AND currency IS NOT NULL AND created_at >= NOW() - INTERVAL '30 days' GROUP BY attribution_game_id, attribution_source, attribution_campaign, mode, currency ORDER BY COUNT(*) DESC, attribution_game_id ASC LIMIT 50"),
+      pool.query("SELECT COUNT(*)::int AS \\"qualifiedReferrals\\", COALESCE(SUM(reward_amount),0)::int AS \\"shardsAwarded\\" FROM commerce_referral_invites WHERE reward_claimed_at >= NOW() - INTERVAL '30 days'"),
     ]);
     return res.json({
       ordersByStatus: orderStats.rows,
@@ -604,6 +605,7 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
       analyticsFunnel: analyticsFunnel.rows[0] || {},
       socialShareByNetwork: socialShareByNetwork.rows,
       paidRevenueByAttribution: paidRevenueByAttribution.rows,
+      verifiedReferralRewards: referralRewardStats.rows[0] || { qualifiedReferrals: 0, shardsAwarded: 0 },
       analyticsRetentionDays,
       note: "Аналитика включает только согласованные события. Это не все посещения сайта и не рекламные показы. Суммы сгруппированы по валютам и не являются бухгалтерским отчётом.",
     });
