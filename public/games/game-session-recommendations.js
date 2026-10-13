@@ -64,6 +64,8 @@ function cancelPendingTelemetry(){for(const controller of pendingTelemetry){try{
 async function sendEvent(name,gameId,source){
  if(!consented())return false;
  const event={eventId:'evt_'+token()+token(),name,sessionId:sessionId(),gameId:games[gameId]?gameId:'unknown',source:String(source||'games-hub').slice(0,80),path:location.pathname,durationSeconds:0};
+ const queue=window.OSGARD_CONSENTED_ANALYTICS;
+ if(queue&&typeof queue.enqueue==='function')return queue.enqueue(event);
  const controller=typeof AbortController==='function'?new AbortController():null;
  if(controller)pendingTelemetry.add(controller);
  try{
@@ -292,6 +294,8 @@ function makeEventToken(){
 async function sendSelectEvent(name,gameId,source){
  if(!hasConsent()||!selectAllowedEvents.has(name))return false;
  const event={eventId:'evt_'+makeEventToken()+makeEventToken(),name,sessionId:selectSessionId(),gameId:titles[gameId]?gameId:'unknown',source:String(source||'osgard-select').slice(0,80),path:location.pathname,durationSeconds:0};
+ const queue=window.OSGARD_CONSENTED_ANALYTICS;
+ if(queue&&typeof queue.enqueue==='function')return queue.enqueue(event);
  const controller=typeof AbortController==='function'?new AbortController():null;
  if(controller)pendingSelectTelemetry.add(controller);
  try{
