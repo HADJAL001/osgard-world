@@ -41,7 +41,7 @@ for (const id of ['time', 'swarm', 'null-shift', 'inherit', 'remix']) {
   assert.ok(platform.includes("game.id === '" + id + "'") || platform.includes(id), 'Game metadata is missing: ' + id)
 }
 for (const feature of [
-  "path === '/games'", "path.startsWith('/games/play/')", "path.startsWith('/games/info/')", "path === '/privacy'", "path === '/terms'",
+  "path === '/games' || path === '/entertainment'", "path.startsWith('/games/play/')", "path.startsWith('/games/info/')", "path === '/privacy'", "path === '/terms'",
   "GamesPlatform", "GameDetailPage", "LegalPage kind=\"privacy\"", "LegalPage kind=\"terms\""
 ]) assert.ok(main.includes(feature), 'Missing page route: ' + feature)
 
@@ -72,7 +72,7 @@ assert.ok(player.includes("querySelector<HTMLElement>('#unity-loading-container'
 assert.ok(platform.includes("href={'/games/play/' + lastPlayed.id}"), 'Continue must route through the player shell')
 assert.ok(platform.includes("new URL('/games/info/' + id, window.location.origin)"), 'Game sharing must use a stable public profile link')
 for (const slug of ['time','swarm','null-shift','inherit','remix']) assert.ok(sitemap.includes('https://osgard.world/games/info/' + slug), 'Missing game profile in sitemap: ' + slug)
-assert.ok(sitemap.includes('https://osgard.world/games</loc>'), 'Game catalogue is missing from sitemap')
+assert.ok(sitemap.includes('https://osgard.world/entertainment</loc>'), 'Canonical Entertainment hub is missing from sitemap')
 assert.ok(player.includes('visibilitychange') && player.includes('visibleSinceRef') && player.includes('activeDurationMsRef') && player.includes('durationSeconds'), 'Session duration should measure visible time separately from elapsed time')
 assert.ok(platform.includes('event.key.toLowerCase() === \'k\'') && platform.includes('searchRef.current?.focus()'), 'Catalog search keyboard shortcut must focus the search input')
 assert.ok(playerCss.includes('.ogp-frame-shell') && playerCss.includes(':fullscreen') && playerCss.includes('@media (max-width:600px)'), 'Responsive player shell styling missing')
@@ -87,6 +87,10 @@ for (const token of [
 assert.ok(html.includes('href="/osgard-mark.svg"') && existsSync('public/osgard-mark.svg'), 'Original SVG brand mark must be wired as favicon')
 assert.ok(staticCatalog.includes('href="/games"'), 'Existing archive must link to the new game hub')
 assert.ok(nginx.includes('location = /games {') && nginx.includes('location = /games/ {'), 'Nginx must route the SPA hub despite static /games directory')
+assert.ok(nginx.includes('location = /entertainment {') && nginx.includes('location = /entertainment/ {') && nginx.includes('location = /entertainment/index.html'), 'Nginx must serve the React Games hub at /entertainment')
+assert.ok(main.includes("if (path === '/games' || path === '/entertainment')"), 'Entertainment must render OSGARD PLAY')
+assert.ok(sitemap.includes('https://osgard.world/entertainment</loc>'), 'Canonical Entertainment hub must be discoverable in the sitemap')
+assert.ok(main.includes("path === '/games' ? '/entertainment' : path"), 'The /games alias must use /entertainment as canonical URL')
 assert.equal(packageJson.scripts['qa:games'], 'node scripts/games-platform-smoke.mjs', 'Game hub smoke test command is not registered')
 assert.ok(workflow.includes('npm run qa:games'), 'Game hub test is not part of frontend CI')
 
