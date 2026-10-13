@@ -438,7 +438,7 @@ app.post("/v1/referrals/reward-status", async (req, res) => {
 app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
   if (!requireDatabase(res)) return;
   try {
-    const [orderStats, currencyStats, leadStats, eventStats, topEvents, analyticsByGame, ownedPromoByService, analyticsFunnel, socialShareByNetwork, paidRevenueByAttribution, referralRewardStats] = await Promise.all([
+    const [orderStats, currencyStats, paidRevenueByAttribution, referralRewardStats, leadStats, eventStats, topEvents, analyticsByGame, ownedPromoByService, analyticsFunnel, socialShareByNetwork] = await Promise.all([
       pool.query("SELECT status, COUNT(*)::int AS count FROM commerce_orders GROUP BY status"),
       pool.query("SELECT currency, SUM(amount_total)::bigint AS total_minor, COUNT(*)::int AS count FROM commerce_orders WHERE status='paid' AND currency IS NOT NULL GROUP BY currency"),
       pool.query("SELECT attribution_game_id AS \"gameId\", attribution_source AS source, NULLIF(attribution_campaign, '') AS campaign, mode, currency, COUNT(*)::int AS orders, COALESCE(SUM(amount_total),0)::text AS \"totalMinor\" FROM commerce_orders WHERE status='paid' AND amount_total IS NOT NULL AND currency IS NOT NULL AND created_at >= NOW() - INTERVAL '30 days' GROUP BY attribution_game_id, attribution_source, attribution_campaign, mode, currency ORDER BY COUNT(*) DESC, attribution_game_id ASC LIMIT 50"),
@@ -472,28 +472,28 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
           FROM recent_events
           WHERE event_name = 'share_created'
             AND source LIKE 'game-invite:%'
-            AND split_part(source, ':', 3) ~ '^(og_[a-f0-9]{8}|[a-f0-9]{12})$'
+            AND split_part(source, ':', 3) ~ '^(og_[a-f0-9]{8}|og_[a-f0-9]{32}|[a-f0-9]{12})$'
         ),
         invite_opens AS (
           SELECT DISTINCT split_part(source, ':', 2) AS invite_code
           FROM recent_events
           WHERE event_name = 'referral_link_opened'
             AND source LIKE 'referral-link:%'
-            AND split_part(source, ':', 2) ~ '^(og_[a-f0-9]{8}|[a-f0-9]{12})$'
+            AND split_part(source, ':', 2) ~ '^(og_[a-f0-9]{8}|og_[a-f0-9]{32}|[a-f0-9]{12})$'
         ),
         invite_starts AS (
           SELECT DISTINCT split_part(source, ':', 2) AS invite_code
           FROM recent_events
           WHERE event_name = 'game_session_started'
             AND source LIKE 'referral:%'
-            AND split_part(source, ':', 2) ~ '^(og_[a-f0-9]{8}|[a-f0-9]{12})$'
+            AND split_part(source, ':', 2) ~ '^(og_[a-f0-9]{8}|og_[a-f0-9]{32}|[a-f0-9]{12})$'
         ),
         invite_completions AS (
           SELECT DISTINCT split_part(source, ':', 2) AS invite_code
           FROM recent_events
           WHERE event_name = 'game_session_completed'
             AND source LIKE 'referral:%'
-            AND split_part(source, ':', 2) ~ '^(og_[a-f0-9]{8}|[a-f0-9]{12})$'
+            AND split_part(source, ':', 2) ~ '^(og_[a-f0-9]{8}|og_[a-f0-9]{32}|[a-f0-9]{12})$'
         )
         SELECT
           COUNT(*) FILTER (WHERE event_name = 'catalog_viewed')::int AS "catalogViews",
