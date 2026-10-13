@@ -361,7 +361,13 @@ assert.equal(mockClasses.has('has-recommendations'),true,'The player layout shou
 const mockGrid=mockHost.children.find(node=>node.className==='post-run-grid');
 const mockSuite=mockHost.children.find(node=>node.className==='og-postgame-suite');
 assert.ok(mockSuite,'Post-run service/reward suite should appear after each valid completion');
-assert.equal(mockSuite.children[0].children.find(node=>node.className==='og-postgame-service-grid').children.length,10,'Post-run intermission should list all ten services');
+const inRunServices=mockSuite.children.find(node=>node.className==='og-postgame-services')
+assert.ok(inRunServices,'The first completed session should show the owned-service shelf')
+const firstServiceGrid=inRunServices.children.find(node=>node.className==='og-postgame-service-grid')
+assert.equal(firstServiceGrid.children.length,10,'All ten services remain available in the expandable grid')
+assert.equal(firstServiceGrid.children.filter(node=>!node.hidden).length,3,'Only three context-ranked services should be visible by default')
+assert.equal(firstServiceGrid.children.filter(node=>node.hidden).length,7,'The remaining seven services must be hidden until the player expands the shelf')
+assert.equal(inRunServices.children.find(node=>node.className==='og-postgame-service-head').children.find(node=>node.className==='og-postgame-toggle').textContent,'Показать все проекты · 10','The expansion control must clearly disclose the remaining options');
 assert.deepEqual(mockGrid.children.map(node=>node.dataset.play),['null-shift','signal-run'],'SWARM should recommend two related live games')
 assert.deepEqual(mockGrid.children.map(node=>node.href),['/games/null-shift-godot/','/games/signal-run/'],'Recommendations should point to valid game launch routes')
 mockDocument.dispatch('osgard:game-launching')
@@ -374,7 +380,8 @@ mockDocument.dispatch('osgard:game-session-ended',{detail:{game:'patina',reason:
 assert.equal(mockOutside.hidden,false,'Closing a live PATINA session should show the owned-service intermission outside the player dialog')
 const outsideSuite=mockOutside.children.find(node=>node.className==='og-postgame-suite og-postgame-outside-suite')
 assert.ok(outsideSuite,'Closed-session intermission should contain a standalone service/reward suite')
-assert.equal(outsideSuite.children.find(node=>node.className==='og-postgame-services').children.find(node=>node.className==='og-postgame-service-grid').children.length,10,'Closed-session intermission must preserve all ten owned service choices')
+assert.equal(outsideSuite.children.some(node=>node.className==='og-postgame-services'),false,'The owned-service promo shelf must not repeat after reaching its per-tab frequency cap')
+assert.ok(outsideSuite.children.find(node=>node.className==='og-postgame-reward'),'Share and local reward actions must remain available after the service shelf is capped')
 assert.equal(outsideSuite.children.find(node=>node.className==='og-postgame-back').href,'#catalog','Players must have a clear path back to the next game')
 mockDocument.dispatch('osgard:game-launching')
 assert.equal(mockOutside.hidden,true,'Starting the next game must dismiss the standalone intermission')
