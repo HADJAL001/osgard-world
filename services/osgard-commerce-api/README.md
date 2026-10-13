@@ -87,3 +87,13 @@ Open /games/commerce-admin/ and paste ADMIN_API_TOKEN into the in-memory field. 
 - ANALYTICS_RETENTION_DAYS defaults to 90 and accepts integers from 30 to 365. Rows older than this limit are deleted at API startup and then every six hours while the database is ready.
 - The operator dashboard reports only consented server-recorded events. It is not a complete count of anonymous page visits, ad impressions, revenue or conversions. UTM clicks only attribute outbound link clicks.
 - The environment still needs a real database and a deployed API for data to be persisted; this source change does not prove that production has been deployed or is receiving events.
+
+
+## Anonymous game feedback (added 2026-10-13)
+
+- The public page at `/games/feedback/` collects a selected game, a 1–5 rating, a fixed-choice return-intent, a category, and an optional comment. It does not ask for an account, email, name, device fingerprint or analytics consent.
+- Before storage, the player explicitly acknowledges the feedback-processing notice. Comments are limited to 1,200 characters and the page tells players not to include names, contact details, credentials or payment information. No public display or third-party analytics is connected.
+- `POST /v1/feedback` validates every field against allow-lists, includes a honeypot, and is rate-limited to 8 requests per hour. Feedback is only stored if PostgreSQL is configured and ready. Otherwise the page states that nothing was sent and offers a manual draft fallback.
+- `GET /v1/admin/feedback` uses the existing `ADMIN_API_TOKEN` guard and returns aggregate counts plus a bounded list of recent comments; the UI renders text as plain text, not HTML.
+- `GAME_FEEDBACK_RETENTION_DAYS` defaults to 90, accepts values from 30 to 365, and purges old comments on API startup and every six hours. This is an operational retention control; publish it in the privacy notice and verify it against the launch jurisdictions before production use.
+- A source change does not activate the service. Deploy the updated Commerce API with a ready PostgreSQL database, configure `public/games/commerce-config.json` to the verified API origin, then test submission, rate limiting, admin authorization and expiry behavior before advertising the form.
