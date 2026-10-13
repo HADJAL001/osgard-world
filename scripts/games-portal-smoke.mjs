@@ -21,7 +21,7 @@ const catalogCards=[...html.matchAll(/<article\b[^>]*\bdata-game="([^"]+)"[^>]*\
 const deployWorkflow=readFileSync(resolve('.github/workflows/deploy-frontend.yml'),'utf8')
 const routeMatrix=readFileSync(resolve('scripts/production-route-matrix.mjs'),'utf8')
 assert.ok(routeMatrix.includes("route === '/games/invite/invite-landing.js'") && routeMatrix.includes("name: 'referral_link_opened'") && routeMatrix.includes("osgard.games.referral-attribution.v1"),'Production route matrix must validate invite JavaScript using its own referral-event contract, not the unrelated SkillCred contract')
-assert.ok(routeMatrix.includes('const ROUTE_TIMEOUT_MS = 10000') && routeMatrix.includes('signal: AbortSignal.timeout(ROUTE_TIMEOUT_MS)'),'Production route and asset requests must have bounded timeouts')
+assert.ok(routeMatrix.includes('const ROUTE_TIMEOUT_MS = 10000') && routeMatrix.includes('const GODOT_ROUTE_TIMEOUT_MS = 20000') && routeMatrix.includes("route === '/games/null-shift-godot/' ? GODOT_ROUTE_TIMEOUT_MS : ROUTE_TIMEOUT_MS") && routeMatrix.includes('signal: AbortSignal.timeout(timeoutMs)'),'Production routes must have bounded timeouts and a bounded allowance for the Godot directory route')
 const launchMapStart=html.indexOf('games={')
 const launchMapEnd=html.indexOf('},read=',launchMapStart)
 assert.ok(launchMapStart>=0&&launchMapEnd>launchMapStart,'Games launch registry is missing or malformed')
