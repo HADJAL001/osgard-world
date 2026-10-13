@@ -80,6 +80,7 @@ if [[ ! -d ios/App/App.xcodeproj ]]; then
   npx cap add ios
 fi
 npx cap sync ios
+(cd ios/App && pod install)
 node scripts/ios/install-app-icon.mjs
 npm run qa:ios-package
 
