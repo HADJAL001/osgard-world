@@ -512,8 +512,8 @@ const signalShareStart=signalJs.indexOf("$('share').addEventListener('click',asy
 const signalShareEnd=signalJs.indexOf("});document.addEventListener('keydown'",signalShareStart);
 assert.ok(signalShareStart>=0&&signalShareEnd>signalShareStart,'SIGNAL RUN share handler boundaries are required');
 const signalShareHandler=signalJs.slice(signalShareStart,signalShareEnd);
-assert.ok(!signalShareHandler.includes('awardShareShards(method)')&&signalShareHandler.includes("method==='clipboard'")&&signalShareHandler.includes('pendingShareReward=method'),'SIGNAL RUN must not auto-award for opening a share sheet or copying');
-assert.ok(signalJs.includes("claimShare.addEventListener('click'")&&signalJs.includes("awardShareShards('user-confirmed:'+method)"),'SIGNAL RUN reward must be granted only after an explicit user confirmation');
+assert.ok(!signalShareHandler.includes('awardShareShards')&&signalShareHandler.includes("method==='clipboard'")&&signalShareHandler.includes('не начисляет SHARDS'),'SIGNAL RUN score sharing must not create a client-side reward');
+assert.ok(!signalJs.includes("claimShare.addEventListener('click'")&&!signalJs.includes("awardShareShards('user-confirmed:"),'SIGNAL RUN must not have a client-minted reward claim');
 new Function(signalJs);
 
 assert.ok(cascadeGame.includes("notifyOsgardLifecycle('completed'"),'CASCADE LAB must emit completion after a passed level')
@@ -611,6 +611,11 @@ console.log('PASS OSGARD referral loop: game-specific invite deep links, consent
 const referralCoreSource=readFileSync(resolve('services/osgard-commerce-api/src/core.mjs'),'utf8')
 const referralApiSource=readFileSync(resolve('services/osgard-commerce-api/src/server.mjs'),'utf8')
 const referralAdminSource=readFileSync(resolve('public/games/commerce-admin/index.html'),'utf8')
+assert.ok(referralCoreSource.includes('REFERRAL_REWARD_POINTS = 50')&&referralCoreSource.includes('REFERRAL_MIN_SESSION_SECONDS = 60')&&referralCoreSource.includes('parseReferralRewardEvent'),'Commerce core must define explicit non-cash, 60-second referral qualification rules')
+for(const table of ['game_referral_invites','game_referral_visits','game_referral_rewards']) assert.ok(referralApiSource.includes('CREATE TABLE IF NOT EXISTS '+table),'Referral reward ledger table missing: '+table)
+assert.ok(referralApiSource.includes('async function processReferralRewardEvent')&&referralApiSource.includes('start.received_at <= finish.received_at - ($2 * INTERVAL \'1 second\')'),'Server must verify a matching started/completed session lasting at least 60 seconds')
+assert.ok(referralApiSource.includes('app.post("/v1/referrals/register"')&&referralApiSource.includes('app.post("/v1/referrals/reward-status"'),'Server reward registration/balance endpoints missing')
+for(const metric of ['analytics-qualified-referrals','analytics-shards-awarded','analytics-rewarded-invites']) assert.ok(referralAdminSource.includes('id="'+metric+'"'),'Commerce admin must expose server-verified reward metrics: '+metric)
 assert.ok(recommendationScript.includes('osgard.games.referral-attribution.v1') && recommendationScript.includes('game-invite:') && recommendationScript.includes('play_with_friends'), 'Post-session invite link and referral attribution missing')
 assert.ok(recommendationScript.includes("shared.pathname==='/games/invite/'+gameId+'/" ) && recommendationScript.includes("new URL('/games/invite/'+encodeURIComponent(gameId)+'/'"),'Post-session sharing must validate and fallback to the game-specific preview route')
 assert.ok(recommendationScript.includes("params.get('og_game')") && recommendationScript.includes("params.get('og_ref')") && recommendationScript.includes("shared.searchParams.get('og_game')===gameId"), 'Post-session invites must use the canonical og_game/og_ref URL contract')
