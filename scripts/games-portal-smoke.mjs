@@ -80,6 +80,7 @@ assert.ok(catalogInviteCard.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10
 
 const lifecycle=readFileSync(resolve(root,'player-lifecycle.js'),'utf8')
 const consentedAnalytics=readFileSync(resolve(root,'consented-analytics.js'),'utf8')
+const commerceCore=readFileSync(resolve('services/osgard-commerce-api/src/core.mjs'),'utf8')
 const commerceClient=readFileSync(resolve(root,'commerce-client.js'),'utf8')
 const commerceConfig=JSON.parse(readFileSync(resolve(root,'commerce-config.json'),'utf8'))
 const recommendationScript=readFileSync(resolve(root,'game-session-recommendations.js'),'utf8')
