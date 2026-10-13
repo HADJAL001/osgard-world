@@ -60,6 +60,7 @@ assert.ok(entertainmentGateway.includes("aria-controls=\"play-select-preferences
 for (const selector of ['.play-select-preferences-panel','.play-select-preference-grid','.play-select-preference-option','.play-select-preferences-status']) {
   assert.ok(entertainmentStyles.includes(selector), 'Premium responsive preferences style missing: ' + selector);
 }
+assert.ok(entertainmentStyles.includes('.play-select-service.is-limited-verification{border-style:dashed') && entertainmentStyles.includes('cursor:not-allowed'), 'The unverified GARD VPN directory entry must look disabled and must not imply it can be launched as a promo link');
 
 const recommendationMapMatch = source.match(/const recommendationByGame=(\{[\s\S]*?\});/);
 assert.ok(recommendationMapMatch, 'Missing game-specific recommendation map');
