@@ -29,6 +29,8 @@ for (const [label, source] of [['SPA route SEO', app], ['legacy section pages', 
 assert.ok(!app.includes('const seo: Record') && app.includes('const cleanSeo: Record'), 'Only the clean, authoritative SPA SEO registry should remain')
 
 const civicGame = read('public/games/civic-cascade/index.html')
+const civicModule = read('public/games/civic-cascade/src/game.js')
+const civicSimulation = read('public/games/civic-cascade/src/simulation.js')
 const cascadeGame = read('public/games/cascade-lab/index.html')
 const afterimageGame = read('public/games/afterimage-run/index.html')
 const aetherGame = read('public/games/aether-grid/index.html')
@@ -83,9 +85,9 @@ assert.ok(cascadeGame.includes('function buildOsgardCampaignUrl') && cascadeGame
 assert.ok(cascadeGame.includes("buildOsgardCampaignUrl(item.id, 'social_share')") && cascadeGame.includes("buildOsgardCampaignUrl(campaign.id, 'between_levels')") && cascadeGame.includes("destination.protocol !== 'https:'"), 'Both social shares and ad CTAs must use HTTPS-only approved campaign destinations')
 
 
-assert.ok(civicGame.includes('id="cc-save"') && civicGame.includes('id="cc-load"') && civicGame.includes('function saveCheckpoint()') && civicGame.includes('function restoreCheckpoint()'), 'CIVIC CASCADE must provide working local operation checkpoints')
-assert.ok(civicGame.includes("osgard-civic-cascade-checkpoint-v1") && civicGame.includes("localStorage.setItem(CHECKPOINT_KEY") && civicGame.includes("schemaVersion!==1"), 'CIVIC CASCADE checkpoint storage must be versioned and validated')
-assert.ok(civicGame.includes('id="cc-forecast"') && civicGame.includes('function updateForecast()') && /30\s+игровых\s+секунд/i.test(civicGame), 'CIVIC CASCADE must render its approximate 30-second risk outlook')
+assert.ok(civicModule.includes("const RECORDS_STORAGE_KEY = 'cc-records-v1'") && civicModule.includes("const VISUAL_SETTINGS_KEY = 'cc-visual-settings-v130'") && civicModule.includes('function saveScenarioRecords()') && civicModule.includes('function saveVisualSettings()') && civicModule.includes('localStorage.setItem(RECORDS_STORAGE_KEY') && civicModule.includes('localStorage.setItem(VISUAL_SETTINGS_KEY'), 'CIVIC CASCADE must persist per-scenario records and visual preferences locally')
+assert.ok(civicModule.includes('function renderPersonalRecord(') && civicModule.includes('function saveCompletedStrategyRun(') && civicModule.includes('function exportOperationReport(') && civicGame.includes('id="resultOverlay"') && civicGame.includes('id="resultScore"'), 'CIVIC CASCADE must render local records, after-action results and exportable operation reports')
+assert.ok(civicModule.includes('function targetImpactItems(tool, target, forecast)') && civicModule.includes('function paintTargetImpacts(button, tool, target, forecast)') && civicSimulation.includes('export function previewIntervention(') && civicModule.includes('previewIntervention(state, tool, target, 8)'), 'CIVIC CASCADE must preview and display intervention impacts from its actual simulation model')
 assert.ok(hub.includes('11 игровых проектов') && hub.includes('Запустить CIVIC CASCADE') && hub.includes('cc-release-strip') && hub.includes('data-game="afterimage-run"') && hub.includes('data-game="aether-grid"'), 'Entertainment hub must accurately count eleven games and visibly promote AETHER GRID, CIVIC CASCADE and AFTERIMAGE//RUN')
 assert.ok(afterimageGame.includes('<title>AFTERIMAGE//RUN — OSGARD PLAY</title>') && afterimageGame.includes('id="runnerCanvas"') && afterimageGame.includes('id="daily-seed"') && afterimageGame.includes("game:'afterimage-run'"), 'AFTERIMAGE//RUN standalone play page must provide its daily game shell and lifecycle identity')
 assert.ok(detail.includes("id: 'afterimage-run'") && detail.includes("href: '/games/afterimage-run/'"), 'AFTERIMAGE//RUN needs a dedicated game-detail record with its real launch route')
