@@ -51,6 +51,14 @@ test('lifetime Player Lab aggregates survive the bounded recent-launch log', () 
   assert.match(js, /const days = stats\.activityDays\.length/);
   assert.match(js, /return \{ schema: 1, launches, totalLaunches, gameIdsEver, activityDays, secondsByGame, completions \}/, 'Exports/imports must preserve the validated aggregates');
 });
+test('Player Lab measures visible game time with a monotonic clock', () => {
+  assert.match(js, /const monotonicNow = \(\) =>[\s\S]*performance\.now\(\)/);
+  assert.match(js, /activeStartedMonotonic = monotonicNow\(\)/);
+  assert.match(js, /const now = monotonicNow\(\)/);
+  assert.match(js, /visibilitychange', \(\) => \{ lastTick = monotonicNow\(\); \}/);
+  assert.match(js, /new Date\(activeWallAt\)\.toISOString\(\)/, 'Launch timestamps must remain wall-clock dates');
+  assert.doesNotMatch(js, /\(Date\.now\(\) - lastTick\) \/ 1000/, 'Session duration must not be derived from wall-clock changes');
+});
 test('the interface has responsive touch and reduced-motion contracts', () => {
   assert.match(css, /@media\(max-width:680px\)/);
   assert.match(css, /min-height:44px/);
