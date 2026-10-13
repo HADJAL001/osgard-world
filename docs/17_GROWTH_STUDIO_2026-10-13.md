@@ -7,6 +7,10 @@ Branch: feat/osgard-growth-studio-2026-10-13
 The Games portal already has a local revenue-scenario calculator, consent-gated event ingestion, a referral ribbon and post-session sharing, plus Partner Studio enquiries. This page fills a different gap: a repeatable, exportable campaign-brief workflow for game referrals and sponsor-pilot planning.
 
 ## Included
+
+- OSGARD SELECT service cards now emit first-party, consent-gated exposure and click events. An exposure is counted only when a clickable owned-service card is at least 50% visible for one second; unsupported browsers do not emit a synthetic exposure.
+- The commerce API records `owned_promo_impression` and the existing `cross_promo_clicked` event with a source that identifies both service and game.
+- The protected commerce dashboard reports visible exposures, clicks and CTR by own service and originating game over the last 30 days. These metrics count browser-confirmed visibility opportunities, not unique people, paid ad-network impressions, downstream conversions or revenue.
 - Standalone route /games/growth-studio/.
 - Invite URL matching the existing catalog route (challenge, ref and UTM fields). Referral tokens are random opaque 12-hex values generated in the browser and contain no contact details.
 - Offline-generated 1200×630 PNG share card.

@@ -45,6 +45,15 @@ test("analytics is disabled unless consent is explicit and event names are allow
   assert.equal(validateEventBatch({ consent: true, events: [{ ...event, name: "steal_customer_emails" }] }).ok, false);
   assert.equal(validateEventBatch({ consent: true, events: [event] }).ok, true);
   assert.equal(validateEventBatch({ consent: true, events: [{ ...event, gameId: "cascade-lab" }] }).ok, true);
+  assert.equal(
+    validateEventBatch({ consent: true, events: [{ ...event, name: "owned_promo_impression", source: "osgard-select:impression:marcosa:swarm", eventId: "evt_promo_impression_123" }] }).ok,
+    true,
+    "A genuinely visible, consented OSGARD SELECT card should be measurable",
+  );
+  assert.equal(
+    validateEventBatch({ consent: false, events: [{ ...event, name: "owned_promo_impression", eventId: "evt_promo_impression_124" }] }).code,
+    "ANALYTICS_CONSENT_REQUIRED",
+  );
 });
 
 test("consented analytics accept stable event IDs and new page-view events, while rejecting malformed IDs", () => {

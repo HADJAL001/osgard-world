@@ -80,6 +80,7 @@ async function sendEvent(name,gameId,source){
   return response.ok;
  }catch{return false}finally{if(controller)pendingTelemetry.delete(controller)}
 }
+window.OSGARDGrowthTelemetry=Object.freeze({sendEvent});
 function incomingInvite(){
  const params=new URLSearchParams(location.search);
  const source=params.get('utm_source')||'',medium=params.get('utm_medium')||'',campaign=params.get('utm_campaign')||'';
@@ -282,9 +283,32 @@ function servicesShelf(gameId){
  services.forEach(([id,num,title,category,description,href,featured=false,active=true])=>{
   const card=make(active===false?'article':'a','og-postgame-service-card'+(featured?' is-featured':'')+(active===false?' is-unavailable':''));
   card.dataset.service=id;card.dataset.game=gameId;card.dataset.category=categoryByService[id]||'other';cards.push(card);
-  if(active!==false){const u=new URL(href);u.searchParams.set('utm_source','osgard_games');u.searchParams.set('utm_medium','post_game');u.searchParams.set('utm_campaign','after_game');u.searchParams.set('utm_content',id+'_'+gameId);card.href=u.href;card.target='_blank';card.rel='noopener noreferrer';card.setAttribute('aria-label','Открыть '+title+' в новой вкладке')}
+  if(active!==false){
+   const u=new URL(href);u.searchParams.set('utm_source','osgard_games');u.searchParams.set('utm_medium','post_game');u.searchParams.set('utm_campaign','after_game');u.searchParams.set('utm_content',id+'_'+gameId);card.href=u.href;card.target='_blank';card.rel='noopener noreferrer';card.setAttribute('aria-label','Открыть '+title+' в новой вкладке');
+   card.addEventListener('click',()=>{void window.OSGARDGrowthTelemetry?.sendEvent?.('cross_promo_clicked',gameId,'osgard-select:click:'+id+':'+gameId)});
+  }
   card.append(make('span','og-postgame-service-code','OSG / '+num+' · '+category),make('strong','og-postgame-service-name',title),make('span','og-postgame-service-description',description),make('span','og-postgame-service-action',active===false?'Пока не продвигается':'Открыть проект ↗'));grid.append(card);
  });
+ // Measure only a consented, genuinely visible card (>=50% of the card for at least one second).
+ // These are first-party service exposures, not third-party ad-network impressions.
+ if(typeof IntersectionObserver==='function'){
+  const observed=new Set(),observer=new IntersectionObserver(entries=>{
+   entries.forEach(entry=>{
+    const card=entry.target;
+    if(entry.isIntersecting&&entry.intersectionRatio>=0.5&&!observed.has(card)){
+     if(card.__osgardImpressionTimer)return;
+     card.__osgardImpressionTimer=setTimeout(()=>{
+      delete card.__osgardImpressionTimer;
+      if(!consented()||!card.isConnected)return;
+      observed.add(card);
+      void window.OSGARDGrowthTelemetry?.sendEvent?.('owned_promo_impression',gameId,'osgard-select:impression:'+card.dataset.service+':'+gameId);
+      observer.unobserve(card);
+     },1000);
+    }else if(card.__osgardImpressionTimer){clearTimeout(card.__osgardImpressionTimer);delete card.__osgardImpressionTimer}
+   });
+  },{threshold:[0,0.5,1]});
+  cards.filter(card=>card.tagName==='A').forEach(card=>observer.observe(card));
+ }
  const foot=make('p','og-postgame-service-foot','Переход добровольный, откроется в отдельной вкладке. Текущий результат игры сохранится.');
  filterButtons.forEach(button=>button.addEventListener('click',()=>{const selected=button.dataset.osgardServiceFilter||'all';filterButtons.forEach(item=>item.setAttribute('aria-pressed',String(item===button)));cards.forEach(card=>{card.hidden=selected!=='all'&&card.dataset.category!==selected})}));
  toggle.addEventListener('click',()=>{const collapsed=!grid.hidden;grid.hidden=collapsed;filters.hidden=collapsed;toggle.textContent=collapsed?'Показать проекты · 10':'Свернуть подборку';toggle.setAttribute('aria-expanded',String(!collapsed))});
