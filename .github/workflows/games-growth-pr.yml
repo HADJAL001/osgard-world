@@ -42,6 +42,8 @@ jobs:
         run: npm run check
       - name: Games hub and share reward contracts
         run: npm run qa:games-portal
+      - name: Player Passport progression, storage and share safety
+        run: npm run qa:player-passport
       - name: Game detail routes and player lifecycle
         run: npm run qa:games-detail
       - name: Game economy and monetization assumptions
