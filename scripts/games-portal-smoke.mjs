@@ -160,14 +160,16 @@ assert.ok(lifecycle.includes("document.dispatchEvent(new Event('osgard:game-laun
 assert.ok(recommendationScript.includes("document.addEventListener('osgard:game-completed'")&&recommendationScript.includes("document.addEventListener('osgard:game-launching'"),'Recommendation module must subscribe to game lifecycle events')
 assert.ok(recommendationStyles.includes('.post-run-recommendations')&&recommendationStyles.includes('prefers-reduced-motion:reduce'),'Recommendation shelf must have responsive/reduced-motion styling')
 new Function(recommendationScript)
-const mockNode=()=>({className:'',textContent:'',hidden:false,dataset:{},children:[],append(...nodes){this.children.push(...nodes)},replaceChildren(...nodes){this.children=nodes}})
+const mockNode=()=>({className:'',textContent:'',hidden:false,dataset:{},attributes:{},children:[],append(...nodes){this.children.push(...nodes)},replaceChildren(...nodes){this.children=nodes},setAttribute(name,value){this.attributes[name]=value},addEventListener(){},querySelector(selector){return selector.startsWith('.')?this.children.find(node=>node.className===selector.slice(1))||null:null}})
 const mockHost=mockNode();mockHost.hidden=true
 const mockClasses=new Set()
 const mockDialog={classList:{add(name){mockClasses.add(name)},remove(name){mockClasses.delete(name)},contains(name){return mockClasses.has(name)}}}
 const mockHandlers={}
-const mockDocument={querySelector(selector){return selector==='#post-run-recommendations'?mockHost:selector==='#player-dialog'?mockDialog:null},createElement(){return mockNode()},addEventListener(name,handler){mockHandlers[name]=handler},dispatch(name,event={}){assert.equal(typeof mockHandlers[name],'function','Missing recommendation lifecycle listener: '+name);mockHandlers[name](event)}}
-new Function('document',recommendationScript)(mockDocument)
+const mockHead=mockNode()
+const mockDocument={head:mockHead,querySelector(selector){return selector==='#post-run-recommendations'?mockHost:selector==='#player-dialog'?mockDialog:null},createElement(){return mockNode()},addEventListener(name,handler){(mockHandlers[name]??=[]).push(handler)},dispatch(name,event={}){const handlers=mockHandlers[name]||[];assert.ok(handlers.length,'Missing recommendation/growth lifecycle listener: '+name);handlers.forEach(handler=>handler(event))}}
+new Function('document','window','location',recommendationScript)(mockDocument,{}, {search:'',origin:'https://osgard.world',pathname:'/games/'})
 mockDocument.dispatch('osgard:game-completed',{detail:{game:'swarm'}})
+assert.equal(mockHandlers['osgard:game-completed'].length,2,'Recommendation shelf and invite loop must both subscribe to completed sessions')
 assert.equal(mockHost.hidden,false,'Completed SWARM session should show recommendations')
 assert.equal(mockClasses.has('has-recommendations'),true,'The player layout should adapt after completion')
 assert.deepEqual(mockHost.children[2].children.map(node=>node.dataset.play),['null-shift','signal-run'],'SWARM should recommend two related live games')
