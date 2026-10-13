@@ -4,6 +4,7 @@ import vm from 'node:vm';
 
 const read=(path)=>readFileSync(path,'utf8');
 const remix=read('public/games/remix/index.html');
+const sitemap=read('public/sitemap.xml');
 const partners=read('public/games/partners/partners.js');
 const manifest=read('src/core/manifest.ts');
 const checks=[];
@@ -11,6 +12,7 @@ function check(name,fn){
   try{fn();checks.push({name,pass:true});console.log('PASS',name)}
   catch(error){checks.push({name,pass:false,error:String(error)});console.error('FAIL',name,error.message)}
 }
+check('REMIX uses the canonical OSGARD WORLD brand URL',()=>{ assert.ok(remix.includes('<title>REMIX — OSGARD WORLD GAMING</title>')); assert.ok(remix.includes('href="https://osgard.world/games/remix/"')); assert.ok(sitemap.includes('<loc>https://osgard.world/games/remix/</loc>')); });
 check('inline REMIX browser script parses',()=>{
   const blocks=[...remix.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
   assert.ok(blocks.length>0,'no inline scripts');

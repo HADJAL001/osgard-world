@@ -11,7 +11,7 @@ The existing REMIX design centres on create → publish → play → submit reco
 3. **Share and clipboard fallback.** Native Web Share is invoked only after an explicit user action; browsers without it fall back to clipboard/prompt.
 4. **PNG result card.** After the server reports RESULTS, a branded 1200×630 image contains the challenge ID, seed, result summary and challenge framing. Supported devices can share the image; other browsers download it.
 5. **Post-session sponsor inquiry.** A clearly labelled Partner Studio CTA becomes visible only after RESULTS, never over active controls. UTM and the sponsored-event format are passed to the existing inquiry page. No active campaign, ad impression or sponsor deal is fabricated.
-6. **Authenticated first-party event logging.** Event uploads use the same-origin /api/v1/player/events endpoint only if an OSGARD token exists. Guest play is not blocked.
+6. **Authenticated, consent-gated first-party event logging.** Event uploads use the same-origin `/api/v1/player/events` endpoint only when the player has explicitly opted into analytics and an OSGARD token exists. Guest play is not blocked.
 7. **Partner lead attribution.** The Partner Studio form preselects the format and carries allowlisted UTM fields into its user-confirmed WhatsApp draft.
 8. **CI gate.** The command qa:remix-growth validates the sharing funnel, daily seed, server-result gating, attribution, analytics access checks, and existing Unity WebGL route before the self-hosted deploy stage.
 
