@@ -77,7 +77,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         : route === '/games/signal-run/'
           ? text.includes('<title>SIGNAL RUN — OSGARD WORLD</title>') && text.includes('id="arena"') && text.includes('game.js')
                 : route === '/games/afterimage-run/'
-          ? text.includes('<title>AFTERIMAGE//RUN — OSGARD PLAY</title>') && text.includes('id="runnerCanvas"') && text.includes('id="run-start"') && text.includes('id="daily-seed"') && text.includes('id="share-telegram"') && text.includes('osgard:game-lifecycle')
+          ? text.includes('<title>AFTERIMAGE//RUN — OSGARD PLAY</title>') && text.includes('id="runnerCanvas"') && text.includes('id="run-start"') && text.includes('id="daily-seed"') && text.includes('id="share-telegram"') && text.includes("life('share_created',{shareMethod:method==='web-share'?'web-share':'clipboard',challengeScore:Math.floor(game.score||daily.best||0)})") && text.includes('osgard:game-lifecycle')
         : route === '/games/cascade-lab/'
           ? text.includes('<title>CASCADE LAB — Premium Physics Lab 0.13.0</title>') &&
             text.includes('name="osgard-game-version" content="0.13.0-osgard-cross-promo"') &&
@@ -151,7 +151,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
              : path === '/games/game-session-recommendations.css'
                ? content.includes('.post-run-recommendations') && content.includes('prefers-reduced-motion:reduce')
              : path === '/games/invite/invite-landing.js'
-               ? content.includes("const validGameIds = new Set(") && content.includes("name: 'referral_link_opened'") && content.includes("localStorage.getItem('osgard.games.analytics-consent.v1') === 'yes'") && content.includes("sessionStorage.setItem(marker, 'pending')") && content.includes("target.searchParams.set('utm_campaign', campaign)")
+               ? content.includes("const validGameIds = new Set(") && content.includes("name: 'referral_link_opened'") && content.includes("localStorage.getItem('osgard.games.analytics-consent.v1') === 'yes'") && content.includes("sessionStorage.setItem(marker, 'pending')") && content.includes("target.searchParams.set('utm_campaign', campaign)") && content.includes("target.searchParams.set('seed', sharedSeed)") && content.includes("target.searchParams.set('score', String(sharedScore))")
              : path === '/games/daily-circuit.js'
                ? content.includes('OSGARDDailyCircuitCore') && content.includes('navigator.share') && content.includes('daily_circuit')
              : path === '/games/daily-circuit.css'
