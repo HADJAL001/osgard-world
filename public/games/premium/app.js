@@ -60,6 +60,24 @@
     const config = await readConfig();
     return String(config.apiBaseUrl || '/commerce-api').replace(/\/+$/, '');
   }
+  const attributionGameIds = new Set([
+    'null-shift', 'time', 'swarm', 'inherit', 'remix',
+    'civic-cascade', 'patina', 'signal-run', 'cascade-lab', 'afterimage-run',
+  ]);
+  const safeSlug = value => {
+    const candidate = String(value || '').trim().toLowerCase();
+    return /^[a-z0-9][a-z0-9_-]{0,47}$/.test(candidate) ? candidate : '';
+  };
+  function checkoutAttribution() {
+    const query = new URLSearchParams(location.search);
+    const gameCandidate = [query.get('game'), query.get('game_id'), query.get('utm_content')]
+      .map(safeSlug).find(value => value && attributionGameIds.has(value)) || 'unknown';
+    return {
+      gameId: gameCandidate,
+      source: safeSlug(query.get('utm_source') || query.get('source')) || 'direct',
+      campaign: safeSlug(query.get('utm_campaign')) || '',
+    };
+  }
   async function sendEvent(name) {
     let consent = false;
     try { consent = consentBox.checked && localStorage.getItem('osgard.games.analytics-consent.v1') === 'yes'; } catch {}
@@ -104,7 +122,7 @@
       const response = await fetch(base + '/v1/checkout/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productKey: item.key, email: email.value.trim(), termsAccepted: true }),
+        body: JSON.stringify({ productKey: item.key, email: email.value.trim(), termsAccepted: true, attribution: checkoutAttribution() }),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok || typeof result.url !== 'string') {
