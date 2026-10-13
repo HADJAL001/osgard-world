@@ -453,7 +453,7 @@ export function GameDetailPage({ slug }: { slug: string }) {
                   'signal-run': /signal\s*run/i,
                   'civic-cascade': /civic\s*cascade/i,
                   patina: /patina\s*atelier/i,
-                  'aether-grid': /aether\\s*grid/i,
+                  'aether-grid': /aether\s*grid/i,
                 }
                 const validTitle = game.id === 'time'
                   ? Boolean(frameDocument?.querySelector('.time-game'))
