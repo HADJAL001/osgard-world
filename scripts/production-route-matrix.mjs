@@ -50,6 +50,8 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
           ? (() => { try { const config = JSON.parse(text); return typeof config.apiBaseUrl === 'string' && !/(sk_(?:live|test)_|whsec_)/i.test(text) } catch { return false } })()
         : route === '/games/commerce-client.js'
           ? text.includes('/v1/leads') && text.includes('wa.me/79640027222') && !/(sk_(?:live|test)_|whsec_)/i.test(text)
+        : route === '/games/operations/'
+          ? text.includes('<title>OSGARD PLAY — диагностика публикации</title>') && text.includes('id="run-checks"') && text.includes('const TARGETS = [') && text.includes("reportType:'osgard-games-readonly-route-health'") && text.includes("credentials: 'omit'")
         : route === '/games/admin/'
           ? text.includes('<meta name="robots" content="noindex,nofollow,noarchive">') && text.includes('id="access-form"') && text.includes('X-Moderation-Token') && text.includes('/api/v1/analytics/summary')
       : route === '/games/admin/partners/'
@@ -177,7 +179,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
              : path === '/games/daily-circuit.css'
                ? content.includes('.daily-circuit-grid') && content.includes('prefers-reduced-motion:reduce')
              : path === '/games/consented-analytics.js'
-              ? content.includes('window.OSGARD_CONSENTED_ANALYTICS') && content.includes('MAX_PENDING = 100') && content.includes('MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000') && content.includes('result?.accepted')
+              ? content.includes('window.OSGARD_CONSENTED_ANALYTICS') && content.includes('analytics-pending.v1') && content.includes('analytics-consent.v1') && content.includes('referral_link_opened') && content.includes('game_session_completed') && content.includes('/v1/events') && content.includes('accepted')
              : path === '/games/player-lifecycle.js'
               ? content.includes('function startSession(') && content.includes('game_session_completed') && content.includes('osgard:game-lifecycle') && content.includes('event.source!==frame.contentWindow')
               : path.endsWith('.css')

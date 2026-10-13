@@ -203,3 +203,11 @@ A new Godot-native growth slice is implemented and covered by the headless runti
 - A blank apiBaseUrl in commerce-config.json is surfaced as a warning, not as working payments or revenue. A configured HTTPS URL still does not prove that the API, checkout or payment webhooks work.
 - Added scripts/games-operations-smoke.mjs, npm run qa:games-operations, a pre-deploy check, and /games/operations/ to the production route matrix. A pull-request CI workflow also type-checks and runs the Games smoke suite before merge.
 - This improves release observability, not the currently documented commercial limitations: ad network approval, production checkout/payment webhooks, a server-backed CMS and manual physical-device gameplay verification remain separate release tasks.
+
+### Production verification follow-up — 13 October 2026
+
+- The first post-deploy matrix executed 150 route/device checks; six failed. Investigation separated two causes: the new Operations route returned HTTP 200 but had no explicit shell contract in the matrix, and the consented analytics asset was minified by esbuild while the matrix required source-format spaces and an exact optional-chain expression.
+- The Operations route now has an explicit contract: page title, run control, route target declaration, report schema and same-origin credential policy must be present.
+- Production consent analytics validation now checks stable public markers that survive minification (queue/consent keys, allowed event names, API endpoint and exported surface). The detailed unit smoke continues to test the original queue limits and acknowledgement/retry/consent behavior.
+- The route-matrix smoke suite asserts that the production checker recognizes Operations explicitly and does not regress to minifier-fragile formatting assertions.
+- The server activation step completed, but that release's production route verification failed on the six checks above. The follow-up CI and deployment must pass the full desktop/mobile matrix before this release can be treated as verified. This correction is a release-pipeline repair, not a claim that all production checks have already passed.

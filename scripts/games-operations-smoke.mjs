@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
+const productionMatrix = readFileSync('scripts/production-route-matrix.mjs', 'utf8');
 
 const page = readFileSync('public/games/operations/index.html', 'utf8');
 const match = page.match(/const TARGETS = (\[[\s\S]*?\n  \]);/);
@@ -64,6 +65,9 @@ for (const contract of [
 assert.ok(!/<script\b[^>]*\bsrc=["']https?:\/\//i.test(page), 'Operations console must not load third-party scripts');
 assert.ok(!/<link\b[^>]*\brel=["']stylesheet["'][^>]*\bhref=["']https?:\/\//i.test(page), 'Operations console must not load third-party stylesheets');
 assert.ok(!/localStorage|sessionStorage|document\.cookie/i.test(page), 'Read-only route health must not persist browser data or read cookies');
+assert.ok(productionMatrix.includes("route === '/games/operations/'") && productionMatrix.includes("reportType:'osgard-games-readonly-route-health'"), 'Production route matrix must recognize the operations console rather than fall through to the SPA root contract');
+assert.ok(productionMatrix.includes("content.includes('analytics-pending.v1')") && productionMatrix.includes("content.includes('/v1/events')"), 'Published minified consent analytics must be checked with stable behavior markers');
+assert.ok(!productionMatrix.includes("content.includes('MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000')") && !productionMatrix.includes("content.includes('result?.accepted')"), 'Production matrix must not rely on spacing or identifiers rewritten by minification');
 assert.ok(!/\b(?:POST|PUT|PATCH|DELETE)\b/.test(page), 'Route health must not mutate service state');
 assert.ok(page.includes('status:response.status') && page.includes('checkedAt:new Date().toISOString()'), 'JSON report must preserve actual HTTP status and check time');
 assert.ok(page.includes('HTTP-ответ совпадает с базовым контрактом') && page.includes('не доказывает успешный запуск игры'), 'UI must clearly distinguish route availability from playable runtime validation');
