@@ -7,7 +7,7 @@ const WIDTH = 1200;
 const HEIGHT = 630;
 const GAMES = [
   { id: 'null-shift', title: 'NULL//SHIFT', colour: [211, 255, 105], order: '01 / 09' },
-  { id: 'time', title: 'EMPIRE OF TIME', colour: [220, 195, 132], order: '02 / 09' },
+  { id: 'time', title: 'Империя времени', cardTitle: 'EMPIRE OF TIME', colour: [220, 195, 132], order: '02 / 09' },
   { id: 'swarm', title: 'SWARM', colour: [255, 151, 103], order: '03 / 09' },
   { id: 'inherit', title: 'INHERIT', colour: [120, 228, 255], order: '04 / 09' },
   { id: 'remix', title: 'REMIX', colour: [186, 150, 255], order: '05 / 09' },
@@ -160,8 +160,8 @@ function makeCard(game) {
   drawText(data, 'OSGARD PLAY', 74, 94, 4, game.colour, 255);
   drawText(data, 'PERSONAL INVITATION', 76, 151, 2, mutedBright, 230);
   line(data, 76, 190, 400, 190, lineDark, 1.2, 230);
-  const titleScale = Math.min(8, Math.floor(640 / (game.title.length * 6)));
-  drawText(data, game.title, 74, 252, Math.max(5, titleScale), [244, 242, 232], 255);
+  const titleScale = Math.min(8, Math.floor(640 / ((game.cardTitle || game.title).length * 6)));
+  drawText(data, game.cardTitle || game.title, 74, 252, Math.max(5, titleScale), [244, 242, 232], 255);
   drawText(data, 'PLAY TOGETHER', 76, 337, 3, game.colour, 240);
   drawText(data, 'ONE WORLD. YOUR NEXT MOVE.', 76, 382, 2, mutedBright, 210);
   drawText(data, game.order, 76, 526, 2, muted, 230);
