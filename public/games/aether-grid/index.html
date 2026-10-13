@@ -46,6 +46,17 @@ h1,h2,h3,p{margin-top:0}h1{max-width:760px;margin-bottom:18px;font:400 clamp(54p
 @media(max-width:420px){.head-nav a:first-child{display:none}.wrap{width:calc(100% - 20px)}.board{gap:3px;padding:4px}.side{grid-template-columns:1fr}.side-card:first-child{grid-column:auto}.tile .cell-tag{font-size:5px}.controls .btn{font-size:10px;min-height:39px;padding:0 8px}}
 .partner-cta{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:15px;padding:11px 12px;border:1px solid #dfc78338;background:#dfc78308;color:#dfc783;font-size:10px;line-height:1.6}.partner-cta:hover{border-color:#dfc78388;background:#dfc78312}.partner-cta:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+.advanced-controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;padding-top:13px;border-top:1px solid var(--line)}
+.advanced-controls .btn{min-height:40px;padding:9px 12px;font-size:10px}
+.advanced-controls .btn[aria-pressed="true"]{border-color:var(--cyan);background:#77e9e612;color:var(--cyan)}
+.run-progress{margin:16px 0 4px;padding:14px;border:1px solid #77e9e625;background:#77e9e606}
+.run-progress-head{display:flex;justify-content:space-between;gap:12px;align-items:center;color:#aababc;font-size:10px}.run-progress-head strong{font:12px var(--mono);color:var(--cyan)}
+.run-progress-track{height:5px;margin-top:10px;overflow:hidden;background:#ffffff12}.run-progress-fill{height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--green));transition:width .18s ease}
+.personal-records{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:12px}
+.personal-record{padding:10px 8px;border:1px solid var(--line);background:#ffffff03}.personal-record small{display:block;color:var(--soft);font:8px var(--mono);letter-spacing:.07em}.personal-record b{display:block;margin-top:5px;color:var(--gold);font:19px var(--serif);overflow-wrap:anywhere}
+@media(max-width:480px){.personal-records{grid-template-columns:repeat(3,minmax(0,1fr))}.personal-record{padding:8px 6px}.personal-record b{font-size:16px}.advanced-controls .btn{flex:1 1 42%}}
+body.high-contrast{--muted:#d7e4e5;--soft:#b7c7ca;--line:#ffffff4d;--cyan:#9ffffb;--gold:#ffe59c}
+body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{stroke-width:7}
 </style>
 </head>
 <body data-aether-grid-ready="true">
@@ -69,6 +80,15 @@ h1,h2,h3,p{margin-top:0}h1{max-width:760px;margin-bottom:18px;font:400 clamp(54p
         <button class="btn" id="reset-button" type="button">↺ Сбросить сетку</button>
         <button class="btn primary" id="share-button" type="button">Вызвать друга ↗</button>
       </div>
+      <div class="advanced-controls" id="advanced-controls" aria-label="Дополнительные инструменты">
+        <button class="btn" id="undo-button" type="button" disabled aria-keyshortcuts="Control+Z">↶ Отменить</button>
+        <button class="btn" id="redo-button" type="button" disabled aria-keyshortcuts="Control+Y">↷ Повторить</button>
+        <button class="btn" id="pause-button" type="button" aria-pressed="false">Ⅱ Пауза</button>
+        <button class="btn" id="sound-button" type="button" aria-pressed="false">♫ Звук: выкл.</button>
+        <button class="btn" id="contrast-button" type="button" aria-pressed="false">◐ Контраст: выкл.</button>
+        <button class="btn" id="haptics-button" type="button" aria-pressed="false">⌁ Вибрация: выкл.</button>
+        <button class="btn" id="export-button" type="button">⇩ Экспорт результата</button>
+      </div>
       <p class="hint-note" id="hint-note" role="status" aria-live="polite">Нажимай на узлы, чтобы поворачивать соединения по часовой стрелке.</p>
     </section>
 
@@ -76,6 +96,15 @@ h1,h2,h3,p{margin-top:0}h1{max-width:760px;margin-bottom:18px;font:400 clamp(54p
       <section class="side-card"><p class="eyebrow">02 / YOUR RUN</p><h2>Текущая попытка</h2><p>Результат хранится в этом браузере. Общего рейтинга пока нет — сравнивай ходы напрямую с друзьями.</p>
         <div class="metrics"><div class="metric"><small>ХОДЫ</small><b id="moves">00</b></div><div class="metric"><small>ВРЕМЯ</small><b id="timer">00<em>s</em></b></div></div>
         <div class="best"><span>Лучший результат сегодня</span><b id="best-score">—</b></div>
+        <div class="run-progress" aria-label="Прогресс сборки сигнала">
+          <div class="run-progress-head"><span>СИГНАЛ / СОЕДИНЁННЫЕ УЗЛЫ</span><strong id="connected-count">1 / 25</strong></div>
+          <div class="run-progress-track" role="progressbar" id="connected-progress" aria-label="Количество соединённых узлов" aria-valuemin="0" aria-valuemax="25" aria-valuenow="1"><div class="run-progress-fill" id="connected-progress-fill"></div></div>
+        </div>
+        <div class="personal-records" aria-label="Личная статистика">
+          <div class="personal-record"><small>ПОБЕДЫ</small><b id="total-solves">0</b></div>
+          <div class="personal-record"><small>СЕРИЯ ДНЕЙ</small><b id="win-streak">0</b></div>
+          <div class="personal-record"><small>РЕКОРД ХОДОВ</small><b id="alltime-best">—</b></div>
+        </div>
         <div class="result" id="result"><p class="eyebrow">SIGNAL CONNECTED</p><h3 id="result-title">Маршрут собран.</h3><p id="result-copy">Твой результат готов к сравнению.</p><button class="btn primary" id="share-result" type="button">Поделиться результатом ↗</button></div>
       </section>
       <section class="side-card"><p class="eyebrow">03 / HOW TO PLAY</p><h2>Правила</h2><ol class="instructions"><li>Каждый узел поворачивается на 90° по нажатию.</li><li>Соедини внешний источник слева с ядром справа внизу.</li><li>Подсказка исправляет один узел, но добавляет 3 хода.</li><li>Сброс возвращает исходную одинаковую сетку дня.</li></ol><div class="mini-meta"><span>5 × 5 NODES</span><span>NO INSTALL / NO LOGIN</span></div><a class="partner-cta" href="/games/partners/?utm_source=osgard_play&amp;utm_medium=game_page&amp;utm_campaign=daily_challenge&amp;utm_content=aether_grid">Для брендов: спонсировать следующий ежедневный вызов ↗</a></section>
