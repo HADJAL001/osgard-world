@@ -44,6 +44,8 @@ jobs:
         run: npm run qa:games-operations
       - name: Games catalog and consented analytics regression
         run: npm run qa:games-portal
+      - name: Player Passport progression, storage and share safety
+        run: npm run qa:player-passport
       - name: Game detail and route contract regression
         run: npm run qa:games-detail
       - name: Economy model regression
