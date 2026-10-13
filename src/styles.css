@@ -341,3 +341,14 @@ header nav .nav-skillcred svg{width:14px}
 @media(max-width:900px){.play-select-header{align-items:flex-start;flex-direction:column}.play-select-layout{grid-template-columns:1fr}.play-select-referral{display:flex;align-items:flex-start}.play-select-wallet,.play-select-share-primary{width:100%}}
 @media(max-width:600px){.play-select-loop{padding:15px}.play-select-disclosure{white-space:normal}.play-select-service-grid{grid-template-columns:1fr}.play-select-service{min-height:116px;padding:14px}.play-select-referral{padding:15px}.play-select-header h3{font-size:31px}.play-select-wallet,.play-select-share-primary{width:100%}}
 @media(prefers-reduced-motion:reduce){.play-select-service{transition:none}.play-select-service:hover{transform:none}}
+
+
+/* Explicit consent for server-verified OSGARD PLAY referrals on the Entertainment gateway. */
+.play-select-consents{display:grid;gap:9px;width:100%;padding:12px;border:1px solid rgba(215,185,120,.2);background:rgba(255,255,255,.015)}
+.play-select-consents label{display:flex;align-items:flex-start;gap:9px;color:rgba(225,235,249,.75);font-size:10px;line-height:1.6;cursor:pointer}
+.play-select-consents input{flex:0 0 auto;width:15px;height:15px;margin:2px 0 0;accent-color:#dfc787}
+.play-select-consents label:focus-within{outline:1px solid #e3ce99;outline-offset:4px}
+.play-select-share-networks a:hover{border-color:rgba(215,185,120,.6);color:#f2dfaa}
+.play-select-share-primary:disabled{opacity:.48;cursor:wait}
+@media(max-width:600px){.play-select-consents{padding:10px}.play-select-consents label{font-size:11px;line-height:1.65}}
+@media(prefers-reduced-motion:reduce){.play-select-consents *{scroll-behavior:auto;transition:none;animation:none}}
