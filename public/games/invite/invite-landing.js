@@ -32,9 +32,12 @@
     medium === 'share' &&
     campaign === 'challenge' &&
     (validDailyMode || validOrdinaryMode);
+  const afterimageScoreText = params.get('challenge') || '';
+  const afterimageScoreValid = /^(?:0|[1-9]\d{0,7})$/.test(afterimageScoreText) &&
+    Number.isSafeInteger(scoreValue) && scoreValue >= 0 && scoreValue <= 99999999;
   const afterimageChallenge = game === 'afterimage-run' &&
     params.get('og_challenge') === 'afterimage-run' &&
-    Number.isSafeInteger(scoreValue) && scoreValue >= 0 && scoreValue <= 99999999 &&
+    afterimageScoreValid &&
     validDailyMode;
   const play = document.querySelector('#play-link');
   if (play) {
