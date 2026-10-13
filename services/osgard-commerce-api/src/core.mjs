@@ -113,6 +113,47 @@ export function validateLeadPayload(body) {
   return { ok: true, bot: false, projectType, budget, contact, description };
 }
 
+const FEEDBACK_CATEGORIES = new Set(["gameplay", "controls", "difficulty", "performance", "bug", "idea", "other"]);
+const FEEDBACK_RETURN_INTENTS = new Set(["yes", "no", "unsure"]);
+
+export function validateGameFeedbackPayload(body) {
+  const input = body && typeof body === "object" && !Array.isArray(body) ? body : {};
+  if (cleanText(input.website, 200)) return { ok: true, bot: true };
+  if (input.consent !== true) return { ok: false, status: 400, code: "FEEDBACK_CONSENT_REQUIRED" };
+
+  const gameId = cleanText(input.gameId, 40).toLowerCase();
+  if (!GAME_IDS.has(gameId) || gameId === "unknown") return { ok: false, status: 400, code: "GAME_ID_INVALID" };
+
+  const rating = Number(input.rating);
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    return { ok: false, status: 400, code: "FEEDBACK_RATING_INVALID" };
+  }
+
+  const wouldPlayAgain = cleanText(input.wouldPlayAgain, 12).toLowerCase();
+  if (!FEEDBACK_RETURN_INTENTS.has(wouldPlayAgain)) {
+    return { ok: false, status: 400, code: "FEEDBACK_RETURN_INTENT_INVALID" };
+  }
+
+  const category = cleanText(input.category, 32).toLowerCase();
+  if (!FEEDBACK_CATEGORIES.has(category)) return { ok: false, status: 400, code: "FEEDBACK_CATEGORY_INVALID" };
+
+  const rawMessage = input.message === undefined || input.message === null
+    ? ""
+    : typeof input.message === "string" ? input.message : null;
+  if (rawMessage === null) return { ok: false, status: 400, code: "FEEDBACK_MESSAGE_INVALID" };
+  if (rawMessage.length > 1200) return { ok: false, status: 400, code: "FEEDBACK_MESSAGE_TOO_LONG" };
+
+  return {
+    ok: true,
+    bot: false,
+    gameId,
+    rating,
+    wouldPlayAgain,
+    category,
+    message: cleanText(rawMessage, 1200),
+  };
+}
+
 export function validateEventBatch(body) {
   const input = body && typeof body === "object" && !Array.isArray(body) ? body : {};
   if (input.consent !== true) return { ok: false, status: 400, code: "ANALYTICS_CONSENT_REQUIRED" };
