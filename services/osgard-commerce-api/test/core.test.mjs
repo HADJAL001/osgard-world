@@ -11,6 +11,8 @@ import {
   resolveCheckoutPaymentState,
   verifyStripeSignature,
   safeEqual,
+  defaultGameCatalogSettings,
+  validateGameCatalogSettings,
 } from "../src/core.mjs";
 
 test("catalog is a fixed server-side allow-list", () => {
@@ -173,4 +175,58 @@ test("checkout status cannot resurrect a refunded, expired, or cancelled order",
   assert.deepEqual(resolveCheckoutPaymentState("unpaid", "pending"), {
     paid: false, orderStatus: "pending", updateOrderToPaid: false,
   });
+});
+
+test("game catalog settings use the fixed game allow-list and safe defaults", () => {
+  const defaults = defaultGameCatalogSettings();
+  assert.equal(defaults.schemaVersion, 1);
+  assert.equal(defaults.games.length, 10);
+  assert.equal(defaults.games.every((item) => item.visible && !item.featured), true);
+  defaults.games[0].visible = false;
+  assert.equal(defaultGameCatalogSettings().games[0].visible, true);
+});
+
+test("game catalog settings accept valid plain-text edits", () => {
+  const config = defaultGameCatalogSettings();
+  config.games[0].featured = true;
+  config.games[0].titleOverride = "NULL//SHIFT · Featured";
+  config.games[0].descriptionOverride = "Text only.";
+  const result = validateGameCatalogSettings(config);
+  assert.equal(result.ok, true);
+  assert.equal(result.config.games[0].titleOverride, "NULL//SHIFT · Featured");
+  assert.equal(result.config.games[0].order, 1);
+});
+
+test("game catalog settings reject unknown IDs, duplicate order and unknown fields", () => {
+  const unknown = defaultGameCatalogSettings();
+  unknown.games[0].id = "run-arbitrary-code";
+  assert.equal(validateGameCatalogSettings(unknown).code, "GAME_CATALOG_GAME_ID_INVALID");
+  const duplicateOrder = defaultGameCatalogSettings();
+  duplicateOrder.games[1].order = duplicateOrder.games[0].order;
+  assert.equal(validateGameCatalogSettings(duplicateOrder).code, "GAME_CATALOG_ORDER_INVALID");
+  const extraField = defaultGameCatalogSettings();
+  extraField.games[0].targetUrl = "javascript:alert(1)";
+  assert.equal(validateGameCatalogSettings(extraField).code, "GAME_CATALOG_ITEM_FIELDS_INVALID");
+});
+
+test("game catalog settings reject all-hidden, hidden-featured and oversized text", () => {
+  const hidden = defaultGameCatalogSettings();
+  hidden.games.forEach((item) => { item.visible = false; });
+  assert.equal(validateGameCatalogSettings(hidden).code, "GAME_CATALOG_NO_VISIBLE_GAMES");
+  const invalidFeatured = defaultGameCatalogSettings();
+  invalidFeatured.games[0].visible = false;
+  invalidFeatured.games[0].featured = true;
+  assert.equal(validateGameCatalogSettings(invalidFeatured).code, "GAME_CATALOG_HIDDEN_FEATURED");
+  const tooLong = defaultGameCatalogSettings();
+  tooLong.games[0].titleOverride = "x".repeat(101);
+  assert.equal(validateGameCatalogSettings(tooLong).code, "GAME_CATALOG_TITLE_INVALID");
+});
+
+test("game catalog settings cap featured games and require every known game ID", () => {
+  const featured = defaultGameCatalogSettings();
+  featured.games.slice(0, 4).forEach((item) => { item.featured = true; });
+  assert.equal(validateGameCatalogSettings(featured).code, "GAME_CATALOG_TOO_MANY_FEATURED");
+  const missing = defaultGameCatalogSettings();
+  missing.games.pop();
+  assert.equal(validateGameCatalogSettings(missing).code, "GAME_CATALOG_GAME_SET_INVALID");
 });
