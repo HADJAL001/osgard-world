@@ -38,3 +38,11 @@ Run node scripts/growth-studio-smoke.mjs. The test checks identifiers, URL param
 
 ## Deployment boundary
 Changes are proposed via pull request against master. The main site changes only after review, merge and a successful hosting deployment. Test the preview URL on desktop and mobile before running a paid campaign.
+
+
+## Entertainment gateway — OSGARD SELECT + referral loop (13 October 2026)
+
+- Added an OSGARD SELECT module directly to the main OSGARD WORLD Entertainment gateway. Six destinations (MARCOSA, OSGARD PROJECTS, O2 SYSTEM, SENJORIO, SUPERDAY and MYOSA) use campaign-tagged links, with a clear first-party advertising disclosure and no auto-navigation.
+- Added native Web Share / clipboard and dedicated Telegram, WhatsApp, VK, X and Facebook composers using the game-specific `/games/invite/signal-run/` route. Rewards share the existing `osgard.games.shards-wallet.v1` storage key and once-per-UTC-day cap with the post-game reward UI.
+- +50 SHARDS can follow a completed native-share or clipboard action. Social composers require explicit player confirmation on return; the static site cannot independently verify a public post. Points are local and non-monetary, not a secure account balance or cash/paid entitlement.
+- Extended `games-portal-smoke.mjs` to require the destinations, disclosure, shared wallet key, daily cap, cancellation behaviour and responsive/reduced-motion styling.

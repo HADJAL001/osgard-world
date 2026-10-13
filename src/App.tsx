@@ -5,6 +5,7 @@ import { ModuleMark } from './ModuleMark'
 import { OsgardLogo } from './OsgardLogo'
 import { Preloader } from './Preloader'
 import { Development } from './Development'
+import { PlaySelectLoop } from './PlaySelectLoop'
 import { recordOsgardEvent } from './core/eventQueue'
 
 type Locale = 'ru' | 'en'
@@ -59,7 +60,7 @@ function PlayGateway({ locale, goto }: { locale: Locale, goto: (id: string) => v
       <a className="play-economy-primary" href="/games/?utm_source=osgard_world&amp;utm_medium=entertainment&amp;utm_campaign=between_worlds">{ru ? 'Выбрать игру и сервис ↗' : 'Choose a game and service ↗'}</a>
       <a className="play-economy-secondary" href="/games/monetization/?utm_source=osgard_world&amp;utm_medium=entertainment&amp;utm_campaign=economy_model">{ru ? 'Изучить модель экономики ↗' : 'Explore the economy model ↗'}</a>
     </div>
-  </section></section>
+  </section><PlaySelectLoop locale={locale} /></section>
 }
  
 function HeroTitle({ locale }: { locale: Locale }) {
