@@ -73,7 +73,7 @@ function rewardShare(method){
  $('reward-title').textContent='✦ SIGNAL SHARD ПОЛУЧЕНА';
  $('reward-status').textContent='Косметическая награда сохранена на этом устройстве. Публичная публикация поста не проверяется.';
  track('share_created',{method:method,reward:'signal-shard',rewardConfirmedByPlayer:true});
- life('shared',{method:method,rewardConfirmedByPlayer:true});
+ life('share_created',{shareMethod:method==='web-share'?'web-share':'social-share',rewardConfirmedByPlayer:true});
  toast('SIGNAL SHARD получена — косметическая награда на сегодня.');
  return true;
 }
