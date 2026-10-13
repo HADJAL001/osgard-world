@@ -46,5 +46,19 @@ main{overflow:hidden}.wrap{width:min(1120px,calc(100% - 44px));margin-inline:aut
 </div></div></section>
 </main>
 <footer><a class="brand" href="/games/"><svg viewBox="0 0 36 36" aria-hidden="true"><path d="M18 2 32 10v16L18 34 4 26V10Z M18 9 25 13v10l-7 4-7-4V13Z" fill="none" stroke="currentColor" stroke-width="1.25"/></svg><strong>OSGARD<span>WORLD</span></strong><em>PLAY</em></a><div><b>OSGARD PLAY / PARTNER STUDIO</b><small>Спонсорские предложения и заказная разработка.</small><small>© OSGARD 2026</small></div><nav aria-label="Служебные ссылки"><a href="/games/">Каталог игр</a><a href="/privacy/">Конфиденциальность</a><a href="/terms/">Условия</a><a href="mailto:osman.osmanov0099@gmail.com">Связаться</a></nav><p class="footer-note">Пилотная коммерческая страница. Все форматы в каталоге — предложения для обсуждения, не подтверждённые активные рекламные размещения.</p></footer>
+<script>
+(() => {
+  const params = new URLSearchParams(location.search);
+  if (params.get('utm_campaign') !== 'daily_challenge' || params.get('utm_content') !== 'aether_grid') return;
+  const form = document.querySelector('#campaign-form');
+  if (!form) return;
+  const format = form.querySelector('select[name="format"]');
+  if (format) format.value = 'Спонсорское событие или уровень';
+  const brief = form.querySelector('textarea[name="brief"]');
+  if (brief && !brief.value) brief.value = 'Запрос на спонсорство ежедневного вызова AETHER GRID. Нужен формат интеграции, сроки и измеримые результаты. Просьба предложить условия до публикации.';
+  const status = document.querySelector('#form-status');
+  if (status) status.textContent = 'Вы выбрали спонсорство ежедневного вызова AETHER GRID. Проверьте и отредактируйте поля перед отправкой.';
+})();
+</script>
 <script src="./partners.js" defer></script>
 <script src="/games/commerce-client.js" defer></script></body></html>
