@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { resolveIosBuildNumber, resolveIosMarketingVersion } from './ios-release-version.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const builtWeb = process.argv.includes('--built-web');
@@ -19,11 +20,21 @@ const consentedAnalytics = read('public/games/consented-analytics.js');
 const referralAnalytics = read('public/games/game-session-recommendations.js');
 const lifecycleAnalytics = read('public/games/player-lifecycle.js');
 const guide = read('docs/IOS_APP_STORE_CODEMAGIC_RU.md');
+const releaseTagPreflight = read('scripts/ios-release-tag-preflight.mjs');
 
 assert.equal(config.appId, 'com.osgardworld.play');
 assert.equal(config.appName, 'OSGARD PLAY');
 assert.equal(config.webDir, 'dist');
 assert.equal(config.ios.backgroundColor, '#080A0B');
+assert.equal(resolveIosMarketingVersion({ CM_TAG: 'osgard-play-v1.2.3' }), '1.2.3');
+assert.equal(resolveIosMarketingVersion({ APP_VERSION: '2.4.0' }), '2.4.0');
+assert.equal(resolveIosMarketingVersion({}), '1.0.0', 'Manual builds retain a documented default version');
+assert.equal(resolveIosBuildNumber({ BUILD_NUMBER: '42' }), '42');
+assert.equal(resolveIosBuildNumber({}), '1', 'Local preflight has a deterministic fallback build number');
+assert.throws(() => resolveIosMarketingVersion({ CM_TAG: 'osgard-play-vnext' }), /Expected osgard-play-vX\.Y\.Z/);
+assert.throws(() => resolveIosMarketingVersion({ CM_TAG: 'osgard-play-v1.2.3', APP_VERSION: '1.2.4' }), /does not match/);
+assert.throws(() => resolveIosMarketingVersion({ APP_VERSION: 'release-1.0.0' }), /numeric X\.Y\.Z/);
+assert.throws(() => resolveIosBuildNumber({ BUILD_NUMBER: '0' }), /positive integer/);
 assert.ok(!Object.hasOwn(config, 'server') || !config.server.url, 'App must bundle local pages, not a remote website wrapper.');
 assert.ok(codemagic.includes('app_store_connect: OSGARD_PLAY_ASC'), 'App Store Connect integration name missing.');
 assert.ok(codemagic.includes('distribution_type: app_store'), 'Apple App Store distribution signing missing.');
@@ -33,6 +44,9 @@ for (const version of ['@capacitor/core@8.5.3', '@capacitor/cli@8.5.3', '@capaci
   assert.ok(codemagic.includes(version), 'Pinned native dependency missing: ' + version);
 }
 assert.ok(codemagic.includes('xcode-project build-ipa'), 'IPA archive stage missing.');
+assert.ok(codemagic.includes('script: node scripts/ios-release-tag-preflight.mjs'), 'Codemagic must validate its release tag before doing expensive work.');
+assert.ok(codemagic.includes('npm run qa:ios-appstore'), 'Codemagic must run the source preflight during the iOS build.');
+assert.ok(releaseTagPreflight.includes('resolveIosMarketingVersion') && prep.includes('resolveIosMarketingVersion') && prep.includes('resolveIosBuildNumber'), 'Xcode project must use the validated release version and build number.');
 for (const command of [
   'npm run qa:games-portal',
   'npm run qa:games-detail',
