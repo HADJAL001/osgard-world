@@ -31,7 +31,8 @@ function render() {
       '<div class="scenario-breakdown">' +
       '<div><span>Расчётная выручка</span><b>' + money(result.totalRevenueUsd) + '</b></div>' +
       '<div><span>Реклама · условно</span><b>' + money(result.adRevenueUsd) + '</b></div>' +
-      '<div><span>Покупки / первый платёж</span><b>' + money(result.paidRevenueUsd) + '</b></div>' +
+      '<div><span>Покупки / первый платёж</span><b>' + money(result.paidRevenueUsd) + '</b></div>'
+      + '<div><span>Новые посетители (допущение)</span><b>' + count(result.newVisitors) + '</b></div>' +
       '<div><span>Оплаченные проекты</span><b>' + money(result.servicesRevenueUsd) + '</b></div>' +
       '<div><span>Спонсорские размещения (модель)</span><b>' + money(result.sponsorRevenueUsd) + '</b></div>' +
       '<div><span>Расходы и комиссии</span><b>' + money(result.operatingCostUsd + result.paymentFeesUsd) + '</b></div>' +
@@ -40,7 +41,9 @@ function render() {
       '<div><span>Effective active-player K</span><b>' + factor.format(result.activePlayerKFactor) + '</b></div>' +
       '<div><span>Игровые сессии</span><b>' + count(result.sessions) + '</b></div>' +
       '<div><span>Заполненные рекламные показы</span><b>' + count(result.filledAdImpressions) + '</b></div>' +
-      '<div><span>Заявки / оплаченные проекты</span><b>' + count(result.leads) + ' / ' + decimal.format(result.closedProjects) + '</b></div>' +
+      '<div><span>Заявки / обработано / очередь</span><b>' + count(result.leads) + ' / ' + count(result.processedLeads) + ' / ' + count(result.unprocessedLeads) + '</b></div>' +
+      '<div><span>Потенциал / закрыто / лимит проектов</span><b>' + decimal.format(result.potentialClosedProjects) + ' / ' + decimal.format(result.closedProjects) + ' / ' + count(result.maxProjectsPerMonth) + '</b></div>' +
+      '<div><span>Загрузка мощности</span><b>' + percent(result.capacityUtilizationPct) + '</b></div>' +
       '</div></article>';
   }).join('');
   statusNode.textContent = 'Пересчёт выполнен локально. Никакие введённые значения не отправляются на сервер.';
@@ -74,11 +77,17 @@ function render() {
   document.getElementById('target-mix-services').textContent = targetScenario ? money(targetScenario.servicesRevenueUsd) : '—';
   document.getElementById('target-mix-sponsors').textContent = targetScenario ? money(targetScenario.sponsorRevenueUsd) : '—';
   document.getElementById('target-mix-leads-contracts').textContent = targetScenario
-    ? count(targetScenario.leads) + ' заявок / ' + decimal.format(targetScenario.closedProjects) + ' договоров'
+    ? count(targetScenario.leads) + ' / ' + count(targetScenario.processedLeads) + ' / ' + decimal.format(targetScenario.closedProjects) + ' из ' + count(targetScenario.maxProjectsPerMonth)
+    : '—';
+  document.getElementById('target-mix-lead-overflow').textContent = targetScenario
+    ? count(targetScenario.unprocessedLeads)
+    : '—';
+  document.getElementById('target-mix-capacity').textContent = targetScenario
+    ? percent(targetScenario.capacityUtilizationPct)
     : '—';
   const targetStatus = document.getElementById('growth-target-status');
   targetStatus.textContent = requiredMonthlyVisitors === null
-    ? 'При текущих коэффициентах цели не достичь даже в пределах 1 млрд стартовых посещений в месяц. Проверь доли запуска, eCPM, конверсию покупок, заказы и спонсорские договоры.'
+    ? 'При текущих коэффициентах цели не достичь даже в пределах 1 млрд стартовых посещений в месяц. Проверь долю новых посетителей, лимит обработки заявок, delivery capacity, eCPM, конверсию и спонсорские договоры.'
     : requiredMonthlyVisitors === 0
       ? 'Цель покрывается смоделированными договорами/поступлениями без дополнительного стартового трафика. Это допущение, не подтверждённая выручка.'
       : 'Ориентир: ' + count(requiredMonthlyVisitors) + ' стартовых посещений в месяц. Модель включает расчётные приглашения; фактический трафик и выручку нужно измерить.';
@@ -96,7 +105,7 @@ exportButton.addEventListener('click', () => {
   const inputs = readInputs();
   const payload = {
     kind: 'osgard-games-business-model',
-    modelVersion: 3,
+    modelVersion: 4,
     note: 'Illustrative scenario estimate only; referral loop is capped at five generations; required visitors are a bounded reverse calculation; not live analytics or guaranteed revenue.',
     currency: 'USD',
     generatedAt: new Date().toISOString(),

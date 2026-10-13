@@ -22,9 +22,11 @@ assert.ok(page.includes('id="export-json"') && page.includes('id="reset-model"')
 assert.ok(page.includes('prefers-reduced-motion:reduce'), 'Reduced-motion support missing');
 assert.ok(['shareRatePct','invitesPerSharer','inviteConversionPct'].every((id) => page.includes('id="' + id + '"') && page.includes('name="' + id + '"')), 'Viral-loop assumption inputs missing');
 assert.ok(['base-viral-visitors','base-k-factor','active-k-factor-status','base-annual-revenue','million-gap','annual-target-heading','monthly-target-value','required-base-visitors','growth-target-status'].every((id) => page.includes('id="' + id + '"')), 'Annual target, required traffic and referral outputs missing');
-assert.ok(['target-mix-total','target-mix-ads','target-mix-paid','target-mix-services','target-mix-sponsors','target-mix-leads-contracts'].every((id) => page.includes('id="' + id + '"')), 'Target-scale source mix must be visible in the Growth Lab');
-assert.ok(['target-mix-total','target-mix-ads','target-mix-paid','target-mix-services','target-mix-sponsors','target-mix-leads-contracts'].every((id) => app.includes("getElementById('" + id + "')")), 'Target-scale source mix must be wired to computed target scenario');
+assert.ok(['target-mix-total','target-mix-ads','target-mix-paid','target-mix-services','target-mix-sponsors','target-mix-leads-contracts','target-mix-lead-overflow','target-mix-capacity'].every((id) => page.includes('id="' + id + '"')), 'Target-scale source mix must be visible in the Growth Lab');
+assert.ok(['target-mix-total','target-mix-ads','target-mix-paid','target-mix-services','target-mix-sponsors','target-mix-leads-contracts','target-mix-lead-overflow','target-mix-capacity'].every((id) => app.includes("getElementById('" + id + "')")), 'Target-scale source mix must be wired to computed target scenario');
 assert.ok(page.includes('name="annualRevenueTargetUsd"'), 'Editable annual gross revenue target input missing');
+assert.ok(['newVisitorSharePct','maxLeadsPerMonth','maxProjectsPerMonth'].every((id) => page.includes('id="' + id + '"') && page.includes('name="' + id + '"')), 'New-visitor share, enquiry processing and project capacity inputs are required');
+assert.ok(app.includes('targetScenario.capacityUtilizationPct') && app.includes('targetScenario.unprocessedLeads') && app.includes('modelVersion: 4'), 'Capacity-aware outputs and model export version must be wired');
 assert.ok(app.includes('calculateRequiredMonthlyVisitors') && app.includes('growthTarget:'), 'Required-traffic calculation must be visible and included in the local export');
 assert.ok(!/https?:\/\/(?:fonts\.googleapis\.com|fonts\.gstatic\.com|cdn\.jsdelivr\.net|unpkg\.com)/i.test(page), 'Financial planner unexpectedly depends on a remote asset CDN');
 assert.ok(app.includes('URL.createObjectURL') && app.includes('osgard-games-model.json'), 'Local JSON export not implemented');
@@ -44,15 +46,36 @@ assert.equal(actual.sessions, 9040.5);
 assert.equal(actual.potentialAdImpressions, 18081);
 assert.ok(Math.abs(actual.filledAdImpressions - 9944.55) < 1e-8);
 assert.ok(Math.abs(actual.adRevenueUsd - 12.4306875) < 1e-8);
-assert.equal(actual.paidCustomers, 25.1125);
-assert.equal(actual.paidRevenueUsd, 150.423875);
+assert.equal(actual.newVisitors, 5022.5, 'Only the configured share is treated as new visitors');
+assert.equal(actual.paidCustomers, 12.55625, 'First payments must apply only to modeled new visitors');
+assert.ok(Math.abs(actual.paidRevenueUsd - 75.2119375) < 1e-8);
 assert.equal(actual.leads, 15.0675);
 assert.ok(Math.abs(actual.closedProjects - 1.2054) < 1e-8);
 assert.ok(Math.abs(actual.servicesRevenueUsd - 1446.48) < 1e-8);
-assert.ok(Math.abs(actual.paymentFeesUsd - 4.51271625) < 1e-8);
+assert.ok(Math.abs(actual.paymentFeesUsd - 2.256358125) < 1e-8);
 assert.equal(actual.operatingCostUsd, 400);
-assert.ok(Math.abs(actual.netOperatingUsd - 1204.82184625) < 1e-8, 'Base net result formula drifted');
+assert.ok(Math.abs(actual.netOperatingUsd - 1131.866266875) < 1e-8, 'Base net result formula drifted');
 assert.equal(actual.viralVisitors, 45, 'Base model must expose the five-generation referral estimate');
+assert.equal(DEFAULT_INPUTS.newVisitorSharePct, 50, 'New-visitor share must be an explicit editable model assumption');
+assert.equal(DEFAULT_INPUTS.maxLeadsPerMonth, 100, 'Lead processing capacity must be explicit');
+assert.equal(DEFAULT_INPUTS.maxProjectsPerMonth, 4, 'Development revenue must be bounded by monthly delivery capacity');
+assert.equal(actual.potentialClosedProjects, actual.closedProjects, 'Base traffic must remain below the default delivery cap');
+const capacityLimited = calculateScenario({ ...DEFAULT_INPUTS, monthlyVisitors: 1000000, maxLeadsPerMonth: 100, maxProjectsPerMonth: 4 }, 'base');
+assert.ok(capacityLimited.leads > 100, 'High-traffic scenario should generate more leads than the team can process');
+assert.equal(capacityLimited.processedLeads, 100, 'Lead processing must never exceed the configured monthly limit');
+assert.ok(Math.abs(capacityLimited.unprocessedLeads - (capacityLimited.leads - 100)) < 1e-8, 'Excess enquiries must be exposed as backlog');
+assert.equal(capacityLimited.potentialClosedProjects, 8, 'Closed-project potential must use leads the team can process');
+assert.equal(capacityLimited.closedProjects, 4, 'Service revenue must never exceed the configured number of monthly projects');
+assert.equal(capacityLimited.servicesRevenueUsd, 4800, 'Service revenue must apply the monthly delivery capacity cap');
+assert.equal(capacityLimited.capacityUtilizationPct, 100, 'Saturated delivery capacity must display 100% utilization');
+const noDeliveryCapacity = calculateScenario({ ...DEFAULT_INPUTS, monthlyVisitors: 1000000, maxProjectsPerMonth: 0 }, 'base');
+assert.equal(noDeliveryCapacity.closedProjects, 0, 'No delivery capacity means no closed service projects');
+assert.equal(noDeliveryCapacity.servicesRevenueUsd, 0, 'No delivery capacity must not produce service revenue');
+const boundedCapacityInputs = normalizeInputs({ maxLeadsPerMonth: 1000001, maxProjectsPerMonth: 100001, newVisitorSharePct: 150 });
+assert.equal(boundedCapacityInputs.maxLeadsPerMonth, 1000000, 'Lead processing capacity must be bounded');
+assert.equal(boundedCapacityInputs.maxProjectsPerMonth, 100000, 'Project capacity must be bounded');
+assert.equal(boundedCapacityInputs.newVisitorSharePct, 100, 'New-visitor share must be bounded to 100%');
+
 assert.ok(actual.totalRevenueUsd > 0 && Number.isFinite(actual.kFactor), 'Referral and revenue results must remain finite');
 
 const conservative = calculateScenario(DEFAULT_INPUTS, 'conservative');
@@ -86,8 +109,8 @@ assert.ok(app.includes('result.sponsorRevenueUsd') && app.includes("getElementBy
 const sponsorExample = calculateScenario({ ...DEFAULT_INPUTS, sponsorDealsPerMonth: 2, averageSponsorDealUsd: 500 }, 'base')
 assert.equal(sponsorExample.sponsorRevenueUsd, 1000, 'Sponsor revenue should only appear when the user enters real signed-and-paid placements')
 assert.equal(sponsorExample.totalRevenueUsd, actual.totalRevenueUsd + 1000)
-assert.ok(Math.abs(actual.totalRevenueUsd * 12 - 19312.01475) < 1e-7, 'Annual gross turnover target calculation drifted')
-assert.ok(Math.abs(1000000 - actual.totalRevenueUsd * 12 - 980687.98525) < 1e-7, 'Remaining gap to the $1M annual turnover target drifted')
+assert.ok(Math.abs(actual.totalRevenueUsd * 12 - 18409.4715) < 1e-7, 'Annual gross turnover target calculation drifted')
+assert.ok(Math.abs(1000000 - actual.totalRevenueUsd * 12 - 981590.5285) < 1e-7, 'Remaining gap to the $1M annual turnover target drifted')
 assert.equal(DEFAULT_INPUTS.annualRevenueTargetUsd, 1000000, 'Default annual gross target must be $1M')
 const requiredVisitors = calculateRequiredMonthlyVisitors(DEFAULT_INPUTS)
 const requiredScaleMix = calculateScenario({ ...DEFAULT_INPUTS, monthlyVisitors: requiredVisitors }, 'base')

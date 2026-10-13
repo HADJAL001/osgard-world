@@ -12,10 +12,13 @@ export const DEFAULT_INPUTS = Object.freeze({
   adFillRate: 55,
   ecpmUsd: 1.25,
   paidConversionRate: 0.25,
+  newVisitorSharePct: 50,
   paidPaymentUsd: 5.99,
   leadRate: 0.15,
   leadCloseRate: 8,
   averageProjectValueUsd: 1200,
+  maxLeadsPerMonth: 100,
+  maxProjectsPerMonth: 4,
   monthlyOperatingCostUsd: 400,
   paymentFeeRate: 3,
   annualRevenueTargetUsd: 1000000,
@@ -34,10 +37,13 @@ const bounds = {
   adFillRate: [0, 100],
   ecpmUsd: [0, 1000],
   paidConversionRate: [0, 100],
+  newVisitorSharePct: [0, 100],
   paidPaymentUsd: [0, 10000000],
   leadRate: [0, 100],
   leadCloseRate: [0, 100],
   averageProjectValueUsd: [0, 1000000000],
+  maxLeadsPerMonth: [0, 1000000],
+  maxProjectsPerMonth: [0, 100000],
   monthlyOperatingCostUsd: [0, 1000000000],
   paymentFeeRate: [0, 100],
   annualRevenueTargetUsd: [0, 1000000000000],
@@ -56,6 +62,9 @@ export function normalizeInputs(input = {}) {
     normalized[key] = Math.min(max, Math.max(min, value));
   }
   normalized.monthlyVisitors = Math.round(normalized.monthlyVisitors);
+  normalized.maxLeadsPerMonth = Math.round(normalized.maxLeadsPerMonth);
+  normalized.maxProjectsPerMonth = Math.round(normalized.maxProjectsPerMonth);
+  normalized.newVisitorSharePct = Math.round(normalized.newVisitorSharePct * 100) / 100;
   normalized.sessionsPerPlayer = Math.round(normalized.sessionsPerPlayer * 100) / 100;
   normalized.adSlotsPerSession = Math.round(normalized.adSlotsPerSession * 100) / 100;
   normalized.shareRatePct = Math.round(normalized.shareRatePct * 100) / 100;
@@ -95,12 +104,19 @@ export function calculateScenario(input = {}, scenarioId = 'base') {
   const filledAdImpressions = potentialAdImpressions * fillRate / 100;
   const ecpm = values.ecpmUsd * scenario.ecpm;
   const adRevenueUsd = filledAdImpressions / 1000 * ecpm;
+  const newVisitors = visitors * values.newVisitorSharePct / 100;
   const paidConversionRate = Math.min(100, values.paidConversionRate * scenario.paid);
-  const paidCustomers = visitors * paidConversionRate / 100;
+  const paidCustomers = newVisitors * paidConversionRate / 100;
   const paidRevenueUsd = paidCustomers * values.paidPaymentUsd;
   const leads = visitors * values.leadRate * scenario.leads / 100;
+  const processedLeads = Math.min(leads, values.maxLeadsPerMonth);
+  const unprocessedLeads = Math.max(0, leads - processedLeads);
   const closeRate = Math.min(100, values.leadCloseRate * scenario.close);
-  const closedProjects = leads * closeRate / 100;
+  const potentialClosedProjects = processedLeads * closeRate / 100;
+  const closedProjects = Math.min(values.maxProjectsPerMonth, potentialClosedProjects);
+  const capacityUtilizationPct = values.maxProjectsPerMonth > 0
+    ? closedProjects / values.maxProjectsPerMonth * 100
+    : 0;
   const servicesRevenueUsd = closedProjects * values.averageProjectValueUsd;
   const paymentFeesUsd = paidRevenueUsd * values.paymentFeeRate / 100;
   const sponsorDealsPerMonth = values.sponsorDealsPerMonth * scenario.sponsors;
@@ -114,6 +130,7 @@ export function calculateScenario(input = {}, scenarioId = 'base') {
     directVisitors,
     viralVisitors,
     visitors,
+    newVisitors,
     gameStartRate,
     gameStarts,
     kFactor,
@@ -130,8 +147,14 @@ export function calculateScenario(input = {}, scenarioId = 'base') {
     paidCustomers,
     paidRevenueUsd,
     leads,
+    processedLeads,
+    unprocessedLeads,
     closeRate,
+    potentialClosedProjects,
     closedProjects,
+    maxLeadsPerMonth: values.maxLeadsPerMonth,
+    maxProjectsPerMonth: values.maxProjectsPerMonth,
+    capacityUtilizationPct,
     servicesRevenueUsd,
     sponsorDealsPerMonth,
     sponsorRevenueUsd,
