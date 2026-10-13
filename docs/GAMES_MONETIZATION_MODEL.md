@@ -138,6 +138,13 @@ Growth Lab теперь принимает редактируемую **цель
 5. Считать $1 млн целью валовой выручки, а не гарантированной суммой и не чистой прибылью. Сопоставлять спрос с пропускной способностью команды и реальной стоимостью привлечения.
 
 
+
+## Вход из главной страницы OSGARD Entertainment
+
+The home-page `OSGARD ENTERTAINMENT` gateway now exposes a direct, UTM-labelled path into the playable hub and this scenario model. The strip previews the real post-session experience: users can choose from the owned-service cards, use share destinations, and see the +50 local SHARDS rule before acting. SHARDS are device-local points, not money; the client does not receive an authoritative confirmation that a third-party social post stayed published.
+
+The page at `/games/monetization/` remains a configurable **scenario model**, not live ad-network reporting. The intermission is self-promotion for OSGARD-owned services, clearly labelled as such. It does not claim third-party ad inventory, verified impressions, payment revenue or a guaranteed path to $1 million.
+ 
 ## Атрибуция заявок Partner Studio
 
 Форма Partner Studio использует POST /commerce-api/v1/leads, если API настроен и база готова. Общий клиент сохраняет в описании заявки цель, географию и безопасные UTM-метки (utm_source, utm_medium, utm_campaign, utm_content). Это делает источник видимым в защищённом списке заявок без передачи контактных данных в analytics events.
