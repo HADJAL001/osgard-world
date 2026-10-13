@@ -623,6 +623,8 @@ assert.ok(selectSender.includes('if(controller)options.signal=controller.signal'
 assert.ok((selectSender.match(/if\(!hasConsent\(\)\|\|\(controller&&controller\.signal\.aborted\)\)return false/g)||[]).length>=3,'Consent must be rechecked after network awaits before posting and accepting analytics');
 assert.ok(selectSender.includes('finally{if(controller)pendingSelectTelemetry.delete(controller)}'),'Completed or aborted telemetry requests must release their controller');
 assert.ok(recommendationScript.includes("sendSelectEvent('social_share_intent'")&&recommendationScript.includes("sendSelectEvent('social_reward_claimed'"), 'Social share-intent and self-reported reward events must be separate')
+assert.equal((recommendationScript.match(/if\(queue&&typeof queue\.enqueue==='function'\)return queue\.enqueue\(event\)/g)||[]).length,2,'Referral/inter-session and OSGARD SELECT telemetry must both use the shared consented retry queue');
+for(const eventName of ['owned_promo_intermission_skipped','owned_promo_preferences_saved','social_share_intent','social_reward_claimed','owned_promo_impression']) assert.ok(consentedAnalytics.includes("'"+eventName+"'"),'Consent queue must allow existing OSGARD SELECT event: '+eventName);
 assert.ok(recommendationScript.includes("sendSelectEvent('share_created',gameId,'game-invite:'"), 'Share actions in the rewards shelf must enter the referral funnel')
 const rewardPrimaryStart=recommendationScript.indexOf("primary.addEventListener('click',async()=>{",recommendationScript.indexOf('function rewardShelf(gameId){'));
 const rewardPrimaryEnd=recommendationScript.indexOf(" const note=make('p','og-postgame-reward-note'",rewardPrimaryStart);
