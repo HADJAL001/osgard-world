@@ -669,6 +669,7 @@ assert.ok(recommendationStyles.includes('.og-postgame-signal-cta')&&recommendati
 
 assert.ok(cascadeGame.includes("notifyOsgardLifecycle('completed'"),'CASCADE LAB must emit completion after a passed level')
 assert.ok(cascadeGame.includes("notifyCompletedShare('daily-challenge'") && cascadeGame.includes("notifyCompletedShare('score-duel'") && cascadeGame.includes("notifyCompletedShare('solution-link'") && cascadeGame.includes("notifyCompletedShare('result-card'"), 'CASCADE LAB must bridge completed share actions from public challenges, duels, solution links and result cards to the parent portal')
+assert.ok(cascadeGame.includes("out.fillText('PLAY: OSGARD.WORLD/GAMES/CASCADE-LAB', 794, 514)") && cascadeGame.includes('text: shareText, url: shareLink') && cascadeGame.includes("'https://osgard.world/games/cascade-lab/'"), 'CASCADE LAB result cards must contain a visible playable URL and share the correct public challenge or duel link')
 assert.ok(lifecycle.includes("payload.flowType=m.flowType") && lifecycle.includes("payload.referralCode=m.referralCode") && lifecycle.includes("'game-share:'+activeGame+':'+flowType"), 'Parent portal must distinguish share flow type and keep validated referral codes separate from generic share actions')
 
 const scripts=Array.from(html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)).map(m=>m[1]).filter(s=>s.trim()&&!s.trim().startsWith('{'))
