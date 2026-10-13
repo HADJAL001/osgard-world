@@ -186,6 +186,14 @@ A new Godot-native growth slice is implemented and covered by the headless runti
 4. Measure net revenue after fees/refunds and acquisition cost. A million-dollar outcome is a goal, not a forecast or promise.
 
 
+## Каталог 10/10 — завершена детальная страница AFTERIMAGE//RUN
+
+- Добавлена запись паспорта игры с фактическим daily seed, препятствиями, SIGNAL SHARDS, PHASE DASH и локальным ghost-маршрутом.
+- Управление сверено с кодом Canvas: Space / Arrow Up / касание — прыжок, Shift или сенсорная кнопка — dash, Escape — пауза.
+- Сохранение указано как локальное; облачная синхронизация и глобальный серверный рейтинг не обещаются.
+- Карточка использует отдельный URL «Подробнее» `/game/afterimage-run`, запуск остаётся на `/games/afterimage-run/`.
+- Расширены `qa:games-detail`, production route matrix и sitemap; iframe readiness распознаёт реальный title AFTERIMAGE//RUN.
+
 ## Retention rewards and cosmetic SHARDS Vault — 13 October 2026
 
 - OSGARD SELECT keeps voluntary, clearly labelled between-game cards for first-party projects. The player can choose services, save a preferred service and control promotion frequency; there is no autoplay or active-round interruption.
