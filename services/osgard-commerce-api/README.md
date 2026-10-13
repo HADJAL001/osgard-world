@@ -77,3 +77,13 @@ Open /games/commerce-admin/ and paste ADMIN_API_TOKEN into the in-memory field. 
 - Never treat a browser redirect as proof of payment. The server verifies Checkout Session data and signed webhooks.
 - Leads are visible to admins; outbound email notification is not configured.
 - Ads are not served by this service. Configure an approved provider separately and request any legally required consent. Do not display fake ads or generate artificial impressions.
+
+
+## Consented analytics and retention (added 2026-10-13)
+
+- The event endpoint accepts only allow-listed event names and records only explicit-consent batches.
+- Clients supply a random eventId; PostgreSQL's primary key makes retries idempotent. Older clients without this field remain accepted but cannot be de-duplicated across retries.
+- The catalog and commerce client reuse a random session ID only for the current browser tab; the game player uses a distinct session ID for a game run. No persistent cross-site visitor profile is created by this code.
+- ANALYTICS_RETENTION_DAYS defaults to 90 and accepts integers from 30 to 365. Rows older than this limit are deleted at API startup and then every six hours while the database is ready.
+- The operator dashboard reports only consented server-recorded events. It is not a complete count of anonymous page visits, ad impressions, revenue or conversions. UTM clicks only attribute outbound link clicks.
+- The environment still needs a real database and a deployed API for data to be persisted; this source change does not prove that production has been deployed or is receiving events.

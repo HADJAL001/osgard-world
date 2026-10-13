@@ -13,6 +13,10 @@ import {
 const { Pool } = pg;
 const app = express();
 const PORT = Number(process.env.PORT || 8080);
+const requestedRetentionDays = Number(process.env.ANALYTICS_RETENTION_DAYS);
+const analyticsRetentionDays = Number.isInteger(requestedRetentionDays) && requestedRetentionDays >= 30 && requestedRetentionDays <= 365
+  ? requestedRetentionDays
+  : 90;
 const PUBLIC_BASE_URL = String(process.env.PUBLIC_BASE_URL || "https://osgard.world").replace(/\/+$/, "");
 const allowedOrigins = new Set(String(process.env.ALLOWED_ORIGINS || "https://osgard.world,https://www.osgard.world,http://localhost:4188").split(",").map((v) => v.trim()).filter(Boolean));
 const stripeSecret = process.env.STRIPE_SECRET_KEY || "";
@@ -52,9 +56,19 @@ async function ensureSchema() {
     "CREATE TABLE IF NOT EXISTS commerce_leads (lead_id TEXT PRIMARY KEY, project_type TEXT NOT NULL, budget TEXT NOT NULL DEFAULT '', contact TEXT NOT NULL, description TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'new', consent_at TIMESTAMPTZ NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
     "CREATE INDEX IF NOT EXISTS commerce_leads_created_idx ON commerce_leads(created_at DESC);\n" +
     "CREATE TABLE IF NOT EXISTS commerce_events (event_id TEXT PRIMARY KEY, event_name TEXT NOT NULL, session_id TEXT NOT NULL, game_id TEXT NOT NULL, source TEXT NOT NULL, path TEXT NOT NULL, duration_seconds INTEGER NOT NULL DEFAULT 0, received_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
-    "CREATE INDEX IF NOT EXISTS commerce_events_name_received_idx ON commerce_events(event_name, received_at DESC);");
+    "CREATE INDEX IF NOT EXISTS commerce_events_name_received_idx ON commerce_events(event_name, received_at DESC);\n" +
+    "CREATE INDEX IF NOT EXISTS commerce_events_game_received_idx ON commerce_events(game_id, received_at DESC);");
   dbReady = true;
   return true;
+}
+
+async function purgeExpiredAnalytics() {
+  if (!pool || !dbReady) return 0;
+  const result = await pool.query(
+    "DELETE FROM commerce_events WHERE received_at < NOW() - ($1 * INTERVAL '1 day')",
+    [analyticsRetentionDays],
+  );
+  return Number(result.rowCount || 0);
 }
 
 function paymentsAllowed() {
@@ -299,8 +313,13 @@ app.post("/v1/events", async (req, res) => {
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
+      let insertedCount = 0;
       for (const event of batch.events) {
-        await client.query("INSERT INTO commerce_events(event_id,event_name,session_id,game_id,source,path,duration_seconds) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT DO NOTHING", [crypto.randomUUID(), event.name, event.sessionId, event.gameId, event.source, event.path, event.durationSeconds]);
+        const inserted = await client.query(
+          "INSERT INTO commerce_events(event_id,event_name,session_id,game_id,source,path,duration_seconds) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT DO NOTHING RETURNING event_id",
+          [event.eventId || crypto.randomUUID(), event.name, event.sessionId, event.gameId, event.source, event.path, event.durationSeconds],
+        );
+        insertedCount += Number(inserted.rowCount || 0);
       }
       await client.query("COMMIT");
     } catch (error) {
@@ -309,7 +328,7 @@ app.post("/v1/events", async (req, res) => {
     } finally {
       client.release();
     }
-    return res.status(202).json({ accepted: batch.events.length });
+    return res.status(202).json({ accepted: batch.events.length, inserted: insertedCount });
   } catch (error) {
     console.error("Analytics insert failed:", error?.message || "unknown error");
     return res.status(503).json({ error: "EVENT_STORAGE_UNAVAILABLE" });
@@ -319,14 +338,26 @@ app.post("/v1/events", async (req, res) => {
 app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
   if (!requireDatabase(res)) return;
   try {
-    const [orderStats, currencyStats, leadStats, eventStats, topEvents] = await Promise.all([
+    const [orderStats, currencyStats, leadStats, eventStats, topEvents, analyticsByGame, analyticsFunnel] = await Promise.all([
       pool.query("SELECT status, COUNT(*)::int AS count FROM commerce_orders GROUP BY status"),
       pool.query("SELECT currency, SUM(amount_total)::bigint AS total_minor, COUNT(*)::int AS count FROM commerce_orders WHERE status='paid' AND currency IS NOT NULL GROUP BY currency"),
       pool.query("SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE status='new')::int AS new FROM commerce_leads"),
       pool.query("SELECT COUNT(*)::int AS total_30d FROM commerce_events WHERE received_at >= NOW() - INTERVAL '30 days'"),
       pool.query("SELECT event_name, COUNT(*)::int AS count FROM commerce_events WHERE received_at >= NOW() - INTERVAL '30 days' GROUP BY event_name ORDER BY count DESC LIMIT 12"),
+      pool.query("SELECT game_id AS \"gameId\", COUNT(*)::int AS events, COUNT(DISTINCT session_id)::int AS sessions, COUNT(*) FILTER (WHERE event_name IN ('game_session_started','game_launched'))::int AS starts, COUNT(*) FILTER (WHERE event_name='game_session_completed')::int AS completions, COALESCE(ROUND(AVG(duration_seconds) FILTER (WHERE event_name='game_session_completed' AND duration_seconds > 0))::int,0) AS \"avgCompletionSeconds\", COUNT(*) FILTER (WHERE event_name='cross_promo_clicked')::int AS \"crossPromoClicks\" FROM commerce_events WHERE received_at >= NOW() - INTERVAL '30 days' GROUP BY game_id ORDER BY starts DESC, events DESC LIMIT 20"),
+      pool.query("SELECT COUNT(*) FILTER (WHERE event_name='catalog_viewed')::int AS \"catalogViews\", COUNT(*) FILTER (WHERE event_name IN ('game_launched','game_session_started'))::int AS \"gameStarts\", COUNT(*) FILTER (WHERE event_name='game_session_completed')::int AS \"completedSessions\", COUNT(*) FILTER (WHERE event_name='cross_promo_clicked')::int AS \"crossPromoClicks\", COUNT(*) FILTER (WHERE event_name='lead_submitted')::int AS \"leadSubmittedEvents\", COUNT(*) FILTER (WHERE event_name='premium_page_view')::int AS \"premiumPageViews\", COUNT(*) FILTER (WHERE event_name='partners_page_viewed')::int AS \"partnersPageViews\" FROM commerce_events WHERE received_at >= NOW() - INTERVAL '30 days'"),
     ]);
-    return res.json({ ordersByStatus: orderStats.rows, grossPaidByCurrency: currencyStats.rows, leads: leadStats.rows[0] || { total: 0, new: 0 }, analyticsEventsLast30Days: eventStats.rows[0]?.total_30d || 0, topEventsLast30Days: topEvents.rows, note: "Суммы сгруппированы по валютам и отражают заказы, которые сейчас помечены как paid; возвраты в статусе refunded исключаются. Комиссии, налоги и регулярные счета подписки здесь не являются полноценным бухгалтерским отчётом." });
+    return res.json({
+      ordersByStatus: orderStats.rows,
+      grossPaidByCurrency: currencyStats.rows,
+      leads: leadStats.rows[0] || { total: 0, new: 0 },
+      analyticsEventsLast30Days: eventStats.rows[0]?.total_30d || 0,
+      topEventsLast30Days: topEvents.rows,
+      analyticsByGame: analyticsByGame.rows,
+      analyticsFunnel: analyticsFunnel.rows[0] || {},
+      analyticsRetentionDays,
+      note: "Аналитика включает только согласованные события. Это не все посещения сайта и не рекламные показы. Суммы сгруппированы по валютам и не являются бухгалтерским отчётом.",
+    });
   } catch (error) {
     console.error("Admin overview failed:", error?.message || "unknown error");
     return res.status(503).json({ error: "ADMIN_OVERVIEW_UNAVAILABLE" });
@@ -361,12 +392,25 @@ app.use((error, _req, res, _next) => {
   return res.status(500).json({ error: "INTERNAL_ERROR", message: "Внутренняя ошибка. Повторите попытку позже." });
 });
 
+const analyticsRetentionTimer = setInterval(() => {
+  if (!dbReady) return;
+  void purgeExpiredAnalytics().catch((error) => {
+    console.error("Analytics retention cleanup failed:", error?.message || "unknown error");
+  });
+}, 6 * 60 * 60 * 1000);
+analyticsRetentionTimer.unref();
+
 const server = app.listen(PORT, "0.0.0.0", async () => {
   try { if (pool) await ensureSchema(); }
   catch (error) {
     dbErrorAtBoot = true;
     dbReady = false;
     console.error("Database initialization failed:", error?.message || "unknown error");
+  }
+  if (dbReady) {
+    void purgeExpiredAnalytics().catch((error) => {
+      console.error("Analytics retention cleanup failed:", error?.message || "unknown error");
+    });
   }
   console.log("OSGARD Commerce API listening on port " + PORT);
 });
