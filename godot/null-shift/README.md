@@ -172,3 +172,10 @@ The deployment workflow downloads official Godot 4.7.2 and matching web template
 - Spark density follows the active quality state: 14 particles in Cinematic, 9 in Balanced, and 5 in Performance/auto-degraded mode. Pool overflow is explicitly counted as a dropped cosmetic effect and never blocks damage, collisions or mission state.
 - Live diagnostics now list the beam, ring and spark pool sizes. Headless Godot runtime smoke tests cover emitter activation, timed expiry, node identity reuse, the hard pool limit and per-profile particle budgets.
 - This is a real allocation/performance improvement in the Godot runtime. It does not claim native 8K output; the export remains constrained by browser and device GPU capabilities.
+
+
+## Premium procedural armour pass (Godot 4.7)
+
+The native Godot scene now builds a more readable combat silhouette using named chest shells/insets, shoulder plates, role-coloured signal bars, rear energy cells/backpacks, utility belts and knee plates for both the operator and security units. Major silhouette pieces cast real scene shadows under the existing quality profiles; collision capsules, movement, targeting, health and damage logic remain unchanged. Runtime smoke tests verify that the named meshes exist in the instantiated scene and that the major pieces are configured to cast shadows.
+
+This is procedural real-time 3D geometry for the current GL Compatibility/Web export, not a claim of native 8K assets.
