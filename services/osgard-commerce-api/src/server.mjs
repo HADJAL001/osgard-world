@@ -97,6 +97,13 @@ async function processReferralRewardEvent(client, event) {
     return;
   }
   if (parsed.type === "invite_qualified") {
+    // Do not rely only on a client-supplied duration. Require server timestamps for
+    // a matching start/completion pair with the same session, game and referral source.
+    const session = await client.query(
+      "SELECT 1 FROM commerce_events finish JOIN commerce_events start ON start.session_id=finish.session_id AND start.game_id=finish.game_id AND start.source=finish.source WHERE finish.event_id=$1 AND finish.event_name='game_session_completed' AND start.event_name='game_session_started' AND start.received_at <= finish.received_at - ($2 * INTERVAL '1 second') LIMIT 1",
+      [event.eventId, REFERRAL_MIN_SESSION_SECONDS],
+    );
+    if (!session.rowCount) return;
     await client.query(
       "INSERT INTO game_referral_rewards(invite_code,visitor_token,game_id,duration_seconds,points) SELECT v.invite_code,v.visitor_token,$3,$4,$5 FROM game_referral_visits v JOIN game_referral_invites i USING(invite_code) WHERE v.invite_code=$1 AND v.visitor_token=$2 AND i.inviter_token<>v.visitor_token ON CONFLICT(invite_code,visitor_token) DO NOTHING",
       [parsed.inviteCode, parsed.visitorToken, parsed.gameId, parsed.durationSeconds, parsed.points],
@@ -348,12 +355,13 @@ app.post("/v1/events", async (req, res) => {
       await client.query("BEGIN");
       let insertedCount = 0;
       for (const event of batch.events) {
+        const persistedEvent = { ...event, eventId: event.eventId || crypto.randomUUID() };
         const inserted = await client.query(
           "INSERT INTO commerce_events(event_id,event_name,session_id,game_id,source,path,duration_seconds) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT DO NOTHING RETURNING event_id",
-          [event.eventId || crypto.randomUUID(), event.name, event.sessionId, event.gameId, event.source, event.path, event.durationSeconds],
+          [persistedEvent.eventId, persistedEvent.name, persistedEvent.sessionId, persistedEvent.gameId, persistedEvent.source, persistedEvent.path, persistedEvent.durationSeconds],
         );
         insertedCount += Number(inserted.rowCount || 0);
-        if (inserted.rowCount) await processReferralRewardEvent(client, event);
+        if (inserted.rowCount) await processReferralRewardEvent(client, persistedEvent);
       }
       await client.query("COMMIT");
     } catch (error) {
