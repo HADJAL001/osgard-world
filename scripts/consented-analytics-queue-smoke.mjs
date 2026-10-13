@@ -85,6 +85,13 @@ assert.equal(await queue.enqueue(detailGranted), true, 'An explicit React "grant
 assert.equal(await queue.flush(), true, 'React "granted" decision should use the existing delivery path');
 assert.ok(postedEvents.some(item => item.eventId === detailGranted.eventId), 'React-granted events should be delivered');
 
+offline = true;
+const detailPending = { ...event, eventId: 'evt_detail_denied_12345', name: 'catalog_viewed' };
+assert.equal(await queue.enqueue(detailPending), true, 'A pending event can be queued before consent withdrawal');
+assert.equal(await queue.flush(), false, 'Offline delivery should keep the event pending until acknowledgement');
+assert.equal(JSON.parse(values.get('osgard.games.analytics-pending.v1') || '[]').length, 1,
+  'Pending analytics should exist before testing React consent withdrawal');
+
 values.set('osgard.games.analytics-consent.v1', 'denied');
 listeners.get('storage')?.({ key: 'osgard.games.analytics-consent.v1' });
 assert.equal(values.has('osgard.games.analytics-pending.v1'), false, 'An explicit React "denied" decision must clear pending analytics');
