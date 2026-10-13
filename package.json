@@ -23,6 +23,7 @@
     "qa:time-ui": "node scripts/time-prototype-smoke.mjs",
     "qa:null-shift": "node scripts/null-shift-premium-smoke.mjs",
     "qa:games-portal": "node scripts/games-portal-smoke.mjs",
+    "qa:osgard-select": "node scripts/osgard-select-growth-smoke.mjs",
     "qa:games-detail": "node scripts/games-detail-smoke.mjs",
     "qa:games-model": "node scripts/games-monetization-smoke.mjs",
     "qa:null-shift-godot": "node scripts/null-shift-godot-smoke.mjs",
