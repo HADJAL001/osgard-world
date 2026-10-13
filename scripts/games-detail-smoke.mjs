@@ -52,7 +52,7 @@ for (const p of ['public/games/index.html','public/games/cascade-lab/index.html'
 }
 execFileSync(process.execPath, ['--check', 'scripts/production-route-matrix.mjs'], { stdio: 'pipe' })
 console.log('PASS OSGARD GAME DETAIL: nine routes, details, SEO sitemap, safe legacy fallback, Nginx redirects, asynchronous SPA readiness and honest lifecycle events.')
-assert.ok(cascadeGame.includes('id="launchMain"') && cascadeGame.includes('id="exportRunReport"') && cascadeGame.includes('id="vectorToggle"') && cascadeGame.includes('Шаг +0,05 с'), 'CASCADE LAB gameplay and diagnostics controls missing')
+assert.ok(cascadeGame.includes('id="runButton"') && cascadeGame.includes('id="exportTelemetryButton"') && cascadeGame.includes('id="exportGrowthButton"') && cascadeGame.includes('id="serviceAdDialog"'), 'CASCADE LAB gameplay, diagnostics and promotion controls missing')
 assert.ok(cascadeGame.includes('data-cascade-lab-ready="true"') && cascadeGame.includes('content="0.13.0-osgard-cross-promo"'), 'CASCADE LAB 0.13.0 version and parent iframe-ready contract missing')
 assert.ok(cascadeGame.includes("notifyOsgardLifecycle('ready'") && cascadeGame.includes("notifyOsgardLifecycle('started'") && cascadeGame.includes("notifyOsgardLifecycle('paused'") && cascadeGame.includes("notifyOsgardLifecycle('resumed'"), 'CASCADE LAB must send the parent portal lifecycle handshake')
 assert.ok(cascadeGame.includes('function showServiceInterstitial') && cascadeGame.includes('id="serviceAdChoices"') && cascadeGame.includes('id="serviceAdVisitButton"') && cascadeGame.includes('Я поделился — получить +10 LC'), 'CASCADE LAB must expose the selectable OSGARD service intermission and share reward')
