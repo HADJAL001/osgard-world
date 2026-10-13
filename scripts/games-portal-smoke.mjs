@@ -171,7 +171,7 @@ for (const source of [commerceClient, consentedAnalytics, recommendationScript, 
 assert.ok(commerceClient.includes("parsed.pathname === '/commerce-api'")&&consentedAnalytics.includes("parsed.pathname === '/commerce-api'")&&recommendationScript.includes("parsedBase.pathname==='/commerce-api'")&&lifecycle.includes("parsed.pathname==='/commerce-api'"), 'The first-party reverse proxy path must be explicitly allow-listed when configured');
 assert.ok(commerceClient.includes("if (!raw) return ''")&&commerceClient.includes("if (!base) throw new Error('COMMERCE_API_NOT_CONFIGURED')"),'Lead submission must fail closed into the disclosed manual-contact fallback when the Commerce API is unset');
 assert.ok(consentedAnalytics.includes("if (!raw) return ''")&&consentedAnalytics.includes('if (!base || !consentGranted()'),'Shared analytics queue must retain local retry state instead of treating the SPA as an analytics server');
-assert.ok(lifecycle.includes("if(!raw)return null")&&lifecycle.includes("return fetch(parsed.origin+'/v1/events'"),'Gameplay lifecycle events must require a configured valid API origin');
+assert.ok(lifecycle.includes("if(!raw)return null")&&lifecycle.includes("return fetch(base+'/v1/events'"),'Gameplay lifecycle events must require a configured valid API origin');
 new Function(consentedAnalytics);
 for(const marker of ['window.OSGARD_CONSENTED_ANALYTICS','MAX_PENDING = 100','MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000','if (!consentGranted())','clearQueue()','result?.accepted']) assert.ok(consentedAnalytics.includes(marker), 'Consent queue contract missing: '+marker);
 const lazyRuntimeMatch=html.match(/<script id="games-lazy-runtime">([\s\S]*?)<\/script>/)
