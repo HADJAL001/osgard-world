@@ -79,32 +79,45 @@ assert.ok(primaryStart >= 0 && primaryEnd > primaryStart, 'Share intent handler 
 const primaryHandler = reward.slice(primaryStart, primaryEnd);
 assert.ok(!primaryHandler.includes("sendSelectEvent('share_created'"),
   'Opening the system share sheet or copying a link must not count as a completed share');
-const claimStart = reward.indexOf("claim.addEventListener('click'");
-const claimEnd = reward.indexOf("primary.addEventListener('click',async()=>{", claimStart);
-assert.ok(claimStart >= 0 && claimEnd > claimStart, 'Explicit share confirmation handler is required');
-const claimHandler = reward.slice(claimStart, claimEnd);
-assert.ok(claimHandler.includes("award('social-confirmation:'+network)") &&
-  claimHandler.includes("sendSelectEvent('share_created',gameId,'game-invite:'") &&
-  claimHandler.includes("sendSelectEvent('social_reward_claimed'"),
-  'The local daily reward and completed-share event must happen only after a separate confirmation');
-assert.ok(reward.includes('Копирование само по себе не считается репостом') &&
-  reward.includes('OSGARD не получает надёжный сигнал о факте публикации') &&
-  reward.includes('не имеют денежной стоимости'),
-  'SHARDS must disclose that social posts are self-confirmed and have no cash value');
+assert.ok(!reward.includes("award('social-confirmation:'+network)") && !reward.includes("sendSelectEvent('social_reward_claimed'"),
+  'SHARDS must not be granted in return for a repost or user self-confirmation of one');
+assert.ok(reward.includes("awardDailyPlayReward('daily-play:'+gameId)") &&
+  reward.includes("sendSelectEvent('daily_play_reward_claimed'"),
+  'Daily SHARDS must be awarded for the completed game-session flow, not for social publication');
+assert.ok(source.includes('function awardReferralWelcomeBonus(gameId)') &&
+  source.includes("sendSelectEvent('referral_welcome_reward_claimed'") &&
+  source.includes('osgard.games.referral-welcome-reward.v1'),
+  'A referred player should receive a single local welcome bonus after a completed session');
+assert.ok(reward.includes('og-shards-vault') && reward.includes('NORTHSTAR') && reward.includes('ECLIPSE') && reward.includes('AURORA') &&
+  reward.includes('cost:100') && reward.includes('cost:250') && reward.includes('cost:400'),
+  'SHARDS Vault must provide cosmetic-only purchases at documented in-app prices');
+assert.ok(reward.includes('не имеют денежной стоимости') && reward.includes('Без pay-to-win') &&
+  reward.includes('SHARDS не выдаются за сам репост'),
+  'Reward copy must say the currency is local/non-cash and never compensates a social repost');
 assert.ok(source.includes("const walletKey='osgard.games.shards-wallet.v1',dailyReward=50") &&
   source.includes('current.day===day'),
-  'Local SHARDS reward must be capped to one claim per UTC day and device wallet');
+  'Local daily reward must be limited to one claim per UTC day and device wallet');
 
-const claimSignal = signalRun.indexOf("claimShare.addEventListener('click'");
-const shareSignal = signalRun.indexOf("$('share').addEventListener('click',async()=>{");
-const shareSignalEnd = signalRun.indexOf("});document.addEventListener('keydown'", shareSignal);
-assert.ok(claimSignal >= 0 && shareSignal >= 0 && shareSignalEnd > shareSignal,
-  'SIGNAL RUN explicit claim and share-intent handlers must be present');
+const shareSignal = signalRun.indexOf("const rawScore=(s.mode==='running'||s.mode==='over')?s.score:s.best");
+const shareSignalEnd = signalRun.indexOf("document.addEventListener('keydown'", shareSignal);
+assert.ok(shareSignal >= 0 && shareSignalEnd > shareSignal, 'SIGNAL RUN share-intent handler must be present');
 const signalShareHandler = signalRun.slice(shareSignal, shareSignalEnd);
-assert.ok(!signalShareHandler.includes("life('share_created'"),
-  'SIGNAL RUN must not report a completed share before the player confirms it');
-assert.ok(signalRun.slice(claimSignal).includes("life('share_created',{shareMethod:method,dailyMode,dailyDate:dailyMode?dailyDate:null,rewardConfirmedByPlayer:true})"),
-  'SIGNAL RUN completed-share analytics must follow the explicit reward confirmation');
+assert.ok(signalShareHandler.includes("life('share_intent'") &&
+  !signalShareHandler.includes("awardShareShards") && !signalShareHandler.includes("life('share_created'"),
+  'SIGNAL RUN share buttons must not claim completed shares or award SHARDS for publication');
+assert.ok(signalRun.includes('function awardDailyPlayShards(source)') &&
+  signalRun.includes("const dailyBonus=awardDailyPlayShards('signal-run:'") &&
+  signalRun.includes("dailyRewardShards:dailyBonus.ok?SHARDS_DAILY_REWARD:0"),
+  'SIGNAL RUN must award the daily SHARDS bonus on an actual completed run');
+assert.ok(!signalRun.includes("claimShare.addEventListener") && !signalRun.includes("pendingShareReward") &&
+  !read('public/games/signal-run/index.html').includes('claim-share-reward'),
+  'Signal Run must not include the old self-confirmed share-reward claim');
+assert.ok(css.includes('.og-shards-vault-grid{') && css.includes('.og-postgame-daily-reward{') &&
+  css.includes('@media(max-width:600px)') && css.includes('prefers-reduced-motion:reduce'),
+  'SHARDS Vault and daily reward must have responsive, reduced-motion-safe styling');
+
+assert.ok(core.includes('"daily_play_reward_claimed"') && core.includes('"referral_welcome_reward_claimed"'),
+  'Commerce API must accept only allow-listed consented gameplay reward events');
 
 console.log(JSON.stringify({
   status: 'passed',
