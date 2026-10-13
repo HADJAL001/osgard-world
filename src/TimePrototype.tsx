@@ -132,6 +132,7 @@ export function TimePrototype() {
       completed.current = true
       void completePlayerSession(session.current, { status: state.status, tick: state.tick, treasury: state.treasury, score: state.score, population: state.population })
       recordOsgardEvent('game_session_completed', { game: 'time', status: state.status, tick: state.tick, score: state.score })
+      try { if (window.parent !== window) window.parent.postMessage({ type: 'osgard:game-lifecycle', game: 'time', state: 'completed', at: Date.now() }, window.location.origin) } catch { /* embedding is optional */ }
     }
   }, [state.status, state.tick, state.treasury, state.score, state.population])
 

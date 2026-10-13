@@ -75,7 +75,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
     const isGamesHub = route === '/games/' || route === '/games/index.html'
     const isPartnerPage = route === '/games/partners/'
     const isGodot = route.startsWith('/games/null-shift-godot')
-    const assetPaths = route === '/games/favicon.svg' || route === '/privacy/' || route === '/terms/' ? [] : isPartnerPage ? ['/games/partners/partners.js', '/games/partners/inventory.json'] : isGamesHub ? ['/games/player-lifecycle.js'] : route === '/skillcred/' ? ['/skillcred/styles.css', '/skillcred/app.js', '/skillcred/fonts/InterVariable.woff2', '/skillcred/fonts/InstrumentSerif-Italic.woff2', '/skillcred/fonts/JetBrainsMono-Regular.woff2'] : route === '/games/signal-run/' ? ['/games/signal-run/game.js'] : isGodot ? ['/games/null-shift-godot/index.js', '/games/null-shift-godot/index.wasm', '/games/null-shift-godot/index.pck'] : route.startsWith('/games/null-shift') ? ['/games/null-shift/styles.css', '/games/null-shift/game.js', '/games/null-shift/engine-3d.js'] : []
+    const assetPaths = route === '/games/favicon.svg' || route === '/privacy/' || route === '/terms/' ? [] : isPartnerPage ? ['/games/partners/partners.js', '/games/partners/inventory.json'] : isGamesHub ? ['/games/player-lifecycle.js','/games/game-session-recommendations.js','/games/game-session-recommendations.css'] : route === '/skillcred/' ? ['/skillcred/styles.css', '/skillcred/app.js', '/skillcred/fonts/InterVariable.woff2', '/skillcred/fonts/InstrumentSerif-Italic.woff2', '/skillcred/fonts/JetBrainsMono-Regular.woff2'] : route === '/games/signal-run/' ? ['/games/signal-run/game.js'] : isGodot ? ['/games/null-shift-godot/index.js', '/games/null-shift-godot/index.wasm', '/games/null-shift-godot/index.pck'] : route.startsWith('/games/null-shift') ? ['/games/null-shift/styles.css', '/games/null-shift/game.js', '/games/null-shift/engine-3d.js'] : []
     const assetChecks = await Promise.all(assetPaths.map(async path => {
       const expectedType = path.endsWith('.css') ? 'text/css' : path.endsWith('.json') ? 'json' : path.endsWith('.js') ? 'javascript' : path.endsWith('.wasm') ? 'wasm' : path.endsWith('.pck') ? 'pack' : 'font'
       const asset = await fetch(new URL(path, base), { headers: { 'user-agent': userAgent } })
@@ -102,7 +102,11 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
                 : content.includes('premiumAtmosphere') && content.includes('PerformanceObserver') && content.includes('premiumV05DrawMotion') && content.includes('premiumV05ArmAudio') && content.includes('premiumV05UpdateMotion') && content.includes('NULL_SHIFT_GET_SCENE_STATE')
             : path === '/games/signal-run/game.js'
                  ? content.includes("game:'signal-run'") && content.includes("life('ready')") && content.includes("life('completed'") && content.includes('osgard.signal-run.best.v1')
-               : path === '/games/player-lifecycle.js'
+               : path === '/games/game-session-recommendations.js'
+              ? content.includes("document.addEventListener('osgard:game-completed'") && content.includes("document.addEventListener('osgard:game-launching'") && content.includes('link.dataset.play=nextId')
+            : path === '/games/game-session-recommendations.css'
+              ? content.includes('.post-run-recommendations') && content.includes('prefers-reduced-motion:reduce')
+            : path === '/games/player-lifecycle.js'
               ? content.includes('function startSession(') && content.includes('game_session_completed') && content.includes('osgard:game-lifecycle') && content.includes('event.source!==frame.contentWindow')
               : path.endsWith('.css')
               ? normalized.includes('--acid:#c8ff3d') && normalized.includes('/skillcred/fonts/intervariable.woff2') && normalized.includes('/skillcred/fonts/instrumentserif-italic.woff2') && normalized.includes('/skillcred/fonts/jetbrainsmono-regular.woff2') && (!expectCurrentDesign || (normalized.includes('--hero-size:clamp(88px,6vw,104px)') && normalized.replace(/["']/g, '').includes('.trust-spine[data-state=revoked]')))

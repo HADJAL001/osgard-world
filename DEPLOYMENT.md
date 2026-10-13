@@ -36,6 +36,8 @@ grep -E '^assets/.+\.(js|css)$' /tmp/osgard-world-files.txt
 
 On the server, upload to a new staging directory and validate the archive there. Do not empty the active serving directory before extraction. Only after the archive listing, byte count, and SHA-256 match the local `release-manifest.json` should the container's document-root reference be switched to the staging directory. Keep the previous validated directory until the route matrix and container health check pass; if either check fails, switch back to the previous directory and restart the container.
 
+INHERIT shared-world sync now requires a deliberately configured `meta[name="osgard-inherit-api-base"]` endpoint implementing the game's existing world-read and generation-write contract. The default is blank; do not use a localhost URL in a public browser. Without that endpoint, a generation handoff is saved locally on the device and must not be represented as shared/cloud synchronization.
+
 The release gate is source-side evidence. A successful local build does not by itself prove that the new bundle is serving on `https://osgard.world`; record the remote container status and route-matrix result in `docs/OSGARD_EXECUTION_LOG.md` for every runtime publication.
 
 The resumable publisher is `scripts/publish-frontend-resumable.ps1`. It uploads 64 KB chunks with retries, verifies the remote archive byte count and SHA-256, and stages without activation by default:
@@ -49,3 +51,8 @@ Use `-Activate` only after reviewing the verified staging output. The activation
 GitHub also contains a manual `OSGARD frontend deploy` workflow. It requires repository secrets `OSGARD_DEPLOY_HOST`, `OSGARD_DEPLOY_USER`, and a dedicated least-privilege `OSGARD_DEPLOY_KEY`. Do not reuse a personal root key; the workflow is intentionally manual until that dedicated key is provisioned.
 
 Do not direct production traffic to the server until the reverse proxy has a valid TLS certificate.
+
+
+## Production API network gate
+
+The frontend activation script intentionally refuses to switch the release unless the OSGARD game API is healthy and reachable from inside the active frontend container. A host-only `http://127.0.0.1:4317/health` response is not sufficient; do not bypass this gate. On 13 October 2026, the host health probe returned HTTP 200, but activation did not find a reachable upstream from the container. The post-failure gateway diagnostic also had a nested-shell quoting error; the workflow now extracts the gateway without `awk` inside the single-quoted SSH command. Re-run deployment only after the Docker bridge/firewall path is verified, then require the public route matrix to pass.

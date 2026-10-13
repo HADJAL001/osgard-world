@@ -10,6 +10,10 @@ const appSource = readFileSync(resolve('src/App.tsx'),'utf8')
 const root=resolve('public/games')
 const html=readFileSync(resolve(root,'index.html'),'utf8')
 const lifecycle=readFileSync(resolve(root,'player-lifecycle.js'),'utf8')
+const deployWorkflow=readFileSync(resolve('.github/workflows/deploy-frontend.yml'),'utf8')
+const recommendations=readFileSync(resolve(root,'game-session-recommendations.js'),'utf8')
+const recommendationCss=readFileSync(resolve(root,'game-session-recommendations.css'),'utf8')
+const inheritGame=readFileSync(resolve(root,'inherit/index.html'),'utf8')
 const nginx=readFileSync(resolve('nginx.conf'),'utf8')
 const admin=readFileSync(resolve(root,'admin/index.html'),'utf8')
 const partnerEditor=readFileSync(resolve(root,'admin/partners/index.html'),'utf8')
@@ -19,12 +23,12 @@ const signalRun=readFileSync(resolve(root,'signal-run/index.html'),'utf8')
 const signalJs=readFileSync(resolve(root,'signal-run/game.js'),'utf8')
 const manifest=readFileSync(resolve('src/core/manifest.ts'),'utf8')
 const sitemap=readFileSync(resolve('public/sitemap.xml'),'utf8')
-const required=['data-game="null-shift"','data-game="time"','data-game="swarm"','data-game="inherit"','data-game="remix"','data-game="civic-cascade"','data-game="patina"','data-game="signal-run"','id="games-grid"','id="game-search"','data-filter="tactical"','id="player-dialog"','id="player-share"','id="player-fullscreen"','id="analytics-toggle"','id="project-form"','https://wa.me/79640027222','osgardbewworld.com','o2system.art','senjorio.com','superday.run','marcosa.club','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio','/games/favicon.svg','/privacy/','/terms/']
+const required=['data-game="null-shift"','data-game="time"','data-game="swarm"','data-game="inherit"','data-game="remix"','data-game="civic-cascade"','data-game="patina"','data-game="signal-run"','id="games-grid"','id="game-search"','data-filter="tactical"','id="player-dialog"','id="post-run-recommendations"','game-session-recommendations.css','game-session-recommendations.js','id="player-share"','id="player-fullscreen"','id="analytics-toggle"','id="project-form"','https://wa.me/79640027222','osgardbewworld.com','o2system.art','senjorio.com','superday.run','marcosa.club','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio','/games/favicon.svg','/privacy/','/terms/']
 for(const item of required) assert.ok(html.includes(item),'Games hub missing: '+item)
 assert.ok(appSource.includes('className="play-catalog-link" href="/games/"')&&appSource.includes('<em>OSGARD WORLD GAMING</em>')&&appSource.includes("'Открыть игровой портал'"),'Homepage entertainment gateway must promote OSGARD WORLD GAMING and open the canonical /games/ hub')
 assert.ok(html.includes('<title>OSGARD WORLD GAMING — Игровая платформа</title>')&&html.includes('og:title" content="OSGARD WORLD GAMING — игровые миры')&&html.includes('"name":"OSGARD WORLD GAMING"'),'Gaming hub identity must be consistent in title, social metadata and structured data')
 assert.ok(html.includes('OSGARD WORLD GAMING <span>/</span> DIGITAL WORLDS')&&html.includes('быстрый возврат к недавним сессиям'),'Gaming hub hero must describe the branded portal and its actual navigation features')
-for(const path of ['public/games/index.html','public/games/favicon.svg','public/games/player-lifecycle.js','public/games/admin/index.html','public/games/admin/partners/index.html','public/games/civic-cascade/index.html','public/games/patina/index.html','public/games/signal-run/index.html','public/games/signal-run/game.js','public/privacy/index.html','public/terms/index.html']) assert.ok(existsSync(resolve(path)),'Missing file: '+path)
+for(const path of ['public/games/index.html','public/games/favicon.svg','public/games/player-lifecycle.js','public/games/game-session-recommendations.js','public/games/game-session-recommendations.css','public/games/inherit/index.html','public/games/admin/index.html','public/games/admin/partners/index.html','public/games/civic-cascade/index.html','public/games/patina/index.html','public/games/signal-run/index.html','public/games/signal-run/game.js','public/privacy/index.html','public/terms/index.html']) assert.ok(existsSync(resolve(path)),'Missing file: '+path)
 for(const path of ['scripts/games-lighthouse-report.mjs','.github/workflows/games-lighthouse.yml']) assert.ok(existsSync(resolve(path)),'Missing games performance monitoring file: '+path)
 const lighthouseScript=readFileSync(resolve('scripts/games-lighthouse-report.mjs'),'utf8')
 const lighthouseWorkflow=readFileSync(resolve('.github/workflows/games-lighthouse.yml'),'utf8')
@@ -98,6 +102,7 @@ assert.ok(html.includes('.consent-row p{max-width:710px;color:#7f877c;font-size:
 assert.ok(html.includes('.note{margin:16px 0 0;color:#8b9387;font-size:12px;line-height:1.7}')&&html.includes('.privacy-note{color:#8b9387;font-size:12px;line-height:1.65}'),'Notes must remain readable on mobile')
 assert.ok(nginx.includes('gzip_types text/plain text/css text/javascript application/json application/javascript'),'Nginx should gzip text/javascript assets')
 assert.ok(lifecycle.includes('function startSession(')&&lifecycle.includes('game_session_completed'),'Actual session lifecycle tracking missing')
+assert.ok(deployWorkflow.includes('gateway="${gateway_values%% *}"')&&!deployWorkflow.includes("awk '{print $1}'"),'Remote API gateway diagnostic must not use nested SSH single quotes')
 assert.ok(lifecycle.includes('event.preventDefault();event.stopPropagation();launch(id,link.href,false)'),'Launch capture must prevent the legacy card handler from opening the same iframe twice')
 assert.ok(lifecycle.includes('clientReadyMs')&&lifecycle.includes('durationSeconds')&&lifecycle.includes('function fail('),'Launch timing and failure recovery missing')
 assert.ok(lifecycle.includes('osgard:game-lifecycle')&&lifecycle.includes('event.origin!==location.origin')&&lifecycle.includes('event.source!==frame.contentWindow'),'Lifecycle message must validate same-origin iframe/source')
@@ -153,3 +158,50 @@ const patinaScriptEnd=patina.indexOf('</script>',patinaScriptStart)
 const patinaInline=patina.slice(patinaScriptStart,patinaScriptEnd)
 assert.ok(patinaInline&&patinaInline.length>5000,'PATINA self-contained gameplay script missing')
 new Function(patinaInline)
+ 
+// Behavioral regression: completion-based discovery must follow explicit end-state events only.
+assert.ok(inheritGame.includes('<meta name="osgard-inherit-api-base" content="">'),'INHERIT shared-world API must be an explicit deployment setting')
+assert.ok(!inheritGame.includes('http://127.0.0.1:4174')&&!inheritGame.includes('http://127.0.0.1:4175'),'Public INHERIT client must not call localhost APIs')
+assert.ok(inheritGame.includes("if(!apiWorld){notice('Shared world sync is not configured — local lineage is active');return}"),'INHERIT must remain playable without a configured shared-world API')
+assert.ok(inheritGame.includes("Generation '+S.generation+' saved locally")&&inheritGame.includes("function osgardAnnounceInheritCompleted()"),'INHERIT must save a local generation and announce real completion')
+assert.ok(inheritGame.includes('Analytics stays local until a consented production collector is configured'),'INHERIT analytics must not silently call a dev localhost collector')
+assert.ok(readFileSync(resolve(root,'null-shift/game.js'),'utf8').includes("game:'null-shift',state:'completed'"),'NULL//SHIFT must announce the mission result')
+assert.ok(readFileSync(resolve(root,'swarm/game.js'),'utf8').includes("game:'swarm',state:'completed'"),'SWARM must announce the result screen')
+assert.ok(readFileSync(resolve(root,'remix/index.html'),'utf8').includes("game:'remix',state:'completed'"),'REMIX must announce server-owned RESULTS')
+assert.ok(readFileSync(resolve('src/TimePrototype.tsx'),'utf8').includes("game: 'time', state: 'completed'"),'Imperium of Time must announce the terminal state')
+assert.ok(lifecycle.includes("document.dispatchEvent(new Event('osgard:game-launching'))")&&lifecycle.includes("new CustomEvent('osgard:game-completed'"),'The trusted lifecycle bridge must clear and emit completion events')
+assert.ok(['null-shift','time','swarm','inherit','remix','civic-cascade','patina','signal-run'].every(id=>recommendations.includes("'" + id + "'")||recommendations.includes(id + ':')),'Completion recommendations should recognise all eight catalogue games')
+assert.ok(!recommendations.includes('fetch('),'Recommendation UI must not issue background network requests')
+assert.ok(recommendationCss.includes('.post-run-recommendations')&&recommendationCss.includes('prefers-reduced-motion:reduce'),'Recommendation UI must keep responsive and reduced-motion styling')
+
+const mockListeners={}
+const fakeNode=()=>({
+ className:'',textContent:'',hidden:false,dataset:{},href:'',children:[],
+ append(...items){this.children.push(...items)},
+ replaceChildren(...items){this.children=items},
+ classList:null
+})
+const mockHost=fakeNode();mockHost.hidden=true
+const dialogClasses=new Set()
+const mockDialog=fakeNode()
+mockDialog.classList={add(name){dialogClasses.add(name)},remove(name){dialogClasses.delete(name)},contains(name){return dialogClasses.has(name)}}
+const mockDocument={
+ querySelector(selector){return selector==='#post-run-recommendations'?mockHost:selector==='#player-dialog'?mockDialog:null},
+ createElement(){return fakeNode()},
+ addEventListener(name,handler){mockListeners[name]=handler}
+}
+new Function('document',recommendations)(mockDocument)
+mockDocument.dispatch=(name,event={})=>{assert.equal(typeof mockListeners[name],'function','Missing lifecycle listener: '+name);mockListeners[name](event)}
+mockDocument.dispatch('osgard:game-completed',{detail:{game:'swarm'}})
+assert.equal(mockHost.hidden,false,'A completed SWARM session should show recommendations')
+assert.equal(dialogClasses.has('has-recommendations'),true,'Completed session should adapt the player viewport')
+assert.equal(mockHost.children.length,3,'Recommendation block should contain a heading, explanation and links')
+assert.deepEqual(mockHost.children[2].children.map(link=>link.dataset.play),['null-shift','remix'],'SWARM should recommend NULL//SHIFT and REMIX')
+assert.deepEqual(mockHost.children[2].children.map(link=>link.href),['/games/null-shift-godot/','/games/remix/'],'Recommendations must use real same-origin game routes')
+mockDocument.dispatch('osgard:game-launching')
+assert.equal(mockHost.hidden,true,'Launching another game must clear prior recommendations')
+assert.equal(mockHost.children.length,0,'Stale game recommendations must be removed')
+assert.equal(dialogClasses.has('has-recommendations'),false,'The player layout must reset after a new launch')
+mockDocument.dispatch('osgard:game-completed',{detail:{game:'unknown'}})
+assert.equal(mockHost.hidden,true,'Unknown game IDs must not fabricate recommendations')
+
