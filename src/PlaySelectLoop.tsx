@@ -236,8 +236,8 @@ export function PlaySelectLoop({ locale }: { locale: Locale }) {
         </div>
         <div className="play-select-preference-grid">
           {services.map(service => {
-            const unverified = service.id === 'gardvpn'
-            return <label className={'play-select-preference-option' + (unverified ? ' is-unverified' : '')} key={service.id}>
+            const limitedVerification = service.id === 'gardvpn'
+            return <label className={'play-select-preference-option' + (limitedVerification ? ' is-limited-verification' : '')} key={service.id}>
               <input
                 type="checkbox"
                 checked={draftSelected.includes(service.id)}
@@ -248,7 +248,7 @@ export function PlaySelectLoop({ locale }: { locale: Locale }) {
                   setPromoStatus('')
                 }}
               />
-              <span><strong>{service.name}</strong><small>{unverified ? (ru ? 'Доступность не подтверждена; откроется сайт проекта' : 'Availability not verified; opens the project site') : service.category}</small></span>
+              <span><strong>{service.name}</strong><small>{limitedVerification ? (ru ? 'Главная страница ответила; VPN-подключение не проверялось' : 'Homepage responded; VPN connectivity not tested') : service.category}</small></span>
             </label>
           })}
         </div>
