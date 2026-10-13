@@ -15,6 +15,7 @@ on:
       - "public/sitemap.xml"
       - "public/privacy/**"
       - "public/terms/**"
+      - "public/support/**"
       - "godot/null-shift/**"
       - "scripts/null-shift-godot-smoke.mjs"
       - "public/games/null-shift-godot/**"
