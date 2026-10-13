@@ -41,24 +41,24 @@ assert.ok(dailyCircuitScript.includes('window.OSGARDDailyCircuitCore')&&dailyCir
 assert.ok(!dailyCircuitScript.includes('fetch(')&&!dailyCircuitScript.includes('googletagmanager')&&!dailyCircuitScript.includes('doubleclick.net'),'Daily Circuit must not add ad SDKs or unapproved network calls')
 assert.ok(html.includes('window.OSGARDGames=Object.freeze')&&html.includes('window.OSGARDDailyTrackShare=')&&html.includes("source:'daily_circuit'"),'Daily Circuit must use the existing player and consent/token analytics bridge')
 new Function(dailyCircuitScript)
-const dailySandbox={window:{},URL,URLSearchParams,Date,Math,Uint8Array}
+const dailyCircuitSandbox={window:{},URL,URLSearchParams,Date,Math,Uint8Array}
 runInNewContext(dailyCircuitScript,dailySandbox)
-const dailyCore=dailySandbox.window.OSGARDDailyCircuitCore
-assert.ok(dailyCore,'Daily Circuit pure routing core must be available')
-const fixedDailyDate='2026-10-13'
-const signalDailyUrl=new URL(dailyCore.routeFor('signal-run',fixedDailyDate,'https://osgard.world').href,'https://osgard.world')
-const nullDailyShare=new URL(dailyCore.shareUrl('null-shift',fixedDailyDate,'0123456789ab','https://osgard.world'))
-assert.equal(signalDailyUrl.pathname,'/games/signal-run/')
-assert.equal(signalDailyUrl.searchParams.get('mode'),'daily')
-assert.equal(signalDailyUrl.searchParams.get('day'),fixedDailyDate)
-assert.equal(signalDailyUrl.searchParams.get('utm_content'),'daily_circuit')
-assert.equal(nullDailyShare.pathname,'/games/null-shift-godot/')
-assert.equal(nullDailyShare.searchParams.get('challenge'),'NS-20261013-C3','NULL//SHIFT daily code must match the UTC Godot contract selector')
-assert.equal(nullDailyShare.searchParams.get('ref'),'og_01234567')
-assert.equal(nullDailyShare.searchParams.get('utm_campaign'),'play_with_friends')
-assert.throws(()=>dailyCore.challengeCode('2026-02-30'),/valid UTC calendar date/i)
-assert.throws(()=>dailyCore.routeFor('unknown',fixedDailyDate,'https://osgard.world'),/Unsupported daily route/i)
-assert.throws(()=>dailyCore.shareUrl('signal-run',fixedDailyDate,'bad','https://osgard.world'),/12-character opaque invite code/i)
+const dailyCircuitCore=dailySandbox.window.OSGARDDailyCircuitCore
+assert.ok(dailyCircuitCore,'Daily Circuit pure routing core must be available')
+const fixedDailyCircuitDate='2026-10-13'
+const signalDailyCircuitUrl=new URL(dailyCircuitCore.routeFor('signal-run',fixedDailyCircuitDate,'https://osgard.world').href,'https://osgard.world')
+const nullDailyCircuitShare=new URL(dailyCircuitCore.shareUrl('null-shift',fixedDailyCircuitDate,'0123456789ab','https://osgard.world'))
+assert.equal(signalDailyCircuitUrl.pathname,'/games/signal-run/')
+assert.equal(signalDailyCircuitUrl.searchParams.get('mode'),'daily')
+assert.equal(signalDailyCircuitUrl.searchParams.get('day'),fixedDailyCircuitDate)
+assert.equal(signalDailyCircuitUrl.searchParams.get('utm_content'),'daily_circuit')
+assert.equal(nullDailyCircuitShare.pathname,'/games/null-shift-godot/')
+assert.equal(nullDailyCircuitShare.searchParams.get('challenge'),'NS-20261013-C3','NULL//SHIFT daily code must match the UTC Godot contract selector')
+assert.equal(nullDailyCircuitShare.searchParams.get('ref'),'og_01234567')
+assert.equal(nullDailyCircuitShare.searchParams.get('utm_campaign'),'play_with_friends')
+assert.throws(()=>dailyCircuitCore.challengeCode('2026-02-30'),/valid UTC calendar date/i)
+assert.throws(()=>dailyCircuitCore.routeFor('unknown',fixedDailyCircuitDate,'https://osgard.world'),/Unsupported daily route/i)
+assert.throws(()=>dailyCircuitCore.shareUrl('signal-run',fixedDailyCircuitDate,'bad','https://osgard.world'),/12-character opaque invite code/i)
 console.log('PASS DAILY CIRCUIT deterministic routes, referral parameters, accessibility/responsive styling and no-ad-network guard')
 
 
