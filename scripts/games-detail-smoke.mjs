@@ -5,6 +5,7 @@ import { readFileSync, existsSync } from 'node:fs'
 const read = (path) => readFileSync(path, 'utf8')
 const detail = read('src/GameDetailPage.tsx')
 const app = read('src/main.tsx')
+const entertainmentCatalog = read('src/EntertainmentCatalog.tsx')
 const hub = read('public/games/index.html')
 const godotProject = read('godot/null-shift/project.godot')
 const deployWorkflow = read('.github/workflows/deploy-frontend.yml')
@@ -13,6 +14,12 @@ const nginx = read('nginx.conf')
 const sitemap = read('public/sitemap.xml')
 const css = read('src/games-hub.css')
 const routeMatrix = read('scripts/production-route-matrix.mjs')
+
+
+for (const [label, source] of [['SPA route SEO', app], ['game detail UI', detail], ['legacy game catalogue', entertainmentCatalog]]) {
+  assert.ok(!source.includes('�') && !source.includes('пїЅ') && !source.includes('РЎР'), label + ' contains a damaged text-encoding sequence')
+}
+assert.ok(!app.includes('const seo: Record') && app.includes('const cleanSeo: Record'), 'Only the clean, authoritative SPA SEO registry should remain')
 
 const civicGame = read('public/games/civic-cascade/index.html')
 const cascadeGame = read('public/games/cascade-lab/index.html')
