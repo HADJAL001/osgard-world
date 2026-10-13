@@ -94,3 +94,8 @@
 .luxury-entertainment .art-patina{--accent:#e2c783;--glow:#b3c9a22a;background:radial-gradient(ellipse at 50% 50%,rgba(199,198,143,.2),transparent 56%),linear-gradient(145deg,#293426,#090e0b)}
 .luxury-entertainment .art-patina svg{filter:drop-shadow(0 12px 18px #0007)}
 .luxury-entertainment .art-patina strong span{color:#e2c783}
+
+/* CASCADE LAB — engineering puzzle cover within the OSGARD PLAY visual system. */
+.luxury-entertainment .art-cascade{--accent:#79eaff;--glow:#79eaff2b;background:linear-gradient(138deg,#142a30 0%,#101a1c 46%,#080b0d 100%)}
+.luxury-entertainment .art-cascade svg{filter:drop-shadow(0 0 22px rgba(121,234,255,.12))}
+.luxury-entertainment .card:hover .art-cascade svg{filter:drop-shadow(0 0 32px rgba(121,234,255,.2))}
