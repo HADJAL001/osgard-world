@@ -27,7 +27,8 @@ The first launch opens a pausing Russian-language field briefing with the three 
 - Mouse: aim; hold left mouse button: fire.
 - E: interact; Q: pulse; Space: tactical dash (short burst with one-hit evade window and 1.65 s cooldown); Shift: phase shift.
 - F2 cycles three persisted graphics profiles: Cinematic (glow + shadows), Balanced (shadows + practical fill lights), and Performance (reduced dynamic lighting). Cinematic mode still adapts down under sustained frame-time pressure and restores effects after stable pacing.
-- F3 toggles live diagnostics; M toggles and persists sound; Esc pauses; C rotates contracts; U opens loadout; 1/2/3 buy upgrades.
+- F3 toggles live diagnostics; F4 toggles and persists Reduced Motion (less camera shake, field-of-view breathing and vignette pulsing); M toggles and persists sound; Esc pauses; C rotates contracts; U opens loadout; 1/2/3 buy upgrades.
+- Touch controls include a dedicated MOT button for Reduced Motion with a live ON/LOW state and tooltip; the setting persists locally and never changes combat timing, damage or collision behavior.
 - Touch screens include dedicated graphics-profile and FPS/diagnostics buttons alongside movement, fire, action, pulse, phase-shift and dash controls; the dash button shows cooldown and aiming is assisted.
 
 ## Live diagnostics

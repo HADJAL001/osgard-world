@@ -248,3 +248,10 @@ The Godot build tracks a persistent UTC daily-clear streak, longest streak and l
 - The system is integrated into the real quality governor: Cinematic = 72 motes, Balanced = 32 at reduced speed, Performance = emission disabled. Adaptive degradation suspends particles and stable frame timing restores them.
 - Runtime and static release tests verify the emitter, particle material, fade ramp, density choices and automatic/manual quality transitions.
 - This is a restrained real-time atmosphere layer, not volumetric cloud simulation or native 8K rendering. Actual frame-time quality still needs device profiling.
+
+
+## Release 2.1 — reduced-motion accessibility
+
+- Added a persistent Reduced Motion preference, available from F4 on desktop and a dedicated third utility button in the Godot touch HUD. The button shows MOT ON / MOT LOW and describes the setting in its tooltip.
+- Reduced mode clears active camera shake when enabled, scales future screen impulses to 12%, reduces their duration to 70%, limits camera FOV breathing to 18%, and holds the health-vignette pulse at a steady level through a shader uniform. Aim, movement, dash windows, weapons, damage and mission state remain unchanged.
+- The setting is stored in the existing local career settings. Headless runtime smoke measures the difference in FOV response and camera shake, verifies shader pulse suppression, exercises the touch toggle, and confirms persistence; the static source contract requires the F4 path and all mobile utility sizing declarations.

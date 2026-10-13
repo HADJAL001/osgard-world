@@ -280,6 +280,66 @@ func _run_smoke() -> void:
 	game.mobile_diagnostics_button.emit_signal("pressed")
 	if not _expect(not game.diagnostics_enabled and not game.diagnostics_label.visible, "touch diagnostics button must hide telemetry when toggled off"):
 		return
+
+	print("RUNTIME_STAGE: reduced-motion accessibility setting")
+	if not _expect(is_instance_valid(game.mobile_motion_button), "touch HUD must expose a reduced-motion control"):
+		return
+	var saved_reduced_motion: bool = game.reduced_motion
+	var saved_motion_velocity: Vector3 = game.player.velocity
+	var saved_motion_aim: Vector3 = game.player_aim
+	var saved_motion_fov: float = game.camera.fov
+	var saved_null_shift_timer: float = game.null_shift_timer
+	var saved_camera_shake_strength: float = game.camera_shake_strength
+	var saved_camera_shake_timer: float = game.camera_shake_timer
+	var saved_camera_shake_duration: float = game.camera_shake_duration
+	var saved_motion_recoil: float = game.weapon_recoil
+	game.reduced_motion = false
+	game.player.velocity = Vector3(7.4, 0.0, 0.0)
+	game.player_aim = Vector3.FORWARD
+	game.null_shift_timer = 0.0
+	game.weapon_recoil = 0.0
+	game.camera.fov = game.CAMERA_BASE_FOV
+	game._update_camera(1.0)
+	var full_motion_fov_change: float = absf(game.camera.fov - game.CAMERA_BASE_FOV)
+	game.camera_shake_strength = 0.0
+	game.camera_shake_timer = 0.0
+	game.camera_shake_duration = 0.0
+	game._screen_impulse(1.0, 0.5)
+	var full_motion_shake: float = game.camera_shake_strength
+	game._toggle_reduced_motion()
+	if not _expect(game.reduced_motion and game.mobile_motion_button.text == "MOT LOW", "motion toggle must enter the low-motion state and update its label"):
+		return
+	if not _expect(bool(game.career.get_value("settings", "reduced_motion", false)), "reduced-motion preference must persist to the career settings"):
+		return
+	if not _expect(is_equal_approx(game.camera_shake_strength, 0.0) and is_equal_approx(game.camera_shake_timer, 0.0), "enabling reduced motion must immediately clear any active camera shake"):
+		return
+	game._screen_impulse(1.0, 0.5)
+	var reduced_motion_shake: float = game.camera_shake_strength
+	if not _expect(reduced_motion_shake < full_motion_shake * 0.15, "reduced motion must cut camera shake to a subtle fraction"):
+		return
+	game.camera.fov = game.CAMERA_BASE_FOV
+	game._update_camera(1.0)
+	var reduced_motion_fov_change: float = absf(game.camera.fov - game.CAMERA_BASE_FOV)
+	if not _expect(full_motion_fov_change > 1.0 and reduced_motion_fov_change < full_motion_fov_change * 0.25, "reduced motion must suppress cinematic field-of-view breathing"):
+		return
+	if not _expect(is_equal_approx(float(game.cinematic_vignette_material.get_shader_parameter("motion_reduction")), 1.0), "vignette shader must stop its periodic pulse in reduced-motion mode"):
+		return
+	game.mobile_motion_button.emit_signal("pressed")
+	if not _expect(not game.reduced_motion and game.mobile_motion_button.text == "MOT ON" and is_equal_approx(float(game.cinematic_vignette_material.get_shader_parameter("motion_reduction")), 0.0), "touch control must restore full visual motion and shader pulse"):
+		return
+	game.reduced_motion = saved_reduced_motion
+	game.career.set_value("settings", "reduced_motion", saved_reduced_motion)
+	game._save_career()
+	game._update_reduced_motion_ui()
+	game._update_cinematic_vignette()
+	game.player.velocity = saved_motion_velocity
+	game.player_aim = saved_motion_aim
+	game.null_shift_timer = saved_null_shift_timer
+	game.camera.fov = saved_motion_fov
+	game.camera_shake_strength = saved_camera_shake_strength
+	game.camera_shake_timer = saved_camera_shake_timer
+	game.camera_shake_duration = saved_camera_shake_duration
+	game.weapon_recoil = saved_motion_recoil
 	game.performance_quality = false
 	game.cinematic_quality = true
 	game._apply_quality_mode()

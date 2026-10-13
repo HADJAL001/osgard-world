@@ -111,6 +111,7 @@ var paused_game := false
 var mouse_firing := false
 var touch_firing := false
 var sound_enabled := true
+var reduced_motion := false
 var player_aim := Vector3.FORWARD
 var career_names := ["STANDARD RAID", "BLACKOUT RUN", "IRON VEIL"]
 var contract_bonus := [0, 350, 550]
@@ -155,6 +156,7 @@ var sound_button: Button
 var quality_button: Button
 var mobile_quality_button: Button
 var mobile_diagnostics_button: Button
+var mobile_motion_button: Button
 var mobile_modules_button: Button
 var mobile_dash_button: Button
 var dash_status_label: Label
@@ -363,6 +365,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_toggle_quality()
 		KEY_F3:
 			_toggle_diagnostics()
+		KEY_F4:
+			_toggle_reduced_motion()
 		KEY_ESCAPE:
 			_set_pause(not paused_game)
 		KEY_C:
@@ -2004,6 +2008,7 @@ func _apply_quality_mode() -> void:
 		mobile_quality_button.tooltip_text = "Текущий режим: %s. Нажмите для переключения." % mode_name
 	if is_instance_valid(mobile_diagnostics_button):
 		mobile_diagnostics_button.text = "FPS+" if diagnostics_enabled else "FPS"
+	_update_reduced_motion_ui()
 	if is_instance_valid(sound_button):
 		sound_button.text = "ЗВУК / ВКЛ" if sound_enabled else "ЗВУК / ВЫКЛ"
 
@@ -2040,6 +2045,27 @@ func _evaluate_adaptive_quality(mean_ms: float, p95_ms: float) -> void:
 	else:
 		adaptive_slow_windows = 0
 		adaptive_fast_windows = 0
+
+func _update_reduced_motion_ui() -> void:
+	if not is_instance_valid(mobile_motion_button):
+		return
+	mobile_motion_button.text = "MOT LOW" if reduced_motion else "MOT ON"
+	mobile_motion_button.tooltip_text = "Сниженное движение ВКЛ: мягкая камера и спокойные экранные эффекты." if reduced_motion else "Сниженное движение ВЫКЛ: полная кинематографическая камера и пульсация."
+
+func _toggle_reduced_motion() -> void:
+	reduced_motion = not reduced_motion
+	if reduced_motion:
+		camera_shake_strength = 0.0
+		camera_shake_timer = 0.0
+		camera_shake_duration = 0.0
+		weapon_recoil = 0.0
+		if is_instance_valid(camera):
+			camera.fov = CAMERA_BASE_FOV
+	career.set_value("settings", "reduced_motion", reduced_motion)
+	_save_career()
+	_update_reduced_motion_ui()
+	_update_cinematic_vignette()
+	_update_hud()
 
 func _toggle_sound() -> void:
 	sound_enabled = not sound_enabled
@@ -2104,6 +2130,7 @@ func _load_career() -> void:
 	if performance_quality:
 		cinematic_quality = false
 	sound_enabled = bool(career.get_value("settings", "sound_enabled", true))
+	reduced_motion = bool(career.get_value("settings", "reduced_motion", false))
 	operator_style = str(career.get_value("cosmetics", "operator_style", "cyan"))
 	if operator_style not in ["cyan", "amber", "violet"]:
 		operator_style = "cyan"
@@ -2123,6 +2150,7 @@ func _save_career() -> void:
 	career.set_value("upgrades", "pulse", pulse_level)
 	career.set_value("upgrades", "weapon", weapon_level)
 	career.set_value("raid", "contract", current_contract)
+	career.set_value("settings", "reduced_motion", reduced_motion)
 	career.set_value("cosmetics", "operator_style", operator_style)
 	career.set_value("cosmetics", "owns_amber", owns_amber_style)
 	career.set_value("cosmetics", "owns_violet", owns_violet_style)
@@ -2195,7 +2223,7 @@ func _create_ui() -> void:
 		lane_chip.custom_minimum_size = Vector2(82.0, 16.0)
 		lane_chip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		phase_lane_labels.append(lane_chip)
-	status_shortcuts = _label(status_stack, "ПОМОЩЬ / H  ·  FPS / F3  ·  ГРАФИКА / F2", 8, Color(0.48, 0.6, 0.62))
+	status_shortcuts = _label(status_stack, "H HELP · F2 GFX · F3 FPS · F4 MOTION", 8, Color(0.48, 0.6, 0.62))
 
 	objective_panel = _make_panel(hud_root, Control.PRESET_TOP_RIGHT, Rect2(-334.0, 18.0, 316.0, 178.0))
 	var objective_stack := _panel_stack(objective_panel)
@@ -2402,11 +2430,13 @@ shader_type canvas_item;
 uniform float vignette_strength : hint_range(0.0, 0.45) = 0.28;
 uniform float danger : hint_range(0.0, 1.0) = 0.0;
 uniform float phase_shift : hint_range(0.0, 1.0) = 0.0;
+uniform float motion_reduction : hint_range(0.0, 1.0) = 0.0;
 void fragment() {
 	vec2 centered = (UV - vec2(0.5)) * vec2(1.0, 0.86);
 	float distance_from_center = length(centered);
 	float edge = smoothstep(0.24, 0.72, distance_from_center);
-	float pulse = 0.72 + 0.28 * sin(TIME * 2.4);
+	float pulse_wave = 0.72 + 0.28 * sin(TIME * 2.4);
+	float pulse = mix(pulse_wave, 1.0, motion_reduction);
 	float danger_edge = danger * 0.14 * pulse;
 	float alpha = edge * (vignette_strength + danger_edge + phase_shift * 0.055);
 	vec3 base = vec3(0.003, 0.009, 0.012);
@@ -2433,6 +2463,7 @@ func _update_cinematic_vignette() -> void:
 	cinematic_vignette_material.set_shader_parameter("vignette_strength", base_strength)
 	cinematic_vignette_material.set_shader_parameter("danger", danger)
 	cinematic_vignette_material.set_shader_parameter("phase_shift", phase_weight)
+	cinematic_vignette_material.set_shader_parameter("motion_reduction", 1.0 if reduced_motion else 0.0)
 	cinematic_vignette.visible = true
 
 func _create_damage_direction_ui() -> void:
@@ -2672,9 +2703,11 @@ func _update_screen_overlay() -> void:
 	impact_overlay.visible = alpha > 0.004
 
 func _screen_impulse(strength: float, duration: float) -> void:
-	camera_shake_strength = maxf(camera_shake_strength, strength)
-	camera_shake_timer = maxf(camera_shake_timer, duration)
-	camera_shake_duration = maxf(camera_shake_duration, duration)
+	var motion_scale: float = 0.12 if reduced_motion else 1.0
+	var duration_scale: float = 0.7 if reduced_motion else 1.0
+	camera_shake_strength = maxf(camera_shake_strength, strength * motion_scale)
+	camera_shake_timer = maxf(camera_shake_timer, duration * duration_scale)
+	camera_shake_duration = maxf(camera_shake_duration, duration * duration_scale)
 
 func _make_panel(parent: Control, preset: int, rect: Rect2) -> PanelContainer:
 	var panel := PanelContainer.new()
@@ -2793,10 +2826,14 @@ func _create_mobile_controls(parent: Control) -> void:
 	var utility_row := HBoxContainer.new()
 	utility_row.add_theme_constant_override("separation", 4)
 	action_stack.add_child(utility_row)
-	mobile_quality_button = _add_button(utility_row, "ГРАФИКА", _toggle_quality, Vector2(86.0, 27.0))
-	mobile_quality_button.add_theme_font_size_override("font_size", 8)
-	mobile_diagnostics_button = _add_button(utility_row, "FPS", _toggle_diagnostics, Vector2(86.0, 27.0))
-	mobile_diagnostics_button.add_theme_font_size_override("font_size", 8)
+	mobile_quality_button = _add_button(utility_row, "GFX", _toggle_quality, Vector2(54.0, 27.0))
+	mobile_quality_button.add_theme_font_size_override("font_size", 7)
+	mobile_diagnostics_button = _add_button(utility_row, "FPS", _toggle_diagnostics, Vector2(54.0, 27.0))
+	mobile_diagnostics_button.add_theme_font_size_override("font_size", 7)
+	mobile_motion_button = _add_button(utility_row, "MOT LOW" if reduced_motion else "MOT ON", _toggle_reduced_motion, Vector2(54.0, 27.0))
+	mobile_motion_button.add_theme_font_size_override("font_size", 7)
+	mobile_motion_button.tooltip_text = "Сниженное движение уменьшает тряску камеры, изменение поля зрения и пульсацию эффектов."
+	_update_reduced_motion_ui()
 	mobile_modules_button = _add_button(action_stack, "МОДУЛИ", _toggle_loadout, Vector2(176.0, 28.0))
 	sound_button = _add_button(action_stack, "ЗВУК / ВКЛ" if sound_enabled else "ЗВУК / ВЫКЛ", _toggle_sound, Vector2(176.0, 27.0))
 
@@ -2938,9 +2975,10 @@ func _layout_compact_controls(viewport_size: Vector2) -> void:
 	var action_button_width: float = floor((action_width - 32.0) * 0.5)
 	for button in mobile_action_buttons:
 		button.custom_minimum_size = Vector2(action_button_width, 34.0)
-	var utility_button_width: float = floor((action_width - 28.0) * 0.5)
+	var utility_button_width: float = floor((action_width - 32.0) / 3.0)
 	mobile_quality_button.custom_minimum_size = Vector2(utility_button_width, 27.0)
 	mobile_diagnostics_button.custom_minimum_size = Vector2(utility_button_width, 27.0)
+	mobile_motion_button.custom_minimum_size = Vector2(utility_button_width, 27.0)
 	mobile_modules_button.custom_minimum_size = Vector2(action_width - 24.0, 28.0)
 	sound_button.custom_minimum_size = Vector2(action_width - 24.0, 27.0)
 
@@ -3079,7 +3117,8 @@ func _update_camera(delta: float) -> void:
 	var follow_weight: float = 1.0 - exp(-delta * 4.25)
 	camera_follow_position = camera_follow_position.lerp(target, clampf(follow_weight, 0.0, 1.0))
 	var shake_fade: float = clampf(camera_shake_timer / maxf(0.001, camera_shake_duration), 0.0, 1.0)
-	var shake_amount: float = camera_shake_strength * shake_fade
+	var motion_scale: float = 0.18 if reduced_motion else 1.0
+	var shake_amount: float = camera_shake_strength * shake_fade * motion_scale
 	var shake := Vector3(
 		sin(scene_clock * 53.0) * shake_amount,
 		sin(scene_clock * 37.0) * shake_amount * 0.42,
@@ -3089,9 +3128,9 @@ func _update_camera(delta: float) -> void:
 	var aim_lead := Vector3(player_aim.x, 0.0, player_aim.z).normalized() * 0.7
 	camera.look_at(player.global_position + Vector3(0.0, 0.55, 0.0) + aim_lead, Vector3.UP)
 	var horizontal_speed := Vector2(player.velocity.x, player.velocity.z).length()
-	var movement_fov := clampf(horizontal_speed / PLAYER_SPEED, 0.0, 1.0) * 1.35
-	var shift_fov := 3.1 if null_shift_timer > 0.0 else 0.0
-	var recoil_fov := clampf(weapon_recoil, 0.0, 1.0) * 0.85
+	var movement_fov := clampf(horizontal_speed / PLAYER_SPEED, 0.0, 1.0) * 1.35 * motion_scale
+	var shift_fov := (3.1 if null_shift_timer > 0.0 else 0.0) * motion_scale
+	var recoil_fov := clampf(weapon_recoil, 0.0, 1.0) * 0.85 * motion_scale
 	var target_fov: float = CAMERA_BASE_FOV + movement_fov + shift_fov + recoil_fov
 	camera.fov = lerpf(camera.fov, target_fov, 1.0 - exp(-maxf(delta, 0.0) * 4.8))
 
