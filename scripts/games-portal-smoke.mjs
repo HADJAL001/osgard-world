@@ -42,6 +42,14 @@ const manifest=readFileSync(resolve('src/core/manifest.ts'),'utf8')
 const sitemap=readFileSync(resolve('public/sitemap.xml'),'utf8')
 const required=['data-game="null-shift"','data-game="time"','data-game="swarm"','data-game="inherit"','data-game="remix"','data-game="civic-cascade"','data-game="patina"','data-game="signal-run"','data-game="cascade-lab"','id="games-grid"','id="game-search"','data-filter="tactical"','id="player-dialog"','id="player-share"','id="player-fullscreen"','id="analytics-toggle"','id="project-form"','https://wa.me/79640027222','osgardbewworld.com','o2system.art','senjorio.com','superday.run','marcosa.club','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio','/games/favicon.svg','/privacy/','/terms/']
 for(const item of required) assert.ok(html.includes(item),'Games hub missing: '+item)
+
+const cardGenres = [...html.matchAll(/<article class="[^"]*" data-game="[^"]+"[^>]*data-genres="([^"]+)"/g)]
+  .flatMap(([, value]) => value.trim().split(/\s+/).filter(Boolean))
+const availableFilters = [...html.matchAll(/<button class="chip[^"]*" data-filter="([^"]+)"/g)].map(([, value]) => value)
+for (const genre of new Set(cardGenres)) assert.ok(availableFilters.includes(genre), 'Every card genre needs a visible filter button: ' + genre)
+assert.ok(availableFilters.includes('arcade'), 'Visible Arcade genre filter is missing')
+assert.ok(html.includes('data-game="signal-run"') && html.includes('data-genres="arcade creative"'), 'SIGNAL RUN must be tagged as an arcade/creative game')
+assert.ok(html.includes('Все игры <b>09</b>'), 'Catalogue count badge must match the nine visible game cards')
 assert.ok(appSource.includes('className="play-catalog-link" href="/games/"')&&appSource.includes('<em>OSGARD WORLD GAMING</em>')&&appSource.includes("'Открыть игровой портал'"),'Homepage entertainment gateway must promote OSGARD WORLD GAMING and open the canonical /games/ hub')
 assert.ok(appSource.includes('className="play-quick-picks"')&&appSource.includes("aria-label={ru ? 'Быстрый запуск игр' : 'Quick launch games'}")&&appSource.includes('QUICK START'),'Homepage must expose a labelled quick-launch section in both locales')
 for (const route of ['/games/swarm/','/games/inherit/','/games/signal-run/']) assert.ok(appSource.includes('href="'+route+'"'),'Homepage quick-launch route missing: '+route)
@@ -78,12 +86,30 @@ const civicInline=(civic.match(/<script>([\s\S]*?)<\/script>/)||[])[1]
 assert.ok(civicInline&&civicInline.length>5000,'CIVIC CASCADE self-contained game script missing')
 new Function(civicInline)
 assert.ok(lifecycle.includes("'signal-run':{title:'SIGNAL RUN',url:'/games/signal-run/'}"), 'Player lifecycle registry must include SIGNAL RUN')
-assert.ok(luxury.includes("const validIds = new Set(['null-shift', 'time', 'swarm', 'inherit', 'remix', 'civic-cascade', 'patina', 'signal-run', 'cascade-lab'])"), 'Recent history and Resume registry must include all nine current games, including CASCADE LAB')
+const cardIds = [...html.matchAll(/<article class="[^"]*" data-game="([^"]+)"/g)].map(([, id]) => id)
+assert.equal(new Set(cardIds).size, cardIds.length, 'Catalog game IDs must be unique')
+assert.equal(cardIds.length, 9, 'The canonical Games catalogue contains nine game cards')
+const validIdsDeclaration = luxury.match(/const validIds = new Set\(\[([^\]]+)\]\)/)
+assert.ok(validIdsDeclaration, 'Recent-history validIds registry must exist')
+const historyIds = [...validIdsDeclaration[1].matchAll(/'([^']+)'/g)].map(([, id]) => id)
+assert.deepEqual([...historyIds].sort(), [...cardIds].sort(), 'Recent history and Resume IDs must match the catalogue cards exactly')
+assert.ok(historyIds.includes('signal-run'), 'SIGNAL RUN must be recognized in recent history and Continue')
 assert.ok(lifecycle.includes("if(id==='signal-run')return !!doc.querySelector('#arena')&&!!doc.querySelector('#start')"), 'Player lifecycle must detect SIGNAL RUN readiness')
 assert.ok(lifecycle.includes("!['ready','started','paused','resumed','error','completed'].includes(m.state)"), 'Player lifecycle must support SIGNAL RUN ready and pause/resume states')
 assert.ok(manifest.includes("'patina' | 'signal-run'") && manifest.includes("href: '/games/signal-run/'"), 'Core manifest must register SIGNAL RUN')
 assert.ok(sitemap.includes('<loc>https://osgard.world/games/signal-run/</loc>') && sitemap.includes('<loc>https://osgard.world/game/signal-run</loc>'), 'SIGNAL RUN routes must be present in the XML sitemap')
 assert.ok(signalRun.includes('<title>SIGNAL RUN — OSGARD WORLD</title>') && signalRun.includes('id="arena"') && signalRun.includes('id="fullscreen"'), 'SIGNAL RUN page shell or controls missing')
+
+assert.ok(signalRun.includes('<link rel="canonical" href="https://osgard.world/games/signal-run/">'), 'SIGNAL RUN canonical URL missing')
+for (const metaTag of [
+  '<meta property="og:type" content="website">',
+  '<meta property="og:site_name" content="OSGARD WORLD">',
+  '<meta property="og:title" content="SIGNAL RUN — OSGARD WORLD">',
+  '<meta property="og:description" content="SIGNAL RUN — бесплатная браузерная аркада OSGARD. Меняй полосу, собирай сигналы и уходи от цифровых помех.">',
+  '<meta property="og:url" content="https://osgard.world/games/signal-run/">',
+  '<meta name="twitter:card" content="summary">'
+]) assert.ok(signalRun.includes(metaTag), 'SIGNAL RUN social metadata missing: ' + metaTag)
+assert.ok(!/<meta[^>]+property="og:image"/i.test(signalRun), 'Do not reference an unverified SIGNAL RUN social image')
 assert.ok(signalRun.includes('prefers-reduced-motion:reduce') && signalRun.includes('id="touch-pulse"'), 'SIGNAL RUN mobile/accessibility controls missing')
 assert.ok(signalJs.includes("game:'signal-run'") && signalJs.includes("life('ready')") && signalJs.includes("life('completed'") && signalJs.includes('osgard.signal-run.best.v1'), 'SIGNAL RUN lifecycle and local-best contract missing')
 new Function(signalJs)
