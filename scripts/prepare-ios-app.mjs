@@ -68,7 +68,7 @@ function prepareWeb() {
     text = text.replaceAll('GODOT 4 · WEB', 'WEBGL · iOS');
     text = text.replaceAll('Основной вход — Godot-сборка; браузерный WebGL остаётся альтернативой.',
       'В iPhone-сборке используется локально упакованная WebGL-версия с сенсорным управлением.');
-    const routes = new Set(['null-shift', 'time', 'swarm', 'inherit', 'remix', 'civic-cascade', 'patina', 'signal-run', 'cascade-lab', 'afterimage-run']);
+    const routes = new Set(['null-shift', 'time', 'swarm', 'inherit', 'remix', 'civic-cascade', 'patina', 'signal-run', 'cascade-lab', 'afterimage-run', 'aether-grid']);
     text = text.replace(/href=(['"])\/game\/([a-z0-9-]+)\1/gi, (match, quote, slug) =>
       routes.has(slug) ? 'href=' + quote + '/games/' + slug + '/index.html' + quote : match);
     text = text.replaceAll('href="/games/time"', 'href="/games/time/index.html"');
@@ -116,7 +116,7 @@ function prepareWeb() {
     '</head><body><main role="status" aria-live="polite"><div class="mark">O</div><strong>OSGARD PLAY</strong><p>Preparing your next world</p></main>' +
     '<script>location.replace("/games/");</script></body></html>';
   writeFileSync(join(dist, 'index.html'), appShell);
-  console.log('Prepared local-first iOS web bundle with packaged games, system share bridge and HTTPS analytics config.');
+  console.log('Prepared local-first iOS web bundle with 11 game entrypoints, system share bridge and HTTPS analytics config.');
 }
 
 function addPrivacyManifest(pbxPath) {
