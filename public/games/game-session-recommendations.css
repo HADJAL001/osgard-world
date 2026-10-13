@@ -182,3 +182,13 @@ dialog#player-dialog[data-postgame-intermission="1"] .post-run-recommendations{m
 @media(max-width:760px){.og-postgame-spotlight{padding:14px}.og-postgame-spotlight-name{font-size:31px}.og-postgame-spotlight-description{font-size:11px}.og-postgame-spotlight-actions>*{flex:1 1 calc(50% - 8px)}.og-postgame-spotlight-open{flex-basis:100%}.og-postgame-toggle{min-height:40px}}
 @media(max-width:360px){.og-postgame-spotlight-actions>*{width:100%;flex:1 1 100%}}
 @media(prefers-reduced-motion:reduce){.og-postgame-spotlight,.og-postgame-spotlight-actions>*{transition:none;animation:none}}
+
+/* Server-verified referral rewards: clear opt-in, responsive and keyboard-visible. */
+.og-postgame-reward-consent{display:flex;align-items:flex-start;gap:11px;margin:10px 0 14px;padding:13px 15px;border:1px solid rgba(211,255,105,.28);background:linear-gradient(115deg,#d3ff690c,transparent 72%),#0b100e;color:#b5c0b5;font-size:11px;line-height:1.7}
+.og-postgame-reward-consent input{flex:0 0 auto;width:18px;height:18px;margin:2px 0 0;accent-color:#d3ff69}
+.og-postgame-reward-consent input:focus-visible{outline:2px solid #d3ff69;outline-offset:3px}
+.og-postgame-reward-consent span{display:block}
+.og-postgame-wallet{font-variant-numeric:tabular-nums}
+.og-postgame-reward-note{max-width:900px}
+@media(max-width:600px){.og-postgame-reward-consent{padding:11px;font-size:10px}.og-postgame-share-actions>*{flex:1 1 100%;width:100%;justify-content:center}.og-postgame-networks>*{flex:1 1 calc(50% - 8px)}}
+@media(prefers-reduced-motion:reduce){.og-postgame-reward-consent,.og-postgame-reward-consent *{transition:none;animation:none}}
