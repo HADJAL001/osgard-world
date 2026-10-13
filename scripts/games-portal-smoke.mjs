@@ -232,3 +232,21 @@ new Function(patinaInline)
 
 assert.ok(luxuryCss.includes('content-visibility:auto') && luxuryCss.includes('contain-intrinsic-size:auto 440px'), 'Mobile layout should defer off-screen cards with a reserved size')
 assert.ok(luxuryCss.includes('luxury-entertainment header{backdrop-filter:none'), 'Mobile layout should avoid expensive header blur')
+
+
+// Growth loop, commercial inquiry surfaces and referral privacy guardrails.
+assert.ok(html.includes('id="growth-lab"') && html.includes('id="growth-invite-button"'), 'Public growth/invitation surface missing')
+for (const offer of ['Спонсорская интеграция','Брендированный игровой челлендж','Игру','Премиум-доступ / Founding Pass (сбор интереса)']) {
+  assert.ok(html.includes('data-interest="'+offer+'"'), 'Commercial interest CTA missing: '+offer)
+  assert.ok(html.includes('<option>'+offer+'</option>'), 'Commercial inquiry form option missing: '+offer)
+}
+assert.ok(html.includes('/games/monetization/'), 'Growth section must link to the scenario model')
+assert.ok(html.includes('РЕКЛАМА НЕ ПОДКЛЮЧЕНА') && html.includes('оплат нет'), 'Public commercial section must distinguish proposals from active monetization')
+assert.ok(luxuryJs.includes("const INVITE_KEY = 'osgard.games.invite-code.v1'"), 'Invite link needs a stable local code')
+assert.ok(luxuryJs.includes("url.searchParams.set('ref', createInviteCode())"), 'Invitation links need a referral parameter')
+assert.ok(luxuryJs.includes("if (!consent || !validInvite(code)) return"), 'Referral analytics must remain gated by consent')
+assert.ok(luxuryJs.includes("name: 'referral_landing_opened'") || luxuryJs.includes("reportInviteEvent('referral_landing_opened'"), 'Referral landing attribution event missing')
+assert.ok(luxuryJs.includes("reportInviteEvent('referral_link_created'"), 'Referral-share attribution event missing')
+assert.ok(luxuryJs.includes('data-interest'), 'Commercial CTAs must wire to the project enquiry form')
+assert.ok(!/stripe|checkout\\.session|payment_intent|sk_live_/i.test(luxuryJs), 'Client must not fake a production payment integration')
+assert.ok(html.includes('id="analytics-toggle"') && html.includes('osgard.games.analytics-consent.v1'), 'Referral event capture must use the existing explicit analytics consent control')
