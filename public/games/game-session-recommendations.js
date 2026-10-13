@@ -81,8 +81,9 @@ async function sendEvent(name,gameId,source){
    let parsedBase;
    try{parsedBase=new URL(rawBase,location.origin)}catch{return false}
    const localApi=['localhost','127.0.0.1'].includes(parsedBase.hostname);
-   if((parsedBase.protocol!=='https:'&&!(localApi&&parsedBase.protocol==='http:'))||parsedBase.username||parsedBase.password||parsedBase.pathname!=='/'||parsedBase.search||parsedBase.hash)return false;
-   const base=parsedBase.origin;
+   const allowedPath=parsedBase.pathname==='/'||(parsedBase.origin===location.origin&&parsedBase.pathname==='/commerce-api');
+   if((parsedBase.protocol!=='https:'&&!(localApi&&parsedBase.protocol==='http:'))||parsedBase.username||parsedBase.password||!allowedPath||parsedBase.search||parsedBase.hash)return false;
+   const base=parsedBase.origin+(parsedBase.pathname==='/'?'':parsedBase.pathname);
   const request={method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({consent:true,events:[event]})};
   if(controller)request.signal=controller.signal;
   const response=await fetch(base+'/v1/events',request);
@@ -321,8 +322,9 @@ async function sendSelectEvent(name,gameId,source){
   let parsedBase;
   try{parsedBase=new URL(rawBase,location.origin)}catch{return false}
   const localApi=['localhost','127.0.0.1'].includes(parsedBase.hostname);
-  if((parsedBase.protocol!=='https:'&&!(localApi&&parsedBase.protocol==='http:'))||parsedBase.username||parsedBase.password||parsedBase.pathname!=='/'||parsedBase.search||parsedBase.hash)return false;
-  const base=parsedBase.origin;
+  const allowedPath=parsedBase.pathname==='/'||(parsedBase.origin===location.origin&&parsedBase.pathname==='/commerce-api');
+  if((parsedBase.protocol!=='https:'&&!(localApi&&parsedBase.protocol==='http:'))||parsedBase.username||parsedBase.password||!allowedPath||parsedBase.search||parsedBase.hash)return false;
+  const base=parsedBase.origin+(parsedBase.pathname==='/'?'':parsedBase.pathname);
   const request={method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({consent:true,events:[event]})};
   if(controller)request.signal=controller.signal;
   const response=await fetch(base+'/v1/events',request);
