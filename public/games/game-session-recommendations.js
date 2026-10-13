@@ -458,7 +458,7 @@ function servicesShelf(gameId,showPromos,completedCount){
  collapseToggle.hidden=!(showPromos&&activeSelected.length);
  collapseToggle.textContent=showPromos?'Выбрать из '+availableServiceIds.length+' сервисов':'Подборка по расписанию';
  collapseToggle.setAttribute('aria-expanded','false');
- const visible=activeSelected.length?services.filter(([id,,,,,,featured=false,active=true])=>active===false||preferences.selected.includes(id)):[];
+ const visible=activeSelected;
  const grid=make('div','og-postgame-service-grid'),cards=[];
  grid.hidden=true;filters.hidden=true;
  if(showPromos&&activeSelected.length){
