@@ -126,6 +126,7 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
   function notify(state, extra = {}) { try { if (window.parent !== window) window.parent.postMessage({ type: 'osgard:game-lifecycle', state, game: 'aether-grid', at: Date.now(), ...extra }, location.origin); } catch {} }
   let seedState = 0, day = '', moves = 0, startedAt = 0, timerHandle = 0, hintsUsed = 0, won = false, toastHandle = 0;
   let elapsedBeforeStart = 0, paused = false, runHasStarted = false, visibilityPaused = false, soundEnabled = false, hapticsEnabled = false;
+  let audioContext = null;
   let undoStack = [], redoStack = [];
   let solutionPath = [], correct = [], original = [], turns = [], bestKey = '';
   const runKeyPrefix = 'osgard.aether-grid.progress.v1.';
@@ -133,7 +134,8 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
   const soundKey = 'osgard.aether-grid.sound.v1';
   const contrastKey = 'osgard.aether-grid.contrast.v1';
   const hapticsKey = 'osgard.aether-grid.haptics.v1';
-  function runSeconds() { return Math.max(0,elapsedBeforeStart+(startedAt&&!paused?Math.floor((Date.now()-startedAt)/1000):0)); }
+  function monotonicNow() { return typeof performance !== 'undefined' && typeof performance.now === 'function' ? performance.now() : Date.now(); }
+  function runSeconds() { return Math.max(0,elapsedBeforeStart+(startedAt&&!paused?Math.floor((monotonicNow()-startedAt)/1000):0)); }
   function safeLocalGet(key,fallback='') { try { return localStorage.getItem(key) ?? fallback; } catch { return fallback; } }
   function readStats() {
     try {
@@ -177,7 +179,10 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
         !raw.turns.every(value=>Number.isInteger(value)&&value>=0&&value<=3)||
         !Number.isSafeInteger(raw.moves)||raw.moves<0||raw.moves>100000||
         !Number.isSafeInteger(raw.hintsUsed)||raw.hintsUsed<0||raw.hintsUsed>10000||
-        !Number.isSafeInteger(raw.elapsedSeconds)||raw.elapsedSeconds<0||raw.elapsedSeconds>86400)return false;
+        !Number.isSafeInteger(raw.elapsedSeconds)||raw.elapsedSeconds<0||raw.elapsedSeconds>604800) {
+        try { localStorage.removeItem(runKeyPrefix+day); } catch {}
+        return false;
+      }
       turns=raw.turns.slice();moves=raw.moves;hintsUsed=raw.hintsUsed;elapsedBeforeStart=raw.elapsedSeconds;
       runHasStarted=moves>0;startedAt=0;paused=false;undoStack=[];redoStack=[];
       renderBoard();updateStats();updateConnectivity();updateHistoryControls();
@@ -193,7 +198,7 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
     const elapsed=runSeconds(),hadStarted=runHasStarted;
     turns=snapshot.turns.slice();moves=snapshot.moves;hintsUsed=snapshot.hintsUsed;elapsedBeforeStart=elapsed;
     startedAt=0;paused=false;runHasStarted=hadStarted||moves>0;won=false;
-    if(runHasStarted){startedAt=Date.now();if(!timerHandle)timerHandle=window.setInterval(updateTimer,250);}
+    if(runHasStarted){startedAt=monotonicNow();if(!timerHandle)timerHandle=window.setInterval(updateTimer,250);}
     $('result').classList.remove('is-visible');$('hint-button').disabled=false;
     $('pause-button').disabled=false;$('pause-button').textContent='Ⅱ Пауза';$('pause-button').setAttribute('aria-pressed','false');
     updateStats();updateConnectivity();updateHistoryControls();saveRun();
@@ -208,17 +213,24 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
   function setPaused(value){
     if(won||paused===value)return;
     if(value){elapsedBeforeStart=runSeconds();startedAt=0;window.clearInterval(timerHandle);timerHandle=0;paused=true;$('pause-button').textContent='▶ Продолжить';$('pause-button').setAttribute('aria-pressed','true');$('hint-note').textContent='Игра на паузе. Прогресс сохранён; нажми «Продолжить», чтобы вернуться.';saveRun();toast('Пауза включена.');}
-    else{paused=false;if(runHasStarted){startedAt=Date.now();if(!timerHandle)timerHandle=window.setInterval(updateTimer,250)}$('pause-button').textContent='Ⅱ Пауза';$('pause-button').setAttribute('aria-pressed','false');$('hint-note').textContent='Снова в игре. Продолжай соединять сигнал.';toast('Игра продолжается.');}
+    else{paused=false;if(runHasStarted){startedAt=monotonicNow();if(!timerHandle)timerHandle=window.setInterval(updateTimer,250)}$('pause-button').textContent='Ⅱ Пауза';$('pause-button').setAttribute('aria-pressed','false');$('hint-note').textContent='Снова в игре. Продолжай соединять сигнал.';toast('Игра продолжается.');}
     updateConnectivity();updateHistoryControls();updateStats();notify(value?'paused':'resumed');
   }
   function playTone(kind='rotate') {
     if(!soundEnabled)return;
     try{
       const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)return;
-      const ctx=new Ctx(),osc=ctx.createOscillator(),gain=ctx.createGain();
-      osc.type='sine';osc.frequency.value=kind==='win'?740:kind==='hint'?390:kind==='undo'?260:520;
-      gain.gain.setValueAtTime(0.0001,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(kind==='win'?0.07:0.025,ctx.currentTime+0.012);gain.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.12);
-      osc.connect(gain);gain.connect(ctx.destination);osc.start();osc.stop(ctx.currentTime+0.13);osc.onended=()=>{void ctx.close().catch(()=>{})};
+      if(!audioContext||audioContext.state==='closed')audioContext=new Ctx();
+      const ctx=audioContext;
+      const scheduleTone=()=>{
+        if(!soundEnabled||ctx.state==='closed')return;
+        const osc=ctx.createOscillator(),gain=ctx.createGain();
+        osc.type='sine';osc.frequency.value=kind==='win'?740:kind==='hint'?390:kind==='undo'?260:520;
+        gain.gain.setValueAtTime(0.0001,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(kind==='win'?0.07:0.025,ctx.currentTime+0.012);gain.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.12);
+        osc.connect(gain);gain.connect(ctx.destination);osc.start();osc.stop(ctx.currentTime+0.13);
+      };
+      if(ctx.state==='suspended'){void ctx.resume().then(scheduleTone).catch(()=>{});return;}
+      scheduleTone();
     }catch{}
   }
   function buzz(pattern=15){if(hapticsEnabled&&typeof navigator.vibrate==='function'){try{navigator.vibrate(pattern)}catch{}}}
@@ -394,7 +406,7 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
   function beginRun() {
     if(paused||won)return false;
     if(!runHasStarted){runHasStarted=true;notify('started');}
-    if(!startedAt){startedAt=Date.now();if(!timerHandle)timerHandle=window.setInterval(updateTimer,250);}
+    if(!startedAt){startedAt=monotonicNow();if(!timerHandle)timerHandle=window.setInterval(updateTimer,250);}
     return true;
   }
   function rotateTile(index) {
@@ -540,7 +552,7 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
       if(startedAt){elapsedBeforeStart=runSeconds();startedAt=0;window.clearInterval(timerHandle);timerHandle=0;visibilityPaused=true;saveRun();updateTimer();}
       if(runHasStarted)notify('paused');
     }else{
-      if(visibilityPaused){visibilityPaused=false;if(runHasStarted&&!paused){startedAt=Date.now();if(!timerHandle)timerHandle=window.setInterval(updateTimer,250)}updateTimer();notify('resumed');}
+      if(visibilityPaused){visibilityPaused=false;if(runHasStarted&&!paused){startedAt=monotonicNow();if(!timerHandle)timerHandle=window.setInterval(updateTimer,250)}updateTimer();notify('resumed');}
     }
   });
   window.addEventListener('pagehide',saveRun);
