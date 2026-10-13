@@ -191,7 +191,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
              : path === '/games/daily-circuit.css'
                ? content.includes('.daily-circuit-grid') && content.includes('prefers-reduced-motion:reduce')
              : path === '/games/player-passport.js'
-               ? content.includes('recordSession(') && content.includes('osgard:game-session-ended') && content.includes('navigator.share') && content.includes('data-passport-share') && content.includes('localStorage')
+               ? content.includes('osgard:game-session-ended') && content.includes('recordInvite') && content.includes('Публичная публикация не проверяется') && content.includes('navigator.share') && content.includes('data-passport-share') && content.includes('localStorage')
              : path === '/games/player-passport-core.js'
                ? content.includes('PASSPORT_GAME_IDS') && content.includes('PASSPORT_MAX_SESSIONS') && content.includes('normalizePassport') && content.includes('derivePassport') && content.includes('recordInvite')
              : path === '/games/player-passport.css'
