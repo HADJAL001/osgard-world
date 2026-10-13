@@ -182,3 +182,30 @@ dialog#player-dialog[data-postgame-intermission="1"] .post-run-recommendations{m
 @media(max-width:760px){.og-postgame-spotlight{padding:14px}.og-postgame-spotlight-name{font-size:31px}.og-postgame-spotlight-description{font-size:11px}.og-postgame-spotlight-actions>*{flex:1 1 calc(50% - 8px)}.og-postgame-spotlight-open{flex-basis:100%}.og-postgame-toggle{min-height:40px}}
 @media(max-width:360px){.og-postgame-spotlight-actions>*{width:100%;flex:1 1 100%}}
 @media(prefers-reduced-motion:reduce){.og-postgame-spotlight,.og-postgame-spotlight-actions>*{transition:none;animation:none}}
+
+
+/* OSGARD PLAY retention rewards — daily play and non-cash cosmetic unlocks. */
+.og-postgame-daily-reward{
+ display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:9px 12px;
+ border:1px solid #d3ff69;background:linear-gradient(115deg,#b7dc62,#d3ff69 60%,#e1efab);
+ border-radius:7px;color:#10140b;font-size:10px;font-weight:750;cursor:pointer;
+}
+.og-postgame-daily-reward:hover:not(:disabled){filter:brightness(1.06);transform:translateY(-1px)}
+.og-postgame-daily-reward:focus-visible,.og-shards-vault-action:focus-visible{outline:2px solid #f2f0e8;outline-offset:3px}
+.og-postgame-daily-reward:disabled{border-color:#ffffff20;background:#151915;color:#858a7d;cursor:default}
+.og-shards-vault{margin-top:14px;padding-top:14px;border-top:1px solid #ffffff18}
+.og-shards-vault-head{display:grid;gap:5px;margin-bottom:12px}
+.og-shards-vault-title{margin:0;color:#f3e6c2;font:400 clamp(20px,2.4vw,28px)/1.05 Georgia,serif;letter-spacing:-.035em}
+.og-shards-vault-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.og-shards-vault-item{min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:7px;padding:12px;border:1px solid rgba(218,192,133,.22);border-radius:8px;background:radial-gradient(ellipse at 70% 0,#d8c28f10,transparent 60%),#0d110f}
+.og-shards-vault-glyph{width:38px;height:38px;display:grid;place-items:center;border:1px solid rgba(218,192,133,.42);border-radius:50%;color:#e7d49f;font-size:22px}
+.og-shards-vault-item[data-cosmetic="eclipse"] .og-shards-vault-glyph{border-color:#8b91a8;color:#c9cde0}
+.og-shards-vault-item[data-cosmetic="aurora"] .og-shards-vault-glyph{border-color:#53d7ff77;color:#8ee8ff}
+.og-shards-vault-name{color:#f3efe4;font:700 10px ui-monospace,Consolas,monospace;letter-spacing:.09em}
+.og-shards-vault-description{flex:1;color:#a8aaa0;font-size:9px;line-height:1.5}
+.og-shards-vault-action{width:100%;min-height:34px;padding:7px;border:1px solid rgba(218,192,133,.35);border-radius:6px;background:#ffffff04;color:#e4d3a5;font-size:9px;font-weight:650;cursor:pointer}
+.og-shards-vault-action:hover:not(:disabled){border-color:#d8c28f;background:#d8c28f12}
+.og-shards-vault-action:disabled{opacity:.58;cursor:default}
+.og-postgame-reward-note{font-size:9px;line-height:1.65}
+@media(max-width:600px){.og-postgame-share-actions>*{flex:1 1 100%;width:100%}.og-shards-vault-grid{grid-template-columns:1fr}.og-shards-vault-item{display:grid;grid-template-columns:40px minmax(0,1fr);align-items:center;column-gap:10px}.og-shards-vault-glyph{grid-row:span 2}.og-shards-vault-name,.og-shards-vault-description{min-width:0}.og-shards-vault-action{grid-column:1/-1}}
+@media(prefers-reduced-motion:reduce){.og-postgame-daily-reward,.og-shards-vault-action{transition:none;transform:none!important}}
