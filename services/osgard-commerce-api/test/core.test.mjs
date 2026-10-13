@@ -49,6 +49,8 @@ test("analytics is disabled unless consent is explicit and event names are allow
   assert.equal(validateEventBatch({ consent: true, events: [{ ...event, name: "steal_customer_emails" }] }).ok, false);
   assert.equal(validateEventBatch({ consent: true, events: [event] }).ok, true);
   assert.equal(validateEventBatch({ consent: true, events: [{ ...event, gameId: "cascade-lab" }] }).ok, true);
+  assert.equal(validateEventBatch({ consent: true, events: [{ ...event, name: "share_target_opened" }] }).ok, true);
+  assert.equal(validateEventBatch({ consent: true, events: [{ ...event, name: "referral_reward_opted_in" }] }).ok, true);
 });
 
 test("consented analytics accept stable event IDs and new page-view events, while rejecting malformed IDs", () => {
