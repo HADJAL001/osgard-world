@@ -20,6 +20,7 @@ const html=readFileSync(resolve(root,'index.html'),'utf8')
 
 assert.ok(html.includes('contain-intrinsic-size:auto 520px'),'Offscreen game cards must reserve enough vertical space; 430px caused touch targets to overlap the following card')
 assert.ok(html.includes('contain-intrinsic-size:auto 540px')&&html.includes('contain-intrinsic-size:auto 620px'),'Mobile game cards need conservative intrinsic-size estimates to prevent cards overlapping tap targets')
+assert.ok(html.includes('.luxury-entertainment footer{margin-top:80px}'),'Mobile footer must remain clear of the project form submit target')
 
 const catalogCards=[...html.matchAll(/<article\b[^>]*\bdata-game="([^"]+)"[^>]*\bdata-genres="([^"]+)"[^>]*>/g)].map(match=>({id:match[1],genres:match[2].trim().split(/\s+/).filter(Boolean)}))
 const deployWorkflow=readFileSync(resolve('.github/workflows/deploy-frontend.yml'),'utf8')
