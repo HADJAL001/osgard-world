@@ -92,11 +92,11 @@ assert.equal(chooseSpotlightService(['myosa','projects','superday'],'superday',8
 assert.equal(chooseSpotlightService([],'',4,'each'),'',
   'Rotation must handle an empty user-selected service list');
 
-assert.ok(source.includes("frequency:'each'") &&
+assert.ok(source.includes("frequency:'every3'") &&
   source.includes("['each','После каждой завершённой игры']") &&
   source.includes("['every3','Раз в три завершённых раунда']") &&
   source.includes("['off','Не показывать подборку']"),
-  'Post-game promos must default to every round and remain user-controllable');
+  'Post-game promos must default to every third round and remain user-controllable');
 assert.ok(source.includes('grid.hidden=true;filters.hidden=true') &&
   source.includes("collapseToggle.textContent=showPromos?'Выбрать из '+availableServiceIds.length+' сервисов'"),
   'The service directory must be compact by default and open only when requested');
