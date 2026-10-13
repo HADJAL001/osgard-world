@@ -31,3 +31,8 @@ Ad impressions, rewarded views, purchases, subscriptions and sponsor revenue are
 After every valid completed game session, the embedded-player intermission presents the OSGARD SELECT service shelf beside existing next-game recommendations. It includes the ten service entries already listed on the canonical Games hub, uses `utm_source=osgard_games`, `utm_medium=post_game`, `utm_campaign=after_game` plus service/game context, and opens service sites in a new tab. Players may collapse the shelf and continue without visiting anything. GARD VPN is deliberately shown as not being promoted until its availability is confirmed; the card is not a link.
 
 The social panel provides share-composer links for Telegram, WhatsApp, VK, X and Facebook. Native share/copy actions and the player's explicit confirmation after using a social compose link can award +50 accountless OSGARD SHARDS once per UTC day per browser. Platform-specific claims are not independently verified: social networks do not provide reliable public-post receipts to this static client. SHARDS are local, non-monetary points and not purchase credit. No ad SDK, tracking pixel or third-party ad network is connected.
+
+
+### Discoverability improvement
+
+The post-game shelf explicitly labels these placements as OSGARD self-promotion. Players can narrow the ten service cards by category (all, development, business, city/lifestyle, technology, social, luxury); the default shows all entries. Filter controls and their selected state are keyboard accessible. These are first-party cross-promotions, not paid ad-network impressions.

@@ -96,3 +96,13 @@ dialog#player-dialog.has-recommendations .player-view iframe{min-height:155px}
 @media(max-width:760px){.og-postgame-outside{padding-inline:0}.og-postgame-outside>.og-postgame-outside-suite{padding:13px}.og-postgame-outside-intro .og-postgame-title{font-size:27px}.og-postgame-outside .og-postgame-service-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:360px){.og-postgame-outside .og-postgame-service-grid{grid-template-columns:1fr}.og-postgame-outside .og-postgame-service-card.is-featured{grid-column:auto}}
 @media(prefers-reduced-motion:reduce){.og-postgame-back{transition:none;scroll-behavior:auto}}
+
+/* OSGARD SELECT: explicit self-promotion disclosure and accessible category selection. */
+.og-postgame-disclosure{margin:0 0 7px;color:#e0c989;font:8px/1.5 ui-monospace,Consolas,monospace;letter-spacing:.12em}
+.og-postgame-service-filters{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.og-postgame-service-filter{min-height:29px;padding:6px 10px;border:1px solid rgba(218,192,133,.24);border-radius:999px;background:#ffffff04;color:#b6b3a8;font:8px/1.3 ui-monospace,Consolas,monospace;letter-spacing:.025em;cursor:pointer;transition:background .16s ease,border-color .16s ease,color .16s ease}
+.og-postgame-service-filter[aria-pressed="true"]{border-color:#d8c28f;background:#d8c28f18;color:#f2e3bd}
+.og-postgame-service-filter:hover{border-color:rgba(218,192,133,.62);color:#f2e3bd}
+.og-postgame-service-filter:focus-visible{outline:2px solid #d8c28f;outline-offset:3px}
+.og-postgame-service-card[hidden]{display:none!important}
+@media(max-width:520px){.og-postgame-service-filters{gap:5px}.og-postgame-service-filter{padding:6px 8px;font-size:7px}}
