@@ -22,6 +22,8 @@ const referralAnalytics = read('public/games/game-session-recommendations.js');
 const lifecycleAnalytics = read('public/games/player-lifecycle.js');
 const guide = read('docs/IOS_APP_STORE_CODEMAGIC_RU.md');
 const supportPage = read('public/support/osgard-play/index.html');
+const gamesCatalog = read('public/games/index.html');
+const sitemap = read('public/sitemap.xml');
 const releaseTagPreflight = read('scripts/ios-release-tag-preflight.mjs');
 
 assert.equal(config.appId, 'com.osgardworld.play');
@@ -56,6 +58,9 @@ assert.ok(!/submit_to_app_store\s*:\s*true/.test(codemagic), 'Public App Review 
 for (const version of ['@capacitor/core@8.5.3', '@capacitor/cli@8.5.3', '@capacitor/ios@8.5.3', '@capacitor/share@8.0.1']) {
   assert.ok(codemagic.includes(version), 'Pinned native dependency missing: ' + version);
 }
+const xcodeSelector = codemagic.match(/^\s+xcode:\s*([^\s#]+)/m)?.[1];
+assert.ok(xcodeSelector === 'latest' || Number.parseInt(String(xcodeSelector || '').split('.')[0], 10) >= 26,
+  'App Store uploads require Xcode 26 or later with the iOS 26 SDK; do not pin an older Codemagic runner.');
 assert.ok(codemagic.includes('xcode-project build-ipa'), 'IPA archive stage missing.');
 assert.ok(codemagic.includes('script: node scripts/ios-release-tag-preflight.mjs'), 'Codemagic must validate its release tag before doing expensive work.');
 assert.ok(codemagic.includes('npm run qa:ios-appstore'), 'Codemagic must run the source preflight during the iOS build.');
@@ -71,6 +76,8 @@ for (const command of [
 ]) assert.ok(codemagic.includes(command), 'TestFlight must run the required game/growth smoke: ' + command);
 assert.ok(guide.includes('TestFlight') && guide.includes('capacitor://localhost') && guide.includes('App Review Guidelines'), 'Release guide is missing signing, CORS, or Apple-review notes.');
 assert.ok(supportPage.includes('mailto:osman.osmanov0099@gmail.com') && supportPage.includes('href="/privacy/"'), 'App Store Support URL must provide a real contact and privacy-policy link.');
+assert.ok(gamesCatalog.includes('href="/support/osgard-play/"'), 'The public Games catalogue must link to its support page.');
+assert.ok(sitemap.includes('https://osgard.world/support/osgard-play/'), 'The support URL must be present in sitemap.xml.');
 assert.ok(read('docs/IOS_APP_STORE_LISTING_RU.md').includes('https://osgard.world/support/osgard-play/'), 'App Store listing draft must point to the published app-support page.');
 assert.ok(privacy.includes('<key>NSPrivacyTracking</key>') && privacy.includes('<false/>'), 'Privacy manifest must declare tracking state.');
 assert.ok(commerceServer.includes('capacitor://localhost'), 'Default Commerce API CORS must allow the Capacitor local origin.');
@@ -110,6 +117,7 @@ if (builtWeb) {
   const apiConfig = JSON.parse(read('dist/games/commerce-config.json'));
   assert.equal(new URL(apiConfig.apiBaseUrl).protocol, 'https:', 'Native API must use HTTPS.');
   assert.ok(catalog.includes('/games/osgard-native-share.js'), 'Native share bridge not injected into the catalogue.');
+  assert.ok(catalog.includes('href="/support/osgard-play/"'), 'The packaged Games catalogue must link to the support page.');
   assert.ok(catalog.includes('WEBGL · iOS') || catalog.includes('WEBGL / iOS'), 'Mobile NULL//SHIFT label not updated.');
   assert.ok(catalog.includes('/games/null-shift/index.html'), 'iOS catalogue must open the bundled WebGL version.');
   assert.ok(!/href=['"]\/game\/(?:null-shift|time|swarm|inherit|remix|civic-cascade|patina|signal-run|cascade-lab|afterimage-run)['"]/.test(catalog),
