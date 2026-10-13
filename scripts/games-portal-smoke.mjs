@@ -377,7 +377,7 @@ assert.deepEqual(postGameSpotlightActions?.children.map(node=>node.textContent),
 const initialSpotlightName=postGameSpotlightCopy.children.find(node=>node.className==='og-postgame-spotlight-name').textContent;
 postGameSpotlightActions.children.find(node=>node.className==='og-postgame-spotlight-next').click();
 assert.notEqual(postGameSpotlight.children.find(node=>node.className==='og-postgame-spotlight-copy').children.find(node=>node.className==='og-postgame-spotlight-name').textContent,initialSpotlightName,'Choosing another service should update the spotlight');
-const postGameDirectoryToggle=postGameServiceShelf.children.find(node=>node.className==='og-postgame-service-head').children.find(node=>node.className==='og-postgame-service-head-actions').children.find(node=>node.className==='og-postgame-collapse-toggle');
+const postGameDirectoryToggle=postGameServiceShelf.children.find(node=>node.className==='og-postgame-service-head').children.find(node=>node.className==='og-postgame-service-head-actions').children.find(node=>node.className==='og-postgame-toggle og-postgame-collapse-toggle');
 const postGameDirectory=postGameServiceShelf.children.find(node=>node.className==='og-postgame-service-grid');
 assert.ok(postGameDirectory.hidden&&postGameServiceShelf.children.find(node=>node.className==='og-postgame-service-filters').hidden,'The full project directory should be opt-in; only one curated promotion appears first');
 assert.equal(postGameDirectoryToggle.textContent,'Выбрать из 10 сервисов','Players must get a clear affordance to open the complete service list');
