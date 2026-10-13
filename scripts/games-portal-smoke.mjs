@@ -210,6 +210,39 @@ assert.ok(cardGenres.every(genre=>visibleFilters.has(genre)),'Every card genre m
 assert.ok(visibleFilters.has('arcade'),'The catalog must expose the Arcade genre filter')
 const required=['data-game="null-shift"','data-game="time"','data-game="swarm"','data-game="inherit"','data-game="remix"','data-game="civic-cascade"','data-game="patina"','data-game="signal-run"','data-game="cascade-lab"','data-game="afterimage-run"','data-game="aether-grid"','id="games-grid"','id="game-search"','data-filter="tactical"','data-filter="arcade"','id="player-dialog"','id="player-share"','id="player-fullscreen"','id="analytics-toggle"','id="project-form"','https://wa.me/79640027222','osgardbewworld.com','o2system.art','senjorio.com','superday.run','marcosa.club','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio','href="/games/ecosystem/"','/games/favicon.svg','/privacy/','/terms/']
 for(const item of required) assert.ok(html.includes(item),'Games hub missing: '+item)
+
+const gameDocumentPages=[
+  'public/entertainment/index.html',
+  'public/games/admin/index.html',
+  'public/games/admin/partners/index.html',
+  'public/games/aether-grid/index.html',
+  'public/games/afterimage-run/index.html',
+  'public/games/cascade-lab/index.html',
+  'public/games/civic-cascade/index.html',
+  'public/games/commerce-admin/index.html',
+  'public/games/ecosystem/index.html',
+  'public/games/growth-studio/index.html',
+  'public/games/index.html',
+  'public/games/inherit/index.html',
+  'public/games/monetization/index.html',
+  'public/games/null-shift/index.html',
+  'public/games/operations/index.html',
+  'public/games/partners/index.html',
+  'public/games/patina/index.html',
+  'public/games/premium/index.html',
+  'public/games/premium/success/index.html',
+  'public/games/remix/index.html',
+  'public/games/remix/player/index.html',
+  'public/games/signal-run/index.html',
+  'public/games/swarm/index.html'
+]
+for(const path of gameDocumentPages){
+  const documentSource=readFileSync(resolve(path),'utf8')
+  assert.equal(documentSource.split('</body>').length-1,1,path+' must close body exactly once')
+  assert.equal(documentSource.split('</html>').length-1,1,path+' must close html exactly once')
+}
+assert.equal(html.split('</body>').length-1,1,'Games hub must close body exactly once')
+assert.equal(html.split('</html>').length-1,1,'Games hub must close html exactly once')
 assert.ok(appSource.includes('className="play-catalog-link" href="/games/"')&&appSource.includes('<em>OSGARD WORLD GAMING</em>')&&appSource.includes("'Открыть игровой портал'"),'Homepage entertainment gateway must promote OSGARD WORLD GAMING and open the canonical /games/ hub')
 assert.ok(appSource.includes('className="play-quick-picks"')&&appSource.includes("aria-label={ru ? 'Быстрый запуск игр' : 'Quick launch games'}")&&appSource.includes('QUICK START'),'Homepage must expose a labelled quick-launch section in both locales')
 for (const route of ['/games/swarm/','/games/inherit/','/games/signal-run/']) assert.ok(appSource.includes('href="'+route+'"'),'Homepage quick-launch route missing: '+route)
@@ -627,6 +660,46 @@ assert.ok(inheritSafeForSmoke.includes('<meta name="osgard-inherit-api-base" con
 assert.ok(!inheritSafeForSmoke.includes('http://127.0.0.1:4174')&&!inheritSafeForSmoke.includes('http://127.0.0.1:4175'),'INHERIT public client must not contain localhost endpoints')
 assert.ok(inheritSafeForSmoke.includes("if(!apiWorld){notice('Общий мир не подключён — локальная летопись активна');return}"),'INHERIT should use local play without a configured shared server')
 assert.ok(inheritSafeForSmoke.includes("game:'inherit',state:'completed'"),'INHERIT generation handoff must publish the completed lifecycle event')
+
+assert.equal(inheritSafeForSmoke.split('</body>').length-1,1,'INHERIT must close body exactly once')
+assert.equal(inheritSafeForSmoke.split('</html>').length-1,1,'INHERIT must close html exactly once')
+assert.ok(!inheritSafeForSmoke.includes('</script></body></html>'+String.fromCharCode(10)+'document.head.insertAdjacentHTML'),'INHERIT theme injection must remain inside its script block')
+const inheritFinalPassHandlerStart=inheritSafeForSmoke.lastIndexOf("const passForAnalytics=q('#pass').onclick;")
+const inheritCompletedSignal=inheritSafeForSmoke.lastIndexOf("game:'inherit',state:'completed'")
+assert.ok(inheritFinalPassHandlerStart>=0&&inheritCompletedSignal>inheritFinalPassHandlerStart,'INHERIT completion must be sent by the final generation-pass handler, not an overwritten earlier handler')
+const inheritPastStyleAnchor=inheritSafeForSmoke.indexOf("document.head.insertAdjacentHTML('beforeend','<style>.past .app")
+const inheritPastScriptStart=inheritSafeForSmoke.lastIndexOf('<script>',inheritPastStyleAnchor)
+const inheritPastScriptEnd=inheritSafeForSmoke.indexOf('</script>',inheritPastStyleAnchor)
+assert.ok(inheritPastScriptStart>=0&&inheritPastScriptEnd>inheritPastStyleAnchor,'INHERIT past-generation theme injection must stay inside a script element')
+new Function(inheritSafeForSmoke.slice(inheritPastScriptStart+'<script>'.length,inheritPastScriptEnd))
+const inheritPassWrapperStart=inheritSafeForSmoke.lastIndexOf("const passForAnalytics=q('#pass').onclick;")
+const inheritPassWrapperEnd=inheritSafeForSmoke.indexOf("const returnedEventKey=",inheritPassWrapperStart)
+assert.ok(inheritPassWrapperStart>=0&&inheritPassWrapperEnd>inheritPassWrapperStart,'INHERIT final pass wrapper must be extractable for a deterministic handoff test')
+const inheritPassWrapperSource=inheritSafeForSmoke.slice(inheritPassWrapperStart,inheritPassWrapperEnd)
+new Function('q','S','window','localStorage','track',inheritPassWrapperSource)
+async function runInheritPassHandoffTest(serverBacked){
+  const state={generation:173,pending:[{type:'light',x:42,y:37}]}
+  const stored=new Map(serverBacked?[['inherit-last-passed','173']]:[])
+  const tracked=[]
+  const messages=[]
+  const button={onclick:async function(){state.generation+=1;state.pending=[];if(serverBacked)stored.set('inherit-last-passed',String(state.generation))}}
+  const mockQ=selector=>selector==='#pass'?button:null
+  const mockWindow={location:{origin:'https://osgard.world'}}
+  mockWindow.parent={postMessage:(message,targetOrigin)=>messages.push({message,targetOrigin})}
+  const mockStorage={getItem:key=>stored.has(key)?stored.get(key):null,setItem:(key,value)=>stored.set(key,String(value))}
+  new Function('q','S','window','localStorage','track',inheritPassWrapperSource)(mockQ,state,mockWindow,mockStorage,name=>tracked.push(name))
+  await button.onclick({type:'click'})
+  assert.equal(state.generation,174,'Passing a local or server-backed generation must advance exactly once')
+  assert.equal(messages.length,1,'Every successful generation handoff must notify the parent player exactly once')
+  assert.equal(messages[0].message.type,'osgard:game-lifecycle','INHERIT must use the shared lifecycle contract')
+  assert.equal(messages[0].message.game,'inherit','INHERIT lifecycle message must identify the game')
+  assert.equal(messages[0].message.state,'completed','Generation handoff must mark the gameplay session completed')
+  assert.equal(messages[0].targetOrigin,'https://osgard.world','Lifecycle message must target the same origin')
+  assert.equal(tracked.includes('generation_transferred'),serverBacked,'Only a server-confirmed generation transfer should count as server transfer analytics')
+}
+await runInheritPassHandoffTest(false)
+await runInheritPassHandoffTest(true)
+
 assert.ok(nullShiftForSmoke.includes("game:'null-shift',state:'completed'"),'NULL//SHIFT WebGL fallback must emit completion')
 assert.ok(swarmForSmoke.includes("game:'swarm',state:'completed'"),'SWARM must emit completion from result state')
 assert.ok(remixForSmoke.includes("game:'remix',state:'completed'"),'REMIX must emit completion from server RESULTS')
