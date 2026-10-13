@@ -26,10 +26,22 @@ let token = '';
 async function base() {
   const response = await fetch('/games/commerce-config.json', { cache: 'no-store' }).catch(() => null);
   const config = response?.ok ? await response.json().catch(() => ({})) : {};
-  return String(config.apiBaseUrl || '/commerce-api').replace(/\/+$/, '');
+  const raw = typeof config.apiBaseUrl === 'string' ? config.apiBaseUrl.trim() : '';
+  if (!raw) return '';
+  try {
+    const parsed = new URL(raw, location.origin);
+    const localApi = ['localhost', '127.0.0.1'].includes(parsed.hostname);
+    const allowedPath = parsed.pathname === '/' || (parsed.origin === location.origin && parsed.pathname === '/commerce-api');
+    if ((parsed.protocol !== 'https:' && !(localApi && parsed.protocol === 'http:')) || parsed.username || parsed.password || !allowedPath || parsed.search || parsed.hash) return '';
+    return parsed.origin + (parsed.pathname === '/' ? '' : parsed.pathname);
+  } catch {
+    return '';
+  }
 }
 async function api(path) {
-  const response = await fetch(await base() + path, { headers: { Authorization: 'Bearer ' + token }, cache: 'no-store' });
+  const apiBase = await base();
+  if (!apiBase) throw new Error('Commerce API не настроен. Введите токен только после развёртывания API и задания commerce-config.json.');
+  const response = await fetch(apiBase + path, { headers: { Authorization: 'Bearer ' + token }, cache: 'no-store' });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.message || data.error || 'HTTP ' + response.status);
   return data;
@@ -69,10 +81,10 @@ function renderOwnedPromo(rows) {
     return;
   }
   const serviceLabels = {
-    marcosa: 'MARCOSA', projects: 'OSGARD PROJECTS', 'o2-system': 'O2 SYSTEM',
+    marcosa: 'MARCOSA', projects: 'OSGARD BEW WORLD', 'o2-system': 'O2 SYSTEM',
     senjorio: 'SENJORIO', superday: 'SUPERDAY', myosa: 'MYOSA',
     'gold-glamour': 'GOLD GLAMOUR', gardvpn: 'GARD VPN',
-    'osgard-business': 'OSGARD BUSINESS', vanguard: 'OSGARD VANGUARD'
+    'osgard-business': 'OSGARD OS', vanguard: 'OSGARD VANGUARD STUDIO'
   };
   for (const item of rows) {
     const impressions = Number(item.impressions || 0);
