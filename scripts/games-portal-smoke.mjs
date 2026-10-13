@@ -17,6 +17,37 @@ execFileSync(process.execPath,[resolve('scripts/generate-games-share-cards.mjs')
 const shareCardGenerator=readFileSync(resolve('scripts/generate-games-share-cards.mjs'),'utf8')
 assert.ok(shareCardGenerator.includes("id: 'afterimage-run'")&&shareCardGenerator.includes("order: '10 / 11'")&&shareCardGenerator.includes("id: 'aether-grid'")&&shareCardGenerator.includes("order: '11 / 11'")&&shareCardGenerator.includes('11 WORLDS / ONE HUB'),'Share-card/invitation generator must include all eleven game worlds')
 const html=readFileSync(resolve(root,'index.html'),'utf8')
+
+const gameDocumentPages=[
+  'public/entertainment/index.html',
+  'public/games/admin/index.html',
+  'public/games/admin/partners/index.html',
+  'public/games/aether-grid/index.html',
+  'public/games/afterimage-run/index.html',
+  'public/games/cascade-lab/index.html',
+  'public/games/civic-cascade/index.html',
+  'public/games/commerce-admin/index.html',
+  'public/games/ecosystem/index.html',
+  'public/games/growth-studio/index.html',
+  'public/games/index.html',
+  'public/games/inherit/index.html',
+  'public/games/monetization/index.html',
+  'public/games/null-shift/index.html',
+  'public/games/operations/index.html',
+  'public/games/partners/index.html',
+  'public/games/patina/index.html',
+  'public/games/premium/index.html',
+  'public/games/premium/success/index.html',
+  'public/games/remix/index.html',
+  'public/games/remix/player/index.html',
+  'public/games/signal-run/index.html',
+  'public/games/swarm/index.html'
+]
+for(const path of gameDocumentPages){
+  const documentSource=readFileSync(resolve(path),'utf8')
+  assert.equal(documentSource.split('</body>').length-1,1,path+' must close body exactly once')
+  assert.equal(documentSource.split('</html>').length-1,1,path+' must close html exactly once')
+}
 const catalogCards=[...html.matchAll(/<article\b[^>]*\bdata-game="([^"]+)"[^>]*\bdata-genres="([^"]+)"[^>]*>/g)].map(match=>({id:match[1],genres:match[2].trim().split(/\s+/).filter(Boolean)}))
 const deployWorkflow=readFileSync(resolve('.github/workflows/deploy-frontend.yml'),'utf8')
 const routeMatrix=readFileSync(resolve('scripts/production-route-matrix.mjs'),'utf8')
