@@ -377,7 +377,7 @@ assert.equal(postGameServiceOptions?.children.length,10,'Service preferences mus
 const servicePreferenceInputs=(postGameServiceOptions?.children||[]).map(option=>option.children[0]);
 assert.equal(servicePreferenceInputs.filter(input=>input.checked&&!input.disabled).length,9,'Default preference selects every service whose availability is confirmed')
 const unavailableServiceChoice=servicePreferenceInputs.find(input=>input.dataset.servicePreference==='gardvpn');
-assert.ok(unavailableServiceChoice?.disabled,'GARD VPN must remain unselectable until service availability is confirmed')
+assert.ok(unavailableServiceChoice&&!unavailableServiceChoice.disabled,'GARD VPN should be a selectable official-site link without claiming its features are verified')
 const frequencyField=postGamePreferences.children.find(node=>node.className==='og-postgame-frequency-label');
 assert.deepEqual(frequencyField.children[0].children.map(option=>option.value),['each','every3','off'],'Players must choose every round, every three rounds, or no promo')
 assert.equal(frequencyField.children[0].value,'each','Service intermission is enabled after every completed game by default')
@@ -571,7 +571,7 @@ assert.ok(recommendationScript.includes("sendEvent('cross_promo_clicked',gameId,
 const postGameIds=['marcosa','projects','o2-system','senjorio','superday','myosa','gold-glamour','gardvpn','osgard-business','vanguard'];
 for(const id of postGameIds)assert.ok(recommendationScript.includes("['"+id+"'"),'Post-game service missing: '+id);
 for(const domain of ['marcosa.club','osgardbewworld.com','o2system.art','senjorio.com','superday.run','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio'])assert.ok(recommendationScript.includes(domain),'Service URL missing: '+domain);
-assert.ok(/\['gardvpn','08','GARD VPN'[^\n]+false,false\]/.test(recommendationScript),'GARD VPN must stay non-clickable until availability is confirmed');
+assert.ok(/\['gardvpn','08','GARD VPN'[^\n]+false,true\]/.test(recommendationScript),'GARD VPN is promoted only as an official-site destination without a verified-functionality claim');
 for(const provider of ['t.me/share/url','wa.me/?text=','vk.com/share.php','twitter.com/intent/tweet','facebook.com/sharer/sharer.php'])assert.ok(recommendationScript.includes(provider),'Social share redirect missing: '+provider);
 assert.ok(recommendationScript.includes("u.searchParams.set('utm_medium','post_game')")&&recommendationScript.includes("u.searchParams.set('utm_campaign','after_game')"),'Post-game links require UTM attribution');
 assert.ok(recommendationScript.includes("const walletKey='osgard.games.shards-wallet.v1',dailyReward=50")&&recommendationScript.includes('current.day===day'),'SHARDS must persist locally and be capped once per UTC day');
