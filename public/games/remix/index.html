@@ -19,7 +19,7 @@
   <section id="build"><span class="eyebrow">The loop</span><div class="grid"><article class="panel"><span class="eyebrow">01 / CREATE</span><strong>Shape a challenge</strong><p>Publish a challenge with deterministic rules and a clear objective.</p></article><article class="panel"><span class="eyebrow">02 / PLAY</span><strong>Enter the match</strong><p>Countdown, live state and inputs are validated by the authoritative service.</p></article><article class="panel"><span class="eyebrow">03 / REMIX</span><strong>Leave proof</strong><p>Results persist as replay keys that can be shared, inspected and remixed.</p></article></div><p class="note">The player build runs separately from the challenge console. Server validation remains the source of match results; social links never manufacture scores.</p></section><section class="growth-loop"><span class="eyebrow">04 / GROWTH + REVENUE</span><h2>Invite a rival.<br>Open a sponsor slot.</h2><p>The daily seed gives players a reason to return; the challenge link gives them a concrete reason to invite someone; a result screen can introduce a clearly labelled sponsor only after the run ends. Sponsorship is by inquiry until a real campaign is contracted.</p><a class="cta" href="/games/partners/?utm_source=remix&utm_medium=landing_cta&utm_campaign=daily_challenge&format=Sponsored%20event%20or%20level">Sponsor a challenge series ↗</a></section>
 </main>
 <script>
-const panel=document.createElement('section');panel.id='live-growth-console';panel.className='panel';panel.style='position:fixed;right:18px;bottom:18px;width:min(390px,calc(100vw - 36px));z-index:5;background:#102825f5;box-shadow:0 20px 70px #0009;max-height:calc(100dvh - 36px);overflow:auto;overscroll-behavior:contain';panel.innerHTML="<span class=\"eyebrow\">LIVE MATCH CONSOLE</span>\n<strong id=\"match-title\">Ready to enter</strong>\n<p id=\"match-status\">The daily challenge uses a shared UTC seed. Create a run, then send the invite link to a friend.</p>\n<input id=\"api-url\" aria-label=\"API URL\" placeholder=\"/api/remix\" style=\"width:100%;margin:10px 0;padding:10px;background:#07110f;border:1px solid #ffffff2b;color:#e8eee3\">\n<button id=\"start-match\" class=\"cta\" style=\"border:0;cursor:pointer;margin-top:4px\">Create daily challenge</button>\n<canvas id=\"arena\" width=\"340\" height=\"150\" style=\"display:block;width:100%;height:150px;margin-top:16px;background:#07110f;border:1px solid #ffffff1c\" aria-label=\"Local input preview\"></canvas>\n<div id=\"match-meter\" style=\"height:5px;background:#ffffff18;margin-top:18px\"><i style=\"display:block;height:100%;width:0;background:#e7c778;transition:width .2s\"></i></div>\n<div id=\"growth-panel\" hidden>\n  <span class=\"eyebrow\" id=\"growth-badge\">CHALLENGE PASSPORT</span>\n  <strong id=\"challenge-code\" style=\"display:block;margin-top:7px;font:21px Georgia,serif\">Awaiting server ID</strong>\n  <p id=\"challenge-copy\">Use this link to challenge a friend to the same ruleset. Only the server result is presented as a result.</p>\n  <input id=\"challenge-link\" aria-label=\"Shareable challenge URL\" readonly>\n  <div id=\"growth-actions\">\n    <button id=\"share-challenge\" class=\"cta\" type=\"button\">Share challenge ↗</button>\n    <button id=\"copy-challenge\" class=\"cta\" type=\"button\" style=\"background:transparent;color:#e7c778;border:1px solid #e7c77855\">Copy invite link</button>\n    <button id=\"rematch-challenge\" class=\"cta\" type=\"button\" style=\"grid-column:1/-1;background:transparent;color:#e8eee3;border:1px solid #ffffff2b\">Run this challenge again ↻</button>\n  </div>\n  <p id=\"result-summary\" role=\"status\" aria-live=\"polite\" hidden></p>\n  <div id=\"sponsor-slot\" hidden>\n    <span class=\"eyebrow\">PARTNER SLOT / INQUIRY ONLY</span>\n    <strong>A brand can sponsor the next challenge.</strong>\n    <p>This is a commercial inquiry link, not a live ad. It appears after the result, never over active controls. No sponsor campaign is currently represented as active.</p>\n    <a id=\"sponsor-cta\" class=\"cta\" href=\"/games/partners/?utm_source=remix&utm_medium=post_session&utm_campaign=challenge_series&utm_content=result_card\">Discuss a sponsored challenge ↗</a>\n  </div>\n</div>";document.body.appendChild(panel);
+const panel=document.createElement('section');panel.id='live-growth-console';panel.className='panel';panel.style='position:fixed;right:18px;bottom:18px;width:min(390px,calc(100vw - 36px));z-index:5;background:#102825f5;box-shadow:0 20px 70px #0009;max-height:calc(100dvh - 36px);overflow:auto;overscroll-behavior:contain';panel.innerHTML="<span class=\"eyebrow\">LIVE MATCH CONSOLE</span>\n<strong id=\"match-title\">Ready to enter</strong>\n<p id=\"match-status\">The daily challenge uses a shared UTC seed. Create a run, then send the invite link to a friend.</p>\n<input id=\"api-url\" aria-label=\"API URL\" placeholder=\"/api/remix\" style=\"width:100%;margin:10px 0;padding:10px;background:#07110f;border:1px solid #ffffff2b;color:#e8eee3\">\n<button id=\"start-match\" class=\"cta\" style=\"border:0;cursor:pointer;margin-top:4px\">Create daily challenge</button>\n<canvas id=\"arena\" width=\"340\" height=\"150\" style=\"display:block;width:100%;height:150px;margin-top:16px;background:#07110f;border:1px solid #ffffff1c\" aria-label=\"Local input preview\"></canvas>\n<div id=\"match-meter\" style=\"height:5px;background:#ffffff18;margin-top:18px\"><i style=\"display:block;height:100%;width:0;background:#e7c778;transition:width .2s\"></i></div>\n<div id=\"growth-panel\" hidden>\n  <span class=\"eyebrow\" id=\"growth-badge\">CHALLENGE PASSPORT</span>\n  <strong id=\"challenge-code\" style=\"display:block;margin-top:7px;font:21px Georgia,serif\">Awaiting server ID</strong>\n  <p id=\"challenge-copy\">Use this link to challenge a friend to the same ruleset. Only the server result is presented as a result.</p>\n  <input id=\"challenge-link\" aria-label=\"Shareable challenge URL\" readonly>\n  <div id=\"growth-actions\">\n    <button id=\"share-challenge\" class=\"cta\" type=\"button\">Share challenge ↗</button>\n    <button id=\"copy-challenge\" class=\"cta\" type=\"button\" style=\"background:transparent;color:#e7c778;border:1px solid #e7c77855\">Copy invite link</button>\n    <button id=\"rematch-challenge\" class=\"cta\" type=\"button\" style=\"grid-column:1/-1;background:transparent;color:#e8eee3;border:1px solid #ffffff2b\">Run this challenge again ↻</button>\n  </div>\n  <p id=\"result-summary\" role=\"status\" aria-live=\"polite\" hidden></p>\n  <div id=\"result-card-actions\" hidden style=\"margin-top:8px\"><button id=\"share-result-card\" class=\"cta\" type=\"button\" style=\"width:100%;justify-content:center\">Share result card ↗</button><button id=\"download-result-card\" class=\"cta\" type=\"button\" style=\"width:100%;justify-content:center;background:transparent;color:#e8eee3;border:1px solid #ffffff2b\">Download result card PNG ↓</button></div>\n  <div id=\"sponsor-slot\" hidden>\n    <span class=\"eyebrow\">PARTNER SLOT / INQUIRY ONLY</span>\n    <strong>A brand can sponsor the next challenge.</strong>\n    <p>This is a commercial inquiry link, not a live ad. It appears after the result, never over active controls. No sponsor campaign is currently represented as active.</p>\n    <a id=\"sponsor-cta\" class=\"cta\" href=\"/games/partners/?utm_source=remix&utm_medium=post_session&utm_campaign=challenge_series&utm_content=result_card\">Discuss a sponsored challenge ↗</a>\n  </div>\n</div>";document.body.appendChild(panel);
 const apiInput=panel.querySelector('#api-url'), status=panel.querySelector('#match-status'), title=panel.querySelector('#match-title'), meter=panel.querySelector('#match-meter i'), arena=panel.querySelector('#arena'), ctx=arena.getContext('2d');let player={x:170,y:105};function draw(){ctx.clearRect(0,0,arena.width,arena.height);ctx.strokeStyle='#e7c77833';for(let x=0;x<arena.width;x+=34){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,arena.height);ctx.stroke()}for(let y=0;y<arena.height;y+=30){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(arena.width,y);ctx.stroke()}ctx.fillStyle='#e7c778';ctx.beginPath();ctx.arc(player.x,player.y,8,0,Math.PI*2);ctx.fill()}draw();apiInput.value=localStorage.getItem('remix-api-url')||'/api/remix';let match=null, playerId='web-'+Math.random().toString(36).slice(2,9), seq=0, timer=null;
 const routeParams=new URLSearchParams(location.search);
 const incomingChallengeId=(routeParams.get('challenge')||'').trim().slice(0,128);
@@ -86,6 +86,7 @@ async function refresh(){
       const resultSummary=panel.querySelector('#result-summary');
       resultSummary.textContent=lastResultSummary;
       resultSummary.hidden=false;
+      panel.querySelector('#result-card-actions').hidden=false;
       const sponsor=panel.querySelector('#sponsor-slot');
       sponsor.hidden=false;
       growthPanel.hidden=false;
@@ -133,6 +134,57 @@ function summarizeResult(result){
     if(labels.length)return 'Server result · '+labels.join(' / ');
   }
   return 'Server returned the result. Challenge a friend to compare this same ruleset.';
+}
+function createResultCardBlob(){
+  return new Promise((resolve,reject)=>{
+    const canvas=document.createElement('canvas');canvas.width=1200;canvas.height=630;
+    const ctx=canvas.getContext('2d');if(!ctx){reject(Error('Canvas export is unavailable.'));return}
+    const bg=ctx.createLinearGradient(0,0,1200,630);bg.addColorStop(0,'#07110f');bg.addColorStop(.58,'#102825');bg.addColorStop(1,'#030807');
+    ctx.fillStyle=bg;ctx.fillRect(0,0,1200,630);
+    ctx.strokeStyle='rgba(231,199,120,.12)';ctx.lineWidth=1;
+    for(let x=0;x<1200;x+=48){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,630);ctx.stroke()}
+    for(let y=0;y<630;y+=48){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(1200,y);ctx.stroke()}
+    ctx.strokeStyle='rgba(231,199,120,.55)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(1010,145,116,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.arc(1010,145,82,0,Math.PI*2);ctx.stroke();
+    ctx.fillStyle='#e7c778';ctx.font='700 22px ui-monospace,monospace';ctx.fillText('OSGARD WORLD  /  REMIX',72,74);
+    ctx.fillStyle='#eff1e7';ctx.font='600 64px Georgia,serif';ctx.fillText('DAILY CHALLENGE',72,165);
+    ctx.fillStyle='#a9b8aa';ctx.font='20px ui-monospace,monospace';ctx.fillText('SERVER RESULT  ·  SEED '+String(activeChallengeSeed),76,216);
+    ctx.fillStyle='#e7c778';ctx.font='700 20px ui-monospace,monospace';ctx.fillText('CHALLENGE '+String(activeChallengeId||'').slice(0,30),76,282);
+    ctx.fillStyle='#eef2e8';ctx.font='27px system-ui,sans-serif';
+    const words=String(lastResultSummary||'Server result received. Challenge a friend.').slice(0,180).split(/\s+/);let line='',y=352;
+    for(const word of words){const next=line?line+' '+word:word;if(ctx.measureText(next).width>1000){ctx.fillText(line,76,y);line=word;y+=42;}else line=next;}
+    if(line)ctx.fillText(line,76,y);
+    ctx.strokeStyle='rgba(231,199,120,.55)';ctx.beginPath();ctx.moveTo(76,510);ctx.lineTo(1124,510);ctx.stroke();
+    ctx.fillStyle='#e7c778';ctx.font='700 25px ui-monospace,monospace';ctx.fillText('CAN YOU BEAT THIS?',76,557);
+    ctx.fillStyle='#becbbd';ctx.font='17px ui-monospace,monospace';ctx.fillText('osgard.world/games/remix/index.html?challenge='+String(activeChallengeId||'').slice(0,60),76,592,1048);
+    canvas.toBlob(blob=>blob?resolve(blob):reject(Error('Could not encode the result card.')),'image/png');
+  });
+}
+function downloadBlob(blob,filename){
+  const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=filename;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+async function downloadResultCard(){
+  if(!lastResultSummary||!activeChallengeId){status.textContent='Finish a server-recorded run first.';return}
+  try{
+    const blob=await createResultCardBlob();
+    downloadBlob(blob,'osgard-remix-challenge-'+String(activeChallengeSeed)+'.png');
+    reportEvent('result_card_exported',{challengeId:activeChallengeId,seed:activeChallengeSeed,format:'png'});
+    status.textContent='Result card downloaded. Share the challenge link so a friend can run the same seed.';
+  }catch(e){status.textContent='Card export unavailable: '+(e && e.message ? e.message : 'Unknown error')}
+}
+async function shareResultCard(){
+  if(!lastResultSummary||!activeChallengeId){status.textContent='Finish a server-recorded run first.';return}
+  try{
+    const blob=await createResultCardBlob();
+    const file=new File([blob],'osgard-remix-challenge-'+String(activeChallengeSeed)+'.png',{type:'image/png'});
+    if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({title:'REMIX — Daily Challenge',text:'Can you beat this server-recorded challenge? Seed '+activeChallengeSeed+'.',files:[file]});
+      reportEvent('result_card_shared',{challengeId:activeChallengeId,seed:activeChallengeSeed,channel:'native_file_share'});
+      status.textContent='The share sheet opened. Share delivery depends on the target app.';
+    }else{
+      downloadBlob(blob,'osgard-remix-challenge-'+String(activeChallengeSeed)+'.png');
+      status.textContent='This browser cannot share files directly. The PNG card was downloaded instead.';
+    }
+  }catch(e){if(e && e.name==='AbortError')return;status.textContent='Result-card sharing unavailable: '+(e && e.message ? e.message : 'Unknown error')}
 }
 function reportEvent(name,payload){
   let token='';
@@ -189,6 +241,8 @@ startButton.onclick=()=>start(false);
 panel.querySelector('#share-challenge').addEventListener('click',shareChallenge);
 panel.querySelector('#copy-challenge').addEventListener('click',copyChallengeLink);
 panel.querySelector('#rematch-challenge').addEventListener('click',resetForRematch);
+panel.querySelector('#share-result-card').addEventListener('click',shareResultCard);
+panel.querySelector('#download-result-card').addEventListener('click',downloadResultCard);
 const sponsorCta=panel.querySelector('#sponsor-cta');
 const partnerUrl=new URL('/games/partners/',location.origin);
 partnerUrl.searchParams.set('utm_source','osgard_remix');
