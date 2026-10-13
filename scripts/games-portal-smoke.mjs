@@ -68,7 +68,7 @@ assert.ok(lifecycle.includes("'vector-zero':{title:'VECTOR//ZERO',url:'/games/ve
 const vectorHtml=readFileSync(resolve(root,'vector-zero/index.html'),'utf8')
 assert.ok(vectorHtml.includes('<title>VECTOR//ZERO — Разрыв поля</title>')&&vectorHtml.includes('id="field"')&&vectorHtml.includes('id="start"')&&vectorHtml.includes('osgard:game-lifecycle'),'Vector Zero game contract missing')
 assert.ok(!/<script[^>]+src=/i.test(vectorHtml),'Vector Zero must not depend on external scripts')
-const scripts=Array.from(vectorHtml.matchAll(/<script>([\\s\\S]*?)<\\/script>/g)).map(m=>m[1]).filter(s=>s.trim())
+const scripts=Array.from(vectorHtml.matchAll(/<script>([\s\S]*?)<\/script>/g)).map(m=>m[1]).filter(s=>s.trim())
 assert.ok(scripts.length>0,'Vector Zero inline script missing')
 new Function(scripts[scripts.length-1])
 console.log('PASS OSGARD GAMES HUB: six actual game routes, search/filters, local favorites/history, embedded player/fullscreen/share, consent-gated authenticated analytics, cross-promotion, contact form, SEO, mobile/reduced-motion styling and legal documents.')
