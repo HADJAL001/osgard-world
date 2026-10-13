@@ -45,6 +45,15 @@ assert.equal(calls[0].options.redirect, 'manual')
 assert.ok(calls[0].options.signal, 'HTTP requests need an explicit timeout signal')
 
 assert.equal(isSafePublicHttpsUrl('https://public.example/'), true)
+let unsafeInitialCalls = 0
+const unsafeInitial = await checkProject(
+  { id: 'unsafe-target', name: 'Unsafe Target', url: 'https://127.0.0.1/' },
+  { fetchImpl: async () => { unsafeInitialCalls += 1; throw new Error('must not be called') }, now: fixedNow },
+)
+assert.equal(unsafeInitial.outcome, 'unsafe_target')
+assert.equal(unsafeInitial.blockedTargetHost, '127.0.0.1')
+assert.equal(unsafeInitialCalls, 0, 'Configured unsafe targets must never reach fetch')
+
 for (const url of [
   'http://public.example/',
   'https://127.0.0.1/',
@@ -126,7 +135,7 @@ const limited = await checkProject(
   }, now: fixedNow },
 )
 assert.equal(limited.outcome, 'redirect_limit')
-assert.equal(limited.redirectsFollowed, undefined)
+assert.equal(redirectHop, 6, 'The audit must stop after five followed redirects and not request hop six')
 
 let bodyCancelled = false
 let unboundedTextCalled = false
