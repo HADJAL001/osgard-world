@@ -125,7 +125,7 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
   const FNV_OFFSET = 2166136261;
   function notify(state, extra = {}) { try { if (window.parent !== window) window.parent.postMessage({ type: 'osgard:game-lifecycle', state, game: 'aether-grid', at: Date.now(), ...extra }, location.origin); } catch {} }
   let seedState = 0, day = '', moves = 0, startedAt = 0, timerHandle = 0, hintsUsed = 0, won = false, toastHandle = 0;
-  let elapsedBeforeStart = 0, paused = false, runHasStarted = false, soundEnabled = false, hapticsEnabled = false;
+  let elapsedBeforeStart = 0, paused = false, runHasStarted = false, visibilityPaused = false, soundEnabled = false, hapticsEnabled = false;
   let undoStack = [], redoStack = [];
   let solutionPath = [], correct = [], original = [], turns = [], bestKey = '';
   const runKeyPrefix = 'osgard.aether-grid.progress.v1.';
@@ -306,8 +306,9 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
       if(!isSolved()) break;
       original[0]=(original[0]+1)%4;
     }
-    moves=0;hintsUsed=0;won=false;startedAt=0;
+    moves=0;hintsUsed=0;won=false;startedAt=0;elapsedBeforeStart=0;paused=false;runHasStarted=false;visibilityPaused=false;undoStack=[];redoStack=[];
     window.clearInterval(timerHandle);timerHandle=0;
+    $('pause-button').disabled=false;$('pause-button').textContent='Ⅱ Пауза';$('pause-button').setAttribute('aria-pressed','false');
     $('result').classList.remove('is-visible');
     $('hint-button').disabled=false;
     renderBoard();updateStats();loadBest();
@@ -373,9 +374,12 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
   }
   function updateConnectivity() {
     const connected=connectedCells();
+    $('connected-count').textContent=connected.size+' / 25';
+    $('connected-progress').setAttribute('aria-valuenow',String(connected.size));
+    $('connected-progress-fill').style.width=(connected.size/25*100)+'%';
     document.querySelectorAll('.tile').forEach((tile,index)=>{
       tile.classList.toggle('connected',connected.has(index));
-      tile.disabled=won;
+      tile.disabled=won||paused;
       const connections=currentConnections(index);
       const svg=tile.querySelector('svg');if(svg)svg.innerHTML=connections.map(dir=>{
         const point={n:[30,5],e:[55,30],s:[30,55],w:[5,30]}[dir];
@@ -383,19 +387,26 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
       }).join('')+'<circle class="hub" cx="30" cy="30" r="4.5"></circle>';
     });
   }
+  function beginRun() {
+    if(paused||won)return false;
+    if(!runHasStarted){runHasStarted=true;notify('started');}
+    if(!startedAt){startedAt=Date.now();if(!timerHandle)timerHandle=window.setInterval(updateTimer,250);}
+    return true;
+  }
   function rotateTile(index) {
-    if(won)return;
-    if(!startedAt){startedAt=Date.now();timerHandle=window.setInterval(updateTimer,250);notify('started');}
-    turns[index]=(turns[index]+1)%4;moves++;updateStats();updateConnectivity();
+    if(won||paused)return;
+    if(!beginRun())return;
+    pushHistory();
+    turns[index]=(turns[index]+1)%4;moves++;playTone('rotate');buzz(8);updateStats();updateConnectivity();saveRun();
     $('hint-note').textContent='Узел '+(index+1)+' повёрнут. Продолжай искать непрерывный путь к ядру.';
     if(isSolved())finishPuzzle();
   }
   function updateTimer() {
-    const seconds=startedAt?Math.max(0,Math.floor((Date.now()-startedAt)/1000)):0;
-    $('timer').innerHTML=String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0')+'<em>s</em>';
+    const seconds=runSeconds();
+    $('timer').textContent=String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0')+'s';
   }
   function updateStats() {
-    $('moves').textContent=String(moves).padStart(2,'0');updateTimer();
+    $('moves').textContent=String(moves).padStart(2,'0');updateTimer();updateHistoryControls();
   }
   function loadBest() {
     bestKey='osgard.aether-grid.best.v1.'+day;
@@ -403,10 +414,11 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
       const best=JSON.parse(localStorage.getItem(bestKey)||'null');
       $('best-score').textContent=best&&Number.isInteger(best.moves)?best.moves+' ход.':'—';
     }catch{$('best-score').textContent='—';}
+    renderPersonalStats();
   }
   function finishPuzzle() {
-    won=true;window.clearInterval(timerHandle);timerHandle=0;updateTimer();updateConnectivity();
-    const seconds=startedAt?Math.max(0,Math.floor((Date.now()-startedAt)/1000)):0;
+    won=true;elapsedBeforeStart=runSeconds();startedAt=0;paused=false;visibilityPaused=false;window.clearInterval(timerHandle);timerHandle=0;updateTimer();updateConnectivity();
+    const seconds=elapsedBeforeStart;
     let personalBest=false;
     try{
       const previous=JSON.parse(localStorage.getItem(bestKey)||'null');
@@ -414,12 +426,18 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
         localStorage.setItem(bestKey,JSON.stringify({moves,seconds,day}));personalBest=true;
       }
     }catch{}
-    loadBest();$('result').classList.add('is-visible');$('hint-button').disabled=true;
+    loadBest();writeCompletionStats(seconds);
+    try{localStorage.removeItem(runKeyPrefix+day)}catch{}
+    $('result').classList.add('is-visible');$('hint-button').disabled=true;$('pause-button').disabled=true;
+    $('pause-button').textContent='✓ Завершено';$('pause-button').setAttribute('aria-pressed','false');
     $('result-title').textContent=personalBest?'Новый личный рекорд.':'Маршрут собран.';
-    $('result-copy').textContent='Вызов '+day+': '+moves+' ходов за '+formatTime(seconds)+(hintsUsed?' · подсказок: '+hintsUsed:'')+'. '+(personalBest?'Рекорд сохранён на этом устройстве.':'Сохрани результат и проверь, кто справится лучше.');
+    const streak=consecutiveDayStreak(readStats().completedDays);
+    const badge=hintsUsed===0?' · PERFECT ROUTE':seconds<=30?' · QUICK SIGNAL':'';
+    $('result-copy').textContent='Вызов '+day+': '+moves+' ходов за '+formatTime(seconds)+(hintsUsed?' · подсказок: '+hintsUsed:'')+'. Серия: '+streak+' дн.'+badge+'. '+(personalBest?'Рекорд сохранён на этом устройстве.':'Сохрани результат и проверь, кто справится лучше.');
     $('hint-note').textContent='Сигнал достиг ядра. Теперь твоя очередь передать вызов.';
+    playTone('win');buzz([25,45,25]);updateHistoryControls();
     toast(personalBest?'Новый личный рекорд!':'Сигнал успешно соединён.');
-    notify('completed',{durationSeconds:seconds,moves});
+    notify('completed',{durationSeconds:seconds,moves,hintsUsed,streak});
   }
   function formatTime(seconds){return Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');}
   function inviteCode(){
@@ -443,8 +461,8 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
     url.searchParams.set('og_day',day);return url.href;
   }
   async function shareResult() {
-    const seconds=startedAt?Math.max(0,Math.floor((Date.now()-startedAt)/1000)):0;
-    const text='AETHER GRID / '+day+' — '+(won?'собрал сигнал за '+moves+' ходов и '+formatTime(seconds):'мой вызов на сегодня')+'. Сможешь лучше?';
+    const seconds=runSeconds(),streak=consecutiveDayStreak(readStats().completedDays);
+    const text='AETHER GRID / '+day+' — '+(won?'собрал сигнал за '+moves+' ходов и '+formatTime(seconds):'мой вызов на сегодня')+(hintsUsed?' · подсказок '+hintsUsed:'')+' · серия '+streak+' дн. Сможешь лучше?';
     const url=inviteUrl();
     try{
       let method='clipboard';
@@ -463,16 +481,21 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
     const element=$('toast');element.textContent=message;element.classList.add('on');
     window.clearTimeout(toastHandle);toastHandle=window.setTimeout(()=>element.classList.remove('on'),3000);
   }
-  function resetPuzzle(){buildPuzzle();toast('Исходная сетка дня восстановлена.');}
+  function resetPuzzle(){
+    if(!won&&moves>0&&typeof window.confirm==='function'&&!window.confirm('Сбросить текущую попытку AETHER GRID? Сохранённый прогресс этого дня будет удалён.'))return;
+    try{localStorage.removeItem(runKeyPrefix+day)}catch{}
+    buildPuzzle();toast('Исходная сетка дня восстановлена.');
+  }
   function useHint(){
-    if(won||!solutionPath.length)return;
+    if(won||paused||!solutionPath.length)return;
+    if(!beginRun())return;
     const current=solutionPath.find(index=>!sameConnections(currentConnections(index),correct[index]));
     if(current===undefined){toast('Путь уже собран.');return;}
     const currentSet=currentConnections(current);
     let clicks=0;
     for(let offset=0;offset<4;offset++){if(sameConnections(rotate(currentSet,offset),correct[current])){clicks=offset;break;}}
     if(clicks===0){const tile=document.querySelector('.tile[data-index="'+current+'"]');tile?.classList.add('hint-pulse');window.setTimeout(()=>tile?.classList.remove('hint-pulse'),1800);$('hint-note').textContent='Подсказка: узел '+(current+1)+' уже ориентирован правильно.';return;}
-    turns[current]=(turns[current]+clicks)%4;moves+=3;hintsUsed++;updateStats();updateConnectivity();
+    pushHistory();turns[current]=(turns[current]+clicks)%4;moves+=3;hintsUsed++;playTone('hint');updateStats();updateConnectivity();saveRun();
     const tile=$('.tile[data-index="'+current+'"]');tile?.classList.add('hint-pulse');window.setTimeout(()=>tile?.classList.remove('hint-pulse'),1800);
     $('hint-note').textContent='Подсказка исправила один узел и добавила 3 хода к результату.';
     if(isSolved())finishPuzzle();
@@ -482,7 +505,10 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
     day=validDay(requested)?requested:utcDay();
     $('day-label').textContent=day;
     $('challenge-code').textContent='AG-'+day.replaceAll('-','')+' / DAILY';
+    configurePersonalControls();
+    renderPersonalStats();
     buildPuzzle();
+    restoreRun();
     $('reset-button').addEventListener('click',resetPuzzle);
     $('hint-button').addEventListener('click',useHint);
     $('share-button').addEventListener('click',shareResult);
@@ -490,6 +516,9 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
     document.addEventListener('keydown',event=>{
       const target=event.target;
       if(target&&(target.isContentEditable||['INPUT','TEXTAREA','SELECT'].includes(target.tagName)))return;
+      if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='z'){event.preventDefault();undoMove();return}
+      if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='y'){event.preventDefault();redoMove();return}
+      if(event.key==='Escape'&&runHasStarted&&!won){event.preventDefault();setPaused(!paused);return}
       if(event.metaKey||event.ctrlKey||event.altKey)return;
       if(event.key.toLowerCase()==='r'){event.preventDefault();resetPuzzle();}
       if(event.key.toLowerCase()==='h'){event.preventDefault();useHint();}
@@ -501,7 +530,16 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
     });
     notify('ready');
   }
-  document.addEventListener('visibilitychange',()=>{if(!startedAt||won)return;notify(document.hidden?'paused':'resumed');});
+  document.addEventListener('visibilitychange',()=>{
+    if(won)return;
+    if(document.hidden){
+      if(startedAt){elapsedBeforeStart=runSeconds();startedAt=0;visibilityPaused=true;saveRun();updateTimer();}
+      if(runHasStarted)notify('paused');
+    }else{
+      if(visibilityPaused){visibilityPaused=false;if(runHasStarted&&!paused)startedAt=Date.now();updateTimer();notify('resumed');}
+    }
+  });
+  window.addEventListener('pagehide',saveRun);
   init();
 })();
 </script>
