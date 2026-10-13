@@ -329,7 +329,7 @@ app.post("/v1/leads", async (req, res) => {
 app.post("/v1/feedback", async (req, res) => {
   const feedback = validateGameFeedbackPayload(req.body);
   if (!feedback.ok) return res.status(feedback.status).json({ error: feedback.code });
-  if (feedback.bot) return res.status(202).json({ accepted: true });
+  if (feedback.bot) return res.status(202).json({ accepted: true, stored: false });
   if (!requireDatabase(res)) return;
 
   const feedbackId = crypto.randomUUID();
@@ -338,7 +338,7 @@ app.post("/v1/feedback", async (req, res) => {
       "INSERT INTO commerce_game_feedback(feedback_id,game_id,rating,would_play_again,category,message,consent_at) VALUES($1,$2,$3,$4,$5,$6,NOW())",
       [feedbackId, feedback.gameId, feedback.rating, feedback.wouldPlayAgain, feedback.category, feedback.message],
     );
-    return res.status(201).json({ accepted: true, feedbackId });
+    return res.status(201).json({ accepted: true, stored: true, feedbackId });
   } catch (error) {
     console.error("Game feedback insert failed:", error?.message || "unknown error");
     return res.status(503).json({ error: "FEEDBACK_STORAGE_UNAVAILABLE", message: "Отзыв не сохранён. Повторите попытку позже." });
