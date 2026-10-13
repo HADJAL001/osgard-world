@@ -35,19 +35,19 @@
   random.type = 'button'
   random.className = 'luxury-action'
   random.innerHTML = '<span aria-hidden="true">✧</span> Случайная игра <span aria-hidden="true">↗</span>'
-  random.setAttribute('aria-label', 'Выбрать случайную игру из текущего фильтра')
+  random.setAttribute('aria-label', 'Случайная игра из текущих результатов')
 
   const resume = document.createElement('button')
   resume.type = 'button'
   resume.className = 'luxury-action'
   resume.innerHTML = '<span aria-hidden="true">▷</span> Продолжить последнюю'
-  resume.setAttribute('aria-label', 'Открыть последнюю выбранную игру')
+  resume.setAttribute('aria-label', 'Продолжить последнюю игру')
 
   const share = document.createElement('button')
   share.type = 'button'
   share.className = 'luxury-action'
   share.innerHTML = '<span aria-hidden="true">↗</span> Поделиться платформой'
-  share.setAttribute('aria-label', 'Поделиться ссылкой на OSGARD PLAY')
+  share.setAttribute('aria-label', 'Поделиться платформой OSGARD PLAY')
 
   const status = document.createElement('p')
   status.className = 'luxury-status'
