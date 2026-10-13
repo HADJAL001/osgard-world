@@ -81,7 +81,7 @@ $('share').addEventListener('click',async()=>{
   }else if(navigator.share){await navigator.share(payload);completed=true;method='web-share-link'}
   else if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(url.href);completed=true;method='clipboard';status.textContent='ССЫЛКА-ПРИГЛАШЕНИЕ СКОПИРОВАНА'}
   else{window.prompt('Скопируй ссылку-приглашение:',url.href);status.textContent='Ссылка готова для ручного копирования. Награда за share не начисляется.'}
-  if(completed){life('share_created',{challengeScore:target,shareMethod:method,dailyMode,dailyDate:dailyMode?dailyDate:null,inviteCode:invite.inviteCode});status.textContent=(method==='web-share-image'?'КАРТОЧКА РЕЗУЛЬТАТА И ПРИГЛАШЕНИЕ ПЕРЕДАНЫ В МЕНЮ ОТПРАВКИ':method==='web-share-link'?'ПРИГЛАШЕНИЕ ПЕРЕДАНО В МЕНЮ ОТПРАВКИ':'ССЫЛКА-ПРИГЛАШЕНИЕ СКОПИРОВАНА')+'. +50 SHARDS начислятся только после того, как приглашённый завершит игровую сессию не менее 60 секунд; соцсеть не подтверждает публикацию.';void refreshServerShards()}
+  if(completed){life('share_created',{challengeScore:target,shareMethod:method,dailyMode,dailyDate:dailyMode?dailyDate:null,referralCode:invite.inviteCode});status.textContent=(method==='web-share-image'?'КАРТОЧКА РЕЗУЛЬТАТА И ПРИГЛАШЕНИЕ ПЕРЕДАНЫ В МЕНЮ ОТПРАВКИ':method==='web-share-link'?'ПРИГЛАШЕНИЕ ПЕРЕДАНО В МЕНЮ ОТПРАВКИ':'ССЫЛКА-ПРИГЛАШЕНИЕ СКОПИРОВАНА')+'. +50 SHARDS начислятся только после того, как приглашённый завершит игровую сессию не менее 60 секунд; соцсеть не подтверждает публикацию.';void refreshServerShards()}
  }catch(error){if(error&&error.name!=='AbortError')status.textContent='НЕ УДАЛОСЬ ОТПРАВИТЬ ПРИГЛАШЕНИЕ'}
 
  }catch(error){if(error&&error.name!=='AbortError')status.textContent='НЕ УДАЛОСЬ ОТПРАВИТЬ ВЫЗОВ'}
