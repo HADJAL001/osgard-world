@@ -269,20 +269,64 @@ function inviteFor(id){
 }
 function getWallet(){try{const w=JSON.parse(localStorage.getItem(walletKey)||'{}');return{balance:Number.isSafeInteger(w.balance)&&w.balance>=0?Math.min(w.balance,1e9):0,day:typeof w.lastRewardDay==='string'?w.lastRewardDay:''}}catch{return{balance:0,day:''}}}
 function award(source){const current=getWallet(),day=new Date().toISOString().slice(0,10);if(current.day===day)return{ok:false,already:true,balance:current.balance};const next={balance:Math.min(1e9,current.balance+dailyReward),lastRewardDay:day,lastSource:String(source||'share').slice(0,60),updatedAt:new Date().toISOString()};try{localStorage.setItem(walletKey,JSON.stringify(next));return{ok:true,balance:next.balance}}catch{return{ok:false,balance:current.balance}}}
+const serviceFrequencyKey='osgard.games.postgame-services-shown.v1';
+let serviceShelfShownInMemory=false;
+const contextualServiceOrder={
+ 'signal-run':['projects','myosa','vanguard'],
+ 'null-shift':['vanguard','projects','myosa'],
+ time:['superday','osgard-business','o2-system'],
+ swarm:['marcosa','myosa','projects'],
+ inherit:['myosa','marcosa','projects'],
+ remix:['vanguard','marcosa','projects'],
+ 'civic-cascade':['superday','osgard-business','o2-system'],
+ patina:['gold-glamour','vanguard','projects'],
+ 'cascade-lab':['myosa','projects','vanguard']
+};
+function hasSeenServiceShelf(){
+ if(serviceShelfShownInMemory)return true;
+ try{return sessionStorage.getItem(serviceFrequencyKey)==='yes'}catch{return false}
+}
+function markServiceShelfSeen(){
+ serviceShelfShownInMemory=true;
+ try{sessionStorage.setItem(serviceFrequencyKey,'yes')}catch{}
+}
 function servicesShelf(gameId){
+ if(hasSeenServiceShelf())return null;
  const section=make('section','og-postgame-services'),head=make('div','og-postgame-service-head'),intro=make('div');
- intro.append(make('p','og-postgame-eyebrow','OSGARD SELECT / BETWEEN WORLDS'),make('h3','og-postgame-title','Мир не заканчивается после раунда.'),make('p','og-postgame-copy','Выбери следующий продукт экосистемы. Это собственные сервисы OSGARD, а не сторонняя рекламная сеть.'));
- const toggle=make('button','og-postgame-toggle','Свернуть подборку');toggle.type='button';toggle.setAttribute('aria-expanded','true');head.append(intro,toggle);
+ const previewLimit=3;
+ const recommended=contextualServiceOrder[gameId]||contextualServiceOrder['signal-run'];
+ let expanded=false;
+ const cards=[];
+ intro.append(make('p','og-postgame-eyebrow','OSGARD SELECT / BETWEEN WORLDS'),make('h3','og-postgame-title','Мир не заканчивается после раунда.'),make('p','og-postgame-copy','Три проекта, подобранных под игровой мир. Остальные доступны по запросу. Это собственные сервисы OSGARD, а не сторонняя рекламная сеть.'));
+ const toggle=make('button','og-postgame-toggle','Показать все проекты · '+services.length);
+ toggle.type='button';toggle.setAttribute('aria-expanded','false');
+ head.append(intro,toggle);
  const grid=make('div','og-postgame-service-grid');
- services.forEach(([id,num,title,category,description,href,featured=false,active=true])=>{
+ const orderedServices=[...services].sort((a,b)=>{
+  const ai=recommended.indexOf(a[0]),bi=recommended.indexOf(b[0]);
+  if(ai<0&&bi<0)return 0;
+  if(ai<0)return 1;
+  if(bi<0)return -1;
+  return ai-bi;
+ });
+ orderedServices.forEach(([id,num,title,category,description,href,featured=false,active=true],serviceIndex)=>{
   const card=make(active===false?'article':'a','og-postgame-service-card'+(featured?' is-featured':'')+(active===false?' is-unavailable':''));
-  card.dataset.service=id;card.dataset.game=gameId;
+  card.dataset.service=id;card.dataset.game=gameId;card.dataset.recommendation=serviceIndex<previewLimit?'contextual':'additional';
+  card.hidden=serviceIndex>=previewLimit;
   if(active!==false){const u=new URL(href);u.searchParams.set('utm_source','osgard_games');u.searchParams.set('utm_medium','post_game');u.searchParams.set('utm_campaign','after_game');u.searchParams.set('utm_content',id+'_'+gameId);card.href=u.href;card.target='_blank';card.rel='noopener noreferrer';card.setAttribute('aria-label','Открыть '+title+' в новой вкладке')}
-  card.append(make('span','og-postgame-service-code','OSG / '+num+' · '+category),make('strong','og-postgame-service-name',title),make('span','og-postgame-service-description',description),make('span','og-postgame-service-action',active===false?'Пока не продвигается':'Открыть проект ↗'));grid.append(card);
+  card.append(make('span','og-postgame-service-code','OSG / '+num+' · '+category),make('strong','og-postgame-service-name',title),make('span','og-postgame-service-description',description),make('span','og-postgame-service-action',active===false?'Пока не продвигается':'Открыть проект ↗'));
+  cards.push(card);grid.append(card);
  });
  const foot=make('p','og-postgame-service-foot','Переход добровольный, откроется в отдельной вкладке. Текущий результат игры сохранится.');
- toggle.addEventListener('click',()=>{grid.hidden=!grid.hidden;toggle.textContent=grid.hidden?'Показать все проекты · 10':'Свернуть подборку';toggle.setAttribute('aria-expanded',String(!grid.hidden))});
- section.append(head,grid,foot);return section;
+ toggle.addEventListener('click',()=>{
+  expanded=!expanded;
+  cards.forEach((card,index)=>{card.hidden=!expanded&&index>=previewLimit});
+  toggle.textContent=expanded?'Показать только три проекта':'Показать все проекты · '+services.length;
+  toggle.setAttribute('aria-expanded',String(expanded));
+ });
+ section.append(head,grid,foot);
+ markServiceShelfSeen();
+ return section;
 }
 function rewardShelf(gameId){
  const section=make('section','og-postgame-reward'),head=make('div','og-postgame-reward-head'),intro=make('div');
@@ -311,7 +355,10 @@ function renderOutsideIntermission(detail){
  intro.append(make('p','og-postgame-copy','Ты завершил сессию '+titles[id]+'. Выбери один из собственных проектов OSGARD, поделись приглашением или сразу вернись к каталогу.'));
  const back=make('a','og-postgame-back','Выбрать следующую игру ↗');
  back.href='#catalog';
- suite.append(intro,back,servicesShelf(id),rewardShelf(id));
+ suite.append(intro,back);
+ const serviceShelf=servicesShelf(id);
+ if(serviceShelf)suite.append(serviceShelf);
+ suite.append(rewardShelf(id));
  outsideRoot.append(suite);
  outsideRoot.hidden=false;
  if(typeof outsideRoot.scrollIntoView==='function'){
@@ -325,5 +372,5 @@ document.addEventListener('osgard:game-launching',()=>{
  outsideRoot.replaceChildren();
  outsideRoot.hidden=true;
 });
-document.addEventListener('osgard:game-completed',event=>{const id=event.detail&&event.detail.game;if(!titles[id])return;root.querySelector('.og-postgame-suite')?.remove();const suite=make('section','og-postgame-suite');suite.append(servicesShelf(id),rewardShelf(id));root.append(suite)});
+document.addEventListener('osgard:game-completed',event=>{const id=event.detail&&event.detail.game;if(!titles[id])return;root.querySelector('.og-postgame-suite')?.remove();const suite=make('section','og-postgame-suite');const serviceShelf=servicesShelf(id);if(serviceShelf)suite.append(serviceShelf);suite.append(rewardShelf(id));root.append(suite)});
 })();
