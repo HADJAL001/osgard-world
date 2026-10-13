@@ -18,6 +18,7 @@ export const DEFAULT_INPUTS = Object.freeze({
   averageProjectValueUsd: 1200,
   monthlyOperatingCostUsd: 400,
   paymentFeeRate: 3,
+  annualRevenueTargetUsd: 1000000,
   shareRatePct: 5,
   invitesPerSharer: 3,
   inviteConversionPct: 10,
@@ -39,6 +40,7 @@ const bounds = {
   averageProjectValueUsd: [0, 1000000000],
   monthlyOperatingCostUsd: [0, 1000000000],
   paymentFeeRate: [0, 100],
+  annualRevenueTargetUsd: [0, 1000000000000],
   shareRatePct: [0, 100],
   invitesPerSharer: [0, 20],
   inviteConversionPct: [0, 100],
@@ -59,6 +61,7 @@ export function normalizeInputs(input = {}) {
   normalized.shareRatePct = Math.round(normalized.shareRatePct * 100) / 100;
   normalized.invitesPerSharer = Math.round(normalized.invitesPerSharer * 100) / 100;
   normalized.inviteConversionPct = Math.round(normalized.inviteConversionPct * 100) / 100;
+  normalized.annualRevenueTargetUsd = Math.round(normalized.annualRevenueTargetUsd * 100) / 100;
   normalized.sponsorDealsPerMonth = Math.round(normalized.sponsorDealsPerMonth * 100) / 100;
   return normalized;
 }
@@ -134,4 +137,41 @@ export function calculateScenario(input = {}, scenarioId = 'base') {
     totalRevenueUsd,
     netOperatingUsd,
   };
+}
+
+/**
+ * Finds the smallest starting (non-referral) monthly traffic estimate whose
+ * BASE scenario reaches the requested annual gross revenue. This is a bounded
+ * reverse calculation over assumptions, not a forecast or measured KPI.
+ * Returns null when the target cannot be reached within the visitor cap.
+ */
+export function calculateRequiredMonthlyVisitors(input = {}, annualTargetUsd) {
+  const values = normalizeInputs(input);
+  const rawTarget = annualTargetUsd ?? values.annualRevenueTargetUsd;
+  const parsedTarget = Number(rawTarget);
+  const target = Number.isFinite(parsedTarget)
+    ? Math.min(1000000000000, Math.max(0, parsedTarget))
+    : values.annualRevenueTargetUsd;
+  if (target <= 0) return 0;
+
+  const maxVisitors = 1000000000;
+  const annualGrossAt = (monthlyVisitors) =>
+    calculateScenario({ ...values, monthlyVisitors }, 'base').totalRevenueUsd * 12;
+
+  if (annualGrossAt(0) >= target) return 0;
+  let low = 0;
+  let high = Math.max(1, Math.min(maxVisitors, values.monthlyVisitors || 1));
+
+  while (high < maxVisitors && annualGrossAt(high) < target) {
+    high = Math.min(maxVisitors, high * 2);
+  }
+  if (annualGrossAt(high) < target) return null;
+
+  // Integer binary search keeps the displayed requirement reproducible.
+  while (low + 1 < high) {
+    const mid = Math.floor((low + high) / 2);
+    if (annualGrossAt(mid) >= target) high = mid;
+    else low = mid;
+  }
+  return high;
 }
