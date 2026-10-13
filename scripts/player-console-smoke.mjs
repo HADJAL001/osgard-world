@@ -47,8 +47,8 @@ test('the interface has responsive touch and reduced-motion contracts', () => {
   assert.match(css, /--og-pc-scale/);
 });
 test('all UI content is constructed without interpolating untrusted HTML', () => {
-  assert.match(js, /textContent = game\.title/);
+  assert.match(js, /\.textContent\s*=\s*[^;\n]*game\.title/, 'Game titles must be inserted through a textContent sink');
   assert.match(js, /document\.createElement\('a'\)/);
   assert.match(js, /dialog\.innerHTML = \[/);
-  assert.doesNotMatch(js, /insertAdjacentHTML|outerHTML\s*=/);
+  assert.doesNotMatch(js, /insertAdjacentHTML|outerHTML\s*=|document\.write\s*\(/, 'UI must not add untrusted catalog values through HTML-writing sinks');
 });
