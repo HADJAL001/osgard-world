@@ -21,6 +21,8 @@ on:
       - "mobile/**"
       - "scripts/prepare-ios-app.mjs"
       - "scripts/ios-appstore-preflight.mjs"
+      - "scripts/ios-release-version.mjs"
+      - "scripts/ios-release-tag-preflight.mjs"
       - "scripts/generate-ios-app-icon.mjs"
       - "docs/IOS_APP_STORE_CODEMAGIC_RU.md"
       - "services/osgard-commerce-api/**"
