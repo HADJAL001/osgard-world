@@ -311,7 +311,7 @@ function award(source){const current=getWallet(),day=new Date().toISOString().sl
 function servicesShelf(gameId,showPromos,completedCount){
  const preferences=readServicePreferences();
  const section=make('section','og-postgame-services'),head=make('div','og-postgame-service-head'),intro=make('div');
- intro.append(make('p','og-postgame-eyebrow','OSGARD SELECT / BETWEEN WORLDS'),make('p','og-postgame-disclosure','РЕКЛАМА · СОБСТВЕННЫЕ ПРОЕКТЫ OSGARD'),make('h3','og-postgame-title','Мир не заканчивается после раунда.'),make('p','og-postgame-copy','Выбери направление или отдельный проект. Это самореклама экосистемы OSGARD; переход добровольный и откроется в новой вкладке.'));
+ intro.append(make('p','og-postgame-eyebrow','OSGARD SELECT / BETWEEN WORLDS'),make('p','og-postgame-disclosure','РЕКЛАМА · СОБСТВЕННЫЕ ПРОЕКТЫ OSGARD'),make('h3','og-postgame-title','Мир не заканчивается после раунда.'),make('p','og-postgame-copy','Выбери категорию и сервис, который хочешь посмотреть. Автозапуска нет. Это самореклама экосистемы OSGARD; переход добровольный и откроется в новой вкладке.'));
  const settingsToggle=make('button','og-postgame-toggle og-postgame-settings-toggle','Настроить показ');settingsToggle.type='button';settingsToggle.setAttribute('aria-expanded','false');settingsToggle.setAttribute('aria-controls','og-postgame-preferences');
  const collapseToggle=make('button','og-postgame-toggle og-postgame-collapse-toggle',showPromos?'Свернуть подборку':'Подборка по расписанию');collapseToggle.type='button';collapseToggle.setAttribute('aria-expanded',String(Boolean(showPromos)));
  const headActions=make('div','og-postgame-service-head-actions');headActions.append(settingsToggle,collapseToggle);head.append(intro,headActions);
