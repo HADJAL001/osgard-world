@@ -9,7 +9,8 @@ const core = read('services/osgard-commerce-api/src/core.mjs')
 const playSelect = read('src/PlaySelectLoop.tsx')
 const signalRun = read('public/games/signal-run/game.js')
 new vm.Script(source, { filename: 'game-session-recommendations.js' })
-const select = source.slice(source.indexOf('/* OSGARD SELECT'))
+assert.ok(source.includes('/* OSGARD SELECT'),'Missing OSGARD SELECT implementation boundary')
+const select = source // Shared service data and preference keys are declared before the implementation block.
 const services = [
  ['MARCOSA','https://marcosa.club/'],['OSGARD BEW WORLD','https://osgardbewworld.com/'],
  ['O2 SYSTEM','https://o2system.art/'],['SENJORIO','https://senjorio.com/'],
