@@ -98,7 +98,7 @@ export async function checkProject(project, {
         requestedUrl: project.url,
         finalUrl,
         finalHost,
-        redirected: Boolean(response.redirected) || finalUrl.replace(/\\/$/, '') !== project.url.replace(/\\/$/, ''),
+        redirected: Boolean(response.redirected) || finalUrl.replace(/\/$/, '') !== project.url.replace(/\/$/, ''),
         statusCode: response.status,
         contentType: contentType || null,
         pageTitle: title,
