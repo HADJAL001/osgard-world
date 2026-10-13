@@ -7,6 +7,20 @@ state_file="/tmp/osgard-frontend-activation.state"
 log_file="/tmp/osgard-frontend-activation.log"
 rm -f "$state_file" "$log_file"
 
+# Prefer the API container when it exists. Some production hosts run the API
+# as a host service; in that case use the gateway from this container's Docker network.
+if docker inspect osgard-game-api >/dev/null 2>&1; then
+  api_host="osgard-game-api"
+else
+  networks_json="$(docker inspect "$container_name" --format '{{json .NetworkSettings.Networks}}')"
+  api_host="$(printf '%s' "$networks_json" | python3 -c 'import json,sys; networks=json.load(sys.stdin); print(next((endpoint.get("Gateway", "") for endpoint in networks.values() if endpoint.get("Gateway")), ""))')"
+fi
+if [[ "$api_host" != "osgard-game-api" && ! "$api_host" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+  echo "Unable to resolve a safe OSGARD game API upstream" >&2
+  exit 1
+fi
+printf 'Using OSGARD game API upstream: %s\n' "$api_host"
+
 rollback() {
   docker exec "$container_name" sh -lc '
     set -eu
@@ -37,10 +51,12 @@ rollback() {
     test -s /tmp/osgard-gh-next/html/skillcred/styles.css.gz
     test -s /tmp/osgard-gh-next/html/skillcred/app.js.gz
     test -f /tmp/osgard-gh-next/nginx.conf
+    sed "s|osgard-game-api;|$api_host;|" /tmp/osgard-gh-next/nginx.conf > /tmp/osgard-gh-next/nginx.runtime.conf
+    test -s /tmp/osgard-gh-next/nginx.runtime.conf
     cp /etc/nginx/conf.d/default.conf /tmp/osgard-nginx-previous.conf
     mv /usr/share/nginx/html /tmp/osgard-gh-previous
     mv /tmp/osgard-gh-next/html /usr/share/nginx/html
-    cp /tmp/osgard-gh-next/nginx.conf /etc/nginx/conf.d/default.conf
+    cp /tmp/osgard-gh-next/nginx.runtime.conf /etc/nginx/conf.d/default.conf
     echo 'Nginx compression module diagnostics:'
     nginx -V 2>&1 | grep -o 'http_gzip[^ ]*' || true
     if nginx -t; then
