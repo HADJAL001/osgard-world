@@ -132,6 +132,11 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
               text.includes('data-game="signal-run"') &&
               text.includes('data-game="cascade-lab"') && text.includes('data-game="afterimage-run"') && text.includes('data-game="aether-grid"') &&
               text.includes('"numberOfItems":11')
+            : route === '/support/osgard-play/'
+              ? text.includes('<title>Поддержка OSGARD PLAY — OSGARD WORLD</title>') &&
+                text.includes('mailto:osman.osmanov0099@gmail.com') &&
+                text.includes('href="/privacy/"') &&
+                text.includes('href="/terms/"')
             : text.includes('<div id="root">')
     const isPartnerPage = route === '/games/partners/'
     const isEcosystemDirectory = route === '/games/ecosystem/'
