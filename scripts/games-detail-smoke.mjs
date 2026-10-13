@@ -15,6 +15,7 @@ const css = read('src/games-hub.css')
 
 const civicGame = read('public/games/civic-cascade/index.html')
 const cascadeGame = read('public/games/cascade-lab/index.html')
+const afterimageGame = read('public/games/afterimage-run/index.html')
 
 const games = [
   { id: 'time', href: '/games/time' },
@@ -47,7 +48,7 @@ assert.ok(!detail.includes("surface: 'games-iframe'"), 'Iframe load must not dup
 assert.ok(!detail.includes("track('game_session_started', { game: game.id, surface: 'games-iframe' }"), 'Iframe HTML load is not proof a session started')
 for (const route of ['/games/', '/games/monetization/', '/game/time', '/game/swarm', '/game/null-shift', '/game/inherit', '/game/remix', '/games/signal-run/', '/game/signal-run', '/games/civic-cascade/', '/games/patina/', '/game/civic-cascade', '/game/patina', '/games/cascade-lab/', '/game/cascade-lab']) assert.ok(sitemap.includes(`https://osgard.world${route}`), `Sitemap is missing ${route}`)
 assert.ok(css.includes('@media') && css.includes('prefers-reduced-motion'), 'Responsive and reduced-motion styles must be defined')
-for (const p of ['public/games/index.html','public/games/cascade-lab/index.html','godot/null-shift/project.godot','public/privacy/index.html','public/terms/index.html','public/osgard-mark.svg']) {
+for (const p of ['public/games/index.html','public/games/cascade-lab/index.html','public/games/afterimage-run/index.html','godot/null-shift/project.godot','public/privacy/index.html','public/terms/index.html','public/osgard-mark.svg']) {
   assert.ok(existsSync(p), `Required publication asset missing: ${p}`)
 }
 execFileSync(process.execPath, ['--check', 'scripts/production-route-matrix.mjs'], { stdio: 'pipe' })
@@ -61,4 +62,6 @@ assert.ok(cascadeGame.includes('function showServiceInterstitial') && cascadeGam
 assert.ok(civicGame.includes('id="cc-save"') && civicGame.includes('id="cc-load"') && civicGame.includes('function saveCheckpoint()') && civicGame.includes('function restoreCheckpoint()'), 'CIVIC CASCADE must provide working local operation checkpoints')
 assert.ok(civicGame.includes("osgard-civic-cascade-checkpoint-v1") && civicGame.includes("localStorage.setItem(CHECKPOINT_KEY") && civicGame.includes("schemaVersion!==1"), 'CIVIC CASCADE checkpoint storage must be versioned and validated')
 assert.ok(civicGame.includes('id="cc-forecast"') && civicGame.includes('function updateForecast()') && /30\s+игровых\s+секунд/i.test(civicGame), 'CIVIC CASCADE must render its approximate 30-second risk outlook')
-assert.ok(hub.includes('9 игровых проектов') && hub.includes('Запустить CIVIC CASCADE') && hub.includes('cc-release-strip'), 'Entertainment hub must accurately count and visibly promote CIVIC CASCADE')
+assert.ok(hub.includes('10 игровых проектов') && hub.includes('Запустить CIVIC CASCADE') && hub.includes('cc-release-strip') && hub.includes('data-game="afterimage-run"'), 'Entertainment hub must accurately count ten games and visibly promote CIVIC CASCADE and AFTERIMAGE//RUN')
+assert.ok(afterimageGame.includes('<title>AFTERIMAGE//RUN — OSGARD PLAY</title>') && afterimageGame.includes('id="runnerCanvas"') && afterimageGame.includes('id="daily-seed"') && afterimageGame.includes("game:'afterimage-run'"), 'AFTERIMAGE//RUN standalone play page must provide its daily game shell and lifecycle identity')
+assert.ok(sitemap.includes('https://osgard.world/games/afterimage-run/'), 'AFTERIMAGE//RUN must be published in the sitemap')
