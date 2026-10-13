@@ -209,3 +209,7 @@ dialog#player-dialog[data-postgame-intermission="1"] .post-run-recommendations{m
 .og-postgame-reward-note{font-size:9px;line-height:1.65}
 @media(max-width:600px){.og-postgame-share-actions>*{flex:1 1 100%;width:100%}.og-shards-vault-grid{grid-template-columns:1fr}.og-shards-vault-item{display:grid;grid-template-columns:40px minmax(0,1fr);align-items:center;column-gap:10px}.og-shards-vault-glyph{grid-row:span 2}.og-shards-vault-name,.og-shards-vault-description{min-width:0}.og-shards-vault-action{grid-column:1/-1}}
 @media(prefers-reduced-motion:reduce){.og-postgame-daily-reward,.og-shards-vault-action{transition:none;transform:none!important}}
+
+.og-postgame-reward[data-cosmetic="northstar"]{border-color:rgba(218,192,133,.58);box-shadow:inset 0 0 32px rgba(218,192,133,.06)}
+.og-postgame-reward[data-cosmetic="eclipse"]{border-color:rgba(154,164,203,.62);box-shadow:inset 0 0 32px rgba(154,164,203,.07)}
+.og-postgame-reward[data-cosmetic="aurora"]{border-color:rgba(83,215,255,.62);box-shadow:inset 0 0 32px rgba(83,215,255,.07)}
