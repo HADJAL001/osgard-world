@@ -353,6 +353,7 @@ function servicesShelf(gameId,showPromos,completedCount){
  filterDefs.forEach(([id,labelText])=>{const button=make('button','og-postgame-service-filter',labelText);button.type='button';button.dataset.osgardServiceFilter=id;button.setAttribute('aria-pressed',String(id==='all'));filters.append(button);filterButtons.push(button)});
  const activeSelected=services.filter(([id,,,,,,featured=false,active=true])=>active!==false&&preferences.selected.includes(id));
  const spotlight=make('section','og-postgame-spotlight');spotlight.setAttribute('aria-label','Персональная рекомендация OSGARD');
+ const spotlightStatus=make('p','og-postgame-spotlight-status');spotlightStatus.setAttribute('role','status');spotlightStatus.setAttribute('aria-live','polite');
  spotlight.hidden=!(showPromos&&activeSelected.length);
  let spotlightServiceId='';
  function serviceDestination(service){const u=new URL(service[5]);u.searchParams.set('utm_source','osgard_games');u.searchParams.set('utm_medium','post_game');u.searchParams.set('utm_campaign','after_game');u.searchParams.set('utm_content',service[0]+'_'+gameId);return u.href}
@@ -365,9 +366,9 @@ function servicesShelf(gameId,showPromos,completedCount){
   copy.append(make('span','og-postgame-spotlight-label','РЕКОМЕНДАЦИЯ ДЛЯ '+(titles[gameId]||'ТВОЕЙ ИГРЫ')),make('span','og-postgame-service-code','OSG / '+service[1]+' · '+service[3]),make('strong','og-postgame-spotlight-name',service[2]),make('span','og-postgame-spotlight-description',service[4]));
   const actions=make('div','og-postgame-spotlight-actions');
   const open=make('a','og-postgame-spotlight-open','Изучить проект ↗');open.href=serviceDestination(service);open.target='_blank';open.rel='noopener noreferrer';open.setAttribute('aria-label','Открыть '+service[2]+' в новой вкладке');open.addEventListener('click',()=>sendSelectEvent('cross_promo_clicked',gameId,'osgard-select:spotlight:'+service[0]));
-  const next=make('button','og-postgame-spotlight-next','Другой проект');next.type='button';next.addEventListener('click',()=>{const index=activeSelected.findIndex(item=>item[0]===spotlightServiceId);const chosen=activeSelected[(index+1)%activeSelected.length];renderSpotlight(chosen[0]);status.textContent='Рекомендация изменена. Выбери «Запомнить выбор», если хочешь видеть этот проект первым.'});
-  const preferred=make('button','og-postgame-spotlight-preferred',readPreferredService()===service[0]?'✓ Мой выбор':'Запомнить выбор');preferred.type='button';preferred.addEventListener('click',()=>{const saved=writePreferredService(service[0]);preferred.textContent=saved?'✓ Мой выбор':'Не удалось сохранить';status.textContent=saved?'Выбор сохранён на этом устройстве.':'Браузер не разрешил сохранить предпочтение.'});
-  actions.append(open,next,preferred);copy.append(actions);spotlight.append(copy);
+  const next=make('button','og-postgame-spotlight-next','Другой проект');next.type='button';next.addEventListener('click',()=>{const index=activeSelected.findIndex(item=>item[0]===spotlightServiceId);const chosen=activeSelected[(index+1)%activeSelected.length];renderSpotlight(chosen[0]);spotlightStatus.textContent='Рекомендация изменена. Выбери «Запомнить выбор», если хочешь видеть этот проект первым.'});
+  const preferred=make('button','og-postgame-spotlight-preferred',readPreferredService()===service[0]?'✓ Мой выбор':'Запомнить выбор');preferred.type='button';preferred.addEventListener('click',()=>{const saved=writePreferredService(service[0]);preferred.textContent=saved?'✓ Мой выбор':'Не удалось сохранить';spotlightStatus.textContent=saved?'Выбор сохранён на этом устройстве.':'Браузер не разрешил сохранить предпочтение.'});
+  actions.append(open,next,preferred);copy.append(actions);spotlight.append(copy,spotlightStatus);
  }
  const preferredId=readPreferredService();
  renderSpotlight(activeSelected.some(item=>item[0]===preferredId)?preferredId:recommendationByGame[gameId]);
