@@ -22,6 +22,25 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Verify the exact Games release is live before measuring
+        env:
+          EXPECTED_DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          set -euo pipefail
+          expected="${EXPECTED_DEPLOY_SHA:0:12}"
+          for attempt in $(seq 1 18); do
+            page="$(curl -fsSL --max-time 12 https://osgard.world/games/ 2>/dev/null || true)"
+            if printf '%s' "$page" | grep -Fq "<meta name=\"osgard-build\" content=\"$expected\">" &&
+               printf '%s' "$page" | grep -Fq "luxury.css?v=$expected" &&
+               printf '%s' "$page" | grep -Fq "player-lifecycle.js?v=$expected"; then
+              echo "Confirmed deployed Games release $expected"
+              exit 0
+            fi
+            echo "Waiting for Games release $expected (attempt $attempt/18)"
+            sleep 10
+          done
+          echo "Refusing to score a stale Games release; expected $expected" >&2
+          exit 1
       - name: Audit OSGARD Games on mobile
         run: npx --yes lighthouse@12.8.2 https://osgard.world/games/ --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" --only-categories=performance,accessibility,best-practices,seo --output=json --output-path=/tmp/osgard-games-lighthouse-mobile.json --quiet
       - name: Audit OSGARD Games on desktop
