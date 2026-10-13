@@ -383,7 +383,7 @@ assert.ok(lifecycle.includes("document.dispatchEvent(new Event('osgard:game-laun
 assert.ok(recommendationScript.includes("document.addEventListener('osgard:game-completed'")&&recommendationScript.includes("document.addEventListener('osgard:game-launching'"),'Recommendation module must subscribe to game lifecycle events')
 assert.ok(recommendationStyles.includes('.post-run-recommendations')&&recommendationStyles.includes('prefers-reduced-motion:reduce'),'Recommendation shelf must have responsive/reduced-motion styling')
 new Function(recommendationScript)
-const mockNode=()=>({className:'',textContent:'',hidden:false,dataset:{},attributes:{},children:[],handlers:{},append(...nodes){this.children.push(...nodes)},replaceChildren(...nodes){this.children=nodes},setAttribute(name,value){this.attributes[name]=value},addEventListener(name,handler){(this.handlers[name]??=[]).push(handler)},click(){for(const handler of this.handlers.click||[])handler({target:this,button:0})},querySelector(selector){return selector.startsWith('.')?this.children.find(node=>node.className===selector.slice(1))||null:null}})
+const mockNode=()=>{const node={className:'',textContent:'',hidden:false,dataset:{},attributes:{},children:[],handlers:{},append(...nodes){this.children.push(...nodes)},replaceChildren(...nodes){this.children=nodes},setAttribute(name,value){this.attributes[name]=value},addEventListener(name,handler){(this.handlers[name]??=[]).push(handler)},click(){for(const handler of this.handlers.click||[])handler({target:this,button:0})},querySelector(selector){return selector.startsWith('.')?this.children.find(child=>child.className===selector.slice(1))||null:null}};node.classList={toggle(name,force){let parts=node.className.split(/\s+/).filter(Boolean);const current=parts.includes(name),enabled=force===undefined?!current:Boolean(force);if(enabled&&!current)parts.push(name);if(!enabled&&current)parts=parts.filter(value=>value!==name);node.className=parts.join(' ');return enabled},add(name){this.toggle(name,true)},remove(name){this.toggle(name,false)},contains(name){return node.className.split(/\s+/).includes(name)}};return node}
 const mockHost=mockNode();mockHost.hidden=true
 const mockOutside=mockNode();mockOutside.hidden=true
 const mockClasses=new Set()
@@ -391,8 +391,17 @@ const mockDialog={classList:{add(name){mockClasses.add(name)},remove(name){mockC
 const mockHandlers={}
 const mockHead=mockNode()
 const mockDocument={head:mockHead,querySelector(selector){return selector==='#post-run-recommendations'?mockHost:selector==='#osgard-aftergame-intermission'?mockOutside:selector==='#player-dialog'?mockDialog:null},createElement(){return mockNode()},addEventListener(name,handler){(mockHandlers[name]??=[]).push(handler)},dispatch(name,event={}){const handlers=mockHandlers[name]||[];assert.ok(handlers.length,'Missing recommendation/growth lifecycle listener: '+name);handlers.forEach(handler=>handler(event))}}
-new Function('document','window','location',recommendationScript)(mockDocument,{}, {search:'',origin:'https://osgard.world',pathname:'/games/'})
-mockDocument.dispatch('osgard:game-completed',{detail:{game:'swarm'}})
+const mockStorage=()=>{const values=new Map();return{getItem(key){return values.has(key)?values.get(key):null},setItem(key,value){values.set(key,String(value))},removeItem(key){values.delete(key)}}}
+const mockLocalStorage=mockStorage(),mockSessionStorage=mockStorage()
+new Function('document','window','location','localStorage','sessionStorage',recommendationScript)(mockDocument,{}, {search:'',origin:'https://osgard.world',pathname:'/games/'},mockLocalStorage,mockSessionStorage)
+const firstSessionId='session_swarm_qa_1000'
+mockDocument.dispatch('osgard:game-completed',{detail:{game:'swarm',sessionId:firstSessionId}})
+const firstProgress=JSON.parse(mockLocalStorage.getItem('osgard.games.postgame-service-progress.v1'))
+assert.equal(firstProgress.count,1,'The completed game event should count one OSGARD intermission')
+mockDocument.dispatch('osgard:game-session-ended',{detail:{game:'swarm',sessionId:firstSessionId,reason:'closed_by_user',durationSeconds:31,sessionStarted:true}})
+const afterSameSessionReturn=JSON.parse(mockLocalStorage.getItem('osgard.games.postgame-service-progress.v1'))
+assert.equal(afterSameSessionReturn.count,1,'Completion and closing the same game session must not increment cadence twice')
+assert.deepEqual(afterSameSessionReturn.sessions,[firstSessionId],'Intermission cadence should persist its idempotency key')
 assert.equal(mockHandlers['osgard:game-completed'].length,3,'Recommendation, invite and OSGARD SELECT modules must subscribe to completed sessions')
 assert.equal(mockHandlers['osgard:game-session-ended'].length,4,'Recommendations, invites, OSGARD SELECT and fallback intermission must subscribe to session returns')
 assert.equal(mockHost.hidden,false,'Completed SWARM session should show recommendations')
@@ -481,7 +490,7 @@ assert.ok(outsideSuite,'Closed-session intermission should contain a standalone 
 assert.equal(outsideSuite.children.find(node=>node.className==='og-postgame-services').children.find(node=>node.className==='og-postgame-service-grid').children.length,9,'Closed-session intermission should only show available selected services')
 assert.equal(outsideSuite.children.find(node=>node.className==='og-postgame-back').href,'#catalog','Players must have a clear path back to the next game');
 const outsideCards=outsideSuite.children.find(node=>node.className==='og-postgame-services').children.find(node=>node.className==='og-postgame-service-grid').children;
-assert.equal(outsideCards.find(node=>node.className.includes('is-featured'))?.dataset.service,'projects','The post-game spotlight should rotate on the next distinct game session');
+assert.equal(outsideCards.find(node=>node.className.includes('is-featured'))?.dataset.service,'gold-glamour','PATINA should highlight its contextual GOLD GLAMOUR service');
 mockDocument.dispatch('osgard:game-launching')
 assert.equal(mockOutside.hidden,true,'Starting the next game must dismiss the standalone intermission')
 assert.equal(mockOutside.children.length,0,'Starting the next game must clear stale promoted-service cards')
@@ -492,6 +501,16 @@ assert.equal(mockOutside.hidden,true,'The in-player return path must not also re
 mockDocument.dispatch('osgard:game-launching')
 assert.equal(mockHost.hidden,true,'Launching another game must dismiss the in-player chooser')
 assert.ok(recommendationScript.includes("'cascade-lab'")&&recommendationScript.includes("'civic-cascade'")&&recommendationScript.includes("'signal-run'"),'Recommendation map must cover the nine-game catalogue')
+const finalSuite=mockHost.children.find(node=>node.className==='og-postgame-suite')
+const finalServiceSection=finalSuite.children.find(node=>node.className==='og-postgame-services')
+const finalSpotlight=finalServiceSection.children.find(node=>node.className==='og-postgame-spotlight')
+const finalSpotlightActions=finalSpotlight.children[0].children.find(node=>node.className==='og-postgame-spotlight-actions')
+const finalRotateButton=finalSpotlightActions.children.find(node=>node.className==='og-postgame-spotlight-next')
+const finalServiceGrid=finalServiceSection.children.find(node=>node.className==='og-postgame-service-grid')
+const beforeRotating=finalSpotlight.dataset.service
+finalRotateButton.click()
+assert.notEqual(finalSpotlight.dataset.service,beforeRotating,'Another project should rotate the contextual spotlight')
+assert.equal(finalServiceGrid.children.find(node=>node.className.includes('is-featured'))?.dataset.service,finalSpotlight.dataset.service,'Rotating the spotlight must move the featured card to the chosen project')
 assert.ok(inheritSafeForSmoke.includes('<meta name="osgard-inherit-api-base" content="">'),'INHERIT API must be an explicit deployment setting')
 assert.ok(!inheritSafeForSmoke.includes('http://127.0.0.1:4174')&&!inheritSafeForSmoke.includes('http://127.0.0.1:4175'),'INHERIT public client must not contain localhost endpoints')
 assert.ok(inheritSafeForSmoke.includes("if(!apiWorld){notice('Общий мир не подключён — локальная летопись активна');return}"),'INHERIT should use local play without a configured shared server')
