@@ -492,8 +492,12 @@ func _run_smoke() -> void:
 	if not _expect(game.beam_pool.size() == 1 and game.beam_pool[0] == pooled_beam, "successive beams must reuse the same mesh node"):
 		return
 	game._update_effect_expiry(0.11)
+	var ring_pool_count_before: int = game.ring_pool.size()
 	game._spawn_ring_burst(Vector3.ZERO, game.materials["amber"])
-	if not _expect(game.ring_pool.size() == 1 and game.ring_effects.size() == 1 and game.ring_pool[0].visible, "ring burst must activate a reusable pool entry"):
+	# Earlier mechanic checks may already have populated several reusable ring nodes.
+	# After the expiry flush above, a new burst must reuse the first hidden entry if one exists.
+	var expected_ring_pool_count: int = max(1, ring_pool_count_before)
+	if not _expect(game.ring_pool.size() == expected_ring_pool_count and game.ring_effects.size() == 1 and game.ring_pool[0].visible, "ring burst must activate a reusable pool entry without allocating unnecessarily"):
 		return
 	var pooled_ring: MeshInstance3D = game.ring_pool[0]
 	game._update_effect_expiry(0.23)
@@ -503,7 +507,7 @@ func _run_smoke() -> void:
 	if not _expect(game.ring_effects.is_empty() and not pooled_ring.visible, "expired ring must return hidden to the pool"):
 		return
 	game._spawn_ring_burst(Vector3.ONE, game.materials["cyan"])
-	if not _expect(game.ring_pool.size() == 1 and game.ring_pool[0] == pooled_ring, "successive rings must reuse the same mesh node"):
+	if not _expect(game.ring_pool.size() == expected_ring_pool_count and game.ring_pool[0] == pooled_ring, "successive rings must reuse the same mesh node without growing the pool"):
 		return
 	game._update_effect_expiry(0.5)
 	print("RUNTIME_STAGE: bounded impact spark pool and quality density")
