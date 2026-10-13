@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080a0b"><meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
+<title>OSGARD Commerce · закрытая панель</title><link rel="icon" href="/games/favicon.svg" type="image/svg+xml">
+<style>
+:root{color-scheme:dark;--bg:#080a0b;--panel:#111514;--ink:#f2f0e8;--muted:#a5aaa1;--line:#ffffff20;--lime:#d3ff69;--gold:#d5bb82}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 85% 0,#30362155,transparent 35%),var(--bg);color:var(--ink);font:14px/1.6 system-ui,sans-serif}.wrap{width:min(1120px,calc(100% - 28px));margin:auto}.top{padding:20px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}.top a{color:var(--lime)}h1{font:clamp(36px,6vw,64px)/.98 Georgia,serif;font-weight:400;letter-spacing:-.04em;margin:36px 0 12px}.muted{color:var(--muted)}.panel{background:var(--panel);border:1px solid var(--line);padding:18px;margin:14px 0}.auth{display:flex;gap:10px;flex-wrap:wrap}.auth input{flex:1;min-width:220px;background:#070a09;border:1px solid var(--line);padding:13px;color:var(--ink)}button{background:var(--lime);border:1px solid var(--lime);padding:12px 18px;color:#10140b;font-weight:650;cursor:pointer}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.metric,.item{padding:14px;border:1px solid var(--line);overflow-wrap:anywhere}.metric b{display:block;font:27px/1.2 Georgia,serif;color:var(--gold)}.metric span,.item p{font-size:12px;color:var(--muted)}.list{display:grid;gap:8px}.item strong{color:var(--gold)}.item p{margin:4px 0;white-space:pre-wrap}.status{min-height:24px;color:var(--gold)}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;color:var(--muted)}button:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-offset:3px}@media(max-width:680px){.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.panel{padding:13px}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+</style></head>
+<body><div class="wrap">
+<header class="top"><strong>OSGARD WORLD / COMMERCE</strong><a href="/games/">← Игровой каталог</a></header>
+<main><h1>Контроль<br>коммерции.</h1><p class="muted">Закрытая панель заказов и заявок. Введите серверный ADMIN_API_TOKEN. Он хранится только в памяти открытой страницы — не сохраняется в браузере. Не пересылайте списки с контактными данными.</p>
+<section class="panel"><label for="token">Операторский токен</label><div class="auth"><input id="token" type="password" minlength="32" maxlength="512" autocomplete="off" placeholder="Токен из защищённых переменных сервера"><button id="load" type="button">Загрузить</button></div><p id="status" class="status" role="status" aria-live="polite"></p></section>
+<section class="panel"><h2>Сводка</h2><div class="metrics"><div class="metric"><b id="lead-total">—</b><span>Заявки, всего</span></div><div class="metric"><b id="lead-new">—</b><span>Новые заявки</span></div><div class="metric"><b id="order-total">—</b><span>Заказы</span></div><div class="metric"><b id="events-total">—</b><span>События за 30 дней</span></div></div><pre id="money"></pre></section>
+<section class="panel"><h2>Последние заявки</h2><div id="leads" class="list"><p class="muted">Не загружено.</p></div></section>
+<section class="panel"><h2>Последние заказы</h2><div id="orders" class="list"><p class="muted">Не загружено.</p></div></section>
+</main></div>
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+let token = '';
+async function base() {
+  const response = await fetch('/games/commerce-config.json', { cache: 'no-store' }).catch(() => null);
+  const config = response?.ok ? await response.json().catch(() => ({})) : {};
+  return String(config.apiBaseUrl || '/commerce-api').replace(/\/+$/, '');
+}
+async function api(path) {
+  const response = await fetch(await base() + path, { headers: { Authorization: 'Bearer ' + token }, cache: 'no-store' });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.message || data.error || 'HTTP ' + response.status);
+  return data;
+}
+function text(tag, cls, value) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  n.textContent = String(value ?? '');
+  return n;
+}
+function list(selector, items, fields) {
+  const root = $(selector); root.replaceChildren();
+  if (!items.length) { root.append(text('p','muted','Пока нет данных.')); return; }
+  for (const item of items) {
+    const card = text('article','item','');
+    card.append(text('strong','',item[fields[0]] || '—'));
+    for (const field of fields.slice(1)) card.append(text('p','',field + ': ' + (item[field] ?? '—')));
+    root.append(card);
+  }
+}
+async function load() {
+  token = $('#token').value.trim();
+  if (token.length < 32) { $('#status').textContent = 'Токен должен содержать не менее 32 символов.'; return; }
+  $('#load').disabled = true; $('#status').textContent = 'Загружаем данные…';
+  try {
+    const [overview, leads, orders] = await Promise.all([
+      api('/v1/admin/overview'), api('/v1/admin/leads?limit=30'), api('/v1/admin/orders?limit=30')
+    ]);
+    $('#lead-total').textContent = String(overview.leads?.total ?? 0);
+    $('#lead-new').textContent = String(overview.leads?.new ?? 0);
+    $('#order-total').textContent = String((overview.ordersByStatus || []).reduce((sum, item) => sum + Number(item.count || 0), 0));
+    $('#events-total').textContent = String(overview.analyticsEventsLast30Days ?? 0);
+    $('#money').textContent = JSON.stringify({ordersByStatus:overview.ordersByStatus,grossPaidByCurrency:overview.grossPaidByCurrency,topEventsLast30Days:overview.topEventsLast30Days,note:overview.note},null,2);
+    list('#leads',leads.items || [],['project_type','contact','budget','description','status','created_at']);
+    list('#orders',orders.items || [],['order_id','product_key','email','status','currency','amount_total','created_at']);
+    $('#status').textContent = 'Данные получены. Выручка показана до комиссий и операционных расходов.';
+  } catch (error) { $('#status').textContent = 'Не удалось загрузить данные: ' + String(error.message || 'ошибка').slice(0,180); }
+  finally { $('#load').disabled = false; }
+}
+$('#load').addEventListener('click',load);
+$('#token').addEventListener('keydown',event=>{if(event.key==='Enter')load();});
+window.addEventListener('pagehide',()=>{token='';$('#token').value='';});
+})();
+</script></body></html>
