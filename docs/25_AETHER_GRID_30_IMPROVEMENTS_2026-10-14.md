@@ -21,7 +21,7 @@ This release focuses on session quality and retention without changing the share
 12. **Undo.** A player can roll back the last accepted move.
 13. **Redo.** A rolled-back move can be replayed.
 14. **Bounded history.** Up to 100 move snapshots are retained in memory.
-15. **Complete snapshots.** Undo/redo includes rotations, move count, hints used and elapsed time.
+15. **Score-safe history.** Undo/redo restores rotations, move count and hint count, but keeps the real elapsed timer monotonic so history cannot game the daily time record.
 16. **Safe reset.** A confirmation warns before abandoning a started attempt.
 17. **Reset cleanup.** Confirmed reset clears the daily checkpoint and both history stacks.
 18. **Live connection count.** Connected nodes are visible as `n / 25`.
