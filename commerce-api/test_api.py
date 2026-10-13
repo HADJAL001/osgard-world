@@ -41,6 +41,10 @@ class CommerceApiTests(unittest.TestCase):
     def setUp(self):
         server._rate_buckets.clear()
         server._last_prune = 0
+        with server.open_db() as db:
+            db.execute('DELETE FROM events')
+            db.execute('DELETE FROM leads')
+            db.commit()
 
     def request(self, method, path, payload=None, token=None, headers=None):
         all_headers = {"Accept": "application/json"}
@@ -160,7 +164,7 @@ class CommerceApiTests(unittest.TestCase):
         self.assertTrue(response["accepted"])
         status, result = self.request("GET", "/v1/admin/leads?status=all", token=server.ADMIN_TOKEN)
         self.assertEqual(status, 200)
-        self.assertEqual(len(result["leads"]), 1)  # Only the real lead from the prior test may be present.
+        self.assertEqual(len(result["leads"]), 0)
         self.assertFalse(any(row["contact"] == "bot@example.test" for row in result["leads"]))
 
     def test_event_retention_deletes_expired_rows(self):
