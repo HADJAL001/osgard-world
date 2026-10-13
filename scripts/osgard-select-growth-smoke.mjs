@@ -54,7 +54,7 @@ assert.ok(entertainmentGateway.includes("value.frequency === 'every3'") && enter
   'Entertainment must expose each-game, every-third-game and off preferences');
 assert.ok(entertainmentGateway.includes("aria-controls=\"play-select-preferences-panel\"") &&
   entertainmentGateway.includes("const limitedVerification = service.id === 'gardvpn'") &&
-  entertainmentGateway.includes("VPN connectivity not tested") &&
+  entertainmentGateway.includes("VPN connectivity unverified") &&
   entertainmentGateway.includes('osgard:service-preferences-updated'),
   'The settings panel must be accessible, disclose unverified VPN availability, and notify same-page consumers when preferences change');
 for (const selector of ['.play-select-preferences-panel','.play-select-preference-grid','.play-select-preference-option','.play-select-preferences-status']) {
@@ -110,7 +110,7 @@ assert.ok(source.includes("u.searchParams.set('utm_source','osgard_games')") &&
   'Each service link needs source, placement and campaign attribution');
 assert.ok(source.includes("РЕКЛАМА · СОБСТВЕННЫЕ ПРОЕКТЫ OSGARD") &&
   source.includes('Автозапуска нет'), 'Self-promotion must be labelled and never autoplay');
-assert.ok(source.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN','Главная страница ответила HTTP 200 при проверке 13 октября 2026 года; работоспособность VPN-подключения не проверялась.','https://gardvpn.is/',false,true]"),
+assert.ok(source.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN','Временно не продвигается: главная страница не подтверждает, что VPN-соединение действительно устанавливается.','https://gardvpn.is/',false,false]"),
   'GARD VPN must remain in the owner inventory but unavailable for promotions until VPN connectivity is verified');
 assert.ok(source.includes("const availableServiceIds=services.filter(item=>item[7]!==false).map(item=>item[0])") &&
   source.includes("input.disabled=active===false"),
@@ -190,9 +190,9 @@ assert.ok(commerceApi.includes("event_name IN ('invite_link_prepared', 'share_cr
 assert.ok(commerceAdmin.includes('Ссылки, подготовленные для публикации') && commerceAdmin.includes('Факт публикации не подтверждается автоматически'),
   'The admin label must distinguish prepared links from verified social publication');
 assert.ok(claimHandler.includes("award('social-confirmation:'+network)") &&
-  claimHandler.includes("sendSelectEvent('share_created',gameId,'game-invite:'") &&
+  !claimHandler.includes("sendSelectEvent('share_created'") &&
   claimHandler.includes("sendSelectEvent('social_reward_claimed'"),
-  'The local daily reward and completed-share event must happen only after a separate confirmation');
+  'A manual reward claim must be recorded separately and must not inflate the created-share metric');
 assert.ok(reward.includes('Копирование само по себе не считается репостом') &&
   reward.includes('OSGARD не получает надёжный сигнал о факте публикации') &&
   reward.includes('не имеют денежной стоимости'),
