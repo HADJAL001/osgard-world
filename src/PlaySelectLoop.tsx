@@ -1,10 +1,15 @@
 import { useEffect, useState } from 'react'
 
 type Locale = 'ru' | 'en'
-type Wallet = { balance: number; day: string }
-const WALLET_KEY = 'osgard.games.shards-wallet.v1'
+type GameId = 'signal-run'
+type Service = { id: string; name: string; category: string; ru: string; en: string; url: string }
 
-const services = [
+const INVITE_CODES_KEY = 'osgard.games.shards-invite-codes.v1'
+const OWNER_TOKEN_KEY = 'osgard.games.referral-owner-token.v1'
+const REWARD_CONSENT_KEY = 'osgard.games.referral-reward-consent.v1'
+const ANALYTICS_CONSENT_KEY = 'osgard.games.analytics-consent.v1'
+
+const services: Service[] = [
   { id: 'marcosa', name: 'MARCOSA', category: 'SOCIAL / COMMUNITY', ru: 'Социальная сеть, сообщества и цифровые миры.', en: 'Social networking, communities and digital worlds.', url: 'https://marcosa.club/' },
   { id: 'projects', name: 'OSGARD BEW WORLD', category: 'DIGITAL STUDIO', ru: 'Создание игр, сайтов, приложений и цифровых продуктов.', en: 'Games, websites, apps and digital product development.', url: 'https://osgardbewworld.com/' },
   { id: 'o2-system', name: 'O2 SYSTEM', category: 'BUSINESS OPERATIONS', ru: 'Система учёта кассы обменников.', en: 'Cash and transaction accounting for exchange offices.', url: 'https://o2system.art/' },
@@ -15,54 +20,221 @@ const services = [
   { id: 'gardvpn', name: 'GARD VPN', category: 'PRIVACY / VPN', ru: 'VPN-сервис; проверьте доступность и условия на сайте проекта. Доступность домена не подтверждена независимо.', en: 'VPN service; check the project site for availability and terms. The domain has not been independently verified.', url: 'https://gardvpn.is/' },
   { id: 'osgard-business', name: 'OSGARD OS', category: 'BUSINESS DEVELOPMENT', ru: 'Направление развития бизнеса.', en: 'Business development.', url: 'https://osgardos.com/' },
   { id: 'vanguard', name: 'OSGARD VANGUARD STUDIO', category: 'VIDEO STUDIO', ru: 'Создание видео для цифровых продуктов и кампаний.', en: 'Video production for digital products and campaigns.', url: 'https://osgardvanguard.studio/' },
-] as const
-function readWallet(): Wallet {
-  if (typeof window === 'undefined') return { balance: 0, day: '' }
+]
+
+function secureHex(bytes: number): string {
   try {
-    const value = JSON.parse(window.localStorage.getItem(WALLET_KEY) || '{}')
-    return {
-      balance: Number.isSafeInteger(value.balance) && value.balance >= 0 ? Math.min(value.balance, 1000000000) : 0,
-      day: typeof value.lastRewardDay === 'string' ? value.lastRewardDay : '',
-    }
+    if (!window.crypto?.getRandomValues) return ''
+    const data = new Uint8Array(bytes)
+    window.crypto.getRandomValues(data)
+    return Array.from(data, value => value.toString(16).padStart(2, '0')).join('')
   } catch {
-    return { balance: 0, day: '' }
+    return ''
+  }
+}
+
+function hasAnalyticsConsent(): boolean {
+  try { return window.localStorage.getItem(ANALYTICS_CONSENT_KEY) === 'yes' } catch { return false }
+}
+
+function hasRewardConsent(): boolean {
+  try { return window.localStorage.getItem(REWARD_CONSENT_KEY) === 'yes' } catch { return false }
+}
+
+function inviteCode(gameId: GameId): string {
+  if (typeof window === 'undefined') return ''
+  try {
+    const parsed: unknown = JSON.parse(window.localStorage.getItem(INVITE_CODES_KEY) || '{}')
+    const codes = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {}
+    const existing = codes[gameId]
+    if (typeof existing === 'string' && /^og_[a-f0-9]{32}$/.test(existing)) return existing
+    const random = secureHex(16)
+    if (!random) return ''
+    const code = 'og_' + random
+    window.localStorage.setItem(INVITE_CODES_KEY, JSON.stringify({ ...codes, [gameId]: code }))
+    return code
+  } catch {
+    return ''
+  }
+}
+
+function ownerToken(): string {
+  try {
+    const existing = window.localStorage.getItem(OWNER_TOKEN_KEY) || ''
+    if (/^[a-f0-9]{12}$/.test(existing)) return existing
+    const random = secureHex(6)
+    if (!random) return ''
+    window.localStorage.setItem(OWNER_TOKEN_KEY, random)
+    return random
+  } catch {
+    return ''
   }
 }
 
 function makeInviteUrl(): string {
-  const bytes = new Uint8Array(4)
-  try {
-    window.crypto.getRandomValues(bytes)
-  } catch {
-    for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256)
+  const url = new URL('/games/', window.location.origin)
+  const code = inviteCode('signal-run')
+  if (code) {
+    url.pathname = '/games/invite/signal-run/'
+    url.searchParams.set('og_ref', code)
+    url.searchParams.set('og_game', 'signal-run')
+    url.searchParams.set('utm_source', 'osgard_play')
+    url.searchParams.set('utm_medium', 'referral')
+    url.searchParams.set('utm_campaign', 'play_with_friends')
+    url.searchParams.set('utm_content', 'signal-run')
+  } else {
+    url.searchParams.set('utm_source', 'osgard_world')
+    url.searchParams.set('utm_medium', 'entertainment')
+    url.searchParams.set('utm_campaign', 'between_worlds')
   }
-  const url = new URL('/games/invite/signal-run/', window.location.origin)
-  url.searchParams.set('og_ref', 'og_' + Array.from(bytes, value => value.toString(16).padStart(2, '0')).join(''))
-  url.searchParams.set('og_game', 'signal-run')
-  url.searchParams.set('utm_source', 'osgard_world')
-  url.searchParams.set('utm_medium', 'entertainment_referral')
-  url.searchParams.set('utm_campaign', 'play_with_friends')
-  url.searchParams.set('utm_content', 'home_entertainment')
   return url.href
+}
+
+async function commerceBase(): Promise<string> {
+  try {
+    const response = await fetch('/games/commerce-config.json', { cache: 'no-store' })
+    const config = response.ok ? await response.json().catch(() => ({})) as { apiBaseUrl?: string } : {}
+    return String(config.apiBaseUrl || '/commerce-api').replace(/\/+$/, '')
+  } catch {
+    return '/commerce-api'
+  }
+}
+
+async function registerInvite(gameId: GameId, code: string): Promise<boolean> {
+  if (!hasAnalyticsConsent() || !hasRewardConsent() || !/^og_[a-f0-9]{32}$/.test(code)) return false
+  const owner = ownerToken()
+  if (!owner) return false
+  try {
+    const base = await commerceBase()
+    const response = await fetch(base + '/v1/referrals/register', {
+      method: 'POST',
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ consent: true, rewardConsent: true, code, gameId, ownerToken: owner }),
+    })
+    if (!response.ok) return false
+    const eventId = secureHex(12)
+    const sessionId = secureHex(12)
+    if (!eventId || !sessionId) return true
+    const event = {
+      eventId: 'evt_' + eventId,
+      name: 'share_created',
+      sessionId: 'session_' + sessionId,
+      gameId,
+      source: 'game-invite:' + gameId + ':' + code + ':' + owner,
+      path: window.location.pathname,
+      durationSeconds: 0,
+    }
+    await fetch(base + '/v1/events', {
+      method: 'POST',
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ consent: true, events: [event] }),
+    }).catch(() => undefined)
+    return true
+  } catch {
+    return false
+  }
+}
+
+async function readReferralBalance(code: string): Promise<{ points: number; sessions: number }> {
+  if (!code || !hasAnalyticsConsent() || !hasRewardConsent()) throw new Error('CONSENT_REQUIRED')
+  const base = await commerceBase()
+  const response = await fetch(base + '/v1/referrals/reward-status', {
+    method: 'POST',
+    cache: 'no-store',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code }),
+  })
+  const result = await response.json().catch(() => ({})) as { pointsEarned?: unknown; qualifiedSessions?: unknown; error?: string }
+  if (!response.ok) throw new Error(result.error || 'REFERRAL_STATUS_UNAVAILABLE')
+  return {
+    points: Number.isSafeInteger(result.pointsEarned) ? Number(result.pointsEarned) : 0,
+    sessions: Number.isSafeInteger(result.qualifiedSessions) ? Number(result.qualifiedSessions) : 0,
+  }
 }
 
 export function PlaySelectLoop({ locale }: { locale: Locale }) {
   const ru = locale === 'ru'
   const [inviteUrl] = useState(makeInviteUrl)
-  const [balance, setBalance] = useState(() => readWallet().balance)
+  const [rewardConsent, setRewardConsent] = useState(hasRewardConsent)
+  const [balance, setBalance] = useState<number | null>(null)
+  const [qualifiedSessions, setQualifiedSessions] = useState(0)
   const [status, setStatus] = useState('')
-  const [pendingNetwork, setPendingNetwork] = useState('')
+  const [isBusy, setIsBusy] = useState(false)
+  const code = (() => { try { return new URL(inviteUrl).searchParams.get('og_ref') || '' } catch { return '' } })()
   const message = ru ? 'Пойдём сыграем в OSGARD PLAY. Выбирай свой мир:' : 'Let’s play OSGARD PLAY. Choose your world:'
 
-  useEffect(() => {
-    const refresh = () => setBalance(readWallet().balance)
-    window.addEventListener('storage', refresh)
-    window.addEventListener('osgard:shards-updated', refresh)
-    return () => {
-      window.removeEventListener('storage', refresh)
-      window.removeEventListener('osgard:shards-updated', refresh)
+  const refreshBalance = async () => {
+    try {
+      const next = await readReferralBalance(code)
+      setBalance(next.points)
+      setQualifiedSessions(next.sessions)
+      setStatus(ru
+        ? 'Сервер подтвердил ' + next.sessions + ' подходящих игровых сессий приглашённых друзей.'
+        : 'The server verified ' + next.sessions + ' qualifying invited game sessions.')
+    } catch {
+      setBalance(null)
+      setQualifiedSessions(0)
+      setStatus(!hasAnalyticsConsent()
+        ? (ru ? 'Для учёта наград сначала включи необязательную аналитику в настройках OSGARD.' : 'Enable optional OSGARD analytics to track referral rewards.')
+        : (!hasRewardConsent()
+          ? (ru ? 'Включи отдельное согласие на программу наград ниже.' : 'Enable the separate rewards-program consent below.')
+          : (ru ? 'Серверный баланс временно недоступен. Попробуй позже.' : 'Server balance is temporarily unavailable. Try again later.')))
     }
-  }, [])
+  }
+
+  useEffect(() => {
+    void refreshBalance()
+    // Consent can change elsewhere in the portal; refresh when this tab regains focus.
+    const onFocus = () => { void refreshBalance() }
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
+  }, [inviteUrl, rewardConsent])
+
+  const prepareInvite = async (): Promise<boolean> => {
+    if (!code) {
+      setStatus(ru ? 'Браузер не разрешил создать защищённую ссылку.' : 'This browser could not create a secure invite link.')
+      return false
+    }
+    if (!hasAnalyticsConsent() || !hasRewardConsent()) {
+      setStatus(!hasAnalyticsConsent()
+        ? (ru ? 'Ссылка откроется, но аналитика выключена — серверные награды не учитываются.' : 'The link still works, but analytics is off and server rewards will not be tracked.')
+        : (ru ? 'Ссылка откроется без учёта наград. Для наград включи участие ниже.' : 'The link still works, but rewards are not tracked. Opt in below to participate.'))
+      return false
+    }
+    setIsBusy(true)
+    const registered = await registerInvite('signal-run', code)
+    setIsBusy(false)
+    if (!registered) setStatus(ru
+      ? 'Не удалось зарегистрировать приглашение на сервере. Ссылкой можно делиться, но награда не будет учтена.'
+      : 'Could not register the invite on the server. You can still share the link, but rewards will not be tracked.')
+    return registered
+  }
+
+  const shareInvite = async () => {
+    setStatus('')
+    const registered = await prepareInvite()
+    try {
+      if (typeof navigator.share === 'function') {
+        await navigator.share({ title: 'OSGARD PLAY', text: message, url: inviteUrl })
+        setStatus(registered
+          ? (ru ? 'Приглашение отправлено в системное меню. +50 SHARDS появятся только если друг запустит игру и проведёт сессию не менее 60 секунд.' : 'Invite opened in the share sheet. +50 SHARDS are earned only if a friend launches a game and plays for at least 60 seconds.')
+          : (ru ? 'Открылось меню отправки. Без включённых согласий награда не учитывается.' : 'Share sheet opened. Rewards are not tracked without consent.'))
+      } else if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(message + ' ' + inviteUrl)
+        setStatus(registered
+          ? (ru ? 'Ссылка скопирована. Копирование само по себе не даёт очки; +50 SHARDS начислятся после подтверждённой сессии друга.' : 'Link copied. Copying alone earns no points; +50 SHARDS are awarded after a qualifying friend session.')
+          : (ru ? 'Ссылка скопирована. Для серверных наград требуется согласие и доступный сервер.' : 'Link copied. Server rewards require consent and an available server.'))
+      } else {
+        setStatus(ru ? 'Быстрая отправка недоступна. Выбери соцсеть ниже.' : 'Quick share is unavailable. Choose a network below.')
+      }
+    } catch (error) {
+      setStatus(error instanceof Error && error.name === 'AbortError'
+        ? (ru ? 'Отправка отменена. Награда не начислена за отмену.' : 'Share cancelled. No reward is issued for a cancelled share.')
+        : (ru ? 'Не удалось отправить приглашение. Выбери соцсеть ниже.' : 'Share failed. Choose a social network below.'))
+    }
+  }
 
   const social = [
     { name: 'Telegram', href: 'https://t.me/share/url?url=' + encodeURIComponent(inviteUrl) + '&text=' + encodeURIComponent(message) },
@@ -71,57 +243,6 @@ export function PlaySelectLoop({ locale }: { locale: Locale }) {
     { name: 'X', href: 'https://twitter.com/intent/tweet?url=' + encodeURIComponent(inviteUrl) + '&text=' + encodeURIComponent(message) },
     { name: 'Facebook', href: 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(inviteUrl) },
   ]
-
-  const grantReward = (source: string) => {
-    const current = readWallet()
-    const today = new Date().toISOString().slice(0, 10)
-    if (current.day === today) {
-      setBalance(current.balance)
-      setStatus(ru ? 'Сегодня награда уже получена. Баланс: ' + current.balance + ' SHARDS.' : 'Today’s reward is already claimed. Balance: ' + current.balance + ' SHARDS.')
-      setPendingNetwork('')
-      return
-    }
-    const next = {
-      balance: Math.min(1000000000, current.balance + 50),
-      lastRewardDay: today,
-      lastSource: source.slice(0, 60),
-      updatedAt: new Date().toISOString(),
-    }
-    try {
-      window.localStorage.setItem(WALLET_KEY, JSON.stringify(next))
-      setBalance(next.balance)
-      window.dispatchEvent(new CustomEvent('osgard:shards-updated', { detail: { balance: next.balance } }))
-      setStatus(ru ? '+50 SHARDS добавлено. Баланс: ' + next.balance + '. Награда локальная и не имеет денежной стоимости.' : '+50 SHARDS added. Balance: ' + next.balance + '. Local points have no cash value.')
-    } catch {
-      setStatus(ru ? 'Браузер не разрешил сохранить награду на этом устройстве.' : 'The browser could not save the reward on this device.')
-    }
-    setPendingNetwork('')
-  }
-
-  const shareInvite = async () => {
-    setPendingNetwork('')
-    try {
-      if (typeof navigator.share === 'function') {
-        await navigator.share({ title: 'OSGARD PLAY', text: message, url: inviteUrl })
-        setPendingNetwork('native-share')
-        setStatus(ru
-          ? 'Меню отправки закрыто. Если ты действительно опубликовал приглашение, подтверди ниже. Автоматически проверить публикацию невозможно.'
-          : 'The share sheet closed. If you actually published the invite, confirm below. The post itself cannot be verified automatically.')
-      } else if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(message + ' ' + inviteUrl)
-        setStatus(ru
-          ? 'Ссылка скопирована. Копирование само по себе не считается репостом и не даёт награду. Опубликуй её через соцсеть ниже, затем вернись и подтверди.'
-          : 'Link copied. Copying alone is not a repost and earns no reward. Publish it through a social network below, then return and confirm.')
-      } else {
-        setStatus(ru ? 'Быстрая отправка недоступна. Выбери соцсеть ниже.' : 'Quick share is unavailable. Choose a network below.')
-      }
-    } catch (error) {
-      setPendingNetwork('')
-      setStatus(error instanceof Error && error.name === 'AbortError'
-        ? (ru ? 'Отправка отменена — награда не начислена.' : 'Share cancelled — no reward was granted.')
-        : (ru ? 'Не удалось отправить приглашение. Выбери соцсеть ниже.' : 'Share failed. Choose a network below.'))
-    }
-  }
 
   return <section className="play-select-loop" aria-labelledby="play-select-title">
     <div className="play-select-header">
@@ -157,20 +278,43 @@ export function PlaySelectLoop({ locale }: { locale: Locale }) {
       <aside className="play-select-referral">
         <p className="play-select-referral-eyebrow">OSGARD PLAY / FRIEND INVITE</p>
         <h4>{ru ? 'Твой следующий раунд — с другом.' : 'Your next round is better with a friend.'}</h4>
-        <p>{ru ? 'Поделись приглашением. +50 SHARDS доступны после явного подтверждения публикации — не чаще раза в UTC-день на этом устройстве. Копирование ссылки само по себе не награждается.' : 'Share an invite. +50 SHARDS can be claimed after you explicitly confirm publishing the invite, once per UTC day on this device. Copying a link alone earns no reward.'}</p>
-        <div className="play-select-wallet"><span>OSGARD SHARDS</span><strong>{balance.toLocaleString(ru ? 'ru-RU' : 'en-US')}</strong></div>
-        <button type="button" className="play-select-share-primary" onClick={shareInvite}>{ru ? 'Поделиться приглашением ↗' : 'Share invitation ↗'}</button>
+        <p>{ru ? 'Поделись приглашением. +50 SHARDS начисляются сервером после подходящей игровой сессии друга длиной от 60 секунд. Публикацию соцсети нельзя проверить автоматически; сама отправка не даёт очки.' : 'Share an invite. The server awards +50 SHARDS after a friend plays a qualifying game session of at least 60 seconds. Social-network posts cannot be verified automatically; sending the link alone earns no points.'}</p>
+        <label className="play-select-reward-consent">
+          <input type="checkbox" checked={rewardConsent} onChange={event => {
+            setRewardConsent(event.target.checked)
+            try { if (event.target.checked) window.localStorage.setItem(REWARD_CONSENT_KEY, 'yes'); else window.localStorage.removeItem(REWARD_CONSENT_KEY) } catch {}
+            if (event.target.checked && !hasAnalyticsConsent()) setStatus(ru ? 'Для работы серверных наград требуется отдельное включение необязательной аналитики.' : 'Server rewards also require optional analytics consent.')
+            else setStatus(event.target.checked ? (ru ? 'Согласие на программу наград включено.' : 'Rewards-program consent enabled.') : (ru ? 'Участие в программе наград отключено.' : 'Rewards program disabled.'))
+          }} />
+          <span>{ru ? 'Разрешаю учитывать открытие приглашения и игровую сессию для наград. Участие добровольное.' : 'I consent to tracking invite opens and qualifying game sessions for rewards. Participation is optional.'}</span>
+        </label>
+        <div className="play-select-wallet"><span>OSGARD SHARDS · SERVER</span><strong>{balance === null ? '—' : balance.toLocaleString(ru ? 'ru-RU' : 'en-US')}</strong></div>
+        <small className="play-select-reward-note">{ru ? 'Подтверждённых сессий: ' + qualifiedSessions + '. SHARDS — непокупаемые пилотные очки без денежной стоимости. Они не начисляются за клик или неподтверждённый пост.' : 'Verified qualifying sessions: ' + qualifiedSessions + '. SHARDS are pilot points with no cash value, not purchasable. Clicks and unverified posts do not earn them.'}</small>
+        <div className="play-select-share-actions">
+          <button type="button" className="play-select-share-primary" onClick={shareInvite} disabled={isBusy}>{isBusy ? (ru ? 'Регистрируем…' : 'Registering…') : (ru ? 'Поделиться приглашением ↗' : 'Share invitation ↗')}</button>
+          <button type="button" className="play-select-share-refresh" onClick={() => { void refreshBalance() }}>{ru ? 'Обновить баланс' : 'Refresh balance'}</button>
+        </div>
         <div className="play-select-share-networks">
-          {social.map(item => <a href={item.href} key={item.name} target="_blank" rel="noopener noreferrer" onClick={() => {
-            setPendingNetwork(item.name)
-            setStatus(ru ? 'Открой публикацию в ' + item.name + ', затем вернись и подтверди действие.' : 'Open the ' + item.name + ' composer, then return and confirm the action.')
+          {social.map(item => <a href={item.href} key={item.name} target="_blank" rel="noopener noreferrer" onClick={async event => {
+            const destination = item.href
+            if (!hasAnalyticsConsent() || !hasRewardConsent()) {
+              setStatus(ru ? 'Соцсеть откроется. Для учёта серверных наград нужны оба добровольных согласия.' : 'The social composer opens. Both optional consents are required to track rewards.')
+              return
+            }
+            event.preventDefault()
+            const popup = window.open('about:blank', '_blank')
+            if (popup) popup.opener = null
+            setIsBusy(true)
+            const registered = await registerInvite('signal-run', code)
+            setIsBusy(false)
+            setStatus(registered
+              ? (ru ? 'Приглашение зарегистрировано. +50 SHARDS появятся после игровой сессии друга от 60 секунд.' : 'Invite registered. +50 SHARDS are earned after a friend’s 60-second qualifying session.')
+              : (ru ? 'Сервер не зарегистрировал приглашение; награда не учитывается.' : 'The server did not register this invite; no reward will be tracked.'))
+            if (popup && !popup.closed) popup.location.href = destination
+            else if (!popup) window.location.assign(destination)
           }}>{item.name} ↗</a>)}
         </div>
-        {pendingNetwork && <button type="button" className="play-select-share-claim" onClick={() => grantReward('homepage-social-confirmation:' + pendingNetwork)}>
-          {ru ? (pendingNetwork === 'native-share' ? 'Я действительно опубликовал — получить +50 SHARDS' : 'Я отправил в ' + pendingNetwork + ' — получить +50 SHARDS') : (pendingNetwork === 'native-share' ? 'I actually published the invite — claim +50 SHARDS' : 'I shared on ' + pendingNetwork + ' — claim +50 SHARDS')}
-        </button>}
         <p className="play-select-status" role="status" aria-live="polite">{status}</p>
-        <small>{ru ? 'SHARDS хранятся только локально, не являются деньгами и не обмениваются на денежную стоимость. Соцсети не подтверждают публикацию сайту; пользователь подтверждает отправку сам, а копирование ссылки награду не даёт.' : 'SHARDS are local points, not money and not redeemable. Social networks do not verify posts to this site; social-compose sharing uses player confirmation.'}</small>
       </aside>
     </div>
   </section>
