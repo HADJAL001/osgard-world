@@ -342,7 +342,7 @@ app.post("/v1/events", async (req, res) => {
 app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
   if (!requireDatabase(res)) return;
   try {
-    const [orderStats, currencyStats, leadStats, eventStats, topEvents, analyticsByGame, ownedPromoByService, analyticsFunnel, socialShareByNetwork, paidRevenueByAttribution] = await Promise.all([
+    const [orderStats, currencyStats, leadStats, eventStats, topEvents, analyticsByGame, ownedPromoByService, ownedPromoVariantStats, analyticsFunnel, socialShareByNetwork, paidRevenueByAttribution] = await Promise.all([
       pool.query("SELECT status, COUNT(*)::int AS count FROM commerce_orders GROUP BY status"),
       pool.query("SELECT currency, SUM(amount_total)::bigint AS total_minor, COUNT(*)::int AS count FROM commerce_orders WHERE status='paid' AND currency IS NOT NULL GROUP BY currency"),
       pool.query("SELECT attribution_game_id AS \"gameId\", attribution_source AS source, NULLIF(attribution_campaign, '') AS campaign, mode, currency, COUNT(*)::int AS orders, COALESCE(SUM(amount_total),0)::text AS \"totalMinor\" FROM commerce_orders WHERE status='paid' AND amount_total IS NOT NULL AND currency IS NOT NULL AND created_at >= NOW() - INTERVAL '30 days' GROUP BY attribution_game_id, attribution_source, attribution_campaign, mode, currency ORDER BY COUNT(*) DESC, attribution_game_id ASC LIMIT 50"),
@@ -363,6 +363,18 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
         GROUP BY split_part(source, ':', 3), game_id
         ORDER BY impressions DESC, clicks DESC, "serviceId" ASC
         LIMIT 50
+      `),
+      pool.query(`
+        SELECT
+          split_part(source, ':', 4) AS variant,
+          COUNT(*) FILTER (WHERE event_name = 'owned_promo_impression')::int AS impressions,
+          COUNT(*) FILTER (WHERE event_name = 'cross_promo_clicked')::int AS clicks
+        FROM commerce_events
+        WHERE received_at >= NOW() - INTERVAL '30 days'
+          AND source ~ '^osgard-select:(spotlight|click):[a-z0-9-]{1,40}:[ab]$'
+          AND event_name IN ('owned_promo_impression', 'cross_promo_clicked')
+        GROUP BY split_part(source, ':', 4)
+        ORDER BY variant ASC
       `),
       pool.query(`
         WITH recent_events AS (
@@ -446,6 +458,7 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
       topEventsLast30Days: topEvents.rows,
       analyticsByGame: analyticsByGame.rows,
       ownedPromoByService: ownedPromoByService.rows,
+      ownedPromoVariantStats: ownedPromoVariantStats.rows,
       analyticsFunnel: analyticsFunnel.rows[0] || {},
       socialShareByNetwork: socialShareByNetwork.rows,
       paidRevenueByAttribution: paidRevenueByAttribution.rows,
