@@ -432,7 +432,7 @@ app.post("/v1/referrals/reward-status", async (req, res) => {
 app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
   if (!requireDatabase(res)) return;
   try {
-    const [orderStats, currencyStats, leadStats, eventStats, topEvents, analyticsByGame, ownedPromoByService, analyticsFunnel, socialShareByNetwork] = await Promise.all([
+    const [orderStats, currencyStats, leadStats, eventStats, topEvents, analyticsByGame, ownedPromoByService, analyticsFunnel, socialShareByNetwork, referralRewardStats] = await Promise.all([
       pool.query("SELECT status, COUNT(*)::int AS count FROM commerce_orders GROUP BY status"),
       pool.query("SELECT currency, SUM(amount_total)::bigint AS total_minor, COUNT(*)::int AS count FROM commerce_orders WHERE status='paid' AND currency IS NOT NULL GROUP BY currency"),
       pool.query("SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE status='new')::int AS new FROM commerce_leads"),
@@ -464,28 +464,28 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
           FROM recent_events
           WHERE event_name = 'share_created'
             AND source LIKE 'game-invite:%'
-            AND split_part(source, ':', 3) ~ '^(og_[a-f0-9]{8}|[a-f0-9]{12})$'
+            AND split_part(source, ':', 3) ~ '^(og_[a-f0-9]{8}|og_[a-f0-9]{32}|[a-f0-9]{12})$'
         ),
         invite_opens AS (
           SELECT DISTINCT split_part(source, ':', 2) AS invite_code
           FROM recent_events
           WHERE event_name = 'referral_link_opened'
             AND source LIKE 'referral-link:%'
-            AND split_part(source, ':', 2) ~ '^(og_[a-f0-9]{8}|[a-f0-9]{12})$'
+            AND split_part(source, ':', 2) ~ '^(og_[a-f0-9]{8}|og_[a-f0-9]{32}|[a-f0-9]{12})$'
         ),
         invite_starts AS (
           SELECT DISTINCT split_part(source, ':', 2) AS invite_code
           FROM recent_events
           WHERE event_name = 'game_session_started'
             AND source LIKE 'referral:%'
-            AND split_part(source, ':', 2) ~ '^(og_[a-f0-9]{8}|[a-f0-9]{12})$'
+            AND split_part(source, ':', 2) ~ '^(og_[a-f0-9]{8}|og_[a-f0-9]{32}|[a-f0-9]{12})$'
         ),
         invite_completions AS (
           SELECT DISTINCT split_part(source, ':', 2) AS invite_code
           FROM recent_events
           WHERE event_name = 'game_session_completed'
             AND source LIKE 'referral:%'
-            AND split_part(source, ':', 2) ~ '^(og_[a-f0-9]{8}|[a-f0-9]{12})$'
+            AND split_part(source, ':', 2) ~ '^(og_[a-f0-9]{8}|og_[a-f0-9]{32}|[a-f0-9]{12})$'
         )
         SELECT
           COUNT(*) FILTER (WHERE event_name = 'catalog_viewed')::int AS "catalogViews",
@@ -505,15 +505,19 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
       `),
       pool.query(`
         SELECT
-          network,
+          split_part(source, ':', 2) AS network,
           COUNT(*) FILTER (WHERE event_name = 'social_share_intent')::int AS intents,
           COUNT(*) FILTER (WHERE event_name = 'social_reward_claimed')::int AS reward_claims
-        FROM (
-          SELECT
-            event_name,
-            CASE
-              WHEN source ~ '^osgard-social-share:(telegram|whatsapp|vk|x|facebook):[a-z0-9-]{1,40}
-    return res.json({
+        FROM commerce_events
+        WHERE received_at >= NOW() - INTERVAL '30 days'
+          AND event_name IN ('social_share_intent', 'social_reward_claimed')
+          AND source ~ '^osgard-social-(share|reward):(telegram|whatsapp|vk|x|facebook):[a-z0-9-]{1,40}$'
+        GROUP BY split_part(source, ':', 2)
+        ORDER BY intents DESC, network ASC
+      `),
+      pool.query("SELECT COUNT(*)::int AS \"qualifiedSessions\", COALESCE(SUM(points),0)::int AS \"pointsAwarded\", COUNT(DISTINCT invite_code)::int AS \"inviteCodesWithRewards\" FROM game_referral_rewards WHERE qualified_at >= NOW() - INTERVAL '30 days'"),
+    ]);
+        return res.json({
       ordersByStatus: orderStats.rows,
       grossPaidByCurrency: currencyStats.rows,
       leads: leadStats.rows[0] || { total: 0, new: 0 },
@@ -523,6 +527,7 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
       ownedPromoByService: ownedPromoByService.rows,
       analyticsFunnel: analyticsFunnel.rows[0] || {},
       socialShareByNetwork: socialShareByNetwork.rows,
+      referralRewards: referralRewardStats.rows[0] || { qualifiedSessions: 0, pointsAwarded: 0, inviteCodesWithRewards: 0 },
       analyticsRetentionDays,
       note: "Аналитика включает только согласованные события. Это не все посещения сайта и не рекламные показы. Суммы сгруппированы по валютам и не являются бухгалтерским отчётом.",
     });
