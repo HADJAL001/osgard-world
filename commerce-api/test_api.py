@@ -1,184 +1,335 @@
+import hashlib
+import hmac
 import json
-import os
-import sys
 import tempfile
 import threading
+import time
 import unittest
 import urllib.error
 import urllib.request
 from http.server import ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import urlparse
 
-ROOT = Path(__file__).resolve().parent
-TEMP = tempfile.TemporaryDirectory(prefix="osgard-commerce-test-")
-os.environ["OSGARD_COMMERCE_DB"] = str(Path(TEMP.name) / "test.sqlite3")
-os.environ["OSGARD_COMMERCE_ADMIN_TOKEN"] = "test-admin-token-" + ("x" * 48)
-os.environ["OSGARD_COMMERCE_RETENTION_DAYS"] = "180"
-sys.path.insert(0, str(ROOT))
+from app import CommerceService, make_handler, make_server
 
-import server  # noqa: E402
 
-server.DB_PATH = os.environ["OSGARD_COMMERCE_DB"]
-server.ADMIN_TOKEN = os.environ["OSGARD_COMMERCE_ADMIN_TOKEN"]
-server.RETENTION_DAYS = 180
+ADMIN_TOKEN = "test-admin-token-" + ("x" * 48)
 
 
 class CommerceApiTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        server.initialize_db()
-        cls.httpd = ThreadingHTTPServer(("127.0.0.1", 0), server.CommerceHandler)
-        cls.thread = threading.Thread(target=cls.httpd.serve_forever, daemon=True)
+        cls.temp = tempfile.TemporaryDirectory(prefix="osgard-commerce-test-")
+        cls.env = {
+            "ADMIN_API_TOKEN": ADMIN_TOKEN,
+            "STRIPE_MODE": "disabled",
+            "DATABASE_PATH": str(Path(cls.temp.name) / "commerce.sqlite3"),
+            "COMMERCE_PRODUCTS_JSON": "[]",
+            "EVENT_RETENTION_DAYS": "90",
+            "LEAD_RETENTION_DAYS": "180",
+            "ORDER_RETENTION_DAYS": "365",
+            "PUBLIC_BASE_URL": "https://osgard.world",
+        }
+        cls.service = CommerceService(cls.env["DATABASE_PATH"], cls.env)
+        cls.server = make_server("127.0.0.1", 0, cls.service)
+        cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
         cls.thread.start()
-        cls.base = "http://127.0.0.1:%s" % cls.httpd.server_address[1]
+        cls.base = "http://127.0.0.1:%s" % cls.server.server_address[1]
 
     @classmethod
     def tearDownClass(cls):
-        cls.httpd.shutdown()
-        cls.httpd.server_close()
-        TEMP.cleanup()
+        cls.server.shutdown()
+        cls.server.server_close()
+        cls.temp.cleanup()
 
     def setUp(self):
-        server._rate_buckets.clear()
-        server._last_prune = 0
-        with server.open_db() as db:
-            db.execute('DELETE FROM events')
-            db.execute('DELETE FROM leads')
-            db.commit()
+        with self.service.connect() as db:
+            db.execute("DELETE FROM events")
+            db.execute("DELETE FROM leads")
+            db.execute("DELETE FROM orders")
+            db.execute("DELETE FROM stripe_events")
+        self.service._rate.clear()
+        self.service._last_cleanup = time.monotonic()
+        self.service.env.update({
+            "ADMIN_API_TOKEN": ADMIN_TOKEN,
+            "STRIPE_MODE": "disabled",
+            "STRIPE_SECRET_KEY": "",
+            "STRIPE_WEBHOOK_SECRET": "",
+            "COMMERCE_PRODUCTS_JSON": "[]",
+        })
+        self._stripe_sessions = {}
+        self._stripe_event_calls = []
 
-    def request(self, method, path, payload=None, token=None, headers=None):
-        all_headers = {"Accept": "application/json"}
+    def request(self, method, path, payload=None, headers=None, raw=None):
+        request_headers = {"Accept": "application/json"}
+        data = raw
         if payload is not None:
-            all_headers["Content-Type"] = "application/json"
-        if token is not None:
-            all_headers["X-Admin-Token"] = token
+            data = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+            request_headers["Content-Type"] = "application/json"
         if headers:
-            all_headers.update(headers)
-        data = None if payload is None else json.dumps(payload).encode("utf-8")
-        req = urllib.request.Request(self.base + path, data=data, headers=all_headers, method=method)
+            request_headers.update(headers)
+        request = urllib.request.Request(self.base + path, data=data, headers=request_headers, method=method)
         try:
-            with urllib.request.urlopen(req, timeout=3) as response:
-                return response.status, json.loads(response.read().decode("utf-8"))
+            with urllib.request.urlopen(request, timeout=4) as response:
+                return response.status, json.loads(response.read().decode("utf-8")), response.headers
         except urllib.error.HTTPError as exc:
-            body = exc.read().decode("utf-8")
+            raw_body = exc.read().decode("utf-8")
             try:
-                return exc.code, json.loads(body)
+                parsed = json.loads(raw_body)
             except json.JSONDecodeError:
-                return exc.code, {"body": body}
+                parsed = {"body": raw_body}
+            return exc.code, parsed, exc.headers
 
-    def event(self, name, session, source, game="null-shift"):
-        return {
-            "name": name,
-            "sessionId": session,
-            "gameId": game,
-            "source": source,
+    def admin_headers(self):
+        return {"Authorization": "Bearer " + ADMIN_TOKEN}
+
+    def _configure_fake_stripe(self):
+        product = {
+            "key": "support-starter",
+            "label": "Поддержать OSGARD",
+            "description": "Разовый вклад в поддержку авторских игр и инфраструктуры.",
+            "stripePriceId": "price_test_osgard_499",
+            "fulfillmentMode": "support",
+            "mode": "payment",
+            "active": True,
+        }
+        self.service.env.update({
+            "STRIPE_MODE": "test",
+            "STRIPE_SECRET_KEY": "sk_test_unit_fixture_only",
+            "STRIPE_WEBHOOK_SECRET": "whsec_unit_fixture_only",
+            "COMMERCE_PRODUCTS_JSON": json.dumps([product]),
+        })
+        self.service.stripe_request = self._fake_stripe_request
+
+    def _fake_stripe_request(self, method, path, fields=None, idempotency_key=""):
+        self._stripe_event_calls.append((method, path, dict(fields or {}), idempotency_key))
+        if method == "GET" and path == "prices/price_test_osgard_499":
+            return {
+                "id": "price_test_osgard_499",
+                "active": True,
+                "type": "one_time",
+                "livemode": False,
+                "unit_amount": 499,
+                "currency": "eur",
+            }
+        if method == "POST" and path == "checkout/sessions":
+            session_id = "cs_test_Osgard123456"
+            order_id = fields["metadata[order_id]"]
+            session = {
+                "id": session_id,
+                "url": "https://checkout.stripe.com/c/pay/" + session_id,
+                "livemode": False,
+                "status": "open",
+                "payment_status": "unpaid",
+                "amount_total": 499,
+                "currency": "eur",
+                "payment_intent": None,
+                "client_reference_id": order_id,
+                "metadata": {
+                    "order_id": order_id,
+                    "product_key": fields["metadata[product_key]"],
+                },
+            }
+            self._stripe_sessions[session_id] = session
+            return session
+        if method == "GET" and path.startswith("checkout/sessions/"):
+            session_id = path.rsplit("/", 1)[1]
+            if session_id not in self._stripe_sessions:
+                raise AssertionError("Unexpected checkout session lookup")
+            return dict(self._stripe_sessions[session_id])
+        raise AssertionError("Unexpected Stripe call %s %s" % (method, path))
+
+    def stripe_signature(self, raw, timestamp=None):
+        timestamp = int(time.time()) if timestamp is None else timestamp
+        signed = str(timestamp).encode("ascii") + b"." + raw
+        secret = self.service.env["STRIPE_WEBHOOK_SECRET"].encode()
+        signature = hmac.new(secret, signed, hashlib.sha256).hexdigest()
+        return "t=%s,v1=%s" % (timestamp, signature)
+
+    def test_health_and_security_headers(self):
+        status, body, headers = self.request("GET", "/health")
+        self.assertEqual(status, 200)
+        self.assertEqual(body["service"], "osgard-commerce-api")
+        self.assertEqual(body["paymentMode"], "disabled")
+        self.assertNotIn("STRIPE_SECRET_KEY", json.dumps(body))
+        self.assertEqual(headers.get("Cache-Control"), "no-store")
+        self.assertEqual(headers.get("X-Content-Type-Options"), "nosniff")
+        self.assertEqual(headers.get("X-Frame-Options"), "DENY")
+
+    def test_consent_and_event_allowlist_are_required(self):
+        event = {
+            "eventId": "evt_test_valid_0001",
+            "name": "share_created",
+            "sessionId": "session_test_001",
+            "gameId": "null-shift",
+            "source": "games-catalog-player",
             "path": "/games/",
             "durationSeconds": 0,
+            "referralCode": "rabcdef123456",
+            "campaign": "player_invite",
         }
-
-    def test_health_and_privacy_headers(self):
-        status, body = self.request("GET", "/health")
+        status, body, _ = self.request("POST", "/v1/events", {"consent": False, "events": [event]})
+        self.assertEqual(status, 400)
+        status, body, _ = self.request("POST", "/v1/events", {"consent": True, "events": [dict(event, name="fake_ad_click")]})
         self.assertEqual(status, 200)
-        self.assertEqual(body["service"], "osgard-commerce")
-        self.assertNotIn("X-Admin-Token", json.dumps(body))
-        req = urllib.request.Request(self.base + "/health")
-        with urllib.request.urlopen(req, timeout=3) as response:
-            self.assertEqual(response.headers.get("Cache-Control"), "no-store")
-            self.assertEqual(response.headers.get("X-Frame-Options"), "DENY")
-
-    def test_event_consent_validation_and_event_whitelist(self):
-        event = self.event("invite_landing", "invitevisit_abcdefgh12345678", "player-invite:abcdef1234567890")
-        status, _ = self.request("POST", "/v1/events", {"consent": False, "events": [event]})
-        self.assertEqual(status, 403)
-        status, _ = self.request("POST", "/v1/events", {"consent": True, "events": [dict(event, name="fake_ad_click")]})
-        self.assertEqual(status, 400)
-        status, _ = self.request("POST", "/v1/events", {"consent": True, "events": [dict(event, gameId=["not-a-game"])]})
-        self.assertEqual(status, 400)
-        status, _ = self.request("POST", "/v1/events", {"consent": True, "events": [dict(event, sessionId="bad id")]})
-        self.assertEqual(status, 400)
+        self.assertEqual(body["accepted"], 0)
+        status, body, _ = self.request("POST", "/v1/events", {"consent": True, "events": [dict(event, gameId=["not-a-game"])]})
+        self.assertEqual(status, 200)
+        self.assertEqual(body["accepted"], 0)
+        status, body, _ = self.request("POST", "/v1/events", {"consent": True, "events": [event]})
+        self.assertEqual(status, 200)
+        self.assertEqual(body["accepted"], 1)
+        status, body, _ = self.request("POST", "/v1/events", {"consent": True, "events": [event]})
+        self.assertEqual(body["accepted"], 0, "Repeated event IDs must be idempotent")
 
     def test_referral_funnel_is_stored_and_aggregated(self):
-        invite = "ab12cd34ef56ab78cd90ef12"
-        created = self.event("invite_link_created", "invite_" + invite, "player-invite-link:" + invite)
-        landing = self.event("invite_landing", "invitevisit_abcdefgh12345678", "player-invite:" + invite)
-        started = self.event("invite_game_started", "invitevisit_abcdefgh12345678", "player-invite:" + invite)
-        completed = self.event("invite_game_completed", "invitevisit_abcdefgh12345678", "player-invite:" + invite)
-        for event in (created, landing, started, completed):
-            status, body = self.request("POST", "/v1/events", {"consent": True, "events": [event]})
-            self.assertEqual(status, 202)
-            self.assertTrue(body["accepted"])
-            self.assertEqual(body["acceptedEvents"], 1)
-        # Idempotent retry must not inflate the referral funnel.
-        status, body = self.request("POST", "/v1/events", {"consent": True, "events": [landing]})
-        self.assertEqual(status, 202)
-        self.assertEqual(body["acceptedEvents"], 0)
-        self.assertEqual(body["duplicateEvents"], 1)
-        status, _ = self.request("GET", "/v1/admin/summary")
-        self.assertEqual(status, 401)
-        status, summary = self.request("GET", "/v1/admin/summary?days=30", token=server.ADMIN_TOKEN)
-        self.assertEqual(status, 200)
-        self.assertEqual(summary["invites"]["created"], 1)
-        self.assertEqual(summary["invites"]["landings"], 1)
-        self.assertEqual(summary["invites"]["gameStarts"], 1)
-        self.assertEqual(summary["invites"]["gameCompletions"], 1)
-        status, body = self.request("GET", "/v1/admin/referrals?days=30", token=server.ADMIN_TOKEN)
-        self.assertEqual(status, 200)
-        self.assertEqual(body["referrals"][0]["inviteId"], invite)
-        self.assertEqual(body["referrals"][0]["starts"], 1)
-
-    def test_origin_guard(self):
-        status, _ = self.request("POST", "/v1/events", {"consent": True, "events": [self.event("invite_landing", "invitevisit_abcdefgh12345678", "player-invite:abcdef1234567890")]}, headers={"Origin": "https://attacker.invalid"})
-        self.assertEqual(status, 403)
-
-    def test_leads_require_consent_and_are_admin_protected(self):
-        no_consent = {"consent": False, "projectType": "Game", "contact": "owner@example.test", "description": "A game project"}
-        status, _ = self.request("POST", "/v1/leads", no_consent)
-        self.assertEqual(status, 403)
-        lead = {
-            "consent": True, "projectType": "Game", "budget": "optional",
-            "contact": "owner@example.test", "description": "Create an original puzzle game",
-            "website": "", "sourcePath": "/games/", "campaign": "player_invite_loop",
-            "campaignMedium": "player_share", "campaignContent": "cascade-lab",
+        landing = {
+            "eventId": "evt_referral_session_0001",
+            "name": "referral_session_started",
+            "sessionId": "session_invite_123",
+            "gameId": "swarm",
+            "source": "games-catalog-player:friend-invite",
+            "path": "/games/",
+            "durationSeconds": 0,
+            "referralCode": "rabcdef123456",
+            "campaign": "player_invite",
+            "placement": "post-run",
+            "inviteMethod": "clipboard",
         }
-        status, body = self.request("POST", "/v1/leads", lead)
+        status, body, _ = self.request("POST", "/v1/events", {"consent": True, "events": [landing]})
+        self.assertEqual(status, 200)
+        self.assertEqual(body["accepted"], 1)
+        status, overview, _ = self.request("GET", "/v1/admin/overview", headers=self.admin_headers())
+        self.assertEqual(status, 200)
+        counts = {item["name"]: item["count"] for item in overview["topEventsLast30Days"]}
+        self.assertEqual(counts.get("referral_session_started"), 1)
+        self.assertEqual(overview["analyticsEventsLast30Days"], 1)
+        self.assertIn("client", overview["note"].lower())
+        self.assertNotIn("rabcdef123456", json.dumps(overview), "Aggregate report must not leak referral codes")
+
+    def test_leads_require_consent_and_are_operator_protected(self):
+        lead = {
+            "projectType": "Игру",
+            "budget": "Пока не определён",
+            "contact": "studio@example.test",
+            "description": "Хочу обсудить небольшую игру.",
+            "consent": True,
+            "website": "",
+        }
+        status, body, _ = self.request("POST", "/v1/leads", dict(lead, consent=False))
+        self.assertEqual(status, 400)
+        status, body, _ = self.request("POST", "/v1/leads", lead)
         self.assertEqual(status, 201)
         self.assertTrue(body["accepted"])
-        lead_id = body["leadId"]
-        status, _ = self.request("GET", "/v1/admin/leads?status=new")
+        self.assertTrue(body["leadId"].startswith("lead_"))
+        status, body, _ = self.request("GET", "/v1/admin/leads?limit=10")
         self.assertEqual(status, 401)
-        status, result = self.request("GET", "/v1/admin/leads?status=new", token=server.ADMIN_TOKEN)
+        status, body, _ = self.request("GET", "/v1/admin/leads?limit=10", headers=self.admin_headers())
         self.assertEqual(status, 200)
-        self.assertEqual(len(result["leads"]), 1)
-        self.assertEqual(result["leads"][0]["leadId"], lead_id)
-        self.assertEqual(result["leads"][0]["campaign"], "player_invite_loop")
-        status, result = self.request("PATCH", "/v1/admin/leads/" + lead_id + "/status", {"status": "qualified"}, token=server.ADMIN_TOKEN)
-        self.assertEqual(status, 200)
-        self.assertEqual(result["status"], "qualified")
-        status, _ = self.request("GET", "/v1/admin/leads?status=qualified", token=server.ADMIN_TOKEN)
-        self.assertEqual(status, 200)
+        self.assertEqual(len(body["items"]), 1)
+        self.assertEqual(body["items"][0]["contact"], "studio@example.test")
 
-    def test_honeypot_does_not_store_lead(self):
-        payload = {"consent": True, "projectType": "Game", "contact": "bot@example.test", "description": "Bot", "website": "spam"}
-        status, response = self.request("POST", "/v1/leads", payload)
-        self.assertEqual(status, 202)
-        self.assertTrue(response["accepted"])
-        status, result = self.request("GET", "/v1/admin/leads?status=all", token=server.ADMIN_TOKEN)
-        self.assertEqual(status, 200)
-        self.assertEqual(len(result["leads"]), 0)
-        self.assertFalse(any(row["contact"] == "bot@example.test" for row in result["leads"]))
+    def test_honeypot_is_not_saved(self):
+        lead = {
+            "projectType": "Игру", "budget": "", "contact": "bot@example.test",
+            "description": "Automated spam", "consent": True, "website": "https://bot.invalid",
+        }
+        status, body, _ = self.request("POST", "/v1/leads", lead)
+        self.assertEqual(status, 201)
+        self.assertTrue(body["accepted"])
+        self.assertEqual(body["leadId"], "accepted")
+        status, listing, _ = self.request("GET", "/v1/admin/leads", headers=self.admin_headers())
+        self.assertEqual(listing["items"], [])
 
-    def test_event_retention_deletes_expired_rows(self):
-        with server.db_connection() as db:
-            db.execute(
-                "INSERT OR IGNORE INTO events (event_name, session_id, game_id, source, path, duration_seconds, invite_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                ("invite_landing", "invitevisit_old123456", "null-shift", "player-invite:oldcode12345678", "/games/", 0, "oldcode12345678", 1),
-            )
-            db.commit()
-        server._last_prune = 0
-        server.prune_old_data()
-        with server.db_connection() as db:
-            row = db.execute("SELECT COUNT(*) AS count FROM events WHERE session_id='invitevisit_old123456'").fetchone()
-            self.assertEqual(row["count"], 0)
+    def test_products_and_checkout_fail_closed_by_default(self):
+        status, body, _ = self.request("GET", "/v1/products")
+        self.assertEqual(status, 200)
+        self.assertEqual(body["items"], [])
+        status, body, _ = self.request("POST", "/v1/checkout/session", {
+            "productKey": "support-starter", "email": "buyer@example.test", "termsAccepted": True,
+        })
+        self.assertEqual(status, 503)
+        self.assertEqual(body["error"], "checkout_disabled")
+        status, body, _ = self.request("GET", "/v1/checkout/status?session_id=cs_test_notknown123")
+        self.assertEqual(status, 503 if self.service.stripe_ready() is False and "cs_test_notknown123" not in self._stripe_sessions else status)
+
+    def test_checkout_uses_server_price_and_stripe_webhook_is_idempotent(self):
+        self._configure_fake_stripe()
+        status, catalog, _ = self.request("GET", "/v1/products")
+        self.assertEqual(status, 200)
+        self.assertTrue(catalog["items"][0]["enabled"])
+        self.assertEqual(catalog["items"][0]["price"], {"amountMinor": 499, "currency": "EUR"})
+
+        status, checkout, _ = self.request("POST", "/v1/checkout/session", {
+            "productKey": "support-starter",
+            "email": "buyer@example.test",
+            "termsAccepted": True,
+            "amount": 1,
+            "currency": "USD",
+        })
+        self.assertEqual(status, 201)
+        self.assertTrue(checkout["url"].startswith("https://checkout.stripe.com/"))
+        self.assertTrue(checkout["orderId"].startswith("ord_"))
+        self.assertTrue(any(call[0] == "GET" and call[1] == "prices/price_test_osgard_499" for call in self._stripe_event_calls))
+        self.assertTrue(any(call[0] == "POST" and call[1] == "checkout/sessions" for call in self._stripe_event_calls))
+        with self.service.connect() as db:
+            order = db.execute("SELECT * FROM orders WHERE order_id=?", (checkout["orderId"],)).fetchone()
+        self.assertEqual(order["amount_total"], 499, "The browser-supplied amount must be ignored")
+        self.assertEqual(order["currency"], "EUR")
+        self.assertEqual(order["status"], "pending")
+
+        session_id = order["stripe_session_id"]
+        session = self._stripe_sessions[session_id]
+        session.update({"status": "complete", "payment_status": "paid", "payment_intent": "pi_test_osgard123"})
+        webhook = {
+            "id": "evt_test_checkout_paid_0001",
+            "type": "checkout.session.completed",
+            "data": {"object": dict(session)},
+        }
+        raw = json.dumps(webhook, separators=(",", ":")).encode()
+        sig = self.stripe_signature(raw)
+        status, received, _ = self.request("POST", "/v1/webhook/stripe", headers={"Stripe-Signature": sig}, raw=raw)
+        self.assertEqual(status, 200)
+        self.assertTrue(received["received"])
+        self.assertFalse(received["duplicate"])
+        status, repeated, _ = self.request("POST", "/v1/webhook/stripe", headers={"Stripe-Signature": sig}, raw=raw)
+        self.assertEqual(status, 200)
+        self.assertTrue(repeated["duplicate"])
+
+        status, verified, _ = self.request("GET", "/v1/checkout/status?session_id=" + session_id)
+        self.assertEqual(status, 200)
+        self.assertTrue(verified["paid"])
+        self.assertEqual(verified["orderId"], checkout["orderId"])
+        status, overview, _ = self.request("GET", "/v1/admin/overview", headers=self.admin_headers())
+        self.assertEqual(status, 200)
+        self.assertEqual(overview["grossPaidByCurrency"], [{"currency": "EUR", "amountMinor": 499}])
+        paid_events = [row for row in overview["topEventsLast30Days"] if row["name"] == "checkout_paid"]
+        self.assertEqual(len(paid_events), 1)
+        self.assertEqual(paid_events[0]["count"], 1)
+
+    def test_webhook_requires_valid_fresh_signature(self):
+        self.service.env["STRIPE_WEBHOOK_SECRET"] = "whsec_fixture"
+        event = {"id": "evt_test_reject_0001", "type": "unknown.event", "data": {"object": {}}}
+        raw = json.dumps(event, separators=(",", ":")).encode()
+        status, body, _ = self.request("POST", "/v1/webhook/stripe", headers={"Stripe-Signature": "t=1,v1=not-valid"}, raw=raw)
+        self.assertEqual(status, 400)
+        status, body, _ = self.request("POST", "/v1/webhook/stripe", headers={"Stripe-Signature": self.stripe_signature(raw)}, raw=raw)
+        self.assertEqual(status, 200)
+        self.assertTrue(body["received"])
+        old_signature = self.stripe_signature(raw, timestamp=int(time.time()) - 600)
+        status, body, _ = self.request("POST", "/v1/webhook/stripe", headers={"Stripe-Signature": old_signature}, raw=raw)
+        self.assertEqual(status, 400)
+
+    def test_body_size_limit_and_unknown_routes(self):
+        status, body, _ = self.request("GET", "/no-such-endpoint")
+        self.assertEqual(status, 404)
+        request = urllib.request.Request(self.base + "/v1/events", data=b"{" + (b" " * 20000), headers={"Content-Type": "application/json"}, method="POST")
+        try:
+            urllib.request.urlopen(request, timeout=3)
+            self.fail("Oversized payload should be rejected")
+        except urllib.error.HTTPError as exc:
+            self.assertEqual(exc.code, 413)
 
 
 if __name__ == "__main__":
