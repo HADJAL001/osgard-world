@@ -454,7 +454,8 @@ function servicesShelf(gameId,showPromos,completedCount){
   spotlight.append(copy,spotlightStatus);
  }
  renderSpotlight(spotlightServiceId);
- watchSpotlight();
+ // Wait until the returned section is attached to the page before observing visibility.
+ setTimeout(watchSpotlight,0);
  collapseToggle.hidden=!(showPromos&&activeSelected.length);
  collapseToggle.textContent=showPromos?'Выбрать из '+availableServiceIds.length+' сервисов':'Подборка по расписанию';
  collapseToggle.setAttribute('aria-expanded','false');
