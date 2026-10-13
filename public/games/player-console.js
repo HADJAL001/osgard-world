@@ -27,6 +27,7 @@
     catch { return false; }
   };
   const dateKey = (value = Date.now()) => new Date(value).toISOString().slice(0, 10);
+  const monotonicNow = () => typeof performance !== 'undefined' && typeof performance.now === 'function' ? performance.now() : Date.now();
   function isValidDateKey(value) {
     if (typeof value !== 'string' || !/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;
     const date = new Date(value + 'T00:00:00.000Z');
@@ -100,8 +101,9 @@
   let queue = loadQueue();
   let settings = loadSettings();
   let activeGame = '';
-  let activeAt = 0;
-  let lastTick = Date.now();
+  let activeWallAt = 0;
+  let activeStartedMonotonic = 0;
+  let lastTick = monotonicNow();
   let lastStatsSave = 0;
   let currentRouteResults = [];
   let pendingInstallPrompt = null;
@@ -644,7 +646,7 @@
     });
     window.addEventListener('online', updateConnectionState);
     window.addEventListener('offline', updateConnectionState);
-    document.addEventListener('visibilitychange', () => { lastTick = Date.now(); });
+    document.addEventListener('visibilitychange', () => { lastTick = monotonicNow(); });
     const player = $('#player-dialog');
     if (player) {
       const observer = new MutationObserver(() => {
@@ -652,12 +654,12 @@
         if (!player.open || !id || !gameMap().has(id)) return;
         if (id === activeGame) return;
         if (activeGame) flushActiveGame();
-        activeGame = id; activeAt = Date.now(); lastTick = activeAt;
-        stats.launches.push({ game: id, at: new Date(activeAt).toISOString() });
+        activeGame = id; activeWallAt = Date.now(); activeStartedMonotonic = monotonicNow(); lastTick = activeStartedMonotonic;
+        stats.launches.push({ game: id, at: new Date(activeWallAt).toISOString() });
         stats.launches = stats.launches.slice(-MAX_LOG);
         stats.totalLaunches = Math.min(MAX_TOTAL_LAUNCHES, stats.totalLaunches + 1);
         stats.gameIdsEver = [...new Set([...stats.gameIdsEver, id])].slice(0, gameMap().size);
-        stats.activityDays = [...new Set([...stats.activityDays, dateKey(activeAt)])].sort().slice(-MAX_ACTIVITY_DAYS);
+        stats.activityDays = [...new Set([...stats.activityDays, dateKey(activeWallAt)])].sort().slice(-MAX_ACTIVITY_DAYS);
         persistStats(); renderOverview(); updateConnectionState();
       });
       observer.observe(player, { attributes: true, attributeFilter: ['open', 'data-game'] });
@@ -669,13 +671,13 @@
   }
   function flushActiveGame() {
     if (activeGame) {
-      if (activeAt && !document.hidden) {
-        const delta = Math.max(0, Math.min(3600, (Date.now() - lastTick) / 1000));
+      if (activeStartedMonotonic && !document.hidden) {
+        const delta = Math.max(0, Math.min(3600, (monotonicNow() - lastTick) / 1000));
         stats.secondsByGame[activeGame] = (stats.secondsByGame[activeGame] || 0) + delta;
       }
       persistStats();
     }
-    activeGame = ''; activeAt = 0; lastTick = Date.now();
+    activeGame = ''; activeWallAt = 0; activeStartedMonotonic = 0; lastTick = monotonicNow();
     renderOverview();
   }
   function updateConnectionState() {
@@ -701,7 +703,7 @@
   }
 
   function tick() {
-    const now = Date.now();
+    const now = monotonicNow();
     if (activeGame && $('#player-dialog')?.open && !document.hidden) {
       const delta = Math.max(0, Math.min(10, (now - lastTick) / 1000));
       if (delta > 0) {
