@@ -273,6 +273,37 @@ const frequencyValues=['each','every3','off'];
 let memoryServicePreferences=null;
 let memoryServiceProgress={count:0,lastAt:0,lastGame:''};
 const make=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n};
+
+// Analytics helpers must be local to this IIFE; functions in the referral IIFE
+// above are closure-private. Ignore every event except the explicitly allowlisted
+// first-party promotional events and do not make network requests before opt-in.
+function consented(){try{return localStorage.getItem('osgard.games.analytics-consent.v1')==='yes'}catch{return false}}
+function selectToken(){
+ const bytes=new Uint8Array(12);
+ try{if(globalThis.crypto&&typeof globalThis.crypto.getRandomValues==='function')globalThis.crypto.getRandomValues(bytes);else for(let i=0;i<bytes.length;i++)bytes[i]=Math.floor(Math.random()*256)}catch{for(let i=0;i<bytes.length;i++)bytes[i]=Math.floor(Math.random()*256)}
+ return Array.from(bytes,value=>value.toString(16).padStart(2,'0')).join('');
+}
+async function sendEvent(name,gameId,source){
+ if(!consented())return false;
+ if(!new Set(['owned_promo_impression','cross_promo_clicked']).has(name))return false;
+ let sessionId='';
+ try{
+  sessionId=sessionStorage.getItem('osgard.games.growth-session.v1')||'';
+  if(!/^session_[a-f0-9]{24}$/.test(sessionId)){
+   sessionId='session_'+selectToken();
+   sessionStorage.setItem('osgard.games.growth-session.v1',sessionId);
+  }
+ }catch{sessionId='session_'+selectToken()}
+ try{
+  const event={eventId:'evt_'+selectToken()+selectToken(),name,sessionId,gameId:titles[gameId]?gameId:'unknown',source:String(source||'osgard-select').slice(0,80),path:location.pathname,durationSeconds:0};
+  const configResponse=await fetch('/games/commerce-config.json',{cache:'no-store'});
+  if(!consented())return false;
+  const config=configResponse.ok?await configResponse.json().catch(()=>({})):{};
+  const base=String(config.apiBaseUrl||'/commerce-api').replace(/\\/+$/,'');
+  const response=await fetch(base+'/v1/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({consent:true,events:[event]})});
+  return consented()&&response.ok;
+ }catch{return false}
+}
 function readServicePreferences(){
  const fallback={frequency:'each',selected:availableServiceIds.slice()};
  let stored=null;
