@@ -11,7 +11,7 @@ const signalRun = read('public/games/signal-run/game.js')
 new vm.Script(source, { filename: 'game-session-recommendations.js' })
 const select = source.slice(source.indexOf('/* OSGARD SELECT'))
 const services = [
- ['MARCOSA','https://marcosa.club/'],['OSGARD PROJECTS','https://osgardbewworld.com/'],
+ ['MARCOSA','https://marcosa.club/'],['OSGARD BEW WORLD','https://osgardbewworld.com/'],
  ['O2 SYSTEM','https://o2system.art/'],['SENJORIO','https://senjorio.com/'],
  ['SUPERDAY','https://superday.run/'],['MYOSA','https://myosa.world/'],
  ['GOLD GLAMOUR','https://gold-glamour.online/'],['GARD VPN','https://gardvpn.is/'],
