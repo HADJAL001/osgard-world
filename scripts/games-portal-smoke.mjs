@@ -373,6 +373,17 @@ const mockSuite=mockHost.children.find(node=>node.className==='og-postgame-suite
 assert.ok(mockSuite,'Post-run service/reward suite should appear after each valid completion');
 assert.equal(mockSuite.children[0].children.find(node=>node.className==='og-postgame-service-grid').children.length,10,'Post-run intermission should list all ten services');
 const postGameServiceShelf=mockSuite.children[0];
+const postGameSpotlight=postGameServiceShelf.children.find(node=>node.className==='og-postgame-spotlight');
+assert.ok(postGameSpotlight,'The post-game suite should begin with a premium contextual spotlight for the game just played');
+const postGameSpotlightActions=postGameSpotlight.children.find(node=>node.className==='og-postgame-spotlight-copy').children.find(node=>node.className==='og-postgame-spotlight-actions');
+assert.deepEqual(postGameSpotlightActions?.children.map(node=>node.textContent),['Изучить проект ↗','Другой проект','Запомнить выбор'],'The premium contextual spotlight exposes open, cycle and remember actions');
+const initialSpotlightName=postGameSpotlight.children.find(node=>node.className==='og-postgame-spotlight-copy').children.find(node=>node.className==='og-postgame-spotlight-name').textContent;
+postGameSpotlightActions.children.find(node=>node.className==='og-postgame-spotlight-next').click();
+assert.notEqual(postGameSpotlight.children.find(node=>node.className==='og-postgame-spotlight-copy').children.find(node=>node.className==='og-postgame-spotlight-name').textContent,initialSpotlightName,'Choosing another service should change the spotlight');
+const postGameDirectoryToggle=postGameServiceShelf.children.find(node=>node.className==='og-postgame-service-head').children.find(node=>node.className==='og-postgame-service-head-actions').children.find(node=>node.className==='og-postgame-toggle og-postgame-collapse-toggle');
+const postGameDirectory=postGameServiceShelf.children.find(node=>node.className==='og-postgame-service-grid');
+assert.ok(postGameDirectory.hidden&&postGameServiceShelf.children.find(node=>node.className==='og-postgame-service-filters').hidden,'The full service directory should be hidden until requested');
+assert.equal(postGameDirectoryToggle.textContent,'Выбрать из 10 сервисов','Players should be able to explicitly open all ten owned services');
 const postGamePreferences=postGameServiceShelf.children.find(node=>node.className==='og-postgame-preferences');
 const postGameServiceOptions=postGamePreferences?.children.find(node=>node.className==='og-postgame-service-options');
 assert.ok(postGamePreferences&&postGamePreferences.hidden,'Service preferences must be available but collapsed by default')
@@ -398,7 +409,7 @@ assert.equal(serviceCards.find(node=>node.dataset.service==='marcosa').hidden,fa
 assert.ok(serviceCards.filter(node=>node.dataset.category!=='social').every(node=>node.hidden),'Non-selected service categories should be hidden')
 serviceFilters.children.find(node=>node.dataset.osgardServiceFilter==='all').click()
 assert.ok(serviceCards.every(node=>!node.hidden),'All services should return when the all-category filter is selected')
-assert.ok(recommendationScript.includes('Выбери категорию и сервис, который хочешь посмотреть. Автозапуска нет'),'Service promotion must remain user-selected and must not autoplay')
+assert.ok(recommendationScript.includes('Сначала — одна рекомендация под игру')&&recommendationScript.includes('Никакого автоперехода.'),'Service promotion must remain contextual, user-selected and must not autoplay')
 const rewardSection=mockSuite.children.find(node=>node.className==='og-postgame-reward')
 const socialGrid=rewardSection.children.find(node=>node.className==='og-postgame-networks')
 assert.deepEqual(socialGrid.children.map(node=>node.textContent),['Telegram ↗','WhatsApp ↗','VK ↗','X ↗','Facebook ↗'],'Share reward must offer the five requested social destinations')
