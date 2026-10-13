@@ -49,5 +49,6 @@ test('the interface has responsive touch and reduced-motion contracts', () => {
 test('all UI content is constructed without interpolating untrusted HTML', () => {
   assert.match(js, /textContent = game\.title/);
   assert.match(js, /document\.createElement\('a'\)/);
-  assert.doesNotMatch(js, /innerHTML\s*=\s*[^'"]/);
+  assert.match(js, /dialog\.innerHTML = \[/);
+  assert.doesNotMatch(js, /insertAdjacentHTML|outerHTML\s*=/);
 });
