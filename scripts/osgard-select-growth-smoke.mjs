@@ -80,6 +80,11 @@ assert.ok(primaryStart >= 0 && primaryEnd > primaryStart, 'Share intent handler 
 const primaryHandler = reward.slice(primaryStart, primaryEnd);
 assert.ok(primaryHandler.includes('registerInvite(gameId,code)') && primaryHandler.includes('navigator.share'),
   'Share and copy actions must register an invite with the server; they do not mint points');
+const registrationAt = primaryHandler.indexOf('await registerInvite(gameId,code)');
+const nativeShareAt = primaryHandler.indexOf('await navigator.share(');
+const completedShareAt = primaryHandler.indexOf('reportInviteShareCreated(gameId,code)');
+assert.ok(registrationAt >= 0 && nativeShareAt > registrationAt && completedShareAt > nativeShareAt,
+  'Rewardable URL must be registered before it leaves the page, and share telemetry waits for the share promise');
 assert.ok(!source.includes("const walletKey='osgard.games.shards-wallet.v1',dailyReward=50") &&
   !source.includes('function award(source){') && !reward.includes("award('social-confirmation:"),
   'The post-game reward UI must not grant points from a browser-local wallet');
