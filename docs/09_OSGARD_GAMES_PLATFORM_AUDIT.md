@@ -211,3 +211,15 @@ A new Godot-native growth slice is implemented and covered by the headless runti
 - Production consent analytics validation now checks stable public markers that survive minification (queue/consent keys, allowed event names, API endpoint and exported surface). The detailed unit smoke continues to test the original queue limits and acknowledgement/retry/consent behavior.
 - The route-matrix smoke suite asserts that the production checker recognizes Operations explicitly and does not regress to minifier-fragile formatting assertions.
 - The server activation step completed, but that release's production route verification failed on the six checks above. The follow-up CI and deployment must pass the full desktop/mobile matrix before this release can be treated as verified. This correction is a release-pipeline repair, not a claim that all production checks have already passed.
+
+
+## Lighthouse follow-up — game-card overlap and touch targets
+
+The 13 October 2026 deployed Games Lighthouse artifact scored accessibility 96/100 on mobile and desktop. The failing `target-size` audit traced controls in game-card footers to the artwork of the next card; the inline card CSS used `content-visibility:auto` with a 430px placeholder while actual card content could be taller. The regular-card fallback was raised to 520px, with a 540px mobile fallback and 620px mobile featured-card fallback. The existing lazy-rendering strategy remains enabled. The Games smoke suite now locks in a minimum intrinsic-size floor so future content growth cannot silently reintroduce the overlap. This is a source-level fix; a fresh deployed Lighthouse run is still required to verify that the score improves.
+
+
+## Accessibility guardrail — explicit Lighthouse target size
+
+After the card-size fix, the Games Lighthouse reporting utility now directly inspects the `target-size` audit in addition to the overall Accessibility score. A failed score (below 1) or missing audit score makes the run fail closed, even if Accessibility remains above 90. The network-free Games smoke fixture now covers a healthy audit, a failing target-size score, and a missing target-size score. The first subsequent deployed Lighthouse run must still confirm that the live fix passes.
+
+- The same Lighthouse artifact also showed the footer brand link intersecting the project-form submit target on mobile. The mobile footer now gets a deliberate 80px separation from the contact section, guarded by the catalogue smoke test; the new `target-size` criterion will verify the published geometry rather than infer success from CSS alone.
