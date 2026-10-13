@@ -42,8 +42,8 @@ assert.ok(!dailyCircuitScript.includes('fetch(')&&!dailyCircuitScript.includes('
 assert.ok(html.includes('window.OSGARDGames=Object.freeze')&&html.includes('window.OSGARDDailyTrackShare=')&&html.includes("source:'daily_circuit'"),'Daily Circuit must use the existing player and consent/token analytics bridge')
 new Function(dailyCircuitScript)
 const dailyCircuitSandbox={window:{},URL,URLSearchParams,Date,Math,Uint8Array}
-runInNewContext(dailyCircuitScript,dailySandbox)
-const dailyCircuitCore=dailySandbox.window.OSGARDDailyCircuitCore
+runInNewContext(dailyCircuitScript,dailyCircuitSandbox)
+const dailyCircuitCore=dailyCircuitSandbox.window.OSGARDDailyCircuitCore
 assert.ok(dailyCircuitCore,'Daily Circuit pure routing core must be available')
 const fixedDailyCircuitDate='2026-10-13'
 const signalDailyCircuitUrl=new URL(dailyCircuitCore.routeFor('signal-run',fixedDailyCircuitDate,'https://osgard.world').href,'https://osgard.world')
