@@ -13,7 +13,16 @@
   }
   const apiBase = async () => {
     const config = await configPromise;
-    return String(config.apiBaseUrl || API_FALLBACK).replace(/\/+$/, '');
+    const raw = typeof config.apiBaseUrl === 'string' ? config.apiBaseUrl.trim() : '';
+    if (!raw) return '';
+    try {
+      const parsed = new URL(raw, location.origin);
+      const localApi = ['localhost', '127.0.0.1'].includes(parsed.hostname);
+      if ((parsed.protocol !== 'https:' && !(localApi && parsed.protocol === 'http:')) || parsed.username || parsed.password || parsed.pathname !== '/' || parsed.search || parsed.hash) return '';
+      return parsed.origin;
+    } catch {
+      return '';
+    }
   };
   function fallbackLink(form, text) {
     const status = form.querySelector('[role="status"]') || document.getElementById('form-status');
