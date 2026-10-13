@@ -19,6 +19,11 @@ assert.equal(sitemap.split('<loc>https://osgard.world/games/ecosystem/</loc>').l
 assert.ok(html.includes('application/ld+json') && html.includes('"numberOfItems":10'), 'Directory must expose an ItemList structured-data contract');
 assert.ok(html.includes('id="project-grid"') && html.includes('id="project-search"') && html.includes('id="project-count"'), 'Searchable project directory controls are required');
 assert.ok(html.includes('id="analytics-toggle"') && readFileSync(resolve(root, 'directory.js'), 'utf8').includes('osgard.games.analytics-consent.v1'), 'Directory must reuse the shared explicit-consent key');
+assert.ok(html.includes('id="analytics-delivery-state"') && html.includes('aria-live="polite"'), 'Directory must disclose backend analytics delivery status accessibly');
+assert.ok(js.includes("name: 'cross_promo_clicked'") && js.includes("source: 'ecosystem-' + projectId"), 'Project click tracking must identify only an allow-listed project');
+assert.ok(js.includes("if (!currentConsent()) return") && js.includes('window.OSGARD_CONSENTED_ANALYTICS'), 'Outbound tracking must be opt-in and use the shared consent queue');
+assert.ok(js.includes("const ALLOWED_PROJECTS = new Set(") && js.includes("gameId: 'unknown'"), 'Outbound events must be restricted and not falsely attributed to a specific game');
+assert.ok(analyticsClient.includes("'cross_promo_clicked'") && apiCore.includes('"cross_promo_clicked"'), 'Browser queue and commerce API must both allow the outbound event');
 assert.ok(html.includes('href="/games/"') && html.includes('href="/development"') && html.includes('mailto:osman.osmanov0099@gmail.com') && html.includes('wa.me/79640027222'), 'Directory must link back into Games and expose the development contact route');
 assert.ok(html.includes('target="_blank" rel="noopener noreferrer"'), 'External project links must isolate opener access');
 assert.ok(html.includes('по описанию владельца') && html.includes('безопасность'), 'Directory must not imply external service capabilities or trust have been independently verified');
