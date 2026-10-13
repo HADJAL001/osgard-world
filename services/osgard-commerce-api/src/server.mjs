@@ -348,6 +348,124 @@ app.post("/v1/events", async (req, res) => {
   }
 });
 
+app.post("/v1/referrals/register", async (req, res) => {
+  const input = validateReferralRegistrationPayload(req.body);
+  if (!input.ok) return res.status(input.status).json({ error: input.code });
+  if (!requireDatabase(res)) return;
+  const ownerHash = crypto.createHash("sha256").update(input.ownerToken, "utf8").digest("hex");
+  try {
+    const inserted = await pool.query(
+      "INSERT INTO commerce_referral_invites(referral_code,owner_hash,game_id) VALUES($1,$2,$3) ON CONFLICT (referral_code) DO NOTHING RETURNING referral_code",
+      [input.referralCode, ownerHash, input.gameId],
+    );
+    if (Number(inserted.rowCount || 0) > 0) {
+      return res.status(201).json({ registered: true, alreadyRegistered: false });
+    }
+    const existing = await pool.query(
+      "SELECT owner_hash, game_id FROM commerce_referral_invites WHERE referral_code=$1",
+      [input.referralCode],
+    );
+    if (existing.rows[0]?.owner_hash === ownerHash && existing.rows[0]?.game_id === input.gameId) {
+      return res.status(200).json({ registered: true, alreadyRegistered: true });
+    }
+    return res.status(409).json({ error: "REFERRAL_CODE_ALREADY_REGISTERED" });
+  } catch (error) {
+    console.error("Referral registration failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "REFERRAL_REGISTRATION_UNAVAILABLE" });
+  }
+});
+
+app.post("/v1/referrals/claim", async (req, res) => {
+  const input = validateReferralClaimPayload(req.body);
+  if (!input.ok) return res.status(input.status).json({ error: input.code });
+  if (!requireDatabase(res)) return;
+  const ownerHash = crypto.createHash("sha256").update(input.ownerToken, "utf8").digest("hex");
+  let client;
+  try {
+    client = await pool.connect();
+    await client.query("BEGIN");
+    const eligible = await client.query(
+      `WITH session_candidates AS (
+        SELECT
+          i.referral_code,
+          i.game_id,
+          e.session_id,
+          MIN(e.received_at) FILTER (WHERE e.event_name = 'game_session_started') AS started_at,
+          MIN(e.received_at) FILTER (WHERE e.event_name = 'game_session_completed') AS completed_at,
+          MAX(e.duration_seconds) FILTER (WHERE e.event_name = 'game_session_completed') AS duration_seconds
+        FROM commerce_referral_invites i
+        JOIN commerce_events e
+          ON e.game_id = i.game_id
+         AND e.source = 'referral:' || i.referral_code || ':' || i.game_id
+         AND e.event_name IN ('game_session_started', 'game_session_completed')
+         AND e.received_at >= i.created_at
+         AND e.received_at <= i.created_at + INTERVAL '7 days'
+        WHERE i.owner_hash = $1
+          AND i.reward_claimed_at IS NULL
+          AND EXISTS (
+            SELECT 1
+            FROM commerce_events opened
+            WHERE opened.event_name = 'referral_link_opened'
+              AND opened.source = 'referral-link:' || i.referral_code
+              AND opened.received_at >= i.created_at - INTERVAL '5 minutes'
+              AND opened.received_at <= i.created_at + INTERVAL '7 days'
+          )
+        GROUP BY i.referral_code, i.game_id, e.session_id
+        HAVING
+          MIN(e.received_at) FILTER (WHERE e.event_name = 'game_session_started') IS NOT NULL
+          AND MIN(e.received_at) FILTER (WHERE e.event_name = 'game_session_completed') IS NOT NULL
+          AND MIN(e.received_at) FILTER (WHERE e.event_name = 'game_session_completed')
+            >= MIN(e.received_at) FILTER (WHERE e.event_name = 'game_session_started') + INTERVAL '30 seconds'
+          AND MAX(e.duration_seconds) FILTER (WHERE e.event_name = 'game_session_completed') >= 30
+      ),
+      one_per_code AS (
+        SELECT DISTINCT ON (referral_code) referral_code, game_id, session_id, completed_at
+        FROM session_candidates
+        ORDER BY referral_code, completed_at ASC
+      )
+      SELECT i.referral_code, i.reward_amount, c.session_id, c.completed_at
+      FROM one_per_code c
+      JOIN commerce_referral_invites i
+        ON i.referral_code = c.referral_code
+       AND i.owner_hash = $1
+      WHERE i.reward_claimed_at IS NULL
+      ORDER BY c.completed_at ASC
+      LIMIT 10
+      FOR UPDATE OF i SKIP LOCKED`,
+      [ownerHash],
+    );
+    let claimedInvites = 0;
+    let shardsAwarded = 0;
+    for (const row of eligible.rows) {
+      const claimed = await client.query(
+        `UPDATE commerce_referral_invites
+         SET qualified_session_id = $2, qualified_at = $3, reward_claimed_at = NOW()
+         WHERE referral_code = $1 AND owner_hash = $4 AND reward_claimed_at IS NULL
+         RETURNING reward_amount`,
+        [row.referral_code, row.session_id, row.completed_at, ownerHash],
+      );
+      if (Number(claimed.rowCount || 0) > 0) {
+        claimedInvites += 1;
+        shardsAwarded += Math.max(0, Number(claimed.rows[0]?.reward_amount || 0));
+      }
+    }
+    await client.query("COMMIT");
+    return res.json({
+      claimedInvites,
+      shardsAwarded,
+      rewardPerQualifiedInvite: 50,
+      qualification: "A registered invite plus a recorded referral open, game start and completion. Server-received start/completion must be at least 30 seconds apart and the completed session must report at least 30 seconds of play.",
+      note: "SHARDS are cosmetic, stored locally and have no cash value. Event timing helps prevent repeated claims but does not prove a unique human or defeat all fabricated client events.",
+    });
+  } catch (error) {
+    await client?.query("ROLLBACK").catch(() => {});
+    console.error("Referral reward claim failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "REFERRAL_REWARD_UNAVAILABLE" });
+  } finally {
+    client?.release();
+  }
+});
+
 app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
   if (!requireDatabase(res)) return;
   try {
