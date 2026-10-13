@@ -127,15 +127,47 @@ $('claim-share-reward').addEventListener('click',()=>{
  pendingRewardMethod='';
  rewardShare('player-confirmed:'+method);
 });
+async function buildResultCardBlob(challengeUrl){
+ return new Promise(resolve=>{
+  const c=document.createElement('canvas');c.width=1200;c.height=630;
+  const x=c.getContext('2d');if(!x){resolve(null);return}
+  const bg=x.createLinearGradient(0,0,1200,630);bg.addColorStop(0,'#19132f');bg.addColorStop(.55,'#111224');bg.addColorStop(1,'#070911');x.fillStyle=bg;x.fillRect(0,0,1200,630);
+  x.strokeStyle='#b7a3ff38';x.lineWidth=1;
+  for(let n=0;n<15;n++){x.beginPath();x.moveTo(n*92-60,0);x.lineTo(n*92+210,630);x.stroke()}
+  const glow=x.createRadialGradient(870,230,10,870,230,390);glow.addColorStop(0,'#b7a3ff38');glow.addColorStop(1,'#b7a3ff00');x.fillStyle=glow;x.fillRect(440,0,760,630);
+  x.fillStyle='#d9c7ff';x.font='700 19px ui-monospace,monospace';x.fillText('OSGARD PLAY  /  DAILY GHOST PROTOCOL',66,73);
+  x.fillStyle='#f4f0ff';x.font='700 67px system-ui,sans-serif';x.fillText('AFTERIMAGE//RUN',64,170);
+  x.fillStyle='#65eaff';x.font='700 91px ui-monospace,monospace';x.fillText(String(game.score||daily.best||0).padStart(5,'0'),64,300);
+  x.fillStyle='#c5bddf';x.font='22px system-ui,sans-serif';x.fillText('DISTANCE '+Math.floor(game.distance)+'m  ·  SHARDS '+game.shards+'  ·  COMBO x'+game.combo,70,354);
+  x.fillStyle='#f0cf89';x.font='20px ui-monospace,monospace';x.fillText('DAILY SEED  '+day+'  /  '+seed.toString(16).toUpperCase(),70,421);
+  x.fillStyle='#9b94bb';x.font='15px system-ui,sans-serif';x.fillText('One route for everyone. Beat this result.',70,470);
+  let route='/games/invite/afterimage-run/';try{route=new URL(challengeUrl,location.origin).pathname}catch{}
+  x.fillStyle='#65eaff';x.font='16px ui-monospace,monospace';x.fillText('OPEN CHALLENGE  '+route,70,535,1050);
+  x.fillStyle='#77738e';x.font='12px ui-monospace,monospace';x.fillText('OSGARD.WORLD  ·  RESULT CARD',70,584);
+  c.toBlob(blob=>resolve(blob),'image/png');
+ });
+}
 async function shareNative(){
- const u=challenge(),txt='AFTERIMAGE//RUN: мой результат '+(game.score||daily.best||0)+', daily seed '+day+'. Повтори маршрут!';
+ const url=challenge(),title='AFTERIMAGE//RUN — OSGARD PLAY',txt='Мой результат: '+(game.score||daily.best||0)+'. Daily seed '+day+'. Повтори маршрут!';
  if(navigator.share){
-  try{await navigator.share({title:'AFTERIMAGE//RUN — OSGARD PLAY',text:txt,url:u});prepareShareReward('web-share')}
-  catch(e){if(e.name!=='AbortError')toast('Не удалось открыть системное меню публикации.')}
- }else if(await copy(txt+' '+u)){
+  try{
+   if(typeof File==='function'&&typeof navigator.canShare==='function'){
+    const blob=await buildResultCardBlob(url);
+    if(blob){
+     const file=new File([blob],'afterimage-run-result.png',{type:'image/png'});
+     if(navigator.canShare({files:[file]})){
+      await navigator.share({files:[file],title:title,text:txt,url:url});
+      prepareShareReward('web-share');return;
+     }
+    }
+   }
+   await navigator.share({title:title,text:txt,url:url});
+   prepareShareReward('web-share');
+  }catch(e){if(e.name!=='AbortError')toast('Не удалось открыть системное меню публикации.')}
+ }else if(await copy(txt+' '+url)){
   $('reward-status').textContent='Ссылка скопирована. Копирование не даёт награду — отправь вызов через одну из соцсетей и подтверди публикацию.';
   toast('Ссылка с seed и результатом скопирована.');
- }else toast('Скопируй ссылку вручную: '+u);
+ }else toast('Скопируй ссылку вручную: '+url);
 }
 function social(kind){
  const u=encodeURIComponent(challenge()),t=encodeURIComponent('AFTERIMAGE//RUN — '+(game.score||daily.best||0)+' points · daily seed '+day+'. Повтори мой маршрут!'),links={telegram:'https://t.me/share/url?url='+u+'&text='+t,vk:'https://vk.com/share.php?url='+u+'&title='+t,x:'https://twitter.com/intent/tweet?url='+u+'&text='+t,whatsapp:'https://wa.me/?text='+t+'%20'+u,facebook:'https://www.facebook.com/sharer/sharer.php?u='+u};
