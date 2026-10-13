@@ -36,12 +36,14 @@ for (const [label, url] of services) {
 assert.ok(entertainmentGateway.includes("const PROMO_PREFERENCES_KEY = 'osgard.games.postgame-service-preferences.v1'") &&
   source.includes("const servicePreferencesKey='osgard.games.postgame-service-preferences.v1'"),
   'The Entertainment gateway and between-game intermission must use one shared preferences key');
-assert.ok(entertainmentGateway.includes("const PROMOTABLE_SERVICE_IDS = services.map(service => service.id)") &&
-  source.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN','Главная страница ответила HTTP 200 при проверке 13 октября 2026 года; работоспособность VPN-подключения не проверялась.','https://gardvpn.is/',false,true]") &&
+assert.ok(entertainmentGateway.includes("const PROMOTABLE_SERVICE_IDS = services.filter(service => service.id !== 'gardvpn').map(service => service.id)") &&
+  source.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN','Временно не продвигается: главная страница не подтверждает, что VPN-соединение действительно устанавливается.','https://gardvpn.is/',false,false]") &&
   entertainmentGateway.includes("const limitedVerification = service.id === 'gardvpn'") &&
-  entertainmentGateway.includes("VPN connectivity not tested") &&
+  entertainmentGateway.includes("disabled={limitedVerification}") &&
+  entertainmentGateway.includes("VPN connectivity unverified") &&
+  entertainmentGateway.includes('className="play-select-service is-limited-verification"') &&
   entertainmentStyles.includes('.play-select-preference-option.is-limited-verification'),
-  'GARD VPN remains selectable; the copy must separate an HTTP homepage response from untested VPN functionality');
+  'GARD VPN must remain visible as unavailable but not selectable in promotions until connection health is verified');
 assert.ok(entertainmentGateway.includes("window.localStorage.setItem(PROMO_PREFERENCES_KEY, JSON.stringify(next))") &&
   entertainmentGateway.includes("frequency: draftFrequency") &&
   entertainmentGateway.includes("selected: PROMOTABLE_SERVICE_IDS.filter(id => draftSelected.includes(id))"),
@@ -109,7 +111,7 @@ assert.ok(source.includes("u.searchParams.set('utm_source','osgard_games')") &&
 assert.ok(source.includes("РЕКЛАМА · СОБСТВЕННЫЕ ПРОЕКТЫ OSGARD") &&
   source.includes('Автозапуска нет'), 'Self-promotion must be labelled and never autoplay');
 assert.ok(source.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN','Главная страница ответила HTTP 200 при проверке 13 октября 2026 года; работоспособность VPN-подключения не проверялась.','https://gardvpn.is/',false,true]"),
-  'GARD VPN must remain selectable but clearly disclosed as not independently verified');
+  'GARD VPN must remain in the owner inventory but unavailable for promotions until VPN connectivity is verified');
 assert.ok(source.includes("const availableServiceIds=services.filter(item=>item[7]!==false).map(item=>item[0])") &&
   source.includes("input.disabled=active===false"),
   'The promotion list must obey explicit service-availability flags while keeping the unverified VPN disclosed');
