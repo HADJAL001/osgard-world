@@ -155,7 +155,7 @@ function createResultCardBlob(){
     if(line)ctx.fillText(line,76,y);
     ctx.strokeStyle='rgba(231,199,120,.55)';ctx.beginPath();ctx.moveTo(76,510);ctx.lineTo(1124,510);ctx.stroke();
     ctx.fillStyle='#e7c778';ctx.font='700 25px ui-monospace,monospace';ctx.fillText('CAN YOU BEAT THIS?',76,557);
-    ctx.fillStyle='#becbbd';ctx.font='17px ui-monospace,monospace';ctx.fillText('osgard.world/games/remix/index.html?challenge='+String(activeChallengeId||'').slice(0,60),76,592,1048);
+    ctx.fillStyle='#becbbd';ctx.font='17px ui-monospace,monospace';ctx.fillText('osgard.world/games/remix/index.html?challenge='+String(activeChallengeId||'').slice(0,36)+'&seed='+String(activeChallengeSeed),76,592,1048);
     canvas.toBlob(blob=>blob?resolve(blob):reject(Error('Could not encode the result card.')),'image/png');
   });
 }
@@ -177,7 +177,7 @@ async function shareResultCard(){
     const blob=await createResultCardBlob();
     const file=new File([blob],'osgard-remix-challenge-'+String(activeChallengeSeed)+'.png',{type:'image/png'});
     if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
-      await navigator.share({title:'REMIX — Daily Challenge',text:'Can you beat this server-recorded challenge? Seed '+activeChallengeSeed+'.',files:[file]});
+      await navigator.share({title:'REMIX — Daily Challenge',text:'Can you beat this server-recorded challenge? Seed '+activeChallengeSeed+'. Invite: '+buildChallengeURL(),files:[file]});
       reportEvent('result_card_shared',{challengeId:activeChallengeId,seed:activeChallengeSeed,channel:'native_file_share'});
       status.textContent='The share sheet opened. Share delivery depends on the target app.';
     }else{
