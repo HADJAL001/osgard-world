@@ -32,7 +32,8 @@
 2. В Team integrations → Developer Portal / App Store Connect keys загрузи API key, Issuer ID и Key ID. Назови integration **OSGARD_PLAY_ASC** — это имя используется в `codemagic.yaml`.
 3. В Code signing identities настрой автоматическое создание/получение Apple Distribution certificate и App Store provisioning profile для `com.osgardworld.play`. В workflow указан `distribution_type: app_store`.
 4. После настройки проверь обнаружение `codemagic.yaml`. Создай tag `osgard-play-v1.0.0`, чтобы запустить workflow; можно запускать из интерфейса Codemagic вручную, если для репозитория доступен ручной запуск.
-5. Успешный workflow должен прикрепить `.ipa` к сборке и загрузить её в TestFlight. Он **не** публикует приложение для всех пользователей.
+5. Версия берётся из тега: `osgard-play-v1.2.3` → маркетинговая версия `1.2.3`. Используй только формат `X.Y.Z`; некорректный тег остановит сборку до установки зависимостей. Для ручной сборки без тега можно задать переменную `APP_VERSION`. Build number берётся из системной переменной Codemagic `BUILD_NUMBER`.
+6. Успешный workflow должен прикрепить `.ipa` к сборке и загрузить её в TestFlight. Он **не** публикует приложение для всех пользователей.
 
 ## 3. Что обязательно проверить на реальном iPhone
 
