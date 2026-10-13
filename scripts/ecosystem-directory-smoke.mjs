@@ -18,7 +18,7 @@ assert.ok(html.includes('id="project-grid"') && html.includes('id="project-searc
 assert.ok(html.includes('id="analytics-toggle"') && html.includes('osgard.games.analytics-consent.v1'), 'Directory must reuse the shared explicit-consent key');
 assert.ok(html.includes('href="/games/"') && html.includes('href="/development"') && html.includes('mailto:osman.osmanov0099@gmail.com') && html.includes('wa.me/79640027222'), 'Directory must link back into Games and expose the development contact route');
 assert.ok(html.includes('target="_blank" rel="noopener noreferrer"'), 'External project links must isolate opener access');
-assert.ok(html.includes('owner-described') && html.includes('безопасность'), 'Directory must not imply external service capabilities or trust have been independently verified');
+assert.ok(html.includes('по описанию владельца') && html.includes('безопасность'), 'Directory must not imply external service capabilities or trust have been independently verified');
 
 const expected = {
   osgardbewworld: 'osgardbewworld.com',
