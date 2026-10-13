@@ -83,3 +83,15 @@ dialog#player-dialog.has-recommendations .player-view iframe{min-height:155px}
 }
 @media(max-width:360px){.og-postgame-service-grid{grid-template-columns:1fr}.og-postgame-service-card.is-featured{grid-column:auto}.og-postgame-service-head{flex-direction:column}.og-postgame-toggle{align-self:flex-start}.og-postgame-share-actions>*{width:100%}.og-postgame-networks>*{flex:1 1 calc(50% - 6px)}}
 @media(prefers-reduced-motion:reduce){.og-postgame-service-card,.og-postgame-share-primary,.og-postgame-network,.og-postgame-claim{transition:none;transform:none}.og-postgame-service-card:hover,.og-postgame-share-primary:hover,.og-postgame-network:hover,.og-postgame-claim:hover{transform:none}}
+
+/* OSGARD SELECT service-category filters + intermission outside the player dialog. */
+.og-postgame-service-filters{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}
+.og-postgame-service-filter{min-height:30px;padding:6px 10px;border:1px solid rgba(218,192,133,.23);border-radius:7px;background:#ffffff03;color:#a7aa9f;font-size:9px;cursor:pointer}
+.og-postgame-service-filter[aria-pressed="true"]{color:#13130f;background:#d8c28f;border-color:#e8d5a1}
+.og-postgame-service-filter:focus-visible{outline:2px solid #f2e4bb;outline-offset:3px}
+.og-postgame-service-card[hidden]{display:none!important}
+#osgard-aftergame-intermission[hidden]{display:none!important}
+.og-postgame-outside-suite{margin:18px 0 26px}
+.og-postgame-back{display:inline-flex;margin-top:10px;padding:10px 12px;border:1px solid #ffffff24;color:#e8e3d6;text-decoration:none;font-size:10px}
+@media(max-width:760px){.og-postgame-service-filters{gap:5px}.og-postgame-service-filter{flex:1 1 auto;min-height:36px}}
+@media(prefers-reduced-motion:reduce){.og-postgame-service-filter,.og-postgame-back{transition:none}}
