@@ -64,6 +64,7 @@ const cleanSeo: Record<string, { title: string; description: string }> = {
   '/skillcred': { title: 'SkillCred — навыки, которые остаются с вами | OSGARD', description: 'Переносимые цифровые подтверждения навыков. Проверка Ed25519 в браузере.' },
   '/games/time': { title: 'Империя времени — стратегия живого города | OSGARD PLAY', description: 'Управляйте казной, энергией, районами и политическими фракциями. Каждое решение меняет летопись города.' },
   '/game/cascade-lab': { title: 'CASCADE LAB — физическая головоломка | OSGARD PLAY', description: 'Собирайте цепные реакции из шести механизмов и исследуйте игровую физику. Самостоятельная браузерная головоломка.' },
+  '/game/aether-grid': { title: 'AETHER GRID — ежедневная логическая головоломка | OSGARD PLAY', description: 'Соединяйте узлы сети, решайте общий ежедневный вызов и сравнивайте локальные рекорды с друзьями.' },
 }
 
 function Seo({ path }: { path: string }) {
