@@ -30,7 +30,7 @@
     return value;
   }
   function canStart(item) {
-    return item.enabled === true && /^[a-z0-9-]+$/.test(item.key);
+    return item.enabled === true && /^[a-z0-9][a-z0-9_-]{1,63}$/.test(item.key);
   }
   function render(items) {
     grid.replaceChildren();
