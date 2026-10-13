@@ -382,7 +382,7 @@ console.log('PASS OSGARD referral loop: game-specific invite deep links, consent
 const referralCoreSource=readFileSync(resolve('services/osgard-commerce-api/src/core.mjs'),'utf8')
 const referralApiSource=readFileSync(resolve('services/osgard-commerce-api/src/server.mjs'),'utf8')
 const referralAdminSource=readFileSync(resolve('public/games/commerce-admin/index.html'),'utf8')
-assert.ok(recommendationScript.includes('osgard.games.referral-attribution.v1') && recommendationScript.includes('game-invite:') && recommendationScript.includes('play_with_a_friend'), 'Post-session invite link and referral attribution missing')
+assert.ok(recommendationScript.includes('osgard.games.referral-attribution.v1') && recommendationScript.includes('game-invite:') && recommendationScript.includes('play_with_friends'), 'Post-session invite link and referral attribution missing')
 assert.ok(recommendationScript.includes("params.get('og_game')") && recommendationScript.includes("params.get('og_ref')") && recommendationScript.includes("shared.searchParams.get('og_game')===gameId"), 'Post-session invites must use the canonical og_game/og_ref URL contract')
 assert.ok(recommendationScript.includes('!invite.legacy') && recommendationScript.includes("params.get('challenge')"), 'Canonical links must use one ribbon while legacy invite links remain supported')
 assert.ok(recommendationScript.includes("sendEvent('referral_link_opened'") && recommendationScript.includes("sendEvent('share_created'"), 'Invite opens and generated links must use the consented event API')
