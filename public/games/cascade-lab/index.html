@@ -62,7 +62,7 @@ async function boot(){
   const html=await new Response(stream).text();
   if(!html.includes('id="game"')||!html.includes('id="launchMain"')||!html.includes('CASCADE LAB')||!html.includes('</head>')||!html.includes('</body>'))throw new Error('Распакованный клиент не прошёл проверку целостности.');
   const seo='<meta name="description" content="CASCADE LAB — инженерная физическая головоломка OSGARD PLAY."><meta property="og:title" content="CASCADE LAB — Chain Reaction | OSGARD PLAY"><link rel="canonical" href="https://osgard.world/games/cascade-lab/">';
-  html=html.replace('</head>',seo+'</head>').replace('</body>','<script>'+bridgeScript+'<\\/script></body>');
+  html=html.replace('</head>',seo+'</head>').replace('</body>','<script>'+bridgeScript+'<\/script></body>');
   setStatus('Клиент готов. Открываем лабораторию…',parts.length);
   document.open();document.write(html);document.close();
  }catch(e){fail(e instanceof Error?e.message:'Неизвестная ошибка загрузки.');}
