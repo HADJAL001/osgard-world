@@ -102,7 +102,7 @@
       try {
         const parsed = new URL(raw, location.origin);
         const localApi = ['localhost', '127.0.0.1'].includes(parsed.hostname);
-        const allowedPath = parsed.pathname === '/' || (parsed.origin === location.origin && parsed.pathname === '/commerce-api');
+        const allowedPath = parsed.pathname === '/' || (parsed.pathname === '/commerce-api' && (parsed.origin === location.origin || parsed.origin === 'https://osgard.world'));
         if ((parsed.protocol !== 'https:' && !(localApi && parsed.protocol === 'http:')) || parsed.username || parsed.password || !allowedPath || parsed.search || parsed.hash) return '';
         return parsed.origin + (parsed.pathname === '/' ? '' : parsed.pathname);
       } catch {
