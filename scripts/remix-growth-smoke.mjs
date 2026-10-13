@@ -65,7 +65,7 @@ check('first-party event upload is only attempted for authenticated players',()=
   assert.ok(fn.includes('if(!token)return'));
   assert.ok(fn.includes("fetch('/api/v1/player/events'"));
   assert.ok(fn.includes("credentials:'same-origin'"));
-  assert.ok(!/https?:\\/\\//.test(fn));
+  assert.ok(!/https?:\/\//.test(fn));
 });
 check('new events are typed in the shared OSGARD analytics contract',()=>{
   for(const name of ['challenge_created','challenge_invite_accepted','share_link_copied','share_dialog_opened','partner_cta_clicked','result_card_exported','result_card_shared'])assert.ok(manifest.includes("'"+name+"'"),name);
