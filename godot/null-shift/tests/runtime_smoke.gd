@@ -23,6 +23,23 @@ func _run_smoke() -> void:
 	print("RUNTIME_STAGE: scene ready")
 	if not _expect(game.get_script() != null, "main scene script must load without GDScript parse errors"):
 		return
+	print("RUNTIME_STAGE: premium layered operator and guard armour")
+	var operator_chest: MeshInstance3D = game.operator_rig.find_child("OperatorChestShell", true, false) as MeshInstance3D
+	var operator_shoulder: MeshInstance3D = game.operator_rig.find_child("OperatorShoulder_L", true, false) as MeshInstance3D
+	var operator_back_cell: MeshInstance3D = game.operator_rig.find_child("OperatorBackCell_L", true, false) as MeshInstance3D
+	if not _expect(is_instance_valid(operator_chest) and is_instance_valid(operator_shoulder) and is_instance_valid(operator_back_cell), "operator must have layered chest, shoulder and backpack energy-cell meshes"):
+		return
+	if not _expect(operator_chest.cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_ON and operator_shoulder.cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_ON, "hero armour silhouette must cast real scene shadows"):
+		return
+	var armour_guard: CharacterBody3D = game.guards[0]["node"] as CharacterBody3D
+	var guard_chest: MeshInstance3D = armour_guard.find_child("GuardChestShell", true, false) as MeshInstance3D
+	var guard_shoulder: MeshInstance3D = armour_guard.find_child("GuardShoulder_L", true, false) as MeshInstance3D
+	var guard_pack: MeshInstance3D = armour_guard.find_child("GuardBackpackShell", true, false) as MeshInstance3D
+	var guard_knee: MeshInstance3D = armour_guard.find_child("GuardKneePlate_L", true, false) as MeshInstance3D
+	if not _expect(is_instance_valid(guard_chest) and is_instance_valid(guard_shoulder) and is_instance_valid(guard_pack) and is_instance_valid(guard_knee), "every guard must expose named chest, shoulder, backpack and knee armour detail"):
+		return
+	if not _expect(guard_chest.cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_ON and guard_shoulder.cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_ON and guard_pack.cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_ON, "guard armour panels must cast real scene shadows"):
+		return
 	if not _expect(is_instance_valid(game.briefing_panel), "first-run briefing panel must instantiate"):
 		return
 	game._show_briefing()
