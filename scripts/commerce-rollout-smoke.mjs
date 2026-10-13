@@ -25,6 +25,7 @@ for (const value of [
   "/v1/checkout/status", "validateEventBatch", "validateLeadPayload",
   "resolveCheckoutPaymentState", "no-store, private",
 ]) assert.ok(server.includes(value), "Commerce API missing required feature: " + value);
+assert.ok(core.includes('"share_reward_claimed"'), "Consent-aware post-game share reward claims must be allow-listed for analytics.\n")
 for (const value of ["PRODUCT_DEFS", "termsAccepted", "verifyStripeSignature", "paymentsModeAllowed"]) {
   assert.ok(core.includes(value), "Core validation missing: " + value);
 }
