@@ -43,7 +43,7 @@ assert.ok(css.includes('.og-passport-badge.is-unlocked') && css.includes('.og-pa
 assert.ok(moduleSource.includes("document.addEventListener('osgard:game-session-ended'") && moduleSource.includes('detail.sessionStarted !== true'), 'Only a confirmed started session return may update passport session history')
 assert.ok(moduleSource.includes('window.OSGARDInvite') && moduleSource.includes('navigator.share') && moduleSource.includes('navigator.clipboard.writeText'), 'Invites should reuse OSGARD attribution links with native-share and copy fallbacks')
 assert.ok(moduleSource.includes('recordInvite(passport,') && moduleSource.includes('Публичная публикация не проверяется'), 'Invite mission must not claim that a public social post was verified')
-assert.ok(moduleSource.includes('passport-export-') && moduleSource.includes('application/json'), 'Player must be able to export the local passport as JSON')
+assert.ok(moduleSource.includes('osgard-player-passport-') && moduleSource.includes('application/json'), 'Player must be able to export the local passport as JSON')
 assert.ok(moduleSource.includes('window.confirm') && moduleSource.includes('Избранное, история и SHARDS сохранены отдельно'), 'Reset must be explicit and must not delete favorites/history/wallet')
 assert.ok(moduleSource.includes('localStorage') && moduleSource.includes('localStorage.removeItem') === false, 'Passport module should preserve user-controlled local data and avoid bulk deletion')
 assert.ok(hub.includes("osgard.games.player-passport.pending.v1") && hub.includes("document.addEventListener('osgard:game-session-ended'"), 'Shell must queue completed sessions before the lazy module loads')
