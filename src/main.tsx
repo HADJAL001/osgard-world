@@ -23,7 +23,6 @@ import './legal.css'
 import App from './App'
 import MiniApp from './MiniApp'
 import { AurumPage, CatalogPage, ChroniclePage, ClubPage, DevelopmentPage, MastersPage, TimeCoinPage, WorldsPage } from './Sections'
-import { EntertainmentCatalog } from './EntertainmentCatalog'
 import { ResultPage } from './ResultPage'
 import { BusinessDiagnostic } from './BusinessDiagnostic'
 import { CreatePrototype } from './CreatePrototype'
@@ -67,7 +66,7 @@ const cleanSeo: Record<string, { title: string; description: string }> = {
   '/aurum': { title: 'AURUM — координационный интеллект OSGARD', description: 'AURUM связывает продукты OSGARD в единую картину и помогает выбрать следующий шаг.' },
   '/timecoin': { title: 'TimeCoin OSGARD — правила и условия', description: 'Правила внутренней бонусной единицы OSGARD для доступа, статуса и специальных условий.' },
   '/development': { title: 'OSGARD Development — создание цифровых продуктов', description: 'Разработка сайтов, приложений и MVP-платформ от идеи до запуска.' },
-  '/entertainment': { title: 'OSGARD Entertainment — интерактивные игры', description: 'Игры OSGARD: выбирайте мир, запускайте сессию и сохраняйте результат.' },
+  '/entertainment': { title: 'OSGARD PLAY — игры и игровые миры', description: 'Премиальная игровая витрина OSGARD WORLD: пять самостоятельных игр, поиск, жанры, избранное, история и собственная цифровая экосистема.' },
   '/skillcred': { title: 'SkillCred — навыки, которые остаются с вами | OSGARD', description: 'Переносимые цифровые подтверждения навыков. Проверка Ed25519 в браузере.' },
   '/games': { title: 'OSGARD PLAY — премиальная игровая платформа', description: 'Каталог игр OSGARD WORLD: браузерные миры, поиск, жанры, избранное, история и собственная экосистема цифровых продуктов.' },
   '/privacy': { title: 'Политика конфиденциальности | OSGARD PLAY', description: 'Как игровая витрина OSGARD обрабатывает локальные настройки и необязательные продуктовые события.' },
@@ -81,7 +80,8 @@ function Seo({ path }: { path: string }) {
     const gameMeta = gameSlug && Object.prototype.hasOwnProperty.call(GAME_DETAILS, gameSlug) ? GAME_DETAILS[gameSlug as keyof typeof GAME_DETAILS] : null
     const detailTitle = path.startsWith('/games/play/') ? `${gameMeta?.title ?? 'Игра'} — игровая сессия | OSGARD PLAY` : `${gameMeta?.title ?? 'Игровой мир'} | OSGARD PLAY`
     const data = cleanSeo[path] ?? (gameMeta ? { title: detailTitle, description: `${gameMeta.tagline} ${gameMeta.description}` } : cleanSeo['/'])
-    const canonical = `https://osgard.world${path === '/' ? '/' : path}`
+    const canonicalPath = path === '/games' ? '/entertainment' : path
+    const canonical = `https://osgard.world${canonicalPath === '/' ? '/' : canonicalPath}`
     document.title = data.title
     const setMeta = (selector: string, attribute: string, value: string) => {
       let element = document.head.querySelector<HTMLMetaElement>(selector)
@@ -106,7 +106,7 @@ function Seo({ path }: { path: string }) {
 const path = location.pathname.replace(/\/+$/, '') || '/'
 function RoutedRoot() {
   const [locale, setLocale] = React.useState<'ru' | 'en'>('ru')
-  if (path === '/games') return <><Seo path="/games" /><GamesPlatform /></>
+  if (path === '/games' || path === '/entertainment') return <><Seo path={path} /><GamesPlatform /></>
   if (path.startsWith('/games/play/')) return <><Seo path={path} /><GamePlayer gameId={path.split('/')[3] || ''} /></>
   if (path.startsWith('/games/info/')) return <><Seo path={path} /><GameDetailPage slug={path.split('/')[3] || ''} /></>
   if (path === '/privacy') return <><Seo path="/privacy" /><LegalPage kind="privacy" /></>
@@ -124,7 +124,7 @@ function RoutedRoot() {
   if (path === '/community') return <CommunitySurface />
   if (path === '/stream') return <StreamSurface />
   if (path === '/archive') return <ArchiveSurface />
-  const page = path === '/marcosa' ? <EcosystemSurface kind="marcosa" /> : path === '/media' ? <EcosystemSurface kind="media" /> : path === '/core-events' ? <CoreEvents /> : path === '/mobility' ? <MobilityPrototype /> : path === '/create' ? <CreatePrototype /> : path === '/business' ? <BusinessDiagnostic /> : path.startsWith('/r/') ? <ResultPage id={path.split('/')[2] || '1842'} /> : path === '/worlds' ? <WorldsPage locale={locale} setLocale={setLocale} /> : path === '/aurum' ? <AurumPage locale={locale} setLocale={setLocale} /> : path === '/timecoin' ? <TimeCoinPage locale={locale} setLocale={setLocale} /> : path === '/development' ? <DevelopmentPage locale={locale} setLocale={setLocale} /> : path === '/catalog' ? <CatalogPage locale={locale} setLocale={setLocale} /> : path === '/chronicle' ? <EcosystemSurface kind="chronicle" /> : path === '/masters' ? <MastersPage locale={locale} setLocale={setLocale} /> : path === '/club' ? <ClubPage locale={locale} setLocale={setLocale} /> : path === '/entertainment' ? <EntertainmentCatalog locale={locale} setLocale={setLocale} /> : <App />
+  const page = path === '/marcosa' ? <EcosystemSurface kind="marcosa" /> : path === '/media' ? <EcosystemSurface kind="media" /> : path === '/core-events' ? <CoreEvents /> : path === '/mobility' ? <MobilityPrototype /> : path === '/create' ? <CreatePrototype /> : path === '/business' ? <BusinessDiagnostic /> : path.startsWith('/r/') ? <ResultPage id={path.split('/')[2] || '1842'} /> : path === '/worlds' ? <WorldsPage locale={locale} setLocale={setLocale} /> : path === '/aurum' ? <AurumPage locale={locale} setLocale={setLocale} /> : path === '/timecoin' ? <TimeCoinPage locale={locale} setLocale={setLocale} /> : path === '/development' ? <DevelopmentPage locale={locale} setLocale={setLocale} /> : path === '/catalog' ? <CatalogPage locale={locale} setLocale={setLocale} /> : path === '/chronicle' ? <EcosystemSurface kind="chronicle" /> : path === '/masters' ? <MastersPage locale={locale} setLocale={setLocale} /> : path === '/club' ? <ClubPage locale={locale} setLocale={setLocale} /> : <App />
   return <><Seo path={path} />{page}</>
 }
 createRoot(document.getElementById('root')!).render(<StrictMode><RoutedRoot /></StrictMode>)
