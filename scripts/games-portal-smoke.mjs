@@ -29,7 +29,7 @@ assert.equal(routeEntries.length,9,'Launch registry must contain exactly nine ga
 assert.deepEqual(routeEntries.map(x=>x.id).sort(),expectedLaunchIds,'Every visible game must have exactly one unique launch route')
 assert.ok(routeEntries.every(x=>x.url.startsWith('/games/')),'Every launch entry must use a same-origin game route')
 const inviteLandingScript=readFileSync(resolve(root,'invite/invite-landing.js'),'utf8')
-assert.ok(inviteLandingScript.includes("localStorage.getItem('osgard.games.analytics-consent.v1') === 'yes'") && inviteLandingScript.includes("name: 'referral_link_opened'") && inviteLandingScript.includes("visitorToken") && inviteLandingScript.includes("source: /^og_[a-f0-9]{32}$/.test(code) ? 'referral-link:' + code + ':' + visitorToken"),'Secure reward invites must include a consent-gated visitor token and a distinct source contract')
+assert.ok(inviteLandingScript.includes("localStorage.getItem('osgard.games.analytics-consent.v1') === 'yes'") && inviteLandingScript.includes("name: 'referral_link_opened'") && inviteLandingScript.includes("rewardConsent = localStorage.getItem('osgard.games.referral-reward-consent.v1') === 'yes'") && inviteLandingScript.includes("source: /^og_[a-f0-9]{32}$/.test(code) ? 'referral-link:' + code + ':' + requestedGame + ':' + visitorToken"),'Secure reward invites must include explicit reward consent, visitor token and matching game ID')
 const productionMatrix = readFileSync(resolve('scripts/production-route-matrix.mjs'),'utf8')
 assert.ok(productionMatrix.includes("path === '/games/invite/invite-landing.js'") && productionMatrix.includes("target.searchParams.set('utm_campaign', campaign)"), 'Production route matrix must validate the invitation script with its own content contract, not unrelated SkillCred markers')
 for(const game of routeEntries){
@@ -634,7 +634,9 @@ assert.ok(rewardPrimaryStart>=0&&rewardPrimaryEnd>rewardPrimaryStart,'OSGARD SEL
 const rewardPrimaryHandler=recommendationScript.slice(rewardPrimaryStart,rewardPrimaryEnd)
 assert.ok(rewardPrimaryHandler.includes('registerInvite(gameId,code)')&&!rewardPrimaryHandler.includes('award('),'Share completion must register an invitation without minting a client-side reward')
 assert.ok(recommendationScript.includes("function inviteCode(gameId)")&&recommendationScript.includes("secureReferralHex(16)")&&recommendationScript.includes("const code='og_'+random"),'A reward invitation must use a secure per-game invite code')
+assert.ok(recommendationScript.includes("'/v1/referrals/register'")&&recommendationScript.includes("body:JSON.stringify({consent:true,rewardConsent:true,code,gameId,ownerToken:owner})"),'Invite registration must be persisted by the server before opening the share composer')
 assert.ok(recommendationScript.includes('function refreshShardsBalance')&&recommendationScript.includes("'/v1/referrals/reward-status'"),'The displayed SHARDS balance must come from the server')
+assert.ok(referralCoreSource.includes('validateReferralRewardRegistration')&&referralApiSource.includes('app.post("/v1/referrals/register"'),'The Commerce API must validate and persist an invite before the share link is opened')
 assert.ok(referralCoreSource.includes('REFERRAL_MIN_SESSION_SECONDS = 60')&&referralCoreSource.includes('parseReferralRewardEvent'),'Referral reward qualification must be validated server-side')
 assert.ok(referralApiSource.includes('processReferralRewardEvent(client, persistedEvent)')&&referralApiSource.includes('game_referral_rewards')&&referralApiSource.includes('REFERRAL_MIN_SESSION_SECONDS'),'The API must verify timed sessions and persist rewards uniquely')
 assert.ok(referralApiSource.includes('i.game_id=$3'),'A reward must be restricted to the game that issued the invite')
