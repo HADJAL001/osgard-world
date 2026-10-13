@@ -21,3 +21,15 @@
 
 ## Приёмочная проверка
 CI запускает `npm run qa:games-detail`, `npm run qa:games-portal`, `npm run build` и матрицу production-маршрутов. Публикация считается проверенной только после успешного GitHub Actions deployment и контрольного запроса к production URL.
+
+## Уточнение адресов рекламных кампаний
+Кнопки CASCADE LAB ведут напрямую на адреса, уже используемые витриной OSGARD SELECT на сайте:
+- MARCOSA → `https://marcosa.club/`
+- Такси / SENJORIO → `https://senjorio.com/`
+- Умная карта / SUPERDAY → `https://superday.run/`
+- OSGARD BUSINESS и OSGARD OS → `https://osgardos.com/`
+- Видео и визуальные проекты / OSGARD VANGUARD → `https://osgardvanguard.studio/`
+- Создание проектов / OSGARD BEW WORLD → `https://osgardbewworld.com/`
+- Каталог экосистемы → `https://osgard.world/worlds`
+
+Ссылки добавляют UTM-параметры `utm_source=osgard_games`, `utm_medium=between_levels` или `social_share`, `utm_campaign=cascade_lab_osgard_select`, `utm_content=<campaign-id>`. Это маркировка источника, а не гарантия подсчёта конверсии: для анализа результата нужна аналитика на сайте назначения. GARD VPN остаётся исключённым до подтверждения работоспособности.
