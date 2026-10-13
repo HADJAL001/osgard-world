@@ -21,6 +21,17 @@ const expectedLaunchIds=['null-shift','time','swarm','inherit','remix','civic-ca
 assert.equal(routeEntries.length,9,'Launch registry must contain exactly nine game entries')
 assert.deepEqual(routeEntries.map(x=>x.id).sort(),expectedLaunchIds,'Every visible game must have exactly one unique launch route')
 assert.ok(routeEntries.every(x=>x.url.startsWith('/games/')),'Every launch entry must use a same-origin game route')
+const catalogIds=catalogCards.map(card=>card.id).sort()
+assert.equal(new Set(catalogIds).size,catalogIds.length,'Catalog card IDs must be unique')
+assert.deepEqual(catalogIds,routeEntries.map(entry=>entry.id).sort(),'Catalog card IDs must exactly match the player launch registry')
+const validIdsMatch=luxury.match(/const validIds = new Set\\(\\[([^\\]]+)\\]\\)/)
+assert.ok(validIdsMatch,'History/resume validIds registry is missing')
+const historyIds=[...validIdsMatch[1].matchAll(/'([^']+)'/g)].map(match=>match[1]).sort()
+assert.deepEqual(historyIds,catalogIds,'Recent history, recent sorting and resume IDs must exactly match catalog cards')
+const visibleFilters=new Set([...html.matchAll(/<button\\b[^>]*data-filter="([^"]+)"/g)].map(match=>match[1]))
+const cardGenres=[...new Set(catalogCards.flatMap(card=>card.genres))].sort()
+assert.ok(cardGenres.every(genre=>visibleFilters.has(genre)),'Every card genre must have a visible catalog filter: '+cardGenres.filter(genre=>!visibleFilters.has(genre)).join(', '))
+assert.ok(visibleFilters.has('arcade'),'The catalog must expose the Arcade genre filter')
 
 const lifecycle=readFileSync(resolve(root,'player-lifecycle.js'),'utf8')
 const recommendationScript=readFileSync(resolve(root,'game-session-recommendations.js'),'utf8')
@@ -39,11 +50,12 @@ const civic=readFileSync(resolve(root,'civic-cascade/index.html'),'utf8')
 const cascadeGame=readFileSync(resolve(root,'cascade-lab/index.html'),'utf8')
 const patina=readFileSync(resolve(root,'patina/index.html'),'utf8')
 const signalRun=readFileSync(resolve(root,'signal-run/index.html'),'utf8')
+const catalogCards=[...html.matchAll(/<article\\b[^>]*\\bdata-game="([^"]+)"[^>]*\\bdata-genres="([^"]+)"[^>]*>/g)].map(match=>({id:match[1],genres:match[2].trim().split(/\\s+/).filter(Boolean)}))
 const signalJs=readFileSync(resolve(root,'signal-run/game.js'),'utf8')
 const signalDailyJs=readFileSync(resolve(root,'signal-run/daily.js'),'utf8')
 const manifest=readFileSync(resolve('src/core/manifest.ts'),'utf8')
 const sitemap=readFileSync(resolve('public/sitemap.xml'),'utf8')
-const required=['data-game="null-shift"','data-game="time"','data-game="swarm"','data-game="inherit"','data-game="remix"','data-game="civic-cascade"','data-game="patina"','data-game="signal-run"','data-game="cascade-lab"','id="games-grid"','id="game-search"','data-filter="tactical"','id="player-dialog"','id="player-share"','id="player-fullscreen"','id="analytics-toggle"','id="project-form"','https://wa.me/79640027222','osgardbewworld.com','o2system.art','senjorio.com','superday.run','marcosa.club','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio','/games/favicon.svg','/privacy/','/terms/']
+const required=['data-game="null-shift"','data-game="time"','data-game="swarm"','data-game="inherit"','data-game="remix"','data-game="civic-cascade"','data-game="patina"','data-game="signal-run"','data-game="cascade-lab"','id="games-grid"','id="game-search"','data-filter="tactical"','data-filter="arcade"','id="player-dialog"','id="player-share"','id="player-fullscreen"','id="analytics-toggle"','id="project-form"','https://wa.me/79640027222','osgardbewworld.com','o2system.art','senjorio.com','superday.run','marcosa.club','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio','/games/favicon.svg','/privacy/','/terms/']
 for(const item of required) assert.ok(html.includes(item),'Games hub missing: '+item)
 assert.ok(appSource.includes('className="play-catalog-link" href="/games/"')&&appSource.includes('<em>OSGARD WORLD GAMING</em>')&&appSource.includes("'Открыть игровой портал'"),'Homepage entertainment gateway must promote OSGARD WORLD GAMING and open the canonical /games/ hub')
 assert.ok(appSource.includes('className="play-quick-picks"')&&appSource.includes("aria-label={ru ? 'Быстрый запуск игр' : 'Quick launch games'}")&&appSource.includes('QUICK START'),'Homepage must expose a labelled quick-launch section in both locales')
@@ -159,6 +171,17 @@ assert.ok(lifecycle.includes("!['ready','started','paused','resumed','share_crea
 assert.ok(manifest.includes("'patina' | 'signal-run'") && manifest.includes("href: '/games/signal-run/'"), 'Core manifest must register SIGNAL RUN')
 assert.ok(sitemap.includes('<loc>https://osgard.world/games/signal-run/</loc>') && sitemap.includes('<loc>https://osgard.world/game/signal-run</loc>'), 'SIGNAL RUN routes must be present in the XML sitemap')
 assert.ok(signalRun.includes('<title>SIGNAL RUN — OSGARD WORLD</title>') && signalRun.includes('id="arena"') && signalRun.includes('id="fullscreen"'), 'SIGNAL RUN page shell or controls missing')
+assert.ok(signalRun.includes('<link rel="canonical" href="https://osgard.world/games/signal-run/">'),'SIGNAL RUN canonical URL must match the public game route')
+for(const meta of [
+  '<meta property="og:type" content="website">',
+  '<meta property="og:site_name" content="OSGARD WORLD">',
+  '<meta property="og:title" content="SIGNAL RUN — OSGARD WORLD">',
+  '<meta property="og:description"',
+  '<meta property="og:url" content="https://osgard.world/games/signal-run/">',
+  '<meta name="twitter:card" content="summary">'
+]) assert.ok(signalRun.includes(meta),'SIGNAL RUN social metadata missing: '+meta)
+assert.ok(!signalRun.includes('property="og:image"'),'SIGNAL RUN must not advertise a non-existent social-preview image')
+assert.equal(catalogCards.find(card=>card.id==='signal-run')?.genres.join(' '),'arcade creative','SIGNAL RUN must be classified as an arcade, not tactical game')
 assert.ok(signalRun.includes('prefers-reduced-motion:reduce') && signalRun.includes('id="touch-pulse"'), 'SIGNAL RUN mobile/accessibility controls missing')
 assert.ok(signalRun.includes('id="daily-run"')&&signalRun.includes('id="daily-info"')&&signalRun.indexOf('src="./daily.js"')<signalRun.indexOf('src="./game.js"'),'SIGNAL RUN daily controls and utility order missing')
 assert.ok(signalJs.includes('OSGARDSignalDaily')&&signalJs.includes('Daily.createRandom(Daily.seedForDate(dailyDate))')&&signalJs.includes("url.searchParams.set('mode','daily')")&&signalJs.includes("url.searchParams.set('day',dailyDate)")&&signalJs.includes('DAILY CONTRACT'),'Deterministic daily run and shareable challenge missing')
