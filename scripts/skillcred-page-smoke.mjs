@@ -134,6 +134,7 @@ for (const file of files) {
      assert.ok(css.includes('@media(max-width:820px),(pointer:coarse)') && css.includes('.pulse-dot{animation:none!important;'), file + ': mobile/coarse-pointer layout must not run paint-bound status-pulse animation')
      assert.ok(css.includes('.artifact-card,.artifact-card::before,.artifact-card::after{animation:none!important;transition:none!important}'), file + ': mobile must pause paint-bound card sweep and border transitions')
      assert.ok(css.includes('@media(max-width:820px),(pointer:coarse)') && css.includes(':root{--serif:Georgia,serif;--mono:ui-monospace,SFMono-Regular,Consolas,monospace}'), file + ': mobile should not request custom serif and mono fonts after the first viewport')
+     assert.ok(css.includes('content-visibility:auto') && css.includes('contain-intrinsic-size:auto 900px') && css.includes('main#main>section:not(#promise)'), file + ': mobile should defer below-fold sections while preserving layout placeholders')
      assert.ok(css.includes('.thread-flow{transition:none!important;stroke-dashoffset:0!important}') && css.includes('.trust-spine-progress{transition:none!important}'), file + ': mobile must avoid repeated SVG stroke-dashoffset transitions')
 
      assert.ok(js.includes('window.requestAnimationFrame(function(){window.requestAnimationFrame(callback);})'), file + ': automatic API startup must settle two browser frames before network work')

@@ -285,3 +285,12 @@ main{position:relative;isolation:isolate}
 @media(max-width:820px),(pointer:coarse){
 :root{--serif:Georgia,serif;--mono:ui-monospace,SFMono-Regular,Consolas,monospace}
 }
+
+
+/* MOBILE OFFSCREEN RENDER BUDGET — retain hero fidelity while deferring heavy sections outside the viewport. */
+@media(max-width:820px),(pointer:coarse){
+main#main>section:not(#promise){content-visibility:auto;contain-intrinsic-size:auto 900px}
+main#main>#demo{contain-intrinsic-size:auto 1500px}
+main#main>#audience,main#main>#developers{contain-intrinsic-size:auto 1150px}
+main#main>#invitation{contain-intrinsic-size:auto 600px}
+}
