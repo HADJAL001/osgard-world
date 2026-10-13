@@ -298,7 +298,7 @@ assert.ok(lifecycle.includes("'signal-run':{title:'SIGNAL RUN',url:'/games/signa
 assert.ok(luxury.includes("const validIds = new Set(['null-shift', 'time', 'swarm', 'inherit', 'remix', 'civic-cascade', 'patina', 'signal-run', 'cascade-lab', 'afterimage-run'])"), 'Recent history and Resume registry must include all ten current games, including AFTERIMAGE//RUN')
 assert.ok(lifecycle.includes("if(id==='signal-run')return !!doc.querySelector('#arena')&&!!doc.querySelector('#start')"), 'Player lifecycle must detect SIGNAL RUN readiness')
 assert.ok(lifecycle.includes("!['ready','started','paused','resumed','share_created','error','completed'].includes(m.state)"), 'Player lifecycle must accept ready, pause/resume, share_created and terminal states')
-assert.ok(lifecycle.includes("activeGame==='null-shift'") && lifecycle.includes("return 'referral:'+code+':null-shift'") && lifecycle.includes("function shareReferralCode(payload)") && lifecycle.includes("source=name==='share_created'?(shareCode?'game-invite:'+activeGame+':'+shareCode:'game-invite:'+activeGame):analyticsSource()"), 'NULL SHIFT daily challenge invites must retain referral source and count confirmed share actions')
+assert.ok(lifecycle.includes("activeGame==='null-shift'") && lifecycle.includes("function shareReferralCode(payload)") && lifecycle.includes("game-invite:'+activeGame+':'+shareCode+':'+owner") && lifecycle.includes("return 'referral:'+code+':'+activeGame+':'+visitorToken"), 'Player lifecycle must carry the registered invite and referred-browser tokens into server-verified session events')
 assert.ok(manifest.includes("'patina' | 'signal-run'") && manifest.includes("href: '/games/signal-run/'"), 'Core manifest must register SIGNAL RUN')
 assert.ok(sitemap.includes('<loc>https://osgard.world/games/signal-run/</loc>') && sitemap.includes('<loc>https://osgard.world/game/signal-run</loc>'), 'SIGNAL RUN routes must be present in the XML sitemap')
 assert.ok(signalRun.includes('<title>SIGNAL RUN — OSGARD WORLD</title>') && signalRun.includes('id="arena"') && signalRun.includes('id="fullscreen"'), 'SIGNAL RUN page shell or controls missing')
@@ -559,16 +559,14 @@ assert.ok(civic.includes("sendLifecycle('completed'"),'CIVIC CASCADE must emit c
 assert.ok(patina.includes("signal('completed'"),'PATINA must emit completion')
 assert.ok(signalJs.includes("life('completed'"),'SIGNAL RUN must emit completion')
 
-assert.ok(signalRun.includes('id="shards"')&&signalRun.includes('OSGARD SHARDS')&&signalRun.includes('публикацию в соцсети')&&signalRun.includes('не имеют денежной стоимости'),'SIGNAL RUN must disclose the local SHARDS wallet and social-share verification limits');
-assert.ok(signalJs.includes("SHARDS_KEY='osgard.games.shards-wallet.v1'")&&signalJs.includes('function awardShareShards')&&signalJs.includes('event.key===SHARDS_KEY'),'SIGNAL RUN must use the same local SHARDS wallet as the postgame reward panel');
-assert.ok(signalJs.includes("bonus.ok?' · +50 SHARDS'")&&signalJs.includes('current.day===day'),'SIGNAL RUN must show the +50 local invitation reward and prevent duplicate grants within one UTC day');
-assert.ok(signalRun.includes('id="claim-share-reward"')&&signalRun.includes('Копирование ссылки само по себе не даёт награду'),'SIGNAL RUN must offer an explicit share-reward confirmation and disclose that copying does not earn a reward');
+assert.ok(signalRun.includes('id="shards"')&&signalRun.includes('OSGARD SHARDS')&&signalRun.includes('серверной проверке')&&signalRun.includes('не имеют денежной стоимости'),'SIGNAL RUN must disclose that referral rewards require server qualification and have no cash value');
+assert.ok(!signalJs.includes("SHARDS_KEY='osgard.games.shards-wallet.v1'")&&!signalJs.includes('function awardShareShards')&&!signalJs.includes('pendingShareReward')&&!signalJs.includes('claimShare.addEventListener'),'SIGNAL RUN must not mint or self-claim client-side SHARDS');
+assert.ok(!signalRun.includes('id="claim-share-reward"'),'SIGNAL RUN must not expose a self-claimed repost reward button');
 const signalShareStart=signalJs.indexOf("$('share').addEventListener('click',async()=>{");
 const signalShareEnd=signalJs.indexOf("});document.addEventListener('keydown'",signalShareStart);
 assert.ok(signalShareStart>=0&&signalShareEnd>signalShareStart,'SIGNAL RUN share handler boundaries are required');
 const signalShareHandler=signalJs.slice(signalShareStart,signalShareEnd);
-assert.ok(!signalShareHandler.includes('awardShareShards(method)')&&signalShareHandler.includes("method==='clipboard'")&&signalShareHandler.includes('pendingShareReward=method'),'SIGNAL RUN must not auto-award for opening a share sheet or copying');
-assert.ok(signalJs.includes("claimShare.addEventListener('click'")&&signalJs.includes("awardShareShards('user-confirmed:'+method)"),'SIGNAL RUN reward must be granted only after an explicit user confirmation');
+assert.ok(!signalShareHandler.includes('awardShareShards')&&!signalShareHandler.includes("life('share_created'")&&signalShareHandler.includes('не начисляет SHARDS'),'SIGNAL RUN challenge sharing must not award or emit false completed-share events');
 new Function(signalJs);
 
 assert.ok(cascadeGame.includes("notifyOsgardLifecycle('completed'"),'CASCADE LAB must emit completion after a passed level')
@@ -754,7 +752,34 @@ for(const metric of ['inviteShares','referralOpens','referredStarts','referredCo
 const inviteSqlStart=referralApiSource.indexOf('invite_shares AS')
 const inviteSqlEnd=referralApiSource.indexOf('SELECT\n          COUNT(*) FILTER',inviteSqlStart)
 const inviteSql=referralApiSource.slice(inviteSqlStart,inviteSqlEnd)
-assert.equal(inviteSql.split("~ '^(og_[a-f0-9]{8}|[a-f0-9]{12})$'").length-1,4,'All four share/open/start/completion SQL stages must accept canonical and legacy invite codes')
+assert.equal(inviteSql.split("~ '^(og_[a-f0-9]{8}|og_[a-f0-9]{32}|[a-f0-9]{12})
+for(const metric of ['analytics-invites','analytics-referral-opens','analytics-referred-starts','analytics-referred-completions']) assert.ok(referralAdminSource.includes('id="'+metric+'"'), 'Commerce admin is missing referral metric '+metric)
+
+ 
+// The root Entertainment gateway must expose the existing OSGARD SELECT cross-promo
+// and the labelled, scenario-based monetisation page without implying live advertising revenue.
+assert.ok(appSource.includes('OSGARD SELECT / BETWEEN WORLDS') && appSource.includes('play-economy-strip'), 'Entertainment gateway must introduce the post-game OSGARD SELECT loop')
+assert.ok(appSource.includes("PlaySelectLoop locale={locale}"), 'Main Entertainment gateway must mount OSGARD SELECT')
+assert.ok(playSelectSource.includes('OSGARD SELECT / OWNED PROJECTS') && playSelectSource.includes('РЕКЛАМА · СОБСТВЕННЫЕ ПРОЕКТЫ'), 'First-party services must be explicitly disclosed')
+assert.ok(['marcosa.club','osgardbewworld.com','o2system.art','senjorio.com','superday.run','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio'].every(domain=>playSelectSource.includes(domain)), 'Entertainment gateway must include all ten owner-provided services')
+assert.ok(['OSGARD BEW WORLD','O2 SYSTEM','SENJORIO','SUPERDAY','MARCOSA','MYOSA','GOLD GLAMOUR','GARD VPN','OSGARD OS','OSGARD VANGUARD STUDIO'].every(name=>playSelectSource.includes(name)), 'The Entertainment gateway must use the official product names')
+assert.ok(playSelectSource.includes("utm_source', 'osgard_world'")&&playSelectSource.includes("utm_medium', 'entertainment_select'")&&playSelectSource.includes("utm_campaign', 'between_worlds'")&&playSelectSource.includes("utm_content', service.id"), 'Every Entertainment project card must carry distinct campaign attribution')
+assert.ok(playSelectSource.includes('Доступность домена не подтверждена независимо.'), 'GARD VPN must not be presented as independently verified')
+assert.ok(playSelectSource.includes("const WALLET_KEY = 'osgard.games.shards-wallet.v1'") && playSelectSource.includes('current.day === today') && playSelectSource.includes('current.balance + 50'), 'Homepage must use shared SHARDS wallet and UTC-day cap')
+assert.ok(playSelectSource.includes('navigator.share') && playSelectSource.includes('navigator.clipboard && navigator.clipboard.writeText') && ['Telegram','WhatsApp','VK','X','Facebook'].every(network=>playSelectSource.includes("name: '"+network+"'")), 'Homepage must offer native/clipboard sharing and five social composers')
+const homeShareStart=playSelectSource.indexOf('const shareInvite = async () => {');
+const homeShareEnd=playSelectSource.indexOf('\n\n  return <section',homeShareStart);
+assert.ok(homeShareStart>=0&&homeShareEnd>homeShareStart,'Homepage share handler boundaries are required');
+const homeShareHandler=playSelectSource.slice(homeShareStart,homeShareEnd);
+assert.ok(!homeShareHandler.includes('grantReward(')&&homeShareHandler.includes("setPendingNetwork('native-share')")&&homeShareHandler.includes('Копирование само по себе не считается репостом'),'Homepage must require explicit confirmation; copy alone cannot grant SHARDS');
+assert.ok(playSelectSource.includes("pendingNetwork === 'native-share'")&&playSelectSource.includes("grantReward('homepage-social-confirmation:' + pendingNetwork)"),'Homepage SHARDS grant must be reached only through its explicit claim button');
+assert.ok(playSelectSource.includes('Отправка отменена — награда не начислена.') && playSelectSource.includes('не являются деньгами'), 'Cancelled shares must not earn and SHARDS must be disclosed as non-monetary')
+assert.ok(appStyles.includes('.play-select-loop') && appStyles.includes('.play-select-layout') && appStyles.includes('@media(max-width:600px)') && appStyles.includes('prefers-reduced-motion:reduce'), 'OSGARD SELECT must be responsive and respect reduced motion')
+assert.ok(appSource.includes('href="/games/?utm_source=osgard_world&amp;utm_medium=entertainment&amp;utm_campaign=between_worlds"'), 'Entertainment gateway must link into the playable hub with campaign attribution')
+assert.ok(appSource.includes('href="/games/monetization/?utm_source=osgard_world&amp;utm_medium=entertainment&amp;utm_campaign=economy_model"'), 'Entertainment gateway must link to the scenario economy model')
+assert.ok(appSource.includes('публикацию нельзя проверить автоматически') && appSource.includes('Это не деньги'), 'SHARDS must be disclosed as non-monetary with social-post verification limits')
+assert.ok(appStyles.includes('.play-economy-strip') && appStyles.includes('@media(max-width:760px)') && appStyles.includes('prefers-reduced-motion:reduce'), 'Entertainment economy teaser needs responsive and reduced-motion styling')
+").length-1,4,'All four share/open/start/completion SQL stages must accept rewardable and legacy invite codes')
 for(const metric of ['analytics-invites','analytics-referral-opens','analytics-referred-starts','analytics-referred-completions']) assert.ok(referralAdminSource.includes('id="'+metric+'"'), 'Commerce admin is missing referral metric '+metric)
 
  
