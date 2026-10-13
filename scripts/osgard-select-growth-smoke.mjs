@@ -42,6 +42,26 @@ assert.ok(source.includes("const preferredServiceKey='osgard.games.preferred-ser
 assert.ok(source.includes('function renderSpotlight(serviceId)') &&
   source.includes('Другой проект') && source.includes('Запомнить мой выбор'),
   'The luxury spotlight requires rotate and save-preference controls');
+const spotlightPickerSource = source.match(/function chooseSpotlightService\(options,preferred,completedCount,frequency\)\{[\s\S]*?\n\}/);
+assert.ok(spotlightPickerSource, 'Automatic spotlight rotation helper must be independently testable');
+const chooseSpotlightService = vm.runInNewContext('(' + spotlightPickerSource[0] + ')');
+assert.equal(chooseSpotlightService(['myosa','projects','superday'],'',1,'each'),'myosa',
+  'First completed round starts with the contextual first-choice service');
+assert.equal(chooseSpotlightService(['myosa','projects','superday'],'',2,'each'),'projects',
+  'The primary service should rotate on the next completed round');
+assert.equal(chooseSpotlightService(['myosa','projects','superday'],'',3,'each'),'superday',
+  'The third completed round should feature the third contextual service');
+assert.equal(chooseSpotlightService(['myosa','projects','superday'],'',4,'each'),'myosa',
+  'After all selected services were featured, the rotation should return to the first service');
+assert.equal(chooseSpotlightService(['myosa','projects','superday'],'',3,'every3'),'myosa',
+  'Three-round frequency starts its first scheduled spotlight at round three');
+assert.equal(chooseSpotlightService(['myosa','projects','superday'],'',6,'every3'),'projects',
+  'Every-third-round promos should rotate on subsequent eligible displays');
+assert.equal(chooseSpotlightService(['myosa','projects','superday'],'superday',8,'each'),'superday',
+  'An explicit saved preference overrides automatic rotation');
+assert.equal(chooseSpotlightService([],'',4,'each'),'',
+  'Rotation must handle an empty user-selected service list');
+
 assert.ok(source.includes("frequency:'each'") &&
   source.includes("['each','После каждой завершённой игры']") &&
   source.includes("['every3','Раз в три завершённых раунда']") &&
@@ -97,6 +117,9 @@ assert.ok(source.includes("const walletKey='osgard.games.shards-wallet.v1',daily
   'Local SHARDS reward must be capped to one claim per UTC day and device wallet');
 assert.ok(lifecycle.includes("activeSessionId='session_'+id+'_'+sequence+'_'+launchAt") && lifecycle.includes('sessionId:activeSessionId') && lifecycle.includes('detail:{game:activeGame,sessionId:activeSessionId}'),
   'The same stable ID must be sent with gameplay completion and post-session return events');
+assert.ok(source.includes("byGame[gameId]=Math.min((byGame[gameId]||0)+1,1000000000)") &&
+  source.includes("const roundForSpotlight=preferences.frequency==='every3'?completedCount:(readServiceProgress().byGame[gameId]||1)"),
+  'Spotlight should rotate by repetitions of the same game while promo frequency remains global');
 assert.ok(source.includes('function recordCompletedRound(gameId,sessionId)') && source.includes('current.sessions.includes(key)') && source.includes('slice(-100)'),
   'Post-game promotion cadence must deduplicate session IDs, not rely only on a 2.5-second timing window');
 assert.ok(source.includes('const isSpotlight=id===spotlightServiceId') && source.includes("cards.forEach(card=>card.classList.toggle('is-featured',card.dataset.service===spotlightServiceId))"),

@@ -292,7 +292,7 @@ const recommendationByGame={
 function readPreferredService(){try{const id=localStorage.getItem(preferredServiceKey)||'';return availableServiceIds.includes(id)?id:''}catch{return''}}
 function savePreferredService(id){if(!availableServiceIds.includes(id))return false;try{localStorage.setItem(preferredServiceKey,id);return true}catch{return false}}
 let memoryServicePreferences=null;
-let memoryServiceProgress={count:0,lastAt:0,lastGame:'',sessions:[]};
+let memoryServiceProgress={count:0,lastAt:0,lastGame:'',sessions:[],byGame:{}};
 const make=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n};
 const selectConsentKey='osgard.games.analytics-consent.v1';
 const selectSessionKey='osgard.games.growth-session.v1';
@@ -356,15 +356,37 @@ function writeServicePreferences(value){
  try{localStorage.setItem(servicePreferencesKey,JSON.stringify(next));return true}catch{return false}
 }
 function readServiceProgress(){
- try{const raw=localStorage.getItem(serviceProgressKey);if(raw){const value=JSON.parse(raw);return{count:Number.isSafeInteger(value.count)&&value.count>=0?Math.min(value.count,1000000000):0,lastAt:Number.isFinite(value.lastAt)?value.lastAt:0,lastGame:typeof value.lastGame==='string'?value.lastGame:'',sessions:Array.isArray(value.sessions)?value.sessions.filter(id=>typeof id==='string'&&/^[a-z0-9:_-]{1,160}$/i.test(id)).slice(-100):[]}}}catch{}
- return {...memoryServiceProgress,sessions:[...(memoryServiceProgress.sessions||[])]};
+ const normalizeByGame=value=>{
+  const result={};
+  if(!value||typeof value!=='object'||Array.isArray(value))return result;
+  for(const [id,count] of Object.entries(value)){
+   if(titles[id]&&Number.isSafeInteger(count)&&count>=0)result[id]=Math.min(count,1000000000);
+  }
+  return result;
+ };
+ try{
+  const raw=localStorage.getItem(serviceProgressKey);
+  if(raw){
+   const value=JSON.parse(raw);
+   return{
+    count:Number.isSafeInteger(value.count)&&value.count>=0?Math.min(value.count,1000000000):0,
+    lastAt:Number.isFinite(value.lastAt)?value.lastAt:0,
+    lastGame:typeof value.lastGame==='string'?value.lastGame:'',
+    sessions:Array.isArray(value.sessions)?value.sessions.filter(id=>typeof id==='string'&&/^[a-z0-9:_-]{1,160}$/i.test(id)).slice(-100):[],
+    byGame:normalizeByGame(value.byGame)
+   };
+  }
+ }catch{}
+ return {...memoryServiceProgress,sessions:[...(memoryServiceProgress.sessions||[])],byGame:normalizeByGame(memoryServiceProgress.byGame)};
 }
 function recordCompletedRound(gameId,sessionId){
  const current=readServiceProgress(),now=Date.now(),key=typeof sessionId==='string'&&/^[a-z0-9:_-]{1,160}$/i.test(sessionId)?sessionId:'';
  if(key&&current.sessions.includes(key))return current.count;
  if(!key&&current.lastGame===gameId&&now>=current.lastAt&&now-current.lastAt<2500)return current.count;
  const sessions=key?[...current.sessions.filter(id=>id!==key),key].slice(-100):current.sessions;
- const next={count:Math.min(current.count+1,1000000000),lastAt:now,lastGame:gameId,sessions};memoryServiceProgress=next;
+ const byGame={...current.byGame};
+ if(titles[gameId])byGame[gameId]=Math.min((byGame[gameId]||0)+1,1000000000);
+ const next={count:Math.min(current.count+1,1000000000),lastAt:now,lastGame:gameId,sessions,byGame};memoryServiceProgress=next;
  try{localStorage.setItem(serviceProgressKey,JSON.stringify(next))}catch{}
  return next.count;
 }
@@ -372,6 +394,14 @@ function shouldShowServicePromos(preferences,completedCount){
  if(preferences.frequency==='off')return false;
  if(preferences.frequency==='every3')return completedCount>0&&completedCount%3===0;
  return true;
+}
+function chooseSpotlightService(options,preferred,completedCount,frequency){
+ const candidates=Array.isArray(options)?options.filter(id=>typeof id==='string'&&id.length>0):[];
+ if(!candidates.length)return '';
+ if(candidates.includes(preferred))return preferred;
+ const count=Number.isSafeInteger(completedCount)&&completedCount>0?completedCount:1;
+ const displayNumber=frequency==='every3'?Math.max(1,Math.floor(count/3)):count;
+ return candidates[(displayNumber-1)%candidates.length];
 }
 function frequencySummary(preferences,completedCount){
  if(preferences.frequency==='off')return 'Подборка отключена. Награды за приглашение остаются доступны.';
@@ -431,7 +461,8 @@ function servicesShelf(gameId,showPromos,completedCount){
  const selectedIds=activeSelected.map(item=>item[0]);
  const relevantOrder=contextualOrder.filter(id=>selectedIds.includes(id));
  const spotlightOptions=[...relevantOrder,...selectedIds.filter(id=>!relevantOrder.includes(id))];
- let spotlightServiceId=selectedIds.includes(preferred)?preferred:(spotlightOptions[0]||'');
+ const roundForSpotlight=preferences.frequency==='every3'?completedCount:(readServiceProgress().byGame[gameId]||1);
+ let spotlightServiceId=chooseSpotlightService(spotlightOptions,preferred,roundForSpotlight,preferences.frequency)||spotlightId||'';
  const spotlight=make('article','og-postgame-spotlight');
  spotlight.setAttribute('aria-label','Персональная рекомендация OSGARD');
  const spotlightStatus=make('p','og-postgame-spotlight-status');
