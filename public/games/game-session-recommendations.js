@@ -163,7 +163,8 @@ function addPostSessionActions(gameId){
     void sendEvent('share_created',gameId,'game-invite:'+gameId+':'+code);
    }
   }catch(error){
-   if(!(error instanceof Error&&error.name==='AbortError')){status.textContent='Не удалось открыть отправку. Можно скопировать ссылку из адресной строки: '+url;fallback.href='https://wa.me/?text='+encodeURIComponent(message);fallback.hidden=false}
+   if(error instanceof Error&&error.name==='AbortError'){status.textContent='Отправка отменена.'}
+   else{status.textContent='Не удалось открыть отправку. Можно скопировать ссылку из адресной строки: '+url;fallback.href='https://wa.me/?text='+encodeURIComponent(message);fallback.hidden=false}
   }finally{inviteButton.disabled=false}
  });
 }
