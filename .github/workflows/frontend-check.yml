@@ -45,6 +45,10 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
+      - name: Syntax-check shared catalogue and SIGNAL RUN logic
+        run: |
+          node --check public/games/luxury.js
+          node --check public/games/signal-run/game.js
       - name: Validate production activation shell before build and tests
         run: bash -n scripts/activate-frontend-remote.sh
       - name: Type-check the frontend
