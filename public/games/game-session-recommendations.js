@@ -568,6 +568,32 @@ function servicesShelf(gameId,showPromos,completedCount){
  filterButtons.forEach(button=>button.addEventListener('click',()=>applyFilter(button.dataset.osgardServiceFilter||'all')));
  updateFilterCounts();
 
+ // Keep a small, immediately visible set of choices so users do not have to open the full directory to change the featured service.
+ const quickPickHeading=make('p','og-postgame-quick-picks-heading','БЫСТРЫЙ ВЫБОР · СЕРВИСЫ ДЛЯ ТЕБЯ');
+ const quickPicks=make('div','og-postgame-quick-picks');
+ quickPicks.setAttribute('role','group');
+ quickPicks.setAttribute('aria-label','Быстрый выбор сервиса OSGARD');
+ const quickPickButtons=[];
+ const quickPickIds=[spotlightServiceId,...spotlightOptions.filter(id=>id!==spotlightServiceId)].slice(0,3);
+ quickPickIds.forEach(serviceId=>{
+  const item=services.find(entry=>entry[0]===serviceId&&entry[7]!==false);
+  if(!item)return;
+  const button=make('button','og-postgame-quick-pick');
+  button.type='button';
+  button.dataset.service=serviceId;
+  button.setAttribute('aria-pressed',String(serviceId===spotlightServiceId));
+  button.append(make('span','og-postgame-quick-pick-category',item[3]),make('strong','',item[2]),make('span','og-postgame-quick-pick-description',item[4]));
+  button.addEventListener('click',()=>{
+   spotlightServiceId=serviceId;
+   renderSpotlight(serviceId);
+   cards.forEach(card=>card.classList.toggle('is-featured',card.dataset.service===serviceId));
+   quickPickButtons.forEach(choice=>choice.setAttribute('aria-pressed',String(choice.dataset.service===serviceId)));
+   watchSpotlight();
+  });
+  quickPickButtons.push(button);
+  quickPicks.append(button);
+ });
+
  const state=make('div','og-postgame-service-empty');
  if(!showPromos)state.textContent=frequencySummary(preferences,completedCount);
  else if(!activeSelected.length)state.textContent='Сейчас ни один сервис не выбран. Открой «Настроить показ» и отметь интересующие проекты.';
@@ -591,7 +617,7 @@ function servicesShelf(gameId,showPromos,completedCount){
   if(nextStatus)nextStatus.textContent=ok?'Настройки сохранены на этом устройстве.':'Настройки действуют в этой вкладке; браузер не разрешил постоянное сохранение.';
  });
  section.append(head,settings);
- if(showPromos&&activeSelected.length)section.append(spotlight);
+ if(showPromos&&activeSelected.length)section.append(spotlight,quickPickHeading,quickPicks);
  if(showPromos&&activeSelected.length)section.append(filters,grid,foot,decision);
  else section.append(state,foot);
  // Count owned-service exposure only when a clickable card is at least half visible for a full second.
