@@ -23,6 +23,10 @@ docker compose -f docker-compose.production.yml up -d --build
 
 The OSGARD production build runs `npm run sync:swarm` first, copying `index.html`, `game.js`, and `styles.css` from the sibling `/opt/swarm-mvp` source. Keep both source directories present on the build host so the portal cannot silently ship a stale SWARM client.
 
+## OSGARD game API bridge
+
+The game API is host-managed on TCP 4317, so the Docker frontend may need to reach the Docker bridge gateway instead of a Compose service named `osgard-game-api`. The activation script first checks the API health endpoint and the existing bridge path. If UFW is active and the bridge path is blocked, it may add a narrowly scoped persistent rule limited to the current frontend container IP, the matching Docker bridge interface, its gateway address and TCP 4317. It does not open 4317 on the public interface. The script must confirm the health check again before switching the live root; if interface/IP/subnet validation or the retest fails, it aborts. 
+
 ## Safe frontend replacement
 
 Before replacing the running frontend, build and verify the complete archive locally:
