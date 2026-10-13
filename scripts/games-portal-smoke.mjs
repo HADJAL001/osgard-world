@@ -407,7 +407,7 @@ assert.equal(serviceGrid.hidden,true,'The full service directory should be colla
 assert.equal(serviceFilters.hidden,true,'Category filters should stay collapsed until the directory is opened')
 const serviceHead=servicesSection.children.find(node=>node.className==='og-postgame-service-head')
 const headActions=serviceHead.children.find(node=>node.className==='og-postgame-service-head-actions')
-const serviceDirectoryToggle=headActions.children.find(node=>node.className==='og-postgame-collapse-toggle')
+const serviceDirectoryToggle=headActions.children.find(node=>node.className.includes('og-postgame-collapse-toggle'))
 assert.ok(serviceDirectoryToggle&&!serviceDirectoryToggle.hidden,'The player must be able to open the full owned-service directory')
 serviceDirectoryToggle.click()
 assert.equal(serviceGrid.hidden,false,'The service directory toggle should reveal all active service cards')
