@@ -121,6 +121,8 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
                ? content.includes('.post-run-recommendations') && content.includes('prefers-reduced-motion:reduce')
              : path === '/games/player-lifecycle.js'
               ? content.includes('function startSession(') && content.includes('game_session_completed') && content.includes('osgard:game-lifecycle') && content.includes('event.source!==frame.contentWindow')
+              : path === '/games/viral-loop.js'
+                ? content.includes('player_invite_loop') && content.includes('invite_landing') && content.includes('invite_game_started') && content.includes('invite_game_completed') && content.includes('if (!hasConsent()) return false')
               : path.endsWith('.css')
               ? normalized.includes('--acid:#c8ff3d') && normalized.includes('/skillcred/fonts/intervariable.woff2') && normalized.includes('/skillcred/fonts/instrumentserif-italic.woff2') && normalized.includes('/skillcred/fonts/jetbrainsmono-regular.woff2') && (!expectCurrentDesign || (normalized.includes('--hero-size:clamp(88px,6vw,104px)') && normalized.replace(/["']/g, '').includes('.trust-spine[data-state=revoked]')))
               : content.includes('demo/issue') && content.includes('data-clock-step')
