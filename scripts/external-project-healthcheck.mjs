@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { isIP } from 'node:net'
 
 export const PROJECTS = [
   { id: 'osgardbewworld', name: 'OSGARD BEW WORLD', url: 'https://osgardbewworld.com/', intendedRole: 'Создание проектов и приложений' },
@@ -17,6 +18,9 @@ export const PROJECTS = [
 
 const USER_AGENT = 'OSGARD-External-Project-Health/1.0 (+https://osgard.world/games/)'
 const MAX_ERROR_LENGTH = 240
+const MAX_REDIRECTS = 5
+const MAX_BODY_BYTES = 1024 * 1024
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308])
 
 function htmlText(value) {
   return String(value || '')
@@ -58,6 +62,106 @@ function classifyHttp(status, isHtml, title) {
   return 'reachable'
 }
 
+
+/**
+ * Redirect destinations are fetched by a scheduled CI job. Only public HTTPS
+ * hostnames are allowed; literal IPs, credentials, non-standard ports, and
+ * local/special-use hostnames are rejected before another network request.
+ */
+export function isSafePublicHttpsUrl(value) {
+  let url
+  try { url = new URL(value) } catch { return false }
+  if (url.protocol !== 'https:' || url.username || url.password) return false
+  if (url.port && url.port !== '443') return false
+
+  const hostname = url.hostname.toLowerCase().replace(/\\.$/, '')
+  const ipHost = hostname.startsWith('[') && hostname.endsWith(']')
+    ? hostname.slice(1, -1)
+    : hostname
+  if (!hostname || isIP(ipHost) !== 0 || !hostname.includes('.')) return false
+
+  const deniedSuffixes = [
+    '.localhost', '.local', '.internal', '.test', '.example', '.invalid',
+    '.onion', '.home', '.lan', '.corp', '.arpa',
+  ]
+  if (hostname === 'localhost' || deniedSuffixes.some(suffix => hostname.endsWith(suffix))) return false
+  return true
+}
+
+async function cancelResponseBody(response) {
+  try {
+    if (typeof response.body?.cancel === 'function') await response.body.cancel()
+  } catch {}
+}
+
+async function readBoundedBody(response, maxBytes = MAX_BODY_BYTES) {
+  const reader = typeof response.body?.getReader === 'function'
+    ? response.body.getReader()
+    : null
+
+  if (!reader) {
+    const text = typeof response.text === 'function' ? await response.text() : ''
+    const bytes = new TextEncoder().encode(text)
+    if (bytes.byteLength <= maxBytes) return { text, truncated: false, bytesRead: bytes.byteLength }
+    const bounded = bytes.subarray(0, maxBytes)
+    return { text: new TextDecoder().decode(bounded), truncated: true, bytesRead: bounded.byteLength }
+  }
+
+  const decoder = new TextDecoder()
+  let text = ''
+  let bytesRead = 0
+  let truncated = false
+  try {
+    while (true) {
+      const result = await reader.read()
+      if (result.done) break
+      const chunk = result.value instanceof Uint8Array ? result.value : new Uint8Array(result.value)
+      const remaining = Math.max(0, maxBytes - bytesRead)
+      if (chunk.byteLength > remaining) {
+        if (remaining > 0) {
+          text += decoder.decode(chunk.subarray(0, remaining), { stream: true })
+          bytesRead += remaining
+        }
+        truncated = true
+        try { await reader.cancel() } catch {}
+        break
+      }
+      text += decoder.decode(chunk, { stream: true })
+      bytesRead += chunk.byteLength
+    }
+    text += decoder.decode()
+  } finally {
+    try { reader.releaseLock() } catch {}
+  }
+  return { text, truncated, bytesRead }
+}
+
+function redirectFailure(project, {
+  outcome, currentUrl, statusCode, started, checkedAt, attempt, blockedHost = null, note,
+}) {
+  return {
+    id: project.id,
+    name: project.name,
+    intendedRole: project.intendedRole,
+    requestedUrl: project.url,
+    finalUrl: currentUrl ? currentUrl.href : null,
+    finalHost: currentUrl ? currentUrl.hostname : null,
+    redirected: statusCode !== null,
+    statusCode,
+    contentType: null,
+    pageTitle: null,
+    metaDescription: null,
+    bodyTruncated: false,
+    outcome,
+    reachable: false,
+    responseMs: Math.max(0, Date.now() - started),
+    attempts: attempt,
+    checkedAt,
+    ...(blockedHost ? { blockedRedirectHost: blockedHost } : {}),
+    note,
+  }
+}
+
 export async function checkProject(project, {
   fetchImpl = globalThis.fetch,
   timeoutMs = 12000,
@@ -67,29 +171,109 @@ export async function checkProject(project, {
 } = {}) {
   const started = Date.now()
   const checkedAt = now().toISOString()
-  for (let attempt = 1; attempt <= Math.max(1, maxAttempts); attempt++) {
+
+  if (!isSafePublicHttpsUrl(project.url)) {
+    let initialUrl = null
+    try { initialUrl = new URL(project.url) } catch {}
+    return redirectFailure(project, {
+      outcome: 'unsafe_target',
+      currentUrl: null,
+      statusCode: null,
+      started,
+      checkedAt,
+      attempt: 0,
+      blockedHost: initialUrl?.hostname || null,
+      note: 'Request was not sent because the configured target is not a public HTTPS hostname.',
+    })
+  }
+
+  const attemptsLimit = Math.max(1, Math.floor(Number(maxAttempts) || 1))
+  for (let attempt = 1; attempt <= attemptsLimit; attempt++) {
     try {
-      const response = await fetchImpl(project.url, {
-        method: 'GET',
-        redirect: 'follow',
-        signal: AbortSignal.timeout(timeoutMs),
-        headers: {
-          accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          'user-agent': USER_AGENT,
-        },
-      })
-      if (response.status >= 500 && attempt < maxAttempts) {
-        try { await response.body?.cancel() } catch {}
+      const deadlineAt = Date.now() + Math.max(1, Number(timeoutMs) || 12000)
+      let currentUrl = new URL(project.url)
+      const visitedUrls = new Set([currentUrl.href])
+      let redirectsFollowed = 0
+      let response
+
+      while (true) {
+        const remainingMs = Math.max(1, deadlineAt - Date.now())
+        response = await fetchImpl(currentUrl.href, {
+          method: 'GET',
+          // Do not let fetch follow an untrusted Location automatically. Each
+          // hop is validated before the healthcheck runner makes another request.
+          redirect: 'manual',
+          signal: AbortSignal.timeout(remainingMs),
+          headers: {
+            accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'user-agent': USER_AGENT,
+          },
+        })
+
+        if (!REDIRECT_STATUSES.has(response.status)) break
+
+        const location = responseHeader(response, 'location')
+        if (!location) {
+          await cancelResponseBody(response)
+          return redirectFailure(project, {
+            outcome: 'redirect_missing_location', currentUrl, statusCode: response.status,
+            started, checkedAt, attempt,
+            note: 'The homepage returned a redirect without a Location header; the destination was not inferred.',
+          })
+        }
+
+        let destination
+        try {
+          destination = new URL(location, currentUrl)
+          destination.hash = ''
+        } catch {}
+
+        if (!destination || !isSafePublicHttpsUrl(destination.href)) {
+          let blockedHost = null
+          try { blockedHost = destination?.hostname || new URL(location, currentUrl).hostname } catch {}
+          await cancelResponseBody(response)
+          return redirectFailure(project, {
+            outcome: 'unsafe_redirect', currentUrl, statusCode: response.status,
+            started, checkedAt, attempt, blockedHost,
+            note: 'Redirect destination was not requested because it is not a public HTTPS hostname on an allowed port.',
+          })
+        }
+
+        if (visitedUrls.has(destination.href)) {
+          await cancelResponseBody(response)
+          return redirectFailure(project, {
+            outcome: 'redirect_loop', currentUrl, statusCode: response.status,
+            started, checkedAt, attempt,
+            note: 'Redirect loop detected; no further request was sent.',
+          })
+        }
+
+        if (redirectsFollowed >= MAX_REDIRECTS) {
+          await cancelResponseBody(response)
+          return redirectFailure(project, {
+            outcome: 'redirect_limit', currentUrl, statusCode: response.status,
+            started, checkedAt, attempt,
+            note: 'Redirect limit reached; no further request was sent.',
+          })
+        }
+
+        await cancelResponseBody(response)
+        redirectsFollowed += 1
+        visitedUrls.add(destination.href)
+        currentUrl = destination
+      }
+
+      if (response.status >= 500 && attempt < attemptsLimit) {
+        await cancelResponseBody(response)
         await new Promise(resolve => setTimeout(resolve, retryDelayMs * attempt))
         continue
       }
+
       const contentType = responseHeader(response, 'content-type').split(';')[0].trim().toLowerCase()
-      const body = await response.text()
+      const { text: body, truncated: bodyTruncated, bytesRead } = await readBoundedBody(response)
       const isHtml = contentType === 'text/html' || contentType === 'application/xhtml+xml'
       const title = isHtml ? extractPageTitle(body) : null
-      const finalUrl = response.url || project.url
-      let finalHost = null
-      try { finalHost = new URL(finalUrl).hostname } catch {}
+      const finalUrl = currentUrl.href
       const outcome = classifyHttp(response.status, isHtml, title)
       return {
         id: project.id,
@@ -97,22 +281,25 @@ export async function checkProject(project, {
         intendedRole: project.intendedRole,
         requestedUrl: project.url,
         finalUrl,
-        finalHost,
-        redirected: Boolean(response.redirected) || finalUrl.replace(/\/$/, '') !== project.url.replace(/\/$/, ''),
+        finalHost: currentUrl.hostname,
+        redirected: redirectsFollowed > 0,
         statusCode: response.status,
         contentType: contentType || null,
         pageTitle: title,
         metaDescription: isHtml ? extractMetaDescription(body) : null,
+        bodyTruncated,
+        bodyBytesRead: bytesRead,
         outcome,
         reachable: response.status >= 200 && response.status < 400,
         responseMs: Math.max(0, Date.now() - started),
         attempts: attempt,
+        redirectsFollowed,
         checkedAt,
         note: 'HTTP homepage check only; it does not confirm product features, login, API, checkout, or service reliability.',
       }
     } catch (error) {
       const name = error && typeof error.name === 'string' ? error.name : 'Error'
-      if (attempt < maxAttempts && (name === 'TypeError' || name === 'TimeoutError' || name === 'AbortError')) {
+      if (attempt < attemptsLimit && (name === 'TypeError' || name === 'TimeoutError' || name === 'AbortError')) {
         await new Promise(resolve => setTimeout(resolve, retryDelayMs * attempt))
         continue
       }
@@ -133,6 +320,7 @@ export async function checkProject(project, {
         contentType: null,
         pageTitle: null,
         metaDescription: null,
+        bodyTruncated: false,
         outcome,
         reachable: false,
         responseMs: Math.max(0, Date.now() - started),
