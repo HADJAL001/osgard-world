@@ -372,3 +372,11 @@
 .gh-detail--cascade-lab .gh-detail-mark{color:#a7efff;text-shadow:0 0 38px rgba(98,219,255,.3)}
 .gh-detail--cascade-lab .gh-detail-ring-one{border-color:rgba(98,219,255,.56)}
 .gh-detail--cascade-lab .gh-detail-ring-two{border-color:rgba(255,198,106,.42)}
+
+
+/* Context-aware recommendations explain why each neighboring game is surfaced. */
+.gh-related-card>div{min-width:0}
+.gh-related-reason{display:inline-flex;align-items:center;gap:5px;max-width:100%;margin-top:7px;color:var(--gh-gold);font-size:9px;line-height:1.4;font-style:normal;letter-spacing:.025em}
+.gh-related-card:focus-visible .gh-related-reason{color:var(--gh-mint)}
+@media(max-width:520px){.gh-related-reason{font-size:8px}}
+@media(prefers-reduced-motion:reduce){.gh-related-card{transition:none}}

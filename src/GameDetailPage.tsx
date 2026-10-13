@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { OsgardLogo } from './OsgardLogo'
 import { recordOsgardEvent } from './core/eventQueue'
+import { getRelatedGames, type RecommendationReason } from './core/gameRecommendations.mjs'
 import type { OsgardEventName } from './core/manifest'
 import './games-hub.css'
 
@@ -286,6 +287,16 @@ function gameDescription(game: GameDefinition, locale: Locale) {
   return locale === 'ru' ? game.descriptionRu : game.descriptionEn
 }
 
+function recommendationReasonLabel(reason: RecommendationReason, locale: Locale) {
+  const labels: Record<RecommendationReason, [string, string]> = {
+    favorite: ['В избранном', 'In your favorites'],
+    curated: ['Подобрано к этому миру', 'Curated for this world'],
+    genre: ['Похожий жанр', 'Similar genre'],
+    discover: ['Открой новый жанр', 'Discover a new genre'],
+  }
+  return labels[reason][locale === 'ru' ? 0 : 1]
+}
+
 function formatProjectType(value: string, locale: Locale) {
   const labels: Record<string, [string, string]> = {
     game: ['Разработка игры', 'Game development'],
@@ -328,7 +339,7 @@ export function GameDetailPage({ slug }: { slug: string }) {
   const game = GAMES.find(item => item.id === slug)
   const [locale, setLocale] = useState<Locale>('ru')
   const ru = locale === 'ru'
-  const { favorites, consent, remember, toggleFavorite, chooseConsent } = useLocalCatalogState()
+  const { favorites, recent, consent, remember, toggleFavorite, chooseConsent } = useLocalCatalogState()
   const [playing, setPlaying] = useState(() => new URLSearchParams(window.location.search).get('launch') === '1')
   const [loadingGame, setLoadingGame] = useState(true)
   const [frameError, setFrameError] = useState(false)
@@ -415,7 +426,7 @@ export function GameDetailPage({ slug }: { slug: string }) {
 
   if (!game) return <main className="gh-page gh-not-found"><a href="/games/"><ArrowLeft size={16} />{ru ? 'Вернуться в каталог' : 'Back to games'}</a><p className="gh-eyebrow">404 / WORLD NOT FOUND</p><h1>{ru ? 'Этого мира нет в каталоге.' : 'This world is not in the catalog.'}</h1><p>{ru ? 'Проверьте ссылку или выберите одну из доступных игр.' : 'Check the URL or choose one of the available games.'}</p><a className="gh-primary" href="/games">{ru ? 'Открыть игры' : 'Open games'}<ArrowRight size={16} /></a></main>
 
-  const relatedGames = GAMES.filter(item => item.id !== game.id).slice(0, 3)
+  const relatedGames = getRelatedGames(game, GAMES, { favorites, recent }, 3)
 
   return <main className={'gh-page gh-detail-page gh-detail--' + game.theme}>
     <header className="gh-header">
@@ -490,7 +501,7 @@ export function GameDetailPage({ slug }: { slug: string }) {
         <p className="gh-play-note">{ru ? 'Игра выполняется в отдельном встроенном окне. Если управление или сетевой режим работают некорректно, откройте её в отдельной вкладке.' : 'The game runs in an embedded frame. If controls or network play do not work correctly, open it in a separate tab.'}</p>
       </section>}
 
-      <section className="gh-related"><div className="gh-section-heading"><div><p className="gh-eyebrow">NEXT / CONTINUE EXPLORING</p><h2>{ru ? 'Другие игровые миры' : 'More game worlds'}</h2></div><a className="gh-text-link" href="/games">{ru ? 'Весь каталог' : 'Full catalog'}<ArrowUpRight size={15} /></a></div><div className="gh-related-grid">{relatedGames.map(item => <a href={'/game/' + item.id} key={item.id} className={'gh-related-card gh-related-card--' + item.theme}><span>{item.mark}</span><div><small>{ru ? item.genreRu : item.genreEn}</small><strong>{gameTitle(item, locale)}</strong></div><ArrowUpRight size={15} /></a>)}</div></section>
+      <section className="gh-related"><div className="gh-section-heading"><div><p className="gh-eyebrow">NEXT / CONTINUE EXPLORING</p><h2>{ru ? 'Другие игровые миры' : 'More game worlds'}</h2></div><a className="gh-text-link" href="/games">{ru ? 'Весь каталог' : 'Full catalog'}<ArrowUpRight size={15} /></a></div><div className="gh-related-grid">{relatedGames.map(({ game: item, reason }) => <a href={'/game/' + item.id} key={item.id} className={'gh-related-card gh-related-card--' + item.theme}><span>{item.mark}</span><div><small>{ru ? item.genreRu : item.genreEn}</small><strong>{gameTitle(item, locale)}</strong><em className="gh-related-reason">{recommendationReasonLabel(reason, locale)}</em></div><ArrowUpRight size={15} /></a>)}</div></section>
     </div>
 
     <footer className="gh-footer"><a href="/" className="gh-footer-brand"><OsgardLogo variant="footer" /></a><span>© OSGARD WORLD · PLAY WITH PURPOSE</span><div><a href="/privacy">{ru ? 'Конфиденциальность' : 'Privacy'}</a><a href="/terms">{ru ? 'Условия' : 'Terms'}</a><button type="button" onClick={() => setConsentPanelOpen(true)}>{ru ? 'Настройки аналитики' : 'Analytics settings'}</button></div></footer>
