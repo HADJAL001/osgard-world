@@ -240,6 +240,14 @@ for(const path of gameDocumentPages){
   const documentSource=readFileSync(resolve(path),'utf8')
   assert.equal(documentSource.split('</body>').length-1,1,path+' must close body exactly once')
   assert.equal(documentSource.split('</html>').length-1,1,path+' must close html exactly once')
+  const inlineScripts=[...documentSource.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)]
+  for(let index=0;index<inlineScripts.length;index++){
+    const attrs=inlineScripts[index][1]
+    const scriptBody=inlineScripts[index][2]
+    const type=(attrs.match(/\btype\s*=\s*["']?([^"'\s>]+)/i)||[])[1]?.toLowerCase()||''
+    if(/\bsrc\s*=/.test(attrs)||['module','application/ld+json','application/json','importmap'].includes(type)||!scriptBody.trim()) continue
+    assert.doesNotThrow(()=>new Function(scriptBody),path+' classic inline script #'+(index+1)+' must parse')
+  }
 }
 assert.equal(html.split('</body>').length-1,1,'Games hub must close body exactly once')
 assert.equal(html.split('</html>').length-1,1,'Games hub must close html exactly once')
