@@ -20,7 +20,7 @@ const $=id=>document.getElementById(id),canvas=$('runnerCanvas'),ctx=canvas.getC
 const reducedMotionQuery=window.matchMedia?window.matchMedia('(prefers-reduced-motion: reduce)'):{matches:false};
 let idleTimer=0,idleLast=0;
 function stopIdle(){if(idleTimer){clearTimeout(idleTimer);idleTimer=0}}
-function scheduleIdle(){if(reducedMotionQuery.matches||idleTimer||document.visibilityState==='hidden'||game.running||game.paused)return;idleTimer=setTimeout(()=>{idleTimer=0;if(document.visibilityState==='hidden'||game.running||game.paused||reducedMotionQuery.matches)return;const now=performance.now();const dt=idleLast?Math.min(.08,(now-idleLast)/1000):0;idleLast=now;game.world+=dt*.6;draw();scheduleIdle()},1000/24)
+function scheduleIdle(){if(reducedMotionQuery.matches||idleTimer||document.visibilityState==='hidden'||game.running||game.paused)return;idleTimer=setTimeout(()=>{idleTimer=0;if(document.visibilityState==='hidden'||game.running||game.paused||reducedMotionQuery.matches)return;const now=performance.now();const dt=idleLast?Math.min(.08,(now-idleLast)/1000):0;idleLast=now;game.world+=dt*.6;draw();scheduleIdle()},1000/24)}
 let loopFrame=0;
 function stopLoop(){if(loopFrame){cancelAnimationFrame(loopFrame);loopFrame=0}}
 function scheduleLoop(){if(!loopFrame&&game.running&&!game.paused&&document.visibilityState!=='hidden')loopFrame=requestAnimationFrame(loop)}
