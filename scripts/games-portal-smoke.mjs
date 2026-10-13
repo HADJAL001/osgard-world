@@ -158,6 +158,9 @@ assert.equal(mockHost.hidden,false,'Completed SWARM session should show recommen
 assert.equal(mockClasses.has('has-recommendations'),true,'The player layout should adapt after completion')
 assert.deepEqual(mockHost.children[2].children.map(node=>node.dataset.play),['null-shift','signal-run'],'SWARM should recommend two related live games')
 assert.deepEqual(mockHost.children[2].children.map(node=>node.href),['/games/null-shift-godot/','/games/signal-run/'],'Recommendations should point to valid game launch routes')
+assert.equal(mockHost.children[3].textContent,'Передать вызов другу ↗','Completed sessions should offer a direct share/challenge action')
+assert.equal(typeof mockHost.children[3].listeners.click,'function','Invite CTA must perform a share action when clicked')
+assert.ok(recommendationScript.includes('game_invite_link_created')&&recommendationScript.includes('utm_medium')&&recommendationScript.includes('viral_challenge'),'Share CTA must generate trackable, same-origin challenge links')
 mockDocument.dispatch('osgard:game-launching')
 assert.equal(mockHost.hidden,true,'The next launch must clear recommendations')
 assert.equal(mockHost.children.length,0,'Stale recommendation links must be removed')
@@ -165,9 +168,6 @@ assert.equal(mockClasses.has('has-recommendations'),false,'The player modal shou
 mockDocument.dispatch('osgard:game-completed',{detail:{game:'unknown'}})
 assert.equal(mockHost.hidden,true,'Unknown game IDs must not generate recommendations')
 assert.equal(mockHost.children.length,0,'Unknown game IDs must not render an invite CTA')
-assert.equal(mockHost.children[3].textContent,'Передать вызов другу ↗','Completed sessions should offer a direct share/challenge action')
-assert.equal(typeof mockHost.children[3].listeners.click,'function','Invite CTA must perform a share action when clicked')
-assert.ok(recommendationScript.includes("game_invite_link_created")&&recommendationScript.includes('utm_medium')&&recommendationScript.includes('viral_challenge'),'Share CTA must generate trackable, same-origin challenge links')
 const viralHost=mockNode();viralHost.hidden=true
 const landingUrl=new URL('https://osgard.world/games/?osgard_challenge=swarm&utm_source=osgard_play&utm_medium=viral_challenge')
 const landingEvents=[]
