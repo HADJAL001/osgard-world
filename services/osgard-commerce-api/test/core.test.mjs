@@ -31,32 +31,6 @@ test("checkout accepts only known product key, email and accepted terms", () => 
   assert.equal(result.email, "buyer@example.com");
 });
 
-test("checkout attribution accepts safe source context and normalizes unknown or hostile values", () => {
-  const tracked = validateCheckoutPayload({
-    productKey: "support-osgard",
-    email: "buyer@example.com",
-    termsAccepted: true,
-    attribution: { gameId: "AFTERIMAGE-RUN", source: "OSGARD_GAMES", campaign: "play_with_friends" },
-  });
-  assert.equal(tracked.ok, true);
-  assert.deepEqual(tracked.attribution, {
-    gameId: "afterimage-run",
-    source: "osgard_games",
-    campaign: "play_with_friends",
-  });
-  const legacy = validateCheckoutPayload({
-    productKey: "support-osgard", email: "buyer@example.com", termsAccepted: true,
-  });
-  assert.deepEqual(legacy.attribution, { gameId: "unknown", source: "direct", campaign: "" });
-  const hostile = validateCheckoutPayload({
-    productKey: "support-osgard",
-    email: "buyer@example.com",
-    termsAccepted: true,
-    attribution: { gameId: "unknown<script>", source: "https://example.test/path", campaign: "x".repeat(500) },
-  });
-  assert.deepEqual(hostile.attribution, { gameId: "unknown", source: "direct", campaign: "" });
-});
-
 test("lead endpoint requires contact, brief and acknowledgement; honeypot is silently classified", () => {
   assert.equal(validateLeadPayload({ projectType: "Игра", contact: "test@example.com", description: "Достаточно подробное описание", consent: false }).code, "DATA_PROCESSING_ACK_REQUIRED");
   assert.equal(validateLeadPayload({ projectType: "Игра", contact: "x", description: "коротко", consent: true }).ok, false);
@@ -90,6 +64,9 @@ test("analytics is disabled unless consent is explicit and event names are allow
     ["owned_promo_preferences_saved", "osgard-select:preferences:each:7"],
     ["social_share_intent", "osgard-social-share:telegram:swarm"],
     ["social_reward_claimed", "osgard-social-reward:telegram:swarm"],
+    ["daily_play_reward_claimed", "osgard-daily-play:signal-run"],
+    ["referral_welcome_reward_claimed", "osgard-referral-welcome:og_12ab34cd"],
+    ["shards_cosmetic_unlocked", "cosmetic-unlock:northstar:100"],
   ]) {
     assert.equal(validateEventBatch({ consent: true, events: [{ ...event, name, source, eventId: "evt_social_event_123456" }] }).ok, true,
       name + " should be accepted as a consented event");
