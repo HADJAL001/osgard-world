@@ -52,5 +52,7 @@ jobs:
         run: npm run qa:ecosystem
       - name: Partner inventory disclosure and inactivity checks
         run: npm run qa:partners-page
+      - name: OSGARD first-party ecosystem directory
+        run: npm run qa:ecosystem-directory
       - name: Production frontend build
         run: npm run build
