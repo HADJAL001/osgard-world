@@ -7,6 +7,10 @@ import {
   validateCheckoutPayload,
   validateLeadPayload,
   validateEventBatch,
+  validateReferralIssuePayload,
+  validateReferralWalletPayload,
+  validateReferralDisablePayload,
+  resolveReferralCompletion,
   paymentsModeAllowed,
   resolveCheckoutPaymentState,
   verifyStripeSignature,
@@ -45,6 +49,8 @@ test("analytics is disabled unless consent is explicit and event names are allow
   assert.equal(validateEventBatch({ consent: true, events: [{ ...event, name: "steal_customer_emails" }] }).ok, false);
   assert.equal(validateEventBatch({ consent: true, events: [event] }).ok, true);
   assert.equal(validateEventBatch({ consent: true, events: [{ ...event, gameId: "cascade-lab" }] }).ok, true);
+  assert.equal(validateEventBatch({ consent: true, events: [{ ...event, name: "share_target_opened" }] }).ok, true);
+  assert.equal(validateEventBatch({ consent: true, events: [{ ...event, name: "referral_reward_opted_in" }] }).ok, true);
 });
 
 test("consented analytics accept stable event IDs and new page-view events, while rejecting malformed IDs", () => {
@@ -117,4 +123,26 @@ test("checkout status cannot resurrect a refunded, expired, or cancelled order",
   assert.deepEqual(resolveCheckoutPaymentState("unpaid", "pending"), {
     paid: false, orderStatus: "pending", updateOrderToPaid: false,
   });
+});
+
+test("server referral wallet validates consent, opaque tokens and a real game allow-list", () => {
+  const token = "rw_" + "a".repeat(64);
+  assert.equal(validateReferralIssuePayload({ walletToken: token, gameId: "swarm" }).code, "REFERRAL_REWARD_CONSENT_REQUIRED");
+  assert.equal(validateReferralIssuePayload({ walletToken: "guessable", gameId: "swarm", rewardConsent: true }).code, "REFERRAL_WALLET_TOKEN_INVALID");
+  assert.equal(validateReferralIssuePayload({ walletToken: token, gameId: "fake-game", rewardConsent: true }).code, "REFERRAL_GAME_ID_INVALID");
+  assert.deepEqual(validateReferralIssuePayload({ walletToken: token, gameId: "swarm", rewardConsent: true }), { ok: true, walletToken: token, gameId: "swarm" });
+  assert.equal(validateReferralWalletPayload({ walletToken: token }).code, "REFERRAL_REWARD_CONSENT_REQUIRED");
+  assert.equal(validateReferralWalletPayload({ walletToken: token, rewardConsent: true }).ok, true);
+  assert.equal(validateReferralDisablePayload({ walletToken: token }).ok, true);
+  assert.equal(validateReferralDisablePayload({ walletToken: "not-a-token" }).ok, false);
+});
+
+test("SHARDS referral rewards require an eligible completed session and a matching invite/game", () => {
+  const event = { name: "game_session_completed", durationSeconds: 60, source: "referral:og_ab12cd34:swarm", gameId: "swarm" };
+  assert.deepEqual(resolveReferralCompletion(event), { inviteCode: "og_ab12cd34", gameId: "swarm", points: 50 });
+  assert.equal(resolveReferralCompletion({ ...event, durationSeconds: 59 }), null);
+  assert.equal(resolveReferralCompletion({ ...event, name: "game_session_started" }), null);
+  assert.equal(resolveReferralCompletion({ ...event, gameId: "time" }), null);
+  assert.equal(resolveReferralCompletion({ ...event, source: "catalog:og_ab12cd34:swarm" }), null);
+  assert.equal(resolveReferralCompletion({ ...event, durationSeconds: 60.5 }), null);
 });
