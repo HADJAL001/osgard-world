@@ -52,3 +52,11 @@ First: connect lead storage, run a test-mode payment from the deployed storefron
 - Admin and checkout-status JSON responses set `Cache-Control: no-store` so customer/order data and payment state are not retained by intermediaries.
 - CI includes regression tests for refunded/cancelled payment states and smoke checks for the private reverse-proxy route.
 - The changes remain in an open pull request. No payment API/database credentials were supplied and no checkout API deployment or real transaction is claimed. The live website changes only after the reviewed branch is merged and the host deployment succeeds.
+
+## Referral SHARDS rollout
+
+The current feature branch adds a voluntary post-game invitation programme. The server stores a one-way SHA-256 hash of a random per-device wallet token, issues unique game-specific invite codes, and derives the displayed balance from a persistent ledger. A 50-point non-cash SHARDS entry is created only after a consented event reports a referred game session of at least 60 seconds, with the invite and game matching a server-issued code. Each invite code can award once; issuance is limited to 20 links per wallet/24 hours and awards to five/rolling 24 hours. The user can request deletion of the wallet, codes and reward records from the post-game panel.
+
+The social destinations (Telegram, WhatsApp, VK, X and Facebook) open native share-composer URLs. Those platforms do not send a generic, trusted publish receipt back to this site, so a clicked share link is **not** treated as a confirmed public repost and no points are granted simply for clicking it. The measurable conversion target is a referred user who actually starts and completes a session. Rewarding actual social publication would require platform-specific approved APIs and verification.
+
+SHARDS are non-cash, non-redeemable pilot points. Client-rendered games cannot cryptographically prove human participation; the ledger is more robust than a local counter but not fully fraud-proof. Do not enable redemption, cash value or pay-to-win benefits without authenticated accounts, server-verified gameplay and fraud review. Referral rewards also rely on explicit reward-program opt-in and consented game lifecycle events; recipients who decline gameplay analytics are not tracked in this pilot.
