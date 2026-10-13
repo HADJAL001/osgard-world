@@ -105,14 +105,15 @@
 
 /* Mobile performance: keep the premium art, but defer off-screen layout/paint. */
 @media(max-width:760px){
- .luxury-entertainment .card{content-visibility:auto;contain-intrinsic-size:auto 440px;box-shadow:none}
+ .luxury-entertainment .card{content-visibility:auto;contain-intrinsic-size:auto 500px;box-shadow:none}
  .luxury-entertainment .card.featured{contain-intrinsic-size:auto 730px}
  .luxury-entertainment .ecosystem{content-visibility:auto;contain-intrinsic-size:auto 900px}
  .luxury-entertainment .sponsor{content-visibility:auto;contain-intrinsic-size:auto 520px}
- .luxury-entertainment .contact-wrap{content-visibility:auto;contain-intrinsic-size:auto 760px}
+ .luxury-entertainment .contact-wrap{content-visibility:auto;contain-intrinsic-size:auto 840px}
  .luxury-entertainment .consent-row{content-visibility:auto;contain-intrinsic-size:auto 220px}
  .luxury-entertainment header{backdrop-filter:none;-webkit-backdrop-filter:none}
  .luxury-entertainment .hero-art svg{filter:none}
+ .luxury-entertainment .hero-art svg{animation:none!important;transform:none!important}
  .luxury-entertainment .art:before{filter:none}
  .luxury-entertainment .art strong{text-shadow:none}
  .luxury-entertainment .card,.luxury-entertainment .art svg,.luxury-entertainment .orbit{transition:none}
