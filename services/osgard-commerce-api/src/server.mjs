@@ -8,7 +8,7 @@ import pg from "pg";
 import {
   catalogConfiguration, validateCheckoutPayload, validateLeadPayload,
   validateEventBatch, paymentsModeAllowed, resolveCheckoutPaymentState, safeEqual,
-  parseReferralRewardEvent, validateReferralRewardStatus, validateReferralRewardRegistration,
+  parseReferralRewardEvent, validateReferralRewardStatus, validateReferralRewardRegistration, validateReferralRewardBalance,
   REFERRAL_REWARD_POINTS, REFERRAL_MIN_SESSION_SECONDS,
 } from "./core.mjs";
 
@@ -405,6 +405,31 @@ app.post("/v1/referrals/register", async (req, res) => {
   } catch (error) {
     console.error("Referral registration failed:", error?.message || "unknown error");
     return res.status(503).json({ error: "REFERRAL_REGISTRATION_UNAVAILABLE" });
+  }
+});
+
+app.post("/v1/referrals/balance", async (req, res) => {
+  res.set("Cache-Control", "no-store, private");
+  const input = validateReferralRewardBalance(req.body);
+  if (!input.ok) return res.status(input.status).json({ error: input.code });
+  if (!requireDatabase(res)) return;
+  try {
+    const result = await pool.query(
+      "SELECT COUNT(*)::int AS qualified_sessions, COALESCE(SUM(r.points),0)::int AS points_earned FROM game_referral_rewards r JOIN game_referral_invites i USING(invite_code) WHERE i.inviter_token=$1",
+      [input.ownerToken],
+    );
+    const row = result.rows[0] || {};
+    return res.json({
+      qualifiedSessions: Number(row.qualified_sessions || 0),
+      pointsEarned: Number(row.points_earned || 0),
+      pointsPerQualifiedSession: REFERRAL_REWARD_POINTS,
+      qualifyingDurationSeconds: REFERRAL_MIN_SESSION_SECONDS,
+      redeemableForCash: false,
+      redeemableForPurchases: false,
+    });
+  } catch (error) {
+    console.error("Referral balance failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "REFERRAL_BALANCE_UNAVAILABLE" });
   }
 });
 
