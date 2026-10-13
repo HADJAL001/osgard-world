@@ -46,5 +46,7 @@ jobs:
         run: npm run qa:games-portal
       - name: Game detail and route contract regression
         run: npm run qa:games-detail
+      - name: Player Console 30-upgrade contract smoke
+        run: npm run qa:player-console
       - name: Economy model regression
         run: npm run qa:games-model

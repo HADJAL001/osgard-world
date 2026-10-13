@@ -1,0 +1,54 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { test } from 'node:test';
+
+const base = new URL('../public/games/', import.meta.url);
+const js = await readFile(new URL('player-console.js', base), 'utf8');
+const css = await readFile(new URL('player-console.css', base), 'utf8');
+const loader = await readFile(new URL('luxury.js', base), 'utf8');
+
+test('Player Console is lazy-loaded by the existing catalogue enhancement', () => {
+  assert.match(loader, /player-console\.js/);
+  assert.match(loader, /player-console\.css/);
+});
+test('all 30 product improvements have code contracts', () => {
+  for (const token of [
+    'og-pc-launcher', 'showModal()', "event.key !== '?'",
+    'stats.launches', 'secondsByGame', 'visibleGenresForLog',
+    'localBadgeList', 'renderNextGame', 'MAX_QUEUE = 5',
+    'queue.includes(id)', 'moveQueue(index, -1)', 'data-pc-queue-add',
+    'playQueueHead', 'persistQueue()', 'data-pc-challenge-fill',
+    'utm_campaign', 'navigator.share', 'navigator.clipboard',
+    "attempt('HEAD')", "attempt('GET')", '6000',
+    "addEventListener('online'", "addEventListener('offline'",
+    'navigator.storage.estimate', "getContext('webgl2')",
+    "getEntriesByType('resource')", 'exportData()',
+    'validateImportedStats', 'clearLocalData()',
+    'og-pc-reduced-motion', 'og-pc-high-contrast', 'data-pc-scale'
+  ]) assert.ok(js.includes(token), 'Missing contract: ' + token);
+});
+test('catalogue checks remain same-origin and do not send events to third parties', () => {
+  assert.match(js, /route\.origin !== location\.origin/);
+  assert.match(js, /credentials: 'same-origin'/);
+  assert.doesNotMatch(js, /https:\/\/(?!osgard\.world)[a-z0-9.-]+\/(v1\/events|collect|analytics)/i);
+  assert.doesNotMatch(js, /localStorage\.getItem\(['"]osgard\.auth\.accessToken/);
+});
+test('personal-data import is capped and accepts only a known schema', () => {
+  assert.match(js, /MAX_IMPORT_BYTES = 100 \* 1024/);
+  assert.match(js, /parsed\.format !== 'osgard-player-console'/);
+  assert.match(js, /parsed\.schema !== 1/);
+  assert.match(js, /new Date\(row\.at\)\.toISOString\(\)/);
+});
+test('the interface has responsive touch and reduced-motion contracts', () => {
+  assert.match(css, /@media\(max-width:680px\)/);
+  assert.match(css, /min-height:44px/);
+  assert.match(css, /og-pc-reduced-motion/);
+  assert.match(css, /og-pc-high-contrast/);
+  assert.match(css, /--og-pc-scale/);
+});
+test('all UI content is constructed without interpolating untrusted HTML', () => {
+  assert.match(js, /textContent = game\.title/);
+  assert.match(js, /document\.createElement\('a'\)/);
+  assert.match(js, /dialog\.innerHTML = \[/);
+  assert.doesNotMatch(js, /insertAdjacentHTML|outerHTML\s*=/);
+});

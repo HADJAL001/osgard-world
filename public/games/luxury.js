@@ -168,4 +168,29 @@
       announce('Поиск очищен.')
     }
   })
+
+  // Player Lab is lazy-loaded with the catalog controls, not on the initial hero.
+  (() => {
+    const build = document.querySelector('meta[name="osgard-build"]')?.content || 'local';
+    if (!document.querySelector('link[data-og-pc-style]')) {
+      const css = document.createElement('link');
+      css.rel = 'stylesheet';
+      css.href = '/games/player-console.css?v=' + encodeURIComponent(build);
+      css.dataset.ogPcStyle = '1';
+      document.head.append(css);
+    }
+    const src = '/games/player-console.js?v=' + encodeURIComponent(build);
+    if (!document.querySelector('script[data-og-player-console]')) {
+      const script = document.createElement('script');
+      script.src = src;
+      script.async = true;
+      script.dataset.ogPlayerConsole = '1';
+      script.onerror = () => {
+        const status = document.querySelector('.luxury-status');
+        if (status) status.textContent = 'Пульт игрока временно недоступен; каталог продолжает работать.';
+      };
+      document.head.append(script);
+    }
+  })();
+
 })();
