@@ -21,7 +21,7 @@ const clientGames = readSet(client, 'GAME_IDS');
 const serverGames = readSet(server, 'GAME_IDS');
 assert.deepEqual(clientGames, serverGames, 'Browser and API game IDs must stay identical');
 
-const manifestLine = manifest.match(/export type OsgardGameId = ([^\\n]+)/)?.[1];
+const manifestLine = manifest.split('\\n').find(line => line.startsWith('export type OsgardGameId = '))?.slice('export type OsgardGameId = '.length);
 assert.ok(manifestLine, 'Canonical OSGARD game ID union must exist');
 const manifestGames = [...manifestLine.matchAll(/'([^']+)'/g)].map(item => item[1]).sort();
 assert.deepEqual(clientGames.filter(id => id !== 'unknown'), manifestGames,
