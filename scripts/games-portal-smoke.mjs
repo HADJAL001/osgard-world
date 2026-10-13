@@ -422,6 +422,8 @@ const servicesSection=mockSuite.children.find(node=>node.className==='og-postgam
 const spotlight=servicesSection.children.find(node=>node.className==='og-postgame-spotlight')
 assert.ok(spotlight&&!spotlight.hidden,'A premium OSGARD SELECT spotlight should appear between game rounds')
 assert.equal(spotlight.dataset.service,'marcosa','SWARM should highlight contextually relevant MARCOSA by default')
+assert.ok(recommendationScript.includes("'signal-run':['myosa','projects','superday']")&&recommendationScript.includes("'afterimage-run':['superday','projects','vanguard']"),'The spotlight map must cover the browser arcade and daily speedrun with relevant owned services')
+assert.ok(recommendationScript.includes("const spotlightOptions=[...relevantOrder,...selectedIds.filter(id=>!relevantOrder.includes(id))]"),'The alternate-project control must cycle relevant suggestions first, then all other services selected by the player')
 assert.ok(spotlight.children.some(node=>node.className==='og-postgame-spotlight-copy'),'Spotlight needs an editorial service description and action controls')
 const serviceFilters=servicesSection.children.find(node=>node.className==='og-postgame-service-filters')
 assert.equal(serviceFilters.children[0].textContent,'Все доступные · 9','The all-services filter count must exclude the unavailable GARD VPN card')
