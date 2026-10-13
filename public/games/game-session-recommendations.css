@@ -96,3 +96,7 @@ dialog#player-dialog.has-recommendations .player-view iframe{min-height:155px}
 @media(max-width:760px){.og-postgame-outside{padding-inline:0}.og-postgame-outside>.og-postgame-outside-suite{padding:13px}.og-postgame-outside-intro .og-postgame-title{font-size:27px}.og-postgame-outside .og-postgame-service-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:360px){.og-postgame-outside .og-postgame-service-grid{grid-template-columns:1fr}.og-postgame-outside .og-postgame-service-card.is-featured{grid-column:auto}}
 @media(prefers-reduced-motion:reduce){.og-postgame-back{transition:none;scroll-behavior:auto}}
+
+/* Progressive disclosure: the context-ranked preview stays compact. */
+.og-postgame-service-card[hidden]{display:none!important}
+.og-postgame-toggle[aria-expanded="true"]{color:#f0dfb2;border-color:rgba(218,192,133,.58);background:#d8c28f12}
