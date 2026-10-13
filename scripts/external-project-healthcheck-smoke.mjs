@@ -90,7 +90,7 @@ const redirected = await checkProject(
   { fetchImpl: safeRedirectFetch, now: fixedNow },
 )
 assert.equal(redirected.outcome, 'reachable')
-assert.equal(redirected.finalHost, 'www.redirect.example')
+assert.equal(redirected.finalHost, 'www.redirect.example.com')
 assert.equal(redirected.redirected, true)
 assert.equal(redirected.redirectsFollowed, 1)
 assert.equal(redirectCalls.length, 2, 'A safe same-domain HTTPS redirect should be followed once')
@@ -133,7 +133,7 @@ const limited = await checkProject(
     const host = new URL(url).hostname
     redirectHop += 1
     const n = host === 'hops.example.com' ? 0 : Number(host.startsWith('hop') ? host.slice(3).split('.')[0] : 0)
-    return redirectResponse(302, 'https://hop' + (n + 1) + '.hops.example/')
+    return redirectResponse(302, 'https://hop' + (n + 1) + '.hops.example.com/')
   }, now: fixedNow },
 )
 assert.equal(limited.outcome, 'redirect_limit')
