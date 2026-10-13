@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const game = document.body.dataset.game || '';
-  const validGameIds = new Set(['null-shift','time','swarm','inherit','remix','civic-cascade','patina','signal-run','cascade-lab']);
+  const validGameIds = new Set(['null-shift','time','swarm','inherit','remix','civic-cascade','patina','signal-run','cascade-lab','aether-grid']);
   const params = new URLSearchParams(location.search);
   const code = params.get('og_ref') || '';
   const requestedGame = params.get('og_game') || '';
@@ -34,7 +34,10 @@
     (validDailyMode || validOrdinaryMode);
   const play = document.querySelector('#play-link');
   if (play) {
-    const target = new URL('/games/', location.origin);
+    const target = new URL(game === 'aether-grid' ? '/games/aether-grid/' : '/games/', location.origin);
+    const aetherDay = params.get('og_day') || '';
+    const validAetherDay = /^\d{4}-\d{2}-\d{2}$/.test(aetherDay) && (() => { const date = new Date(aetherDay + 'T00:00:00.000Z'); return Number.isFinite(date.getTime()) && date.toISOString().slice(0,10) === aetherDay; })();
+    if (game === 'aether-grid' && validAetherDay) target.searchParams.set('day', aetherDay);
     if (game && validGameIds.has(game)) target.searchParams.set('og_game', game);
     if (valid) {
       target.searchParams.set('og_ref', code);
