@@ -15,6 +15,18 @@ Backend for OSGARD PLAY checkout sessions, signed Stripe webhooks, request leads
 - Admin overview, order list and lead list require a server-side bearer token of at least 32 characters.
 - No card numbers or CVC values are handled or stored by OSGARD.
 
+## Referral SHARDS reward ledger
+
+The optional referral programme is separate from payment revenue. A user explicitly enables it; the browser stores a random 256-bit opaque wallet token and the database stores only its SHA-256 hash. The API issues game-specific invite codes, limits issue requests to 20 per wallet per rolling 24 hours, and limits qualifying awards to five per wallet per rolling 24 hours. The server awards 50 non-cash SHARDS once per invite code when a consented `game_session_completed` event of at least 60 seconds is received and the invite code and game match a server-issued invite. The server ledger, not localStorage, defines the balance. Users can delete the wallet and all associated invites/rewards from the in-game intermission panel.
+
+Endpoints:
+- `POST /v1/referrals/issue` — `{ walletToken, gameId, rewardConsent: true }`.
+- `POST /v1/referrals/wallet` — fetches the server-calculated balance.
+- `POST /v1/referrals/disable` — deletes the wallet and linked invitation/reward records.
+- `POST /v1/events` — accepts consented game lifecycle events and atomically records eligible referral awards.
+
+This is a limited, non-cash pilot. Client-rendered games cannot cryptographically prove a human played fairly, so do not enable cash conversion, redemption or pay-to-win benefits without authenticated player accounts, server-verified gameplay, fraud review and legal/platform review. Social networks do not return a generic trusted “repost succeeded” receipt; the share/copy action itself therefore does not grant points.
+
 ## Local run
 
 1. Install Node.js 22 or newer.
