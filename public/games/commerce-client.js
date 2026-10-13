@@ -1,8 +1,16 @@
 (() => {
   'use strict';
-  const configPromise = fetch('/games/commerce-config.json', { cache: 'no-store', credentials: 'same-origin' })
-    .then((response) => response.ok ? response.json() : {})
-    .catch(() => ({}));
+  // Avoid a config request for every catalogue visitor. Fetch the public commerce
+  // config only when a consented event or project form actually needs the API.
+  let configPromise;
+  const loadConfig = () => {
+    if (!configPromise) {
+      configPromise = fetch('/games/commerce-config.json', { cache: 'no-store', credentials: 'same-origin' })
+        .then((response) => response.ok ? response.json() : {})
+        .catch(() => ({}));
+    }
+    return configPromise;
+  };
   const clean = (value, max = 1800) => String(value ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, max);
   function readCampaignAttribution() {
     const params = new URLSearchParams(location.search);
@@ -12,7 +20,7 @@
     });
   }
   const apiBase = async () => {
-    const config = await configPromise;
+    const config = await loadConfig();
     const raw = typeof config.apiBaseUrl === 'string' ? config.apiBaseUrl.trim() : '';
     if (!raw) return '';
     try {

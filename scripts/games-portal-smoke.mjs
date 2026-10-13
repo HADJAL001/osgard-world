@@ -69,7 +69,44 @@ const remixForSmoke=readFileSync(resolve(root,'remix/index.html'),'utf8')
 const timeForSmoke=readFileSync(resolve('src/TimePrototype.tsx'),'utf8')
 const luxury=readFileSync(resolve(root,'luxury.js'),'utf8')
 
-assert.ok(html.includes('href="./daily-circuit.css?v=__OSGARD_BUILD_VERSION__"')&&html.includes('src="./daily-circuit.js?v=__OSGARD_BUILD_VERSION__"'),'Daily Circuit assets must be linked with the release version marker')
+assert.ok(!html.includes('href="./daily-circuit.css?v=__OSGARD_BUILD_VERSION__"')&&!html.includes('<script src="./daily-circuit.js?v=__OSGARD_BUILD_VERSION__"'),'Daily Circuit assets must not block the initial catalogue render')
+assert.ok(html.includes('id="daily-circuit-slot"')&&html.includes('id="daily-circuit-lazy-loader"')&&html.includes('/games/daily-circuit.css?v=__OSGARD_BUILD_VERSION__')&&html.includes('/games/daily-circuit.js?v=__OSGARD_BUILD_VERSION__')&&html.includes("rootMargin: '180px 0px'")&&html.includes('data-load-daily-circuit'),'Daily Circuit must keep a visible manual CTA and lazily load versioned assets near the section')
+const dailyCircuitLazyLoaderMatch=html.match(/<script id="daily-circuit-lazy-loader">([\s\S]*?)<\/script>/)
+assert.ok(dailyCircuitLazyLoaderMatch,'Daily Circuit lazy loader is missing')
+new Function(dailyCircuitLazyLoaderMatch[1])
+{
+ const loadedDailyAssets=[]
+ let dailyObserverCallback=null
+ const dailyButton={disabled:false,textContent:'Открыть',closest(selector){return selector==='[data-load-daily-circuit]'?this:null}}
+ const dailyStatus={textContent:''}
+ const dailySlot={isConnected:true,dataset:{},setAttribute(){},querySelector(selector){return selector==='[data-load-daily-circuit]'?dailyButton:selector==='#daily-circuit-load-status'?dailyStatus:null}}
+ const dailyHead={append(node){loadedDailyAssets.push(node)}}
+ const dailyListeners={}
+ class DailyCircuitObserver{
+  constructor(callback,options){dailyObserverCallback=callback;this.options=options}
+  observe(target){this.target=target}
+  disconnect(){this.disconnected=true}
+ }
+ const dailyDocument={
+  head:dailyHead,
+  getElementById(id){return id==='daily-circuit-slot'?dailySlot:null},
+  querySelector(selector){return selector==='link[data-daily-circuit-style]'?loadedDailyAssets.find(node=>node.tagName==='LINK'&&node.dataset.dailyCircuitStyle==='true')||null:null},
+  createElement(tag){return{tagName:tag.toUpperCase(),dataset:{},remove(){this.removed=true}}},
+  addEventListener(type,handler){dailyListeners[type]=handler}
+ }
+ runInNewContext(dailyCircuitLazyLoaderMatch[1],{document:dailyDocument,window:{IntersectionObserver:DailyCircuitObserver},IntersectionObserver:DailyCircuitObserver})
+ assert.equal(loadedDailyAssets.length,0,'Daily Circuit CSS and JS must not download before its section approaches the viewport')
+ assert.equal(typeof dailyObserverCallback,'function','Daily Circuit must observe its reserved slot')
+ dailyObserverCallback([{isIntersecting:true}])
+ assert.equal(loadedDailyAssets[0]?.tagName,'LINK','The Daily Circuit stylesheet should load before the script')
+ assert.ok(loadedDailyAssets[0].href.includes('/games/daily-circuit.css?v=__OSGARD_BUILD_VERSION__'),'Daily Circuit CSS must use the release marker')
+ loadedDailyAssets[0].onload()
+ assert.equal(loadedDailyAssets[1]?.tagName,'SCRIPT','Daily Circuit JS should start after stylesheet resolution')
+ assert.ok(loadedDailyAssets[1].src.includes('/games/daily-circuit.js?v=__OSGARD_BUILD_VERSION__'),'Daily Circuit JS must use the release marker')
+ loadedDailyAssets[1].onload()
+ assert.equal(dailySlot.dataset.loaded,'true','Lazy loader must record that the daily engine loaded')
+}
+assert.ok(dailyCircuitScript.includes("const mount=doc.querySelector('#daily-circuit-slot')")&&dailyCircuitScript.includes('if(mount)mount.replaceWith(section)'),'Daily Circuit must mount into its reserved lazy slot without inserting unexpected content at the hero')
 assert.ok(dailyCircuitStyles.includes('.daily-circuit-grid')&&dailyCircuitStyles.includes('@media(max-width:760px)')&&dailyCircuitStyles.includes('prefers-reduced-motion:reduce'),'Daily Circuit must be responsive and respect reduced motion')
 assert.ok(dailyCircuitScript.includes('OSGARDDailyCircuitCore')&&dailyCircuitScript.includes('navigator.share')&&dailyCircuitScript.includes('navigator.clipboard.writeText'),'Daily Circuit must expose deterministic routes and share/copy fallback')
 assert.ok(!dailyCircuitScript.includes('fetch(')&&!dailyCircuitScript.includes('googletagmanager')&&!dailyCircuitScript.includes('doubleclick.net'),'Daily Circuit must not add ad SDKs or unapproved network calls')
@@ -187,7 +224,8 @@ assert.ok(html.indexOf('src="/games/consented-analytics.js') < html.indexOf('src
 assert.equal(typeof commerceConfig.apiBaseUrl,'string','Commerce API config must expose a public URL setting, never a secret');
 for (const source of [commerceClient, consentedAnalytics, recommendationScript, lifecycle]) assert.ok(!source.includes("config.apiBaseUrl||'/commerce-api'")&&!source.includes("config.apiBaseUrl || '/commerce-api'")&&!source.includes("return '/commerce-api'")&&!source.includes('config.apiBaseUrl || API_FALLBACK'), 'Unconfigured API clients must not silently fall back to the relative SPA path');
 assert.ok(commerceClient.includes("parsed.pathname === '/commerce-api'")&&consentedAnalytics.includes("parsed.pathname === '/commerce-api'")&&recommendationScript.includes("parsedBase.pathname==='/commerce-api'")&&lifecycle.includes("parsed.pathname==='/commerce-api'"), 'The first-party reverse proxy path must be explicitly allow-listed when configured');
-assert.ok(commerceClient.includes("if (!raw) return ''")&&commerceClient.includes("if (!base) throw new Error('COMMERCE_API_NOT_CONFIGURED')"),'Lead submission must fail closed into the disclosed manual-contact fallback when the Commerce API is unset');
+assert.ok(commerceClient.includes("if (!raw) return ''")&&commerceClient.includes("if (!base) throw new Error('COMMERCE_API_NOT_CONFIGURED')"),'Lead submission must fail closed into the disclosed manual-contact fallback when the Commerce API is unset')
+assert.ok(commerceClient.includes('const loadConfig = () => {')&&commerceClient.includes('const config = await loadConfig();')&&commerceClient.includes("fetch('/games/commerce-config.json'")&&!commerceClient.includes('const configPromise = fetch('),'The public commerce configuration must be fetched only when the API client is actually used');
 assert.ok(consentedAnalytics.includes("if (!raw) return ''")&&consentedAnalytics.includes('if (!base || !consentGranted()'),'Shared analytics queue must retain local retry state instead of treating the SPA as an analytics server');
 assert.ok(lifecycle.includes("if(!raw)return null")&&lifecycle.includes("return fetch(base+'/v1/events'"),'Gameplay lifecycle events must require a configured valid API origin');
 new Function(consentedAnalytics);
