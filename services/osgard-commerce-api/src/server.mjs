@@ -49,8 +49,12 @@ app.use("/v1/admin", rateLimit({ windowMs: 5 * 60 * 1000, limit: 120, standardHe
 
 async function ensureSchema() {
   if (!pool) return false;
-  await pool.query("CREATE TABLE IF NOT EXISTS commerce_orders (order_id TEXT PRIMARY KEY, email TEXT NOT NULL, product_key TEXT NOT NULL, mode TEXT NOT NULL CHECK (mode IN ('payment','subscription')), status TEXT NOT NULL DEFAULT 'pending', stripe_session_id TEXT UNIQUE, stripe_customer_id TEXT, stripe_payment_intent_id TEXT, stripe_subscription_id TEXT, amount_total BIGINT, currency TEXT, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
+  await pool.query("CREATE TABLE IF NOT EXISTS commerce_orders (order_id TEXT PRIMARY KEY, email TEXT NOT NULL, product_key TEXT NOT NULL, mode TEXT NOT NULL CHECK (mode IN ('payment','subscription')), status TEXT NOT NULL DEFAULT 'pending', stripe_session_id TEXT UNIQUE, stripe_customer_id TEXT, stripe_payment_intent_id TEXT, stripe_subscription_id TEXT, amount_total BIGINT, currency TEXT, attribution_game_id TEXT NOT NULL DEFAULT 'unknown', attribution_source TEXT NOT NULL DEFAULT 'direct', attribution_campaign TEXT NOT NULL DEFAULT '', created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
+    "ALTER TABLE commerce_orders ADD COLUMN IF NOT EXISTS attribution_game_id TEXT NOT NULL DEFAULT 'unknown';\n" +
+    "ALTER TABLE commerce_orders ADD COLUMN IF NOT EXISTS attribution_source TEXT NOT NULL DEFAULT 'direct';\n" +
+    "ALTER TABLE commerce_orders ADD COLUMN IF NOT EXISTS attribution_campaign TEXT NOT NULL DEFAULT '';\n" +
     "CREATE INDEX IF NOT EXISTS commerce_orders_status_created_idx ON commerce_orders(status, created_at DESC);\n" +
+    "CREATE INDEX IF NOT EXISTS commerce_orders_paid_attribution_idx ON commerce_orders(status, created_at DESC, attribution_game_id, attribution_source);\n" +
     "CREATE INDEX IF NOT EXISTS commerce_orders_email_idx ON commerce_orders(email);\n" +
     "CREATE TABLE IF NOT EXISTS commerce_stripe_events (event_id TEXT PRIMARY KEY, event_type TEXT NOT NULL, processed_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
     "CREATE TABLE IF NOT EXISTS commerce_leads (lead_id TEXT PRIMARY KEY, project_type TEXT NOT NULL, budget TEXT NOT NULL DEFAULT '', contact TEXT NOT NULL, description TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'new', consent_at TIMESTAMPTZ NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
@@ -228,14 +232,14 @@ app.post("/v1/checkout/session", async (req, res) => {
   const orderId = crypto.randomUUID();
   try {
     const price = await getStripePrice(configured);
-    await pool.query("INSERT INTO commerce_orders(order_id,email,product_key,mode,status,currency) VALUES($1,$2,$3,$4,'pending',$5)", [orderId, input.email, input.productKey, input.product.mode, price.currency]);
+    await pool.query("INSERT INTO commerce_orders(order_id,email,product_key,mode,status,currency,attribution_game_id,attribution_source,attribution_campaign) VALUES($1,$2,$3,$4,'pending',$5,$6,$7,$8)", [orderId, input.email, input.productKey, input.product.mode, price.currency, input.attribution.gameId, input.attribution.source, input.attribution.campaign]);
     const session = await stripe.checkout.sessions.create({
       mode: input.product.mode,
       line_items: [{ price: price.id, quantity: 1 }],
       customer_email: input.email,
       client_reference_id: orderId,
-      metadata: { order_id: orderId, product_key: input.productKey },
-      ...(input.product.mode === "subscription" ? { subscription_data: { metadata: { order_id: orderId, product_key: input.productKey } } } : {}),
+      metadata: { order_id: orderId, product_key: input.productKey, osgard_game_id: input.attribution.gameId, osgard_source: input.attribution.source, osgard_campaign: input.attribution.campaign || "none" },
+      ...(input.product.mode === "subscription" ? { subscription_data: { metadata: { order_id: orderId, product_key: input.productKey, osgard_game_id: input.attribution.gameId, osgard_source: input.attribution.source, osgard_campaign: input.attribution.campaign || "none" } } } : {}),
       success_url: PUBLIC_BASE_URL + "/games/premium/success/?session_id={CHECKOUT_SESSION_ID}",
       cancel_url: PUBLIC_BASE_URL + "/games/premium/?checkout=cancelled",
       locale: "auto",
@@ -338,9 +342,10 @@ app.post("/v1/events", async (req, res) => {
 app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
   if (!requireDatabase(res)) return;
   try {
-    const [orderStats, currencyStats, leadStats, eventStats, topEvents, analyticsByGame, ownedPromoByService, analyticsFunnel, socialShareByNetwork] = await Promise.all([
+    const [orderStats, currencyStats, leadStats, eventStats, topEvents, analyticsByGame, ownedPromoByService, analyticsFunnel, socialShareByNetwork, paidRevenueByAttribution] = await Promise.all([
       pool.query("SELECT status, COUNT(*)::int AS count FROM commerce_orders GROUP BY status"),
       pool.query("SELECT currency, SUM(amount_total)::bigint AS total_minor, COUNT(*)::int AS count FROM commerce_orders WHERE status='paid' AND currency IS NOT NULL GROUP BY currency"),
+      pool.query("SELECT attribution_game_id AS \"gameId\", attribution_source AS source, NULLIF(attribution_campaign, '') AS campaign, mode, currency, COUNT(*)::int AS orders, COALESCE(SUM(amount_total),0)::text AS \"totalMinor\" FROM commerce_orders WHERE status='paid' AND amount_total IS NOT NULL AND currency IS NOT NULL AND created_at >= NOW() - INTERVAL '30 days' GROUP BY attribution_game_id, attribution_source, attribution_campaign, mode, currency ORDER BY COUNT(*) DESC, attribution_game_id ASC LIMIT 50"),
       pool.query("SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE status='new')::int AS new FROM commerce_leads"),
       pool.query("SELECT COUNT(*)::int AS total_30d FROM commerce_events WHERE received_at >= NOW() - INTERVAL '30 days'"),
       pool.query("SELECT event_name, COUNT(*)::int AS count FROM commerce_events WHERE received_at >= NOW() - INTERVAL '30 days' GROUP BY event_name ORDER BY count DESC LIMIT 12"),
@@ -418,162 +423,9 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
           SELECT
             event_name,
             CASE
-              WHEN source ~ '^osgard-social-share:(telegram|whatsapp|vk|x|facebook):[a-z0-9-]{1,40}
-    return res.json({
-      ordersByStatus: orderStats.rows,
-      grossPaidByCurrency: currencyStats.rows,
-      leads: leadStats.rows[0] || { total: 0, new: 0 },
-      analyticsEventsLast30Days: eventStats.rows[0]?.total_30d || 0,
-      topEventsLast30Days: topEvents.rows,
-      analyticsByGame: analyticsByGame.rows,
-      ownedPromoByService: ownedPromoByService.rows,
-      analyticsFunnel: analyticsFunnel.rows[0] || {},
-      socialShareByNetwork: socialShareByNetwork.rows,
-      analyticsRetentionDays,
-      note: "Аналитика включает только согласованные события. Это не все посещения сайта и не рекламные показы. Суммы сгруппированы по валютам и не являются бухгалтерским отчётом.",
-    });
-  } catch (error) {
-    console.error("Admin overview failed:", error?.message || "unknown error");
-    return res.status(503).json({ error: "ADMIN_OVERVIEW_UNAVAILABLE" });
-  }
-});
-app.get("/v1/admin/leads", requireAdmin, async (req, res) => {
-  if (!requireDatabase(res)) return;
-  const limit = Math.max(1, Math.min(100, Number.parseInt(String(req.query.limit || "50"), 10) || 50));
-  try {
-    const result = await pool.query("SELECT lead_id, project_type, budget, contact, description, status, created_at FROM commerce_leads ORDER BY created_at DESC LIMIT $1", [limit]);
-    return res.json({ items: result.rows });
-  } catch (error) {
-    console.error("Admin leads failed:", error?.message || "unknown error");
-    return res.status(503).json({ error: "ADMIN_LEADS_UNAVAILABLE" });
-  }
-});
-app.get("/v1/admin/orders", requireAdmin, async (req, res) => {
-  if (!requireDatabase(res)) return;
-  const limit = Math.max(1, Math.min(100, Number.parseInt(String(req.query.limit || "50"), 10) || 50));
-  try {
-    const result = await pool.query("SELECT order_id, email, product_key, mode, status, amount_total, currency, created_at FROM commerce_orders ORDER BY created_at DESC LIMIT $1", [limit]);
-    return res.json({ items: result.rows });
-  } catch (error) {
-    console.error("Admin orders failed:", error?.message || "unknown error");
-    return res.status(503).json({ error: "ADMIN_ORDERS_UNAVAILABLE" });
-  }
-});
-
-app.use((error, _req, res, _next) => {
-  if (error?.type === "entity.too.large") return res.status(413).json({ error: "REQUEST_TOO_LARGE" });
-  console.error("Unhandled API error:", error?.message || "unknown error");
-  return res.status(500).json({ error: "INTERNAL_ERROR", message: "Внутренняя ошибка. Повторите попытку позже." });
-});
-
-const analyticsRetentionTimer = setInterval(() => {
-  if (!dbReady) return;
-  void purgeExpiredAnalytics().catch((error) => {
-    console.error("Analytics retention cleanup failed:", error?.message || "unknown error");
-  });
-}, 6 * 60 * 60 * 1000);
-analyticsRetentionTimer.unref();
-
-const server = app.listen(PORT, "0.0.0.0", async () => {
-  try { if (pool) await ensureSchema(); }
-  catch (error) {
-    dbErrorAtBoot = true;
-    dbReady = false;
-    console.error("Database initialization failed:", error?.message || "unknown error");
-  }
-  if (dbReady) {
-    void purgeExpiredAnalytics().catch((error) => {
-      console.error("Analytics retention cleanup failed:", error?.message || "unknown error");
-    });
-  }
-  console.log("OSGARD Commerce API listening on port " + PORT);
-});
-async function shutdown(signal) {
-  console.log("Shutting down after " + signal);
-  server.close(async () => { await pool?.end().catch(() => {}); process.exit(0); });
-  setTimeout(() => process.exit(1), 10000).unref();
-}
-process.on("SIGTERM", () => shutdown("SIGTERM"));
-process.on("SIGINT", () => shutdown("SIGINT"));
-
+              WHEN source ~ '^osgard-social-share:(telegram|whatsapp|vk|x|facebook):[a-z0-9-]{1,40}$'
                 THEN split_part(source, ':', 2)
-              WHEN source ~ '^osgard-social-reward:(telegram|whatsapp|vk|x|facebook):[a-z0-9-]{1,40}
-    return res.json({
-      ordersByStatus: orderStats.rows,
-      grossPaidByCurrency: currencyStats.rows,
-      leads: leadStats.rows[0] || { total: 0, new: 0 },
-      analyticsEventsLast30Days: eventStats.rows[0]?.total_30d || 0,
-      topEventsLast30Days: topEvents.rows,
-      analyticsByGame: analyticsByGame.rows,
-      ownedPromoByService: ownedPromoByService.rows,
-      analyticsFunnel: analyticsFunnel.rows[0] || {},
-      analyticsRetentionDays,
-      note: "Аналитика включает только согласованные события. Это не все посещения сайта и не рекламные показы. Суммы сгруппированы по валютам и не являются бухгалтерским отчётом.",
-    });
-  } catch (error) {
-    console.error("Admin overview failed:", error?.message || "unknown error");
-    return res.status(503).json({ error: "ADMIN_OVERVIEW_UNAVAILABLE" });
-  }
-});
-app.get("/v1/admin/leads", requireAdmin, async (req, res) => {
-  if (!requireDatabase(res)) return;
-  const limit = Math.max(1, Math.min(100, Number.parseInt(String(req.query.limit || "50"), 10) || 50));
-  try {
-    const result = await pool.query("SELECT lead_id, project_type, budget, contact, description, status, created_at FROM commerce_leads ORDER BY created_at DESC LIMIT $1", [limit]);
-    return res.json({ items: result.rows });
-  } catch (error) {
-    console.error("Admin leads failed:", error?.message || "unknown error");
-    return res.status(503).json({ error: "ADMIN_LEADS_UNAVAILABLE" });
-  }
-});
-app.get("/v1/admin/orders", requireAdmin, async (req, res) => {
-  if (!requireDatabase(res)) return;
-  const limit = Math.max(1, Math.min(100, Number.parseInt(String(req.query.limit || "50"), 10) || 50));
-  try {
-    const result = await pool.query("SELECT order_id, email, product_key, mode, status, amount_total, currency, created_at FROM commerce_orders ORDER BY created_at DESC LIMIT $1", [limit]);
-    return res.json({ items: result.rows });
-  } catch (error) {
-    console.error("Admin orders failed:", error?.message || "unknown error");
-    return res.status(503).json({ error: "ADMIN_ORDERS_UNAVAILABLE" });
-  }
-});
-
-app.use((error, _req, res, _next) => {
-  if (error?.type === "entity.too.large") return res.status(413).json({ error: "REQUEST_TOO_LARGE" });
-  console.error("Unhandled API error:", error?.message || "unknown error");
-  return res.status(500).json({ error: "INTERNAL_ERROR", message: "Внутренняя ошибка. Повторите попытку позже." });
-});
-
-const analyticsRetentionTimer = setInterval(() => {
-  if (!dbReady) return;
-  void purgeExpiredAnalytics().catch((error) => {
-    console.error("Analytics retention cleanup failed:", error?.message || "unknown error");
-  });
-}, 6 * 60 * 60 * 1000);
-analyticsRetentionTimer.unref();
-
-const server = app.listen(PORT, "0.0.0.0", async () => {
-  try { if (pool) await ensureSchema(); }
-  catch (error) {
-    dbErrorAtBoot = true;
-    dbReady = false;
-    console.error("Database initialization failed:", error?.message || "unknown error");
-  }
-  if (dbReady) {
-    void purgeExpiredAnalytics().catch((error) => {
-      console.error("Analytics retention cleanup failed:", error?.message || "unknown error");
-    });
-  }
-  console.log("OSGARD Commerce API listening on port " + PORT);
-});
-async function shutdown(signal) {
-  console.log("Shutting down after " + signal);
-  server.close(async () => { await pool?.end().catch(() => {}); process.exit(0); });
-  setTimeout(() => process.exit(1), 10000).unref();
-}
-process.on("SIGTERM", () => shutdown("SIGTERM"));
-process.on("SIGINT", () => shutdown("SIGINT"));
-
+              WHEN source ~ '^osgard-social-reward:(telegram|whatsapp|vk|x|facebook):[a-z0-9-]{1,40}$'
                 THEN split_part(source, ':', 2)
               ELSE NULL
             END AS network
@@ -595,6 +447,8 @@ process.on("SIGINT", () => shutdown("SIGINT"));
       analyticsByGame: analyticsByGame.rows,
       ownedPromoByService: ownedPromoByService.rows,
       analyticsFunnel: analyticsFunnel.rows[0] || {},
+      socialShareByNetwork: socialShareByNetwork.rows,
+      paidRevenueByAttribution: paidRevenueByAttribution.rows,
       analyticsRetentionDays,
       note: "Аналитика включает только согласованные события. Это не все посещения сайта и не рекламные показы. Суммы сгруппированы по валютам и не являются бухгалтерским отчётом.",
     });
@@ -618,7 +472,7 @@ app.get("/v1/admin/orders", requireAdmin, async (req, res) => {
   if (!requireDatabase(res)) return;
   const limit = Math.max(1, Math.min(100, Number.parseInt(String(req.query.limit || "50"), 10) || 50));
   try {
-    const result = await pool.query("SELECT order_id, email, product_key, mode, status, amount_total, currency, created_at FROM commerce_orders ORDER BY created_at DESC LIMIT $1", [limit]);
+    const result = await pool.query("SELECT order_id, email, product_key, mode, status, amount_total, currency, attribution_game_id, attribution_source, attribution_campaign, created_at FROM commerce_orders ORDER BY created_at DESC LIMIT $1", [limit]);
     return res.json({ items: result.rows });
   } catch (error) {
     console.error("Admin orders failed:", error?.message || "unknown error");

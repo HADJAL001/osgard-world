@@ -31,6 +31,32 @@ test("checkout accepts only known product key, email and accepted terms", () => 
   assert.equal(result.email, "buyer@example.com");
 });
 
+test("checkout attribution accepts safe source context and normalizes unknown or hostile values", () => {
+  const tracked = validateCheckoutPayload({
+    productKey: "support-osgard",
+    email: "buyer@example.com",
+    termsAccepted: true,
+    attribution: { gameId: "AFTERIMAGE-RUN", source: "OSGARD_GAMES", campaign: "play_with_friends" },
+  });
+  assert.equal(tracked.ok, true);
+  assert.deepEqual(tracked.attribution, {
+    gameId: "afterimage-run",
+    source: "osgard_games",
+    campaign: "play_with_friends",
+  });
+  const legacy = validateCheckoutPayload({
+    productKey: "support-osgard", email: "buyer@example.com", termsAccepted: true,
+  });
+  assert.deepEqual(legacy.attribution, { gameId: "unknown", source: "direct", campaign: "" });
+  const hostile = validateCheckoutPayload({
+    productKey: "support-osgard",
+    email: "buyer@example.com",
+    termsAccepted: true,
+    attribution: { gameId: "unknown<script>", source: "https://example.test/path", campaign: "x".repeat(500) },
+  });
+  assert.deepEqual(hostile.attribution, { gameId: "unknown", source: "direct", campaign: "" });
+});
+
 test("lead endpoint requires contact, brief and acknowledgement; honeypot is silently classified", () => {
   assert.equal(validateLeadPayload({ projectType: "Игра", contact: "test@example.com", description: "Достаточно подробное описание", consent: false }).code, "DATA_PROCESSING_ACK_REQUIRED");
   assert.equal(validateLeadPayload({ projectType: "Игра", contact: "x", description: "коротко", consent: true }).ok, false);
