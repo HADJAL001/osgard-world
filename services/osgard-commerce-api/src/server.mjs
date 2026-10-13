@@ -302,7 +302,7 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
       pool.query("SELECT COUNT(*)::int AS total_30d FROM commerce_events WHERE received_at >= NOW() - INTERVAL '30 days'"),
       pool.query("SELECT event_name, COUNT(*)::int AS count FROM commerce_events WHERE received_at >= NOW() - INTERVAL '30 days' GROUP BY event_name ORDER BY count DESC LIMIT 12"),
     ]);
-    return res.json({ ordersByStatus: orderStats.rows, grossPaidByCurrency: currencyStats.rows, leads: leadStats.rows[0] || { total: 0, new: 0 }, analyticsEventsLast30Days: eventStats.rows[0]?.total_30d || 0, topEventsLast30Days: topEvents.rows, note: "Выручка — сумма подтверждённых платежей по валютам до возвратов/комиссий, не бухгалтерская прибыль." });
+    return res.json({ ordersByStatus: orderStats.rows, grossPaidByCurrency: currencyStats.rows, leads: leadStats.rows[0] || { total: 0, new: 0 }, analyticsEventsLast30Days: eventStats.rows[0]?.total_30d || 0, topEventsLast30Days: topEvents.rows, note: "Суммы сгруппированы по валютам и отражают заказы, которые сейчас помечены как paid; возвраты в статусе refunded исключаются. Комиссии, налоги и регулярные счета подписки здесь не являются полноценным бухгалтерским отчётом." });
   } catch (error) {
     console.error("Admin overview failed:", error?.message || "unknown error");
     return res.status(503).json({ error: "ADMIN_OVERVIEW_UNAVAILABLE" });
