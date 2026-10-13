@@ -45,6 +45,8 @@ assert.equal(calls[0].options.redirect, 'manual')
 assert.ok(calls[0].options.signal, 'HTTP requests need an explicit timeout signal')
 
 assert.equal(isSafePublicHttpsUrl('https://public.example/'), true)
+assert.equal(isSafePublicHttpsUrl('https://public.example./'), true, 'A trailing DNS dot should not make a public hostname fail validation')
+assert.equal(isSafePublicHttpsUrl('https://service.internal./'), false, 'A trailing DNS dot must not bypass internal-host blocking')
 let unsafeInitialCalls = 0
 const unsafeInitial = await checkProject(
   { id: 'unsafe-target', name: 'Unsafe Target', url: 'https://127.0.0.1/' },
