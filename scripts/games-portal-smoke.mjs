@@ -740,7 +740,45 @@ for(const metric of ['inviteShares','referralOpens','referredStarts','referredCo
 const inviteSqlStart=referralApiSource.indexOf('invite_shares AS')
 const inviteSqlEnd=referralApiSource.indexOf('SELECT\n          COUNT(*) FILTER',inviteSqlStart)
 const inviteSql=referralApiSource.slice(inviteSqlStart,inviteSqlEnd)
-assert.equal(inviteSql.split("~ '^(og_[a-f0-9]{8}|[a-f0-9]{12})$'").length-1,4,'All four share/open/start/completion SQL stages must accept canonical and legacy invite codes')
+assert.equal(inviteSql.split("~ '^(og_[a-f0-9]{8}|og_[a-f0-9]{32}|[a-f0-9]{12})
+for(const metric of ['analytics-invites','analytics-referral-opens','analytics-referred-starts','analytics-referred-completions']) assert.ok(referralAdminSource.includes('id="'+metric+'"'), 'Commerce admin is missing referral metric '+metric)
+
+ 
+// The root Entertainment gateway must expose the existing OSGARD SELECT cross-promo
+// and the labelled, scenario-based monetisation page without implying live advertising revenue.
+assert.ok(appSource.includes('OSGARD SELECT / BETWEEN WORLDS') && appSource.includes('play-economy-strip'), 'Entertainment gateway must introduce the post-game OSGARD SELECT loop')
+assert.ok(appSource.includes("PlaySelectLoop locale={locale}"), 'Main Entertainment gateway must mount OSGARD SELECT')
+assert.ok(playSelectSource.includes('OSGARD SELECT / OWNED PROJECTS') && playSelectSource.includes('РЕКЛАМА · СОБСТВЕННЫЕ ПРОЕКТЫ'), 'First-party services must be explicitly disclosed')
+assert.ok(['marcosa.club','osgardbewworld.com','o2system.art','senjorio.com','superday.run','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio'].every(domain=>playSelectSource.includes(domain)), 'Entertainment gateway must include all ten owner-provided services')
+assert.ok(['OSGARD BEW WORLD','O2 SYSTEM','SENJORIO','SUPERDAY','MARCOSA','MYOSA','GOLD GLAMOUR','GARD VPN','OSGARD OS','OSGARD VANGUARD STUDIO'].every(name=>playSelectSource.includes(name)), 'The Entertainment gateway must use the official product names')
+assert.ok(playSelectSource.includes("utm_source', 'osgard_world'")&&playSelectSource.includes("utm_medium', 'entertainment_select'")&&playSelectSource.includes("utm_campaign', 'between_worlds'")&&playSelectSource.includes("utm_content', service.id"), 'Every Entertainment project card must carry distinct campaign attribution')
+assert.ok(playSelectSource.includes('Доступность домена не подтверждена независимо.'), 'GARD VPN must not be presented as independently verified')
+assert.ok(playSelectSource.includes("const WALLET_KEY = 'osgard.games.shards-wallet.v1'") && playSelectSource.includes('current.day === today') && playSelectSource.includes('current.balance + 50'), 'Homepage must use shared SHARDS wallet and UTC-day cap')
+assert.ok(playSelectSource.includes('navigator.share') && playSelectSource.includes('navigator.clipboard && navigator.clipboard.writeText') && ['Telegram','WhatsApp','VK','X','Facebook'].every(network=>playSelectSource.includes("name: '"+network+"'")), 'Homepage must offer native/clipboard sharing and five social composers')
+const homeShareStart=playSelectSource.indexOf('const shareInvite = async () => {');
+const homeShareEnd=playSelectSource.indexOf('\n\n  return <section',homeShareStart);
+assert.ok(homeShareStart>=0&&homeShareEnd>homeShareStart,'Homepage share handler boundaries are required');
+const homeShareHandler=playSelectSource.slice(homeShareStart,homeShareEnd);
+assert.ok(!homeShareHandler.includes('grantReward(')&&homeShareHandler.includes("setPendingNetwork('native-share')")&&homeShareHandler.includes('Копирование само по себе не считается репостом'),'Homepage must require explicit confirmation; copy alone cannot grant SHARDS');
+assert.ok(playSelectSource.includes("pendingNetwork === 'native-share'")&&playSelectSource.includes("grantReward('homepage-social-confirmation:' + pendingNetwork)"),'Homepage SHARDS grant must be reached only through its explicit claim button');
+assert.ok(playSelectSource.includes('Отправка отменена — награда не начислена.') && playSelectSource.includes('не являются деньгами'), 'Cancelled shares must not earn and SHARDS must be disclosed as non-monetary')
+assert.ok(appStyles.includes('.play-select-loop') && appStyles.includes('.play-select-layout') && appStyles.includes('@media(max-width:600px)') && appStyles.includes('prefers-reduced-motion:reduce'), 'OSGARD SELECT must be responsive and respect reduced motion')
+assert.ok(appSource.includes('href="/games/?utm_source=osgard_world&amp;utm_medium=entertainment&amp;utm_campaign=between_worlds"'), 'Entertainment gateway must link into the playable hub with campaign attribution')
+assert.ok(appSource.includes('href="/games/monetization/?utm_source=osgard_world&amp;utm_medium=entertainment&amp;utm_campaign=economy_model"'), 'Entertainment gateway must link to the scenario economy model')
+assert.ok(appSource.includes('публикацию нельзя проверить автоматически') && appSource.includes('Это не деньги'), 'SHARDS must be disclosed as non-monetary with social-post verification limits')
+assert.ok(appStyles.includes('.play-economy-strip') && appStyles.includes('@media(max-width:760px)') && appStyles.includes('prefers-reduced-motion:reduce'), 'Entertainment economy teaser needs responsive and reduced-motion styling')
+
+assert.ok(referralCoreSource.includes('REFERRAL_REWARD_POINTS = 50')&&referralCoreSource.includes('REFERRAL_MIN_SESSION_SECONDS = 60')&&referralCoreSource.includes('parseReferralRewardEvent'),'Server core must parse qualified referral events and keep points non-cash')
+assert.ok(referralCoreSource.includes('validateReferralRewardRegistration')&&referralCoreSource.includes('input.rewardConsent !== true'),'Server referral registration must require explicit reward consent')
+assert.ok(referralApiSource.includes('game_referral_invites')&&referralApiSource.includes('game_referral_visits')&&referralApiSource.includes('game_referral_rewards'),'Server must persist invite, opt-in visit and idempotent qualified reward')
+assert.ok(referralApiSource.includes('REFERRAL_MIN_SESSION_SECONDS')&&referralApiSource.includes('ON CONFLICT(invite_code,visitor_token) DO NOTHING')&&referralApiSource.includes('i.inviter_token<>v.visitor_token'),'Server rewards must require a 60-second verified session, exclude the inviter browser and prevent duplicate rewards')
+assert.ok(referralApiSource.includes('/v1/referrals/register')&&referralApiSource.includes('/v1/referrals/reward-status'),'Referral register and balance APIs must exist')
+assert.ok(recommendationScript.includes("REWARD_CONSENT_KEY='osgard.games.referral-reward-consent.v1'")&&recommendationScript.includes('if(!hasRewardConsent())'),'Referral rewards must require separate opt-in')
+assert.ok(inviteLandingScript.includes('OSGARD SHARDS / ДОБРОВОЛЬНО')&&inviteLandingScript.includes('if (rewardCode)')&&inviteLandingScript.includes("localStorage.setItem(REWARD_CONSENT_KEY, 'yes')"),'Invite landing must ask for opt-in for canonical long invite codes and still allow play')
+assert.ok(recommendationStyles.includes('.og-postgame-reward-consent')&&recommendationStyles.includes('prefers-reduced-motion:reduce'),'Referral reward consent UI must be responsive and motion-safe')
+assert.ok(referralAdminSource.includes('analytics-referral-qualified')&&referralAdminSource.includes('referralRewards.pointsAwarded'),'Admin must display verified rewards separately from share intents')
+assert.ok(referralCoreSource.includes('visitorToken')&&referralCoreSource.includes('durationSeconds: Number(event.durationSeconds)'),'Server event parser must bind the invited browser token and eligible session duration')
+").length-1,4,'All four share/open/start/completion SQL stages must accept old codes and canonical 128-bit rewardable invite codes')
 for(const metric of ['analytics-invites','analytics-referral-opens','analytics-referred-starts','analytics-referred-completions']) assert.ok(referralAdminSource.includes('id="'+metric+'"'), 'Commerce admin is missing referral metric '+metric)
 
  
