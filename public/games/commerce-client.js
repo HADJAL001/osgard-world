@@ -37,7 +37,7 @@
       'Цель: ' + clean(data.get('goal'), 120),
       'География: ' + clean(data.get('geo'), 80),
     ].filter(Boolean).join('\n'), 1800);
-    const consent = data.get('dataConsent') === 'on';
+    const consent = data.get('dataConsent') === 'on' || data.get('consent') === 'on';
     const status = form.querySelector('[role="status"]') || document.getElementById('form-status');
     const fallbackText = [
       'Здравствуйте! Хочу обсудить проект с OSGARD.',
