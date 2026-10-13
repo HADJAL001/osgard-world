@@ -14,6 +14,7 @@ import {
   if (!root) return;
 
   const KEY = 'osgard.games.player-passport.v1';
+  const PENDING_KEY = 'osgard.games.player-passport.pending.v1';
   const FAVORITES_KEY = 'osgard.games.favorites.v1';
   const RECENT_KEY = 'osgard.games.recent.v1';
   const WALLET_KEY = 'osgard.games.shards-wallet.v1';
@@ -81,6 +82,32 @@ import {
       storageAvailable = false;
       return false;
     }
+  }
+
+  function processPendingSessions() {
+    const pending = readJson(PENDING_KEY, []);
+    if (!Array.isArray(pending) || pending.length === 0) return 0;
+    let next = passport;
+    let added = 0;
+    for (const event of pending) {
+      if (!event || typeof event !== 'object' || event.sessionStarted !== true) continue;
+      const queuedAt = Number.isFinite(event.queuedAt) ? event.queuedAt : Date.now();
+      const result = recordSession(next, event, queuedAt);
+      next = result.progress;
+      if (result.added) added += 1;
+    }
+    const previous = passport;
+    passport = next;
+    if (!savePassport()) {
+      passport = previous;
+      return 0;
+    }
+    try {
+      localStorage.setItem(PENDING_KEY, '[]');
+    } catch {
+      storageAvailable = false;
+    }
+    return added;
   }
 
   function announce(message) {
@@ -179,6 +206,8 @@ import {
     renderResume(snapshot);
     if (content) content.hidden = false;
     if (loadButton) loadButton.hidden = true;
+    const loading = $('#passport-loading');
+    if (loading) loading.hidden = true;
     root.dataset.ready = 'true';
     root.setAttribute('aria-busy', 'false');
     const privacyNote = $('#passport-storage-note');
@@ -292,10 +321,19 @@ import {
   document.addEventListener('osgard:game-session-ended', event => {
     const detail = event && event.detail;
     if (!detail || detail.sessionStarted !== true) return;
-    const result = recordSession(passport, detail);
-    if (!result.added) return;
-    passport = result.progress;
-    persistAndRender('Игровая сессия добавлена в локальный паспорт.');
+    const previousCount = passport.sessions.length;
+    processPendingSessions();
+    const sessionId = typeof detail.sessionId === 'string' ? detail.sessionId : '';
+    const alreadyRecorded = sessionId && passport.sessions.some(item => item.sessionId === sessionId);
+    if (!alreadyRecorded && passport.sessions.length === previousCount) {
+      const result = recordSession(passport, detail);
+      if (result.added) {
+        passport = result.progress;
+        savePassport();
+      }
+    }
+    render();
+    announce('Игровая сессия учтена в локальном паспорте.');
   });
 
   document.addEventListener('click', event => {
@@ -322,5 +360,6 @@ import {
   });
 
   passport = readPassport();
+  processPendingSessions();
   render();
 })();
