@@ -58,7 +58,7 @@ for (const command of [
   'npm run qa:ecosystem'
 ]) assert.ok(codemagic.includes(command), 'TestFlight must run the required game/growth smoke: ' + command);
 assert.ok(guide.includes('TestFlight') && guide.includes('capacitor://localhost') && guide.includes('App Review Guidelines'), 'Release guide is missing signing, CORS, or Apple-review notes.');
-assert.ok(supportPage.includes('mailto:osman.osmanov0099@gmail.com') && supportPage.includes('https://osgard.world/privacy/'), 'App Store Support URL must provide a real contact and privacy-policy link.');
+assert.ok(supportPage.includes('mailto:osman.osmanov0099@gmail.com') && supportPage.includes('href="/privacy/"'), 'App Store Support URL must provide a real contact and privacy-policy link.');
 assert.ok(read('docs/IOS_APP_STORE_LISTING_RU.md').includes('https://osgard.world/support/osgard-play/'), 'App Store listing draft must point to the published app-support page.');
 assert.ok(privacy.includes('<key>NSPrivacyTracking</key>') && privacy.includes('<false/>'), 'Privacy manifest must declare tracking state.');
 assert.ok(commerceServer.includes('capacitor://localhost'), 'Default Commerce API CORS must allow the Capacitor local origin.');
