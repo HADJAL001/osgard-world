@@ -6,6 +6,7 @@ const read = (path) => readFileSync(path, 'utf8');
 const source = read('public/games/game-session-recommendations.js');
 const css = read('public/games/game-session-recommendations.css');
 const core = read('services/osgard-commerce-api/src/core.mjs');
+const server = read('services/osgard-commerce-api/src/server.mjs');
 const signalRun = read('public/games/signal-run/game.js');
 
 new vm.Script(source, { filename: 'game-session-recommendations.js' });
@@ -77,23 +78,33 @@ const primaryStart = reward.indexOf("primary.addEventListener('click',async()=>{
 const primaryEnd = reward.indexOf("const note=make('p','og-postgame-reward-note'", primaryStart);
 assert.ok(primaryStart >= 0 && primaryEnd > primaryStart, 'Share intent handler boundaries are required');
 const primaryHandler = reward.slice(primaryStart, primaryEnd);
-assert.ok(!primaryHandler.includes("sendSelectEvent('share_created'"),
-  'Opening the system share sheet or copying a link must not count as a completed share');
-const claimStart = reward.indexOf("claim.addEventListener('click'");
-const claimEnd = reward.indexOf("primary.addEventListener('click',async()=>{", claimStart);
-assert.ok(claimStart >= 0 && claimEnd > claimStart, 'Explicit share confirmation handler is required');
-const claimHandler = reward.slice(claimStart, claimEnd);
-assert.ok(claimHandler.includes("award('social-confirmation:'+network)") &&
-  claimHandler.includes("sendSelectEvent('share_created',gameId,'game-invite:'") &&
-  claimHandler.includes("sendSelectEvent('social_reward_claimed'"),
-  'The local daily reward and completed-share event must happen only after a separate confirmation');
+assert.ok(primaryHandler.includes('registerInvite(gameId,code)') && primaryHandler.includes('navigator.share'),
+  'Share and copy actions must register an invite with the server; they do not mint points');
+assert.ok(!source.includes("const walletKey='osgard.games.shards-wallet.v1',dailyReward=50") &&
+  !source.includes('function award(source){') && !reward.includes("award('social-confirmation:"),
+  'The post-game reward UI must not grant points from a browser-local wallet');
+assert.ok(source.includes("const INVITE_CODES_KEY='osgard.games.shards-invite-codes.v1'") &&
+  source.includes("async function registerInvite(gameId,code)") &&
+  source.includes("base+'/v1/referrals/register'") &&
+  source.includes("base+'/v1/referrals/reward-status'"),
+  'The invite programme must use server-side registration and balance endpoints');
+assert.ok(reward.includes("consentToggle.type='checkbox'") &&
+  reward.includes("REWARD_CONSENT_KEY='osgard.games.referral-reward-consent.v1'") &&
+  reward.includes("if(!hasConsent()||!hasRewardConsent()||!titles[gameId]"),
+  'Reward eligibility must require separate analytics and reward consent');
 assert.ok(reward.includes('Копирование само по себе не считается репостом') &&
-  reward.includes('OSGARD не получает надёжный сигнал о факте публикации') &&
   reward.includes('не имеют денежной стоимости'),
-  'SHARDS must disclose that social posts are self-confirmed and have no cash value');
-assert.ok(source.includes("const walletKey='osgard.games.shards-wallet.v1',dailyReward=50") &&
-  source.includes('current.day===day'),
-  'Local SHARDS reward must be capped to one claim per UTC day and device wallet');
+  'SHARDS must be described as non-cash and not awarded for a click or self-asserted post');
+assert.ok(core.includes('export function validateReferralRewardRegistration') &&
+  core.includes('export function parseReferralRewardEvent') &&
+  core.includes('REFERRAL_MIN_SESSION_SECONDS = 60'),
+  'Commerce core must validate referral consent and qualifying sessions');
+assert.ok(server.includes('app.post("/v1/referrals/register"') &&
+  server.includes('app.post("/v1/referrals/reward-status"') &&
+  server.includes('game_referral_rewards') &&
+  server.includes("start.received_at <= finish.received_at - ($2 * INTERVAL '1 second')") &&
+  server.includes('ON CONFLICT(invite_code,visitor_token) DO NOTHING'),
+  'The server must qualify same-game 60-second sessions and deduplicate rewards');
 
 const claimSignal = signalRun.indexOf("claimShare.addEventListener('click'");
 const shareSignal = signalRun.indexOf("$('share').addEventListener('click',async()=>{");
