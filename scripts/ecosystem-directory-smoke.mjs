@@ -11,8 +11,11 @@ const commerceClient = readFileSync(resolve('public/games/commerce-client.js'), 
 const analyticsClient = readFileSync(resolve('public/games/consented-analytics.js'), 'utf8');
 const apiCore = readFileSync(resolve('services/osgard-commerce-api/src/core.mjs'), 'utf8');
 const routeMatrix = readFileSync(resolve('scripts/production-route-matrix.mjs'), 'utf8');
+const sitemap = readFileSync(resolve('public/sitemap.xml'), 'utf8');
 
 assert.ok(html.includes('<title>OSGARD WORLD — Экосистема проектов</title>'), 'Directory needs a route-specific title');
+assert.ok(sitemap.includes('<loc>https://osgard.world/games/ecosystem/</loc>'), 'Public sitemap must include the canonical directory route');
+assert.equal(sitemap.split('<loc>https://osgard.world/games/ecosystem/</loc>').length - 1, 1, 'Canonical directory route must occur once in sitemap');
 assert.ok(html.includes('application/ld+json') && html.includes('"numberOfItems":10'), 'Directory must expose an ItemList structured-data contract');
 assert.ok(html.includes('id="project-grid"') && html.includes('id="project-search"') && html.includes('id="project-count"'), 'Searchable project directory controls are required');
 assert.ok(html.includes('id="analytics-toggle"') && readFileSync(resolve(root, 'directory.js'), 'utf8').includes('osgard.games.analytics-consent.v1'), 'Directory must reuse the shared explicit-consent key');
