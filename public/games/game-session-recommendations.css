@@ -144,3 +144,10 @@ dialog#player-dialog.has-recommendations .player-view iframe{min-height:155px}
 }
 @media(max-width:360px){.og-postgame-service-options{grid-template-columns:1fr}.og-postgame-presets>*{flex:1}}
 @media(prefers-reduced-motion:reduce){.og-postgame-service-option,.og-postgame-preset,.og-postgame-save{transition:none}}
+
+/* In-player Between Worlds intermission after a confirmed session returns to the catalogue. */
+dialog#player-dialog[data-postgame-intermission="1"] .player-view{height:0!important;min-height:0!important;margin:0!important;overflow:hidden!important;border:0!important}
+dialog#player-dialog[data-postgame-intermission="1"] .player-view iframe{display:none!important;height:0!important;min-height:0!important}
+dialog#player-dialog[data-postgame-intermission="1"] .player-foot{display:none!important}
+dialog#player-dialog[data-postgame-intermission="1"] .post-run-recommendations{max-height:min(78svh,760px);overflow:auto}
+@media(prefers-reduced-motion:reduce){dialog#player-dialog[data-postgame-intermission="1"] *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
