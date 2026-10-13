@@ -60,8 +60,12 @@
   }
   if (!valid) return;
   let consent = false;
-  try { consent = localStorage.getItem('osgard.games.analytics-consent.v1') === 'yes'; } catch {}
-  if (!consent) return;
+  let rewardConsent = false;
+  try {
+    consent = localStorage.getItem('osgard.games.analytics-consent.v1') === 'yes';
+    rewardConsent = localStorage.getItem('osgard.games.referral-reward-consent.v1') === 'yes';
+  } catch {}
+  if (!consent || (/^og_[a-f0-9]{32}$/.test(code) && !rewardConsent)) return;
   const attributionKey = 'osgard.games.referral-attribution.v1';
   const marker = 'osgard.games.referral-opened.' + code;
   const visitorTokenKey = 'osgard.games.referral-owner-token.v1';
@@ -89,7 +93,7 @@
     name: 'referral_link_opened',
     sessionId: 'session_' + randomHex(),
     gameId: validGameIds.has(requestedGame) ? requestedGame : 'unknown',
-    source: /^og_[a-f0-9]{32}$/.test(code) ? 'referral-link:' + code + ':' + visitorToken : 'referral-link:' + code,
+    source: /^og_[a-f0-9]{32}$/.test(code) ? 'referral-link:' + code + ':' + requestedGame + ':' + visitorToken : 'referral-link:' + code,
     path: location.pathname,
     durationSeconds: 0,
   };
