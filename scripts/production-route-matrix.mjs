@@ -64,7 +64,11 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
               text.includes('<title>OSGARD WORLD GAMING — Игровая платформа</title>') &&
               text.includes('id="games-grid"') &&
               text.includes('data-game="null-shift"') &&
-              text.includes('data-game="remix"') && text.includes('data-game="signal-run"')
+              text.includes('data-game="remix"') &&
+              text.includes('data-game="civic-cascade"') &&
+              text.includes('data-game="patina"') &&
+              text.includes('data-game="signal-run"') &&
+              text.includes('"numberOfItems":8')
             : text.includes('<div id="root">')
     const isGamesHub = route === '/games/' || route === '/games/index.html'
     const isPartnerPage = route === '/games/partners/'
