@@ -15,7 +15,7 @@ const routeMatrix = readFileSync(resolve('scripts/production-route-matrix.mjs'),
 assert.ok(html.includes('<title>OSGARD WORLD — Экосистема проектов</title>'), 'Directory needs a route-specific title');
 assert.ok(html.includes('application/ld+json') && html.includes('"numberOfItems":10'), 'Directory must expose an ItemList structured-data contract');
 assert.ok(html.includes('id="project-grid"') && html.includes('id="project-search"') && html.includes('id="project-count"'), 'Searchable project directory controls are required');
-assert.ok(html.includes('id="analytics-toggle"') && html.includes('osgard.games.analytics-consent.v1'), 'Directory must reuse the shared explicit-consent key');
+assert.ok(html.includes('id="analytics-toggle"') && readFileSync(resolve(root, 'directory.js'), 'utf8').includes('osgard.games.analytics-consent.v1'), 'Directory must reuse the shared explicit-consent key');
 assert.ok(html.includes('href="/games/"') && html.includes('href="/development"') && html.includes('mailto:osman.osmanov0099@gmail.com') && html.includes('wa.me/79640027222'), 'Directory must link back into Games and expose the development contact route');
 assert.ok(html.includes('target="_blank" rel="noopener noreferrer"'), 'External project links must isolate opener access');
 assert.ok(html.includes('по описанию владельца') && html.includes('безопасность'), 'Directory must not imply external service capabilities or trust have been independently verified');
