@@ -212,9 +212,20 @@ const required=['data-game="null-shift"','data-game="time"','data-game="swarm"',
 for(const item of required) assert.ok(html.includes(item),'Games hub missing: '+item)
 
 const tagCount = tag => html.split(tag).length - 1
-assert.equal(tagCount('<html lang="ru">'),1,'Games hub must contain exactly one HTML root')
-assert.equal(tagCount('<head>'),1,'Games hub must contain exactly one head element')
-assert.equal(tagCount('<body>'),1,'Games hub must contain exactly one body element')
+const openingTagCount = name => {
+  const prefix = '<' + name
+  let count = 0
+  let cursor = 0
+  while ((cursor = html.indexOf(prefix, cursor)) !== -1) {
+    const next = html[cursor + prefix.length]
+    if (next === '>' || next === ' ') count += 1
+    cursor += prefix.length
+  }
+  return count
+}
+assert.equal(openingTagCount('html'),1,'Games hub must contain exactly one HTML root')
+assert.equal(openingTagCount('head'),1,'Games hub must contain exactly one head element')
+assert.equal(openingTagCount('body'),1,'Games hub must contain exactly one body element')
 assert.equal(tagCount('</head>'),1,'Games hub must close head exactly once')
 assert.equal(tagCount('</body>'),1,'Games hub must close body exactly once')
 assert.equal(tagCount('</html>'),1,'Games hub must close html exactly once')
