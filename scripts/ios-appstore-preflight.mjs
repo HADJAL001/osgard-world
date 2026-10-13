@@ -22,6 +22,8 @@ const lifecycleAnalytics = read('public/games/player-lifecycle.js');
 const guide = read('docs/IOS_APP_STORE_CODEMAGIC_RU.md');
 const listing = read('docs/IOS_APP_STORE_LISTING_RU.md');
 const supportPage = read('public/support/osgard-play/index.html');
+const gamesCatalog = read('public/games/index.html');
+const sitemap = read('public/sitemap.xml');
 const releaseTagPreflight = read('scripts/ios-release-tag-preflight.mjs');
 
 assert.equal(config.appId, 'com.osgardworld.play');
@@ -83,6 +85,9 @@ for (const command of [
 ]) assert.ok(codemagic.includes(command), 'TestFlight must run the required game/growth smoke: ' + command);
 assert.ok(guide.includes('TestFlight') && guide.includes('capacitor://localhost') && guide.includes('App Review Guidelines'), 'Release guide is missing signing, CORS, or Apple-review notes.');
 assert.ok(supportPage.includes('mailto:osman.osmanov0099@gmail.com') && supportPage.includes('https://osgard.world/privacy/'), 'App Store Support URL must provide a real contact and privacy-policy link.');
+assert.ok(supportPage.includes('https://osgard.world/support/osgard-play/') && supportPage.includes('<title>Поддержка OSGARD PLAY'), 'App Store Support URL must be a dedicated, titled support page.');
+assert.ok(gamesCatalog.includes('href="/support/osgard-play/"'), 'The public Games portal must link to the app-support page.');
+assert.ok(sitemap.includes('https://osgard.world/support/osgard-play/'), 'The dedicated support URL must be present in sitemap.xml.');
 assert.ok(read('docs/IOS_APP_STORE_LISTING_RU.md').includes('https://osgard.world/support/osgard-play/'), 'App Store listing draft must point to the published app-support page.');
 assert.ok(privacy.includes('<key>NSPrivacyTracking</key>') && privacy.includes('<false/>'), 'Privacy manifest must declare tracking state.');
 assert.ok(commerceServer.includes('capacitor://localhost'), 'Default Commerce API CORS must allow the Capacitor local origin.');
@@ -122,6 +127,7 @@ if (builtWeb) {
   const apiConfig = JSON.parse(read('dist/games/commerce-config.json'));
   assert.equal(new URL(apiConfig.apiBaseUrl).protocol, 'https:', 'Native API must use HTTPS.');
   assert.ok(catalog.includes('/games/osgard-native-share.js'), 'Native share bridge not injected into the catalogue.');
+  assert.ok(catalog.includes('href="/support/osgard-play/"'), 'Bundled Games catalogue must link to the support page.');
   assert.ok(catalog.includes('WEBGL · iOS') || catalog.includes('WEBGL / iOS'), 'Mobile NULL//SHIFT label not updated.');
   assert.ok(catalog.includes('/games/null-shift/index.html'), 'iOS catalogue must open the bundled WebGL version.');
   assert.ok(!/href=['"]\/game\/(?:null-shift|time|swarm|inherit|remix|civic-cascade|patina|signal-run|cascade-lab|afterimage-run)['"]/.test(catalog),
