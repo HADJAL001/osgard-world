@@ -16,6 +16,10 @@ on:
       - "scripts/external-project-healthcheck-smoke.mjs"
       - ".github/workflows/games-lighthouse.yml"
       - "public/games/**"
+      - "public/brand/**"
+      - "public/osgard-mark.svg"
+      - "docs/OSGARD_BRAND_SYSTEM.md"
+      - "scripts/brand-system-smoke.mjs"
       - "services/osgard-commerce-api/**"
       - "godot/null-shift/**"
       - "scripts/null-shift-godot-smoke.mjs"
@@ -80,5 +84,7 @@ jobs:
         run: npm run qa:partners-page
       - name: Verify ecosystem links, claims, contacts and privacy boundaries
         run: npm run qa:ecosystem
+      - name: Verify OSGARD identity assets and metadata
+        run: npm run qa:brand-system
       - name: Validate static archive and HTML
         run: npm run preflight:frontend
