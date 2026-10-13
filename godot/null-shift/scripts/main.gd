@@ -6,6 +6,7 @@ const CIPHER := [KEY_UP, KEY_LEFT, KEY_DOWN, KEY_RIGHT]
 const SAVE_PATH := "user://null_shift_career.cfg"
 const MAX_BEAM_POOL := 28
 const MAX_RING_POOL := 10
+const MAX_SPARK_POOL := 8
 const DASH_DURATION := 0.24
 const DASH_COOLDOWN := 1.65
 const DASH_SPEED_MULTIPLIER := 3.05
@@ -55,6 +56,8 @@ var hazard_status_label: Label
 var health_bar: ProgressBar
 var health_bar_fill: StyleBoxFlat
 var effects: Array[Node] = []
+var spark_pool: Array[CPUParticles3D] = []
+var spark_effects: Array[Dictionary] = []
 var beam_pool: Array[MeshInstance3D] = []
 var beam_effects: Array[Dictionary] = []
 var ring_pool: Array[MeshInstance3D] = []
@@ -229,6 +232,10 @@ func _reset_runtime_collections() -> void:
 	phase_lane_labels.clear()
 	effects = effects.duplicate()
 	effects.clear()
+	spark_pool = spark_pool.duplicate()
+	spark_pool.clear()
+	spark_effects = spark_effects.duplicate()
+	spark_effects.clear()
 	beam_pool = beam_pool.duplicate()
 	beam_pool.clear()
 	beam_effects = beam_effects.duplicate()
@@ -3052,9 +3059,9 @@ func _update_hud() -> void:
 		fps_p95_ms = p95
 		var draw_calls := int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
 		var profile: String = "PERFORMANCE" if performance_quality else ("BALANCED" if not cinematic_quality else ("AUTO-OPTIMIZED" if adaptive_quality_degraded else "CINEMATIC"))
-		diagnostics_label.text = "LIVE DIAGNOSTICS\nFPS        %02d\nFRAME P95  %.1f ms\nFRAME NOW  %.1f ms\nDRAW CALLS %d\nFX ACTIVE  %02d\nFX POOLS   %02d BEAM / %02d RING\nFX DROPPED %d\nGUARDS     %d\nDEVICES    %d\nDASH EVADES %d\nDASH CD    %.1f s\nPROFILE    %s" % [
+		diagnostics_label.text = "LIVE DIAGNOSTICS\nFPS        %02d\nFRAME P95  %.1f ms\nFRAME NOW  %.1f ms\nDRAW CALLS %d\nFX ACTIVE  %02d\nFX POOLS   %02d BEAM / %02d RING / %02d SPARK\nFX DROPPED %d\nGUARDS     %d\nDEVICES    %d\nDASH EVADES %d\nDASH CD    %.1f s\nPROFILE    %s" % [
 			Engine.get_frames_per_second(), fps_p95_ms, current_frame_ms, draw_calls,
-			effects.size(), beam_pool.size(), ring_pool.size(), effect_pool_exhaustions,
+			effects.size(), beam_pool.size(), ring_pool.size(), spark_pool.size(), effect_pool_exhaustions,
 			guards.size(), _living_device_count(), dash_evasions, dash_cooldown, profile
 		]
 
@@ -3219,6 +3226,19 @@ func _update_effect_expiry(delta: float) -> void:
 			ring.transparency = clampf(progress * 0.88, 0.0, 0.9)
 			state["remaining"] = remaining
 			ring_effects[index] = state
+	for index in range(spark_effects.size() - 1, -1, -1):
+		var spark_state: Dictionary = spark_effects[index]
+		var particles: CPUParticles3D = spark_state["node"]
+		var remaining: float = maxf(0.0, float(spark_state["remaining"]) - dt)
+		if remaining <= 0.0 or not is_instance_valid(particles):
+			if is_instance_valid(particles):
+				particles.emitting = false
+				particles.visible = false
+			effects.erase(particles)
+			spark_effects.remove_at(index)
+		else:
+			spark_state["remaining"] = remaining
+			spark_effects[index] = spark_state
 	for index in range(effects.size() - 1, -1, -1):
 		if not is_instance_valid(effects[index]):
 			effects.remove_at(index)
@@ -3282,33 +3302,48 @@ func _spawn_ring_burst(at: Vector3, material: Material) -> void:
 	ring_effects.append({"node": ring, "remaining": 0.46, "duration": 0.46})
 	effects.append(ring)
 func _spawn_hit_sparks(at: Vector3, material: Material) -> void:
-	if effects.size() > 36:
+	# Reuse a bounded one-shot emitter instead of allocating a node and timer for every hit.
+	if effects.size() >= 36:
+		effect_pool_exhaustions += 1
 		return
-	var particles := CPUParticles3D.new()
-	particles.name = "ImpactParticles"
-	particles.amount = 14
-	particles.lifetime = 0.3
-	particles.one_shot = true
-	particles.explosiveness = 0.95
-	particles.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
-	particles.emission_sphere_radius = 0.12
-	particles.direction = Vector3.UP
-	particles.spread = 180.0
-	particles.initial_velocity_min = 1.0
-	particles.initial_velocity_max = 4.2
-	particles.gravity = Vector3(0.0, -4.0, 0.0)
-	particles.scale_amount_min = 0.025
-	particles.scale_amount_max = 0.075
-	particles.mesh = SphereMesh.new()
+	var particles: CPUParticles3D
+	for pooled: CPUParticles3D in spark_pool:
+		if is_instance_valid(pooled) and not pooled.visible:
+			particles = pooled
+			break
+	if not is_instance_valid(particles):
+		if spark_pool.size() >= MAX_SPARK_POOL:
+			effect_pool_exhaustions += 1
+			return
+		particles = CPUParticles3D.new()
+		particles.name = "ImpactSparkPool_%02d" % [spark_pool.size() + 1]
+		particles.amount = 14
+		particles.lifetime = 0.28
+		particles.one_shot = true
+		particles.explosiveness = 0.95
+		particles.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+		particles.emission_sphere_radius = 0.12
+		particles.direction = Vector3.UP
+		particles.spread = 180.0
+		particles.initial_velocity_min = 1.0
+		particles.initial_velocity_max = 4.2
+		particles.gravity = Vector3(0.0, -4.0, 0.0)
+		particles.scale_amount_min = 0.025
+		particles.scale_amount_max = 0.075
+		particles.mesh = SphereMesh.new()
+		particles.emitting = false
+		particles.visible = false
+		add_child(particles)
+		spark_pool.append(particles)
+	particles.amount = 14 if cinematic_quality and not adaptive_quality_degraded else (9 if not performance_quality else 5)
 	particles.material_override = material
 	particles.position = at
-	add_child(particles)
+	particles.visible = true
+	particles.emitting = false
+	particles.restart()
 	particles.emitting = true
+	spark_effects.append({"node": particles, "remaining": 0.34})
 	effects.append(particles)
-	get_tree().create_timer(0.65).timeout.connect(func():
-		if is_instance_valid(particles):
-			particles.queue_free()
-	)
 
 func _play_sfx(frequency: float, duration: float, volume: float) -> void:
 	if not sound_enabled:
