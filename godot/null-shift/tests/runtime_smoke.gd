@@ -537,6 +537,28 @@ func _run_smoke() -> void:
 	if not _expect(absf(game.core_ring.rotation.y - before_rotation) > 0.0001, "core orbit must animate"):
 		return
 
+	print("RUNTIME_STAGE: enemy gait and floating recovery pickup")
+	var gait_guard: Dictionary = game.guards[0]
+	var gait_body: CharacterBody3D = gait_guard["node"] as CharacterBody3D
+	var gait_legs: Array = gait_guard.get("leg_pivots", [])
+	var gait_arms: Array = gait_guard.get("arm_pivots", [])
+	if not _expect(gait_legs.size() == 2 and gait_arms.size() == 2, "every guard must have two procedural leg and arm pivots"):
+		return
+	gait_guard["phase"] = 0.73
+	gait_body.velocity = Vector3(2.4, 0.0, 0.0)
+	game.scene_clock = 0.41
+	game._animate_world(0.16)
+	if not _expect(absf((gait_legs[0] as Node3D).rotation.x - (gait_legs[1] as Node3D).rotation.x) > 0.15, "moving guards must animate their legs in opposing gait phases"):
+		return
+	if not _expect(absf((gait_arms[0] as Node3D).rotation.x - (gait_arms[1] as Node3D).rotation.x) > 0.08, "guard arms must counter-swing for a more grounded movement silhouette"):
+		return
+	gait_body.velocity = Vector3.ZERO
+	var medkit_y_before: float = game.medkit.position.y
+	game.scene_clock = 0.8
+	game._animate_world(0.016)
+	if not _expect(absf(game.medkit.position.y - medkit_y_before) > 0.01, "available recovery pickup must smoothly bob in world space"):
+		return
+
 	print("RUNTIME_STAGE: live diagnostics")
 	game._toggle_diagnostics()
 	game._update_hud()

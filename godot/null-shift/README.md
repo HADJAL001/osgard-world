@@ -148,3 +148,11 @@ The deployment workflow downloads official Godot 4.7.2 and matching web template
 - A successful daily contract pays 400 credits. Day 3 adds 100 credits and every seventh consecutive day adds 300. Same-day duplicates are blocked; missing a UTC date resets the active streak while retaining the record.
 - The Style Vault shows current streak, longest record and the next milestone. Mission results and 1200×630 share cards show streak alongside the daily challenge code while keeping career credits visible.
 - Invite URLs and the existing consent-gated attribution pipeline continue to measure referral opens, game starts and completions. Streaks and credits remain local; they are not presented as verified cross-device progression.
+
+
+## Release 1.9 — procedural guard gait and readable recovery pickups
+
+- Security units now use small procedural limb rigs: two articulated leg pivots and two arm pivots with role-specific boot and armor accents. Frame-delta smoothing drives opposing leg swings from actual CharacterBody3D velocity and counter-swings the arms, so patrol/approach movement no longer relies only on capsule/armor bobbing.
+- The field medkit has a restrained world-space hover and yaw drift while it remains available. It reuses the existing pickup node and scene clock, without runtime allocations or extra light sources.
+- Headless Godot runtime smoke checks verify both limb rigs exist, legs move in opposing phases, arms counter-swing, and the medkit changes its world-space height over time. The static release contract requires the new animation code.
+- The change enhances engine-native presentation without changing the combat capsule, target selection, damage rules or mission progression. It is procedural geometry, not imported motion-capture animation or native 8K art.

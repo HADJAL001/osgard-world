@@ -1013,6 +1013,28 @@ func _spawn_guard(at: Vector3, is_warden: bool) -> void:
 	_add_cube(body, Vector3(0.0, 0.43, 0.28), Vector3(0.34, 0.38, 0.17), materials["black"])
 	_add_cube(body, Vector3(-0.13, 0.43, 0.375), Vector3(0.05, 0.24, 0.025), role_material)
 	_add_cube(body, Vector3(0.13, 0.43, 0.375), Vector3(0.05, 0.24, 0.025), role_material)
+	var leg_pivots: Array[Node3D] = []
+	for leg_index in range(2):
+		var side: float = -1.0 if leg_index == 0 else 1.0
+		var leg_pivot := Node3D.new()
+		leg_pivot.name = "GuardLeg_L" if leg_index == 0 else "GuardLeg_R"
+		leg_pivot.position = Vector3(side * (0.2 if is_warden or role == "HEAVY" else 0.17), -0.34, 0.0)
+		body.add_child(leg_pivot)
+		_add_cube(leg_pivot, Vector3(0.0, -0.17, 0.025), Vector3(0.19, 0.38, 0.23), materials["black"])
+		_add_cube(leg_pivot, Vector3(0.0, -0.345, -0.075), Vector3(0.23, 0.10, 0.38), materials["wall_trim"] if role != "STALKER" else materials["violet"])
+		_add_cube(leg_pivot, Vector3(0.0, -0.075, -0.105), Vector3(0.205, 0.09, 0.035), role_material)
+		leg_pivots.append(leg_pivot)
+	var arm_pivots: Array[Node3D] = []
+	for arm_index in range(2):
+		var side: float = -1.0 if arm_index == 0 else 1.0
+		var arm_pivot := Node3D.new()
+		arm_pivot.name = "GuardArm_L" if arm_index == 0 else "GuardArm_R"
+		arm_pivot.position = Vector3(side * (0.37 if not is_warden else 0.43), 0.31, -0.035)
+		body.add_child(arm_pivot)
+		_add_cube(arm_pivot, Vector3(0.0, -0.15, -0.035), Vector3(0.19, 0.38, 0.22), materials["black"])
+		_add_cube(arm_pivot, Vector3(0.0, -0.255, -0.105), Vector3(0.17, 0.19, 0.19), role_material)
+		_add_cube(arm_pivot, Vector3(0.0, -0.07, -0.15), Vector3(0.2, 0.09, 0.055), materials["wall_trim"])
+		arm_pivots.append(arm_pivot)
 	var tag := Label3D.new()
 	tag.name = "CombatRole"
 	tag.text = "WARDEN / ELITE" if is_warden else role
@@ -1035,6 +1057,8 @@ func _spawn_guard(at: Vector3, is_warden: bool) -> void:
 		"hit_flash_timer": 0.0,
 		"hit_label_timer": 0.0,
 		"hit_label": hit_feedback,
+		"leg_pivots": leg_pivots,
+		"arm_pivots": arm_pivots,
 		"speed": 3.25 if is_warden else (3.0 if role == "STALKER" else (1.6 if role == "HEAVY" else (2.25 if current_contract == 2 else 1.9))),
 		"damage": 18 if is_warden else (16 if role == "HEAVY" else 10),
 		"warden": is_warden,
@@ -3045,6 +3069,10 @@ func _animate_world(delta: float) -> void:
 		muzzle_flash.visible = muzzle_flash_timer > 0.0
 	if is_instance_valid(muzzle_light):
 		muzzle_light.visible = muzzle_flash_timer > 0.0 and cinematic_quality and not adaptive_quality_degraded
+	if is_instance_valid(medkit) and medkit.visible and not medkit_used:
+		# Hover and yaw drift make the existing pickup readable without runtime allocations.
+		medkit.position.y = 0.08 + sin(scene_clock * 2.15) * 0.065
+		medkit.rotation.y = sin(scene_clock * 0.72) * 0.13
 	if is_instance_valid(core_ring) and quantum_core.visible:
 		core_ring.rotate_y(delta * 1.2)
 		core_ring.rotate_x(sin(scene_clock * 0.8) * delta * 0.25)
@@ -3067,13 +3095,29 @@ func _animate_world(delta: float) -> void:
 			continue
 		var armor := body.get_node_or_null("Armor") as MeshInstance3D
 		var hit_timer: float = float(guard.get("hit_flash_timer", 0.0))
+		var locomotion_speed: float = body.velocity.length()
 		if armor:
 			var role: String = str(guard.get("role", "RANGER"))
 			var role_material: Material = materials["white"] if hit_timer > 0.0 else (materials["cyan"] if float(guard["stun"]) > 0.0 else (materials["red"] if role in ["WARDEN", "RANGER"] else (materials["violet"] if role == "STALKER" else materials["amber"])))
 			armor.material_override = role_material
-			var body_speed: float = body.velocity.length()
-			armor.position.y = sin(scene_clock * (9.0 if body_speed > 0.2 else 1.6) + float(guard["phase"])) * (0.035 if body_speed > 0.2 else 0.012) + (0.045 if hit_timer > 0.0 else 0.0)
+			armor.position.y = sin(scene_clock * (9.0 if locomotion_speed > 0.2 else 1.6) + float(guard["phase"])) * (0.035 if locomotion_speed > 0.2 else 0.012) + (0.045 if hit_timer > 0.0 else 0.0)
 			armor.scale = Vector3.ONE * (1.07 if hit_timer > 0.0 else 1.0)
+		var gait_weight: float = clampf(locomotion_speed / maxf(0.1, float(guard.get("speed", 2.0))), 0.0, 1.0)
+		var gait_clock: float = scene_clock * (9.2 if locomotion_speed > 0.2 else 1.6) + float(guard.get("phase", 0.0))
+		var guard_legs: Array = guard.get("leg_pivots", [])
+		for leg_index in range(guard_legs.size()):
+			var leg_pivot: Node3D = guard_legs[leg_index] as Node3D
+			if is_instance_valid(leg_pivot):
+				var leg_phase: float = 0.0 if leg_index == 0 else PI
+				var leg_target: float = sin(gait_clock + leg_phase) * 0.38 * gait_weight
+				leg_pivot.rotation.x = lerpf(leg_pivot.rotation.x, leg_target, 1.0 - exp(-delta * 13.0))
+		var guard_arms: Array = guard.get("arm_pivots", [])
+		for arm_index in range(guard_arms.size()):
+			var arm_pivot: Node3D = guard_arms[arm_index] as Node3D
+			if is_instance_valid(arm_pivot):
+				var arm_phase: float = PI if arm_index == 0 else 0.0
+				var arm_target: float = sin(gait_clock + arm_phase) * 0.22 * gait_weight
+				arm_pivot.rotation.x = lerpf(arm_pivot.rotation.x, arm_target, 1.0 - exp(-delta * 11.0))
 		var hit_feedback: Label3D = guard.get("hit_label") as Label3D
 		if is_instance_valid(hit_feedback):
 			var remaining: float = float(guard.get("hit_label_timer", 0.0))
