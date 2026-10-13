@@ -36,6 +36,7 @@ assert.ok(appStyles.includes('.premium-game-card--afterimage-run'), 'The React E
 assert.ok(routeEntries.every(x=>x.url.startsWith('/games/')),'Every launch entry must use a same-origin game route')
 const inviteLandingScript=readFileSync(resolve(root,'invite/invite-landing.js'),'utf8')
 assert.ok(inviteLandingScript.includes("localStorage.getItem('osgard.games.analytics-consent.v1') === 'yes'") && inviteLandingScript.includes("name: 'referral_link_opened'") && inviteLandingScript.includes("source: 'referral-link:' + code"),'Invite preview must preserve consent-gated referral attribution')
+assert.ok(inviteLandingScript.includes("requestedGame === 'afterimage-run'")&&inviteLandingScript.includes("target.searchParams.set('seed', sharedSeed)")&&inviteLandingScript.includes("target.searchParams.set('score', String(sharedScore))")&&inviteLandingScript.includes("sharedScore <= 99999999"),'Canonical AFTERIMAGE invites must preserve only validated daily seed and target score')
 const productionMatrix = readFileSync(resolve('scripts/production-route-matrix.mjs'),'utf8')
 assert.ok(productionMatrix.includes("path === '/games/invite/invite-landing.js'") && productionMatrix.includes("target.searchParams.set('utm_campaign', campaign)"), 'Production route matrix must validate the invitation script with its own content contract, not unrelated SkillCred markers')
 for(const game of routeEntries){
@@ -74,6 +75,7 @@ assert.ok(dailyCircuitStyles.includes('.daily-circuit-grid')&&dailyCircuitStyles
 assert.ok(dailyCircuitScript.includes('OSGARDDailyCircuitCore')&&dailyCircuitScript.includes('navigator.share')&&dailyCircuitScript.includes('navigator.clipboard.writeText'),'Daily Circuit must expose deterministic routes and share/copy fallback')
 assert.ok(!dailyCircuitScript.includes('fetch(')&&!dailyCircuitScript.includes('googletagmanager')&&!dailyCircuitScript.includes('doubleclick.net'),'Daily Circuit must not add ad SDKs or unapproved network calls')
 assert.ok(html.includes('window.OSGARDGames=Object.freeze')&&html.includes('window.OSGARDDailyTrackShare=')&&html.includes("source:'daily_circuit'"),'Daily Circuit must use the existing player and consent/token analytics bridge')
+assert.ok(html.includes('function validatedAfterimageLaunchUrl')&&html.includes("target.pathname!=='/games/afterimage-run/'")&&html.includes('frame.src=launchUrl'),'The Games hub must pass validated challenge parameters only into AFTERIMAGE')
 new Function(dailyCircuitScript)
 const dailyCircuitSandbox={window:{},URL,URLSearchParams,Date,Math,Uint8Array}
 runInNewContext(dailyCircuitScript,dailyCircuitSandbox)
@@ -127,6 +129,11 @@ assert.ok(afterimageGame.includes('<title>AFTERIMAGE//RUN — OSGARD PLAY</title
 assert.ok(!/<script[^>]+src=/i.test(afterimageGame)&&!/<link[^>]+href=["']https?:/i.test(afterimageGame),'AFTERIMAGE//RUN must remain self-contained')
 assert.ok(afterimageGame.includes("extra||{}),location.origin)")&&!afterimageGame.includes("extra||{}),'*')"),'AFTERIMAGE lifecycle messages must stay same-origin')
 assert.ok(afterimageGame.includes('incomingSeed=params.get(\'seed\')')&&afterimageGame.includes('Number.isFinite(rawTarget)')&&afterimageGame.includes('if(r[today])'),'AFTERIMAGE challenge/reward safety checks missing')
+assert.ok(afterimageGame.includes("window.parent.OSGARDInvite.createLink('afterimage-run')")&&afterimageGame.includes("new URL('/games/invite/afterimage-run/',location.origin)"),'AFTERIMAGE share links must use the canonical referral route')
+assert.ok(afterimageGame.includes("u.searchParams.set('seed',day);u.searchParams.set('score',String(score))"),'AFTERIMAGE challenge must include the common daily seed and target score')
+assert.ok(afterimageGame.includes("life('share_created',{shareMethod:method==='web-share'?'web-share':'clipboard',challengeScore:Math.floor(game.score||daily.best||0)})"),'AFTERIMAGE share must use the host lifecycle event and carry share method/target score')
+assert.ok(afterimageGame.includes("track('game_session_started',{dailySeed:day,challengeTarget:targetScore,isChallenge:targetScore>0})"),'AFTERIMAGE must measure daily/challenge session starts')
+assert.ok(afterimageGame.includes("challengeBeaten:targetScore>0&&game.score>=targetScore")&&afterimageGame.includes("isChallenge:targetScore>0"),'AFTERIMAGE must measure completed challenged runs and whether the target score was beaten')
 assert.ok(afterimageGame.includes("opened.opener=null")&&afterimageGame.includes("share-intent-'+kind"),'Social share must detach opener and only reward after the share flow opens')
 assert.ok(afterimageGame.includes('SIGNAL SHARD')&&afterimageGame.includes('Публичная публикация поста не проверяется'),'Share reward copy must not claim that a public post was verified')
 const afterimageInline=[...afterimageGame.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]).filter(s=>s.trim())

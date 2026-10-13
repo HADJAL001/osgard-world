@@ -43,6 +43,18 @@
       target.searchParams.set('utm_medium', medium);
       target.searchParams.set('utm_campaign', campaign);
       target.searchParams.set('utm_content', content);
+      // Preserve only a validated AFTERIMAGE challenge while moving to the game hub.
+      if (requestedGame === 'afterimage-run') {
+        const sharedSeed = params.get('seed') || '';
+        const rawSharedScore = params.get('score') || '';
+        const sharedScore = Number(rawSharedScore);
+        const sharedDate = /^\d{4}-\d{2}-\d{2}$/.test(sharedSeed) &&
+          (() => { const date = new Date(sharedSeed + 'T00:00:00.000Z'); return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === sharedSeed; })();
+        if (sharedDate && rawSharedScore !== '' && Number.isSafeInteger(sharedScore) && sharedScore >= 0 && sharedScore <= 99999999) {
+          target.searchParams.set('seed', sharedSeed);
+          target.searchParams.set('score', String(sharedScore));
+        }
+      }
     }
     else if (legacySignalRun) {
       // Keep only the validated SIGNAL RUN challenge contract when leaving the social preview.
