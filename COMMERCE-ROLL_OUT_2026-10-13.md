@@ -52,3 +52,9 @@ First: connect lead storage, run a test-mode payment from the deployed storefron
 - Admin and checkout-status JSON responses set `Cache-Control: no-store` so customer/order data and payment state are not retained by intermediaries.
 - CI includes regression tests for refunded/cancelled payment states and smoke checks for the private reverse-proxy route.
 - The changes remain in an open pull request. No payment API/database credentials were supplied and no checkout API deployment or real transaction is claimed. The live website changes only after the reviewed branch is merged and the host deployment succeeds.
+
+## Referral SHARDS rollout
+
+The new feature branch adds an opt-in, server-backed invitation pilot. The browser stores a random per-device token; PostgreSQL stores only its SHA-256 hash, alongside invite codes and reward ledger entries. A server-side 50 SHARDS entry can be inserted once per invite only after a consented `game_session_completed` event for the same game and server-issued code has at least 60 seconds recorded. Limits are 20 invite-code creations and five rewards per wallet per rolling 24 hours. The wallet balance is calculated from the ledger and the user can delete the wallet and related codes/rewards through the post-game panel.
+
+SHARDS are non-cash and non-redeemable. A share-composer click or a copied URL does not earn points, because generic social URLs do not return a trusted repost receipt. The growth metric to validate is an invited session that is actually completed, not simply a button press. Client-rendered games cannot cryptographically prove that a human played, so this limited pilot should not add cash value, redemption or pay-to-win effects without authenticated accounts, server-side gameplay verification and fraud/legal review.
