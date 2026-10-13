@@ -60,7 +60,75 @@ const lighthouseWorkflow=readFileSync(resolve('.github/workflows/games-lighthous
 assert.ok(lighthouseWorkflow.includes('https://osgard.world/games/')&&lighthouseWorkflow.includes('--preset=desktop')&&lighthouseWorkflow.includes('actions/upload-artifact@v4'),'Games Lighthouse workflow must audit mobile/desktop and preserve reports')
 assert.ok(lighthouseWorkflow.includes('workflow_run')&&lighthouseWorkflow.includes('OSGARD frontend deploy'),'Games Lighthouse audit should run after successful publication')
 assert.ok(html.includes('<meta name="osgard-build" content="__OSGARD_BUILD_VERSION__">'),'Games hub must carry a release marker that is stamped at packaging time')
-assert.ok(html.includes('game-session-recommendations.css?v=__OSGARD_BUILD_VERSION__')&&html.includes('game-session-recommendations.js?v=__OSGARD_BUILD_VERSION__'),'All secondary Games hub assets must use the release version')
+assert.ok(!html.includes('<link rel="stylesheet" href="/games/game-session-recommendations.css?v=__OSGARD_BUILD_VERSION__">'),'Recommendation CSS must not block the initial catalogue render')
+assert.ok(!html.includes('<script src="./player-lifecycle.js?v=__OSGARD_BUILD_VERSION__" defer>')&&!html.includes('<script src="./game-session-recommendations.js?v=__OSGARD_BUILD_VERSION__" defer>'),'Gameplay lifecycle and referral modules must not be eagerly downloaded on the landing view')
+const lazyRuntimeMatch=html.match(/<script id="games-lazy-runtime">([\s\S]*?)<\/script>/)
+assert.ok(lazyRuntimeMatch,'The Games hub must provide the on-demand runtime loader')
+const lazyRuntime=lazyRuntimeMatch[1]
+new Function(lazyRuntime)
+for(const marker of ["function loadPlayerRuntime()","function loadRecommendations()","loadScript('player-lifecycle.js')","loadScript('game-session-recommendations.js')","link.dataset.osgardLazy='recommendations-css'","event.stopImmediatePropagation()","playPending()","playerState==='failed'","meta[name=\"osgard-build\"]"]) assert.ok(lazyRuntime.includes(marker),'Lazy-load contract missing: '+marker)
+assert.ok(lazyRuntime.includes("params.get('og_ref')")&&lazyRuntime.includes("loadRecommendations()"),'Invite landings must lazily activate consent-aware referral UI')
+assert.ok(lazyRuntime.includes("script.async=true")&&lazyRuntime.includes("encodeURIComponent(version)"),'On-demand scripts must be asynchronous and release-versioned')
+
+{
+ const loadedScripts=[],loadedStyles=[],listeners=[];
+ let actualLaunches=0;
+ class FakeElement {
+  constructor(tag='a'){this.tagName=tag.toUpperCase();this.dataset={};this.children=[];this.isConnected=true;this.rel='';this.href='';this.src='';this.hidden=false;this.onload=null;this.onerror=null;this.className=''}
+  closest(selector){return selector==='a[data-play]'&&this.dataset.play?this:null}
+  append(...items){this.children.push(...items)}
+  setAttribute(){}
+  addEventListener(){}
+  remove(){}
+  dispatchEvent(event){return fakeDocument.dispatchEvent({...event,target:this})}
+ }
+ class FakeMouseEvent {
+  constructor(type,options={}){this.type=type;Object.assign(this,options);this.defaultPrevented=false;this.immediateStopped=false}
+  preventDefault(){this.defaultPrevented=true}
+  stopImmediatePropagation(){this.immediateStopped=true}
+ }
+ const fakeHead={append(node){
+  if(node.tagName==='LINK'){loadedStyles.push(node);return}
+  if(node.tagName==='SCRIPT'){
+   loadedScripts.push(node.src);
+   setTimeout(()=>{
+    if(node.src.includes('/player-lifecycle.js')){
+     fakeDocument.addEventListener('click',event=>{
+      const link=event.target&&event.target.closest&&event.target.closest('a[data-play]');
+      if(!link||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+      event.preventDefault();event.stopImmediatePropagation();actualLaunches++;
+     },true);
+    }
+    node.onload&&node.onload();
+   },0);
+  }
+ }};
+ const fakeDocument={
+  head:fakeHead,
+  querySelector(selector){return selector==='meta[name="osgard-build"]'?{content:'qa-release-123'}:null},
+  createElement(tag){return new FakeElement(tag)},
+  addEventListener(type,handler,capture){listeners.push({type,handler,capture:!!capture})},
+  dispatchEvent(eventLike){
+   const event=eventLike instanceof FakeMouseEvent?eventLike:new FakeMouseEvent(eventLike.type,eventLike);
+   for(const item of [...listeners])if(item.type===event.type){item.handler(event);if(event.immediateStopped)break}
+   return !event.defaultPrevented;
+  }
+ };
+ const fakeWindow={};
+ const fakeLocation={origin:'https://osgard.world',search:'',pathname:'/games/'};
+ const lazyApi=new Function('document','window','location','Element','MouseEvent','URLSearchParams','encodeURIComponent','Promise','setTimeout',lazyRuntime+';return window.OSGARDGamesLazy;')(fakeDocument,fakeWindow,fakeLocation,FakeElement,FakeMouseEvent,URLSearchParams,encodeURIComponent,Promise,setTimeout);
+ const gameLink=new FakeElement('a');gameLink.dataset.play='swarm';gameLink.href='https://osgard.world/games/swarm/';
+ const firstClick=fakeDocument.dispatchEvent({type:'click',target:gameLink,button:0,metaKey:false,ctrlKey:false,shiftKey:false,altKey:false});
+ assert.equal(firstClick,false,'First gameplay click must pause native navigation while the lifecycle runtime loads');
+ await lazyApi.loadPlayerRuntime();
+ await lazyApi.loadRecommendations();
+ assert.equal(actualLaunches,1,'The first game click must be replayed exactly once after the player runtime registers its listener');
+ assert.ok(loadedScripts.some(src=>src.startsWith('/games/player-lifecycle.js?v=qa-release-123')),'Gameplay lifecycle script must use the deployed build marker');
+ assert.ok(loadedScripts.some(src=>src.startsWith('/games/game-session-recommendations.js?v=qa-release-123')),'Referral/recommendation script must use the deployed build marker');
+ assert.ok(loadedStyles.some(link=>link.href.startsWith('/games/game-session-recommendations.css?v=qa-release-123')),'Recommendation CSS must load only when the growth module is requested');
+ assert.equal(fakeWindow.OSGARDGamesLazy.loadPlayerRuntime instanceof Function,true,'Loader API must remain available to retry the runtime');
+}
+
 assert.ok(deployWorkflow.includes('s|__OSGARD_BUILD_VERSION__|$ASSET_VERSION|g')&&deployWorkflow.includes('grep -Fq "<meta name=\\"osgard-build\\" content=\\"$ASSET_VERSION\\">"'),'Deploy packaging must stamp and verify the Games build marker')
 assert.ok(lighthouseWorkflow.includes('EXPECTED_DEPLOY_SHA')&&lighthouseWorkflow.includes('osgard-build')&&lighthouseWorkflow.includes('luxury.css?v=$expected'),'Games Lighthouse must wait for the matching release before scoring')
 const healthyScores={performance:.95,accessibility:1,'best-practices':1,seo:1}
@@ -150,7 +218,7 @@ assert.ok(html.includes('prefers-reduced-motion:reduce'),'Reduced motion CSS mis
 const css=html.match(/<style>([\s\S]*?)<\/style>/)?.[1]||''
 assert.ok(css.includes('@media(max-width:760px)'),'Responsive/mobile layout missing')
 assert.ok(css.includes('.player-view')&&css.includes('dialog::backdrop'),'Game dialog style missing')
-assert.ok(html.includes('src="./player-lifecycle.js?v=__OSGARD_BUILD_VERSION__"'),'Self-hosted lifecycle module must be included and versioned')
+assert.ok(lazyRuntime.includes("loadScript('player-lifecycle.js')")&&lazyRuntime.includes("versioned('/games/'+path)"),'Self-hosted lifecycle module must be loaded on demand with the current release version')
 assert.ok(html.includes('aria-label="OSGARD WORLD PLAY"'),'Brand accessible name must include visible PLAY label')
 for(const label of ['NULL//SHIFT — играть на Godot','TIME / EMPIRE — играть в Империю времени','SWARM — играть','INHERIT — играть','REMIX / ARENA — открыть REMIX']) assert.ok(html.includes('aria-label="'+label+'"'),'Game art accessible name must include the visible label: '+label)
 for(const lowContrast of ['#656c61','#6f796b','#6d756a','#71796c','#737a70','#737b70','#697168']) assert.ok(!html.toLowerCase().includes(lowContrast),'Low-contrast secondary color remains: '+lowContrast)
@@ -164,7 +232,8 @@ assert.ok(lifecycle.includes('osgard:game-lifecycle')&&lifecycle.includes('event
 assert.ok(lifecycle.includes('if(!consent||!token)return'),'Lifecycle analytics must require consent and authentication')
 new Function(lifecycle)
 assert.ok(lifecycle.includes('dialog#player-dialog{width:100vw'),'Mobile CSS selector must match actual dialog id')
-assert.ok(html.includes('id="post-run-recommendations"')&&html.includes('game-session-recommendations.css')&&html.includes('game-session-recommendations.js'),'The catalogue must mount the post-session recommendation shelf')
+assert.ok(html.includes('id="post-run-recommendations"')&&lazyRuntime.includes('game-session-recommendations.css')&&lazyRuntime.includes('game-session-recommendations.js'),'The catalogue must mount post-session recommendations through the on-demand loader')
+assert.ok(recommendationScript.includes("document.addEventListener('osgard:game-completed'")&&recommendationScript.includes("document.addEventListener('osgard:game-launching'"),'The deferred recommendation runtime must subscribe to the gameplay lifecycle')
 assert.ok(lifecycle.includes("document.dispatchEvent(new Event('osgard:game-launching'))")&&lifecycle.includes("new CustomEvent('osgard:game-completed'"),'Lifecycle wrapper must clear recommendations on launch and publish confirmed completion')
 assert.ok(recommendationScript.includes("document.addEventListener('osgard:game-completed'")&&recommendationScript.includes("document.addEventListener('osgard:game-launching'"),'Recommendation module must subscribe to game lifecycle events')
 assert.ok(recommendationStyles.includes('.post-run-recommendations')&&recommendationStyles.includes('prefers-reduced-motion:reduce'),'Recommendation shelf must have responsive/reduced-motion styling')
