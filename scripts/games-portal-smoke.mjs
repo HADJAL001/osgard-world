@@ -106,7 +106,7 @@ assert.ok(publicProxy.includes('proxy_set_header X-Real-IP $remote_addr;'),'Publ
 assert.ok(nginx.includes('limit_req_zone $http_x_real_ip zone=osgard_player_api:10m rate=15r/s;'),'Player API limiter must key on the client identity forwarded by the host proxy')
 assert.ok(!nginx.includes('limit_req_zone $binary_remote_addr zone=osgard_player_api:'),'Player API must not rate-limit every visitor as one shared Docker address')
 const apiStart=nginx.indexOf('location ^~ /api/v1/ {')
-const apiEnd=nginx.indexOf('\\n  }',apiStart)
+const apiEnd=nginx.indexOf('\n  }',apiStart)
 const apiProxy=apiStart>=0&&apiEnd>apiStart?nginx.slice(apiStart,apiEnd):''
 assert.ok(apiProxy.includes('limit_req zone=osgard_player_api burst=30 nodelay;')&&apiProxy.includes('limit_req_status 429;'),'Player API must have a bounded burst and explicit HTTP 429 response')
 assert.ok(apiProxy.includes('proxy_pass http://$osgard_game_api_host:4317;')&&!apiProxy.includes('proxy_set_header Authorization ""'),'API route must proxy to osgard-game-api without stripping caller authorization')
