@@ -16,7 +16,7 @@ const services = [
  ['O2 SYSTEM','https://o2system.art/'],['SENJORIO','https://senjorio.com/'],
  ['SUPERDAY','https://superday.run/'],['MYOSA','https://myosa.world/'],
  ['GOLD GLAMOUR','https://gold-glamour.online/'],['GARD VPN','https://gardvpn.is/'],
- ['OSGARD BUSINESS','https://osgardos.com/'],['OSGARD VANGUARD','https://osgardvanguard.studio/'],
+ ['OSGARD OS','https://osgardos.com/'],['OSGARD VANGUARD STUDIO','https://osgardvanguard.studio/'],
 ]
 for (const [name,url] of services) {
  assert.ok(select.includes(name),'Missing self-promo label: '+name)
