@@ -13,6 +13,7 @@ import {
   safeEqual,
   parseReferralRewardEvent,
   validateReferralRewardStatus,
+  validateReferralRewardRegistration,
   REFERRAL_REWARD_POINTS,
   REFERRAL_MIN_SESSION_SECONDS,
 } from "../src/core.mjs";
@@ -194,4 +195,20 @@ test("server-verified SHARDS require a canonical invite and one matching game se
   }), null, "Short legacy codes stay compatible but are not rewardable");
   assert.equal(validateReferralRewardStatus({ code: inviteCode }).ok, true);
   assert.equal(validateReferralRewardStatus({ code: "og_bad" }).code, "REFERRAL_CODE_INVALID");
+});
+
+test("referral registration requires both analytics and rewards consent plus matching identifiers", () => {
+  const valid = {
+    consent: true,
+    rewardConsent: true,
+    code: "og_" + "ab".repeat(16),
+    gameId: "swarm",
+    ownerToken: "123456abcdef",
+  };
+  assert.deepEqual(validateReferralRewardRegistration(valid), { ok: true, ...valid });
+  assert.equal(validateReferralRewardRegistration({ ...valid, consent: false }).code, "REFERRAL_CONSENT_REQUIRED");
+  assert.equal(validateReferralRewardRegistration({ ...valid, rewardConsent: false }).code, "REFERRAL_CONSENT_REQUIRED");
+  assert.equal(validateReferralRewardRegistration({ ...valid, code: "og_bad" }).code, "REFERRAL_CODE_INVALID");
+  assert.equal(validateReferralRewardRegistration({ ...valid, gameId: "not-a-game" }).code, "GAME_ID_INVALID");
+  assert.equal(validateReferralRewardRegistration({ ...valid, ownerToken: "short" }).code, "REFERRAL_OWNER_TOKEN_INVALID");
 });
