@@ -34,9 +34,11 @@ for (const [label, url] of services) {
 assert.ok(entertainmentGateway.includes("const PROMO_PREFERENCES_KEY = 'osgard.games.postgame-service-preferences.v1'") &&
   source.includes("const servicePreferencesKey='osgard.games.postgame-service-preferences.v1'"),
   'The Entertainment gateway and between-game intermission must use one shared preferences key');
-assert.ok(entertainmentGateway.includes("const PROMOTABLE_SERVICE_IDS = services.filter(service => service.id !== 'gardvpn').map(service => service.id)") &&
-  source.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN','VPN-сервис. Описание и условия доступны на сайте проекта; доступность домена не была подтверждена проверкой.','https://gardvpn.is/',false,false]"),
-  'GARD VPN may remain in the directory but must not appear as an active unverified intermission promotion');
+assert.ok(entertainmentGateway.includes("const PROMOTABLE_SERVICE_IDS = services.map(service => service.id)") &&
+  source.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN','VPN-сервис. Описание и условия доступны на сайте проекта; доступность домена не была подтверждена проверкой.','https://gardvpn.is/',false,true]") &&
+  entertainmentGateway.includes("const unverified = service.id === 'gardvpn'") &&
+  entertainmentGateway.includes("Availability not verified; opens the project site"),
+  'GARD VPN remains selectable like the other owner projects, with an explicit warning that its availability is unverified');
 assert.ok(entertainmentGateway.includes("window.localStorage.setItem(PROMO_PREFERENCES_KEY, JSON.stringify(next))") &&
   entertainmentGateway.includes("frequency: draftFrequency") &&
   entertainmentGateway.includes("selected: PROMOTABLE_SERVICE_IDS.filter(id => draftSelected.includes(id))"),
