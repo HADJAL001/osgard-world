@@ -136,7 +136,6 @@ export function validateEventBatch(body) {
 export const REFERRAL_REWARD_POINTS = 100;
 export const REFERRAL_MIN_SESSION_SECONDS = 60;
 const REWARDABLE_INVITE_CODE = /^og_[a-f0-9]{32}$/;
-const REFERRAL_DEVICE_TOKEN = /^[a-f0-9]{12}$/;
 
 export function validateReferralRewardStatus(body) {
   const input = body && typeof body === "object" && !Array.isArray(body) ? body : {};
