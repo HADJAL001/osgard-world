@@ -53,7 +53,7 @@
     try { sessionStorage.removeItem(ATTRIBUTION_KEY); } catch (_) {}
   }
 
-  async function sendEvent(name, gameId, source) {
+  async function sendEvent(name, gameId, source, explicitSessionId) {
     if (!hasConsent()) return false;
     const allowedNames = new Set([
       'invite_link_created',
@@ -65,8 +65,7 @@
     const game = games[gameId];
     if (!game) return false;
 
-    let sessionId = attribution && attribution.sessionId;
-    if (!sessionId) sessionId = 'invite_' + randomId();
+    const sessionId = explicitSessionId || (attribution && attribution.sessionId) || ('invite_' + randomId());
     const body = {
       consent: true,
       events: [{
@@ -156,23 +155,27 @@
 
   function createInviteUrl(gameId) {
     const game = games[gameId];
-    if (!game) return '';
+    if (!game) return null;
+    const inviteId = randomId();
     const params = new URLSearchParams({
       game: gameId,
-      invite: randomId(),
+      invite: inviteId,
       utm_source: 'osgard_games',
       utm_medium: 'player_share',
       utm_campaign: 'player_invite_loop',
       utm_content: gameId,
     });
-    return location.origin + '/games/?' + params.toString();
+    return { url: location.origin + '/games/?' + params.toString(), inviteId };
   }
 
   async function invite(gameId, button) {
     if (!games[gameId] || shareBusy) return;
     shareBusy = true;
     if (button) button.disabled = true;
-    const url = createInviteUrl(gameId);
+    const invite = createInviteUrl(gameId);
+    if (!invite) { shareBusy = false; if (button) button.disabled = false; return; }
+    const url = invite.url;
+    const inviteSessionId = 'invite_' + invite.inviteId;
     const game = games[gameId];
     let shared = false;
 
@@ -184,11 +187,11 @@
           url,
         });
         shared = true;
-        if (hasConsent()) await sendEvent('invite_link_created', gameId, 'native-share-sheet');
+        if (hasConsent()) await sendEvent('invite_link_created', gameId, 'player-invite-link:' + invite.inviteId, inviteSessionId);
       } else if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(url);
         shared = true;
-        if (hasConsent()) await sendEvent('invite_link_created', gameId, 'clipboard-copy');
+        if (hasConsent()) await sendEvent('invite_link_created', gameId, 'player-invite-link:' + invite.inviteId, inviteSessionId);
         setStatus('Ссылка-приглашение скопирована. Отправь её другу.');
       } else {
         window.prompt('Скопируй ссылку и отправь другу:', url);
@@ -218,6 +221,7 @@
     if (!invite) return;
     renderInviteBanner(invite);
     if (!hasConsent()) return;
+    if (attribution && attribution.inviteId === invite.inviteId && attribution.gameId === invite.gameId) return;
     attribution = {
       gameId: invite.gameId,
       inviteId: invite.inviteId,
