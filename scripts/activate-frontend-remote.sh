@@ -28,6 +28,40 @@ if ! docker exec "$container_name" sh -lc 'wget -q -T 3 -O /dev/null http://osga
       fi
     done
   fi
+  if [[ "$api_target" == "osgard-game-api" ]] \
+    && [[ "$host_api_health" == *'"status":"ok"'* ]] \
+    && command -v ufw >/dev/null 2>&1 \
+    && ufw status 2>/dev/null | grep -q '^Status: active'; then
+    # UFW currently denies incoming traffic by default. Permit the API only
+    # from this frontend container to its Docker bridge gateway (TCP/4317).
+    # This does not open port 4317 on the public network interface.
+    network_info="$(docker inspect "$container_name" --format '{{json .NetworkSettings.Networks}}' 2>/dev/null \
+      | python3 -c 'import json,sys; d=json.load(sys.stdin); rows=[(k,v) for k,v in d.items() if v.get("Gateway") and v.get("IPAddress") and v.get("NetworkID")]; print("|".join([rows[0][0],rows[0][1]["Gateway"],rows[0][1]["IPAddress"],rows[0][1]["NetworkID"]]) if rows else "")' 2>/dev/null || true)"
+    IFS='|' read -r api_network api_gateway api_container_ip api_network_id <<< "$network_info"
+    api_subnet="$(docker network inspect "$api_network" --format '{{range .IPAM.Config}}{{.Subnet}}{{end}}' 2>/dev/null || true)"
+    bridge_iface="br-${api_network_id:0:12}"
+    if [[ -n "$api_network" ]] \
+      && [[ "$api_gateway" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]] \
+      && [[ "$api_container_ip" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]] \
+      && [[ "$api_network_id" =~ ^[0-9a-f]{12,}$ ]] \
+      && [[ "$api_subnet" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}$ ]] \
+      && [[ "$bridge_iface" =~ ^br-[0-9a-f]{12}$ ]] \
+      && ip link show "$bridge_iface" >/dev/null 2>&1; then
+      echo "Adding a restricted UFW rule for the current OSGARD frontend container only:"
+      echo "interface=$bridge_iface source=$api_container_ip destination=$api_gateway tcp/4317"
+      if ufw allow in on "$bridge_iface" from "$api_container_ip" to "$api_gateway" port 4317 proto tcp; then
+        if docker exec "$container_name" sh -lc "wget -q -T 3 -O /dev/null http://$api_gateway:4317/health" >/dev/null 2>&1; then
+          api_target="$api_gateway"
+          echo "OSGARD game API is reachable through the restricted Docker-bridge rule."
+        else
+          echo "Restricted firewall rule was added, but the API probe still fails; activation will be refused." >&2
+          docker exec "$container_name" sh -lc "wget -S -T 3 -O- http://$api_gateway:4317/health 2>&1 || true" || true
+        fi
+      fi
+    else
+      echo "Cannot safely derive a Docker bridge interface/IP for a restricted API rule; refusing to change firewall policy." >&2
+    fi
+  fi
   if [[ "$api_target" == "osgard-game-api" ]]; then
     echo "Host API health response: ${host_api_health:-<empty>}" >&2
     echo "ERROR: no reachable, healthy OSGARD game API upstream; refusing frontend activation." >&2
