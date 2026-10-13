@@ -50,6 +50,8 @@ assert.equal(attribution?.utmCampaign, 'player_invite')
 assert.equal(attribution?.utmContent, 'null-shift')
 location.search = '?play=swarm&ref=not-valid&utm_source=other&utm_medium=friend_invite&utm_campaign=player_invite&utm_content=swarm'
 assert.equal(api.readAttribution(), null, 'Unrecognized and malformed referral URLs must not be attributed')
+location.search = '?play=swarm&ref=r0a0a0a0a0a0a&utm_source=osgard_games&utm_medium=friend_invite&utm_campaign=player_invite&utm_content=null-shift'
+assert.equal(api.readAttribution(), null, 'Changing the requested game must invalidate attribution that points at another game')
 
 const copiedResult = await api.share('swarm', 'post-run')
 assert.equal(copiedResult.status, 'copied')
