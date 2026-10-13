@@ -345,7 +345,54 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
       pool.query("SELECT COUNT(*)::int AS total_30d FROM commerce_events WHERE received_at >= NOW() - INTERVAL '30 days'"),
       pool.query("SELECT event_name, COUNT(*)::int AS count FROM commerce_events WHERE received_at >= NOW() - INTERVAL '30 days' GROUP BY event_name ORDER BY count DESC LIMIT 12"),
       pool.query("SELECT game_id AS \"gameId\", COUNT(*)::int AS events, COUNT(DISTINCT session_id)::int AS sessions, COUNT(*) FILTER (WHERE event_name IN ('game_session_started','game_launched'))::int AS starts, COUNT(*) FILTER (WHERE event_name='game_session_completed')::int AS completions, COALESCE(ROUND(AVG(duration_seconds) FILTER (WHERE event_name='game_session_completed' AND duration_seconds > 0))::int,0) AS \"avgCompletionSeconds\", COUNT(*) FILTER (WHERE event_name='cross_promo_clicked')::int AS \"crossPromoClicks\" FROM commerce_events WHERE received_at >= NOW() - INTERVAL '30 days' GROUP BY game_id ORDER BY starts DESC, events DESC LIMIT 20"),
-      pool.query("SELECT COUNT(*) FILTER (WHERE event_name='catalog_viewed')::int AS \"catalogViews\", COUNT(*) FILTER (WHERE event_name IN ('game_launched','game_session_started'))::int AS \"gameStarts\", COUNT(*) FILTER (WHERE event_name='game_session_completed')::int AS \"completedSessions\", COUNT(*) FILTER (WHERE event_name='cross_promo_clicked')::int AS \"crossPromoClicks\", COUNT(*) FILTER (WHERE event_name='lead_submitted')::int AS \"leadSubmittedEvents\", COUNT(*) FILTER (WHERE event_name='premium_page_view')::int AS \"premiumPageViews\", COUNT(*) FILTER (WHERE event_name='partners_page_viewed')::int AS \"partnersPageViews\", COUNT(*) FILTER (WHERE event_name='share_created' AND source LIKE 'game-invite:%')::int AS \"inviteShares\", COUNT(*) FILTER (WHERE event_name='referral_link_opened' AND source LIKE 'referral-link:%')::int AS \"referralOpens\", COUNT(*) FILTER (WHERE event_name='game_session_started' AND source LIKE 'referral:%')::int AS \"referredStarts\", COUNT(*) FILTER (WHERE event_name='game_session_completed' AND source LIKE 'referral:%')::int AS \"referredCompletions\" FROM commerce_events WHERE received_at >= NOW() - INTERVAL '30 days'"),
+      pool.query(`
+        WITH recent_events AS (
+          SELECT event_name, source
+          FROM commerce_events
+          WHERE received_at >= NOW() - INTERVAL '30 days'
+        ),
+        invite_shares AS (
+          SELECT DISTINCT split_part(source, ':', 3) AS invite_code
+          FROM recent_events
+          WHERE event_name = 'share_created'
+            AND source LIKE 'game-invite:%'
+            AND split_part(source, ':', 3) ~ '^[a-f0-9]{12}$'
+        ),
+        invite_opens AS (
+          SELECT DISTINCT split_part(source, ':', 2) AS invite_code
+          FROM recent_events
+          WHERE event_name = 'referral_link_opened'
+            AND source LIKE 'referral-link:%'
+            AND split_part(source, ':', 2) ~ '^[a-f0-9]{12}$'
+        ),
+        invite_starts AS (
+          SELECT DISTINCT split_part(source, ':', 2) AS invite_code
+          FROM recent_events
+          WHERE event_name = 'game_session_started'
+            AND source LIKE 'referral:%'
+            AND split_part(source, ':', 2) ~ '^[a-f0-9]{12}$'
+        ),
+        invite_completions AS (
+          SELECT DISTINCT split_part(source, ':', 2) AS invite_code
+          FROM recent_events
+          WHERE event_name = 'game_session_completed'
+            AND source LIKE 'referral:%'
+            AND split_part(source, ':', 2) ~ '^[a-f0-9]{12}$'
+        )
+        SELECT
+          COUNT(*) FILTER (WHERE event_name = 'catalog_viewed')::int AS "catalogViews",
+          COUNT(*) FILTER (WHERE event_name IN ('game_launched', 'game_session_started'))::int AS "gameStarts",
+          COUNT(*) FILTER (WHERE event_name = 'game_session_completed')::int AS "completedSessions",
+          COUNT(*) FILTER (WHERE event_name = 'cross_promo_clicked')::int AS "crossPromoClicks",
+          COUNT(*) FILTER (WHERE event_name = 'lead_submitted')::int AS "leadSubmittedEvents",
+          COUNT(*) FILTER (WHERE event_name = 'premium_page_view')::int AS "premiumPageViews",
+          COUNT(*) FILTER (WHERE event_name = 'partners_page_viewed')::int AS "partnersPageViews",
+          (SELECT COUNT(*) FROM invite_shares)::int AS "inviteShares",
+          (SELECT COUNT(*) FROM invite_shares s JOIN invite_opens o USING (invite_code))::int AS "referralOpens",
+          (SELECT COUNT(*) FROM invite_shares s JOIN invite_starts r USING (invite_code))::int AS "referredStarts",
+          (SELECT COUNT(*) FROM invite_shares s JOIN invite_completions c USING (invite_code))::int AS "referredCompletions"
+        FROM recent_events
+      `),
     ]);
     return res.json({
       ordersByStatus: orderStats.rows,
