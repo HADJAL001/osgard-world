@@ -376,7 +376,10 @@ assert.equal(mockClasses.has('has-recommendations'),true,'The player layout shou
 const mockGrid=mockHost.children.find(node=>node.className==='post-run-grid');
 const mockSuite=mockHost.children.find(node=>node.className==='og-postgame-suite');
 assert.ok(mockSuite,'Post-run service/reward suite should appear after each valid completion');
-assert.equal(mockSuite.children[0].children.find(node=>node.className==='og-postgame-service-grid').children.length,10,'Post-run intermission should list all ten services');
+assert.equal(mockSuite.children[0].children.find(node=>node.className==='og-postgame-service-grid').children.length,9,'Post-run intermission should list only the nine available, opted-in service links');
+const initialSpotlight=mockSuite.children[0].children.find(node=>node.className==='og-postgame-service-grid').children.find(node=>node.className.includes('is-featured'));
+assert.equal(initialSpotlight?.dataset.service,'marcosa','The first available service should lead the first post-game spotlight');
+assert.ok(mockSuite.children[0].children.find(node=>node.className==='og-postgame-service-grid').children.every(node=>node.dataset.service!=='gardvpn'),'Unavailable GARD VPN must not appear as a promo card');
 const postGameServiceShelf=mockSuite.children[0];
 const postGamePreferences=postGameServiceShelf.children.find(node=>node.className==='og-postgame-preferences');
 const postGameServiceOptions=postGamePreferences?.children.find(node=>node.className==='og-postgame-service-options');
@@ -403,6 +406,14 @@ assert.equal(serviceCards.find(node=>node.dataset.service==='marcosa').hidden,fa
 assert.ok(serviceCards.filter(node=>node.dataset.category!=='social').every(node=>node.hidden),'Non-selected service categories should be hidden')
 serviceFilters.children.find(node=>node.dataset.osgardServiceFilter==='all').click()
 assert.ok(serviceCards.every(node=>!node.hidden),'All services should return when the all-category filter is selected')
+const decisionBar=servicesSection.children.find(node=>node.className==='og-postgame-service-decision');
+assert.ok(decisionBar,'A clear skip control should be available in the intermission');
+const skipOffer=decisionBar.children.find(node=>node.className==='og-postgame-skip');
+skipOffer.click();
+assert.equal(servicesSection.children.find(node=>node.className==='og-postgame-service-grid').hidden,true,'Skip should hide promo cards without blocking share rewards');
+assert.equal(servicesSection.children.find(node=>node.className==='og-postgame-service-filters').hidden,true,'Skip should hide service categories together with promo cards');
+assert.equal(decisionBar.children.find(node=>node.className==='og-postgame-skip-status').hidden,false,'Skip should provide accessible feedback');
+assert.ok(recommendationScript.includes("'owned_promo_intermission_skipped'")&&recommendationScript.includes("'owned_promo_preferences_saved'"),'Promotion control events should be consent-gated and allowlisted');
 assert.ok(recommendationScript.includes('Выбери категорию и сервис, который хочешь посмотреть. Автозапуска нет'),'Service promotion must remain user-selected and must not autoplay')
 const rewardSection=mockSuite.children.find(node=>node.className==='og-postgame-reward')
 const socialGrid=rewardSection.children.find(node=>node.className==='og-postgame-networks')
@@ -425,8 +436,10 @@ mockDocument.dispatch('osgard:game-session-ended',{detail:{game:'patina',reason:
 assert.equal(mockOutside.hidden,false,'Closing a live PATINA session should show the owned-service intermission outside the player dialog')
 const outsideSuite=mockOutside.children.find(node=>node.className==='og-postgame-suite og-postgame-outside-suite')
 assert.ok(outsideSuite,'Closed-session intermission should contain a standalone service/reward suite')
-assert.equal(outsideSuite.children.find(node=>node.className==='og-postgame-services').children.find(node=>node.className==='og-postgame-service-grid').children.length,10,'Closed-session intermission must preserve all ten owned service choices')
-assert.equal(outsideSuite.children.find(node=>node.className==='og-postgame-back').href,'#catalog','Players must have a clear path back to the next game')
+assert.equal(outsideSuite.children.find(node=>node.className==='og-postgame-services').children.find(node=>node.className==='og-postgame-service-grid').children.length,9,'Closed-session intermission should only show available selected services')
+assert.equal(outsideSuite.children.find(node=>node.className==='og-postgame-back').href,'#catalog','Players must have a clear path back to the next game');
+const outsideCards=outsideSuite.children.find(node=>node.className==='og-postgame-services').children.find(node=>node.className==='og-postgame-service-grid').children;
+assert.equal(outsideCards.find(node=>node.className.includes('is-featured'))?.dataset.service,'projects','The post-game spotlight should rotate on the next distinct game session');
 mockDocument.dispatch('osgard:game-launching')
 assert.equal(mockOutside.hidden,true,'Starting the next game must dismiss the standalone intermission')
 assert.equal(mockOutside.children.length,0,'Starting the next game must clear stale promoted-service cards')

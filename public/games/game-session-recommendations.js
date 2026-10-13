@@ -272,7 +272,7 @@ let memoryServiceProgress={count:0,lastAt:0,lastGame:''};
 const make=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n};
 const selectConsentKey='osgard.games.analytics-consent.v1';
 const selectSessionKey='osgard.games.growth-session.v1';
-const selectAllowedEvents=new Set(['cross_promo_clicked','owned_promo_impression','social_share_intent','social_reward_claimed','share_created']);
+const selectAllowedEvents=new Set(['cross_promo_clicked','owned_promo_impression','owned_promo_intermission_skipped','owned_promo_preferences_saved','social_share_intent','social_reward_claimed','share_created']);
 function hasConsent(){try{return localStorage.getItem(selectConsentKey)==='yes'}catch{return false}}
 const pendingSelectTelemetry=new Set();
 function cancelPendingSelectTelemetry(){for(const controller of pendingSelectTelemetry){try{controller.abort()}catch{}}pendingSelectTelemetry.clear()}
@@ -392,17 +392,18 @@ function servicesShelf(gameId,showPromos,completedCount){
  filterDefs.forEach(([id,labelText])=>{const button=make('button','og-postgame-service-filter',labelText);button.type='button';button.dataset.osgardServiceFilter=id;button.setAttribute('aria-pressed',String(id==='all'));filters.append(button);filterButtons.push(button)});
  const activeSelected=services.filter(([id,,,,,,featured=false,active=true])=>active!==false&&preferences.selected.includes(id));
  collapseToggle.hidden=!(showPromos&&activeSelected.length);
- const visible=activeSelected.length?services.filter(([id,,,,,,featured=false,active=true])=>active===false||preferences.selected.includes(id)):[];
+ const visible=activeSelected;
+ const spotlightId=activeSelected.length?activeSelected[(Math.max(0,completedCount-1)%activeSelected.length)][0]:null;
  const grid=make('div','og-postgame-service-grid'),cards=[];
  if(showPromos&&activeSelected.length){
   visible.forEach(([id,num,title,category,description,href,featured=false,active=true])=>{
-   const card=make(active===false?'article':'a','og-postgame-service-card'+(featured?' is-featured':'')+(active===false?' is-unavailable':''));
+   const isSpotlight=id===spotlightId;
+   const card=make('a','og-postgame-service-card'+(isSpotlight?' is-featured':''));
    card.dataset.service=id;card.dataset.game=gameId;card.dataset.category=categoryByService[id]||'other';cards.push(card);
-   if(active!==false){
-    const u=new URL(href);u.searchParams.set('utm_source','osgard_games');u.searchParams.set('utm_medium','post_game');u.searchParams.set('utm_campaign','after_game');u.searchParams.set('utm_content',id+'_'+gameId);card.href=u.href;card.target='_blank';card.rel='noopener noreferrer';card.setAttribute('aria-label','Открыть '+title+' в новой вкладке');
-    card.addEventListener('click',()=>sendSelectEvent('cross_promo_clicked',gameId,'osgard-select:click:'+id));
-   }
-   card.append(make('span','og-postgame-service-code','OSG / '+num+' · '+category),make('strong','og-postgame-service-name',title),make('span','og-postgame-service-description',description),make('span','og-postgame-service-action',active===false?'Пока не продвигается':'Открыть проект ↗'));grid.append(card);
+   const u=new URL(href);u.searchParams.set('utm_source','osgard_games');u.searchParams.set('utm_medium','post_game');u.searchParams.set('utm_campaign','after_game');u.searchParams.set('utm_content',id+'_'+gameId);card.href=u.href;card.target='_blank';card.rel='noopener noreferrer';card.setAttribute('aria-label','Открыть '+title+' в новой вкладке');
+   card.addEventListener('click',()=>sendSelectEvent('cross_promo_clicked',gameId,'osgard-select:click:'+id));
+   if(isSpotlight)card.append(make('span','og-postgame-service-spotlight','В ФОКУСЕ ЭТОГО РАУНДА'));
+   card.append(make('span','og-postgame-service-code','OSG / '+num+' · '+category),make('strong','og-postgame-service-name',title),make('span','og-postgame-service-description',description),make('span','og-postgame-service-action','Открыть проект ↗'));grid.append(card);
   });
  }
  function updateFilterCounts(){
@@ -426,11 +427,17 @@ function servicesShelf(gameId,showPromos,completedCount){
  if(!showPromos)state.textContent=frequencySummary(preferences,completedCount);
  else if(!activeSelected.length)state.textContent='Сейчас ни один сервис не выбран. Открой «Настроить показ» и отметь интересующие проекты.';
  const foot=make('p','og-postgame-service-foot','Переход добровольный и открывается в новой вкладке. Результат сохраняется. Нет сторонней рекламной сети или фиктивных показов.');
+ const decision=make('div','og-postgame-service-decision');
+ const skipButton=make('button','og-postgame-skip','Пропустить подборку');skipButton.type='button';
+ const skipStatus=make('p','og-postgame-skip-status','Подборка скрыта. Игровой каталог и награда за приглашение остаются доступны.');skipStatus.hidden=true;skipStatus.setAttribute('role','status');skipStatus.setAttribute('aria-live','polite');
+ skipButton.addEventListener('click',()=>{grid.hidden=true;filters.hidden=true;skipButton.hidden=true;skipStatus.hidden=false;void sendSelectEvent('owned_promo_intermission_skipped',gameId,'osgard-select:skip:'+completedCount)});
+ decision.append(skipButton,skipStatus);
  settingsToggle.addEventListener('click',()=>{settings.hidden=!settings.hidden;settingsToggle.textContent=settings.hidden?'Настроить показ':'Закрыть настройки';settingsToggle.setAttribute('aria-expanded',String(!settings.hidden));if(!settings.hidden)frequency.focus()});
  collapseToggle.addEventListener('click',()=>{const collapsed=!grid.hidden;grid.hidden=collapsed;filters.hidden=collapsed;collapseToggle.textContent=collapsed?'Показать подборку · '+cards.length:'Свернуть подборку';collapseToggle.setAttribute('aria-expanded',String(!collapsed))});
  saveButton.addEventListener('click',()=>{
   const selectedIds=Array.from(choices.querySelectorAll('input[data-service-preference]:checked')).map(input=>input.dataset.servicePreference);
   const ok=writeServicePreferences({frequency:frequency.value,selected:selectedIds});
+  if(ok)void sendSelectEvent('owned_promo_preferences_saved',gameId,'osgard-select:preferences:'+frequency.value+':'+selectedIds.length);
   const nextPreferences=readServicePreferences(),nextShow=shouldShowServicePromos(nextPreferences,completedCount);
   const replacement=servicesShelf(gameId,nextShow,completedCount);section.replaceWith(replacement);
   const nextToggle=replacement.querySelector('.og-postgame-settings-toggle');if(nextToggle)nextToggle.click();
@@ -438,7 +445,7 @@ function servicesShelf(gameId,showPromos,completedCount){
   if(nextStatus)nextStatus.textContent=ok?'Настройки сохранены на этом устройстве.':'Настройки действуют в этой вкладке; браузер не разрешил постоянное сохранение.';
  });
  section.append(head,settings);
- if(showPromos&&activeSelected.length)section.append(filters,grid,foot);
+ if(showPromos&&activeSelected.length)section.append(filters,grid,foot,decision);
  else section.append(state,foot);
  // Count owned-service exposure only when a clickable card is at least half visible for a full second.
  // This remains consent-gated first-party measurement, not a third-party ad-network impression.
