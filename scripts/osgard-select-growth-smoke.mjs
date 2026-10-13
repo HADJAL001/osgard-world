@@ -35,7 +35,7 @@ assert.ok(entertainmentGateway.includes("const PROMO_PREFERENCES_KEY = 'osgard.g
   source.includes("const servicePreferencesKey='osgard.games.postgame-service-preferences.v1'"),
   'The Entertainment gateway and between-game intermission must use one shared preferences key');
 assert.ok(entertainmentGateway.includes("const PROMOTABLE_SERVICE_IDS = services.map(service => service.id)") &&
-  source.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN','VPN-сервис. Описание и условия доступны на сайте проекта; доступность домена не была подтверждена проверкой.','https://gardvpn.is/',false,true]") &&
+  source.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN','VPN-сервис. Описание и условия доступны на сайте проекта; доступность домена не была подтверждена проверкой.','https://gardvpn.is/',false,false]") &&
   entertainmentGateway.includes("const unverified = service.id === 'gardvpn'") &&
   entertainmentGateway.includes("Availability not verified; opens the project site"),
   'GARD VPN remains selectable like the other owner projects, with an explicit warning that its availability is unverified');
@@ -104,13 +104,14 @@ assert.ok(source.includes("u.searchParams.set('utm_source','osgard_games')") &&
   'Each service link needs source, placement and campaign attribution');
 assert.ok(source.includes("РЕКЛАМА · СОБСТВЕННЫЕ ПРОЕКТЫ OSGARD") &&
   source.includes('Автозапуска нет'), 'Self-promotion must be labelled and never autoplay');
-assert.ok(source.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN','VPN-сервис. Описание и условия доступны на сайте проекта; доступность домена не была подтверждена проверкой.','https://gardvpn.is/',false,true]"),
+assert.ok(source.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN','VPN-сервис. Описание и условия доступны на сайте проекта; доступность домена не была подтверждена проверкой.','https://gardvpn.is/',false,false]"),
   'GARD VPN must remain selectable but clearly disclosed as not independently verified');
 assert.ok(source.includes("const availableServiceIds=services.filter(item=>item[7]!==false).map(item=>item[0])") &&
   source.includes("input.disabled=active===false"),
   'The promotion list must obey explicit service-availability flags while keeping the unverified VPN disclosed');
 assert.ok(source.includes("const activeSelected=services.filter(([id,,,,,,featured=false,active=true])=>active!==false&&preferences.selected.includes(id))") &&
-  source.includes("const visible=activeSelected;"),
+  source.includes("const visible=activeSelected;") &&
+   source.includes("Из выбранных сервисов пока нет подтверждённо доступных для межигрового показа."),
   'Unavailable service IDs must be excluded from the promotable service card grid');
 assert.ok(source.includes("if(!hasConsent()||!selectAllowedEvents.has(name))return false") &&
   source.includes("sendSelectEvent('owned_promo_impression',gameId,'osgard-select:spotlight:'"),
