@@ -13,6 +13,8 @@ A compact sci-fi precision runner in OSGARD PLAY: a UTC daily seed, local person
 The share reward is a self-confirmed, cosmetic acknowledgement—not proof that a post was published. Client-only localStorage is easy to reset and is not anti-fraud, so the local SIGNAL SHARD must have no monetary, transferable or referral-credit value. Before offering paid/transferable value, implement server-side invite attribution, idempotent referral records, account/abuse controls and require a qualified referred player's first completed session.
 
 ## Gameplay integrity hardening
+
+The challenge uses a deterministic UTC seed and a bounded fixed 60 Hz simulation accumulator. Cosmetic particles/camera shake run on a separate random stream, so render effects don't consume obstacle-generation randomness. This reduces frame-rate variance; it does not guarantee tamper-proof scores, because a browser-local score/ghost can still be edited. Keep public leaderboards and valuable rewards server-verified.
 - Gameplay obstacle generation and cosmetic randomness use separate seeded generators, so particles, background stars and camera shake do not consume the daily obstacle sequence.
 - Restart resets both streams. The challenge is considered beaten only when the score is strictly higher than the target score, not equal.
 - The exported PNG uses URL parameters for the daily seed and target score, so a result card points to a valid challenge URL rather than a malformed query string.
