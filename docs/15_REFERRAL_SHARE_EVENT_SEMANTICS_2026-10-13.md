@@ -31,3 +31,12 @@ The funnel is consented analytics, not complete traffic measurement. It must not
 ## Monetization relevance
 
 A lower but more truthful share count is preferable to artificially inflated conversion metrics. Sponsorship and revenue forecasts must use confirmed provider/order data and clearly disclosed assumptions; referral events alone never justify claiming a dollar value or “viral coefficient.”
+
+
+## Additional hardening — one referral contract
+
+The catalogue toolbar and the post-session invite button now use the same canonical `og_ref` / `og_game` link when that builder is available. The legacy 12-hex `challenge` / `ref` format remains accepted for already-shared links. Both formats are validated against their expected source, medium and campaign before the growth module treats a URL as an OSGARD referral.
+
+Referral-open markers use a per-tab `pending` state before the first network await, preventing two concurrent callbacks from submitting the same open event in one tab. A successful event changes the marker to `yes`; a failed upload removes `pending` so a later visible-page retry remains possible. When consent is withdrawn, in-flight analytics requests are aborted where supported and consent is checked again after configuration loading and immediately before/after posting. This reduces the risk of recording events after opt-out; it cannot undo an event that the server already accepted before withdrawal.
+
+Gameplay attribution accepts both the legacy 12-hex token and the canonical `og_[a-f0-9]{8}` token, so valid consented invite opens can be tied to referred session start/completion events without putting a personal identifier in the URL.

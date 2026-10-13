@@ -349,7 +349,7 @@ const catalogRuntime=html.slice(inviteScriptBodyStart,inviteScriptEnd)
 new Function(catalogRuntime)
 for(const marker of ["og_ref","og_game","utm_source","utm_medium","utm_campaign","utm_content","function createInviteLink","function renderInviteRibbon","source:'referral_link'","referralCode:invite.code","if(!consent)return","if(!token)return"]) assert.ok(catalogRuntime.includes(marker),'Referral / privacy contract missing: '+marker)
 assert.ok(catalogRuntime.includes("navigator.share({title:games[id].title+' — OSGARD PLAY'") && catalogRuntime.includes("url=createInviteLink(id)"),'Player-share action must produce a game-specific invite link')
-assert.ok(catalogRuntime.includes('window.OSGARDInvite={createLink:()=>createInviteLink()') && luxury.includes('window.OSGARDInvite?.createLink()') && luxury.includes('window.OSGARDInvite?.trackShare?.()'),'Catalogue share control must use the same invite-link builder')
+assert.ok(catalogRuntime.includes('window.OSGARDInvite={createLink:(id)=>createInviteLink(id)') && luxury.includes('window.OSGARDInvite?.createLink()') && luxury.includes('window.OSGARDInvite?.trackShare?.()'),'Catalogue share control must use the same invite-link builder')
 assert.ok(luxuryCss.includes('.invite-ribbon') && luxuryCss.includes('@media(max-width:620px)') && luxuryCss.includes('prefers-reduced-motion:reduce'),'Referral invitation ribbon must be responsive and respect reduced motion')
 assert.ok(catalogRuntime.includes("sessionStorage.setItem('osgard.games.invite-dismissed.v1',key)"),'Invite dismissal should be local to this browser session')
 console.log('PASS OSGARD referral loop: game-specific invite deep links, consent-gated authenticated attribution, responsive invite ribbon and script syntax.')
@@ -377,3 +377,13 @@ assert.ok(lifecycle.includes('function analyticsSource()') && lifecycle.includes
 assert.ok(referralCoreSource.includes('"referral_link_opened"') && referralCoreSource.includes('"share_created"'), 'Commerce API must explicitly allowlist invite events')
 for(const metric of ['inviteShares','referralOpens','referredStarts','referredCompletions']) assert.ok(referralApiSource.includes(metric), 'Commerce analytics response lacks referral metric '+metric)
 for(const metric of ['analytics-invites','analytics-referral-opens','analytics-referred-starts','analytics-referred-completions']) assert.ok(referralAdminSource.includes('id="'+metric+'"'), 'Commerce admin is missing referral metric '+metric)
+
+
+// Regression checks: unify catalogue/post-session referrals and keep consent withdrawal race-safe.
+assert.ok(catalogRuntime.includes('window.OSGARDInvite={createLink:(id)=>createInviteLink(id)'), 'The canonical invite builder must accept a game ID');
+assert.ok(recommendationScript.includes("params.get('og_game')")&&recommendationScript.includes("params.get('og_ref')"), 'Post-session invite tracking must recognize canonical catalogue links');
+assert.ok(recommendationScript.includes("campaign==='play_with_friends'")&&recommendationScript.includes("campaign==='play_with_a_friend'"), 'Both existing OSGARD invite formats must remain compatible');
+assert.ok(recommendationScript.includes("sessionStorage.setItem(marker,'pending')")&&recommendationScript.includes("state==='pending'"), 'Referral-open events must be deduplicated within a tab while a request is pending');
+assert.ok(recommendationScript.includes('pendingTelemetry')&&recommendationScript.includes('cancelPendingTelemetry()')&&recommendationScript.includes("if(!consented()||(controller&&controller.signal.aborted))return false"), 'Consent withdrawal must abort pending telemetry and re-check before upload');
+assert.ok(recommendationScript.includes("invite.code.startsWith('og_')"), 'Canonical invite must not produce a duplicate second invite banner');
+assert.ok(lifecycle.includes("/^(?:[a-f0-9]{12}|og_[a-f0-9]{8})$/"), 'Gameplay attribution must accept both referral token formats');
