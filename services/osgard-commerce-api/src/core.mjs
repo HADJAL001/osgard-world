@@ -46,6 +46,7 @@ const GAME_IDS = new Set([
 ]);
 GAME_IDS.add("cascade-lab");
 GAME_IDS.add("aether-grid");
+GAME_IDS.add("aether-grid");
 
 export function cleanText(value, max = 500) {
   return String(value ?? "")
