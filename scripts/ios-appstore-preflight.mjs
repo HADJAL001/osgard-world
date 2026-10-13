@@ -20,6 +20,7 @@ const consentedAnalytics = read('public/games/consented-analytics.js');
 const referralAnalytics = read('public/games/game-session-recommendations.js');
 const lifecycleAnalytics = read('public/games/player-lifecycle.js');
 const guide = read('docs/IOS_APP_STORE_CODEMAGIC_RU.md');
+const listing = read('docs/IOS_APP_STORE_LISTING_RU.md');
 const supportPage = read('public/support/osgard-play/index.html');
 const releaseTagPreflight = read('scripts/ios-release-tag-preflight.mjs');
 
@@ -27,6 +28,29 @@ assert.equal(config.appId, 'com.osgardworld.play');
 assert.equal(config.appName, 'OSGARD PLAY');
 assert.equal(config.webDir, 'dist');
 assert.equal(config.ios.backgroundColor, '#080A0B');
+
+const signingBundleId = codemagic.match(/^\\s+bundle_identifier:\\s*([^\\s#]+)/m)?.[1];
+assert.equal(signingBundleId, config.appId, 'Codemagic signing Bundle ID must match Capacitor appId.');
+const xcodeSelector = codemagic.match(/^\\s+xcode:\\s*([^\\s#]+)/m)?.[1];
+assert.ok(
+  xcodeSelector === 'latest' || Number.parseInt(String(xcodeSelector || '').split('.')[0], 10) >= 26,
+  'App Store submissions after 2026-04-28 require Xcode 26 or later; do not pin an older runner.'
+);
+
+const storeName = listing.match(/Название:\\*\\* `([^`]+)`/)?.[1] || '';
+const storeSubtitle = listing.match(/Подзаголовок:\\*\\* `([^`]+)`/)?.[1] || '';
+const promoText = listing.match(/## Promotional Text\\s+\\d+\\/170 символов:\\s*\\n\\s*>\\s*([^\\n]+)/)?.[1] || '';
+const descriptionBlock = listing.match(/## Description\\s+\\d+\\/4000 символов:\\s*\\n\\n([\\s\\S]*?)\\n\\nПеред отправкой/)?.[1] || '';
+const storeDescription = descriptionBlock.split('\\n').map((line) => line.replace(/^>\\s?/, '')).join('\\n').trim();
+const keywordText = listing.match(/## Keywords\\s+\\d+\\/100 UTF-8 bytes:\\s*\\n\\n`([^`]+)`/)?.[1] || '';
+assert.ok(storeName && storeSubtitle && promoText && storeDescription && keywordText, 'App Store listing draft is missing a required field.');
+assert.ok([...storeName].length <= 30, 'App Store name exceeds 30 characters.');
+assert.ok([...storeSubtitle].length <= 30, 'App Store subtitle exceeds 30 characters.');
+assert.ok([...promoText].length <= 170, 'App Store promotional text exceeds 170 characters.');
+assert.ok([...storeDescription].length <= 4000, 'App Store description exceeds 4000 characters.');
+assert.ok(Buffer.byteLength(keywordText, 'utf8') <= 100, 'App Store keywords exceed 100 UTF-8 bytes.');
+assert.ok(listing.includes('https://osgard.world/support/osgard-play/'), 'App Store listing must use the dedicated support URL.');
+assert.ok(listing.includes('https://osgard.world/privacy/'), 'App Store listing must use the published privacy policy URL.');
 assert.equal(resolveIosMarketingVersion({ CM_TAG: 'osgard-play-v1.2.3' }), '1.2.3');
 assert.equal(resolveIosMarketingVersion({ APP_VERSION: '2.4.0' }), '2.4.0');
 assert.equal(resolveIosMarketingVersion({}), '1.0.0', 'Manual builds retain a documented default version');
