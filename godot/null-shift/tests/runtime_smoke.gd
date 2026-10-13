@@ -241,17 +241,19 @@ func _run_smoke() -> void:
 	game.adaptive_slow_windows = 0
 	game.adaptive_fast_windows = 0
 	game._apply_quality_mode()
+	if not _expect(is_instance_valid(game.atmosphere_particles) and game.atmosphere_particles.emitting and game.atmosphere_particles.amount == 72, "cinematic profile must enable the high-quality suspended dust field"):
+		return
 	game._evaluate_adaptive_quality(25.0, 34.0)
 	if not _expect(not game.adaptive_quality_degraded, "adaptive quality must require sustained slow windows"):
 		return
 	game._evaluate_adaptive_quality(25.0, 34.0)
 	if not _expect(game.adaptive_quality_degraded, "sustained frame-time pressure must enable the optimized profile"):
 		return
-	if not _expect(not game.world_environment.environment.glow_enabled and not game.key_light.shadow_enabled and not game.fill_light.visible, "optimized profile must lower expensive cinematic effects"):
+	if not _expect(not game.world_environment.environment.glow_enabled and not game.key_light.shadow_enabled and not game.fill_light.visible and not game.atmosphere_particles.emitting and not game.atmosphere_particles.visible, "optimized profile must lower expensive cinematic effects and suspend atmospheric particles"):
 		return
 	for _window in range(4):
 		game._evaluate_adaptive_quality(15.5, 19.5)
-	if not _expect(not game.adaptive_quality_degraded and game.world_environment.environment.glow_enabled and game.key_light.shadow_enabled and game.fill_light.visible, "stable frame pacing must restore cinematic effects"):
+	if not _expect(not game.adaptive_quality_degraded and game.world_environment.environment.glow_enabled and game.key_light.shadow_enabled and game.fill_light.visible and game.atmosphere_particles.emitting and game.atmosphere_particles.amount == 72, "stable frame pacing must restore cinematic effects and atmosphere density"):
 		return
 
 	print("RUNTIME_STAGE: three graphics presets and touch utility buttons")
@@ -262,15 +264,15 @@ func _run_smoke() -> void:
 	game.adaptive_quality_degraded = false
 	game._apply_quality_mode()
 	game.mobile_quality_button.emit_signal("pressed")
-	if not _expect(not game.cinematic_quality and not game.performance_quality and not game.world_environment.environment.glow_enabled and game.key_light.shadow_enabled and game.fill_light.visible, "first quality tap must select balanced mode and retain useful lighting/shadows"):
+	if not _expect(not game.cinematic_quality and not game.performance_quality and not game.world_environment.environment.glow_enabled and game.key_light.shadow_enabled and game.fill_light.visible and game.atmosphere_particles.emitting and game.atmosphere_particles.amount == 32, "first quality tap must select balanced mode and retain useful lighting/shadows with a lighter atmosphere"):
 		return
 	game.mobile_quality_button.emit_signal("pressed")
-	if not _expect(not game.cinematic_quality and game.performance_quality and not game.key_light.shadow_enabled and not game.fill_light.visible, "second quality tap must select performance mode and disable expensive dynamic lighting"):
+	if not _expect(not game.cinematic_quality and game.performance_quality and not game.key_light.shadow_enabled and not game.fill_light.visible and not game.atmosphere_particles.emitting and game.atmosphere_particles.amount == 8, "second quality tap must select performance mode and disable expensive dynamic lighting and atmosphere"):
 		return
 	if not _expect(bool(game.career.get_value("settings", "performance_quality", false)), "performance mode must persist across sessions"):
 		return
 	game.mobile_quality_button.emit_signal("pressed")
-	if not _expect(game.cinematic_quality and not game.performance_quality and game.world_environment.environment.glow_enabled and game.key_light.shadow_enabled, "third quality tap must return to cinematic mode"):
+	if not _expect(game.cinematic_quality and not game.performance_quality and game.world_environment.environment.glow_enabled and game.key_light.shadow_enabled and game.atmosphere_particles.emitting and game.atmosphere_particles.amount == 72, "third quality tap must return to cinematic lighting and full atmosphere density"):
 		return
 	game.mobile_diagnostics_button.emit_signal("pressed")
 	if not _expect(game.diagnostics_enabled and game.diagnostics_label.visible and game.mobile_diagnostics_button.text == "FPS+", "touch diagnostics button must reveal live FPS/telemetry"):

@@ -240,3 +240,11 @@ This pass removes recurring allocations from the firefight path: beams and ring 
 ## Release 1.8 — retention + share conversion loop
 
 The Godot build tracks a persistent UTC daily-clear streak, longest streak and last completion date. Daily rewards remain 400 credits, with +100 on the third consecutive clear and +300 on each seventh consecutive clear. Duplicate claims are blocked. A missed UTC date resets the active streak while retaining the record. The loadout shows streak, record and next milestone; the share card communicates the streak and daily challenge code. The feature is soft-currency only and does not create pay-to-win attributes.
+
+
+## Release 0.10 — engine-native atmospheric depth
+
+- Added a Godot GPUParticles3D suspension-dust field using procedural sphere motes, a four-stop alpha-ramp texture, slow drift and bounded visibility. The effect adds depth in front of the existing fog/lighting without importing textures or making per-frame scene allocations.
+- The system is integrated into the real quality governor: Cinematic = 72 motes, Balanced = 32 at reduced speed, Performance = emission disabled. Adaptive degradation suspends particles and stable frame timing restores them.
+- Runtime and static release tests verify the emitter, particle material, fade ramp, density choices and automatic/manual quality transitions.
+- This is a restrained real-time atmosphere layer, not volumetric cloud simulation or native 8K rendering. Actual frame-time quality still needs device profiling.

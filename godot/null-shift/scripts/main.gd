@@ -147,6 +147,7 @@ var target_lock_has_position := false
 var target_lock_tracked_node: Node3D
 var local_lights: Array[OmniLight3D] = []
 var fill_light: OmniLight3D
+var atmosphere_particles: GPUParticles3D
 var sound_button: Button
 var quality_button: Button
 var mobile_quality_button: Button
@@ -440,6 +441,61 @@ func _create_lighting() -> void:
 	fill_light.omni_range = 19.0
 	fill_light.shadow_enabled = false
 	add_child(fill_light)
+	_create_atmosphere_particles()
+
+func _create_atmosphere_particles() -> void:
+	# Fine drifting motes give the arena depth without external textures or per-frame allocations.
+	atmosphere_particles = GPUParticles3D.new()
+	atmosphere_particles.name = "SuspendedSignalDust"
+	atmosphere_particles.amount = 72
+	atmosphere_particles.lifetime = 7.4
+	atmosphere_particles.explosiveness = 0.0
+	atmosphere_particles.randomness = 1.0
+	atmosphere_particles.fixed_fps = 30
+	atmosphere_particles.interpolate = true
+	atmosphere_particles.local_coords = true
+	atmosphere_particles.visibility_aabb = AABB(Vector3(-25.0, -1.0, -17.0), Vector3(50.0, 10.0, 34.0))
+	atmosphere_particles.position = Vector3(0.0, 1.8, 0.0)
+	var process_material := ParticleProcessMaterial.new()
+	process_material.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+	process_material.emission_box_extents = Vector3(22.0, 3.2, 13.5)
+	process_material.direction = Vector3(0.12, 0.03, -0.08)
+	process_material.spread = 32.0
+	process_material.initial_velocity_min = 0.025
+	process_material.initial_velocity_max = 0.11
+	process_material.gravity = Vector3.ZERO
+	process_material.scale_min = 0.45
+	process_material.scale_max = 1.15
+	process_material.color = Color(0.5, 0.94, 0.88, 0.34)
+	var fade := Gradient.new()
+	fade.offsets = PackedFloat32Array([0.0, 0.14, 0.82, 1.0])
+	fade.colors = PackedColorArray([
+		Color(0.34, 0.88, 0.82, 0.0),
+		Color(0.42, 0.96, 0.88, 0.25),
+		Color(0.3, 0.75, 0.74, 0.16),
+		Color(0.3, 0.75, 0.74, 0.0)
+	])
+	var fade_texture := GradientTexture1D.new()
+	fade_texture.gradient = fade
+	process_material.color_ramp = fade_texture
+	atmosphere_particles.process_material = process_material
+	var mote_mesh := SphereMesh.new()
+	mote_mesh.radius = 0.025
+	mote_mesh.height = 0.05
+	mote_mesh.radial_segments = 6
+	mote_mesh.rings = 3
+	var mote_material := StandardMaterial3D.new()
+	mote_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mote_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mote_material.albedo_color = Color(0.45, 0.92, 0.85, 0.42)
+	mote_material.emission_enabled = true
+	mote_material.emission = Color(0.035, 0.24, 0.21)
+	mote_material.emission_energy_multiplier = 0.22
+	mote_mesh.material = mote_material
+	atmosphere_particles.draw_pass_1 = mote_mesh
+	atmosphere_particles.emitting = false
+	atmosphere_particles.visible = false
+	add_child(atmosphere_particles)
 
 func _create_arena() -> void:
 	_make_solid_box("ArenaDeck", Vector3(0.0, -0.3, 0.0), Vector3(48.0, 0.5, 30.0), materials["floor"])
@@ -1930,6 +1986,11 @@ func _apply_quality_mode() -> void:
 	for light in local_lights:
 		if is_instance_valid(light):
 			light.visible = balanced_effects
+	if is_instance_valid(atmosphere_particles):
+		atmosphere_particles.amount = 72 if cinematic_effects else (32 if balanced_effects else 8)
+		atmosphere_particles.speed_scale = 1.0 if cinematic_effects else 0.72
+		atmosphere_particles.emitting = not performance_quality and not adaptive_quality_degraded
+		atmosphere_particles.visible = atmosphere_particles.emitting
 	var mode_name: String = "CINEMATIC" if cinematic_quality else ("PERFORMANCE" if performance_quality else "BALANCED")
 	if is_instance_valid(status_subtitle):
 		status_subtitle.text = "PHASE TRANSIT / AUTO-OPTIMIZED" if adaptive_quality_degraded else "PHASE TRANSIT / %s" % mode_name

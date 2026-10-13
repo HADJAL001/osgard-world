@@ -156,3 +156,10 @@ The deployment workflow downloads official Godot 4.7.2 and matching web template
 - The field medkit has a restrained world-space hover and yaw drift while it remains available. It reuses the existing pickup node and scene clock, without runtime allocations or extra light sources.
 - Headless Godot runtime smoke checks verify both limb rigs exist, legs move in opposing phases, arms counter-swing, and the medkit changes its world-space height over time. The static release contract requires the new animation code.
 - The change enhances engine-native presentation without changing the combat capsule, target selection, damage rules or mission progression. It is procedural geometry, not imported motion-capture animation or native 8K art.
+
+
+## Release 1.9 — suspended signal dust / atmosphere
+
+- Added a bounded, engine-native GPUParticles3D field with tiny emissive motes drifting through the arena. A four-point alpha ramp fades each mote in/out smoothly; the field uses no external textures or runtime file dependencies and is placed inside an explicit visibility AABB.
+- Particle density follows the existing graphics selector: Cinematic uses 72 particles, Balanced uses 32 slower particles, and Performance suspends emission with an 8-particle budget ready for a mode switch. The adaptive cinematic governor turns the field off under sustained frame-time pressure and restores full density after stable pacing.
+- Headless smoke now asserts emitter instantiation, cinematic density, automatic degradation/recovery and all three manual quality modes. This is subtle environmental depth, not volumetric ray-marched fog or a native 8K claim.
