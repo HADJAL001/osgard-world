@@ -582,6 +582,15 @@ assert.ok(recommendationScript.includes("['all','Все сервисы · 10']")
 assert.ok(recommendationScript.includes("sendSelectEvent('cross_promo_clicked',gameId,'osgard-select:click:'+id)")&&recommendationScript.includes("'owned_promo_impression'"),'Every active OSGARD SELECT service card must emit service-attributed click and exposure events');
 assert.ok(recommendationScript.includes('function hasConsent()')&&recommendationScript.includes('function sendSelectEvent(name,gameId,source)'), 'OSGARD SELECT must define its own consent-gated analytics functions')
 assert.ok(recommendationScript.includes("fetch('/games/commerce-config.json'")&&recommendationScript.includes("base+'/v1/events'")&&recommendationScript.includes("localStorage.getItem(selectConsentKey)==='yes'"), 'OSGARD SELECT must post to same-origin commerce API only after consent')
+const selectSenderStart=recommendationScript.indexOf('async function sendSelectEvent(name,gameId,source){');
+const selectSenderEnd=recommendationScript.indexOf('function readServicePreferences(){',selectSenderStart);
+assert.ok(selectSenderStart>=0&&selectSenderEnd>selectSenderStart,'OSGARD SELECT sender must remain independently testable');
+const selectSender=recommendationScript.slice(selectSenderStart,selectSenderEnd);
+assert.ok(recommendationScript.includes('const pendingSelectTelemetry=new Set()')&&recommendationScript.includes('function cancelPendingSelectTelemetry()')&&recommendationScript.includes('controller.abort()'),'OSGARD SELECT must cancel in-flight requests when analytics consent is withdrawn');
+assert.ok(recommendationScript.includes('checkSelectConsentAfterToggle()')&&recommendationScript.includes("target.closest('#analytics-toggle')"),'OSGARD SELECT must observe the consent control when it is changed or clicked');
+assert.ok(selectSender.includes('if(controller)options.signal=controller.signal')&&selectSender.includes('if(controller)request.signal=controller.signal'),'Consent cancellation must abort both config and event POST requests');
+assert.ok((selectSender.match(/if\(!hasConsent\(\)\|\|\(controller&&controller\.signal\.aborted\)\)return false/g)||[]).length>=3,'Consent must be rechecked after network awaits before posting and accepting analytics');
+assert.ok(selectSender.includes('finally{if(controller)pendingSelectTelemetry.delete(controller)}'),'Completed or aborted telemetry requests must release their controller');
 assert.ok(recommendationScript.includes("sendSelectEvent('social_share_intent'")&&recommendationScript.includes("sendSelectEvent('social_reward_claimed'"), 'Social share-intent and self-reported reward events must be separate')
 assert.ok(recommendationScript.includes("sendSelectEvent('share_created',gameId,'game-invite:'"), 'Share actions in the rewards shelf must enter the referral funnel')
 assert.ok(recommendationScript.includes("entry.intersectionRatio>=0.5")&&recommendationScript.includes("},1000)")&&recommendationScript.includes('card.isConnected')&&recommendationScript.includes('card.getClientRects().length'),'A promo exposure must require at least 50% visibility for a full second on a connected, visible card');
