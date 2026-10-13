@@ -549,6 +549,7 @@ function rewardShelf(gameId){
   const link=make('a','og-postgame-network',name+' ↗');link.href=href;link.target='_blank';link.rel='noopener noreferrer';
   link.setAttribute('aria-label','Открыть форму публикации в '+name+' в новой вкладке');
   link.addEventListener('click',event=>{
+   if(hasConsent())void sendSelectEvent('social_share_intent',gameId,'osgard-social-share:'+name.toLowerCase()+':'+gameId);
    if(!hasConsent()||!hasRewardConsent()) {
     status.textContent=!hasConsent()
      ? 'Соцсеть откроется. Для учёта SHARDS нужно включить необязательную аналитику и согласиться на программу наград.'
