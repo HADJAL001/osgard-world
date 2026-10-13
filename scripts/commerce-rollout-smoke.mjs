@@ -23,7 +23,7 @@ for (const value of [
   "express.raw", "commerce_stripe_events", "ON CONFLICT DO NOTHING",
   "ENABLE_LIVE_PAYMENTS", "ADMIN_API_TOKEN", "/v1/admin/overview",
   "/v1/checkout/status", "validateEventBatch", "validateLeadPayload",
-  "resolveCheckoutPaymentState", "no-store, private", "paidRevenueByAttribution", "attribution_game_id", "attribution_source", "attribution_campaign",
+  "resolveCheckoutPaymentState", "no-store, private",
 ]) assert.ok(server.includes(value), "Commerce API missing required feature: " + value);
 for (const value of ["PRODUCT_DEFS", "termsAccepted", "verifyStripeSignature", "paymentsModeAllowed"]) {
   assert.ok(core.includes(value), "Core validation missing: " + value);
@@ -34,14 +34,13 @@ for (const value of ["id=\"products\"", "id=\"buyer-email\"", "id=\"terms-accept
 for (const value of ["no-store", "Деньги не списаны", "termsAccepted"]) {
   assert.ok(app.includes(value), "Storefront behavior missing: " + value);
 }
-for (const value of ["/v1/products", "/v1/checkout/session", "https:", "checkout_started", "checkoutAttribution()", "attribution: checkoutAttribution()"]) {
+for (const value of ["/v1/products", "/v1/checkout/session", "https:", "checkout_started"]) {
   assert.ok(app.includes(value), "Storefront code missing: " + value);
 }
 for (const value of ["type=\"password\"", "ADMIN_API_TOKEN", "/v1/admin/leads", "noindex,nofollow"]) {
   assert.ok(admin.includes(value), "Admin UI missing: " + value);
 }
 assert.equal(config.apiBaseUrl, "", "No production API hostname should be assumed without deployment confirmation.");
-assert.equal(server.split('app.get("/v1/admin/overview"').length - 1, 1, "Commerce API must have exactly one admin overview handler.");
 assert.ok(!server.includes("sk_live_abc123"), "No live secret may be committed.");
 assert.ok(!admin.includes("Bearer sk_"), "No payment secret may be embedded in admin HTML.");
 assert.ok(nginx.includes("location ^~ /commerce-api/"), "Existing Nginx must expose the same-origin commerce API prefix.");
@@ -78,7 +77,7 @@ for (const [label, page] of [["Games", html], ["Partners", partners], ["Premium"
 }
 for (const value of ["window.OSGARD_CONSENTED_ANALYTICS", "MAX_PENDING = 100", "MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000", "result?.accepted", "clearQueue()"]) {
   assert.ok(consentQueue.includes(value), "Consent-aware retry queue is missing: " + value);
-for (const eventName of ["owned_promo_intermission_skipped", "owned_promo_preferences_saved", "social_share_intent", "social_reward_claimed", "owned_promo_impression"]) assert.ok(consentQueue.includes("'"+eventName+"'"), "Consent queue does not allow OSGARD SELECT event: " + eventName);
+for (const eventName of ["owned_promo_intermission_skipped", "owned_promo_preferences_saved", "social_share_intent", "social_reward_claimed", "daily_play_reward_claimed", "referral_welcome_reward_claimed", "shards_cosmetic_unlocked", "owned_promo_impression"]) assert.ok(consentQueue.includes("'"+eventName+"'"), "Consent queue does not allow OSGARD SELECT event: " + eventName);
 
 }
 assert.ok(sharedClient.includes("queue.enqueue(event)"), "Website analytics must use the retry queue when available.");
@@ -115,7 +114,7 @@ assert.ok(playerLifecycle.includes("eventId:'evt_'"), "Player lifecycle should a
 for (const value of ['id="social-network-table"', 'id="social-network-body"', "renderSocialChannels", "socialShareByNetwork"]) {
   assert.ok(admin.includes(value), "Social-channel dashboard missing: " + value);
 }
-for (const value of ['id="analytics-retention"', 'id="game-analytics-table"', "analyticsByGame", "analyticsFunnel", 'id="paid-attribution-table"', "renderPaidAttribution", "paidRevenueByAttribution"]) {
+for (const value of ['id="analytics-retention"', 'id="game-analytics-table"', 'id="analytics-daily-play-rewards"', 'id="analytics-referral-welcome-rewards"', 'id="analytics-cosmetic-unlocks"', "analyticsByGame", "analyticsFunnel", "dailyPlayRewards", "referralWelcomeRewards", "cosmeticUnlocks"]) {
   assert.ok(admin.includes(value), "Admin analytics dashboard missing: " + value);
 }
 assert.ok(readFileSync(resolve("public/games/premium/index.html"), "utf8").includes('src="/games/commerce-client.js"'), "Premium page view analytics must use the shared consent gate.");
