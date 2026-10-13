@@ -1,0 +1,71 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import vm from 'node:vm';
+
+const page = readFileSync('public/games/operations/index.html', 'utf8');
+const match = page.match(/const TARGETS = (\[[\s\S]*?\n  \]);/);
+assert.ok(match, 'Operations console must declare an explicit, inspectable route target list');
+const targets = JSON.parse(JSON.stringify(vm.runInNewContext('(' + match[1] + ')')));
+const ids = targets.map((target) => target.id);
+const paths = targets.map((target) => target.path);
+assert.equal(new Set(ids).size, ids.length, 'Route target IDs must be unique');
+assert.equal(new Set(paths).size, paths.length, 'Route target paths must be unique');
+assert.ok(targets.length >= 18, 'Operations checks should cover games, business pages and security boundaries');
+assert.ok(targets.every((target) => target.path.startsWith('/') && !/^https?:/i.test(target.path)), 'All probes must stay on same-origin relative paths');
+
+const byId = Object.fromEntries(targets.map((target) => [target.id, target]));
+const requiredGameRoutes = {
+  time: '/games/time',
+  'null-shift-godot': '/games/null-shift-godot/index.html',
+  'null-shift-webgl': '/games/null-shift/index.html',
+  swarm: '/games/swarm/',
+  inherit: '/games/inherit/',
+  remix: '/games/remix/',
+  'civic-cascade': '/games/civic-cascade/',
+  patina: '/games/patina/',
+  'signal-run': '/games/signal-run/',
+  'cascade-lab': '/games/cascade-lab/',
+  'afterimage-run': '/games/afterimage-run/',
+};
+for (const [id, path] of Object.entries(requiredGameRoutes)) {
+  assert.equal(byId[id]?.path, path, 'Game runtime route changed or is missing: ' + id);
+  assert.ok(byId[id].marker, 'Game route needs a source marker to reject generic SPA fallback: ' + id);
+}
+assert.equal(byId.catalog?.path, '/games/', 'Canonical game catalogue route is missing');
+assert.equal(byId.economics?.path, '/games/monetization/', 'Scenario economy page must be checked');
+assert.equal(byId.privacy?.path, '/privacy/', 'Privacy page must be checked');
+assert.equal(byId.terms?.path, '/terms/', 'Terms page must be checked');
+assert.equal(byId['commerce-config']?.type, 'json', 'Public commerce configuration must be read as JSON');
+assert.deepEqual(byId['analytics-auth']?.expectedStatuses, [401, 403], 'Protected analytics must reject unauthenticated requests with HTTP 401/403');
+assert.equal(byId['analytics-auth']?.type, 'json', 'Protected analytics rejection must be JSON rather than the SPA fallback');
+
+for (const contract of [
+  'name="robots" content="noindex,nofollow,noarchive"',
+  "credentials: 'omit'",
+  "method: 'GET'",
+  'new AbortController()',
+  '8000',
+  'data-estimate="not-live-data"',
+  'OSGARD Partner Inventory Editor',
+  'OSGARD LIVEOPS',
+  'response.status',
+  'content-type',
+  'Контрольный маркер страницы не найден',
+  'Commerce API не настроен',
+  'URL.createObjectURL',
+  'osgard-games-route-health-',
+  'navigator.clipboard.writeText',
+  'prefers-reduced-motion:reduce',
+  'cookiesSent:false',
+  'analyticsEventsCreated:false',
+]) {
+  assert.ok(page.toLowerCase().includes(contract.toLowerCase()), 'Missing quality/privacy contract in operations page: ' + contract);
+}
+assert.ok(!/<script\b[^>]*\bsrc=["']https?:\/\//i.test(page), 'Operations console must not load third-party scripts');
+assert.ok(!/<link\b[^>]*\brel=["']stylesheet["'][^>]*\bhref=["']https?:\/\//i.test(page), 'Operations console must not load third-party stylesheets');
+assert.ok(!/localStorage|sessionStorage|document\.cookie/i.test(page), 'Read-only route health must not persist browser data or read cookies');
+assert.ok(!/\b(?:POST|PUT|PATCH|DELETE)\b/.test(page), 'Route health must not mutate service state');
+assert.ok(page.includes('status:response.status') && page.includes('checkedAt:new Date().toISOString()'), 'JSON report must preserve actual HTTP status and check time');
+assert.ok(page.includes('HTTP-ответ совпадает с базовым контрактом') && page.includes('не доказывает успешный запуск игры'), 'UI must clearly distinguish route availability from playable runtime validation');
+
+console.log('PASS OSGARD Games operations console: ' + targets.length + ' route contracts, 11 game/runtime entrypoints, same-origin GET-only checks, privacy boundary and JSON export.');
