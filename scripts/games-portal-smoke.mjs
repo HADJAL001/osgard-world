@@ -431,6 +431,11 @@ assert.ok(timeForSmoke.includes("game: 'time', state: 'completed'"),'Imperium of
 assert.ok(civic.includes("sendLifecycle('completed'"),'CIVIC CASCADE must emit completion')
 assert.ok(patina.includes("signal('completed'"),'PATINA must emit completion')
 assert.ok(signalJs.includes("life('completed'"),'SIGNAL RUN must emit completion')
+
+assert.ok(signalRun.includes('id="shards"')&&signalRun.includes('OSGARD SHARDS')&&signalRun.includes('публикацию в соцсети')&&signalRun.includes('не имеют денежной стоимости'),'SIGNAL RUN must disclose the local SHARDS wallet and social-share verification limits');
+assert.ok(signalJs.includes("SHARDS_KEY='osgard.games.shards-wallet.v1'")&&signalJs.includes('function awardShareShards')&&signalJs.includes('event.key===SHARDS_KEY'),'SIGNAL RUN must use the same local SHARDS wallet as the postgame reward panel');
+assert.ok(signalJs.includes("bonus.ok?' · +50 SHARDS'")&&signalJs.includes('current.day===day'),'SIGNAL RUN must show the +50 local invitation reward and prevent duplicate grants within one UTC day');
+
 assert.ok(cascadeGame.includes("notifyOsgardLifecycle('completed'"),'CASCADE LAB must emit completion after a passed level')
 
 const scripts=Array.from(html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)).map(m=>m[1]).filter(s=>s.trim()&&!s.trim().startsWith('{'))
@@ -574,6 +579,12 @@ assert.ok(recommendationScript.includes('Я опубликовал — полу�
 assert.ok(recommendationStyles.includes('.og-postgame-services')&&recommendationStyles.includes('.og-postgame-service-grid')&&recommendationStyles.includes('.og-postgame-reward')&&recommendationStyles.includes('@media(max-width:760px)')&&recommendationStyles.includes('prefers-reduced-motion:reduce'),'Postgame UI must be premium, responsive and accessible');
 assert.ok(recommendationScript.includes('РЕКЛАМА · СОБСТВЕННЫЕ ПРОЕКТЫ OSGARD')&&recommendationScript.includes('osgardServiceFilter')&&recommendationScript.includes('categoryByService'),'OSGARD SELECT must disclose self-promotion and let players filter service offers by category');
 assert.ok(recommendationScript.includes("['all','Все сервисы · 10']")&&recommendationScript.includes("['studio','Разработка · 2']")&&recommendationScript.includes("['luxury','Luxury · 1']"),'OSGARD SELECT filters must expose all configured service categories');
+assert.ok(recommendationScript.includes("sendSelectEvent('cross_promo_clicked',gameId,'osgard-select:click:'+id)")&&recommendationScript.includes("'owned_promo_impression'"),'Every active OSGARD SELECT service card must emit service-attributed click and exposure events');
+assert.ok(recommendationScript.includes("entry.intersectionRatio>=0.5")&&recommendationScript.includes("},1000)")&&recommendationScript.includes('card.isConnected')&&recommendationScript.includes('card.getClientRects().length'),'A promo exposure must require at least 50% visibility for a full second on a connected, visible card');
+assert.ok(referralCoreSource.includes('"owned_promo_impression"'),'Commerce API must allow the explicit owned-promo impression event');
+assert.ok(referralApiSource.includes("source LIKE 'osgard-select:%'")&&referralApiSource.includes("event_name = 'owned_promo_impression'")&&referralApiSource.includes('ownedPromoByService: ownedPromoByService.rows'),'Admin analytics API must aggregate consented OSGARD SELECT exposure and click events per service/game');
+assert.ok(referralAdminSource.includes('id="owned-promo-body"')&&referralAdminSource.includes('renderOwnedPromo(overview.ownedPromoByService || [])')&&referralAdminSource.includes('CTR по появлениям'),'Protected commerce admin must report own-service exposure, clicks and CTR');
+
 assert.ok(recommendationScript.includes("const servicePreferencesKey='osgard.games.postgame-service-preferences.v1'")&&recommendationScript.includes("frequency:'each'")&&recommendationScript.includes("frequency==='every3'")&&recommendationScript.includes("frequency==='off'"),'Service preferences must persist promo frequency choice')
 assert.ok(recommendationScript.includes('availableServiceIds.filter(id=>Array.isArray(value.selected)&&value.selected.includes(id))')&&recommendationScript.includes('preferences.selected.includes(id)'), 'Only services selected by the player should be actively promoted')
 assert.ok(recommendationScript.includes("localStorage.setItem(serviceProgressKey,JSON.stringify(next))")&&recommendationScript.includes('completedCount%3===0'),'Promo caps must count completed game sessions, not page visits')
