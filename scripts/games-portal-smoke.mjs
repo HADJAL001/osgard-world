@@ -327,11 +327,15 @@ const mockHead=mockNode()
 const mockDocument={head:mockHead,querySelector(selector){return selector==='#post-run-recommendations'?mockHost:selector==='#player-dialog'?mockDialog:null},createElement(){return mockNode()},addEventListener(name,handler){(mockHandlers[name]??=[]).push(handler)},dispatch(name,event={}){const handlers=mockHandlers[name]||[];assert.ok(handlers.length,'Missing recommendation/growth lifecycle listener: '+name);handlers.forEach(handler=>handler(event))}}
 new Function('document','window','location',recommendationScript)(mockDocument,{}, {search:'',origin:'https://osgard.world',pathname:'/games/'})
 mockDocument.dispatch('osgard:game-completed',{detail:{game:'swarm'}})
-assert.equal(mockHandlers['osgard:game-completed'].length,2,'Recommendation shelf and invite loop must both subscribe to completed sessions')
+assert.equal(mockHandlers['osgard:game-completed'].length,3,'Recommendation, invite and OSGARD SELECT modules must subscribe to completed sessions')
 assert.equal(mockHost.hidden,false,'Completed SWARM session should show recommendations')
 assert.equal(mockClasses.has('has-recommendations'),true,'The player layout should adapt after completion')
-assert.deepEqual(mockHost.children[2].children.map(node=>node.dataset.play),['null-shift','signal-run'],'SWARM should recommend two related live games')
-assert.deepEqual(mockHost.children[2].children.map(node=>node.href),['/games/null-shift-godot/','/games/signal-run/'],'Recommendations should point to valid game launch routes')
+const mockGrid=mockHost.children.find(node=>node.className==='post-run-grid');
+const mockSuite=mockHost.children.find(node=>node.className==='og-postgame-suite');
+assert.ok(mockSuite,'Post-run service/reward suite should appear after each valid completion');
+assert.equal(mockSuite.children[0].children.find(node=>node.className==='og-postgame-service-grid').children.length,10,'Post-run intermission should list all ten services');
+assert.deepEqual(mockGrid.children.map(node=>node.dataset.play),['null-shift','signal-run'],'SWARM should recommend two related live games')
+assert.deepEqual(mockGrid.children.map(node=>node.href),['/games/null-shift-godot/','/games/signal-run/'],'Recommendations should point to valid game launch routes')
 mockDocument.dispatch('osgard:game-launching')
 assert.equal(mockHost.hidden,true,'The next launch must clear recommendations')
 assert.equal(mockHost.children.length,0,'Stale recommendation links must be removed')
@@ -468,6 +472,15 @@ assert.ok(recommendationScript.includes("partnerCta.setAttribute('aria-label'"),
 assert.ok(recommendationStyles.includes('.og-partner-cta') && recommendationStyles.includes('@media(max-width:760px)') && recommendationStyles.includes('prefers-reduced-motion:reduce'), 'Partner Studio CTA must be responsive and respect reduced motion')
 assert.ok(recommendationScript.includes("async function sendEvent(name,gameId,source)") && recommendationScript.includes("if(!consented())return false"), 'Partner CTA tracking must reuse the analytics-consent gate')
 assert.ok(recommendationScript.includes("sendEvent('cross_promo_clicked',gameId,'post-game-partner-studio')") && !recommendationScript.includes("sendEvent('partner_impression'"), 'Only actual CTA clicks are recorded; no synthetic sponsor impressions')
+const postGameIds=['marcosa','projects','o2-system','senjorio','superday','myosa','gold-glamour','gardvpn','osgard-business','vanguard'];
+for(const id of postGameIds)assert.ok(recommendationScript.includes("['"+id+"'"),'Post-game service missing: '+id);
+for(const domain of ['marcosa.club','osgardbewworld.com','o2system.art','senjorio.com','superday.run','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio'])assert.ok(recommendationScript.includes(domain),'Service URL missing: '+domain);
+for(const provider of ['t.me/share/url','wa.me/?text=','vk.com/share.php','twitter.com/intent/tweet','facebook.com/sharer/sharer.php'])assert.ok(recommendationScript.includes(provider),'Social share redirect missing: '+provider);
+assert.ok(recommendationScript.includes("u.searchParams.set('utm_medium','post_game')")&&recommendationScript.includes("u.searchParams.set('utm_campaign','after_game')"),'Post-game links require UTM attribution');
+assert.ok(recommendationScript.includes("const walletKey='osgard.games.shards-wallet.v1',dailyReward=50")&&recommendationScript.includes('current.day===day'),'SHARDS must persist locally and be capped once per UTC day');
+assert.ok(recommendationScript.includes('Я опубликовал — получить +50 SHARDS')&&recommendationScript.includes('Соцсеть не сообщает сайту подтверждение публикации')&&recommendationScript.includes('не является платёжным средством'),'Social reward must disclose self-confirmation and non-monetary points');
+assert.ok(recommendationStyles.includes('.og-postgame-services')&&recommendationStyles.includes('.og-postgame-service-grid')&&recommendationStyles.includes('.og-postgame-reward')&&recommendationStyles.includes('@media(max-width:760px)')&&recommendationStyles.includes('prefers-reduced-motion:reduce'),'Postgame UI must be premium, responsive and accessible');
+
 assert.ok(lifecycle.includes('function analyticsSource()') && lifecycle.includes(':analyticsSource()') && lifecycle.includes("return 'referral:'+code+':null-shift'"), 'Actual gameplay sessions must preserve consented invite attribution')
 assert.ok(referralCoreSource.includes('"referral_link_opened"') && referralCoreSource.includes('"share_created"'), 'Commerce API must explicitly allowlist invite events')
 for(const metric of ['inviteShares','referralOpens','referredStarts','referredCompletions']) assert.ok(referralApiSource.includes(metric), 'Commerce analytics response lacks referral metric '+metric)

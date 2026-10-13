@@ -22,3 +22,64 @@ dialog#player-dialog.has-recommendations .player-view iframe{min-height:180px}
 .og-partner-cta:hover,.og-partner-cta:focus-visible{border-color:#d3ff69;background:#d3ff6912;outline:2px solid transparent}
 @media(max-width:760px){.og-partner-cta{grid-template-columns:minmax(0,1fr);gap:5px;padding:10px}.og-partner-action{white-space:normal}}
 @media(prefers-reduced-motion:reduce){.og-partner-cta{transition:none}}
+
+/* OSGARD SELECT — luxury own-service intermission, shown after completed rounds. */
+.post-run-recommendations{max-height:min(53vh,580px);overscroll-behavior:contain;scrollbar-color:#bda36b #10120f}
+.post-run-heading{color:#ddc58b;font-size:9px;letter-spacing:.15em}
+.post-run-copy{font-size:11px;color:#aaa99e}
+dialog#player-dialog.has-recommendations .player-view{height:min(36vh,370px);min-height:155px}
+dialog#player-dialog.has-recommendations .player-view iframe{min-height:155px}
+.og-postgame-suite{display:grid;gap:10px;margin:12px 0}
+.og-postgame-services,.og-postgame-reward{min-width:0;padding:14px;border:1px solid rgba(218,192,133,.27);border-radius:11px;background:radial-gradient(ellipse at 0 0,rgba(201,173,111,.10),transparent 42%),linear-gradient(145deg,#11120f,#0a0d0c 72%);box-shadow:0 18px 46px rgba(0,0,0,.22)}
+.og-postgame-service-head,.og-postgame-reward-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}
+.og-postgame-service-head>div,.og-postgame-reward-head>div{min-width:0}
+.og-postgame-eyebrow{margin:0 0 5px;color:#d7bf87;font:8px/1.5 ui-monospace,Consolas,monospace;letter-spacing:.16em}
+.og-postgame-title{margin:0;color:#f4f0e6;font:400 clamp(20px,2.1vw,28px)/1.04 Georgia,serif;letter-spacing:-.035em}
+.og-postgame-copy{max-width:650px;margin:7px 0 0;color:#a8a79d;font-size:10px;line-height:1.6}
+.og-postgame-toggle{flex:0 0 auto;min-height:30px;padding:6px 9px;border:1px solid rgba(218,192,133,.3);border-radius:7px;background:#ffffff03;color:#d8c28f;font-size:9px;cursor:pointer}
+.og-postgame-toggle:hover,.og-postgame-toggle:focus-visible{border-color:#d8c28f;background:#d8c28f12;outline:2px solid transparent}
+.og-postgame-service-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:minmax(92px,auto);gap:7px}
+.og-postgame-service-grid[hidden]{display:none}
+.og-postgame-service-card{position:relative;display:flex;min-width:0;min-height:94px;flex-direction:column;align-items:flex-start;gap:6px;overflow:hidden;padding:11px;border:1px solid #ffffff16;border-radius:8px;background:linear-gradient(135deg,#ffffff05,transparent 75%),#101311;color:#f3f0e8;text-decoration:none;transition:border-color .22s ease,background .22s ease,transform .22s ease}
+.og-postgame-service-card:after{position:absolute;right:0;top:0;width:24px;height:1px;content:"";background:rgba(218,192,133,.45)}
+.og-postgame-service-card:hover,.og-postgame-service-card:focus-visible{transform:translateY(-2px);border-color:rgba(218,192,133,.62);background:linear-gradient(125deg,#d8c28f12,transparent 70%),#121511;outline:2px solid transparent}
+.og-postgame-service-card.is-featured{grid-column:span 2;grid-row:span 2;justify-content:center;gap:10px;padding:16px;background:radial-gradient(ellipse at 100% 0,rgba(218,192,133,.13),transparent 48%),#111410;border-color:rgba(218,192,133,.32)}
+.og-postgame-service-code{color:#b8a676;font:7px/1.5 ui-monospace,Consolas,monospace;letter-spacing:.09em}
+.og-postgame-service-name{font-size:11px;font-weight:750;letter-spacing:.035em;overflow-wrap:anywhere}
+.og-postgame-service-card.is-featured .og-postgame-service-name{font:400 clamp(24px,3vw,38px)/1 Georgia,serif;letter-spacing:-.045em;color:#f2e4bb}
+.og-postgame-service-description{flex:1;color:#a9aaa0;font-size:9px;line-height:1.55;overflow-wrap:anywhere}
+.og-postgame-service-action{margin-top:2px;color:#e0c989;font:8px/1.5 ui-monospace,Consolas,monospace;letter-spacing:.04em}
+.og-postgame-service-card.is-unavailable{border-style:dashed;border-color:#ffffff18;opacity:.78;cursor:default}
+.og-postgame-service-card.is-unavailable:after{background:#75786d}
+.og-postgame-service-card.is-unavailable .og-postgame-service-action{color:#99988e}
+.og-postgame-service-foot{margin:10px 0 0;color:#777d72;font-size:8px;line-height:1.5}
+.og-postgame-wallet{flex:0 0 auto;padding:7px 9px;border:1px solid rgba(218,192,133,.29);border-radius:7px;color:#e7d49f;font:8px ui-monospace,Consolas,monospace;letter-spacing:.04em;white-space:nowrap}
+.og-postgame-share-actions,.og-postgame-networks{display:flex;flex-wrap:wrap;gap:7px}
+.og-postgame-share-primary,.og-postgame-claim,.og-postgame-network{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:8px 11px;border:1px solid rgba(218,192,133,.29);border-radius:7px;background:#ffffff03;color:#e8e3d6;text-decoration:none;font-size:9px;font-weight:650;cursor:pointer;transition:background .2s ease,border-color .2s ease,transform .2s ease}
+.og-postgame-share-primary,.og-postgame-claim{border-color:#d8c28f;background:linear-gradient(115deg,#c5a95e,#e8d5a1 60%,#c9ab64);color:#13130f}
+.og-postgame-share-primary:hover,.og-postgame-claim:hover,.og-postgame-network:hover{transform:translateY(-1px);border-color:#f0dfb2;background-color:#d8c28f14}
+.og-postgame-network{color:#d4c29a}
+.og-postgame-network:focus-visible,.og-postgame-share-primary:focus-visible,.og-postgame-claim:focus-visible{outline:2px solid #f2e4bb;outline-offset:2px}
+.og-postgame-claim[hidden]{display:none}
+.og-postgame-status{margin:0;color:#d9c997;font-size:10px;line-height:1.6;overflow-wrap:anywhere}
+.og-postgame-reward-note{margin:0;color:#777e73;font-size:8px;line-height:1.6}
+@media(max-width:760px){
+ .post-run-recommendations{max-height:min(56svh,640px);padding:10px}
+ .og-postgame-services,.og-postgame-reward{padding:11px}
+ .og-postgame-service-head{gap:8px}
+ .og-postgame-title{font-size:23px}
+ .og-postgame-toggle{font-size:8px;padding:6px}
+ .og-postgame-service-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(86px,auto)}
+ .og-postgame-service-card{min-height:88px;padding:9px}
+ .og-postgame-service-card.is-featured{grid-column:span 2;grid-row:auto;min-height:135px;padding:13px}
+ .og-postgame-service-card.is-featured .og-postgame-service-name{font-size:30px}
+ .og-postgame-service-name{font-size:10px}
+ .og-postgame-service-description{font-size:9px}
+ .og-postgame-reward-head{flex-direction:column;gap:8px}
+ .og-postgame-wallet{align-self:flex-start}
+ .og-postgame-share-primary,.og-postgame-network,.og-postgame-claim{min-height:38px}
+ dialog#player-dialog.has-recommendations .player-view{height:min(29svh,300px);min-height:135px}
+ dialog#player-dialog.has-recommendations .player-view iframe{min-height:135px}
+}
+@media(max-width:360px){.og-postgame-service-grid{grid-template-columns:1fr}.og-postgame-service-card.is-featured{grid-column:auto}.og-postgame-service-head{flex-direction:column}.og-postgame-toggle{align-self:flex-start}.og-postgame-share-actions>*{width:100%}.og-postgame-networks>*{flex:1 1 calc(50% - 6px)}}
+@media(prefers-reduced-motion:reduce){.og-postgame-service-card,.og-postgame-share-primary,.og-postgame-network,.og-postgame-claim{transition:none;transform:none}.og-postgame-service-card:hover,.og-postgame-share-primary:hover,.og-postgame-network:hover,.og-postgame-claim:hover{transform:none}}
