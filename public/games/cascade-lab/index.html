@@ -1648,9 +1648,23 @@ function resetSimulation() { if (mode === 'replay') mode = replayReturnMode; phy
 function notifyOsgardLifecycle(state, details = {}) {
   try {
     if (window.parent && window.parent !== window) {
-      window.parent.postMessage({ type: 'osgard:game-lifecycle', game: 'cascade-lab', state, at: Date.now(), ...details }, window.location.origin);
+      window.parent.postMessage({ ...details, type: 'osgard:game-lifecycle', game: 'cascade-lab', state, at: Date.now() }, window.location.origin);
     }
   } catch { /* A standalone session must work without the portal bridge. */ }
+}
+function notifyCompletedShare(flowType, shareMethod, link) {
+  const payload = {
+    flowType: ['daily-challenge', 'score-duel', 'solution-link', 'result-card'].includes(flowType) ? flowType : 'generic',
+    shareMethod: shareMethod === 'web-share' ? 'web-share' : 'clipboard'
+  };
+  try {
+    if (typeof link === 'string' && link.length <= 4096) {
+      const url = new URL(link, location.href);
+      const code = url.searchParams.get('og_ref') || url.searchParams.get('ref') || '';
+      if (/^(?:og_[a-f0-9]{8}|[a-f0-9]{12})$/.test(code)) payload.referralCode = code;
+    }
+  } catch { /* A valid local share can exist without referral metadata. */ }
+  notifyOsgardLifecycle('share_created', payload);
 }
 function runSimulation() { if (mode === 'paused') { mode = 'running'; prevFrame = performance.now(); updateInterface(); updateDiagnostics(); notifyOsgardLifecycle('resumed', { levelId: level.id }); return; } if (mode === 'running') { mode = 'paused'; updateInterface(); updateDiagnostics(); notifyOsgardLifecycle('paused', { levelId: level.id }); return; } if (mode !== 'build') return; physics = new PhysicsWorld(level, devices); physics.start(); economyProfile = recordGrowthAction(economyProfile, 'runs'); saveProgress(); accumulator = 0; lastLaunchCount = 0; speedSamples = []; lastFxEventSequence = 0; particles = []; $('resultOverlay').classList.add('hidden'); $('targetStatus').textContent = 'В ПУТИ'; $('targetStatus').classList.remove('complete'); mode = 'running'; analytics.track('level_started', { levelId: level.id, mode: analyticsMode() }); notifyOsgardLifecycle('started', { levelId: level.id, mode: analyticsMode() }); updateInterface(); updateDiagnostics(); sound('start'); }
 function finishSimulation() {
@@ -1732,8 +1746,13 @@ async function shareSolution(importMode = false) {
     return;
   }
   const link = solutionUrl(location.href, code);
-  try { await navigator.clipboard.writeText(link); analytics.track('solution_shared', { levelId: level.id, mode: 'solution' }); economyProfile = recordGrowthAction(economyProfile, 'shares'); saveProgress(); showToast('Ссылка на конструкцию скопирована. Друг откроет её сразу в своей лаборатории.'); }
-  catch { prompt('Скопируй ссылку на решение:', link); }
+  try {
+    await navigator.clipboard.writeText(link);
+    analytics.track('solution_shared', { levelId: level.id, mode: 'solution' });
+    notifyCompletedShare('solution-link', 'clipboard', link);
+    economyProfile = recordGrowthAction(economyProfile, 'shares'); saveProgress();
+    showToast('Ссылка на конструкцию скопирована. Друг откроет её сразу в своей лаборатории.');
+  } catch { prompt('Скопируй ссылку на решение:', link); }
 }
 async function shareDailyChallenge() {
   const challenge = activeDailyChallenge || getDailyChallenge(new Date());
@@ -1744,8 +1763,29 @@ async function shareDailyChallenge() {
     return;
   }
   const link = challengeUrl(location.href, challenge, { referral: true });
-  try { if (navigator.share) await navigator.share({ title: 'CASCADE LAB — испытание дня', text: `Мой вызов: ${challenge.title}. Ограничение ${challenge.maxDevices} деталей. Сможешь лучше?`, url: link }); else await navigator.clipboard.writeText(link); analytics.track('challenge_shared', { levelId: challenge.levelId, mode: 'daily' }); economyProfile = recordGrowthAction(economyProfile, 'challengeLinks'); saveProgress(); showToast('Вызов готов к отправке. Ссылка откроет ту же задачу у друга.'); }
-  catch (error) { if (error?.name !== 'AbortError') { try { await navigator.clipboard.writeText(link); analytics.track('challenge_shared', { levelId: challenge.levelId, mode: 'daily' }); economyProfile = recordGrowthAction(economyProfile, 'challengeLinks'); saveProgress(); showToast('Ссылка вызова скопирована.'); } catch { prompt('Скопируй ссылку:', link); } } }
+  let shareMethod = 'clipboard';
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: 'CASCADE LAB — испытание дня', text: `Мой вызов: ${challenge.title}. Ограничение ${challenge.maxDevices} деталей. Сможешь лучше?`, url: link });
+      shareMethod = 'web-share';
+    } else {
+      await navigator.clipboard.writeText(link);
+    }
+    analytics.track('challenge_shared', { levelId: challenge.levelId, mode: 'daily' });
+    notifyCompletedShare('daily-challenge', shareMethod, link);
+    economyProfile = recordGrowthAction(economyProfile, 'challengeLinks'); saveProgress();
+    showToast(shareMethod === 'web-share' ? 'Ссылка передана в системное меню отправки. Факт публикации не проверяется.' : 'Ссылка вызова скопирована. Её можно отправить другу.');
+  } catch (error) {
+    if (error?.name !== 'AbortError') {
+      try {
+        await navigator.clipboard.writeText(link);
+        analytics.track('challenge_shared', { levelId: challenge.levelId, mode: 'daily' });
+        notifyCompletedShare('daily-challenge', 'clipboard', link);
+        economyProfile = recordGrowthAction(economyProfile, 'challengeLinks'); saveProgress();
+        showToast('Ссылка вызова скопирована.');
+      } catch { prompt('Скопируй ссылку:', link); }
+    }
+  }
 }
 async function shareResultDuel() {
   if (!lastCompletedResult || mode !== 'won') { showToast('Сначала заверши протокол, затем брось вызов по результату.'); return; }
@@ -1759,19 +1799,30 @@ async function shareResultDuel() {
     catch { prompt('Текст вызова (для рабочей ссылки нужен HTTPS-домен):', summary); }
     return;
   }
+  let shareMethod = 'clipboard';
   try {
-    if (navigator.share) await navigator.share({ title: 'CASCADE LAB — побей мой результат', text: `Я прошёл ${level.title}: ${lastCompletedResult.grade} за ${lastCompletedResult.time.toFixed(2)} с и ${lastCompletedResult.devices} деталей. Сможешь лучше?`, url: link });
-    else { await navigator.clipboard.writeText(link); }
-    analytics.track('duel_challenge_shared', { levelId: level.id, mode: 'duel' }); economyProfile = recordGrowthAction(economyProfile, 'duelLinks'); saveProgress(); renderGrowthPanel();
-    showToast('Вызов готов: ссылка откроет этот протокол с моим результатом-целью.');
+    if (navigator.share) {
+      await navigator.share({ title: 'CASCADE LAB — побей мой результат', text: `Я прошёл ${level.title}: ${lastCompletedResult.grade} за ${lastCompletedResult.time.toFixed(2)} с и ${lastCompletedResult.devices} деталей. Сможешь лучше?`, url: link });
+      shareMethod = 'web-share';
+    } else {
+      await navigator.clipboard.writeText(link);
+    }
+    notifyCompletedShare('score-duel', shareMethod, link);
+    analytics.track('duel_challenge_shared', { levelId: level.id, mode: 'duel' });
+    economyProfile = recordGrowthAction(economyProfile, 'duelLinks'); saveProgress(); renderGrowthPanel();
+    showToast(shareMethod === 'web-share' ? 'Вызов передан в меню отправки. Публикация не проверяется автоматически.' : 'Ссылка дуэли скопирована.');
   } catch (error) {
     if (error?.name !== 'AbortError') {
-      try { await navigator.clipboard.writeText(link); analytics.track('duel_challenge_shared', { levelId: level.id, mode: 'duel' }); economyProfile = recordGrowthAction(economyProfile, 'duelLinks'); saveProgress(); renderGrowthPanel(); showToast('Ссылка дуэли скопирована.'); }
-      catch { prompt('Скопируй ссылку на дуэль:', link); }
+      try {
+        await navigator.clipboard.writeText(link);
+        notifyCompletedShare('score-duel', 'clipboard', link);
+        analytics.track('duel_challenge_shared', { levelId: level.id, mode: 'duel' });
+        economyProfile = recordGrowthAction(economyProfile, 'duelLinks'); saveProgress(); renderGrowthPanel();
+        showToast('Ссылка дуэли скопирована.');
+      } catch { prompt('Скопируй ссылку на дуэль:', link); }
     }
   }
 }
-
 async function exportResultCard() {
   const button = $('shareResultButton'); if (button) button.disabled = true;
   let shot;
@@ -1795,7 +1846,7 @@ async function exportResultCard() {
     if (navigator.share && typeof File === 'function') {
       const file = new File([blob], filename, { type: 'image/png' });
       if (!navigator.canShare || navigator.canShare({ files: [file] })) {
-        try { await navigator.share({ files: [file], title: 'CASCADE LAB — мой результат', text: `${level.title}: ${physics.status === 'won' ? $('scoreText').textContent : 'RETRY'}. Сможешь лучше?` }); economyProfile = recordGrowthAction(economyProfile, 'resultCards'); saveProgress(); showToast('Карточка результата отправлена.'); return; }
+        try { await navigator.share({ files: [file], title: 'CASCADE LAB — мой результат', text: `${level.title}: ${physics.status === 'won' ? $('scoreText').textContent : 'RETRY'}. Сможешь лучше?` }); notifyCompletedShare('result-card', 'web-share'); economyProfile = recordGrowthAction(economyProfile, 'resultCards'); saveProgress(); showToast('Карточка результата передана в меню отправки. Публикация не проверяется автоматически.'); return; }
         catch (error) { if (error?.name === 'AbortError') return; }
       }
     }
