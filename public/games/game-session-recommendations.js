@@ -32,6 +32,7 @@ function render(id){
 }
 document.addEventListener('osgard:game-launching',clear);
 document.addEventListener('osgard:game-completed',event=>render(event.detail&&event.detail.game));
+document.addEventListener('osgard:game-session-ended',event=>{if(event.detail&&event.detail.sessionStarted===true)render(event.detail.game)});
 })();
 
 /* OSGARD PLAY growth loop: invite a friend after a real game completion. */
