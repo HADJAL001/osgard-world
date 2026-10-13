@@ -1327,6 +1327,15 @@ let prevFrame = performance.now(), accumulator = 0, fpsFrames = 0, fpsMark = per
 let lastLaunchCount = 0, saveTimer = 0, toastTimer = null, renderScale = 1, shake = 0, shakePhase = 0, captureBusy = false;
 let pendingServiceTransition = null, selectedServiceCampaignId = OSGARD_CAMPAIGNS[0].id;
 let serviceSharePending = false, pendingShareCampaignId = null;
+let visibleServiceCampaigns = OSGARD_CAMPAIGNS;
+let fallbackInterstitialCompletionCount = 0;
+const SHARED_SERVICE_PREFERENCES_KEY = 'osgard.games.postgame-service-preferences.v1';
+const CASCADE_INTERSTITIAL_COMPLETION_KEY = 'osgard.games.cascade-lab-interstitial-completions.v1';
+const CAMPAIGN_TO_SERVICE_PREFERENCE = Object.freeze({
+  marcosa: 'marcosa', taxi: 'senjorio', 'smart-map': 'superday',
+  business: 'osgard-business', 'creator-studio': 'vanguard',
+  'project-builder': 'projects', worlds: 'projects', 'osgard-os': 'osgard-business'
+});
 
 function analyticsMode() { return activeDuelChallenge ? 'duel' : activeDailyChallenge ? 'daily' : 'campaign'; }
 function renderAnalyticsStatus(result = {}) {
@@ -1508,13 +1517,48 @@ function updateObjectiveProgress() {
   }
 }
 function showToast(message) { const toast = $('toast'); toast.textContent = message; toast.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove('show'), 3200); }
+function readSharedServicePreferences() {
+  const defaults = { frequency: 'each', selected: null };
+  try {
+    const raw = localStorage.getItem(SHARED_SERVICE_PREFERENCES_KEY);
+    if (!raw) return defaults;
+    const value = JSON.parse(raw);
+    if (!value || typeof value !== 'object') return defaults;
+    const frequency = ['each', 'every3', 'off'].includes(value.frequency) ? value.frequency : 'each';
+    const selected = Array.isArray(value.selected)
+      ? [...new Set(value.selected.filter(id => typeof id === 'string' && /^[a-z0-9-]{1,48}$/.test(id)))]
+      : null;
+    return { frequency, selected };
+  } catch {
+    return defaults;
+  }
+}
+function getEligibleServiceCampaigns(preferences = readSharedServicePreferences()) {
+  if (!Array.isArray(preferences.selected)) return OSGARD_CAMPAIGNS;
+  return OSGARD_CAMPAIGNS.filter(campaign => {
+    const preferenceId = CAMPAIGN_TO_SERVICE_PREFERENCE[campaign.id];
+    return preferenceId && preferences.selected.includes(preferenceId);
+  });
+}
+function incrementCompletedInterstitialCount() {
+  try {
+    const current = Number(localStorage.getItem(CASCADE_INTERSTITIAL_COMPLETION_KEY));
+    const next = Math.min(Number.isSafeInteger(current) && current >= 0 ? current + 1 : 1, 1000000000);
+    localStorage.setItem(CASCADE_INTERSTITIAL_COMPLETION_KEY, String(next));
+    return next;
+  } catch {
+    fallbackInterstitialCompletionCount = Math.min(fallbackInterstitialCompletionCount + 1, 1000000000);
+    return fallbackInterstitialCompletionCount;
+  }
+}
 function renderServiceAdCampaign(campaignId = selectedServiceCampaignId) {
-  const campaign = getOsgardCampaign(campaignId);
+  const campaign = visibleServiceCampaigns.find(item => item.id === campaignId) || visibleServiceCampaigns[0] || getOsgardCampaign(campaignId);
+  selectedServiceCampaignId = campaign.id;
   if (campaign.id !== selectedServiceCampaignId && serviceSharePending) { serviceSharePending = false; pendingShareCampaignId = null; }
   selectedServiceCampaignId = campaign.id;
   const choices = $('serviceAdChoices');
   choices.replaceChildren();
-  for (const item of OSGARD_CAMPAIGNS) {
+  for (const item of visibleServiceCampaigns) {
     const button = document.createElement('button');
     button.type = 'button'; button.className = `service-ad-choice${item.id === campaign.id ? ' selected' : ''}`;
     button.dataset.campaignSelect = item.id; button.setAttribute('aria-pressed', String(item.id === campaign.id));
@@ -1526,7 +1570,7 @@ function renderServiceAdCampaign(campaignId = selectedServiceCampaignId) {
     const arrow = document.createElement('span'); arrow.className = 'service-ad-choice-arrow'; arrow.textContent = item.id === campaign.id ? '✦' : '↗';
     button.append(number, copy, arrow); choices.append(button);
   }
-  $('serviceAdCount').textContent = `${String(OSGARD_CAMPAIGNS.length).padStart(2, '0')} / ${String(OSGARD_CAMPAIGNS.length).padStart(2, '0')}`;
+  $('serviceAdCount').textContent = `${String(visibleServiceCampaigns.length).padStart(2, '0')} / ${String(visibleServiceCampaigns.length).padStart(2, '0')}`;
   const feature = $('serviceAdFeature');
   feature.dataset.accent = campaign.accent;
   $('serviceAdIndex').textContent = `COLLECTION ${campaign.number} / ${String(OSGARD_CAMPAIGNS.length).padStart(2, '0')}`;
@@ -1549,14 +1593,28 @@ function renderServiceAdCampaign(campaignId = selectedServiceCampaignId) {
       ? 'Вернись из окна соцсети и подтверди публикацию. Подтверждение ручное: социальная сеть не возвращает игре надёжный статус опубликованного поста.'
       : 'Открой нужную соцсеть, опубликуй ссылку и вернись в игру, чтобы подтвердить действие. +10 LC один раз в день; публикация не проверяется автоматически.';
 }
-function showServiceInterstitial(continueAction) {
+function showServiceInterstitial(continueAction, { completedLevel = false } = {}) {
   const dialog = $('serviceAdDialog');
-  if (!dialog || typeof dialog.showModal !== 'function') { continueAction?.(); return; }
+  const preferences = readSharedServicePreferences();
+  const eligible = getEligibleServiceCampaigns(preferences);
+  // The Games catalogue and this game share one preference. "Off" and an empty
+  // service selection bypass promotion without interrupting the player's action.
+  if (!dialog || typeof dialog.showModal !== 'function' || preferences.frequency === 'off' || !eligible.length) {
+    continueAction?.(); return;
+  }
+  // "Every three" counts successful level completions, not menu clicks or daily-mode entry.
+  // The default "each" choice keeps the existing intermission rhythm.
+  if (preferences.frequency === 'every3') {
+    if (!completedLevel || incrementCompletedInterstitialCount() % 3 !== 0) {
+      continueAction?.(); return;
+    }
+  }
+  visibleServiceCampaigns = eligible;
   pendingServiceTransition = typeof continueAction === 'function' ? continueAction : null;
-  const nextIndex = (economyProfile.stats.serviceAdsShown || 0) % OSGARD_CAMPAIGNS.length;
+  const nextIndex = (economyProfile.stats.serviceAdsShown || 0) % visibleServiceCampaigns.length;
   economyProfile = recordGrowthAction(economyProfile, 'serviceAdsShown');
-  saveProgress(); renderServiceAdCampaign(OSGARD_CAMPAIGNS[nextIndex].id);
-  analytics.track('service_ad_shown', { levelId: level.id, mode: analyticsMode(), campaignId: selectedServiceCampaignId });
+  saveProgress(); renderServiceAdCampaign(visibleServiceCampaigns[nextIndex].id);
+  analytics.track('service_ad_shown', { levelId: level.id, mode: analyticsMode(), campaignId: selectedServiceCampaignId, frequency: preferences.frequency });
   if (!dialog.open) dialog.showModal();
 }
 function resumeAfterServiceInterstitial() {
@@ -1703,7 +1761,7 @@ function finishSimulation() {
         : `Цель друга: ${target}. Твой результат: ${grade} · ${physics.time.toFixed(2)} с · ${devices.length} деталей. Для победы улучшай ранг, затем время; при равном времени решает меньшее число деталей.`;
     } else $('resultText').textContent = ordinaryResultText;
     $('resultPrimary').innerHTML = levelIndex < LEVELS.length - 1 ? 'Следующий протокол <span>→</span>' : 'В лабораторию <span>↗</span>';
-    $('resultPrimary').onclick = () => { const nextIndex = levelIndex < LEVELS.length - 1 ? levelIndex + 1 : 0; showServiceInterstitial(() => { $('resultOverlay').classList.add('hidden'); loadLevel(nextIndex); }); };
+    $('resultPrimary').onclick = () => { const nextIndex = levelIndex < LEVELS.length - 1 ? levelIndex + 1 : 0; showServiceInterstitial(() => { $('resultOverlay').classList.add('hidden'); loadLevel(nextIndex); }, { completedLevel: true }); };
     $('shareDuelButton')?.classList.remove('hidden');
     for (let i = 0; i < 36; i++) spawnBurst(level.goal.x + Math.random() * level.goal.w, level.goal.y + Math.random() * 35, i % 3 ? '#e9ba6a' : '#68d7ff', 1);
   } else {
