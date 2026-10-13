@@ -15,6 +15,11 @@ The Games portal already has a local revenue-scenario calculator, consent-gated 
 - Optional share_created event sent only after the browser confirms successful sharing or copying, and only when the existing consent key is already set to yes. Dismissing the native share sheet sends no event. An event does not prove message delivery or recipient open.
 - Partner Studio navigation link, static smoke test and dedicated GitHub Actions check.
 
+## OSGARD SELECT measurement
+- A first-party owned-service exposure is emitted only when a clickable service card is at least 50% visible for at least one second and analytics consent is present.
+- The exposure and click source identifies both the originating game and the service. The protected commerce dashboard groups visible exposures and outbound clicks by service/game for the last 30 days and calculates CTR from those events.
+- These are browser-observed visibility opportunities, not unique people, third-party paid-ad impressions, downstream conversions, or revenue. Empty reports mean no accepted consented events have arrived; they do not justify estimating traffic or sales.
+
 ## Guardrails
 - No ad SDK, fabricated impressions, fake orders or live payment activation.
 - No new personal-data collection and no server storage for the local campaign fields.
