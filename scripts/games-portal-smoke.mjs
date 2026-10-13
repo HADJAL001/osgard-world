@@ -788,7 +788,8 @@ const todayUtc=new Date().toISOString().slice(0,10);
 assert.ok(recommendationScript.includes('Использовать SHARDS в SIGNAL RUN')&&recommendationScript.includes("utm_campaign','shards_cosmetic'"),'Post-game share reward must link the local SHARDS wallet to the SIGNAL RUN cosmetic');
 assert.ok(recommendationStyles.includes('.og-postgame-signal-cta')&&recommendationStyles.includes('prefers-reduced-motion:reduce'),'SHARDS redemption CTA must be responsive and respect reduced motion');
 
-assert.ok(cascadeGame.includes("notifyOsgardLifecycle('completed'"),'CASCADE LAB must emit completion after a passed level')
+assert.ok(cascadeGame.includes("notifyOsgardLifecycle('level_completed'")&&!cascadeGame.includes("notifyOsgardLifecycle('completed'"),'CASCADE LAB must report a level result without pretending the entire game session ended')
+assert.ok(lifecycle.includes("'level_completed'")&&lifecycle.includes("if(m.state==='level_completed')")&&lifecycle.includes("osgard:game-level-completed")&&lifecycle.includes("if(m.state==='completed')"),'The portal must keep level completion distinct from game-session completion')
 assert.ok(cascadeGame.includes("const SHARED_SERVICE_PREFERENCES_KEY = 'osgard.games.postgame-service-preferences.v1'") && cascadeGame.includes('function readSharedServicePreferences()'), 'CASCADE LAB must read the same service-promotion preferences as the Games hub')
 assert.ok(cascadeGame.includes("preferences.frequency === 'off'") && cascadeGame.includes('!eligible.length'), 'CASCADE LAB must bypass its service interstitial when promotion is disabled or no service was selected')
 assert.ok(cascadeGame.includes("preferences.frequency === 'every3'") && cascadeGame.includes('if (!completedLevel || incrementCompletedInterstitialCount() % 3 !== 0)'), 'CASCADE LAB must only count successful level completions for every-three frequency')
