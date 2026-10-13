@@ -1,7 +1,7 @@
 import { isValidPartnerInventoryText } from './partner-inventory-contract.mjs'
 const base = process.env.OSGARD_BASE_URL || 'https://osgard.world'
 const expectCurrentDesign = process.env.SKILLCRED_EXPECT_CURRENT_DESIGN === '1'
-const routes = ['/','/skillcred/','/skillcred-api/health','/skillcred-api/ready','/skillcred-api/issuer','/entertainment','/games/','/games/index.html','/games/partners/','/games/admin/','/games/favicon.svg','/privacy/','/terms/','/community','/stream','/archive','/profile','/api/v1/player/profile','/api/v1/analytics/summary?from=0&to=1','/r/1842','/games/time','/games/null-shift/','/games/null-shift/index.html','/games/null-shift-godot/','/games/null-shift-godot/index.html','/play/swarm','/play/null-shift','/play/inherit','/play/remix','/media','/business','/create','/mobility']
+const routes = ['/','/skillcred/','/skillcred-api/health','/skillcred-api/ready','/skillcred-api/issuer','/entertainment','/games/','/games/index.html','/games/partners/','/games/admin/','/games/vector-zero/','/games/favicon.svg','/privacy/','/terms/','/community','/stream','/archive','/profile','/api/v1/player/profile','/api/v1/analytics/summary?from=0&to=1','/r/1842','/games/time','/games/null-shift/','/games/null-shift/index.html','/games/null-shift-godot/','/games/null-shift-godot/index.html','/play/swarm','/play/null-shift','/play/inherit','/play/remix','/media','/business','/create','/mobility']
 const agents = { desktop: 'OSGARD-Route-Matrix/1.1 Desktop', mobile: 'OSGARD-Route-Matrix/1.1 Mobile' }
 const results = []
 for (const [device, userAgent] of Object.entries(agents)) for (const route of routes) {
@@ -39,7 +39,9 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         : route === '/games/partners/'
           ? text.includes('id="campaign-form"') && text.includes('id="inventory-grid"') && text.includes('id="principles"') && text.includes('partners.js') && text.includes('mailto:osman.osmanov0099@gmail.com')
         : (route === '/games/' || route === '/games/index.html')
-          ? text.includes('id="games-grid"') && text.includes('data-game="null-shift"') && text.includes('data-game="time"') && text.includes('data-game="swarm"') && text.includes('data-game="inherit"') && text.includes('data-game="remix"') && text.includes('id="player-dialog"') && text.includes('id="player-share"') && text.includes('player-lifecycle.js') && text.includes('id="project-form"') && text.includes('id="analytics-toggle"') && text.includes('osgardvanguard.studio')
+          ? text.includes('id="games-grid"') && text.includes('data-game="null-shift"') && text.includes('data-game="time"') && text.includes('data-game="swarm"') && text.includes('data-game="inherit"') && text.includes('data-game="remix"') && text.includes('data-game="vector-zero"') && text.includes('"numberOfItems":6') && text.includes('id="player-dialog"') && text.includes('id="player-share"') && text.includes('player-lifecycle.js') && text.includes('id="project-form"') && text.includes('id="analytics-toggle"') && text.includes('osgardvanguard.studio')
+        : route.startsWith('/games/vector-zero/')
+          ? text.includes('<title>VECTOR//ZERO — Разрыв поля</title>') && text.includes('id="field"') && text.includes('id="start"') && text.includes('osgard:game-lifecycle')
         : route.startsWith('/games/null-shift-godot')
           ? /<canvas/i.test(text) && /godot/i.test(text) && text.includes('index.wasm') && text.includes('index.pck') &&
             text.includes('data-nullshift-shell="premium-v1"') &&
