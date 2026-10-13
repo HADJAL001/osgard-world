@@ -1,7 +1,7 @@
 # AFTERIMAGE//RUN — growth & monetization plan
 
 ## Product pitch
-A compact sci-fi precision runner in OSGARD PLAY: the same UTC daily seed for everyone, a personal best/ghost, a challenge URL carrying the seed and score, share-result image, and a cosmetic SIGNAL SHARD that can be earned once per UTC day by starting a share flow or copying a challenge link. The game explicitly tells the player that the actual public post is not verified.
+A compact sci-fi precision runner in OSGARD PLAY: the same UTC daily seed for everyone, a personal best/ghost, a challenge URL carrying the seed and target score, a share-result image, and a cosmetic SIGNAL SHARD that can be claimed once per UTC day only after the player explicitly confirms a share action. Merely copying the link or opening a social composer does not grant the shard. The game explicitly tells the player that the actual public post is not verified.
 
 ## Viral loop to measure
 1. A player starts from the OSGARD games catalog or Entertainment.
@@ -10,7 +10,7 @@ A compact sci-fi precision runner in OSGARD PLAY: the same UTC daily seed for ev
 4. The recipient lands on the same date/seed, plays their run and can share their result.
 5. A non-transferable, cosmetic shard provides a small in-game acknowledgement. It does not alter speed, score, or paid rights.
 
-The share incentive is intentionally a reward for starting the share flow, not a claim that a post was published. Client-only localStorage is easy to reset and is not anti-fraud. Before offering tradable/paid value or a referral payout, implement server-side invite attribution, idempotent referral records, account/abuse controls, and require a qualified referred player's first completed session. The local shard is cosmetic-only.
+The share incentive is a locally stored cosmetic acknowledgement after the player explicitly confirms they published/shared the result, not proof that a post was published. Copying a link does not grant the reward. Client-only localStorage is easy to reset and is not anti-fraud. Before offering tradable/paid value or a referral payout, implement server-side invite attribution, idempotent referral records, account/abuse controls, and require a qualified referred player's first completed session. The local shard is cosmetic-only.
 
 ## Owned-service intermission
 On closing an embedded game session, show one optional luxury cross-promotion panel containing the ten OSGARD-owned products. The player chooses a specific card then explicitly opens that destination, or dismisses the intermission. Each link carries:
@@ -58,3 +58,24 @@ Minimum useful release experiment:
 
 ## Release boundaries
 The first release uses local personal-best data and a locally stored cosmetic shard. It has no public leaderboard, cross-device save, ad SDK, payment processor or server-backed referral reward. The intermission is owned-service cross-promotion, not third-party ads. Activate server-backed monetization only after accounts, provider approval, webhook/signature validation, consent and refund handling exist.
+
+## Quality pass — 14 October 2026
+
+The current implementation adds these reliability and measurement safeguards:
+
+- The obstacle/spawn random stream is separated from decorative stars, particles and camera shake so visual effects do not change the seeded gameplay sequence.
+- Date and target-score parameters are validated; a challenge is beaten only when the new score is strictly higher than the target.
+- The single animation-frame loop can be cancelled on pause, restart, hidden-tab transition and page exit; hidden tabs pause the run and reduced-motion settings suppress idle animation.
+- Challenge URLs use the canonical invite landing and keep a validated UTC day, target score, referral code and UTM campaign. The invite landing forwards a valid AFTERIMAGE challenge into the game instead of dropping the target.
+- The host session lifecycle records allowlisted challenge metadata on start and completion: target, score, win/loss, shard count, daily seed, referral code and dash count. Embedded share events avoid duplicate direct analytics from the game frame.
+- Open Graph/Twitter summary-card metadata is present for the result URL. A result-card image uses a short route label to avoid overflowing with long referral URLs.
+- On browsers supporting native file sharing, the share action attaches the generated 1200×630 PNG result card plus the challenge URL. If file sharing is unavailable or fails, it falls back to text + URL; cancelling a share sheet stops without retrying or granting the cosmetic reward.
+
+### Funnel to report (do not conflate these events)
+
+1. Catalogue/Entertainment card seen → game launch → engine ready → completed run.
+2. Challenge created → invite landing opened → challenge accepted and game started → target beaten (or not beaten).
+3. Share UI opened by channel → player-confirmed share claim → referred player completed a session.
+4. OSGARD SELECT shown → chosen service → click-through with UTM → qualified inquiry → closed contract and contribution margin.
+
+The game is still client-side for personal-best/ghost and the cosmetic shard. Those values can be cleared or manipulated and must not be used for cash rewards, paid rights, a public leaderboard or verified referral payments. Challenge telemetry should be considered directional until the repository CI and a real browser cohort confirm it end-to-end.
