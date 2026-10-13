@@ -29,7 +29,10 @@ jobs:
           set -euo pipefail
           expected="${EXPECTED_DEPLOY_SHA:0:12}"
           for attempt in $(seq 1 18); do
-            page="$(curl -fsSL --max-time 12 https://osgard.world/games/ 2>/dev/null || true)"
+            # Bypass browser/CDN caches so this check sees the newly activated HTML.
+            # Keep the exact build and versioned-asset checks; never score stale content.
+            cache_buster="__osgard_build_check=$expected-$attempt-$(date +%s%N)"
+            page="$(curl -fsSL --max-time 12 -H 'Cache-Control: no-cache, no-store, max-age=0' -H 'Pragma: no-cache' "https://osgard.world/games/?$cache_buster" 2>/dev/null || true)"
             # Use Bash substring matching here: grep -q can close the pipe early, making
             # printf fail with SIGPIPE under pipefail even when the expected marker exists.
             if [[ "$page" == *"<meta name=\"osgard-build\" content=\"$expected\">"* &&
@@ -38,7 +41,10 @@ jobs:
               echo "Confirmed deployed Games release $expected"
               exit 0
             fi
-            echo "Waiting for Games release $expected (attempt $attempt/18)"
+            observed="$page"
+            observed="${observed#*<meta name=\"osgard-build\" content=\"}"
+            observed="${observed%%\"*}"
+            echo "Waiting for Games release $expected; observed ${observed:-<missing>} (attempt $attempt/18)"
             sleep 10
           done
           echo "Refusing to score a stale Games release; expected $expected" >&2
