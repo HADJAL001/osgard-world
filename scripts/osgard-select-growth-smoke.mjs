@@ -144,7 +144,7 @@ assert.ok(!signalShareHandler.includes("life('share_created'") && !signalShareHa
   'SIGNAL RUN challenge shares must not claim rewards or emit false completed-share events');
 
 assert.ok(core.includes("REFERRAL_REWARD_POINTS = 50") && core.includes("REFERRAL_MIN_SESSION_SECONDS = 60") && core.includes("validateReferralRewardRegistration"), 'Commerce API defines server-qualified non-cash reward rules');
-assert.ok(core.includes("parseReferralRewardEvent") && core.includes("durationSeconds >= REFERRAL_MIN_SESSION_SECONDS"), 'Only qualified game sessions should enter the referral reward parser');
+assert.ok(core.includes("parseReferralRewardEvent") && core.includes("Number(event.durationSeconds) >= REFERRAL_MIN_SESSION_SECONDS"), 'Only qualified game sessions should enter the referral reward parser');
 assert.ok(referralApiSource.includes('game_referral_invites') && referralApiSource.includes('game_referral_visits') && referralApiSource.includes('game_referral_rewards'), 'Commerce API persists invite registrations, visits, and unique qualified rewards');
 assert.ok(referralApiSource.includes('processReferralRewardEvent') && referralApiSource.includes('/v1/referrals/register') && referralApiSource.includes('/v1/referrals/balance'), 'Commerce API must verify referral rewards and return server-derived balance');
 assert.ok(inviteLanding.includes("osgard.games.referral-reward-consent.v1") && inviteLanding.includes("source:'referral-link:'+code+':'+requestedGame+':'+visitorToken"), 'Invite landing must collect reward consent and provide a same-game visitor token');
