@@ -397,7 +397,7 @@ assert.ok(postSessionShareHandler.indexOf('shareCompleted=true')>nativeShareAt&&
 assert.ok(countedShareAt>postSessionShareHandler.indexOf('finally {')&&postSessionShareHandler.includes("if(error instanceof Error&&error.name==='AbortError')"),'share_created must be emitted only after successful completion; cancelling the native share sheet must return before the event')
 assert.equal(postSessionShareHandler.split("sendEvent('share_created'").length-1,1,'A completed share action should generate at most one share event')
 assert.ok(recommendationScript.includes('osgardbewworld.com/?utm_source=osgard_games&utm_medium=cross_promo&utm_campaign=after_game'), 'Post-session game-creation lead CTA and attribution missing')
-assert.ok(lifecycle.includes('function analyticsSource()') && lifecycle.includes('source:analyticsSource()'), 'Actual gameplay sessions must preserve consented invite attribution')
+assert.ok(lifecycle.includes('function analyticsSource()') && lifecycle.includes(':analyticsSource()') && lifecycle.includes("return 'referral:'+code+':null-shift'"), 'Actual gameplay sessions must preserve consented invite attribution')
 assert.ok(referralCoreSource.includes('"referral_link_opened"') && referralCoreSource.includes('"share_created"'), 'Commerce API must explicitly allowlist invite events')
 for(const metric of ['inviteShares','referralOpens','referredStarts','referredCompletions']) assert.ok(referralApiSource.includes(metric), 'Commerce analytics response lacks referral metric '+metric)
 for(const metric of ['analytics-invites','analytics-referral-opens','analytics-referred-starts','analytics-referred-completions']) assert.ok(referralAdminSource.includes('id="'+metric+'"'), 'Commerce admin is missing referral metric '+metric)
