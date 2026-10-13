@@ -144,7 +144,11 @@
       } else if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(url)
       } else {
-        throw new Error('Share unavailable')
+        const confirmed = window.prompt('Скопируй ссылку-приглашение и отправь её другу:', url)
+        if (confirmed === null) {
+          announce('Создание приглашения отменено.')
+          return
+        }
       }
       announce('Персональная ссылка готова. Отправь её другу.')
       const growthStatus = $('#growth-invite-status')
