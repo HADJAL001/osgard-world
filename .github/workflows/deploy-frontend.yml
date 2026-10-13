@@ -55,6 +55,8 @@ jobs:
       - run: npm run qa:null-shift
       - name: Smoke-test the OSGARD Games hub
         run: npm run qa:games-portal
+      - name: Verify viral referral links, attribution, and fallback sharing
+        run: npm run qa:games-referral
       - name: Smoke-test individual game pages and SEO routes
         run: npm run qa:games-detail
       - name: Verify ecosystem links, claims, contacts and privacy boundaries
