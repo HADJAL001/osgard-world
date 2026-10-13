@@ -150,17 +150,20 @@ async function buildResultCardBlob(challengeUrl){
 async function shareNative(){
  const url=challenge(),title='AFTERIMAGE//RUN — OSGARD PLAY',txt='Мой результат: '+(game.score||daily.best||0)+'. Daily seed '+day+'. Повтори маршрут!';
  if(navigator.share){
-  try{
-   if(typeof File==='function'&&typeof navigator.canShare==='function'){
+  if(typeof File==='function'&&typeof navigator.canShare==='function'){
+   try{
     const blob=await buildResultCardBlob(url);
     if(blob){
      const file=new File([blob],'afterimage-run-result.png',{type:'image/png'});
      if(navigator.canShare({files:[file]})){
       await navigator.share({files:[file],title:title,text:txt,url:url});
-      prepareShareReward('web-share');return;
+      prepareShareReward('web-share');
+      return;
      }
     }
-   }
+   }catch(e){if(e.name==='AbortError')return}
+  }
+  try{
    await navigator.share({title:title,text:txt,url:url});
    prepareShareReward('web-share');
   }catch(e){if(e.name!=='AbortError')toast('Не удалось открыть системное меню публикации.')}
