@@ -279,6 +279,11 @@ const selectConsentKey='osgard.games.analytics-consent.v1';
 const selectSessionKey='osgard.games.growth-session.v1';
 const selectAllowedEvents=new Set(['cross_promo_clicked','owned_promo_impression','social_share_intent','social_reward_claimed','share_created']);
 function hasConsent(){try{return localStorage.getItem(selectConsentKey)==='yes'}catch{return false}}
+const pendingSelectTelemetry=new Set();
+function cancelPendingSelectTelemetry(){for(const controller of pendingSelectTelemetry){try{controller.abort()}catch{}}pendingSelectTelemetry.clear()}
+function checkSelectConsentAfterToggle(){setTimeout(()=>{if(!hasConsent())cancelPendingSelectTelemetry()},0)}
+document.addEventListener('change',event=>{if(event.target&&event.target.id==='analytics-toggle')checkSelectConsentAfterToggle()});
+document.addEventListener('click',event=>{const target=event.target;if(target&&typeof target.closest==='function'&&target.closest('#analytics-toggle'))checkSelectConsentAfterToggle()});
 function selectSessionId(){
  try{let value=sessionStorage.getItem(selectSessionKey);if(value&&/^session_[a-f0-9]{24}$/.test(value))return value;value='session_'+makeEventToken()+makeEventToken();sessionStorage.setItem(selectSessionKey,value);return value}
  catch{return 'session_'+makeEventToken()+makeEventToken()}
@@ -289,18 +294,27 @@ function makeEventToken(){
  else for(let i=0;i<bytes.length;i++)bytes[i]=Math.floor(Math.random()*256);
  return Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
 }
-function sendSelectEvent(name,gameId,source){
- if(!hasConsent()||!selectAllowedEvents.has(name))return Promise.resolve(false);
+async function sendSelectEvent(name,gameId,source){
+ if(!hasConsent()||!selectAllowedEvents.has(name))return false;
  const event={eventId:'evt_'+makeEventToken()+makeEventToken(),name,sessionId:selectSessionId(),gameId:titles[gameId]?gameId:'unknown',source:String(source||'osgard-select').slice(0,80),path:location.pathname,durationSeconds:0};
- return fetch('/games/commerce-config.json',{cache:'no-store'})
-  .then(r=>r.ok?r.json().catch(()=>({})):({}))
-  .then(config=>{
-   let base=String(config.apiBaseUrl||'/commerce-api');
-   while(base.endsWith('/'))base=base.slice(0,-1);
-   return fetch(base+'/v1/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({consent:true,events:[event]})});
-  })
-  .then(response=>response.ok)
-  .catch(()=>false);
+ const controller=typeof AbortController==='function'?new AbortController():null;
+ if(controller)pendingSelectTelemetry.add(controller);
+ try{
+  if(!hasConsent())return false;
+  const options={cache:'no-store'};
+  if(controller)options.signal=controller.signal;
+  const configResponse=await fetch('/games/commerce-config.json',options);
+  if(!hasConsent()||(controller&&controller.signal.aborted))return false;
+  const config=configResponse.ok?await configResponse.json().catch(()=>({})):{};
+  if(!hasConsent()||(controller&&controller.signal.aborted))return false;
+  let base=String(config.apiBaseUrl||'/commerce-api');
+  while(base.endsWith('/'))base=base.slice(0,-1);
+  const request={method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({consent:true,events:[event]})};
+  if(controller)request.signal=controller.signal;
+  const response=await fetch(base+'/v1/events',request);
+  if(!hasConsent()||(controller&&controller.signal.aborted))return false;
+  return response.ok;
+ }catch{return false}finally{if(controller)pendingSelectTelemetry.delete(controller)}
 }
 function readServicePreferences(){
  const fallback={frequency:'each',selected:availableServiceIds.slice()};
