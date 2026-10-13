@@ -39,6 +39,18 @@ test('personal-data import is capped and accepts only a known schema', () => {
   assert.match(js, /parsed\.schema !== 1/);
   assert.match(js, /new Date\(row\.at\)\.toISOString\(\)/);
 });
+test('lifetime Player Lab aggregates survive the bounded recent-launch log', () => {
+  assert.match(js, /MAX_LOG = 1000/);
+  assert.match(js, /MAX_TOTAL_LAUNCHES = 10000000/);
+  assert.match(js, /MAX_ACTIVITY_DAYS = 4000/);
+  assert.match(js, /Math\.max\(raw\.totalLaunches, launches\.length\)/, 'Legacy imports must derive a minimum lifetime count from existing history');
+  assert.match(js, /stats\.totalLaunches = Math\.min\(MAX_TOTAL_LAUNCHES, stats\.totalLaunches \+ 1\)/);
+  assert.match(js, /stats\.gameIdsEver = \[\.\.\.new Set\(\[\.\.\.stats\.gameIdsEver, id\]\)\]/);
+  assert.match(js, /stats\.activityDays = \[\.\.\.new Set\(\[\.\.\.stats\.activityDays, dateKey\(activeAt\)\]\)\]/);
+  assert.match(js, /const unique = stats\.gameIdsEver\.length/);
+  assert.match(js, /const days = stats\.activityDays\.length/);
+  assert.match(js, /return \{ schema: 1, launches, totalLaunches, gameIdsEver, activityDays, secondsByGame, completions \}/, 'Exports/imports must preserve the validated aggregates');
+});
 test('the interface has responsive touch and reduced-motion contracts', () => {
   assert.match(css, /@media\(max-width:680px\)/);
   assert.match(css, /min-height:44px/);
