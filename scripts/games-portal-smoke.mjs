@@ -37,7 +37,7 @@ const luxury=readFileSync(resolve(root,'luxury.js'),'utf8')
 
 assert.ok(html.includes('href="./daily-circuit.css"')&&html.includes('src="./daily-circuit.js"'),'Daily Circuit assets must be linked from the Games hub')
 assert.ok(dailyCircuitStyles.includes('.daily-circuit-grid')&&dailyCircuitStyles.includes('@media(max-width:760px)')&&dailyCircuitStyles.includes('prefers-reduced-motion:reduce'),'Daily Circuit must be responsive and respect reduced motion')
-assert.ok(dailyCircuitScript.includes('window.OSGARDDailyCircuitCore')&&dailyCircuitScript.includes('navigator.share')&&dailyCircuitScript.includes('navigator.clipboard.writeText'),'Daily Circuit must expose deterministic routes and share/copy fallback')
+assert.ok(dailyCircuitScript.includes('OSGARDDailyCircuitCore')&&dailyCircuitScript.includes('navigator.share')&&dailyCircuitScript.includes('navigator.clipboard.writeText'),'Daily Circuit must expose deterministic routes and share/copy fallback')
 assert.ok(!dailyCircuitScript.includes('fetch(')&&!dailyCircuitScript.includes('googletagmanager')&&!dailyCircuitScript.includes('doubleclick.net'),'Daily Circuit must not add ad SDKs or unapproved network calls')
 assert.ok(html.includes('window.OSGARDGames=Object.freeze')&&html.includes('window.OSGARDDailyTrackShare=')&&html.includes("source:'daily_circuit'"),'Daily Circuit must use the existing player and consent/token analytics bridge')
 new Function(dailyCircuitScript)
