@@ -2,6 +2,7 @@ import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFi
 import { dirname, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { resolveIosBuildNumber, resolveIosMarketingVersion } from './ios-release-version.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const dist = join(root, 'dist');
@@ -178,10 +179,11 @@ function prepareIosProject() {
   writeFileSync(plistPath, plist);
 
   let pbx = readFileSync(pbxPath, 'utf8');
-  const buildNumber = /^\d+$/.test(String(process.env.BUILD_NUMBER || '')) ? String(process.env.BUILD_NUMBER) : '1';
+  const buildNumber = resolveIosBuildNumber(process.env);
+  const marketingVersion = resolveIosMarketingVersion(process.env);
   pbx = pbx.replace(/PRODUCT_BUNDLE_IDENTIFIER = [^;]+;/g, 'PRODUCT_BUNDLE_IDENTIFIER = ' + config.appId + ';');
   pbx = pbx.replace(/IPHONEOS_DEPLOYMENT_TARGET = [^;]+;/g, 'IPHONEOS_DEPLOYMENT_TARGET = 15.0;');
-  pbx = pbx.replace(/MARKETING_VERSION = [^;]+;/g, 'MARKETING_VERSION = 1.0.0;');
+  pbx = pbx.replace(/MARKETING_VERSION = [^;]+;/g, 'MARKETING_VERSION = ' + marketingVersion + ';');
   pbx = pbx.replace(/CURRENT_PROJECT_VERSION = [^;]+;/g, 'CURRENT_PROJECT_VERSION = ' + buildNumber + ';');
   pbx = pbx.replace(/INFOPLIST_KEY_CFBundleDisplayName = [^;]+;/g, 'INFOPLIST_KEY_CFBundleDisplayName = "OSGARD PLAY";');
   writeFileSync(pbxPath, pbx);
@@ -190,7 +192,7 @@ function prepareIosProject() {
   const iconDir = join(appDir, 'Assets.xcassets', 'AppIcon.appiconset');
   const result = spawnSync(process.execPath, [join(root, 'scripts', 'generate-ios-app-icon.mjs'), '--output-dir', iconDir], { stdio: 'inherit' });
   if (result.status !== 0) throw new Error('Could not generate App Store icon assets.');
-  console.log('Prepared native Xcode project for ' + config.appId + ', version 1.0.0 (' + buildNumber + ').');
+  console.log('Prepared native Xcode project for ' + config.appId + ', version ' + marketingVersion + ' (' + buildNumber + ').');
 }
 
 if (!iosOnly) prepareWeb();
