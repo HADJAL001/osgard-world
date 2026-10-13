@@ -51,7 +51,7 @@ Edit public/games/commerce-config.json and set apiBaseUrl to this API's HTTPS UR
 
 ## Admin
 
-Open /games/admin/ and paste ADMIN_API_TOKEN into the in-memory field. It is not saved in localStorage. The admin endpoints expose customers' contact details; protect and rotate the token if exposed.
+Open /games/commerce-admin/ and paste ADMIN_API_TOKEN into the in-memory field. It is not saved in localStorage. The admin endpoints expose customers' contact details; protect and rotate the token if exposed.
 
 ## Launch gates
 
