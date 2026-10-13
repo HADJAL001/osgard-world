@@ -286,7 +286,7 @@ const recommendationByGame={
 function readPreferredService(){try{const id=localStorage.getItem(preferredServiceKey)||'';return availableServiceIds.includes(id)?id:''}catch{return''}}
 function savePreferredService(id){if(!availableServiceIds.includes(id))return false;try{localStorage.setItem(preferredServiceKey,id);return true}catch{return false}}
 let memoryServicePreferences=null;
-let memoryServiceProgress={count:0,lastAt:0,lastGame:''};
+let memoryServiceProgress={count:0,lastAt:0,lastGame:'',sessions:[]};
 const make=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n};
 const selectConsentKey='osgard.games.analytics-consent.v1';
 const selectSessionKey='osgard.games.growth-session.v1';
@@ -344,13 +344,15 @@ function writeServicePreferences(value){
  try{localStorage.setItem(servicePreferencesKey,JSON.stringify(next));return true}catch{return false}
 }
 function readServiceProgress(){
- try{const raw=localStorage.getItem(serviceProgressKey);if(raw){const value=JSON.parse(raw);return{count:Number.isSafeInteger(value.count)&&value.count>=0?Math.min(value.count,1000000000):0,lastAt:Number.isFinite(value.lastAt)?value.lastAt:0,lastGame:typeof value.lastGame==='string'?value.lastGame:''}}}catch{}
- return {...memoryServiceProgress};
+ try{const raw=localStorage.getItem(serviceProgressKey);if(raw){const value=JSON.parse(raw);return{count:Number.isSafeInteger(value.count)&&value.count>=0?Math.min(value.count,1000000000):0,lastAt:Number.isFinite(value.lastAt)?value.lastAt:0,lastGame:typeof value.lastGame==='string'?value.lastGame:'',sessions:Array.isArray(value.sessions)?value.sessions.filter(id=>typeof id==='string'&&/^[a-z0-9:_-]{1,160}$/i.test(id)).slice(-100):[]}}}catch{}
+ return {...memoryServiceProgress,sessions:[...(memoryServiceProgress.sessions||[])]};
 }
-function recordCompletedRound(gameId){
- const current=readServiceProgress(),now=Date.now();
- if(current.lastGame===gameId&&now>=current.lastAt&&now-current.lastAt<2500)return current.count;
- const next={count:Math.min(current.count+1,1000000000),lastAt:now,lastGame:gameId};memoryServiceProgress=next;
+function recordCompletedRound(gameId,sessionId){
+ const current=readServiceProgress(),now=Date.now(),key=typeof sessionId==='string'&&/^[a-z0-9:_-]{1,160}$/i.test(sessionId)?sessionId:'';
+ if(key&&current.sessions.includes(key))return current.count;
+ if(!key&&current.lastGame===gameId&&now>=current.lastAt&&now-current.lastAt<2500)return current.count;
+ const sessions=key?[...current.sessions.filter(id=>id!==key),key].slice(-100):current.sessions;
+ const next={count:Math.min(current.count+1,1000000000),lastAt:now,lastGame:gameId,sessions};memoryServiceProgress=next;
  try{localStorage.setItem(serviceProgressKey,JSON.stringify(next))}catch{}
  return next.count;
 }
@@ -639,6 +641,6 @@ function renderOsgardSelect(gameId){
  root.querySelector('.og-postgame-suite')?.remove();
  const suite=make('section','og-postgame-suite');suite.append(servicesShelf(id,shouldShowServicePromos(preferences,completedCount),completedCount),rewardShelf(id));root.append(suite);
 }
-document.addEventListener('osgard:game-completed',event=>renderOsgardSelect(event.detail&&event.detail.game));
+document.addEventListener('osgard:game-completed',event=>renderOsgardSelect(event.detail&&event.detail.game,event.detail&&event.detail.sessionId));
 document.addEventListener('osgard:game-session-ended',event=>{if(event.detail&&event.detail.sessionStarted===true)renderOsgardSelect(event.detail.game)});
 })();

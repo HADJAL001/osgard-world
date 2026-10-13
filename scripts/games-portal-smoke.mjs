@@ -384,6 +384,9 @@ assert.ok(recommendationScript.includes("document.addEventListener('osgard:game-
 assert.ok(recommendationStyles.includes('#osgard-aftergame-intermission[hidden]')&&recommendationStyles.includes('.og-postgame-outside-suite'),'Post-session intermission must have a hidden state and standalone layout')
 assert.ok(recommendationScript.includes("document.addEventListener('osgard:game-completed'")&&recommendationScript.includes("document.addEventListener('osgard:game-launching'"),'The deferred recommendation runtime must subscribe to the gameplay lifecycle')
 assert.ok(lifecycle.includes("document.dispatchEvent(new Event('osgard:game-launching'))")&&lifecycle.includes("new CustomEvent('osgard:game-completed'"),'Lifecycle wrapper must clear recommendations on launch and publish confirmed completion')
+assert.ok(lifecycle.includes("activeSessionId='session_'+id+'_'+sequence+'_'+launchAt") && lifecycle.includes('sessionId:activeSessionId') && lifecycle.includes('detail:{game:activeGame,sessionId:activeSessionId}'),'Each launch must propagate one stable session identity into completion and return events')
+assert.ok(recommendationScript.includes('function recordCompletedRound(gameId,sessionId)') && recommendationScript.includes('current.sessions.includes(key)') && recommendationScript.includes('recordCompletedRound(id,sessionId)'),'Repeated completed/closed events for one game session must not increment postgame cadence twice')
+
 assert.ok(recommendationScript.includes("document.addEventListener('osgard:game-completed'")&&recommendationScript.includes("document.addEventListener('osgard:game-launching'"),'Recommendation module must subscribe to game lifecycle events')
 assert.ok(recommendationStyles.includes('.post-run-recommendations')&&recommendationStyles.includes('prefers-reduced-motion:reduce'),'Recommendation shelf must have responsive/reduced-motion styling')
 new Function(recommendationScript)
