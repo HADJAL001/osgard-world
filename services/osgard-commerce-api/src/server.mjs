@@ -419,9 +419,18 @@ app.post("/v1/referrals/claim", async (req, res) => {
           AND MAX(e.duration_seconds) FILTER (WHERE e.event_name = 'game_session_completed') >= 30
       ),
       one_per_code AS (
-        SELECT DISTINCT ON (referral_code) referral_code, game_id, session_id, completed_at
-        FROM session_candidates
-        ORDER BY referral_code, completed_at ASC
+        SELECT DISTINCT ON (candidate.referral_code)
+          candidate.referral_code, candidate.game_id, candidate.session_id, candidate.completed_at
+        FROM session_candidates candidate
+        WHERE EXISTS (
+          SELECT 1
+          FROM commerce_events opened
+          WHERE opened.event_name = 'referral_link_opened'
+            AND opened.source = 'referral-link:' || candidate.referral_code
+            AND opened.received_at <= candidate.started_at
+            AND opened.received_at >= candidate.started_at - INTERVAL '7 days'
+        )
+        ORDER BY candidate.referral_code, candidate.completed_at ASC
       )
       SELECT i.referral_code, i.reward_amount, c.session_id, c.completed_at
       FROM one_per_code c
