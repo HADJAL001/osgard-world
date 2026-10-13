@@ -28,6 +28,8 @@ export const ALLOWED_EVENTS = new Set([
   "premium_page_view",
   "catalog_viewed",
   "partners_page_viewed",
+  "share_created",
+  "referral_link_opened",
   "game_session_started",
   "checkout_started",
   "checkout_paid",
