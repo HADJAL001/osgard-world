@@ -74,6 +74,13 @@ check('existing Unity player route remains intact',()=>{
   assert.ok(remix.includes('/v1/matches/'));
   assert.ok(remix.includes('/v1/challenges'));
 });
+check('player events require explicit analytics consent and authentication',()=>{
+  assert.ok(remix.includes("localStorage.getItem('osgard.games.analytics-consent.v1')==='yes'"),'explicit OSGARD analytics consent gate missing');
+  assert.ok(remix.includes('if(!consent||!token)return;'),'unauthorized or non-consenting player must not submit optional events');
+});
+check('sponsor enquiry opens outside the embedded game',()=>{
+  assert.ok(remix.includes(String.raw`target=\"_blank\" rel=\"noopener noreferrer\"`),'sponsor CTA must open safely in a new tab');
+});
 check('no fake active ads, fake payments, or third-party ad SDK',()=>{
   for(const forbidden of ['googletagmanager','doubleclick.net','adsbygoogle','checkout.stripe.com','Buy now for $'])assert.ok(!remix.toLowerCase().includes(forbidden),forbidden);
 });

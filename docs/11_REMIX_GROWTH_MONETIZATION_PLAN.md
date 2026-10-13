@@ -53,3 +53,10 @@ Run a 30–50 person playtest first. Compare a basic URL share to the PNG-card s
 - CrazyGames monetization guide: https://docs.crazygames.com/resources/ad-monetization-guide/ — natural breaks and pacing.
 - Steam Workshop: https://partner.steamgames.com/doc/features/workshop — UGC needs platform integration and moderation design.
 - Steam demos: https://partner.steamgames.com/doc/store/application/demos — a polished demo can support purchase evaluation but does not guarantee conversion.
+
+## Privacy and embedded-player safeguards
+
+- Optional REMIX events are sent only if the catalogue's explicit opt-in key `osgard.games.analytics-consent.v1` is `yes` **and** an authenticated OSGARD access token is available. Guests can still play, create challenges, accept invites, share links and download result cards without analytics requests.
+- The sponsor enquiry CTA appears only after the match API reports `RESULTS` and opens in a new tab with `noopener noreferrer`, so it cannot replace the game inside its host iframe.
+- Consent withdrawal at the catalogue disables future REMIX telemetry; this page does not write a new consent choice on the player's behalf.
+
