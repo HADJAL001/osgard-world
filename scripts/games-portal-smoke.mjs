@@ -403,3 +403,11 @@ assert.ok(lifecycle.includes('function analyticsSource()') && lifecycle.includes
 assert.ok(referralCoreSource.includes('"referral_link_opened"') && referralCoreSource.includes('"share_created"'), 'Commerce API must explicitly allowlist invite events')
 for(const metric of ['inviteShares','referralOpens','referredStarts','referredCompletions']) assert.ok(referralApiSource.includes(metric), 'Commerce analytics response lacks referral metric '+metric)
 for(const metric of ['analytics-invites','analytics-referral-opens','analytics-referred-starts','analytics-referred-completions']) assert.ok(referralAdminSource.includes('id="'+metric+'"'), 'Commerce admin is missing referral metric '+metric)
+
+// Referral reliability: strict UTM contract, at-most-once pending opens and consent withdrawal.
+assert.ok(recommendationScript.includes('const pendingTelemetry=new Set()') && recommendationScript.includes('function cancelPendingTelemetry()'), 'Referral telemetry must track cancellable in-flight requests');
+assert.ok(recommendationScript.includes('controller.abort()') && recommendationScript.includes('controller.signal.aborted'), 'Consent withdrawal must abort/check outstanding event requests');
+assert.ok(recommendationScript.includes("if(!consented()||(controller&&controller.signal.aborted))return false"), 'Consent must be checked after config and event upload');
+assert.ok(recommendationScript.includes("campaign==='play_with_friends'") && recommendationScript.includes("campaign==='play_with_a_friend'"), 'Canonical and legacy referrals must match the correct UTM campaigns');
+assert.ok(recommendationScript.includes("sessionStorage.setItem(marker,'pending')") && recommendationScript.includes("state==='pending'"), 'Referral-open events must deduplicate before network await');
+assert.ok(recommendationScript.includes("window.addEventListener('storage'") && recommendationScript.includes('cancelPendingTelemetry()'), 'Consent withdrawal in another tab must cancel outstanding telemetry');
