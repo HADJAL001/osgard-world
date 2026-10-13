@@ -16,7 +16,6 @@ const css = read('src/games-hub.css')
 const civicGame = read('public/games/civic-cascade/index.html')
 const cascadeGame = read('public/games/cascade-lab/index.html')
 const aetherGame = read('public/games/aether-grid/index.html')
-const aetherGame = read('public/games/aether-grid/index.html')
 
 const games = [
   { id: 'time', href: '/games/time' },
