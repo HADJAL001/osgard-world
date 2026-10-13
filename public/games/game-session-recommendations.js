@@ -9,13 +9,14 @@ const games={
  'signal-run':{title:'SIGNAL RUN',subtitle:'Динамичная аркада',href:'/games/signal-run/'},
  'civic-cascade':{title:'CIVIC CASCADE',subtitle:'Кризисная стратегия',href:'/games/civic-cascade/'},
  patina:{title:'PATINA Atelier',subtitle:'Реставрационная мастерская',href:'/games/patina/'},
- 'cascade-lab':{title:'CASCADE LAB',subtitle:'Физические головоломки',href:'/games/cascade-lab/'}
+ 'cascade-lab':{title:'CASCADE LAB',subtitle:'Физические головоломки',href:'/games/cascade-lab/'},
+ 'afterimage-run':{title:'AFTERIMAGE//RUN',subtitle:'Ежедневный sci-fi speedrun',href:'/games/afterimage-run/'}
 };
 const next={
  'null-shift':['civic-cascade','cascade-lab'],time:['civic-cascade','inherit'],
  swarm:['null-shift','signal-run'],inherit:['patina','time'],remix:['swarm','cascade-lab'],
  'signal-run':['swarm','null-shift'],'civic-cascade':['time','inherit'],patina:['inherit','civic-cascade'],
- 'cascade-lab':['signal-run','null-shift']
+ 'cascade-lab':['signal-run','afterimage-run'],'afterimage-run':['signal-run','cascade-lab']
 };
 const host=document.querySelector('#post-run-recommendations'),dialog=document.querySelector('#player-dialog');
 if(!host||!dialog)return;
@@ -50,7 +51,7 @@ const games={
  'civic-cascade':{title:'CIVIC CASCADE'},
  patina:{title:'PATINA Atelier'},
  'signal-run':{title:'SIGNAL RUN'},
- 'cascade-lab':{title:'CASCADE LAB'}
+ 'cascade-lab':{title:'CASCADE LAB'},'afterimage-run':{title:'AFTERIMAGE//RUN'}
 };
 const CONSENT_KEY='osgard.games.analytics-consent.v1';
 const ATTR_KEY='osgard.games.referral-attribution.v1';
@@ -249,7 +250,7 @@ captureInvite();installInviteBanner();
 const root=document.querySelector('#post-run-recommendations');
 const outsideRoot=document.querySelector('#osgard-aftergame-intermission');
 if(!root||typeof window==='undefined'||typeof location==='undefined')return;
-const titles={'null-shift':'NULL//SHIFT',time:'Империя времени',swarm:'SWARM',inherit:'INHERIT',remix:'REMIX','civic-cascade':'CIVIC CASCADE',patina:'PATINA Atelier','signal-run':'SIGNAL RUN','cascade-lab':'CASCADE LAB'};
+const titles={'null-shift':'NULL//SHIFT',time:'Империя времени',swarm:'SWARM',inherit:'INHERIT',remix:'REMIX','civic-cascade':'CIVIC CASCADE',patina:'PATINA Atelier','signal-run':'SIGNAL RUN','cascade-lab':'CASCADE LAB','afterimage-run':'AFTERIMAGE//RUN'};
 const services=[
  ['marcosa','05','MARCOSA','SOCIAL / COMMUNITY','Социальная сеть нового поколения — общение, сообщества и цифровые миры','https://marcosa.club/',true],
  ['projects','01','OSGARD PROJECTS','DIGITAL STUDIO','Создание сайтов, приложений и цифровых продуктов','https://osgardbewworld.com/'],
