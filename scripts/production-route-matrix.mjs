@@ -80,10 +80,17 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
           ? text.includes('<title>Growth Studio — OSGARD PLAY</title>') && text.includes('id="campaign-url"') && text.includes('canvas id="share-card" width="1200" height="630"') && text.includes("url.searchParams.set('og_game',game)") && text.includes("url.searchParams.set('utm_campaign','play_with_friends')") && text.includes("source:'game-invite:'+state.game+':'+state.code")
         : route === '/games/monetization/'
           ? text.includes('data-estimate="not-live-data"') && text.includes('id="assumptions-form"') && text.includes('id="scenario-results"') && text.includes('id="export-json"') && text.includes('не отправляются на сервер')
-        : /^\/game\/(time|swarm|null-shift|inherit|remix|signal-run|civic-cascade|patina|cascade-lab)$/.test(route)
+        : /^\/game\/(time|swarm|null-shift|inherit|remix|signal-run|civic-cascade|patina|cascade-lab|afterimage-run|aether-grid)$/.test(route)
           ? text.includes('<div id="root">') && text.includes('type="module"')
         : (route === '/games/' || route === '/games/index.html')
-          ? expectedBuildMatches && text.includes('id="games-grid"') && text.includes('data-game="null-shift"') && text.includes('data-game="time"') && text.includes('data-game="swarm"') && text.includes('data-game="inherit"') && text.includes('data-game="remix"') && text.includes('data-game="civic-cascade"') && text.includes('data-game="patina"') && text.includes('data-game="signal-run"') && text.includes('data-game="cascade-lab"') && text.includes('data-game="afterimage-run"') && text.includes('"numberOfItems":10') && text.includes('id="player-dialog"') && text.includes('id="player-share"') && text.includes('player-lifecycle.js') && text.includes('id="project-form"') && text.includes('id="analytics-toggle"') && text.includes('osgardvanguard.studio')
+          ? expectedBuildMatches && text.includes('id="games-grid"') && text.includes('data-game="null-shift"') && text.includes('data-game="time"') && text.includes('data-game="swarm"') && text.includes('data-game="inherit"') && text.includes('data-game="remix"') && text.includes('data-game="civic-cascade"') && text.includes('data-game="patina"') && text.includes('data-game="signal-run"') && text.includes('data-game="cascade-lab"') && text.includes('data-game="afterimage-run"') && text.includes('data-game="aether-grid"') && text.includes('"numberOfItems":11') && text.includes('id="player-dialog"') && text.includes('id="player-share"') && text.includes('player-lifecycle.js') && text.includes('id="project-form"') && text.includes('id="analytics-toggle"') && text.includes('osgardvanguard.studio')
+        : route === '/games/aether-grid/'
+          ? text.includes('<title>AETHER GRID — OSGARD WORLD GAMING</title>') &&
+            text.includes('content="1.0.0-game-11"') &&
+            text.includes('data-aether-grid-ready="true"') &&
+            text.includes('id="board"') && text.includes('id="challenge-code"') &&
+            text.includes("notify('ready')") && text.includes("notify('completed'") &&
+            text.includes("notify('share_created'")
         : route === '/games/civic-cascade/'
           ? text.includes('<title>CIVIC CASCADE — кризисная стратегия | OSGARD PLAY</title>') && text.includes('id=\"cc-game-root\"') && text.includes('id=\"cc-status\"')
         : route === '/games/patina/'
@@ -123,8 +130,8 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
               text.includes('data-game="civic-cascade"') &&
               text.includes('data-game="patina"') &&
               text.includes('data-game="signal-run"') &&
-              text.includes('data-game="cascade-lab"') && text.includes('data-game="afterimage-run"') &&
-              text.includes('"numberOfItems":10')
+              text.includes('data-game="cascade-lab"') && text.includes('data-game="afterimage-run"') && text.includes('data-game="aether-grid"') &&
+              text.includes('"numberOfItems":11')
             : text.includes('<div id="root">')
     const isPartnerPage = route === '/games/partners/'
     const isEcosystemDirectory = route === '/games/ecosystem/'
