@@ -42,6 +42,24 @@ assert.ok(source.includes("const preferredServiceKey='osgard.games.preferred-ser
 assert.ok(source.includes('function renderSpotlight(serviceId)') &&
   source.includes('Другой проект') && source.includes('Запомнить мой выбор'),
   'The luxury spotlight requires rotate and save-preference controls');
+const spotlightPickerSource = source.match(/function chooseSpotlightService\(options,preferred,completedCount,frequency\)\{[\s\S]*?\n\}/);
+assert.ok(spotlightPickerSource, 'Automatic spotlight rotation helper must be independently testable');
+const chooseSpotlightService = vm.runInNewContext('(' + spotlightPickerSource[0] + ')');
+assert.equal(chooseSpotlightService(['myosa','projects','superday'],'',1,'each'),'myosa',
+  'First completed round starts with the contextual first-choice service');
+assert.equal(chooseSpotlightService(['myosa','projects','superday'],'',2,'each'),'projects',
+  'The primary service should rotate on the next completed round');
+assert.equal(chooseSpotlightService(['myosa','projects','superday'],'',4,'each'),'superday',
+  'Round-by-round rotation should not repeat the first service too early');
+assert.equal(chooseSpotlightService(['myosa','projects','superday'],'',3,'every3'),'myosa',
+  'Three-round frequency starts its first scheduled spotlight at round three');
+assert.equal(chooseSpotlightService(['myosa','projects','superday'],'',6,'every3'),'projects',
+  'Every-third-round promos should rotate on subsequent eligible displays');
+assert.equal(chooseSpotlightService(['myosa','projects','superday'],'superday',8,'each'),'superday',
+  'An explicit saved preference overrides automatic rotation');
+assert.equal(chooseSpotlightService([],'',4,'each'),'',
+  'Rotation must handle an empty user-selected service list');
+
 assert.ok(source.includes("frequency:'each'") &&
   source.includes("['each','После каждой завершённой игры']") &&
   source.includes("['every3','Раз в три завершённых раунда']") &&
