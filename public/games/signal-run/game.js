@@ -37,6 +37,27 @@ let sound=false,audio=null,scale=1,ox=0,oy=0,dpr=1,last=0;const stars=Array.from
  g.fillStyle='#70f6d8';g.fillRect(72,588,1056,2);g.fillStyle='#d3ff69';g.fillRect(72,588,215,2);
  return await new Promise(resolve=>card.toBlob(resolve,'image/png'));
 }
+$('download-share-card')?.addEventListener('click',async()=>{
+ const score=Math.max(1,Math.min(1000000000,Math.floor(s.score)||100));
+ const button=$('download-share-card');
+ if(button)button.disabled=true;
+ try{
+  const blob=await buildSignalShareCard(score);
+  if(!blob||blob.type!=='image/png')throw new Error('png_unavailable');
+  const url=URL.createObjectURL(blob),link=document.createElement('a');
+  link.href=url;
+  link.download='osgard-signal-run-'+(dailyMode?dailyDate:'score-'+score)+'.png';
+  link.hidden=true;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.setTimeout(()=>URL.revokeObjectURL(url),1500);
+  status.textContent='КАРТОЧКА РЕЗУЛЬТАТА СОХРАНЕНА В PNG';
+ }catch{
+  status.textContent='НЕ УДАЛОСЬ СОХРАНИТЬ PNG. Попробуй кнопку «Поделиться».';
+ }finally{
+  if(button)button.disabled=false;
+}});
 $('share').addEventListener('click',async()=>{
  const rawScore=(s.mode==='running'||s.mode==='over')?s.score:s.best,target=Math.max(1,Math.min(1000000000,Math.floor(rawScore)||100));
  const code=referralCode(),url=new URL('/games/invite/signal-run/',location.origin);
