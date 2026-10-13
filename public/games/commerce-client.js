@@ -124,12 +124,26 @@
   }
   function sendAnalytics(name, gameId, source = 'contact-form') {
     if (!analyticsAllowed()) return;
-    const eventId = makeEventId();
-    const sessionId = analyticsSessionId();
+    const event = {
+      eventId: makeEventId(),
+      name,
+      sessionId: analyticsSessionId(),
+      gameId,
+      source: clean(source, 80),
+      path: location.pathname,
+      durationSeconds: 0,
+    };
+    const queue = window.OSGARD_CONSENTED_ANALYTICS;
+    if (queue && typeof queue.enqueue === 'function') {
+      void queue.enqueue(event);
+      return;
+    }
+    // Compatibility fallback for pages served without the shared queue asset.
     void apiBase().then((base) => fetch(base + '/v1/events', {
       method: 'POST',
+      credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ consent: true, events: [{ eventId, name, sessionId, gameId, source: clean(source, 80), path: location.pathname, durationSeconds: 0 }] }),
+      body: JSON.stringify({ consent: true, events: [event] }),
     })).catch(() => {});
   }
   let pageViewTracked = false;
