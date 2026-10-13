@@ -179,7 +179,7 @@ const js=scripts[scripts.length-1]
 new Function(js)
 assert.ok(js.includes('osgard.games.favorites.v1')&&js.includes('osgard.games.recent.v1'),'Local favorites/history missing')
 assert.ok(js.includes("localStorage.getItem('osgard.auth.accessToken')")&&js.includes('/api/v1/player/events')&&js.includes('if(!consent)return'),'Analytics must require both explicit consent and login token')
-assert.ok(js.includes("trackShare:()=>eventIfAllowed('share_created'") && js.includes("if(!consent||!token)return"),'Catalog share must use a consent- and login-gated event with referral attribution')
+assert.ok(js.includes("trackShare:()=>eventIfAllowed('share_created'") && js.includes("if(!consent)return") && js.includes("if(!token)return"),'Catalog share must use a consent- and login-gated event with referral attribution')
 assert.ok(js.includes('frame.requestFullscreen()'),'Fullscreen action missing')
 assert.ok(!/https?:\/\/(?:fonts\.googleapis\.com|fonts\.gstatic\.com|cdn\.jsdelivr\.net|unpkg\.com)/i.test(html),'External asset CDN found')
 for(const host of ['osgardbewworld.com','o2system.art','senjorio.com','superday.run','marcosa.club','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio']) assert.ok(html.includes('utm_source=osgard_games')&&html.includes(host),'Cross-promo UTM missing for '+host)
