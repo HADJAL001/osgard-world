@@ -1,0 +1,56 @@
+name: OSGARD Games Growth PR Checks
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - "src/**"
+      - "public/games/**"
+      - "scripts/games-portal-smoke.mjs"
+      - "scripts/games-detail-smoke.mjs"
+      - "scripts/games-monetization-smoke.mjs"
+      - "scripts/remix-growth-smoke.mjs"
+      - "scripts/ecosystem-integrity-smoke.mjs"
+      - "scripts/partners-page-smoke.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/games-growth-pr.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: osgard-games-growth-pr-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out proposed changes
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: TypeScript checks
+        run: npm run check
+      - name: Games hub and share reward contracts
+        run: npm run qa:games-portal
+      - name: Game detail routes and player lifecycle
+        run: npm run qa:games-detail
+      - name: Game economy and monetization assumptions
+        run: npm run qa:games-model
+      - name: Referral growth loop and sponsor safety
+        run: npm run qa:remix-growth
+      - name: Ecosystem links, claims and privacy boundaries
+        run: npm run qa:ecosystem
+      - name: Partner inventory disclosure and inactivity checks
+        run: npm run qa:partners-page
+      - name: Production frontend build
+        run: npm run build
