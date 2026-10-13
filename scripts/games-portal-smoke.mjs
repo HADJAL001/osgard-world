@@ -691,6 +691,35 @@ const inheritPastScriptEnd=inheritSafeForSmoke.indexOf('</script>',inheritPastSt
 assert.ok(inheritPastScriptStart>=0&&inheritPastScriptEnd>inheritPastStyleAnchor,'INHERIT past-generation theme injection must stay inside a script element')
 new Function(inheritSafeForSmoke.slice(inheritPastScriptStart+'<script>'.length,inheritPastScriptEnd))
 
+const inheritPassWrapperStart=inheritSafeForSmoke.lastIndexOf("const passForAnalytics=q('#pass').onclick;")
+const inheritPassWrapperEnd=inheritSafeForSmoke.indexOf("const returnedEventKey=",inheritPassWrapperStart)
+assert.ok(inheritPassWrapperStart>=0&&inheritPassWrapperEnd>inheritPassWrapperStart,'INHERIT final pass wrapper must be extractable for a deterministic handoff test')
+const inheritPassWrapperSource=inheritSafeForSmoke.slice(inheritPassWrapperStart,inheritPassWrapperEnd)
+new Function('q','S','window','localStorage','track',inheritPassWrapperSource)
+async function runInheritPassHandoffTest(serverBacked){
+  const state={generation:173,pending:[{type:'light',x:42,y:37}]}
+  const stored=new Map(serverBacked?[['inherit-last-passed','173']]:[])
+  const tracked=[]
+  const messages=[]
+  const button={onclick:async function(){state.generation+=1;state.pending=[];if(serverBacked)stored.set('inherit-last-passed',String(state.generation))}}
+  const mockQ=selector=>selector==='#pass'?button:null
+  const mockWindow={location:{origin:'https://osgard.world'}}
+  mockWindow.parent={postMessage:(message,targetOrigin)=>messages.push({message,targetOrigin})}
+  const mockStorage={getItem:key=>stored.has(key)?stored.get(key):null,setItem:(key,value)=>stored.set(key,String(value))}
+  new Function('q','S','window','localStorage','track',inheritPassWrapperSource)(mockQ,state,mockWindow,mockStorage,name=>tracked.push(name))
+  await button.onclick({type:'click'})
+  assert.equal(state.generation,174,'Passing a local or server-backed generation must advance exactly once')
+  assert.equal(messages.length,1,'Every successful generation handoff must notify the parent player exactly once')
+  assert.equal(messages[0].message.type,'osgard:game-lifecycle','INHERIT must use the shared lifecycle contract')
+  assert.equal(messages[0].message.game,'inherit','INHERIT lifecycle message must identify the game')
+  assert.equal(messages[0].message.state,'completed','Generation handoff must mark the gameplay session completed')
+  assert.equal(messages[0].targetOrigin,'https://osgard.world','Lifecycle message must target the same origin')
+  assert.equal(tracked.includes('generation_transferred'),serverBacked,'Only a server-confirmed generation transfer should count as server transfer analytics')
+}
+await runInheritPassHandoffTest(false)
+await runInheritPassHandoffTest(true)
+
+
 assert.ok(nullShiftForSmoke.includes("game:'null-shift',state:'completed'"),'NULL//SHIFT WebGL fallback must emit completion')
 assert.ok(swarmForSmoke.includes("game:'swarm',state:'completed'"),'SWARM must emit completion from result state')
 assert.ok(remixForSmoke.includes("game:'remix',state:'completed'"),'REMIX must emit completion from server RESULTS')
