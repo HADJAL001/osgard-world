@@ -36,6 +36,28 @@ assert.ok(appStyles.includes('.premium-game-card--afterimage-run'), 'The React E
 assert.ok(routeEntries.every(x=>x.url.startsWith('/games/')),'Every launch entry must use a same-origin game route')
 const inviteLandingScript=readFileSync(resolve(root,'invite/invite-landing.js'),'utf8')
 assert.ok(inviteLandingScript.includes("localStorage.getItem('osgard.games.analytics-consent.v1') === 'yes'") && inviteLandingScript.includes("name: 'referral_link_opened'") && inviteLandingScript.includes("source: 'referral-link:' + code"),'Invite preview must preserve consent-gated referral attribution')
+{
+ const challengeQuery=new URLSearchParams({og_ref:'og_1234abcd',og_game:'afterimage-run',utm_source:'osgard_play',utm_medium:'referral',utm_campaign:'play_with_friends',utm_content:'afterimage-run',og_challenge:'afterimage-run',challenge:'1500',day:'2026-10-13',mode:'daily'})
+ const playLink={href:''}
+ const inviteDoc={body:{dataset:{game:'afterimage-run'}},querySelector(selector){return selector==='#play-link'?playLink:null}}
+ const inviteStorage={getItem(){return null},setItem(){}}
+ const inviteSandbox={URL,URLSearchParams,document:inviteDoc,location:{origin:'https://osgard.world',pathname:'/games/invite/afterimage-run/',search:'?'+challengeQuery.toString()},localStorage:inviteStorage,Date,Math,Number,String,Object,Array,RegExp,JSON,Uint8Array}
+ runInNewContext(inviteLandingScript,inviteSandbox)
+ const acceptedChallenge=new URL(playLink.href)
+ assert.equal(acceptedChallenge.pathname,'/games/afterimage-run/','A valid AFTERIMAGE invite must launch the game, not the generic catalogue')
+ assert.equal(acceptedChallenge.searchParams.get('seed'),'2026-10-13','Accepted invite must preserve the daily UTC seed')
+ assert.equal(acceptedChallenge.searchParams.get('score'),'1500','Accepted invite must preserve the challenge target')
+ assert.equal(acceptedChallenge.searchParams.get('og_ref'),'og_1234abcd','Accepted invite must preserve the validated referral code')
+ assert.equal(acceptedChallenge.searchParams.get('utm_campaign'),'play_with_friends','Accepted invite must preserve campaign attribution')
+ const invalidQuery=new URLSearchParams(challengeQuery);invalidQuery.set('day','2026-02-30')
+ const invalidLink={href:''};const invalidDoc={body:{dataset:{game:'afterimage-run'}},querySelector(selector){return selector==='#play-link'?invalidLink:null}}
+ runInNewContext(inviteLandingScript,{...inviteSandbox,document:invalidDoc,location:{origin:'https://osgard.world',pathname:'/games/invite/afterimage-run/',search:'?'+invalidQuery.toString()}})
+ assert.notEqual(new URL(invalidLink.href).pathname,'/games/afterimage-run/','An impossible calendar date must not be accepted as a valid daily challenge')
+ const badScoreQuery=new URLSearchParams(challengeQuery);badScoreQuery.set('challenge','1.5')
+ const badScoreLink={href:''};const badScoreDoc={body:{dataset:{game:'afterimage-run'}},querySelector(selector){return selector==='#play-link'?badScoreLink:null}}
+ runInNewContext(inviteLandingScript,{...inviteSandbox,document:badScoreDoc,location:{origin:'https://osgard.world',pathname:'/games/invite/afterimage-run/',search:'?'+badScoreQuery.toString()}})
+ assert.notEqual(new URL(badScoreLink.href).pathname,'/games/afterimage-run/','A fractional score must not be accepted as a challenge target')
+}
 const productionMatrix = readFileSync(resolve('scripts/production-route-matrix.mjs'),'utf8')
 assert.ok(productionMatrix.includes("path === '/games/invite/invite-landing.js'") && productionMatrix.includes("target.searchParams.set('utm_campaign', campaign)"), 'Production route matrix must validate the invitation script with its own content contract, not unrelated SkillCred markers')
 for(const game of routeEntries){
