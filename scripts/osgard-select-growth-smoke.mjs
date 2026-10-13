@@ -7,7 +7,8 @@ const source = read('public/games/game-session-recommendations.js');
 const css = read('public/games/game-session-recommendations.css');
 const core = read('services/osgard-commerce-api/src/core.mjs');
 const signalRun = read('public/games/signal-run/game.js');
-const lifecycle = read('public/games/player-lifecycle.js');
+const lifecycle = read('public/games/player-lifecycle.js')
+const hub = read('public/games/index.html');
 
 new vm.Script(source, { filename: 'game-session-recommendations.js' });
 new vm.Script(signalRun, { filename: 'signal-run/game.js' });
@@ -113,10 +114,24 @@ assert.ok(!signalShareHandler.includes("life('share_created'"),
 assert.ok(signalRun.slice(claimSignal).includes("life('share_created',{shareMethod:method,dailyMode,dailyDate:dailyMode?dailyDate:null,rewardConfirmedByPlayer:true})"),
   'SIGNAL RUN completed-share analytics must follow the explicit reward confirmation');
 
+
+const outsideIntermissionStart = source.indexOf('function renderOutsideIntermission(detail){');
+const outsideIntermissionEnd = source.indexOf("document.addEventListener('osgard:game-session-ended',event=>renderOutsideIntermission", outsideIntermissionStart);
+assert.ok(outsideIntermissionStart >= 0 && outsideIntermissionEnd > outsideIntermissionStart,
+  'Outside intermission renderer must be independently testable');
+const outsideIntermission = source.slice(outsideIntermissionStart, outsideIntermissionEnd);
+assert.ok(outsideIntermission.includes("['closed_by_user','returned_to_catalog','escape_to_catalog'].includes(detail.reason)"),
+  'Post-game outside intermission must accept the actual reasons emitted by the shared player lifecycle');
+assert.ok(lifecycle.includes("openBetweenWorlds('returned_to_catalog')") &&
+  lifecycle.includes("openBetweenWorlds('escape_to_catalog')") &&
+  source.includes("document.querySelector('#osgard-aftergame-intermission')") &&
+  hub.includes('id="osgard-aftergame-intermission"'),
+  'Returning to the catalogue or pressing Escape must render the actual outside intermission root');
+
 console.log(JSON.stringify({
   status: 'passed',
   serviceDestinations: services.length,
   gameContexts: 9,
-  checks: 33,
+  checks: 36,
   notes: 'Source-level guardrails; social publication is self-confirmed, not verified by social-network APIs.'
 }));
