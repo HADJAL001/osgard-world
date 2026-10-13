@@ -221,3 +221,5 @@ The 13 October 2026 deployed Games Lighthouse artifact scored accessibility 96/1
 ## Accessibility guardrail — explicit Lighthouse target size
 
 After the card-size fix, the Games Lighthouse reporting utility now directly inspects the `target-size` audit in addition to the overall Accessibility score. A failed score (below 1) or missing audit score makes the run fail closed, even if Accessibility remains above 90. The network-free Games smoke fixture now covers a healthy audit, a failing target-size score, and a missing target-size score. The first subsequent deployed Lighthouse run must still confirm that the live fix passes.
+
+- The same Lighthouse artifact also showed the footer brand link intersecting the project-form submit target on mobile. The mobile footer now gets a deliberate 80px separation from the contact section, guarded by the catalogue smoke test; the new `target-size` criterion will verify the published geometry rather than infer success from CSS alone.
