@@ -96,17 +96,24 @@ export function PlaySelectLoop({ locale }: { locale: Locale }) {
   }
 
   const shareInvite = async () => {
+    setPendingNetwork('')
     try {
       if (typeof navigator.share === 'function') {
         await navigator.share({ title: 'OSGARD PLAY', text: message, url: inviteUrl })
-        grantReward('homepage-native-share')
+        setPendingNetwork('native-share')
+        setStatus(ru
+          ? 'Меню отправки закрыто. Если ты действительно опубликовал приглашение, подтверди ниже. Автоматически проверить публикацию невозможно.'
+          : 'The share sheet closed. If you actually published the invite, confirm below. The post itself cannot be verified automatically.')
       } else if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(message + ' ' + inviteUrl)
-        grantReward('homepage-clipboard')
+        setStatus(ru
+          ? 'Ссылка скопирована. Копирование само по себе не считается репостом и не даёт награду. Опубликуй её через соцсеть ниже, затем вернись и подтверди.'
+          : 'Link copied. Copying alone is not a repost and earns no reward. Publish it through a social network below, then return and confirm.')
       } else {
         setStatus(ru ? 'Быстрая отправка недоступна. Выбери соцсеть ниже.' : 'Quick share is unavailable. Choose a network below.')
       }
     } catch (error) {
+      setPendingNetwork('')
       setStatus(error instanceof Error && error.name === 'AbortError'
         ? (ru ? 'Отправка отменена — награда не начислена.' : 'Share cancelled — no reward was granted.')
         : (ru ? 'Не удалось отправить приглашение. Выбери соцсеть ниже.' : 'Share failed. Choose a network below.'))
@@ -147,7 +154,7 @@ export function PlaySelectLoop({ locale }: { locale: Locale }) {
       <aside className="play-select-referral">
         <p className="play-select-referral-eyebrow">OSGARD PLAY / FRIEND INVITE</p>
         <h4>{ru ? 'Твой следующий раунд — с другом.' : 'Your next round is better with a friend.'}</h4>
-        <p>{ru ? 'Поделись приглашением. За успешное действие Web Share или копирование ссылки начисляется +50 SHARDS — не чаще раза в сутки на этом устройстве.' : 'Share an invite. A completed Web Share action or copied link can earn +50 SHARDS, once per day on this device.'}</p>
+        <p>{ru ? 'Поделись приглашением. +50 SHARDS доступны после явного подтверждения публикации — не чаще раза в UTC-день на этом устройстве. Копирование ссылки само по себе не награждается.' : 'Share an invite. A completed Web Share action or copied link can earn +50 SHARDS, once per day on this device.'}</p>
         <div className="play-select-wallet"><span>OSGARD SHARDS</span><strong>{balance.toLocaleString(ru ? 'ru-RU' : 'en-US')}</strong></div>
         <button type="button" className="play-select-share-primary" onClick={shareInvite}>{ru ? 'Поделиться приглашением ↗' : 'Share invitation ↗'}</button>
         <div className="play-select-share-networks">
@@ -160,7 +167,7 @@ export function PlaySelectLoop({ locale }: { locale: Locale }) {
           {ru ? 'Я отправил в ' + pendingNetwork + ' — получить +50 SHARDS' : 'I shared on ' + pendingNetwork + ' — claim +50 SHARDS'}
         </button>}
         <p className="play-select-status" role="status" aria-live="polite">{status}</p>
-        <small>{ru ? 'SHARDS хранятся локально, не являются деньгами и не обмениваются на денежную стоимость. Соцсети не подтверждают публикацию сайту; отправку по кнопке соцсети пользователь подтверждает сам.' : 'SHARDS are local points, not money and not redeemable. Social networks do not verify posts to this site; social-compose sharing uses player confirmation.'}</small>
+        <small>{ru ? 'SHARDS хранятся только локально, не являются деньгами и не обмениваются на денежную стоимость. Соцсети не подтверждают публикацию сайту; пользователь подтверждает отправку сам, а копирование ссылки награду не даёт.' : 'SHARDS are local points, not money and not redeemable. Social networks do not verify posts to this site; social-compose sharing uses player confirmation.'}</small>
       </aside>
     </div>
   </section>
