@@ -165,9 +165,10 @@ const mockHost=mockNode();mockHost.hidden=true
 const mockClasses=new Set()
 const mockDialog={classList:{add(name){mockClasses.add(name)},remove(name){mockClasses.delete(name)},contains(name){return mockClasses.has(name)}}}
 const mockHandlers={}
-const mockDocument={querySelector(selector){return selector==='#post-run-recommendations'?mockHost:selector==='#player-dialog'?mockDialog:null},createElement(){return mockNode()},addEventListener(name,handler){mockHandlers[name]=handler},dispatch(name,event={}){assert.equal(typeof mockHandlers[name],'function','Missing recommendation lifecycle listener: '+name);mockHandlers[name](event)}}
+const mockDocument={querySelector(selector){return selector==='#post-run-recommendations'?mockHost:selector==='#player-dialog'?mockDialog:null},createElement(){return mockNode()},addEventListener(name,handler){(mockHandlers[name]??=[]).push(handler)},dispatch(name,event={}){const handlers=mockHandlers[name]||[];assert.ok(handlers.length,'Missing recommendation/growth lifecycle listener: '+name);handlers.forEach(handler=>handler(event))}}
 new Function('document',recommendationScript)(mockDocument)
 mockDocument.dispatch('osgard:game-completed',{detail:{game:'swarm'}})
+assert.equal(mockHandlers['osgard:game-completed'].length,2,'Recommendation shelf and invite loop must both subscribe to completed sessions')
 assert.equal(mockHost.hidden,false,'Completed SWARM session should show recommendations')
 assert.equal(mockClasses.has('has-recommendations'),true,'The player layout should adapt after completion')
 assert.deepEqual(mockHost.children[2].children.map(node=>node.dataset.play),['null-shift','signal-run'],'SWARM should recommend two related live games')
