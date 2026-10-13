@@ -775,7 +775,8 @@ const patinaInline=patina.slice(patinaScriptStart,patinaScriptEnd)
 assert.ok(patinaInline&&patinaInline.length>5000,'PATINA self-contained gameplay script missing')
 new Function(patinaInline)
 
-assert.ok(luxuryCss.includes('content-visibility:auto') && luxuryCss.includes('contain-intrinsic-size:auto 440px'), 'Mobile layout should defer off-screen cards with a reserved size')
+assert.ok(luxuryCss.includes('content-visibility:auto') && luxuryCss.includes('contain-intrinsic-size:auto 500px') && luxuryCss.includes('contain-intrinsic-size:auto 840px'), 'Mobile layout should reserve enough space for off-screen cards and the contact panel')
+assert.ok(luxuryCss.includes('.luxury-entertainment .hero-art svg{animation:none!important;transform:none!important}'), 'Mobile hero artwork must avoid continuous animation that competes with gameplay startup')
 assert.ok(luxuryCss.includes('luxury-entertainment header{backdrop-filter:none'), 'Mobile layout should avoid expensive header blur')
 
 const inviteScriptStart=html.indexOf("<script>\n(()=>{'use strict';")
