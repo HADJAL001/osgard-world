@@ -1,37 +1,52 @@
-# OSGARD WORLD — hardening consented game analytics
+# OSGARD WORLD — технический аудит и изменения игровой коммерческой платформы
 
-Date: 13 October 2026  
-Repository: HADJAL001/osgard-world  
-Implementation branch: feat/games-analytics-hardening-2026-10-13
+**Дата:** 13 октября 2026 г.  
+**Репозиторий:** HADJAL001/osgard-world  
+**Рабочая ветка:** feat/games-analytics-hardening-2026-10-13  
+**PR:** https://github.com/HADJAL001/osgard-world/pull/71
 
-## Baseline audit
+## 1. Результат аудита исходников
 
-The repository already includes a React 19 / Vite 6 / TypeScript portal, static browser/WebGL game builds, a Godot export workflow for NULL//SHIFT, the Games catalogue, player-session instrumentation, a Node 22 Commerce API, an optional Postgres store, consent-gated events, lead intake, a token-protected commerce admin panel, a local revenue-assumptions calculator, and an inactive sponsor inventory. This change set extends those existing pieces rather than replacing the portal or forcing every game onto the same engine.
+Репозиторий уже содержит React 19 / Vite / TypeScript для сайта и отдельную премиальную витрину игр в `public/games/`. Игровые сборки размещены независимо: часть — браузерные/WebGL, для отдельных проектов есть сборки и проверки игровых движков. В частности, в репозитории есть отдельный Godot-проект/проверки для NULL//SHIFT; из этого не следует, что все игры нужно переносить на один движок.
 
-## Changes in this branch
+Уже существовали: каталог с поиском, жанрами, избранным, историей, полноэкранным запуском и рекомендациями; общий клиент форм заявок; серверный Commerce API на Node 22, Postgres-схема и код Stripe Checkout с проверкой webhook; закрытая токеном панель заказов; согласие на необязательную аналитику, UTM-метки кросс-продвижения и отдельная партнёрская страница; интерактивный калькулятор финансовых сценариев; условия и политика конфиденциальности.
 
-- Added optional, validated client event IDs. New clients submit a unique eventId; the database primary key now de-duplicates retries. Old clients without this field remain accepted for backward compatibility.
-- The browser commerce client uses a random, tab-scoped session identifier for catalogue, partner, Premium and outbound promotion events; game sessions continue using a separate per-run session identifier.
-- Added consent-gated page-view events catalog_viewed and partners_page_viewed, and ensured the Premium store loads the shared consent-aware client. Page views are not sent before explicit consent.
-- Added a server-side retention setting ANALYTICS_RETENTION_DAYS: valid values 30–365, default 90. Expired analytics rows are purged on startup and every six hours when the database is ready. An index supports game/time aggregation.
-- Extended the protected commerce admin API/UI with 30-day metrics by game and summary funnel events (catalog views, game starts, completed sessions, cross-promotion clicks, lead events and Premium visits). The UI renders untrusted values with textContent, not interpolated HTML.
-- Corrected privacy and partner-form copy to match the current API-first, manual-WhatsApp-fallback behavior and documented the retention policy.
-- Added service-domain tests and static rollout assertions for event IDs, backward compatibility, consent gate, retention, API aggregates and dashboard wiring.
+## 2. Выполненные изменения в PR
 
-## Evidence and boundaries
+1. **Идемпотентность аналитических событий.** Клиент формирует случайный `eventId`; сервер валидирует его и использует уникальный ключ таблицы событий. Повторная отправка того же идентификатора не создаёт новую строку. Старые клиенты без `eventId` поддерживаются.
+2. **Сессионные идентификаторы.** Для событий каталога используется случайный ID текущей вкладки; игровая сессия имеет отдельный ID конкретного запуска. Постоянный межсайтовый профиль посетителя этим кодом не создаётся.
+3. **События просмотров при согласии.** Добавлены просмотры каталога и партнёрской страницы, расширена аналитика переходов и игровых сессий. До явного согласия аналитические события не отправляются.
+4. **Срок хранения.** `ANALYTICS_RETENTION_DAYS`: по умолчанию 90 дней, допустимый диапазон 30–365. Очистка запускается при старте API и затем каждые шесть часов, если база готова.
+5. **Панель оператора.** Добавлены 30-дневные события и сессии по играм, старты, завершения, средняя длительность завершённых сессий, клики к собственным проектам и агрегированные шаги воронки.
+6. **Документация.** Обновлены пояснения формы партнёрства и политики конфиденциальности, чтобы они отражали фактический API-путь и ручной WhatsApp-запасной вариант. Добавлены тесты и статические проверки выпуска.
 
-- This is a proposed GitHub branch/PR; it does not by itself publish changes to https://osgard.world.
-- The event endpoint stores only consented allow-listed events. Its event rows do not include contact fields, email, phone or bearer tokens. Host/proxy operational logs may be governed separately.
-- A deployable API and PostgreSQL database are still required to persist leads/events. Production credentials were not read or changed by this branch.
-- No advertising network, rewarded-ad callback, live payments or subscription entitlement activation is added here. Those remain disabled until provider accounts, review, server configuration and game-account access rights are ready.
-- Aggregates are consented recorded events, not all page visits. UTM clicks do not prove downstream purchases. The financial model in /games/monetization/ remains a scenario calculator, not verified revenue.
-- Automated CI checks are required on the PR. Static source assertions are not evidence of live production behavior; a deployed route matrix and manual device QA remain release gates.
+## 3. Границы доказательств
 
-## Next highest-impact deployment steps
+- PR и CI не означают, что production-сайт уже обновлён. Для публикации PR нужно принять и выполнить действующий процесс развёртывания.
+- Аналитика отражает только события, записанные при согласии и настроенной базе. Она не является счётчиком всех посетителей, рекламных показов, покупок или гарантированной выручки.
+- Записи событий не содержат контакт, телефон, email или токен входа. Инфраструктурные журналы сервера/прокси могут иметь отдельные правила хранения.
+- Рекламная сеть и вознаграждаемая реклама не подключены. Live-платежи и продажа OSGARD PREMIUM по умолчанию отключены; фактическая обработка оплаты требует секретов, цен, webhook, базы, условий возврата и завершённой выдачи платных прав.
+- В этой среде не получилось независимо загрузить публичные страницы `osgard.world` и десяти внешних доменов списка: веб-источник вернул «Cache miss». Это не доказывает ни доступность, ни недоступность сайтов. Их содержание, юридические сведения, безопасность и пригодность для платного продвижения требуют ручной проверки в обычном браузере.
+- Финансовый калькулятор остаётся моделью допущений. Его исходные значения не являются реальным трафиком, рекламным eCPM, доходом или прогнозом, подтверждённым фактическими данными.
 
-1. Let CI pass and review the branch.
-2. Deploy the Commerce API on the private frontend network and provision PostgreSQL; keep live Stripe and Premium flags off.
-3. Verify the public route matrix and API health through the existing TLS reverse proxy.
-4. Test consent accept/refuse/revoke, page view, duplicate event replay, retention cleanup and mobile catalogue navigation in a browser.
-5. Confirm the legal operator, jurisdiction, data contact and retention settings before using the service commercially.
-6. Verify external project domains and their visible terms/contact/security before sponsoring or buying traffic. Existing audit evidence says their live content could not be independently fetched; keep any domain requiring a trust review out of paid campaigns until checked.
+## 4. Проверки
+
+GitHub Actions на коммите `77e17a20281ca708302aaba861c072150ebde058`:
+- frontend validation: успешно;
+- release readiness: успешно;
+- Commerce API: тесты, проверка синтаксиса и статические проверки интеграции — успешно.
+
+Это CI-проверки исходников и сборки. Ручные проверки на физических телефонах, API с рабочей PostgreSQL, отзыв согласия в настоящем браузере и production route matrix остаются этапом развёртывания.
+
+## 5. Порядок публикации
+
+1. Проверить PR и дождаться зелёного CI.
+2. Перед production создать PostgreSQL, развернуть Commerce API в приватной Docker-сети за существующим Nginx, настроить `DATABASE_URL` и `ADMIN_API_TOKEN`.
+3. Оставить `ENABLE_LIVE_PAYMENTS=false` и `ENABLE_OSGARD_PREMIUM_SALES=false`, пока не пройдены коммерческие и юридические проверки.
+4. В браузере проверить отказ/согласие/отзыв аналитики, события страниц и игры, повторный eventId, очистку старых событий и мобильную операторскую таблицу.
+5. Проверить страницы десяти проектов вручную и только потом утверждать их описания и рекламные переходы.
+6. Запустить production route matrix после реального развёртывания; только результат этого этапа подтверждает обновление публичного сайта.
+
+## 6. Следующий коммерческий приоритет
+
+Сначала собирать корректные данные с явным согласием; измерить запуски и завершения сессий и переходы к собственным продуктам; улучшать игры с низким завершением; затем тестировать спонсорские интеграции. Не подключать рекламную сеть до проверки требований провайдера, географии и возрастной аудитории.
