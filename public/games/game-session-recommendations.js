@@ -449,7 +449,7 @@ function inviteFor(id,code=inviteCode(id)){
  return u.href;
 }
 async function registerInvite(gameId,code){
- if(!hasConsent()||!hasRewardConsent()||!titles[gameId]||!/^og_[a-f0-9]{32}$/.test(code))return false;
+ if(!hasRewardConsent()||!titles[gameId]||!/^og_[a-f0-9]{32}$/.test(code))return false;
  const owner=ownerToken();if(!owner)return false;
  try{
   let base='/commerce-api';
@@ -461,13 +461,13 @@ async function registerInvite(gameId,code){
    body:JSON.stringify({consent:true,rewardConsent:true,code,gameId,ownerToken:owner})
   });
   if(!response.ok)return false;
-  void sendSelectEvent('share_created',gameId,'game-invite:'+gameId+':'+code+':'+owner);
+  if(hasConsent())void sendSelectEvent('share_created',gameId,'game-invite:'+gameId+':'+code+':'+owner);
   return true;
  }catch{return false}
 }
 async function refreshShardsBalance(gameId,balance,status){
  const code=inviteCode(gameId);
- if(!hasConsent()||!hasRewardConsent()){
+ if(!hasRewardConsent()){
   balance.textContent='OSGARD SHARDS · —';
   status.textContent=!hasConsent()
    ? 'Для учёта наград включи необязательную аналитику в настройках каталога. Никаких SHARDS за сам клик или публикацию не начисляется.'
@@ -710,10 +710,8 @@ function rewardShelf(gameId){
   link.setAttribute('aria-label','Открыть форму публикации в '+name+' в новой вкладке');
   link.addEventListener('click',event=>{
    if(hasConsent())void sendSelectEvent('social_share_intent',gameId,'osgard-social-share:'+name.toLowerCase()+':'+gameId);
-   if(!hasConsent()||!hasRewardConsent()) {
-    status.textContent=!hasConsent()
-     ? 'Соцсеть откроется. Для учёта SHARDS нужно включить необязательную аналитику и согласиться на программу наград.'
-     : 'Соцсеть откроется, но участие в программе наград выключено; очки за эту ссылку не учитываются.';
+   if(!hasRewardConsent()) {
+    status.textContent='Соцсеть откроется. Участие в программе SHARDS выключено, поэтому приглашённые сессии не будут учитываться для награды.';
     return;
    }
    event.preventDefault();
@@ -733,9 +731,8 @@ function rewardShelf(gameId){
  });
  consentToggle.addEventListener('change',()=>{
   try{if(consentToggle.checked)localStorage.setItem(REWARD_CONSENT_KEY,'yes');else localStorage.removeItem(REWARD_CONSENT_KEY)}catch{}
-  if(consentToggle.checked&&!hasConsent())status.textContent='Сначала включи необязательную аналитику в настройках каталога. Без неё сервер не сможет проверить приглашённую сессию.';
-  else status.textContent=consentToggle.checked?'Участие в программе наград включено. SHARDS появятся после подтверждённой игровой сессии друга.':'Участие отключено. Ссылками можно делиться без отслеживания и наград.';
-  if(consentToggle.checked&&hasConsent())captureInvite();
+  status.textContent=consentToggle.checked?'Участие в программе наград включено. Для подтверждения сессии друга будут отправляться минимальные данные: код приглашения, игра и события старта/завершения.':'Участие отключено. Ссылками можно делиться без учёта наград.';
+  if(consentToggle.checked)captureInvite();
   void refreshShardsBalance(gameId,balance,status);
  });
  primary.addEventListener('click',async()=>{
