@@ -23,7 +23,7 @@ const validIncomingDay=/^\d{4}-\d{2}-\d{2}$/.test(incomingSeed)&&(()=>{const par
 const day=validIncomingDay?incomingSeed:today;
 const rawTargetText=(params.has('challenge')?params.get('challenge'):params.get('score'))||'';
 const rawTarget=Number(rawTargetText||0);
-const targetScoreValid=/^(?:0|[1-9]\\d{0,7})$/.test(rawTargetText)&&Number.isSafeInteger(rawTarget)&&rawTarget>=0&&rawTarget<=99999999;
+const targetScoreValid=/^(?:0|[1-9]\d{0,7})$/.test(rawTargetText)&&Number.isSafeInteger(rawTarget)&&rawTarget>=0&&rawTarget<=99999999;
 const targetScore=targetScoreValid?rawTarget:0;
 const fromChallenge=(params.has('challenge')||params.has('score'))&&validIncomingDay&&targetScoreValid;
 const rawReferralCode=params.get('og_ref')||'';
