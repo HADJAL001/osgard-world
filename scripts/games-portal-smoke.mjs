@@ -40,12 +40,14 @@ assert.ok(inviteLandingScript.includes("const afterimageChallenge = game === 'af
 {
   const playLink={href:''}
   const fakeDocument={body:{dataset:{game:'afterimage-run'}},querySelector(selector){return selector==='#play-link'?playLink:null}}
-  const fakeLocation={origin:'https://osgard.world',search:'?og_challenge=afterimage-run&challenge=2468&day=2026-10-13&mode=daily'}
+  const fakeLocation={origin:'https://osgard.world',search:'?og_ref=og_1234abcd&og_game=afterimage-run&utm_source=osgard_play&utm_medium=referral&utm_campaign=play_with_friends&utm_content=afterimage-run&og_challenge=afterimage-run&challenge=2468&day=2026-10-13&mode=daily'}
   new Function('document','location','URL','URLSearchParams',inviteLandingScript)(fakeDocument,fakeLocation,URL,URLSearchParams)
   const target=new URL(playLink.href)
   assert.equal(target.pathname,'/games/afterimage-run/','A valid AFTERIMAGE invite should launch the game directly')
   assert.equal(target.searchParams.get('seed'),'2026-10-13','Invite must preserve the daily seed')
   assert.equal(target.searchParams.get('score'),'2468','Invite must preserve the target score')
+  assert.equal(target.searchParams.get('og_ref'),'og_1234abcd','AFTERIMAGE invite must preserve the referral code')
+  assert.equal(target.searchParams.get('utm_campaign'),'play_with_friends','AFTERIMAGE invite must preserve referral attribution through launch')
 }
 for(const query of [
   '?og_challenge=afterimage-run&challenge=2468&day=2026-99-99&mode=daily',
