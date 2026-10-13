@@ -1,6 +1,7 @@
 import { isValidPartnerInventoryText } from './partner-inventory-contract.mjs'
 const base = process.env.OSGARD_BASE_URL || 'https://osgard.world'
 const expectCurrentDesign = process.env.SKILLCRED_EXPECT_CURRENT_DESIGN === '1'
+const expectedBuild = String(process.env.OSGARD_EXPECTED_BUILD || '').trim()
 const ROUTE_TIMEOUT_MS = 10000
 const GODOT_ROUTE_TIMEOUT_MS = 20000
 const routes = ['/','/skillcred/','/skillcred-api/health','/skillcred-api/ready','/skillcred-api/issuer','/entertainment','/entertainment/','/games/','/games/index.html','/sitemap.xml','/games/civic-cascade/','/games/patina/','/games/cascade-lab/','/games/afterimage-run/','/games/partners/','/games/ecosystem/','/games/growth-studio/','/games/monetization/','/games/premium/','/games/premium/success/','/games/commerce-admin/','/games/commerce-config.json','/games/commerce-client.js','/games/admin/','/games/admin/partners/','/games/invite/','/games/invite/null-shift/','/games/invite/time/','/games/invite/swarm/','/games/invite/inherit/','/games/invite/remix/','/games/invite/civic-cascade/','/games/invite/patina/','/games/invite/signal-run/','/games/invite/cascade-lab/','/games/invite/afterimage-run/','/games/invite/invite-landing.js','/games/share-cards/catalog.png','/games/share-cards/null-shift.png','/games/share-cards/afterimage-run.png','/games/favicon.svg','/privacy/','/terms/','/community','/stream','/archive','/profile','/api/v1/player/profile','/api/v1/analytics/summary?from=0&to=1','/r/1842','/games/time','/game/time','/game/swarm','/game/null-shift','/game/inherit','/game/remix','/game/signal-run','/game/civic-cascade','/game/patina','/game/cascade-lab','/game/afterimage-run','/games/signal-run/','/games/null-shift/','/games/null-shift/index.html','/games/null-shift-godot/','/games/null-shift-godot/index.html','/play/swarm','/play/null-shift','/play/inherit','/play/remix','/media','/business','/create','/mobility']
@@ -17,6 +18,9 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
     const response = await fetch(new URL(route, base), { method: isGodotDirectory ? 'HEAD' : 'GET', headers: { 'user-agent': userAgent }, signal: AbortSignal.timeout(timeoutMs) })
     const responseBody = route.startsWith('/games/share-cards/') ? new Uint8Array(await response.arrayBuffer()) : isGodotDirectory ? '' : await response.text()
     const text = typeof responseBody === 'string' ? responseBody : ''
+    const isGamesHub = route === '/games/' || route === '/games/index.html'
+    const actualBuild = isGamesHub ? (text.match(/<meta name="osgard-build" content="([a-f0-9]{12})">/i)?.[1] || '') : ''
+    const expectedBuildMatches = !isGamesHub || (actualBuild.length === 12 && (!expectedBuild || actualBuild === expectedBuild.slice(0, 12)))
     const shellOk = route.startsWith('/api/v1/')
       ? [401, 403].includes(response.status) && (response.headers.get('content-type') || '').toLowerCase().includes('application/json') && (() => { try { JSON.parse(text); return true } catch { return false } })()
       : route === '/skillcred/'
@@ -77,7 +81,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         : /^\/game\/(time|swarm|null-shift|inherit|remix|signal-run|civic-cascade|patina|cascade-lab)$/.test(route)
           ? text.includes('<div id="root">') && text.includes('type="module"')
         : (route === '/games/' || route === '/games/index.html')
-          ? text.includes('id="games-grid"') && text.includes('data-game="null-shift"') && text.includes('data-game="time"') && text.includes('data-game="swarm"') && text.includes('data-game="inherit"') && text.includes('data-game="remix"') && text.includes('data-game="civic-cascade"') && text.includes('data-game="patina"') && text.includes('data-game="signal-run"') && text.includes('data-game="cascade-lab"') && text.includes('data-game="afterimage-run"') && text.includes('"numberOfItems":10') && text.includes('id="player-dialog"') && text.includes('id="player-share"') && text.includes('player-lifecycle.js') && text.includes('id="project-form"') && text.includes('id="analytics-toggle"') && text.includes('osgardvanguard.studio')
+          ? expectedBuildMatches && text.includes('id="games-grid"') && text.includes('data-game="null-shift"') && text.includes('data-game="time"') && text.includes('data-game="swarm"') && text.includes('data-game="inherit"') && text.includes('data-game="remix"') && text.includes('data-game="civic-cascade"') && text.includes('data-game="patina"') && text.includes('data-game="signal-run"') && text.includes('data-game="cascade-lab"') && text.includes('data-game="afterimage-run"') && text.includes('"numberOfItems":10') && text.includes('id="player-dialog"') && text.includes('id="player-share"') && text.includes('player-lifecycle.js') && text.includes('id="project-form"') && text.includes('id="analytics-toggle"') && text.includes('osgardvanguard.studio')
         : route === '/games/civic-cascade/'
           ? text.includes('<title>CIVIC CASCADE — кризисная стратегия | OSGARD PLAY</title>') && text.includes('id=\"cc-game-root\"') && text.includes('id=\"cc-status\"')
         : route === '/games/patina/'
@@ -120,7 +124,6 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
               text.includes('data-game="cascade-lab"') && text.includes('data-game="afterimage-run"') &&
               text.includes('"numberOfItems":10')
             : text.includes('<div id="root">')
-    const isGamesHub = route === '/games/' || route === '/games/index.html'
     const isPartnerPage = route === '/games/partners/'
     const isEcosystemDirectory = route === '/games/ecosystem/'
     const isGodot = route.startsWith('/games/null-shift-godot')
@@ -185,7 +188,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
     }))
     const assetsOk = assetChecks.every(asset => asset.ok)
     const statusOk = route.startsWith('/api/v1/') ? [401, 403].includes(response.status) : response.status === 200
-    results.push({ device, route, status: response.status, assets: assetChecks, ok: statusOk && shellOk && assetsOk, durationMs: Date.now() - started })
+    results.push({ device, route, status: response.status, ...(isGamesHub ? { build: { expected: expectedBuild ? expectedBuild.slice(0, 12) : null, actual: actualBuild || null, matches: expectedBuildMatches } } : {}), assets: assetChecks, ok: statusOk && shellOk && assetsOk, durationMs: Date.now() - started })
   } catch (error) { results.push({ device, route, status: 0, ok: false, error: String(error), durationMs: Date.now() - started }) }
 }
 const failed = results.filter(item => !item.ok)
