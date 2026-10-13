@@ -150,6 +150,26 @@ export function validateReferralRewardStatus(body) {
   return { ok: true, code };
 }
 
+export function validateReferralRewardRegistration(body) {
+  const input = body && typeof body === "object" && !Array.isArray(body) ? body : {};
+  const code = cleanText(input.code, 40);
+  const gameId = cleanText(input.gameId, 40);
+  const ownerToken = cleanText(input.ownerToken, 12);
+  if (input.consent !== true || input.rewardConsent !== true) {
+    return { ok: false, status: 400, code: "REFERRAL_CONSENT_REQUIRED" };
+  }
+  if (!/^og_[a-f0-9]{32}$/.test(code)) {
+    return { ok: false, status: 400, code: "REFERRAL_CODE_INVALID" };
+  }
+  if (!GAME_IDS.has(gameId)) {
+    return { ok: false, status: 400, code: "GAME_ID_INVALID" };
+  }
+  if (!/^[a-f0-9]{12}$/.test(ownerToken)) {
+    return { ok: false, status: 400, code: "REFERRAL_OWNER_TOKEN_INVALID" };
+  }
+  return { ok: true, code, gameId, ownerToken };
+}
+
 export function parseReferralRewardEvent(value) {
   const event = value && typeof value === "object" && !Array.isArray(value) ? value : {};
   const source = cleanText(event.source, 80);
