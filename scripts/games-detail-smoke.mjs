@@ -99,6 +99,11 @@ assert.ok(aetherGame.includes('osgard.aether-grid.progress.v1.')&&aetherGame.inc
 assert.ok(aetherGame.includes('function pushHistory()')&&aetherGame.includes('undoStack.length>100')&&aetherGame.includes('function undoMove()')&&aetherGame.includes('function redoMove()'), 'AETHER GRID undo/redo history must be bounded and recoverable')
 assert.ok(aetherGame.includes('const elapsed=runSeconds(),hadStarted=runHasStarted')&&aetherGame.includes('History can restore board state, but it must never rewind elapsed time.'), 'Undo/redo must not exploit history to rewind the leaderboard timer')
 assert.ok(aetherGame.includes('function runSeconds()')&&aetherGame.includes("document.addEventListener('visibilitychange'")&&aetherGame.includes('visibilityPaused=true'), 'AETHER GRID elapsed timer must pause when the tab becomes hidden')
+assert.ok(aetherGame.includes('function monotonicNow()')&&aetherGame.includes('monotonicNow()-startedAt'),'Elapsed time must use a monotonic clock, not system-wall-clock deltas')
+assert.ok(!aetherGame.includes('startedAt=Date.now()'),'All active timer starts and resumes must use the monotonic clock')
+assert.ok(aetherGame.includes('raw.elapsedSeconds>604800')&&aetherGame.includes('localStorage.removeItem(runKeyPrefix+day); } catch {}'),'Invalid checkpoints must be bounded and discarded rather than retried forever')
+assert.ok(aetherGame.includes('let audioContext = null;')&&aetherGame.includes("if(!audioContext||audioContext.state==='closed')audioContext=new Ctx();")&&!aetherGame.includes('ctx.close()'),'Repeated interface tones must reuse one audio context instead of creating and closing a context per click')
+
 assert.ok(aetherGame.includes('function consecutiveDayStreak(')&&aetherGame.includes('function writeCompletionStats(')&&aetherGame.includes('completedDays'), 'AETHER GRID daily streak must use validated UTC completion days')
 assert.ok(aetherGame.includes("window.confirm('Сбросить текущую попытку AETHER GRID?")&&aetherGame.includes("localStorage.removeItem(runKeyPrefix+day)"), 'AETHER GRID reset must warn about progress loss and clear the saved run')
 assert.ok(aetherGame.includes("localStorage.setItem(soundKey,soundEnabled?'yes':'no')")&&aetherGame.includes('function playTone('), 'AETHER GRID sound must be optional and persisted locally')
