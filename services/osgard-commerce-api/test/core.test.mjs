@@ -46,6 +46,11 @@ test("analytics is disabled unless consent is explicit and event names are allow
   assert.equal(validateEventBatch({ consent: true, events: [event] }).ok, true);
   assert.equal(validateEventBatch({ consent: true, events: [{ ...event, gameId: "cascade-lab" }] }).ok, true);
   assert.equal(
+    validateEventBatch({ consent: true, events: [{ ...event, gameId: "afterimage-run", name: "social_share_intent", source: "osgard-select:share:telegram", eventId: "evt_afterimage_share_123" }] }).ok,
+    true,
+    "AFTERIMAGE//RUN social-growth events must be accepted by the commerce analytics allow-list",
+  );
+  assert.equal(
     validateEventBatch({ consent: true, events: [{ ...event, name: "owned_promo_impression", source: "osgard-select:impression:marcosa", eventId: "evt_promo_impression_123" }] }).ok,
     true,
     "A genuinely visible, consented OSGARD SELECT card can be measured",
