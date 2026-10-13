@@ -448,7 +448,7 @@ function servicesShelf(gameId,showPromos,completedCount){
    if(activeSelected.length<2){spotlightStatus.textContent='В настройках выбери ещё один проект, чтобы сменить рекомендацию.';return}
    const currentIndex=activeSelected.findIndex(entry=>entry[0]===spotlightServiceId);
    spotlightServiceId=activeSelected[(Math.max(0,currentIndex)+1)%activeSelected.length][0];
-   renderSpotlight(spotlightServiceId);watchSpotlight();
+   renderSpotlight(spotlightServiceId);cards.forEach(card=>card.classList.toggle('is-featured',card.dataset.service===spotlightServiceId));watchSpotlight();
   });
   const save=make('button','og-postgame-spotlight-preferred',preferred===item[0]?'★ Мой выбор сохранён':'☆ Запомнить мой выбор');save.type='button';
   save.addEventListener('click',()=>{
