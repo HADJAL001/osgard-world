@@ -341,3 +341,17 @@ header nav .nav-skillcred svg{width:14px}
 @media(max-width:900px){.play-select-header{align-items:flex-start;flex-direction:column}.play-select-layout{grid-template-columns:1fr}.play-select-referral{display:flex;align-items:flex-start}.play-select-wallet,.play-select-share-primary{width:100%}}
 @media(max-width:600px){.play-select-loop{padding:15px}.play-select-disclosure{white-space:normal}.play-select-service-grid{grid-template-columns:1fr}.play-select-service{min-height:116px;padding:14px}.play-select-referral{padding:15px}.play-select-header h3{font-size:31px}.play-select-wallet,.play-select-share-primary{width:100%}}
 @media(prefers-reduced-motion:reduce){.play-select-service{transition:none}.play-select-service:hover{transform:none}}
+
+
+/* Server-verified referral rewards: consent first, points only after a qualified session. */
+.play-select-reward-consent{display:flex;align-items:flex-start;gap:9px;width:100%;margin:2px 0 4px;padding:11px 12px;border:1px solid rgba(215,185,120,.22);border-radius:4px;background:rgba(215,185,120,.035);color:#b6b3a7;font-size:9px;line-height:1.65}
+.play-select-reward-consent input{flex:0 0 auto;width:16px;height:16px;margin:2px 0 0;accent-color:#dfc787;cursor:pointer}
+.play-select-reward-consent input:focus-visible{outline:2px solid #f0dfb2;outline-offset:3px}
+.play-select-reward-note{display:block;margin:0;color:#8591a2;font-size:8px;line-height:1.65}
+.play-select-share-refresh{width:100%;min-height:38px;padding:8px 12px;border:1px solid rgba(215,185,120,.27);background:transparent;color:#d8c696;font-size:9px;cursor:pointer}
+.play-select-share-refresh:hover{border-color:#d8c696;background:rgba(215,185,120,.07)}
+.play-select-share-primary:disabled,.play-select-share-refresh:disabled{opacity:.55;cursor:wait}
+.play-select-share-actions{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;width:100%}
+.play-select-share-actions .play-select-share-primary{width:100%}
+.play-select-share-actions .play-select-share-refresh{width:auto;white-space:nowrap}
+@media(max-width:600px){.play-select-reward-consent{font-size:9px;padding:10px}.play-select-share-actions{grid-template-columns:1fr}.play-select-share-actions .play-select-share-refresh{width:100%}}
