@@ -614,7 +614,7 @@ function rewardShelf(gameId){
   try{
    if(typeof navigator.share==='function'){
     await navigator.share({title:'OSGARD PLAY · '+titles[gameId],text:message,url});
-    status.textContent='Ссылка передана в системное меню отправки. Награда начисляется за игровой результат, а не за репост.';
+    status.textContent='Ссылка передана в системное меню отправки. SHARDS не выдаются за сам репост; награда начисляется за игровой результат.';
     void sendSelectEvent('social_share_intent',gameId,'osgard-social-share:native-share:'+gameId);
    }else if(navigator.clipboard?.writeText){
     await navigator.clipboard.writeText(message+' '+url);
@@ -640,7 +640,7 @@ function rewardShelf(gameId){
   }
   refreshVault();
  });
- const note=make('p','og-postgame-reward-note','SHARDS и косметика хранятся только в этом браузере, не имеют денежной стоимости и не дают игровых преимуществ. +50 начисляются за завершённую игровую сессию не чаще раза в UTC-день; новый игрок может получить один приветственный бонус после завершённого раунда по приглашению. Ссылки на соцсети добровольные, публикация не проверяется автоматически и не вознаграждается отдельно.');
+ const note=make('p','og-postgame-reward-note','SHARDS и косметика хранятся только в этом браузере и не имеют денежной стоимости и не дают игровых преимуществ. +50 начисляются за завершённую игровую сессию не чаще раза в UTC-день; новый игрок может получить один приветственный бонус после завершённого раунда по приглашению. Ссылки на соцсети добровольные, публикация не проверяется автоматически и не вознаграждается отдельно.');
  const vault=make('section','og-shards-vault');vault.setAttribute('aria-label','OSGARD SHARDS Vault — косметические знаки');
  const vaultItems=[
   {id:'northstar',name:'NORTHSTAR',cost:100,glyph:'✦',desc:'Шампань · знак компаса'},
