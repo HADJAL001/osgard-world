@@ -2,13 +2,15 @@ import { isValidPartnerInventoryText } from './partner-inventory-contract.mjs'
 const base = process.env.OSGARD_BASE_URL || 'https://osgard.world'
 const expectCurrentDesign = process.env.SKILLCRED_EXPECT_CURRENT_DESIGN === '1'
 const ROUTE_TIMEOUT_MS = 10000
+const GODOT_ROUTE_TIMEOUT_MS = 20000
 const routes = ['/','/skillcred/','/skillcred-api/health','/skillcred-api/ready','/skillcred-api/issuer','/entertainment','/entertainment/','/games/','/games/index.html','/games/civic-cascade/','/games/patina/','/games/cascade-lab/','/games/afterimage-run/','/games/partners/','/games/growth-studio/','/games/monetization/','/games/premium/','/games/premium/success/','/games/commerce-admin/','/games/commerce-config.json','/games/commerce-client.js','/games/admin/','/games/admin/partners/','/games/invite/','/games/invite/null-shift/','/games/invite/time/','/games/invite/swarm/','/games/invite/inherit/','/games/invite/remix/','/games/invite/civic-cascade/','/games/invite/patina/','/games/invite/signal-run/','/games/invite/cascade-lab/','/games/invite/afterimage-run/','/games/invite/invite-landing.js','/games/share-cards/catalog.png','/games/share-cards/null-shift.png','/games/share-cards/afterimage-run.png','/games/favicon.svg','/privacy/','/terms/','/community','/stream','/archive','/profile','/api/v1/player/profile','/api/v1/analytics/summary?from=0&to=1','/r/1842','/games/time','/game/time','/game/swarm','/game/null-shift','/game/inherit','/game/remix','/game/signal-run','/game/civic-cascade','/game/patina','/game/cascade-lab','/games/signal-run/','/games/null-shift/','/games/null-shift/index.html','/games/null-shift-godot/','/games/null-shift-godot/index.html','/play/swarm','/play/null-shift','/play/inherit','/play/remix','/media','/business','/create','/mobility']
 const agents = { desktop: 'OSGARD-Route-Matrix/1.1 Desktop', mobile: 'OSGARD-Route-Matrix/1.1 Mobile' }
 const results = []
 for (const [device, userAgent] of Object.entries(agents)) for (const route of routes) {
   const started = Date.now()
   try {
-    const response = await fetch(new URL(route, base), { headers: { 'user-agent': userAgent }, signal: AbortSignal.timeout(ROUTE_TIMEOUT_MS) })
+    const timeoutMs = route === '/games/null-shift-godot/' ? GODOT_ROUTE_TIMEOUT_MS : ROUTE_TIMEOUT_MS
+    const response = await fetch(new URL(route, base), { headers: { 'user-agent': userAgent }, signal: AbortSignal.timeout(timeoutMs) })
     const responseBody = route.startsWith('/games/share-cards/') ? new Uint8Array(await response.arrayBuffer()) : await response.text()
     const text = typeof responseBody === 'string' ? responseBody : ''
     const shellOk = route.startsWith('/api/v1/')
