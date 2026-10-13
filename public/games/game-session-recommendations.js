@@ -468,24 +468,41 @@ function servicesShelf(gameId,showPromos,completedCount){
  const spotlightStatus=make('p','og-postgame-spotlight-status');
  spotlightStatus.setAttribute('role','status');spotlightStatus.setAttribute('aria-live','polite');
  const spotlightSeen=new Set();
+ let spotlightObserver=null,spotlightImpressionTimer=0,spotlightIsVisible=false;
+ function clearSpotlightImpression(){
+  if(spotlightImpressionTimer){clearTimeout(spotlightImpressionTimer);spotlightImpressionTimer=0}
+ }
+ function stopSpotlightWatcher(){
+  clearSpotlightImpression();
+  spotlightIsVisible=false;
+  if(spotlightObserver){spotlightObserver.disconnect();spotlightObserver=null}
+ }
+ function canCountSpotlightImpression(visible,consented,connected,hidden,backgrounded,currentService,targetService){
+  return Boolean(visible&&consented&&connected&&!hidden&&!backgrounded&&currentService===targetService);
+ }
  function watchSpotlight(){
+  stopSpotlightWatcher();
   if(typeof IntersectionObserver!=='function'||spotlight.hidden||!spotlight.isConnected)return;
   const serviceId=spotlightServiceId,seenKey=gameId+':'+serviceId;
   if(spotlightSeen.has(seenKey))return;
-  const observer=new IntersectionObserver(entries=>{
+  spotlightObserver=new IntersectionObserver(entries=>{
    entries.forEach(entry=>{
-    if(!entry.isIntersecting||entry.intersectionRatio<0.5)return;
-    observer.disconnect();
-    setTimeout(()=>{
-     if(!hasConsent()||!spotlight.isConnected||spotlight.hidden||spotlight.dataset.service!==serviceId||!spotlight.getClientRects().length)return;
+    spotlightIsVisible=Boolean(entry.isIntersecting&&entry.intersectionRatio>=0.5);
+    if(!spotlightIsVisible){clearSpotlightImpression();return}
+    if(spotlightImpressionTimer)return;
+    spotlightImpressionTimer=setTimeout(()=>{
+     spotlightImpressionTimer=0;
+     if(!canCountSpotlightImpression(spotlightIsVisible,hasConsent(),spotlight.isConnected,spotlight.hidden,document.visibilityState!=='visible',spotlight.dataset.service,serviceId))return;
      spotlightSeen.add(seenKey);
      void sendSelectEvent('owned_promo_impression',gameId,'osgard-select:spotlight:'+serviceId);
+     if(spotlightObserver){spotlightObserver.disconnect();spotlightObserver=null}
     },1000);
    });
-  },{threshold:[0.5]});
-  observer.observe(spotlight);
+  },{threshold:[0,0.5,1]});
+  spotlightObserver.observe(spotlight);
  }
  function renderSpotlight(serviceId){
+  stopSpotlightWatcher();
   const item=services.find(entry=>entry[0]===serviceId&&entry[7]!==false);
   if(!item||!showPromos||!activeSelected.length){spotlight.hidden=true;return}
   spotlight.hidden=false;spotlight.dataset.service=item[0];spotlight.replaceChildren();
@@ -558,7 +575,7 @@ function servicesShelf(gameId,showPromos,completedCount){
  const decision=make('div','og-postgame-service-decision');
  const skipButton=make('button','og-postgame-skip','Пропустить подборку');skipButton.type='button';
  const skipStatus=make('p','og-postgame-skip-status','Подборка скрыта. Игровой каталог и награда за приглашение остаются доступны.');skipStatus.hidden=true;skipStatus.setAttribute('role','status');skipStatus.setAttribute('aria-live','polite');
- skipButton.addEventListener('click',()=>{spotlight.hidden=true;grid.hidden=true;filters.hidden=true;skipButton.hidden=true;skipStatus.hidden=false;void sendSelectEvent('owned_promo_intermission_skipped',gameId,'osgard-select:skip:'+completedCount)});
+ skipButton.addEventListener('click',()=>{stopSpotlightWatcher();spotlight.hidden=true;grid.hidden=true;filters.hidden=true;skipButton.hidden=true;skipStatus.hidden=false;void sendSelectEvent('owned_promo_intermission_skipped',gameId,'osgard-select:skip:'+completedCount)});
  decision.append(skipButton,skipStatus);
  settingsToggle.addEventListener('click',()=>{settings.hidden=!settings.hidden;settingsToggle.textContent=settings.hidden?'Настроить показ':'Закрыть настройки';settingsToggle.setAttribute('aria-expanded',String(!settings.hidden));if(!settings.hidden)frequency.focus()});
  collapseToggle.addEventListener('click',()=>{const collapsed=!grid.hidden;grid.hidden=collapsed;filters.hidden=collapsed;collapseToggle.textContent=collapsed?'Выбрать из '+availableServiceIds.length+' сервисов':'Свернуть каталог';collapseToggle.setAttribute('aria-expanded',String(!collapsed))});
@@ -567,6 +584,7 @@ function servicesShelf(gameId,showPromos,completedCount){
   const ok=writeServicePreferences({frequency:frequency.value,selected:selectedIds});
   if(ok)void sendSelectEvent('owned_promo_preferences_saved',gameId,'osgard-select:preferences:'+frequency.value+':'+selectedIds.length);
   const nextPreferences=readServicePreferences(),nextShow=shouldShowServicePromos(nextPreferences,completedCount);
+  stopSpotlightWatcher();
   const replacement=servicesShelf(gameId,nextShow,completedCount);section.replaceWith(replacement);
   const nextToggle=replacement.querySelector('.og-postgame-settings-toggle');if(nextToggle)nextToggle.click();
   const nextStatus=replacement.querySelector('.og-postgame-settings-status');
