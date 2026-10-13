@@ -39,7 +39,7 @@ test("lead endpoint requires contact, brief and acknowledgement; honeypot is sil
 });
 
 test("analytics is disabled unless consent is explicit and event names are allow-listed", () => {
-  const event = { name: "game_launched", sessionId: "session_123456789", gameId: "null-shift", source: "catalog", path: "/games/", durationSeconds: 0 };
+  const event = { name: "game_session_started", sessionId: "session_123456789", gameId: "signal-run", source: "catalog", path: "/games/", durationSeconds: 0 };
   assert.equal(validateEventBatch({ consent: false, events: [event] }).code, "ANALYTICS_CONSENT_REQUIRED");
   assert.equal(validateEventBatch({ consent: true, events: [{ ...event, name: "steal_customer_emails" }] }).ok, false);
   assert.equal(validateEventBatch({ consent: true, events: [event] }).ok, true);
