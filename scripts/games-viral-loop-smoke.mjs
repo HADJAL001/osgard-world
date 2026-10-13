@@ -38,7 +38,7 @@ assert.ok(privacy.includes('invite_link_created') && privacy.includes('invite_ga
 assert.ok(routes.includes("'/games/viral-loop.js'") && routes.includes("path === '/games/viral-loop.js'"), 'Production route matrix must verify the new self-hosted asset')
 assert.ok(deploy.includes('npm run qa:games-viral'), 'Deploy must fail before publication if viral-loop contracts regress')
 
-const script = viral.replace(/^\\s*<script[^>]*>/, '').replace(/<\\/script>\\s*$/, '')
+const script = viral
 new Function(script)
 new Function(lifecycle)
 new Function(recommendations)
