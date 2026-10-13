@@ -191,4 +191,4 @@ This is procedural real-time 3D geometry for the current GL Compatibility/Web ex
 
 ### Visual upgrade: volumetric tracers
 
-Weapon fire and other transient beams use two crossed triangle ribbons plus a crisp center line. This avoids relying on 1-pixel line rasterization on different desktop/mobile GPUs. The effect reuses the existing bounded mesh pool; headless runtime smoke verifies both surface types.
+Weapon fire and other transient beams use two crossed triangle ribbons plus a crisp center line. This avoids relying on 1-pixel line rasterization on different desktop/mobile GPUs. The effect reuses the existing bounded mesh pool; headless runtime smoke verifies that the actual mesh contains both surfaces; the static source contract verifies the triangle-ribbon and line primitive declarations.

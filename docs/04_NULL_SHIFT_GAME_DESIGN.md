@@ -261,5 +261,5 @@ The Godot build tracks a persistent UTC daily-clear streak, longest streak and l
 
 - Replaced the single zero-width line in the bounded beam pool with two crossed 3D triangle ribbons and a precise center line. The beam remains readable from elevated or oblique camera angles and is less dependent on driver-specific line rasterization width.
 - Ribbon width scales gently with beam length and remains capped. The existing `ImmediateMesh` pool, lifetime handling, materials and gameplay remain intact; shots do not allocate new scene nodes.
-- Runtime smoke checks the actual mesh surface count and primitive types. Static release checks reject a regression to the old single-line-only rendering.
+- Runtime smoke checks the actual mesh surface count, while the static release contract verifies the triangle-ribbon and core-line primitive declarations. This avoids relying on a surface-inspection method that Godot 4.7 does not expose on ImmediateMesh.
 - This is a geometry-level gameplay presentation improvement, not a claim of native 8K output. It runs through the existing Godot 4.7.2 GL Compatibility Web export pipeline.
