@@ -182,3 +182,17 @@ dialog#player-dialog[data-postgame-intermission="1"] .post-run-recommendations{m
 @media(max-width:760px){.og-postgame-spotlight{padding:14px}.og-postgame-spotlight-name{font-size:31px}.og-postgame-spotlight-description{font-size:11px}.og-postgame-spotlight-actions>*{flex:1 1 calc(50% - 8px)}.og-postgame-spotlight-open{flex-basis:100%}.og-postgame-toggle{min-height:40px}}
 @media(max-width:360px){.og-postgame-spotlight-actions>*{width:100%;flex:1 1 100%}}
 @media(prefers-reduced-motion:reduce){.og-postgame-spotlight,.og-postgame-spotlight-actions>*{transition:none;animation:none}}
+
+/* Server-verified invite reward consent and share controls. */
+.og-postgame-reward-consent{display:flex;align-items:flex-start;gap:10px;margin:8px 0 14px;padding:13px 15px;border:1px solid rgba(218,192,133,.28);background:linear-gradient(135deg,rgba(218,192,133,.07),rgba(255,255,255,.015));color:#c4c3b6;font-size:11px;line-height:1.65;cursor:pointer}
+.og-postgame-reward-consent input{flex:0 0 auto;width:16px;height:16px;margin:2px 0 0;accent-color:#d8c28f}
+.og-postgame-reward .og-postgame-wallet{display:inline-flex;align-items:center;min-height:34px;padding:8px 12px;border:1px solid rgba(218,192,133,.34);color:#e4d3a5;font:600 10px ui-monospace,monospace;letter-spacing:.08em}
+.og-postgame-reward .og-postgame-status{min-height:1.5em;line-height:1.65;overflow-wrap:anywhere}
+.og-postgame-reward .og-postgame-networks{display:flex;flex-wrap:wrap;gap:8px}
+.og-postgame-reward .og-postgame-network{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:9px 12px;border:1px solid rgba(218,192,133,.3);background:rgba(255,255,255,.02);color:#e4d3a5;font-size:10px;text-decoration:none}
+.og-postgame-reward .og-postgame-network:hover{border-color:#d8c28f;background:rgba(218,192,133,.08)}
+.og-postgame-reward .og-postgame-share-primary,.og-postgame-reward .og-postgame-claim{min-height:42px;padding:10px 14px;border:1px solid #d8c28f;background:linear-gradient(115deg,#c5a95e,#e8d5a1 60%,#c9ab64);color:#13130f;font-size:10px;font-weight:700;cursor:pointer}
+.og-postgame-reward .og-postgame-share-primary:disabled,.og-postgame-reward .og-postgame-claim:disabled{opacity:.55;cursor:wait}
+.og-postgame-reward .og-postgame-share-primary:focus-visible,.og-postgame-reward .og-postgame-claim:focus-visible,.og-postgame-reward .og-postgame-network:focus-visible,.og-postgame-reward-consent input:focus-visible{outline:2px solid #f2e4bb;outline-offset:3px}
+@media(max-width:600px){.og-postgame-reward-consent{font-size:12px}.og-postgame-reward .og-postgame-share-actions{display:grid;grid-template-columns:1fr}.og-postgame-reward .og-postgame-share-actions>*{width:100%}.og-postgame-reward .og-postgame-networks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.og-postgame-reward .og-postgame-network{width:100%}}
+@media(prefers-reduced-motion:reduce){.og-postgame-reward .og-postgame-network,.og-postgame-reward .og-postgame-share-primary,.og-postgame-reward .og-postgame-claim{transition:none;animation:none}}
