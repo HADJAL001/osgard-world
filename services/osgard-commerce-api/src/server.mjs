@@ -7,7 +7,8 @@ import Stripe from "stripe";
 import pg from "pg";
 import {
   catalogConfiguration, validateCheckoutPayload, validateLeadPayload,
-  validateEventBatch, paymentsModeAllowed, resolveCheckoutPaymentState, safeEqual,
+  validateEventBatch, validateReferralRegistrationPayload, validateReferralClaimPayload,
+  paymentsModeAllowed, resolveCheckoutPaymentState, safeEqual,
 } from "./core.mjs";
 
 const { Pool } = pg;
@@ -45,6 +46,7 @@ app.use(cors({
 app.use("/v1/checkout", rateLimit({ windowMs: 15 * 60 * 1000, limit: 20, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/leads", rateLimit({ windowMs: 60 * 60 * 1000, limit: 8, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/events", rateLimit({ windowMs: 5 * 60 * 1000, limit: 60, standardHeaders: "draft-8", legacyHeaders: false }));
+app.use("/v1/referrals", rateLimit({ windowMs: 15 * 60 * 1000, limit: 30, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/admin", rateLimit({ windowMs: 5 * 60 * 1000, limit: 120, standardHeaders: "draft-8", legacyHeaders: false }));
 
 async function ensureSchema() {
@@ -61,7 +63,10 @@ async function ensureSchema() {
     "CREATE INDEX IF NOT EXISTS commerce_leads_created_idx ON commerce_leads(created_at DESC);\n" +
     "CREATE TABLE IF NOT EXISTS commerce_events (event_id TEXT PRIMARY KEY, event_name TEXT NOT NULL, session_id TEXT NOT NULL, game_id TEXT NOT NULL, source TEXT NOT NULL, path TEXT NOT NULL, duration_seconds INTEGER NOT NULL DEFAULT 0, received_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
     "CREATE INDEX IF NOT EXISTS commerce_events_name_received_idx ON commerce_events(event_name, received_at DESC);\n" +
-    "CREATE INDEX IF NOT EXISTS commerce_events_game_received_idx ON commerce_events(game_id, received_at DESC);");
+    "CREATE INDEX IF NOT EXISTS commerce_events_game_received_idx ON commerce_events(game_id, received_at DESC);\n" +
+    "CREATE TABLE IF NOT EXISTS commerce_referral_invites (referral_code TEXT PRIMARY KEY, owner_hash TEXT NOT NULL, game_id TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), qualified_session_id TEXT, qualified_at TIMESTAMPTZ, reward_claimed_at TIMESTAMPTZ, reward_amount INTEGER NOT NULL DEFAULT 50 CHECK (reward_amount >= 0));\n" +
+    "CREATE INDEX IF NOT EXISTS commerce_referral_owner_claim_idx ON commerce_referral_invites(owner_hash, reward_claimed_at, created_at DESC);\n" +
+    "CREATE UNIQUE INDEX IF NOT EXISTS commerce_referral_qualified_session_idx ON commerce_referral_invites(qualified_session_id) WHERE qualified_session_id IS NOT NULL");
   dbReady = true;
   return true;
 }
@@ -72,7 +77,11 @@ async function purgeExpiredAnalytics() {
     "DELETE FROM commerce_events WHERE received_at < NOW() - ($1 * INTERVAL '1 day')",
     [analyticsRetentionDays],
   );
-  return Number(result.rowCount || 0);
+  const referrals = await pool.query(
+    "DELETE FROM commerce_referral_invites WHERE created_at < NOW() - ($1 * INTERVAL '1 day')",
+    [analyticsRetentionDays],
+  );
+  return Number(result.rowCount || 0) + Number(referrals.rowCount || 0);
 }
 
 function paymentsAllowed() {
