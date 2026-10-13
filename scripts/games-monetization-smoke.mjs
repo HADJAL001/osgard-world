@@ -21,7 +21,7 @@ assert.ok(page.includes('id="assumptions-form"') && page.includes('id="scenario-
 assert.ok(page.includes('id="export-json"') && page.includes('id="reset-model"'), 'Financial planner reset/JSON export controls missing');
 assert.ok(page.includes('prefers-reduced-motion:reduce'), 'Reduced-motion support missing');
 assert.ok(['shareRatePct','invitesPerSharer','inviteConversionPct'].every((id) => page.includes('id="' + id + '"') && page.includes('name="' + id + '"')), 'Viral-loop assumption inputs missing');
-assert.ok(['base-viral-visitors','base-k-factor','base-annual-revenue','million-gap','annual-target-heading','monthly-target-value','required-base-visitors','growth-target-status'].every((id) => page.includes('id="' + id + '"')), 'Annual target, required traffic and referral outputs missing');
+assert.ok(['base-viral-visitors','base-k-factor','active-k-factor-status','base-annual-revenue','million-gap','annual-target-heading','monthly-target-value','required-base-visitors','growth-target-status'].every((id) => page.includes('id="' + id + '"')), 'Annual target, required traffic and referral outputs missing');
 assert.ok(['target-mix-total','target-mix-ads','target-mix-paid','target-mix-services','target-mix-sponsors','target-mix-leads-contracts'].every((id) => page.includes('id="' + id + '"')), 'Target-scale source mix must be visible in the Growth Lab');
 assert.ok(['target-mix-total','target-mix-ads','target-mix-paid','target-mix-services','target-mix-sponsors','target-mix-leads-contracts'].every((id) => app.includes("getElementById('" + id + "')")), 'Target-scale source mix must be wired to computed target scenario');
 assert.ok(page.includes('name="annualRevenueTargetUsd"'), 'Editable annual gross revenue target input missing');
@@ -36,7 +36,9 @@ const actual = calculateScenario(DEFAULT_INPUTS, 'base');
 assert.equal(actual.directVisitors, 10000);
 assert.equal(actual.viralVisitors, 45);
 assert.equal(actual.visitors, 10045);
-assert.ok(Math.abs(actual.kFactor - 0.015) < 1e-12);
+assert.ok(Math.abs(actual.kFactor - 0.015) < 1e-12, 'Invite-visit multiplier must stay separately measurable');
+assert.ok(Math.abs(actual.activePlayerKFactor - 0.0045) < 1e-12, 'Active-player K must include the game-start rate');
+assert.ok(app.includes('base.activePlayerKFactor') && app.includes('result.activePlayerKFactor') && app.includes("getElementById('active-k-factor-status')"), 'UI must display effective active-player K and explain whether the referral loop decays');
 assert.equal(actual.gameStarts, 3013.5);
 assert.equal(actual.sessions, 9040.5);
 assert.equal(actual.potentialAdImpressions, 18081);
@@ -77,7 +79,7 @@ assert.equal(boundedReferral.shareRatePct, 100, 'Share-rate input must be bounde
 assert.equal(boundedReferral.invitesPerSharer, 20, 'Invite count must be bounded to protect model stability');
 assert.equal(boundedReferral.inviteConversionPct, 0, 'Referral conversion input must be bounded at zero');
 
-console.log('PASS OSGARD games economics model: transparent referral K-factor, five-generation cap, $1M annual target gap, formulas, bounds and scenario sensitivity.');
+console.log('PASS OSGARD games economics model: invite-visit multiplier, active-player K-factor, five-generation cap, $1M target-scale mix, formulas, bounds and scenario sensitivity.');
 
 assert.ok(page.includes('name="sponsorDealsPerMonth"') && page.includes('name="averageSponsorDealUsd"'), 'Sponsor placement revenue inputs are missing')
 assert.ok(app.includes('result.sponsorRevenueUsd') && app.includes("getElementById('base-annual-revenue')") && app.includes("getElementById('million-gap')"), 'Sponsor income or annual target is not wired to the UI')

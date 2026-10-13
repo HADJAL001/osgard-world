@@ -74,6 +74,8 @@ export function calculateScenario(input = {}, scenarioId = 'base') {
   const effectiveShareRatePct = Math.min(100, values.shareRatePct * scenario.share);
   const effectiveInviteConversionPct = Math.min(100, values.inviteConversionPct * scenario.inviteConversion);
   const kFactor = effectiveShareRatePct / 100 * values.invitesPerSharer * effectiveInviteConversionPct / 100;
+  // The active-player reproduction factor also accounts for invited visitors who actually start a game.
+  const activePlayerKFactor = gameStartRate / 100 * kFactor;
 
   // Five explicit generations keep the illustrative model finite even when K-factor >= 1.
   // The model is a sensitivity tool, not a measured viral coefficient or a traffic forecast.
@@ -115,6 +117,7 @@ export function calculateScenario(input = {}, scenarioId = 'base') {
     gameStartRate,
     gameStarts,
     kFactor,
+    activePlayerKFactor,
     effectiveShareRatePct,
     effectiveInviteConversionPct,
     sessions,
