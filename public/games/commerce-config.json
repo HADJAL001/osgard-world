@@ -1,0 +1,4 @@
+{
+  "apiBaseUrl": "",
+  "notes": "Public URL only. Set to the HTTPS origin of the OSGARD Commerce API without a trailing slash. Never place secrets here."
+}
