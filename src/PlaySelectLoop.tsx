@@ -20,7 +20,7 @@ const services = [
 type PromoFrequency = 'each' | 'every3' | 'off'
 type PromoPreferences = { frequency: PromoFrequency; selected: string[] }
 const PROMO_PREFERENCES_KEY = 'osgard.games.postgame-service-preferences.v1'
-const PROMOTABLE_SERVICE_IDS = services.filter(service => service.id !== 'gardvpn').map(service => service.id)
+const PROMOTABLE_SERVICE_IDS = services.map(service => service.id)
 
 function readPromoPreferences(): PromoPreferences {
   if (typeof window === 'undefined') return { frequency: 'each', selected: [...PROMOTABLE_SERVICE_IDS] }
@@ -236,12 +236,12 @@ export function PlaySelectLoop({ locale }: { locale: Locale }) {
         </div>
         <div className="play-select-preference-grid">
           {services.map(service => {
-            const unavailable = service.id === 'gardvpn'
-            return <label className={'play-select-preference-option' + (unavailable ? ' is-unavailable' : '')} key={service.id}>
+            const unverified = service.id === 'gardvpn'
+            return <label className={'play-select-preference-option' + (unverified ? ' is-unverified' : '')} key={service.id}>
               <input
                 type="checkbox"
                 checked={draftSelected.includes(service.id)}
-                disabled={unavailable}
+                disabled={false}
                 onChange={event => {
                   setDraftSelected(current => event.target.checked
                     ? [...new Set([...current, service.id])]
@@ -249,7 +249,7 @@ export function PlaySelectLoop({ locale }: { locale: Locale }) {
                   setPromoStatus('')
                 }}
               />
-              <span><strong>{service.name}</strong><small>{unavailable ? (ru ? 'Промо выключено до подтверждения доступности' : 'Promotion disabled until availability is confirmed') : service.category}</small></span>
+              <span><strong>{service.name}</strong><small>{unverified ? (ru ? 'Доступность не подтверждена; откроется сайт проекта' : 'Availability not verified; opens the project site') : service.category}</small></span>
             </label>
           })}
         </div>
