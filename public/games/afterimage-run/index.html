@@ -33,6 +33,30 @@ const stars=Array.from({length:150},()=>({x:visualRandom()*W,y:visualRandom()*44
 $('daily-seed').textContent=day.replaceAll('-','')+' / '+seed.toString(16).toUpperCase().padStart(8,'0');$('challenge-target').textContent=targetScore?'TARGET SCORE: '+targetScore+' / BEAT YOUR FRIEND':'TARGET SCORE: SET A RECORD';$('best-score').textContent=String(daily.best||0).padStart(4,'0');$('ghost-label').textContent=daily.ghost&&daily.ghost.length?'GHOST: READY':'GHOST: RECORD YOUR RUN';
 function life(state,extra){if(window.parent===window)return;try{parent.postMessage(Object.assign({type:'osgard:game-lifecycle',game:'afterimage-run',state:state,at:Date.now()},extra||{}),location.origin)}catch{}}
 function track(name,props){try{if(localStorage.getItem('osgard.games.analytics-consent.v1')!=='yes'||!localStorage.getItem('osgard.auth.accessToken'))return;const ev={id:crypto.randomUUID?crypto.randomUUID():name+'-'+Date.now(),name:name,world:'play',game:'afterimage-run',payload:Object.assign({source:'afterimage_run',dailySeed:day},referralCode?{referralCode:referralCode}:{},props||{}),occurredAt:new Date().toISOString(),schemaVersion:1};fetch('/api/v1/player/events',{method:'POST',credentials:'same-origin',keepalive:true,headers:{authorization:'Bearer '+localStorage.getItem('osgard.auth.accessToken'),'content-type':'application/json'},body:JSON.stringify({event:ev})}).catch(()=>{})}catch{}}
+
+function commerceMetric(name,source){
+ try{
+  if(localStorage.getItem('osgard.games.analytics-consent.v1')!=='yes')return;
+  if(!['invite_link_prepared','social_share_intent','social_reward_claimed'].includes(name))return;
+  const randomId=()=>crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,16);
+  const event={eventId:('evt_'+randomId()).replace(/[^a-zA-Z0-9_-]/g,''),name:name,sessionId:('session_'+randomId()).replace(/[^a-zA-Z0-9_-]/g,''),gameId:'afterimage-run',source:String(source||'game-share:afterimage-run').slice(0,80),path:'/games/afterimage-run/',durationSeconds:0};
+  const host=window.parent!==window?window.parent:window;
+  const queue=host.OSGARD_CONSENTED_ANALYTICS;
+  if(queue&&typeof queue.enqueue==='function'){Promise.resolve(queue.enqueue(event)).catch(()=>{});return;}
+  if(window.parent!==window)return;
+  fetch('/games/commerce-config.json',{cache:'no-store',credentials:'same-origin'}).then(r=>r.ok?r.json():{}).catch(()=>({})).then(config=>{
+   if(localStorage.getItem('osgard.games.analytics-consent.v1')!=='yes')return null;
+   const raw=typeof config.apiBaseUrl==='string'?config.apiBaseUrl.trim():'';
+   if(!raw)return null;
+   let parsed;try{parsed=new URL(raw,location.origin)}catch{return null}
+   const localApi=['localhost','127.0.0.1'].includes(parsed.hostname);
+   const allowedPath=parsed.pathname==='/'||(parsed.pathname==='/commerce-api'&&(parsed.origin===location.origin||parsed.origin==='https://osgard.world'));
+   if((parsed.protocol!=='https:'&&!(localApi&&parsed.protocol==='http:'))||parsed.username||parsed.password||!allowedPath||parsed.search||parsed.hash)return null;
+   const base=parsed.origin+(parsed.pathname==='/'?'':parsed.pathname);
+   return fetch(base+'/v1/events',{method:'POST',credentials:'same-origin',keepalive:true,headers:{'content-type':'application/json'},body:JSON.stringify({consent:true,events:[event]})});
+  }).catch(()=>{});
+ }catch{}
+}
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.classList.remove('show'),2700)}
 function hud(){$('distance-score').textContent=String(Math.floor(game.distance)).padStart(4,'0')+'m';$('best-score').textContent=String(daily.best||0).padStart(4,'0');$('shard-count').textContent=game.shards;$('combo-count').textContent='x'+game.combo;$('phase-dash').disabled=!game.running||game.paused||game.cooldown>0;$('phase-dash').textContent=game.cooldown>0?'PHASE DASH · '+game.cooldown.toFixed(1)+'s':'⇢ PHASE DASH · SHIFT'}
 function reset(){rng=seed;visualRng=(seed^0x9e3779b9)>>>0;game={running:false,paused:false,ended:false,distance:0,score:0,shards:0,combo:1,comboTimer:0,world:0,speed:410,elapsed:0,spawnAt:350,obstacles:[],items:[],particles:[],ghost:[],dash:0,dashCount:0,cooldown:0,invincible:0,shake:0,lastSample:0};player.y=FLOOR-player.h;player.vy=0;player.ground=true;$('run-state').textContent='SYSTEM READY';$('objective-status').textContent='OBJECTIVE: PASS THE GATES · COLLECT 6 SHARDS · BEAT YOUR GHOST';$('run-start').disabled=false;$('run-start').textContent='▶ Начать ежедневный забег';$('run-pause').disabled=true;$('run-pause').textContent='Ⅱ Пауза';$('record-progress').disabled=true;hud();draw()}
@@ -84,6 +108,8 @@ function challenge(){
  u.searchParams.set('day',day);
  u.searchParams.set('mode','daily');
  track('challenge_created',{score:score,targetScore:targetScore,challengeSeed:day,sharePreview:'rich-invite'});
+ const inviteCode=u.searchParams.get('og_ref')||'';
+ if(/^og_[a-f0-9]{8}$/.test(inviteCode))commerceMetric('invite_link_prepared','game-invite:afterimage-run:'+inviteCode);
  return u.href;
 }
 async function copy(text){try{if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(text);return true}}catch{}const t=document.createElement('textarea');t.value=text;t.style.position='fixed';t.style.opacity='0';document.body.append(t);t.select();const ok=document.execCommand('copy');t.remove();return ok}
@@ -119,6 +145,8 @@ function rewardShare(method){
  $('reward-title').textContent='✦ SIGNAL SHARD ПОЛУЧЕНА';
  shardCosmeticUnlocked=true;$('reward-status').textContent='Золотой голографический след разблокирован на этом устройстве. Он не меняет скорость или счёт. Публичная публикация поста не проверяется.';
  if(window.parent===window)track('share_created',{method:confirmedMethod,reward:'signal-shard',rewardConfirmedByPlayer:true,flowType:'daily-challenge'});
+ const rewardNetwork=['telegram','whatsapp','vk','x','facebook'].includes(confirmedMethod)?confirmedMethod:'native';
+ commerceMetric('social_reward_claimed','osgard-social-reward:'+rewardNetwork+':afterimage-run');
  let referralCode='';try{const candidate=localStorage.getItem('osgard.games.invite-code.v1')||'';if(/^og_[a-f0-9]{8}$/.test(candidate))referralCode=candidate}catch{}const shareScore=Math.max(0,Math.min(99999999,Math.floor(Number(game.score||daily.best||0))));life('share_created',{shareMethod:confirmedMethod,rewardConfirmedByPlayer:true,flowType:'daily-challenge',referralCode:referralCode||undefined,challengeScore:shareScore,challengeSeed:day});
  toast('SIGNAL SHARD получена — золотой след разблокирован.');
  return true;
@@ -132,10 +160,11 @@ $('claim-share-reward').addEventListener('click',()=>{
 async function shareNative(){
  const u=challenge(),txt='AFTERIMAGE//RUN: мой результат '+(game.score||daily.best||0)+', daily seed '+day+'. Повтори маршрут!';
  if(navigator.share){
-  try{await navigator.share({title:'AFTERIMAGE//RUN — OSGARD PLAY',text:txt,url:u});prepareShareReward('web-share')}
+  try{await navigator.share({title:'AFTERIMAGE//RUN — OSGARD PLAY',text:txt,url:u});commerceMetric('social_share_intent','osgard-social-share:native:afterimage-run');prepareShareReward('web-share')}
   catch(e){if(e.name!=='AbortError')toast('Не удалось открыть системное меню публикации.')}
  }else if(await copy(txt+' '+u)){
   track('share_link_copied',{method:'clipboard',score:game.score||daily.best||0,challengeSeed:day});
+  commerceMetric('social_share_intent','osgard-social-share:copy:afterimage-run');
   $('reward-status').textContent='Ссылка скопирована. Копирование не даёт награду — отправь вызов через одну из соцсетей и подтверди публикацию.';
   toast('Ссылка с seed и результатом скопирована.');
  }else toast('Скопируй ссылку вручную: '+u);
@@ -143,7 +172,7 @@ async function shareNative(){
 function social(kind){
  const u=encodeURIComponent(challenge()),t=encodeURIComponent('AFTERIMAGE//RUN — '+(game.score||daily.best||0)+' points · daily seed '+day+'. Повтори мой маршрут!'),links={telegram:'https://t.me/share/url?url='+u+'&text='+t,vk:'https://vk.com/share.php?url='+u+'&title='+t,x:'https://twitter.com/intent/tweet?url='+u+'&text='+t,whatsapp:'https://wa.me/?text='+t+'%20'+u,facebook:'https://www.facebook.com/sharer/sharer.php?u='+u};
  const opened=window.open(links[kind],'_blank','width=680,height=560');
- if(opened){opened.opener=null;track('share_dialog_opened',{method:kind,score:game.score||daily.best||0,challengeSeed:day});prepareShareReward('share-intent-'+kind)}
+ if(opened){opened.opener=null;track('share_dialog_opened',{method:kind,score:game.score||daily.best||0,challengeSeed:day});commerceMetric('social_share_intent','osgard-social-share:'+kind+':afterimage-run');prepareShareReward('share-intent-'+kind)}
  else toast('Разреши открытие окна, чтобы перейти к публикации.');
 }
 if(safeRead(REWARD,{})[today]){
