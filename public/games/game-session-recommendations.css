@@ -62,7 +62,15 @@ dialog#player-dialog.has-recommendations .player-view iframe{min-height:155px}
 .og-postgame-network:focus-visible,.og-postgame-share-primary:focus-visible,.og-postgame-claim:focus-visible{outline:2px solid #f2e4bb;outline-offset:2px}
 .og-postgame-claim[hidden]{display:none}
 .og-postgame-status{margin:0;color:#d9c997;font-size:10px;line-height:1.6;overflow-wrap:anywhere}
+.og-postgame-reward-consent{display:flex;align-items:flex-start;gap:9px;margin:0 0 12px;padding:11px 12px;border:1px solid rgba(218,192,133,.22);border-radius:8px;background:linear-gradient(120deg,#d8c28f0a,transparent 70%),#ffffff02;color:#b9b7aa;font-size:9px;line-height:1.65}
+.og-postgame-reward-consent input{flex:0 0 auto;width:16px;height:16px;margin:2px 0 0;accent-color:#d8c28f;cursor:pointer}
+.og-postgame-reward-consent input:focus-visible{outline:2px solid #e8d5a1;outline-offset:3px}
+.og-postgame-reward-consent span{max-width:700px}
 .og-postgame-reward-note{margin:0;color:#777e73;font-size:8px;line-height:1.6}
+.og-postgame-status{overflow-wrap:anywhere}
+.og-postgame-share-primary:disabled,.og-postgame-claim:disabled{opacity:.55;cursor:wait;transform:none}
+@media(max-width:760px){.og-postgame-reward-consent{padding:10px;font-size:9px}.og-postgame-share-actions>*{flex:1 1 calc(50% - 7px)}.og-postgame-networks>*{flex:1 1 calc(33.333% - 7px)}}
+@media(prefers-reduced-motion:reduce){.og-postgame-share-primary,.og-postgame-claim,.og-postgame-network{transition:none;animation:none}}
 @media(max-width:760px){
  .post-run-recommendations{max-height:min(56svh,640px);padding:10px}
  .og-postgame-services,.og-postgame-reward{padding:11px}
