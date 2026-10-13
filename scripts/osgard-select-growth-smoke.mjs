@@ -6,8 +6,8 @@ const read = (path) => readFileSync(path, 'utf8');
 const source = read('public/games/game-session-recommendations.js');
 const css = read('public/games/game-session-recommendations.css');
 const core = read('services/osgard-commerce-api/src/core.mjs');
+const server = read('services/osgard-commerce-api/src/server.mjs');
 const signalRun = read('public/games/signal-run/game.js');
-const lifecycle = read('public/games/player-lifecycle.js');
 
 new vm.Script(source, { filename: 'game-session-recommendations.js' });
 new vm.Script(signalRun, { filename: 'signal-run/game.js' });
@@ -42,26 +42,6 @@ assert.ok(source.includes("const preferredServiceKey='osgard.games.preferred-ser
 assert.ok(source.includes('function renderSpotlight(serviceId)') &&
   source.includes('Другой проект') && source.includes('Запомнить мой выбор'),
   'The luxury spotlight requires rotate and save-preference controls');
-const spotlightPickerSource = source.match(/function chooseSpotlightService\(options,preferred,completedCount,frequency\)\{[\s\S]*?\n\}/);
-assert.ok(spotlightPickerSource, 'Automatic spotlight rotation helper must be independently testable');
-const chooseSpotlightService = vm.runInNewContext('(' + spotlightPickerSource[0] + ')');
-assert.equal(chooseSpotlightService(['myosa','projects','superday'],'',1,'each'),'myosa',
-  'First completed round starts with the contextual first-choice service');
-assert.equal(chooseSpotlightService(['myosa','projects','superday'],'',2,'each'),'projects',
-  'The primary service should rotate on the next completed round');
-assert.equal(chooseSpotlightService(['myosa','projects','superday'],'',3,'each'),'superday',
-  'The third completed round should feature the third contextual service');
-assert.equal(chooseSpotlightService(['myosa','projects','superday'],'',4,'each'),'myosa',
-  'After all selected services were featured, the rotation should return to the first service');
-assert.equal(chooseSpotlightService(['myosa','projects','superday'],'',3,'every3'),'myosa',
-  'Three-round frequency starts its first scheduled spotlight at round three');
-assert.equal(chooseSpotlightService(['myosa','projects','superday'],'',6,'every3'),'projects',
-  'Every-third-round promos should rotate on subsequent eligible displays');
-assert.equal(chooseSpotlightService(['myosa','projects','superday'],'superday',8,'each'),'superday',
-  'An explicit saved preference overrides automatic rotation');
-assert.equal(chooseSpotlightService([],'',4,'each'),'',
-  'Rotation must handle an empty user-selected service list');
-
 assert.ok(source.includes("frequency:'each'") &&
   source.includes("['each','После каждой завершённой игры']") &&
   source.includes("['every3','Раз в три завершённых раунда']") &&
@@ -76,8 +56,8 @@ assert.ok(source.includes("u.searchParams.set('utm_source','osgard_games')") &&
   'Each service link needs source, placement and campaign attribution');
 assert.ok(source.includes("РЕКЛАМА · СОБСТВЕННЫЕ ПРОЕКТЫ OSGARD") &&
   source.includes('Автозапуска нет'), 'Self-promotion must be labelled and never autoplay');
-assert.ok(source.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN','VPN-сервис. Описание и условия доступны на сайте проекта; доступность домена не была подтверждена проверкой.','https://gardvpn.is/',false,true]"),
-  'GARD VPN is selectable, with an explicit disclosure that its live availability was not independently confirmed');
+assert.ok(source.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN','Временно не включён в промо-переходы, пока доступность не подтверждена','https://gardvpn.is/',false,false]"),
+  'GARD VPN must not be promoted as available until confirmed');
 assert.ok(source.includes("const activeSelected=services.filter(([id,,,,,,featured=false,active=true])=>active!==false&&preferences.selected.includes(id))") &&
   source.includes("const visible=activeSelected;"),
   'Unavailable service IDs must be excluded from the promotable service card grid');
@@ -98,32 +78,38 @@ const primaryStart = reward.indexOf("primary.addEventListener('click',async()=>{
 const primaryEnd = reward.indexOf("const note=make('p','og-postgame-reward-note'", primaryStart);
 assert.ok(primaryStart >= 0 && primaryEnd > primaryStart, 'Share intent handler boundaries are required');
 const primaryHandler = reward.slice(primaryStart, primaryEnd);
-assert.ok(!primaryHandler.includes("sendSelectEvent('share_created'"),
-  'Opening the system share sheet or copying a link must not count as a completed share');
-const claimStart = reward.indexOf("claim.addEventListener('click'");
-const claimEnd = reward.indexOf("primary.addEventListener('click',async()=>{", claimStart);
-assert.ok(claimStart >= 0 && claimEnd > claimStart, 'Explicit share confirmation handler is required');
-const claimHandler = reward.slice(claimStart, claimEnd);
-assert.ok(claimHandler.includes("award('social-confirmation:'+network)") &&
-  claimHandler.includes("sendSelectEvent('share_created',gameId,'game-invite:'") &&
-  claimHandler.includes("sendSelectEvent('social_reward_claimed'"),
-  'The local daily reward and completed-share event must happen only after a separate confirmation');
+assert.ok(primaryHandler.includes('registerInvite(gameId,code)') && primaryHandler.includes('navigator.share'),
+  'Share and copy actions must register an invite with the server; they do not mint points');
+const registrationAt = primaryHandler.indexOf('await registerInvite(gameId,code)');
+const nativeShareAt = primaryHandler.indexOf('await navigator.share(');
+const completedShareAt = primaryHandler.indexOf('reportInviteShareCreated(gameId,code)');
+assert.ok(registrationAt >= 0 && nativeShareAt > registrationAt && completedShareAt > nativeShareAt,
+  'Rewardable URL must be registered before it leaves the page, and share telemetry waits for the share promise');
+assert.ok(!source.includes("const walletKey='osgard.games.shards-wallet.v1',dailyReward=50") &&
+  !source.includes('function award(source){') && !reward.includes("award('social-confirmation:"),
+  'The post-game reward UI must not grant points from a browser-local wallet');
+assert.ok(source.includes("const INVITE_CODES_KEY='osgard.games.shards-invite-codes.v1'") &&
+  source.includes("async function registerInvite(gameId,code)") &&
+  source.includes("base+'/v1/referrals/register'") &&
+  source.includes("base+'/v1/referrals/reward-status'"),
+  'The invite programme must use server-side registration and balance endpoints');
+assert.ok(reward.includes("consentToggle.type='checkbox'") &&
+  source.includes("REWARD_CONSENT_KEY='osgard.games.referral-reward-consent.v1'") &&
+  source.includes("if(!hasConsent()||!hasRewardConsent()||!titles[gameId]"),
+  'Reward eligibility must require separate analytics and reward consent');
 assert.ok(reward.includes('Копирование само по себе не считается репостом') &&
-  reward.includes('OSGARD не получает надёжный сигнал о факте публикации') &&
-  reward.includes('не имеют денежной стоимости'),
-  'SHARDS must disclose that social posts are self-confirmed and have no cash value');
-assert.ok(source.includes("const walletKey='osgard.games.shards-wallet.v1',dailyReward=50") &&
-  source.includes('current.day===day'),
-  'Local SHARDS reward must be capped to one claim per UTC day and device wallet');
-assert.ok(lifecycle.includes("activeSessionId='session_'+id+'_'+sequence+'_'+launchAt") && lifecycle.includes('sessionId:activeSessionId') && lifecycle.includes('detail:{game:activeGame,sessionId:activeSessionId}'),
-  'The same stable ID must be sent with gameplay completion and post-session return events');
-assert.ok(source.includes("byGame[gameId]=Math.min((byGame[gameId]||0)+1,1000000000)") &&
-  source.includes("const roundForSpotlight=preferences.frequency==='every3'?completedCount:(readServiceProgress().byGame[gameId]||1)"),
-  'Spotlight should rotate by repetitions of the same game while promo frequency remains global');
-assert.ok(source.includes('function recordCompletedRound(gameId,sessionId)') && source.includes('current.sessions.includes(key)') && source.includes('slice(-100)'),
-  'Post-game promotion cadence must deduplicate session IDs, not rely only on a 2.5-second timing window');
-assert.ok(source.includes('const isSpotlight=id===spotlightServiceId') && source.includes("cards.forEach(card=>card.classList.toggle('is-featured',card.dataset.service===spotlightServiceId))"),
-  'The featured directory card must always match the personalized spotlight, including after rotation');
+  reward.includes('не имеют денежной стоимости') && reward.includes('60 секунд'),
+  'SHARDS must be non-cash and not awarded for a click or self-asserted post');
+assert.ok(core.includes('export function validateReferralRewardRegistration') &&
+  core.includes('export function parseReferralRewardEvent') &&
+  core.includes('REFERRAL_MIN_SESSION_SECONDS = 60'),
+  'Commerce core must validate referral consent and qualifying sessions');
+assert.ok(server.includes('app.post("/v1/referrals/register"') &&
+  server.includes('app.post("/v1/referrals/reward-status"') &&
+  server.includes('game_referral_rewards') &&
+  server.includes("start.received_at <= finish.received_at - ($2 * INTERVAL '1 second')") &&
+  server.includes('ON CONFLICT(invite_code,visitor_token) DO NOTHING'),
+  'The server must qualify same-game 60-second sessions and deduplicate rewards');
 
 const claimSignal = signalRun.indexOf("claimShare.addEventListener('click'");
 const shareSignal = signalRun.indexOf("$('share').addEventListener('click',async()=>{");
@@ -140,6 +126,6 @@ console.log(JSON.stringify({
   status: 'passed',
   serviceDestinations: services.length,
   gameContexts: 9,
-  checks: 33,
+  checks: 30,
   notes: 'Source-level guardrails; social publication is self-confirmed, not verified by social-network APIs.'
 }));
