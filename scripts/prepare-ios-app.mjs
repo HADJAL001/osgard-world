@@ -53,8 +53,10 @@ function prepareWeb() {
   for (const path of files) {
     replaceFile(path, (source) => {
       let text = source;
-      text = text.replace(/new URL\((['"])(\/games\/)\1\s*,\s*location\.origin\s*\)/g,
-        (_match, quote, route) => 'new URL(' + quote + route + quote + ', (window.OSGARD_PUBLIC_ORIGIN || location.origin))');
+      // Rewrite all statically or dynamically constructed /games/... share URLs to the public origin.
+      // Without this, Capacitor could share capacitor://localhost/... URLs instead of a valid public invitation.
+      text = text.replace(/new URL\(((?:'\/games\/[^']*'|"\/games\/[^"]*")(?:\s*\+\s*[^,\r\n]+)*),\s*location\.origin\s*\)/g,
+        (_match, routeExpression) => 'new URL(' + routeExpression + ', (window.OSGARD_PUBLIC_ORIGIN || location.origin))');
       text = text.replace(/\bfetch\(\s*(['"])(\/api\/[^'"]*)\1/g,
         (_match, quote, route) => 'fetch(' + quote + 'https://osgard.world' + route + quote);
       text = text.replaceAll('/games/null-shift-godot/', '/games/null-shift/');
