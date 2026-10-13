@@ -74,6 +74,8 @@ for (const [label, page] of [["Games", html], ["Partners", partners], ["Premium"
 }
 for (const value of ["window.OSGARD_CONSENTED_ANALYTICS", "MAX_PENDING = 100", "MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000", "result?.accepted", "clearQueue()"]) {
   assert.ok(consentQueue.includes(value), "Consent-aware retry queue is missing: " + value);
+for (const eventName of ["owned_promo_intermission_skipped", "owned_promo_preferences_saved", "social_share_intent", "social_reward_claimed", "owned_promo_impression"]) assert.ok(consentQueue.includes("'"+eventName+"'"), "Consent queue does not allow OSGARD SELECT event: " + eventName);
+
 }
 assert.ok(sharedClient.includes("queue.enqueue(event)"), "Website analytics must use the retry queue when available.");
 assert.ok(playerLifecycle.includes("queue.enqueue(event)"), "Game-session analytics must use the retry queue when available.");
