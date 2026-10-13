@@ -382,7 +382,9 @@ async function appendStepSummary(report) {
     const status = result.statusCode === null ? '—' : String(result.statusCode)
     const host = result.finalHost || '—'
     const title = result.pageTitle || result.error || 'No title returned'
-    return '| ' + mdCell(result.name) + ' | ' + mdCell(result.outcome) + ' | ' + status + ' | ' + result.responseMs + ' ms | ' + mdCell(host) + ' | ' + mdCell(title) + ' |'
+    const redirects = Number.isFinite(result.redirectsFollowed) ? String(result.redirectsFollowed) : result.redirected ? 'blocked' : '0'
+    const truncated = result.bodyTruncated ? 'yes' : 'no'
+    return '| ' + mdCell(result.name) + ' | ' + mdCell(result.outcome) + ' | ' + status + ' | ' + result.responseMs + ' ms | ' + redirects + ' | ' + truncated + ' | ' + mdCell(host) + ' | ' + mdCell(title) + ' |'
   })
   const content = [
     '## OSGARD external project homepage check',
@@ -393,8 +395,8 @@ async function appendStepSummary(report) {
     '',
     '> Intended roles are owner-provided descriptions. A 2xx response checks only that a homepage responded; it does not verify product capabilities, security, service reliability or purchase flows.',
     '',
-    '| Project | Outcome | HTTP | Response | Final host | Returned page title / error |',
-    '|---|---|---:|---:|---|---|',
+    '| Project | Outcome | HTTP | Response | Redirects | Body truncated | Final host | Returned page title / error |',
+    '|---|---|---:|---:|---:|---|---|---|',
     ...rows,
     '',
     'Full JSON report is attached as a workflow artifact.',
