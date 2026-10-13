@@ -289,7 +289,7 @@ class CommerceHandler(BaseHTTPRequestHandler):
             self._send_json(404, {"error": "not_found"})
 
     def _admin_summary(self, days: int, cutoff: int) -> None:
-        with open_db() as db:
+        with db_connection() as db:
             counts = {
                 row["event_name"]: int(row["count"])
                 for row in db.execute(
@@ -342,7 +342,7 @@ class CommerceHandler(BaseHTTPRequestHandler):
         })
 
     def _admin_referrals(self, cutoff: int, limit: int) -> None:
-        with open_db() as db:
+        with db_connection() as db:
             rows = db.execute(
                 """SELECT invite_id,
                     MAX(CASE WHEN event_name='invite_link_created' THEN game_id END) AS game_id,
@@ -375,7 +375,7 @@ class CommerceHandler(BaseHTTPRequestHandler):
             where += " AND status = ?"
             params.append(status_filter)
         params.append(limit)
-        with open_db() as db:
+        with db_connection() as db:
             rows = db.execute(
                 f"""SELECT id, project_type, budget, contact, description, source_path,
                            campaign, campaign_medium, campaign_content, status, created_at, updated_at
@@ -469,7 +469,7 @@ class CommerceHandler(BaseHTTPRequestHandler):
             })
         now = int(time.time())
         accepted = 0
-        with open_db() as db:
+        with db_connection() as db:
             for event in clean_events:
                 cursor = db.execute(
                     """INSERT OR IGNORE INTO events
@@ -515,7 +515,7 @@ class CommerceHandler(BaseHTTPRequestHandler):
                 return
         lead_id = str(uuid.uuid4())
         now = int(time.time())
-        with open_db() as db:
+        with db_connection() as db:
             db.execute(
                 """INSERT INTO leads
                    (id, project_type, budget, contact, description, source_path, campaign,
@@ -547,7 +547,7 @@ class CommerceHandler(BaseHTTPRequestHandler):
         if status not in LEAD_STATUSES:
             self._send_json(400, {"error": "lead_status_invalid"})
             return
-        with open_db() as db:
+        with db_connection() as db:
             cursor = db.execute(
                 "UPDATE leads SET status=?, updated_at=? WHERE id=?",
                 (status, int(time.time()), match.group(1)),
