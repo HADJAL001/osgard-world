@@ -69,4 +69,28 @@ values.set('osgard.games.analytics-consent.v1', 'yes');
 storageListeners.get('storage')?.({ key: 'osgard.games.analytics-consent.v1' });
 assert.equal(state.textContent, 'Аналитика разрешена', 'A choice made in another tab must update the settings state');
 
+// If storage is blocked, the page must remain fail-closed and expose a visible error.
+const blockedState = makeElement('consent-state');
+const blockedMessage = makeElement('consent-message');
+const blockedAllow = makeElement('analytics-allow');
+const blockedRevoke = makeElement('analytics-revoke');
+const blockedElements = new Map([
+  [blockedState.id, blockedState], [blockedMessage.id, blockedMessage],
+  [blockedAllow.id, blockedAllow], [blockedRevoke.id, blockedRevoke],
+]);
+const blockedStorage = {
+  getItem: () => { throw new Error('storage blocked'); },
+  setItem: () => { throw new Error('storage blocked'); },
+  removeItem: () => { throw new Error('storage blocked'); },
+};
+vm.runInNewContext(source, {
+  window: { addEventListener: () => {} },
+  document: { getElementById: id => blockedElements.get(id) || null },
+  localStorage: blockedStorage, String,
+});
+blockedAllow.click();
+assert.equal(blockedState.dataset.state, 'error', 'A failed storage write must be announced as an error');
+assert.equal(blockedState.textContent, 'Не удалось сохранить выбор', 'Storage errors must not be overwritten by the default-off state');
+assert.match(blockedMessage.textContent, /Аналитика не включается без сохранённого разрешения/i, 'Storage failure must explain the fail-closed behavior');
+
 console.log('PASS privacy consent center: shared consent key, default-off state, allow/revoke controls, queue clearing, cross-tab sync, and no third-party scripts.');
