@@ -210,6 +210,15 @@ assert.ok(cardGenres.every(genre=>visibleFilters.has(genre)),'Every card genre m
 assert.ok(visibleFilters.has('arcade'),'The catalog must expose the Arcade genre filter')
 const required=['data-game="null-shift"','data-game="time"','data-game="swarm"','data-game="inherit"','data-game="remix"','data-game="civic-cascade"','data-game="patina"','data-game="signal-run"','data-game="cascade-lab"','data-game="afterimage-run"','data-game="aether-grid"','id="games-grid"','id="game-search"','data-filter="tactical"','data-filter="arcade"','id="player-dialog"','id="player-share"','id="player-fullscreen"','id="analytics-toggle"','id="project-form"','https://wa.me/79640027222','osgardbewworld.com','o2system.art','senjorio.com','superday.run','marcosa.club','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio','href="/games/ecosystem/"','/games/favicon.svg','/privacy/','/terms/']
 for(const item of required) assert.ok(html.includes(item),'Games hub missing: '+item)
+
+assert.equal((html.match(/<html\\b/gi)||[]).length,1,'Games hub must contain exactly one HTML root')
+assert.equal((html.match(/<head\\b/gi)||[]).length,1,'Games hub must contain exactly one head element')
+assert.equal((html.match(/<body\\b/gi)||[]).length,1,'Games hub must contain exactly one body element')
+assert.equal((html.match(/<\\/head\\s*>/gi)||[]).length,1,'Games hub must close head exactly once')
+assert.equal((html.match(/<\\/body\\s*>/gi)||[]).length,1,'Games hub must close body exactly once')
+assert.equal((html.match(/<\\/html\\s*>/gi)||[]).length,1,'Games hub must close html exactly once')
+assert.ok(html.trimEnd().endsWith('</body></html>'),'Games hub must end with a single, well-formed document closure')
+
 assert.ok(appSource.includes('className="play-catalog-link" href="/games/"')&&appSource.includes('<em>OSGARD WORLD GAMING</em>')&&appSource.includes("'Открыть игровой портал'"),'Homepage entertainment gateway must promote OSGARD WORLD GAMING and open the canonical /games/ hub')
 assert.ok(appSource.includes('className="play-quick-picks"')&&appSource.includes("aria-label={ru ? 'Быстрый запуск игр' : 'Quick launch games'}")&&appSource.includes('QUICK START'),'Homepage must expose a labelled quick-launch section in both locales')
 for (const route of ['/games/swarm/','/games/inherit/','/games/signal-run/']) assert.ok(appSource.includes('href="'+route+'"'),'Homepage quick-launch route missing: '+route)
