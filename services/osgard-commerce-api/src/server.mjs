@@ -356,7 +356,10 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
           game_id AS "gameId",
           COUNT(*) FILTER (
             WHERE event_name = 'owned_promo_impression'
-              AND source ~ '^osgard-select:spotlight:[a-z0-9-]{1,40}:[ab]$'
+              AND (
+                source ~ '^osgard-select:spotlight:[a-z0-9-]{1,40}:[ab]$'
+                OR source ~ '^osgard-select:impression:[a-z0-9-]{1,40}$'
+              )
           )::int AS impressions,
           COUNT(*) FILTER (
             WHERE event_name = 'cross_promo_clicked'
@@ -365,7 +368,10 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
         FROM commerce_events
         WHERE received_at >= NOW() - INTERVAL '30 days'
           AND (
-            (event_name = 'owned_promo_impression' AND source ~ '^osgard-select:spotlight:[a-z0-9-]{1,40}:[ab]$')
+            (event_name = 'owned_promo_impression' AND (
+              source ~ '^osgard-select:spotlight:[a-z0-9-]{1,40}:[ab]$'
+              OR source ~ '^osgard-select:impression:[a-z0-9-]{1,40}$'
+            ))
             OR
             (event_name = 'cross_promo_clicked' AND source ~ '^osgard-select:click:[a-z0-9-]{1,40}(:[ab])?$')
           )
