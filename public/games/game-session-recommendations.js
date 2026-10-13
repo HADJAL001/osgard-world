@@ -314,7 +314,7 @@ const selectAllowedEvents=new Set(['cross_promo_clicked','owned_promo_impression
 function hasConsent(){try{return localStorage.getItem(selectConsentKey)==='yes'}catch{return false}}
 const pendingSelectTelemetry=new Set();
 function cancelPendingSelectTelemetry(){for(const controller of pendingSelectTelemetry){try{controller.abort()}catch{}}pendingSelectTelemetry.clear()}
-function checkSelectConsentAfterToggle(){setTimeout(()=>{if(!hasConsent()){cancelPendingSelectTelemetry();try{localStorage.removeItem(REWARD_CONSENT_KEY)}catch{}}},0)}
+function checkSelectConsentAfterToggle(){setTimeout(()=>{if(!hasConsent()){cancelPendingSelectTelemetry()}},0)}
 document.addEventListener('change',event=>{if(event.target&&event.target.id==='analytics-toggle')checkSelectConsentAfterToggle()});
 document.addEventListener('click',event=>{const target=event.target;if(target&&typeof target.closest==='function'&&target.closest('#analytics-toggle'))checkSelectConsentAfterToggle()});
 function selectSessionId(){
