@@ -60,7 +60,7 @@ async function ensureSchema() {
     "CREATE TABLE IF NOT EXISTS commerce_events (event_id TEXT PRIMARY KEY, event_name TEXT NOT NULL, session_id TEXT NOT NULL, game_id TEXT NOT NULL, source TEXT NOT NULL, path TEXT NOT NULL, duration_seconds INTEGER NOT NULL DEFAULT 0, received_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
     "CREATE INDEX IF NOT EXISTS commerce_events_name_received_idx ON commerce_events(event_name, received_at DESC);\n" +
     "CREATE INDEX IF NOT EXISTS commerce_events_game_received_idx ON commerce_events(game_id, received_at DESC);");
-  await pool.query(\
+  await pool.query(
     "CREATE TABLE IF NOT EXISTS game_referral_invites (invite_code TEXT PRIMARY KEY, game_id TEXT NOT NULL, inviter_token TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());" +
     "CREATE INDEX IF NOT EXISTS game_referral_invites_created_idx ON game_referral_invites(created_at DESC);" +
     "CREATE TABLE IF NOT EXISTS game_referral_visits (invite_code TEXT NOT NULL REFERENCES game_referral_invites(invite_code) ON DELETE CASCADE, visitor_token TEXT NOT NULL, opened_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), PRIMARY KEY(invite_code,visitor_token));" +
@@ -77,6 +77,7 @@ async function purgeExpiredAnalytics() {
     "DELETE FROM commerce_events WHERE received_at < NOW() - ($1 * INTERVAL '1 day')",
     [analyticsRetentionDays],
   );
+  await pool.query("DELETE FROM game_referral_invites WHERE created_at < NOW() - INTERVAL '365 days'");
   return Number(result.rowCount || 0);
 }
 
