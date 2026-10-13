@@ -93,7 +93,10 @@ assert.ok(signalRun.includes('<title>SIGNAL RUN — OSGARD WORLD</title>') && si
 assert.ok(signalRun.includes('prefers-reduced-motion:reduce') && signalRun.includes('id="touch-pulse"'), 'SIGNAL RUN mobile/accessibility controls missing')
 assert.ok(signalJs.includes("game:'signal-run'") && signalJs.includes("life('ready')") && signalJs.includes("life('completed'") && signalJs.includes('osgard.signal-run.best.v1'), 'SIGNAL RUN lifecycle and local-best contract missing')
 assert.ok(signalRun.includes('id="after-actions"')&&signalRun.includes('utm_campaign=branded-challenge#campaign-form'),'Post-session sponsor CTA must be separate from active gameplay')
-assert.ok(signalJs.includes('challengeTarget')&&signalJs.includes("url.searchParams.set('ref','signal-run-share')")&&signalJs.includes("url.searchParams.set('utm_campaign','challenge')")&&signalJs.includes("life('share_created'"),'Challenge sharing and referral attribution missing')
+assert.ok(signalRun.includes('target="_blank" rel="noopener noreferrer"'),'Sponsor enquiry must open outside the embedded game frame with noopener')
+assert.ok(html.includes('id="signal-run-referral-bridge"')&&html.includes("incoming.searchParams.get('play')!=='signal-run'")&&html.includes("requestAnimationFrame(()=>link.click())"),'Shared referral links must launch SIGNAL RUN through the catalogue lifecycle wrapper')
+assert.ok(signalJs.includes('challengeTarget')&&signalJs.includes("new URL('/games/',location.origin)")&&signalJs.includes("url.searchParams.set('play','signal-run')")&&signalJs.includes("url.searchParams.set('ref','signal-run-share')")&&signalJs.includes("url.searchParams.set('utm_campaign','challenge')")&&signalJs.includes("life('share_created'"),'Challenge sharing and referral attribution missing')
+assert.ok(lifecycle.includes('function sessionAttribution()')&&lifecycle.includes("referralSource:'signal-run-share'")&&lifecycle.includes("allowedEvent('game_session_started',Object.assign")&&lifecycle.includes("allowedEvent('game_session_completed',Object.assign"),'Referral attribution must flow into consent-gated start/completion events')
 assert.ok(signalJs.includes("afterActions.hidden=mode!=='over'"),'Sponsor/cross-promotion CTAs must only appear after the run ends')
 new Function(signalJs)
 
