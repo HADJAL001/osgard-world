@@ -30,6 +30,8 @@ on:
       - "scripts/null-shift-godot-smoke.mjs"
       - "docs/02_IMPERIUM_OF_TIME_GAME_DESIGN.md"
       - "public/skillcred/**"
+      - "public/privacy/**"
+      - "scripts/privacy-consent-center-smoke.mjs"
       - "package.json"
       - "package-lock.json"
       - "vite.config.ts"
@@ -77,6 +79,8 @@ jobs:
         run: npm run qa:osgard-select
       - name: Test consented analytics offline retry and withdrawal
         run: npm run qa:consented-analytics-queue
+      - name: Verify privacy page consent controls and queue withdrawal
+        run: npm run qa:privacy-consent
       - name: Verify external-project audit contract (network-free)
         run: npm run qa:external-project-healthcheck
       - name: Validate NULL//SHIFT Godot source contract
