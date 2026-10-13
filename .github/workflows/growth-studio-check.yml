@@ -1,0 +1,24 @@
+name: Growth Studio check
+on:
+  pull_request:
+    paths:
+      - 'public/games/growth-studio/**'
+      - 'public/games/partners/index.html'
+      - 'scripts/growth-studio-smoke.mjs'
+      - '.github/workflows/growth-studio-check.yml'
+  push:
+    branches: [master]
+    paths:
+      - 'public/games/growth-studio/**'
+      - 'public/games/partners/index.html'
+      - 'scripts/growth-studio-smoke.mjs'
+      - '.github/workflows/growth-studio-check.yml'
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/growth-studio-smoke.mjs
