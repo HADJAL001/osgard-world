@@ -185,7 +185,7 @@ var observer=new IntersectionObserver(function(entries){if(entries.some(function
 observer.observe(section);
 }
 
-function sectionMotionSetup(){if(!("IntersectionObserver" in window)||reduced)return;[[".journey-line","is-visible"],[".developers","is-tracing"]].forEach(function(pair){var section=document.querySelector(pair[0]);if(!section)return;var observer=new IntersectionObserver(function(entries){entries.forEach(function(entry){section.classList.toggle(pair[1],entry.isIntersecting);});},{rootMargin:"0px 0px 18% 0px",threshold:.01});observer.observe(section);});}
+function sectionMotionSetup(){if(mobileLite||!("IntersectionObserver" in window)||reduced)return;[[".journey-line","is-visible"],[".developers","is-tracing"]].forEach(function(pair){var section=document.querySelector(pair[0]);if(!section)return;var observer=new IntersectionObserver(function(entries){entries.forEach(function(entry){section.classList.toggle(pair[1],entry.isIntersecting);});},{rootMargin:"0px 0px 18% 0px",threshold:.01});observer.observe(section);});}
 function eventLogVisibilitySetup(){
 var log=$("eventLog");if(!log)return;
 if(!("IntersectionObserver" in window)){eventLogVisible=true;if(pendingEvents.length){pendingEvents.splice(0).forEach(appendEvent);}return;}
@@ -217,7 +217,8 @@ head.dataset.worded="true";
 }
 function revealSetup(){
 var items=Array.from(document.querySelectorAll(".reveal,.kinetic-heading"));
-if(!("IntersectionObserver" in window)||reduced){items.forEach(function(item){item.classList.add("is-visible");});return;}
+// On small/coarse-pointer devices, render all copy immediately instead of creating dozens of reveal observers.
+if(mobileLite||!("IntersectionObserver" in window)||reduced){items.forEach(function(item){item.classList.add("is-visible");});return;}
 var observer=new IntersectionObserver(function(entries){entries.forEach(function(entry){if(!entry.isIntersecting)return;var target=entry.target;observer.unobserve(target);if(target.classList.contains("kinetic-heading")){window.setTimeout(function(){wrapHeadingWords(target);target.classList.add("is-visible");},0);}else{target.classList.add("is-visible");}});},{threshold:.12,rootMargin:"0px 0px -28px 0px"});
 items.forEach(function(item){observer.observe(item);});
 var heroHead=document.querySelector(".hero .kinetic-heading"),heroCopy=document.querySelector(".hero-copy.reveal");
@@ -239,7 +240,8 @@ var progress=Math.max(0,Math.min(1,(index+Math.max(.08,Math.min(.92,ratio)))/sec
 path.setAttribute("stroke-dashoffset",String(1000*(1-progress)));
 }
 paint(0,0.08);
-if(reduced||!("IntersectionObserver" in window))return;
+// The scroll-following SVG is decorative; do not install seven section observers on mobile.
+if(mobileLite||reduced||!("IntersectionObserver" in window))return;
 var activeIndex=0;
 var observer=new IntersectionObserver(function(entries){
 entries.sort(function(a,b){return a.boundingClientRect.top-b.boundingClientRect.top;});
