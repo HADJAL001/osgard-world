@@ -41,6 +41,11 @@ for (const [path, source] of [['src/App.tsx', app], ['src/Development.tsx', deve
 }
 
 assert.ok(app.includes('href="/games/"'), 'Main navigation must expose the Games hub')
+assert.ok(sections.includes("['Entertainment', '/games/']"), 'Secondary/section navigation must open the Games hub')
+assert.ok(nginx.includes('location = /entertainment') && nginx.includes('return 301 /games/;'), 'Legacy Entertainment URLs must redirect to Games')
+assert.ok(nginx.includes('location ^~ /api/v1/') && nginx.includes('proxy_pass http://osgard-game-api:4317;'), 'Player API must reach its service rather than the SPA fallback')
+assert.ok(nginx.includes('limit_req zone=osgard_api burst=60 nodelay;') && nginx.includes('limit_req_status 429;'), 'Player API needs request-rate limits')
+
 assert.ok(app.includes("url: 'https://osgardbewworld.com/'"), 'Main ecosystem must use the supplied digital-development domain')
 assert.ok(sections.includes("href: '/games/time'"), 'Entertainment route must point to the current Time game URL')
 assert.ok(!sections.includes('/games/time-empire/'), 'Legacy Time route must not be used by the current catalog')
