@@ -132,6 +132,24 @@ export function validateEventBatch(body) {
   return { ok: true, events };
 }
 
+export function validateReferralIssuePayload(body) {
+  const input = body && typeof body === "object" && !Array.isArray(body) ? body : {};
+  const walletToken = typeof input.walletToken === "string" ? input.walletToken : "";
+  const gameId = cleanText(input.gameId, 40);
+  if (input.rewardConsent !== true) return { ok: false, status: 400, code: "REFERRAL_REWARD_CONSENT_REQUIRED" };
+  if (!/^rw_[a-f0-9]{64}$/.test(walletToken)) return { ok: false, status: 400, code: "REFERRAL_WALLET_TOKEN_INVALID" };
+  if (!GAME_IDS.has(gameId) || gameId === "unknown") return { ok: false, status: 400, code: "REFERRAL_GAME_ID_INVALID" };
+  return { ok: true, walletToken, gameId };
+}
+
+export function validateReferralWalletPayload(body) {
+  const input = body && typeof body === "object" && !Array.isArray(body) ? body : {};
+  const walletToken = typeof input.walletToken === "string" ? input.walletToken : "";
+  if (input.rewardConsent !== true) return { ok: false, status: 400, code: "REFERRAL_REWARD_CONSENT_REQUIRED" };
+  if (!/^rw_[a-f0-9]{64}$/.test(walletToken)) return { ok: false, status: 400, code: "REFERRAL_WALLET_TOKEN_INVALID" };
+  return { ok: true, walletToken };
+}
+
 export function paymentsModeAllowed(secretKey, enableLive = false) {
   if (typeof secretKey !== "string") return false;
   if (secretKey.startsWith("sk_test_")) return true;
