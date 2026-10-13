@@ -54,7 +54,7 @@ function PlayGateway({ locale, goto }: { locale: Locale, goto: (id: string) => v
       <p className="play-economy-eyebrow">OSGARD SELECT / BETWEEN WORLDS</p>
       <h3>{ru ? 'Раунд окончен. Выбирай, что дальше.' : 'Round complete. Choose what comes next.'}</h3>
       <p>{ru ? 'В игровом портале после сессии можно выбрать собственный сервис OSGARD, пригласить друга или открыть следующий игровой мир.' : 'After a session, choose an OSGARD service, invite a friend or open the next game world.'}</p>
-      <small>{ru ? 'За действие с приглашением доступно +50 локальных SHARDS не чаще раза в сутки на устройстве. Это не деньги. Публикация в соцсети не подтверждается автоматически.' : 'One invitation action per day on this device may earn +50 local SHARDS. They are not money. Social posts are not automatically verified.'}</small>
+      <small>{ru ? 'За действие с приглашением доступно +50 локальных SHARDS не чаще раза в сутки на устройстве. Это не деньги. Это не деньги. Важно: публикацию нельзя проверить автоматически.' : 'One invitation action per day on this device may earn +50 local SHARDS. They are not money. Social posts cannot be verified automatically by OSGARD.'}</small>
     </div>
     <div className="play-economy-actions">
       <a className="play-economy-primary" href="/games/?utm_source=osgard_world&amp;utm_medium=entertainment&amp;utm_campaign=between_worlds">{ru ? 'Выбрать игру и сервис ↗' : 'Choose a game and service ↗'}</a>
