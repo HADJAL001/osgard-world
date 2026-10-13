@@ -21,7 +21,7 @@ const next={
 const host=document.querySelector('#post-run-recommendations'),dialog=document.querySelector('#player-dialog');
 if(!host||!dialog)return;
 const make=(tag,cls,value)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(value!==undefined)n.textContent=value;return n};
-function clear(){host.replaceChildren();host.hidden=true;dialog.classList.remove('has-recommendations')}
+function clear(){document.dispatchEvent(new CustomEvent('osgard:dispose-postgame'));host.replaceChildren();host.hidden=true;dialog.classList.remove('has-recommendations')}
 function render(id){
  if(!games[id]||!Array.isArray(next[id]))return;
  host.replaceChildren();
@@ -294,6 +294,9 @@ function savePreferredService(id){if(!availableServiceIds.includes(id))return fa
 let memoryServicePreferences=null;
 let memoryServiceProgress={count:0,lastAt:0,lastGame:'',sessions:[],byGame:{}};
 const make=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n};
+function disposePostgameTree(node){if(!node)return;const dispose=node.__osgardDispose;if(typeof dispose==='function'){node.__osgardDispose=null;try{dispose()}catch{}}Array.from(node.children||[]).forEach(disposePostgameTree)}
+function disposeCurrentPostgame(){disposePostgameTree(root);disposePostgameTree(outsideRoot)}
+document.addEventListener('osgard:dispose-postgame',disposeCurrentPostgame);
 const selectConsentKey='osgard.games.analytics-consent.v1';
 const selectSessionKey='osgard.games.growth-session.v1';
 const selectAllowedEvents=new Set(['cross_promo_clicked','owned_promo_impression','owned_promo_intermission_skipped','owned_promo_preferences_saved','social_share_intent','social_reward_claimed','share_created','invite_link_prepared']);
@@ -611,7 +614,7 @@ function servicesShelf(gameId,showPromos,completedCount){
   if(ok)void sendSelectEvent('owned_promo_preferences_saved',gameId,'osgard-select:preferences:'+frequency.value+':'+selectedIds.length);
   const nextPreferences=readServicePreferences(),nextShow=shouldShowServicePromos(nextPreferences,completedCount);
   stopSpotlightWatcher();
-  const replacement=servicesShelf(gameId,nextShow,completedCount);section.replaceWith(replacement);
+  const replacement=servicesShelf(gameId,nextShow,completedCount);disposePostgameTree(section);section.replaceWith(replacement);
   const nextToggle=replacement.querySelector('.og-postgame-settings-toggle');if(nextToggle)nextToggle.click();
   const nextStatus=replacement.querySelector('.og-postgame-settings-status');
   if(nextStatus)nextStatus.textContent=ok?'Настройки сохранены на этом устройстве.':'Настройки действуют в этой вкладке; браузер не разрешил постоянное сохранение.';
@@ -624,7 +627,8 @@ function servicesShelf(gameId,showPromos,completedCount){
  // This remains consent-gated first-party measurement, not a third-party ad-network impression.
  if(typeof IntersectionObserver==='function'){
   const observed=new Set();
-  const observer=new IntersectionObserver(entries=>{
+  let cardObserver=null;
+ const observer=new IntersectionObserver(entries=>{
    entries.forEach(entry=>{
     const card=entry.target;
     if(entry.isIntersecting&&entry.intersectionRatio>=0.5&&!card.hidden&&!observed.has(card)){
@@ -642,8 +646,14 @@ function servicesShelf(gameId,showPromos,completedCount){
     }
    });
   },{threshold:[0,0.5,1]});
+  cardObserver=observer;
   cards.filter(card=>card.tagName==='A'&&!card.classList.contains('is-unavailable')).forEach(card=>observer.observe(card));
  }
+ section.__osgardDispose=()=>{
+  stopSpotlightWatcher();
+  if(cardObserver){cardObserver.disconnect();cardObserver=null}
+  cards.forEach(card=>{if(card.__osgardImpressionTimer){clearTimeout(card.__osgardImpressionTimer);delete card.__osgardImpressionTimer}});
+ };
  return section;
 }
 function rewardShelf(gameId){
@@ -707,6 +717,7 @@ function renderOutsideIntermission(detail){
  const id=detail&&detail.game;
  if(!outsideRoot||!titles[id]||!detail||detail.sessionStarted!==true||detail.reason!=='closed_by_user')return;
  const completedCount=recordCompletedRound(id,detail.sessionId),preferences=readServicePreferences();
+ disposePostgameTree(outsideRoot);
  outsideRoot.replaceChildren();
  const suite=make('section','og-postgame-suite og-postgame-outside-suite');
  const intro=make('div','og-postgame-outside-intro');
@@ -723,6 +734,7 @@ function renderOutsideIntermission(detail){
 }
 document.addEventListener('osgard:game-session-ended',event=>renderOutsideIntermission(event.detail));
 document.addEventListener('osgard:game-launching',()=>{
+ disposeCurrentPostgame();
  if(!outsideRoot)return;
  outsideRoot.replaceChildren();
  outsideRoot.hidden=true;
@@ -730,7 +742,7 @@ document.addEventListener('osgard:game-launching',()=>{
 function renderOsgardSelect(gameId,sessionId){
  const id=gameId;if(!titles[id])return;
  const completedCount=recordCompletedRound(id,sessionId),preferences=readServicePreferences();
- root.querySelector('.og-postgame-suite')?.remove();
+ const previousSuite=root.querySelector('.og-postgame-suite');if(previousSuite){disposePostgameTree(previousSuite);previousSuite.remove()}
  const suite=make('section','og-postgame-suite');suite.append(servicesShelf(id,shouldShowServicePromos(preferences,completedCount),completedCount),rewardShelf(id));root.append(suite);
 }
 document.addEventListener('osgard:game-completed',event=>renderOsgardSelect(event.detail&&event.detail.game,event.detail&&event.detail.sessionId));
