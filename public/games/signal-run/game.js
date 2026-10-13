@@ -92,7 +92,7 @@ $('share').addEventListener('click',async()=>{
     status.textContent='ССЫЛКА-ВЫЗОВ СКОПИРОВАНА. Копирование само по себе не считается репостом и не даёт SHARDS. Опубликуй приглашение через соцсеть, затем вернись и подтверди действие в каталоге.';
    }else{
     pendingShareReward=method;if(claimShare)claimShare.hidden=false;
-    status.textContent=(method==='web-share-image'?'КАРТОЧКА РЕЗУЛЬТАТА И ВЫЗОВ ПЕРЕДАНЫ В МЕНЮ ОТПРАВКИ':'ВЫЗОВ ПЕРЕДАН В МЕНЮ ОТПРАВКИ')+'. Если действительно опубликовал приглашение, подтверди ниже для +50 SHARDS. Публикация не проверяется автоматически.';
+    status.textContent=(method==='web-share-image'?'КАРТОЧКА РЕЗУЛЬТАТА И ВЫЗОВ ПЕРЕДАНЫ В МЕНЮ ОТПРАВКИ':'ВЫЗОВ ПЕРЕДАН В МЕНЮ ОТПРАВКИ')+'. Репост сам по себе не даёт SHARDS. Для +50 пригласи друга через OSGARD SELECT; сервер проверит его игровую сессию от 60 секунд.';
    }
   }
  }catch(error){pendingShareReward='';if(claimShare)claimShare.hidden=true;if(error&&error.name!=='AbortError')status.textContent='НЕ УДАЛОСЬ ОТПРАВИТЬ ВЫЗОВ. Награда не начислена.';else status.textContent='ОТПРАВКА ОТМЕНЕНА. НАГРАДА НЕ НАЧИСЛЕНА.'}
