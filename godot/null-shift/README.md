@@ -192,3 +192,11 @@ This is procedural real-time 3D geometry for the current GL Compatibility/Web ex
 ### Visual upgrade: volumetric tracers
 
 Weapon fire and other transient beams use two crossed triangle ribbons plus a crisp center line. This avoids relying on 1-pixel line rasterization on different desktop/mobile GPUs. The effect reuses the existing bounded mesh pool; headless runtime smoke verifies that the actual mesh contains both surfaces; the static source contract verifies the triangle-ribbon and line primitive declarations.
+
+
+## Release 2.2 — phase-dash afterimages and tracer fade
+
+- The dash now leaves short volumetric afterimage ribbons sampled from real `CharacterBody3D` positions during physics ticks. Their cyan/violet colour follows the current phase state, uses the existing bounded beam pool, and is counted in diagnostics; the effect does not clone character rigs or allocate an unbounded stream of nodes.
+- All pooled tracer beams now fade with their remaining lifetime and reset their transparency before reuse. The same fade applies to weapon tracers, enemy telegraphs and dash trails, reducing harsh cut-offs and improving depth/readability.
+- Runtime smoke verifies dash movement causes actual trail emission, beam opacity changes over time, expired tracers reset, and pooled meshes are reused without growing the pool.
+- This is a native Godot scene/gameplay change tested by the official Godot 4.7.2 headless runtime/export pipeline; the browser Canvas/WebGL prototype remains untouched.

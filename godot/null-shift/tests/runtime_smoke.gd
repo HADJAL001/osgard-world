@@ -472,6 +472,7 @@ func _run_smoke() -> void:
 	await physics_frame
 	game.mobile_actions["right"] = true
 	var evades_before: int = game.dash_evasions
+	var dash_trails_before: int = game.dash_trails_emitted
 	game._set_mobile_action("dash", true)
 	if not _expect(game.dash_timer >= game.DASH_DURATION - 0.001 and game.dash_cooldown >= game.DASH_COOLDOWN - 0.001 and game.dash_direction.is_equal_approx(Vector3.RIGHT), "touch dash must start in the held movement direction and start its cooldown"):
 		return
@@ -483,7 +484,10 @@ func _run_smoke() -> void:
 	# Exercise the real CharacterBody3D from the active physics loop, not a direct method call.
 	await physics_frame
 	await physics_frame
+	await physics_frame
 	if not _expect(game.player.global_position.x > dash_move_origin.x + 0.12, "dash must move the real CharacterBody3D during physics updates"):
+		return
+	if not _expect(game.dash_trails_emitted > dash_trails_before and not game.beam_effects.is_empty(), "live dash physics must emit pooled 3D afterimage ribbons behind the operator"):
 		return
 	game.damage_cooldown = 0.0
 	game.null_shift_timer = 0.0
@@ -511,19 +515,24 @@ func _run_smoke() -> void:
 	game._update_hud()
 	game._update_effect_expiry(1.0)
 
-	print("RUNTIME_STAGE: bounded transient beam/ring pools")
+	print("RUNTIME_STAGE: bounded transient beam/ring pools and smooth tracer fade")
+	game._update_effect_expiry(1.0)
+	var beam_pool_count_before: int = game.beam_pool.size()
 	game._spawn_beam(Vector3(-1.0, 1.0, 0.0), Vector3(1.0, 1.0, 0.0), game.materials["cyan"], 0.10)
-	if not _expect(game.beam_pool.size() == 1 and game.beam_effects.size() == 1 and game.beam_pool[0].visible, "beam firing must activate one pooled mesh"):
+	if not _expect(game.beam_pool.size() == max(1, beam_pool_count_before) and game.beam_effects.size() == 1 and (game.beam_effects[0]["node"] as MeshInstance3D).visible, "beam firing must activate an existing or newly pooled mesh without unbounded growth"):
 		return
-	var pooled_beam: MeshInstance3D = game.beam_pool[0]
+	var pooled_beam: MeshInstance3D = game.beam_effects[0]["node"] as MeshInstance3D
 	var pooled_beam_mesh: ImmediateMesh = pooled_beam.mesh as ImmediateMesh
 	if not _expect(is_instance_valid(pooled_beam_mesh) and pooled_beam_mesh.get_surface_count() == 2, "pooled beam must contain a crossed triangle-ribbon shell and a crisp center line"):
 		return
-	game._update_effect_expiry(0.11)
-	if not _expect(game.beam_effects.is_empty() and not pooled_beam.visible, "expired beam must return hidden to the pool"):
+	game._update_effect_expiry(0.05)
+	if not _expect(pooled_beam.visible and pooled_beam.transparency > 0.35 and pooled_beam.transparency < 0.65, "beam opacity must fade progressively with remaining lifetime"):
+		return
+	game._update_effect_expiry(0.06)
+	if not _expect(game.beam_effects.is_empty() and not pooled_beam.visible and is_zero_approx(pooled_beam.transparency), "expired beam must return hidden and reset transparency in the pool"):
 		return
 	game._spawn_beam(Vector3(-2.0, 1.0, 0.0), Vector3(2.0, 1.0, 0.0), game.materials["amber"], 0.10)
-	if not _expect(game.beam_pool.size() == 1 and game.beam_pool[0] == pooled_beam, "successive beams must reuse the same mesh node"):
+	if not _expect(game.beam_pool.size() == max(1, beam_pool_count_before) and game.beam_effects.size() == 1 and game.beam_effects[0]["node"] == pooled_beam, "successive beams must reuse the same mesh node without growing the pool"):
 		return
 	game._update_effect_expiry(0.11)
 	var ring_pool_count_before: int = game.ring_pool.size()

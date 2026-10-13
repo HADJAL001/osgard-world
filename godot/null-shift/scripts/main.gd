@@ -10,6 +10,8 @@ const MAX_SPARK_POOL := 8
 const DASH_DURATION := 0.24
 const DASH_COOLDOWN := 1.65
 const DASH_SPEED_MULTIPLIER := 3.05
+const DASH_TRAIL_INTERVAL := 0.042
+const DASH_TRAIL_LIFETIME := 0.18
 const PULSE_LANE_DISRUPTION_SECONDS := 1.85
 const PULSE_LANE_DISRUPTION_RANGE := 1.75
 
@@ -85,6 +87,9 @@ var dash_cooldown := 0.0
 var dash_direction := Vector3.FORWARD
 var dash_evasions := 0
 var dash_evasion_registered := false
+var dash_trail_clock := 0.0
+var dash_trail_last_position := Vector3.ZERO
+var dash_trails_emitted := 0
 var pulse_cooldown := 0.0
 var fire_cooldown := 0.0
 var damage_cooldown := 0.0
@@ -234,6 +239,9 @@ func _reset_runtime_collections() -> void:
 	phase_lanes = phase_lanes.duplicate()
 	phase_lanes.clear()
 	phase_lane_disruptions = 0
+	dash_trail_clock = 0.0
+	dash_trail_last_position = Vector3.ZERO
+	dash_trails_emitted = 0
 	phase_lane_labels = phase_lane_labels.duplicate()
 	phase_lane_labels.clear()
 	effects = effects.duplicate()
@@ -324,6 +332,7 @@ func _physics_process(delta: float) -> void:
 	if null_shift_timer == 0.0 and instability > 0.0:
 		instability = maxf(0.0, instability - dt * 3.0)
 	_move_player(dt)
+	_update_dash_trail(dt)
 	_update_guards(dt)
 	_check_phase_lane_damage()
 	# Keep the evade window open through movement, hostile attacks and lane damage for this physics tick.
@@ -1262,6 +1271,8 @@ func _try_dash() -> void:
 		dash_direction = Vector3.FORWARD
 	dash_timer = DASH_DURATION
 	dash_cooldown = DASH_COOLDOWN
+	dash_trail_clock = 0.0
+	dash_trail_last_position = player.global_position
 	dash_evasion_registered = false
 	var dash_material: Material = materials["violet"] if null_shift_timer > 0.0 else materials["cyan"]
 	var feet: Vector3 = player.global_position + Vector3.UP * 0.12
@@ -1272,6 +1283,30 @@ func _try_dash() -> void:
 	if is_instance_valid(dash_status_label):
 		dash_status_label.text = "РЫВОК · УКЛОНЕНИЕ АКТИВНО"
 		dash_status_label.add_theme_color_override("font_color", Color(0.38, 1.0, 0.86))
+
+func _update_dash_trail(delta: float) -> void:
+	# Sample the real CharacterBody3D path in physics time and reuse the bounded ribbon pool.
+	if not is_instance_valid(player):
+		return
+	if dash_timer <= 0.0:
+		dash_trail_clock = 0.0
+		dash_trail_last_position = player.global_position
+		return
+	dash_trail_clock += maxf(0.0, delta)
+	if dash_trail_clock < DASH_TRAIL_INTERVAL:
+		return
+	dash_trail_clock = fmod(dash_trail_clock, DASH_TRAIL_INTERVAL)
+	var current_position: Vector3 = player.global_position
+	var previous_position: Vector3 = dash_trail_last_position
+	dash_trail_last_position = current_position
+	if previous_position.distance_to(current_position) < 0.06:
+		return
+	var offset := Vector3.UP * 0.42
+	var trail_material: Material = materials["violet"] if null_shift_timer > 0.0 else materials["cyan"]
+	var active_beams_before: int = beam_effects.size()
+	_spawn_beam(previous_position + offset, current_position + offset, trail_material, DASH_TRAIL_LIFETIME)
+	if beam_effects.size() > active_beams_before:
+		dash_trails_emitted += 1
 
 func _update_player_aim() -> void:
 	if not is_instance_valid(player) or not is_instance_valid(camera):
@@ -3191,10 +3226,10 @@ func _update_hud() -> void:
 		fps_p95_ms = p95
 		var draw_calls := int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
 		var profile: String = "PERFORMANCE" if performance_quality else ("BALANCED" if not cinematic_quality else ("AUTO-OPTIMIZED" if adaptive_quality_degraded else "CINEMATIC"))
-		diagnostics_label.text = "LIVE DIAGNOSTICS\nFPS        %02d\nFRAME P95  %.1f ms\nFRAME NOW  %.1f ms\nDRAW CALLS %d\nFX ACTIVE  %02d\nFX POOLS   %02d BEAM / %02d RING / %02d SPARK\nFX DROPPED %d\nGUARDS     %d\nDEVICES    %d\nLANE SUPPRESS %03d\nDASH EVADES %d\nDASH CD    %.1f s\nPROFILE    %s" % [
+		diagnostics_label.text = "LIVE DIAGNOSTICS\nFPS        %02d\nFRAME P95  %.1f ms\nFRAME NOW  %.1f ms\nDRAW CALLS %d\nFX ACTIVE  %02d\nFX POOLS   %02d BEAM / %02d RING / %02d SPARK\nFX DROPPED %d\nDASH TRAILS %04d\nGUARDS     %d\nDEVICES    %d\nLANE SUPPRESS %03d\nDASH EVADES %d\nDASH CD    %.1f s\nPROFILE    %s" % [
 			Engine.get_frames_per_second(), fps_p95_ms, current_frame_ms, draw_calls,
 			effects.size(), beam_pool.size(), ring_pool.size(), spark_pool.size(), effect_pool_exhaustions,
-			guards.size(), _living_device_count(), phase_lane_disruptions, dash_evasions, dash_cooldown, profile
+			dash_trails_emitted, guards.size(), _living_device_count(), phase_lane_disruptions, dash_evasions, dash_cooldown, profile
 		]
 
 func _living_device_count() -> int:
@@ -3331,13 +3366,17 @@ func _update_effect_expiry(delta: float) -> void:
 	for index in range(beam_effects.size() - 1, -1, -1):
 		var state: Dictionary = beam_effects[index]
 		var instance: MeshInstance3D = state["node"]
+		var duration: float = maxf(0.001, float(state.get("duration", 0.18)))
 		var remaining: float = maxf(0.0, float(state["remaining"]) - dt)
 		if remaining <= 0.0 or not is_instance_valid(instance):
 			if is_instance_valid(instance):
 				instance.visible = false
+				instance.transparency = 0.0
 			effects.erase(instance)
 			beam_effects.remove_at(index)
 		else:
+			var progress: float = clampf(1.0 - remaining / duration, 0.0, 1.0)
+			instance.transparency = clampf(progress * 0.9, 0.0, 0.9)
 			state["remaining"] = remaining
 			beam_effects[index] = state
 	for index in range(ring_effects.size() - 1, -1, -1):
@@ -3432,6 +3471,7 @@ func _spawn_beam(from: Vector3, to: Vector3, material: Material, lifetime: float
 	line_mesh.surface_add_vertex(from)
 	line_mesh.surface_add_vertex(to)
 	line_mesh.surface_end()
+	instance.transparency = 0.0
 	instance.visible = true
 	var duration: float = maxf(0.025, lifetime)
 	beam_effects.append({"node": instance, "remaining": duration, "duration": duration})

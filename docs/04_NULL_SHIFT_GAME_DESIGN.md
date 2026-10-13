@@ -271,3 +271,11 @@ The Godot build tracks a persistent UTC daily-clear streak, longest streak and l
 - The lighting cue is driven by the same hazard state that controls damage and HUD status, keeping visual telegraphing synchronized with the simulation. The light is disabled in the Performance preset and during adaptive quality degradation.
 - Runtime smoke validates warning/active/disrupted light colors, energy, spatial tracking, expiry behavior and quality-mode suppression. Static Godot smoke also requires the light-state wiring.
 - This adds stateful lighting to the real Godot scene, not just a browser overlay. Frame-rate and shadow behavior still need measurement on physical target devices.
+
+
+## Release 2.2 — native Godot movement trails
+
+- Added a physics-sampled dash afterimage trail using the existing bounded crossed-ribbon beam pool. Trail colour follows the active NULL SHIFT phase, and emitted trail count is available in live diagnostics. This uses actual player-body positions and does not allocate character clones.
+- Applied a progressive transparency fade to pooled beams based on normalized remaining lifetime. Transparency is reset on pool expiry/reuse, so weapon tracers, guard telegraphs and dash afterimages fade instead of abruptly popping out.
+- Godot runtime smoke now checks that a real touch/physics dash emits afterimages and that pooled beam opacity advances through a fade, returns to zero, and reuses the same mesh.
+- Godot remains the engine-backed 3D branch; GL Compatibility is retained for Web/mobile export. This is not a claim of native 8K output.
