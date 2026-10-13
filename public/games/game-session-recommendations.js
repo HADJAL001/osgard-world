@@ -228,6 +228,7 @@ function addPostSessionActions(gameId){
  });
 }
 document.addEventListener('osgard:game-completed',event=>{const id=event.detail&&event.detail.game;addPostSessionActions(id)});
+document.addEventListener('osgard:game-session-ended',event=>{if(event.detail&&event.detail.sessionStarted===true)addPostSessionActions(event.detail.game)});
 document.addEventListener('change',event=>{
  const target=event.target;
  if(target&&target.id==='analytics-toggle')handleConsentToggle();
