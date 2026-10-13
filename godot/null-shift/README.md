@@ -163,3 +163,11 @@ The deployment workflow downloads official Godot 4.7.2 and matching web template
 - Added a bounded, engine-native GPUParticles3D field with tiny emissive motes drifting through the arena. A four-point alpha ramp fades each mote in/out smoothly; the field uses no external textures or runtime file dependencies and is placed inside an explicit visibility AABB.
 - Particle density follows the existing graphics selector: Cinematic uses 72 particles, Balanced uses 32 slower particles, and Performance suspends emission with an 8-particle budget ready for a mode switch. The adaptive cinematic governor turns the field off under sustained frame-time pressure and restores full density after stable pacing.
 - Headless smoke now asserts emitter instantiation, cinematic density, automatic degradation/recovery and all three manual quality modes. This is subtle environmental depth, not volumetric ray-marched fog or a native 8K claim.
+
+
+## Release 2.0 — reusable impact-spark pool
+
+- Confirmed weapon hits and incoming damage now reuse a bounded pool of up to 8 `CPUParticles3D` emitters. The game no longer allocates a new particle node and a scene timer for every hit; effects return to the pool through the frame-delta lifetime manager.
+- Spark density follows the active quality state: 14 particles in Cinematic, 9 in Balanced, and 5 in Performance/auto-degraded mode. Pool overflow is explicitly counted as a dropped cosmetic effect and never blocks damage, collisions or mission state.
+- Live diagnostics now list the beam, ring and spark pool sizes. Headless Godot runtime smoke tests cover emitter activation, timed expiry, node identity reuse, the hard pool limit and per-profile particle budgets.
+- This is a real allocation/performance improvement in the Godot runtime. It does not claim native 8K output; the export remains constrained by browser and device GPU capabilities.
