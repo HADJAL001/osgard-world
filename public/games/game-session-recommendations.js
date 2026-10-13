@@ -21,7 +21,7 @@ const next={
 const host=document.querySelector('#post-run-recommendations'),dialog=document.querySelector('#player-dialog');
 if(!host||!dialog)return;
 const make=(tag,cls,value)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(value!==undefined)n.textContent=value;return n};
-function clear(){document.dispatchEvent(new CustomEvent('osgard:dispose-postgame'));host.replaceChildren();host.hidden=true;dialog.classList.remove('has-recommendations')}
+function clear(){if(typeof document.dispatchEvent==='function')document.dispatchEvent(new CustomEvent('osgard:dispose-postgame'));host.replaceChildren();host.hidden=true;dialog.classList.remove('has-recommendations')}
 function render(id){
  if(!games[id]||!Array.isArray(next[id]))return;
  host.replaceChildren();
