@@ -90,11 +90,20 @@ assert.equal(chooseSpotlightService(['myosa','projects','superday'],'superday',8
 assert.equal(chooseSpotlightService([],'',4,'each'),'',
   'Rotation must handle an empty user-selected service list');
 
-assert.ok(source.includes("frequency:'each'") &&
+assert.ok(source.includes("frequency:'every3'") &&
   source.includes("['each','После каждой завершённой игры']") &&
   source.includes("['every3','Раз в три завершённых раунда']") &&
   source.includes("['off','Не показывать подборку']"),
-  'Post-game promos must default to every round and remain user-controllable');
+  'Post-game promos must default to every three rounds and remain user-controllable');
+const cadenceGateSource = source.match(/function shouldShowServicePromos\(preferences,completedCount\)\{\n[\s\S]*?\n\}/);
+assert.ok(cadenceGateSource, 'Promotion cadence gate must remain independently testable');
+const shouldShowServicePromos = vm.runInNewContext('(' + cadenceGateSource[0] + ')');
+assert.equal(shouldShowServicePromos({frequency:'every3'},1), false, 'Fresh users should not see an owned-service promotion after round one');
+assert.equal(shouldShowServicePromos({frequency:'every3'},2), false, 'Fresh users should not see an owned-service promotion after round two');
+assert.equal(shouldShowServicePromos({frequency:'every3'},3), true, 'Fresh users should see contextual owned-service promotion after round three');
+assert.equal(shouldShowServicePromos({frequency:'every3'},6), true, 'Every-third-round cadence should repeat at round six');
+assert.equal(shouldShowServicePromos({frequency:'each'},1), true, 'Explicit every-round preference must be honored');
+assert.equal(shouldShowServicePromos({frequency:'off'},3), false, 'An explicit off preference must suppress owned-service promotions');
 assert.ok(source.includes('grid.hidden=true;filters.hidden=true') &&
   source.includes("collapseToggle.textContent=showPromos?'Выбрать из '+availableServiceIds.length+' сервисов'"),
   'The service directory must be compact by default and open only when requested');

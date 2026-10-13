@@ -322,7 +322,7 @@ assert.ok(lifecycle.includes("'afterimage-run':{title:'AFTERIMAGE//RUN',url:'/ga
 const recommendations=readFileSync(resolve(root,'game-session-recommendations.js'),'utf8')
 assert.ok(recommendations.includes("'afterimage-run':{title:'AFTERIMAGE//RUN',subtitle:'Ежедневный sci-fi speedrun',href:'/games/afterimage-run/'}")&&recommendations.includes("'afterimage-run':['signal-run','cascade-lab']")&&recommendations.includes("'afterimage-run':'AFTERIMAGE//RUN'"),'AFTERIMAGE must participate in postgame recommendations, referral share, and OSGARD SELECT')
 assert.ok(recommendations.includes('osgard-aftergame-intermission')&&recommendations.includes('og-postgame-preferences')&&recommendations.includes('Настроить показ')&&recommendations.includes('Автозапуска нет.'),'The existing optional between-game OSGARD SELECT must remain available, user-configurable and must not autoplay')
-assert.ok(recommendations.includes("const frequencyValues=['each','every3','off']")&&recommendations.includes("const fallback={frequency:'each',selected:availableServiceIds.slice()}"),'OSGARD SELECT should default to every game and allow frequency preferences')
+assert.ok(recommendations.includes("const frequencyValues=['each','every3','off']")&&recommendations.includes("const fallback={frequency:'every3',selected:availableServiceIds.slice()}"),'OSGARD SELECT should default to every three completed rounds while allowing player-selected frequency preferences')
 for(const domain of ['marcosa.club','osgardbewworld.com','o2system.art','senjorio.com','superday.run','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio']) assert.ok(recommendations.includes(domain),'Owned-service intermission missing '+domain)
 assert.ok(recommendations.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN'")&&recommendations.includes('доступность домена не была подтверждена проверкой')&&recommendations.includes("services.filter(item=>item[7]!==false)"),'GARD VPN must be selectable while disclosing that availability has not been independently verified')
 assert.ok(civic.includes('id="cc-game-root"')&&civic.includes('id="cc-map"')&&civic.includes('id="cc-status"'),'CIVIC CASCADE playable entry point or diagnostics are missing')
@@ -463,7 +463,36 @@ const mockHandlers={}
 const mockHead=mockNode()
 const mockDocument={head:mockHead,querySelector(selector){return selector==='#post-run-recommendations'?mockHost:selector==='#osgard-aftergame-intermission'?mockOutside:selector==='#player-dialog'?mockDialog:null},createElement(){return mockNode()},addEventListener(name,handler){(mockHandlers[name]??=[]).push(handler)},dispatch(name,event={}){const handlers=mockHandlers[name]||[];assert.ok(handlers.length,'Missing recommendation/growth lifecycle listener: '+name);handlers.forEach(handler=>handler(event))}}
 const mockStorage=()=>{const values=new Map();return{getItem(key){return values.has(key)?values.get(key):null},setItem(key,value){values.set(key,String(value))},removeItem(key){values.delete(key)}}}
+const makeCadenceHarness=storage=>{
+ const host=mockNode();host.hidden=true
+ const outside=mockNode();outside.hidden=true
+ const classes=new Set()
+ const dialog={classList:{add(name){classes.add(name)},remove(name){classes.delete(name)},contains(name){return classes.has(name)}}}
+ const handlers={},head=mockNode()
+ const doc={head,querySelector(selector){return selector==='#post-run-recommendations'?host:selector==='#osgard-aftergame-intermission'?outside:selector==='#player-dialog'?dialog:null},createElement(){return mockNode()},addEventListener(name,handler){(handlers[name]??=[]).push(handler)},dispatch(name,event={}){const listeners=handlers[name]||[];assert.ok(listeners.length,'Missing cadence listener: '+name);listeners.forEach(handler=>handler(event))}}
+ new Function('document','window','location','localStorage','sessionStorage',recommendationScript)(doc,{}, {search:'',origin:'https://osgard.world',pathname:'/games/'},storage,mockStorage())
+ return {doc,host}
+}
+const defaultCadence=makeCadenceHarness(mockStorage())
+defaultCadence.doc.dispatch('osgard:game-completed',{detail:{game:'swarm',sessionId:'session_default_cadence_1'}})
+const defaultSuite=defaultCadence.host.children.find(node=>node.className==='og-postgame-suite')
+const defaultServices=defaultSuite?.children.find(node=>node.className==='og-postgame-services')
+const defaultSettings=defaultServices?.children.find(node=>node.className==='og-postgame-preferences')
+const defaultFrequency=defaultSettings?.children.find(node=>node.className==='og-postgame-frequency-label')
+assert.equal(defaultFrequency?.children[0].value,'every3','Fresh players should get the every-three-round default')
+assert.equal(defaultServices?.children.find(node=>node.className==='og-postgame-spotlight'),undefined,'Owned-service spotlight must not display after the first completed round by default')
+assert.ok(defaultServices?.children.find(node=>node.className==='og-postgame-service-empty')?.textContent.includes('раз в три'),'The first-round status must explain the configured cadence')
+const thirdRoundStorage=mockStorage()
+thirdRoundStorage.setItem('osgard.games.postgame-service-progress.v1',JSON.stringify({count:2,lastAt:0,lastGame:'',sessions:[],byGame:{}}))
+const thirdRound=makeCadenceHarness(thirdRoundStorage)
+thirdRound.doc.dispatch('osgard:game-completed',{detail:{game:'swarm',sessionId:'session_default_cadence_3'}})
+const thirdSuite=thirdRound.host.children.find(node=>node.className==='og-postgame-suite')
+const thirdServices=thirdSuite?.children.find(node=>node.className==='og-postgame-services')
+assert.equal(JSON.parse(thirdRoundStorage.getItem('osgard.games.postgame-service-progress.v1')).count,3,'Completed sessions must increment the promotion cadence once')
+assert.ok(thirdServices?.children.find(node=>node.className==='og-postgame-spotlight'),'The contextual service spotlight should appear on the third completed round')
+
 const mockLocalStorage=mockStorage(),mockSessionStorage=mockStorage()
+mockLocalStorage.setItem('osgard.games.postgame-service-preferences.v1',JSON.stringify({frequency:'each',selected:['projects','vanguard','o2-system','osgard-business','senjorio','superday','myosa','gardvpn','marcosa','gold-glamour']}))
 new Function('document','window','location','localStorage','sessionStorage',recommendationScript)(mockDocument,{}, {search:'',origin:'https://osgard.world',pathname:'/games/'},mockLocalStorage,mockSessionStorage)
 const firstSessionId='session_swarm_qa_1000'
 mockDocument.dispatch('osgard:game-completed',{detail:{game:'swarm',sessionId:firstSessionId}})
@@ -495,7 +524,7 @@ const unavailableServiceChoice=servicePreferenceInputs.find(input=>input.dataset
 assert.ok(unavailableServiceChoice&&!unavailableServiceChoice.disabled,'GARD VPN is selectable with a transparent unverified-availability caveat')
 const frequencyField=postGamePreferences.children.find(node=>node.className==='og-postgame-frequency-label');
 assert.deepEqual(frequencyField.children[0].children.map(option=>option.value),['each','every3','off'],'Players must choose every round, every three rounds, or no promo')
-assert.equal(frequencyField.children[0].value,'each','Service intermission is enabled after every completed game by default')
+assert.equal(frequencyField.children[0].value,'each','The main UI test fixture explicitly opts into each-round promotions')
 assert.ok(mockSuite.children[1]&&mockSuite.children[1].className==='og-postgame-reward','Social-share reward must remain available with or without promotions')
 
 const servicesSection=mockSuite.children.find(node=>node.className==='og-postgame-services')
@@ -835,7 +864,7 @@ assert.ok(referralApiSource.includes("source LIKE 'osgard-select:%'")&&referralA
 assert.ok(referralAdminSource.includes('id="owned-promo-body"')&&referralAdminSource.includes('renderOwnedPromo(overview.ownedPromoByService || [])')&&referralAdminSource.includes('CTR по появлениям'),'Protected commerce admin must report own-service exposure, clicks and CTR');
 assert.ok(referralAdminSource.includes('id="analytics-social-share-intents"')&&referralAdminSource.includes('id="analytics-social-reward-claims"')&&referralAdminSource.includes('funnel.socialShareIntents')&&referralAdminSource.includes('funnel.socialRewardClaims'),'Protected commerce dashboard must distinguish social share intents from self-reported reward claims')
 
-assert.ok(recommendationScript.includes("const servicePreferencesKey='osgard.games.postgame-service-preferences.v1'")&&recommendationScript.includes("frequency:'each'")&&recommendationScript.includes("frequency==='every3'")&&recommendationScript.includes("frequency==='off'"),'Service preferences must persist promo frequency choice')
+assert.ok(recommendationScript.includes("const servicePreferencesKey='osgard.games.postgame-service-preferences.v1'")&&recommendationScript.includes("frequency:'every3'")&&recommendationScript.includes("frequency==='every3'")&&recommendationScript.includes("frequency==='off'")&&recommendationScript.includes("const frequencyValues=['each','every3','off']"),'Service preferences must default to every three rounds and preserve explicit each/every-three/off choices')
 assert.ok(recommendationScript.includes('availableServiceIds.filter(id=>Array.isArray(value.selected)&&value.selected.includes(id))')&&recommendationScript.includes('preferences.selected.includes(id)'), 'Only services selected by the player should be actively promoted')
 assert.ok(recommendationScript.includes("localStorage.setItem(serviceProgressKey,JSON.stringify(next))")&&recommendationScript.includes('completedCount%3===0'),'Promo caps must count completed game sessions, not page visits')
 assert.ok(!recommendationScript.includes("sendEvent('partner_impression'"),'Do not synthesize sponsor impressions without an ad measurement signal')
