@@ -685,6 +685,7 @@ function rewardShelf(gameId){
       raw.balance=Math.max(0,current.balance-item.cost);raw.lastRewardDay=current.day;raw.lastSource='cosmetic-unlock:'+item.id;raw.updatedAt=new Date().toISOString();
       localStorage.setItem(walletKey,JSON.stringify(raw));
       unlocked.add(item.id);localStorage.setItem(unlockKey,JSON.stringify(Array.from(unlocked)));
+      void sendSelectEvent('shards_cosmetic_unlocked',gameId,'cosmetic-unlock:'+item.id+':'+item.cost);
      }
      localStorage.setItem(equippedKey,item.id);
      balance.textContent='OSGARD SHARDS · '+getWallet().balance;
