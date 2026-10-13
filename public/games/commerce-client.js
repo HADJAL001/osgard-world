@@ -90,16 +90,44 @@
       if (button) button.disabled = false;
     }
   }
+  const ANALYTICS_SESSION_KEY = 'osgard.games.analytics-session.v1';
+  const makeEventId = () => 'evt_' + (globalThis.crypto?.randomUUID?.() || (Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 15))).replace(/[^a-zA-Z0-9_-]/g, '');
+  function analyticsSessionId() {
+    try {
+      let value = sessionStorage.getItem(ANALYTICS_SESSION_KEY) || '';
+      if (!/^[a-zA-Z0-9_-]{12,96}$/.test(value)) {
+        value = 'session_' + (globalThis.crypto?.randomUUID?.() || (Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 15))).replace(/[^a-zA-Z0-9_-]/g, '');
+        sessionStorage.setItem(ANALYTICS_SESSION_KEY, value);
+      }
+      return value;
+    } catch {
+      return 'session_' + (Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 15)).replace(/[^a-zA-Z0-9_-]/g, '');
+    }
+  }
+  function analyticsAllowed() {
+    try { return localStorage.getItem('osgard.games.analytics-consent.v1') === 'yes'; } catch { return false; }
+  }
   function sendAnalytics(name, gameId, source = 'contact-form') {
-    let allowed = false;
-    try { allowed = localStorage.getItem('osgard.games.analytics-consent.v1') === 'yes'; } catch {}
-    if (!allowed) return;
-    const sessionId = 'session_' + (globalThis.crypto?.randomUUID?.() || (Date.now().toString(36) + Math.random().toString(36).slice(2, 15))).replace(/[^a-zA-Z0-9_-]/g, '');
+    if (!analyticsAllowed()) return;
+    const eventId = makeEventId();
+    const sessionId = analyticsSessionId();
     void apiBase().then((base) => fetch(base + '/v1/events', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ consent: true, events: [{ name, sessionId, gameId, source: clean(source, 80), path: location.pathname, durationSeconds: 0 }] }),
+      body: JSON.stringify({ consent: true, events: [{ eventId, name, sessionId, gameId, source: clean(source, 80), path: location.pathname, durationSeconds: 0 }] }),
     })).catch(() => {});
+  }
+  let pageViewTracked = false;
+  function trackCurrentPageView() {
+    if (pageViewTracked || !analyticsAllowed()) return;
+    const path = location.pathname.replace(/\/+$/, '') || '/';
+    const eventName = path === '/games' ? 'catalog_viewed'
+      : path === '/games/premium' ? 'premium_page_view'
+      : path === '/games/partners' ? 'partners_page_viewed'
+      : '';
+    if (!eventName) return;
+    pageViewTracked = true;
+    sendAnalytics(eventName, 'unknown', 'page-view');
   }
   document.addEventListener('click', (event) => {
     const target = event.target;
@@ -114,6 +142,8 @@
     const destination = clean(url.searchParams.get('utm_content'), 40) || 'project';
     sendAnalytics('cross_promo_clicked', gameId || 'unknown', 'cross-promo:' + destination);
   }, true);
+  document.querySelector('#analytics-toggle')?.addEventListener('click', () => queueMicrotask(trackCurrentPageView));
+  trackCurrentPageView();
   document.addEventListener('submit', (event) => {
     const form = event.target;
     if (!(form instanceof HTMLFormElement) || !['project-form', 'campaign-form'].includes(form.id)) return;

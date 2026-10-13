@@ -26,6 +26,8 @@ export const PRODUCT_DEFS = Object.freeze([
 
 export const ALLOWED_EVENTS = new Set([
   "premium_page_view",
+  "catalog_viewed",
+  "partners_page_viewed",
   "game_session_started",
   "checkout_started",
   "checkout_paid",
@@ -100,6 +102,11 @@ export function validateEventBatch(body) {
     const event = value && typeof value === "object" && !Array.isArray(value) ? value : {};
     const name = cleanText(event.name, 60);
     const sessionId = cleanText(event.sessionId, 96);
+    const rawEventId = event.eventId;
+    const eventId = typeof rawEventId === "string" ? cleanText(rawEventId, 96) : "";
+    if (rawEventId !== undefined && (!eventId || !/^[a-zA-Z0-9_-]{12,96}$/.test(eventId))) {
+      return { ok: false, status: 400, code: "EVENT_ID_INVALID" };
+    }
     const gameId = cleanText(event.gameId, 40) || "unknown";
     const source = cleanText(event.source, 80);
     const path = cleanText(event.path, 160);
@@ -111,6 +118,7 @@ export function validateEventBatch(body) {
       return { ok: false, status: 400, code: "DURATION_INVALID" };
     }
     events.push({
+      eventId,
       name,
       sessionId,
       gameId,

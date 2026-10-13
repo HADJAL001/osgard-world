@@ -79,4 +79,20 @@ assert.ok(!successPage.includes("Статус: '+String(result.paymentStatus||re
 assert.ok(successPage.includes("if(accepted.ok){try{sessionStorage.setItem('osgard.purchase.tracked.'+sessionId,'yes');}catch{}}"), "Purchase analytics must only be deduplicated after the server accepts the consented event.");
 assert.ok(successPage.includes("let alreadyTracked=false;try{alreadyTracked=sessionStorage.getItem"), "Blocked sessionStorage must not prevent displaying a server-verified payment result.");
 assert.ok(successPage.includes("replace(/\\/+$/"), "Checkout status page URL base trimming must be valid.");
+for (const value of ["ANALYTICS_RETENTION_DAYS", "purgeExpiredAnalytics", "game_id AS", "analyticsByGame", "analyticsFunnel", "event.eventId || crypto.randomUUID()"]) {
+  assert.ok(server.includes(value), "Commerce API analytics hardening missing: " + value);
+}
+for (const value of ['"EVENT_ID_INVALID"', '"catalog_viewed"', '"partners_page_viewed"']) {
+  assert.ok(core.includes(value), "Event validator missing: " + value);
+}
+for (const value of ["ANALYTICS_SESSION_KEY", "eventId", "catalog_viewed", "partners_page_viewed", "sessionStorage"]) {
+  assert.ok(sharedClient.includes(value), "Browser analytics client missing: " + value);
+}
+assert.ok(playerLifecycle.includes("eventId:'evt_'"), "Player lifecycle should attach an idempotency key to session events.");
+for (const value of ['id="analytics-retention"', 'id="game-analytics-table"', "analyticsByGame", "analyticsFunnel"]) {
+  assert.ok(admin.includes(value), "Admin analytics dashboard missing: " + value);
+}
+assert.ok(readFileSync(resolve("public/games/premium/index.html"), "utf8").includes('src="/games/commerce-client.js"'), "Premium page view analytics must use the shared consent gate.");
+assert.ok(privacy.includes("ANALYTICS_RETENTION_DAYS") && privacy.includes("90 дней") && privacy.includes("не отправляется автоматически"), "Privacy page must document consented analytics retention and manual WhatsApp fallback.");
+
 console.log("Commerce rollout smoke: all static integration checks passed.");

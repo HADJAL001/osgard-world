@@ -47,6 +47,20 @@ test("analytics is disabled unless consent is explicit and event names are allow
   assert.equal(validateEventBatch({ consent: true, events: [{ ...event, gameId: "cascade-lab" }] }).ok, true);
 });
 
+test("consented analytics accept stable event IDs and new page-view events, while rejecting malformed IDs", () => {
+  const baseEvent = { name: "catalog_viewed", sessionId: "session_123456789", gameId: "unknown", source: "page-view", path: "/games/?campaign=private", durationSeconds: 0 };
+  const first = validateEventBatch({ consent: true, events: [{ ...baseEvent, eventId: "evt_session_123456789" }] });
+  assert.equal(first.ok, true);
+  assert.equal(first.events[0].eventId, "evt_session_123456789");
+  assert.equal(first.events[0].path, "/games/");
+  const malformed = validateEventBatch({ consent: true, events: [{ ...baseEvent, eventId: "bad" }] });
+  assert.equal(malformed.ok, false);
+  assert.equal(malformed.code, "EVENT_ID_INVALID");
+  const legacy = validateEventBatch({ consent: true, events: [{ ...baseEvent, name: "partners_page_viewed" }] });
+  assert.equal(legacy.ok, true, "Older clients without eventId stay backward-compatible");
+  assert.equal(legacy.events[0].eventId, "");
+});
+
 test("live Stripe keys stay disabled unless explicitly enabled", () => {
   assert.equal(paymentsModeAllowed("sk_test_example", false), true);
   assert.equal(paymentsModeAllowed("sk_live_example", false), false);
