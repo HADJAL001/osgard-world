@@ -151,3 +151,44 @@ dialog#player-dialog[data-postgame-intermission="1"] .player-view iframe{display
 dialog#player-dialog[data-postgame-intermission="1"] .player-foot{display:none!important}
 dialog#player-dialog[data-postgame-intermission="1"] .post-run-recommendations{max-height:min(78svh,760px);overflow:auto}
 @media(prefers-reduced-motion:reduce){dialog#player-dialog[data-postgame-intermission="1"] *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+
+
+/* OSGARD SELECT premium contextual spotlight: one curated choice first, full directory on request. */
+.og-postgame-spotlight{
+ position:relative;display:grid;grid-template-columns:minmax(0,1fr);gap:12px;
+ margin:2px 0 13px;padding:clamp(17px,2.4vw,27px);
+ border:1px solid rgba(218,192,133,.5);border-radius:11px;
+ background:radial-gradient(ellipse at 100% 0,rgba(218,192,133,.16),transparent 48%),linear-gradient(135deg,#1c1b15,#0d100f 72%);
+ box-shadow:inset 0 1px 0 #ffffff0a,0 16px 40px #0005;overflow:hidden
+}
+.og-postgame-spotlight:after{content:"";position:absolute;right:0;top:0;width:68px;height:2px;background:#e0c989}
+.og-postgame-spotlight[hidden]{display:none!important}
+.og-postgame-spotlight-copy{display:grid;gap:8px;min-width:0}
+.og-postgame-spotlight-label{color:#d9c68f;font:8px/1.55 ui-monospace,Consolas,monospace;letter-spacing:.16em}
+.og-postgame-spotlight-name{color:#f7efda;font:400 clamp(29px,3.3vw,43px)/1.02 Georgia,serif;letter-spacing:-.045em;overflow-wrap:anywhere}
+.og-postgame-spotlight-description{max-width:820px;color:#c0bdae;font-size:12px;line-height:1.75}
+.og-postgame-spotlight-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px}
+.og-postgame-spotlight-open,.og-postgame-spotlight-next,.og-postgame-spotlight-preferred{
+ display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:10px 14px;
+ border:1px solid rgba(218,192,133,.38);border-radius:6px;background:#ffffff04;color:#e6d6ab;
+ font-size:10px;font-weight:650;text-decoration:none;cursor:pointer
+}
+.og-postgame-spotlight-open{border-color:#d8c28f;background:linear-gradient(115deg,#c5a95e,#e8d5a1 60%,#c9ab64);color:#13130f}
+.og-postgame-spotlight-open:hover{filter:brightness(1.07)}
+.og-postgame-spotlight-next:hover,.og-postgame-spotlight-preferred:hover{border-color:#e8d5a1;background:rgba(218,192,133,.1)}
+.og-postgame-spotlight-open:focus-visible,.og-postgame-spotlight-next:focus-visible,.og-postgame-spotlight-preferred:focus-visible{outline:2px solid #f2e4bb;outline-offset:3px}
+.og-postgame-service-filters[hidden],.og-postgame-service-grid[hidden]{display:none!important}
+.og-postgame-toggle{min-height:39px;padding:9px 13px}
+.og-postgame-service-empty{font-size:10px;line-height:1.7}
+.og-postgame-spotlight-status{min-height:1em;margin:0;color:#d9c997;font-size:9px;line-height:1.55}
+@media(max-width:760px){
+ .og-postgame-spotlight{padding:15px}
+ .og-postgame-spotlight-name{font-size:31px}
+ .og-postgame-spotlight-description{font-size:11px}
+ .og-postgame-spotlight-actions>*{flex:1 1 calc(50% - 8px)}
+ .og-postgame-spotlight-open{flex-basis:100%}
+ .og-postgame-toggle{min-height:41px}
+}
+@media(max-width:360px){.og-postgame-spotlight-actions>*{width:100%;flex:1 1 100%}}
+@media(prefers-reduced-motion:reduce){.og-postgame-spotlight,.og-postgame-spotlight-actions>*{transition:none;animation:none;scroll-behavior:auto}}
