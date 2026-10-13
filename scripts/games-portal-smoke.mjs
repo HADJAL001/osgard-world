@@ -362,6 +362,20 @@ const mockGrid=mockHost.children.find(node=>node.className==='post-run-grid');
 const mockSuite=mockHost.children.find(node=>node.className==='og-postgame-suite');
 assert.ok(mockSuite,'Post-run service/reward suite should appear after each valid completion');
 assert.equal(mockSuite.children[0].children.find(node=>node.className==='og-postgame-service-grid').children.length,10,'Post-run intermission should list all ten services');
+const postGameServiceShelf=mockSuite.children[0];
+const postGamePreferences=postGameServiceShelf.children.find(node=>node.className==='og-postgame-preferences');
+const postGameServiceOptions=postGamePreferences?.children.find(node=>node.className==='og-postgame-service-options');
+assert.ok(postGamePreferences&&postGamePreferences.hidden,'Service preferences must be available but collapsed by default')
+assert.equal(postGameServiceOptions?.children.length,10,'Service preferences must offer all ten owned projects')
+const servicePreferenceInputs=(postGameServiceOptions?.children||[]).map(option=>option.children[0]);
+assert.equal(servicePreferenceInputs.filter(input=>input.checked&&!input.disabled).length,9,'Default preference selects every service whose availability is confirmed')
+const unavailableServiceChoice=servicePreferenceInputs.find(input=>input.dataset.servicePreference==='gardvpn');
+assert.ok(unavailableServiceChoice?.disabled,'GARD VPN must remain unselectable until service availability is confirmed')
+const frequencyField=postGamePreferences.children.find(node=>node.className==='og-postgame-frequency-label');
+assert.deepEqual(frequencyField.children[0].children.map(option=>option.value),['each','every3','off'],'Players must choose every round, every three rounds, or no promo')
+assert.equal(frequencyField.children[0].value,'each','Service intermission is enabled after every completed game by default')
+assert.ok(mockSuite.children[1]&&mockSuite.children[1].className==='og-postgame-reward','Social-share reward must remain available with or without promotions')
+
 assert.deepEqual(mockGrid.children.map(node=>node.dataset.play),['null-shift','signal-run'],'SWARM should recommend two related live games')
 assert.deepEqual(mockGrid.children.map(node=>node.href),['/games/null-shift-godot/','/games/signal-run/'],'Recommendations should point to valid game launch routes')
 mockDocument.dispatch('osgard:game-launching')
@@ -518,6 +532,12 @@ assert.ok(recommendationScript.includes("u.searchParams.set('utm_medium','post_g
 assert.ok(recommendationScript.includes("const walletKey='osgard.games.shards-wallet.v1',dailyReward=50")&&recommendationScript.includes('current.day===day'),'SHARDS must persist locally and be capped once per UTC day');
 assert.ok(recommendationScript.includes('Я опубликовал — получить +50 SHARDS')&&recommendationScript.includes('Соцсеть не сообщает сайту подтверждение публикации')&&recommendationScript.includes('не являются платёжным средством'),'Social reward must disclose self-confirmation and non-monetary points');
 assert.ok(recommendationStyles.includes('.og-postgame-services')&&recommendationStyles.includes('.og-postgame-service-grid')&&recommendationStyles.includes('.og-postgame-reward')&&recommendationStyles.includes('@media(max-width:760px)')&&recommendationStyles.includes('prefers-reduced-motion:reduce'),'Postgame UI must be premium, responsive and accessible');
+assert.ok(recommendationScript.includes("const servicePreferencesKey='osgard.games.postgame-service-preferences.v1'")&&recommendationScript.includes("frequency:'each'")&&recommendationScript.includes("frequency==='every3'")&&recommendationScript.includes("frequency==='off'"),'Service preferences must persist promo frequency choice')
+assert.ok(recommendationScript.includes('availableServiceIds.filter(id=>Array.isArray(value.selected)&&value.selected.includes(id))')&&recommendationScript.includes('preferences.selected.includes(id)'), 'Only services selected by the player should be actively promoted')
+assert.ok(recommendationScript.includes("localStorage.setItem(serviceProgressKey,JSON.stringify(next))")&&recommendationScript.includes('completedCount%3===0'),'Promo caps must count completed game sessions, not page visits')
+assert.ok(!recommendationScript.includes("sendEvent('partner_impression'"),'Do not synthesize sponsor impressions without an ad measurement signal')
+assert.ok(recommendationStyles.includes('.og-postgame-preferences')&&recommendationStyles.includes('.og-postgame-service-options')&&recommendationStyles.includes('.og-postgame-frequency')&&recommendationStyles.includes('@media(max-width:360px)'),'Promo preference controls must be responsive on mobile')
+
 
 assert.ok(lifecycle.includes('function analyticsSource()') && lifecycle.includes(':analyticsSource()') && lifecycle.includes("return 'referral:'+code+':null-shift'"), 'Actual gameplay sessions must preserve consented invite attribution')
 assert.ok(referralCoreSource.includes('"referral_link_opened"') && referralCoreSource.includes('"share_created"'), 'Commerce API must explicitly allowlist invite events')
