@@ -369,10 +369,35 @@ app.post("/v1/events", async (req, res) => {
   }
 });
 
+app.post("/v1/referrals/reward-status", async (req, res) => {
+  res.set("Cache-Control", "no-store, private");
+  const input = validateReferralRewardStatus(req.body);
+  if (!input.ok) return res.status(input.status).json({ error: input.code });
+  if (!requireDatabase(res)) return;
+  try {
+    const result = await pool.query(
+      "SELECT COUNT(*)::int AS qualified_sessions, COALESCE(SUM(points),0)::int AS points_earned FROM game_referral_rewards WHERE invite_code=$1",
+      [input.code],
+    );
+    const row = result.rows[0] || {};
+    return res.json({
+      qualifiedSessions: Number(row.qualified_sessions || 0),
+      pointsEarned: Number(row.points_earned || 0),
+      pointsPerQualifiedSession: REFERRAL_REWARD_POINTS,
+      qualifyingDurationSeconds: REFERRAL_MIN_SESSION_SECONDS,
+      redeemableForCash: false,
+      redeemableForPurchases: false,
+    });
+  } catch (error) {
+    console.error("Referral reward status failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "REFERRAL_STATUS_UNAVAILABLE" });
+  }
+});
+
 app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
   if (!requireDatabase(res)) return;
   try {
-    const [orderStats, currencyStats, leadStats, eventStats, topEvents, analyticsByGame, analyticsFunnel] = await Promise.all([
+    const [orderStats, currencyStats, leadStats, eventStats, topEvents, analyticsByGame, analyticsFunnel, referralRewardStats] = await Promise.all([
       pool.query("SELECT status, COUNT(*)::int AS count FROM commerce_orders GROUP BY status"),
       pool.query("SELECT currency, SUM(amount_total)::bigint AS total_minor, COUNT(*)::int AS count FROM commerce_orders WHERE status='paid' AND currency IS NOT NULL GROUP BY currency"),
       pool.query("SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE status='new')::int AS new FROM commerce_leads"),
@@ -390,7 +415,7 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
           FROM recent_events
           WHERE event_name = 'share_created'
             AND source LIKE 'game-invite:%'
-            AND split_part(source, ':', 3) ~ '^(og_[a-f0-9]{8}|[a-f0-9]{12})$'
+            AND split_part(source, ':', 3) ~ '^(og_[a-f0-9]{8}|og_[a-f0-9]{32}|[a-f0-9]{12})
         ),
         invite_opens AS (
           SELECT DISTINCT split_part(source, ':', 2) AS invite_code
@@ -427,6 +452,7 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
           (SELECT COUNT(*) FROM invite_shares s JOIN invite_completions c USING (invite_code))::int AS "referredCompletions"
         FROM recent_events
       `),
+      pool.query("SELECT COUNT(*)::int AS qualified_sessions, COALESCE(SUM(points),0)::int AS points_issued, COUNT(DISTINCT invite_code)::int AS invite_codes FROM game_referral_rewards WHERE qualified_at >= NOW() - INTERVAL '30 days'"),
     ]);
     return res.json({
       ordersByStatus: orderStats.rows,
@@ -436,6 +462,421 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
       topEventsLast30Days: topEvents.rows,
       analyticsByGame: analyticsByGame.rows,
       analyticsFunnel: analyticsFunnel.rows[0] || {},
+      referralRewardsLast30Days: referralRewardStats.rows[0] || { qualified_sessions: 0, points_issued: 0, invite_codes: 0 },
+      analyticsRetentionDays,
+      note: "Аналитика включает только согласованные события. Это не все посещения сайта и не рекламные показы. Суммы сгруппированы по валютам и не являются бухгалтерским отчётом.",
+    });
+  } catch (error) {
+    console.error("Admin overview failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "ADMIN_OVERVIEW_UNAVAILABLE" });
+  }
+});
+app.get("/v1/admin/leads", requireAdmin, async (req, res) => {
+  if (!requireDatabase(res)) return;
+  const limit = Math.max(1, Math.min(100, Number.parseInt(String(req.query.limit || "50"), 10) || 50));
+  try {
+    const result = await pool.query("SELECT lead_id, project_type, budget, contact, description, status, created_at FROM commerce_leads ORDER BY created_at DESC LIMIT $1", [limit]);
+    return res.json({ items: result.rows });
+  } catch (error) {
+    console.error("Admin leads failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "ADMIN_LEADS_UNAVAILABLE" });
+  }
+});
+app.get("/v1/admin/orders", requireAdmin, async (req, res) => {
+  if (!requireDatabase(res)) return;
+  const limit = Math.max(1, Math.min(100, Number.parseInt(String(req.query.limit || "50"), 10) || 50));
+  try {
+    const result = await pool.query("SELECT order_id, email, product_key, mode, status, amount_total, currency, created_at FROM commerce_orders ORDER BY created_at DESC LIMIT $1", [limit]);
+    return res.json({ items: result.rows });
+  } catch (error) {
+    console.error("Admin orders failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "ADMIN_ORDERS_UNAVAILABLE" });
+  }
+});
+
+app.use((error, _req, res, _next) => {
+  if (error?.type === "entity.too.large") return res.status(413).json({ error: "REQUEST_TOO_LARGE" });
+  console.error("Unhandled API error:", error?.message || "unknown error");
+  return res.status(500).json({ error: "INTERNAL_ERROR", message: "Внутренняя ошибка. Повторите попытку позже." });
+});
+
+const analyticsRetentionTimer = setInterval(() => {
+  if (!dbReady) return;
+  void purgeExpiredAnalytics().catch((error) => {
+    console.error("Analytics retention cleanup failed:", error?.message || "unknown error");
+  });
+}, 6 * 60 * 60 * 1000);
+analyticsRetentionTimer.unref();
+
+const server = app.listen(PORT, "0.0.0.0", async () => {
+  try { if (pool) await ensureSchema(); }
+  catch (error) {
+    dbErrorAtBoot = true;
+    dbReady = false;
+    console.error("Database initialization failed:", error?.message || "unknown error");
+  }
+  if (dbReady) {
+    void purgeExpiredAnalytics().catch((error) => {
+      console.error("Analytics retention cleanup failed:", error?.message || "unknown error");
+    });
+  }
+  console.log("OSGARD Commerce API listening on port " + PORT);
+});
+async function shutdown(signal) {
+  console.log("Shutting down after " + signal);
+  server.close(async () => { await pool?.end().catch(() => {}); process.exit(0); });
+  setTimeout(() => process.exit(1), 10000).unref();
+}
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
+
+        ),
+        invite_opens AS (
+          SELECT DISTINCT split_part(source, ':', 2) AS invite_code
+          FROM recent_events
+          WHERE event_name = 'referral_link_opened'
+            AND source LIKE 'referral-link:%'
+            AND split_part(source, ':', 2) ~ '^(og_[a-f0-9]{8}|og_[a-f0-9]{32}|[a-f0-9]{12})
+        ),
+        invite_starts AS (
+          SELECT DISTINCT split_part(source, ':', 2) AS invite_code
+          FROM recent_events
+          WHERE event_name = 'game_session_started'
+            AND source LIKE 'referral:%'
+            AND split_part(source, ':', 2) ~ '^(og_[a-f0-9]{8}|[a-f0-9]{12})$'
+        ),
+        invite_completions AS (
+          SELECT DISTINCT split_part(source, ':', 2) AS invite_code
+          FROM recent_events
+          WHERE event_name = 'game_session_completed'
+            AND source LIKE 'referral:%'
+            AND split_part(source, ':', 2) ~ '^(og_[a-f0-9]{8}|[a-f0-9]{12})$'
+        )
+        SELECT
+          COUNT(*) FILTER (WHERE event_name = 'catalog_viewed')::int AS "catalogViews",
+          COUNT(*) FILTER (WHERE event_name IN ('game_launched', 'game_session_started'))::int AS "gameStarts",
+          COUNT(*) FILTER (WHERE event_name = 'game_session_completed')::int AS "completedSessions",
+          COUNT(*) FILTER (WHERE event_name = 'cross_promo_clicked')::int AS "crossPromoClicks",
+          COUNT(*) FILTER (WHERE event_name = 'lead_submitted')::int AS "leadSubmittedEvents",
+          COUNT(*) FILTER (WHERE event_name = 'premium_page_view')::int AS "premiumPageViews",
+          COUNT(*) FILTER (WHERE event_name = 'partners_page_viewed')::int AS "partnersPageViews",
+          (SELECT COUNT(*) FROM invite_shares)::int AS "inviteShares",
+          (SELECT COUNT(*) FROM invite_shares s JOIN invite_opens o USING (invite_code))::int AS "referralOpens",
+          (SELECT COUNT(*) FROM invite_shares s JOIN invite_starts r USING (invite_code))::int AS "referredStarts",
+          (SELECT COUNT(*) FROM invite_shares s JOIN invite_completions c USING (invite_code))::int AS "referredCompletions"
+        FROM recent_events
+      `),
+      pool.query("SELECT COUNT(*)::int AS qualified_sessions, COALESCE(SUM(points),0)::int AS points_issued, COUNT(DISTINCT invite_code)::int AS invite_codes FROM game_referral_rewards WHERE qualified_at >= NOW() - INTERVAL '30 days'"),
+    ]);
+    return res.json({
+      ordersByStatus: orderStats.rows,
+      grossPaidByCurrency: currencyStats.rows,
+      leads: leadStats.rows[0] || { total: 0, new: 0 },
+      analyticsEventsLast30Days: eventStats.rows[0]?.total_30d || 0,
+      topEventsLast30Days: topEvents.rows,
+      analyticsByGame: analyticsByGame.rows,
+      analyticsFunnel: analyticsFunnel.rows[0] || {},
+      referralRewardsLast30Days: referralRewardStats.rows[0] || { qualified_sessions: 0, points_issued: 0, invite_codes: 0 },
+      analyticsRetentionDays,
+      note: "Аналитика включает только согласованные события. Это не все посещения сайта и не рекламные показы. Суммы сгруппированы по валютам и не являются бухгалтерским отчётом.",
+    });
+  } catch (error) {
+    console.error("Admin overview failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "ADMIN_OVERVIEW_UNAVAILABLE" });
+  }
+});
+app.get("/v1/admin/leads", requireAdmin, async (req, res) => {
+  if (!requireDatabase(res)) return;
+  const limit = Math.max(1, Math.min(100, Number.parseInt(String(req.query.limit || "50"), 10) || 50));
+  try {
+    const result = await pool.query("SELECT lead_id, project_type, budget, contact, description, status, created_at FROM commerce_leads ORDER BY created_at DESC LIMIT $1", [limit]);
+    return res.json({ items: result.rows });
+  } catch (error) {
+    console.error("Admin leads failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "ADMIN_LEADS_UNAVAILABLE" });
+  }
+});
+app.get("/v1/admin/orders", requireAdmin, async (req, res) => {
+  if (!requireDatabase(res)) return;
+  const limit = Math.max(1, Math.min(100, Number.parseInt(String(req.query.limit || "50"), 10) || 50));
+  try {
+    const result = await pool.query("SELECT order_id, email, product_key, mode, status, amount_total, currency, created_at FROM commerce_orders ORDER BY created_at DESC LIMIT $1", [limit]);
+    return res.json({ items: result.rows });
+  } catch (error) {
+    console.error("Admin orders failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "ADMIN_ORDERS_UNAVAILABLE" });
+  }
+});
+
+app.use((error, _req, res, _next) => {
+  if (error?.type === "entity.too.large") return res.status(413).json({ error: "REQUEST_TOO_LARGE" });
+  console.error("Unhandled API error:", error?.message || "unknown error");
+  return res.status(500).json({ error: "INTERNAL_ERROR", message: "Внутренняя ошибка. Повторите попытку позже." });
+});
+
+const analyticsRetentionTimer = setInterval(() => {
+  if (!dbReady) return;
+  void purgeExpiredAnalytics().catch((error) => {
+    console.error("Analytics retention cleanup failed:", error?.message || "unknown error");
+  });
+}, 6 * 60 * 60 * 1000);
+analyticsRetentionTimer.unref();
+
+const server = app.listen(PORT, "0.0.0.0", async () => {
+  try { if (pool) await ensureSchema(); }
+  catch (error) {
+    dbErrorAtBoot = true;
+    dbReady = false;
+    console.error("Database initialization failed:", error?.message || "unknown error");
+  }
+  if (dbReady) {
+    void purgeExpiredAnalytics().catch((error) => {
+      console.error("Analytics retention cleanup failed:", error?.message || "unknown error");
+    });
+  }
+  console.log("OSGARD Commerce API listening on port " + PORT);
+});
+async function shutdown(signal) {
+  console.log("Shutting down after " + signal);
+  server.close(async () => { await pool?.end().catch(() => {}); process.exit(0); });
+  setTimeout(() => process.exit(1), 10000).unref();
+}
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
+
+        ),
+        invite_starts AS (
+          SELECT DISTINCT split_part(source, ':', 2) AS invite_code
+          FROM recent_events
+          WHERE event_name = 'game_session_started'
+            AND source LIKE 'referral:%'
+            AND split_part(source, ':', 2) ~ '^(og_[a-f0-9]{8}|og_[a-f0-9]{32}|[a-f0-9]{12})
+        ),
+        invite_completions AS (
+          SELECT DISTINCT split_part(source, ':', 2) AS invite_code
+          FROM recent_events
+          WHERE event_name = 'game_session_completed'
+            AND source LIKE 'referral:%'
+            AND split_part(source, ':', 2) ~ '^(og_[a-f0-9]{8}|[a-f0-9]{12})$'
+        )
+        SELECT
+          COUNT(*) FILTER (WHERE event_name = 'catalog_viewed')::int AS "catalogViews",
+          COUNT(*) FILTER (WHERE event_name IN ('game_launched', 'game_session_started'))::int AS "gameStarts",
+          COUNT(*) FILTER (WHERE event_name = 'game_session_completed')::int AS "completedSessions",
+          COUNT(*) FILTER (WHERE event_name = 'cross_promo_clicked')::int AS "crossPromoClicks",
+          COUNT(*) FILTER (WHERE event_name = 'lead_submitted')::int AS "leadSubmittedEvents",
+          COUNT(*) FILTER (WHERE event_name = 'premium_page_view')::int AS "premiumPageViews",
+          COUNT(*) FILTER (WHERE event_name = 'partners_page_viewed')::int AS "partnersPageViews",
+          (SELECT COUNT(*) FROM invite_shares)::int AS "inviteShares",
+          (SELECT COUNT(*) FROM invite_shares s JOIN invite_opens o USING (invite_code))::int AS "referralOpens",
+          (SELECT COUNT(*) FROM invite_shares s JOIN invite_starts r USING (invite_code))::int AS "referredStarts",
+          (SELECT COUNT(*) FROM invite_shares s JOIN invite_completions c USING (invite_code))::int AS "referredCompletions"
+        FROM recent_events
+      `),
+      pool.query("SELECT COUNT(*)::int AS qualified_sessions, COALESCE(SUM(points),0)::int AS points_issued, COUNT(DISTINCT invite_code)::int AS invite_codes FROM game_referral_rewards WHERE qualified_at >= NOW() - INTERVAL '30 days'"),
+    ]);
+    return res.json({
+      ordersByStatus: orderStats.rows,
+      grossPaidByCurrency: currencyStats.rows,
+      leads: leadStats.rows[0] || { total: 0, new: 0 },
+      analyticsEventsLast30Days: eventStats.rows[0]?.total_30d || 0,
+      topEventsLast30Days: topEvents.rows,
+      analyticsByGame: analyticsByGame.rows,
+      analyticsFunnel: analyticsFunnel.rows[0] || {},
+      referralRewardsLast30Days: referralRewardStats.rows[0] || { qualified_sessions: 0, points_issued: 0, invite_codes: 0 },
+      analyticsRetentionDays,
+      note: "Аналитика включает только согласованные события. Это не все посещения сайта и не рекламные показы. Суммы сгруппированы по валютам и не являются бухгалтерским отчётом.",
+    });
+  } catch (error) {
+    console.error("Admin overview failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "ADMIN_OVERVIEW_UNAVAILABLE" });
+  }
+});
+app.get("/v1/admin/leads", requireAdmin, async (req, res) => {
+  if (!requireDatabase(res)) return;
+  const limit = Math.max(1, Math.min(100, Number.parseInt(String(req.query.limit || "50"), 10) || 50));
+  try {
+    const result = await pool.query("SELECT lead_id, project_type, budget, contact, description, status, created_at FROM commerce_leads ORDER BY created_at DESC LIMIT $1", [limit]);
+    return res.json({ items: result.rows });
+  } catch (error) {
+    console.error("Admin leads failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "ADMIN_LEADS_UNAVAILABLE" });
+  }
+});
+app.get("/v1/admin/orders", requireAdmin, async (req, res) => {
+  if (!requireDatabase(res)) return;
+  const limit = Math.max(1, Math.min(100, Number.parseInt(String(req.query.limit || "50"), 10) || 50));
+  try {
+    const result = await pool.query("SELECT order_id, email, product_key, mode, status, amount_total, currency, created_at FROM commerce_orders ORDER BY created_at DESC LIMIT $1", [limit]);
+    return res.json({ items: result.rows });
+  } catch (error) {
+    console.error("Admin orders failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "ADMIN_ORDERS_UNAVAILABLE" });
+  }
+});
+
+app.use((error, _req, res, _next) => {
+  if (error?.type === "entity.too.large") return res.status(413).json({ error: "REQUEST_TOO_LARGE" });
+  console.error("Unhandled API error:", error?.message || "unknown error");
+  return res.status(500).json({ error: "INTERNAL_ERROR", message: "Внутренняя ошибка. Повторите попытку позже." });
+});
+
+const analyticsRetentionTimer = setInterval(() => {
+  if (!dbReady) return;
+  void purgeExpiredAnalytics().catch((error) => {
+    console.error("Analytics retention cleanup failed:", error?.message || "unknown error");
+  });
+}, 6 * 60 * 60 * 1000);
+analyticsRetentionTimer.unref();
+
+const server = app.listen(PORT, "0.0.0.0", async () => {
+  try { if (pool) await ensureSchema(); }
+  catch (error) {
+    dbErrorAtBoot = true;
+    dbReady = false;
+    console.error("Database initialization failed:", error?.message || "unknown error");
+  }
+  if (dbReady) {
+    void purgeExpiredAnalytics().catch((error) => {
+      console.error("Analytics retention cleanup failed:", error?.message || "unknown error");
+    });
+  }
+  console.log("OSGARD Commerce API listening on port " + PORT);
+});
+async function shutdown(signal) {
+  console.log("Shutting down after " + signal);
+  server.close(async () => { await pool?.end().catch(() => {}); process.exit(0); });
+  setTimeout(() => process.exit(1), 10000).unref();
+}
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
+
+        ),
+        invite_completions AS (
+          SELECT DISTINCT split_part(source, ':', 2) AS invite_code
+          FROM recent_events
+          WHERE event_name = 'game_session_completed'
+            AND source LIKE 'referral:%'
+            AND split_part(source, ':', 2) ~ '^(og_[a-f0-9]{8}|og_[a-f0-9]{32}|[a-f0-9]{12})
+        )
+        SELECT
+          COUNT(*) FILTER (WHERE event_name = 'catalog_viewed')::int AS "catalogViews",
+          COUNT(*) FILTER (WHERE event_name IN ('game_launched', 'game_session_started'))::int AS "gameStarts",
+          COUNT(*) FILTER (WHERE event_name = 'game_session_completed')::int AS "completedSessions",
+          COUNT(*) FILTER (WHERE event_name = 'cross_promo_clicked')::int AS "crossPromoClicks",
+          COUNT(*) FILTER (WHERE event_name = 'lead_submitted')::int AS "leadSubmittedEvents",
+          COUNT(*) FILTER (WHERE event_name = 'premium_page_view')::int AS "premiumPageViews",
+          COUNT(*) FILTER (WHERE event_name = 'partners_page_viewed')::int AS "partnersPageViews",
+          (SELECT COUNT(*) FROM invite_shares)::int AS "inviteShares",
+          (SELECT COUNT(*) FROM invite_shares s JOIN invite_opens o USING (invite_code))::int AS "referralOpens",
+          (SELECT COUNT(*) FROM invite_shares s JOIN invite_starts r USING (invite_code))::int AS "referredStarts",
+          (SELECT COUNT(*) FROM invite_shares s JOIN invite_completions c USING (invite_code))::int AS "referredCompletions"
+        FROM recent_events
+      `),
+      pool.query("SELECT COUNT(*)::int AS qualified_sessions, COALESCE(SUM(points),0)::int AS points_issued, COUNT(DISTINCT invite_code)::int AS invite_codes FROM game_referral_rewards WHERE qualified_at >= NOW() - INTERVAL '30 days'"),
+    ]);
+    return res.json({
+      ordersByStatus: orderStats.rows,
+      grossPaidByCurrency: currencyStats.rows,
+      leads: leadStats.rows[0] || { total: 0, new: 0 },
+      analyticsEventsLast30Days: eventStats.rows[0]?.total_30d || 0,
+      topEventsLast30Days: topEvents.rows,
+      analyticsByGame: analyticsByGame.rows,
+      analyticsFunnel: analyticsFunnel.rows[0] || {},
+      referralRewardsLast30Days: referralRewardStats.rows[0] || { qualified_sessions: 0, points_issued: 0, invite_codes: 0 },
+      analyticsRetentionDays,
+      note: "Аналитика включает только согласованные события. Это не все посещения сайта и не рекламные показы. Суммы сгруппированы по валютам и не являются бухгалтерским отчётом.",
+    });
+  } catch (error) {
+    console.error("Admin overview failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "ADMIN_OVERVIEW_UNAVAILABLE" });
+  }
+});
+app.get("/v1/admin/leads", requireAdmin, async (req, res) => {
+  if (!requireDatabase(res)) return;
+  const limit = Math.max(1, Math.min(100, Number.parseInt(String(req.query.limit || "50"), 10) || 50));
+  try {
+    const result = await pool.query("SELECT lead_id, project_type, budget, contact, description, status, created_at FROM commerce_leads ORDER BY created_at DESC LIMIT $1", [limit]);
+    return res.json({ items: result.rows });
+  } catch (error) {
+    console.error("Admin leads failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "ADMIN_LEADS_UNAVAILABLE" });
+  }
+});
+app.get("/v1/admin/orders", requireAdmin, async (req, res) => {
+  if (!requireDatabase(res)) return;
+  const limit = Math.max(1, Math.min(100, Number.parseInt(String(req.query.limit || "50"), 10) || 50));
+  try {
+    const result = await pool.query("SELECT order_id, email, product_key, mode, status, amount_total, currency, created_at FROM commerce_orders ORDER BY created_at DESC LIMIT $1", [limit]);
+    return res.json({ items: result.rows });
+  } catch (error) {
+    console.error("Admin orders failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "ADMIN_ORDERS_UNAVAILABLE" });
+  }
+});
+
+app.use((error, _req, res, _next) => {
+  if (error?.type === "entity.too.large") return res.status(413).json({ error: "REQUEST_TOO_LARGE" });
+  console.error("Unhandled API error:", error?.message || "unknown error");
+  return res.status(500).json({ error: "INTERNAL_ERROR", message: "Внутренняя ошибка. Повторите попытку позже." });
+});
+
+const analyticsRetentionTimer = setInterval(() => {
+  if (!dbReady) return;
+  void purgeExpiredAnalytics().catch((error) => {
+    console.error("Analytics retention cleanup failed:", error?.message || "unknown error");
+  });
+}, 6 * 60 * 60 * 1000);
+analyticsRetentionTimer.unref();
+
+const server = app.listen(PORT, "0.0.0.0", async () => {
+  try { if (pool) await ensureSchema(); }
+  catch (error) {
+    dbErrorAtBoot = true;
+    dbReady = false;
+    console.error("Database initialization failed:", error?.message || "unknown error");
+  }
+  if (dbReady) {
+    void purgeExpiredAnalytics().catch((error) => {
+      console.error("Analytics retention cleanup failed:", error?.message || "unknown error");
+    });
+  }
+  console.log("OSGARD Commerce API listening on port " + PORT);
+});
+async function shutdown(signal) {
+  console.log("Shutting down after " + signal);
+  server.close(async () => { await pool?.end().catch(() => {}); process.exit(0); });
+  setTimeout(() => process.exit(1), 10000).unref();
+}
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
+
+        )
+        SELECT
+          COUNT(*) FILTER (WHERE event_name = 'catalog_viewed')::int AS "catalogViews",
+          COUNT(*) FILTER (WHERE event_name IN ('game_launched', 'game_session_started'))::int AS "gameStarts",
+          COUNT(*) FILTER (WHERE event_name = 'game_session_completed')::int AS "completedSessions",
+          COUNT(*) FILTER (WHERE event_name = 'cross_promo_clicked')::int AS "crossPromoClicks",
+          COUNT(*) FILTER (WHERE event_name = 'lead_submitted')::int AS "leadSubmittedEvents",
+          COUNT(*) FILTER (WHERE event_name = 'premium_page_view')::int AS "premiumPageViews",
+          COUNT(*) FILTER (WHERE event_name = 'partners_page_viewed')::int AS "partnersPageViews",
+          (SELECT COUNT(*) FROM invite_shares)::int AS "inviteShares",
+          (SELECT COUNT(*) FROM invite_shares s JOIN invite_opens o USING (invite_code))::int AS "referralOpens",
+          (SELECT COUNT(*) FROM invite_shares s JOIN invite_starts r USING (invite_code))::int AS "referredStarts",
+          (SELECT COUNT(*) FROM invite_shares s JOIN invite_completions c USING (invite_code))::int AS "referredCompletions"
+        FROM recent_events
+      `),
+      pool.query("SELECT COUNT(*)::int AS qualified_sessions, COALESCE(SUM(points),0)::int AS points_issued, COUNT(DISTINCT invite_code)::int AS invite_codes FROM game_referral_rewards WHERE qualified_at >= NOW() - INTERVAL '30 days'"),
+    ]);
+    return res.json({
+      ordersByStatus: orderStats.rows,
+      grossPaidByCurrency: currencyStats.rows,
+      leads: leadStats.rows[0] || { total: 0, new: 0 },
+      analyticsEventsLast30Days: eventStats.rows[0]?.total_30d || 0,
+      topEventsLast30Days: topEvents.rows,
+      analyticsByGame: analyticsByGame.rows,
+      analyticsFunnel: analyticsFunnel.rows[0] || {},
+      referralRewardsLast30Days: referralRewardStats.rows[0] || { qualified_sessions: 0, points_issued: 0, invite_codes: 0 },
       analyticsRetentionDays,
       note: "Аналитика включает только согласованные события. Это не все посещения сайта и не рекламные показы. Суммы сгруппированы по валютам и не являются бухгалтерским отчётом.",
     });
