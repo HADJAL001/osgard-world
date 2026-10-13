@@ -153,8 +153,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
              : path === '/games/consented-analytics.js'
               ? content.includes('window.OSGARD_CONSENTED_ANALYTICS') && content.includes('MAX_PENDING = 100') && content.includes('MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000') && content.includes('result?.accepted')
              : path === '/games/player-lifecycle.js'
-              ? content.includes('function startSession(');
- && content.includes('game_session_completed') && content.includes('osgard:game-lifecycle') && content.includes('event.source!==frame.contentWindow')
+              ? content.includes('function startSession(') && content.includes('game_session_completed') && content.includes('osgard:game-lifecycle') && content.includes('event.source!==frame.contentWindow')
               : path.endsWith('.css')
               ? normalized.includes('--acid:#c8ff3d') && normalized.includes('/skillcred/fonts/intervariable.woff2') && normalized.includes('/skillcred/fonts/instrumentserif-italic.woff2') && normalized.includes('/skillcred/fonts/jetbrainsmono-regular.woff2') && (!expectCurrentDesign || (normalized.includes('--hero-size:clamp(88px,6vw,104px)') && normalized.replace(/["']/g, '').includes('.trust-spine[data-state=revoked]')))
               : content.includes('demo/issue') && content.includes('data-clock-step')
