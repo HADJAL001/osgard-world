@@ -208,3 +208,12 @@ Weapon fire and other transient beams use two crossed triangle ribbons plus a cr
 - The marker combines a tapered emissive beam, a floor ring, an upper orbit ring, a signal core and a local accent light. The beam/orbit disappear when the operator is close to the target, while the ground ring remains as an interaction anchor.
 - The pulse and ring motion respect Reduced Motion; the extra light is disabled by the Performance profile or adaptive degradation. The beacon is built once and reuses the same nodes every frame.
 - The headless Godot runtime smoke now tests target-stage changes, per-stage materials, frame-driven pulse, close-range beam suppression, and stable node count.
+
+
+## Release 2.4 — pooled spatial impact lighting
+
+- Added four preallocated, shadowless \`OmniLight3D\` nodes dedicated to combat flashes. Guard hits/eliminations, device destruction and incoming damage now light nearby 3D surfaces in cyan, amber/violet or red, in addition to particles and screen feedback.
+- Each flash fades its energy smoothly and contracts its radius. A round-robin pool has a hard capacity of four and reuses the same nodes, so repeated fire cannot create an unbounded stream of lights.
+- Cinematic and Balanced profiles allow these flashes; Performance and automatic degradation hide them. They never cast shadows because short-lived point-light shadows cost too much for this compatibility-rendered browser/mobile build.
+- Headless runtime smoke verifies real light position/energy/range, smooth decay, clean expiry, telemetry, the four-light limit, and Performance-profile gating.
+- This is native Godot lighting behavior, not a baked image or native 8K claim; real-device performance must still be measured.

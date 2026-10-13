@@ -596,7 +596,52 @@ func _run_smoke() -> void:
 	if not _expect(game.ring_pool.size() == expected_ring_pool_count and game.ring_pool[0] == pooled_ring, "successive rings must reuse the same mesh node without growing the pool"):
 		return
 	game._update_effect_expiry(0.5)
-	print("RUNTIME_STAGE: bounded impact spark pool and quality density")
+		print("RUNTIME_STAGE: pooled spatial impact lighting")
+	game._update_effect_expiry(1.0)
+	var saved_light_cinematic: bool = game.cinematic_quality
+	var saved_light_performance: bool = game.performance_quality
+	var saved_light_degraded: bool = game.adaptive_quality_degraded
+	game.cinematic_quality = true
+	game.performance_quality = false
+	game.adaptive_quality_degraded = false
+	game._apply_quality_mode()
+	if not _expect(game.impact_light_pool.size() == 4 and game.impact_light_effects.size() == 4, "impact lights must be allocated once in a fixed four-node pool"):
+		return
+	for pooled_light: OmniLight3D in game.impact_light_pool:
+		if not _expect(not pooled_light.visible and not pooled_light.shadow_enabled, "idle impact lights must be hidden and must never cast shadows"):
+			return
+	var light_cursor_before: int = game.impact_light_cursor
+	game._spawn_impact_light(Vector3(1.0, 0.8, 2.0), Color(1.0, 0.55, 0.18), 2.4, 4.8, 0.16)
+	var pooled_impact_light: OmniLight3D = game.impact_light_pool[light_cursor_before % game.impact_light_pool.size()]
+	if not _expect(pooled_impact_light.visible and is_equal_approx(pooled_impact_light.light_energy, 2.4) and is_equal_approx(pooled_impact_light.omni_range, 4.8), "impact must illuminate the hit location with the requested real 3D light"):
+		return
+	if not _expect(game._active_impact_light_count() == 1 and game.effects.has(pooled_impact_light), "active impact lighting must be counted in live effect telemetry"):
+		return
+	game._update_effect_expiry(0.04)
+	if not _expect(pooled_impact_light.visible and pooled_impact_light.light_energy < 2.4 and pooled_impact_light.light_energy > 0.0, "impact light energy must decay smoothly before expiry"):
+		return
+	game._update_effect_expiry(0.20)
+	if not _expect(not pooled_impact_light.visible and is_zero_approx(pooled_impact_light.light_energy) and not game.effects.has(pooled_impact_light), "expired impact light must hide, reset energy and return to the reusable pool"):
+		return
+	var stable_impact_light_count: int = game.impact_light_pool.size()
+	for flash_index in range(9):
+		game._spawn_impact_light(Vector3(float(flash_index), 0.8, 0.0), Color(0.1, 0.95, 0.8), 1.8, 3.5, 0.12)
+	if not _expect(game.impact_light_pool.size() == stable_impact_light_count and stable_impact_light_count == 4 and game._active_impact_light_count() == 4, "repeated impacts must reuse the fixed pool instead of allocating unbounded light nodes"):
+		return
+	game.performance_quality = true
+	game._apply_quality_mode()
+	for pooled_light: OmniLight3D in game.impact_light_pool:
+		if not _expect(not pooled_light.visible, "performance profile must hide all dynamic impact lighting"):
+			return
+	game._update_effect_expiry(1.0)
+	game.cinematic_quality = saved_light_cinematic
+	game.performance_quality = saved_light_performance
+	game.adaptive_quality_degraded = saved_light_degraded
+	game._apply_quality_mode()
+	if not _expect(game._active_impact_light_count() == 0, "impact light telemetry must return to zero after all flashes expire"):
+		return
+
+print("RUNTIME_STAGE: bounded impact spark pool and quality density")
 	game._update_effect_expiry(1.0)
 	var saved_spark_cinematic: bool = game.cinematic_quality
 	var saved_spark_performance: bool = game.performance_quality

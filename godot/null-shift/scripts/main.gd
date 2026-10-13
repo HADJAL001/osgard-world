@@ -7,6 +7,7 @@ const SAVE_PATH := "user://null_shift_career.cfg"
 const MAX_BEAM_POOL := 28
 const MAX_RING_POOL := 10
 const MAX_SPARK_POOL := 8
+const MAX_IMPACT_LIGHT_POOL := 4
 const DASH_DURATION := 0.24
 const DASH_COOLDOWN := 1.65
 const DASH_SPEED_MULTIPLIER := 3.05
@@ -63,6 +64,9 @@ var health_bar_fill: StyleBoxFlat
 var effects: Array[Node] = []
 var spark_pool: Array[CPUParticles3D] = []
 var spark_effects: Array[Dictionary] = []
+var impact_light_pool: Array[OmniLight3D] = []
+var impact_light_effects: Array[Dictionary] = []
+var impact_light_cursor := 0
 var beam_pool: Array[MeshInstance3D] = []
 var beam_effects: Array[Dictionary] = []
 var ring_pool: Array[MeshInstance3D] = []
@@ -223,6 +227,7 @@ func _ready() -> void:
 	_resolve_shared_challenge()
 	_create_materials()
 	_create_lighting()
+	_create_impact_light_pool()
 	_create_arena()
 	_create_arena_props()
 	_create_interactables()
@@ -266,6 +271,11 @@ func _reset_runtime_collections() -> void:
 	spark_pool.clear()
 	spark_effects = spark_effects.duplicate()
 	spark_effects.clear()
+	impact_light_pool = impact_light_pool.duplicate()
+	impact_light_pool.clear()
+	impact_light_effects = impact_light_effects.duplicate()
+	impact_light_effects.clear()
+	impact_light_cursor = 0
 	beam_pool = beam_pool.duplicate()
 	beam_pool.clear()
 	beam_effects = beam_effects.duplicate()
@@ -440,6 +450,59 @@ func _material(albedo: Color, emission: Color, energy: float, metal: float, roug
 		mat.emission = emission
 		mat.emission_energy_multiplier = energy
 	return mat
+
+func _create_impact_light_pool() -> void:
+	# Four reusable, shadowless lights make impacts illuminate nearby 3D geometry.
+	impact_light_pool = impact_light_pool.duplicate()
+	impact_light_pool.clear()
+	impact_light_effects = impact_light_effects.duplicate()
+	impact_light_effects.clear()
+	impact_light_cursor = 0
+	for index in range(MAX_IMPACT_LIGHT_POOL):
+		var flash := OmniLight3D.new()
+		flash.name = "CombatImpactLight_%02d" % [index + 1]
+		flash.light_color = Color(0.12, 1.0, 0.82)
+		flash.light_energy = 0.0
+		flash.omni_range = 3.5
+		flash.shadow_enabled = false
+		flash.visible = false
+		add_child(flash)
+		impact_light_pool.append(flash)
+		impact_light_effects.append({"node": flash, "remaining": 0.0, "duration": 0.14, "energy": 0.0, "range": 3.5})
+
+
+func _impact_lighting_enabled() -> bool:
+	return not performance_quality and not adaptive_quality_degraded
+
+
+func _spawn_impact_light(at: Vector3, tint: Color, energy: float, radius: float, lifetime: float) -> void:
+	if impact_light_pool.is_empty() or not _impact_lighting_enabled():
+		return
+	var pool_index: int = impact_light_cursor % impact_light_pool.size()
+	impact_light_cursor = (pool_index + 1) % impact_light_pool.size()
+	var flash: OmniLight3D = impact_light_pool[pool_index]
+	if not is_instance_valid(flash):
+		return
+	var duration: float = maxf(0.04, lifetime)
+	var flash_energy: float = maxf(0.0, energy)
+	var flash_range: float = maxf(0.5, radius)
+	flash.global_position = at
+	flash.light_color = tint
+	flash.light_energy = flash_energy
+	flash.omni_range = flash_range
+	flash.visible = true
+	impact_light_effects[pool_index] = {"node": flash, "remaining": duration, "duration": duration, "energy": flash_energy, "range": flash_range}
+	if not effects.has(flash):
+		effects.append(flash)
+
+
+func _active_impact_light_count() -> int:
+	var count := 0
+	for state in impact_light_effects:
+		if float(state.get("remaining", 0.0)) > 0.0:
+			count += 1
+	return count
+
 
 func _create_lighting() -> void:
 	world_environment = WorldEnvironment.new()
@@ -1736,6 +1799,7 @@ func _damage_target(target: Node) -> void:
 			guard["health_timer"] = 1.8
 			guard["hit_flash_timer"] = 0.14
 			guard["hit_label_timer"] = 0.52
+			_spawn_impact_light(target.global_position + Vector3.UP * 0.72, Color(1.0, 0.58, 0.22), 2.1, 3.9, 0.13)
 			var hit_feedback: Label3D = guard.get("hit_label") as Label3D
 			if is_instance_valid(hit_feedback):
 				hit_feedback.text = "−1"
@@ -1752,6 +1816,7 @@ func _damage_target(target: Node) -> void:
 			if int(guard["hp"]) <= 0:
 				var body: Node3D = guard["node"]
 				_spawn_ring_burst(body.global_position + Vector3.UP * 0.14, materials["amber"] if bool(guard["warden"]) else materials["cyan"])
+				_spawn_impact_light(body.global_position + Vector3.UP * 0.7, Color(1.0, 0.62, 0.27) if bool(guard["warden"]) else Color(0.10, 1.0, 0.78), 3.0 if bool(guard["warden"]) else 2.35, 5.0 if bool(guard["warden"]) else 4.2, 0.22)
 				_spawn_hit_sparks(body.global_position + Vector3.UP * 0.95, materials["white"])
 				_screen_impulse(0.045 if not bool(guard["warden"]) else 0.085, 0.085 if not bool(guard["warden"]) else 0.14)
 				if aim_target_node == body:
@@ -1783,6 +1848,8 @@ func _destroy_device(index: int) -> void:
 	device["destroyed"] = true
 	var body: Node3D = device["node"]
 	var kind: String = device["kind"]
+	var flash_tint: Color = Color(1.0, 0.62, 0.23) if kind == "CELL" else (Color(0.65, 0.36, 1.0) if kind == "ANCHOR" else Color(0.12, 0.95, 0.82))
+	_spawn_impact_light(body.global_position + Vector3.UP * 0.7, flash_tint, 2.8, 5.2, 0.2)
 	_spawn_ring_burst(body.global_position + Vector3.UP * 0.15, materials["amber"] if kind == "CELL" else (materials["violet"] if kind == "ANCHOR" else materials["cyan"]))
 	_spawn_hit_sparks(body.global_position + Vector3.UP * 0.7, materials["amber"])
 	_screen_impulse(0.17, 0.28)
@@ -1984,6 +2051,7 @@ func _damage_player(amount: float, attacker: Node3D = null) -> void:
 	impact_flash_timer = maxf(impact_flash_timer, 0.28)
 	_screen_impulse(0.24, 0.32)
 	player_health = maxf(0.0, player_health - amount)
+	_spawn_impact_light(player.global_position + Vector3.UP * 0.82, Color(1.0, 0.12, 0.22), 2.5, 4.7, 0.19)
 	if is_instance_valid(attacker):
 		_show_damage_direction(attacker)
 	_spawn_hit_sparks(player.global_position + Vector3.UP * 0.8, materials["red"])
@@ -2279,6 +2347,10 @@ func _apply_quality_mode() -> void:
 	for light in local_lights:
 		if is_instance_valid(light):
 			light.visible = balanced_effects
+	for impact_state in impact_light_effects:
+		var impact_light: OmniLight3D = impact_state.get("node") as OmniLight3D
+		if is_instance_valid(impact_light):
+			impact_light.visible = float(impact_state.get("remaining", 0.0)) > 0.0 and balanced_effects
 	if is_instance_valid(atmosphere_particles):
 		atmosphere_particles.amount = 72 if cinematic_effects else (32 if balanced_effects else 8)
 		atmosphere_particles.speed_scale = 1.0 if cinematic_effects else 0.72
@@ -3381,11 +3453,12 @@ func _update_hud() -> void:
 			p95 = samples[clampi(int(ceil(float(samples.size() - 1) * 0.95)), 0, samples.size() - 1)]
 		fps_p95_ms = p95
 		var draw_calls := int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
+		var active_impact_lights: int = _active_impact_light_count()
 		var profile: String = "PERFORMANCE" if performance_quality else ("BALANCED" if not cinematic_quality else ("AUTO-OPTIMIZED" if adaptive_quality_degraded else "CINEMATIC"))
-		diagnostics_label.text = "LIVE DIAGNOSTICS\nFPS        %02d\nFRAME P95  %.1f ms\nFRAME NOW  %.1f ms\nDRAW CALLS %d\nFX ACTIVE  %02d\nFX POOLS   %02d BEAM / %02d RING / %02d SPARK\nFX DROPPED %d\nDASH TRAILS %04d\nGUARDS     %d\nDEVICES    %d\nLANE SUPPRESS %03d\nDASH EVADES %d\nDASH CD    %.1f s\nPROFILE    %s" % [
+		diagnostics_label.text = "LIVE DIAGNOSTICS\nFPS        %02d\nFRAME P95  %.1f ms\nFRAME NOW  %.1f ms\nDRAW CALLS %d\nFX ACTIVE  %02d\nFX POOLS   %02d BEAM / %02d RING / %02d SPARK\nFX DROPPED %d\nDASH TRAILS %04d\nGUARDS     %d\nDEVICES    %d\nLANE SUPPRESS %03d\nDASH EVADES %d\nDASH CD    %.1f s\nHIT LIGHTS %d / %d POOL\nPROFILE    %s" % [
 			Engine.get_frames_per_second(), fps_p95_ms, current_frame_ms, draw_calls,
 			effects.size(), beam_pool.size(), ring_pool.size(), spark_pool.size(), effect_pool_exhaustions,
-			dash_trails_emitted, guards.size(), _living_device_count(), phase_lane_disruptions, dash_evasions, dash_cooldown, profile
+			dash_trails_emitted, guards.size(), _living_device_count(), phase_lane_disruptions, dash_evasions, dash_cooldown, active_impact_lights, impact_light_pool.size(), profile
 		]
 
 func _living_device_count() -> int:
@@ -3568,6 +3641,25 @@ func _update_effect_expiry(delta: float) -> void:
 		else:
 			spark_state["remaining"] = remaining
 			spark_effects[index] = spark_state
+	for index in range(impact_light_effects.size()):
+		var impact_state: Dictionary = impact_light_effects[index]
+		var impact_light: OmniLight3D = impact_state.get("node") as OmniLight3D
+		var remaining: float = maxf(0.0, float(impact_state.get("remaining", 0.0)) - dt)
+		if remaining <= 0.0 or not is_instance_valid(impact_light):
+			if is_instance_valid(impact_light):
+				impact_light.visible = false
+				impact_light.light_energy = 0.0
+				impact_light.omni_range = maxf(0.5, float(impact_state.get("range", 3.5)))
+				effects.erase(impact_light)
+			impact_state["remaining"] = 0.0
+		else:
+			var duration: float = maxf(0.001, float(impact_state.get("duration", 0.14)))
+			var strength: float = clampf(remaining / duration, 0.0, 1.0)
+			impact_light.light_energy = float(impact_state.get("energy", 0.0)) * pow(strength, 1.65)
+			impact_light.omni_range = maxf(0.5, float(impact_state.get("range", 3.5)) * (0.38 + 0.62 * strength))
+			impact_light.visible = _impact_lighting_enabled()
+			impact_state["remaining"] = remaining
+		impact_light_effects[index] = impact_state
 	for index in range(effects.size() - 1, -1, -1):
 		if not is_instance_valid(effects[index]):
 			effects.remove_at(index)
