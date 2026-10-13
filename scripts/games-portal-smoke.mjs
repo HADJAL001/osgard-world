@@ -267,7 +267,7 @@ assert.ok(signalRun.includes('prefers-reduced-motion:reduce') && signalRun.inclu
 assert.ok(signalRun.includes('id="daily-run"')&&signalRun.includes('id="daily-info"')&&signalRun.indexOf('src="./daily.js"')<signalRun.indexOf('src="./game.js"'),'SIGNAL RUN daily controls and utility order missing')
 assert.ok(signalJs.includes('OSGARDSignalDaily')&&signalJs.includes('Daily.createRandom(Daily.seedForDate(dailyDate))')&&signalJs.includes("url.searchParams.set('mode','daily')")&&signalJs.includes("url.searchParams.set('day',dailyDate)")&&signalJs.includes('DAILY CONTRACT'),'Deterministic daily run and shareable challenge missing')
 assert.ok(signalJs.includes("new URL('/games/invite/signal-run/',location.origin)")&&signalJs.includes("url.searchParams.set('play','signal-run')")&&signalJs.includes('function referralCode()')&&signalJs.includes("url.searchParams.set('ref',code)"),'SIGNAL RUN must use its social-preview invitation page and a stable opaque referral code')
-assert.ok(signalJs.includes('async function buildSignalShareCard(score)')&&signalJs.includes("card.toBlob(resolve,'image/png')")&&signalJs.includes("navigator.canShare({files:[file]})")&&signalJs.includes("life('share_created'"),'SIGNAL RUN must create a PNG result card and count sharing only after a completed share/copy')
+assert.ok(signalJs.includes('async function buildSignalShareCard(score)')&&signalJs.includes("card.toBlob(resolve,'image/png')")&&signalJs.includes("navigator.canShare({files:[file]})"),'SIGNAL RUN must create and share its premium PNG result card')
 assert.ok(signalRun.includes('id="download-share-card"')&&signalRun.includes('СОХРАНИТЬ КАРТОЧКУ PNG'),'SIGNAL RUN must expose a result-card download control after a run')
 assert.ok(signalJs.includes("$('download-share-card')?.addEventListener('click'")&&signalJs.includes("URL.createObjectURL(blob)")&&signalJs.includes("URL.revokeObjectURL(url)")&&signalJs.includes("link.download='osgard-signal-run-'")&&signalJs.includes("status.textContent='КАРТОЧКА РЕЗУЛЬТАТА СОХРАНЕНА В PNG'"),'SIGNAL RUN PNG download must save a local image and release its object URL without fabricating a share event')
 assert.ok(inviteLandingScript.includes("const legacySignalRun = game === 'signal-run'")&&inviteLandingScript.includes("target.searchParams.set(key, value)")&&inviteLandingScript.includes("validDailyMode"),'Signal Run social preview must preserve only validated challenge and daily-mode parameters')
@@ -470,8 +470,8 @@ const signalShareStart=signalJs.indexOf("$('share').addEventListener('click',asy
 const signalShareEnd=signalJs.indexOf("});document.addEventListener('keydown'",signalShareStart);
 assert.ok(signalShareStart>=0&&signalShareEnd>signalShareStart,'SIGNAL RUN share handler boundaries are required');
 const signalShareHandler=signalJs.slice(signalShareStart,signalShareEnd);
-assert.ok(!signalShareHandler.includes('awardShareShards(method)')&&signalShareHandler.includes("method==='clipboard'")&&signalShareHandler.includes('pendingShareReward=method'),'SIGNAL RUN must not auto-award for opening a share sheet or copying');
-assert.ok(signalJs.includes("claimShare.addEventListener('click'")&&signalJs.includes("awardShareShards('user-confirmed:'+method)"),'SIGNAL RUN reward must be granted only after an explicit user confirmation');
+assert.ok(!signalShareHandler.includes('awardShareShards(method)')&&!signalShareHandler.includes("life('share_created'")&&signalShareHandler.includes("method==='clipboard'")&&signalShareHandler.includes('pendingShareReward=method'),'SIGNAL RUN must not award or report a completed share for intent/copy alone');
+assert.ok(signalJs.includes("claimShare.addEventListener('click'")&&signalJs.includes("awardShareShards('user-confirmed:'+method)")&&signalJs.includes("life('share_created',{shareMethod:method,dailyMode,dailyDate:dailyMode?dailyDate:null,rewardConfirmedByPlayer:true})"),'SIGNAL RUN reward and completed-share analytics require explicit user confirmation');
 new Function(signalJs);
 
 assert.ok(cascadeGame.includes("notifyOsgardLifecycle('completed'"),'CASCADE LAB must emit completion after a passed level')
@@ -622,7 +622,16 @@ assert.ok(selectSender.includes('if(controller)options.signal=controller.signal'
 assert.ok((selectSender.match(/if\(!hasConsent\(\)\|\|\(controller&&controller\.signal\.aborted\)\)return false/g)||[]).length>=3,'Consent must be rechecked after network awaits before posting and accepting analytics');
 assert.ok(selectSender.includes('finally{if(controller)pendingSelectTelemetry.delete(controller)}'),'Completed or aborted telemetry requests must release their controller');
 assert.ok(recommendationScript.includes("sendSelectEvent('social_share_intent'")&&recommendationScript.includes("sendSelectEvent('social_reward_claimed'"), 'Social share-intent and self-reported reward events must be separate')
-assert.ok(recommendationScript.includes("sendSelectEvent('share_created',gameId,'game-invite:'"), 'Share actions in the rewards shelf must enter the referral funnel')
+assert.ok(recommendationScript.includes("sendSelectEvent('share_created',gameId,'game-invite:'"), 'Explicitly claimed shares in the rewards shelf must enter the referral funnel')
+const rewardClaimStart=recommendationScript.indexOf("claim.addEventListener('click'",recommendationScript.indexOf('function rewardShelf(gameId){'));
+const rewardClaimEnd=recommendationScript.indexOf("primary.addEventListener('click',async()=>{",rewardClaimStart);
+assert.ok(rewardClaimStart>=0&&rewardClaimEnd>rewardClaimStart,'OSGARD SELECT reward-claim handler boundaries are required');
+const rewardClaimHandler=recommendationScript.slice(rewardClaimStart,rewardClaimEnd);
+const rewardPrimaryStart=recommendationScript.indexOf("primary.addEventListener('click',async()=>{",recommendationScript.indexOf('function rewardShelf(gameId){'));
+const rewardPrimaryEnd=recommendationScript.indexOf(" const note=make('p','og-postgame-reward-note'",rewardPrimaryStart);
+assert.ok(rewardPrimaryStart>=0&&rewardPrimaryEnd>rewardPrimaryStart,'OSGARD SELECT primary-share handler boundaries are required');
+const rewardPrimaryHandler=recommendationScript.slice(rewardPrimaryStart,rewardPrimaryEnd);
+assert.ok(rewardClaimHandler.includes("sendSelectEvent('share_created',gameId,'game-invite:")&&!rewardPrimaryHandler.includes("sendSelectEvent('share_created'"),'OSGARD SELECT may record share_created only after the confirmation button');
 const rewardPrimaryStart=recommendationScript.indexOf("primary.addEventListener('click',async()=>{",recommendationScript.indexOf('function rewardShelf(gameId){'));
 const rewardPrimaryEnd=recommendationScript.indexOf(" const note=make('p','og-postgame-reward-note'",rewardPrimaryStart);
 assert.ok(rewardPrimaryStart>=0&&rewardPrimaryEnd>rewardPrimaryStart,'OSGARD SELECT reward-share handler boundaries are required');

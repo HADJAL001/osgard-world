@@ -19,6 +19,7 @@ if(claimShare)claimShare.addEventListener('click',()=>{
  if(!pendingShareReward)return;
  const method=pendingShareReward;pendingShareReward='';
  const bonus=awardShareShards('user-confirmed:'+method);
+ life('share_created',{shareMethod:method,dailyMode,dailyDate:dailyMode?dailyDate:null,rewardConfirmedByPlayer:true});
  claimShare.hidden=true;hud();
  const bonusNotice=bonus.ok?' · +50 SHARDS':bonus.already?' · ДНЕВНАЯ НАГРАДА УЖЕ ПОЛУЧЕНА':' · НЕ УДАЛОСЬ СОХРАНИТЬ НАГРАДУ';
  status.textContent='ДЕЙСТВИЕ ПОДТВЕРЖДЕНО ПОЛЬЗОВАТЕЛЕМ'+bonusNotice+(bonus.balance?' · БАЛАНС '+bonus.balance:'');
@@ -87,7 +88,7 @@ $('share').addEventListener('click',async()=>{
   else if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(url.href);completed=true;method='clipboard'}
   else{window.prompt('Скопируй ссылку-вызов:',url.href);status.textContent='Ссылка открыта для ручного копирования. Отправка не подтверждена.'}
   if(completed){
-   life('share_created',{challengeScore:target,shareMethod:method,dailyMode,dailyDate:dailyMode?dailyDate:null});
+   
    if(method==='clipboard'){
     status.textContent='ССЫЛКА-ВЫЗОВ СКОПИРОВАНА. Копирование само по себе не считается репостом и не даёт SHARDS. Опубликуй приглашение через соцсеть, затем вернись и подтверди действие в каталоге.';
    }else{
