@@ -45,6 +45,8 @@ test("analytics is disabled unless consent is explicit and event names are allow
   assert.equal(validateEventBatch({ consent: true, events: [{ ...event, name: "steal_customer_emails" }] }).ok, false);
   assert.equal(validateEventBatch({ consent: true, events: [event] }).ok, true);
   assert.equal(validateEventBatch({ consent: true, events: [{ ...event, gameId: "cascade-lab" }] }).ok, true);
+  assert.equal(validateEventBatch({ consent: true, events: [{ ...event, name: "game_session_completed", gameId: "afterimage-run", eventId: "evt_afterimage_123456" }] }).ok, true,
+    "AFTERIMAGE//RUN is a shipped game and its consented analytics must be accepted");
   assert.equal(
     validateEventBatch({ consent: true, events: [{ ...event, name: "owned_promo_impression", source: "osgard-select:impression:marcosa", eventId: "evt_promo_impression_123" }] }).ok,
     true,
