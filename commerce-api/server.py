@@ -8,6 +8,7 @@ import sqlite3
 import threading
 import time
 import uuid
+from contextlib import contextmanager
 from collections import deque
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -61,9 +62,21 @@ def open_db() -> sqlite3.Connection:
     return db
 
 
+@contextmanager
+def db_connection():
+    db = open_db()
+    try:
+        yield db
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
 def initialize_db() -> None:
     Path(DB_PATH).parent.mkdir(parents=True, exist_ok=True)
-    with open_db() as db:
+    with db_connection() as db:
         db.execute("PRAGMA journal_mode = WAL")
         db.execute("""
             CREATE TABLE IF NOT EXISTS events (
@@ -115,7 +128,7 @@ def prune_old_data() -> None:
             return
         cutoff = int(now - RETENTION_DAYS * 86400)
         try:
-            with open_db() as db:
+            with db_connection() as db:
                 db.execute("DELETE FROM events WHERE created_at < ?", (cutoff,))
                 db.execute("DELETE FROM leads WHERE created_at < ?", (cutoff,))
                 db.commit()
@@ -422,7 +435,7 @@ class CommerceHandler(BaseHTTPRequestHandler):
                 self._send_json(400, {"accepted": False, "error": "event_object_required"})
                 return
             name = event.get("name")
-            if name not in EVENT_NAMES:
+            if not isinstance(name, str) or name not in EVENT_NAMES:
                 self._send_json(400, {"accepted": False, "error": "event_name_not_allowed"})
                 return
             session_id = event.get("sessionId")
@@ -433,7 +446,7 @@ class CommerceHandler(BaseHTTPRequestHandler):
             if not isinstance(session_id, str) or not SESSION_RE.fullmatch(session_id):
                 self._send_json(400, {"accepted": False, "error": "session_id_invalid"})
                 return
-            if game_id not in GAME_IDS:
+            if not isinstance(game_id, str) or game_id not in GAME_IDS:
                 self._send_json(400, {"accepted": False, "error": "game_id_invalid"})
                 return
             if not isinstance(source, str) or not SOURCE_RE.fullmatch(source):
