@@ -370,28 +370,28 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
           FROM recent_events
           WHERE event_name = 'share_created'
             AND source LIKE 'game-invite:%'
-            AND split_part(source, ':', 3) ~ '^(og_[a-f0-9]{8}|[a-f0-9]{12})$'
+            AND split_part(source, ':', 3) ~ '^(og_[a-f0-9]{8}(?:[a-f0-9]{8})?|[a-f0-9]{12})$'
         ),
         invite_opens AS (
           SELECT DISTINCT split_part(source, ':', 2) AS invite_code
           FROM recent_events
           WHERE event_name = 'referral_link_opened'
             AND source LIKE 'referral-link:%'
-            AND split_part(source, ':', 2) ~ '^(og_[a-f0-9]{8}|[a-f0-9]{12})$'
+            AND split_part(source, ':', 2) ~ '^(og_[a-f0-9]{8}(?:[a-f0-9]{8})?|[a-f0-9]{12})$'
         ),
         invite_starts AS (
           SELECT DISTINCT split_part(source, ':', 2) AS invite_code
           FROM recent_events
           WHERE event_name = 'game_session_started'
             AND source LIKE 'referral:%'
-            AND split_part(source, ':', 2) ~ '^(og_[a-f0-9]{8}|[a-f0-9]{12})$'
+            AND split_part(source, ':', 2) ~ '^(og_[a-f0-9]{8}(?:[a-f0-9]{8})?|[a-f0-9]{12})$'
         ),
         invite_completions AS (
           SELECT DISTINCT split_part(source, ':', 2) AS invite_code
           FROM recent_events
           WHERE event_name = 'game_session_completed'
             AND source LIKE 'referral:%'
-            AND split_part(source, ':', 2) ~ '^(og_[a-f0-9]{8}|[a-f0-9]{12})$'
+            AND split_part(source, ':', 2) ~ '^(og_[a-f0-9]{8}(?:[a-f0-9]{8})?|[a-f0-9]{12})$'
         )
         SELECT
           COUNT(*) FILTER (WHERE event_name = 'catalog_viewed')::int AS "catalogViews",
