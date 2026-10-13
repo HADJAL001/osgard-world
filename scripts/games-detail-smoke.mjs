@@ -28,7 +28,6 @@ const games = [
   { id: 'patina', href: '/games/patina/' },
   { id: 'cascade-lab', href: '/games/cascade-lab/' },
   { id: 'aether-grid', href: '/games/aether-grid/' },
-  { id: 'aether-grid', href: '/games/aether-grid/' },
 
 ]
 
