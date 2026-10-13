@@ -429,6 +429,11 @@ const serviceFilters=servicesSection.children.find(node=>node.className==='og-po
 assert.equal(serviceFilters.children[0].textContent,'Все доступные · 9','The all-services filter count must exclude the unavailable GARD VPN card')
 const serviceGrid=servicesSection.children.find(node=>node.className==='og-postgame-service-grid')
 const serviceCards=serviceGrid.children
+const spotlightActions=spotlight.children[0].children.find(node=>node.className==='og-postgame-spotlight-actions')
+const nextSpotlight=spotlightActions.children.find(node=>node.className==='og-postgame-spotlight-next')
+nextSpotlight.click()
+assert.equal(spotlight.dataset.service,'projects','The spotlight rotation should update the chosen service')
+assert.equal(serviceCards.find(node=>node.className.includes('is-featured'))?.dataset.service,spotlight.dataset.service,'Rotating the spotlight must also move the featured state to the matching directory card')
 assert.equal(serviceGrid.hidden,true,'The full service directory should be collapsed under the spotlight by default')
 assert.equal(serviceFilters.hidden,true,'Category filters should stay collapsed until the directory is opened')
 const serviceHead=servicesSection.children.find(node=>node.className==='og-postgame-service-head')
