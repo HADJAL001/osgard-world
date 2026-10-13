@@ -17,6 +17,21 @@
     medium === 'referral' &&
     campaign === 'play_with_friends' &&
     content === (requestedGame || 'catalog');
+  const scoreValue = Number(params.get('challenge') || 0);
+  const requestedDay = params.get('day') || '';
+  const validDay = /^\d{4}-\d{2}-\d{2}$/.test(requestedDay) &&
+    (() => { const date = new Date(requestedDay + 'T00:00:00.000Z'); return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === requestedDay; })();
+  const requestedMode = params.get('mode') || '';
+  const validDailyMode = requestedMode === 'daily' && validDay;
+  const validOrdinaryMode = requestedMode === '' && requestedDay === '';
+  const legacySignalRun = game === 'signal-run' &&
+    params.get('play') === 'signal-run' &&
+    Number.isSafeInteger(scoreValue) && scoreValue > 0 && scoreValue <= 1000000000 &&
+    /^[a-f0-9]{12}$/.test(params.get('ref') || '') &&
+    source === 'signal-run' &&
+    medium === 'share' &&
+    campaign === 'challenge' &&
+    (validDailyMode || validOrdinaryMode);
   const play = document.querySelector('#play-link');
   if (play) {
     const target = new URL('/games/', location.origin);
@@ -28,6 +43,18 @@
       target.searchParams.set('utm_medium', medium);
       target.searchParams.set('utm_campaign', campaign);
       target.searchParams.set('utm_content', content);
+    }
+    else if (legacySignalRun) {
+      // Keep only the validated SIGNAL RUN challenge contract when leaving the social preview.
+      // This is a legacy score challenge, not a canonical anonymous invite-open event.
+      for (const key of ['play', 'challenge', 'ref', 'utm_source', 'utm_medium', 'utm_campaign']) {
+        const value = params.get(key);
+        if (value !== null) target.searchParams.set(key, value);
+      }
+      if (validDailyMode) {
+        target.searchParams.set('mode', 'daily');
+        target.searchParams.set('day', requestedDay);
+      }
     }
     play.href = target.href;
   }
