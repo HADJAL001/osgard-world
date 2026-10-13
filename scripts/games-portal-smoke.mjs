@@ -129,7 +129,7 @@ assert.ok(afterimageGame.includes('<title>AFTERIMAGE//RUN — OSGARD PLAY</title
 assert.ok(!/<script[^>]+src=/i.test(afterimageGame)&&!/<link[^>]+href=["']https?:/i.test(afterimageGame),'AFTERIMAGE//RUN must remain self-contained')
 assert.ok(afterimageGame.includes("extra||{}),location.origin)")&&!afterimageGame.includes("extra||{}),'*')"),'AFTERIMAGE lifecycle messages must stay same-origin')
 assert.ok(afterimageGame.includes('incomingSeed=params.get(\'seed\')')&&afterimageGame.includes('Number.isFinite(rawTarget)')&&afterimageGame.includes('if(r[today])'),'AFTERIMAGE challenge/reward safety checks missing')
-assert.ok(afterimageGame.includes("new URL('/games/invite/afterimage-run/',location.origin)")&&afterimageGame.includes("window.parent.OSGARDInvite?.createLink('afterimage-run')"),'AFTERIMAGE share links must use the canonical referral route')
+assert.ok(afterimageGame.includes("new URL('/games/invite/afterimage-run/',location.origin)")&&afterimageGame.includes("window.parent.OSGARDInvite.createLink('afterimage-run')"),'AFTERIMAGE share links must use the canonical referral route')
 assert.ok(afterimageGame.includes("u.searchParams.set('seed',day);u.searchParams.set('score',String(score))"),'AFTERIMAGE challenge must include the common daily seed and target score')
 assert.ok(afterimageGame.includes("life('share_created',{shareMethod:method==='web-share'?'web-share':'clipboard',challengeScore:Math.floor(game.score||daily.best||0)})"),'AFTERIMAGE share must use the host lifecycle event and carry share method/target score')
 assert.ok(afterimageGame.includes("opened.opener=null")&&afterimageGame.includes("share-intent-'+kind"),'Social share must detach opener and only reward after the share flow opens')
