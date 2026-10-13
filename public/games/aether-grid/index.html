@@ -316,7 +316,7 @@ h1,h2,h3,p{margin-top:0}h1{max-width:760px;margin-bottom:18px;font:400 clamp(54p
     const currentSet=currentConnections(current);
     let clicks=0;
     for(let offset=0;offset<4;offset++){if(sameConnections(rotate(currentSet,offset),correct[current])){clicks=offset;break;}}
-    if(clicks===0){const tile=$('.tile[data-index="'+current+'"]');tile?.classList.add('hint-pulse');window.setTimeout(()=>tile?.classList.remove('hint-pulse'),1800);$('hint-note').textContent='Подсказка: узел '+(current+1)+' уже ориентирован правильно.';return;}
+    if(clicks===0){const tile=document.querySelector('.tile[data-index="'+current+'"]');tile?.classList.add('hint-pulse');window.setTimeout(()=>tile?.classList.remove('hint-pulse'),1800);$('hint-note').textContent='Подсказка: узел '+(current+1)+' уже ориентирован правильно.';return;}
     turns[current]=(turns[current]+clicks)%4;moves+=3;hintsUsed++;updateStats();updateConnectivity();
     const tile=$('.tile[data-index="'+current+'"]');tile?.classList.add('hint-pulse');window.setTimeout(()=>tile?.classList.remove('hint-pulse'),1800);
     $('hint-note').textContent='Подсказка исправила один узел и добавила 3 хода к результату.';
@@ -341,7 +341,7 @@ h1,h2,h3,p{margin-top:0}h1{max-width:760px;margin-bottom:18px;font:400 clamp(54p
       if(event.key.toLowerCase()==='s'){event.preventDefault();shareResult();}
       if(['ArrowRight','ArrowLeft','ArrowDown','ArrowUp'].includes(event.key)&&target?.classList?.contains('tile')){
         const i=Number(target.dataset.index),step=event.key==='ArrowRight'?1:event.key==='ArrowLeft'?-1:event.key==='ArrowDown'?5:-5;
-        const next=i+step;if(next>=0&&next<25&&!(Math.abs(step)===1&&Math.floor(next/5)!==Math.floor(i/5))){$('.tile[data-index="'+next+'"]')?.focus();event.preventDefault();}
+        const next=i+step;if(next>=0&&next<25&&!(Math.abs(step)===1&&Math.floor(next/5)!==Math.floor(i/5))){document.querySelector('.tile[data-index="'+next+'"]')?.focus();event.preventDefault();}
       }
     });
   }
