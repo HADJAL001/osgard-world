@@ -5,7 +5,11 @@
 - Страница игры: https://osgard.world/game/cascade-lab
 - Самостоятельный запуск: https://osgard.world/games/cascade-lab/
 
-## Обновление 0.13.0
+## Обновление 0.13.0 (историческая запись)
+
+Текущая версия — **0.14.0**. Список улучшений, ограничения, горячие клавиши и детали JSON-импорта описаны в `docs/30_CASCADE_LAB_0.14.0_IMPROVEMENTS.md`.
+
+
 - В `public/games/cascade-lab/index.html` интегрирована автономная сборка CASCADE LAB 0.13.0 — без отдельного CDN и дополнительного игрового runtime.
 - Сохранён контракт готовности iframe через `body[data-cascade-lab-ready="true"]` и сообщения `osgard:game-lifecycle`: ready, started, paused, resumed. Успешное прохождение отдельного уровня передаётся как `level_completed` и не завершает игровую сессию; `completed` оставлен для реального завершения игры.
 - Страница сохраняет встроенную витрину OSGARD между протоколами: выбор кампании, кнопка перехода, Telegram/WhatsApp/VK/X/LinkedIn и ручное подтверждение вознаграждения +10 LC (не более раза в день по UTC).

@@ -2319,7 +2319,7 @@ requestAnimationFrame(frame);
 const VERSION='0.14.0', PREF_KEY='osgard.cascade-lab.ui-preferences.v1', PROMO_KEY='osgard.games.postgame-service-preferences.v1', HISTORY_LIMIT=50;
 const $=s=>document.querySelector(s), mk=(tag,cls,txt)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(txt!==undefined)n.textContent=txt;return n};
 const safeRead=k=>{try{return localStorage.getItem(k)}catch{return null}}, safeWrite=(k,v)=>{try{localStorage.setItem(k,v);return true}catch{return false}};
-let pref={highContrast:false,largeUI:false,reducedMotion:!!matchMedia?.('(prefers-reduced-motion: reduce)').matches,autoPause:true};
+let pref={highContrast:false,largeUI:false,reducedMotion:!!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches),autoPause:true};
 try{const p=JSON.parse(safeRead(PREF_KEY)||'{}');for(const k of Object.keys(pref))if(typeof p[k]==='boolean')pref[k]=p[k]}catch{}
 let undoStack=[],redoStack=[],restoring=false,focusReturn=null,fileInput=null;
 function state(){return{levelId:Number(level.id),dailyDate:activeDailyChallenge?.date||null,devices:devices.map(d=>({uid:String(d.uid||''),type:String(d.type||''),x:Number(d.x),y:Number(d.y),angle:Number(d.angle)||0}))}}
@@ -2459,7 +2459,7 @@ function renderFrequency(){const b=$('#cl14PromoFrequency');if(b){const f=prefer
 function preferenceData(){try{const p=JSON.parse(safeRead(PROMO_KEY)||'{}');return{frequency:['each','every3','off'].includes(p.frequency)?p.frequency:'each',selected:Array.isArray(p.selected)?p.selected:null}}catch{return{frequency:'each',selected:null}}}
 function cycleFrequency(){const p=preferenceData(),order=['each','every3','off'],next=order[(order.indexOf(p.frequency)+1)%order.length];if(!safeWrite(PROMO_KEY,JSON.stringify({frequency:next,selected:p.selected})))return showToast('Не удалось сохранить настройку.');if(typeof analytics!=='undefined')analytics.track('owned_promo_preferences_saved',{levelId:level.id,mode:analyticsMode(),frequency:next});renderFrequency();showToast('Витрина OSGARD: '+(next==='off'?'выключена':next==='every3'?'раз в три раунда':'каждый раунд')+'.')}
 applyPrefs();renderPrefs();renderFrequency();updateHistory();
-$('#cl14Undo').addEventListener('click',undo);$('#cl14Redo').addEventListener('click',redo);$('#cl14UndoConsole').addEventListener('click',undo);$('#cl14RedoConsole').addEventListener('click',redo);
+// The makeButton calls above already wire undo/redo exactly once.
 function editing(e){const t=e.target instanceof Element?e.target:null;return !!t?.closest('input,textarea,select,[contenteditable="true"]')}
 function nudgeKeys(e){if(mode!=='build'||!selectedDeviceUid)return false;const step=e.shiftKey?24:12,o={ArrowLeft:[-step,0],ArrowRight:[step,0],ArrowUp:[0,-step],ArrowDown:[0,step]}[e.key];if(!o)return false;nudge(o[0],o[1]);return true}
 function fullscreen(){if(document.fullscreenElement){document.exitFullscreen().catch(()=>showToast('Не удалось выйти из полного экрана.'));return}const target=$('.stage-column')||document.documentElement;if(target.requestFullscreen)target.requestFullscreen().then(()=>showToast('Полный экран включён.')).catch(()=>{cinemaMode=!cinemaMode;updateInterface();showToast('Браузер заблокировал полный экран; включён кинорежим.')});else{cinemaMode=!cinemaMode;updateInterface();showToast('Включён кинорежим.')}}
