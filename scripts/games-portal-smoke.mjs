@@ -459,11 +459,14 @@ const rewardSection=mockSuite.children.find(node=>node.className==='og-postgame-
 const socialGrid=rewardSection.children.find(node=>node.className==='og-postgame-networks')
 assert.deepEqual(socialGrid.children.map(node=>node.textContent),['Telegram ↗','WhatsApp ↗','VK ↗','X ↗','Facebook ↗'],'Share reward must offer the five requested social destinations')
 assert.ok(socialGrid.children.every(node=>node.target==='_blank'&&node.rel==='noopener noreferrer'&&node.href.startsWith('https://')),'Social buttons must open valid, isolated external share destinations')
-const claimReward=rewardSection.children.find(node=>node.className==='og-postgame-claim')
-socialGrid.children[0].click()
-assert.equal(claimReward.hidden,false,'Choosing a social destination should reveal the return-to-game reward confirmation')
-assert.ok(claimReward.textContent.includes('Telegram')&&claimReward.textContent.includes('+50 SHARDS'),'Reward confirmation should name the selected destination and show the local reward')
-assert.ok(rewardSection.children.find(node=>node.className==='og-postgame-status').textContent.includes('Соцсеть не сообщает сайту подтверждение публикации'),'Manual repost reward must clearly disclose that posting is player-confirmed, not network-verified')
+const rewardConsentLabel=rewardSection.children.find(node=>node.className==='og-postgame-reward-consent')
+assert.ok(rewardConsentLabel,'The server reward pilot must have a separate opt-in checkbox')
+assert.equal(rewardConsentLabel.children[0].type,'checkbox','Reward consent must be an explicit checkbox')
+assert.ok(rewardConsentLabel.children[1].textContent.includes('Участие добровольное'),'Reward consent must be voluntary and explained')
+assert.ok(rewardSection.children.some(node=>node.className==='og-postgame-share-primary'),'Primary share action must be present')
+assert.equal(rewardSection.children.filter(node=>node.className==='og-postgame-claim').length,2,'Reward shelf must offer copy-link and refresh-balance actions instead of a self-claim button')
+assert.ok(rewardSection.children.find(node=>node.className==='og-postgame-copy').textContent.includes('не короче 60 секунд'),'Reward copy must explain the qualifying invite session')
+assert.ok(rewardSection.children.find(node=>node.className==='og-postgame-status').textContent.includes('Публикацию поста соцсеть не подтверждает'),'Social-share UI must not imply network-verified publication')
 assert.deepEqual(mockGrid.children.map(node=>node.dataset.play),['null-shift','signal-run'],'SWARM should recommend two related live games')
 assert.deepEqual(mockGrid.children.map(node=>node.href),['/games/null-shift-godot/','/games/signal-run/'],'Recommendations should point to valid game launch routes')
 mockDocument.dispatch('osgard:game-launching')
@@ -648,8 +651,11 @@ assert.ok(recommendationScript.includes("['o2-system','02','O2 SYSTEM','BUSINESS
 assert.ok(/\['gardvpn','08','GARD VPN'[^\n]+false,false\]/.test(recommendationScript),'GARD VPN must stay non-clickable until availability is confirmed');
 for(const provider of ['t.me/share/url','wa.me/?text=','vk.com/share.php','twitter.com/intent/tweet','facebook.com/sharer/sharer.php'])assert.ok(recommendationScript.includes(provider),'Social share redirect missing: '+provider);
 assert.ok(recommendationScript.includes("u.searchParams.set('utm_medium','post_game')")&&recommendationScript.includes("u.searchParams.set('utm_campaign','after_game')"),'Post-game links require UTM attribution');
-assert.ok(recommendationScript.includes("const walletKey='osgard.games.shards-wallet.v1',dailyReward=50")&&recommendationScript.includes('current.day===day'),'SHARDS must persist locally and be capped once per UTC day');
-assert.ok(recommendationScript.includes('Я опубликовал — получить +50 SHARDS')&&recommendationScript.includes('Соцсеть не сообщает сайту подтверждение публикации')&&recommendationScript.includes('не являются платёжным средством'),'Social reward must disclose self-confirmation and non-monetary points');
+assert.ok(recommendationScript.includes("const REWARD_CONSENT_KEY='osgard.games.referral-reward-consent.v1'")&&recommendationScript.includes('function secureReferralHex(bytes)')&&recommendationScript.includes('function ownerToken()'),'Referral rewards must use a separate opt-in and cryptographically secure invite/owner tokens');
+assert.ok(recommendationScript.includes("base+'/v1/referrals/register'")&&recommendationScript.includes("base+'/v1/referrals/reward-status'")&&recommendationScript.includes('async function refreshShardsBalance'),'SHARDS must use the server registration and balance API, not a local wallet');
+assert.ok(!recommendationScript.includes('osgard.games.shards-wallet.v1')&&!recommendationScript.includes('function award(source)'),'Client code must not mint a local SHARDS balance');
+assert.ok(recommendationScript.includes('не короче 60 секунд')&&recommendationScript.includes('не начисляются за нажатие кнопки'),'Referral reward must be tied to a qualified server-recorded session, not social button clicks');
+assert.ok(recommendationScript.includes('Публикацию поста соцсеть не подтверждает')&&recommendationScript.includes('не имеют денежной стоимости'),'Social reward disclosure must not claim that network publication is verified and must state non-cash status');
 assert.ok(recommendationStyles.includes('.og-postgame-services')&&recommendationStyles.includes('.og-postgame-service-grid')&&recommendationStyles.includes('.og-postgame-reward')&&recommendationStyles.includes('@media(max-width:760px)')&&recommendationStyles.includes('prefers-reduced-motion:reduce'),'Postgame UI must be premium, responsive and accessible');
 assert.ok(recommendationScript.includes('РЕКЛАМА · СОБСТВЕННЫЕ ПРОЕКТЫ OSGARD')&&recommendationScript.includes('osgardServiceFilter')&&recommendationScript.includes('categoryByService'),'OSGARD SELECT must disclose self-promotion and let players filter service offers by category');
 assert.ok(recommendationScript.includes("['all','Все доступные · '+availableServiceIds.length]")&&recommendationScript.includes("['studio','Разработка · 2']")&&recommendationScript.includes("['luxury','Luxury · 1']"),'OSGARD SELECT filters must expose all configured service categories');
@@ -674,8 +680,8 @@ const rewardPrimaryEnd=recommendationScript.indexOf(" const note=make('p','og-po
 assert.ok(rewardPrimaryStart>=0&&rewardPrimaryEnd>rewardPrimaryStart,'OSGARD SELECT reward-share handler boundaries are required');
 const rewardPrimaryHandler=recommendationScript.slice(rewardPrimaryStart,rewardPrimaryEnd);
 assert.ok(!rewardPrimaryHandler.includes('show(award('),'OSGARD SELECT must not award automatically when native share succeeds or a link is copied');
-assert.ok(rewardPrimaryHandler.includes("pending='native-share'")&&rewardPrimaryHandler.includes("claim.hidden=false")&&rewardPrimaryHandler.includes('Копирование само по себе не считается репостом и не даёт награду'),'Native sharing must require confirmation and clipboard copy must not award');
-assert.ok(recommendationScript.includes("award('social-confirmation:'+network)")&&recommendationScript.includes('не чаще раза в UTC-день на этом устройстве'),'Social reward is self-confirmed, local and daily-capped');
+assert.ok(rewardPrimaryHandler.includes('registerInvite(gameId,code)')&&rewardPrimaryHandler.includes("navigator.share")&&rewardPrimaryHandler.includes("navigator.clipboard.writeText"),'Share/copy actions must register a canonical invite before attributing the referral');
+assert.ok(recommendationScript.includes("base+'/v1/referrals/register'")&&recommendationScript.includes("base+'/v1/referrals/reward-status'")&&recommendationScript.includes('pointsEarned'),'Referral reward balance and invite registration must be server-backed');
 assert.ok(recommendationScript.includes("entry.intersectionRatio>=0.5")&&recommendationScript.includes("},1000)")&&recommendationScript.includes('card.isConnected')&&recommendationScript.includes('card.getClientRects().length'),'A promo exposure must require at least 50% visibility for a full second on a connected, visible card');
 assert.ok(referralCoreSource.includes('"owned_promo_impression"'),'Commerce API must allow the explicit owned-promo impression event');
 assert.ok(referralApiSource.includes("source LIKE 'osgard-select:%'")&&referralApiSource.includes("event_name = 'owned_promo_impression'")&&referralApiSource.includes('ownedPromoByService: ownedPromoByService.rows'),'Admin analytics API must aggregate consented OSGARD SELECT exposure and click events per service/game');
