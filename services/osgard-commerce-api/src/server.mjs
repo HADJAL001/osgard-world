@@ -410,6 +410,11 @@ app.post("/v1/referrals/reward-status", async (req, res) => {
   if (!input.ok) return res.status(input.status).json({ error: input.code });
   if (!requireDatabase(res)) return;
   try {
+    const owner = await pool.query(
+      "SELECT 1 FROM game_referral_invites WHERE invite_code=$1 AND inviter_token=$2 LIMIT 1",
+      [input.code, input.ownerToken],
+    );
+    if (!owner.rowCount) return res.status(404).json({ error: "REFERRAL_CODE_NOT_FOUND" });
     const result = await pool.query(
       "SELECT COUNT(*)::int AS qualified_sessions, COALESCE(SUM(points),0)::int AS points_earned FROM game_referral_rewards WHERE invite_code=$1",
       [input.code],
