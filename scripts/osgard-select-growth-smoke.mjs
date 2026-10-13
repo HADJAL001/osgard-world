@@ -84,6 +84,26 @@ assert.ok(source.includes("const activeSelected=services.filter(([id,,,,,,featur
 assert.ok(source.includes("if(!hasConsent()||!selectAllowedEvents.has(name))return false") &&
   source.includes("sendSelectEvent('owned_promo_impression',gameId,'osgard-select:spotlight:'"),
   'Spotlight exposure measurement must be behind explicit analytics consent');
+const spotlightGateSource = source.match(/function canCountSpotlightImpression\([^)]*\)\{\s*return Boolean\(([^;]+)\);\s*\}/);
+assert.ok(spotlightGateSource, 'Spotlight impression guard must be independently testable');
+const canCountSpotlightImpression = vm.runInNewContext('(' + spotlightGateSource[0] + ')');
+assert.equal(canCountSpotlightImpression(true,true,true,false,false,'myosa','myosa'), true,
+  'A consented, visible, connected spotlight can count after its visibility timer');
+assert.equal(canCountSpotlightImpression(false,true,true,false,false,'myosa','myosa'), false,
+  'A spotlight that leaves the viewport must not count an impression');
+assert.equal(canCountSpotlightImpression(true,false,true,false,false,'myosa','myosa'), false,
+  'Spotlight impressions must remain off without analytics consent');
+assert.equal(canCountSpotlightImpression(true,true,false,false,false,'myosa','myosa'), false,
+  'A detached spotlight must not count an impression');
+assert.equal(canCountSpotlightImpression(true,true,true,true,false,'myosa','myosa'), false,
+  'A hidden spotlight must not count an impression');
+assert.equal(canCountSpotlightImpression(true,true,true,false,true,'myosa','myosa'), false,
+  'A hidden browser tab must not count an impression');
+assert.equal(canCountSpotlightImpression(true,true,true,false,false,'projects','myosa'), false,
+  'Changing the spotlight before the timer ends must cancel the old service impression');
+assert.ok(source.includes('if(!spotlightIsVisible){clearSpotlightImpression();return}') &&
+  source.includes('stopSpotlightWatcher()') && source.includes("document.visibilityState!=='visible'"),
+  'The spotlight observer must cancel pending timers when the element leaves view, changes or the tab is backgrounded');
 assert.ok(core.includes('"owned_promo_impression"') && core.includes('"cross_promo_clicked"'),
   'Commerce API must allow only the existing, consented first-party promo events');
 assert.ok(css.includes('.og-postgame-spotlight{') &&
@@ -140,6 +160,6 @@ console.log(JSON.stringify({
   status: 'passed',
   serviceDestinations: services.length,
   gameContexts: 9,
-  checks: 33,
+  checks: 41,
   notes: 'Source-level guardrails; social publication is self-confirmed, not verified by social-network APIs.'
 }));
