@@ -356,8 +356,10 @@ function rewardShelf(gameId){
    const popup=window.open('about:blank','_blank');
    if(popup)popup.opener=null;
    status.textContent='Регистрируем код приглашения перед открытием '+name+'…';
-   void registerInvite().finally(()=>{
-    status.textContent='Форма '+name+' открыта. Мы не можем проверить публикацию в соцсети. SHARDS начисляются только после подходящей игровой сессии друга.';
+   void registerInvite().then(registered=>{
+    status.textContent=registered
+     ? 'Форма '+name+' открыта. Мы не можем проверить публикацию в соцсети. SHARDS начисляются только после подходящей игровой сессии друга.'
+     : 'Код приглашения не удалось зарегистрировать на сервере. Соцсеть всё равно откроется, но эта ссылка может не участвовать в начислении SHARDS.';
     if(popup&&!popup.closed)popup.location.href=destination;
     else if(!popup)location.href=destination;
    });
@@ -368,7 +370,8 @@ function rewardShelf(gameId){
   try{
    await navigator.clipboard.writeText(message);
    status.textContent='Ссылка скопирована. Отправь её другу. Награда начислится после подтверждённой игровой сессии приглашённого.';
-   if(analyticsConsented())void registerInvite();
+   const registered=analyticsConsented()?await registerInvite():false;
+   if(analyticsConsented()&&!registered)status.textContent='Ссылка скопирована, но код не удалось зарегистрировать на сервере. Отправь её другу, однако SHARDS за эту ссылку могут не учитываться.';
   }catch{status.textContent='Не удалось скопировать автоматически. Выбери соцсеть выше или скопируй адрес приглашения из адресной строки.'}
  });
  primary.addEventListener('click',async()=>{
@@ -376,12 +379,16 @@ function rewardShelf(gameId){
   try{
    if(typeof navigator.share==='function'){
     await navigator.share({title:'OSGARD PLAY · '+titles[gameId],text:'Пойдём сыграем вместе.',url});
-    if(analyticsConsented())await registerInvite();
-    status.textContent='Приглашение подготовлено. Факт публикации соцсетью не подтверждается; SHARDS начисляются после подходящей игровой сессии друга.';
+    const registered=analyticsConsented()?await registerInvite():false;
+    status.textContent=registered
+     ? 'Приглашение подготовлено. Факт публикации соцсетью не подтверждается; SHARDS начисляются после подходящей игровой сессии друга.'
+     : 'Приглашение подготовлено, но код не был зарегистрирован на сервере. Отправка возможна, однако SHARDS за эту ссылку могут не учитываться.';
    }else if(navigator.clipboard?.writeText){
     await navigator.clipboard.writeText(message);
-    if(analyticsConsented())await registerInvite();
-    status.textContent='Текст приглашения скопирован. Отправь его другу; SHARDS начислятся после подтверждённой игровой сессии.';
+    const registered=analyticsConsented()?await registerInvite():false;
+    status.textContent=registered
+     ? 'Текст приглашения скопирован. Отправь его другу; SHARDS начислятся после подтверждённой игровой сессии.'
+     : 'Текст приглашения скопирован, но код не зарегистрирован на сервере. SHARDS за эту ссылку могут не учитываться.';
    }else{
     status.textContent='Выбери соцсеть ниже, чтобы открыть форму публикации.';
    }
