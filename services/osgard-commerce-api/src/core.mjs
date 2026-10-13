@@ -150,6 +150,13 @@ export function validateReferralWalletPayload(body) {
   return { ok: true, walletToken };
 }
 
+export function validateReferralDisablePayload(body) {
+  const input = body && typeof body === "object" && !Array.isArray(body) ? body : {};
+  const walletToken = typeof input.walletToken === "string" ? input.walletToken : "";
+  if (!/^rw_[a-f0-9]{64}$/.test(walletToken)) return { ok: false, status: 400, code: "REFERRAL_WALLET_TOKEN_INVALID" };
+  return { ok: true, walletToken };
+}
+
 export function paymentsModeAllowed(secretKey, enableLive = false) {
   if (typeof secretKey !== "string") return false;
   if (secretKey.startsWith("sk_test_")) return true;
