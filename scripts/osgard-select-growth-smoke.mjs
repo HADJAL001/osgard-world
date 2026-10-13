@@ -7,6 +7,7 @@ const source = read('public/games/game-session-recommendations.js');
 const css = read('public/games/game-session-recommendations.css');
 const core = read('services/osgard-commerce-api/src/core.mjs');
 const signalRun = read('public/games/signal-run/game.js');
+const lifecycle = read('public/games/player-lifecycle.js');
 
 new vm.Script(source, { filename: 'game-session-recommendations.js' });
 new vm.Script(signalRun, { filename: 'signal-run/game.js' });
@@ -94,6 +95,10 @@ assert.ok(reward.includes('Копирование само по себе не с
 assert.ok(source.includes("const walletKey='osgard.games.shards-wallet.v1',dailyReward=50") &&
   source.includes('current.day===day'),
   'Local SHARDS reward must be capped to one claim per UTC day and device wallet');
+assert.ok(source.includes('function recordCompletedRound(gameId,sessionId)')&&source.includes('current.sessions.includes(key)')&&source.includes('slice(-100)'),
+  'A completed round and later player return must share one idempotency key, even if the user waits before closing');
+assert.ok(lifecycle.includes("activeSessionId='session_'+id+'_'+sequence+'_'+launchAt")&&lifecycle.includes('sessionId:activeSessionId')&&lifecycle.includes('detail:{game:activeGame,sessionId:activeSessionId}'),
+  'The lifecycle wrapper must send the same session identity for completion and catalog return');
 
 const claimSignal = signalRun.indexOf("claimShare.addEventListener('click'");
 const shareSignal = signalRun.indexOf("$('share').addEventListener('click',async()=>{");
