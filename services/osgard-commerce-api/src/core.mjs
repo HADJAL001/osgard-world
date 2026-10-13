@@ -39,6 +39,9 @@ export const ALLOWED_EVENTS = new Set([
   "owned_promo_preferences_saved",
   "social_share_intent",
   "social_reward_claimed",
+  "daily_play_reward_claimed",
+  "referral_welcome_reward_claimed",
+  "shards_cosmetic_unlocked",
   "game_launched",
   "game_session_completed",
   "lead_submitted",
@@ -73,21 +76,6 @@ export function isSafeEmail(value) {
     /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email);
 }
 
-const CHECKOUT_ATTRIBUTION_SLUG = /^[a-z0-9][a-z0-9_-]{0,47}$/;
-
-export function normalizeCheckoutAttribution(raw) {
-  const input = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
-  const gameCandidate = cleanText(input.gameId, 48).toLowerCase();
-  // Do not truncate: overlong slugs must fail validation instead of becoming valid prefixes.
-  const sourceCandidate = cleanText(input.source, 128).toLowerCase();
-  const campaignCandidate = cleanText(input.campaign, 128).toLowerCase();
-  return {
-    gameId: GAME_IDS.has(gameCandidate) ? gameCandidate : "unknown",
-    source: CHECKOUT_ATTRIBUTION_SLUG.test(sourceCandidate) ? sourceCandidate : "direct",
-    campaign: CHECKOUT_ATTRIBUTION_SLUG.test(campaignCandidate) ? campaignCandidate : "",
-  };
-}
-
 export function validateCheckoutPayload(body) {
   const input = body && typeof body === "object" && !Array.isArray(body) ? body : {};
   const productKey = cleanText(input.productKey, 80);
@@ -96,7 +84,7 @@ export function validateCheckoutPayload(body) {
   if (!product) return { ok: false, status: 400, code: "PRODUCT_NOT_ALLOWED" };
   if (!isSafeEmail(email)) return { ok: false, status: 400, code: "VALID_EMAIL_REQUIRED" };
   if (input.termsAccepted !== true) return { ok: false, status: 400, code: "TERMS_ACCEPTANCE_REQUIRED" };
-  return { ok: true, product, productKey, email, attribution: normalizeCheckoutAttribution(input.attribution) };
+  return { ok: true, product, productKey, email };
 }
 
 export function validateLeadPayload(body) {
