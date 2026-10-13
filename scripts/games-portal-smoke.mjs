@@ -585,7 +585,7 @@ const rewardPrimaryEnd=recommendationScript.indexOf(" const note=make('p','og-po
 assert.ok(rewardPrimaryStart>=0&&rewardPrimaryEnd>rewardPrimaryStart,'OSGARD SELECT reward-share handler boundaries are required');
 const rewardPrimaryHandler=recommendationScript.slice(rewardPrimaryStart,rewardPrimaryEnd);
 assert.ok(!rewardPrimaryHandler.includes('show(award(')&&rewardPrimaryHandler.includes("pending='native-share'")&&rewardPrimaryHandler.includes('claim.hidden=false'),'OSGARD SELECT must require a separate claim after native share and not auto-award');
-assert.ok(rewardPrimaryHandler.includes('Копирование само по себе не считается репостом и не даёт награду')&&!rewardPrimaryHandler.includes("show(award(source+':"+'gameId'+"))"),'Clipboard copy alone must never award SHARDS');
+assert.ok(rewardPrimaryHandler.includes('Копирование само по себе не считается репостом и не даёт награду')&&!rewardPrimaryHandler.includes('show(award('),'Clipboard copy alone must never award SHARDS');
 
 assert.ok(recommendationStyles.includes('.og-postgame-services')&&recommendationStyles.includes('.og-postgame-service-grid')&&recommendationStyles.includes('.og-postgame-reward')&&recommendationStyles.includes('@media(max-width:760px)')&&recommendationStyles.includes('prefers-reduced-motion:reduce'),'Postgame UI must be premium, responsive and accessible');
 assert.ok(recommendationScript.includes('РЕКЛАМА · СОБСТВЕННЫЕ ПРОЕКТЫ OSGARD')&&recommendationScript.includes('osgardServiceFilter')&&recommendationScript.includes('categoryByService'),'OSGARD SELECT must disclose self-promotion and let players filter service offers by category');
@@ -645,6 +645,7 @@ assert.ok(appSource.includes('не подтверждается автомати
 const homepageShareStart=playSelectSource.indexOf('  const shareInvite = async () => {');
 const homepageShareEnd=playSelectSource.indexOf('\n  }\n\n  return <section',homepageShareStart);
 assert.ok(homepageShareStart>=0&&homepageShareEnd>homepageShareStart,'Homepage invitation-share handler boundaries are required');
+const homeShareHandler=playSelectSource.slice(homepageShareStart,homepageShareEnd);
 const homeShareHandler=playSelectSource.slice(homepageShareStart,homepageShareEnd);
 assert.ok(homeShareHandler.includes("setPendingNetwork('native-share')")&&!homeShareHandler.includes("grantReward('homepage-native-share')")&&!homeShareHandler.includes("grantReward('homepage-clipboard')"),'Homepage must not auto-award on a share-sheet return or clipboard copy');
 assert.ok(playSelectSource.includes("grantReward('homepage-social-confirmation:' + pendingNetwork)")&&playSelectSource.includes('Копирование ссылки само по себе не даёт награду'),'Homepage SHARDS must require explicit social-share confirmation');
