@@ -54,3 +54,12 @@ Keyboard shortcuts support Ctrl/Cmd+Z undo, Ctrl/Cmd+Y redo and Escape to pause;
 ## Verification
 
 The Games detail smoke test checks the controls, versioned checkpoint contract, bounded undo/redo, visibility pause, UTC streaks, optional settings, export semantics, keyboard shortcuts and parses the inline game controller. Production-browser behavior and real-device haptics still require device QA; CI source validation is not a substitute for a physical-device test.
+
+
+## Additional hardening after source review
+
+The active timer now uses `performance.now()` through a single monotonic-clock helper; `Date.now()` remains only for wall-clock metadata such as save timestamps and lifecycle event timestamps. This avoids a user's system-clock adjustment freezing or jumping the in-progress elapsed time.
+
+The interface also reuses one Web Audio context for all optional tones instead of allocating and closing a new audio context for each move. Suspended audio is resumed only from an explicit player interaction. Malformed checkpoints are removed after strict validation, and the elapsed-time restore bound allows a long-lived but valid session up to seven days.
+
+The Games detail smoke test now has regression assertions for the monotonic timer contract, timer start/resume paths, invalid-checkpoint cleanup and audio-context reuse. These are source/CI checks; physical-device audio and timer behavior still require real browser QA.
