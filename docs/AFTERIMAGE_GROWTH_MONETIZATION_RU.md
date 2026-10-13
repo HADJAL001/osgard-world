@@ -56,5 +56,12 @@ Minimum useful release experiment:
 - Audit whether the intermission is dismissible, one click from choice to destination, mobile-readable and never rendered over a live run.
 - Keep the promotion-frequency choice test separate from game-balance testing.
 
+## Performance and fair-play hardening
+
+- The idle scene uses a cancellable timer at a lower redraw cadence rather than maintaining a permanent `requestAnimationFrame` loop while the player is not playing.
+- Ambient idle movement is disabled when `prefers-reduced-motion: reduce` is active.
+- Switching away from the tab automatically pauses an active run; returning to the tab does not auto-resume it, so the player must intentionally continue.
+- Game QA asserts these contracts to prevent accidental reintroduction of the busy-loop and hidden-tab unfair-loss bug.
+
 ## Release boundaries
 The first release uses local personal-best data and a locally stored cosmetic shard. It has no public leaderboard, cross-device save, ad SDK, payment processor or server-backed referral reward. The intermission is owned-service cross-promotion, not third-party ads. Activate server-backed monetization only after accounts, provider approval, webhook/signature validation, consent and refund handling exist.
