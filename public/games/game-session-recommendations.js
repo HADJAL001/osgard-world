@@ -59,6 +59,7 @@ const SESSION_KEY='osgard.games.growth-session.v1';
 const make=(tag,cls,value)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(value!==undefined)n.textContent=value;return n};
 const consented=()=>{try{return localStorage.getItem(CONSENT_KEY)==='yes'}catch{return false}};
 function token(){const bytes=new Uint8Array(6);if(globalThis.crypto?.getRandomValues)globalThis.crypto.getRandomValues(bytes);else for(let i=0;i<bytes.length;i++)bytes[i]=Math.floor(Math.random()*256);return Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('')}
+function inviteCode(){const bytes=new Uint8Array(8);if(globalThis.crypto?.getRandomValues)globalThis.crypto.getRandomValues(bytes);else for(let i=0;i<bytes.length;i++)bytes[i]=Math.floor(Math.random()*256);return'og_'+Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('')}
 function sessionId(){try{let value=sessionStorage.getItem(SESSION_KEY);if(value&&/^session_[a-f0-9]{24}$/.test(value))return value;value='session_'+token()+token();sessionStorage.setItem(SESSION_KEY,value);return value}catch{return 'session_'+token()+token()}}
 const pendingTelemetry=new Set();
 function cancelPendingTelemetry(){for(const controller of pendingTelemetry){try{controller.abort()}catch{}}pendingTelemetry.clear()}
@@ -95,7 +96,7 @@ function incomingInvite(){
  const params=new URLSearchParams(location.search);
  const source=params.get('utm_source')||'',medium=params.get('utm_medium')||'',campaign=params.get('utm_campaign')||'';
  const canonicalGame=params.get('og_game')||'',canonicalCode=params.get('og_ref')||'';
- const canonicalInvite=Boolean(games[canonicalGame]&&/^og_[a-f0-9]{8}$/.test(canonicalCode)&&source==='osgard_play'&&medium==='referral'&&campaign==='play_with_friends');
+ const canonicalInvite=Boolean(games[canonicalGame]&&/^og_[a-f0-9]{8}(?:[a-f0-9]{8})?$/.test(canonicalCode)&&source==='osgard_play'&&medium==='referral'&&campaign==='play_with_friends');
  if(canonicalInvite)return {game:canonicalGame,code:canonicalCode,legacy:false};
  const legacyGame=params.get('challenge')||'',legacyCode=params.get('ref')||'';
  const legacyInvite=Boolean(games[legacyGame]&&/^[a-f0-9]{12}$/.test(legacyCode)&&source==='osgard_games'&&medium==='referral'&&campaign==='play_with_a_friend');
@@ -164,12 +165,12 @@ function buildShareUrl(gameId){
  try{
   if(typeof window.OSGARDInvite?.createLink==='function'){
    const shared=new URL(window.OSGARDInvite.createLink(gameId),location.origin);
-   if(shared.origin===location.origin&&shared.pathname==='/games/invite/'+gameId+'/'&&shared.searchParams.get('og_game')===gameId&&/^og_[a-f0-9]{8}$/.test(shared.searchParams.get('og_ref')||''))return shared.href;
+   if(shared.origin===location.origin&&shared.pathname==='/games/invite/'+gameId+'/'&&shared.searchParams.get('og_game')===gameId&&/^og_[a-f0-9]{8}(?:[a-f0-9]{8})?$/.test(shared.searchParams.get('og_ref')||''))return shared.href;
   }
  }catch{}
  // Fail-soft fallback follows the same public URL contract as the catalogue toolbar.
  const url=new URL('/games/invite/'+encodeURIComponent(gameId)+'/',location.origin);
- url.searchParams.set('og_ref','og_'+token().slice(0,8));
+ url.searchParams.set('og_ref',inviteCode());
  url.searchParams.set('og_game',gameId);
  url.searchParams.set('utm_source','osgard_play');
  url.searchParams.set('utm_medium','referral');
@@ -379,8 +380,8 @@ function frequencySummary(preferences,completedCount){
  return 'Подборка появится после завершённой игры. Можно изменить частоту в настройках.';
 }
 function inviteFor(id){
- try{const candidate=window.OSGARDInvite?.createLink?.(id);if(candidate){const u=new URL(candidate,location.origin);if(u.origin===location.origin&&u.pathname==='/games/invite/'+id+'/'&&u.searchParams.get('og_game')===id&&/^og_[a-f0-9]{8}$/.test(u.searchParams.get('og_ref')||''))return u.href}}catch{}
- const bytes=new Uint8Array(4);if(globalThis.crypto?.getRandomValues)globalThis.crypto.getRandomValues(bytes);else for(let i=0;i<bytes.length;i++)bytes[i]=Math.floor(Math.random()*256);
+ try{const candidate=window.OSGARDInvite?.createLink?.(id);if(candidate){const u=new URL(candidate,location.origin);if(u.origin===location.origin&&u.pathname==='/games/invite/'+id+'/'&&u.searchParams.get('og_game')===id&&/^og_[a-f0-9]{8}(?:[a-f0-9]{8})?$/.test(u.searchParams.get('og_ref')||''))return u.href}}catch{}
+ const bytes=new Uint8Array(8);if(globalThis.crypto?.getRandomValues)globalThis.crypto.getRandomValues(bytes);else for(let i=0;i<bytes.length;i++)bytes[i]=Math.floor(Math.random()*256);
  const u=new URL('/games/invite/'+encodeURIComponent(id)+'/',location.origin);u.searchParams.set('og_ref','og_'+Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join(''));u.searchParams.set('og_game',id);
  u.searchParams.set('utm_source','osgard_play');u.searchParams.set('utm_medium','referral');u.searchParams.set('utm_campaign','play_with_friends');u.searchParams.set('utm_content',id);return u.href;
 }
