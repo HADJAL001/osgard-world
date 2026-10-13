@@ -109,7 +109,7 @@
     activeController = controller;
     try {
       const base = await resolveApiBase(controller?.signal);
-      if (!consentGranted() || controller?.signal.aborted) return false;
+      if (!base || !consentGranted() || controller?.signal.aborted) return false;
       const response = await fetch(base + '/v1/events', {
         method: 'POST',
         credentials: 'same-origin',
