@@ -3428,3 +3428,30 @@ Continue non-financial brief implementation; billing can be handled only after a
 ### Publication boundary
 
 - This changes verifier resilience only; it does not weaken catalog correctness or alter external production requirements.
+
+
+## 2026-10-13 / Pass 180
+
+### Scope completed
+
+- Merged and deployed the OSGARD PLAY completion-discovery update (PR #57, merge commit `97b30af74ee41a4a2983bd300d410d79a847bf4f`).
+- Added a compact in-player recommendation shelf triggered only by the active iframe's same-origin `completed` lifecycle message. The shelf clears on the next launch.
+- Added terminal completion signals to the primary Godot NULL//SHIFT client, its WebGL fallback, SWARM, REMIX server RESULTS, the Imperium of Time terminal state, and INHERIT generation handoff.
+- Removed INHERIT's hard-coded visitor-side `127.0.0.1:4174` world endpoint and development-only `127.0.0.1:4175` analytics endpoint. Shared-world sync now stays disabled unless a compatible API URL is deliberately configured; local lineage remains available by default.
+
+### Verification and deployment evidence
+
+- Frontend validation run: `38330991745` — success.
+- Release readiness run: `38330999207` — success.
+- Godot-enabled frontend deployment run: `38330991753` — success.
+- Godot 4.7.2 project import/parse, headless runtime smoke, and web export all passed.
+- Production archive SHA-256: `5c251ff2c0b948cf5f34ea76c9d0bf2799fe13dd9970ec8c815b53a26c8bec65`; checksum-verified staging and rollback-protected activation succeeded.
+- Live desktop/mobile route matrix: `98` routes, `failed: 0`, `status: ready`. Both new recommendation assets were served and checked.
+- Same-origin SkillCred proxy test passed: `/health`, `/ready`, `/issuer`, demo issue, verify-active, revoke, and verify-revoked all returned HTTP 200 as expected.
+- OSGARD Games Lighthouse audit run `38330999142` — success.
+
+### Remaining quality boundary
+
+- SkillCred Lighthouse run `38330999002` failed its existing strict 100/100 guard: mobile Performance measured 84/100 with TBT 550 ms and LCP 2.3 s; Accessibility, Best Practices, and SEO were 100/100, and all four desktop categories were 100/100. The raw reports were retained as a GitHub Actions artifact. This does not negate the successful deployment or the separate successful Games Lighthouse audit.
+- INHERIT shared-world synchronisation remains intentionally disabled until a compatible production API is configured and tested; its device-local save path remains available.
+- Advertising SDKs, production checkout/subscriptions, and server-side purchase entitlements were not activated by this pass. The monetization planner remains a browser-side scenario model rather than measured financial analytics.
