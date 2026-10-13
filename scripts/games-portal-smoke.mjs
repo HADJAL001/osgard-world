@@ -252,7 +252,9 @@ assert.ok(sitemap.includes('<loc>https://osgard.world/games/civic-cascade/</loc>
 assert.ok(manifest.includes("'afterimage-run'")&&manifest.includes("title: 'AFTERIMAGE//RUN'")&&manifest.includes("href: '/games/afterimage-run/'"),'AFTERIMAGE must be registered in core manifest')
 assert.ok(sitemap.includes('<loc>https://osgard.world/games/afterimage-run/</loc>'),'AFTERIMAGE must be present in the XML sitemap')
 assert.ok(lifecycle.includes("'afterimage-run':{title:'AFTERIMAGE//RUN',url:'/games/afterimage-run/'}")&&lifecycle.includes("if(id==='afterimage-run')return !!doc.querySelector('#runnerCanvas')&&!!doc.querySelector('#run-start')&&!!doc.querySelector('#daily-seed')"),'AFTERIMAGE must participate in player lifecycle readiness')
-assert.ok(lifecycle.includes("if(m.state==='shared')")&&lifecycle.includes("allowedEvent('share_created',payload)"),'AFTERIMAGE legacy share state must normalize into registered platform analytics')
+assert.ok(manifest.includes("'afterimage-run'")&&manifest.includes("title: 'AFTERIMAGE//RUN'")&&manifest.includes("href: '/games/afterimage-run/'"),'AFTERIMAGE must be registered in the typed manifest')
+assert.ok(sitemap.includes('<loc>https://osgard.world/games/afterimage-run/</loc>'),'AFTERIMAGE must be present in the XML sitemap')
+assert.ok(lifecycle.includes("'afterimage-run':{title:'AFTERIMAGE//RUN',url:'/games/afterimage-run/'}")&&lifecycle.includes("if(id==='afterimage-run')return !!doc.querySelector('#runnerCanvas')&&!!doc.querySelector('#run-start')&&!!doc.querySelector('#daily-seed')"),'AFTERIMAGE must participate in player lifecycle readiness')
 const recommendations=readFileSync(resolve(root,'game-session-recommendations.js'),'utf8')
 assert.ok(recommendations.includes("'afterimage-run':{title:'AFTERIMAGE//RUN',subtitle:'Ежедневный sci-fi speedrun',href:'/games/afterimage-run/'}")&&recommendations.includes("'afterimage-run':['signal-run','cascade-lab']")&&recommendations.includes("'afterimage-run':'AFTERIMAGE//RUN'"),'AFTERIMAGE must participate in postgame recommendations, referral share, and OSGARD SELECT')
 assert.ok(recommendations.includes('osgard-aftergame-intermission')&&recommendations.includes('og-postgame-preferences')&&recommendations.includes('Настроить показ')&&recommendations.includes('Автозапуска нет.'),'The existing optional between-game OSGARD SELECT must remain available, user-configurable and must not autoplay')
@@ -720,3 +722,7 @@ assert.ok(appSource.includes('href="/games/?utm_source=osgard_world&amp;utm_medi
 assert.ok(appSource.includes('href="/games/monetization/?utm_source=osgard_world&amp;utm_medium=entertainment&amp;utm_campaign=economy_model"'), 'Entertainment gateway must link to the scenario economy model')
 assert.ok(appSource.includes('публикацию нельзя проверить автоматически') && appSource.includes('Это не деньги'), 'SHARDS must be disclosed as non-monetary with social-post verification limits')
 assert.ok(appStyles.includes('.play-economy-strip') && appStyles.includes('@media(max-width:760px)') && appStyles.includes('prefers-reduced-motion:reduce'), 'Entertainment economy teaser needs responsive and reduced-motion styling')
+
+// AFTERIMAGE's older share message must still count through the canonical event contract.
+assert.ok(lifecycle.includes("m.state!=='shared'")&&lifecycle.includes("m.state==='shared'")&&lifecycle.includes("allowedEvent('share_created',payload)"),'AFTERIMAGE legacy share state must normalize into registered platform analytics')
+console.log('PASS AFTERIMAGE legacy share-state normalization')
