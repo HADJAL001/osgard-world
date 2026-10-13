@@ -11,6 +11,11 @@ assert.ok(files.length > 0, 'SkillCred page is missing from source and build out
 const nginxPath = resolve('nginx.conf')
 assert.ok(existsSync(nginxPath), 'nginx.conf is missing')
 const nginx = readFileSync(nginxPath, 'utf8')
+const lighthouseWorkflowPath = resolve('.github/workflows/skillcred-lighthouse.yml')
+assert.ok(existsSync(lighthouseWorkflowPath), 'SkillCred Lighthouse workflow is missing')
+const lighthouseWorkflow = readFileSync(lighthouseWorkflowPath, 'utf8')
+assert.ok(lighthouseWorkflow.includes('EXPECTED_DEPLOY_SHA') && lighthouseWorkflow.includes('/skillcred/styles.css?v=$expected') && lighthouseWorkflow.includes('/skillcred/app.js?v=$expected'), 'SkillCred Lighthouse must verify the precise deployed asset version before scoring')
+
 assert.ok(nginx.includes('location /skillcred/'), 'SkillCred static location is missing')
 assert.ok(nginx.includes('location ^~ /skillcred-api/'), 'same-origin API proxy is missing')
 assert.ok(nginx.includes('gzip_static on;'), 'precompressed static asset delivery is missing')
