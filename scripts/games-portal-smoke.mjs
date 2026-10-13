@@ -163,7 +163,8 @@ const afterimageGame=readFileSync(resolve(root,'afterimage-run/index.html'),'utf
 assert.ok(afterimageGame.includes('<title>AFTERIMAGE//RUN — OSGARD PLAY</title>')&&afterimageGame.includes('id="runnerCanvas"')&&afterimageGame.includes('id="run-start"')&&afterimageGame.includes('id="daily-seed"')&&afterimageGame.includes('id="share-telegram"')&&afterimageGame.includes('id="record-progress"'),'AFTERIMAGE//RUN interactive/share contract missing')
 assert.ok(!/<script[^>]+src=/i.test(afterimageGame)&&!/<link[^>]+href=["']https?:/i.test(afterimageGame),'AFTERIMAGE//RUN must remain self-contained')
 assert.ok(afterimageGame.includes("extra||{}),location.origin)")&&!afterimageGame.includes("extra||{}),'*')"),'AFTERIMAGE lifecycle messages must stay same-origin')
-assert.ok(afterimageGame.includes('incomingSeed=params.get(\'seed\')')&&afterimageGame.includes('Number.isFinite(rawTarget)')&&afterimageGame.includes('if(r[today])'),'AFTERIMAGE challenge/reward safety checks missing')
+assert.ok(afterimageGame.includes("incomingSeed=params.get('day')||params.get('seed')||''")&&afterimageGame.includes('validIncomingDay')&&afterimageGame.includes('Number.isSafeInteger(rawTarget)')&&afterimageGame.includes("params.has('challenge')||params.has('score')"),'AFTERIMAGE challenge/reward safety checks missing');
+assert.ok(afterimageGame.includes("const fromChallenge=params.has('challenge')||params.has('score')")&&afterimageGame.includes("game.score>targetScore?' · CHALLENGE BEATEN'"),'Score-duel challenges must track zero-score targets and require a strictly greater score')
 assert.ok(afterimageGame.includes("opened.opener=null")&&afterimageGame.includes("prepareShareReward('share-intent-'+kind)"),'Social share must detach opener and require a separate reward confirmation')
 assert.ok(afterimageGame.includes('id="claim-share-reward"')&&afterimageGame.includes("rewardShare('player-confirmed:'+method)"),'AFTERIMAGE reward must require a separate player confirmation')
 const afterimageShareStart=afterimageGame.indexOf('async function shareNative()')
@@ -172,7 +173,8 @@ const afterimageShareFlow=afterimageGame.slice(afterimageShareStart,afterimageSh
 assert.ok(afterimageShareStart>=0&&afterimageShareEnd>afterimageShareStart,'AFTERIMAGE share flow boundaries must remain independently testable')
 assert.ok(!afterimageShareFlow.includes("rewardShare('web-share'")&&!afterimageShareFlow.includes("rewardShare('copy-link'")&&!afterimageShareFlow.includes("rewardShare('share-intent-"),'Opening a share sheet, opening a social composer, or copying a link must not award a shard immediately')
 assert.ok(afterimageGame.includes("Копирование не даёт награду")&&afterimageGame.includes("rewardConfirmedByPlayer:true"),'Copying a link must not reward; analytics must mark a player-confirmed claim')
-assert.ok(afterimageGame.includes("life('share_created',{shareMethod:method==='web-share'?'web-share':'social-share',rewardConfirmedByPlayer:true})")&&!afterimageGame.includes("life('shared'"),'Confirmed share must use the player-lifecycle bridge event accepted by the host')
+assert.ok(afterimageGame.includes("const confirmedMethod=String(method||'social-share')")&&afterimageGame.includes("const shareMethod=['web-share','telegram','vk','x','whatsapp','facebook'].includes(confirmedMethod)?confirmedMethod:'clipboard'")&&afterimageGame.includes("flowType:'daily-challenge',challengeScore:"),'AFTERIMAGE share claims must normalize the channel and report challenge metadata');
+assert.ok(afterimageGame.includes("life('started',{seed:day,challenge:fromChallenge,targetScore:targetScore,referralCode:referralCode})")&&afterimageGame.includes("life('completed',{score:game.score,distance:Math.floor(game.distance),shards:game.shards,dashesUsed:game.dashCount")&&afterimageGame.includes("if(window.parent===window)track('game_session_completed'"),'AFTERIMAGE sessions must report score, referral context, and dash count without double-counting embedded sessions')
 assert.ok(afterimageGame.includes('id="share-facebook"')&&afterimageGame.includes("facebook:'https://www.facebook.com/sharer/sharer.php?u='"),'AFTERIMAGE share buttons must expose the configured Facebook share path')
 assert.ok(afterimageGame.includes('SIGNAL SHARD')&&afterimageGame.includes('Публичная публикация поста не проверяется'),'Share reward copy must not claim that a public post was verified')
 assert.ok(afterimageGame.includes("let shardCosmeticUnlocked=Object.values(safeRead(REWARD,{})).some(record=>record&&record.kind==='cosmetic')"),'Previously claimed SIGNAL SHARD cosmetics must persist across sessions')
@@ -180,6 +182,53 @@ assert.ok(afterimageGame.includes("shardCosmeticUnlocked=true")&&afterimageGame.
 const goldTrailStart=afterimageGame.indexOf('if(shardCosmeticUnlocked&&game.elapsed-(game.cosmeticTrailAt||0)>.06)')
 const goldTrailEnd=afterimageGame.indexOf('game.speed=',goldTrailStart)
 assert.ok(goldTrailStart>=0&&goldTrailEnd>goldTrailStart&&!afterimageGame.slice(goldTrailStart,goldTrailEnd).includes('random('),'Cosmetic trail must not consume gameplay randomness or alter obstacle generation')
+
+assert.ok(afterimageGame.includes('function makeRng(initialState,multiplier=1664525,increment=1013904223)')&&afterimageGame.includes('let gameplayRandom=makeRng(seed),visualRandom=makeRng(cosmeticSeed,22695477,1)'),'AFTERIMAGE must use independent seeded gameplay and visual RNG streams')
+assert.ok(afterimageGame.includes('function reset(){gameplayRandom=makeRng(seed);visualRandom=makeRng(cosmeticSeed,22695477,1);'),'Restart must reset both RNG streams to the daily seed')
+const afterimageSpawnStart=afterimageGame.indexOf('function spawn(){'),afterimageSpawnEnd=afterimageGame.indexOf('\nfunction hit(',afterimageSpawnStart)
+const afterimageBurstStart=afterimageGame.indexOf('function burst('),afterimageBurstEnd=afterimageGame.indexOf('\nfunction spawn(',afterimageBurstStart)
+assert.ok(afterimageSpawnStart>=0&&afterimageSpawnEnd>afterimageSpawnStart&&afterimageBurstStart>=0&&afterimageBurstEnd>afterimageBurstStart,'AFTERIMAGE gameplay/visual RNG boundaries must be independently testable')
+const afterimageSpawnSource=afterimageGame.slice(afterimageSpawnStart,afterimageSpawnEnd),afterimageBurstSource=afterimageGame.slice(afterimageBurstStart,afterimageBurstEnd)
+assert.ok(afterimageSpawnSource.includes('gameplayRandom()')&&afterimageSpawnSource.includes('phase:visualRandom()')&&!/\brandom\(\)/.test(afterimageSpawnSource),'Only obstacle layout uses gameplay RNG; collectible phase uses visual RNG')
+assert.ok(afterimageBurstSource.includes('visualRandom()')&&!afterimageBurstSource.includes('gameplayRandom()')&&!/\brandom\(\)/.test(afterimageBurstSource),'Particles must never consume gameplay RNG')
+const afterimageRngFactoryStart=afterimageGame.indexOf('function makeRng('),afterimageRngFactoryEnd=afterimageGame.indexOf('\nlet gameplayRandom=',afterimageRngFactoryStart)
+assert.ok(afterimageRngFactoryStart>=0&&afterimageRngFactoryEnd>afterimageRngFactoryStart,'Deterministic RNG factory must be extractable for behavior tests')
+const makeAfterimageRng=new Function(afterimageGame.slice(afterimageRngFactoryStart,afterimageRngFactoryEnd)+'\nreturn makeRng;')()
+function simulateAfterimageWorld(visualCallsPerStep){
+ const world={distance:0,obstacles:[],items:[],spawnAt:0}
+ const playRng=makeAfterimageRng(0x1234abcd),fxRng=makeAfterimageRng((0x1234abcd^0x9e3779b9)>>>0,22695477,1)
+ const spawn=new Function('game','gameplayRandom','visualRandom','W','FLOOR',afterimageSpawnSource+'\nreturn spawn;')(world,playRng,fxRng,1200,490)
+ for(let step=0;step<24;step++){for(let j=0;j<visualCallsPerStep(step);j++)fxRng();world.distance=step*75;spawn()}
+ return {obstacles:world.obstacles,items:world.items.map(({phase,...item})=>item),spawnAt:world.spawnAt}
+}
+assert.deepEqual(simulateAfterimageWorld(step=>step%2===0?18:3),simulateAfterimageWorld(step=>step%5===0?1:7),'Visual effects must not change obstacle layout for a shared daily seed')
+const afterimageInviteScript=readFileSync(resolve(root,'invite/invite-landing.js'),'utf8')
+assert.ok(afterimageInviteScript.includes("const afterimageChallenge = game === 'afterimage-run'")&&afterimageInviteScript.includes("params.get('og_challenge') === 'afterimage-run'")&&afterimageInviteScript.includes('Number.isSafeInteger(scoreValue) && scoreValue >= 0 && scoreValue <= 99999999'),'Invite landing must validate AFTERIMAGE challenge parameters')
+{
+ const makeInviteTarget=query=>{
+  const playLink={href:''}
+  const fakeDocument={body:{dataset:{game:'afterimage-run'}},querySelector(selector){return selector==='#play-link'?playLink:null}}
+  const fakeLocation={origin:'https://osgard.world',search:query}
+  const fakeStorage={getItem(){return null}}
+  new Function('document','location','URL','URLSearchParams','localStorage',afterimageInviteScript)(fakeDocument,fakeLocation,URL,URLSearchParams,fakeStorage)
+  return new URL(playLink.href)
+ }
+ const validInvite='?og_ref=og_1234abcd&og_game=afterimage-run&utm_source=osgard_play&utm_medium=referral&utm_campaign=play_with_friends&utm_content=afterimage-run&og_challenge=afterimage-run&challenge=2468&day=2026-10-13&mode=daily'
+ const validTarget=makeInviteTarget(validInvite)
+ assert.equal(validTarget.pathname,'/games/afterimage-run/','Valid invite must open AFTERIMAGE directly')
+ assert.equal(validTarget.searchParams.get('seed'),'2026-10-13','Invite must preserve the daily seed')
+ assert.equal(validTarget.searchParams.get('score'),'2468','Invite must preserve target score')
+ assert.equal(validTarget.searchParams.get('og_ref'),'og_1234abcd','Invite must preserve referral attribution')
+ for(const badQuery of [
+  '?og_ref=og_1234abcd&og_game=afterimage-run&utm_source=osgard_play&utm_medium=referral&utm_campaign=play_with_friends&utm_content=afterimage-run&og_challenge=afterimage-run&challenge=2468&day=2026-99-99&mode=daily',
+  '?og_ref=og_1234abcd&og_game=afterimage-run&utm_source=osgard_play&utm_medium=referral&utm_campaign=play_with_friends&utm_content=afterimage-run&og_challenge=afterimage-run&challenge=999999999999&day=2026-10-13&mode=daily',
+  '?og_ref=og_1234abcd&og_game=afterimage-run&utm_source=osgard_play&utm_medium=referral&utm_campaign=play_with_friends&utm_content=afterimage-run&og_challenge=afterimage-run&challenge=2468&day=2026-10-13&mode=wrong'
+ ]){
+  const invalidTarget=makeInviteTarget(badQuery)
+  assert.equal(invalidTarget.pathname,'/games/','Invalid challenge must fall back to catalogue')
+  assert.equal(invalidTarget.searchParams.has('challenge'),false,'Invalid challenge must not be forwarded')
+ }
+}
 const afterimageInline=[...afterimageGame.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]).filter(s=>s.trim())
 assert.equal(afterimageInline.length,1,'AFTERIMAGE should have one inline game script')
 new Function(afterimageInline[0])
