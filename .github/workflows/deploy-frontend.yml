@@ -11,6 +11,10 @@ on:
       - "src/**"
       - "public/skillcred/**"
       - "public/games/**"
+      - "public/brand/**"
+      - "public/osgard-mark.svg"
+      - "docs/OSGARD_BRAND_SYSTEM.md"
+      - "scripts/brand-system-smoke.mjs"
       - "public/entertainment/**"
       - "public/sitemap.xml"
       - "public/privacy/**"
@@ -55,6 +59,9 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm run qa:null-shift
+      - name: Verify OSGARD identity assets and metadata
+        run: npm run qa:brand-system
+
       - name: Smoke-test the OSGARD Games hub
         run: npm run qa:games-portal
       - name: Verify OSGARD SELECT luxury spotlight and social reward guardrails
