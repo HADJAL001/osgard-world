@@ -157,6 +157,15 @@ export function validateReferralDisablePayload(body) {
   return { ok: true, walletToken };
 }
 
+export function resolveReferralCompletion(event) {
+  if (!event || event.name !== "game_session_completed") return null;
+  if (!Number.isInteger(event.durationSeconds) || event.durationSeconds < 60) return null;
+  const source = typeof event.source === "string" ? event.source : "";
+  const match = /^referral:(og_[a-f0-9]{8}):([a-z-]+)$/.exec(source);
+  if (!match || match[2] !== event.gameId) return null;
+  return { inviteCode: match[1], gameId: match[2], points: 50 };
+}
+
 export function paymentsModeAllowed(secretKey, enableLive = false) {
   if (typeof secretKey !== "string") return false;
   if (secretKey.startsWith("sk_test_")) return true;
