@@ -83,3 +83,40 @@ dialog#player-dialog.has-recommendations .player-view iframe{min-height:155px}
 }
 @media(max-width:360px){.og-postgame-service-grid{grid-template-columns:1fr}.og-postgame-service-card.is-featured{grid-column:auto}.og-postgame-service-head{flex-direction:column}.og-postgame-toggle{align-self:flex-start}.og-postgame-share-actions>*{width:100%}.og-postgame-networks>*{flex:1 1 calc(50% - 6px)}}
 @media(prefers-reduced-motion:reduce){.og-postgame-service-card,.og-postgame-share-primary,.og-postgame-network,.og-postgame-claim{transition:none;transform:none}.og-postgame-service-card:hover,.og-postgame-share-primary:hover,.og-postgame-network:hover,.og-postgame-claim:hover{transform:none}}
+
+
+/* OSGARD SELECT preferences: frequency + service-level choice. */
+.og-postgame-preferences{display:grid;gap:10px;margin:0 0 12px;padding:12px;border:1px solid rgba(218,192,133,.22);border-radius:9px;background:linear-gradient(130deg,rgba(218,192,133,.055),transparent 62%),#0b0d0b}
+.og-postgame-preferences[hidden]{display:none}
+.og-postgame-settings-heading,.og-postgame-settings-subheading{margin:0;color:#d6bf86;font:8px/1.55 ui-monospace,Consolas,monospace;letter-spacing:.15em}
+.og-postgame-settings-copy{margin:-4px 0 0;color:#999b8e;font-size:10px;line-height:1.65}
+.og-postgame-frequency-label{display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,.85fr);align-items:center;gap:11px;color:#bcb8a8;font-size:10px}
+.og-postgame-frequency{width:100%;min-width:0;min-height:36px;padding:0 10px;border:1px solid rgba(218,192,133,.26);border-radius:6px;background:#0b0d0b;color:#e8dfc5;font-size:10px}
+.og-postgame-frequency option{background:#11120f;color:#eee}
+.og-postgame-service-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.og-postgame-service-option{display:flex;align-items:flex-start;gap:8px;min-width:0;min-height:52px;padding:9px;border:1px solid rgba(255,255,255,.1);border-radius:7px;background:rgba(255,255,255,.015);cursor:pointer;transition:border-color .18s ease,background .18s ease}
+.og-postgame-service-option:has(input:checked){border-color:rgba(218,192,133,.48);background:rgba(218,192,133,.065)}
+.og-postgame-service-option:has(input:focus-visible){outline:2px solid #f2e4bb;outline-offset:2px}
+.og-postgame-service-option input{flex:0 0 auto;width:13px;height:13px;margin:2px 0 0;accent-color:#d8c28f}
+.og-postgame-service-option-copy{display:grid;gap:4px;min-width:0}
+.og-postgame-service-option-copy strong{color:#ebe7da;font-size:9px;line-height:1.4;overflow-wrap:anywhere}
+.og-postgame-service-option-copy small{color:#878a7d;font:7px/1.45 ui-monospace,Consolas,monospace;letter-spacing:.04em;overflow-wrap:anywhere}
+.og-postgame-service-option.is-unavailable{opacity:.48;cursor:not-allowed}
+.og-postgame-presets{display:flex;gap:7px;flex-wrap:wrap}
+.og-postgame-preset{min-height:30px;padding:6px 9px;border:1px solid rgba(218,192,133,.2);border-radius:6px;background:#ffffff02;color:#b9b4a2;font-size:9px;cursor:pointer}
+.og-postgame-preset:hover{border-color:rgba(218,192,133,.55);color:#f0dba8}
+.og-postgame-save{min-height:36px;padding:8px 12px;border:1px solid #d8c28f;border-radius:6px;background:linear-gradient(110deg,#c5a95e,#e8d5a1 60%,#c9ab64);color:#13130f;font-size:10px;font-weight:700;cursor:pointer}
+.og-postgame-save:hover{filter:brightness(1.06)}
+.og-postgame-settings-status{min-height:1em;margin:0;color:#d9c997;font-size:9px;line-height:1.55}
+.og-postgame-service-empty{padding:17px;border:1px dashed rgba(218,192,133,.22);border-radius:8px;color:#a9a89a;font-size:10px;line-height:1.75;background:#ffffff02}
+@media(max-width:760px){
+ .og-postgame-preferences{padding:10px}
+ .og-postgame-frequency-label{grid-template-columns:minmax(0,1fr);gap:6px}
+ .og-postgame-frequency{min-height:39px}
+ .og-postgame-service-options{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .og-postgame-service-option{padding:8px;min-height:48px}
+ .og-postgame-service-option-copy strong{font-size:9px}
+ .og-postgame-service-empty{padding:12px}
+}
+@media(max-width:360px){.og-postgame-service-options{grid-template-columns:1fr}.og-postgame-presets>*{flex:1}}
+@media(prefers-reduced-motion:reduce){.og-postgame-service-option,.og-postgame-preset,.og-postgame-save{transition:none}}
