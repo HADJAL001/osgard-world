@@ -74,7 +74,7 @@
 <button class="action-btn" id="cc-action-repair" data-action="repair"><span class="action-icon">⌁</span><span class="action-copy"><b>Отправить ремонтные бригады</b><small>Устраняет сбой выбранного узла</small></span><span class="cost">−12 ед.</span></button>
 </div></div><div class="controls"><button class="ctrl" id="cc-pause" type="button">Ⅱ Пауза</button><button class="ctrl" id="cc-speed" type="button">СКОРОСТЬ 1×</button><button class="ctrl" id="cc-reset" type="button">↻ Новая операция</button></div><div class="risk"><div><div class="risk-label">ИНДЕКС КРИЗИСА</div><strong id="cc-risk">61<small> / 100</small></strong></div><div class="risk-copy"><b id="cc-risk-label">РАЗВИВАЕТСЯ</b><span id="cc-risk-copy">Нагрузка на сети растёт. Выбери первичный узел.</span></div></div>
 <div class="checkpoint-panel" aria-label="Сохранение операции и краткосрочный прогноз">
-  <div class="checkpoint-head"><div><small>LOCAL OPERATION LAB / V1.8</small><strong>Контрольная точка</strong></div><span id="cc-checkpoint-status" role="status" aria-live="polite">Проверка сохранения…</span></div>
+  <div class="checkpoint-head"><div><small>LOCAL OPERATION LAB / V1.8.0</small><strong>Контрольная точка</strong></div><span id="cc-checkpoint-status" role="status" aria-live="polite">Проверка сохранения…</span></div>
   <p class="checkpoint-intro">Сохрани ход операции на этом устройстве и продолжи позже. Контрольная точка не отправляется на сервер.</p>
   <div class="checkpoint-tools"><button class="ctrl" id="cc-save" type="button">Сохранить операцию</button><button class="ctrl" id="cc-load" type="button" disabled>Восстановить сохранение</button></div>
   <div class="forecast-head"><b>ПРОГНОЗ НА 30 ИГРОВЫХ СЕКУНД</b><span>ОЦЕНКА ПО ТЕКУЩИМ ТРЕНДАМ</span></div>
@@ -90,7 +90,7 @@
 </div>
 <p class="notice">Это браузерная игровая редакция OSGARD PLAY. Показатели и последствия моделируются внутри игры и не являются реальными городскими данными. Состояние операции не отправляется на сервер.</p>
 </main>
-<footer class="footer"><span>© OSGARD WORLD / PLAY · CIVIC CASCADE WEB EDITION 0.2</span><span>КРИЗИСНАЯ СТРАТЕГИЯ · DESKTOP + TOUCH</span><span><a href="/games/">ВЕРНУТЬСЯ В КАТАЛОГ ↗</a></span></footer>
+<footer class="footer"><span>© OSGARD WORLD / PLAY · CIVIC CASCADE WEB EDITION 1.8.0</span><span>КРИЗИСНАЯ СТРАТЕГИЯ · DESKTOP + TOUCH</span><span><a href="/games/">ВЕРНУТЬСЯ В КАТАЛОГ ↗</a></span></footer>
 </div><div class="toast" id="cc-toast" role="status" aria-live="polite"></div>
 <script>
 (function(){
@@ -143,7 +143,8 @@ function readCheckpoint(){
   if(!Number.isInteger(item.speedIndex)||item.speedIndex<0||item.speedIndex>=speeds.length||typeof item.paused!=='boolean')return null;
   if(!nodes.some(n=>n.id===item.selected))return null;
   const logs=Array.isArray(item.logs)?item.logs.slice(0,6).filter(x=>x&&typeof x.time==='string'&&typeof x.text==='string').map(x=>({time:x.time.slice(0,8),text:x.text.replace(/<[^>]*>/g,'').slice(0,320)})):[];
-  return {state:s,elapsed:item.elapsed,selected:item.selected,speedIndex:item.speedIndex,paused:item.paused,logs:logs,savedAt:typeof item.savedAt==='string'?item.savedAt:''};
+  const cleanState={scenario:s.scenario};Object.keys(ranges).forEach(key=>{cleanState[key]=s[key]});cleanState.elapsed=item.elapsed;
+  return {state:cleanState,elapsed:item.elapsed,selected:item.selected,speedIndex:item.speedIndex,paused:item.paused,logs:logs,savedAt:typeof item.savedAt==='string'?item.savedAt:''};
  }catch(_){return null}
 }
 function updateCheckpointStatus(){
