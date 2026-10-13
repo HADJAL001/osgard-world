@@ -221,6 +221,7 @@ const GAMES: GameDefinition[] = [
 ]
 
 
+const GAME_LAUNCH_TIMEOUT_MS = 15000
 const FAVORITES_KEY = 'osgard.games.favorites.v1'
 const RECENT_KEY = 'osgard.games.recent.v1'
 const ANALYTICS_CONSENT_KEY = 'osgard.games.analytics-consent.v1'
@@ -239,7 +240,9 @@ function readStringList(key: string): string[] {
 function readConsent(): Consent {
   try {
     const value = localStorage.getItem(ANALYTICS_CONSENT_KEY)
-    return value === 'granted' || value === 'denied' ? value : null
+    if (value === 'granted' || value === 'yes') return 'granted'
+    if (value === 'denied' || value === 'no') return 'denied'
+    return null
   } catch {
     return null
   }
@@ -312,6 +315,7 @@ export function GameDetailPage({ slug }: { slug: string }) {
   const [playing, setPlaying] = useState(() => new URLSearchParams(window.location.search).get('launch') === '1')
   const [loadingGame, setLoadingGame] = useState(true)
   const [frameError, setFrameError] = useState(false)
+  const [frameAttempt, setFrameAttempt] = useState(0)
   const [notice, setNotice] = useState('')
   const [consentPanelOpen, setConsentPanelOpen] = useState(() => readConsent() === null)
   const stageRef = useRef<HTMLDivElement>(null)
@@ -363,9 +367,26 @@ export function GameDetailPage({ slug }: { slug: string }) {
     }
   }, [playing, game?.id])
 
+  // A blocked iframe can fail without firing either load or error. Never leave a permanent spinner.
+  useEffect(() => {
+    if (!playing || !game || !loadingGame || frameError) return
+    const timeoutId = window.setTimeout(() => {
+      setLoadingGame(false)
+      setFrameError(true)
+    }, GAME_LAUNCH_TIMEOUT_MS)
+    return () => window.clearTimeout(timeoutId)
+  }, [playing, game?.id, loadingGame, frameError])
+
   const startPlaying = () => {
     if (!game) return
     remember(game.id)
+    setLoadingGame(true)
+    setFrameError(false)
+    setPlaying(true)
+  }
+
+  const retryPlaying = () => {
+    setFrameAttempt(attempt => attempt + 1)
     setLoadingGame(true)
     setFrameError(false)
     setPlaying(true)
@@ -417,7 +438,7 @@ export function GameDetailPage({ slug }: { slug: string }) {
         <div className="gh-play-toolbar"><div><span className="gh-play-live" /><strong>{gameTitle(game, locale)}</strong><small>{ru ? 'Игровая сессия' : 'Game session'}</small></div><div><a href={game.href} target="_blank" rel="noopener noreferrer">{ru ? 'Открыть в отдельной вкладке' : 'Open in new tab'}<ExternalLink size={14} /></a><button type="button" onClick={toggleFullscreen}><Maximize2 size={15} />{ru ? 'На весь экран' : 'Fullscreen'}</button><button type="button" onClick={() => setPlaying(false)}><X size={15} />{ru ? 'Закрыть игру' : 'Close game'}</button></div></div>
         <div className="gh-game-stage" ref={stageRef}>
           {loadingGame && !frameError && <div className="gh-game-loading"><span className="gh-loader" /><p>{ru ? 'Подключаем игровой мир…' : 'Loading game world…'}</p></div>}
-          {frameError ? <div className="gh-game-error"><p>{ru ? 'Не удалось загрузить встроенную игру.' : 'The embedded game could not be loaded.'}</p><a className="gh-primary" href={game.href} target="_blank" rel="noopener noreferrer">{ru ? 'Открыть игру отдельно' : 'Open game separately'}<ExternalLink size={15} /></a></div> : <iframe title={gameTitle(game, locale)} src={game.href} onLoad={() => {
+          {frameError ? <div className="gh-game-error"><p>{ru ? 'Не удалось загрузить встроенную игру.' : 'The embedded game could not be loaded.'}</p><button className="gh-secondary" type="button" onClick={retryPlaying}>{ru ? 'Повторить запуск' : 'Retry game launch'}<ArrowRight size={15} /></button><a className="gh-primary" href={game.href} target="_blank" rel="noopener noreferrer">{ru ? 'Открыть игру отдельно' : 'Open game separately'}<ExternalLink size={15} /></a></div> : <iframe key={game.id + ':' + frameAttempt} title={gameTitle(game, locale)} src={game.href} onLoad={() => {
             let attempts = 0
             const validateFrame = () => {
               try {

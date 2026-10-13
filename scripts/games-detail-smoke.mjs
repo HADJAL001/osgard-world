@@ -42,6 +42,10 @@ assert.ok(hub.includes('href="/games/null-shift/">WebGL-версия'), 'Browser
 assert.ok(godotProject.includes('config/name="NULL SHIFT"') && deployWorkflow.includes('--export-release Web') && deployWorkflow.includes('public/games/null-shift-godot/index.html') && godotSmoke.includes("process.argv[2] === '--export-check'")&&deployWorkflow.includes('node scripts/null-shift-godot-smoke.mjs --export-check public/games/null-shift-godot'), 'Godot project export and artifact contract must be verified')
 assert.ok(!nginx.includes('return 302 /games/null-shift/;') && nginx.includes('return 301 /games/;'), 'Nginx must not override Godot and must preserve the entertainment canonical redirect')
 assert.ok(detail.includes('attempts < 20') && detail.includes('window.setTimeout(validateFrame, 250)'), 'React game mount must have a bounded iframe startup grace period')
+assert.ok(detail.includes('const GAME_LAUNCH_TIMEOUT_MS = 15000'), 'Game detail must have a bounded wall-clock iframe launch timeout')
+assert.ok(detail.includes('setLoadingGame(false)') && detail.includes('setFrameError(true)'), 'A timed-out iframe must leave loading state and show recovery')
+assert.ok(detail.includes('const retryPlaying = () =>') && detail.includes('setFrameAttempt(attempt => attempt + 1)') && detail.includes("key={game.id + ':' + frameAttempt}"), 'The embedded game error state must allow a true reload retry')
+
 assert.ok(detail.includes("querySelector('.time-game')"), 'Strategy-game readiness must use the actual mounted game root')
 assert.ok(detail.includes("track('game_opened', { game: game.id, surface: 'game-detail' }, consent)"), 'Detail views are logged once with consent')
 assert.ok(!detail.includes("surface: 'games-iframe'"), 'Iframe load must not duplicate a detail-view event')

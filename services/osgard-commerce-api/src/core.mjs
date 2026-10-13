@@ -47,9 +47,8 @@ export const ALLOWED_EVENTS = new Set([
 
 const GAME_IDS = new Set([
   "null-shift", "time", "swarm", "inherit", "remix",
-  "civic-cascade", "patina", "signal-run", "unknown",
+  "civic-cascade", "patina", "signal-run", "cascade-lab", "afterimage-run", "unknown",
 ]);
-GAME_IDS.add("cascade-lab");
 
 export function cleanText(value, max = 500) {
   return String(value ?? "")
