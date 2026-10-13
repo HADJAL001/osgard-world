@@ -232,7 +232,7 @@ assert.equal(artCardMatches.filter(card=>card.body.includes('<svg')).length,0,'I
 for(const [artClass,id] of Object.entries(artClassToId)){
  const card=artCardMatches.find(item=>item.artClass===artClass)
  assert.ok(card,'Missing artwork card '+artClass)
- assert.ok(card.body.includes('src="/games/art/'+id+'.svg"')&&card.body.includes('loading="lazy"')&&card.body.includes('decoding="async"'),'Artwork must use a lazy, async-decoded asset: '+id)
+ assert.ok(card.body.includes('src="/games/art/'+id+'.svg?v=__OSGARD_BUILD_VERSION__"')&&card.body.includes('loading="lazy"')&&card.body.includes('decoding="async"'),'Artwork must use a lazy, async-decoded asset: '+id)
  const file='public/games/art/'+id+'.svg'
  assert.ok(existsSync(resolve(file)),'Missing extracted card artwork: '+file)
  const svg=readFileSync(resolve(file),'utf8')
