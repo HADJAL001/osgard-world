@@ -61,6 +61,21 @@ assert.equal(postedEvents.length, 1, 'The server should receive the event once a
 assert.equal(postedEvents[0].eventId, event.eventId, 'Retry must not generate a new event ID');
 assert.equal(values.has('osgard.games.analytics-pending.v1'), false, 'Acknowledged event should be removed from local queue');
 
+// AFTERIMAGE//RUN is the tenth catalog game. Its real events must pass client
+// schema validation and be accepted by the same consented delivery queue.
+const afterimage = {
+  ...event,
+  eventId: 'evt_afterimage_123456',
+  name: 'game_session_completed',
+  gameId: 'afterimage-run',
+  durationSeconds: 42,
+};
+assert.equal(await queue.enqueue(afterimage), true, 'AFTERIMAGE//RUN completion should enter the consented queue');
+assert.equal(await queue.flush(), true, 'AFTERIMAGE//RUN event should be delivered when online');
+assert.ok(postedEvents.some(item => item.gameId === 'afterimage-run' && item.eventId === afterimage.eventId),
+  'AFTERIMAGE//RUN analytics must not be silently dropped by the client allowlist');
+assert.equal(values.has('osgard.games.analytics-pending.v1'), false, 'Acknowledged AFTERIMAGE//RUN event should drain the queue');
+
 // A consent withdrawal clears pending events and aborts any active request.
 offline = true;
 const second = { ...event, eventId: 'evt_123456789013', name: 'cross_promo_clicked' };
