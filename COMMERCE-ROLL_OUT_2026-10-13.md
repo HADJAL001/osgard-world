@@ -11,7 +11,7 @@ The site source could be reviewed through the linked GitHub connection. The live
 - A separate Node.js 22 Commerce API with Stripe-hosted Checkout, server-defined product allow-list, fixed Stripe Price IDs, signed webhooks and idempotency.
 - PostgreSQL persistence for orders, provider webhook events, leads and consented analytics events.
 - A storefront at /games/premium/ and a server-verified purchase-status page.
-- A token-protected admin panel at /games/admin/ to inspect order state, broad payment totals by currency, leads and consented event counts.
+- A token-protected admin panel at /games/commerce-admin/ to inspect order state, broad payment totals by currency, leads and consented event counts.
 - A lead endpoint that can replace manual handoff when the API is configured; manual WhatsApp handoff remains the fallback.
 - Live payment processing and subscription sales default to OFF.
 - CI/static smoke checks and a service-level test suite.
@@ -20,7 +20,7 @@ The site source could be reviewed through the linked GitHub connection. The live
 
 - No provider account, API key, webhook secret, database URL or admin token was available to the coding environment. No live payment was charged.
 - No paid entitlement is granted to a signed-in account yet, because the current Games hub has no identified shared account/entitlement contract. The order is recorded and verified, but OSGARD PREMIUM remains disabled by default.
-- No mail delivery provider is configured; leads are persisted and appear in the protected admin view.
+- No mail delivery provider is configured; leads are persisted and appear in the protected commerce admin view.
 - No advertising network has been connected. Partner inventory remains inquiry/planned until approved and configured. Ad code must not be enabled until the account, site approval, consent and placement rules are checked.
 - No production DNS, reverse proxy or deployment has been changed by this branch.
 
