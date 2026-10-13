@@ -1354,6 +1354,7 @@ let serviceSharePending = false, pendingShareCampaignId = null;
 let visibleServiceCampaigns = OSGARD_CAMPAIGNS;
 let fallbackInterstitialCompletionCount = 0;
 const SHARED_SERVICE_PREFERENCES_KEY = 'osgard.games.postgame-service-preferences.v1';
+const PREFERRED_SERVICE_KEY = 'osgard.games.preferred-service.v1';
 const CASCADE_INTERSTITIAL_COMPLETION_KEY = 'osgard.games.cascade-lab-interstitial-completions.v1';
 const CAMPAIGN_TO_SERVICE_PREFERENCE = Object.freeze({
   marcosa: 'marcosa', taxi: 'senjorio', 'smart-map': 'superday',
@@ -1565,6 +1566,19 @@ function getEligibleServiceCampaigns(preferences = readSharedServicePreferences(
     return preferenceId && preferences.selected.includes(preferenceId);
   });
 }
+function readPreferredServiceId() {
+  try {
+    const value = localStorage.getItem(PREFERRED_SERVICE_KEY) || '';
+    return /^[a-z0-9-]{1,48}$/.test(value) ? value : '';
+  } catch {
+    return '';
+  }
+}
+function getPreferredServiceCampaign(campaigns) {
+  const preferredServiceId = readPreferredServiceId();
+  if (!preferredServiceId || !Array.isArray(campaigns)) return null;
+  return campaigns.find(campaign => CAMPAIGN_TO_SERVICE_PREFERENCE[campaign.id] === preferredServiceId) || null;
+}
 function incrementCompletedInterstitialCount() {
   try {
     const current = Number(localStorage.getItem(CASCADE_INTERSTITIAL_COMPLETION_KEY));
@@ -1636,8 +1650,10 @@ function showServiceInterstitial(continueAction, { completedLevel = false } = {}
   visibleServiceCampaigns = eligible;
   pendingServiceTransition = typeof continueAction === 'function' ? continueAction : null;
   const nextIndex = (economyProfile.stats.serviceAdsShown || 0) % visibleServiceCampaigns.length;
+  const preferredCampaign = getPreferredServiceCampaign(visibleServiceCampaigns);
+  const initialCampaign = preferredCampaign || visibleServiceCampaigns[nextIndex];
   economyProfile = recordGrowthAction(economyProfile, 'serviceAdsShown');
-  saveProgress(); renderServiceAdCampaign(visibleServiceCampaigns[nextIndex].id);
+  saveProgress(); renderServiceAdCampaign(initialCampaign.id);
   analytics.track('service_ad_shown', { levelId: level.id, mode: analyticsMode(), campaignId: selectedServiceCampaignId, frequency: preferences.frequency });
   if (!dialog.open) dialog.showModal();
 }
