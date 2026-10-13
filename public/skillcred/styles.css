@@ -269,3 +269,13 @@ main{position:relative;isolation:isolate}
   .hero-visual::before{animation:none!important}
   .artifact-card[data-phase="signature"]::before{animation:none!important;background-position:0 0,0 0,50% 0}
 }
+
+
+/* MOBILE COMPOSITOR BUDGET — preserve the luxury design while avoiding paint-bound loops on phones. */
+@media(max-width:820px),(pointer:coarse){
+.pulse-dot{animation:none!important;box-shadow:0 0 0 2px rgba(var(--rgb-acid),.12)}
+.artifact-card,.artifact-card::before,.artifact-card::after{animation:none!important;transition:none!important}
+.thread-flow{transition:none!important;stroke-dashoffset:0!important}
+.trust-spine-progress{transition:none!important}
+.hero-visual::before{animation:none!important}
+}
