@@ -184,3 +184,14 @@ A new Godot-native growth slice is implemented and covered by the headless runti
 2. Add server-verified invite rewards after a referred player completes a real mission, not after a click.
 3. Test a one-time cosmetic supporter pack only after checkout, signed webhooks, entitlement persistence and refunds are operational.
 4. Measure net revenue after fees/refunds and acquisition cost. A million-dollar outcome is a goal, not a forecast or promise.
+
+
+## Retention rewards and cosmetic SHARDS Vault — 13 October 2026
+
+- OSGARD SELECT keeps its voluntary, clearly labelled between-game cards for first-party projects. The player can choose services, save a preferred service and control promotion frequency; there is no autoplay or active-round interruption.
+- Direct compensation for reposts/self-confirmed shares has been removed from the intermission reward shelf. Social buttons for Telegram, WhatsApp, VK, X and Facebook remain available; the catalogue records a share intent only with explicit analytics consent, not as verified public distribution.
+- The reward path is now +50 local SHARDS for a completed game session once per UTC day, plus one local welcome bonus for a new device/browser arriving through a valid invite and completing its first referred session. Invite attribution accepts the current canonical invite contract and the validated legacy SIGNAL RUN challenge contract.
+- SHARDS can unlock three cosmetic-only intermission accents in the local Vault (NORTHSTAR 100, ECLIPSE 250, AURORA 400). They have no cash value, do not unlock combat advantages, are not shared across devices, and do not prove a server-verified referral. Clearing browser storage can clear the balance and cosmetic ownership; this is a lightweight engagement prototype, not a financial wallet.
+- Signal Run now grants its daily bonus on completed run and no longer uses the self-confirmed share reward button. The parent player lifecycle and consented analytics queue record daily_play_reward_claimed, referral_welcome_reward_claimed and social_share_intent only when analytics consent is enabled.
+- The commerce API allow-list and tests include the new aggregate event names. These are metrics/events only: they do not transfer monetary value, trigger paid entitlements, or constitute proof that an invitee is a unique person.
+- For a production-grade fraud-resistant referral programme, persist invitation claims and completion eligibility server-side, use idempotent transactions and limits, and never expose cash-equivalent rewards until identity, abuse handling, privacy review and entitlement verification are in place.
