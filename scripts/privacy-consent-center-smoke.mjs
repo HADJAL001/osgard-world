@@ -23,7 +23,6 @@ function makeElement(id) {
     dataset: {},
     attributes: {},
     addEventListener: (event, callback) => listeners.set(event, callback),
-    setAttribute: (name, value) => { this?.attributes?.[name] = value; },
     click: () => listeners.get('click')?.({ type: 'click', target: { id } }),
     _listeners: listeners,
   };
