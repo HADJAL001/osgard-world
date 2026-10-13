@@ -51,6 +51,10 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
+      - name: Syntax-check shared catalogue and SIGNAL RUN logic
+        run: |
+          node --check public/games/luxury.js
+          node --check public/games/signal-run/game.js
       - run: npm run check
       - run: npm run qa:null-shift
       - name: Smoke-test the OSGARD Games hub
