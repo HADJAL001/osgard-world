@@ -12,6 +12,7 @@ const godotSmoke = read('scripts/null-shift-godot-smoke.mjs')
 const nginx = read('nginx.conf')
 const sitemap = read('public/sitemap.xml')
 const css = read('src/games-hub.css')
+const routeMatrix = read('scripts/production-route-matrix.mjs')
 
 const civicGame = read('public/games/civic-cascade/index.html')
 const cascadeGame = read('public/games/cascade-lab/index.html')
