@@ -170,7 +170,7 @@ assert.ok(afterimageGame.includes("candidate.pathname==='/games/invite/afterimag
 assert.ok(afterimageGame.includes("BEAT MY ROUTE")&&afterimageGame.includes("GAMES / INVITE / AFTERIMAGE-RUN"),'AFTERIMAGE share card must include a clear challenge CTA');
 assert.ok(inviteLandingScript.includes("const validAfterimageChallenge = valid && game === 'afterimage-run'")&&inviteLandingScript.includes("target.searchParams.set('seed', afterimageSeed)")&&inviteLandingScript.includes("target.searchParams.set('score', String(afterimageScore))"),'AFTERIMAGE invite preview must validate and preserve seed + target score');
 assert.ok(html.includes("const validSeed=/^\\d{4}-\\d{2}-\\d{2}$/.test(seed)")&&html.includes("openGame(invite.game,target)"),'Games hub must pass only validated AFTERIMAGE challenge parameters into the game');
-assert.ok(html.includes('Цель друга: ')&&html.includes("accept.textContent=validAfterimageChallenge?'Побить '+parsedChallengeScore+' очков ↗'"),'Invite ribbon must show the challenge target before launch');
+assert.ok(html.includes("const validAfterimageSeed=/^\\d{4}-\\d{2}-\\d{2}$/.test(challengeSeed)")&&html.includes('Цель друга: ')&&html.includes("accept.textContent=validAfterimageChallenge?'Побить '+parsedChallengeScore+' очков ↗'"),'Invite ribbon must validate and show the challenge target before launch');
 new Function(inviteLandingScript)
 
 assert.ok(afterimageGame.includes("opened.opener=null")&&afterimageGame.includes("prepareShareReward('share-intent-'+kind)"),'Social share must detach opener and require a separate reward confirmation')
