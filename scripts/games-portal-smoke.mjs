@@ -628,8 +628,10 @@ const catalogRuntime=html.slice(inviteScriptBodyStart,inviteScriptEnd)
 new Function(catalogRuntime)
 for(const marker of ["og_ref","og_game","utm_source","utm_medium","utm_campaign","utm_content","function createInviteLink","function renderInviteRibbon","source:'referral_link'","referralCode:invite.code","if(!consent)return","if(!token)return"]) assert.ok(catalogRuntime.includes(marker),'Referral / privacy contract missing: '+marker)
 assert.ok(catalogRuntime.includes("navigator.share({title:games[id].title+' — OSGARD PLAY'") && catalogRuntime.includes("url=createInviteLink(id)"),'Player-share action must produce a game-specific invite link')
+assert.ok(catalogRuntime.includes('new Uint8Array(8)') && catalogRuntime.includes("return'og_'+Array.from(bytes,value=>value.toString(16).padStart(2,'0')).join('')"), 'New canonical invite codes must carry 64 random bits');
+assert.ok(catalogRuntime.includes("^og_[a-f0-9]{8}(?:[a-f0-9]{8})?$"), 'Invite validation must accept old and new canonical links');
 assert.ok(catalogRuntime.includes("async function sendCommerceInviteEvent(gameId,code)") && catalogRuntime.includes("source:'game-invite:'+gameId+':'+code"),'Player-share events must include the same invitation code used by the generated link')
-assert.ok(catalogRuntime.includes("void sendCommerceInviteEvent(id,referralCode)") && catalogRuntime.includes("if(!allowed()||!games[gameId]||!/^og_[a-f0-9]{8}$/.test(String(code||'')))return false"),'Share-event persistence must validate the game/code and require explicit analytics consent')
+assert.ok(catalogRuntime.includes("void sendCommerceInviteEvent(id,referralCode)") && catalogRuntime.includes("if(!allowed()||!games[gameId]||!/^og_[a-f0-9]{8}(?:[a-f0-9]{8})?$/.test(String(code||'')))return false"),'Share-event persistence must validate the game/code and require explicit analytics consent')
 assert.ok(catalogRuntime.includes("'/v1/events'") && catalogRuntime.includes("name:'share_created'") && catalogRuntime.includes("consent:true"),'Player-share event must use the shared, consented Commerce API event contract')
 assert.ok(lifecycle.includes("function shareReferralCode(payload)") && lifecycle.includes("localStorage.getItem('osgard.games.invite-code.v1')") && lifecycle.includes("source=name==='share_created'?(shareCode?'game-invite:'+activeGame+':'+shareCode:'game-invite:'+activeGame):analyticsSource()"),'In-game sharing must attach a validated referral code to the server funnel event')
 
@@ -730,7 +732,7 @@ for(const metric of ['inviteShares','referralOpens','referredStarts','referredCo
 const inviteSqlStart=referralApiSource.indexOf('invite_shares AS')
 const inviteSqlEnd=referralApiSource.indexOf('SELECT\n          COUNT(*) FILTER',inviteSqlStart)
 const inviteSql=referralApiSource.slice(inviteSqlStart,inviteSqlEnd)
-assert.equal(inviteSql.split("~ '^(og_[a-f0-9]{8}|[a-f0-9]{12})$'").length-1,4,'All four share/open/start/completion SQL stages must accept canonical and legacy invite codes')
+assert.equal(inviteSql.split("~ '^(og_[a-f0-9]{8}(?:[a-f0-9]{8})?|[a-f0-9]{12})$'").length-1,4,'All four share/open/start/completion SQL stages must accept canonical and legacy invite codes')
 for(const metric of ['analytics-invites','analytics-referral-opens','analytics-referred-starts','analytics-referred-completions']) assert.ok(referralAdminSource.includes('id="'+metric+'"'), 'Commerce admin is missing referral metric '+metric)
 
  
