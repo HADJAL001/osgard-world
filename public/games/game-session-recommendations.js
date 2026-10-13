@@ -153,11 +153,11 @@ function buildShareUrl(gameId){
  try{
   if(typeof window.OSGARDInvite?.createLink==='function'){
    const shared=new URL(window.OSGARDInvite.createLink(gameId),location.origin);
-   if(shared.origin===location.origin&&shared.pathname==='/games/'&&shared.searchParams.get('og_game')===gameId&&/^og_[a-f0-9]{8}$/.test(shared.searchParams.get('og_ref')||''))return shared.href;
+   if(shared.origin===location.origin&&shared.pathname==='/games/invite/'+gameId+'/'&&shared.searchParams.get('og_game')===gameId&&/^og_[a-f0-9]{8}$/.test(shared.searchParams.get('og_ref')||''))return shared.href;
   }
  }catch{}
  // Fail-soft fallback follows the same public URL contract as the catalogue toolbar.
- const url=new URL('/games/',location.origin);
+ const url=new URL('/games/invite/'+encodeURIComponent(gameId)+'/',location.origin);
  url.searchParams.set('og_ref','og_'+token().slice(0,8));
  url.searchParams.set('og_game',gameId);
  url.searchParams.set('utm_source','osgard_play');
