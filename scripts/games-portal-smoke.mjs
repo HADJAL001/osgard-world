@@ -80,7 +80,7 @@ assert.ok(lazyRuntime.includes("script.async=true")&&lazyRuntime.includes("encod
   setAttribute(){}
   addEventListener(){}
   remove(){}
-  dispatchEvent(event){return fakeDocument.dispatchEvent(event.type,{...event,target:this})}
+  dispatchEvent(event){return fakeDocument.dispatchEvent({...event,target:this})}
  }
  class FakeMouseEvent {
   constructor(type,options={}){this.type=type;Object.assign(this,options);this.defaultPrevented=false;this.immediateStopped=false}
