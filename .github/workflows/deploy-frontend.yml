@@ -51,6 +51,8 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
+      - name: Validate the commerce API contract before release packaging
+        run: python3 -m unittest discover -s commerce-api -p 'test_*.py' -v
       - run: npm run check
       - run: npm run qa:null-shift
       - name: Smoke-test the OSGARD Games hub
