@@ -625,7 +625,7 @@ function rewardShelf(gameId){
 }
 function renderOutsideIntermission(detail){
  const id=detail&&detail.game;
- if(!outsideRoot||!titles[id]||!detail||detail.sessionStarted!==true||detail.reason!=='closed_by_user')return;
+ if(!outsideRoot||!titles[id]||!detail||detail.sessionStarted!==true||!['closed_by_user','returned_to_catalog','escape_to_catalog'].includes(detail.reason))return;
  const completedCount=recordCompletedRound(id,detail.sessionId),preferences=readServicePreferences();
  outsideRoot.replaceChildren();
  const suite=make('section','og-postgame-suite og-postgame-outside-suite');
