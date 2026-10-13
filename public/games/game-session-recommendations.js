@@ -275,7 +275,7 @@ const recommendationByGame={'null-shift':'projects','time':'superday','swarm':'m
 function readPreferredService(){try{const id=localStorage.getItem(preferredServiceKey)||'';return availableServiceIds.includes(id)?id:''}catch{return''}}
 function savePreferredService(id){if(!availableServiceIds.includes(id))return false;try{localStorage.setItem(preferredServiceKey,id);return true}catch{return false}}
 let memoryServicePreferences=null;
-let memoryServiceProgress={count:0,lastAt:0,lastGame:''};
+let memoryServiceProgress={count:0,lastAt:0,lastGame:'',sessions:[]};
 const make=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n};
 const selectConsentKey='osgard.games.analytics-consent.v1';
 const selectSessionKey='osgard.games.growth-session.v1';
@@ -333,13 +333,15 @@ function writeServicePreferences(value){
  try{localStorage.setItem(servicePreferencesKey,JSON.stringify(next));return true}catch{return false}
 }
 function readServiceProgress(){
- try{const raw=localStorage.getItem(serviceProgressKey);if(raw){const value=JSON.parse(raw);return{count:Number.isSafeInteger(value.count)&&value.count>=0?Math.min(value.count,1000000000):0,lastAt:Number.isFinite(value.lastAt)?value.lastAt:0,lastGame:typeof value.lastGame==='string'?value.lastGame:''}}}catch{}
- return {...memoryServiceProgress};
+ try{const raw=localStorage.getItem(serviceProgressKey);if(raw){const value=JSON.parse(raw);return{count:Number.isSafeInteger(value.count)&&value.count>=0?Math.min(value.count,1000000000):0,lastAt:Number.isFinite(value.lastAt)?value.lastAt:0,lastGame:typeof value.lastGame==='string'?value.lastGame:'',sessions:Array.isArray(value.sessions)?value.sessions.filter(id=>typeof id==='string'&&/^[a-z0-9:_-]{1,160}$/i.test(id)).slice(-100):[]}}}catch{}
+ return {...memoryServiceProgress,sessions:[...(memoryServiceProgress.sessions||[])]};
 }
-function recordCompletedRound(gameId){
- const current=readServiceProgress(),now=Date.now();
- if(current.lastGame===gameId&&now>=current.lastAt&&now-current.lastAt<2500)return current.count;
- const next={count:Math.min(current.count+1,1000000000),lastAt:now,lastGame:gameId};memoryServiceProgress=next;
+function recordCompletedRound(gameId,sessionId){
+ const current=readServiceProgress(),now=Date.now(),key=typeof sessionId==='string'&&/^[a-z0-9:_-]{1,160}$/i.test(sessionId)?sessionId:'';
+ if(key&&current.sessions.includes(key))return current.count;
+ if(!key&&current.lastGame===gameId&&now>=current.lastAt&&now-current.lastAt<2500)return current.count;
+ const sessions=key?[...current.sessions.filter(id=>id!==key),key].slice(-100):current.sessions;
+ const next={count:Math.min(current.count+1,1000000000),lastAt:now,lastGame:gameId,sessions};memoryServiceProgress=next;
  try{localStorage.setItem(serviceProgressKey,JSON.stringify(next))}catch{}
  return next.count;
 }
@@ -400,7 +402,6 @@ function servicesShelf(gameId,showPromos,completedCount){
  const filterButtons=[];
  filterDefs.forEach(([id,labelText])=>{const button=make('button','og-postgame-service-filter',labelText);button.type='button';button.dataset.osgardServiceFilter=id;button.setAttribute('aria-pressed',String(id==='all'));filters.append(button);filterButtons.push(button)});
  const activeSelected=services.filter(([id,,,,,,featured=false,active=true])=>active!==false&&preferences.selected.includes(id));
- const spotlightId=activeSelected.length?activeSelected[(Math.max(0,completedCount-1)%activeSelected.length)][0]:null;
  const preferred=readPreferredService();
  const contextual=recommendationByGame[gameId]||'marcosa';
  let spotlightServiceId=activeSelected.some(item=>item[0]===preferred)?preferred:
@@ -468,7 +469,7 @@ function servicesShelf(gameId,showPromos,completedCount){
  grid.hidden=true;filters.hidden=true;
  if(showPromos&&activeSelected.length){
   visible.forEach(([id,num,title,category,description,href,featured=false,active=true])=>{
-   const isSpotlight=id===spotlightId;
+   const isSpotlight=id===spotlightServiceId;
    const card=make('a','og-postgame-service-card'+(isSpotlight?' is-featured':''));
    card.dataset.service=id;card.dataset.game=gameId;card.dataset.category=categoryByService[id]||'other';cards.push(card);
    const u=new URL(href);u.searchParams.set('utm_source','osgard_games');u.searchParams.set('utm_medium','post_game');u.searchParams.set('utm_campaign','after_game');u.searchParams.set('utm_content',id+'_'+gameId);card.href=u.href;card.target='_blank';card.rel='noopener noreferrer';card.setAttribute('aria-label','Открыть '+title+' в новой вкладке');
@@ -600,7 +601,7 @@ function rewardShelf(gameId){
 function renderOutsideIntermission(detail){
  const id=detail&&detail.game;
  if(!outsideRoot||!titles[id]||!detail||detail.sessionStarted!==true||detail.reason!=='closed_by_user')return;
- const completedCount=recordCompletedRound(id),preferences=readServicePreferences();
+ const completedCount=recordCompletedRound(id,detail.sessionId),preferences=readServicePreferences();
  outsideRoot.replaceChildren();
  const suite=make('section','og-postgame-suite og-postgame-outside-suite');
  const intro=make('div','og-postgame-outside-intro');
@@ -621,12 +622,12 @@ document.addEventListener('osgard:game-launching',()=>{
  outsideRoot.replaceChildren();
  outsideRoot.hidden=true;
 });
-function renderOsgardSelect(gameId){
+function renderOsgardSelect(gameId,sessionId){
  const id=gameId;if(!titles[id])return;
- const completedCount=recordCompletedRound(id),preferences=readServicePreferences();
+ const completedCount=recordCompletedRound(id,sessionId),preferences=readServicePreferences();
  root.querySelector('.og-postgame-suite')?.remove();
  const suite=make('section','og-postgame-suite');suite.append(servicesShelf(id,shouldShowServicePromos(preferences,completedCount),completedCount),rewardShelf(id));root.append(suite);
 }
-document.addEventListener('osgard:game-completed',event=>renderOsgardSelect(event.detail&&event.detail.game));
-document.addEventListener('osgard:game-session-ended',event=>{if(event.detail&&event.detail.sessionStarted===true)renderOsgardSelect(event.detail.game)});
+document.addEventListener('osgard:game-completed',event=>renderOsgardSelect(event.detail&&event.detail.game,event.detail&&event.detail.sessionId));
+document.addEventListener('osgard:game-session-ended',event=>{if(event.detail&&event.detail.sessionStarted===true)renderOsgardSelect(event.detail.game,event.detail.sessionId)});
 })();
