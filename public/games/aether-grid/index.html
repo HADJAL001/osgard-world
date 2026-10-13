@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="osgard-game-version" content="1.0.0-game-11">
+<meta name="osgard-game-version" content="1.1.0-game-11-premium-session">
 <meta name="theme-color" content="#080b0e">
 <meta name="color-scheme" content="dark">
 <meta name="description" content="AETHER GRID — ежедневная браузерная головоломка OSGARD. Соедини источник с ядром, уложись в меньшее число ходов и брось вызов другу.">
@@ -205,7 +205,7 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
     if(won||paused===value)return;
     if(value){elapsedBeforeStart=runSeconds();startedAt=0;paused=true;$('pause-button').textContent='▶ Продолжить';$('pause-button').setAttribute('aria-pressed','true');$('hint-note').textContent='Игра на паузе. Прогресс сохранён; нажми «Продолжить», чтобы вернуться.';saveRun();toast('Пауза включена.');}
     else{paused=false;if(runHasStarted)startedAt=Date.now();$('pause-button').textContent='Ⅱ Пауза';$('pause-button').setAttribute('aria-pressed','false');$('hint-note').textContent='Снова в игре. Продолжай соединять сигнал.';toast('Игра продолжается.');}
-    updateConnectivity();updateHistoryControls();updateStats();
+    updateConnectivity();updateHistoryControls();updateStats();notify(value?'paused':'resumed');
   }
   function playTone(kind='rotate') {
     if(!soundEnabled)return;
