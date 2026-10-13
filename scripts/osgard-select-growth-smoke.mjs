@@ -38,7 +38,7 @@ assert.ok(js.includes("['each','После каждой завершённой �
 assert.ok(js.includes('function writeServicePreferences(value)'), 'Per-service selection preferences missing')
 assert.ok(js.includes('utm_source') && js.includes('utm_medium') && js.includes('utm_campaign') && js.includes('utm_content'), 'Promotional links must preserve first-party campaign attribution')
 assert.ok(js.includes('РЕКЛАМА · СОБСТВЕННЫЕ ПРОЕКТЫ OSGARD'), 'Promotional content must be disclosed as OSGARD self-promotion')
-assert.ok(js.includes("if(!hasConsent())return") && js.includes("sendSelectEvent('owned_promo_impression'") && js.includes('entry.intersectionRatio>=0.5'), 'Exposure measurement must require visibility and the existing consent gate')
+assert.ok(js.includes("if(!consented())return false;") && js.includes("sendEvent('owned_promo_impression'") && js.includes('entry.intersectionRatio>=0.5'), 'Exposure measurement must require visibility and the existing consent gate')
 assert.ok(commerceCore.includes('"owned_promo_impression"') && commerceCore.includes('"cross_promo_clicked"'), 'Analytics names must be accepted by the existing first-party API contract')
 assert.ok(js.includes("const walletKey='osgard.games.shards-wallet.v1',dailyReward=50") && js.includes('current.day===day'), 'Local invite reward must remain capped to once per UTC day and browser')
 assert.ok(js.includes('Соцсеть не сообщает сайту подтверждение публикации') && js.includes('не являются платёжным средством'), 'Must disclose that social publishing is not verified and SHARDS are non-cash')
