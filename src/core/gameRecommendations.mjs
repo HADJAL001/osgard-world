@@ -46,7 +46,7 @@ export function getRelatedGames(current, games, preferences = {}, limit = 3) {
         current.category === game.category;
 
       let score = indexInCurated >= 0 ? 100 - indexInCurated * 12 : sameCategory ? 52 : 28;
-      if (isFavorite) score += 30;
+      if (isFavorite) score += 55;
       if (wasRecent && !isFavorite) score -= 35;
 
       const reason = isFavorite
