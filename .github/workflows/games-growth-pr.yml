@@ -12,6 +12,7 @@ on:
       - "scripts/remix-growth-smoke.mjs"
       - "scripts/ecosystem-integrity-smoke.mjs"
       - "scripts/partners-page-smoke.mjs"
+      - "scripts/ecosystem-directory-smoke.mjs"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/games-growth-pr.yml"
