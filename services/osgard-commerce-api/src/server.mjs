@@ -8,7 +8,8 @@ import pg from "pg";
 import {
   catalogConfiguration, validateCheckoutPayload, validateLeadPayload,
   validateEventBatch, paymentsModeAllowed, resolveCheckoutPaymentState, safeEqual,
-  parseReferralRewardEvent, validateReferralRewardStatus, REFERRAL_REWARD_POINTS, REFERRAL_MIN_SESSION_SECONDS,
+  parseReferralRewardEvent, validateReferralRewardStatus, validateReferralRewardRegistration,
+  REFERRAL_REWARD_POINTS, REFERRAL_MIN_SESSION_SECONDS,
 } from "./core.mjs";
 
 const { Pool } = pg;
@@ -374,6 +375,32 @@ app.post("/v1/events", async (req, res) => {
   } catch (error) {
     console.error("Analytics insert failed:", error?.message || "unknown error");
     return res.status(503).json({ error: "EVENT_STORAGE_UNAVAILABLE" });
+  }
+});
+
+app.post("/v1/referrals/register", async (req, res) => {
+  res.set("Cache-Control", "no-store, private");
+  const input = validateReferralRewardRegistration(req.body);
+  if (!input.ok) return res.status(input.status).json({ error: input.code });
+  if (!requireDatabase(res)) return;
+  try {
+    const inserted = await pool.query(
+      "INSERT INTO game_referral_invites(invite_code,game_id,inviter_token) VALUES($1,$2,$3) ON CONFLICT(invite_code) DO NOTHING RETURNING invite_code",
+      [input.code, input.gameId, input.ownerToken],
+    );
+    if (inserted.rowCount) return res.status(201).json({ registered: true });
+    const existing = await pool.query(
+      "SELECT game_id, inviter_token FROM game_referral_invites WHERE invite_code=$1",
+      [input.code],
+    );
+    const record = existing.rows[0];
+    if (record && record.game_id === input.gameId && record.inviter_token === input.ownerToken) {
+      return res.status(200).json({ registered: true, alreadyRegistered: true });
+    }
+    return res.status(409).json({ error: "REFERRAL_CODE_ALREADY_USED" });
+  } catch (error) {
+    console.error("Referral registration failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "REFERRAL_REGISTRATION_UNAVAILABLE" });
   }
 });
 
