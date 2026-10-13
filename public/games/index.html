@@ -345,6 +345,31 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   if (!root) return;
   const trigger = root.querySelector('[data-passport-load]');
   const status = root.querySelector('[data-passport-status]');
+  const PENDING_KEY = 'osgard.games.player-passport.pending.v1';
+  // Queue only locally confirmed sessions so lazy-loading the Passport cannot miss
+  // a fast game round when the user has not scrolled to the Passport section yet.
+  document.addEventListener('osgard:game-session-ended', event => {
+    const detail = event && event.detail;
+    if (!detail || detail.sessionStarted !== true || typeof detail.game !== 'string') return;
+    try {
+      const raw = JSON.parse(localStorage.getItem(PENDING_KEY) || '[]');
+      const pending = Array.isArray(raw) ? raw : [];
+      const sessionId = typeof detail.sessionId === 'string' && /^[a-z0-9:_-]{1,160}$/i.test(detail.sessionId)
+        ? detail.sessionId : 'queued_' + Date.now() + '_' + pending.length;
+      if (pending.some(item => item && item.sessionId === sessionId)) return;
+      pending.push({
+        game: detail.game,
+        sessionId,
+        sessionStarted: true,
+        durationSeconds: detail.durationSeconds,
+        reason: detail.reason,
+        queuedAt: Date.now()
+      });
+      localStorage.setItem(PENDING_KEY, JSON.stringify(pending.slice(-100)));
+    } catch {
+      // The Passport will keep an in-memory session if local storage is unavailable.
+    }
+  });
   let state = 'idle';
   let observer = null;
   let styleLink = null;
