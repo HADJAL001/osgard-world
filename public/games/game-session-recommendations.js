@@ -134,15 +134,37 @@ function addPostSessionActions(gameId){
  inviteButton.addEventListener('click',async()=>{
   inviteButton.disabled=true;status.textContent='Готовим персональную ссылку…';
   const code=token(),url=buildShareUrl(gameId,code),message='Пойдём сыграем в '+game.title+' в OSGARD PLAY: '+url;
-  void sendEvent('share_created',gameId,'game-invite:'+gameId+':'+code);
+  let shareCompleted=false;
   try{
-   if(typeof navigator.share==='function'){await navigator.share({title:'OSGARD PLAY · '+game.title,text:'Пойдём сыграем вместе.',url});status.textContent='Ссылка передана в системное меню отправки.'}
-   else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(message);status.textContent='Текст приглашения скопирован.'}
-   else{fallback.href='https://wa.me/?text='+encodeURIComponent(message);fallback.hidden=false;status.textContent='Открой WhatsApp, чтобы отправить ссылку другу.'}
-  }catch(error){
-   if(error instanceof Error&&error.name==='AbortError')status.textContent='Отправка отменена.';
-   else{status.textContent='Не удалось открыть отправку. Можно скопировать ссылку из адресной строки: '+url;fallback.href='https://wa.me/?text='+encodeURIComponent(message);fallback.hidden=false}
-  }finally{inviteButton.disabled=false}
+   if(typeof navigator.share==='function'){
+    await navigator.share({title:'OSGARD PLAY · '+game.title,text:'Пойдём сыграем вместе.',url});
+    shareCompleted=true;
+    status.textContent='Ссылка передана в системное меню отправки.';
+   } else if(navigator.clipboard?.writeText){
+    await navigator.clipboard.writeText(message);
+    shareCompleted=true;
+    status.textContent='Текст приглашения скопирован.';
+   } else {
+    fallback.href='https://wa.me/?text='+encodeURIComponent(message);
+    fallback.hidden=false;
+    status.textContent='Открой WhatsApp, проверь приглашение и отправь его другу.';
+   }
+  } catch(error){
+   if(error instanceof Error&&error.name==='AbortError'){
+    status.textContent='Отправка отменена. Действие не засчитано как успешное приглашение.';
+    return;
+   }
+   status.textContent='Не удалось открыть отправку. Можно попробовать WhatsApp или скопировать ссылку из адресной строки: '+url;
+   fallback.href='https://wa.me/?text='+encodeURIComponent(message);
+   fallback.hidden=false;
+   return;
+  } finally {
+   inviteButton.disabled=false;
+  }
+  // Count only an action the browser confirmed: the native share promise resolved
+  // or the invite text was successfully copied. A visible fallback link or a
+  // dismissed share sheet is not counted as a successful share.
+  if(shareCompleted)void sendEvent('share_created',gameId,'game-invite:'+gameId+':'+code);
  });
 }
 document.addEventListener('osgard:game-completed',event=>{const id=event.detail&&event.detail.game;addPostSessionActions(id)});
