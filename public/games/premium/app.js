@@ -44,6 +44,7 @@
       const button = node('button', 'buy-button', canStart(item) ? 'Перейти к защищённой оплате ↗' : 'Пока недоступно');
       button.type = 'button';
       button.disabled = !canStart(item);
+      button.dataset.available = String(canStart(item));
       button.addEventListener('click', () => void checkout(item));
       card.append(kicker, title, description, price, reason, button);
       grid.append(card);
@@ -114,8 +115,7 @@
       location.assign(target.href);
     } catch (error) {
       status.textContent = 'Платёж не создан: ' + String(error.message || 'сервис временно недоступен') + '. Деньги не списаны.';
-      buttons.forEach((button) => { button.disabled = !button.dataset.available; });
-      await load();
+      buttons.forEach((button) => { button.disabled = button.dataset.available !== 'true'; });
     }
   }
   refresh.addEventListener('click', () => void load());
