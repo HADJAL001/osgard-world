@@ -122,6 +122,13 @@ var mission_finished := false
 var paused_game := false
 var mouse_firing := false
 var touch_firing := false
+var gamepad_device_id := -1
+var gamepad_mode_active := false
+var gamepad_move := Vector2.ZERO
+var gamepad_aim := Vector2.ZERO
+var gamepad_fire_held := false
+const GAMEPAD_MOVE_DEADZONE := 0.20
+const GAMEPAD_AIM_DEADZONE := 0.24
 var sound_enabled := true
 var reduced_motion := false
 var player_aim := Vector3.FORWARD
@@ -223,6 +230,11 @@ var daily_challenge_button: Button
 
 func _ready() -> void:
 	_reset_runtime_collections()
+	if not Input.joy_connection_changed.is_connected(_on_joy_connection_changed):
+		Input.joy_connection_changed.connect(_on_joy_connection_changed)
+	var connected_gamepads: Array = Input.get_connected_joypads()
+	if not connected_gamepads.is_empty():
+		gamepad_device_id = int(connected_gamepads[0])
 	_load_career()
 	_resolve_shared_challenge()
 	_create_materials()
@@ -349,6 +361,7 @@ func _process(delta: float) -> void:
 func _physics_process(delta: float) -> void:
 	if paused_game or mission_finished:
 		return
+	_poll_gamepad_state()
 	var dt := minf(delta, 0.05)
 	fire_cooldown = maxf(0.0, fire_cooldown - dt)
 	dash_cooldown = maxf(0.0, dash_cooldown - dt)
@@ -363,20 +376,34 @@ func _physics_process(delta: float) -> void:
 	_check_phase_lane_damage()
 	# Keep the evade window open through movement, hostile attacks and lane damage for this physics tick.
 	dash_timer = maxf(0.0, dash_timer - dt)
-	if touch_firing or mouse_firing:
+	if touch_firing or mouse_firing or gamepad_fire_held:
 		_fire_weapon()
 	if player_health <= 0.0:
 		_finish_mission(false)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		_set_gamepad_mode(false)
+		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		_set_gamepad_mode(false)
 		mouse_firing = event.pressed
+		return
+	if event is InputEventJoypadMotion:
+		var axis_event := event as InputEventJoypadMotion
+		if absf(axis_event.axis_value) >= GAMEPAD_MOVE_DEADZONE:
+			gamepad_device_id = axis_event.device
+			_set_gamepad_mode(true)
+		return
+	if event is InputEventJoypadButton:
+		_handle_gamepad_button(event as InputEventJoypadButton)
 		return
 	if not (event is InputEventKey):
 		return
 	var key_event := event as InputEventKey
 	if not key_event.pressed or key_event.echo:
 		return
+	_set_gamepad_mode(false)
 	var key := key_event.keycode
 	if briefing_visible:
 		if key in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_ESCAPE, KEY_H]:
@@ -423,6 +450,111 @@ func _unhandled_input(event: InputEvent) -> void:
 				_buy_upgrade("weapon")
 		KEY_M:
 			_toggle_sound()
+
+func _on_joy_connection_changed(device: int, connected: bool) -> void:
+	if connected:
+		gamepad_device_id = device
+		return
+	if gamepad_device_id != device:
+		return
+	var connected_gamepads: Array = Input.get_connected_joypads()
+	gamepad_device_id = int(connected_gamepads[0]) if not connected_gamepads.is_empty() else -1
+	gamepad_move = Vector2.ZERO
+	gamepad_aim = Vector2.ZERO
+	gamepad_fire_held = false
+	if gamepad_device_id < 0:
+		_set_gamepad_mode(false)
+
+func _set_gamepad_mode(enabled: bool) -> void:
+	if gamepad_mode_active == enabled:
+		return
+	gamepad_mode_active = enabled
+	_update_input_hint()
+
+func _apply_gamepad_deadzone(value: Vector2, deadzone: float = GAMEPAD_MOVE_DEADZONE) -> Vector2:
+	var magnitude: float = minf(value.length(), 1.0)
+	if magnitude <= deadzone:
+		return Vector2.ZERO
+	var remapped: float = clampf((magnitude - deadzone) / maxf(0.001, 1.0 - deadzone), 0.0, 1.0)
+	return value.normalized() * remapped
+
+func _poll_gamepad_state() -> void:
+	var connected_gamepads: Array = Input.get_connected_joypads()
+	if not connected_gamepads.has(gamepad_device_id):
+		if connected_gamepads.is_empty():
+			gamepad_device_id = -1
+			gamepad_move = Vector2.ZERO
+			gamepad_aim = Vector2.ZERO
+			gamepad_fire_held = false
+			if gamepad_mode_active:
+				_set_gamepad_mode(false)
+			return
+		gamepad_device_id = int(connected_gamepads[0])
+		gamepad_move = Vector2.ZERO
+		gamepad_aim = Vector2.ZERO
+		gamepad_fire_held = false
+		return
+	var raw_move := Vector2(
+		Input.get_joy_axis(gamepad_device_id, JOY_AXIS_LEFT_X),
+		Input.get_joy_axis(gamepad_device_id, JOY_AXIS_LEFT_Y)
+	)
+	var raw_aim := Vector2(
+		Input.get_joy_axis(gamepad_device_id, JOY_AXIS_RIGHT_X),
+		Input.get_joy_axis(gamepad_device_id, JOY_AXIS_RIGHT_Y)
+	)
+	gamepad_move = _apply_gamepad_deadzone(raw_move, GAMEPAD_MOVE_DEADZONE)
+	gamepad_aim = _apply_gamepad_deadzone(raw_aim, GAMEPAD_AIM_DEADZONE)
+	var right_trigger: float = Input.get_joy_axis(gamepad_device_id, JOY_AXIS_TRIGGER_RIGHT)
+	gamepad_fire_held = Input.is_joy_button_pressed(gamepad_device_id, JOY_BUTTON_RIGHT_SHOULDER) or right_trigger > 0.35
+	if gamepad_move.length_squared() > 0.003 or gamepad_aim.length_squared() > 0.003 or gamepad_fire_held:
+		_set_gamepad_mode(true)
+
+func _handle_gamepad_button(event: InputEventJoypadButton) -> void:
+	if event.pressed:
+		gamepad_device_id = event.device
+		_set_gamepad_mode(true)
+	if not event.pressed:
+		return
+	var button: int = event.button_index
+	if briefing_visible:
+		if button in [JOY_BUTTON_A, JOY_BUTTON_START]:
+			_dismiss_briefing()
+			get_viewport().set_input_as_handled()
+		return
+	if terminal_active:
+		var cipher_key: int = -1
+		match button:
+			JOY_BUTTON_DPAD_UP:
+				cipher_key = KEY_UP
+			JOY_BUTTON_DPAD_LEFT:
+				cipher_key = KEY_LEFT
+			JOY_BUTTON_DPAD_DOWN:
+				cipher_key = KEY_DOWN
+			JOY_BUTTON_DPAD_RIGHT:
+				cipher_key = KEY_RIGHT
+		if cipher_key >= 0:
+			_submit_cipher_key(cipher_key)
+			get_viewport().set_input_as_handled()
+			return
+		if button != JOY_BUTTON_A and button != JOY_BUTTON_START and button != JOY_BUTTON_BACK and button != JOY_BUTTON_LEFT_SHOULDER:
+			return
+	match button:
+		JOY_BUTTON_A:
+			_interact()
+		JOY_BUTTON_B:
+			_try_dash()
+		JOY_BUTTON_X:
+			_deploy_pulse()
+		JOY_BUTTON_Y:
+			_shift_layer()
+		JOY_BUTTON_START:
+			_set_pause(not paused_game)
+		JOY_BUTTON_BACK:
+			_toggle_diagnostics()
+		JOY_BUTTON_LEFT_SHOULDER:
+			_toggle_loadout()
+		# RB/RT fires while held; polling keeps the trigger responsive with no key-repeat.
+	get_viewport().set_input_as_handled()
 
 func _create_materials() -> void:
 	materials["floor"] = _material(Color(0.035, 0.063, 0.071), Color(0.02, 0.12, 0.12), 0.15, 0.28, 0.82)
@@ -1455,6 +1587,8 @@ func _read_move_input() -> Vector2:
 		float(mobile_actions.get("right", false)) - float(mobile_actions.get("left", false)),
 		float(mobile_actions.get("down", false)) - float(mobile_actions.get("up", false))
 	)
+	if gamepad_mode_active:
+		move += gamepad_move
 	return move.normalized() if move.length() > 1.0 else move
 
 func _move_player(_delta: float) -> void:
@@ -1545,6 +1679,23 @@ func _update_player_aim() -> void:
 				direction = quantum_core.global_position - player.global_position
 			else:
 				direction = extraction.global_position - player.global_position
+	elif gamepad_mode_active:
+		if gamepad_aim.length_squared() > 0.003:
+			var stick_direction := Vector3(gamepad_aim.x, 0.0, gamepad_aim.y).normalized()
+			direction = stick_direction
+			var selected := _select_aim_target(stick_direction, false)
+			aim_target_node = selected["node"] as Node3D if not selected.is_empty() else null
+			if is_instance_valid(aim_target_node):
+				var target_direction: Vector3 = aim_target_node.global_position - player.global_position
+				target_direction.y = 0.0
+				if target_direction.length_squared() > 0.01:
+					var alignment: float = stick_direction.dot(target_direction.normalized())
+					if alignment > 0.88:
+						var assist_weight: float = clampf((alignment - 0.88) / 0.12, 0.0, 1.0) * 0.14
+						direction = stick_direction.slerp(target_direction.normalized(), assist_weight)
+		else:
+			aim_target_node = null
+			direction = Vector3(player_aim.x, 0.0, player_aim.z)
 	else:
 		var mouse := get_viewport().get_mouse_position()
 		var ray_origin := camera.project_ray_origin(mouse)
@@ -1590,7 +1741,8 @@ func _select_aim_target(aim_direction: Vector3, mobile: bool) -> Dictionary:
 			if facing.length_squared() < 0.001:
 				continue
 			alignment = facing.dot(offset / distance)
-			if alignment < 0.965:
+			var minimum_alignment: float = 0.88 if gamepad_mode_active else 0.965
+			if alignment < minimum_alignment:
 				continue
 		if not _has_clear_path_to_aim_target(body):
 			continue
@@ -3195,6 +3347,8 @@ func _create_mobile_controls(parent: Control) -> void:
 	sound_button = _add_button(action_stack, "ЗВУК / ВКЛ" if sound_enabled else "ЗВУК / ВЫКЛ", _toggle_sound, Vector2(176.0, 27.0))
 
 func _set_mobile_action(action: String, pressed: bool) -> void:
+	if pressed:
+		_set_gamepad_mode(false)
 	match action:
 		"up", "down", "left", "right":
 			mobile_actions[action] = pressed
@@ -3445,6 +3599,7 @@ func _update_hud() -> void:
 		mobile_dash_button.text = "РЫВОК" if dash_cooldown <= 0.02 else "РЫВОК %.1f" % dash_cooldown
 		mobile_dash_button.disabled = dash_cooldown > 0.02 or paused_game or mission_finished or terminal_active or briefing_visible
 	telemetry_label.text = "HOSTILES %02d  ·  DEVICES %02d  ·  CONTRACT %02d" % [guards.size(), _living_device_count(), current_contract + 1]
+	_update_input_hint()
 	if diagnostics_enabled:
 		var samples := frame_samples.duplicate()
 		samples.sort()
@@ -3460,6 +3615,19 @@ func _update_hud() -> void:
 			effects.size(), beam_pool.size(), ring_pool.size(), spark_pool.size(), effect_pool_exhaustions,
 			dash_trails_emitted, guards.size(), _living_device_count(), phase_lane_disruptions, dash_evasions, dash_cooldown, active_impact_lights, impact_light_pool.size(), profile
 		]
+
+func _update_input_hint() -> void:
+	if not is_instance_valid(bottom_hint):
+		return
+	var hint: String
+	if mobile_controls_visible:
+		hint = "TOUCH · MOVE / FIRE / ACTION · DASH · PULSE · PHASE SHIFT"
+	elif gamepad_mode_active:
+		hint = "GAMEPAD · LS MOVE · RS AIM · RT/RB FIRE · A ACTION · B DASH · X PULSE · Y PHASE · START PAUSE"
+	else:
+		hint = "WASD / ARROWS MOVE · MOUSE AIM / FIRE · E ACTION · Q PULSE · SPACE DASH · SHIFT PHASE · PAD: LS / RS / RT"
+	if bottom_hint.text != hint:
+		bottom_hint.text = hint
 
 func _living_device_count() -> int:
 	var count := 0
