@@ -45,6 +45,11 @@ export function assessReport(json, label) {
     if (score < limits[key]) issues.push(name + ' below guardrail: ' + score + '/100 (minimum ' + limits[key] + ')')
   }
 
+  const targetSizeRaw = json.audits?.['target-size']?.score
+  const targetSizeScore = typeof targetSizeRaw === 'number' ? targetSizeRaw : null
+  if (targetSizeScore === null) issues.push('Touch target size audit score is missing')
+  else if (targetSizeScore < 1) issues.push('Touch target size audit failed: score ' + targetSizeScore + '/1')
+
   const tbt = json.audits?.['total-blocking-time']?.numericValue
   const lcp = json.audits?.['largest-contentful-paint']?.numericValue
   const tbtMs = typeof tbt === 'number' ? tbt : null
@@ -62,6 +67,7 @@ export function assessReport(json, label) {
     scores,
     tbtMs,
     lcpMs,
+    targetSizeScore,
     issues,
     pass: issues.length === 0,
   }
@@ -87,6 +93,7 @@ function main(paths) {
     }
     console.log('  Total Blocking Time: ' + (result.tbtMs === null ? 'not reported' : Math.round(result.tbtMs) + ' ms'))
     console.log('  Largest Contentful Paint: ' + (result.lcpMs === null ? 'not reported' : (result.lcpMs / 1000).toFixed(2) + ' s'))
+    console.log('  Touch target size: ' + (result.targetSizeScore === null ? 'not reported' : result.targetSizeScore === 1 ? 'PASS (1/1)' : 'FAIL (' + result.targetSizeScore + '/1)'))
     if (result.issues.length) {
       for (const issue of result.issues) console.error('  GUARDRAIL: ' + issue)
     } else {
