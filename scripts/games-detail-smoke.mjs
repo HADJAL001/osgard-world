@@ -15,6 +15,7 @@ const css = read('src/games-hub.css')
 
 const civicGame = read('public/games/civic-cascade/index.html')
 const cascadeGame = read('public/games/cascade-lab/index.html')
+const aetherGame = read('public/games/aether-grid/index.html')
 
 const games = [
   { id: 'time', href: '/games/time' },
@@ -26,6 +27,8 @@ const games = [
   { id: 'civic-cascade', href: '/games/civic-cascade/' },
   { id: 'patina', href: '/games/patina/' },
   { id: 'cascade-lab', href: '/games/cascade-lab/' },
+  { id: 'aether-grid', href: '/games/aether-grid/' },
+
 ]
 
 for (const game of games) {
@@ -45,17 +48,19 @@ assert.ok(detail.includes("querySelector('.time-game')"), 'Strategy-game readine
 assert.ok(detail.includes("track('game_opened', { game: game.id, surface: 'game-detail' }, consent)"), 'Detail views are logged once with consent')
 assert.ok(!detail.includes("surface: 'games-iframe'"), 'Iframe load must not duplicate a detail-view event')
 assert.ok(!detail.includes("track('game_session_started', { game: game.id, surface: 'games-iframe' }"), 'Iframe HTML load is not proof a session started')
-for (const route of ['/games/', '/games/monetization/', '/game/time', '/game/swarm', '/game/null-shift', '/game/inherit', '/game/remix', '/games/signal-run/', '/game/signal-run', '/games/civic-cascade/', '/games/patina/', '/game/civic-cascade', '/game/patina', '/games/cascade-lab/', '/game/cascade-lab']) assert.ok(sitemap.includes(`https://osgard.world${route}`), `Sitemap is missing ${route}`)
+for (const route of ['/games/', '/games/monetization/', '/game/time', '/game/swarm', '/game/null-shift', '/game/inherit', '/game/remix', '/games/signal-run/', '/game/signal-run', '/games/civic-cascade/', '/games/patina/', '/game/civic-cascade', '/game/patina', '/games/cascade-lab/', '/game/cascade-lab', '/games/aether-grid/', '/game/aether-grid']) assert.ok(sitemap.includes(`https://osgard.world${route}`), `Sitemap is missing ${route}`)
 assert.ok(css.includes('@media') && css.includes('prefers-reduced-motion'), 'Responsive and reduced-motion styles must be defined')
-for (const p of ['public/games/index.html','public/games/cascade-lab/index.html','godot/null-shift/project.godot','public/privacy/index.html','public/terms/index.html','public/osgard-mark.svg']) {
+for (const p of ['public/games/index.html','public/games/cascade-lab/index.html','public/games/aether-grid/index.html','godot/null-shift/project.godot','public/privacy/index.html','public/terms/index.html','public/osgard-mark.svg']) {
   assert.ok(existsSync(p), `Required publication asset missing: ${p}`)
 }
 execFileSync(process.execPath, ['--check', 'scripts/production-route-matrix.mjs'], { stdio: 'pipe' })
-console.log('PASS OSGARD GAME DETAIL: nine routes, details, SEO sitemap, safe legacy fallback, Nginx redirects, asynchronous SPA readiness and honest lifecycle events.')
+console.log('PASS OSGARD GAME DETAIL: ten routes, details, SEO sitemap, safe legacy fallback, Nginx redirects, asynchronous SPA readiness and honest lifecycle events.')
+assert.ok(aetherGame.includes('<title>AETHER GRID — OSGARD WORLD GAMING</title>') && aetherGame.includes('id="board"') && aetherGame.includes('id="challenge-code"') && aetherGame.includes("notify('ready'"), 'AETHER GRID page and daily puzzle contract missing')
+assert.ok(aetherGame.includes('class="partner-cta"') && aetherGame.includes('/games/partners/?utm_source=osgard_play'), 'AETHER GRID sponsor inquiry CTA missing')
 assert.ok(cascadeGame.includes('id="launchMain"') && cascadeGame.includes('id="exportRunReport"') && cascadeGame.includes('id="vectorToggle"') && cascadeGame.includes('Шаг +0,05 с'), 'CASCADE LAB gameplay and diagnostics controls missing')
 
 
 assert.ok(civicGame.includes('id="cc-save"') && civicGame.includes('id="cc-load"') && civicGame.includes('function saveCheckpoint()') && civicGame.includes('function restoreCheckpoint()'), 'CIVIC CASCADE must provide working local operation checkpoints')
 assert.ok(civicGame.includes("osgard-civic-cascade-checkpoint-v1") && civicGame.includes("localStorage.setItem(CHECKPOINT_KEY") && civicGame.includes("schemaVersion!==1"), 'CIVIC CASCADE checkpoint storage must be versioned and validated')
 assert.ok(civicGame.includes('id="cc-forecast"') && civicGame.includes('function updateForecast()') && /30\s+игровых\s+секунд/i.test(civicGame), 'CIVIC CASCADE must render its approximate 30-second risk outlook')
-assert.ok(hub.includes('9 игровых проектов') && hub.includes('Запустить CIVIC CASCADE') && hub.includes('cc-release-strip'), 'Entertainment hub must accurately count and visibly promote CIVIC CASCADE')
+assert.ok(hub.includes('10 игровых проектов') && hub.includes('Запустить CIVIC CASCADE') && hub.includes('cc-release-strip'), 'Entertainment hub must accurately count and visibly promote CIVIC CASCADE')
