@@ -150,7 +150,7 @@ const mockHost=mockNode();mockHost.hidden=true
 const mockClasses=new Set()
 const mockDialog={classList:{add(name){mockClasses.add(name)},remove(name){mockClasses.delete(name)},contains(name){return mockClasses.has(name)}}}
 const mockHandlers={}
-const mockDocument={querySelector(selector){return selector==='#post-run-recommendations'?mockHost:selector==='#player-dialog'?mockDialog:null},createElement(){return mockNode()},addEventListener(name,handler){mockHandlers[name]=handler},dispatch(name,event={}){assert.equal(typeof mockHandlers[name],'function','Missing recommendation lifecycle listener: '+name);mockHandlers[name](event)}}
+const mockDocument={querySelector(selector){return selector==='#post-run-recommendations'?mockHost:selector==='#player-dialog'?mockDialog:null},createElement(){return mockNode()},addEventListener(name,handler){(mockHandlers[name]??=[]).push(handler)},dispatch(name,event={}){const handlers=mockHandlers[name]||[];assert.ok(handlers.length,'Missing recommendation lifecycle listener: '+name);handlers.forEach(handler=>handler(event))}}
 new Function('document',recommendationScript)(mockDocument)
 mockDocument.dispatch('osgard:game-completed',{detail:{game:'swarm'}})
 assert.equal(mockHost.hidden,false,'Completed SWARM session should show recommendations')
@@ -189,6 +189,16 @@ assert.ok(!/https?:\/\/(?:fonts\.googleapis\.com|fonts\.gstatic\.com|cdn\.jsdeli
 for(const host of ['osgardbewworld.com','o2system.art','senjorio.com','superday.run','marcosa.club','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio']) assert.ok(html.includes('utm_source=osgard_games')&&html.includes(host),'Cross-promo UTM missing for '+host)
 for (const slug of ['time','swarm','null-shift','inherit','remix','signal-run','civic-cascade','patina','cascade-lab']) assert.ok(html.includes('href="/game/' + slug + '"'), 'Missing detail link: ' + slug)
 assert.ok(html.includes('href="/games/monetization/"'), 'Economics planner link missing')
+const growthApiCore=readFileSync(resolve('services/osgard-commerce-api/src/core.mjs'),'utf8')
+const growthApi=readFileSync(resolve('services/osgard-commerce-api/src/server.mjs'),'utf8')
+const growthAdmin=readFileSync(resolve('public/games/commerce-admin/index.html'),'utf8')
+assert.ok(recommendationScript.includes('osgard.games.referral-attribution.v1') && recommendationScript.includes('game-invite:') && recommendationScript.includes('play_with_a_friend'), 'Post-session invite link and referral attribution missing')
+assert.ok(recommendationScript.includes("sendEvent('referral_link_opened'") && recommendationScript.includes("sendEvent('share_created'"), 'Invite views and shares must use the consented event API')
+assert.ok(recommendationScript.includes('osgardbewworld.com/?utm_source=osgard_games&utm_medium=cross_promo&utm_campaign=after_game'), 'Post-session game-creation lead CTA and attribution missing')
+assert.ok(lifecycle.includes("function analyticsSource()") && lifecycle.includes("source:analyticsSource()"), 'Actual gameplay sessions must preserve consented invite attribution')
+assert.ok(growthApiCore.includes('"referral_link_opened"') && growthApiCore.includes('"share_created"'), 'Commerce API must explicitly allowlist the invite funnel events')
+for(const metric of ['inviteShares','referralOpens','referredStarts','referredCompletions']) assert.ok(growthApi.includes(metric), 'Commerce analytics response lacks referral metric '+metric)
+for(const metric of ['analytics-invites','analytics-referral-opens','analytics-referred-starts','analytics-referred-completions']) assert.ok(growthAdmin.includes('id="'+metric+'"'), 'Commerce admin is missing referral metric field '+metric)
 console.log('PASS OSGARD GAMES HUB: nine actual game routes, search/filters, local favorites/history, embedded player/fullscreen/share, consent-gated authenticated analytics, cross-promotion, contact form, SEO, mobile/reduced-motion styling and legal documents.')
 assert.ok(html.includes('href="/games/cascade-lab/" data-play="cascade-lab"') && html.includes('data-favorite="cascade-lab"') && html.includes('href="/game/cascade-lab"'), 'CASCADE LAB must use catalogue play, favourites and detail route')
 assert.ok(cascadeGame.includes('<title>CASCADE LAB — OSGARD PLAY</title>') && cascadeGame.includes('data-cascade-lab-ready="true"') && cascadeGame.includes("notifyOsgardLifecycle('ready'") && cascadeGame.includes("notifyOsgardLifecycle('started'") && cascadeGame.includes("notifyOsgardLifecycle('paused'") && cascadeGame.includes("notifyOsgardLifecycle('resumed'") && cascadeGame.includes("notifyOsgardLifecycle('completed'"), 'CASCADE LAB lifecycle contract missing')
