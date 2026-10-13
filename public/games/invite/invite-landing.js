@@ -43,6 +43,19 @@
       target.searchParams.set('utm_medium', medium);
       target.searchParams.set('utm_campaign', campaign);
       target.searchParams.set('utm_content', content);
+      // Keep the validated AFTERIMAGE daily seed/target while moving from the
+      // social invite page to the hub. The hub passes them only to AFTERIMAGE.
+      if (requestedGame === 'afterimage-run') {
+        const sharedSeed = params.get('seed') || '';
+        const rawSharedScore = params.get('score') || '';
+        const sharedScore = Number(rawSharedScore);
+        const sharedDate = /^\\d{4}-\\d{2}-\\d{2}$/.test(sharedSeed) &&
+          (() => { const date = new Date(sharedSeed + 'T00:00:00.000Z'); return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === sharedSeed; })();
+        if (sharedDate && rawSharedScore !== '' && Number.isSafeInteger(sharedScore) && sharedScore >= 0 && sharedScore <= 99999999) {
+          target.searchParams.set('seed', sharedSeed);
+          target.searchParams.set('score', String(sharedScore));
+        }
+      }
     }
     else if (legacySignalRun) {
       // Keep only the validated SIGNAL RUN challenge contract when leaving the social preview.
