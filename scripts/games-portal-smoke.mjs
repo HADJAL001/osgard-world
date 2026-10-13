@@ -534,6 +534,10 @@ assert.ok(recommendationScript.includes('availableServiceIds.filter(id=>Array.is
 assert.ok(recommendationScript.includes("localStorage.setItem(serviceProgressKey,JSON.stringify(next))")&&recommendationScript.includes('completedCount%3===0'),'Frequency must follow completed sessions, not page views');
 assert.ok(recommendationScript.includes("active===false?'Доступность не подтверждена':category"),'GARD VPN must remain unselectable until availability is verified');
 assert.ok(recommendationStyles.includes('.og-postgame-preferences')&&recommendationStyles.includes('.og-postgame-service-options')&&recommendationStyles.includes('.og-postgame-frequency')&&recommendationStyles.includes('@media(max-width:360px)'),'Service preferences must be accessible and responsive');
+assert.ok(recommendationScript.includes("card.addEventListener('click',()=>{void sendPromoEvent('cross_promo_clicked',gameId,'post-game-service:'+id)})"),'Owned-service outbound clicks must generate a real click-through event');
+assert.ok(recommendationScript.includes("if(!promoConsented()||!titles[gameId])return false")&&recommendationScript.includes("'/games/commerce-config.json'"),'Owned-service analytics must be consent-gated and use the configurable Commerce endpoint');
+assert.ok(!recommendationScript.includes("sendPromoEvent('service_impression'"),'Do not count a service card as an impression merely because it was rendered');
+
 
 
 assert.ok(lifecycle.includes('function analyticsSource()') && lifecycle.includes(':analyticsSource()') && lifecycle.includes("return 'referral:'+code+':null-shift'"), 'Actual gameplay sessions must preserve consented invite attribution')
