@@ -236,7 +236,7 @@ export function PlaySelectLoop({ locale }: { locale: Locale }) {
         </div>
         <div className="play-select-preference-grid">
           {services.map(service => {
-            const unavailable = !PROMOTABLE_SERVICE_IDS.includes(service.id)
+            const unavailable = service.id === 'gardvpn'
             return <label className={'play-select-preference-option' + (unavailable ? ' is-unavailable' : '')} key={service.id}>
               <input
                 type="checkbox"
