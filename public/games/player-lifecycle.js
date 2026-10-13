@@ -44,8 +44,10 @@ function sendCommerceEvent(name,payload){
   let parsed;
   try{parsed=new URL(raw,location.origin)}catch{return null}
   const localApi=['localhost','127.0.0.1'].includes(parsed.hostname);
-  if((parsed.protocol!=='https:'&&!(localApi&&parsed.protocol==='http:'))||parsed.username||parsed.password||parsed.pathname!=='/'||parsed.search||parsed.hash)return null;
-  return fetch(parsed.origin+'/v1/events',{method:'POST',keepalive:true,headers:{'content-type':'application/json'},body:JSON.stringify({consent:true,events:[event]})});
+  const allowedPath=parsed.pathname==='/'||(parsed.origin===location.origin&&parsed.pathname==='/commerce-api');
+  if((parsed.protocol!=='https:'&&!(localApi&&parsed.protocol==='http:'))||parsed.username||parsed.password||!allowedPath||parsed.search||parsed.hash)return null;
+  const base=parsed.origin+(parsed.pathname==='/'?'':parsed.pathname);
+  return fetch(base+'/v1/events',{method:'POST',keepalive:true,headers:{'content-type':'application/json'},body:JSON.stringify({consent:true,events:[event]})});
  }).catch(()=>{})
 }
 function allowedEvent(name,payload){sendCommerceEvent(name,payload);if(!activeGame||activeGame==='time')return;let consent=false,token='';try{consent=localStorage.getItem('osgard.games.analytics-consent.v1')==='yes';token=localStorage.getItem('osgard.auth.accessToken')||''}catch{}if(!consent||!token)return;const event={id:window.crypto?.randomUUID?.()||name+'-'+Date.now()+'-'+Math.random().toString(36).slice(2),name,world:'play',game:activeGame,payload:Object.assign({source:'games_catalog',catalogVersion:2},payload||{}),occurredAt:new Date().toISOString(),schemaVersion:1};fetch('/api/v1/player/events',{method:'POST',credentials:'same-origin',keepalive:true,headers:{authorization:'Bearer '+token,'content-type':'application/json'},body:JSON.stringify({event})}).catch(()=>{})}
