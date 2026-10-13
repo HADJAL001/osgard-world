@@ -189,3 +189,5 @@ dialog#player-dialog[data-postgame-intermission="1"] .post-run-recommendations{m
 }
 @media(max-width:360px){.og-postgame-spotlight-actions>*{width:100%;flex:1 1 100%}}
 @media(prefers-reduced-motion:reduce){.og-postgame-spotlight,.og-postgame-spotlight-actions>*{transition:none;animation:none;scroll-behavior:auto}}
+
+.og-postgame-spotlight-status{min-height:1em;margin:0;color:#d9c997;font-size:9px;line-height:1.55}
