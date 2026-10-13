@@ -37,6 +37,7 @@
 <script>
 (()=>{'use strict';
 const parts=['payload-01.txt','payload-02.txt','payload-03.txt','payload-04.txt','payload-05.txt','payload-06.txt','payload-07.txt','payload-07b.txt','payload-08.txt'];
+const bridgeScript="(()=>{\n'use strict';\nconst send=(state,extra={})=>{try{if(window.parent!==window)window.parent.postMessage({type:'osgard:game-lifecycle',game:'cascade-lab',state,at:Date.now(),...extra},location.origin)}catch{}};\nlet started=false,finished=false;\nconst announceStart=()=>{if(started||finished)return;started=true;send('started',{level:document.querySelector('[data-level].active')?.dataset.level||'0'})};\nconst startControls=['#launchMain','#pauseBtn','#stepOnce'];\nstartControls.forEach(selector=>document.querySelector(selector)?.addEventListener('click',()=>setTimeout(()=>{const mode=(document.querySelector('#modeTag')?.textContent||'').trim().toLowerCase();if(mode==='run'||mode==='paused')announceStart()},0),{passive:true}));\ndocument.querySelector('#game')?.addEventListener('pointerdown',announceStart,{once:true,passive:true});\ndocument.querySelector('#game')?.addEventListener('keydown',announceStart,{once:true});\ndocument.querySelectorAll('[data-tool],[data-level]').forEach(el=>el.addEventListener('click',announceStart,{once:true,passive:true}));\nconst overlay=document.querySelector('#resultOverlay'),title=document.querySelector('#resultTitle');\nif(overlay)new MutationObserver(()=>{if(finished||!overlay.classList.contains('show'))return;finished=true;const heading=(title?.textContent||'').trim();const success=heading==='Поставка выполнена';send('completed',{success,level:document.querySelector('#stageName')?.textContent||'',durationSeconds:Number.parseFloat(document.querySelector('#resultTime')?.textContent||'0')||undefined})}).observe(overlay,{attributes:true,attributeFilter:['class']});\nwindow.addEventListener('error',event=>{if(!event.message)return;send('error',{message:String(event.message).slice(0,180)})});\nwindow.addEventListener('unhandledrejection',event=>{send('error',{message:String(event.reason?.message||event.reason||'Uncaught promise rejection').slice(0,180)})});\n})();";
 const $=id=>document.getElementById(id),status=$('status'),progress=$('progress'),error=$('error'),retry=$('retry');
 function setStatus(text,n){status.textContent=text;if(Number.isFinite(n))progress.value=n}
 function fail(message){error.textContent=message;error.classList.add('show');retry.hidden=false;setStatus('Игра не запущена.');}
@@ -59,7 +60,9 @@ async function boot(){
   setStatus('Распаковка физической лаборатории…',parts.length);
   const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
   const html=await new Response(stream).text();
-  if(!html.includes('id="game"')||!html.includes('id="launchMain"')||!html.includes('CASCADE LAB'))throw new Error('Распакованный клиент не прошёл проверку целостности.');
+  if(!html.includes('id="game"')||!html.includes('id="launchMain"')||!html.includes('CASCADE LAB')||!html.includes('</head>')||!html.includes('</body>'))throw new Error('Распакованный клиент не прошёл проверку целостности.');
+  const seo='<meta name="description" content="CASCADE LAB — инженерная физическая головоломка OSGARD PLAY."><meta property="og:title" content="CASCADE LAB — Chain Reaction | OSGARD PLAY"><link rel="canonical" href="https://osgard.world/games/cascade-lab/">';
+  html=html.replace('</head>',seo+'</head>').replace('</body>','<script>'+bridgeScript+'<\\/script></body>');
   setStatus('Клиент готов. Открываем лабораторию…',parts.length);
   document.open();document.write(html);document.close();
  }catch(e){fail(e instanceof Error?e.message:'Неизвестная ошибка загрузки.');}
