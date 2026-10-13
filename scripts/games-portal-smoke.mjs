@@ -501,6 +501,7 @@ assert.equal(mockOutside.hidden,true,'The in-player return path must not also re
 mockDocument.dispatch('osgard:game-launching')
 assert.equal(mockHost.hidden,true,'Launching another game must dismiss the in-player chooser')
 assert.ok(recommendationScript.includes("'cascade-lab'")&&recommendationScript.includes("'civic-cascade'")&&recommendationScript.includes("'signal-run'"),'Recommendation map must cover the nine-game catalogue')
+mockDocument.dispatch('osgard:game-completed',{detail:{game:'swarm',sessionId:'session_swarm_rotation_test'}})
 const finalSuite=mockHost.children.find(node=>node.className==='og-postgame-suite')
 const finalServiceSection=finalSuite.children.find(node=>node.className==='og-postgame-services')
 const finalSpotlight=finalServiceSection.children.find(node=>node.className==='og-postgame-spotlight')
