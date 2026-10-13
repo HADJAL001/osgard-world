@@ -259,7 +259,7 @@ const services=[
  ['osgard-business','09','OSGARD BUSINESS','BUSINESS INTELLIGENCE','Диагностика бизнеса, развитие и рекомендации по росту','https://osgardos.com/'],
  ['vanguard','10','OSGARD VANGUARD','VIDEO STUDIO','Создание видео и визуальных проектов','https://osgardvanguard.studio/']
 ];
-const recommendationByGame={'null-shift':'gardvpn',time:'superday',swarm:'marcosa',inherit:'myosa',remix:'projects','civic-cascade':'osgard-business',patina:'gold-glamour','signal-run':'vanguard','cascade-lab':'projects'};
+const recommendationByGame={'null-shift':'gardvpn','time':'superday','swarm':'marcosa','inherit':'myosa','remix':'projects','civic-cascade':'osgard-business','patina':'gold-glamour','signal-run':'vanguard','cascade-lab':'projects'};
 const walletKey='osgard.games.shards-wallet.v1',preferredKey='osgard.games.preferred-service.v1',dailyReward=50;
 const make=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n};
 const hasConsent=()=>{try{return localStorage.getItem('osgard.games.analytics-consent.v1')==='yes'}catch{return false}};
