@@ -56,6 +56,10 @@ for (const value of ['id="campaign-form"', 'name="consent"', 'src="/games/commer
   assert.ok(partners.includes(value), "Partner page missing lead integration: " + value);
 }
 assert.ok(sharedClient.includes("/v1/leads") && sharedClient.includes("wa.me/79640027222"), "Lead API and manual fallback must both exist.");
+const ecosystemDomains = ["osgardbewworld.com","o2system.art","senjorio.com","superday.run","marcosa.club","myosa.world","gold-glamour.online","gardvpn.is","osgardos.com","osgardvanguard.studio"];
+for (const domain of ecosystemDomains) assert.ok(html.includes(domain), "Games hub missing owned ecosystem link: " + domain);
+assert.ok(html.includes("utm_source=osgard_games") && html.includes("utm_medium=cross_promo"), "Owned-platform links must include source attribution.");
+assert.ok(sharedClient.includes("cross_promo_clicked") && sharedClient.includes("utm_content"), "Cross-promo clicks must be measured with consent and campaign context.");
 assert.ok(playerLifecycle.includes("sendCommerceEvent(name,payload)") && playerLifecycle.includes("game_session_completed"), "Consented game session metrics must reach commerce analytics.");
 assert.ok(privacy.includes("платёжного провайдера") && privacy.includes("Необязательная аналитика"), "Privacy page missing actual commerce data handling.");
 assert.ok(terms.includes("Покупки и платёжный статус") && terms.includes("Подписка OSGARD PREMIUM выключена"), "Terms must document checkout and disabled recurring sales.");
