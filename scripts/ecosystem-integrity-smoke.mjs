@@ -69,6 +69,7 @@ assert.ok(nginx.indexOf('limit_req_zone $binary_remote_addr zone=osgard_player_a
 assert.ok(apiProxy.includes('resolver 127.0.0.11 valid=30s ipv6=off;') && apiProxy.includes('set $osgard_game_api_host osgard-game-api;') && apiProxy.includes('proxy_pass http://$osgard_game_api_host:4317;'), 'Protected API proxy must use Docker DNS at request time so Nginx can start before the API alias resolves')
 const activator = read('scripts/activate-frontend-remote.sh')
 assert.ok(activator.includes('docker inspect osgard-game-api') && activator.includes('NetworkSettings.Networks') && activator.includes('nginx.runtime.conf') && activator.includes('Using OSGARD game API upstream'), 'Activation must resolve a live API container or fall back to the existing host bridge gateway')
+assert.ok(activator.includes("sed 's|osgard-game-api;|$api_host;|'"), 'Nginx upstream substitution must be valid inside the quoted remote shell command')
 assert.ok(apiProxy.includes('limit_req zone=osgard_player_api burst=30 nodelay;') && apiProxy.includes('limit_req_status 429;'), 'API route must enforce an explicit per-client rate limit')
 assert.ok(apiProxy.includes('add_header Cache-Control "no-store" always;'), 'Player and admin analytics responses must not be cached by shared browsers/proxies')
 assert.ok(apiProxy.includes('proxy_read_timeout 10s;') && apiProxy.includes('client_max_body_size 256k;'), 'API proxy needs bounded request size and upstream timeout')

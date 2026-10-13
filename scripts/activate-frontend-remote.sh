@@ -51,7 +51,7 @@ rollback() {
     test -s /tmp/osgard-gh-next/html/skillcred/styles.css.gz
     test -s /tmp/osgard-gh-next/html/skillcred/app.js.gz
     test -f /tmp/osgard-gh-next/nginx.conf
-    sed "s|osgard-game-api;|$api_host;|" /tmp/osgard-gh-next/nginx.conf > /tmp/osgard-gh-next/nginx.runtime.conf
+    sed 's|osgard-game-api;|$api_host;|' /tmp/osgard-gh-next/nginx.conf > /tmp/osgard-gh-next/nginx.runtime.conf
     test -s /tmp/osgard-gh-next/nginx.runtime.conf
     cp /etc/nginx/conf.d/default.conf /tmp/osgard-nginx-previous.conf
     mv /usr/share/nginx/html /tmp/osgard-gh-previous
