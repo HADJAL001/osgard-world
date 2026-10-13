@@ -11,10 +11,11 @@ const commerceCore = read('services/osgard-commerce-api/src/core.mjs')
 
 new vm.Script(js, { filename: 'game-session-recommendations.js' })
 const select = js.slice(js.indexOf('function servicesShelf'), js.lastIndexOf('})();'))
+const titleMap = js.slice(js.indexOf('const titles='), js.indexOf('const services='))
 
 const games = ['null-shift','time','swarm','inherit','remix','civic-cascade','patina','signal-run','cascade-lab']
 for (const game of games) {
-  assert.ok(select.includes("'" + game + "'") || js.includes("'" + game + "'"), 'Missing contextual game: ' + game)
+  assert.ok(titleMap.includes("'" + game + "':") || titleMap.includes(game + ':'), 'Missing game ID from the current player title map: ' + game)
 }
 const projects = [
   ['MARCOSA','https://marcosa.club/'],['OSGARD PROJECTS','https://osgardbewworld.com/'],
