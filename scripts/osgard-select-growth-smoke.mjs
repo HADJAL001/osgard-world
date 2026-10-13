@@ -48,8 +48,7 @@ assert.ok(portalSmoke.includes('premium contextual spotlight') && portalSmoke.in
 
 console.log(JSON.stringify({
   status:'passed',
-  checks:9+projects.length+15,
   games:games.length,
   ownedProjects:projects.length,
-  notes:'Static contract and JS parse checks; runtime browser checks remain in games-portal-smoke and deployment CI.'
+  coverage:'static contracts and JavaScript syntax; runtime assertions are in games-portal-smoke and deployment CI'
 }))
