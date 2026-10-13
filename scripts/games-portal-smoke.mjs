@@ -408,7 +408,7 @@ socialGrid.children[0].click()
 assert.equal(claimReward.hidden,false,'Choosing a social destination should reveal the return-to-game reward confirmation')
 assert.ok(claimReward.textContent.includes('Telegram')&&claimReward.textContent.includes('+50 SHARDS'),'Reward confirmation should name the selected destination and show the local reward')
 assert.ok(rewardSection.children.find(node=>node.className==='og-postgame-status').textContent.includes('Соцсеть не сообщает сайту подтверждение публикации'),'Manual repost reward must clearly disclose that posting is player-confirmed, not network-verified')
-assert.ok(playSelectSource.includes("setPendingNetwork('native-share')") && playSelectSource.includes('если ты действительно опубликовал приглашение') && playSelectSource.includes('If you actually published the invitation'),'Homepage native-share flow must require explicit post confirmation')
+assert.ok(playSelectSource.includes("setPendingNetwork('native-share')") && playSelectSource.includes('Если ты действительно опубликовал приглашение') && playSelectSource.includes('If you actually published the invitation'),'Homepage native-share flow must require explicit post confirmation')
 assert.ok(!playSelectSource.includes("grantReward('homepage-native-share')") && !playSelectSource.includes("grantReward('homepage-clipboard')"),'Opening the share sheet or copying a URL must never grant SHARDS automatically')
 assert.ok(playSelectSource.includes('Copying alone is not a repost and earns no reward') && playSelectSource.includes('Копирование само по себе не считается репостом и не даёт награду'),'Copy fallback must explicitly state that a copied link is not a repost')
 assert.ok(playSelectSource.includes("onClick={() => grantReward('homepage-social-confirmation:' + pendingNetwork)}") && playSelectSource.includes('I actually published the invitation — claim +50 SHARDS'),'Homepage reward must be granted only by a separate explicit confirmation')
@@ -449,9 +449,10 @@ assert.ok(civic.includes("sendLifecycle('completed'"),'CIVIC CASCADE must emit c
 assert.ok(patina.includes("signal('completed'"),'PATINA must emit completion')
 assert.ok(signalJs.includes("life('completed'"),'SIGNAL RUN must emit completion')
 
-assert.ok(signalRun.includes('id="shards"')&&signalRun.includes('OSGARD SHARDS')&&signalRun.includes('публикацию в соцсети')&&signalRun.includes('не имеют денежной стоимости'),'SIGNAL RUN must disclose the local SHARDS wallet and social-share verification limits');
+assert.ok(signalRun.includes('id="shards"')&&signalRun.includes('id="claim-share"')&&signalRun.includes('OSGARD SHARDS')&&signalRun.includes('публикацию игроком')&&signalRun.includes('не имеют денежной стоимости'),'SIGNAL RUN must disclose local-only SHARDS and provide a separate post-confirmation control');
 assert.ok(signalJs.includes("SHARDS_KEY='osgard.games.shards-wallet.v1'")&&signalJs.includes('function awardShareShards')&&signalJs.includes('event.key===SHARDS_KEY'),'SIGNAL RUN must use the same local SHARDS wallet as the postgame reward panel');
-assert.ok(signalJs.includes("bonus.ok?' · +50 SHARDS'")&&signalJs.includes('current.day===day'),'SIGNAL RUN must show the +50 local invitation reward and prevent duplicate grants within one UTC day');
+assert.ok(signalJs.includes("if(claimShare)claimShare.addEventListener('click'")&&signalJs.includes("awardShareShards('user-confirmed:'+method)")&&signalJs.includes('pendingShareReward=method')&&signalJs.includes('current.day===day'),'SIGNAL RUN must award +50 local SHARDS only from explicit confirmation and prevent duplicate grants within one UTC day');
+assert.ok(!signalJs.includes('const bonus=awardShareShards(method)')&&signalJs.includes('Копирование само по себе не даёт +50 SHARDS'),'SIGNAL RUN must not award points from a closed share sheet or clipboard copy');
 
 assert.ok(cascadeGame.includes("notifyOsgardLifecycle('completed'"),'CASCADE LAB must emit completion after a passed level')
 
