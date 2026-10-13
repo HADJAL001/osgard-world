@@ -1671,6 +1671,7 @@ function finishSimulation() {
     $('resultPrimary').innerHTML = 'Попробовать снова <span>↺</span>'; $('resultPrimary').onclick = resetSimulation;
   }
   mode = won ? 'won' : 'lost'; $('resultRetry').onclick = resetSimulation; updateInterface(); updateDiagnostics(); $('resultOverlay').classList.remove('hidden');
+  if (won) notifyOsgardLifecycle('completed', { levelId: level.id, mode: analyticsMode(), elapsedMs: Math.max(0, Math.min(3_600_000, Math.round(physics.time * 1000))) });
 }
 function replaySimulation() { if (lastReplay.length < 2 || mode === 'running') return; replayReturnMode = ['won', 'lost'].includes(mode) ? mode : 'build'; $('resultOverlay').classList.add('hidden'); replayClock = 0; mode = 'replay'; updateInterface(); }
 function encodeShare() { const data = { version: 1, level: level.id, devices: devices.map(d => ({ type: d.type, x: Math.round(d.x * 10) / 10, y: Math.round(d.y * 10) / 10, angle: Math.round(d.angle * 1000) / 1000 })) }; return `CL1-${btoa(unescape(encodeURIComponent(JSON.stringify(data))))}`; }
