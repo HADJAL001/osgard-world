@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="osgard-game-version" content="1.0.0-game-11">
+<meta name="osgard-game-version" content="1.1.0-game-11-premium-session">
 <meta name="theme-color" content="#080b0e">
 <meta name="color-scheme" content="dark">
 <meta name="description" content="AETHER GRID — ежедневная браузерная головоломка OSGARD. Соедини источник с ядром, уложись в меньшее число ходов и брось вызов другу.">
@@ -46,6 +46,17 @@ h1,h2,h3,p{margin-top:0}h1{max-width:760px;margin-bottom:18px;font:400 clamp(54p
 @media(max-width:420px){.head-nav a:first-child{display:none}.wrap{width:calc(100% - 20px)}.board{gap:3px;padding:4px}.side{grid-template-columns:1fr}.side-card:first-child{grid-column:auto}.tile .cell-tag{font-size:5px}.controls .btn{font-size:10px;min-height:39px;padding:0 8px}}
 .partner-cta{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:15px;padding:11px 12px;border:1px solid #dfc78338;background:#dfc78308;color:#dfc783;font-size:10px;line-height:1.6}.partner-cta:hover{border-color:#dfc78388;background:#dfc78312}.partner-cta:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+.advanced-controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;padding-top:13px;border-top:1px solid var(--line)}
+.advanced-controls .btn{min-height:40px;padding:9px 12px;font-size:10px}
+.advanced-controls .btn[aria-pressed="true"]{border-color:var(--cyan);background:#77e9e612;color:var(--cyan)}
+.run-progress{margin:16px 0 4px;padding:14px;border:1px solid #77e9e625;background:#77e9e606}
+.run-progress-head{display:flex;justify-content:space-between;gap:12px;align-items:center;color:#aababc;font-size:10px}.run-progress-head strong{font:12px var(--mono);color:var(--cyan)}
+.run-progress-track{height:5px;margin-top:10px;overflow:hidden;background:#ffffff12}.run-progress-fill{height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--green));transition:width .18s ease}
+.personal-records{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:12px}
+.personal-record{padding:10px 8px;border:1px solid var(--line);background:#ffffff03}.personal-record small{display:block;color:var(--soft);font:8px var(--mono);letter-spacing:.07em}.personal-record b{display:block;margin-top:5px;color:var(--gold);font:19px var(--serif);overflow-wrap:anywhere}
+@media(max-width:480px){.personal-records{grid-template-columns:repeat(3,minmax(0,1fr))}.personal-record{padding:8px 6px}.personal-record b{font-size:16px}.advanced-controls .btn{flex:1 1 42%}}
+body.high-contrast{--muted:#d7e4e5;--soft:#b7c7ca;--line:#ffffff4d;--cyan:#9ffffb;--gold:#ffe59c}
+body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{stroke-width:7}
 </style>
 </head>
 <body data-aether-grid-ready="true">
@@ -69,6 +80,15 @@ h1,h2,h3,p{margin-top:0}h1{max-width:760px;margin-bottom:18px;font:400 clamp(54p
         <button class="btn" id="reset-button" type="button">↺ Сбросить сетку</button>
         <button class="btn primary" id="share-button" type="button">Вызвать друга ↗</button>
       </div>
+      <div class="advanced-controls" id="advanced-controls" aria-label="Дополнительные инструменты">
+        <button class="btn" id="undo-button" type="button" disabled aria-keyshortcuts="Control+Z">↶ Отменить</button>
+        <button class="btn" id="redo-button" type="button" disabled aria-keyshortcuts="Control+Y">↷ Повторить</button>
+        <button class="btn" id="pause-button" type="button" aria-pressed="false">Ⅱ Пауза</button>
+        <button class="btn" id="sound-button" type="button" aria-pressed="false">♫ Звук: выкл.</button>
+        <button class="btn" id="contrast-button" type="button" aria-pressed="false">◐ Контраст: выкл.</button>
+        <button class="btn" id="haptics-button" type="button" aria-pressed="false">⌁ Вибрация: выкл.</button>
+        <button class="btn" id="export-button" type="button">⇩ Экспорт результата</button>
+      </div>
       <p class="hint-note" id="hint-note" role="status" aria-live="polite">Нажимай на узлы, чтобы поворачивать соединения по часовой стрелке.</p>
     </section>
 
@@ -76,6 +96,15 @@ h1,h2,h3,p{margin-top:0}h1{max-width:760px;margin-bottom:18px;font:400 clamp(54p
       <section class="side-card"><p class="eyebrow">02 / YOUR RUN</p><h2>Текущая попытка</h2><p>Результат хранится в этом браузере. Общего рейтинга пока нет — сравнивай ходы напрямую с друзьями.</p>
         <div class="metrics"><div class="metric"><small>ХОДЫ</small><b id="moves">00</b></div><div class="metric"><small>ВРЕМЯ</small><b id="timer">00<em>s</em></b></div></div>
         <div class="best"><span>Лучший результат сегодня</span><b id="best-score">—</b></div>
+        <div class="run-progress" aria-label="Прогресс сборки сигнала">
+          <div class="run-progress-head"><span>СИГНАЛ / СОЕДИНЁННЫЕ УЗЛЫ</span><strong id="connected-count">1 / 25</strong></div>
+          <div class="run-progress-track" role="progressbar" id="connected-progress" aria-label="Количество соединённых узлов" aria-valuemin="0" aria-valuemax="25" aria-valuenow="1"><div class="run-progress-fill" id="connected-progress-fill"></div></div>
+        </div>
+        <div class="personal-records" aria-label="Личная статистика">
+          <div class="personal-record"><small>ПОБЕДЫ</small><b id="total-solves">0</b></div>
+          <div class="personal-record"><small>СЕРИЯ ДНЕЙ</small><b id="win-streak">0</b></div>
+          <div class="personal-record"><small>РЕКОРД ХОДОВ</small><b id="alltime-best">—</b></div>
+        </div>
         <div class="result" id="result"><p class="eyebrow">SIGNAL CONNECTED</p><h3 id="result-title">Маршрут собран.</h3><p id="result-copy">Твой результат готов к сравнению.</p><button class="btn primary" id="share-result" type="button">Поделиться результатом ↗</button></div>
       </section>
       <section class="side-card"><p class="eyebrow">03 / HOW TO PLAY</p><h2>Правила</h2><ol class="instructions"><li>Каждый узел поворачивается на 90° по нажатию.</li><li>Соедини внешний источник слева с ядром справа внизу.</li><li>Подсказка исправляет один узел, но добавляет 3 хода.</li><li>Сброс возвращает исходную одинаковую сетку дня.</li></ol><div class="mini-meta"><span>5 × 5 NODES</span><span>NO INSTALL / NO LOGIN</span></div><a class="partner-cta" href="/games/partners/?utm_source=osgard_play&amp;utm_medium=game_page&amp;utm_campaign=daily_challenge&amp;utm_content=aether_grid">Для брендов: спонсировать следующий ежедневный вызов ↗</a></section>
@@ -96,7 +125,131 @@ h1,h2,h3,p{margin-top:0}h1{max-width:760px;margin-bottom:18px;font:400 clamp(54p
   const FNV_OFFSET = 2166136261;
   function notify(state, extra = {}) { try { if (window.parent !== window) window.parent.postMessage({ type: 'osgard:game-lifecycle', state, game: 'aether-grid', at: Date.now(), ...extra }, location.origin); } catch {} }
   let seedState = 0, day = '', moves = 0, startedAt = 0, timerHandle = 0, hintsUsed = 0, won = false, toastHandle = 0;
+  let elapsedBeforeStart = 0, paused = false, runHasStarted = false, visibilityPaused = false, soundEnabled = false, hapticsEnabled = false;
+  let undoStack = [], redoStack = [];
   let solutionPath = [], correct = [], original = [], turns = [], bestKey = '';
+  const runKeyPrefix = 'osgard.aether-grid.progress.v1.';
+  const statsKey = 'osgard.aether-grid.stats.v1';
+  const soundKey = 'osgard.aether-grid.sound.v1';
+  const contrastKey = 'osgard.aether-grid.contrast.v1';
+  const hapticsKey = 'osgard.aether-grid.haptics.v1';
+  function runSeconds() { return Math.max(0,elapsedBeforeStart+(startedAt&&!paused?Math.floor((Date.now()-startedAt)/1000):0)); }
+  function safeLocalGet(key,fallback='') { try { return localStorage.getItem(key) ?? fallback; } catch { return fallback; } }
+  function readStats() {
+    try {
+      const raw=JSON.parse(localStorage.getItem(statsKey)||'{}');
+      const days=Array.isArray(raw.completedDays)?[...new Set(raw.completedDays.filter(validDay))].sort().slice(-400):[];
+      return {version:1,totalSolves:days.length,completedDays:days,allTimeBestMoves:Number.isSafeInteger(raw.allTimeBestMoves)&&raw.allTimeBestMoves>0?raw.allTimeBestMoves:null,allTimeBestSeconds:Number.isSafeInteger(raw.allTimeBestSeconds)&&raw.allTimeBestSeconds>0?raw.allTimeBestSeconds:null};
+    } catch { return {version:1,totalSolves:0,completedDays:[],allTimeBestMoves:null,allTimeBestSeconds:null}; }
+  }
+  function consecutiveDayStreak(days) {
+    const set=new Set(days),today=utcDay();
+    let cursor=new Date(today+'T00:00:00.000Z');
+    if(!set.has(today)){cursor.setUTCDate(cursor.getUTCDate()-1);if(!set.has(cursor.toISOString().slice(0,10)))return 0;}
+    let count=0;
+    while(set.has(cursor.toISOString().slice(0,10))&&count<400){count++;cursor.setUTCDate(cursor.getUTCDate()-1);}
+    return count;
+  }
+  function renderPersonalStats() {
+    const stats=readStats();
+    $('total-solves').textContent=String(stats.totalSolves);
+    $('win-streak').textContent=String(consecutiveDayStreak(stats.completedDays));
+    $('alltime-best').textContent=stats.allTimeBestMoves===null?'—':String(stats.allTimeBestMoves);
+  }
+  function writeCompletionStats(seconds) {
+    const stats=readStats(),completedDays=[...new Set([...stats.completedDays,day])].sort().slice(-400);
+    const payload={version:1,completedDays,totalSolves:completedDays.length,
+      allTimeBestMoves:stats.allTimeBestMoves===null?moves:Math.min(stats.allTimeBestMoves,moves),
+      allTimeBestSeconds:stats.allTimeBestSeconds===null?seconds:Math.min(stats.allTimeBestSeconds,seconds),
+      lastCompletedAt:new Date().toISOString()};
+    try{localStorage.setItem(statsKey,JSON.stringify(payload));}catch{}
+    renderPersonalStats();
+  }
+  function saveRun() {
+    if(!day||won||!Array.isArray(turns)||turns.length!==25)return;
+    const payload={version:1,day,turns:turns.slice(),moves,hintsUsed,elapsedSeconds:runSeconds(),savedAt:Date.now()};
+    try{localStorage.setItem(runKeyPrefix+day,JSON.stringify(payload));}catch{}
+  }
+  function restoreRun() {
+    try {
+      const raw=JSON.parse(localStorage.getItem(runKeyPrefix+day)||'null');
+      if(!raw||raw.version!==1||raw.day!==day||!Array.isArray(raw.turns)||raw.turns.length!==25||
+        !raw.turns.every(value=>Number.isInteger(value)&&value>=0&&value<=3)||
+        !Number.isSafeInteger(raw.moves)||raw.moves<0||raw.moves>100000||
+        !Number.isSafeInteger(raw.hintsUsed)||raw.hintsUsed<0||raw.hintsUsed>10000||
+        !Number.isSafeInteger(raw.elapsedSeconds)||raw.elapsedSeconds<0||raw.elapsedSeconds>86400)return false;
+      turns=raw.turns.slice();moves=raw.moves;hintsUsed=raw.hintsUsed;elapsedBeforeStart=raw.elapsedSeconds;
+      runHasStarted=moves>0;startedAt=0;paused=false;undoStack=[];redoStack=[];
+      renderBoard();updateStats();updateConnectivity();updateHistoryControls();
+      $('hint-note').textContent=moves?'Продолжена сохранённая попытка этого дня. Таймер возобновится после следующего хода.':'Твоя ежедневная сетка готова.';
+      toast('Прогресс AETHER GRID восстановлен.');
+      return true;
+    } catch { return false; }
+  }
+  function snapshotRun(){return {turns:turns.slice(),moves,hintsUsed};}
+  function pushHistory(){undoStack.push(snapshotRun());if(undoStack.length>100)undoStack.shift();redoStack=[];updateHistoryControls();}
+  function applySnapshot(snapshot){
+    // History can restore board state, but it must never rewind elapsed time.
+    const elapsed=runSeconds(),hadStarted=runHasStarted;
+    turns=snapshot.turns.slice();moves=snapshot.moves;hintsUsed=snapshot.hintsUsed;elapsedBeforeStart=elapsed;
+    startedAt=0;paused=false;runHasStarted=hadStarted||moves>0;won=false;
+    if(runHasStarted){startedAt=Date.now();if(!timerHandle)timerHandle=window.setInterval(updateTimer,250);}
+    $('result').classList.remove('is-visible');$('hint-button').disabled=false;
+    $('pause-button').disabled=false;$('pause-button').textContent='Ⅱ Пауза';$('pause-button').setAttribute('aria-pressed','false');
+    updateStats();updateConnectivity();updateHistoryControls();saveRun();
+  }
+  function updateHistoryControls(){
+    const undo=$('undo-button'),redo=$('redo-button');
+    if(undo)undo.disabled=paused||won||undoStack.length===0;
+    if(redo)redo.disabled=paused||won||redoStack.length===0;
+  }
+  function undoMove(){if(paused||won||!undoStack.length)return;redoStack.push(snapshotRun());const previous=undoStack.pop();applySnapshot(previous);toast('Последний ход отменён.');}
+  function redoMove(){if(paused||won||!redoStack.length)return;undoStack.push(snapshotRun());const next=redoStack.pop();applySnapshot(next);toast('Ход повторён.');}
+  function setPaused(value){
+    if(won||paused===value)return;
+    if(value){elapsedBeforeStart=runSeconds();startedAt=0;window.clearInterval(timerHandle);timerHandle=0;paused=true;$('pause-button').textContent='▶ Продолжить';$('pause-button').setAttribute('aria-pressed','true');$('hint-note').textContent='Игра на паузе. Прогресс сохранён; нажми «Продолжить», чтобы вернуться.';saveRun();toast('Пауза включена.');}
+    else{paused=false;if(runHasStarted){startedAt=Date.now();if(!timerHandle)timerHandle=window.setInterval(updateTimer,250)}$('pause-button').textContent='Ⅱ Пауза';$('pause-button').setAttribute('aria-pressed','false');$('hint-note').textContent='Снова в игре. Продолжай соединять сигнал.';toast('Игра продолжается.');}
+    updateConnectivity();updateHistoryControls();updateStats();notify(value?'paused':'resumed');
+  }
+  function playTone(kind='rotate') {
+    if(!soundEnabled)return;
+    try{
+      const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)return;
+      const ctx=new Ctx(),osc=ctx.createOscillator(),gain=ctx.createGain();
+      osc.type='sine';osc.frequency.value=kind==='win'?740:kind==='hint'?390:kind==='undo'?260:520;
+      gain.gain.setValueAtTime(0.0001,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(kind==='win'?0.07:0.025,ctx.currentTime+0.012);gain.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.12);
+      osc.connect(gain);gain.connect(ctx.destination);osc.start();osc.stop(ctx.currentTime+0.13);osc.onended=()=>{void ctx.close().catch(()=>{})};
+    }catch{}
+  }
+  function buzz(pattern=15){if(hapticsEnabled&&typeof navigator.vibrate==='function'){try{navigator.vibrate(pattern)}catch{}}}
+  function configurePersonalControls(){
+    soundEnabled=safeLocalGet(soundKey)==='yes';
+    hapticsEnabled=safeLocalGet(hapticsKey)==='yes';
+    const contrast=safeLocalGet(contrastKey)==='yes';document.body.classList.toggle('high-contrast',contrast);
+    $('sound-button').setAttribute('aria-pressed',String(soundEnabled));$('sound-button').textContent=soundEnabled?'♫ Звук: вкл.':'♫ Звук: выкл.';
+    $('contrast-button').setAttribute('aria-pressed',String(contrast));$('contrast-button').textContent=contrast?'◐ Контраст: вкл.':'◐ Контраст: выкл.';
+    $('haptics-button').setAttribute('aria-pressed',String(hapticsEnabled));$('haptics-button').textContent=hapticsEnabled?'⌁ Вибрация: вкл.':'⌁ Вибрация: выкл.';
+    $('sound-button').addEventListener('click',()=>{soundEnabled=!soundEnabled;try{localStorage.setItem(soundKey,soundEnabled?'yes':'no')}catch{};configureToggleLabels();if(soundEnabled)playTone('hint');});
+    $('contrast-button').addEventListener('click',()=>{const next=!document.body.classList.contains('high-contrast');document.body.classList.toggle('high-contrast',next);try{localStorage.setItem(contrastKey,next?'yes':'no')}catch{};configureToggleLabels();});
+    $('haptics-button').addEventListener('click',()=>{hapticsEnabled=!hapticsEnabled;try{localStorage.setItem(hapticsKey,hapticsEnabled?'yes':'no')}catch{};configureToggleLabels();if(hapticsEnabled)buzz([12,25,12]);});
+    $('undo-button').addEventListener('click',undoMove);$('redo-button').addEventListener('click',redoMove);
+    $('pause-button').addEventListener('click',()=>setPaused(!paused));
+    $('export-button').addEventListener('click',exportResult);
+  }
+  function configureToggleLabels(){
+    const contrast=document.body.classList.contains('high-contrast');
+    $('sound-button').setAttribute('aria-pressed',String(soundEnabled));$('sound-button').textContent=soundEnabled?'♫ Звук: вкл.':'♫ Звук: выкл.';
+    $('contrast-button').setAttribute('aria-pressed',String(contrast));$('contrast-button').textContent=contrast?'◐ Контраст: вкл.':'◐ Контраст: выкл.';
+    $('haptics-button').setAttribute('aria-pressed',String(hapticsEnabled));$('haptics-button').textContent=hapticsEnabled?'⌁ Вибрация: вкл.':'⌁ Вибрация: выкл.';
+  }
+  function exportResult(){
+    const payload={game:'AETHER GRID',schemaVersion:1,day,completed:won,moves,elapsedSeconds:runSeconds(),hintsUsed,streak:consecutiveDayStreak(readStats().completedDays),savedAt:new Date().toISOString(),note:'Личная статистика этого браузера; не является глобальным рейтингом.'};
+    try{
+      const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');
+      link.href=url;link.download='aether-grid-'+day+'.json';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+      toast('Файл личного результата сохранён.');$('hint-note').textContent='Экспорт содержит только результат головоломки, без контактных и личных данных.';
+    }catch{toast('Экспорт недоступен в этом браузере.');}
+  }
 
   function validDay(value) {
     if (typeof value !== 'string' || !DAY_RE.test(value)) return false;
@@ -157,8 +310,9 @@ h1,h2,h3,p{margin-top:0}h1{max-width:760px;margin-bottom:18px;font:400 clamp(54p
       if(!isSolved()) break;
       original[0]=(original[0]+1)%4;
     }
-    moves=0;hintsUsed=0;won=false;startedAt=0;
+    moves=0;hintsUsed=0;won=false;startedAt=0;elapsedBeforeStart=0;paused=false;runHasStarted=false;visibilityPaused=false;undoStack=[];redoStack=[];
     window.clearInterval(timerHandle);timerHandle=0;
+    $('pause-button').disabled=false;$('pause-button').textContent='Ⅱ Пауза';$('pause-button').setAttribute('aria-pressed','false');
     $('result').classList.remove('is-visible');
     $('hint-button').disabled=false;
     renderBoard();updateStats();loadBest();
@@ -224,9 +378,12 @@ h1,h2,h3,p{margin-top:0}h1{max-width:760px;margin-bottom:18px;font:400 clamp(54p
   }
   function updateConnectivity() {
     const connected=connectedCells();
+    $('connected-count').textContent=connected.size+' / 25';
+    $('connected-progress').setAttribute('aria-valuenow',String(connected.size));
+    $('connected-progress-fill').style.width=(connected.size/25*100)+'%';
     document.querySelectorAll('.tile').forEach((tile,index)=>{
       tile.classList.toggle('connected',connected.has(index));
-      tile.disabled=won;
+      tile.disabled=won||paused;
       const connections=currentConnections(index);
       const svg=tile.querySelector('svg');if(svg)svg.innerHTML=connections.map(dir=>{
         const point={n:[30,5],e:[55,30],s:[30,55],w:[5,30]}[dir];
@@ -234,19 +391,26 @@ h1,h2,h3,p{margin-top:0}h1{max-width:760px;margin-bottom:18px;font:400 clamp(54p
       }).join('')+'<circle class="hub" cx="30" cy="30" r="4.5"></circle>';
     });
   }
+  function beginRun() {
+    if(paused||won)return false;
+    if(!runHasStarted){runHasStarted=true;notify('started');}
+    if(!startedAt){startedAt=Date.now();if(!timerHandle)timerHandle=window.setInterval(updateTimer,250);}
+    return true;
+  }
   function rotateTile(index) {
-    if(won)return;
-    if(!startedAt){startedAt=Date.now();timerHandle=window.setInterval(updateTimer,250);notify('started');}
-    turns[index]=(turns[index]+1)%4;moves++;updateStats();updateConnectivity();
+    if(won||paused)return;
+    if(!beginRun())return;
+    pushHistory();
+    turns[index]=(turns[index]+1)%4;moves++;playTone('rotate');buzz(8);updateStats();updateConnectivity();saveRun();
     $('hint-note').textContent='Узел '+(index+1)+' повёрнут. Продолжай искать непрерывный путь к ядру.';
     if(isSolved())finishPuzzle();
   }
   function updateTimer() {
-    const seconds=startedAt?Math.max(0,Math.floor((Date.now()-startedAt)/1000)):0;
-    $('timer').innerHTML=String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0')+'<em>s</em>';
+    const seconds=runSeconds();
+    $('timer').textContent=String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0')+'s';
   }
   function updateStats() {
-    $('moves').textContent=String(moves).padStart(2,'0');updateTimer();
+    $('moves').textContent=String(moves).padStart(2,'0');updateTimer();updateHistoryControls();
   }
   function loadBest() {
     bestKey='osgard.aether-grid.best.v1.'+day;
@@ -254,10 +418,11 @@ h1,h2,h3,p{margin-top:0}h1{max-width:760px;margin-bottom:18px;font:400 clamp(54p
       const best=JSON.parse(localStorage.getItem(bestKey)||'null');
       $('best-score').textContent=best&&Number.isInteger(best.moves)?best.moves+' ход.':'—';
     }catch{$('best-score').textContent='—';}
+    renderPersonalStats();
   }
   function finishPuzzle() {
-    won=true;window.clearInterval(timerHandle);timerHandle=0;updateTimer();updateConnectivity();
-    const seconds=startedAt?Math.max(0,Math.floor((Date.now()-startedAt)/1000)):0;
+    won=true;elapsedBeforeStart=runSeconds();startedAt=0;paused=false;visibilityPaused=false;window.clearInterval(timerHandle);timerHandle=0;updateTimer();updateConnectivity();
+    const seconds=elapsedBeforeStart;
     let personalBest=false;
     try{
       const previous=JSON.parse(localStorage.getItem(bestKey)||'null');
@@ -265,12 +430,18 @@ h1,h2,h3,p{margin-top:0}h1{max-width:760px;margin-bottom:18px;font:400 clamp(54p
         localStorage.setItem(bestKey,JSON.stringify({moves,seconds,day}));personalBest=true;
       }
     }catch{}
-    loadBest();$('result').classList.add('is-visible');$('hint-button').disabled=true;
+    loadBest();writeCompletionStats(seconds);
+    try{localStorage.removeItem(runKeyPrefix+day)}catch{}
+    $('result').classList.add('is-visible');$('hint-button').disabled=true;$('pause-button').disabled=true;
+    $('pause-button').textContent='✓ Завершено';$('pause-button').setAttribute('aria-pressed','false');
     $('result-title').textContent=personalBest?'Новый личный рекорд.':'Маршрут собран.';
-    $('result-copy').textContent='Вызов '+day+': '+moves+' ходов за '+formatTime(seconds)+(hintsUsed?' · подсказок: '+hintsUsed:'')+'. '+(personalBest?'Рекорд сохранён на этом устройстве.':'Сохрани результат и проверь, кто справится лучше.');
+    const streak=consecutiveDayStreak(readStats().completedDays);
+    const badge=hintsUsed===0?' · PERFECT ROUTE':seconds<=30?' · QUICK SIGNAL':'';
+    $('result-copy').textContent='Вызов '+day+': '+moves+' ходов за '+formatTime(seconds)+(hintsUsed?' · подсказок: '+hintsUsed:'')+'. Серия: '+streak+' дн.'+badge+'. '+(personalBest?'Рекорд сохранён на этом устройстве.':'Сохрани результат и проверь, кто справится лучше.');
     $('hint-note').textContent='Сигнал достиг ядра. Теперь твоя очередь передать вызов.';
+    playTone('win');buzz([25,45,25]);updateHistoryControls();
     toast(personalBest?'Новый личный рекорд!':'Сигнал успешно соединён.');
-    notify('completed',{durationSeconds:seconds,moves});
+    notify('completed',{durationSeconds:seconds,moves,hintsUsed,streak});
   }
   function formatTime(seconds){return Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');}
   function inviteCode(){
@@ -294,8 +465,8 @@ h1,h2,h3,p{margin-top:0}h1{max-width:760px;margin-bottom:18px;font:400 clamp(54p
     url.searchParams.set('og_day',day);return url.href;
   }
   async function shareResult() {
-    const seconds=startedAt?Math.max(0,Math.floor((Date.now()-startedAt)/1000)):0;
-    const text='AETHER GRID / '+day+' — '+(won?'собрал сигнал за '+moves+' ходов и '+formatTime(seconds):'мой вызов на сегодня')+'. Сможешь лучше?';
+    const seconds=runSeconds(),streak=consecutiveDayStreak(readStats().completedDays);
+    const text='AETHER GRID / '+day+' — '+(won?'собрал сигнал за '+moves+' ходов и '+formatTime(seconds):'мой вызов на сегодня')+(hintsUsed?' · подсказок '+hintsUsed:'')+' · серия '+streak+' дн. Сможешь лучше?';
     const url=inviteUrl();
     try{
       let method='clipboard';
@@ -314,16 +485,21 @@ h1,h2,h3,p{margin-top:0}h1{max-width:760px;margin-bottom:18px;font:400 clamp(54p
     const element=$('toast');element.textContent=message;element.classList.add('on');
     window.clearTimeout(toastHandle);toastHandle=window.setTimeout(()=>element.classList.remove('on'),3000);
   }
-  function resetPuzzle(){buildPuzzle();toast('Исходная сетка дня восстановлена.');}
+  function resetPuzzle(){
+    if(!won&&moves>0&&typeof window.confirm==='function'&&!window.confirm('Сбросить текущую попытку AETHER GRID? Сохранённый прогресс этого дня будет удалён.'))return;
+    try{localStorage.removeItem(runKeyPrefix+day)}catch{}
+    buildPuzzle();toast('Исходная сетка дня восстановлена.');
+  }
   function useHint(){
-    if(won||!solutionPath.length)return;
+    if(won||paused||!solutionPath.length)return;
+    if(!beginRun())return;
     const current=solutionPath.find(index=>!sameConnections(currentConnections(index),correct[index]));
     if(current===undefined){toast('Путь уже собран.');return;}
     const currentSet=currentConnections(current);
     let clicks=0;
     for(let offset=0;offset<4;offset++){if(sameConnections(rotate(currentSet,offset),correct[current])){clicks=offset;break;}}
     if(clicks===0){const tile=document.querySelector('.tile[data-index="'+current+'"]');tile?.classList.add('hint-pulse');window.setTimeout(()=>tile?.classList.remove('hint-pulse'),1800);$('hint-note').textContent='Подсказка: узел '+(current+1)+' уже ориентирован правильно.';return;}
-    turns[current]=(turns[current]+clicks)%4;moves+=3;hintsUsed++;updateStats();updateConnectivity();
+    pushHistory();turns[current]=(turns[current]+clicks)%4;moves+=3;hintsUsed++;playTone('hint');updateStats();updateConnectivity();saveRun();
     const tile=$('.tile[data-index="'+current+'"]');tile?.classList.add('hint-pulse');window.setTimeout(()=>tile?.classList.remove('hint-pulse'),1800);
     $('hint-note').textContent='Подсказка исправила один узел и добавила 3 хода к результату.';
     if(isSolved())finishPuzzle();
@@ -333,7 +509,10 @@ h1,h2,h3,p{margin-top:0}h1{max-width:760px;margin-bottom:18px;font:400 clamp(54p
     day=validDay(requested)?requested:utcDay();
     $('day-label').textContent=day;
     $('challenge-code').textContent='AG-'+day.replaceAll('-','')+' / DAILY';
+    configurePersonalControls();
+    renderPersonalStats();
     buildPuzzle();
+    restoreRun();
     $('reset-button').addEventListener('click',resetPuzzle);
     $('hint-button').addEventListener('click',useHint);
     $('share-button').addEventListener('click',shareResult);
@@ -341,6 +520,9 @@ h1,h2,h3,p{margin-top:0}h1{max-width:760px;margin-bottom:18px;font:400 clamp(54p
     document.addEventListener('keydown',event=>{
       const target=event.target;
       if(target&&(target.isContentEditable||['INPUT','TEXTAREA','SELECT'].includes(target.tagName)))return;
+      if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='z'){event.preventDefault();undoMove();return}
+      if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='y'){event.preventDefault();redoMove();return}
+      if(event.key==='Escape'&&runHasStarted&&!won){event.preventDefault();setPaused(!paused);return}
       if(event.metaKey||event.ctrlKey||event.altKey)return;
       if(event.key.toLowerCase()==='r'){event.preventDefault();resetPuzzle();}
       if(event.key.toLowerCase()==='h'){event.preventDefault();useHint();}
@@ -352,7 +534,16 @@ h1,h2,h3,p{margin-top:0}h1{max-width:760px;margin-bottom:18px;font:400 clamp(54p
     });
     notify('ready');
   }
-  document.addEventListener('visibilitychange',()=>{if(!startedAt||won)return;notify(document.hidden?'paused':'resumed');});
+  document.addEventListener('visibilitychange',()=>{
+    if(won)return;
+    if(document.hidden){
+      if(startedAt){elapsedBeforeStart=runSeconds();startedAt=0;window.clearInterval(timerHandle);timerHandle=0;visibilityPaused=true;saveRun();updateTimer();}
+      if(runHasStarted)notify('paused');
+    }else{
+      if(visibilityPaused){visibilityPaused=false;if(runHasStarted&&!paused){startedAt=Date.now();if(!timerHandle)timerHandle=window.setInterval(updateTimer,250)}updateTimer();notify('resumed');}
+    }
+  });
+  window.addEventListener('pagehide',saveRun);
   init();
 })();
 </script>
