@@ -463,12 +463,14 @@ function servicesShelf(gameId,showPromos,completedCount){
  if(showPromos&&activeSelected.length){
   visible.forEach(([id,num,title,category,description,href,featured=false,active=true])=>{
    const isSpotlight=id===spotlightId;
-   const card=make('a','og-postgame-service-card'+(isSpotlight?' is-featured':''));
+   const card=make(active===false?'article':'a','og-postgame-service-card'+(isSpotlight?' is-featured':'')+(active===false?' is-unavailable':''));
    card.dataset.service=id;card.dataset.game=gameId;card.dataset.category=categoryByService[id]||'other';cards.push(card);
-   const u=new URL(href);u.searchParams.set('utm_source','osgard_games');u.searchParams.set('utm_medium','post_game');u.searchParams.set('utm_campaign','after_game');u.searchParams.set('utm_content',id+'_'+gameId);card.href=u.href;card.target='_blank';card.rel='noopener noreferrer';card.setAttribute('aria-label','Открыть '+title+' в новой вкладке');
-   card.addEventListener('click',()=>sendSelectEvent('cross_promo_clicked',gameId,'osgard-select:click:'+id));
+   if(active!==false){
+    const u=new URL(href);u.searchParams.set('utm_source','osgard_games');u.searchParams.set('utm_medium','post_game');u.searchParams.set('utm_campaign','after_game');u.searchParams.set('utm_content',id+'_'+gameId);card.href=u.href;card.target='_blank';card.rel='noopener noreferrer';card.setAttribute('aria-label','Открыть '+title+' в новой вкладке');
+    card.addEventListener('click',()=>void sendSelectEvent('cross_promo_clicked',gameId,'osgard-select:click:'+id));
+   }
    if(isSpotlight)card.append(make('span','og-postgame-service-spotlight','В ФОКУСЕ ЭТОГО РАУНДА'));
-   card.append(make('span','og-postgame-service-code','OSG / '+num+' · '+category),make('strong','og-postgame-service-name',title),make('span','og-postgame-service-description',description),make('span','og-postgame-service-action','Открыть проект ↗'));grid.append(card);
+   card.append(make('span','og-postgame-service-code','OSG / '+num+' · '+category),make('strong','og-postgame-service-name',title),make('span','og-postgame-service-description',description),make('span','og-postgame-service-action',active===false?'Пока не продвигается':'Открыть проект ↗'));grid.append(card);
   });
  }
  function updateFilterCounts(){
