@@ -51,4 +51,17 @@ First: connect lead storage, run a test-mode payment from the deployed storefron
 - Checkout polling now uses a compare-and-set status update. Re-opening an old success URL cannot silently return an order from `refunded`, `expired`, `payment_failed` or `cancelled` back to `paid`; a concurrent refund wins over a stale poll.
 - Admin and checkout-status JSON responses set `Cache-Control: no-store` so customer/order data and payment state are not retained by intermediaries.
 - CI includes regression tests for refunded/cancelled payment states and smoke checks for the private reverse-proxy route.
-- The changes remain in an open pull request. No payment API/database credentials were supplied and no checkout API deployment or real transaction is claimed. The live website changes only after the reviewed branch is merged and the host deployment succeeds.
+- The web-side changes have been merged to `master` and activated by the production deploy workflow. The commerce API still requires operator-provided PostgreSQL and Stripe configuration; no live transaction or paid entitlement is claimed.
+
+
+## Production verification — 13 October 2026
+
+Verified against commit `a1cb673d07298c448338633f0d6b493287e1e90d`:
+
+- **Frontend deployment:** OSGARD frontend deploy run #327 completed successfully. The signed release archive was staged, checksummed and activated; Nginx configuration validation passed.
+- **Published routes:** the production route matrix returned `status: ready`, **136 route checks, 0 failures**, using desktop and mobile user-agent profiles. The checks included the Games hub, nine game routes, invite pages, partner inventory, premium storefront, consent-gated analytics assets, the commerce admin, same-origin API proxy, and the new social-network reporting table.
+- **Engine and game checks:** Godot 4.7.2 was available from the build cache; project import, headless gameplay state-transition smoke, Web export, the game hub smoke and scenario-formula bounds all passed.
+- **Commerce CI:** Node syntax checks, service-level tests and the commerce rollout smoke checks passed.
+- **Games Lighthouse:** the post-deploy mobile report scored **94 Performance, 96 Accessibility, 96 Best Practices, 100 SEO**, TBT 273 ms, LCP 1.37 s. Desktop scored **99 Performance, 100 Accessibility, 96 Best Practices, 100 SEO**, TBT 0 ms, LCP 0.37 s. The workflow's configured guardrails passed. Scores are a point-in-time synthetic audit, not a substitute for real-user monitoring.
+- **Social-channel dashboard:** the protected commerce overview now returns consented share-intent and self-confirmed reward counts grouped by Telegram, WhatsApp, VK, X and Facebook. These numbers do not establish that a social network published a post.
+- **Payment/analytics activation limits remain:** `ENABLE_LIVE_PAYMENTS=false`, `ENABLE_OSGARD_PREMIUM_SALES=false`; `public/games/commerce-config.json` intentionally has an empty public API base. No provider credentials or database URL were supplied, so the source-only commerce API must not be represented as receiving live production payments or centralising real events yet.
