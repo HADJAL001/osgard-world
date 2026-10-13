@@ -92,6 +92,7 @@ h1,h2,h3,p{margin-top:0}h1{max-width:760px;margin-bottom:18px;font:400 clamp(54p
   const OPPOSITE = { n:'s', e:'w', s:'n', w:'e' };
   const DELTA = { n:0, e:1, s:2, w:3 };
   const FNV_OFFSET = 2166136261;
+  function notify(state, extra = {}) { try { if (window.parent !== window) window.parent.postMessage({ type: 'osgard:game-lifecycle', state, game: 'aether-grid', at: Date.now(), ...extra }, location.origin); } catch {} }
   let seedState = 0, day = '', moves = 0, startedAt = 0, timerHandle = 0, hintsUsed = 0, won = false, toastHandle = 0;
   let solutionPath = [], correct = [], original = [], turns = [], bestKey = '';
 
@@ -233,7 +234,7 @@ h1,h2,h3,p{margin-top:0}h1{max-width:760px;margin-bottom:18px;font:400 clamp(54p
   }
   function rotateTile(index) {
     if(won)return;
-    if(!startedAt){startedAt=Date.now();timerHandle=window.setInterval(updateTimer,250);}
+    if(!startedAt){startedAt=Date.now();timerHandle=window.setInterval(updateTimer,250);notify('started');}
     turns[index]=(turns[index]+1)%4;moves++;updateStats();updateConnectivity();
     $('hint-note').textContent='Узел '+(index+1)+' повёрнут. Продолжай искать непрерывный путь к ядру.';
     if(isSolved())finishPuzzle();
@@ -267,6 +268,7 @@ h1,h2,h3,p{margin-top:0}h1{max-width:760px;margin-bottom:18px;font:400 clamp(54p
     $('result-copy').textContent='Вызов '+day+': '+moves+' ходов за '+formatTime(seconds)+(hintsUsed?' · подсказок: '+hintsUsed:'')+'. '+(personalBest?'Рекорд сохранён на этом устройстве.':'Сохрани результат и проверь, кто справится лучше.');
     $('hint-note').textContent='Сигнал достиг ядра. Теперь твоя очередь передать вызов.';
     toast(personalBest?'Новый личный рекорд!':'Сигнал успешно соединён.');
+    notify('completed',{durationSeconds:seconds,moves});
   }
   function formatTime(seconds){return Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');}
   function inviteCode(){
@@ -294,9 +296,11 @@ h1,h2,h3,p{margin-top:0}h1{max-width:760px;margin-bottom:18px;font:400 clamp(54p
     const text='AETHER GRID / '+day+' — '+(won?'собрал сигнал за '+moves+' ходов и '+formatTime(seconds):'мой вызов на сегодня')+'. Сможешь лучше?';
     const url=inviteUrl();
     try{
-      if(navigator.share)await navigator.share({title:'AETHER GRID — ежедневный вызов',text,url});
+      let method='clipboard';
+      if(navigator.share){method='web-share';await navigator.share({title:'AETHER GRID — ежедневный вызов',text,url});}
       else if(navigator.clipboard&&navigator.clipboard.writeText)await navigator.clipboard.writeText(text+' '+url);
       else throw new Error('Share API unavailable');
+      notify('share_created',{shareMethod:method});
       toast('Приглашение готово. Отправь его другу.');$('hint-note').textContent='Ссылка скопирована или передана в меню отправки.';
     }catch(error){
       if(error instanceof Error&&error.name==='AbortError'){toast('Отправка отменена.');return;}
@@ -344,7 +348,9 @@ h1,h2,h3,p{margin-top:0}h1{max-width:760px;margin-bottom:18px;font:400 clamp(54p
         const next=i+step;if(next>=0&&next<25&&!(Math.abs(step)===1&&Math.floor(next/5)!==Math.floor(i/5))){document.querySelector('.tile[data-index="'+next+'"]')?.focus();event.preventDefault();}
       }
     });
+    notify('ready');
   }
+  document.addEventListener('visibilitychange',()=>{if(!startedAt||won)return;notify(document.hidden?'paused':'resumed');});
   init();
 })();
 </script>
