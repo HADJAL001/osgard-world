@@ -5,6 +5,13 @@
     .then((response) => response.ok ? response.json() : {})
     .catch(() => ({}));
   const clean = (value, max = 1800) => String(value ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, max);
+  function readCampaignAttribution() {
+    const params = new URLSearchParams(location.search);
+    return ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content'].flatMap((key) => {
+      const value = clean(params.get(key), 60);
+      return /^[a-zA-Z0-9_-]{1,60}$/.test(value) ? [key + '=' + value] : [];
+    });
+  }
   const apiBase = async () => {
     const config = await configPromise;
     return String(config.apiBaseUrl || API_FALLBACK).replace(/\/+$/, '');
@@ -33,10 +40,17 @@
     const projectType = clean(data.get('projectType') || ('Партнёрская интеграция: ' + clean(data.get('format'), 120)), 120);
     const contact = clean(data.get('contact'), 180);
     const budget = clean(data.get('budget'), 80);
-    const description = clean(data.get('brief') || [
-      'Цель: ' + clean(data.get('goal'), 120),
-      'География: ' + clean(data.get('geo'), 80),
-    ].filter(Boolean).join('\n'), 1800);
+    const attribution = readCampaignAttribution();
+    const contextParts = [];
+    const goal = clean(data.get('goal'), 120);
+    const geo = clean(data.get('geo'), 80);
+    if (goal) contextParts.push('Цель: ' + goal);
+    if (geo) contextParts.push('География: ' + geo);
+    if (attribution.length) contextParts.push('Источник кампании (UTM): ' + attribution.join(' · '));
+    const contextText = contextParts.join('\n');
+    const briefLimit = Math.max(0, Math.min(1600, 1800 - contextText.length - (contextText ? 1 : 0)));
+    const brief = clean(data.get('brief'), briefLimit);
+    const description = clean([brief, contextText].filter(Boolean).join('\n'), 1800);
     const consent = data.get('dataConsent') === 'on' || data.get('consent') === 'on';
     const status = form.querySelector('[role="status"]') || document.getElementById('form-status');
     const fallbackText = [
@@ -45,7 +59,7 @@
       'Бюджет: ' + (budget || 'не указан'),
       'Мой контакт: ' + contact,
       'Описание: ' + description,
-      'Источник: ' + location.pathname,
+      'Источник: ' + location.pathname + (attribution.length ? ' · ' + attribution.join(' · ') : ''),
     ].join('\n');
 
     if (!consent) {
@@ -82,7 +96,8 @@
         if (fallback) fallback.hidden = true;
       }
       form.reset();
-      sendAnalytics('lead_submitted', 'unknown');
+      const eventSource = attribution.length ? ('lead-campaign:' + attribution.join('&')).slice(0, 80) : (form.id === 'campaign-form' ? 'partner-form' : 'contact-form');
+      sendAnalytics('lead_submitted', 'unknown', eventSource);
     } catch {
       if (status) status.textContent = 'Сервер заявок пока недоступен или не настроен. Ниже можно открыть черновик и отправить его вручную.';
       fallbackLink(form, fallbackText);
