@@ -1,5 +1,12 @@
 # Production deployment
 
+## Canonical Games / Entertainment entry
+
+- The public Games hub is served from this repository at `https://osgard.world/games/` (static `public/games/index.html`).
+- The homepage's **РАЗВЛЕЧЕНИЯ** navigation opens `/games/`. Legacy `/entertainment` URLs forward to the canonical hub.
+- Game assets remain in their existing browser/engine builds. The deploy workflow exports the Godot Web build before assembling the release archive; it is not a Vercel deployment.
+- Production is served by the OSGARD VPS via Docker/Nginx. GitHub Actions packages the site, uploads it over SSH, verifies SHA-256 and activates with rollback checks. The latest deployment attempt stopped at a shell syntax check before touching the live document root; the related fix is guarded by `bash -n` and the ecosystem smoke test.
+
 1. Point these Namecheap records to `207.180.248.95`:
 
 | Type | Host | Value | TTL |
