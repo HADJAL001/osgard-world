@@ -74,6 +74,7 @@ async function sendEvent(name,gameId,source){
   if(!consented()||(controller&&controller.signal.aborted))return false;
    let base=String(config.apiBaseUrl||'/commerce-api');
    while(base.endsWith('/'))base=base.slice(0,-1);
+   while(base.endsWith('/'))base=base.slice(0,-1);
   const request={method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({consent:true,events:[event]})};
   if(controller)request.signal=controller.signal;
   const response=await fetch(base+'/v1/events',request);
@@ -288,7 +289,8 @@ function sendSelectEvent(name,gameId,source){
  return fetch('/games/commerce-config.json',{cache:'no-store'})
   .then(r=>r.ok?r.json().catch(()=>({})):({}))
   .then(config=>{
-   const base=String(config.apiBaseUrl||'/commerce-api').replace(/\\/+$/,'');
+   let base=String(config.apiBaseUrl||'/commerce-api');
+   while(base.endsWith('/'))base=base.slice(0,-1);
    return fetch(base+'/v1/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({consent:true,events:[event]})});
   })
   .then(response=>response.ok)
