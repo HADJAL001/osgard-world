@@ -671,20 +671,19 @@ function rewardShelf(gameId){
  });
  primary.addEventListener('click',async()=>{
   if(!url){status.textContent='Браузер не разрешил создать защищённую ссылку. Проверь настройки приватности.';return}
-  primary.disabled=true;status.textContent='Готовим приглашение…';
+  primary.disabled=true;status.textContent='Регистрируем приглашение перед отправкой…';
+  const registered=await registerInvite(gameId,code);
   try{
    if(typeof navigator.share==='function'){
     await navigator.share({title:'OSGARD PLAY · '+titles[gameId],text:'Пойдём сыграем вместе.',url});
-    const registered=await registerInvite(gameId,code);
     status.textContent=registered
-     ? 'Приглашение подготовлено. Публикация соцсетью не подтверждается; награда зависит от реальной игровой сессии друга.'
+     ? 'Приглашение зарегистрировано. Публикация соцсетью не подтверждается; награда зависит от реальной игровой сессии друга.'
      : 'Ссылка передана в меню отправки. Для награды нужно включить аналитику и согласиться на учёт приглашений.';
    }else if(navigator.clipboard?.writeText){
     await navigator.clipboard.writeText(message);
-    const registered=await registerInvite(gameId,code);
     status.textContent=registered
-     ? 'Ссылка скопирована. Отправь её другу; +50 SHARDS начислятся после подтверждённой сессии.'
-     : 'Ссылка скопирована. Приглашение работает, но для наград нужна включённая аналитика и согласие на участие.';
+     ? 'Ссылка скопирована и зарегистрирована. Отправь её другу; +50 SHARDS появятся после квалифицированной сессии.'
+     : 'Ссылка скопирована. Приглашение работает, но для наград нужны включённая аналитика и отдельное согласие.';
    }else{
     status.textContent='Выбери соцсеть ниже, чтобы открыть форму публикации.';
    }
