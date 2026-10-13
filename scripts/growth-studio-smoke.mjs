@@ -48,8 +48,11 @@ check('offline branded card is a local 1200x630 canvas export', () => {
   assert.ok(page.includes("$('poster-placeholder').hidden=Boolean(state.url)"), 'Placeholder should remain until an invite is generated');
 });
 check('model calculator exposes full referral funnel and labels assumptions', () => {
-  for (const id of ['cohort-size','share-rate','invites-per-sharer','open-rate','start-rate','complete-rate','m-shares','m-opens','m-starts','m-k']) assert.ok(page.includes('id="'+id+'"'), id);
+  for (const id of ['cohort-size','share-rate','invites-per-sharer','open-rate','start-rate','complete-rate','m-shares','m-opens','m-starts','m-k','m-k-completed']) assert.ok(page.includes('id="'+id+'"'), id);
   assert.ok(page.includes("status:'hypothesis-only'"));
+  assert.ok(page.includes("completedPlayerKFactor:kCompleted"), 'Completed-player K-factor must include completion rate');
+  assert.ok(page.includes("K завершений = K запусков × доля завершивших игру"), 'UI must distinguish starts from completions');
+  assert.ok(page.includes("$('m-k-completed').textContent=m.completedPlayerKFactor.toFixed(3)"), 'Completed-player K-factor must render in the live model');
   assert.ok(page.includes('not live audience measurements'));
   assert.ok(page.includes('Числа являются сценарием') || page.includes('сценарий'));
 });
