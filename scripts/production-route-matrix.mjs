@@ -1,14 +1,15 @@
 import { isValidPartnerInventoryText } from './partner-inventory-contract.mjs'
 const base = process.env.OSGARD_BASE_URL || 'https://osgard.world'
 const expectCurrentDesign = process.env.SKILLCRED_EXPECT_CURRENT_DESIGN === '1'
-const routes = ['/','/skillcred/','/skillcred-api/health','/skillcred-api/ready','/skillcred-api/issuer','/entertainment','/entertainment/','/games/','/games/index.html','/games/civic-cascade/','/games/patina/','/games/cascade-lab/','/games/partners/','/games/growth-studio/','/games/monetization/','/games/premium/','/games/premium/success/','/games/commerce-admin/','/games/commerce-config.json','/games/commerce-client.js','/games/admin/','/games/admin/partners/','/games/favicon.svg','/privacy/','/terms/','/community','/stream','/archive','/profile','/api/v1/player/profile','/api/v1/analytics/summary?from=0&to=1','/r/1842','/games/time','/game/time','/game/swarm','/game/null-shift','/game/inherit','/game/remix','/game/signal-run','/game/civic-cascade','/game/patina','/game/cascade-lab','/games/signal-run/','/games/null-shift/','/games/null-shift/index.html','/games/null-shift-godot/','/games/null-shift-godot/index.html','/play/swarm','/play/null-shift','/play/inherit','/play/remix','/media','/business','/create','/mobility']
+const routes = ['/','/skillcred/','/skillcred-api/health','/skillcred-api/ready','/skillcred-api/issuer','/entertainment','/entertainment/','/games/','/games/index.html','/games/civic-cascade/','/games/patina/','/games/cascade-lab/','/games/partners/','/games/growth-studio/','/games/monetization/','/games/premium/','/games/premium/success/','/games/commerce-admin/','/games/commerce-config.json','/games/commerce-client.js','/games/admin/','/games/admin/partners/','/games/invite/','/games/invite/null-shift/','/games/invite/time/','/games/invite/swarm/','/games/invite/inherit/','/games/invite/remix/','/games/invite/civic-cascade/','/games/invite/patina/','/games/invite/signal-run/','/games/invite/cascade-lab/','/games/invite/invite-landing.js','/games/share-cards/catalog.png','/games/share-cards/null-shift.png','/games/favicon.svg','/privacy/','/terms/','/community','/stream','/archive','/profile','/api/v1/player/profile','/api/v1/analytics/summary?from=0&to=1','/r/1842','/games/time','/game/time','/game/swarm','/game/null-shift','/game/inherit','/game/remix','/game/signal-run','/game/civic-cascade','/game/patina','/game/cascade-lab','/games/signal-run/','/games/null-shift/','/games/null-shift/index.html','/games/null-shift-godot/','/games/null-shift-godot/index.html','/play/swarm','/play/null-shift','/play/inherit','/play/remix','/media','/business','/create','/mobility']
 const agents = { desktop: 'OSGARD-Route-Matrix/1.1 Desktop', mobile: 'OSGARD-Route-Matrix/1.1 Mobile' }
 const results = []
 for (const [device, userAgent] of Object.entries(agents)) for (const route of routes) {
   const started = Date.now()
   try {
     const response = await fetch(new URL(route, base), { headers: { 'user-agent': userAgent } })
-    const text = await response.text()
+    const responseBody = route.startsWith('/games/share-cards/') ? new Uint8Array(await response.arrayBuffer()) : await response.text()
+    const text = typeof responseBody === 'string' ? responseBody : ''
     const shellOk = route.startsWith('/api/v1/')
       ? [401, 403].includes(response.status) && (response.headers.get('content-type') || '').toLowerCase().includes('application/json') && (() => { try { JSON.parse(text); return true } catch { return false } })()
       : route === '/skillcred/'
@@ -42,7 +43,13 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
           ? text.includes('<meta name="robots" content="noindex,nofollow,noarchive">') && text.includes('id="access-form"') && text.includes('X-Moderation-Token') && text.includes('/api/v1/analytics/summary')
       : route === '/games/admin/partners/'
           ? text.includes('<meta name="robots" content="noindex,nofollow,noarchive">') && text.includes('id="editor-list"') && text.includes('id="download"') && text.includes('inventory.json')
-      : route === '/games/favicon.svg'
+      : route === '/games/invite/invite-landing.js'
+           ? text.includes("osgard.games.referral-attribution.v1") && text.includes("name: 'referral_link_opened'")
+        : route.startsWith('/games/invite/')
+          ? text.includes('property="og:title"') && text.includes('property="og:image"') && text.includes('name="twitter:card" content="summary_large_image"') && text.includes('id="play-link"') && text.includes('noindex,follow')
+        : route.startsWith('/games/share-cards/')
+          ? (response.headers.get('content-type') || '').toLowerCase().includes('image/png') && responseBody[0]===137 && responseBody[1]===80 && responseBody[2]===78 && responseBody[3]===71 && responseBody.length>5000 && new DataView(responseBody.buffer,responseBody.byteOffset,responseBody.byteLength).getUint32(16)===1200 && new DataView(responseBody.buffer,responseBody.byteOffset,responseBody.byteLength).getUint32(20)===630
+        : route === '/games/favicon.svg'
           ? text.includes('<svg') && text.includes('viewBox="0 0 64 64"')
         : route === '/privacy/'
           ? text.includes('<title>Конфиденциальность OSGARD PLAY</title>') && text.includes('osgard.games.analytics-consent.v1')
@@ -90,7 +97,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
     const isGamesHub = route === '/games/' || route === '/games/index.html'
     const isPartnerPage = route === '/games/partners/'
     const isGodot = route.startsWith('/games/null-shift-godot')
-    const assetPaths = route === '/games/favicon.svg' || route === '/privacy/' || route === '/terms/' ? [] : isPartnerPage ? ['/games/partners/partners.js', '/games/partners/inventory.json'] : isGamesHub ? ['/games/player-lifecycle.js','/games/game-session-recommendations.js','/games/game-session-recommendations.css','/games/daily-circuit.js','/games/daily-circuit.css'] : route === '/skillcred/' ? ['/skillcred/styles.css', '/skillcred/app.js', '/skillcred/fonts/InterVariable.woff2', '/skillcred/fonts/InstrumentSerif-Italic.woff2', '/skillcred/fonts/JetBrainsMono-Regular.woff2'] : route === '/games/signal-run/' ? ['/games/signal-run/game.js'] : isGodot ? ['/games/null-shift-godot/index.js', '/games/null-shift-godot/index.wasm', '/games/null-shift-godot/index.pck'] : route.startsWith('/games/null-shift') ? ['/games/null-shift/styles.css', '/games/null-shift/game.js', '/games/null-shift/engine-3d.js'] : []
+    const assetPaths = route === '/games/favicon.svg' || route === '/privacy/' || route === '/terms/' ? [] : isPartnerPage ? ['/games/partners/partners.js', '/games/partners/inventory.json'] : isGamesHub ? ['/games/player-lifecycle.js','/games/game-session-recommendations.js','/games/game-session-recommendations.css','/games/daily-circuit.js','/games/daily-circuit.css'] : route === '/skillcred/' ? ['/skillcred/styles.css', '/skillcred/app.js', '/skillcred/fonts/InterVariable.woff2', '/skillcred/fonts/InstrumentSerif-Italic.woff2', '/skillcred/fonts/JetBrainsMono-Regular.woff2'] : route === '/games/signal-run/' ? ['/games/signal-run/game.js'] : isGodot ? ['/games/null-shift-godot/index.js', '/games/null-shift-godot/index.wasm', '/games/null-shift-godot/index.pck'] : route.startsWith('/games/null-shift') ? ['/games/null-shift/styles.css', '/games/null-shift/game.js', '/games/null-shift/engine-3d.js'] : route.startsWith('/games/invite/') && route !== '/games/invite/invite-landing.js' ? ['/games/invite/invite-landing.js', '/games/share-cards/' + (route.split('/')[3] || 'catalog') + '.png'] : []
     const assetChecks = await Promise.all(assetPaths.map(async path => {
       const expectedType = path.endsWith('.css') ? 'text/css' : path.endsWith('.json') ? 'json' : path.endsWith('.js') ? 'javascript' : path.endsWith('.wasm') ? 'wasm' : path.endsWith('.pck') ? 'pack' : 'font'
       const asset = await fetch(new URL(path, base), { headers: { 'user-agent': userAgent } })
