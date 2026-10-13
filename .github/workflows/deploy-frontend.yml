@@ -187,6 +187,7 @@ jobs:
       - name: Verify published routes and same-origin API proxy
         env:
           OSGARD_BASE_URL: https://osgard.world
+          OSGARD_EXPECTED_BUILD: ${{ github.sha }}
           SKILLCRED_EXPECT_CURRENT_DESIGN: "1"
         run: npm run qa:production-routes
       - name: Diagnose API upstream after post-deploy route failure
