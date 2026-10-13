@@ -463,6 +463,7 @@ function servicesShelf(gameId,showPromos,completedCount){
  }
  renderSpotlight(spotlightServiceId);
  const grid=make('div','og-postgame-service-grid'),cards=[];
+ grid.hidden=true;filters.hidden=true;collapseToggle.textContent='Выбрать из '+availableServiceIds.length+' сервисов';collapseToggle.setAttribute('aria-expanded','false');
  if(showPromos&&activeSelected.length){
   visible.forEach(([id,num,title,category,description,href,featured=false,active=true])=>{
    const isSpotlight=id===spotlightServiceId;
