@@ -157,12 +157,16 @@ test("server-verified SHARDS require a canonical invite and one matching game se
   const opened = parseReferralRewardEvent({
     name: "referral_link_opened",
     gameId: "swarm",
-    gameId: "swarm",
     source: "referral-link:" + inviteCode + ":swarm:" + visitorToken,
   });
   assert.deepEqual(opened, {
     type: "invite_opened", inviteCode, gameId: "swarm", visitorToken,
   });
+  assert.equal(parseReferralRewardEvent({
+    name: "referral_link_opened",
+    gameId: "signal-run",
+    source: "referral-link:" + inviteCode + ":swarm:" + visitorToken,
+  }), null, "Referral opening must match the server-validated game ID");
   const qualified = parseReferralRewardEvent({
     name: "game_session_completed",
     gameId: "swarm",
