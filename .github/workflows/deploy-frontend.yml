@@ -195,11 +195,14 @@ jobs:
             timeout 5s sh -lc "ss -ltnp 2>/dev/null | grep ':4317' || netstat -ltnp 2>/dev/null | grep ':4317' || true"
             timeout 5s curl -i --max-time 4 http://127.0.0.1:4317/health 2>&1 || true
             echo "=== host gateway probe from frontend container ==="
-            gateway="$(docker inspect -f "{{range .NetworkSettings.Networks}}{{.Gateway}} {{end}}" osgard-world 2>/dev/null | awk '{print $1}')"
+            networks_json="$(docker inspect osgard-world --format '{{json .NetworkSettings.Networks}}' 2>/dev/null || true)"
+            gateway="$(printf '%s' "$networks_json" | python3 -c 'import json,sys; data=json.load(sys.stdin); print(next((n.get("Gateway", "") for n in data.values() if n.get("Gateway")), ""))' 2>/dev/null || true)"
             echo "gateway=$gateway"
             if [ -n "$gateway" ]; then
-              timeout 6s docker exec osgard-world sh -lc "timeout 4s wget -S -T 3 -O- http://$gateway:4317/health 2>&1 || true" || true
+              timeout 6s docker exec osgard-world sh -lc "if command -v wget >/dev/null 2>&1; then wget -S -T 3 -O- http://$gateway:4317/health 2>&1; elif command -v curl >/dev/null 2>&1; then curl -v --max-time 4 http://$gateway:4317/health; else echo 'No wget or curl in frontend container'; exit 127; fi" || true
             fi
+            echo "=== activation preflight log ==="
+            tail -n 100 /tmp/osgard-frontend-activation.log 2>/dev/null || true
             echo "=== upstream DNS and Nginx errors ==="
             timeout 8s docker exec osgard-world sh -lc "timeout 3s getent hosts osgard-game-api 2>&1 || true; tail -n 60 /var/log/nginx/error.log 2>&1 || true" || true
           '

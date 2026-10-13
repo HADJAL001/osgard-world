@@ -7,24 +7,51 @@ state_file="/tmp/osgard-frontend-activation.state"
 log_file="/tmp/osgard-frontend-activation.log"
 rm -f "$state_file" "$log_file"
 
-# The OSGARD game API is sometimes managed by the host, not by Docker Compose.
-# Keep the current release untouched unless the active frontend can reach a healthy API.
-api_target="osgard-game-api"
-if ! docker exec "$container_name" sh -lc 'wget -q -T 3 -O /dev/null http://osgard-game-api:4317/health' >/dev/null 2>&1; then
-  host_api_health="$(curl --max-time 3 -fsS http://127.0.0.1:4317/health 2>/dev/null || true)"
-  if [[ "$host_api_health" == *'"status":"ok"'* ]]; then
-    gateways="$(docker inspect -f "{{range .NetworkSettings.Networks}}{{.Gateway}} {{end}}" "$container_name" 2>/dev/null || true)"
-    for gateway in $gateways; do
-      if [[ "$gateway" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]] \
-        && docker exec "$container_name" sh -lc "wget -q -T 3 -O /dev/null http://$gateway:4317/health" >/dev/null 2>&1; then
-        api_target="$gateway"
-        echo "Using reachable Docker host gateway for the host-managed OSGARD game API."
-        break
-      fi
-    done
+# The API may run as a container service or directly on the host.
+# Do not switch the current site until the exact upstream can be reached from Nginx.
+probe_api_from_frontend() {
+  local host="$1"
+  local health_url="http://${host}:4317/health"
+  local probe_script
+  local probe_output
+  probe_script="if command -v wget >/dev/null 2>&1; then wget -q -T 3 -O /dev/null '${health_url}'; elif command -v curl >/dev/null 2>&1; then curl -fsS --max-time 3 '${health_url}' >/dev/null; else echo 'Neither wget nor curl is installed in the frontend container'; exit 127; fi"
+  if probe_output="$(docker exec "$container_name" sh -lc "$probe_script" 2>&1)"; then
+    echo "PASS: frontend container reached API health at ${health_url}"
+    return 0
   fi
+  printf 'Gateway probe failed for %s: %s\n' "$health_url" "$probe_output" >&2
+  return 1
+}
+
+api_target="osgard-game-api"
+if ! probe_api_from_frontend "$api_target"; then
+  host_api_health="$(curl --max-time 3 -fsS http://127.0.0.1:4317/health 2>/dev/null || true)"
+  if [[ "$host_api_health" != *'"status":"ok"'* ]]; then
+    echo "ERROR: the host API health endpoint is not healthy; refusing frontend activation." >&2
+    exit 1
+  fi
+  networks_json="$(docker inspect "$container_name" --format '{{json .NetworkSettings.Networks}}' 2>&1)" || {
+    echo "ERROR: cannot inspect frontend Docker network: $networks_json" >&2
+    exit 1
+  }
+  gateways="$(printf '%s' "$networks_json" | python3 -c 'import json,sys; data=json.load(sys.stdin); print(" ".join(dict.fromkeys(n.get("Gateway", "") for n in data.values() if n.get("Gateway"))))' 2>/dev/null || true)"
+  if [[ -z "$gateways" ]]; then
+    echo "ERROR: frontend Docker network has no readable gateway. inspect output: $networks_json" >&2
+    exit 1
+  fi
+  for gateway in $gateways; do
+    if [[ ! "$gateway" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+      echo "Skipping non-IPv4 Docker gateway candidate: $gateway" >&2
+      continue
+    fi
+    if probe_api_from_frontend "$gateway"; then
+      api_target="$gateway"
+      echo "Using reachable Docker host gateway for the host-managed OSGARD game API."
+      break
+    fi
+  done
   if [[ "$api_target" == "osgard-game-api" ]]; then
-    echo "ERROR: no reachable, healthy OSGARD game API upstream; refusing frontend activation." >&2
+    echo "ERROR: host API responds locally, but no Docker gateway is reachable from the frontend container; refusing frontend activation." >&2
     exit 1
   fi
 fi
