@@ -1,16 +1,22 @@
 # AFTERIMAGE//RUN — growth & monetization plan
 
 ## Product pitch
-A compact sci-fi precision runner in OSGARD PLAY: the same UTC daily seed for everyone, a personal best/ghost, a challenge URL carrying the seed and score, share-result image, and a cosmetic SIGNAL SHARD that can be earned once per UTC day by starting a share flow or copying a challenge link. The game explicitly tells the player that the actual public post is not verified.
+A compact sci-fi precision runner in OSGARD PLAY: a UTC daily seed, local personal best/ghost, a challenge URL carrying the seed and target score, result-card export, and a cosmetic SIGNAL SHARD. The game only offers the reward after the player opens a share destination/native share sheet and separately confirms that they posted. The platform cannot verify the public post; clipboard copy alone does not earn the reward.
 
 ## Viral loop to measure
 1. A player starts from the OSGARD games catalog or Entertainment.
 2. The daily seed and score make a compact challenge ("beat this route / beat this score").
 3. Native share or Telegram, VK, X, WhatsApp and copy-link buttons create a route-specific challenge URL.
 4. The recipient lands on the same date/seed, plays their run and can share their result.
-5. A non-transferable, cosmetic shard provides a small in-game acknowledgement. It does not alter speed, score, or paid rights.
+5. After opening a share destination, the player must explicitly press “I published” to claim a non-transferable cosmetic shard. Copying the link by itself never grants the reward. It does not alter speed, score or paid rights.
 
-The share incentive is intentionally a reward for starting the share flow, not a claim that a post was published. Client-only localStorage is easy to reset and is not anti-fraud. Before offering tradable/paid value or a referral payout, implement server-side invite attribution, idempotent referral records, account/abuse controls, and require a qualified referred player's first completed session. The local shard is cosmetic-only.
+The share reward is a self-confirmed, cosmetic acknowledgement—not proof that a post was published. Client-only localStorage is easy to reset and is not anti-fraud, so the local SIGNAL SHARD must have no monetary, transferable or referral-credit value. Before offering paid/transferable value, implement server-side invite attribution, idempotent referral records, account/abuse controls and require a qualified referred player's first completed session.
+
+## Gameplay integrity hardening
+- Gameplay obstacle generation and cosmetic randomness use separate seeded generators, so particles, background stars and camera shake do not consume the daily obstacle sequence.
+- Restart resets both streams. The challenge is considered beaten only when the score is strictly higher than the target score, not equal.
+- The exported PNG uses URL parameters for the daily seed and target score, so a result card points to a valid challenge URL rather than a malformed query string.
+- Completion analytics use the platform's core `game_session_started` and `game_session_completed` names, with `fromChallenge`, `targetScore`, `challengeBeaten`, and `dashesUsed` in the payload. Social channels, link-copy events and result-card exports use the existing event vocabulary; no new ad impressions or fake referral wins are generated.
 
 ## Owned-service intermission
 On closing an embedded game session, show one optional luxury cross-promotion panel containing the ten OSGARD-owned products. The player chooses a specific card then explicitly opens that destination, or dismisses the intermission. Each link carries:
@@ -57,4 +63,4 @@ Minimum useful release experiment:
 - Keep the promotion-frequency choice test separate from game-balance testing.
 
 ## Release boundaries
-The first release uses local personal-best data and a locally stored cosmetic shard. It has no public leaderboard, cross-device save, ad SDK, payment processor or server-backed referral reward. The intermission is owned-service cross-promotion, not third-party ads. Activate server-backed monetization only after accounts, provider approval, webhook/signature validation, consent and refund handling exist.
+The first release uses local personal-best data and a locally stored cosmetic shard that requires a player confirmation after a share flow; copying a link alone does not grant it. It has no public leaderboard, cross-device save, ad SDK, payment processor or server-backed referral reward. The intermission is owned-service cross-promotion, not third-party ads. Activate server-backed monetization only after accounts, provider approval, webhook/signature validation, consent and refund handling exist.
