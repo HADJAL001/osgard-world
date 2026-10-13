@@ -91,4 +91,29 @@ $('#copy-email').addEventListener('click',async()=>{try{await navigator.clipboar
 $('#project-form').addEventListener('submit',e=>{e.preventDefault();const f=e.currentTarget;if(!(f instanceof HTMLFormElement)||!f.reportValidity())return;const d=new FormData(f),txt=['Здравствуйте! Хочу обсудить проект с OSGARD.','Направление: '+d.get('projectType'),'Бюджет: '+d.get('budget'),'Канал ответа: '+d.get('replyVia'),'Мой контакт: '+String(d.get('contact')).trim(),'Описание: '+String(d.get('brief')).trim()].join('\n');$('#form-status').textContent='Открываем WhatsApp. Проверьте текст и отправьте сообщение вручную.';window.open('https://wa.me/79640027222?text='+encodeURIComponent(txt),'_blank','noopener,noreferrer')});
 consentToggle.addEventListener('click',()=>{consent=!consent;try{localStorage.setItem(K.consent,consent?'yes':'no')}catch{}consentToggle.setAttribute('aria-pressed',consent);$('b',consentToggle).textContent=consent?'Разрешена':'Разрешить';consentState.textContent=consent?'Аналитика разрешена':'Аналитика выключена'});document.addEventListener('keydown',e=>{if(e.key==='/'&&!dialog.open&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)){e.preventDefault();search.focus()}});
 consentToggle.setAttribute('aria-pressed',consent);$('b',consentToggle).textContent=consent?'Разрешена':'Разрешить';consentState.textContent=consent?'Аналитика разрешена':'Аналитика выключена';renderFav();renderRecent();renderInviteRibbon()})();
-</script><script src="/games/commerce-client.js" defer></script><script src="./player-lifecycle.js?v=__OSGARD_BUILD_VERSION__" defer></script><script src="./game-session-recommendations.js?v=__OSGARD_BUILD_VERSION__" defer></script><script src="./luxury.js?v=__OSGARD_BUILD_VERSION__" defer></script></body></html>
+</script><script src="/games/commerce-client.js" defer></script><script src="./player-lifecycle.js?v=__OSGARD_BUILD_VERSION__" defer></script><script src="./game-session-recommendations.js?v=__OSGARD_BUILD_VERSION__" defer></script><script src="./luxury.js?v=__OSGARD_BUILD_VERSION__" defer></script>
+<script id="signal-run-referral-bridge">
+(()=>{'use strict';
+const incoming=new URL(location.href);
+if(incoming.searchParams.get('play')!=='signal-run')return;
+const link=document.querySelector('a[data-play="signal-run"]');
+if(!link)return;
+const target=new URL(link.href,location.origin);
+for(const key of ['challenge','ref','utm_source','utm_medium','utm_campaign','mode','day']){
+ const value=incoming.searchParams.get(key);
+ if(value!==null&&value.length<=128)target.searchParams.set(key,value);
+}
+const code=incoming.searchParams.get('ref')||'';
+const consent=(()=>{try{return localStorage.getItem('osgard.games.analytics-consent.v1')==='yes'}catch{return false}})();
+if(consent&&/^[a-f0-9]{12}$/.test(code)&&incoming.searchParams.get('utm_source')==='signal-run'&&incoming.searchParams.get('utm_medium')==='share'&&incoming.searchParams.get('utm_campaign')==='challenge'){
+ const eventId='evt_'+(window.crypto?.randomUUID?.()||Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,15)).replace(/[^a-zA-Z0-9_-]/g,'');
+ fetch('/games/commerce-config.json',{cache:'no-store'}).then(r=>r.ok?r.json():{}).catch(()=>({})).then(config=>{
+  const base=String(config.apiBaseUrl||'/commerce-api').replace(/\/+$/,'');
+  return fetch(base+'/v1/events',{method:'POST',keepalive:true,headers:{'content-type':'application/json'},body:JSON.stringify({consent:true,events:[{eventId,name:'referral_link_opened',sessionId:'invite_'+code,gameId:'signal-run',source:'referral:'+code+':signal-run',path:'/games/',durationSeconds:0}]})});
+ }).catch(()=>{});
+}
+link.href=target.href;
+const launch=()=>requestAnimationFrame(()=>link.click());
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',launch,{once:true});else launch();
+})();
+</script></body></html>

@@ -93,7 +93,16 @@ assert.ok(sitemap.includes('<loc>https://osgard.world/games/signal-run/</loc>') 
 assert.ok(signalRun.includes('<title>SIGNAL RUN — OSGARD WORLD</title>') && signalRun.includes('id="arena"') && signalRun.includes('id="fullscreen"'), 'SIGNAL RUN page shell or controls missing')
 assert.ok(signalRun.includes('prefers-reduced-motion:reduce') && signalRun.includes('id="touch-pulse"'), 'SIGNAL RUN mobile/accessibility controls missing')
 assert.ok(signalRun.includes('id="daily-run"')&&signalRun.includes('id="daily-info"')&&signalRun.indexOf('src="./daily.js"')<signalRun.indexOf('src="./game.js"'),'SIGNAL RUN daily controls and utility order missing')
-assert.ok(signalJs.includes('OSGARDSignalDaily')&&signalJs.includes('Daily.createRandom(Daily.seedForDate(dailyDate))')&&signalJs.includes("url.searchParams.set('mode','daily')")&&signalJs.includes('DAILY CONTRACT'),'Deterministic daily run and shareable challenge missing')
+assert.ok(signalJs.includes('OSGARDSignalDaily')&&signalJs.includes('Daily.createRandom(Daily.seedForDate(dailyDate))')&&signalJs.includes("url.searchParams.set('mode','daily')")&&signalJs.includes("url.searchParams.set('day',dailyDate)")&&signalJs.includes('DAILY CONTRACT'),'Deterministic daily run and shareable challenge missing')
+assert.ok(signalJs.includes("new URL('/games/',location.origin)")&&signalJs.includes("url.searchParams.set('play','signal-run')")&&signalJs.includes('function referralCode()')&&signalJs.includes("url.searchParams.set('ref',referralCode())"),'SIGNAL RUN must share a game-specific catalog deep link with an opaque referral code')
+assert.ok(html.includes('id="signal-run-referral-bridge"')&&html.includes("incoming.searchParams.get('play')!=='signal-run'")&&html.includes("requestAnimationFrame(()=>link.click())"),'SIGNAL RUN challenge links must launch through the existing game-player lifecycle')
+const signalReferralBridgeStart=html.indexOf('<script id="signal-run-referral-bridge">')+'<script id="signal-run-referral-bridge">'.length;
+const signalReferralBridgeEnd=html.indexOf('</script>',signalReferralBridgeStart);
+assert.ok(signalReferralBridgeEnd>signalReferralBridgeStart,'SIGNAL RUN referral bridge must be a valid inline script');
+new Function(html.slice(signalReferralBridgeStart,signalReferralBridgeEnd));
+assert.ok(html.slice(signalReferralBridgeStart,signalReferralBridgeEnd).includes("localStorage.getItem('osgard.games.analytics-consent.v1')==='yes'")&&html.slice(signalReferralBridgeStart,signalReferralBridgeEnd).includes("name:'referral_link_opened'"),'Referral opens must be consent-gated and use the server event contract')
+assert.ok(lifecycle.includes("return 'referral:'+code+':signal-run'")&&lifecycle.includes("url.searchParams.get('utm_campaign')==='challenge'"),'Accepted SIGNAL RUN challenges must feed a fixed, consented referral source into session metrics')
+assert.ok(signalRun.includes('target="_blank" rel="noopener noreferrer"'),'Post-run sponsor inquiry must not replace the active game document')
 new Function(signalDailyJs)
 const dailySandbox={Date,Math,Number,String,Object,RegExp};runInNewContext(signalDailyJs,dailySandbox)
 const daily=dailySandbox.OSGARDSignalDaily
@@ -196,7 +205,8 @@ assert.ok(cascadeGame.includes("notifyOsgardLifecycle('completed'"),'CASCADE LAB
 
 const scripts=Array.from(html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)).map(m=>m[1]).filter(s=>s.trim()&&!s.trim().startsWith('{'))
 assert.ok(scripts.length,'Inline application JavaScript not found')
-const js=scripts[scripts.length-1]
+const js=scripts.find(s=>s.includes('function createInviteLink')&&s.includes('function eventIfAllowed'))
+assert.ok(js,'Games catalogue runtime script missing; do not confuse it with additive feature bridges')
 new Function(js)
 assert.ok(js.includes('osgard.games.favorites.v1')&&js.includes('osgard.games.recent.v1'),'Local favorites/history missing')
 assert.ok(js.includes("localStorage.getItem('osgard.auth.accessToken')")&&js.includes('/api/v1/player/events')&&js.includes('if(!consent)return'),'Analytics must require both explicit consent and login token')
