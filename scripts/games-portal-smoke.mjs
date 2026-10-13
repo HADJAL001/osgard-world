@@ -452,8 +452,8 @@ const signalShareStart=signalJs.indexOf("$('share').addEventListener('click',asy
 const signalShareEnd=signalJs.indexOf("});document.addEventListener('keydown'",signalShareStart);
 assert.ok(signalShareStart>=0&&signalShareEnd>signalShareStart,'SIGNAL RUN share handler boundaries are required');
 const signalShareHandler=signalJs.slice(signalShareStart,signalShareEnd);
-assert.ok(!signalShareHandler.includes('awardShareShards(method)')&&signalShareHandler.includes("method==='clipboard'")&&signalShareHandler.includes('pendingShareReward=method'),'SIGNAL RUN must not auto-award for opening a share sheet or copying');
-assert.ok(signalJs.includes("claimShare.addEventListener('click'")&&signalJs.includes("awardShareShards('user-confirmed:'+method)"),'SIGNAL RUN reward must be granted only after an explicit user confirmation');
+assert.ok(!signalShareHandler.includes('awardShareShards(method)')&&!signalShareHandler.includes("life('share_created'")&&signalShareHandler.includes("method==='clipboard'")&&signalShareHandler.includes('pendingShareReward=method'),'SIGNAL RUN must not award or record a completed share for intent/copy alone');
+assert.ok(signalJs.includes("claimShare.addEventListener('click'")&&signalJs.includes("awardShareShards('user-confirmed:'+method)")&&signalJs.includes("life('share_created',{shareMethod:method,dailyMode,dailyDate:dailyMode?dailyDate:null,rewardConfirmedByPlayer:true})"),'SIGNAL RUN reward and completed-share analytics must require explicit user confirmation');
 new Function(signalJs);
 
 assert.ok(cascadeGame.includes("notifyOsgardLifecycle('completed'"),'CASCADE LAB must emit completion after a passed level')
@@ -609,7 +609,13 @@ const rewardPrimaryStart=recommendationScript.indexOf("primary.addEventListener(
 const rewardPrimaryEnd=recommendationScript.indexOf(" const note=make('p','og-postgame-reward-note'",rewardPrimaryStart);
 assert.ok(rewardPrimaryStart>=0&&rewardPrimaryEnd>rewardPrimaryStart,'OSGARD SELECT reward-share handler boundaries are required');
 const rewardPrimaryHandler=recommendationScript.slice(rewardPrimaryStart,rewardPrimaryEnd);
-assert.ok(!rewardPrimaryHandler.includes('show(award('),'OSGARD SELECT must not award automatically when native share succeeds or a link is copied');
+assert.ok(!rewardPrimaryHandler.includes('show(award(')&&!rewardPrimaryHandler.includes("sendSelectEvent('share_created'"),'OSGARD SELECT must not award or record a completed share when native share succeeds or a link is copied');
+const rewardClaimStart=recommendationScript.indexOf("claim.addEventListener('click'",recommendationScript.indexOf('function rewardShelf(gameId){'));
+const rewardClaimEnd=recommendationScript.indexOf("primary.addEventListener('click',async()=>{",rewardClaimStart);
+assert.ok(rewardClaimStart>=0&&rewardClaimEnd>rewardClaimStart,'OSGARD SELECT reward-claim handler boundaries are required');
+const rewardClaimHandler=recommendationScript.slice(rewardClaimStart,rewardClaimEnd);
+assert.ok(rewardClaimHandler.includes("sendSelectEvent('share_created',gameId,'game-invite:'")&&rewardClaimHandler.includes("sendSelectEvent('social_reward_claimed'"),'OSGARD SELECT must record a share only from the player-confirmation handler');
+
 assert.ok(rewardPrimaryHandler.includes("pending='native-share'")&&rewardPrimaryHandler.includes("claim.hidden=false")&&rewardPrimaryHandler.includes('Копирование само по себе не считается репостом и не даёт награду'),'Native sharing must require confirmation and clipboard copy must not award');
 assert.ok(recommendationScript.includes("award('social-confirmation:'+network)")&&recommendationScript.includes('не чаще раза в UTC-день на этом устройстве'),'Social reward is self-confirmed, local and daily-capped');
 assert.ok(recommendationScript.includes("entry.intersectionRatio>=0.5")&&recommendationScript.includes("},1000)")&&recommendationScript.includes('card.isConnected')&&recommendationScript.includes('card.getClientRects().length'),'A promo exposure must require at least 50% visibility for a full second on a connected, visible card');
