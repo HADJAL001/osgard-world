@@ -1,8 +1,49 @@
 import { useEffect, useState } from 'react'
 
 type Locale = 'ru' | 'en'
-type Wallet = { balance: number; day: string }
-const WALLET_KEY = 'osgard.games.shards-wallet.v1'
+type ReferralBalance = { pointsEarned: number; qualifiedSessions: number } | null
+const ANALYTICS_KEY = 'osgard.games.analytics-consent.v1'
+const REWARD_CONSENT_KEY = 'osgard.games.referral-reward-consent.v1'
+const OWNER_TOKEN_KEY = 'osgard.games.referral-owner-token.v1'
+const INVITE_CODES_KEY = 'osgard.games.shards-invite-codes.v1'
+
+function storedConsent(key: string): boolean {
+  try { return typeof window !== 'undefined' && window.localStorage.getItem(key) === 'yes' } catch { return false }
+}
+
+function randomHex(byteCount: number): string {
+  if (typeof window === 'undefined' || !window.crypto || typeof window.crypto.getRandomValues !== 'function') return ''
+  try {
+    const bytes = new Uint8Array(byteCount)
+    window.crypto.getRandomValues(bytes)
+    return Array.from(bytes, value => value.toString(16).padStart(2, '0')).join('')
+  } catch { return '' }
+}
+
+function readOwnerToken(): string {
+  try {
+    const current = window.localStorage.getItem(OWNER_TOKEN_KEY) || ''
+    if (/^[a-f0-9]{12}$/.test(current)) return current
+    const token = randomHex(6)
+    if (!token) return ''
+    window.localStorage.setItem(OWNER_TOKEN_KEY, token)
+    return token
+  } catch { return '' }
+}
+
+function getInviteCode(): string {
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(INVITE_CODES_KEY) || '{}') as Record<string, unknown>
+    const existing = typeof stored['signal-run'] === 'string' ? stored['signal-run'] : ''
+    if (/^og_[a-f0-9]{32}$/.test(existing)) return existing
+    const random = randomHex(16)
+    if (!random) return ''
+    const code = 'og_' + random
+    stored['signal-run'] = code
+    window.localStorage.setItem(INVITE_CODES_KEY, JSON.stringify(stored))
+    return code
+  } catch { return '' }
+}
 
 const services = [
   { id: 'marcosa', name: 'MARCOSA', category: 'SOCIAL / COMMUNITY', ru: 'Социальная сеть, сообщества и цифровые миры.', en: 'Social networking, communities and digital worlds.', url: 'https://marcosa.club/' },
@@ -16,34 +57,73 @@ const services = [
   { id: 'osgard-business', name: 'OSGARD OS', category: 'BUSINESS DEVELOPMENT', ru: 'Направление развития бизнеса.', en: 'Business development.', url: 'https://osgardos.com/' },
   { id: 'vanguard', name: 'OSGARD VANGUARD STUDIO', category: 'VIDEO STUDIO', ru: 'Создание видео для цифровых продуктов и кампаний.', en: 'Video production for digital products and campaigns.', url: 'https://osgardvanguard.studio/' },
 ] as const
-function readWallet(): Wallet {
-  if (typeof window === 'undefined') return { balance: 0, day: '' }
-  try {
-    const value = JSON.parse(window.localStorage.getItem(WALLET_KEY) || '{}')
-    return {
-      balance: Number.isSafeInteger(value.balance) && value.balance >= 0 ? Math.min(value.balance, 1000000000) : 0,
-      day: typeof value.lastRewardDay === 'string' ? value.lastRewardDay : '',
-    }
-  } catch {
-    return { balance: 0, day: '' }
-  }
-}
-
 function makeInviteUrl(): string {
-  const bytes = new Uint8Array(4)
-  try {
-    window.crypto.getRandomValues(bytes)
-  } catch {
-    for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256)
-  }
   const url = new URL('/games/invite/signal-run/', window.location.origin)
-  url.searchParams.set('og_ref', 'og_' + Array.from(bytes, value => value.toString(16).padStart(2, '0')).join(''))
+  const code = getInviteCode()
+  if (code) url.searchParams.set('og_ref', code)
   url.searchParams.set('og_game', 'signal-run')
   url.searchParams.set('utm_source', 'osgard_world')
   url.searchParams.set('utm_medium', 'entertainment_referral')
   url.searchParams.set('utm_campaign', 'play_with_friends')
   url.searchParams.set('utm_content', 'home_entertainment')
   return url.href
+}
+
+async function apiBaseUrl(): Promise<string | null> {
+  let raw = ''
+  try {
+    const response = await fetch('/games/commerce-config.json', { cache: 'no-store' })
+    const config = response.ok ? await response.json().catch(() => ({})) : {}
+    raw = typeof config.apiBaseUrl === 'string' ? config.apiBaseUrl.trim() : ''
+  } catch {}
+  if (!raw) {
+    try {
+      const readiness = await fetch('/commerce-api/readyz', { cache: 'no-store' })
+      if (!readiness.ok) return null
+      raw = '/commerce-api'
+    } catch { return null }
+  }
+  let parsed: URL
+  try { parsed = new URL(raw, window.location.origin) } catch { return null }
+  const local = ['localhost', '127.0.0.1'].includes(parsed.hostname)
+  const allowedPath = parsed.pathname === '/' || (parsed.origin === window.location.origin && parsed.pathname === '/commerce-api')
+  if ((parsed.protocol !== 'https:' && !(local && parsed.protocol === 'http:')) || parsed.username || parsed.password || !allowedPath || parsed.search || parsed.hash) return null
+  return parsed.origin + (parsed.pathname === '/' ? '' : parsed.pathname)
+}
+
+async function registerInvite(code: string): Promise<boolean> {
+  if (!storedConsent(ANALYTICS_KEY) || !storedConsent(REWARD_CONSENT_KEY) || !/^og_[a-f0-9]{32}$/.test(code)) return false
+  const ownerToken = readOwnerToken()
+  if (!ownerToken) return false
+  const base = await apiBaseUrl()
+  if (!base) return false
+  try {
+    const response = await fetch(base + '/v1/referrals/register', {
+      method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ consent: true, rewardConsent: true, code, gameId: 'signal-run', ownerToken }),
+    })
+    return response.ok
+  } catch { return false }
+}
+
+async function fetchReferralBalance(): Promise<ReferralBalance> {
+  if (!storedConsent(ANALYTICS_KEY) || !storedConsent(REWARD_CONSENT_KEY)) return null
+  const ownerToken = readOwnerToken()
+  if (!ownerToken) return null
+  const base = await apiBaseUrl()
+  if (!base) return null
+  try {
+    const response = await fetch(base + '/v1/referrals/balance', {
+      method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ consent: true, rewardConsent: true, ownerToken }),
+    })
+    if (!response.ok) return null
+    const value = await response.json()
+    return {
+      pointsEarned: Number.isSafeInteger(value.pointsEarned) && value.pointsEarned >= 0 ? value.pointsEarned : 0,
+      qualifiedSessions: Number.isSafeInteger(value.qualifiedSessions) && value.qualifiedSessions >= 0 ? value.qualifiedSessions : 0,
+    }
+  } catch { return null }
 }
 
 export function PlaySelectLoop({ locale }: { locale: Locale }) {
