@@ -96,6 +96,8 @@ values.set('osgard.games.analytics-consent.v1', 'denied');
 listeners.get('storage')?.({ key: 'osgard.games.analytics-consent.v1' });
 assert.equal(values.has('osgard.games.analytics-pending.v1'), false, 'An explicit React "denied" decision must clear pending analytics');
 
+// Simulate a later, explicit opt-in in the static hub for the existing queue-revocation case.
+values.set('osgard.games.analytics-consent.v1', 'yes');
 
 // A consent withdrawal clears pending events and aborts any active request.
 offline = true;
