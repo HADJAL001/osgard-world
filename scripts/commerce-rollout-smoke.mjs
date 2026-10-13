@@ -74,6 +74,8 @@ assert.ok(terms.includes("Покупки и платёжный статус") &&
 const successPage = readFileSync(resolve("public/games/premium/success/index.html"), "utf8");
 assert.ok(successPage.includes("/v1/checkout/status"), "Success page must ask the server for verified payment status.");
 assert.ok(successPage.includes("result.paid===true"), "Success page must not trust the redirect alone.");
+assert.ok(successPage.includes("result.orderStatus==='refunded'") && successPage.includes("payment_failed"), "Checkout result must clearly distinguish refunds/failures from a pending payment.");
+assert.ok(!successPage.includes("Статус: '+String(result.paymentStatus||result.orderStatus"), "Checkout result must not present the original Stripe session status as the current order status.");
 assert.ok(successPage.includes("if(accepted.ok){try{sessionStorage.setItem('osgard.purchase.tracked.'+sessionId,'yes');}catch{}}"), "Purchase analytics must only be deduplicated after the server accepts the consented event.");
 assert.ok(successPage.includes("let alreadyTracked=false;try{alreadyTracked=sessionStorage.getItem"), "Blocked sessionStorage must not prevent displaying a server-verified payment result.");
 assert.ok(successPage.includes("replace(/\\/+$/"), "Checkout status page URL base trimming must be valid.");
