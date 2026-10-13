@@ -379,7 +379,7 @@ assert.ok(recommendations.includes("'afterimage-run':{title:'AFTERIMAGE//RUN',su
 assert.ok(recommendations.includes('osgard-aftergame-intermission')&&recommendations.includes('og-postgame-preferences')&&recommendations.includes('Настроить показ')&&recommendations.includes('Автозапуска нет.'),'The existing optional between-game OSGARD SELECT must remain available, user-configurable and must not autoplay')
 assert.ok(recommendations.includes("const frequencyValues=['each','every3','off']")&&recommendations.includes("const fallback={frequency:'each',selected:availableServiceIds.slice()}")&&recommendations.includes("frequency:frequencyValues.includes(stored.frequency)?stored.frequency:'each'"),'OSGARD SELECT should default to each completed round while preserving user-configurable frequency')
 for(const domain of ['marcosa.club','osgardbewworld.com','o2system.art','senjorio.com','superday.run','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio']) assert.ok(recommendations.includes(domain),'Owned-service intermission missing '+domain)
-assert.ok(recommendations.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN'")&&recommendations.includes('Главная страница ответила HTTP 200 при проверке 13 октября 2026 года; работоспособность VPN-подключения не проверялась.')&&recommendations.includes("services.filter(item=>item[7]!==false)"),'GARD VPN must be selectable with the homepage result disclosed separately from VPN functionality')
+assert.ok(recommendations.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN'")&&recommendations.includes('Временно не продвигается: главная страница не подтверждает, что VPN-соединение действительно устанавливается.')&&recommendations.includes("services.filter(item=>item[7]!==false)")&&/\['gardvpn','08','GARD VPN'[^\n]+false,false\]/.test(recommendations),'GARD VPN must be excluded from promotional selections until VPN connectivity is verified')
 assert.ok(civic.includes('id="cc-game-root"')&&civic.includes('id="cc-map"')&&civic.includes('id="cc-status"'),'CIVIC CASCADE playable entry point or diagnostics are missing')
 for(const action of ['data-action="pump"','data-action="grid"','data-action="route"','data-action="repair"'])assert.ok(civic.includes(action),'CIVIC CASCADE tactical action missing: '+action)
 for(const feature of ['function riskValue()','function objectiveState()','function checkFinish()','function sendLifecycle(status)','requestAnimationFrame(frame)','prefers-reduced-motion:reduce'])assert.ok(civic.includes(feature),'CIVIC CASCADE simulation feature missing: '+feature)
@@ -524,7 +524,7 @@ const mockHead=mockNode()
 const mockDocument={head:mockHead,querySelector(selector){return selector==='#post-run-recommendations'?mockHost:selector==='#osgard-aftergame-intermission'?mockOutside:selector==='#player-dialog'?mockDialog:null},createElement(){return mockNode()},addEventListener(name,handler){(mockHandlers[name]??=[]).push(handler)},dispatch(name,event={}){const handlers=mockHandlers[name]||[];assert.ok(handlers.length,'Missing recommendation/growth lifecycle listener: '+name);handlers.forEach(handler=>handler(event))}}
 const mockStorage=()=>{const values=new Map();return{getItem(key){return values.has(key)?values.get(key):null},setItem(key,value){values.set(key,String(value))},removeItem(key){values.delete(key)}}}
 const mockLocalStorage=mockStorage(),mockSessionStorage=mockStorage()
-const serviceIdsForCadence=['marcosa','projects','o2-system','senjorio','superday','myosa','gold-glamour','gardvpn','osgard-business','vanguard']
+const serviceIdsForCadence=['marcosa','projects','o2-system','senjorio','superday','myosa','gold-glamour','osgard-business','vanguard']
 const preferenceStart=recommendationScript.indexOf('function readServicePreferences(){')
 const preferenceEnd=recommendationScript.indexOf('\nfunction writeServicePreferences(',preferenceStart)
 assert.ok(preferenceStart>=0&&preferenceEnd>preferenceStart,'Service preference reader must be independently testable')
@@ -561,19 +561,19 @@ assert.equal(mockClasses.has('has-recommendations'),true,'The player layout shou
 const mockGrid=mockHost.children.find(node=>node.className==='post-run-grid');
 const mockSuite=mockHost.children.find(node=>node.className==='og-postgame-suite');
 assert.ok(mockSuite,'Post-run service/reward suite should appear after each valid completion');
-assert.equal(mockSuite.children[0].children.find(node=>node.className==='og-postgame-service-grid').children.length,10,'Post-run intermission should list all ten owner-provided projects in the selectable service directory');
+assert.equal(mockSuite.children[0].children.find(node=>node.className==='og-postgame-service-grid').children.length,9,'Post-run intermission should promote only nine eligible services until GARD VPN connectivity is verified');
 const initialSpotlight=mockSuite.children[0].children.find(node=>node.className==='og-postgame-service-grid').children.find(node=>node.className.includes('is-featured'));
 assert.equal(initialSpotlight?.dataset.service,'marcosa','The first available service should lead the first post-game spotlight');
-assert.ok(mockSuite.children[0].children.find(node=>node.className==='og-postgame-service-grid').children.some(node=>node.dataset.service==='gardvpn'),'GARD VPN must be present as an owner-provided service with a transparent availability caveat');
+assert.ok(!mockSuite.children[0].children.find(node=>node.className==='og-postgame-service-grid').children.some(node=>node.dataset.service==='gardvpn'),'GARD VPN must not appear in active promotional cards until its connection is verified');
 const postGameServiceShelf=mockSuite.children[0];
 const postGamePreferences=postGameServiceShelf.children.find(node=>node.className==='og-postgame-preferences');
 const postGameServiceOptions=postGamePreferences?.children.find(node=>node.className==='og-postgame-service-options');
 assert.ok(postGamePreferences&&postGamePreferences.hidden,'Service preferences must be available but collapsed by default')
 assert.equal(postGameServiceOptions?.children.length,10,'Service preferences must offer all ten owned projects')
 const servicePreferenceInputs=(postGameServiceOptions?.children||[]).map(option=>option.children[0]);
-assert.equal(servicePreferenceInputs.filter(input=>input.checked&&!input.disabled).length,10,'Default preference selects all ten owner-provided first-party projects')
+assert.equal(servicePreferenceInputs.filter(input=>input.checked&&!input.disabled).length,9,'Default preferences select only the nine eligible promotional services')
 const unavailableServiceChoice=servicePreferenceInputs.find(input=>input.dataset.servicePreference==='gardvpn');
-assert.ok(unavailableServiceChoice&&!unavailableServiceChoice.disabled,'GARD VPN is selectable with a transparent unverified-availability caveat')
+assert.ok(unavailableServiceChoice&&unavailableServiceChoice.disabled,'GARD VPN remains visible in preferences but disabled until functional VPN connectivity is verified')
 const frequencyField=postGamePreferences.children.find(node=>node.className==='og-postgame-frequency-label');
 assert.deepEqual(frequencyField.children[0].children.map(option=>option.value),['each','every3','off'],'Players must choose every round, every three rounds, or no promo')
 assert.equal(frequencyField.children[0].value,'each','An explicitly saved every-round preference should be preserved')
@@ -939,7 +939,7 @@ assert.ok(recommendationScript.includes("['projects','01','OSGARD BEW WORLD'") &
 assert.ok(html.includes('<b>OSGARD BEW WORLD</b>') && html.includes('<b>OSGARD OS</b>') && html.includes('<b>OSGARD VANGUARD STUDIO</b>'),'Games hub ecosystem cards must use the same official product names');
 assert.ok(!html.includes('<b>OSGARD PROJECTS</b>') && !html.includes('<b>OSGARD BUSINESS</b>') && !html.includes('<b>OSGARD VANGUARD</b>'),'Retired shorthand names must not drift back into the visible Games hub');
 assert.ok(recommendationScript.includes("['o2-system','02','O2 SYSTEM','BUSINESS OPERATIONS','Система учёта кассы обменников'") && recommendationScript.includes("['myosa','06','MYOSA','AI PLATFORM','Платформа искусственного интеллекта нового поколения'"),'Post-session cards must retain the intended product descriptions');
-assert.ok(/\['gardvpn','08','GARD VPN'[^\n]+false,true\]/.test(recommendationScript)&&recommendationScript.includes('Главная страница ответила HTTP 200 при проверке 13 октября 2026 года; работоспособность VPN-подключения не проверялась.'),'GARD VPN must be selectable while transparently disclosing that availability was not independently verified');
+assert.ok(/\['gardvpn','08','GARD VPN'[^\n]+false,false\]/.test(recommendationScript)&&recommendationScript.includes('Временно не продвигается: главная страница не подтверждает, что VPN-соединение действительно устанавливается.'),'GARD VPN must be unavailable in promotions until connection health is verified');
 for(const provider of ['t.me/share/url','wa.me/?text=','vk.com/share.php','twitter.com/intent/tweet','facebook.com/sharer/sharer.php'])assert.ok(recommendationScript.includes(provider),'Social share redirect missing: '+provider);
 assert.ok(recommendationScript.includes("u.searchParams.set('utm_medium','post_game')")&&recommendationScript.includes("u.searchParams.set('utm_campaign','after_game')"),'Post-game links require UTM attribution');
 assert.ok(recommendationScript.includes("const walletKey='osgard.games.shards-wallet.v1',dailyReward=50")&&recommendationScript.includes('current.day===day'),'SHARDS must persist locally and be capped once per UTC day');
@@ -962,7 +962,12 @@ assert.ok(selectSender.includes('finally{if(controller)pendingSelectTelemetry.de
 assert.ok(recommendationScript.includes("sendSelectEvent('social_share_intent'")&&recommendationScript.includes("sendSelectEvent('social_reward_claimed'"), 'Social share-intent and self-reported reward events must be separate')
 assert.equal((recommendationScript.match(/if\(queue&&typeof queue\.enqueue==='function'\)return queue\.enqueue\(event\)/g)||[]).length,2,'Referral/inter-session and OSGARD SELECT telemetry must both use the shared consented retry queue');
 for(const eventName of ['owned_promo_intermission_skipped','owned_promo_preferences_saved','social_share_intent','social_reward_claimed','owned_promo_impression']) assert.ok(consentedAnalytics.includes("'"+eventName+"'"),'Consent queue must allow existing OSGARD SELECT event: '+eventName);
-assert.ok(recommendationScript.includes("sendSelectEvent('share_created',gameId,'game-invite:'"), 'Share actions in the rewards shelf must enter the referral funnel')
+const rewardClaimStart=recommendationScript.indexOf("claim.addEventListener('click',()=>{",recommendationScript.indexOf('function rewardShelf(gameId){'));
+const rewardClaimEnd=recommendationScript.indexOf(" primary.addEventListener('click',async()=>{",rewardClaimStart);
+assert.ok(rewardClaimStart>=0&&rewardClaimEnd>rewardClaimStart,'Reward claim handler boundaries are required');
+const rewardClaimHandler=recommendationScript.slice(rewardClaimStart,rewardClaimEnd);
+assert.ok(rewardClaimHandler.includes("sendSelectEvent('social_reward_claimed'")&&!rewardClaimHandler.includes("sendSelectEvent('share_created'"), 'A player-confirmed reward claim must not be counted as a created share');
+assert.ok(rewardClaimHandler.includes("award('social-confirmation:'+network)"), 'A share reward must remain a separate local player-confirmed action');
 const rewardPrimaryStart=recommendationScript.indexOf("primary.addEventListener('click',async()=>{",recommendationScript.indexOf('function rewardShelf(gameId){'));
 const rewardPrimaryEnd=recommendationScript.indexOf(" const note=make('p','og-postgame-reward-note'",rewardPrimaryStart);
 assert.ok(rewardPrimaryStart>=0&&rewardPrimaryEnd>rewardPrimaryStart,'OSGARD SELECT reward-share handler boundaries are required');
