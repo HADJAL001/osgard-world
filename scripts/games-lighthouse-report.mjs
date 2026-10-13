@@ -45,6 +45,15 @@ export function assessReport(json, label) {
     if (score < limits[key]) issues.push(name + ' below guardrail: ' + score + '/100 (minimum ' + limits[key] + ')')
   }
 
+  const targetSizeAudit = json.audits?.['target-size']
+  const targetSizeItems = targetSizeAudit?.details?.items
+  const targetSizeFailures = Array.isArray(targetSizeItems) ? targetSizeItems.length : null
+  if (typeof targetSizeAudit?.score !== 'number') {
+    issues.push('Touch-target size/spacing audit is missing')
+  } else if (targetSizeAudit.score !== 1 || targetSizeFailures === null || targetSizeFailures > 0) {
+    issues.push('Touch-target size/spacing failures: ' + (targetSizeFailures === null ? 'count unavailable' : targetSizeFailures))
+  }
+
   const tbt = json.audits?.['total-blocking-time']?.numericValue
   const lcp = json.audits?.['largest-contentful-paint']?.numericValue
   const tbtMs = typeof tbt === 'number' ? tbt : null
@@ -60,6 +69,7 @@ export function assessReport(json, label) {
     label: mode.toUpperCase(),
     url: json.finalDisplayedUrl ?? '(URL missing from report)',
     scores,
+    targetSizeFailures,
     tbtMs,
     lcpMs,
     issues,
@@ -85,6 +95,7 @@ function main(paths) {
     for (const [key, title] of Object.entries(categoryNames)) {
       console.log('  ' + title + ': ' + (result.scores[key] === undefined ? 'not reported' : result.scores[key] + '/100'))
     }
+    console.log('  Touch-target failures: ' + (result.targetSizeFailures === null ? 'not reported' : result.targetSizeFailures))
     console.log('  Total Blocking Time: ' + (result.tbtMs === null ? 'not reported' : Math.round(result.tbtMs) + ' ms'))
     console.log('  Largest Contentful Paint: ' + (result.lcpMs === null ? 'not reported' : (result.lcpMs / 1000).toFixed(2) + ' s'))
     if (result.issues.length) {
