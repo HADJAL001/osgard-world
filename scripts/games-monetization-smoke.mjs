@@ -19,9 +19,9 @@ const hub = readFileSync(hubPath, 'utf8');
 assert.ok(page.includes('data-estimate="not-live-data"'), 'Financial planner must label the numbers as modelled assumptions');
 assert.ok(page.includes('id="assumptions-form"') && page.includes('id="scenario-results"'), 'Financial planner is missing its input/output interface');
 assert.ok(page.includes('id="export-json"') && page.includes('id="reset-model"'), 'Financial planner reset/JSON export controls missing');
-assert.ok(page.includes('name="sponsorCampaignsPerMonth"')&&page.includes('name="averageSponsorPackageUsd"')&&page.includes('Начальное число кампаний равно нулю'),'Sponsor contract scenario inputs missing');
-assert.ok(app.includes('sponsorshipRevenueUsd')&&app.includes('Спонсорство · модель'),'Sponsor model must be visible in scenario results');
 assert.ok(page.includes('prefers-reduced-motion:reduce'), 'Reduced-motion support missing');
+assert.ok(['shareRatePct','invitesPerSharer','inviteConversionPct'].every((id) => page.includes('id="' + id + '"') && page.includes('name="' + id + '"')), 'Viral-loop assumption inputs missing');
+assert.ok(['base-viral-visitors','base-k-factor','base-annual-revenue','million-gap'].every((id) => page.includes('id="' + id + '"')), 'Annual $1M target and referral outputs missing');
 assert.ok(!/https?:\/\/(?:fonts\.googleapis\.com|fonts\.gstatic\.com|cdn\.jsdelivr\.net|unpkg\.com)/i.test(page), 'Financial planner unexpectedly depends on a remote asset CDN');
 assert.ok(app.includes('URL.createObjectURL') && app.includes('osgard-games-model.json'), 'Local JSON export not implemented');
 assert.ok(app.includes('Пересчёт выполнен локально') && app.includes('не отправляются на сервер'), 'Local-only privacy status missing');
@@ -29,28 +29,25 @@ assert.ok(hub.includes('href="/games/null-shift-godot/"') && hub.includes('href=
 
 assert.deepEqual(SCENARIOS.map((scenario) => scenario.id), ['conservative', 'base', 'optimistic']);
 const actual = calculateScenario(DEFAULT_INPUTS, 'base');
-assert.equal(actual.visitors, 10000);
-assert.equal(actual.gameStarts, 3000);
-assert.equal(actual.sessions, 9000);
-assert.equal(actual.potentialAdImpressions, 18000);
-assert.equal(actual.filledAdImpressions, 9900);
-assert.equal(actual.adRevenueUsd, 12.375);
-assert.equal(actual.paidCustomers, 25);
-assert.equal(actual.paidRevenueUsd, 149.75);
-assert.equal(actual.sponsorCampaigns, 0, 'Default model must not invent existing sponsor contracts');
-assert.equal(actual.sponsorshipRevenueUsd, 0, 'Sponsor revenue must default to zero until the user assumes signed contracts');
-assert.equal(actual.leads, 15);
-assert.equal(actual.closedProjects, 1.2);
-assert.equal(actual.servicesRevenueUsd, 1440);
-const sponsorCase = calculateScenario({ ...DEFAULT_INPUTS, sponsorCampaignsPerMonth: 2, averageSponsorPackageUsd: 3000 }, 'base');
-assert.equal(sponsorCase.sponsorCampaigns, 2);
-assert.equal(sponsorCase.sponsorshipRevenueUsd, 6000);
-assert.equal(sponsorCase.totalRevenueUsd, actual.totalRevenueUsd + 6000, 'Sponsor packages must contribute transparently to total modeled revenue');
-assert.equal(sponsorCase.netOperatingUsd, actual.netOperatingUsd + 6000, 'Sponsor scenario must affect modeled operating result');
-assert.equal(calculateScenario({ ...DEFAULT_INPUTS, sponsorCampaignsPerMonth: -4 }, 'base').sponsorCampaigns, 0, 'Negative sponsor contract counts must clamp to zero');
-assert.equal(actual.paymentFeesUsd, 4.4925);
+assert.equal(actual.directVisitors, 10000);
+assert.equal(actual.viralVisitors, 45);
+assert.equal(actual.visitors, 10045);
+assert.ok(Math.abs(actual.kFactor - 0.015) < 1e-12);
+assert.equal(actual.gameStarts, 3013.5);
+assert.equal(actual.sessions, 9040.5);
+assert.equal(actual.potentialAdImpressions, 18081);
+assert.ok(Math.abs(actual.filledAdImpressions - 9944.55) < 1e-8);
+assert.ok(Math.abs(actual.adRevenueUsd - 12.4306875) < 1e-8);
+assert.equal(actual.paidCustomers, 25.1125);
+assert.equal(actual.paidRevenueUsd, 150.423875);
+assert.equal(actual.leads, 15.0675);
+assert.ok(Math.abs(actual.closedProjects - 1.2054) < 1e-8);
+assert.ok(Math.abs(actual.servicesRevenueUsd - 1446.48) < 1e-8);
+assert.ok(Math.abs(actual.paymentFeesUsd - 4.51271625) < 1e-8);
 assert.equal(actual.operatingCostUsd, 400);
-assert.ok(Math.abs(actual.netOperatingUsd - 1197.6325) < 1e-8, 'Base net result formula drifted');
+assert.ok(Math.abs(actual.netOperatingUsd - 1204.82184625) < 1e-8, 'Base net result formula drifted');
+assert.equal(actual.viralVisitors, 45, 'Base model must expose the five-generation referral estimate');
+assert.ok(actual.totalRevenueUsd > 0 && Number.isFinite(actual.kFactor), 'Referral and revenue results must remain finite');
 
 const conservative = calculateScenario(DEFAULT_INPUTS, 'conservative');
 const optimistic = calculateScenario(DEFAULT_INPUTS, 'optimistic');
@@ -58,6 +55,11 @@ assert.ok(conservative.visitors < actual.visitors, 'Conservative traffic should 
 assert.ok(conservative.netOperatingUsd < actual.netOperatingUsd, 'Conservative scenario should reduce the base result');
 assert.ok(optimistic.visitors > actual.visitors, 'Optimistic traffic should be higher than base');
 assert.ok(optimistic.netOperatingUsd > actual.netOperatingUsd, 'Optimistic assumptions should increase the illustrative result');
+const zeroReferral = calculateScenario({ ...DEFAULT_INPUTS, shareRatePct: 0 }, 'base');
+assert.equal(zeroReferral.visitors, zeroReferral.directVisitors, 'With sharing disabled, referrals must add no visitors');
+assert.equal(zeroReferral.viralVisitors, 0, 'With sharing disabled, referral visitors must be zero');
+const wideReferral = calculateScenario({ ...DEFAULT_INPUTS, monthlyVisitors: 1000, gameStartRate: 100, shareRatePct: 100, invitesPerSharer: 20, inviteConversionPct: 100 }, 'base');
+assert.ok(Number.isFinite(wideReferral.visitors) && wideReferral.visitors > wideReferral.directVisitors, 'The referral-generation cap must keep high-K scenarios finite');
 const zero = calculateScenario({ ...DEFAULT_INPUTS, monthlyVisitors: 0 }, 'base');
 assert.equal(zero.totalRevenueUsd, 0, 'Zero traffic must produce zero modeled revenue');
 assert.equal(zero.netOperatingUsd, -DEFAULT_INPUTS.monthlyOperatingCostUsd, 'Zero traffic should retain operating costs');
@@ -66,5 +68,20 @@ assert.equal(bounded.monthlyVisitors, 0, 'Negative visitor assumptions must clam
 assert.equal(bounded.adFillRate, 100, 'Percent input must be bounded at 100');
 assert.equal(bounded.ecpmUsd, DEFAULT_INPUTS.ecpmUsd, 'Non-finite inputs must fall back to documented defaults');
 assert.equal(bounded.gameStartRate, DEFAULT_INPUTS.gameStartRate, 'Infinite values must fall back to documented defaults');
+const boundedReferral = normalizeInputs({ shareRatePct: 500, invitesPerSharer: 200, inviteConversionPct: -1 });
+assert.equal(boundedReferral.shareRatePct, 100, 'Share-rate input must be bounded at 100 percent');
+assert.equal(boundedReferral.invitesPerSharer, 20, 'Invite count must be bounded to protect model stability');
+assert.equal(boundedReferral.inviteConversionPct, 0, 'Referral conversion input must be bounded at zero');
 
-console.log('PASS OSGARD games economics model: UI contract, transparent fallback, scenario formulas, bounds and conservative/base/optimistic sensitivity.');
+console.log('PASS OSGARD games economics model: transparent referral K-factor, five-generation cap, $1M annual target gap, formulas, bounds and scenario sensitivity.');
+
+assert.ok(page.includes('name="sponsorDealsPerMonth"') && page.includes('name="averageSponsorDealUsd"'), 'Sponsor placement revenue inputs are missing')
+assert.ok(app.includes('result.sponsorRevenueUsd') && app.includes("getElementById('base-annual-revenue')") && app.includes("getElementById('million-gap')"), 'Sponsor income or annual target is not wired to the UI')
+const sponsorExample = calculateScenario({ ...DEFAULT_INPUTS, sponsorDealsPerMonth: 2, averageSponsorDealUsd: 500 }, 'base')
+assert.equal(sponsorExample.sponsorRevenueUsd, 1000, 'Sponsor revenue should only appear when the user enters real signed-and-paid placements')
+assert.equal(sponsorExample.totalRevenueUsd, actual.totalRevenueUsd + 1000)
+assert.ok(Math.abs(actual.totalRevenueUsd * 12 - 19312.01475) < 1e-7, 'Annual gross turnover target calculation drifted')
+assert.ok(Math.abs(1000000 - actual.totalRevenueUsd * 12 - 980687.98525) < 1e-7, 'Remaining gap to the $1M annual turnover target drifted')
+const boundedCommercial = normalizeInputs({ sponsorDealsPerMonth: 30000, averageSponsorDealUsd: -1 })
+assert.equal(boundedCommercial.sponsorDealsPerMonth, 10000, 'Sponsor deal count must be bounded')
+assert.equal(boundedCommercial.averageSponsorDealUsd, 0, 'Sponsor amount cannot be negative')

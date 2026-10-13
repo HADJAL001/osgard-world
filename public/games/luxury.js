@@ -122,14 +122,17 @@
 
   share.addEventListener('click', async () => {
     try {
+      const inviteUrl = window.OSGARDInvite?.createLink() || location.href
       if (navigator.share) {
-        await navigator.share({ title: 'OSGARD PLAY', text: 'Игровые миры OSGARD', url: location.href })
+        await navigator.share({ title: 'OSGARD PLAY', text: 'Исследуй игровые миры OSGARD и попробуй новый вызов.', url: inviteUrl })
       } else if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(location.href)
+        await navigator.clipboard.writeText(inviteUrl)
       } else {
-        throw new Error('Share unavailable')
+        announce('Ссылка-приглашение: ' + inviteUrl)
+        return
       }
-      announce('Ссылка на OSGARD PLAY готова к отправке.')
+      window.OSGARDInvite?.trackShare?.()
+      announce('Ссылка-приглашение готова. Получатель попадёт в каталог с твоим приглашением.')
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         announce('Отправка ссылки отменена.')
