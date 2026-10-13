@@ -396,6 +396,7 @@ assert.ok(mockSuite.children[1]&&mockSuite.children[1].className==='og-postgame-
 
 const servicesSection=mockSuite.children.find(node=>node.className==='og-postgame-services')
 const serviceFilters=servicesSection.children.find(node=>node.className==='og-postgame-service-filters')
+assert.equal(serviceFilters.children[0].textContent,'Все доступные · 9','The all-services filter count must exclude the unavailable GARD VPN card')
 const serviceCards=servicesSection.children.find(node=>node.className==='og-postgame-service-grid').children
 assert.equal(serviceFilters.children.length,7,'The luxury intermission should offer explicit categories for all ten service choices')
 const socialFilter=serviceFilters.children.find(node=>node.dataset.osgardServiceFilter==='social')
@@ -608,7 +609,7 @@ assert.ok(recommendationScript.includes("const walletKey='osgard.games.shards-wa
 assert.ok(recommendationScript.includes('Я опубликовал — получить +50 SHARDS')&&recommendationScript.includes('Соцсеть не сообщает сайту подтверждение публикации')&&recommendationScript.includes('не являются платёжным средством'),'Social reward must disclose self-confirmation and non-monetary points');
 assert.ok(recommendationStyles.includes('.og-postgame-services')&&recommendationStyles.includes('.og-postgame-service-grid')&&recommendationStyles.includes('.og-postgame-reward')&&recommendationStyles.includes('@media(max-width:760px)')&&recommendationStyles.includes('prefers-reduced-motion:reduce'),'Postgame UI must be premium, responsive and accessible');
 assert.ok(recommendationScript.includes('РЕКЛАМА · СОБСТВЕННЫЕ ПРОЕКТЫ OSGARD')&&recommendationScript.includes('osgardServiceFilter')&&recommendationScript.includes('categoryByService'),'OSGARD SELECT must disclose self-promotion and let players filter service offers by category');
-assert.ok(recommendationScript.includes("['all','Все сервисы · 10']")&&recommendationScript.includes("['studio','Разработка · 2']")&&recommendationScript.includes("['luxury','Luxury · 1']"),'OSGARD SELECT filters must expose all configured service categories');
+assert.ok(recommendationScript.includes("['all','Все доступные · '+availableServiceIds.length]")&&recommendationScript.includes("['studio','Разработка · 2']")&&recommendationScript.includes("['luxury','Luxury · 1']"),'OSGARD SELECT filters must expose all configured service categories');
 assert.ok(recommendationScript.includes("sendSelectEvent('cross_promo_clicked',gameId,'osgard-select:click:'+id)")&&recommendationScript.includes("'owned_promo_impression'"),'Every active OSGARD SELECT service card must emit service-attributed click and exposure events');
 assert.ok(recommendationScript.includes('function hasConsent()')&&recommendationScript.includes('function sendSelectEvent(name,gameId,source)'), 'OSGARD SELECT must define its own consent-gated analytics functions')
 assert.ok(recommendationScript.includes("fetch('/games/commerce-config.json'")&&recommendationScript.includes("base+'/v1/events'")&&recommendationScript.includes("localStorage.getItem(selectConsentKey)==='yes'"), 'OSGARD SELECT must post to same-origin commerce API only after consent')
