@@ -12,6 +12,8 @@ on:
       - "scripts/games-lighthouse-report.mjs"
       - ".github/workflows/games-lighthouse.yml"
       - "public/games/**"
+      - "commerce-api/**"
+      - "docker-compose.production.yml"
       - "godot/null-shift/**"
       - "scripts/null-shift-godot-smoke.mjs"
       - "docs/02_IMPERIUM_OF_TIME_GAME_DESIGN.md"
@@ -45,6 +47,8 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
+      - name: Test guarded OSGARD Commerce API and webhook behavior
+        run: python3 -m unittest discover -s commerce-api -p 'test_*.py' -v
       - name: Validate production activation shell before build and tests
         run: bash -n scripts/activate-frontend-remote.sh
       - name: Type-check the frontend
