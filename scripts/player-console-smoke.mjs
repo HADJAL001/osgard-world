@@ -46,7 +46,7 @@ test('lifetime Player Lab aggregates survive the bounded recent-launch log', () 
   assert.match(js, /Math\.max\(raw\.totalLaunches, launches\.length\)/, 'Legacy imports must derive a minimum lifetime count from existing history');
   assert.match(js, /stats\.totalLaunches = Math\.min\(MAX_TOTAL_LAUNCHES, stats\.totalLaunches \+ 1\)/);
   assert.match(js, /stats\.gameIdsEver = \[\.\.\.new Set\(\[\.\.\.stats\.gameIdsEver, id\]\)\]/);
-  assert.match(js, /stats\.activityDays = \[\.\.\.new Set\(\[\.\.\.stats\.activityDays, dateKey\(activeAt\)\]\)\]/);
+  assert.match(js, /stats\.activityDays = \[\.\.\.new Set\(\[\.\.\.stats\.activityDays, dateKey\(activeWallAt\)\]\)\]/);
   assert.match(js, /const unique = stats\.gameIdsEver\.length/);
   assert.match(js, /const days = stats\.activityDays\.length/);
   assert.match(js, /return \{ schema: 1, launches, totalLaunches, gameIdsEver, activityDays, secondsByGame, completions \}/, 'Exports/imports must preserve the validated aggregates');
