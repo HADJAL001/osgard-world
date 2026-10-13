@@ -65,3 +65,18 @@ Verified against commit `a1cb673d07298c448338633f0d6b493287e1e90d`:
 - **Games Lighthouse:** the post-deploy mobile report scored **94 Performance, 96 Accessibility, 96 Best Practices, 100 SEO**, TBT 273 ms, LCP 1.37 s. Desktop scored **99 Performance, 100 Accessibility, 96 Best Practices, 100 SEO**, TBT 0 ms, LCP 0.37 s. The workflow's configured guardrails passed. Scores are a point-in-time synthetic audit, not a substitute for real-user monitoring.
 - **Social-channel dashboard:** the protected commerce overview now returns consented share-intent and self-confirmed reward counts grouped by Telegram, WhatsApp, VK, X and Facebook. These numbers do not establish that a social network published a post.
 - **Payment/analytics activation limits remain:** `ENABLE_LIVE_PAYMENTS=false`, `ENABLE_OSGARD_PREMIUM_SALES=false`; `public/games/commerce-config.json` intentionally has an empty public API base. No provider credentials or database URL were supplied, so the source-only commerce API must not be represented as receiving live production payments or centralising real events yet.
+
+## Analytics retry queue and latest production release — 13 October 2026
+
+The consented analytics retry queue is included in the deployed web revision `19a7cc75818b33db1f271087e5273559f54055f0` (OSGARD frontend deploy run #355):
+
+- A consented event is stored locally only if it passes the event/game schema, with a bounded cap of 100 queued items and 7-day expiry.
+- Delivery retries in batches of up to 20 and the same event ID is preserved across retries. Items leave the queue only after an API acknowledgement; an empty queue removes its storage key.
+- Withdrawing consent clears queued items and aborts an in-flight request best-effort. This cannot retract a request already received by the server.
+- The shared queue is used by the Games hub, contact/partner/premium analytics, gameplay lifecycle, post-game recommendations, and OSGARD SELECT social/promo events.
+- Repeatable behavior test: `npm run qa:consented-analytics-queue` passed — offline persistence, stable IDs, acknowledged retry, consent withdrawal, and schema allowlist.
+- Production route matrix: **136 route checks, 0 failures**. Deployment's same-origin API proxy and issue/verify/revoke smoke completed successfully.
+- Post-deploy OSGARD Games Lighthouse run #157 passed guardrails: mobile Performance 99, Accessibility 96, Best Practices 96, SEO 100; TBT 94 ms, LCP 1.35 s. Desktop Performance 99, Accessibility 100, Best Practices 96, SEO 100; TBT 0 ms, LCP 0.37 s.
+- Commerce Checks, frontend validation, deployment and release readiness completed successfully on this revision.
+
+**Activation boundary is unchanged:** the browser queue can retry events, but central analytics are only available when the private Commerce API and its database are online. Production checkout is still disabled until the PostgreSQL and Stripe secrets/prices/webhook configuration are supplied and validated. No ad network, paid reward video, live subscription billing, or real-money SHARDS redemption is claimed as active.
