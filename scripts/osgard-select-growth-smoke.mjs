@@ -93,11 +93,15 @@ assert.equal(chooseSpotlightService(['myosa','projects','superday'],'superday',8
 assert.equal(chooseSpotlightService([],'',4,'each'),'',
   'Rotation must handle an empty user-selected service list');
 
-assert.ok(source.includes("frequency:'every3'") &&
+assert.ok(source.includes("const fallback={frequency:'each',selected:availableServiceIds.slice()}") &&
+  source.includes("frequency:frequencyValues.includes(stored.frequency)?stored.frequency:'each'") &&
+  source.includes("frequency:frequencyValues.includes(value.frequency)?value.frequency:'each'") &&
+  source.includes("settingsDescription=make('p','og-postgame-settings-copy','По умолчанию подборка появляется после каждой завершённой игры.") &&
   source.includes("['each','После каждой завершённой игры']") &&
   source.includes("['every3','Раз в три завершённых раунда']") &&
-  source.includes("['off','Не показывать подборку']"),
-  'Post-game promos must default to every third round and remain user-controllable');
+  source.includes("['off','Не показывать подборку']") &&
+  entertainmentGateway.includes("return { frequency: 'each', selected: [...PROMOTABLE_SERVICE_IDS] }"),
+  'Games intermission and Entertainment must share an after-every-game default while preserving every-third and off options');
 assert.ok(source.includes('grid.hidden=true;filters.hidden=true') &&
   source.includes("collapseToggle.textContent=showPromos?'Выбрать из '+availableServiceIds.length+' сервисов'"),
   'The service directory must be compact by default and open only when requested');
