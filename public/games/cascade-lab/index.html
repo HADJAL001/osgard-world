@@ -1838,20 +1838,25 @@ async function exportResultCard() {
     out.fillStyle = '#e3edf2'; out.font = '22px system-ui, sans-serif'; out.fillText(physics.status === 'won' ? 'Доставка подтверждена' : 'Новая попытка', 792, 274);
     out.fillStyle = '#8aa7b6'; out.font = '15px ui-monospace, monospace'; out.fillText(`ВРЕМЯ  ${physics.time.toFixed(2)} s`, 794, 324); out.fillText(`ДЕТАЛИ  ${devices.length}/${activeDeviceLimit()}`, 794, 354); out.fillText(`КОНТАКТЫ  ${physics.telemetry.contacts}`, 794, 384);
     const challenge = activeDailyChallenge || getDailyChallenge(new Date());
+    const shareLink = publicShareAllowed()
+      ? (physics.status === 'won' && lastCompletedResult ? duelUrl(location.href, lastCompletedResult) : challengeUrl(location.href, challenge, { referral: true }))
+      : 'https://osgard.world/games/cascade-lab/';
+    const shareText = `${level.title}: ${physics.status === 'won' ? $('scoreText').textContent : 'RETRY'}. Сможешь лучше? Испытай механизм: ${shareLink}`;
     out.fillStyle = '#73debc'; out.font = '700 12px ui-monospace, monospace'; out.fillText(challenge.code, 794, 442);
     out.fillStyle = '#7895a7'; out.font = '12px system-ui, sans-serif'; out.fillText('Собери механизм. Проверь физику. Брось вызов другу.', 794, 470);
+    out.fillStyle = '#62dbff'; out.font = '700 12px ui-monospace, monospace'; out.fillText('PLAY: OSGARD.WORLD/GAMES/CASCADE-LAB', 794, 514);
     out.fillStyle = '#203a4a'; out.fillRect(42, 558, 1116, 1); out.fillStyle = '#7895a7'; out.font = '10px ui-monospace, monospace'; out.fillText('ORIGINAL PHYSICS PUZZLE · LOCAL SCORE CARD · NO PAY-TO-WIN', 42, 585);
     const blob = await new Promise((resolve, reject) => shot.toBlob(data => data ? resolve(data) : reject(new Error('PNG encode failed')), 'image/png'));
     const filename = `cascade-lab-result-${level.id}-${Date.now()}.png`;
     if (navigator.share && typeof File === 'function') {
       const file = new File([blob], filename, { type: 'image/png' });
       if (!navigator.canShare || navigator.canShare({ files: [file] })) {
-        try { await navigator.share({ files: [file], title: 'CASCADE LAB — мой результат', text: `${level.title}: ${physics.status === 'won' ? $('scoreText').textContent : 'RETRY'}. Сможешь лучше?` }); notifyCompletedShare('result-card', 'web-share'); economyProfile = recordGrowthAction(economyProfile, 'resultCards'); saveProgress(); showToast('Карточка результата передана в меню отправки. Публикация не проверяется автоматически.'); return; }
+        try { await navigator.share({ files: [file], title: 'CASCADE LAB — мой результат', text: shareText, url: shareLink }); notifyCompletedShare('result-card', 'web-share', shareLink); economyProfile = recordGrowthAction(economyProfile, 'resultCards'); saveProgress(); showToast('Карточка результата передана в меню отправки. Публикация не проверяется автоматически.'); return; }
         catch (error) { if (error?.name === 'AbortError') return; }
       }
     }
     const url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = filename; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1800);
-    economyProfile = recordGrowthAction(economyProfile, 'resultCards'); saveProgress(); showToast('Карточка результата сохранена. Прикрепи её к публикации вместе с кодом ежедневного вызова.');
+    economyProfile = recordGrowthAction(economyProfile, 'resultCards'); saveProgress(); showToast('Карточка результата сохранена. На изображении есть адрес игры; прикрепи её к публикации.');
   } catch (error) { console.error('Result card export failed', error); showToast('Не удалось создать карточку в этой среде. Попробуй ещё раз.'); }
   finally { if (button) button.disabled = false; }
 }
