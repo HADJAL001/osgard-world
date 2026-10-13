@@ -6,6 +6,8 @@ import {
   catalogConfiguration,
   validateCheckoutPayload,
   validateLeadPayload,
+  validateLeadStatusPayload,
+  LEAD_STATUSES,
   validateEventBatch,
   paymentsModeAllowed,
   resolveCheckoutPaymentState,
@@ -63,6 +65,19 @@ test("lead endpoint requires contact, brief and acknowledgement; honeypot is sil
   const good = validateLeadPayload({ projectType: "Игра", contact: "test@example.com", description: "Нужно разработать мобильную стратегию", consent: true });
   assert.equal(good.ok, true);
   assert.equal(validateLeadPayload({ website: "spam", consent: true }).bot, true);
+});
+
+test("admin lead status updates accept only allow-listed workflow states", () => {
+  assert.deepEqual(LEAD_STATUSES, ["new", "contacted", "qualified", "won", "lost", "spam"]);
+  for (const status of LEAD_STATUSES) {
+    assert.deepEqual(validateLeadStatusPayload({ status }), { ok: true, status });
+  }
+  assert.equal(validateLeadStatusPayload(null).code, "LEAD_STATUS_PAYLOAD_INVALID");
+  assert.equal(validateLeadStatusPayload([]).code, "LEAD_STATUS_PAYLOAD_INVALID");
+  assert.equal(validateLeadStatusPayload({}).code, "LEAD_STATUS_FIELDS_INVALID");
+  assert.equal(validateLeadStatusPayload({ status: "new", notes: "unexpected field" }).code, "LEAD_STATUS_FIELDS_INVALID");
+  assert.equal(validateLeadStatusPayload({ status: "approved<script>" }).code, "LEAD_STATUS_INVALID");
+  assert.equal(validateLeadStatusPayload({ status: "unknown" }).code, "LEAD_STATUS_INVALID");
 });
 
 test("analytics is disabled unless consent is explicit and event names are allow-listed", () => {

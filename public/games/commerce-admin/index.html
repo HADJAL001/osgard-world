@@ -6,6 +6,7 @@
 <title>OSGARD Commerce · закрытая панель</title><link rel="icon" href="/games/favicon.svg" type="image/svg+xml">
 <style>
 :root{color-scheme:dark;--bg:#080a0b;--panel:#111514;--ink:#f2f0e8;--muted:#a5aaa1;--line:#ffffff20;--lime:#d3ff69;--gold:#d5bb82}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 85% 0,#30362155,transparent 35%),var(--bg);color:var(--ink);font:14px/1.6 system-ui,sans-serif}.wrap{width:min(1120px,calc(100% - 28px));margin:auto}.top{padding:20px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}.top a{color:var(--lime)}h1{font:clamp(36px,6vw,64px)/.98 Georgia,serif;font-weight:400;letter-spacing:-.04em;margin:36px 0 12px}.muted{color:var(--muted)}.panel{background:var(--panel);border:1px solid var(--line);padding:18px;margin:14px 0}.auth{display:flex;gap:10px;flex-wrap:wrap}.auth input{flex:1;min-width:220px;background:#070a09;border:1px solid var(--line);padding:13px;color:var(--ink)}button{background:var(--lime);border:1px solid var(--lime);padding:12px 18px;color:#10140b;font-weight:650;cursor:pointer}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.metric,.item{padding:14px;border:1px solid var(--line);overflow-wrap:anywhere}.metric b{display:block;font:27px/1.2 Georgia,serif;color:var(--gold)}.metric span,.item p{font-size:12px;color:var(--muted)}.list{display:grid;gap:8px}.item strong{color:var(--gold)}.item p{margin:4px 0;white-space:pre-wrap}.table-wrap{width:100%;overflow-x:auto;border:1px solid var(--line)}.analytics-table{width:100%;min-width:760px;border-collapse:collapse;font-size:11px}.analytics-table th,.analytics-table td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}.analytics-table th{color:var(--gold);font-weight:600;background:#ffffff05}.analytics-table td{color:var(--muted)}.analytics-table tbody tr:last-child td{border-bottom:0}.retention{font-size:11px;color:var(--muted);margin:0 0 14px}.status{min-height:24px;color:var(--gold)}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;color:var(--muted)}button:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-offset:3px}@media(max-width:680px){.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.panel{padding:13px}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+.lead-filters{display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,.42fr);gap:12px;margin:12px 0 18px}.lead-filters label{display:grid;gap:6px;color:var(--muted);font-size:12px}.lead-filters input,.lead-filters select,.lead-controls select{min-width:0;width:100%;background:#070a09;border:1px solid var(--line);padding:11px 12px;color:var(--ink);border-radius:2px;min-height:44px}.lead-list{display:grid;gap:10px}.lead-item{display:grid;gap:9px}.lead-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}.lead-card-head strong{font-size:15px;overflow-wrap:anywhere}.lead-status{display:inline-flex;align-items:center;border:1px solid #d3ff6950;color:var(--lime);font:10px ui-monospace,monospace;padding:4px 7px;letter-spacing:.03em}.lead-detail{white-space:pre-wrap;overflow-wrap:anywhere;margin:0!important}.lead-controls{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:10px;padding-top:8px;border-top:1px solid var(--line)}.lead-controls label{display:grid;gap:5px;color:var(--muted);font-size:11px}.lead-save{min-height:44px;white-space:nowrap}.lead-save-status{grid-column:1/-1;min-height:18px;margin:0!important;color:var(--gold)!important}.lead-save:disabled{opacity:.55;cursor:wait}.lead-updated{font-size:11px;color:var(--muted)}
 </style></head>
 <body><div class="wrap">
 <header class="top"><strong>OSGARD WORLD / COMMERCE</strong><a href="/games/">← Игровой каталог</a></header>
@@ -16,7 +17,7 @@
 <section class="panel"><h2>Социальный канал · 30 дней</h2><p class="retention">Сравнивай кнопки публикации и самоподтверждённые награды по сети. «Награда / намерение» — не подтверждение реального репоста: соцсети не сообщают сайту факт публикации.</p><div class="table-wrap"><table class="analytics-table" id="social-network-table"><thead><tr><th scope="col">Канал</th><th scope="col">Открытия публикации</th><th scope="col">Запрошенные награды</th><th scope="col">Награды / открытия</th></tr></thead><tbody id="social-network-body"><tr><td colspan="4">Не загружено.</td></tr></tbody></table></div></section>
 <section class="panel"><h2>Игровая аналитика · 30 дней</h2><p id="analytics-retention" class="retention">Данные появятся после явного согласия игрока и записи событий в настроенный API.</p><div class="metrics"><div class="metric"><b id="analytics-catalog-views">—</b><span>Просмотры каталога</span></div><div class="metric"><b id="analytics-starts">—</b><span>Старты игры</span></div><div class="metric"><b id="analytics-completions">—</b><span>Завершения сессий</span></div><div class="metric"><b id="analytics-outbound-clicks">—</b><span>Переходы к проектам</span></div><div class="metric"><b id="analytics-lead-events">—</b><span>События заявок</span></div><div class="metric"><b id="analytics-premium-views">—</b><span>Просмотры Premium</span></div></div><p class="retention">Вирусная петля · последние 30 дней · считаются уникальные коды, переданные в форму соцсети или системное меню, а не уникальные люди. Факт публикации не подтверждается автоматически.</p><div class="metrics" aria-label="Воронка приглашений"><div class="metric"><b id="analytics-invites">—</b><span>Ссылки, подготовленные для публикации</span></div><div class="metric"><b id="analytics-referral-opens">—</b><span>Ссылки с открытием</span></div><div class="metric"><b id="analytics-referred-starts">—</b><span>Ссылки со стартом игры</span></div><div class="metric"><b id="analytics-referred-completions">—</b><span>Ссылки с завершением игры</span></div><div class="metric"><b id="analytics-invite-open-rate">—</b><span>Открытие / созданные ссылки</span></div><div class="metric"><b id="analytics-invite-start-rate">—</b><span>Старт / открытые ссылки</span></div><div class="metric"><b id="analytics-invite-completion-rate">—</b><span>Завершение / старт</span></div></div><p class="muted">Учитываются только события после согласия; часть этапов может не совпадать, если согласие дано позже. Это измеряемая воронка ссылок, а не уникальная аудитория, подтверждённые рекламные показы или продажи.</p><div class="table-wrap"><table class="analytics-table" id="game-analytics-table"><thead><tr><th scope="col">Игра</th><th scope="col">События</th><th scope="col">Старты</th><th scope="col">Завершения</th><th scope="col">Средняя длительность завершённой сессии</th><th scope="col">Переходы</th><th scope="col">Сессии</th></tr></thead><tbody id="game-analytics-body"><tr><td colspan="7">Не загружено.</td></tr></tbody></table></div></section>
 <section class="panel"><h2>Оплаченные заказы по источнику · 30 дней</h2><p class="retention" id="paid-attribution-note">Данные появятся после настройки Commerce API, PostgreSQL и платёжного провайдера. Метки источника передаются ссылкой и не подтверждают личность покупателя.</p><div class="table-wrap"><table class="analytics-table" id="paid-attribution-table"><thead><tr><th scope="col">Игра</th><th scope="col">Источник</th><th scope="col">Кампания</th><th scope="col">Тип</th><th scope="col">Заказы</th><th scope="col">Валюта</th><th scope="col">Валовая сумма</th></tr></thead><tbody id="paid-attribution-body"><tr><td colspan="7">Не загружено.</td></tr></tbody></table></div><p class="retention">Суммы разделены по валюте и показаны до комиссий и расходов. Для подписок это сумма исходного Checkout, а не MRR и не все повторные списания. Возвраты не считаются оплаченными заказами.</p></section>
-<section class="panel"><h2>Последние заявки</h2><div id="leads" class="list"><p class="muted">Не загружено.</p></div></section>
+<section class="panel"><h2>Входящие заявки</h2><p class="retention">Последние 100 заявок. Статусы: новая → связались → квалифицирована → договор / закрыта / спам. Изменения сохраняются на сервере и доступны только оператору с ADMIN_API_TOKEN.</p><div class="lead-filters"><label for="lead-search">Поиск по типу проекта, контакту и описанию<input id="lead-search" type="search" autocomplete="off" placeholder="Например: мобильная игра"></label><label for="lead-status-filter">Фильтр статуса<select id="lead-status-filter"><option value="all">Все статусы</option><option value="new">Новые</option><option value="contacted">Связались</option><option value="qualified">Квалифицированы</option><option value="won">Договор / успешно</option><option value="lost">Закрыты / отказ</option><option value="spam">Спам</option></select></label></div><div id="lead-list-status" class="status" role="status" aria-live="polite">Заявки будут доступны после подключения Commerce API.</div><div id="leads" class="list lead-list" aria-live="polite"><p class="muted">Не загружено.</p></div></section>
 <section class="panel"><h2>Последние заказы</h2><div id="orders" class="list"><p class="muted">Не загружено.</p></div></section>
 </main></div>
 <script>
@@ -39,10 +40,15 @@ async function base() {
     return '';
   }
 }
-async function api(path) {
+async function api(path, options = {}) {
   const apiBase = await base();
   if (!apiBase) throw new Error('Commerce API не настроен. Введите токен только после развёртывания API и задания commerce-config.json.');
-  const response = await fetch(apiBase + path, { headers: { Authorization: 'Bearer ' + token }, cache: 'no-store' });
+  const response = await fetch(apiBase + path, {
+    ...options,
+    headers: { ...(options.headers || {}), Authorization: 'Bearer ' + token },
+    cache: 'no-store',
+    credentials: 'omit',
+  });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.message || data.error || 'HTTP ' + response.status);
   return data;
@@ -60,6 +66,75 @@ function list(selector, items, fields) {
     const card = text('article','item','');
     card.append(text('strong','',item[fields[0]] || '—'));
     for (const field of fields.slice(1)) card.append(text('p','',field + ': ' + (item[field] ?? '—')));
+    root.append(card);
+  }
+}
+const LEAD_STATUS_LABELS = Object.freeze({new:'Новая',contacted:'Связались',qualified:'Квалифицирована',won:'Договор / успешно',lost:'Закрыта / отказ',spam:'Спам'});
+let currentLeads = [];
+function renderLeads(items) {
+  currentLeads = Array.isArray(items) ? items : [];
+  const root = $('#leads');
+  const search = $('#lead-search').value.trim().toLocaleLowerCase('ru-RU');
+  const selectedStatus = $('#lead-status-filter').value;
+  const filtered = currentLeads.filter(item => {
+    const statusMatches = selectedStatus === 'all' || item.status === selectedStatus;
+    const haystack = [item.project_type, item.contact, item.budget, item.description, item.status].map(value => String(value ?? '')).join(' ').toLocaleLowerCase('ru-RU');
+    return statusMatches && (!search || haystack.includes(search));
+  });
+  root.replaceChildren();
+  $('#lead-list-status').textContent = 'Показано ' + filtered.length + ' из ' + currentLeads.length + ' загруженных заявок. Поиск выполняется только в текущей выборке.';
+  if (!filtered.length) { root.append(text('p','muted',currentLeads.length ? 'По фильтру ничего не найдено.' : 'Пока нет заявок.')); return; }
+  for (const item of filtered) {
+    const card = text('article','item lead-item','');
+    const head = text('div','lead-card-head','');
+    head.append(text('strong','',item.project_type || 'Заявка без названия'));
+    head.append(text('span','lead-status',LEAD_STATUS_LABELS[item.status] || ('Неизвестный статус: ' + String(item.status ?? '—'))));
+    card.append(head);
+    card.append(text('p','lead-detail','Контакт: ' + (item.contact || '—')));
+    if (item.budget) card.append(text('p','lead-detail','Бюджет: ' + item.budget));
+    card.append(text('p','lead-detail',String(item.description || 'Описание не заполнено')));
+    const created = new Date(item.created_at);
+    card.append(text('p','lead-updated','Создана: ' + (Number.isNaN(created.getTime()) ? String(item.created_at || '—') : created.toLocaleString('ru-RU'))));
+    const controls = text('div','lead-controls','');
+    const label = text('label','','Статус заявки');
+    const select = document.createElement('select');
+    select.setAttribute('aria-label','Статус заявки ' + String(item.project_type || item.lead_id || ''));
+    if (!Object.prototype.hasOwnProperty.call(LEAD_STATUS_LABELS, item.status)) {
+      const unknown = document.createElement('option'); unknown.value = String(item.status ?? ''); unknown.textContent = 'Текущий статус: ' + String(item.status ?? '—'); select.append(unknown);
+    }
+    for (const [value, caption] of Object.entries(LEAD_STATUS_LABELS)) {
+      const option = document.createElement('option'); option.value = value; option.textContent = caption; select.append(option);
+    }
+    select.value = Object.prototype.hasOwnProperty.call(LEAD_STATUS_LABELS,item.status) ? item.status : String(item.status ?? '');
+    label.append(select);
+    const save = text('button','lead-save','Сохранить статус'); save.type = 'button';
+    const feedback = text('p','lead-save-status',''); feedback.setAttribute('role','status'); feedback.setAttribute('aria-live','polite');
+    select.addEventListener('change',()=>{save.textContent='Сохранить статус';feedback.textContent='';});
+    save.addEventListener('click',async()=>{
+      const nextStatus = select.value;
+      if (nextStatus === item.status) { feedback.textContent = 'Изменений нет.'; return; }
+      if (!Object.prototype.hasOwnProperty.call(LEAD_STATUS_LABELS,nextStatus)) { feedback.textContent = 'Выберите допустимый статус.'; return; }
+      save.disabled = true; feedback.textContent = 'Сохраняем статус…';
+      try {
+        const result = await api('/v1/admin/leads/' + encodeURIComponent(String(item.lead_id || '')), { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: nextStatus }) });
+        if (!result.item || result.item.status !== nextStatus) throw new Error('Ответ API не содержит подтверждённый статус.');
+        const previousStatus = item.status;
+        item.status = result.item.status;
+        item.updated_at = result.item.updated_at;
+        head.querySelector('.lead-status').textContent = LEAD_STATUS_LABELS[item.status];
+        feedback.textContent = 'Сохранено: ' + LEAD_STATUS_LABELS[item.status] + (item.updated_at ? ' · ' + new Date(item.updated_at).toLocaleString('ru-RU') : '');
+        save.textContent = 'Сохранено';
+        if (previousStatus !== item.status && (previousStatus === 'new' || item.status === 'new')) {
+          const counter = $('#lead-new'); const number = Number(counter.textContent);
+          if (Number.isFinite(number)) counter.textContent = String(Math.max(0, number + (item.status === 'new' ? 1 : -1)));
+        }
+      } catch (error) {
+        feedback.textContent = 'Не удалось сохранить: ' + String(error.message || 'ошибка').slice(0,180);
+        save.textContent = 'Повторить';
+      } finally { save.disabled = false; }
+    });
+    controls.append(label, save, feedback);
+    card.append(controls);
     root.append(card);
   }
 }
@@ -216,7 +291,7 @@ async function load() {
   $('#load').disabled = true; $('#status').textContent = 'Загружаем данные…';
   try {
     const [overview, leads, orders] = await Promise.all([
-      api('/v1/admin/overview'), api('/v1/admin/leads?limit=30'), api('/v1/admin/orders?limit=30')
+      api('/v1/admin/overview'), api('/v1/admin/leads?limit=100'), api('/v1/admin/orders?limit=30')
     ]);
     $('#lead-total').textContent = String(overview.leads?.total ?? 0);
     $('#lead-new').textContent = String(overview.leads?.new ?? 0);
@@ -245,12 +320,14 @@ async function load() {
     renderPromoVariants(overview.ownedPromoVariantStats || []);
     renderSocialChannels(overview.socialShareByNetwork || []);
     $('#money').textContent = JSON.stringify({ordersByStatus:overview.ordersByStatus,grossPaidByCurrency:overview.grossPaidByCurrency,paidRevenueByAttribution:overview.paidRevenueByAttribution,topEventsLast30Days:overview.topEventsLast30Days,note:overview.note},null,2);
-    list('#leads',leads.items || [],['project_type','contact','budget','description','status','created_at']);
+    renderLeads(leads.items || []);
     list('#orders',orders.items || [],['order_id','product_key','email','status','currency','amount_total','attribution_game_id','attribution_source','attribution_campaign','created_at']);
     $('#status').textContent = 'Данные получены. Выручка показана до комиссий и операционных расходов.';
   } catch (error) { $('#status').textContent = 'Не удалось загрузить данные: ' + String(error.message || 'ошибка').slice(0,180); }
   finally { $('#load').disabled = false; }
 }
+$('#lead-search').addEventListener('input',()=>renderLeads(currentLeads));
+$('#lead-status-filter').addEventListener('change',()=>renderLeads(currentLeads));
 $('#load').addEventListener('click',load);
 $('#token').addEventListener('keydown',event=>{if(event.key==='Enter')load();});
 window.addEventListener('pagehide',()=>{token='';$('#token').value='';});
