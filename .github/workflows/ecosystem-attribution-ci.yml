@@ -1,0 +1,58 @@
+name: OSGARD ecosystem attribution QA
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - "public/games/ecosystem/**"
+      - "public/games/consented-analytics.js"
+      - "services/osgard-commerce-api/src/core.mjs"
+      - "scripts/ecosystem-directory-smoke.mjs"
+      - "scripts/ecosystem-outbound-tracking-smoke.mjs"
+      - "scripts/consented-analytics-queue-smoke.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/ecosystem-attribution-ci.yml"
+  push:
+    branches: [master]
+    paths:
+      - "public/games/ecosystem/**"
+      - "public/games/consented-analytics.js"
+      - "services/osgard-commerce-api/src/core.mjs"
+      - "scripts/ecosystem-directory-smoke.mjs"
+      - "scripts/ecosystem-outbound-tracking-smoke.mjs"
+      - "scripts/consented-analytics-queue-smoke.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/ecosystem-attribution-ci.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ecosystem-attribution-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  attribution-contract:
+    name: Consent and attribution contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: TypeScript check
+        run: npm run check
+      - name: Project directory contract
+        run: npm run qa:ecosystem-directory
+      - name: Runtime click attribution smoke test
+        run: npm run qa:ecosystem-clicks
+      - name: Consent queue offline and withdrawal tests
+        run: npm run qa:consented-analytics-queue

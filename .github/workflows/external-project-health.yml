@@ -9,6 +9,8 @@ on:
     paths:
       - 'scripts/external-project-healthcheck.mjs'
       - 'scripts/external-project-healthcheck-smoke.mjs'
+      - 'public/games/ecosystem/**'
+      - 'public/games/index.html'
       - '.github/workflows/external-project-health.yml'
       - 'docs/EXTERNAL_PROJECT_LINK_AUDIT.md'
 
