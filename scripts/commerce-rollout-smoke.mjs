@@ -15,12 +15,15 @@ const store = readFileSync(resolve("public/games/premium/index.html"), "utf8");
 const app = readFileSync(resolve("public/games/premium/app.js"), "utf8");
 const admin = readFileSync(resolve("public/games/commerce-admin/index.html"), "utf8");
 const config = JSON.parse(readFileSync(resolve("public/games/commerce-config.json"), "utf8"));
+const nginx = readFileSync(resolve("nginx.conf"), "utf8");
+const routeMatrix = readFileSync(resolve("scripts/production-route-matrix.mjs"), "utf8");
 
 for (const value of [
   "stripe.checkout.sessions.create", "stripe.webhooks.constructEvent",
   "express.raw", "commerce_stripe_events", "ON CONFLICT DO NOTHING",
   "ENABLE_LIVE_PAYMENTS", "ADMIN_API_TOKEN", "/v1/admin/overview",
   "/v1/checkout/status", "validateEventBatch", "validateLeadPayload",
+  "resolveCheckoutPaymentState", "no-store, private",
 ]) assert.ok(server.includes(value), "Commerce API missing required feature: " + value);
 for (const value of ["PRODUCT_DEFS", "termsAccepted", "verifyStripeSignature", "paymentsModeAllowed"]) {
   assert.ok(core.includes(value), "Core validation missing: " + value);
@@ -40,6 +43,11 @@ for (const value of ["type=\"password\"", "ADMIN_API_TOKEN", "/v1/admin/leads", 
 assert.equal(config.apiBaseUrl, "", "No production API hostname should be assumed without deployment confirmation.");
 assert.ok(!server.includes("sk_live_abc123"), "No live secret may be committed.");
 assert.ok(!admin.includes("Bearer sk_"), "No payment secret may be embedded in admin HTML.");
+assert.ok(nginx.includes("location ^~ /commerce-api/"), "Existing Nginx must expose the same-origin commerce API prefix.");
+assert.ok(nginx.includes("set $osgard_commerce_api_host osgard-commerce-api;"), "Commerce API must use its private Docker DNS name.");
+assert.ok(nginx.includes("proxy_pass http://$osgard_commerce_api_host:8080$uri$is_args$args;"), "Nginx must strip the public prefix and preserve query strings.");
+assert.ok(routeMatrix.includes("'/games/commerce-admin/'") && routeMatrix.includes("'/games/premium/'") && routeMatrix.includes("'/games/premium/success/'"), "Production route matrix must verify commerce pages.");
+assert.ok(!/(sk_(?:live|test)_|whsec_)[A-Za-z0-9_]+/.test(readFileSync(resolve("public/games/commerce-config.json"), "utf8")), "Public config must never contain Stripe secrets.");
 
 const html = readFileSync(resolve("public/games/index.html"), "utf8");
 assert.ok(html.includes("id=\"project-form\""), "Existing project form must remain in the games hub.");
