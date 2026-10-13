@@ -108,7 +108,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
             text.includes('id="serviceAdChoices"') && text.includes('Я поделился — получить +10 LC') &&
             text.includes("notifyOsgardLifecycle('ready'") && text.includes("notifyOsgardLifecycle('started'") &&
             text.includes("notifyOsgardLifecycle('paused'") && text.includes("notifyOsgardLifecycle('resumed'") &&
-            text.includes("notifyOsgardLifecycle('completed'")
+            text.includes("notifyOsgardLifecycle('level_completed'") && !text.includes("notifyOsgardLifecycle('completed'")
         : route.startsWith('/games/null-shift-godot')
           ? isGodotDirectory
             ? (response.headers.get('content-type') || '').toLowerCase().includes('text/html') &&
