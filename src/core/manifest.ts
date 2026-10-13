@@ -18,6 +18,8 @@ export type OsgardEventName =
   | 'share_link_copied'
   | 'share_dialog_opened'
   | 'partner_cta_clicked'
+  | 'result_card_exported'
+  | 'result_card_shared'
 
 export interface OsgardEvent<TPayload extends Record<string, unknown> = Record<string, unknown>> {
   id: string
