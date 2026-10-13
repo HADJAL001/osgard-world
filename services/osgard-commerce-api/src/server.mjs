@@ -8,6 +8,7 @@ import pg from "pg";
 import {
   catalogConfiguration, validateCheckoutPayload, validateLeadPayload,
   validateEventBatch, paymentsModeAllowed, resolveCheckoutPaymentState, safeEqual,
+  defaultGameCatalogSettings, validateGameCatalogSettings,
 } from "./core.mjs";
 
 const { Pool } = pg;
@@ -62,6 +63,7 @@ async function ensureSchema() {
     "CREATE TABLE IF NOT EXISTS commerce_events (event_id TEXT PRIMARY KEY, event_name TEXT NOT NULL, session_id TEXT NOT NULL, game_id TEXT NOT NULL, source TEXT NOT NULL, path TEXT NOT NULL, duration_seconds INTEGER NOT NULL DEFAULT 0, received_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
     "CREATE INDEX IF NOT EXISTS commerce_events_name_received_idx ON commerce_events(event_name, received_at DESC);\n" +
     "CREATE INDEX IF NOT EXISTS commerce_events_game_received_idx ON commerce_events(game_id, received_at DESC);");
+  await pool.query("CREATE TABLE IF NOT EXISTS commerce_game_catalog_settings (setting_key TEXT PRIMARY KEY CHECK (setting_key = 'default'), revision INTEGER NOT NULL CHECK (revision > 0), payload JSONB NOT NULL, updated_by TEXT NOT NULL DEFAULT 'admin', updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())");
   dbReady = true;
   return true;
 }
@@ -196,6 +198,24 @@ app.get("/v1/products", async (_req, res) => {
     res.json({ items: await loadPublicProducts(), currencySource: "Stripe Dashboard prices; never accepted from the browser." });
   } catch {
     res.status(503).json({ error: "CATALOG_UNAVAILABLE", message: "Каталог оплаты временно недоступен." });
+  }
+});
+
+// Public copy settings are optional; without a saved row, return defaults for the static catalog.
+app.get("/v1/game-catalog", async (_req, res) => {
+  res.set("Cache-Control", "no-store");
+  const fallback = { revision: 0, updatedAt: null, config: defaultGameCatalogSettings() };
+  if (!pool || !dbReady) return res.json(fallback);
+  try {
+    const result = await pool.query("SELECT revision, payload, updated_at FROM commerce_game_catalog_settings WHERE setting_key='default'");
+    if (!result.rows.length) return res.json(fallback);
+    const row = result.rows[0];
+    const validated = validateGameCatalogSettings(row.payload);
+    if (!validated.ok) return res.status(503).json({ error: "GAME_CATALOG_CONFIG_INVALID" });
+    return res.json({ revision: Number(row.revision), updatedAt: row.updated_at, config: validated.config });
+  } catch (error) {
+    console.error("Public game catalog settings failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "GAME_CATALOG_UNAVAILABLE" });
   }
 });
 
@@ -477,6 +497,61 @@ app.get("/v1/admin/orders", requireAdmin, async (req, res) => {
   } catch (error) {
     console.error("Admin orders failed:", error?.message || "unknown error");
     return res.status(503).json({ error: "ADMIN_ORDERS_UNAVAILABLE" });
+  }
+});
+
+
+app.get("/v1/admin/game-catalog", requireAdmin, async (_req, res) => {
+  if (!requireDatabase(res)) return;
+  try {
+    const result = await pool.query("SELECT revision, payload, updated_at FROM commerce_game_catalog_settings WHERE setting_key='default'");
+    if (!result.rows.length) return res.json({ revision: 0, updatedAt: null, config: defaultGameCatalogSettings() });
+    const row = result.rows[0];
+    const validated = validateGameCatalogSettings(row.payload);
+    if (!validated.ok) return res.status(503).json({ error: "GAME_CATALOG_CONFIG_INVALID" });
+    return res.json({ revision: Number(row.revision), updatedAt: row.updated_at, config: validated.config });
+  } catch (error) {
+    console.error("Admin game catalog read failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "GAME_CATALOG_READ_UNAVAILABLE" });
+  }
+});
+
+app.post("/v1/admin/game-catalog", requireAdmin, async (req, res) => {
+  if (!requireDatabase(res)) return;
+  const expectedRevision = req.body?.expectedRevision;
+  if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0) {
+    return res.status(400).json({ error: "EXPECTED_REVISION_INVALID" });
+  }
+  const validated = validateGameCatalogSettings(req.body?.config);
+  if (!validated.ok) return res.status(400).json({ error: validated.code });
+  try {
+    let saved;
+    const payload = JSON.stringify(validated.config);
+    if (expectedRevision === 0) {
+      const result = await pool.query(
+        "INSERT INTO commerce_game_catalog_settings(setting_key,revision,payload,updated_by,updated_at) VALUES('default',1,$1::jsonb,'admin',NOW()) ON CONFLICT DO NOTHING RETURNING revision,payload,updated_at",
+        [payload],
+      );
+      saved = result.rows[0];
+    } else {
+      const result = await pool.query(
+        "UPDATE commerce_game_catalog_settings SET revision=revision+1,payload=$2::jsonb,updated_by='admin',updated_at=NOW() WHERE setting_key='default' AND revision=$1 RETURNING revision,payload,updated_at",
+        [expectedRevision, payload],
+      );
+      saved = result.rows[0];
+    }
+    if (!saved) {
+      const current = await pool.query("SELECT revision FROM commerce_game_catalog_settings WHERE setting_key='default'");
+      return res.status(409).json({
+        error: "REVISION_CONFLICT",
+        revision: Number(current.rows[0]?.revision || 0),
+        message: "Настройки изменились в другой вкладке. Перезагрузите данные и повторите правки.",
+      });
+    }
+    return res.json({ revision: Number(saved.revision), updatedAt: saved.updated_at, config: saved.payload });
+  } catch (error) {
+    console.error("Admin game catalog save failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "GAME_CATALOG_SAVE_UNAVAILABLE" });
   }
 });
 
