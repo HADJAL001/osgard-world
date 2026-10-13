@@ -42,7 +42,42 @@ function draw(){ctx.save();if(game.shake>0)ctx.translate((visualRandom()-.5)*8,(
 if(daily.ghost&&daily.ghost.length){let nearest=null;for(let i=0;i<daily.ghost.length;i++){if(daily.ghost[i].d>=game.distance){nearest=daily.ghost[i];break}}if(nearest){ctx.globalAlpha=.22;ctx.fillStyle='#65eaff';ctx.fillRect(nearest.x,nearest.y,player.w,player.h);ctx.strokeStyle='#65eaff';ctx.strokeRect(nearest.x,nearest.y,player.w,player.h);ctx.globalAlpha=1}}
 game.obstacles.forEach(o=>{if(o.type==='laser'){ctx.shadowColor='#ff81c8';ctx.shadowBlur=18;ctx.fillStyle='#ff81c8';ctx.fillRect(o.x,o.y,o.w,o.h);ctx.fillStyle='#ffe0f4';ctx.fillRect(o.x,o.y+4,o.w,3);ctx.shadowBlur=0}else{ctx.shadowColor=o.type==='barrier'?'#b7a3ff':'#65eaff';ctx.shadowBlur=14;polygon([[o.x,o.y+o.h],[o.x+4,o.y+o.h/2],[o.x+o.w*.45,o.y],[o.x+o.w,o.y+o.h*.4],[o.x+o.w-3,o.y+o.h]],o.type==='barrier'?'#4c3d78':'#163b53',o.type==='barrier'?'#b7a3ff':'#65eaff');ctx.shadowBlur=0}});game.items.forEach(c=>{ctx.save();ctx.translate(c.x,c.y);ctx.rotate(c.phase);ctx.shadowColor='#65eaff';ctx.shadowBlur=20;polygon([[0,-10],[10,0],[0,10],[-10,0]],'#d7fbff','#65eaff');ctx.restore()});ctx.save();ctx.translate(player.x,player.y);ctx.globalAlpha=game.invincible>0&&Math.sin(game.elapsed*90)>0?.45:1;ctx.shadowColor=game.dash>0?'#b7a3ff':shardCosmeticUnlocked?'#ffc86a':'#65eaff';ctx.shadowBlur=game.dash>0?36:shardCosmeticUnlocked?27:17;polygon([[3,player.h],[0,player.h-22],[6,player.h-39],[17,player.h-54],[28,player.h-42],[player.w,player.h-19],[player.w-5,player.h]],game.dash>0?'#e9ddff':shardCosmeticUnlocked?'#ffe6a8':'#7cecff',game.dash>0?'#fff':shardCosmeticUnlocked?'#ffc86a':'#d2fbff');ctx.shadowBlur=0;ctx.fillStyle='#181b44';ctx.fillRect(7,player.h-35,19,13);ctx.fillStyle='#d8faff';ctx.fillRect(12,player.h-31,12,3);ctx.fillStyle=shardCosmeticUnlocked?'#ffc86a':'#b7a3ff';ctx.fillRect(3,player.h-5,28,4);ctx.globalAlpha=1;ctx.restore();game.particles.forEach(p=>{ctx.globalAlpha=Math.max(0,p.life/p.max);ctx.fillStyle=p.color;ctx.fillRect(p.x,p.y,p.r,p.r)});ctx.globalAlpha=1;if(!game.running){ctx.fillStyle='#05071196';ctx.fillRect(0,0,W,H);ctx.textAlign='center';ctx.fillStyle='#f4f1ff';ctx.font='700 31px system-ui';ctx.fillText(game.ended?'SIGNAL LOST':'AFTERIMAGE PROTOCOL',W/2,250);ctx.fillStyle='#b7a3ff';ctx.font='14px system-ui';ctx.fillText(game.ended?'Результат '+game.score+' · '+game.shards+' сигнал-осколков':'Жми «Начать забег», затем прыгай через препятствия',W/2,286);ctx.fillStyle='#8382aa';ctx.font='11px monospace';ctx.fillText('SPACE / ↑ / TAP = JUMP · SHIFT = PHASE DASH',W/2,316)}else if(game.paused){ctx.fillStyle='#050711bb';ctx.fillRect(0,0,W,H);ctx.textAlign='center';ctx.fillStyle='#f4f1ff';ctx.font='700 32px system-ui';ctx.fillText('PAUSED',W/2,280)}ctx.restore()}
 function loop(now){if(!game.running||game.paused)return;const dt=Math.min(.032,(now-(game.last||now))/1000);game.last=now;tick(dt);draw();if(game.running)requestAnimationFrame(loop)}
-function challenge(){const score=Math.max(0,Math.min(99999999,Math.floor(Number(game.score||daily.best||0))));const u=new URL('/games/invite/afterimage-run/',location.origin);u.searchParams.set('og_challenge','afterimage-run');u.searchParams.set('challenge',String(score));u.searchParams.set('day',day);u.searchParams.set('mode','daily');let code='';try{code=localStorage.getItem('osgard.games.invite-code.v1')||''}catch{}if(/^og_[a-f0-9]{8}$/.test(code)){u.searchParams.set('og_ref',code);u.searchParams.set('og_game','afterimage-run');u.searchParams.set('utm_source','osgard_play');u.searchParams.set('utm_medium','referral');u.searchParams.set('utm_campaign','play_with_friends');u.searchParams.set('utm_content','afterimage-run')}track('challenge_created',{score:score,targetScore:targetScore,challengeSeed:day,sharePreview:'rich-invite'});return u.href}
+function challenge(){
+ const score=Math.max(0,Math.min(99999999,Math.floor(Number(game.score||daily.best||0))));
+ let u=null;
+ try{
+  const inviteHost=window.parent!==window?window.parent:window;
+  const candidate=inviteHost.OSGARDInvite?.createLink?.('afterimage-run');
+  if(candidate){
+   const parsed=new URL(candidate,location.origin);
+   if(parsed.origin===location.origin&&parsed.pathname==='/games/invite/afterimage-run/'&&parsed.searchParams.get('og_game')==='afterimage-run'&&/^og_[a-f0-9]{8}$/.test(parsed.searchParams.get('og_ref')||''))u=parsed;
+  }
+ }catch{}
+ if(!u){
+  u=new URL('/games/invite/afterimage-run/',location.origin);
+  let code='';
+  try{code=localStorage.getItem('osgard.games.invite-code.v1')||''}catch{}
+  if(!/^og_[a-f0-9]{8}$/.test(code)){
+   const bytes=new Uint8Array(4);
+   if(globalThis.crypto?.getRandomValues)globalThis.crypto.getRandomValues(bytes);
+   else for(let i=0;i<bytes.length;i++)bytes[i]=Math.floor(Math.random()*256);
+   code='og_'+Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
+   try{localStorage.setItem('osgard.games.invite-code.v1',code)}catch{}
+  }
+  u.searchParams.set('og_ref',code);
+  u.searchParams.set('og_game','afterimage-run');
+  u.searchParams.set('utm_source','osgard_play');
+  u.searchParams.set('utm_medium','referral');
+  u.searchParams.set('utm_campaign','play_with_friends');
+  u.searchParams.set('utm_content','afterimage-run');
+ }
+ u.searchParams.set('og_challenge','afterimage-run');
+ u.searchParams.set('challenge',String(score));
+ u.searchParams.set('day',day);
+ u.searchParams.set('mode','daily');
+ track('challenge_created',{score:score,targetScore:targetScore,challengeSeed:day,sharePreview:'rich-invite'});
+ return u.href;
+}
 async function copy(text){try{if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(text);return true}}catch{}const t=document.createElement('textarea');t.value=text;t.style.position='fixed';t.style.opacity='0';document.body.append(t);t.select();const ok=document.execCommand('copy');t.remove();return ok}
 let pendingRewardMethod='';
 function prepareShareReward(method){
