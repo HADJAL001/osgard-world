@@ -13,7 +13,7 @@ export type OsgardEventName =
   | 'mobility_route_requested'
   | 'profile_opened'
   | 'share_created'
-  | 'referral_landing'
+  | 'referral_session_started'
 
 export interface OsgardEvent<TPayload extends Record<string, unknown> = Record<string, unknown>> {
   id: string
