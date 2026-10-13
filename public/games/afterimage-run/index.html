@@ -73,8 +73,11 @@ function rewardShare(method){
  $('claim-share-reward').hidden=true;
  $('reward-title').textContent='✦ SIGNAL SHARD ПОЛУЧЕНА';
  shardCosmeticUnlocked=true;$('reward-status').textContent='Золотой голографический след разблокирован на этом устройстве. Он не меняет скорость или счёт. Публичная публикация поста не проверяется.';
- track('share_created',{method:method,reward:'signal-shard',rewardConfirmedByPlayer:true});
- life('share_created',{shareMethod:method==='web-share'?'web-share':'social-share',rewardConfirmedByPlayer:true});
+ const rawMethod=String(method||'social-share');
+ const shareMethod=rawMethod.includes('web-share')?'web-share':rawMethod.includes('telegram')?'telegram':rawMethod.includes('facebook')?'facebook':rawMethod.includes('whatsapp')?'whatsapp':rawMethod.includes('vk')?'vk':rawMethod.includes('share-intent-x')?'x':'social-share';
+ const shareScore=Math.max(0,Math.min(99999999,Math.floor(Number(game.score||daily.best||0))));
+ track('share_created',{method:shareMethod,reward:'signal-shard',rewardConfirmedByPlayer:true,challengeScore:shareScore,challengeSeed:day});
+ life('share_created',{shareMethod:shareMethod,rewardConfirmedByPlayer:true,challengeScore:shareScore,challengeSeed:day});
  toast('SIGNAL SHARD получена — золотой след разблокирован.');
  return true;
 }
