@@ -439,7 +439,7 @@ function servicesShelf(gameId,showPromos,completedCount){
      if(card.__osgardImpressionTimer)return;
      card.__osgardImpressionTimer=setTimeout(()=>{
       delete card.__osgardImpressionTimer;
-      if(!hasConsent()||!card.isConnected||card.hidden||!card.getClientRects().length)return;
+      if(!consented()||!card.isConnected||card.hidden||!card.getClientRects().length)return;
       observed.add(card);
       sendEvent('owned_promo_impression',gameId,'osgard-select:impression:'+card.dataset.service);
       observer.unobserve(card);
