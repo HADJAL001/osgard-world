@@ -130,7 +130,7 @@ const limited = await checkProject(
   { fetchImpl: async url => {
     const host = new URL(url).hostname
     redirectHop += 1
-    const n = host === 'hops.example' ? 0 : Number(host.match(/^hop(\\d+)\\.hops\\.example$/)?.[1] || 0)
+    const n = host === 'hops.example' ? 0 : Number(host.startsWith('hop') ? host.slice(3).split('.')[0] : 0)
     return redirectResponse(302, 'https://hop' + (n + 1) + '.hops.example/')
   }, now: fixedNow },
 )
