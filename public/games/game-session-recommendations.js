@@ -257,7 +257,7 @@ const services=[
  ['superday','04','SUPERDAY','MAP / DAILY PLANNING','Умная карта и планировщик дня','https://superday.run/'],
  ['myosa','06','MYOSA','AI PLATFORM','Платформа искусственного интеллекта','https://myosa.world/'],
  ['gold-glamour','07','GOLD GLAMOUR','LUXURY SERVICES','Премиальные услуги с золотом и выездным обслуживанием','https://gold-glamour.online/'],
- ['gardvpn','08','GARD VPN','PRIVACY / VPN','VPN-сервис. Проверь актуальные возможности и условия на официальном сайте','https://gardvpn.is/',false,true],
+ ['gardvpn','08','GARD VPN','PRIVACY / VPN','Промо временно отключено, пока доступность сервиса не подтверждена','https://gardvpn.is/',false,false],
  ['osgard-business','09','OSGARD BUSINESS','BUSINESS INTELLIGENCE','Диагностика бизнеса, развитие и рекомендации по росту','https://osgardos.com/'],
  ['vanguard','10','OSGARD VANGUARD','VIDEO STUDIO','Создание видео и визуальных проектов','https://osgardvanguard.studio/']
 ];
