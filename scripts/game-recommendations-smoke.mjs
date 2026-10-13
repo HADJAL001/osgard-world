@@ -44,8 +44,8 @@ assert.deepEqual(getRelatedGames({ id: 'not-in-list', category: 'creative' }, ga
 assert.deepEqual(getRelatedGames(find('time'), games, { favorites: 'not-an-array', recent: null }).map(x => x.game.id),
   getRelatedGames(find('time'), games).map(x => x.game.id), 'malformed preferences must be ignored safely');
 
-const duplicateGames = [...games, { id: 'swarm', category: 'coop' }];
-assert.equal(getRelatedGames(find('time'), duplicateGames).filter(x => x.game.id === 'swarm').length, 1,
+const duplicateGames = [...games, { id: 'civic-cascade', category: 'strategy' }];
+assert.equal(getRelatedGames(find('time'), duplicateGames).filter(x => x.game.id === 'civic-cascade').length, 1,
   'duplicate IDs must not produce duplicate cards');
 
 console.log('PASS OSGARD contextual game discovery: curated relevance, favorites, recent history, bounded output and malformed preferences.');
