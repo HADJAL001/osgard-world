@@ -13,6 +13,8 @@ const playSelectSource = readFileSync(resolve('src/PlaySelectLoop.tsx'),'utf8')
 const appStyles = readFileSync(resolve('src/styles.css'),'utf8')
 const root=resolve('public/games')
 execFileSync(process.execPath,[resolve('scripts/generate-games-share-cards.mjs')],{stdio:'ignore'})
+const shareCardGenerator=readFileSync(resolve('scripts/generate-games-share-cards.mjs'),'utf8')
+assert.ok(shareCardGenerator.includes("id: 'afterimage-run'")&&shareCardGenerator.includes("order: '10 / 10'")&&shareCardGenerator.includes('10 WORLDS / ONE HUB'),'Share-card/invitation generator must include AFTERIMAGE//RUN')
 const html=readFileSync(resolve(root,'index.html'),'utf8')
 const catalogCards=[...html.matchAll(/<article\b[^>]*\bdata-game="([^"]+)"[^>]*\bdata-genres="([^"]+)"[^>]*>/g)].map(match=>({id:match[1],genres:match[2].trim().split(/\s+/).filter(Boolean)}))
 const deployWorkflow=readFileSync(resolve('.github/workflows/deploy-frontend.yml'),'utf8')
@@ -49,6 +51,7 @@ assert.ok(catalogInvitePage.includes('property="og:title" content="OSGARD PLAY �
 assert.ok(catalogInviteCard.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])),'Generic catalogue share card must be a PNG')
 
 const lifecycle=readFileSync(resolve(root,'player-lifecycle.js'),'utf8')
+const consentedAnalytics=readFileSync(resolve(root,'consented-analytics.js'),'utf8')
 const recommendationScript=readFileSync(resolve(root,'game-session-recommendations.js'),'utf8')
 const recommendationStyles=readFileSync(resolve(root,'game-session-recommendations.css'),'utf8')
 const dailyCircuitScript=readFileSync(resolve(root,'daily-circuit.js'),'utf8')
@@ -116,12 +119,17 @@ const cascadeGame=readFileSync(resolve(root,'cascade-lab/index.html'),'utf8')
 const afterimageGame=readFileSync(resolve(root,'afterimage-run/index.html'),'utf8')
 assert.ok(afterimageGame.includes('<title>AFTERIMAGE//RUN — OSGARD PLAY</title>')&&afterimageGame.includes('id="runnerCanvas"')&&afterimageGame.includes('id="run-start"')&&afterimageGame.includes('id="daily-seed"')&&afterimageGame.includes('id="share-telegram"')&&afterimageGame.includes('id="record-progress"'),'AFTERIMAGE//RUN interactive/share contract missing')
 assert.ok(!/<script[^>]+src=/i.test(afterimageGame)&&!/<link[^>]+href=["']https?:/i.test(afterimageGame),'AFTERIMAGE//RUN must remain self-contained')
+assert.ok(afterimageGame.includes("extra||{}),location.origin)")&&!afterimageGame.includes("extra||{}),'*')"),'AFTERIMAGE lifecycle messages must stay same-origin')
 assert.ok(afterimageGame.includes('incomingSeed=params.get(\'seed\')')&&afterimageGame.includes('Number.isFinite(rawTarget)')&&afterimageGame.includes('if(r[today])'),'AFTERIMAGE challenge/reward safety checks missing')
 assert.ok(afterimageGame.includes("opened.opener=null")&&afterimageGame.includes("share-intent-'+kind"),'Social share must detach opener and only reward after the share flow opens')
 assert.ok(afterimageGame.includes('SIGNAL SHARD')&&afterimageGame.includes('Публичная публикация поста не проверяется'),'Share reward copy must not claim that a public post was verified')
 const afterimageInline=[...afterimageGame.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]).filter(s=>s.trim())
 assert.equal(afterimageInline.length,1,'AFTERIMAGE should have one inline game script')
 new Function(afterimageInline[0])
+assert.ok(afterimageGame.includes('isValidSeedDay')&&afterimageGame.includes('isValidSeedDay?incomingSeed:today'),'AFTERIMAGE must reject impossible calendar dates in challenge links')
+assert.ok(afterimageGame.includes("reset();life('ready')")&&afterimageGame.includes("life('share_created',{shareMethod:method")&&afterimageGame.includes("life('paused')")&&afterimageGame.includes("life('resumed')"),'AFTERIMAGE must use the player-host lifecycle protocol')
+assert.ok(afterimageGame.includes("track('game_session_completed'")&&afterimageGame.includes("track('result_card_exported'"),'AFTERIMAGE analytics must use registered platform event names')
+assert.ok(!/track\('(game_completed|phase_dash_used|signal_shard_collected|run_restarted)'/.test(afterimageGame),'AFTERIMAGE must not emit unregistered analytics event names')
 const patina=readFileSync(resolve(root,'patina/index.html'),'utf8')
 const signalRun=readFileSync(resolve(root,'signal-run/index.html'),'utf8')
 const signalJs=readFileSync(resolve(root,'signal-run/game.js'),'utf8')
@@ -149,7 +157,7 @@ assert.ok(appStyles.includes('.play-quick-picks{display:grid;grid-template-colum
 assert.ok(appStyles.includes('.play-quick-link:focus-visible')&&appStyles.includes('@media(prefers-reduced-motion:reduce){.play-quick-link'),'Quick-launch links must retain keyboard focus and reduced-motion support')
 assert.ok(html.includes('<title>OSGARD WORLD GAMING — Игровая платформа</title>')&&html.includes('og:title" content="OSGARD WORLD GAMING — игровые миры')&&html.includes('"name":"OSGARD WORLD GAMING"'),'Gaming hub identity must be consistent in title, social metadata and structured data')
 assert.ok(html.includes('OSGARD WORLD GAMING <span>/</span> DIGITAL WORLDS')&&html.includes('быстрый возврат к недавним сессиям'),'Gaming hub hero must describe the branded portal and its actual navigation features')
-for(const path of ['public/games/index.html','public/games/favicon.svg','public/games/player-lifecycle.js','public/games/game-session-recommendations.js','public/games/game-session-recommendations.css','public/games/admin/index.html','public/games/admin/partners/index.html','public/games/civic-cascade/index.html','public/games/patina/index.html','public/games/signal-run/index.html','public/games/signal-run/game.js','public/games/signal-run/daily.js','public/games/cascade-lab/index.html','public/games/afterimage-run/index.html','public/privacy/index.html','public/terms/index.html']) assert.ok(existsSync(resolve(path)),'Missing file: '+path)
+for(const path of ['public/games/index.html','public/games/favicon.svg','public/games/player-lifecycle.js','public/games/consented-analytics.js','public/games/game-session-recommendations.js','public/games/game-session-recommendations.css','public/games/admin/index.html','public/games/admin/partners/index.html','public/games/civic-cascade/index.html','public/games/patina/index.html','public/games/signal-run/index.html','public/games/signal-run/game.js','public/games/signal-run/daily.js','public/games/cascade-lab/index.html','public/privacy/index.html','public/terms/index.html']) assert.ok(existsSync(resolve(path)),'Missing file: '+path)
 for(const path of ['scripts/games-lighthouse-report.mjs','.github/workflows/games-lighthouse.yml']) assert.ok(existsSync(resolve(path)),'Missing games performance monitoring file: '+path)
 const lighthouseScript=readFileSync(resolve('scripts/games-lighthouse-report.mjs'),'utf8')
 const lighthouseWorkflow=readFileSync(resolve('.github/workflows/games-lighthouse.yml'),'utf8')
@@ -158,6 +166,10 @@ assert.ok(lighthouseWorkflow.includes('workflow_run')&&lighthouseWorkflow.includ
 assert.ok(html.includes('<meta name="osgard-build" content="__OSGARD_BUILD_VERSION__">'),'Games hub must carry a release marker that is stamped at packaging time')
 assert.ok(!html.includes('<link rel="stylesheet" href="/games/game-session-recommendations.css?v=__OSGARD_BUILD_VERSION__">'),'Recommendation CSS must not block the initial catalogue render')
 assert.ok(!html.includes('<script src="./player-lifecycle.js?v=__OSGARD_BUILD_VERSION__" defer>')&&!html.includes('<script src="./game-session-recommendations.js?v=__OSGARD_BUILD_VERSION__" defer>'),'Gameplay lifecycle and referral modules must not be eagerly downloaded on the landing view')
+assert.ok(html.includes('src="/games/consented-analytics.js?v=__OSGARD_BUILD_VERSION__"'), 'Consent-gated delivery queue must be loaded for the hub.');
+assert.ok(html.indexOf('src="/games/consented-analytics.js') < html.indexOf('src="/games/commerce-client.js"'), 'Shared analytics queue must load before the commerce client.');
+new Function(consentedAnalytics);
+for(const marker of ['window.OSGARD_CONSENTED_ANALYTICS','MAX_PENDING = 100','MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000','if (!consentGranted())','clearQueue()','result?.accepted']) assert.ok(consentedAnalytics.includes(marker), 'Consent queue contract missing: '+marker);
 const lazyRuntimeMatch=html.match(/<script id="games-lazy-runtime">([\s\S]*?)<\/script>/)
 assert.ok(lazyRuntimeMatch,'The Games hub must provide the on-demand runtime loader')
 const lazyRuntime=lazyRuntimeMatch[1]
@@ -244,15 +256,12 @@ assert.ok(sitemap.includes('<loc>https://osgard.world/games/civic-cascade/</loc>
 assert.ok(manifest.includes("'afterimage-run'")&&manifest.includes("title: 'AFTERIMAGE//RUN'")&&manifest.includes("href: '/games/afterimage-run/'"),'AFTERIMAGE must be registered in core manifest')
 assert.ok(sitemap.includes('<loc>https://osgard.world/games/afterimage-run/</loc>'),'AFTERIMAGE must be present in the XML sitemap')
 assert.ok(lifecycle.includes("'afterimage-run':{title:'AFTERIMAGE//RUN',url:'/games/afterimage-run/'}")&&lifecycle.includes("if(id==='afterimage-run')return !!doc.querySelector('#runnerCanvas')&&!!doc.querySelector('#run-start')&&!!doc.querySelector('#daily-seed')"),'AFTERIMAGE must participate in player lifecycle readiness')
-assert.ok(manifest.includes("'afterimage-run'")&&manifest.includes("title: 'AFTERIMAGE//RUN'")&&manifest.includes("href: '/games/afterimage-run/'"),'AFTERIMAGE must be registered in the typed manifest')
-assert.ok(sitemap.includes('<loc>https://osgard.world/games/afterimage-run/</loc>'),'AFTERIMAGE must be present in the XML sitemap')
-assert.ok(lifecycle.includes("'afterimage-run':{title:'AFTERIMAGE//RUN',url:'/games/afterimage-run/'}")&&lifecycle.includes("if(id==='afterimage-run')return !!doc.querySelector('#runnerCanvas')&&!!doc.querySelector('#run-start')&&!!doc.querySelector('#daily-seed')"),'AFTERIMAGE must participate in player lifecycle readiness')
 const recommendations=readFileSync(resolve(root,'game-session-recommendations.js'),'utf8')
 assert.ok(recommendations.includes("'afterimage-run':{title:'AFTERIMAGE//RUN',subtitle:'Ежедневный sci-fi speedrun',href:'/games/afterimage-run/'}")&&recommendations.includes("'afterimage-run':['signal-run','cascade-lab']")&&recommendations.includes("'afterimage-run':'AFTERIMAGE//RUN'"),'AFTERIMAGE must participate in postgame recommendations, referral share, and OSGARD SELECT')
-assert.ok(recommendations.includes('osgard-aftergame-intermission')&&recommendations.includes('aftergame-frequency')&&recommendations.includes('Продолжить игру'),'The existing optional between-game OSGARD SELECT must remain available and user-configurable')
+assert.ok(recommendations.includes('osgard-aftergame-intermission')&&recommendations.includes('og-postgame-preferences')&&recommendations.includes('Настроить показ')&&recommendations.includes('Автозапуска нет.'),'The existing optional between-game OSGARD SELECT must remain available, user-configurable and must not autoplay')
 assert.ok(recommendations.includes("const frequencyValues=['each','every3','off']")&&recommendations.includes("const fallback={frequency:'each',selected:availableServiceIds.slice()}"),'OSGARD SELECT should default to every game and allow frequency preferences')
 for(const domain of ['marcosa.club','osgardbewworld.com','o2system.art','senjorio.com','superday.run','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio']) assert.ok(recommendations.includes(domain),'Owned-service intermission missing '+domain)
-assert.ok(recommendations.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN'")&&!recommendations.includes('Временно не включён в промо-переходы'),'GARD VPN should be included after its endpoint was verified')
+assert.ok(recommendations.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN'")&&recommendations.includes('Временно не включён в промо-переходы')&&recommendations.includes("services.filter(item=>item[7]!==false)"),'GARD VPN must stay excluded from selectable promos until its availability is confirmed')
 assert.ok(civic.includes('id="cc-game-root"')&&civic.includes('id="cc-map"')&&civic.includes('id="cc-status"'),'CIVIC CASCADE playable entry point or diagnostics are missing')
 for(const action of ['data-action="pump"','data-action="grid"','data-action="route"','data-action="repair"'])assert.ok(civic.includes(action),'CIVIC CASCADE tactical action missing: '+action)
 for(const feature of ['function riskValue()','function objectiveState()','function checkFinish()','function sendLifecycle(status)','requestAnimationFrame(frame)','prefers-reduced-motion:reduce'])assert.ok(civic.includes(feature),'CIVIC CASCADE simulation feature missing: '+feature)
@@ -261,7 +270,7 @@ const civicInline=(civic.match(/<script>([\s\S]*?)<\/script>/)||[])[1]
 assert.ok(civicInline&&civicInline.length>5000,'CIVIC CASCADE self-contained game script missing')
 new Function(civicInline)
 assert.ok(lifecycle.includes("'signal-run':{title:'SIGNAL RUN',url:'/games/signal-run/'}"), 'Player lifecycle registry must include SIGNAL RUN')
-assert.ok(luxury.includes("const validIds = new Set(['null-shift', 'time', 'swarm', 'inherit', 'remix', 'civic-cascade', 'patina', 'signal-run', 'cascade-lab'])"), 'Recent history and Resume registry must include all nine current games, including CASCADE LAB')
+assert.ok(luxury.includes("const validIds = new Set(['null-shift', 'time', 'swarm', 'inherit', 'remix', 'civic-cascade', 'patina', 'signal-run', 'cascade-lab', 'afterimage-run'])"), 'Recent history and Resume registry must include all ten current games, including AFTERIMAGE//RUN')
 assert.ok(lifecycle.includes("if(id==='signal-run')return !!doc.querySelector('#arena')&&!!doc.querySelector('#start')"), 'Player lifecycle must detect SIGNAL RUN readiness')
 assert.ok(lifecycle.includes("!['ready','started','paused','resumed','share_created','error','completed'].includes(m.state)"), 'Player lifecycle must accept ready, pause/resume, share_created and terminal states')
 assert.ok(lifecycle.includes("activeGame==='null-shift'") && lifecycle.includes("return 'referral:'+code+':null-shift'") && lifecycle.includes("function shareReferralCode(payload)") && lifecycle.includes("source=name==='share_created'?(shareCode?'game-invite:'+activeGame+':'+shareCode:'game-invite:'+activeGame):analyticsSource()"), 'NULL SHIFT daily challenge invites must retain referral source and count confirmed share actions')
@@ -392,7 +401,10 @@ assert.equal(mockClasses.has('has-recommendations'),true,'The player layout shou
 const mockGrid=mockHost.children.find(node=>node.className==='post-run-grid');
 const mockSuite=mockHost.children.find(node=>node.className==='og-postgame-suite');
 assert.ok(mockSuite,'Post-run service/reward suite should appear after each valid completion');
-assert.equal(mockSuite.children[0].children.find(node=>node.className==='og-postgame-service-grid').children.length,10,'Post-run intermission should list all ten services');
+assert.equal(mockSuite.children[0].children.find(node=>node.className==='og-postgame-service-grid').children.length,9,'Post-run intermission should list only the nine available, opted-in service links');
+const initialSpotlight=mockSuite.children[0].children.find(node=>node.className==='og-postgame-service-grid').children.find(node=>node.className.includes('is-featured'));
+assert.equal(initialSpotlight?.dataset.service,'marcosa','The first available service should lead the first post-game spotlight');
+assert.ok(mockSuite.children[0].children.find(node=>node.className==='og-postgame-service-grid').children.every(node=>node.dataset.service!=='gardvpn'),'Unavailable GARD VPN must not appear as a promo card');
 const postGameServiceShelf=mockSuite.children[0];
 const postGamePreferences=postGameServiceShelf.children.find(node=>node.className==='og-postgame-preferences');
 const postGameServiceOptions=postGamePreferences?.children.find(node=>node.className==='og-postgame-service-options');
@@ -408,8 +420,23 @@ assert.equal(frequencyField.children[0].value,'each','Service intermission is en
 assert.ok(mockSuite.children[1]&&mockSuite.children[1].className==='og-postgame-reward','Social-share reward must remain available with or without promotions')
 
 const servicesSection=mockSuite.children.find(node=>node.className==='og-postgame-services')
+const spotlight=servicesSection.children.find(node=>node.className==='og-postgame-spotlight')
+assert.ok(spotlight&&!spotlight.hidden,'A premium OSGARD SELECT spotlight should appear between game rounds')
+assert.equal(spotlight.dataset.service,'marcosa','SWARM should highlight contextually relevant MARCOSA by default')
+assert.ok(spotlight.children.some(node=>node.className==='og-postgame-spotlight-copy'),'Spotlight needs an editorial service description and action controls')
 const serviceFilters=servicesSection.children.find(node=>node.className==='og-postgame-service-filters')
-const serviceCards=servicesSection.children.find(node=>node.className==='og-postgame-service-grid').children
+assert.equal(serviceFilters.children[0].textContent,'Все доступные · 9','The all-services filter count must exclude the unavailable GARD VPN card')
+const serviceGrid=servicesSection.children.find(node=>node.className==='og-postgame-service-grid')
+const serviceCards=serviceGrid.children
+assert.equal(serviceGrid.hidden,true,'The full service directory should be collapsed under the spotlight by default')
+assert.equal(serviceFilters.hidden,true,'Category filters should stay collapsed until the directory is opened')
+const serviceHead=servicesSection.children.find(node=>node.className==='og-postgame-service-head')
+const headActions=serviceHead.children.find(node=>node.className==='og-postgame-service-head-actions')
+const serviceDirectoryToggle=headActions.children.find(node=>node.className.includes('og-postgame-collapse-toggle'))
+assert.ok(serviceDirectoryToggle&&!serviceDirectoryToggle.hidden,'The player must be able to open the full owned-service directory')
+serviceDirectoryToggle.click()
+assert.equal(serviceGrid.hidden,false,'The service directory toggle should reveal all active service cards')
+assert.equal(serviceFilters.hidden,false,'Opening the directory should reveal category filters');
 assert.equal(serviceFilters.children.length,7,'The luxury intermission should offer explicit categories for all ten service choices')
 const socialFilter=serviceFilters.children.find(node=>node.dataset.osgardServiceFilter==='social')
 socialFilter.click()
@@ -419,6 +446,15 @@ assert.equal(serviceCards.find(node=>node.dataset.service==='marcosa').hidden,fa
 assert.ok(serviceCards.filter(node=>node.dataset.category!=='social').every(node=>node.hidden),'Non-selected service categories should be hidden')
 serviceFilters.children.find(node=>node.dataset.osgardServiceFilter==='all').click()
 assert.ok(serviceCards.every(node=>!node.hidden),'All services should return when the all-category filter is selected')
+const decisionBar=servicesSection.children.find(node=>node.className==='og-postgame-service-decision');
+assert.ok(decisionBar,'A clear skip control should be available in the intermission');
+const skipOffer=decisionBar.children.find(node=>node.className==='og-postgame-skip');
+skipOffer.click();
+assert.equal(spotlight.hidden,true,'Skip should hide the premium spotlight too')
+assert.equal(servicesSection.children.find(node=>node.className==='og-postgame-service-grid').hidden,true,'Skip should hide promo cards without blocking share rewards');
+assert.equal(servicesSection.children.find(node=>node.className==='og-postgame-service-filters').hidden,true,'Skip should hide service categories together with promo cards');
+assert.equal(decisionBar.children.find(node=>node.className==='og-postgame-skip-status').hidden,false,'Skip should provide accessible feedback');
+assert.ok(recommendationScript.includes("'owned_promo_intermission_skipped'")&&recommendationScript.includes("'owned_promo_preferences_saved'"),'Promotion control events should be consent-gated and allowlisted');
 assert.ok(recommendationScript.includes('Выбери категорию и сервис, который хочешь посмотреть. Автозапуска нет'),'Service promotion must remain user-selected and must not autoplay')
 const rewardSection=mockSuite.children.find(node=>node.className==='og-postgame-reward')
 const socialGrid=rewardSection.children.find(node=>node.className==='og-postgame-networks')
@@ -441,8 +477,10 @@ mockDocument.dispatch('osgard:game-session-ended',{detail:{game:'patina',reason:
 assert.equal(mockOutside.hidden,false,'Closing a live PATINA session should show the owned-service intermission outside the player dialog')
 const outsideSuite=mockOutside.children.find(node=>node.className==='og-postgame-suite og-postgame-outside-suite')
 assert.ok(outsideSuite,'Closed-session intermission should contain a standalone service/reward suite')
-assert.equal(outsideSuite.children.find(node=>node.className==='og-postgame-services').children.find(node=>node.className==='og-postgame-service-grid').children.length,10,'Closed-session intermission must preserve all ten owned service choices')
-assert.equal(outsideSuite.children.find(node=>node.className==='og-postgame-back').href,'#catalog','Players must have a clear path back to the next game')
+assert.equal(outsideSuite.children.find(node=>node.className==='og-postgame-services').children.find(node=>node.className==='og-postgame-service-grid').children.length,9,'Closed-session intermission should only show available selected services')
+assert.equal(outsideSuite.children.find(node=>node.className==='og-postgame-back').href,'#catalog','Players must have a clear path back to the next game');
+const outsideCards=outsideSuite.children.find(node=>node.className==='og-postgame-services').children.find(node=>node.className==='og-postgame-service-grid').children;
+assert.equal(outsideCards.find(node=>node.className.includes('is-featured'))?.dataset.service,'projects','The post-game spotlight should rotate on the next distinct game session');
 mockDocument.dispatch('osgard:game-launching')
 assert.equal(mockOutside.hidden,true,'Starting the next game must dismiss the standalone intermission')
 assert.equal(mockOutside.children.length,0,'Starting the next game must clear stale promoted-service cards')
@@ -468,6 +506,14 @@ assert.ok(signalJs.includes("life('completed'"),'SIGNAL RUN must emit completion
 assert.ok(signalRun.includes('id="shards"')&&signalRun.includes('OSGARD SHARDS')&&signalRun.includes('публикацию в соцсети')&&signalRun.includes('не имеют денежной стоимости'),'SIGNAL RUN must disclose the local SHARDS wallet and social-share verification limits');
 assert.ok(signalJs.includes("SHARDS_KEY='osgard.games.shards-wallet.v1'")&&signalJs.includes('function awardShareShards')&&signalJs.includes('event.key===SHARDS_KEY'),'SIGNAL RUN must use the same local SHARDS wallet as the postgame reward panel');
 assert.ok(signalJs.includes("bonus.ok?' · +50 SHARDS'")&&signalJs.includes('current.day===day'),'SIGNAL RUN must show the +50 local invitation reward and prevent duplicate grants within one UTC day');
+assert.ok(signalRun.includes('id="claim-share-reward"')&&signalRun.includes('Копирование ссылки само по себе не даёт награду'),'SIGNAL RUN must offer an explicit share-reward confirmation and disclose that copying does not earn a reward');
+const signalShareStart=signalJs.indexOf("$('share').addEventListener('click',async()=>{");
+const signalShareEnd=signalJs.indexOf("});document.addEventListener('keydown'",signalShareStart);
+assert.ok(signalShareStart>=0&&signalShareEnd>signalShareStart,'SIGNAL RUN share handler boundaries are required');
+const signalShareHandler=signalJs.slice(signalShareStart,signalShareEnd);
+assert.ok(!signalShareHandler.includes('awardShareShards(method)')&&signalShareHandler.includes("method==='clipboard'")&&signalShareHandler.includes('pendingShareReward=method'),'SIGNAL RUN must not auto-award for opening a share sheet or copying');
+assert.ok(signalJs.includes("claimShare.addEventListener('click'")&&signalJs.includes("awardShareShards('user-confirmed:'+method)"),'SIGNAL RUN reward must be granted only after an explicit user confirmation');
+new Function(signalJs);
 
 assert.ok(cascadeGame.includes("notifyOsgardLifecycle('completed'"),'CASCADE LAB must emit completion after a passed level')
 
@@ -493,7 +539,8 @@ for (const slug of ['time','swarm','null-shift','inherit','remix','signal-run','
 assert.ok(html.includes('href="/games/monetization/"'), 'Economics planner link missing')
 console.log('PASS OSGARD GAMES HUB: ten actual game routes, search/filters, local favorites/history, embedded player/fullscreen/share, consent-gated authenticated analytics, cross-promotion, contact form, SEO, mobile/reduced-motion styling and legal documents.')
 assert.ok(html.includes('href="/games/cascade-lab/" data-play="cascade-lab"') && html.includes('data-favorite="cascade-lab"') && html.includes('href="/game/cascade-lab"'), 'CASCADE LAB must use catalogue play, favourites and detail route')
-assert.ok(cascadeGame.includes('<title>CASCADE LAB — Premium Physics Lab 0.13.0</title>') && cascadeGame.includes('name="osgard-game-version" content="0.13.0-osgard-cross-promo"') && cascadeGame.includes('data-cascade-lab-ready="true"') && cascadeGame.includes("notifyOsgardLifecycle('ready'") && cascadeGame.includes("notifyOsgardLifecycle('started'") && cascadeGame.includes("notifyOsgardLifecycle('paused'") && cascadeGame.includes("notifyOsgardLifecycle('resumed'") && cascadeGame.includes("notifyOsgardLifecycle('completed'"), 'CASCADE LAB lifecycle contract missing')
+// Assert the actual release marker of the current production-bound CASCADE LAB browser prototype.
+assert.ok(cascadeGame.includes('<title>CASCADE LAB — Premium Physics Lab 0.13.0</title>') && cascadeGame.includes('name="osgard-game-version" content="0.13.0-osgard-cross-promo"') && cascadeGame.includes('data-cascade-lab-ready="true"') && cascadeGame.includes("notifyOsgardLifecycle('ready'") && cascadeGame.includes("notifyOsgardLifecycle('started'") && cascadeGame.includes("notifyOsgardLifecycle('paused'") && cascadeGame.includes("notifyOsgardLifecycle('resumed'") && cascadeGame.includes("notifyOsgardLifecycle('completed'"), 'CASCADE LAB lifecycle contract or shipped version metadata mismatch')
 assert.ok(lifecycle.includes("'cascade-lab':{title:'CASCADE LAB',url:'/games/cascade-lab/'}") && lifecycle.includes("if(id==='cascade-lab')return doc.body.dataset.cascadeLabReady==='true'"), 'Game modal must register CASCADE LAB readiness')
 assert.ok(manifest.includes("'cascade-lab'") && manifest.includes("title: 'CASCADE LAB'") && sitemap.includes('<loc>https://osgard.world/games/cascade-lab/</loc>'), 'CASCADE LAB must be present in manifest and sitemap')
 
@@ -595,6 +642,10 @@ assert.ok(recommendationScript.includes("sendEvent('cross_promo_clicked',gameId,
 const postGameIds=['marcosa','projects','o2-system','senjorio','superday','myosa','gold-glamour','gardvpn','osgard-business','vanguard'];
 for(const id of postGameIds)assert.ok(recommendationScript.includes("['"+id+"'"),'Post-game service missing: '+id);
 for(const domain of ['marcosa.club','osgardbewworld.com','o2system.art','senjorio.com','superday.run','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio'])assert.ok(recommendationScript.includes(domain),'Service URL missing: '+domain);
+assert.ok(recommendationScript.includes("['projects','01','OSGARD BEW WORLD'") && recommendationScript.includes("['osgard-business','09','OSGARD OS'") && recommendationScript.includes("['vanguard','10','OSGARD VANGUARD STUDIO'"),'Post-session cards must use the official OSGARD product names');
+assert.ok(html.includes('<b>OSGARD BEW WORLD</b>') && html.includes('<b>OSGARD OS</b>') && html.includes('<b>OSGARD VANGUARD STUDIO</b>'),'Games hub ecosystem cards must use the same official product names');
+assert.ok(!html.includes('<b>OSGARD PROJECTS</b>') && !html.includes('<b>OSGARD BUSINESS</b>') && !html.includes('<b>OSGARD VANGUARD</b>'),'Retired shorthand names must not drift back into the visible Games hub');
+assert.ok(recommendationScript.includes("['o2-system','02','O2 SYSTEM','BUSINESS OPERATIONS','Система учёта кассы обменников'") && recommendationScript.includes("['myosa','06','MYOSA','AI PLATFORM','Платформа искусственного интеллекта нового поколения'"),'Post-session cards must retain the intended product descriptions');
 assert.ok(/\['gardvpn','08','GARD VPN'[^\n]+false,false\]/.test(recommendationScript),'GARD VPN must stay non-clickable until availability is confirmed');
 for(const provider of ['t.me/share/url','wa.me/?text=','vk.com/share.php','twitter.com/intent/tweet','facebook.com/sharer/sharer.php'])assert.ok(recommendationScript.includes(provider),'Social share redirect missing: '+provider);
 assert.ok(recommendationScript.includes("u.searchParams.set('utm_medium','post_game')")&&recommendationScript.includes("u.searchParams.set('utm_campaign','after_game')"),'Post-game links require UTM attribution');
@@ -602,7 +653,7 @@ assert.ok(recommendationScript.includes("const walletKey='osgard.games.shards-wa
 assert.ok(recommendationScript.includes('Я опубликовал — получить +50 SHARDS')&&recommendationScript.includes('Соцсеть не сообщает сайту подтверждение публикации')&&recommendationScript.includes('не являются платёжным средством'),'Social reward must disclose self-confirmation and non-monetary points');
 assert.ok(recommendationStyles.includes('.og-postgame-services')&&recommendationStyles.includes('.og-postgame-service-grid')&&recommendationStyles.includes('.og-postgame-reward')&&recommendationStyles.includes('@media(max-width:760px)')&&recommendationStyles.includes('prefers-reduced-motion:reduce'),'Postgame UI must be premium, responsive and accessible');
 assert.ok(recommendationScript.includes('РЕКЛАМА · СОБСТВЕННЫЕ ПРОЕКТЫ OSGARD')&&recommendationScript.includes('osgardServiceFilter')&&recommendationScript.includes('categoryByService'),'OSGARD SELECT must disclose self-promotion and let players filter service offers by category');
-assert.ok(recommendationScript.includes("['all','Все сервисы · 10']")&&recommendationScript.includes("['studio','Разработка · 2']")&&recommendationScript.includes("['luxury','Luxury · 1']"),'OSGARD SELECT filters must expose all configured service categories');
+assert.ok(recommendationScript.includes("['all','Все доступные · '+availableServiceIds.length]")&&recommendationScript.includes("['studio','Разработка · 2']")&&recommendationScript.includes("['luxury','Luxury · 1']"),'OSGARD SELECT filters must expose all configured service categories');
 assert.ok(recommendationScript.includes("sendSelectEvent('cross_promo_clicked',gameId,'osgard-select:click:'+id)")&&recommendationScript.includes("'owned_promo_impression'"),'Every active OSGARD SELECT service card must emit service-attributed click and exposure events');
 assert.ok(recommendationScript.includes('function hasConsent()')&&recommendationScript.includes('function sendSelectEvent(name,gameId,source)'), 'OSGARD SELECT must define its own consent-gated analytics functions')
 assert.ok(recommendationScript.includes("fetch('/games/commerce-config.json'")&&recommendationScript.includes("base+'/v1/events'")&&recommendationScript.includes("localStorage.getItem(selectConsentKey)==='yes'"), 'OSGARD SELECT must post to same-origin commerce API only after consent')
@@ -616,7 +667,16 @@ assert.ok(selectSender.includes('if(controller)options.signal=controller.signal'
 assert.ok((selectSender.match(/if\(!hasConsent\(\)\|\|\(controller&&controller\.signal\.aborted\)\)return false/g)||[]).length>=3,'Consent must be rechecked after network awaits before posting and accepting analytics');
 assert.ok(selectSender.includes('finally{if(controller)pendingSelectTelemetry.delete(controller)}'),'Completed or aborted telemetry requests must release their controller');
 assert.ok(recommendationScript.includes("sendSelectEvent('social_share_intent'")&&recommendationScript.includes("sendSelectEvent('social_reward_claimed'"), 'Social share-intent and self-reported reward events must be separate')
+assert.equal((recommendationScript.match(/if\(queue&&typeof queue\.enqueue==='function'\)return queue\.enqueue\(event\)/g)||[]).length,2,'Referral/inter-session and OSGARD SELECT telemetry must both use the shared consented retry queue');
+for(const eventName of ['owned_promo_intermission_skipped','owned_promo_preferences_saved','social_share_intent','social_reward_claimed','owned_promo_impression']) assert.ok(consentedAnalytics.includes("'"+eventName+"'"),'Consent queue must allow existing OSGARD SELECT event: '+eventName);
 assert.ok(recommendationScript.includes("sendSelectEvent('share_created',gameId,'game-invite:'"), 'Share actions in the rewards shelf must enter the referral funnel')
+const rewardPrimaryStart=recommendationScript.indexOf("primary.addEventListener('click',async()=>{",recommendationScript.indexOf('function rewardShelf(gameId){'));
+const rewardPrimaryEnd=recommendationScript.indexOf(" const note=make('p','og-postgame-reward-note'",rewardPrimaryStart);
+assert.ok(rewardPrimaryStart>=0&&rewardPrimaryEnd>rewardPrimaryStart,'OSGARD SELECT reward-share handler boundaries are required');
+const rewardPrimaryHandler=recommendationScript.slice(rewardPrimaryStart,rewardPrimaryEnd);
+assert.ok(!rewardPrimaryHandler.includes('show(award('),'OSGARD SELECT must not award automatically when native share succeeds or a link is copied');
+assert.ok(rewardPrimaryHandler.includes("pending='native-share'")&&rewardPrimaryHandler.includes("claim.hidden=false")&&rewardPrimaryHandler.includes('Копирование само по себе не считается репостом и не даёт награду'),'Native sharing must require confirmation and clipboard copy must not award');
+assert.ok(recommendationScript.includes("award('social-confirmation:'+network)")&&recommendationScript.includes('не чаще раза в UTC-день на этом устройстве'),'Social reward is self-confirmed, local and daily-capped');
 assert.ok(recommendationScript.includes("entry.intersectionRatio>=0.5")&&recommendationScript.includes("},1000)")&&recommendationScript.includes('card.isConnected')&&recommendationScript.includes('card.getClientRects().length'),'A promo exposure must require at least 50% visibility for a full second on a connected, visible card');
 assert.ok(referralCoreSource.includes('"owned_promo_impression"'),'Commerce API must allow the explicit owned-promo impression event');
 assert.ok(referralApiSource.includes("source LIKE 'osgard-select:%'")&&referralApiSource.includes("event_name = 'owned_promo_impression'")&&referralApiSource.includes('ownedPromoByService: ownedPromoByService.rows'),'Admin analytics API must aggregate consented OSGARD SELECT exposure and click events per service/game');
@@ -649,9 +709,15 @@ assert.ok(playSelectSource.includes('OSGARD SELECT / OWNED PROJECTS') && playSel
 assert.ok(['marcosa.club','osgardbewworld.com','o2system.art','senjorio.com','superday.run','myosa.world'].every(domain=>playSelectSource.includes(domain)), 'Entertainment gateway must include six selected owned services')
 assert.ok(playSelectSource.includes("const WALLET_KEY = 'osgard.games.shards-wallet.v1'") && playSelectSource.includes('current.day === today') && playSelectSource.includes('current.balance + 50'), 'Homepage must use shared SHARDS wallet and UTC-day cap')
 assert.ok(playSelectSource.includes('navigator.share') && playSelectSource.includes('navigator.clipboard && navigator.clipboard.writeText') && ['Telegram','WhatsApp','VK','X','Facebook'].every(network=>playSelectSource.includes("name: '"+network+"'")), 'Homepage must offer native/clipboard sharing and five social composers')
+const homeShareStart=playSelectSource.indexOf('const shareInvite = async () => {');
+const homeShareEnd=playSelectSource.indexOf('\n\n  return <section',homeShareStart);
+assert.ok(homeShareStart>=0&&homeShareEnd>homeShareStart,'Homepage share handler boundaries are required');
+const homeShareHandler=playSelectSource.slice(homeShareStart,homeShareEnd);
+assert.ok(!homeShareHandler.includes('grantReward(')&&homeShareHandler.includes("setPendingNetwork('native-share')")&&homeShareHandler.includes('Копирование само по себе не считается репостом'),'Homepage must require explicit confirmation; copy alone cannot grant SHARDS');
+assert.ok(playSelectSource.includes("pendingNetwork === 'native-share'")&&playSelectSource.includes("grantReward('homepage-social-confirmation:' + pendingNetwork)"),'Homepage SHARDS grant must be reached only through its explicit claim button');
 assert.ok(playSelectSource.includes('Отправка отменена — награда не начислена.') && playSelectSource.includes('не являются деньгами'), 'Cancelled shares must not earn and SHARDS must be disclosed as non-monetary')
 assert.ok(appStyles.includes('.play-select-loop') && appStyles.includes('.play-select-layout') && appStyles.includes('@media(max-width:600px)') && appStyles.includes('prefers-reduced-motion:reduce'), 'OSGARD SELECT must be responsive and respect reduced motion')
 assert.ok(appSource.includes('href="/games/?utm_source=osgard_world&amp;utm_medium=entertainment&amp;utm_campaign=between_worlds"'), 'Entertainment gateway must link into the playable hub with campaign attribution')
 assert.ok(appSource.includes('href="/games/monetization/?utm_source=osgard_world&amp;utm_medium=entertainment&amp;utm_campaign=economy_model"'), 'Entertainment gateway must link to the scenario economy model')
-assert.ok(appSource.includes('не подтверждается автоматически') && appSource.includes('Это не деньги'), 'SHARDS must be disclosed as non-monetary with social-post verification limits')
+assert.ok(appSource.includes('публикацию нельзя проверить автоматически') && appSource.includes('Это не деньги'), 'SHARDS must be disclosed as non-monetary with social-post verification limits')
 assert.ok(appStyles.includes('.play-economy-strip') && appStyles.includes('@media(max-width:760px)') && appStyles.includes('prefers-reduced-motion:reduce'), 'Entertainment economy teaser needs responsive and reduced-motion styling')
