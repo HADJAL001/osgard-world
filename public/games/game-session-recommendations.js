@@ -267,7 +267,7 @@ const services=[
  ['superday','04','SUPERDAY','MAP / DAILY PLANNING','Умная карта и планировщик дня','https://superday.run/'],
  ['myosa','06','MYOSA','AI PLATFORM','Платформа искусственного интеллекта нового поколения','https://myosa.world/'],
  ['gold-glamour','07','GOLD GLAMOUR','LUXURY SERVICES','Премиальные услуги с золотом и выездным обслуживанием','https://gold-glamour.online/'],
- ['gardvpn','08','GARD VPN','PRIVACY / VPN','VPN-сервис. Описание и условия доступны на сайте проекта; доступность домена не была подтверждена проверкой.','https://gardvpn.is/',false,true],
+ ['gardvpn','08','GARD VPN','PRIVACY / VPN','VPN-сервис. Описание и условия доступны на сайте проекта; доступность домена не была подтверждена проверкой.','https://gardvpn.is/',false,false],
  ['osgard-business','09','OSGARD OS','BUSINESS INTELLIGENCE','Диагностика бизнеса, развитие и рекомендации по росту','https://osgardos.com/'],
  ['vanguard','10','OSGARD VANGUARD STUDIO','VIDEO STUDIO','Создание видео и визуальных проектов','https://osgardvanguard.studio/']
 ];
@@ -276,7 +276,7 @@ const OWNER_TOKEN_KEY='osgard.games.referral-owner-token.v1';
 const REWARD_CONSENT_KEY='osgard.games.referral-reward-consent.v1';
 const servicePreferencesKey='osgard.games.postgame-service-preferences.v1';
 const serviceProgressKey='osgard.games.postgame-service-progress.v1';
-const availableServiceIds=services.filter(item=>item[7]!==false).map(item=>item[0]);
+const availableServiceIds=services.map(item=>item[0]); // User preferences retain every owned service; unverified destinations are filtered only from actual intermissions.
 const frequencyValues=['each','every3','off'];
 const preferredServiceKey='osgard.games.preferred-service.v1';
 const recommendationByGame={
