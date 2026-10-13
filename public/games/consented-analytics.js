@@ -76,7 +76,12 @@
 
   function writeQueue(queue) {
     try {
-      localStorage.setItem(QUEUE_KEY, JSON.stringify(queue.slice(-MAX_PENDING)));
+      const bounded = queue.slice(-MAX_PENDING);
+      if (bounded.length === 0) {
+        localStorage.removeItem(QUEUE_KEY);
+        return true;
+      }
+      localStorage.setItem(QUEUE_KEY, JSON.stringify(bounded));
       return true;
     } catch {
       return false;
