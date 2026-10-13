@@ -26,6 +26,8 @@ assert.deepEqual(routeEntries.map(x=>x.id).sort(),expectedLaunchIds,'Every visib
 assert.ok(routeEntries.every(x=>x.url.startsWith('/games/')),'Every launch entry must use a same-origin game route')
 const inviteLandingScript=readFileSync(resolve(root,'invite/invite-landing.js'),'utf8')
 assert.ok(inviteLandingScript.includes("localStorage.getItem('osgard.games.analytics-consent.v1') === 'yes'") && inviteLandingScript.includes("name: 'referral_link_opened'") && inviteLandingScript.includes("source: 'referral-link:' + code"),'Invite preview must preserve consent-gated referral attribution')
+const productionMatrix = readFileSync(resolve('scripts/production-route-matrix.mjs'),'utf8')
+assert.ok(productionMatrix.includes("path === '/games/invite/invite-landing.js'") && productionMatrix.includes("target.searchParams.set('utm_campaign', campaign)"), 'Production route matrix must validate the invitation script with its own content contract, not unrelated SkillCred markers')
 for(const game of routeEntries){
  const invitePage=readFileSync(resolve(root,'invite',game.id,'index.html'),'utf8')
  const card=readFileSync(resolve(root,'share-cards',game.id+'.png'))
