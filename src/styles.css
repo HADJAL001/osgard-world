@@ -364,8 +364,8 @@ header nav .nav-skillcred svg{width:14px}
 .play-select-preference-option>span{display:grid;gap:4px;min-width:0}
 .play-select-preference-option strong{color:#f0e6ca;font-size:10px;overflow-wrap:anywhere}
 .play-select-preference-option small{color:#98a5b5;font-size:8px;line-height:1.45}
-.play-select-preference-option.is-unavailable{border-style:dashed;opacity:.7;cursor:not-allowed}
-.play-select-preference-option.is-unavailable strong{color:#c8c0ac}
+.play-select-preference-option.is-unverified{border-style:dashed;border-color:rgba(215,185,120,.32)}
+.play-select-preference-option.is-unverified small{color:#d8c696}
 .play-select-preference-actions{display:flex;gap:7px;flex-wrap:wrap}
 .play-select-preference-actions .is-save{border-color:#dfc787;background:linear-gradient(115deg,#c4a65b,#ead5a0 58%,#c9ac65);color:#17150e}
 .play-select-preferences-status{min-height:1em;margin:0;color:#d8c696;font-size:9px;line-height:1.5}
