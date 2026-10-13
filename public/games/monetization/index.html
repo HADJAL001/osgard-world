@@ -53,6 +53,11 @@
             <div class="field"><label for="leadCloseRate">Доля заявок, ставших заказами</label><div class="field-unit"><input id="leadCloseRate" name="leadCloseRate" type="number" min="0" max="100" step=".5" value="8" required><span>%</span></div></div>
             <div class="field"><label for="averageProjectValueUsd">Средняя стоимость заказа<small>Задай по собственным данным</small></label><div class="field-unit"><input id="averageProjectValueUsd" name="averageProjectValueUsd" type="number" min="0" max="1000000000" step="50" value="1200" required><span>USD</span></div></div>
           </div>
+          <div class="group"><h3>Спонсорские кампании (сценарий)</h3>
+            <p class="field-note">Это модель заявок и контрактов, не действующие рекламные показы. Начальное число кампаний равно нулю.</p>
+            <div class="field"><label for="sponsorCampaignsPerMonth">Оплаченных кампаний в месяц<small>Среднее число после заключённых контрактов</small></label><input id="sponsorCampaignsPerMonth" name="sponsorCampaignsPerMonth" type="number" min="0" max="1000000" step=".5" value="0" required></div>
+            <div class="field"><label for="averageSponsorPackageUsd">Средний пакет спонсорства<small>Используй фактическую цену контракта</small></label><div class="field-unit"><input id="averageSponsorPackageUsd" name="averageSponsorPackageUsd" type="number" min="0" max="10000000" step="100" value="2500" required><span>USD</span></div></div>
+          </div>
           <div class="group"><h3>Расходы</h3>
             <div class="field"><label for="monthlyOperatingCostUsd">Ежемесячные расходы<small>Серверы, API, инструменты, поддержка</small></label><div class="field-unit"><input id="monthlyOperatingCostUsd" name="monthlyOperatingCostUsd" type="number" min="0" max="1000000000" step="25" value="400" required><span>USD</span></div></div>
           </div>
@@ -68,7 +73,7 @@
         <article class="formula"><h3>Заказы на разработку</h3><code>заявки = посещения × доля заявок</code><code>заказы = заявки × конверсия в заказ</code><p>Выручка по разработке показана отдельно от игровой монетизации; среднюю стоимость нужно заменить реальной.</p></article>
         <article class="formula"><h3>Операционный результат</h3><code>доходы = реклама + платежи + заказы</code><code>результат = доходы − расходы − комиссии</code><p>Это оценка до налогов и прочих неуказанных затрат, а не бухгалтерская прибыль.</p></article>
       </div>
-      <ul class="model-notes"><li>Осторожный сценарий снижает трафик, запуск игр, сессии, заполнение, eCPM, покупки и закрытие заказов; расходы повышаются.</li><li>Оптимистичный сценарий моделирует масштабирование, но не является целью или гарантией. Измеренные значения должны заменить начальные множители.</li><li>Рекламные показы должны оставаться добровольными и не мешать управлению игрой. Вознаграждение за рекламу не включено, пока нет подтверждения просмотра и серверной защиты повторной выдачи.</li><li>На странице не собираются персональные данные, заявки или аналитические события. JSON-экспорт содержит только допущения и вычисленные значения.</li></ul>
+      <ul class="model-notes"><li>Осторожный сценарий снижает трафик, запуск игр, сессии, заполнение, eCPM, покупки, спонсорские контракты и закрытие заказов; расходы повышаются.</li><li>Оптимистичный сценарий моделирует масштабирование, включая больше спонсорских контрактов, но не является целью или гарантией. Измеренные значения должны заменить начальные множители.</li><li>Рекламные показы должны оставаться добровольными и не мешать управлению игрой. Вознаграждение за рекламу не включено, пока нет подтверждения просмотра и серверной защиты повторной выдачи.</li><li>На странице не собираются персональные данные, заявки или аналитические события. JSON-экспорт содержит только допущения и вычисленные значения.</li></ul>
     </section>
     <footer><span>OSGARD PLAY / GROWTH LAB · ВЕРСИЯ МОДЕЛИ 1</span><nav><a href="/games/">Каталог игр</a><a href="/privacy/">Конфиденциальность</a><a href="/terms/">Условия</a><a href="/development">Разработка продуктов</a></nav></footer>
   </main>
