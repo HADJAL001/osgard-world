@@ -24,7 +24,10 @@
   let activeController = null;
 
   const consentGranted = () => {
-    try { return localStorage.getItem(CONSENT_KEY) === 'yes'; }
+    try {
+      const value = localStorage.getItem(CONSENT_KEY);
+      return value === 'yes' || value === 'granted';
+    }
     catch { return false; }
   };
   const clean = (value, max) => String(value ?? '')
