@@ -267,7 +267,7 @@ assert.ok(signalRun.includes('prefers-reduced-motion:reduce') && signalRun.inclu
 assert.ok(signalRun.includes('id="daily-run"')&&signalRun.includes('id="daily-info"')&&signalRun.indexOf('src="./daily.js"')<signalRun.indexOf('src="./game.js"'),'SIGNAL RUN daily controls and utility order missing')
 assert.ok(signalJs.includes('OSGARDSignalDaily')&&signalJs.includes('Daily.createRandom(Daily.seedForDate(dailyDate))')&&signalJs.includes("url.searchParams.set('mode','daily')")&&signalJs.includes("url.searchParams.set('day',dailyDate)")&&signalJs.includes('DAILY CONTRACT'),'Deterministic daily run and shareable challenge missing')
 assert.ok(signalJs.includes("new URL('/games/invite/signal-run/',location.origin)")&&signalJs.includes("url.searchParams.set('play','signal-run')")&&signalJs.includes('function referralCode()')&&signalJs.includes("url.searchParams.set('ref',code)"),'SIGNAL RUN must use its social-preview invitation page and a stable opaque referral code')
-assert.ok(signalJs.includes('async function buildSignalShareCard(score)')&&signalJs.includes("card.toBlob(resolve,'image/png')")&&signalJs.includes("navigator.canShare({files:[file]})")&&signalJs.includes("life('share_created'"),'SIGNAL RUN must create a PNG result card and count sharing only after a completed share/copy')
+assert.ok(signalJs.includes('async function buildSignalShareCard(score)')&&signalJs.includes("card.toBlob(resolve,'image/png')")&&signalJs.includes("navigator.canShare({files:[file]})"),'SIGNAL RUN must create a PNG result card for social sharing')
 assert.ok(signalRun.includes('id="download-share-card"')&&signalRun.includes('СОХРАНИТЬ КАРТОЧКУ PNG'),'SIGNAL RUN must expose a result-card download control after a run')
 assert.ok(signalJs.includes("$('download-share-card')?.addEventListener('click'")&&signalJs.includes("URL.createObjectURL(blob)")&&signalJs.includes("URL.revokeObjectURL(url)")&&signalJs.includes("link.download='osgard-signal-run-'")&&signalJs.includes("status.textContent='КАРТОЧКА РЕЗУЛЬТАТА СОХРАНЕНА В PNG'"),'SIGNAL RUN PNG download must save a local image and release its object URL without fabricating a share event')
 assert.ok(inviteLandingScript.includes("const legacySignalRun = game === 'signal-run'")&&inviteLandingScript.includes("target.searchParams.set(key, value)")&&inviteLandingScript.includes("validDailyMode"),'Signal Run social preview must preserve only validated challenge and daily-mode parameters')
@@ -471,8 +471,8 @@ const signalShareStart=signalJs.indexOf("$('share').addEventListener('click',asy
 const signalShareEnd=signalJs.indexOf("});document.addEventListener('keydown'",signalShareStart);
 assert.ok(signalShareStart>=0&&signalShareEnd>signalShareStart,'SIGNAL RUN share handler boundaries are required');
 const signalShareHandler=signalJs.slice(signalShareStart,signalShareEnd);
-assert.ok(!signalShareHandler.includes('awardShareShards(method)')&&signalShareHandler.includes("method==='clipboard'")&&signalShareHandler.includes('pendingShareReward=method'),'SIGNAL RUN must not auto-award for opening a share sheet or copying');
-assert.ok(signalJs.includes("claimShare.addEventListener('click'")&&signalJs.includes("awardShareShards('user-confirmed:'+method)"),'SIGNAL RUN reward must be granted only after an explicit user confirmation');
+assert.ok(!signalShareHandler.includes('awardShareShards(method)')&&!signalShareHandler.includes("life('share_created'")&&signalShareHandler.includes("method==='clipboard'")&&signalShareHandler.includes('pendingShareReward=method'),'SIGNAL RUN must not award or count a completed share for intent/copy alone');
+assert.ok(signalJs.includes("claimShare.addEventListener('click'")&&signalJs.includes("awardShareShards('user-confirmed:'+method)")&&signalJs.includes("life('share_created',{shareMethod:method,dailyMode,dailyDate:dailyMode?dailyDate:null,rewardConfirmedByPlayer:true})"),'SIGNAL RUN reward and completed-share analytics require explicit confirmation');
 new Function(signalJs);
 
 assert.ok(cascadeGame.includes("notifyOsgardLifecycle('completed'"),'CASCADE LAB must emit completion after a passed level')
@@ -634,7 +634,12 @@ const rewardPrimaryStart=recommendationScript.indexOf("primary.addEventListener(
 const rewardPrimaryEnd=recommendationScript.indexOf(" const note=make('p','og-postgame-reward-note'",rewardPrimaryStart);
 assert.ok(rewardPrimaryStart>=0&&rewardPrimaryEnd>rewardPrimaryStart,'OSGARD SELECT reward-share handler boundaries are required');
 const rewardPrimaryHandler=recommendationScript.slice(rewardPrimaryStart,rewardPrimaryEnd);
-assert.ok(!rewardPrimaryHandler.includes('show(award('),'OSGARD SELECT must not award automatically when native share succeeds or a link is copied');
+assert.ok(!rewardPrimaryHandler.includes('show(award(')&&!rewardPrimaryHandler.includes("sendSelectEvent('share_created'"),'OSGARD SELECT must not award or count a completed share when native share succeeds or a link is copied');
+const shareClaimStart=recommendationScript.indexOf("claim.addEventListener('click'",recommendationScript.indexOf('function rewardShelf(gameId){'));
+const shareClaimEnd=recommendationScript.indexOf("primary.addEventListener('click',async()=>{",shareClaimStart);
+assert.ok(shareClaimStart>=0&&shareClaimEnd>shareClaimStart,'OSGARD SELECT share-confirmation handler boundaries are required');
+const shareClaimHandler=recommendationScript.slice(shareClaimStart,shareClaimEnd);
+assert.ok(shareClaimHandler.includes("sendSelectEvent('share_created',gameId,'game-invite:")&&shareClaimHandler.includes("sendSelectEvent('social_reward_claimed'"),'OSGARD SELECT must log share-created only in the user-confirmation handler');
 assert.ok(rewardPrimaryHandler.includes("pending='native-share'")&&rewardPrimaryHandler.includes("claim.hidden=false")&&rewardPrimaryHandler.includes('Копирование само по себе не считается репостом и не даёт награду'),'Native sharing must require confirmation and clipboard copy must not award');
 assert.ok(recommendationScript.includes("award('social-confirmation:'+network)")&&recommendationScript.includes('не чаще раза в UTC-день на этом устройстве'),'Social reward is self-confirmed, local and daily-capped');
 assert.ok(recommendationScript.includes("entry.intersectionRatio>=0.5")&&recommendationScript.includes("},1000)")&&recommendationScript.includes('card.isConnected')&&recommendationScript.includes('card.getClientRects().length'),'A promo exposure must require at least 50% visibility for a full second on a connected, visible card');
