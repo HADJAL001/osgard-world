@@ -8,6 +8,7 @@ import pg from "pg";
 import {
   catalogConfiguration, validateCheckoutPayload, validateLeadPayload,
   validateEventBatch, paymentsModeAllowed, resolveCheckoutPaymentState, safeEqual,
+  parseReferralRewardEvent, validateReferralRewardStatus, REFERRAL_REWARD_POINTS, REFERRAL_MIN_SESSION_SECONDS,
 } from "./core.mjs";
 
 const { Pool } = pg;
@@ -45,6 +46,7 @@ app.use(cors({
 app.use("/v1/checkout", rateLimit({ windowMs: 15 * 60 * 1000, limit: 20, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/leads", rateLimit({ windowMs: 60 * 60 * 1000, limit: 8, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/events", rateLimit({ windowMs: 5 * 60 * 1000, limit: 60, standardHeaders: "draft-8", legacyHeaders: false }));
+app.use("/v1/referrals", rateLimit({ windowMs: 5 * 60 * 1000, limit: 30, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/admin", rateLimit({ windowMs: 5 * 60 * 1000, limit: 120, standardHeaders: "draft-8", legacyHeaders: false }));
 
 async function ensureSchema() {
@@ -58,6 +60,11 @@ async function ensureSchema() {
     "CREATE TABLE IF NOT EXISTS commerce_events (event_id TEXT PRIMARY KEY, event_name TEXT NOT NULL, session_id TEXT NOT NULL, game_id TEXT NOT NULL, source TEXT NOT NULL, path TEXT NOT NULL, duration_seconds INTEGER NOT NULL DEFAULT 0, received_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
     "CREATE INDEX IF NOT EXISTS commerce_events_name_received_idx ON commerce_events(event_name, received_at DESC);\n" +
     "CREATE INDEX IF NOT EXISTS commerce_events_game_received_idx ON commerce_events(game_id, received_at DESC);");
+  await pool.query("CREATE TABLE IF NOT EXISTS game_referral_invites (invite_code TEXT PRIMARY KEY, game_id TEXT NOT NULL, inviter_token TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());" +
+    "CREATE INDEX IF NOT EXISTS game_referral_invites_created_idx ON game_referral_invites(created_at DESC);" +
+    "CREATE TABLE IF NOT EXISTS game_referral_visits (invite_code TEXT NOT NULL REFERENCES game_referral_invites(invite_code) ON DELETE CASCADE, visitor_token TEXT NOT NULL, opened_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), PRIMARY KEY(invite_code, visitor_token));" +
+    "CREATE TABLE IF NOT EXISTS game_referral_rewards (invite_code TEXT NOT NULL REFERENCES game_referral_invites(invite_code) ON DELETE CASCADE, visitor_token TEXT NOT NULL, game_id TEXT NOT NULL, duration_seconds INTEGER NOT NULL CHECK (duration_seconds >= 60), points INTEGER NOT NULL DEFAULT 100 CHECK (points = 100), qualified_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), PRIMARY KEY(invite_code, visitor_token));" +
+    "CREATE INDEX IF NOT EXISTS game_referral_rewards_qualified_idx ON game_referral_rewards(qualified_at DESC);");
   dbReady = true;
   return true;
 }
@@ -68,7 +75,33 @@ async function purgeExpiredAnalytics() {
     "DELETE FROM commerce_events WHERE received_at < NOW() - ($1 * INTERVAL '1 day')",
     [analyticsRetentionDays],
   );
+  await pool.query("DELETE FROM game_referral_invites WHERE created_at < NOW() - INTERVAL '365 days'");
   return Number(result.rowCount || 0);
+}
+
+async function processReferralRewardEvent(client, event) {
+  const parsed = parseReferralRewardEvent(event);
+  if (!parsed) return;
+  if (parsed.type === "invite_created") {
+    await client.query(
+      "INSERT INTO game_referral_invites(invite_code,game_id,inviter_token) VALUES($1,$2,$3) ON CONFLICT(invite_code) DO NOTHING",
+      [parsed.inviteCode, parsed.gameId, parsed.ownerToken],
+    );
+    return;
+  }
+  if (parsed.type === "invite_opened") {
+    await client.query(
+      "INSERT INTO game_referral_visits(invite_code,visitor_token) SELECT $1,$2 FROM game_referral_invites i WHERE i.invite_code=$1 AND i.inviter_token<>$2 ON CONFLICT(invite_code,visitor_token) DO NOTHING",
+      [parsed.inviteCode, parsed.visitorToken],
+    );
+    return;
+  }
+  if (parsed.type === "invite_qualified") {
+    await client.query(
+      "INSERT INTO game_referral_rewards(invite_code,visitor_token,game_id,duration_seconds,points) SELECT v.invite_code,v.visitor_token,$3,$4,$5 FROM game_referral_visits v JOIN game_referral_invites i USING(invite_code) WHERE v.invite_code=$1 AND v.visitor_token=$2 AND i.inviter_token<>v.visitor_token ON CONFLICT(invite_code,visitor_token) DO NOTHING",
+      [parsed.inviteCode, parsed.visitorToken, parsed.gameId, parsed.durationSeconds, parsed.points],
+    );
+  }
 }
 
 function paymentsAllowed() {
@@ -320,6 +353,7 @@ app.post("/v1/events", async (req, res) => {
           [event.eventId || crypto.randomUUID(), event.name, event.sessionId, event.gameId, event.source, event.path, event.durationSeconds],
         );
         insertedCount += Number(inserted.rowCount || 0);
+        if (inserted.rowCount) await processReferralRewardEvent(client, event);
       }
       await client.query("COMMIT");
     } catch (error) {
