@@ -76,8 +76,13 @@ async function sendEvent(name,gameId,source){
   if(!consented()||(controller&&controller.signal.aborted))return false;
   const config=configResponse.ok?await configResponse.json().catch(()=>({})):{};
   if(!consented()||(controller&&controller.signal.aborted))return false;
-   let base=String(config.apiBaseUrl||'/commerce-api');
-   while(base.endsWith('/'))base=base.slice(0,-1);
+   const rawBase=typeof config.apiBaseUrl==='string'?config.apiBaseUrl.trim():'';
+   if(!rawBase)return false;
+   let parsedBase;
+   try{parsedBase=new URL(rawBase,location.origin)}catch{return false}
+   const localApi=['localhost','127.0.0.1'].includes(parsedBase.hostname);
+   if((parsedBase.protocol!=='https:'&&!(localApi&&parsedBase.protocol==='http:'))||parsedBase.username||parsedBase.password||parsedBase.pathname!=='/'||parsedBase.search||parsedBase.hash)return false;
+   const base=parsedBase.origin;
   const request={method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({consent:true,events:[event]})};
   if(controller)request.signal=controller.signal;
   const response=await fetch(base+'/v1/events',request);
@@ -261,7 +266,7 @@ const services=[
  ['superday','04','SUPERDAY','MAP / DAILY PLANNING','Умная карта и планировщик дня','https://superday.run/'],
  ['myosa','06','MYOSA','AI PLATFORM','Платформа искусственного интеллекта нового поколения','https://myosa.world/'],
  ['gold-glamour','07','GOLD GLAMOUR','LUXURY SERVICES','Премиальные услуги с золотом и выездным обслуживанием','https://gold-glamour.online/'],
- ['gardvpn','08','GARD VPN','PRIVACY / VPN','Временно не включён в промо-переходы, пока доступность не подтверждена','https://gardvpn.is/',false,false],
+ ['gardvpn','08','GARD VPN','PRIVACY / VPN','VPN-сервис. Описание и условия доступны на сайте проекта; доступность домена не была подтверждена проверкой.','https://gardvpn.is/',false,true],
  ['osgard-business','09','OSGARD OS','BUSINESS INTELLIGENCE','Диагностика бизнеса, развитие и рекомендации по росту','https://osgardos.com/'],
  ['vanguard','10','OSGARD VANGUARD STUDIO','VIDEO STUDIO','Создание видео и визуальных проектов','https://osgardvanguard.studio/']
 ];
@@ -311,8 +316,13 @@ async function sendSelectEvent(name,gameId,source){
   if(!hasConsent()||(controller&&controller.signal.aborted))return false;
   const config=configResponse.ok?await configResponse.json().catch(()=>({})):{};
   if(!hasConsent()||(controller&&controller.signal.aborted))return false;
-  let base=String(config.apiBaseUrl||'/commerce-api');
-  while(base.endsWith('/'))base=base.slice(0,-1);
+  const rawBase=typeof config.apiBaseUrl==='string'?config.apiBaseUrl.trim():'';
+  if(!rawBase)return false;
+  let parsedBase;
+  try{parsedBase=new URL(rawBase,location.origin)}catch{return false}
+  const localApi=['localhost','127.0.0.1'].includes(parsedBase.hostname);
+  if((parsedBase.protocol!=='https:'&&!(localApi&&parsedBase.protocol==='http:'))||parsedBase.username||parsedBase.password||parsedBase.pathname!=='/'||parsedBase.search||parsedBase.hash)return false;
+  const base=parsedBase.origin;
   const request={method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({consent:true,events:[event]})};
   if(controller)request.signal=controller.signal;
   const response=await fetch(base+'/v1/events',request);
