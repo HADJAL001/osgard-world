@@ -202,7 +202,7 @@ form.addEventListener('submit', async event => {
       cache: 'no-store',
     });
     const result = await response.json().catch(() => ({}));
-    if (!response.ok || result.accepted !== true) throw new Error(result.message || result.error || 'FEEDBACK_NOT_ACCEPTED');
+    if (!response.ok || result.accepted !== true || result.stored !== true) throw new Error(result.message || result.error || 'FEEDBACK_NOT_STORED');
     form.reset();
     $('#message-count').textContent = '0 / 1 200';
     status.textContent = 'Спасибо. Отзыв сохранён. Он не публикуется и не включает необязательную аналитику.';
