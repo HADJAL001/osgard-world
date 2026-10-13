@@ -9,6 +9,7 @@ const CURATED_RELATED_IDS = Object.freeze({
   patina: ['inherit', 'cascade-lab', 'civic-cascade'],
   'cascade-lab': ['signal-run', 'afterimage-run', 'remix'],
   'afterimage-run': ['signal-run', 'cascade-lab', 'null-shift'],
+  'aether-grid': ['cascade-lab', 'afterimage-run', 'signal-run'],
 });
 
 const asStringSet = value => new Set(
