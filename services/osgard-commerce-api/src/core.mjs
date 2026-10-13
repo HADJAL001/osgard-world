@@ -132,6 +132,50 @@ export function validateEventBatch(body) {
   return { ok: true, events };
 }
 
+export const REFERRAL_REWARD_POINTS = 50;
+export const REFERRAL_MIN_SESSION_SECONDS = 60;
+const REWARDABLE_INVITE_CODE = /^og_[a-f0-9]{32}$/;
+
+export function validateReferralRewardStatus(body) {
+  const input = body && typeof body === "object" && !Array.isArray(body) ? body : {};
+  const code = cleanText(input.code, 40);
+  if (!REWARDABLE_INVITE_CODE.test(code)) {
+    return { ok: false, status: 400, code: "REFERRAL_CODE_INVALID" };
+  }
+  return { ok: true, code };
+}
+
+export function parseReferralRewardEvent(value) {
+  const event = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  const source = cleanText(event.source, 80);
+  const gameId = cleanText(event.gameId, 40);
+  if (event.name === "share_created") {
+    const match = /^game-invite:([a-z0-9-]{1,40}):(og_[a-f0-9]{32}):([a-f0-9]{12})$/.exec(source);
+    if (match && match[1] === gameId && GAME_IDS.has(gameId)) {
+      return { type: "invite_created", inviteCode: match[2], gameId, ownerToken: match[3] };
+    }
+  }
+  if (event.name === "referral_link_opened") {
+    const match = /^referral-link:(og_[a-f0-9]{32}):([a-f0-9]{12})$/.exec(source);
+    if (match) return { type: "invite_opened", inviteCode: match[1], visitorToken: match[2] };
+  }
+  if (event.name === "game_session_completed" &&
+      Number(event.durationSeconds) >= REFERRAL_MIN_SESSION_SECONDS) {
+    const match = /^referral:(og_[a-f0-9]{32}):([a-z0-9-]{1,40}):([a-f0-9]{12})$/.exec(source);
+    if (match && match[2] === gameId && GAME_IDS.has(gameId)) {
+      return {
+        type: "invite_qualified",
+        inviteCode: match[1],
+        gameId,
+        visitorToken: match[3],
+        durationSeconds: Number(event.durationSeconds),
+        points: REFERRAL_REWARD_POINTS,
+      };
+    }
+  }
+  return null;
+}
+
 export function paymentsModeAllowed(secretKey, enableLive = false) {
   if (typeof secretKey !== "string") return false;
   if (secretKey.startsWith("sk_test_")) return true;
