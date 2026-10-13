@@ -132,6 +132,8 @@ assert.ok(afterimageGame.includes('incomingSeed=params.get(\'seed\')')&&afterima
 assert.ok(afterimageGame.includes("window.parent.OSGARDInvite.createLink('afterimage-run')")&&afterimageGame.includes("new URL('/games/invite/afterimage-run/',location.origin)"),'AFTERIMAGE share links must use the canonical referral route')
 assert.ok(afterimageGame.includes("u.searchParams.set('seed',day);u.searchParams.set('score',String(score))"),'AFTERIMAGE challenge must include the common daily seed and target score')
 assert.ok(afterimageGame.includes("life('share_created',{shareMethod:method==='web-share'?'web-share':'clipboard',challengeScore:Math.floor(game.score||daily.best||0)})"),'AFTERIMAGE share must use the host lifecycle event and carry share method/target score')
+assert.ok(afterimageGame.includes("track('game_session_started',{dailySeed:day,challengeTarget:targetScore,isChallenge:targetScore>0})"),'AFTERIMAGE must measure daily/challenge session starts')
+assert.ok(afterimageGame.includes("challengeBeaten:targetScore>0&&game.score>=targetScore")&&afterimageGame.includes("isChallenge:targetScore>0"),'AFTERIMAGE must measure completed challenged runs and whether the target score was beaten')
 assert.ok(afterimageGame.includes("opened.opener=null")&&afterimageGame.includes("share-intent-'+kind"),'Social share must detach opener and only reward after the share flow opens')
 assert.ok(afterimageGame.includes('SIGNAL SHARD')&&afterimageGame.includes('Публичная публикация поста не проверяется'),'Share reward copy must not claim that a public post was verified')
 const afterimageInline=[...afterimageGame.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]).filter(s=>s.trim())
