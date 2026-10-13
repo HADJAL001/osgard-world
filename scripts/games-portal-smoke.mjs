@@ -428,6 +428,11 @@ assert.ok(timeForSmoke.includes("game: 'time', state: 'completed'"),'Imperium of
 assert.ok(civic.includes("sendLifecycle('completed'"),'CIVIC CASCADE must emit completion')
 assert.ok(patina.includes("signal('completed'"),'PATINA must emit completion')
 assert.ok(signalJs.includes("life('completed'"),'SIGNAL RUN must emit completion')
+
+assert.ok(signalRun.includes('id="shards"')&&signalRun.includes('OSGARD SHARDS')&&signalRun.includes('публикацию в соцсети')&&signalRun.includes('не имеют денежной стоимости'),'SIGNAL RUN must disclose the local SHARDS wallet and social-share verification limits');
+assert.ok(signalJs.includes("SHARDS_KEY='osgard.games.shards-wallet.v1'")&&signalJs.includes('function awardShareShards')&&signalJs.includes('event.key===SHARDS_KEY'),'SIGNAL RUN must use the same local SHARDS wallet as the postgame reward panel');
+assert.ok(signalJs.includes("bonus.ok?' · +50 SHARDS'")&&signalJs.includes('current.day===day'),'SIGNAL RUN must show the +50 local invitation reward and prevent duplicate grants within one UTC day');
+
 assert.ok(cascadeGame.includes("notifyOsgardLifecycle('completed'"),'CASCADE LAB must emit completion after a passed level')
 
 const scripts=Array.from(html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)).map(m=>m[1]).filter(s=>s.trim()&&!s.trim().startsWith('{'))
