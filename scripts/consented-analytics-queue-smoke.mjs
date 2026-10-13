@@ -5,17 +5,34 @@ import vm from 'node:vm';
 const source = readFileSync('public/games/consented-analytics.js', 'utf8');
 const commerceCore = readFileSync('services/osgard-commerce-api/src/core.mjs', 'utf8');
 
-function extractGameIds(source, label) {
-  const match = source.match(/const GAME_IDS = new Set\(\[([\s\S]*?)\]\)/);
-  assert.ok(match, label + ' must declare a game-ID allow-list');
-  return [...match[1].matchAll(/['"]([a-z0-9-]+)['"]/g)].map(item => item[1]).sort();
+function extractStringSet(source, declaration, label) {
+  const start = source.indexOf(declaration);
+  assert.ok(start >= 0, label + ' must declare its allow-list');
+  const end = source.indexOf(']);', start);
+  assert.ok(end > start, label + ' must close its allow-list');
+  const block = source.slice(start, end);
+  return [...block.matchAll(/['"]([a-z0-9_-]+)['"]/g)].map(item => item[1]).sort();
 }
+const extractGameIds = (text, label) => extractStringSet(text, 'const GAME_IDS = new Set([', label + ' game-ID');
+const extractEventNames = (text, label) => extractStringSet(text, 'const ALLOWED_EVENTS = new Set([', label + ' event-name');
 
+const actualGameIds = extractGameIds(source, 'Browser analytics queue');
 assert.deepEqual(
-  extractGameIds(source, 'Browser analytics queue'),
+  actualGameIds,
   extractGameIds(commerceCore, 'Commerce API'),
   'Browser and server analytics must accept the same game IDs; drift can silently discard share/promo events',
 );
+assert.deepEqual(actualGameIds, [
+  'aether-grid', 'afterimage-run', 'cascade-lab', 'civic-cascade', 'inherit',
+  'null-shift', 'patina', 'remix', 'signal-run', 'swarm', 'time', 'unknown',
+], 'Every released game, including AETHER GRID, must be admitted by both analytics allow-lists');
+assert.deepEqual(
+  extractEventNames(source, 'Browser analytics queue'),
+  extractEventNames(commerceCore, 'Commerce API'),
+  'Browser queue and Commerce API event allow-lists must remain identical',
+);
+assert.ok(extractEventNames(source, 'Browser analytics queue').includes('invite_link_prepared'),
+  'Invite-link preparation must not be dropped by the shared consent queue');
 
 function createQueue(apiBaseUrl, origin = 'https://osgard.world') {
   const values = new Map([['osgard.games.analytics-consent.v1', 'yes']]);
@@ -127,5 +144,15 @@ assert.equal(
   await configured.queue.enqueue({ ...event, eventId: 'evt_afterimage_123456', gameId: 'afterimage-run', name: 'social_share_intent', source: 'osgard-select:share:telegram' }),
   true,
   'AFTERIMAGE//RUN social-share events must pass the client game-ID allow-list',
+);
+assert.equal(
+  await configured.queue.enqueue({ ...event, eventId: 'evt_aethergrid_12345', gameId: 'aether-grid', name: 'owned_promo_impression', source: 'osgard-select:spotlight:marcosa:a' }),
+  true,
+  'AETHER GRID promotion events must pass the client game-ID allow-list',
+);
+assert.equal(
+  await configured.queue.enqueue({ ...event, eventId: 'evt_inviteprepared_123', gameId: 'aether-grid', name: 'invite_link_prepared', source: 'game-invite:aether-grid:og_abcd1234' }),
+  true,
+  'Invite preparation events must be accepted by the shared retry queue',
 );
 console.log('PASS consented analytics queue: fail-closed API configuration, offline persistence, stable IDs, acknowledged retry, consent withdrawal, and schema allowlist.');

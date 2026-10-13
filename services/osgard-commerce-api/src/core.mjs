@@ -50,7 +50,7 @@ export const ALLOWED_EVENTS = new Set([
 const GAME_IDS = new Set([
   "null-shift", "time", "swarm", "inherit", "remix",
   "civic-cascade", "patina", "signal-run", "cascade-lab",
-  "afterimage-run", "unknown",
+  "afterimage-run", "aether-grid", "unknown",
 ]);
 
 export function cleanText(value, max = 500) {
