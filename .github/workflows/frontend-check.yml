@@ -10,6 +10,13 @@ on:
       - "scripts/games-portal-smoke.mjs"
       - "scripts/osgard-select-growth-smoke.mjs"
       - "scripts/consented-analytics-queue-smoke.mjs"
+      - "codemagic.yaml"
+      - "capacitor.config.ts"
+      - "scripts/codemagic/**"
+      - "scripts/ios/**"
+      - "scripts/ios-codemagic-config-smoke.mjs"
+      - "scripts/ios-package-smoke.mjs"
+      - "scripts/prepare-ios-dist.mjs"
       - "scripts/activate-frontend-remote.sh"
       - "scripts/games-lighthouse-report.mjs"
       - "scripts/external-project-healthcheck.mjs"
@@ -52,6 +59,15 @@ jobs:
         run: npm ci
       - name: Validate production activation shell before build and tests
         run: bash -n scripts/activate-frontend-remote.sh
+      - name: Validate iOS packaging shell and JavaScript syntax
+        run: |
+          bash -n scripts/codemagic/build-ios.sh
+          node --check scripts/prepare-ios-dist.mjs
+          node --check scripts/ios/install-app-icon.mjs
+          node --check scripts/ios-package-smoke.mjs
+          node --check scripts/ios-codemagic-config-smoke.mjs
+      - name: Validate Codemagic release configuration
+        run: npm run qa:ios-config
       - name: Type-check the frontend
         run: npm run check
       - name: Build the production site
