@@ -168,7 +168,7 @@
       announce('Поиск очищен.')
     }
   })
-}
+
   // Player Lab is lazy-loaded with the catalog controls, not on the initial hero.
   (() => {
     const build = document.querySelector('meta[name="osgard-build"]')?.content || 'local';
