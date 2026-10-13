@@ -30,9 +30,11 @@ jobs:
           expected="${EXPECTED_DEPLOY_SHA:0:12}"
           for attempt in $(seq 1 18); do
             page="$(curl -fsSL --max-time 12 https://osgard.world/games/ 2>/dev/null || true)"
-            if printf '%s' "$page" | grep -Fq "<meta name=\"osgard-build\" content=\"$expected\">" &&
-               printf '%s' "$page" | grep -Fq "luxury.css?v=$expected" &&
-               printf '%s' "$page" | grep -Fq "player-lifecycle.js?v=$expected"; then
+            # Use Bash substring matching here: grep -q can close the pipe early, making
+            # printf fail with SIGPIPE under pipefail even when the expected marker exists.
+            if [[ "$page" == *"<meta name=\"osgard-build\" content=\"$expected\">"* &&
+                  "$page" == *"luxury.css?v=$expected"* &&
+                  "$page" == *"player-lifecycle.js?v=$expected"* ]]; then
               echo "Confirmed deployed Games release $expected"
               exit 0
             fi
