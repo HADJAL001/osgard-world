@@ -395,6 +395,7 @@ function servicesShelf(gameId,showPromos,completedCount){
  const filterButtons=[];
  filterDefs.forEach(([id,labelText])=>{const button=make('button','og-postgame-service-filter',labelText);button.type='button';button.dataset.osgardServiceFilter=id;button.setAttribute('aria-pressed',String(id==='all'));filters.append(button);filterButtons.push(button)});
  const activeSelected=services.filter(([id,,,,,,featured=false,active=true])=>active!==false&&preferences.selected.includes(id));
+ const spotlightId=activeSelected.length?activeSelected[(Math.max(0,completedCount-1)%activeSelected.length)][0]:null;
  const preferred=readPreferredService();
  const contextual=recommendationByGame[gameId]||'marcosa';
  let spotlightServiceId=activeSelected.some(item=>item[0]===preferred)?preferred:
@@ -497,7 +498,7 @@ function servicesShelf(gameId,showPromos,completedCount){
  const decision=make('div','og-postgame-service-decision');
  const skipButton=make('button','og-postgame-skip','Пропустить подборку');skipButton.type='button';
  const skipStatus=make('p','og-postgame-skip-status','Подборка скрыта. Игровой каталог и награда за приглашение остаются доступны.');skipStatus.hidden=true;skipStatus.setAttribute('role','status');skipStatus.setAttribute('aria-live','polite');
- skipButton.addEventListener('click',()=>{grid.hidden=true;filters.hidden=true;skipButton.hidden=true;skipStatus.hidden=false;void sendSelectEvent('owned_promo_intermission_skipped',gameId,'osgard-select:skip:'+completedCount)});
+ skipButton.addEventListener('click',()=>{spotlight.hidden=true;grid.hidden=true;filters.hidden=true;skipButton.hidden=true;skipStatus.hidden=false;void sendSelectEvent('owned_promo_intermission_skipped',gameId,'osgard-select:skip:'+completedCount)});
  decision.append(skipButton,skipStatus);
  settingsToggle.addEventListener('click',()=>{settings.hidden=!settings.hidden;settingsToggle.textContent=settings.hidden?'Настроить показ':'Закрыть настройки';settingsToggle.setAttribute('aria-expanded',String(!settings.hidden));if(!settings.hidden)frequency.focus()});
  collapseToggle.addEventListener('click',()=>{const collapsed=!grid.hidden;grid.hidden=collapsed;filters.hidden=collapsed;collapseToggle.textContent=collapsed?'Выбрать из '+availableServiceIds.length+' сервисов':'Свернуть каталог';collapseToggle.setAttribute('aria-expanded',String(!collapsed))});
