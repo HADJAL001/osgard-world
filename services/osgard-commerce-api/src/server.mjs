@@ -86,6 +86,37 @@ async function purgeExpiredAnalytics() {
   return Number(result.rowCount || 0);
 }
 
+
+async function processReferralRewardEvent(client, event) {
+  const parsed = parseReferralRewardEvent(event);
+  if (!parsed) return;
+  if (parsed.type === "invite_created") {
+    await client.query(
+      "INSERT INTO game_referral_invites(invite_code,game_id,inviter_token) VALUES($1,$2,$3) ON CONFLICT(invite_code) DO NOTHING",
+      [parsed.inviteCode, parsed.gameId, parsed.ownerToken],
+    );
+    return;
+  }
+  if (parsed.type === "invite_opened") {
+    await client.query(
+      "INSERT INTO game_referral_visits(invite_code,visitor_token) SELECT $1,$2 FROM game_referral_invites i WHERE i.invite_code=$1 AND i.game_id=$3 AND i.inviter_token<>$2 ON CONFLICT(invite_code,visitor_token) DO NOTHING",
+      [parsed.inviteCode, parsed.visitorToken, parsed.gameId],
+    );
+    return;
+  }
+  if (parsed.type === "invite_qualified") {
+    const verifiedSession = await client.query(
+      "SELECT 1 FROM commerce_events finish JOIN commerce_events start ON start.session_id=finish.session_id AND start.game_id=finish.game_id AND start.source=finish.source WHERE finish.event_id=$1 AND finish.event_name='game_session_completed' AND start.event_name='game_session_started' AND start.received_at <= finish.received_at - ($2 * INTERVAL '1 second') LIMIT 1",
+      [event.eventId, REFERRAL_MIN_SESSION_SECONDS],
+    );
+    if (!verifiedSession.rowCount) return;
+    await client.query(
+      "INSERT INTO game_referral_rewards(invite_code,visitor_token,game_id,duration_seconds,points) SELECT v.invite_code,v.visitor_token,$3,$4,$5 FROM game_referral_visits v JOIN game_referral_invites i USING(invite_code) WHERE v.invite_code=$1 AND v.visitor_token=$2 AND i.game_id=$3 AND i.inviter_token<>v.visitor_token ON CONFLICT(invite_code,visitor_token) DO NOTHING",
+      [parsed.inviteCode, parsed.visitorToken, parsed.gameId, parsed.durationSeconds, parsed.points],
+    );
+  }
+}
+
 function paymentsAllowed() {
   return Boolean(stripe && pool && dbReady && webhookSecret &&
     paymentsModeAllowed(stripeSecret, process.env.ENABLE_LIVE_PAYMENTS === "true"));
@@ -330,11 +361,13 @@ app.post("/v1/events", async (req, res) => {
       await client.query("BEGIN");
       let insertedCount = 0;
       for (const event of batch.events) {
+        const persistedEvent = { ...event, eventId: event.eventId || crypto.randomUUID() };
         const inserted = await client.query(
           "INSERT INTO commerce_events(event_id,event_name,session_id,game_id,source,path,duration_seconds) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT DO NOTHING RETURNING event_id",
-          [event.eventId || crypto.randomUUID(), event.name, event.sessionId, event.gameId, event.source, event.path, event.durationSeconds],
+          [persistedEvent.eventId, persistedEvent.name, persistedEvent.sessionId, persistedEvent.gameId, persistedEvent.source, persistedEvent.path, persistedEvent.durationSeconds],
         );
         insertedCount += Number(inserted.rowCount || 0);
+        if (inserted.rowCount) await processReferralRewardEvent(client, persistedEvent);
       }
       await client.query("COMMIT");
     } catch (error) {
@@ -350,13 +383,66 @@ app.post("/v1/events", async (req, res) => {
   }
 });
 
+
+app.post("/v1/referrals/register", async (req, res) => {
+  res.set("Cache-Control", "no-store, private");
+  const input = validateReferralRewardRegistration(req.body);
+  if (!input.ok) return res.status(input.status).json({ error: input.code });
+  if (!requireDatabase(res)) return;
+  try {
+    const inserted = await pool.query(
+      "INSERT INTO game_referral_invites(invite_code,game_id,inviter_token) VALUES($1,$2,$3) ON CONFLICT(invite_code) DO NOTHING RETURNING invite_code",
+      [input.code, input.gameId, input.ownerToken],
+    );
+    if (inserted.rowCount) return res.status(201).json({ registered: true });
+    const existing = await pool.query(
+      "SELECT game_id, inviter_token FROM game_referral_invites WHERE invite_code=$1",
+      [input.code],
+    );
+    const record = existing.rows[0];
+    if (record && record.game_id === input.gameId && record.inviter_token === input.ownerToken) {
+      return res.status(200).json({ registered: true, alreadyRegistered: true });
+    }
+    return res.status(409).json({ error: "REFERRAL_CODE_ALREADY_USED" });
+  } catch (error) {
+    console.error("Referral registration failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "REFERRAL_REGISTRATION_UNAVAILABLE" });
+  }
+});
+
+app.post("/v1/referrals/reward-status", async (req, res) => {
+  res.set("Cache-Control", "no-store, private");
+  const input = validateReferralRewardStatus(req.body);
+  if (!input.ok) return res.status(input.status).json({ error: input.code });
+  if (!requireDatabase(res)) return;
+  try {
+    const result = await pool.query(
+      "SELECT COUNT(*)::int AS qualified_sessions, COALESCE(SUM(points),0)::int AS points_earned FROM game_referral_rewards WHERE invite_code=$1",
+      [input.code],
+    );
+    const row = result.rows[0] || {};
+    return res.json({
+      qualifiedSessions: Number(row.qualified_sessions || 0),
+      pointsEarned: Number(row.points_earned || 0),
+      pointsPerQualifiedSession: REFERRAL_REWARD_POINTS,
+      qualifyingDurationSeconds: REFERRAL_MIN_SESSION_SECONDS,
+      redeemableForCash: false,
+      redeemableForPurchases: false,
+    });
+  } catch (error) {
+    console.error("Referral status failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "REFERRAL_STATUS_UNAVAILABLE" });
+  }
+});
+
 app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
   if (!requireDatabase(res)) return;
   try {
-    const [orderStats, currencyStats, leadStats, eventStats, topEvents, analyticsByGame, ownedPromoByService, analyticsFunnel, socialShareByNetwork, paidRevenueByAttribution] = await Promise.all([
+    const [orderStats, currencyStats, paidRevenueByAttribution, referralRewardStats, leadStats, eventStats, topEvents, analyticsByGame, ownedPromoByService, analyticsFunnel, socialShareByNetwork] = await Promise.all([
       pool.query("SELECT status, COUNT(*)::int AS count FROM commerce_orders GROUP BY status"),
       pool.query("SELECT currency, SUM(amount_total)::bigint AS total_minor, COUNT(*)::int AS count FROM commerce_orders WHERE status='paid' AND currency IS NOT NULL GROUP BY currency"),
       pool.query("SELECT attribution_game_id AS \"gameId\", attribution_source AS source, NULLIF(attribution_campaign, '') AS campaign, mode, currency, COUNT(*)::int AS orders, COALESCE(SUM(amount_total),0)::text AS \"totalMinor\" FROM commerce_orders WHERE status='paid' AND amount_total IS NOT NULL AND currency IS NOT NULL AND created_at >= NOW() - INTERVAL '30 days' GROUP BY attribution_game_id, attribution_source, attribution_campaign, mode, currency ORDER BY COUNT(*) DESC, attribution_game_id ASC LIMIT 50"),
+      pool.query("SELECT COUNT(*)::int AS sessions, COALESCE(SUM(points),0)::int AS points FROM game_referral_rewards WHERE qualified_at >= NOW() - INTERVAL '30 days'"),
       pool.query("SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE status='new')::int AS new FROM commerce_leads"),
       pool.query("SELECT COUNT(*)::int AS total_30d FROM commerce_events WHERE received_at >= NOW() - INTERVAL '30 days'"),
       pool.query("SELECT event_name, COUNT(*)::int AS count FROM commerce_events WHERE received_at >= NOW() - INTERVAL '30 days' GROUP BY event_name ORDER BY count DESC LIMIT 12"),
@@ -386,28 +472,28 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
           FROM recent_events
           WHERE event_name = 'share_created'
             AND source LIKE 'game-invite:%'
-            AND split_part(source, ':', 3) ~ '^(og_[a-f0-9]{8}|[a-f0-9]{12})$'
+            AND split_part(source, ':', 3) ~ '^(og_[a-f0-9]{8}|og_[a-f0-9]{32}|[a-f0-9]{12})$'
         ),
         invite_opens AS (
           SELECT DISTINCT split_part(source, ':', 2) AS invite_code
           FROM recent_events
           WHERE event_name = 'referral_link_opened'
             AND source LIKE 'referral-link:%'
-            AND split_part(source, ':', 2) ~ '^(og_[a-f0-9]{8}|[a-f0-9]{12})$'
+            AND split_part(source, ':', 2) ~ '^(og_[a-f0-9]{8}|og_[a-f0-9]{32}|[a-f0-9]{12})$'
         ),
         invite_starts AS (
           SELECT DISTINCT split_part(source, ':', 2) AS invite_code
           FROM recent_events
           WHERE event_name = 'game_session_started'
             AND source LIKE 'referral:%'
-            AND split_part(source, ':', 2) ~ '^(og_[a-f0-9]{8}|[a-f0-9]{12})$'
+            AND split_part(source, ':', 2) ~ '^(og_[a-f0-9]{8}|og_[a-f0-9]{32}|[a-f0-9]{12})$'
         ),
         invite_completions AS (
           SELECT DISTINCT split_part(source, ':', 2) AS invite_code
           FROM recent_events
           WHERE event_name = 'game_session_completed'
             AND source LIKE 'referral:%'
-            AND split_part(source, ':', 2) ~ '^(og_[a-f0-9]{8}|[a-f0-9]{12})$'
+            AND split_part(source, ':', 2) ~ '^(og_[a-f0-9]{8}|og_[a-f0-9]{32}|[a-f0-9]{12})$'
         )
         SELECT
           COUNT(*) FILTER (WHERE event_name = 'catalog_viewed')::int AS "catalogViews",
@@ -460,6 +546,13 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
       analyticsFunnel: analyticsFunnel.rows[0] || {},
       socialShareByNetwork: socialShareByNetwork.rows,
       paidRevenueByAttribution: paidRevenueByAttribution.rows,
+      verifiedReferralRewards30Days: {
+        qualifiedSessions: referralRewardStats.rows[0]?.sessions || 0,
+        pointsAwarded: referralRewardStats.rows[0]?.points || 0,
+        pointsPerSession: REFERRAL_REWARD_POINTS,
+        minimumSessionSeconds: REFERRAL_MIN_SESSION_SECONDS,
+        cashValue: 0,
+      },
       analyticsRetentionDays,
       note: "Аналитика включает только согласованные события. Это не все посещения сайта и не рекламные показы. Суммы сгруппированы по валютам и не являются бухгалтерским отчётом.",
     });
