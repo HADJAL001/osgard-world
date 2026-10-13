@@ -3,6 +3,7 @@
 var API_BASE=(document.querySelector('meta[name="api-base"]')||{}).content||"/skillcred-api";
 var $=function(id){return document.getElementById(id);},credential=null,verified=false,revoked=false,busy=false,events=0,lastJson="",heroStarted=false,inspectorReady=false,eventLogVisible=false,eventScrollPending=false,eventScrollScheduled=false,pendingEvents=[],heroVerifiedAt=0,freshnessTimer=0;
 var reduced=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+var mobileLite=!!(window.matchMedia&&window.matchMedia("(max-width: 820px), (pointer: coarse)").matches);
 var samples={
 curl:{file:"terminal / issue.sh",text:"curl -sS -X POST \\\n  https://osgard.world/skillcred-api/demo/issue \\\n  -H 'Accept: application/json' \\\n  -H 'Content-Type: application/json' \\\n  -d '{}'"},
 node:{file:"node / issue.mjs",text:'const base = "https://osgard.world/skillcred-api";\nconst response = await fetch(base + "/demo/issue", {\n  method: "POST",\n  headers: { "Accept": "application/json", "Content-Type": "application/json" },\n  body: "{}"\n});\nif (!response.ok) throw new Error("HTTP " + response.status);\nconst credential = await response.json();\nconsole.log(credential.id);'},
@@ -205,6 +206,7 @@ observer.observe(log);
 }
 function wrapHeadingWords(head){
 if(!head||head.dataset.worded==="true")return;
+if(mobileLite){head.dataset.worded="true";return;}
 if(head.classList.contains("hero-title")){head.dataset.worded="true";return;}
 var walker=document.createTreeWalker(head,NodeFilter.SHOW_TEXT,{acceptNode:function(node){return node.nodeValue.trim()&&!node.parentElement.closest("svg,script,style,code")?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT;}});
 var nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
