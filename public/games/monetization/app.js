@@ -1,4 +1,4 @@
-import { DEFAULT_INPUTS, SCENARIOS, calculateScenario, normalizeInputs } from './model.js';
+import { DEFAULT_INPUTS, SCENARIOS, calculateScenario, calculateRequiredMonthlyVisitors, normalizeInputs } from './model.js';
 
 const form = document.getElementById('assumptions-form');
 const resultsNode = document.getElementById('scenario-results');
@@ -51,10 +51,22 @@ function render() {
   document.getElementById('base-sessions').textContent = count(base.sessions);
   document.getElementById('base-ad-impressions').textContent = count(base.filledAdImpressions);
   const annualRevenue = base.totalRevenueUsd * 12;
+  const target = inputs.annualRevenueTargetUsd;
+  const requiredMonthlyVisitors = calculateRequiredMonthlyVisitors(inputs, target);
   document.getElementById('base-viral-visitors').textContent = count(base.viralVisitors);
   document.getElementById('base-k-factor').textContent = factor.format(base.kFactor);
   document.getElementById('base-annual-revenue').textContent = money(annualRevenue);
-  document.getElementById('million-gap').textContent = money(Math.max(0, 1000000 - annualRevenue));
+  document.getElementById('annual-target-heading').textContent = money(target);
+  document.getElementById('monthly-target-value').textContent = money(target / 12);
+  document.getElementById('million-gap').textContent = money(Math.max(0, target - annualRevenue));
+  document.getElementById('required-base-visitors').textContent =
+    requiredMonthlyVisitors === null ? '—' : count(requiredMonthlyVisitors);
+  const targetStatus = document.getElementById('growth-target-status');
+  targetStatus.textContent = requiredMonthlyVisitors === null
+    ? 'При текущих коэффициентах цели не достичь даже в пределах 1 млрд стартовых посещений в месяц. Проверь доли запуска, eCPM, конверсию покупок, заказы и спонсорские договоры.'
+    : requiredMonthlyVisitors === 0
+      ? 'Цель покрывается смоделированными договорами/поступлениями без дополнительного стартового трафика. Это допущение, не подтверждённая выручка.'
+      : 'Ориентир: ' + count(requiredMonthlyVisitors) + ' стартовых посещений в месяц. Модель включает расчётные приглашения; фактический трафик и выручку нужно измерить.';
 }
 
 form.addEventListener('input', render);
@@ -69,11 +81,12 @@ exportButton.addEventListener('click', () => {
   const inputs = readInputs();
   const payload = {
     kind: 'osgard-games-business-model',
-    modelVersion: 2,
-    note: 'Illustrative scenario estimate only; referral loop is capped at five generations; not live analytics or guaranteed revenue.',
+    modelVersion: 3,
+    note: 'Illustrative scenario estimate only; referral loop is capped at five generations; required visitors are a bounded reverse calculation; not live analytics or guaranteed revenue.',
     currency: 'USD',
     generatedAt: new Date().toISOString(),
     inputs,
+    growthTarget: { annualRevenueTargetUsd: inputs.annualRevenueTargetUsd, requiredMonthlyStartingVisitors: calculateRequiredMonthlyVisitors(inputs, inputs.annualRevenueTargetUsd) },
     scenarios: SCENARIOS.map((scenario) => ({ label: scenario.label, assumptions: scenario, results: calculateScenario(inputs, scenario.id) })),
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });

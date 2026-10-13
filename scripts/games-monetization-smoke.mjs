@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { calculateScenario, DEFAULT_INPUTS, normalizeInputs, SCENARIOS } from '../public/games/monetization/model.js';
+import { calculateScenario, calculateRequiredMonthlyVisitors, DEFAULT_INPUTS, normalizeInputs, SCENARIOS } from '../public/games/monetization/model.js';
 
 const root = process.cwd();
 const pagePath = resolve(root, 'public/games/monetization/index.html');
@@ -21,7 +21,9 @@ assert.ok(page.includes('id="assumptions-form"') && page.includes('id="scenario-
 assert.ok(page.includes('id="export-json"') && page.includes('id="reset-model"'), 'Financial planner reset/JSON export controls missing');
 assert.ok(page.includes('prefers-reduced-motion:reduce'), 'Reduced-motion support missing');
 assert.ok(['shareRatePct','invitesPerSharer','inviteConversionPct'].every((id) => page.includes('id="' + id + '"') && page.includes('name="' + id + '"')), 'Viral-loop assumption inputs missing');
-assert.ok(['base-viral-visitors','base-k-factor','base-annual-revenue','million-gap'].every((id) => page.includes('id="' + id + '"')), 'Annual $1M target and referral outputs missing');
+assert.ok(['base-viral-visitors','base-k-factor','base-annual-revenue','million-gap','annual-target-heading','monthly-target-value','required-base-visitors','growth-target-status'].every((id) => page.includes('id="' + id + '"')), 'Annual target, required traffic and referral outputs missing');
+assert.ok(page.includes('name="annualRevenueTargetUsd"'), 'Editable annual gross revenue target input missing');
+assert.ok(app.includes('calculateRequiredMonthlyVisitors') && app.includes('growthTarget:'), 'Required-traffic calculation must be visible and included in the local export');
 assert.ok(!/https?:\/\/(?:fonts\.googleapis\.com|fonts\.gstatic\.com|cdn\.jsdelivr\.net|unpkg\.com)/i.test(page), 'Financial planner unexpectedly depends on a remote asset CDN');
 assert.ok(app.includes('URL.createObjectURL') && app.includes('osgard-games-model.json'), 'Local JSON export not implemented');
 assert.ok(app.includes('Пересчёт выполнен локально') && app.includes('не отправляются на сервер'), 'Local-only privacy status missing');
@@ -82,6 +84,16 @@ assert.equal(sponsorExample.sponsorRevenueUsd, 1000, 'Sponsor revenue should onl
 assert.equal(sponsorExample.totalRevenueUsd, actual.totalRevenueUsd + 1000)
 assert.ok(Math.abs(actual.totalRevenueUsd * 12 - 19312.01475) < 1e-7, 'Annual gross turnover target calculation drifted')
 assert.ok(Math.abs(1000000 - actual.totalRevenueUsd * 12 - 980687.98525) < 1e-7, 'Remaining gap to the $1M annual turnover target drifted')
+assert.equal(DEFAULT_INPUTS.annualRevenueTargetUsd, 1000000, 'Default annual gross target must be $1M')
+const requiredVisitors = calculateRequiredMonthlyVisitors(DEFAULT_INPUTS)
+assert.ok(Number.isInteger(requiredVisitors) && requiredVisitors > DEFAULT_INPUTS.monthlyVisitors, 'Current assumptions should require a finite, larger seed-traffic estimate')
+assert.ok(calculateScenario({ ...DEFAULT_INPUTS, monthlyVisitors: requiredVisitors }, 'base').totalRevenueUsd * 12 >= DEFAULT_INPUTS.annualRevenueTargetUsd, 'Required seed traffic must reach the annual gross target')
+assert.ok(calculateScenario({ ...DEFAULT_INPUTS, monthlyVisitors: requiredVisitors - 1 }, 'base').totalRevenueUsd * 12 < DEFAULT_INPUTS.annualRevenueTargetUsd, 'Required seed traffic must be the smallest integer estimate that reaches the goal')
+assert.equal(calculateRequiredMonthlyVisitors(DEFAULT_INPUTS, 0), 0, 'A zero annual target requires no starting traffic')
+const impossibleInputs = { ...DEFAULT_INPUTS, adSlotsPerSession: 0, paidConversionRate: 0, leadRate: 0, sponsorDealsPerMonth: 0, averageSponsorDealUsd: 0 }
+assert.equal(calculateRequiredMonthlyVisitors(impossibleInputs, 1000000), null, 'A target without any variable revenue stream must be explicitly unreachable')
+const boundedTarget = normalizeInputs({ annualRevenueTargetUsd: 2000000000000 })
+assert.equal(boundedTarget.annualRevenueTargetUsd, 1000000000000, 'Annual target must be bounded');
 const boundedCommercial = normalizeInputs({ sponsorDealsPerMonth: 30000, averageSponsorDealUsd: -1 })
 assert.equal(boundedCommercial.sponsorDealsPerMonth, 10000, 'Sponsor deal count must be bounded')
 assert.equal(boundedCommercial.averageSponsorDealUsd, 0, 'Sponsor amount cannot be negative')
