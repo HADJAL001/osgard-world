@@ -1,0 +1,115 @@
+workflows:
+  osgard-play-ios-testflight:
+    name: OSGARD PLAY — iOS TestFlight
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: osgard_app_store_connect
+    environment:
+      xcode: latest
+      node: 22
+      groups:
+        - osgard_app_store
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: world.osgard.play
+      vars:
+        APP_VERSION: "1.0.0"
+        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
+        XCODE_SCHEME: "App"
+    scripts:
+      - name: Build, test and package local OSGARD games for iOS
+        script: bash scripts/codemagic/build-ios.sh
+      - name: Configure App Store signing identities
+        script: xcode-project use-profiles
+      - name: Set monotonically increasing App Store version/build numbers
+        script: |
+          set -euo pipefail
+          if [[ -z "${APP_STORE_APPLE_ID:-}" ]]; then
+            echo "Set APP_STORE_APPLE_ID in the osgard_app_store variable group." >&2
+            exit 1
+          fi
+          latest="$(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || true)"
+          if [[ "$latest" =~ ^[0-9]+$ ]]; then
+            next=$((latest + 1))
+          else
+            next="${BUILD_NUMBER:-1}"
+          fi
+          if [[ "${BUILD_NUMBER:-1}" =~ ^[0-9]+$ ]] && (( BUILD_NUMBER > next )); then
+            next="$BUILD_NUMBER"
+          fi
+          cd "$CM_BUILD_DIR/ios/App"
+          agvtool new-marketing-version "$APP_VERSION"
+          agvtool new-version -all "$next"
+          echo "OSGARD PLAY version=$APP_VERSION build=$next"
+      - name: Build signed IPA for TestFlight
+        script: |
+          xcode-project build-ipa \
+            --workspace "$CM_BUILD_DIR/$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME"
+    artifacts:
+      - ios/App/build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+
+  osgard-play-ios-app-store-submit:
+    name: OSGARD PLAY — Submit to App Store Review
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: osgard_app_store_connect
+    environment:
+      xcode: latest
+      node: 22
+      groups:
+        - osgard_app_store
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: world.osgard.play
+      vars:
+        APP_VERSION: "1.0.0"
+        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
+        XCODE_SCHEME: "App"
+    scripts:
+      - name: Build, test and package local OSGARD games for iOS
+        script: bash scripts/codemagic/build-ios.sh
+      - name: Configure App Store signing identities
+        script: xcode-project use-profiles
+      - name: Set monotonically increasing App Store version/build numbers
+        script: |
+          set -euo pipefail
+          if [[ -z "${APP_STORE_APPLE_ID:-}" ]]; then
+            echo "Set APP_STORE_APPLE_ID in the osgard_app_store variable group." >&2
+            exit 1
+          fi
+          latest="$(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || true)"
+          if [[ "$latest" =~ ^[0-9]+$ ]]; then
+            next=$((latest + 1))
+          else
+            next="${BUILD_NUMBER:-1}"
+          fi
+          if [[ "${BUILD_NUMBER:-1}" =~ ^[0-9]+$ ]] && (( BUILD_NUMBER > next )); then
+            next="$BUILD_NUMBER"
+          fi
+          cd "$CM_BUILD_DIR/ios/App"
+          agvtool new-marketing-version "$APP_VERSION"
+          agvtool new-version -all "$next"
+          echo "OSGARD PLAY version=$APP_VERSION build=$next"
+      - name: Build signed IPA for App Store review
+        script: |
+          xcode-project build-ipa \
+            --workspace "$CM_BUILD_DIR/$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME"
+    artifacts:
+      - ios/App/build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: false
+        submit_to_app_store: true
