@@ -1187,6 +1187,9 @@ const OSGARD_SERVICE_DESTINATIONS = Object.freeze({
   'marcosa': 'https://marcosa.club/',
   'taxi': 'https://senjorio.com/',
   'smart-map': 'https://superday.run/',
+  'myosa': 'https://myosa.world/',
+  'o2-system': 'https://o2system.art/',
+  'gold-glamour': 'https://gold-glamour.online/',
   'business': OSGARD_OS_URL + '/',
   'creator-studio': 'https://osgardvanguard.studio/',
   'project-builder': 'https://osgardbewworld.com/',
@@ -1251,6 +1254,27 @@ const OSGARD_CAMPAIGNS = Object.freeze([
     description: 'Открой сайт OSgard OS и познакомься с проектом непосредственно на его сайте.',
     stage: 'Открыть официальный сайт', accent: 'gold',
     cta: 'Перейти на osgardos.com', destinationLabel: 'osgardos.com', url: OSGARD_SERVICE_DESTINATIONS['osgard-os']
+  },
+  {
+    id: 'myosa', number: '09', brand: 'MYOSA', category: 'AI PLATFORM',
+    title: 'Новые инструменты для цифровых идей.',
+    description: 'Платформа искусственного интеллекта экосистемы OSgard. Открой сайт и изучи доступные функции.',
+    stage: 'Платформа экосистемы · описание и доступность на официальном сайте', accent: 'violet',
+    cta: 'Открыть MYOSA', destinationLabel: 'myosa.world', url: OSGARD_SERVICE_DESTINATIONS.myosa
+  },
+  {
+    id: 'o2-system', number: '10', brand: 'O2 SYSTEM', category: 'BUSINESS OPERATIONS',
+    title: 'Операционная работа — под контролем.',
+    description: 'Инструменты учёта кассы обменников. Подробности доступны на сайте проекта.',
+    stage: 'Официальный сайт сервиса', accent: 'cyan',
+    cta: 'Открыть O2 SYSTEM', destinationLabel: 'o2system.art', url: OSGARD_SERVICE_DESTINATIONS['o2-system']
+  },
+  {
+    id: 'gold-glamour', number: '11', brand: 'GOLD GLAMOUR', category: 'LUXURY SERVICES',
+    title: 'Премиальные услуги и внимание к деталям.',
+    description: 'Проект премиальных услуг с золотом и выездным обслуживанием. Изучи подробности на сайте.',
+    stage: 'Премиальный сервис экосистемы', accent: 'gold',
+    cta: 'Открыть GOLD GLAMOUR', destinationLabel: 'gold-glamour.online', url: OSGARD_SERVICE_DESTINATIONS['gold-glamour']
   }
 ]);
 
@@ -1334,7 +1358,8 @@ const CASCADE_INTERSTITIAL_COMPLETION_KEY = 'osgard.games.cascade-lab-interstiti
 const CAMPAIGN_TO_SERVICE_PREFERENCE = Object.freeze({
   marcosa: 'marcosa', taxi: 'senjorio', 'smart-map': 'superday',
   business: 'osgard-business', 'creator-studio': 'vanguard',
-  'project-builder': 'projects', worlds: 'projects', 'osgard-os': 'osgard-business'
+  'project-builder': 'projects', worlds: 'projects', 'osgard-os': 'osgard-business',
+  myosa: 'myosa', 'o2-system': 'o2-system', 'gold-glamour': 'gold-glamour'
 });
 
 function analyticsMode() { return activeDuelChallenge ? 'duel' : activeDailyChallenge ? 'daily' : 'campaign'; }
