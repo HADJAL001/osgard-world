@@ -5,6 +5,7 @@ import vm from 'node:vm'
 const read = (path) => readFileSync(path, 'utf8')
 const source = read('public/games/game-session-recommendations.js')
 const css = read('public/games/game-session-recommendations.css')
+const commerceCore = read('services/osgard-commerce-api/src/core.mjs')
 const start = source.indexOf('/* OSGARD SELECT v2')
 assert.ok(start >= 0, 'OSGARD SELECT v2 block must exist')
 const select = source.slice(start)
@@ -29,13 +30,14 @@ for (const [name, url] of projects) {
 for (const game of ['null-shift','time','swarm','inherit','remix','civic-cascade','patina','signal-run','cascade-lab']) {
   assert.ok(select.includes("'" + game + "'"), 'Missing game context: ' + game)
 }
-for (const metric of ['cross_promo_clicked','share_dialog_opened','share_created','share_link_copied']) {
+for (const metric of ['cross_promo_clicked','share_dialog_opened','share_created','share_link_copied','service_recommendation_changed']) {
   assert.ok(select.includes("'" + metric + "'"), 'Missing consent-aware event: ' + metric)
 }
 for (const network of ['Telegram','WhatsApp','VK','X','Facebook']) assert.ok(select.includes("'" + network + "'"), 'Missing social sharing target: ' + network)
 assert.ok(select.includes("const preferredKey='osgard.games.preferred-service.v1'"), 'The user's preferred service must persist on-device')
 assert.ok(select.includes("const initial=readPreferred()||recommendationByGame[gameId]||'marcosa'"), 'Contextual suggestion must respect an explicitly saved preference')
 assert.ok(select.includes("u.searchParams.set('utm_source','osgard_games')") && select.includes("u.searchParams.set('utm_campaign','after_game')"), 'Service links must include game-level campaign attribution')
+assert.ok(commerceCore.includes('"cross_promo_clicked"') && commerceCore.includes('"share_dialog_opened"') && commerceCore.includes('"share_link_copied"') && commerceCore.includes('"service_recommendation_changed"'), 'Commerce API must allow the client events this intermission emits')
 assert.ok(select.includes("if(!hasConsent())return"), 'Optional event delivery must be consent-gated')
 assert.ok(select.includes("const walletKey='osgard.games.shards-wallet.v1'") && select.includes("current.day===day"), 'Local reward must be limited to once per day on that browser')
 assert.ok(select.includes('РЕКЛАМА · СОБСТВЕННЫЕ ПРОЕКТЫ OSGARD'), 'Cross-promotion must be identified as self-promotion')
