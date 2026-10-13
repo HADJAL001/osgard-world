@@ -241,7 +241,6 @@ export function PlaySelectLoop({ locale }: { locale: Locale }) {
               <input
                 type="checkbox"
                 checked={draftSelected.includes(service.id)}
-                disabled={false}
                 onChange={event => {
                   setDraftSelected(current => event.target.checked
                     ? [...new Set([...current, service.id])]
