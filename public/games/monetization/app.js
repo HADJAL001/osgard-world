@@ -8,6 +8,7 @@ const resetButton = document.getElementById('reset-model');
 const usd = new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 const number = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 });
 const decimal = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 });
+const factor = new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 
 function readInputs() {
   const data = new FormData(form);
@@ -32,9 +33,11 @@ function render() {
       '<div><span>Реклама · условно</span><b>' + money(result.adRevenueUsd) + '</b></div>' +
       '<div><span>Покупки / первый платёж</span><b>' + money(result.paidRevenueUsd) + '</b></div>' +
       '<div><span>Оплаченные проекты</span><b>' + money(result.servicesRevenueUsd) + '</b></div>' +
-      '<div><span>Спонсорство · модель</span><b>' + money(result.sponsorshipRevenueUsd) + ' (' + decimal.format(result.sponsorCampaigns) + ' камп.)</b></div>' +
+      '<div><span>Спонсорские размещения (модель)</span><b>' + money(result.sponsorRevenueUsd) + '</b></div>' +
       '<div><span>Расходы и комиссии</span><b>' + money(result.operatingCostUsd + result.paymentFeesUsd) + '</b></div>' +
-      '<div><span>Посещения</span><b>' + count(result.visitors) + '</b></div>' +
+      '<div><span>Посещения всего</span><b>' + count(result.visitors) + '</b></div>' +
+      '<div><span>В том числе приглашения</span><b>' + count(result.viralVisitors) + '</b></div>' +
+      '<div><span>K-factor</span><b>' + factor.format(result.kFactor) + '</b></div>' +
       '<div><span>Игровые сессии</span><b>' + count(result.sessions) + '</b></div>' +
       '<div><span>Заполненные рекламные показы</span><b>' + count(result.filledAdImpressions) + '</b></div>' +
       '<div><span>Заявки / оплаченные проекты</span><b>' + count(result.leads) + ' / ' + decimal.format(result.closedProjects) + '</b></div>' +
@@ -42,10 +45,16 @@ function render() {
   }).join('');
   statusNode.textContent = 'Пересчёт выполнен локально. Никакие введённые значения не отправляются на сервер.';
   const netValues = results.map((item) => item.result.netOperatingUsd);
+  const base = results[1].result;
   document.getElementById('base-net').textContent = money(netValues[1]);
-  document.getElementById('base-visitors').textContent = count(results[1].result.visitors);
-  document.getElementById('base-sessions').textContent = count(results[1].result.sessions);
-  document.getElementById('base-ad-impressions').textContent = count(results[1].result.filledAdImpressions);
+  document.getElementById('base-visitors').textContent = count(base.visitors);
+  document.getElementById('base-sessions').textContent = count(base.sessions);
+  document.getElementById('base-ad-impressions').textContent = count(base.filledAdImpressions);
+  const annualRevenue = base.totalRevenueUsd * 12;
+  document.getElementById('base-viral-visitors').textContent = count(base.viralVisitors);
+  document.getElementById('base-k-factor').textContent = factor.format(base.kFactor);
+  document.getElementById('base-annual-revenue').textContent = money(annualRevenue);
+  document.getElementById('million-gap').textContent = money(Math.max(0, 1000000 - annualRevenue));
 }
 
 form.addEventListener('input', render);
@@ -60,8 +69,8 @@ exportButton.addEventListener('click', () => {
   const inputs = readInputs();
   const payload = {
     kind: 'osgard-games-business-model',
-    modelVersion: 1,
-    note: 'Illustrative scenario estimate only; not live analytics or guaranteed revenue.',
+    modelVersion: 2,
+    note: 'Illustrative scenario estimate only; referral loop is capped at five generations; not live analytics or guaranteed revenue.',
     currency: 'USD',
     generatedAt: new Date().toISOString(),
     inputs,

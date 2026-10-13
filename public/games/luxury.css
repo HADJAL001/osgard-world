@@ -118,3 +118,20 @@
  .luxury-entertainment .card,.luxury-entertainment .art svg,.luxury-entertainment .orbit{transition:none}
  .luxury-entertainment .card:hover{transform:none}
 }
+
+/* Consent-aware invitation ribbon: a useful deep link, not a fake reward banner. */
+.invite-ribbon{display:grid;grid-template-columns:42px minmax(0,1fr) auto;align-items:center;gap:16px;margin:0 auto;padding:18px clamp(18px,4vw,58px);border-bottom:1px solid #d3ff6940;background:linear-gradient(105deg,#d3ff6910,#d3ff6904 45%,transparent);max-width:1280px}
+.invite-mark{width:40px;height:40px;display:grid;place-items:center;border:1px solid #d3ff6960;color:var(--acid);font-size:22px}
+.invite-copy{display:grid;gap:4px;min-width:0}
+.invite-eyebrow{color:var(--acid);font:9px ui-monospace,Consolas,monospace;letter-spacing:.13em}
+.invite-copy strong{font-size:14px;font-weight:650;letter-spacing:-.02em}
+.invite-copy p{margin:0;color:#9ba396;font-size:11px;line-height:1.6}
+.invite-actions{display:flex;align-items:center;gap:7px}
+.invite-action,.invite-dismiss{min-height:40px;border:1px solid #d3ff6960;background:#d3ff690e;color:var(--acid);padding:0 14px;font-size:10px;font-weight:650;cursor:pointer;transition:background .2s,border-color .2s}
+.invite-action:hover,.invite-dismiss:hover{background:#d3ff691a;border-color:var(--acid)}
+.invite-dismiss{width:38px;padding:0;border-color:#ffffff22;background:transparent;color:#b2b8ab;font-size:20px}
+.invite-action:focus-visible,.invite-dismiss:focus-visible{outline:2px solid var(--acid);outline-offset:3px}
+@media(max-width:620px){.invite-ribbon{grid-template-columns:32px minmax(0,1fr);gap:11px;padding:14px 18px}.invite-mark{width:31px;height:31px;font-size:18px}.invite-copy strong{font-size:12px}.invite-copy p{font-size:10px}.invite-actions{grid-column:1/-1;justify-content:stretch;padding-left:42px}.invite-action{flex:1}.invite-dismiss{flex:0 0 38px}}
+@media(prefers-reduced-motion:reduce){.invite-action,.invite-dismiss{transition:none}}
+
+.invite-disclosure{display:block;margin-top:3px;color:#727c6f;font-size:9px;line-height:1.6}
