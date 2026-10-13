@@ -8,6 +8,8 @@ const css = read('public/games/game-session-recommendations.css');
 const core = read('services/osgard-commerce-api/src/core.mjs');
 const signalRun = read('public/games/signal-run/game.js');
 const lifecycle = read('public/games/player-lifecycle.js');
+const referralApiSource = read('services/osgard-commerce-api/src/server.mjs');
+const inviteLanding = read('public/games/invite/invite-landing.js');
 
 new vm.Script(source, { filename: 'game-session-recommendations.js' });
 new vm.Script(signalRun, { filename: 'signal-run/game.js' });
@@ -98,23 +100,30 @@ const primaryStart = reward.indexOf("primary.addEventListener('click',async()=>{
 const primaryEnd = reward.indexOf("const note=make('p','og-postgame-reward-note'", primaryStart);
 assert.ok(primaryStart >= 0 && primaryEnd > primaryStart, 'Share intent handler boundaries are required');
 const primaryHandler = reward.slice(primaryStart, primaryEnd);
-assert.ok(!primaryHandler.includes("sendSelectEvent('share_created'"),
-  'Opening the system share sheet or copying a link must not count as a completed share');
-const claimStart = reward.indexOf("claim.addEventListener('click'");
-const claimEnd = reward.indexOf("primary.addEventListener('click',async()=>{", claimStart);
-assert.ok(claimStart >= 0 && claimEnd > claimStart, 'Explicit share confirmation handler is required');
-const claimHandler = reward.slice(claimStart, claimEnd);
-assert.ok(claimHandler.includes("award('social-confirmation:'+network)") &&
-  claimHandler.includes("sendSelectEvent('share_created',gameId,'game-invite:'") &&
-  claimHandler.includes("sendSelectEvent('social_reward_claimed'"),
-  'The local daily reward and completed-share event must happen only after a separate confirmation');
-assert.ok(reward.includes('Копирование само по себе не считается репостом') &&
-  reward.includes('OSGARD не получает надёжный сигнал о факте публикации') &&
+assert.ok(primaryHandler.includes('registerReferralInvite(gameId,code)') &&
+  primaryHandler.includes('navigator.share') &&
+  primaryHandler.includes("sendSelectEvent('share_created',gameId,'game-invite:'"),
+  'Referral sharing must register the code before share and only then record invite creation');
+assert.ok(!reward.includes("award('social-confirmation:") && !reward.includes("claim.addEventListener('click'"),
+  'A user must not be able to self-award SHARDS by claiming they posted');
+assert.ok(reward.includes('hasReferralRewardConsent()') &&
+  reward.includes("localStorage.setItem(rewardConsentKey,'yes')") &&
+  reward.includes("localStorage.removeItem(rewardConsentKey)") &&
+  reward.includes('/v1/referrals/register') &&
+  reward.includes('/v1/referrals/balance'),
+  'Referral rewards require separate consent and server registration/balance endpoints');
+assert.ok(reward.includes('не короче 60 секунд') &&
+  reward.includes('Нет награды за клик, копирование или самоподтверждение репоста') &&
   reward.includes('не имеют денежной стоимости'),
-  'SHARDS must disclose that social posts are self-confirmed and have no cash value');
-assert.ok(source.includes("const walletKey='osgard.games.shards-wallet.v1',dailyReward=50") &&
-  source.includes('current.day===day'),
-  'Local SHARDS reward must be capped to one claim per UTC day and device wallet');
+  'SHARDS must be server-qualified after 60 seconds and disclose non-cash value');
+assert.ok(source.includes("const inviteCodesKey='osgard.games.shards-invite-codes.v1'") &&
+  source.includes('async function registerReferralInvite') &&
+  source.includes('async function refreshReferralBalance') &&
+  source.includes('function referralOwnerToken'),
+  'Invite codes and balances must use anonymous browser tokens and server state, not a local points wallet');
+assert.ok(!source.includes("const walletKey='osgard.games.shards-wallet.v1',dailyReward=50") &&
+  !source.includes('function award(source){'),
+  'Client-side reward wallet and self-award mutation must be removed');
 assert.ok(lifecycle.includes("activeSessionId='session_'+id+'_'+sequence+'_'+launchAt") && lifecycle.includes('sessionId:activeSessionId') && lifecycle.includes('detail:{game:activeGame,sessionId:activeSessionId}'),
   'The same stable ID must be sent with gameplay completion and post-session return events');
 assert.ok(source.includes("byGame[gameId]=Math.min((byGame[gameId]||0)+1,1000000000)") &&
@@ -136,10 +145,15 @@ assert.ok(!signalShareHandler.includes("life('share_created'"),
 assert.ok(signalRun.slice(claimSignal).includes("life('share_created',{shareMethod:method,dailyMode,dailyDate:dailyMode?dailyDate:null,rewardConfirmedByPlayer:true})"),
   'SIGNAL RUN completed-share analytics must follow the explicit reward confirmation');
 
+assert.ok(core.includes("REFERRAL_REWARD_POINTS = 50") && core.includes("REFERRAL_MIN_SESSION_SECONDS = 60") && core.includes("validateReferralRewardRegistration"), 'Commerce API defines server-qualified non-cash reward rules');
+assert.ok(core.includes("parseReferralRewardEvent") && core.includes("durationSeconds >= REFERRAL_MIN_SESSION_SECONDS"), 'Only qualified game sessions should enter the referral reward parser');
+assert.ok(referralApiSource.includes('game_referral_invites') && referralApiSource.includes('game_referral_visits') && referralApiSource.includes('game_referral_rewards'), 'Commerce API persists invite registrations, visits, and unique qualified rewards');
+assert.ok(referralApiSource.includes('processReferralRewardEvent') && referralApiSource.includes('/v1/referrals/register') && referralApiSource.includes('/v1/referrals/balance'), 'Commerce API must verify referral rewards and return server-derived balance');
+assert.ok(inviteLanding.includes("osgard.games.referral-reward-consent.v1") && inviteLanding.includes("source:'referral-link:'+code+':'+requestedGame+':'+visitorToken"), 'Invite landing must collect reward consent and provide a same-game visitor token');
 console.log(JSON.stringify({
   status: 'passed',
   serviceDestinations: services.length,
   gameContexts: 9,
-  checks: 33,
-  notes: 'Source-level guardrails; social publication is self-confirmed, not verified by social-network APIs.'
+  checks: 38,
+  notes: 'Referrals require analytics and separate reward consent, a registered invite, and a server-qualified same-game session of at least 60 seconds.'
 }));
