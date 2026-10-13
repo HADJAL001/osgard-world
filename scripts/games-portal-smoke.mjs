@@ -363,8 +363,15 @@ const css=html.match(/<style>([\s\S]*?)<\/style>/)?.[1]||''
 assert.ok(css.includes('@media(max-width:760px)'),'Responsive/mobile layout missing')
 assert.ok(css.includes('.player-view')&&css.includes('dialog::backdrop'),'Game dialog style missing')
 assert.ok(lazyRuntime.includes("loadScript('player-lifecycle.js')")&&lazyRuntime.includes("versioned('/games/'+path)"),'Self-hosted lifecycle module must be loaded on demand with the current release version')
-assert.ok(html.includes('aria-label="OSGARD WORLD PLAY"'),'Brand accessible name must include visible PLAY label')
-for(const label of ['NULL//SHIFT — играть на Godot','TIME / EMPIRE — играть в Империю времени','SWARM — играть','INHERIT — играть','REMIX / ARENA — открыть REMIX']) assert.ok(html.includes('aria-label="'+label+'"'),'Game art accessible name must include the visible label: '+label)
+assert.ok(html.includes("$('.card',grid).forEach(c=>")&&!/(^|[^$])\$\('\.card',grid\)\.forEach/.test(html),'Catalog search/filter must iterate over every card; a single-element query caused a render TypeError')
+assert.ok(html.includes('<strong>OSGARD <span>WORLD</span></strong> <em>PLAY</em>')&&!html.includes('aria-label="OSGARD WORLD PLAY"'),'Brand accessible name must preserve the exact visible words')
+assert.ok(!/<a class="art art-[^"]+"[^>]*aria-label=/.test(html),'Artwork links must use their visible content for the accessible name')
+for(const [marker,label] of [
+  ["random.setAttribute('aria-label', 'Случайная игра","random action label must contain the visible text"],
+  ["resume.setAttribute('aria-label', 'Продолжить последнюю игру'","resume action label must contain the visible text"],
+  ["share.setAttribute('aria-label', 'Поделиться платформой OSGARD PLAY'","share action label must contain the visible text"],
+]) assert.ok(luxury.includes(marker),label)
+assert.ok(html.includes('.game-actions a{display:inline-flex;align-items:center;min-height:44px;padding:0 8px}')&&html.includes('.luxury-entertainment footer>nav a{display:inline-flex;align-items:center;min-height:36px;padding:8px 2px}'),'Catalog and footer links must meet minimum touch-target dimensions')
 for(const lowContrast of ['#656c61','#6f796b','#6d756a','#71796c','#737a70','#737b70','#697168']) assert.ok(!html.toLowerCase().includes(lowContrast),'Low-contrast secondary color remains: '+lowContrast)
 assert.ok(html.includes('.consent-row p{max-width:710px;color:#7f877c;font-size:12px;line-height:1.7}'),'Analytics consent copy must reach a legible 12px size')
 assert.ok(html.includes('.note{margin:16px 0 0;color:#8b9387;font-size:12px;line-height:1.7}')&&html.includes('.privacy-note{color:#8b9387;font-size:12px;line-height:1.65}'),'Notes must remain readable on mobile')
