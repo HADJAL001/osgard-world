@@ -735,6 +735,27 @@ function rewardShelf(gameId){
  const url=inviteFor(gameId),inviteCode=new URL(url,location.origin).searchParams.get('og_ref')||'',message='Пойдём сыграем в '+titles[gameId]+' в OSGARD PLAY.',eu=encodeURIComponent(url),et=encodeURIComponent(message);
  const networks=[['Telegram','https://t.me/share/url?url='+eu+'&text='+et],['WhatsApp','https://wa.me/?text='+encodeURIComponent(message+' '+url)],['VK','https://vk.com/share.php?url='+eu+'&title='+encodeURIComponent('OSGARD PLAY · '+titles[gameId])+'&comment='+et],['X','https://twitter.com/intent/tweet?url='+eu+'&text='+et],['Facebook','https://www.facebook.com/sharer/sharer.php?u='+eu]];
  const grid=make('div','og-postgame-networks'),claim=make('button','og-postgame-claim','Я опубликовал — получить +50 SHARDS');claim.type='button';claim.hidden=true;let pending='';
+ const qualifiedClaim=make('button','og-postgame-qualified-claim','Проверить награду за друга ↗');qualifiedClaim.type='button';
+ const qualifiedNote=make('p','og-postgame-qualified-note','Дополнительные +50 SHARDS начисляются за каждую зарегистрированную ссылку, по которой друг открыл приглашение и прошёл игровую сессию не короче 30 секунд. Требуется согласие на аналитику и доступность Commerce API.');
+ const qualifiedStatus=make('p','og-postgame-status');qualifiedStatus.setAttribute('role','status');qualifiedStatus.setAttribute('aria-live','polite');
+ qualifiedClaim.addEventListener('click',async()=>{
+  qualifiedClaim.disabled=true;qualifiedStatus.textContent='Проверяем приглашения на сервере…';
+  try{
+   const result=await claimQualifiedReferralShards();
+   if(!result.ok){
+    const messages={consent:'Включи согласие на аналитику, чтобы проверить приглашения. Без согласия игровые ссылки всё равно можно отправлять.', 'no-invites':'Сначала отправь другу приглашение с этого устройства.', 'not-configured':'Сервис вознаграждений пока не подключён к Commerce API. Приглашение всё равно работает.', 'invalid-config':'Адрес Commerce API не настроен корректно.', network:'Не удалось связаться с сервером. Попробуй позже.', 'REFERRAL_REWARD_UNAVAILABLE':'Сервис наград временно недоступен.'};
+    qualifiedStatus.textContent=messages[result.reason]||'Не удалось проверить приглашения: '+String(result.reason||'ошибка');
+    return;
+   }
+   if(result.count===0){qualifiedStatus.textContent='Пока нет подтверждённых завершений по твоим приглашениям. Награда появится после того, как друг откроет ссылку и завершит сессию не короче 30 секунд.';return}
+   const saved=addQualifiedReferralShards(result.amount);
+   if(!saved.ok){qualifiedStatus.textContent='Сервер подтвердил '+result.count+' приглашение(я), но браузер не сохранил локальные SHARDS. Очистка/блокировка хранилища может лишить локальной награды.';return}
+   balance.textContent='OSGARD SHARDS · '+saved.balance;
+   qualifiedStatus.textContent='Сервер подтвердил '+result.count+' завершённое приглашение(я). Начислено +'+result.amount+' SHARDS. Это косметические очки без денежной стоимости.';
+   void sendSelectEvent('referral_reward_claimed',gameId,'osgard-referral-qualified:'+result.count+':'+gameId);
+  }catch{qualifiedStatus.textContent='Не удалось проверить приглашения. Попробуй позже.'}
+  finally{qualifiedClaim.disabled=false;balance.textContent='OSGARD SHARDS · '+getWallet().balance}
+ });
  const show=result=>{balance.textContent='OSGARD SHARDS · '+getWallet().balance;status.textContent=result.ok?'+50 SHARDS начислено. Баланс: '+result.balance+'.':result.already?'Дневная награда уже получена. Баланс: '+result.balance+'.':'Не удалось сохранить награду в этом браузере.'};
  networks.forEach(([name,href])=>{const link=make('a','og-postgame-network',name+' ↗');link.href=href;link.target='_blank';link.rel='noopener noreferrer';link.setAttribute('aria-label','Открыть форму публикации в '+name+' в новой вкладке');link.addEventListener('click',()=>{pending=name;claim.hidden=false;claim.textContent='Я опубликовал в '+name+' — получить +50 SHARDS';status.textContent='Откроется форма публикации. После отправки вернись и подтверди действие. Соцсеть не сообщает сайту подтверждение публикации.';void sendSelectEvent('invite_link_prepared',gameId,'game-invite:'+gameId+':'+inviteCode);void sendSelectEvent('social_share_intent',gameId,'osgard-social-share:'+name.toLowerCase()+':'+gameId)});grid.append(link)});
  claim.addEventListener('click',()=>{
