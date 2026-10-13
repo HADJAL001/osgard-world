@@ -207,6 +207,39 @@ const visibleFilters=new Set([...html.matchAll(/<button\b[^>]*data-filter="([^"]
 const cardGenres=[...new Set(catalogCards.flatMap(card=>card.genres))].sort()
 assert.ok(cardGenres.every(genre=>visibleFilters.has(genre)),'Every card genre must have a visible catalog filter: '+cardGenres.filter(genre=>!visibleFilters.has(genre)).join(', '))
 assert.ok(visibleFilters.has('arcade'),'The catalog must expose the Arcade genre filter')
+
+const artworkIds=['null-shift','time','swarm','inherit','remix','civic-cascade','patina','signal-run','cascade-lab','afterimage-run']
+const artClassToId={'art-null':'null-shift','art-time':'time','art-swarm':'swarm','art-inherit':'inherit','art-remix':'remix','art-civic':'civic-cascade','art-patina':'patina','art-signal':'signal-run','art-cascade-lab':'cascade-lab','art-afterimage':'afterimage-run'}
+const artCardMatches=[]
+let artCursor=0
+while(true){
+ const start=html.indexOf('<a class="art ',artCursor)
+ if(start<0)break
+ const openingEnd=html.indexOf('>',start)+1
+ const closingStart=html.indexOf('</a>',openingEnd)
+ if(openingEnd<=0||closingStart<0)break
+ const opening=html.slice(start,openingEnd)
+ const body=html.slice(openingEnd,closingStart)
+ const classStart=opening.indexOf('class="')+7
+ const classEnd=opening.indexOf('"',classStart)
+ const classes=opening.slice(classStart,classEnd).split(/\\s+/)
+ const artClass=classes.find(value=>Object.prototype.hasOwnProperty.call(artClassToId,value))
+ if(artClass)artCardMatches.push({artClass,body})
+ artCursor=closingStart+4
+}
+assert.equal(artCardMatches.length,10,'All ten game cards must keep one artwork link')
+assert.equal(artCardMatches.filter(card=>card.body.includes('<svg')).length,0,'Initial catalogue DOM must not inline the decorative card SVGs')
+for(const [artClass,id] of Object.entries(artClassToId)){
+ const card=artCardMatches.find(item=>item.artClass===artClass)
+ assert.ok(card,'Missing artwork card '+artClass)
+ assert.ok(card.body.includes('src="/games/art/'+id+'.svg"')&&card.body.includes('loading="lazy"')&&card.body.includes('decoding="async"'),'Artwork must use a lazy, async-decoded asset: '+id)
+ const file='public/games/art/'+id+'.svg'
+ assert.ok(existsSync(resolve(file)),'Missing extracted card artwork: '+file)
+ const svg=readFileSync(resolve(file),'utf8')
+ assert.ok(svg.includes('<svg xmlns="http://www.w3.org/2000/svg"')&&svg.includes('viewBox="'),'Standalone SVG is malformed: '+id)
+}
+assert.ok(html.includes('.art-illustration{position:absolute')&&html.includes('object-fit:contain'),'Extracted artwork must preserve card geometry and sizing')
+
 const required=['data-game="null-shift"','data-game="time"','data-game="swarm"','data-game="inherit"','data-game="remix"','data-game="civic-cascade"','data-game="patina"','data-game="signal-run"','data-game="cascade-lab"','data-game="afterimage-run"','id="games-grid"','id="game-search"','data-filter="tactical"','data-filter="arcade"','id="player-dialog"','id="player-share"','id="player-fullscreen"','id="analytics-toggle"','id="project-form"','https://wa.me/79640027222','osgardbewworld.com','o2system.art','senjorio.com','superday.run','marcosa.club','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio','href="/games/ecosystem/"','/games/favicon.svg','/privacy/','/terms/']
 for(const item of required) assert.ok(html.includes(item),'Games hub missing: '+item)
 assert.ok(appSource.includes('className="play-catalog-link" href="/games/"')&&appSource.includes('<em>OSGARD WORLD GAMING</em>')&&appSource.includes("'Открыть игровой портал'"),'Homepage entertainment gateway must promote OSGARD WORLD GAMING and open the canonical /games/ hub')
