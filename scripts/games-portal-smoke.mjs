@@ -682,6 +682,10 @@ const rewardPrimaryEnd=recommendationScript.indexOf(" const note=make('p','og-po
 assert.ok(rewardPrimaryStart>=0&&rewardPrimaryEnd>rewardPrimaryStart,'OSGARD SELECT reward-share handler boundaries are required');
 const rewardPrimaryHandler=recommendationScript.slice(rewardPrimaryStart,rewardPrimaryEnd);
 assert.ok(!rewardPrimaryHandler.includes('award(')&&rewardPrimaryHandler.includes('registerInvite(gameId,code)')&&rewardPrimaryHandler.includes('navigator.share'),'Invite sharing must not mint local SHARDS and must register through the server');
+const inviteRegisterAt=rewardPrimaryHandler.indexOf('await registerInvite(gameId,code)');
+const inviteShareAt=rewardPrimaryHandler.indexOf('await navigator.share(');
+assert.ok(inviteRegisterAt>=0&&inviteShareAt>inviteRegisterAt,'Rewardable invite must exist on the server before a social app receives the URL');
+assert.ok(rewardPrimaryHandler.indexOf('reportInviteShareCreated(gameId,code)')>inviteShareAt,'A completed share event must follow native share resolution, never the registration request');
 assert.ok(recommendationScript.includes("consentToggle.type='checkbox'")&&recommendationScript.includes('osgard:reward-consent-changed')&&recommendationScript.includes('Участие в программе наград включено'),'Reward participation requires a separate opt-in and updates invite attribution');
 assert.ok(!recommendationScript.includes("award('social-confirmation:")&&!recommendationScript.includes("const walletKey='osgard.games.shards-wallet.v1'"),'Social self-confirmation must never create rewarded balance');
 assert.ok(recommendationScript.includes("entry.intersectionRatio>=0.5")&&recommendationScript.includes("},1000)")&&recommendationScript.includes('card.isConnected')&&recommendationScript.includes('card.getClientRects().length'),'A promo exposure must require at least 50% visibility for a full second on a connected, visible card');
