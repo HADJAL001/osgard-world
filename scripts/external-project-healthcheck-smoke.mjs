@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { checkProject, extractMetaDescription, extractPageTitle, PROJECTS, runAudit } from './external-project-healthcheck.mjs'
+import { checkProject, extractMetaDescription, extractPageTitle, isSafePublicHttpsUrl, PROJECTS, runAudit } from './external-project-healthcheck.mjs'
 
 assert.equal(PROJECTS.length, 10, 'The audit must include all ten owner-listed projects')
 assert.equal(new Set(PROJECTS.map(project => project.id)).size, 10, 'Project IDs must be unique')
@@ -41,8 +41,125 @@ assert.equal(good.pageTitle, 'OSGARD Product')
 assert.equal(good.metaDescription, 'Test homepage')
 assert.equal(good.reachable, true)
 assert.equal(calls[0].options.method, 'GET')
-assert.equal(calls[0].options.redirect, 'follow')
+assert.equal(calls[0].options.redirect, 'manual')
 assert.ok(calls[0].options.signal, 'HTTP requests need an explicit timeout signal')
+
+assert.equal(isSafePublicHttpsUrl('https://public.example/'), true)
+for (const url of [
+  'http://public.example/',
+  'https://127.0.0.1/',
+  'https://127.1/',
+  'https://[::1]/',
+  'https://localhost/',
+  'https://private.internal/',
+  'https://public.example:8443/',
+  'https://user:pass@public.example/',
+]) assert.equal(isSafePublicHttpsUrl(url), false, 'Unsafe audit target must be rejected: ' + url)
+
+const redirectResponse = (status, location = null, body = '<title>Redirecting</title>') => ({
+  status,
+  headers: { get: name => name === 'location' ? location : name === 'content-type' ? 'text/html; charset=utf-8' : null },
+  body: { cancel: async () => {} },
+  text: async () => body,
+})
+const finalResponse = (url, body = '<html><head><title>Canonical OSGARD</title><meta name="description" content="Canonical page"></head></html>') => ({
+  status: 200,
+  url,
+  headers: { get: name => name === 'content-type' ? 'text/html; charset=utf-8' : null },
+  text: async () => body,
+})
+const redirectCalls = []
+const safeRedirectFetch = async (url, options) => {
+  redirectCalls.push({ url, options })
+  if (url === 'https://redirect.example/') return redirectResponse(301, 'https://www.redirect.example/home')
+  return finalResponse(url)
+}
+const redirected = await checkProject(
+  { id: 'redirect-test', name: 'Redirect Test', url: 'https://redirect.example/' },
+  { fetchImpl: safeRedirectFetch, now: fixedNow },
+)
+assert.equal(redirected.outcome, 'reachable')
+assert.equal(redirected.finalHost, 'www.redirect.example')
+assert.equal(redirected.redirected, true)
+assert.equal(redirected.redirectsFollowed, 1)
+assert.equal(redirectCalls.length, 2, 'A safe same-domain HTTPS redirect should be followed once')
+assert.ok(redirectCalls.every(call => call.options.redirect === 'manual'), 'Every hop must use manual redirect mode')
+
+let unsafeTargetRequested = false
+const blockedRedirect = await checkProject(
+  { id: 'unsafe-redirect', name: 'Unsafe Redirect', url: 'https://safe.example/' },
+  { fetchImpl: async (url) => {
+    if (url !== 'https://safe.example/') unsafeTargetRequested = true
+    return redirectResponse(302, 'http://127.0.0.1:4317/private')
+  }, now: fixedNow },
+)
+assert.equal(blockedRedirect.outcome, 'unsafe_redirect')
+assert.equal(blockedRedirect.reachable, false)
+assert.equal(blockedRedirect.blockedRedirectHost, '127.0.0.1')
+assert.equal(unsafeTargetRequested, false, 'A local redirect target must never be requested')
+
+let crossDomainRequested = false
+const crossDomain = await checkProject(
+  { id: 'cross-domain', name: 'Cross Domain Redirect', url: 'https://owner.example/' },
+  { fetchImpl: async url => {
+    if (url !== 'https://owner.example/') crossDomainRequested = true
+    return redirectResponse(302, 'https://unrelated.example/landing')
+  }, now: fixedNow },
+)
+assert.equal(crossDomain.outcome, 'unsafe_redirect')
+assert.equal(crossDomainRequested, false, 'A redirect outside the configured domain family must be flagged, not fetched')
+
+const loop = await checkProject(
+  { id: 'redirect-loop', name: 'Redirect Loop', url: 'https://loop.example/' },
+  { fetchImpl: async () => redirectResponse(301, 'https://loop.example/'), now: fixedNow },
+)
+assert.equal(loop.outcome, 'redirect_loop')
+
+let redirectHop = 0
+const limited = await checkProject(
+  { id: 'redirect-limit', name: 'Redirect Limit', url: 'https://hops.example/' },
+  { fetchImpl: async url => {
+    const host = new URL(url).hostname
+    redirectHop += 1
+    const n = host === 'hops.example' ? 0 : Number(host.match(/^hop(\\d+)\\.hops\\.example$/)?.[1] || 0)
+    return redirectResponse(302, 'https://hop' + (n + 1) + '.hops.example/')
+  }, now: fixedNow },
+)
+assert.equal(limited.outcome, 'redirect_limit')
+assert.equal(limited.redirectsFollowed, undefined)
+
+let bodyCancelled = false
+let unboundedTextCalled = false
+const largeHtml = new TextEncoder().encode('<html><head><title>Bounded response</title></head><body>' + 'x'.repeat(1024 * 1024 + 128) + '</body></html>')
+let bodyRead = false
+const oversizedResponse = {
+  status: 200,
+  headers: { get: name => name === 'content-type' ? 'text/html' : null },
+  body: {
+    getReader() {
+      return {
+        async read() {
+          if (bodyRead) return { done: true }
+          bodyRead = true
+          return { done: false, value: largeHtml }
+        },
+        async cancel() { bodyCancelled = true },
+        releaseLock() {},
+      }
+    },
+  },
+  async text() { unboundedTextCalled = true; return '' },
+}
+const bounded = await checkProject(
+  { id: 'large-page', name: 'Large Page', url: 'https://large.example/' },
+  { fetchImpl: async () => oversizedResponse, now: fixedNow },
+)
+assert.equal(bounded.pageTitle, 'Bounded response', 'Useful metadata should be parsed from the bounded prefix')
+assert.equal(bounded.bodyTruncated, true, 'Oversized pages must be explicitly marked as truncated')
+assert.ok(bounded.bodyBytesRead <= 1024 * 1024, 'The reader must never consume more than the configured body cap')
+assert.equal(bodyCancelled, true, 'The remainder of an oversized response must be cancelled')
+assert.equal(unboundedTextCalled, false, 'The streaming reader must avoid unbounded response.text()')
+
 
 const forbidden = await checkProject(PROJECTS[1], { fetchImpl: fakeFetch, now: fixedNow })
 assert.equal(forbidden.outcome, 'http_error')
@@ -72,4 +189,4 @@ assert.equal(report.results.find(result => result.id === 'senjorio').attempts, 2
 assert.equal(report.results.find(result => result.id === 'myosa').attempts, 2, 'A 5xx response gets one retry before classification')
 assert.ok(report.results.every(result => result.note.includes('HTTP homepage check only') || result.note.includes('does not by itself prove')))
 
-console.log('PASS external project healthcheck: 10 URL registry entries, HTML metadata, bounded GET requests, HTTP/network/timeout classification, and report boundaries.')
+console.log('PASS external project healthcheck: 10 URL registry entries, safe manual HTTPS redirects, redirect loop/limit handling, bounded streaming reads, HTML metadata, and HTTP/network/timeout classification.')
