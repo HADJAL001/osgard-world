@@ -7,7 +7,8 @@ import Stripe from "stripe";
 import pg from "pg";
 import {
   catalogConfiguration, validateCheckoutPayload, validateLeadPayload,
-  validateEventBatch, paymentsModeAllowed, resolveCheckoutPaymentState, safeEqual,
+  validateEventBatch, validateReferralIssuePayload, validateReferralWalletPayload,
+  validateReferralDisablePayload, paymentsModeAllowed, resolveCheckoutPaymentState, safeEqual,
 } from "./core.mjs";
 
 const { Pool } = pg;
@@ -45,6 +46,7 @@ app.use(cors({
 app.use("/v1/checkout", rateLimit({ windowMs: 15 * 60 * 1000, limit: 20, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/leads", rateLimit({ windowMs: 60 * 60 * 1000, limit: 8, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/events", rateLimit({ windowMs: 5 * 60 * 1000, limit: 60, standardHeaders: "draft-8", legacyHeaders: false }));
+app.use("/v1/referrals", rateLimit({ windowMs: 60 * 60 * 1000, limit: 80, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/admin", rateLimit({ windowMs: 5 * 60 * 1000, limit: 120, standardHeaders: "draft-8", legacyHeaders: false }));
 
 async function ensureSchema() {
@@ -57,7 +59,12 @@ async function ensureSchema() {
     "CREATE INDEX IF NOT EXISTS commerce_leads_created_idx ON commerce_leads(created_at DESC);\n" +
     "CREATE TABLE IF NOT EXISTS commerce_events (event_id TEXT PRIMARY KEY, event_name TEXT NOT NULL, session_id TEXT NOT NULL, game_id TEXT NOT NULL, source TEXT NOT NULL, path TEXT NOT NULL, duration_seconds INTEGER NOT NULL DEFAULT 0, received_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
     "CREATE INDEX IF NOT EXISTS commerce_events_name_received_idx ON commerce_events(event_name, received_at DESC);\n" +
-    "CREATE INDEX IF NOT EXISTS commerce_events_game_received_idx ON commerce_events(game_id, received_at DESC);");
+    "CREATE INDEX IF NOT EXISTS commerce_events_game_received_idx ON commerce_events(game_id, received_at DESC);\n" +
+    "CREATE TABLE IF NOT EXISTS commerce_referral_wallets (wallet_token_hash TEXT PRIMARY KEY, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
+    "CREATE TABLE IF NOT EXISTS commerce_referral_invites (invite_code TEXT PRIMARY KEY, wallet_token_hash TEXT NOT NULL REFERENCES commerce_referral_wallets(wallet_token_hash) ON DELETE CASCADE, game_id TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
+    "CREATE INDEX IF NOT EXISTS commerce_referral_invites_owner_created_idx ON commerce_referral_invites(wallet_token_hash, created_at DESC);\n" +
+    "CREATE TABLE IF NOT EXISTS commerce_referral_rewards (reward_id TEXT PRIMARY KEY, invite_code TEXT NOT NULL UNIQUE REFERENCES commerce_referral_invites(invite_code) ON DELETE CASCADE, wallet_token_hash TEXT NOT NULL REFERENCES commerce_referral_wallets(wallet_token_hash) ON DELETE CASCADE, referred_session_id TEXT NOT NULL UNIQUE, game_id TEXT NOT NULL, points INTEGER NOT NULL CHECK (points = 50), created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
+    "CREATE INDEX IF NOT EXISTS commerce_referral_rewards_owner_created_idx ON commerce_referral_rewards(wallet_token_hash, created_at DESC);");
   dbReady = true;
   return true;
 }
