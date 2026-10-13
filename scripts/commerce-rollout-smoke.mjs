@@ -43,7 +43,7 @@ for (const value of ["type=\"password\"", "ADMIN_API_TOKEN", "/v1/admin/leads", 
 assert.equal(config.apiBaseUrl, "", "No production API hostname should be assumed without deployment confirmation.");
 assert.equal(server.split('app.get("/v1/admin/overview"').length - 1, 1, "Commerce API must have exactly one admin overview handler.");
 
-const overviewStart = server.indexOf("const [orderStats, currencyStats, leadStats, eventStats, topEvents, analyticsByGame, ownedPromoByService, ownedPromoVariantStats, analyticsFunnel, socialShareByNetwork, paidRevenueByAttribution]");
+const overviewStart = server.indexOf("const [orderStats, currencyStats, leadStats, eventStats, topEvents, analyticsByGame, ownedPromoByService, ownedPromoVariantStats, analyticsFunnel, socialShareByNetwork, paidRevenueByAttribution, referralRewardStats]");
 const overviewEnd = server.indexOf("\n    ]);", overviewStart);
 assert.ok(overviewStart >= 0 && overviewEnd > overviewStart, "Admin overview Promise.all query block missing.");
 const overviewQueries = server.slice(overviewStart, overviewEnd);
@@ -59,6 +59,7 @@ const overviewQueryOrder = [
   "WITH recent_events AS (",
   "SELECT\n          network,",
   "SELECT attribution_game_id AS",
+  'SELECT COUNT(*)::int AS \\"qualifiedReferrals\\"',
 ];
 const overviewPositions = overviewQueryOrder.map((needle) => overviewQueries.indexOf(needle));
 assert.ok(overviewPositions.every((position) => position >= 0), "Admin overview is missing one or more expected query slots.");
@@ -143,5 +144,11 @@ for (const value of ['id="analytics-retention"', 'id="game-analytics-table"', "a
 assert.ok(readFileSync(resolve("public/games/premium/index.html"), "utf8").includes('src="/games/commerce-client.js"'), "Premium page view analytics must use the shared consent gate.");
 assert.ok(privacy.includes("ANALYTICS_RETENTION_DAYS") && privacy.includes("90 дней") && privacy.includes("не отправляется автоматически"), "Privacy page must document consented analytics retention and manual WhatsApp fallback.");
 assert.ok(privacy.includes("100 событий") && privacy.includes("7 дней") && privacy.includes("отзыве согласия"), "Privacy page must disclose local analytics queue bounds and withdrawal behavior.");
+
+assert.ok(core.includes("validateReferralRegistrationPayload") && core.includes("validateReferralClaimPayload"), "Commerce API must validate referral codes and owner tokens");
+assert.ok(server.includes('app.post("/v1/referrals/register"') && server.includes('app.post("/v1/referrals/claim"'), "Qualified invite reward endpoints are missing");
+assert.ok(server.includes("CREATE TABLE IF NOT EXISTS commerce_referral_invites") && server.includes("INTERVAL '30 seconds'") && server.includes("reward_claimed_at IS NULL"), "Referral rewards must be idempotent and require a completed timed session");
+assert.ok(server.includes("verifiedReferralRewards: referralRewardStats.rows[0]") && admin.includes('id="analytics-qualified-referrals"') && admin.includes('id="analytics-qualified-shards"'), "Qualified referral rewards must be shown in the protected admin dashboard");
+assert.ok(core.includes('"referral_reward_claimed"') && consentQueue.includes("'referral_reward_claimed'"), "Qualified referral events must remain consent-gated and allow-listed");
 
 console.log("Commerce rollout smoke: all static integration checks passed.");
