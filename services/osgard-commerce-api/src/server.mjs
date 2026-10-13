@@ -6,7 +6,7 @@ import rateLimit from "express-rate-limit";
 import Stripe from "stripe";
 import pg from "pg";
 import {
-  catalogConfiguration, validateCheckoutPayload, validateLeadPayload,
+  catalogConfiguration, validateCheckoutPayload, validateLeadPayload, validateLeadStatusPayload,
   validateEventBatch, paymentsModeAllowed, resolveCheckoutPaymentState, safeEqual,
 } from "./core.mjs";
 
@@ -38,7 +38,7 @@ app.use(cors({
     if (!origin || allowedOrigins.has(origin)) return callback(null, true);
     return callback(null, false);
   },
-  methods: ["GET", "POST", "OPTIONS"],
+  methods: ["GET", "POST", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "Stripe-Signature"],
   maxAge: 600,
 }));
@@ -57,7 +57,9 @@ async function ensureSchema() {
     "CREATE INDEX IF NOT EXISTS commerce_orders_paid_attribution_idx ON commerce_orders(status, created_at DESC, attribution_game_id, attribution_source);\n" +
     "CREATE INDEX IF NOT EXISTS commerce_orders_email_idx ON commerce_orders(email);\n" +
     "CREATE TABLE IF NOT EXISTS commerce_stripe_events (event_id TEXT PRIMARY KEY, event_type TEXT NOT NULL, processed_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
-    "CREATE TABLE IF NOT EXISTS commerce_leads (lead_id TEXT PRIMARY KEY, project_type TEXT NOT NULL, budget TEXT NOT NULL DEFAULT '', contact TEXT NOT NULL, description TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'new', consent_at TIMESTAMPTZ NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
+    "CREATE TABLE IF NOT EXISTS commerce_leads (lead_id TEXT PRIMARY KEY, project_type TEXT NOT NULL, budget TEXT NOT NULL DEFAULT '', contact TEXT NOT NULL, description TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'new', consent_at TIMESTAMPTZ NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
+    "ALTER TABLE commerce_leads ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();\n" +
+    "CREATE INDEX IF NOT EXISTS commerce_leads_status_created_idx ON commerce_leads(status, created_at DESC);\n" +
     "CREATE INDEX IF NOT EXISTS commerce_leads_created_idx ON commerce_leads(created_at DESC);\n" +
     "CREATE TABLE IF NOT EXISTS commerce_events (event_id TEXT PRIMARY KEY, event_name TEXT NOT NULL, session_id TEXT NOT NULL, game_id TEXT NOT NULL, source TEXT NOT NULL, path TEXT NOT NULL, duration_seconds INTEGER NOT NULL DEFAULT 0, received_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
     "CREATE INDEX IF NOT EXISTS commerce_events_name_received_idx ON commerce_events(event_name, received_at DESC);\n" +
@@ -474,13 +476,34 @@ app.get("/v1/admin/leads", requireAdmin, async (req, res) => {
   if (!requireDatabase(res)) return;
   const limit = Math.max(1, Math.min(100, Number.parseInt(String(req.query.limit || "50"), 10) || 50));
   try {
-    const result = await pool.query("SELECT lead_id, project_type, budget, contact, description, status, created_at FROM commerce_leads ORDER BY created_at DESC LIMIT $1", [limit]);
+    const result = await pool.query("SELECT lead_id, project_type, budget, contact, description, status, created_at, updated_at FROM commerce_leads ORDER BY created_at DESC LIMIT $1", [limit]);
     return res.json({ items: result.rows });
   } catch (error) {
     console.error("Admin leads failed:", error?.message || "unknown error");
     return res.status(503).json({ error: "ADMIN_LEADS_UNAVAILABLE" });
   }
 });
+app.patch("/v1/admin/leads/:leadId", requireAdmin, async (req, res) => {
+  if (!requireDatabase(res)) return;
+  const leadId = String(req.params.leadId || "");
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(leadId)) {
+    return res.status(400).json({ error: "LEAD_ID_INVALID" });
+  }
+  const update = validateLeadStatusPayload(req.body);
+  if (!update.ok) return res.status(update.status).json({ error: update.code });
+  try {
+    const result = await pool.query(
+      "UPDATE commerce_leads SET status=$1, updated_at=NOW() WHERE lead_id=$2 RETURNING lead_id, project_type, budget, contact, description, status, created_at, updated_at",
+      [update.status, leadId],
+    );
+    if (!result.rowCount) return res.status(404).json({ error: "LEAD_NOT_FOUND" });
+    return res.json({ item: result.rows[0] });
+  } catch (error) {
+    console.error("Admin lead status update failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "ADMIN_LEAD_UPDATE_UNAVAILABLE" });
+  }
+});
+
 app.get("/v1/admin/orders", requireAdmin, async (req, res) => {
   if (!requireDatabase(res)) return;
   const limit = Math.max(1, Math.min(100, Number.parseInt(String(req.query.limit || "50"), 10) || 50));
