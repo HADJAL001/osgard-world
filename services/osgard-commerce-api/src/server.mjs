@@ -356,7 +356,23 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
           game_id AS "gameId",
           COUNT(*) FILTER (
             WHERE event_name = 'owned_promo_impression'
-              AND source ~ '^osgard-select:spotlight:[a-z0-9-]{1,40}:[ab]
+              AND source ~ '^osgard-select:spotlight:[a-z0-9-]{1,40}:[ab]$'
+          )::int AS impressions,
+          COUNT(*) FILTER (
+            WHERE event_name = 'cross_promo_clicked'
+              AND source ~ '^osgard-select:click:[a-z0-9-]{1,40}(:[ab])?$'
+          )::int AS clicks
+        FROM commerce_events
+        WHERE received_at >= NOW() - INTERVAL '30 days'
+          AND (
+            (event_name = 'owned_promo_impression' AND source ~ '^osgard-select:spotlight:[a-z0-9-]{1,40}:[ab]$')
+            OR
+            (event_name = 'cross_promo_clicked' AND source ~ '^osgard-select:click:[a-z0-9-]{1,40}(:[ab])?$')
+          )
+        GROUP BY split_part(source, ':', 3), game_id
+        ORDER BY impressions DESC, clicks DESC, "serviceId" ASC
+        LIMIT 50
+      `),
       pool.query(`
         SELECT
           split_part(source, ':', 4) AS variant,
