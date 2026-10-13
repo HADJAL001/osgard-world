@@ -144,10 +144,14 @@ const REWARDABLE_INVITE_CODE = /^og_[a-f0-9]{32}$/;
 export function validateReferralRewardStatus(body) {
   const input = body && typeof body === "object" && !Array.isArray(body) ? body : {};
   const code = cleanText(input.code, 40);
+  const ownerToken = cleanText(input.ownerToken, 12);
   if (!REWARDABLE_INVITE_CODE.test(code)) {
     return { ok: false, status: 400, code: "REFERRAL_CODE_INVALID" };
   }
-  return { ok: true, code };
+  if (!/^[a-f0-9]{12}$/.test(ownerToken)) {
+    return { ok: false, status: 400, code: "REFERRAL_OWNER_TOKEN_INVALID" };
+  }
+  return { ok: true, code, ownerToken };
 }
 
 export function validateReferralRewardRegistration(body) {
