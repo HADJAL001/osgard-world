@@ -641,7 +641,7 @@ func _run_smoke() -> void:
 	if not _expect(game._active_impact_light_count() == 0, "impact light telemetry must return to zero after all flashes expire"):
 		return
 
-print("RUNTIME_STAGE: bounded impact spark pool and quality density")
+	print("RUNTIME_STAGE: bounded impact spark pool and quality density")
 	game._update_effect_expiry(1.0)
 	var saved_spark_cinematic: bool = game.cinematic_quality
 	var saved_spark_performance: bool = game.performance_quality
