@@ -104,6 +104,80 @@ func _run_smoke() -> void:
 	game._update_input_hint()
 	game.sound_enabled = false
 
+	print("RUNTIME_STAGE: reactive operator rim lighting")
+	if not _expect(is_instance_valid(game.operator_rim_light), "operator must create one live cinematic rim light"):
+		return
+	if not _expect(game.operator_rim_light.get_parent() == game.operator_rig and game.local_lights.has(game.operator_rim_light) and not game.operator_rim_light.shadow_enabled, "operator rim light must follow the animated suit and use the shared shadowless light budget"):
+		return
+	game.cinematic_quality = true
+	game.performance_quality = false
+	game.adaptive_quality_degraded = false
+	game._apply_quality_mode()
+	if not _expect(game.operator_rim_light.visible, "cinematic profile must enable the operator rim light"):
+		return
+	var saved_rim_energy: float = game.operator_rim_light.light_energy
+	var saved_rim_color: Color = game.operator_rim_light.light_color
+	var saved_lighting_health: float = game.player_health
+	var saved_lighting_shift: float = game.null_shift_timer
+	var saved_lighting_dash: float = game.dash_timer
+	var saved_lighting_position: Vector3 = game.player.global_position
+	var saved_lane_states: Array[String] = []
+	for lane in game.phase_lanes:
+		saved_lane_states.append(str(lane.get("state", "safe")))
+		lane["state"] = "safe"
+	game.player.global_position = Vector3(-19.0, 0.82, 8.2)
+	game.player_health = game.player_max_health
+	game.null_shift_timer = 0.0
+	game.dash_timer = 0.0
+	game._update_operator_lighting(1.0)
+	var calm_rim_energy: float = game.operator_rim_light.light_energy
+	var warning_lane: Dictionary = game.phase_lanes[0]
+	warning_lane["state"] = "warning"
+	game.phase_lanes[0] = warning_lane
+	game._update_operator_lighting(1.0)
+	var warning_color: Color = game.operator_rim_light.light_color
+	if not _expect(game.operator_rim_light.light_energy > calm_rim_energy and (warning_color.r > 0.35 or warning_color.g > 0.7), "nearby charging conduit must warm and brighten the operator rim"):
+		return
+	var active_lane: Dictionary = game.phase_lanes[0]
+	active_lane["state"] = "active"
+	game.phase_lanes[0] = active_lane
+	game._update_operator_lighting(1.0)
+	if not _expect(game.operator_rim_light.light_energy > calm_rim_energy and game.operator_rim_light.light_color.r > game.operator_rim_light.light_color.g, "active conduit must produce a stronger red danger rim"):
+		return
+	game.phase_lanes[0]["state"] = "safe"
+	game.null_shift_timer = 0.9
+	game._update_operator_lighting(1.0)
+	if not _expect(game.operator_rim_light.light_energy > calm_rim_energy and game.operator_rim_light.light_color.b > game.operator_rim_light.light_color.r, "NULL SHIFT must intensify and recolour the operator rim violet"):
+		return
+	game.null_shift_timer = 0.0
+	game.dash_timer = game.DASH_DURATION
+	game._update_operator_lighting(1.0)
+	if not _expect(game.operator_rim_light.light_color.g > 0.9 and game.operator_rim_light.light_color.b > 0.9, "dash must briefly lift the rim toward a cool white highlight"):
+		return
+	game.performance_quality = true
+	game._apply_quality_mode()
+	if not _expect(not game.operator_rim_light.visible, "performance profile must turn off the operator rim light"):
+		return
+	game.performance_quality = false
+	game.adaptive_quality_degraded = true
+	game._apply_quality_mode()
+	if not _expect(not game.operator_rim_light.visible, "adaptive degraded profile must turn off the operator rim light"):
+		return
+	game.adaptive_quality_degraded = false
+	game.cinematic_quality = true
+	game._apply_quality_mode()
+	game.player.global_position = saved_lighting_position
+	game.player_health = saved_lighting_health
+	game.null_shift_timer = saved_lighting_shift
+	game.dash_timer = saved_lighting_dash
+	for lane_index in range(game.phase_lanes.size()):
+		var lane_restore: Dictionary = game.phase_lanes[lane_index]
+		lane_restore["state"] = saved_lane_states[lane_index]
+		game.phase_lanes[lane_index] = lane_restore
+	game.operator_rim_light.light_energy = saved_rim_energy
+	game.operator_rim_light.light_color = saved_rim_color
+	game._update_operator_lighting(0.016)
+
 	print("RUNTIME_STAGE: live 3D objective beacon route guidance")
 	if not _expect(is_instance_valid(game.objective_beacon) and is_instance_valid(game.objective_beacon_beam) and is_instance_valid(game.objective_beacon_ring) and is_instance_valid(game.objective_beacon_top_ring) and is_instance_valid(game.objective_beacon_core) and is_instance_valid(game.objective_beacon_light), "procedural objective beacon must create its beam, two rings, signal core and light"):
 		return

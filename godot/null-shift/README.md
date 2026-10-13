@@ -227,3 +227,8 @@ Weapon fire and other transient beams use two crossed triangle ribbons plus a cr
 - Cinematic and Balanced profiles use normal/roughness detail maps. Performance and adaptive-degraded profiles keep subtle albedo variation while disabling normal/roughness maps to reduce shader work.
 - Headless runtime smoke checks texture presence, dimensions, spatial variation and Performance/Cinematic map policy. The browser export continues through the existing Godot 4.7.2 CI workflow.
 - This is procedural PBR material detail, not scanned photogrammetry, physically simulated reflections, a new shadow-map system or native 8K rendering; target-device GPU testing remains necessary.
+
+
+## Release note — reactive operator rim lighting
+
+The Godot scene uses one shadowless OmniLight3D accent parented to the animated operator rig. The cyan rim improves suit separation against the dark arena; it shifts toward amber/red near a charging/active conduit or at low health. NULL SHIFT pushes the light toward violet, and dash briefly lifts it toward a cool white highlight. The light shares the existing local-light budget and is disabled in Performance and adaptive-degraded profiles. The headless runtime smoke checks rig attachment, state-driven energy/colour changes and quality gating. This is live scene lighting, not a baked screenshot or a claim of native 8K rendering.

@@ -174,6 +174,7 @@ var target_lock_has_position := false
 var target_lock_tracked_node: Node3D
 var local_lights: Array[OmniLight3D] = []
 var fill_light: OmniLight3D
+var operator_rim_light: OmniLight3D
 var atmosphere_particles: GPUParticles3D
 var sound_button: Button
 var quality_button: Button
@@ -349,6 +350,7 @@ func _process(delta: float) -> void:
 		_update_adaptive_quality()
 	_update_camera(dt)
 	_animate_world(dt)
+	_update_operator_lighting(dt)
 	_update_effect_expiry(dt)
 	_update_mobile_layout()
 	_update_player_material()
@@ -1457,6 +1459,11 @@ func _create_player() -> void:
 	helmet.scale = Vector3(1.0, 1.0, 0.92)
 	_add_cube(operator_rig, Vector3(0.0, 0.72, -0.235), Vector3(0.31, 0.075, 0.04), materials["cyan"])
 	_add_cube(operator_rig, Vector3(0.0, 0.56, -0.21), Vector3(0.2, 0.04, 0.035), materials["amber"])
+	# One shadowless practical light gives the layered exosuit a reactive cinematic rim.
+	# It shares the existing local-light budget and is disabled by Performance mode.
+	operator_rim_light = _make_omni_light(operator_rig, Vector3(-0.78, 0.92, -0.48), Color(0.10, 0.94, 0.79), 0.66, 4.6)
+	operator_rim_light.name = "OperatorCinematicRimLight"
+	operator_rim_light.light_specular = 0.34
 	var flash_mesh := SphereMesh.new()
 	flash_mesh.radius = 0.085
 	flash_mesh.height = 0.17
@@ -3690,11 +3697,12 @@ func _update_hud() -> void:
 		fps_p95_ms = p95
 		var draw_calls := int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
 		var active_impact_lights: int = _active_impact_light_count()
+		var operator_rim_active: int = int(is_instance_valid(operator_rim_light) and operator_rim_light.visible)
 		var profile: String = "PERFORMANCE" if performance_quality else ("BALANCED" if not cinematic_quality else ("AUTO-OPTIMIZED" if adaptive_quality_degraded else "CINEMATIC"))
-		diagnostics_label.text = "LIVE DIAGNOSTICS\nFPS        %02d\nFRAME P95  %.1f ms\nFRAME NOW  %.1f ms\nDRAW CALLS %d\nFX ACTIVE  %02d\nFX POOLS   %02d BEAM / %02d RING / %02d SPARK\nFX DROPPED %d\nDASH TRAILS %04d\nGUARDS     %d\nDEVICES    %d\nLANE SUPPRESS %03d\nDASH EVADES %d\nDASH CD    %.1f s\nHIT LIGHTS %d / %d POOL\nPROFILE    %s" % [
+		diagnostics_label.text = "LIVE DIAGNOSTICS\nFPS        %02d\nFRAME P95  %.1f ms\nFRAME NOW  %.1f ms\nDRAW CALLS %d\nFX ACTIVE  %02d\nFX POOLS   %02d BEAM / %02d RING / %02d SPARK\nFX DROPPED %d\nDASH TRAILS %04d\nGUARDS     %d\nDEVICES    %d\nLANE SUPPRESS %03d\nDASH EVADES %d\nDASH CD    %.1f s\nHIT LIGHTS %d / %d POOL\nOPERATOR RIM %d / 1\nPROFILE    %s" % [
 			Engine.get_frames_per_second(), fps_p95_ms, current_frame_ms, draw_calls,
 			effects.size(), beam_pool.size(), ring_pool.size(), spark_pool.size(), effect_pool_exhaustions,
-			dash_trails_emitted, guards.size(), _living_device_count(), phase_lane_disruptions, dash_evasions, dash_cooldown, active_impact_lights, impact_light_pool.size(), profile
+			dash_trails_emitted, guards.size(), _living_device_count(), phase_lane_disruptions, dash_evasions, dash_cooldown, active_impact_lights, impact_light_pool.size(), operator_rim_active, profile
 		]
 
 func _update_input_hint() -> void:
@@ -3740,6 +3748,38 @@ func _update_camera(delta: float) -> void:
 	var recoil_fov := clampf(weapon_recoil, 0.0, 1.0) * 0.85 * motion_scale
 	var target_fov: float = CAMERA_BASE_FOV + movement_fov + shift_fov + recoil_fov
 	camera.fov = lerpf(camera.fov, target_fov, 1.0 - exp(-maxf(delta, 0.0) * 4.8))
+
+
+func _update_operator_lighting(delta: float) -> void:
+	# A single shadowless practical is cheap enough for mobile and follows the animated suit rig.
+	if not is_instance_valid(player) or not is_instance_valid(operator_rim_light):
+		return
+	if performance_quality or adaptive_quality_degraded:
+		return
+
+	var motion_pulse: float = 0.5 if reduced_motion else (0.5 + 0.5 * sin(scene_clock * 1.45))
+	var health_ratio: float = clampf(player_health / maxf(1.0, player_max_health), 0.0, 1.0)
+	var health_danger: float = clampf((0.68 - health_ratio) / 0.52, 0.0, 1.0)
+	var conduit_danger: float = 0.0
+	for lane in phase_lanes:
+		var lane_state: String = str(lane.get("state", "safe"))
+		if lane_state != "warning" and lane_state != "active":
+			continue
+		if absf(player.global_position.z - float(lane.get("z", 999.0))) > 3.2 or absf(player.global_position.x) > 21.7:
+			continue
+		conduit_danger = maxf(conduit_danger, 0.38 if lane_state == "warning" else 0.82)
+
+	var danger_weight: float = maxf(health_danger, conduit_danger)
+	var shift_weight: float = clampf(null_shift_timer / 0.9, 0.0, 1.0)
+	var dash_weight: float = clampf(dash_timer / maxf(DASH_DURATION, 0.001), 0.0, 1.0)
+	var rim_target_energy: float = 0.58 + motion_pulse * 0.15 + danger_weight * 0.20 + shift_weight * 0.35 + dash_weight * 0.18
+	var rim_color: Color = Color(0.10, 0.94, 0.79).lerp(Color(1.0, 0.46, 0.18), danger_weight)
+	rim_color = rim_color.lerp(Color(0.55, 0.18, 1.0), shift_weight)
+	rim_color = rim_color.lerp(Color(0.86, 1.0, 0.96), dash_weight * 0.68)
+	var response: float = clampf(maxf(delta, 0.0) * 5.5, 0.0, 1.0)
+	operator_rim_light.light_color = operator_rim_light.light_color.lerp(rim_color, response)
+	operator_rim_light.light_energy = move_toward(operator_rim_light.light_energy, rim_target_energy, maxf(delta, 0.0) * 3.8)
+
 
 func _update_player_material() -> void:
 	# The suit is a child of the articulated visual rig, not the physics root.
