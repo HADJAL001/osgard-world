@@ -97,9 +97,19 @@
     try {
       const response = await fetch('/games/commerce-config.json', { cache: 'no-store', credentials: 'same-origin', signal });
       const config = response.ok ? await response.json() : {};
-      return String(config.apiBaseUrl || '/commerce-api').replace(/\/+$/, '');
+      const raw = typeof config.apiBaseUrl === 'string' ? config.apiBaseUrl.trim() : '';
+      if (!raw) return '';
+      try {
+        const parsed = new URL(raw, location.origin);
+        const localApi = ['localhost', '127.0.0.1'].includes(parsed.hostname);
+        const allowedPath = parsed.pathname === '/' || (parsed.origin === location.origin && parsed.pathname === '/commerce-api');
+        if ((parsed.protocol !== 'https:' && !(localApi && parsed.protocol === 'http:')) || parsed.username || parsed.password || !allowedPath || parsed.search || parsed.hash) return '';
+        return parsed.origin + (parsed.pathname === '/' ? '' : parsed.pathname);
+      } catch {
+        return '';
+      }
     } catch {
-      return '/commerce-api';
+      return '';
     }
   }
 
@@ -109,7 +119,7 @@
     activeController = controller;
     try {
       const base = await resolveApiBase(controller?.signal);
-      if (!consentGranted() || controller?.signal.aborted) return false;
+      if (!base || !consentGranted() || controller?.signal.aborted) return false;
       const response = await fetch(base + '/v1/events', {
         method: 'POST',
         credentials: 'same-origin',

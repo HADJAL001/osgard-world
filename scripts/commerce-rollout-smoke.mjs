@@ -67,6 +67,9 @@ for (const value of ['id="campaign-form"', 'name="consent"', 'src="/games/commer
   assert.ok(partners.includes(value), "Partner page missing lead integration: " + value);
 }
 assert.ok(sharedClient.includes("/v1/leads") && sharedClient.includes("wa.me/79640027222"), "Lead API and manual fallback must both exist.");
+assert.ok(sharedClient.includes("if (!raw) return ''") && sharedClient.includes("if (!base) throw new Error('COMMERCE_API_NOT_CONFIGURED')"), "Lead forms must fail closed and disclose manual fallback when commerce is not configured.");
+assert.ok(consentQueue.includes("if (!raw) return ''") && consentQueue.includes("if (!base || !consentGranted()"), "Analytics must not route to the SPA fallback when API configuration is missing.");
+assert.ok(admin.includes("if (!raw) return ''") && admin.includes("if (!apiBase) throw new Error('Commerce API не настроен."), "Admin must require an explicitly configured Commerce API URL before using its bearer token.");
 for (const [label, page] of [["Games", html], ["Partners", partners], ["Premium", store]]) {
   const queueTag = page.indexOf('src="/games/consented-analytics.js?v=__OSGARD_BUILD_VERSION__"');
   const clientTag = page.indexOf('src="/games/commerce-client.js"');

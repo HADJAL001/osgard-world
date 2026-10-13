@@ -1,6 +1,5 @@
 (() => {
   'use strict';
-  const API_FALLBACK = '/commerce-api';
   const configPromise = fetch('/games/commerce-config.json', { cache: 'no-store', credentials: 'same-origin' })
     .then((response) => response.ok ? response.json() : {})
     .catch(() => ({}));
@@ -14,7 +13,17 @@
   }
   const apiBase = async () => {
     const config = await configPromise;
-    return String(config.apiBaseUrl || API_FALLBACK).replace(/\/+$/, '');
+    const raw = typeof config.apiBaseUrl === 'string' ? config.apiBaseUrl.trim() : '';
+    if (!raw) return '';
+    try {
+      const parsed = new URL(raw, location.origin);
+      const localApi = ['localhost', '127.0.0.1'].includes(parsed.hostname);
+      const allowedPath = parsed.pathname === '/' || (parsed.origin === location.origin && parsed.pathname === '/commerce-api');
+      if ((parsed.protocol !== 'https:' && !(localApi && parsed.protocol === 'http:')) || parsed.username || parsed.password || !allowedPath || parsed.search || parsed.hash) return '';
+      return parsed.origin + (parsed.pathname === '/' ? '' : parsed.pathname);
+    } catch {
+      return '';
+    }
   };
   function fallbackLink(form, text) {
     const status = form.querySelector('[role="status"]') || document.getElementById('form-status');
@@ -71,6 +80,7 @@
     if (status) status.textContent = 'Проверяем подключение безопасной формы…';
     try {
       const base = await apiBase();
+      if (!base) throw new Error('COMMERCE_API_NOT_CONFIGURED');
       const response = await fetch(base + '/v1/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -139,12 +149,12 @@
       return;
     }
     // Compatibility fallback for pages served without the shared queue asset.
-    void apiBase().then((base) => fetch(base + '/v1/events', {
+    void apiBase().then((base) => base ? fetch(base + '/v1/events', {
       method: 'POST',
       credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ consent: true, events: [event] }),
-    })).catch(() => {});
+    }) : null).catch(() => {});
   }
   let pageViewTracked = false;
   function trackCurrentPageView() {
