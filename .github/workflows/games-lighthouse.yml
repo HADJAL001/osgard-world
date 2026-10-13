@@ -30,14 +30,17 @@ jobs:
           expected="${EXPECTED_DEPLOY_SHA:0:12}"
           for attempt in $(seq 1 18); do
             # Bypass browser/CDN caches so this check sees the newly activated HTML.
-            # Keep the exact build and versioned-asset checks; never score stale content.
+            # Require the exact build, versioned Daily Circuit assets and actual lazy-loader contract; never score stale content.
             cache_buster="__osgard_build_check=$expected-$attempt-$(date +%s%N)"
             page="$(curl -fsSL --max-time 12 -H 'Cache-Control: no-cache, no-store, max-age=0' -H 'Pragma: no-cache' "https://osgard.world/games/?$cache_buster" 2>/dev/null || true)"
             # Use Bash substring matching here: grep -q can close the pipe early, making
             # printf fail with SIGPIPE under pipefail even when the expected marker exists.
             if [[ "$page" == *"<meta name=\"osgard-build\" content=\"$expected\">"* &&
                   "$page" == *"luxury.css?v=$expected"* &&
-                  "$page" == *"player-lifecycle.js?v=$expected"* ]]; then
+                  "$page" == *"daily-circuit.css?v=$expected"* &&
+                  "$page" == *"daily-circuit.js?v=$expected"* &&
+                  "$page" == *"versioned('/games/'+path)"* &&
+                  "$page" == *"loadScript('player-lifecycle.js')"* ]]; then
               echo "Confirmed deployed Games release $expected"
               exit 0
             fi
