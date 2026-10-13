@@ -508,6 +508,7 @@ console.log('PASS OSGARD referral loop: game-specific invite deep links, consent
 const referralCoreSource=readFileSync(resolve('services/osgard-commerce-api/src/core.mjs'),'utf8')
 const referralApiSource=readFileSync(resolve('services/osgard-commerce-api/src/server.mjs'),'utf8')
 const referralAdminSource=readFileSync(resolve('public/games/commerce-admin/index.html'),'utf8')
+const inviteLandingSource=readFileSync(resolve('public/games/invite/invite-landing.js'),'utf8')
 assert.ok(recommendationScript.includes('osgard.games.referral-attribution.v1') && recommendationScript.includes('game-invite:') && recommendationScript.includes('play_with_friends'), 'Post-session invite link and referral attribution missing')
 assert.ok(recommendationScript.includes("shared.pathname==='/games/invite/'+gameId+'/" ) && recommendationScript.includes("new URL('/games/invite/'+encodeURIComponent(gameId)+'/'"),'Post-session sharing must validate and fallback to the game-specific preview route')
 assert.ok(recommendationScript.includes("params.get('og_game')") && recommendationScript.includes("params.get('og_ref')") && recommendationScript.includes("shared.searchParams.get('og_game')===gameId"), 'Post-session invites must use the canonical og_game/og_ref URL contract')
