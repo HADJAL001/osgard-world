@@ -401,20 +401,23 @@ class CommerceService:
             (event_id, name, event_id, "unknown", source, "/games/premium/", 0, utc_now()),
         )
 
+    def _mark_paid_in_db(self, db: sqlite3.Connection, order_id: str, session: dict[str, Any], source: str) -> None:
+        order = db.execute("SELECT * FROM orders WHERE order_id=?", (order_id,)).fetchone()
+        if order is None or order["status"] == "refunded":
+            return
+        if int(session.get("amount_total") or -1) != int(order["amount_total"]) or str(session.get("currency", "")).upper() != order["currency"]:
+            raise ApiError(409, "paid_amount_mismatch", "Подтверждённая сумма не совпадает с заказом.")
+        changed = order["status"] != "paid"
+        db.execute(
+            "UPDATE orders SET status='paid',stripe_payment_intent_id=?,paid_at=COALESCE(paid_at,?),updated_at=? WHERE order_id=?",
+            (session.get("payment_intent"), utc_now(), utc_now(), order_id),
+        )
+        if changed:
+            self._record_server_event(db, "checkout_paid", order_id, order["product_key"], source)
+
     def _mark_paid(self, order_id: str, session: dict[str, Any], source: str) -> None:
         with self.connect() as db:
-            order = db.execute("SELECT * FROM orders WHERE order_id=?", (order_id,)).fetchone()
-            if order is None or order["status"] == "refunded":
-                return
-            if int(session.get("amount_total") or -1) != int(order["amount_total"]) or str(session.get("currency", "")).upper() != order["currency"]:
-                raise ApiError(409, "paid_amount_mismatch", "Подтверждённая сумма не совпадает с заказом.")
-            changed = order["status"] != "paid"
-            db.execute(
-                "UPDATE orders SET status='paid',stripe_payment_intent_id=?,paid_at=COALESCE(paid_at,?),updated_at=? WHERE order_id=?",
-                (session.get("payment_intent"), utc_now(), utc_now(), order_id),
-            )
-            if changed:
-                self._record_server_event(db, "checkout_paid", order_id, order["product_key"], source)
+            self._mark_paid_in_db(db, order_id, session, source)
 
     def verify_stripe_signature(self, raw: bytes, header: str) -> bool:
         secret = self.env.get("STRIPE_WEBHOOK_SECRET", "").strip()
@@ -460,7 +463,7 @@ class CommerceService:
                 if obj.get("payment_status") == "paid" and obj.get("status") == "complete":
                     if int(obj.get("amount_total") or -1) != int(order["amount_total"]) or str(obj.get("currency", "")).upper() != order["currency"]:
                         raise ApiError(409, "webhook_amount_mismatch", "Сумма или валюта webhook не совпадает с заказом.")
-                    self._mark_paid(order["order_id"], obj, "stripe-webhook")
+                    self._mark_paid_in_db(db, order["order_id"], obj, "stripe-webhook")
                 else:
                     db.execute("UPDATE orders SET status='pending',updated_at=? WHERE order_id=? AND status NOT IN ('paid','refunded')", (utc_now(), order["order_id"]))
             elif event_type == "checkout.session.expired" and order:
@@ -718,7 +721,7 @@ def main() -> None:
     host = os.environ.get("HOST", "0.0.0.0")
     port = int(os.environ.get("PORT", "8080"))
     server = make_server(host, port)
-    print(json.dumps({"service": "osgard-commerce-api", "version": APP_VERSION, "port": port, "paymentMode": server.RequestHandlerClass.__closure__ is not None and os.environ.get("STRIPE_MODE", "disabled")}, ensure_ascii=False))
+    print(json.dumps({"service": "osgard-commerce-api", "version": APP_VERSION, "port": port, "paymentMode": os.environ.get("STRIPE_MODE", "disabled")}, ensure_ascii=False))
     try:
         server.serve_forever(poll_interval=0.5)
     except KeyboardInterrupt:
