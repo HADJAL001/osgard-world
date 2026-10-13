@@ -15,6 +15,18 @@ Backend for OSGARD PLAY checkout sessions, signed Stripe webhooks, request leads
 - Admin overview, order list and lead list require a server-side bearer token of at least 32 characters.
 - No card numbers or CVC values are handled or stored by OSGARD.
 
+## Referral SHARDS reward ledger
+
+The optional referral programme is separate from checkout revenue. A user explicitly enables the programme, and the browser creates a random 256-bit opaque wallet token; the database stores only its SHA-256 hash. The server issues unique game-specific invite codes, limits issuance to 20 per wallet per rolling 24 hours and limits referral rewards to five per wallet per rolling 24 hours. A reward is inserted once per invite code after a consented `game_session_completed` event of at least 60 seconds is received with a matching registered invite/game. Wallet balance is calculated from the server ledger; rewards are not computed from a button click or stored as an authoritative local balance. Users can request server-side deletion of their wallet and associated invite/reward records.
+
+**Abuse and eligibility limits:** static/client-rendered games cannot cryptographically prove that a human played fairly. This is a capped, non-cash, non-redeemable community-points pilot, not fraud-proof identity or payment-grade rewards. Completion events require analytics consent on the referring player's browser; the invitee also has to allow the gameplay event to be recorded. Do not enable point redemption, paid advantages or cash value without authenticated player identities, game-server attestation, fraud review, explicit terms, and a legal/platform policy check.
+
+Endpoints:
+- `POST /v1/referrals/issue` — `{ walletToken, gameId, rewardConsent: true }`.
+- `POST /v1/referrals/wallet` — same token/consent; returns the server-calculated balance.
+- `POST /v1/referrals/disable` — token-based deletion of the wallet and linked invitation/reward ledger.
+- `POST /v1/events` — after analytics consent, accepts gameplay events and transactionally creates one eligible SHARDS ledger record per invite code.
+
 ## Local run
 
 1. Install Node.js 22 or newer.
