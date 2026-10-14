@@ -312,6 +312,7 @@ jobs:
         env:
           OSGARD_BASE_URL: https://osgard.world
           OSGARD_EXPECTED_BUILD: ${{ github.sha }}
+          OSGARD_INCLUDE_PLAYER_TOOLS_ROUTES: '1'
           SKILLCRED_EXPECT_CURRENT_DESIGN: "1"
         run: npm run qa:production-routes
       - name: Preserve production route diagnostics even when verification fails

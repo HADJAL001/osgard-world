@@ -42,3 +42,15 @@ npm run qa:external-project-healthcheck
 ## Publication-linked verification — 14 October 2026
 
 This audit has been attached to the OSGARD publication review so that changing this file runs the existing pull-request homepage check. Use the resulting timestamped GitHub Actions artifact for the actual HTTP statuses and redirect destinations. A report from this one CI region is a reachability snapshot only; it does not confirm login, API health, product function, ownership, legal compliance, or suitability for paid promotion. Keep paid promotion blocked pending manual review even if every homepage returns 2xx/3xx.
+
+## Owner-requested network re-check — 15 October 2026
+
+Run: https://github.com/HADJAL001/osgard-world/actions/runs/38646379488
+
+- 9/10 owner-listed HTTPS homepages returned HTTP 200 from the GitHub Actions runner.
+- `osgardbewworld.com`: `network_error / blocked_no_response`, error `fetch failed`; repeat from an independent network before treating the destination as reachable.
+- `o2system.art`, `senjorio.com`, `superday.run`, `marcosa.club`, `myosa.world`, `gold-glamour.online`, `gardvpn.is`, `osgardos.com`, and `osgardvanguard.studio`: HTTP 200 on that run.
+- Paid-promotion eligibility: **0/10**. One destination is blocked for no response; the other nine remain `manual_review_required`.
+
+This timestamped homepage check does not establish application functionality, domain ownership, legal compliance, payment health or advertising approval. Re-run the audit before a campaign and keep the existing human-review gate.
+

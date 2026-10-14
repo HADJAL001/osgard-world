@@ -30,7 +30,7 @@
     "qa:cascade-lab-hypothesis": "node scripts/cascade-lab-hypothesis-smoke.mjs",
     "qa:game-detail-runtime": "node scripts/game-detail-runtime-smoke.mjs",
     "qa:civic-cascade-forecast": "node scripts/civic-cascade-forecast-smoke.mjs",
-    "qa:games-operations": "node scripts/games-operations-smoke.mjs",
+    "qa:games-operations": "node scripts/games-operations-smoke.mjs && npm run qa:player-tools",
     "qa:campaign-manager": "node scripts/campaign-manager-smoke.mjs",
     "qa:intermission-sponsor": "node scripts/game-intermission-sponsor-smoke.mjs",
     "qa:game-recommendations": "node scripts/game-recommendations-smoke.mjs",
@@ -81,7 +81,8 @@
     "qa:performance-budget-tests": "node --test scripts/osgard-performance-budget.test.mjs",
     "qa:release-attestation": "node --test scripts/osgard-release-attestation.test.mjs",
     "release:attest": "node scripts/osgard-release-attestation.mjs create --contract-report osgard-contract-audit.json --performance-report osgard-performance-budget.json",
-    "release:verify": "node scripts/osgard-release-attestation.mjs verify --contract-report osgard-contract-audit.json --performance-report osgard-performance-budget.json"
+    "release:verify": "node scripts/osgard-release-attestation.mjs verify --contract-report osgard-contract-audit.json --performance-report osgard-performance-budget.json",
+    "qa:player-tools": "node scripts/player-reliability-smoke.mjs && node scripts/player-preferences-backup-smoke.mjs"
   },
   "dependencies": {
     "@types/three": "^0.186.0",

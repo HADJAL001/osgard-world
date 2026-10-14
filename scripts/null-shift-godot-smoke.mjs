@@ -107,6 +107,7 @@ assert.ok(runtime.includes('assisted targeting and projected lock reticle') && r
 assert.ok(game.includes('get_viewport().get_visible_rect().size.x') && !game.includes('get_viewport_rect()'), 'Godot Node3D responsive profile must use the active viewport API')
 assert.ok(game.includes('var role: String = str(guard.get("role", "RANGER"))') && game.includes('var locomotion_speed: float = body.velocity.length()'), 'Godot dictionaries must not rely on ambiguous inferred local types')
 assert.ok(!game.includes('var role := str(guard.get("role", "RANGER"))'), 'Every role read from an untyped dictionary must have an explicit String type')
+assert.ok(game.includes('var role_name: String = str(guard.get("role", "RANGER"))') && !game.includes('var role_name := str(guard.get("role", "RANGER"))'), 'Role names read from untyped dictionaries must explicitly declare String')
 assert.ok(!game.includes('var role :='), 'All Godot role local variables must declare an explicit type')
 assert.ok(game.includes('func _update_mobile_layout() -> void:') && game.includes('if not is_instance_valid(status_panel) or not is_instance_valid(objective_panel) or not is_instance_valid(mobile_move_panel) or not is_instance_valid(mobile_action_panel):'), 'Godot startup layout must wait for a fully constructed HUD tree')
 assert.ok(game.includes('func _update_mobile_layout() -> void:') && game.includes('fully constructed HUD tree') === false, 'Godot layout must protect startup viewport state')
