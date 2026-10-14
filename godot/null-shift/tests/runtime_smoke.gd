@@ -394,6 +394,34 @@ func _run_smoke() -> void:
 	game.null_shift_timer = vignette_saved_shift
 	game._update_cinematic_vignette()
 
+	print("RUNTIME_STAGE: cinematic screen-space impact wave")
+	var saved_wave_timer: float = game.impact_wave_timer
+	var saved_wave_duration: float = game.impact_wave_duration
+	var saved_wave_strength: float = game.impact_wave_strength
+	var saved_wave_motion: bool = game.reduced_motion
+	game.reduced_motion = false
+	game.impact_wave_timer = 0.0
+	game.impact_wave_strength = 0.0
+	game._screen_impulse(0.24, 0.30)
+	game._update_cinematic_vignette()
+	var wave_initial_strength: float = float(game.cinematic_vignette_material.get_shader_parameter("impact_wave_strength"))
+	if not _expect(wave_initial_strength > 0.3 and is_equal_approx(float(game.cinematic_vignette_material.get_shader_parameter("impact_wave_progress")), 0.0), "screen-space impact wave must start from the centre with a real nonzero shader strength"):
+		return
+	game.impact_wave_timer = game.impact_wave_duration * 0.5
+	game._update_cinematic_vignette()
+	if not _expect(absf(float(game.cinematic_vignette_material.get_shader_parameter("impact_wave_progress")) - 0.5) < 0.01 and float(game.cinematic_vignette_material.get_shader_parameter("impact_wave_strength")) < wave_initial_strength, "impact wave must expand and fade according to its live timer"):
+		return
+	var full_motion_wave: float = float(game.cinematic_vignette_material.get_shader_parameter("impact_wave_strength"))
+	game.reduced_motion = true
+	game._update_cinematic_vignette()
+	if not _expect(float(game.cinematic_vignette_material.get_shader_parameter("impact_wave_strength")) < full_motion_wave * 0.11, "Reduced Motion must attenuate the cinematic wave without changing combat timing"):
+		return
+	game.reduced_motion = saved_wave_motion
+	game.impact_wave_timer = saved_wave_timer
+	game.impact_wave_duration = saved_wave_duration
+	game.impact_wave_strength = saved_wave_strength
+	game._update_cinematic_vignette()
+
 	print("RUNTIME_STAGE: cinematic camera response and incoming-damage direction")
 	if not _expect(is_instance_valid(game.damage_direction_root) and is_instance_valid(game.damage_direction_arrow), "directional damage indicator must instantiate as a native HUD control"):
 		return
