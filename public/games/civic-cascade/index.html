@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#080d10">
-<meta name="description" content="CIVIC CASCADE 2.6 — адаптивная кризисная стратегия OSGARD: инфраструктура деградирует, события рождаются из повреждений, решения меняют развитие аварии.">
+<meta name="description" content="CIVIC CASCADE 2.7 — кризисная стратегия OSGARD с причинным разбором действий, последствиями для инфраструктуры и прозрачным отчётом после операции.">
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://osgard.world/games/civic-cascade/">
 <title>CIVIC CASCADE — кризисная стратегия | OSGARD PLAY</title>
-<meta name="osgard-game-version" content="2.6.0-adaptive-crisis-director">
+<meta name="osgard-game-version" content="2.7.0-causal-operation-debrief">
 <style>
 :root{color-scheme:dark;--bg:#080d10;--panel:#10191d;--panel2:#142126;--line:#ffffff1c;--ink:#edf3ee;--muted:#91a29e;--mint:#b8f4cf;--cyan:#68d8d2;--gold:#e1c58a;--warn:#f2b27c;--bad:#ff827b;--mono:ui-monospace,Consolas,monospace;--serif:Georgia,serif}
 *{box-sizing:border-box}html{background:var(--bg);scroll-behavior:smooth}body{margin:0;color:var(--ink);background:radial-gradient(ellipse at 76% -18%,#234d453d,transparent 48%),var(--bg);font:14px/1.55 Inter,Geist,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}button,select{font:inherit}button,a,select{touch-action:manipulation}a{color:inherit;text-decoration:none}button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(--mint);outline-offset:3px}.wrap{max-width:1440px;padding:0 clamp(14px,2.8vw,42px);margin:auto}
@@ -20,7 +20,22 @@
 .objectives{padding:14px 15px}.section-line{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}.section-line h3{font:10px var(--mono);letter-spacing:.1em;margin:0}.section-line span{color:var(--muted);font:8px var(--mono)}.objective{display:grid;grid-template-columns:18px 1fr auto;align-items:center;gap:9px;padding:9px 0;border-top:1px solid #ffffff0d}.objective:first-of-type{border-top:0}.check{display:grid;place-items:center;width:17px;height:17px;border:1px solid #ffffff33;border-radius:50%;color:transparent;font-size:10px}.objective.done .check{color:#0a1510;background:var(--mint);border-color:var(--mint)}.objective span:nth-child(2){font-size:10px}.objective small{color:var(--muted);font:8px var(--mono)}.objective.done span:nth-child(2){color:#b9d8c4}
 .actions{padding:14px 15px 15px;border-top:1px solid var(--line)}.action-list{display:grid;gap:7px}.action-btn{display:grid;grid-template-columns:36px minmax(0,1fr) auto;align-items:center;gap:10px;min-height:54px;padding:8px 10px;border:1px solid #ffffff20;background:#0b1215;color:var(--ink);text-align:left;cursor:pointer;transition:border-color .18s,background .18s,transform .18s}.action-btn:hover:not(:disabled){transform:translateY(-1px);border-color:#b8f4cf7a;background:#11201e}.action-btn:disabled{opacity:.42;cursor:not-allowed}.action-icon{display:grid;place-items:center;width:34px;height:34px;border:1px solid #b8f4cf30;color:var(--mint);font:14px var(--mono)}.action-copy b{display:block;font-size:10px;font-weight:650}.action-copy small{display:block;margin-top:3px;color:var(--muted);font-size:8px}.cost{color:var(--gold);font:9px var(--mono);white-space:nowrap}.controls{display:flex;gap:7px;flex-wrap:wrap;padding:13px 14px;border-top:1px solid var(--line)}.ctrl{min-height:34px;padding:0 10px;border:1px solid var(--line);background:#0a1214;color:#c9d8cf;font-size:9px;cursor:pointer}.ctrl:hover{border-color:#b8f4cf70}.ctrl.primary{color:#08120d;background:var(--mint);border-color:var(--mint);font-weight:700}.ctrl:disabled{opacity:.45;cursor:not-allowed}
 .log{padding:0 15px 12px}.log-entry{display:flex;gap:9px;padding:8px 0;border-top:1px solid #ffffff0d;color:var(--muted);font-size:9px;line-height:1.5}.log-entry time{flex-shrink:0;color:#8ed6bc;font:8px var(--mono)}.log-entry b{color:#d8e5dc;font-weight:500}.risk{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 15px;border-top:1px solid var(--line);background:#0a1214}.risk-label{color:var(--muted);font:8px var(--mono);letter-spacing:.12em}.risk strong{font:23px var(--serif);font-weight:400}.risk strong small{font:8px var(--mono);color:var(--muted)}.risk-copy{max-width:62%;color:var(--muted);text-align:right;font-size:9px}.risk-copy b{display:block;color:var(--mint);font-weight:500}
-.footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:15px 0 27px;border-top:1px solid var(--line);color:var(--muted);font:8px var(--mono);letter-spacing:.05em}.footer a{color:var(--mint)}.notice{margin:0 0 22px;color:#758b82;font-size:9px;line-height:1.7}.toast{position:fixed;z-index:20;left:50%;bottom:20px;transform:translateX(-50%);max-width:calc(100% - 28px);padding:10px 14px;border:1px solid #b8f4cf60;background:#091311f2;color:#d5e9de;box-shadow:0 14px 45px #0008;font-size:11px;opacity:0;pointer-events:none;transition:opacity .2s}.toast.show{opacity:1}.overlay{position:absolute;inset:0;display:grid;place-items:center;padding:18px;background:#071013dc;backdrop-filter:blur(6px);z-index:4}.overlay[hidden]{display:none}.result{max-width:430px;text-align:center;border:1px solid #b8f4cf44;padding:24px;background:#0b1719}.result .eyebrow{margin-bottom:8px}.result h2{margin:0;font:30px var(--serif);font-weight:400}.result p{color:var(--muted);font-size:11px;line-height:1.7}.result b{color:var(--mint)}
+.footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:15px 0 27px;border-top:1px solid var(--line);color:var(--muted);font:8px var(--mono);letter-spacing:.05em}.footer a{color:var(--mint)}.notice{margin:0 0 22px;color:#758b82;font-size:9px;line-height:1.7}.toast{position:fixed;z-index:20;left:50%;bottom:20px;transform:translateX(-50%);max-width:calc(100% - 28px);padding:10px 14px;border:1px solid #b8f4cf60;background:#091311f2;color:#d5e9de;box-shadow:0 14px 45px #0008;font-size:11px;opacity:0;pointer-events:none;transition:opacity .2s}.toast.show{opacity:1}.overlay{position:absolute;inset:0;display:grid;place-items:center;padding:18px;background:#071013dc;backdrop-filter:blur(6px);z-index:4}.overlay[hidden]{display:none}.result{max-width:560px;max-height:min(92vh,850px);overflow:auto;text-align:center;border:1px solid #b8f4cf44;padding:24px;background:#0b1719}
+.causal-report{margin:16px 0 12px;padding:13px;text-align:left;background:#071114;border:1px solid #8ce4d22b;border-radius:3px}
+.causal-report-head{display:flex;align-items:center;justify-content:space-between;gap:10px;font:9px var(--mono);letter-spacing:.08em;color:#8ce4d2}
+.causal-report-head small{color:var(--muted);font-size:8px;white-space:nowrap}
+.causal-summary{margin:10px 0!important;color:#dce8e1!important;font-size:11px!important;line-height:1.7!important}
+.causal-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:10px 0}
+.causal-facts>div{min-width:0;padding:8px;background:#ffffff05;border:1px solid #ffffff10}
+.causal-facts small{display:block;min-height:23px;color:var(--muted);font:7px/1.5 var(--mono);letter-spacing:.05em}
+.causal-facts b{display:block;margin-top:5px;color:#e2efe8;font:10px/1.5 var(--mono);overflow-wrap:anywhere}
+.causal-ledger{display:grid;gap:6px;max-height:195px;overflow:auto;padding-right:3px}
+.causal-entry{padding:8px 9px;border-left:2px solid #68d8d266;background:#ffffff04}
+.causal-entry[data-kind="incident"]{border-left-color:#e1c58a}
+.causal-entry strong{display:block;color:#e0eee6;font-size:10px;font-weight:600;line-height:1.5}
+.causal-entry small{display:block;margin-top:4px;color:var(--muted);font:9px/1.6 var(--mono);overflow-wrap:anywhere}
+.causal-footnote{margin:9px 0 0!important;font-size:9px!important;line-height:1.6!important;text-align:left}
+.result .eyebrow{margin-bottom:8px}.result h2{margin:0;font:30px var(--serif);font-weight:400}.result p{color:var(--muted);font-size:11px;line-height:1.7}.result b{color:var(--mint)}
 @media(max-width:980px){.layout{grid-template-columns:minmax(0,1fr) minmax(285px,.8fr)}.hero h1{font-size:clamp(36px,5.2vw,54px)}.metrics{gap:6px}.metric{padding:10px}.metric b{font-size:23px}}
 @media(max-width:740px){.wrap{padding:0 12px}.topbar{height:58px}.toplinks{gap:10px;font-size:9px}.toplinks a:first-child{display:none}.hero{padding:23px 0 18px;align-items:start}.hero h1{font-size:clamp(38px,9vw,55px)}.hero-side{min-width:93px;padding-left:11px}.hero-side b{font-size:20px}.lede{font-size:11px}.layout{grid-template-columns:1fr;padding-top:11px}.side{display:grid;grid-template-columns:1fr}.canvas-wrap{min-height:220px}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.metric{padding:12px}.metric b{font-size:25px}.action-btn{min-height:58px}.panel-head{padding:12px}.notice{margin-top:8px}}
 @media(max-width:410px){.toplinks{gap:7px}.toplinks a:nth-child(2){display:none}.hero{display:block}.hero-side{display:flex;align-items:center;gap:9px;margin-top:15px;padding:8px 0 0;border-left:0;border-top:1px solid var(--line)}.hero-side b{margin:0}.hero-side small{max-width:90px}.hero-side span{margin-left:auto}.map-caption{font-size:7px}.mission-stats small{font-size:6px}}
@@ -179,6 +194,17 @@
 <div class="layout">
 <section class="main-column">
 <div class="panel"><div class="panel-head"><strong>01 / ЖИВАЯ КАРТА ГОРОДА</strong><small id="cc-map-mode">КРИЗИС · УЗЕЛ 04</small></div><div class="canvas-wrap"><canvas id="cc-map" width="1000" height="590" aria-label="Карта кризисного города. Нажмите на объект, чтобы выбрать его."></canvas><div class="map-overlay"><span class="map-tag">OSGARD RESPONSE / <b id="cc-stage">OPERATIONAL</b></span><span class="map-compass">N</span></div><div class="overlay" id="cc-result-overlay" hidden><div class="result"><p class="eyebrow" id="cc-result-label">ОПЕРАЦИЯ ЗАВЕРШЕНА</p><h2 id="cc-result-title">Город стабилизирован</h2><p id="cc-result-copy">Основные системы удержаны.</p><p>ИТОГОВЫЙ БАЛЛ <b id="cc-score">0</b></p>
+<section class="causal-report" id="cc-causal-debrief" aria-label="Разбор завершённой операции">
+ <div class="causal-report-head"><strong>ПОСЛЕОПЕРАЦИОННЫЙ РАЗБОР</strong><small id="cc-causal-count">ЗАПИСЕЙ: 0</small></div>
+ <p class="causal-summary" id="cc-causal-summary">Разбор станет доступен после завершения операции.</p>
+ <div class="causal-facts">
+  <div><small>РИСК / СТАРТ → ФИНИШ</small><b id="cc-causal-risk-change">—</b></div>
+  <div><small>СЛАБЕЙШЕЕ ЗВЕНО</small><b id="cc-causal-weakest">—</b></div>
+  <div><small>ЛУЧШИЙ НЕПОСРЕДСТВЕННЫЙ ЭФФЕКТ</small><b id="cc-causal-best">—</b></div>
+ </div>
+ <div class="causal-ledger" id="cc-causal-ledger" aria-label="Хронология действий и кризисных решений"></div>
+ <p class="causal-footnote">Журнал показывает измеренные изменения непосредственно до и после каждого решения. Это не доказывает, что без него исход был бы иным.</p>
+</section>
 <div class="cc-share-actions"><button class="ctrl primary" id="cc-result-challenge" type="button">Бросить вызов другу ↗</button><button class="ctrl" id="cc-result-restart" type="button">Начать новую операцию ↗</button></div>
 <p class="cc-share-status" id="cc-challenge-share-status" role="status" aria-live="polite"></p>
 <a class="cc-share-link" id="cc-challenge-share-link" hidden target="_blank" rel="noopener noreferrer">Открыть ссылку челленджа ↗</a></div></div></div><div class="map-caption"><span>КЛИК / КАСАНИЕ — ВЫБРАТЬ УЗЕЛ</span><span id="cc-selected">ВЫБРАНО: ЦЕНТР СЕТИ</span></div></div>
@@ -269,7 +295,7 @@
 
 <p class="notice">Это браузерная игровая редакция OSGARD PLAY. Показатели и последствия моделируются внутри игры и не являются реальными городскими данными. Состояние операции не отправляется на сервер.</p>
 </main>
-<footer class="footer"><span>© OSGARD WORLD / PLAY · CIVIC CASCADE WEB EDITION 2.6.0</span><span>КРИЗИСНАЯ СТРАТЕГИЯ · DESKTOP + TOUCH</span><span><a href="/games/">ВЕРНУТЬСЯ В КАТАЛОГ ↗</a></span></footer>
+<footer class="footer"><span>© OSGARD WORLD / PLAY · CIVIC CASCADE WEB EDITION 2.7.0</span><span>КРИЗИСНАЯ СТРАТЕГИЯ · DESKTOP + TOUCH</span><span><a href="/games/">ВЕРНУТЬСЯ В КАТАЛОГ ↗</a></span></footer>
 </div><div class="toast" id="cc-toast" role="status" aria-live="polite"></div>
 <script>
 (function(){
@@ -432,6 +458,23 @@ function clamp(n,min=0,max=100){return Math.max(min,Math.min(max,n))}
 function fmt(n){return String(Math.max(0,Math.floor(n))).padStart(2,'0')}
 function clock(s){s=Math.max(0,Math.floor(s));return fmt(Math.floor(s/60))+':'+fmt(s%60)}
 function riskValue(){return Math.round(clamp((state.water*.38)+(100-state.grid)*.34+(100-state.access)*.28+state.riskOffset))}
+function operationSnapshot(s){
+ ensureNodeIntegrity(s);
+ return {water:Math.round(s.water),grid:Math.round(s.grid),access:Math.round(s.access),supplies:Math.round(s.supplies),crews:Math.round(s.crews),risk:Math.round(clamp(s.water*.38+(100-s.grid)*.34+(100-s.access)*.28+s.riskOffset)),nodeIntegrity:Object.fromEntries(nodes.map(n=>[n.id,Math.round(s.nodeIntegrity[n.id])]))};
+}
+function cleanOperationSnapshot(value,fallbackState){
+ if(!value||typeof value!=='object')return operationSnapshot(fallbackState);
+ const keys=['water','grid','access','supplies','crews','risk'];
+ if(!keys.every(k=>typeof value[k]==='number'&&Number.isFinite(value[k])&&value[k]>=0&&value[k]<=100)||!value.nodeIntegrity||!nodes.every(n=>typeof value.nodeIntegrity[n.id]==='number'&&Number.isFinite(value.nodeIntegrity[n.id])&&value.nodeIntegrity[n.id]>=0&&value.nodeIntegrity[n.id]<=100))return operationSnapshot(fallbackState);
+ return {water:Math.round(value.water),grid:Math.round(value.grid),access:Math.round(value.access),supplies:Math.round(value.supplies),crews:Math.round(value.crews),risk:Math.round(value.risk),nodeIntegrity:Object.fromEntries(nodes.map(n=>[n.id,Math.round(value.nodeIntegrity[n.id])]))};
+}
+function operationDelta(before,after){return {water:after.water-before.water,grid:after.grid-before.grid,access:after.access-before.access,supplies:after.supplies-before.supplies,crews:after.crews-before.crews,risk:after.risk-before.risk}}
+function recordOperationEvent(s,kind,title,nodeId,before,choiceLabel=''){
+ if(!Array.isArray(s.operationLedger))s.operationLedger=[];
+ const safeBefore=cleanOperationSnapshot(before,s),after=operationSnapshot(s);
+ const event={at:clock(elapsed),kind:kind==='incident'?'incident':'action',title:String(title||'Действие оператора').slice(0,120),nodeId:nodes.some(n=>n.id===nodeId)?nodeId:'',choice:String(choiceLabel||'').slice(0,120),before:safeBefore,after:after,delta:operationDelta(safeBefore,after)};
+ s.operationLedger=[...s.operationLedger,event].slice(-20);return event;
+}
 function objectiveState(){return {water:state.water<45,grid:state.grid>68,access:state.access>60}}
 function objectiveTotal(){return Object.values(objectiveState()).filter(Boolean).length}
 function addLog(text){const row={time:clock(elapsed),text:text};logRows.unshift(row);logRows=logRows.slice(0,6);ui.log.innerHTML='';logRows.forEach(x=>{const div=document.createElement('div');div.className='log-entry';const time=document.createElement('time');time.textContent=x.time;const span=document.createElement('span');span.innerHTML=x.text;div.append(time,span);ui.log.append(div)});ui.logCount.textContent=logRows.length+' СОБЫТИЙ'}
@@ -463,6 +506,11 @@ function readCheckpoint(){
   }
   cleanState.nodeIncidentFlags=Object.fromEntries(nodes.map(n=>[n.id,typeof s.nodeIncidentFlags?.[n.id]==='boolean'?s.nodeIncidentFlags[n.id]:false]));
   cleanState.pendingNodeIncidents=Array.isArray(s.pendingNodeIncidents)?[...new Set(s.pendingNodeIncidents.filter(id=>nodes.some(n=>n.id===id)))]:[];
+  cleanState.operationBaseline=cleanOperationSnapshot(s.operationBaseline,cleanState);
+  cleanState.operationLedger=Array.isArray(s.operationLedger)?s.operationLedger.slice(-20).filter(e=>e&&['action','incident'].includes(e.kind)&&typeof e.title==='string').map(e=>{
+   const before=cleanOperationSnapshot(e.before,cleanState),after=cleanOperationSnapshot(e.after,cleanState);
+   return {at:typeof e.at==='string'?e.at.slice(0,8):'--:--',kind:e.kind,title:e.title.slice(0,120),nodeId:nodes.some(n=>n.id===e.nodeId)?e.nodeId:'',choice:typeof e.choice==='string'?e.choice.slice(0,120):'',before,after,delta:operationDelta(before,after)};
+  }):[];
   cleanState.elapsed=item.elapsed;
   return {state:cleanState,elapsed:item.elapsed,selected:item.selected,speedIndex:item.speedIndex,paused:item.paused,logs:logs,savedAt:typeof item.savedAt==='string'?item.savedAt:''};
  }catch(_){return null}
@@ -511,6 +559,28 @@ function updateForecast(){
 }
 
 function selectedNode(){return nodes.find(n=>n.id===selected)||nodes[0]}
+function signedDelta(value){return (value>0?'+':'')+String(value)}
+function renderOperationDebrief(){
+ const ledger=Array.isArray(state.operationLedger)?state.operationLedger.slice(-20):[];
+ const start=cleanOperationSnapshot(state.operationBaseline,state),finish=operationSnapshot(state),change=finish.risk-start.risk;
+ const summary=$('cc-causal-summary'),risk=$('cc-causal-risk-change'),weakestNode=$('cc-causal-weakest'),bestNode=$('cc-causal-best'),count=$('cc-causal-count'),list=$('cc-causal-ledger');
+ count.textContent='ЗАПИСЕЙ: '+ledger.length;
+ risk.textContent=start.risk+' → '+finish.risk+' ('+signedDelta(change)+')';
+ const weakest=nodes.map(n=>({node:n,start:start.nodeIntegrity[n.id],end:finish.nodeIntegrity[n.id],loss:start.nodeIntegrity[n.id]-finish.nodeIntegrity[n.id]})).sort((a,b)=>b.loss-a.loss||a.end-b.end)[0];
+ weakestNode.textContent=weakest?weakest.node.name+' · '+weakest.start+' → '+weakest.end:'—';
+ const best=ledger.filter(e=>e.delta.risk<0).sort((a,b)=>a.delta.risk-b.delta.risk)[0],worst=ledger.filter(e=>e.delta.risk>0).sort((a,b)=>b.delta.risk-a.delta.risk)[0];
+ bestNode.textContent=best?best.title+' ('+signedDelta(best.delta.risk)+')':'Нет решений со снижением риска в непосредственном замере';
+ summary.textContent='Риск за операцию изменился на '+signedDelta(change)+'. Самое ослабленное звено: '+(weakest?weakest.node.name:'не определено')+'. '+(worst?'Наибольший немедленный рост риска зафиксирован после события «'+worst.title+'» ('+signedDelta(worst.delta.risk)+').':'В журнале не зафиксировано отдельного резкого скачка риска.');
+ list.replaceChildren();
+ if(!ledger.length){const empty=document.createElement('p');empty.className='causal-entry';empty.textContent='Операция завершена без зарегистрированных вмешательств.';list.append(empty);return}
+ ledger.slice(-8).reverse().forEach(event=>{
+  const row=document.createElement('article');row.className='causal-entry';row.dataset.kind=event.kind;
+  const title=document.createElement('strong'),node=nodes.find(n=>n.id===event.nodeId);
+  title.textContent=event.at+' · '+(event.kind==='incident'?'КРИЗИС':'ДЕЙСТВИЕ')+' · '+event.title+(node?' / '+node.name:'')+(event.choice?' → '+event.choice:'');
+  const detail=document.createElement('small');detail.textContent='Δ риск '+signedDelta(event.delta.risk)+' · вода '+signedDelta(event.delta.water)+' · сеть '+signedDelta(event.delta.grid)+' · доступ '+signedDelta(event.delta.access)+' · ресурсы '+signedDelta(event.delta.supplies);
+  row.append(title,detail);list.append(row);
+ });
+}
 function renderNodeInspector(){
  if(!state||!state.scenario)return;
  ensureNodeIntegrity(state);
@@ -604,9 +674,11 @@ function openIncident(incident){
 function resolveIncident(choiceId){
  if(!activeIncident||finished)return;
  const incident=activeIncident,choice=incident.choices.find(item=>item.id===choiceId);if(!choice)return;
+ const operationBefore=operationSnapshot(state);
  if(state.supplies<choice.cost){toast('Недостаточно запасов для этого ответа. Выбери другой вариант.');return}
  if(!spend(choice.cost))return;
  choice.apply();const message=choice.log;
+ recordOperationEvent(state,'incident',incident.title,incident.nodeId||selectedNode().id,operationBefore,choice.label);
  activeIncident=null;ui.incident.hidden=true;ui.incidentOptions.replaceChildren();paused=incidentResumePaused;incidentResumePaused=false;
  ui.status.textContent=paused?'ПАУЗА':'СИСТЕМА АКТИВНА';ui.stage.textContent=paused?'CHECKPOINT':'OPERATIONAL';$('cc-pause').textContent=paused?'▶ Продолжить':'Ⅱ Пауза';ui.incidentStatus.textContent='';
  addLog('<b>Решение принято:</b> '+choice.label+'. '+message);
@@ -621,7 +693,7 @@ function fresh(scenario){
  const base=scenarioData[scenario]||scenarioData.flood;
  if(planTimer)clearTimeout(planTimer);planTimer=0;planRunning=false;runningPlan=[];planIndex=0;planOrders=[];planNotice='Новая операция: составь свежий штабной план.';
  state={scenario:scenario,water:base.water,grid:base.grid,access:base.access,supplies:base.supplies,crews:4,maxCrews:4,waterRate:base.waterRate,gridRate:base.gridRate,accessRate:base.accessRate,riskOffset:base.riskOffset,openedRoutes:scenario==='blockade'?1:2,repairs:0,pumps:0,stabilized:0,actionCount:0,elapsed:0,score:0};
- state.nodeIntegrity=seedNodeIntegrity(state);state.nodeOutages=Object.fromEntries(nodes.map(n=>[n.id,false]));state.nodeIncidentFlags=Object.fromEntries(nodes.map(n=>[n.id,false]));state.pendingNodeIncidents=[];
+ state.nodeIntegrity=seedNodeIntegrity(state);state.nodeOutages=Object.fromEntries(nodes.map(n=>[n.id,false]));state.nodeIncidentFlags=Object.fromEntries(nodes.map(n=>[n.id,false]));state.pendingNodeIncidents=[];state.operationLedger=[];state.operationBaseline=operationSnapshot(state);
  elapsed=0;paused=false;speedIndex=0;finished=false;activeIncident=null;incidentResumePaused=false;ui.incident.hidden=true;ui.incidentOptions.replaceChildren();ui.incidentStatus.textContent='';selected=scenario==='blackout'?'substation':scenario==='blockade'?'bridge':'hub';logRows=[];particles=[];
  ui.resultOverlay.hidden=true;ui.status.textContent='СИСТЕМА АКТИВНА';ui.stage.textContent='OPERATIONAL';ui.missionTitle.textContent=base.mission;ui.missionCopy.textContent=base.copy;
  $('cc-pause').textContent='Ⅱ Пауза';$('cc-speed').textContent='СКОРОСТЬ 1×';$('cc-scenario').value=scenario;
@@ -633,6 +705,7 @@ function act(action){
  if(finished){toast('Операция завершена. Начни новую для продолжения.');return}
  if(paused){toast('Сними паузу, чтобы выполнить действие.');return}
  let n=selectedNode();
+ const operationBefore=operationSnapshot(state);
  if(action==='pump'){
   if(!spend(18))return;state.water=clamp(state.water-12);state.waterRate=Math.max(-.02,state.waterRate-.12);state.pumps++;state.score+=90;
   addLog('<b>Насосные группы:</b> расход ресурсов 18 ед. Уровень воды снижен на 12 пунктов.');
@@ -654,6 +727,8 @@ function act(action){
  if(state.crews===0 && state.repairs+state.stabilized>0)state.riskOffset=Math.max(0,state.riskOffset-1);
  state.waterRate=Math.max(-.03,state.waterRate);state.gridRate=Math.max(-.03,state.gridRate);state.accessRate=Math.max(-.03,state.accessRate);
  state.score+=Math.round((100-riskValue())*.05);
+ const actionLabels={pump:'Развернуть насосы',grid:'Стабилизировать сеть',route:'Открыть маршрут',repair:'Ремонт узла'};
+ recordOperationEvent(state,'action',actionLabels[action]||action,n.id,operationBefore);
  state.actionCount=(state.actionCount||0)+1;
  if(crisisIncidents[state.actionCount])openIncident(crisisIncidents[state.actionCount]);
  renderUI();draw(performance.now());if(!activeIncident)checkFinish();
@@ -824,6 +899,8 @@ function checkFinish(){
 function finish(won,copy,score){
  finished=true;paused=true;
  const finalScore=Number.isFinite(score)?score:state.score;
+ if(!Array.isArray(state.operationLedger))state.operationLedger=[];
+ if(!state.operationBaseline)state.operationBaseline=operationSnapshot(state);
  lastResult={won:Boolean(won),score:Math.max(0,Math.floor(finalScore)),scenario:state.scenario,elapsed:Math.max(0,Math.floor(elapsed)),risk:riskValue()};
  ui.status.textContent=won?'МИССИЯ УСПЕШНА':'ОПЕРАЦИЯ ПРОВАЛЕНА';ui.stage.textContent=won?'STABLE':'CASCADE';ui.resultOverlay.hidden=false;
  ui.resultLabel.textContent=won?'ОПЕРАЦИЯ УСПЕШНА':'ЦЕПОЧКА ОТКАЗОВ';ui.resultTitle.textContent=won?'Город стабилизирован':'Город не удержан';
@@ -831,7 +908,7 @@ function finish(won,copy,score){
  if(activeChallenge&&activeChallenge.scenario===state.scenario){
   resultCopy+=' '+(lastResult.score>activeChallenge.target?'ЧЕЛЛЕНДЖ ПРОЙДЕН: ты превзошёл результат на '+(lastResult.score-activeChallenge.target)+' очков.':'Цель челленджа — превзойти '+activeChallenge.target+' очков. До цели: '+Math.max(0,activeChallenge.target-lastResult.score)+'.');
  }
- ui.resultCopy.textContent=resultCopy;ui.score.textContent=String(lastResult.score);ui.resultOverlay.querySelector('.result h2').style.color=won?'var(--mint)':'var(--bad)';
+ ui.resultCopy.textContent=resultCopy;ui.score.textContent=String(lastResult.score);renderOperationDebrief();ui.resultOverlay.querySelector('.result h2').style.color=won?'var(--mint)':'var(--bad)';
  addLog('<b>Итог операции:</b> '+(won?'город удержан':'зафиксирован каскад отказов')+'.');renderUI();sendLifecycle('completed');
 }
 function checkDrift(dt){
