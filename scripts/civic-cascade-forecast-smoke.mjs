@@ -157,6 +157,24 @@ for(const family of ['water-surge','grid-overload','weak-node-shock']){
  const familyProfiles=envelope.filter(profile=>profile.family===family).sort((a,b)=>a.severityRank-b.severityRank)
  assert.deepEqual(familyProfiles.map(profile=>profile.severity),['mild','moderate','severe'],family+' must expose monotonic severity levels')
  assert.deepEqual(familyProfiles.map(profile=>profile.magnitude),[.5,1,1.5],family+' severity factors must be explicit and monotonic')
+ const impactStates=familyProfiles.map(profile=>{
+  const trial={...stressFixture,nodeIntegrity:{...stressFixture.nodeIntegrity},nodeOutages:{...(stressFixture.nodeOutages||{})},nodeIncidentFlags:{...(stressFixture.nodeIncidentFlags||{})},pendingNodeIncidents:[...(stressFixture.pendingNodeIncidents||[])]}
+  profile.apply(trial)
+  return trial
+ })
+ if(family==='water-surge'){
+  const impacts=impactStates.map(state=>state.water-stressFixture.water)
+  check(impacts[0]<impacts[1]&&impacts[1]<impacts[2], 'water-surge impact must increase monotonically across severity')
+ }else if(family==='grid-overload'){
+  const impacts=impactStates.map(state=>stressFixture.grid-state.grid)
+  check(impacts[0]<impacts[1]&&impacts[1]<impacts[2], 'grid-overload impact must increase monotonically across severity')
+ }else{
+  const target=familyProfiles[0].targetNode
+  const impacts=impactStates.map(state=>(stressFixture.nodeIntegrity[target]||0)-(state.nodeIntegrity[target]||0))
+  const supplyImpacts=impactStates.map(state=>stressFixture.supplies-state.supplies)
+  check(impacts[0]<impacts[1]&&impacts[1]<impacts[2], 'weak-node damage must increase monotonically across severity')
+  check(supplyImpacts[0]<supplyImpacts[1]&&supplyImpacts[1]<supplyImpacts[2], 'supply loss must increase monotonically across severity')
+ }
 }
 check(envelope.every(profile=>profile.severityRank>=1&&profile.severityRank<=3&&profile.targetNode!==undefined), 'every stress profile must have explicit severity metadata and target scope')
 for (const scenario of ['flood', 'blackout', 'blockade']) {
@@ -301,7 +319,7 @@ check(gridAt89.grid < floodThreshold.grid - floodThreshold.gridRate * 90,
 
 console.log(JSON.stringify({
   status: 'passed',
-  suite: 'CIVIC CASCADE reproducible decision evidence export, Pareto portfolio, robust doctrine search and infrastructure integrity',
+  suite: 'CIVIC CASCADE three-level stress envelope, Pareto decision portfolio and reproducible evidence dossier',
   release: manifest.version,
   scenarios: 3,
   horizons: [30, 60, 90],
