@@ -1313,7 +1313,7 @@ function buildDoctrineDossierPayload(sourceState,result,gameVersion,scenarioDefi
   },
   baseline:{forecast:encodeForecast(result.baseline?.forecast)},
   selectedCandidate:chosen?{rank:selectedIndex+1,signature:chosen.signature}:null,
-  candidates:(result.alternatives||[]).map(encodeCandidate),
+  candidates:(result.alternatives||[]).map((candidate,index)=>encodeCandidate(candidate,index+1)),
   assumptions:{
    forecastIsApproximate:true,futureRandomIncidentsIncluded:false,stressProfilesAreSyntheticPerturbations:true,
    comparesAgainstNoInterventionUnderSameStress:true,openAIAPIUsed:false,telemetrySent:false,personalDataIncluded:false,
