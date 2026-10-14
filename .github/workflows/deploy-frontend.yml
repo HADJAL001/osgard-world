@@ -60,6 +60,8 @@ jobs:
       - run: npm run qa:null-shift
       - name: Smoke-test the OSGARD Games hub
         run: npm run qa:games-portal
+      - name: Smoke-test the consent-gated sponsored campaign slot
+        run: npm run qa:campaign-manager
       - name: Smoke-test read-only Games operations diagnostics
         run: npm run qa:games-operations
       - name: Smoke-test Player Lab daily missions, local rewards and backup migration
