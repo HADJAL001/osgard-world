@@ -44,6 +44,7 @@ on:
       - "scripts/games-detail-smoke.mjs"
       - "scripts/cascade-lab-experiment-dossier-smoke.mjs"
       - "scripts/cascade-lab-engineering-suite-smoke.mjs"
+      - "scripts/cascade-lab-experiment-studio-smoke.mjs"
       - "scripts/game-detail-runtime-smoke.mjs"
       - "scripts/games-monetization-smoke.mjs"
       - "scripts/ecosystem-integrity-smoke.mjs"
@@ -87,6 +88,8 @@ jobs:
         run: npm run qa:games-detail
       - name: Validate CASCADE LAB experiment dossier export
         run: npm run qa:cascade-lab-dossier
+      - name: Validate CASCADE LAB controlled Experiment Studio archive
+        run: npm run qa:cascade-lab-experiment-studio
       - name: Test game session clock and iframe lifecycle trust boundaries
         run: npm run qa:game-detail-runtime
       - name: Verify REMIX growth funnel, attribution and sponsor safety
