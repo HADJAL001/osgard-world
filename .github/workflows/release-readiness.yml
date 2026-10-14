@@ -26,6 +26,8 @@ jobs:
       - run: npm ci
       - name: Check cross-surface OSGARD product contracts
         run: npm run qa:contracts
+      - name: Verify premium LiveOps analytics dashboard
+        run: npm run qa:liveops-dashboard
       - name: Test static asset performance budgets
         run: npm run qa:performance-budget-tests
       - name: Test build-attestation tamper resistance
