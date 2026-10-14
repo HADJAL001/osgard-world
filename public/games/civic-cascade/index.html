@@ -8,7 +8,7 @@
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://osgard.world/games/civic-cascade/">
 <title>CIVIC CASCADE — кризисная стратегия | OSGARD PLAY</title>
-<meta name="osgard-game-version" content="3.2.0-three-level-stress-envelope">
+<meta name="osgard-game-version" content="3.3.0-auditable-dossier-verifier">
 <style>
 :root{color-scheme:dark;--bg:#080d10;--panel:#10191d;--panel2:#142126;--line:#ffffff1c;--ink:#edf3ee;--muted:#91a29e;--mint:#b8f4cf;--cyan:#68d8d2;--gold:#e1c58a;--warn:#f2b27c;--bad:#ff827b;--mono:ui-monospace,Consolas,monospace;--serif:Georgia,serif}
 *{box-sizing:border-box}html{background:var(--bg);scroll-behavior:smooth}body{margin:0;color:var(--ink);background:radial-gradient(ellipse at 76% -18%,#234d453d,transparent 48%),var(--bg);font:14px/1.55 Inter,Geist,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}button,select{font:inherit}button,a,select{touch-action:manipulation}a{color:inherit;text-decoration:none}button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(--mint);outline-offset:3px}.wrap{max-width:1440px;padding:0 clamp(14px,2.8vw,42px);margin:auto}
@@ -141,6 +141,25 @@
 .doctrine-export-row{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;margin-top:9px}
 .doctrine-export-row .ctrl{width:100%;min-height:42px;border-color:#68d8d277;color:var(--cyan);white-space:normal}
 .doctrine-export-row p{margin:0;color:#81938e;font-size:8px;line-height:1.65}
+
+.doctrine-verifier{display:grid;gap:8px;margin-top:10px;padding:12px;border:1px solid #e1c58a44;border-radius:8px;background:#111719}
+.doctrine-verifier-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.doctrine-verifier-head strong{color:var(--gold);font:8px var(--mono);letter-spacing:.08em}
+.doctrine-verifier-head span{color:var(--muted);font:7px var(--mono)}
+.doctrine-verifier label{color:#cad2c8;font:9px var(--mono)}
+#cc-doctrine-import-file{max-width:100%;min-height:38px;color:var(--ink);font-size:10px}
+#cc-doctrine-import-file::file-selector-button{min-height:32px;margin-right:8px;padding:4px 9px;border:1px solid #ffffff28;border-radius:5px;background:#1a2729;color:var(--ink)}
+.doctrine-verifier .ctrl{width:100%;min-height:40px;white-space:normal}
+.doctrine-verifier .ctrl:disabled{opacity:.35;cursor:not-allowed}
+#cc-doctrine-verify-help{margin:0;color:#81938e;font-size:8px;line-height:1.65}
+.doctrine-verification-result{padding:10px;border:1px dashed #ffffff25;border-radius:6px;color:#a7b7b0;font-size:9px;line-height:1.65;overflow-wrap:anywhere}
+.doctrine-verification-result[data-status="valid"]{border-color:#68d8d266;color:#c7e9dc}
+.doctrine-verification-result[data-status="invalid"]{border-color:#e58d7777;color:#f0b6a9}
+.doctrine-verification-result[data-status="warning"]{border-color:#e1c58a66;color:#e1c58a}
+.doctrine-verification-title{margin:0 0 6px;font:8px var(--mono);letter-spacing:.08em}
+.doctrine-verification-list{margin:0;padding-left:17px}
+.doctrine-verification-list li{margin:3px 0}
+
 @media(max-width:560px){.doctrine-lab{padding:11px}.doctrine-head{display:grid;grid-template-columns:1fr;gap:7px}#cc-doctrine-status{max-width:none;text-align:left}.doctrine-tools{grid-template-columns:minmax(0,1fr)}.doctrine-tools label{margin-top:2px}.doctrine-tools select,.doctrine-tools .ctrl{width:100%}.doctrine-footer{grid-template-columns:1fr}.doctrine-option-head{align-items:flex-start;flex-direction:column;gap:4px}}
 
 /* CIVIC CASCADE 2.1 — tactical incidents. The simulation pauses until the operator chooses. */
@@ -305,6 +324,14 @@
    <button class="ctrl" id="cc-doctrine-reset" type="button" disabled>Сбросить расчёт</button>
   </div>
   <div class="doctrine-export-row"><button class="ctrl" id="cc-doctrine-export" type="button" disabled>⇩ Скачать досье решения · JSON</button><p>Досье включает снимок города, версию модели, прогноз базы, компромиссы Pareto и все стресс-профили. SHA-256 проверяет целостность экспортированного набора. Файл создаётся только по нажатию и остаётся у тебя.</p></div>
+ <div class="doctrine-verifier" id="cc-doctrine-verifier">
+  <div class="doctrine-verifier-head"><strong>НЕЗАВИСИМАЯ ПРОВЕРКА ДОСЬЕ</strong><span>ЛОКАЛЬНО · БЕЗ СЕТИ</span></div>
+  <label for="cc-doctrine-import-file">Выбери JSON-досье для проверки</label>
+  <input id="cc-doctrine-import-file" type="file" accept=".json,application/json" aria-describedby="cc-doctrine-verify-help">
+  <button class="ctrl" id="cc-doctrine-verify-import" type="button" disabled>Проверить структуру и SHA-256</button>
+  <p id="cc-doctrine-verify-help">Лимит файла — 1 МиБ. Проверка не импортирует очередь и не исполняет команды из файла. SHA-256 выявляет изменение после экспорта, но сам по себе не подтверждает личность автора.</p>
+  <div class="doctrine-verification-result" id="cc-doctrine-verification-result" role="status" aria-live="polite">Досье ещё не выбрано. Никакие файлы не отправляются на сервер.</div>
+ </div>
   <p class="doctrine-footnote">Планировщик детерминированный и локальный: до восьми лучших вариантов проверяются в девяти контролируемых стресс-экспериментах (три семейства по три уровня) против базового решения под тем же стрессом. Он не отправляет игровые данные на сервер и не вызывает OpenAI API. Будущие случайные инциденты и решения игрока не предсказываются.</p>
  </section>
  <ol class="command-list" id="cc-plan-list" aria-live="polite"><li class="command-empty">Очередь пуста. Поставь игру на паузу и добавь первый приказ.</li></ol>
@@ -1114,6 +1141,116 @@ function searchDoctrinePlans(sourceState,mode,selectedNodeId,simulateOrders,simu
 }
 
 
+function canonicalDossierStringify(value){
+ if(value===null||typeof value!=='object'){
+  if(typeof value==='number'&&!Number.isFinite(value))throw new Error('JSON numbers must be finite');
+  const encoded=JSON.stringify(value);if(encoded===undefined)throw new Error('Unsupported JSON value');return encoded;
+ }
+ if(Array.isArray(value))return '['+value.map(canonicalDossierStringify).join(',')+']';
+ const prototype=Object.getPrototypeOf(value);
+ if(prototype!==Object.prototype&&prototype!==null)throw new Error('Only plain JSON objects are accepted');
+ return '{'+Object.keys(value).sort().map(key=>JSON.stringify(key)+':'+canonicalDossierStringify(value[key])).join(',')+'}';
+}
+function validateDoctrineDossierStructure(dossier,currentModelVersion){
+ const errors=[],warnings=[],fail=message=>errors.push(message);
+ const isObject=value=>Boolean(value)&&typeof value==='object'&&!Array.isArray(value);
+ const finite=(value,min,max)=>Number.isFinite(value)&&value>=min&&value<=max;
+ const hexDigest=value=>typeof value==='string'&&/^[a-f0-9]{64}$/.test(value);
+ if(!isObject(dossier))return {valid:false,errors:['Корневое значение должно быть JSON-объектом.'],warnings,modelCompatible:false,candidateCount:0,profileCount:0};
+ const stack=[{value:dossier,depth:0}];let visited=0;
+ while(stack.length){
+  const item=stack.pop();visited++;
+  if(visited>50000){fail('Слишком сложная структура: превышен лимит 50 000 элементов.');break}
+  if(item.depth>32){fail('Слишком глубокая структура: превышен лимит 32 уровней.');break}
+  if(item.value&&typeof item.value==='object')for(const child of (Array.isArray(item.value)?item.value:Object.values(item.value)))stack.push({value:child,depth:item.depth+1});
+ }
+ if(dossier.schema!=='osgard.civic-cascade.decision-dossier/v1')fail('Неподдерживаемая схема досье.');
+ if(dossier.game!=='CIVIC CASCADE')fail('Досье относится к другой игре.');
+ if(typeof dossier.gameVersion!=='string'||dossier.gameVersion.length>100)fail('Не указана допустимая версия игры.');
+ const engine=dossier.engine,scenario=dossier.scenario,source=dossier.sourceState,baseline=dossier.baseline,search=dossier.search,assumptions=dossier.assumptions;
+ if(!isObject(engine)||engine.id!=='civic-cascade-deterministic-decision-engine')fail('Неизвестный движок модели.');
+ if(!isObject(engine)||typeof engine.modelVersion!=='string'||!(/^\d+\.\d+\.\d+$/.test(engine.modelVersion)))fail('Версия модели имеет неверный формат.');
+ if(!isObject(engine)||engine.searchAlgorithm!=='deterministic-bounded-beam-search'||engine.portfolioAlgorithm!=='bounded-pareto-frontier')fail('Контракт алгоритма поиска не совпадает.');
+ if(!isObject(engine)||engine.limits?.maxCommands!==4||engine.limits?.stressCandidateLimit!==8||engine.limits?.stressProfileCount!==9||engine.limits?.portfolioLimit!==3)fail('Лимиты расчёта не совпадают с поддерживаемой схемой.');
+ const expectedProfiles=['water-surge-mild','water-surge-moderate','water-surge-severe','grid-overload-mild','grid-overload-moderate','grid-overload-severe','weak-node-shock-mild','weak-node-shock-moderate','weak-node-shock-severe'];
+ if(!isObject(engine)||!Array.isArray(engine.stressProfiles)||JSON.stringify(engine.stressProfiles)!==JSON.stringify(expectedProfiles))fail('Список стресс-профилей не совпадает с известной моделью.');
+ if(!isObject(scenario)||!['flood','blackout','blockade'].includes(scenario.id)||typeof scenario.label!=='string')fail('Неизвестный сценарий.');
+ if(!isObject(source)||!isObject(source.metrics)||!isObject(source.nodeIntegrity)||!isObject(source.nodeOutages)||!isObject(source.nodeIncidentFlags))fail('Снимок исходного состояния неполный.');
+ if(isObject(source)&&isObject(source.metrics)&&isObject(source.nodeIntegrity)){
+  for(const key of ['water','grid','access','supplies'])if(!finite(source.metrics[key],0,100))fail('Метрика '+key+' должна находиться в диапазоне 0–100.');
+  for(const [key,value] of Object.entries(source.metrics))if(value!==null&&!Number.isFinite(value))fail('Метрика '+key+' содержит нечисловое значение.');
+  for(const [key,value] of Object.entries(source.nodeIntegrity))if(!finite(value,0,100))fail('Целостность узла '+key+' вне диапазона 0–100.');
+  if(!Array.isArray(source.pendingNodeIncidents)||source.pendingNodeIncidents.length>6)fail('Список текущих инцидентов повреждён.');
+ }
+ const checkForecast=(forecast,label)=>{
+  if(!Array.isArray(forecast)||forecast.length!==3){fail(label+': прогноз должен содержать ровно три горизонта.');return}
+  for(let index=0;index<forecast.length;index++){
+   const row=forecast[index];
+   if(!isObject(row)||row.seconds!==[30,60,90][index]){fail(label+': нарушен порядок горизонтов 30/60/90.');continue}
+   for(const metric of ['water','grid','access','risk'])if(!finite(row[metric],0,100))fail(label+': метрика '+metric+' вне диапазона 0–100.');
+   if(!finite(row.weakestIntegrity,0,100))fail(label+': целостность слабейшего узла вне диапазона.');
+   if(row.criticalNodes!==undefined&&(!Array.isArray(row.criticalNodes)||row.criticalNodes.length>6))fail(label+': неверный список критических узлов.');
+  }
+ };
+ if(!isObject(baseline))fail('Не найден базовый прогноз.');else checkForecast(baseline.forecast,'Базовый прогноз');
+ if(!isObject(search))fail('Отсутствует сводка поиска.');
+ const candidates=dossier.candidates;
+ if(!Array.isArray(candidates)||candidates.length>3)fail('Количество кандидатов должно быть от нуля до трёх.');
+ else{
+  if(isObject(search)&&search.returnedCandidates!==candidates.length)fail('Количество кандидатов не совпадает со сводкой поиска.');
+  const allowedActions=['pump','grid','route','repair'],allowedNodes=['hub','substation','pump','bridge','hospital','shelter'],seenSignatures=new Set();
+  for(let i=0;i<candidates.length;i++){
+   const candidate=candidates[i],label='Кандидат '+(i+1);
+   if(!isObject(candidate)){fail(label+': неверный формат.');continue}
+   if(!Number.isInteger(candidate.rank)||candidate.rank<1||candidate.rank>3)fail(label+': неверный ранг.');
+   if(typeof candidate.signature!=='string'||candidate.signature.length>300)fail(label+': неверная подпись последовательности.');
+   if(seenSignatures.has(candidate.signature))fail(label+': повторная подпись последовательности.');seenSignatures.add(candidate.signature);
+   if(!Array.isArray(candidate.orders)||candidate.orders.length<1||candidate.orders.length>4)fail(label+': длина плана должна быть 1–4 приказа.');
+   else for(const order of candidate.orders){
+    if(!isObject(order)||!allowedActions.includes(order.action))fail(label+': обнаружен неизвестный тип приказа.');
+    else if(order.action==='repair'&&!allowedNodes.includes(order.nodeId))fail(label+': ремонт указывает неизвестный инфраструктурный узел.');
+    else if(order.action!=='repair'&&order.nodeId!==null)fail(label+': неремонтный приказ не должен иметь целевой узел.');
+   }
+   if(!finite(candidate.resourceCost,0,10000)||!finite(candidate.crewsUsed,0,4))fail(label+': ресурсная оценка вне допустимого диапазона.');
+   if(!isObject(candidate.scores)||!finite(candidate.scores.nominal,0,100000)||!finite(candidate.scores.stressAdjusted,0,100000))fail(label+': оценки плана недопустимы.');
+   checkForecast(candidate.forecast,label);
+   const robustness=candidate.robustness;
+   if(!isObject(robustness)||robustness.profileCount!==9||!Array.isArray(robustness.profiles)||robustness.profiles.length!==9)fail(label+': необходимы все девять стресс-профилей.');
+   else{
+    const profileIds=new Set();
+    for(const profile of robustness.profiles){
+     if(!isObject(profile)||!expectedProfiles.includes(profile.id)||profileIds.has(profile.id)){fail(label+': неизвестный или повторный стресс-профиль.');continue}
+     profileIds.add(profile.id);
+     const expectedSeverity=profile.id.endsWith('-mild')?'mild':profile.id.endsWith('-moderate')?'moderate':'severe';
+     const expectedRank=expectedSeverity==='mild'?1:expectedSeverity==='moderate'?2:3,expectedMagnitude=expectedRank===1?.5:expectedRank===2?1:1.5;
+     if(profile.severity!==expectedSeverity||profile.severityRank!==expectedRank||profile.magnitude!==expectedMagnitude)fail(label+': несогласованные параметры тяжести стресса.');
+     if(!finite(profile.baselineRisk90,0,100)||!finite(profile.candidateRisk90,0,100)||!finite(profile.riskDelta90,-100,100))fail(label+': недопустимые значения риска под стрессом.');
+     if(!finite(profile.baselineWeakestIntegrity,0,100)||!finite(profile.candidateWeakestIntegrity,0,100)||!finite(profile.weakestIntegrityDelta,-100,100))fail(label+': недопустимая целостность узлов под стрессом.');
+     if(!Number.isInteger(profile.criticalNodeDelta)||profile.criticalNodeDelta< -6||profile.criticalNodeDelta>6)fail(label+': некорректная разница критических узлов.');
+    }
+    if(profileIds.size!==9)fail(label+': набор стресс-профилей неполный.');
+   }
+  }
+ }
+ if(isObject(search)&&(search.returnedCandidates!==candidates?.length||!Number.isInteger(search.evaluatedCandidateCount)||search.evaluatedCandidateCount<0||search.evaluatedCandidateCount>1000||!Number.isInteger(search.stressEvaluatedCandidateCount)||search.stressEvaluatedCandidateCount<0||search.stressEvaluatedCandidateCount>8))fail('Счётчики поиска противоречат лимитам движка.');
+ if(!isObject(assumptions)||assumptions.forecastIsApproximate!==true||assumptions.futureRandomIncidentsIncluded!==false||assumptions.stressProfilesAreSyntheticPerturbations!==true||assumptions.comparesAgainstNoInterventionUnderSameStress!==true||assumptions.openAIAPIUsed!==false||assumptions.telemetrySent!==false||assumptions.personalDataIncluded!==false||assumptions.modelOutputsDescribeImplementedRulesOnly!==true)fail('Обязательные ограничения модели или приватности отсутствуют.');
+ if(dossier.selectedCandidate!==null&&(!isObject(dossier.selectedCandidate)||!Number.isInteger(dossier.selectedCandidate.rank)||dossier.selectedCandidate.rank<1||dossier.selectedCandidate.rank>Math.max(1,candidates?.length||0)))fail('Выбранный кандидат не входит в портфель.');
+ const integrity=dossier.exportMetadata?.integrity,newScope='canonical recursively key-sorted JSON payload without exportMetadata',legacyScope='UTF-8 JSON payload without exportMetadata';
+ if(!isObject(dossier.exportMetadata)||!isObject(integrity)||integrity.algorithm!=='SHA-256'||![newScope,legacyScope].includes(integrity.scope)||!['computed','unavailable'].includes(integrity.status)||(integrity.status==='computed'&&!hexDigest(integrity.digest))||(integrity.status==='unavailable'&&integrity.digest!==null))fail('Метаданные целостности отсутствуют или имеют неподдерживаемый формат.');
+ if(integrity?.scope===legacyScope)warnings.push('Исторический SHA-256 сохраняет порядок JSON-ключей; изменение порядка ключей меняет старый хеш.');
+ const modelCompatible=Boolean(isObject(engine)&&engine.modelVersion===currentModelVersion);
+ if(isObject(engine)&&typeof engine.modelVersion==='string'&&!modelCompatible)warnings.push('Досье создано моделью '+engine.modelVersion+', текущая модель '+currentModelVersion+'. Исторический отчёт доступен только для чтения.');
+ if(integrity?.status==='unavailable')warnings.push('В исходном экспорте SHA-256 не был рассчитан. Структура может пройти проверку, но хеш подтвердить нельзя.');
+ return {valid:errors.length===0,errors,warnings,modelCompatible,modelVersion:engine?.modelVersion||'unknown',candidateCount:Array.isArray(candidates)?candidates.length:0,profileCount:Array.isArray(candidates)?Math.min(...candidates.map(candidate=>candidate?.robustness?.profileCount||0),9):0,integrityStatus:integrity?.status||'invalid',visitedNodes:visited};
+}
+function assessDoctrineDossierIntegrity(dossier,computedDigest){
+ const integrity=dossier?.exportMetadata?.integrity;
+ if(!integrity||integrity.algorithm!=='SHA-256'||integrity.status!=='computed'||typeof integrity.digest!=='string')return {available:false,verified:false,reason:'В досье нет вычисленного SHA-256.'};
+ const validComputed=typeof computedDigest==='string'&&/^[a-f0-9]{64}$/.test(computedDigest);
+ if(!validComputed)return {available:false,verified:false,reason:'Проверка SHA-256 недоступна.'};
+ return {available:true,verified:integrity.digest===computedDigest,reason:integrity.digest===computedDigest?'Хеш совпадает с содержимым досье. Это проверка целостности, не цифровая подпись автора.':'Хеш не совпадает: содержимое изменено после экспорта или файл повреждён.'};
+}
+
 function buildDoctrineDossierPayload(sourceState,result,gameVersion,scenarioDefinitions,nodeDefinitions,selectedIndex){
  const metricKeys=['water','grid','access','supplies','crews','riskOffset','waterRate','gridRate','accessRate','actionCount'];
  const metrics={};
@@ -1159,7 +1296,7 @@ function buildDoctrineDossierPayload(sourceState,result,gameVersion,scenarioDefi
  return {
   schema:'osgard.civic-cascade.decision-dossier/v1',game:'CIVIC CASCADE',gameVersion:String(gameVersion||'unknown'),
   engine:{
-   id:'civic-cascade-deterministic-decision-engine',modelVersion:'3.2.0',
+   id:'civic-cascade-deterministic-decision-engine',modelVersion:'3.3.0',
    searchAlgorithm:'deterministic-bounded-beam-search',portfolioAlgorithm:'bounded-pareto-frontier',
    objective:String(result.mode||'balanced'),limits:{maxCommands:4,beamWidth:6,stressCandidateLimit:8,stressProfileCount:9,stressSeverityLevels:3,portfolioLimit:3},
    forecastHorizonsGameSeconds:[30,60,90],stressFamilies:['water-surge','grid-overload','weak-node-shock'],stressSeverityLevels:['mild','moderate','severe'],stressProfiles:['water-surge-mild','water-surge-moderate','water-surge-severe','grid-overload-mild','grid-overload-moderate','grid-overload-severe','weak-node-shock-mild','weak-node-shock-moderate','weak-node-shock-severe']
@@ -1176,7 +1313,7 @@ function buildDoctrineDossierPayload(sourceState,result,gameVersion,scenarioDefi
   },
   baseline:{forecast:encodeForecast(result.baseline?.forecast)},
   selectedCandidate:chosen?{rank:selectedIndex+1,signature:chosen.signature}:null,
-  candidates:(result.alternatives||[]).map(encodeCandidate),
+  candidates:(result.alternatives||[]).map((candidate,index)=>encodeCandidate(candidate,index+1)),
   assumptions:{
    forecastIsApproximate:true,futureRandomIncidentsIncluded:false,stressProfilesAreSyntheticPerturbations:true,
    comparesAgainstNoInterventionUnderSameStress:true,openAIAPIUsed:false,telemetrySent:false,personalDataIncluded:false,
@@ -1199,8 +1336,8 @@ async function exportDoctrineDossier(){
  try{
   const version=document.querySelector('meta[name="osgard-game-version"]')?.content||'unknown';
   const payload=buildDoctrineDossierPayload(state,doctrineResult,version,scenarioData,nodes,doctrineSelectedIndex);
-  const canonicalPayload=JSON.stringify(payload);
-  let integrity={algorithm:'SHA-256',scope:'UTF-8 JSON payload without exportMetadata',status:'unavailable',digest:null};
+  const canonicalPayload=canonicalDossierStringify(payload)
+  let integrity={algorithm:'SHA-256',scope:'canonical recursively key-sorted JSON payload without exportMetadata',status:'unavailable',digest:null};
   try{
    if(!window.crypto?.subtle)throw new Error('Web Crypto unavailable');
    const digest=await window.crypto.subtle.digest('SHA-256',new TextEncoder().encode(canonicalPayload));
@@ -1218,6 +1355,66 @@ async function exportDoctrineDossier(){
   toast('Не удалось создать досье: '+String(error?.message||'ошибка экспорта').slice(0,100));
  }finally{
   if(button)button.disabled=!paused||!doctrineResult||doctrineResult.fingerprint!==doctrineFingerprint()||finished||activeIncident||planRunning;
+ }
+}
+
+
+function renderDoctrineDossierVerification(result){
+ const root=$('cc-doctrine-verification-result');if(!root)return;
+ root.replaceChildren();root.dataset.status=!result.valid?'invalid':result.integrity.available&&result.integrity.verified?'valid':'warning';
+ const title=document.createElement('p');title.className='doctrine-verification-title';
+ if(!result.valid)title.textContent='ДОСЬЕ ОТКЛОНЕНО · '+result.validation.errors.length+' ОШИБОК';
+ else if(result.integrity.available&&result.integrity.verified)title.textContent=result.validation.modelCompatible?'СТРУКТУРА OK · SHA-256 СОВПАДАЕТ · МОДЕЛЬ ТЕКУЩАЯ':'СТРУКТУРА OK · SHA-256 СОВПАДАЕТ · ИСТОРИЧЕСКАЯ МОДЕЛЬ';
+ else title.textContent='СТРУКТУРА ПРОВЕРЕНА · ЦЕЛОСТНОСТЬ НЕ ПОДТВЕРЖДЕНА';
+ root.append(title);const lines=[];
+ if(result.fileName)lines.push('Файл: '+result.fileName+' ('+Math.ceil(result.fileSize/1024)+' КиБ)');
+ if(result.valid){
+  lines.push('Схема: osgard.civic-cascade.decision-dossier/v1');
+  lines.push('Версия модели: '+result.validation.modelVersion+(result.validation.modelCompatible?' · совпадает':' · отличается от текущей'));
+  lines.push('Кандидаты: '+result.validation.candidateCount+' · стресс-профили на кандидата: 9');
+  lines.push(result.integrity.reason);lines.push('SHA-256 не является цифровой подписью и не доказывает автора файла.');
+ }else{
+  for(const error of result.validation.errors.slice(0,8))lines.push('Ошибка: '+error);
+  if(result.validation.errors.length>8)lines.push('И ещё ошибок: '+(result.validation.errors.length-8));
+ }
+ for(const warning of result.validation.warnings||[])lines.push('Предупреждение: '+warning);
+ const list=document.createElement('ul');list.className='doctrine-verification-list';
+ for(const line of lines){const item=document.createElement('li');item.textContent=line;list.append(item)}
+ root.append(list);
+}
+async function verifyDoctrineDossierFile(){
+ const input=$('cc-doctrine-import-file'),button=$('cc-doctrine-verify-import'),file=input?.files?.[0];
+ if(!file){renderDoctrineDossierVerification({valid:false,validation:{errors:['Сначала выбери JSON-файл.'],warnings:[]},integrity:{available:false,verified:false,reason:'Проверка не выполнялась.'}});return}
+ if(button)button.disabled=true;
+ try{
+  if(file.size<=0||file.size>1048576){
+   renderDoctrineDossierVerification({valid:false,fileName:file.name,fileSize:file.size,validation:{errors:['Размер файла должен быть от 1 байта до 1 МиБ.'],warnings:[]},integrity:{available:false,verified:false,reason:'Проверка хеша не выполнялась.'}});return;
+  }
+  const textData=await file.text();let dossier;
+  try{dossier=JSON.parse(textData)}catch(_){
+   renderDoctrineDossierVerification({valid:false,fileName:file.name,fileSize:file.size,validation:{errors:['Файл не содержит корректный JSON.'],warnings:[]},integrity:{available:false,verified:false,reason:'Проверка хеша не выполнялась.'}});return;
+  }
+  const currentModelVersion=(document.querySelector('meta[name="osgard-game-version"]')?.content||'unknown').split('-')[0];
+  const validation=validateDoctrineDossierStructure(dossier,currentModelVersion);
+  if(!validation.valid){
+   renderDoctrineDossierVerification({valid:false,fileName:file.name,fileSize:file.size,validation,integrity:{available:false,verified:false,reason:'Хеш не проверялся, поскольку структура не прошла валидацию.'}});return;
+  }
+  let integrity={available:false,verified:false,reason:'Web Crypto недоступна: проверена структура, но не целостность.'};
+  if(dossier.exportMetadata?.integrity?.status==='computed'&&window.crypto?.subtle){
+   try{
+    const {exportMetadata,...payload}=dossier,legacyScope='UTF-8 JSON payload without exportMetadata';
+    const canonicalPayload=dossier.exportMetadata.integrity.scope===legacyScope?JSON.stringify(payload):canonicalDossierStringify(payload);
+    const digestBuffer=await window.crypto.subtle.digest('SHA-256',new TextEncoder().encode(canonicalPayload));
+    const digest=Array.from(new Uint8Array(digestBuffer),byte=>byte.toString(16).padStart(2,'0')).join('');
+    integrity=assessDoctrineDossierIntegrity(dossier,digest);
+   }catch(_){integrity={available:false,verified:false,reason:'Не удалось вычислить SHA-256: проверь поддержку криптографии в браузере.'}}
+  }else if(dossier.exportMetadata?.integrity?.status==='unavailable')integrity={available:false,verified:false,reason:'В исходном досье SHA-256 не был рассчитан.'};
+  if(integrity.available&&!integrity.verified){validation.errors.push('Проверка SHA-256 не прошла.');validation.valid=false}
+  renderDoctrineDossierVerification({valid:validation.valid,fileName:file.name,fileSize:file.size,validation,integrity});
+ }catch(error){
+  renderDoctrineDossierVerification({valid:false,fileName:file.name,fileSize:file.size,validation:{errors:['Не удалось безопасно прочитать досье: '+String(error?.message||'ошибка').slice(0,140)],warnings:[]},integrity:{available:false,verified:false,reason:'Проверка не завершена.'}});
+ }finally{
+  if(button)button.disabled=!input?.files?.length;
  }
 }
 
@@ -1492,6 +1689,7 @@ $('cc-map').addEventListener('pointerdown',pick);
 buttons.forEach(id=>$('cc-action-'+id).addEventListener('click',()=>act(id)));
 $('cc-plan-add').addEventListener('click',addPlannedOrder);$('cc-plan-clear').addEventListener('click',clearPlannedOrders);$('cc-plan-execute').addEventListener('click',executePlannedOrders);
 $('cc-doctrine-run').addEventListener('click',runDoctrinePlanner);$('cc-doctrine-apply').addEventListener('click',applyDoctrinePlan);$('cc-doctrine-reset').addEventListener('click',resetDoctrinePlanner);$('cc-doctrine-mode').addEventListener('change',setDoctrineObjective);$('cc-doctrine-export').addEventListener('click',exportDoctrineDossier);
+$('cc-doctrine-import-file').addEventListener('change',()=>{$('cc-doctrine-verify-import').disabled=!$('cc-doctrine-import-file').files?.length});$('cc-doctrine-verify-import').addEventListener('click',verifyDoctrineDossierFile);
 $('cc-pause').addEventListener('click',()=>{if(finished||planRunning)return;if(paused&&planOrders.length){toast('Сначала исполни очередь или очисти план перед снятием паузы.');return}paused=!paused;$('cc-pause').textContent=paused?'▶ Продолжить':'Ⅱ Пауза';ui.status.textContent=paused?'ПАУЗА':'СИСТЕМА АКТИВНА';renderUI();renderPlan();addLog(paused?'<b>Оператор:</b> симуляция приостановлена.':'<b>Оператор:</b> симуляция возобновлена.')});
 $('cc-speed').addEventListener('click',()=>{speedIndex=(speedIndex+1)%speeds.length;$('cc-speed').textContent='СКОРОСТЬ '+speeds[speedIndex]+'×';toast('Скорость симуляции: '+speeds[speedIndex]+'×')});
 $('cc-reset').addEventListener('click',()=>fresh($('cc-scenario').value));
