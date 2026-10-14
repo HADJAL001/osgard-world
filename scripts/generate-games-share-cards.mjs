@@ -207,9 +207,12 @@ function escapeHtml(value) {
 }
 function invitePage(game) {
   const title = escapeHtml(game.title);
-  const description = escapeHtml(game.id
-    ? 'Тебя пригласили в ' + game.title + ' в OSGARD PLAY. Прими приглашение, запусти игру и передай свой следующий вызов дальше.'
-    : 'Выбери игровой мир OSGARD PLAY, попробуй его и передай приглашение другу.');
+  const socialTitle = escapeHtml(game.id === 'cascade-lab' ? 'CASCADE LAB — Контракт-вызов' : game.title);
+  const description = escapeHtml(game.id === 'cascade-lab'
+    ? 'Тебя пригласили на контракт-вызов в CASCADE LAB. Прими приглашение, проверь механику и попробуй выполнить тот же контракт в своей лаборатории.'
+    : game.id
+      ? 'Тебя пригласили в ' + game.title + ' в OSGARD PLAY. Прими приглашение, запусти игру и передай свой следующий вызов дальше.'
+      : 'Выбери игровой мир OSGARD PLAY, попробуй его и передай приглашение другу.');
   const slug = game.id ? '/games/invite/' + game.id + '/' : '/games/invite/';
   const gameAttribute = game.id ? ' data-game="' + game.id + '"' : '';
   const catalogTarget = game.id ? '/games/?og_game=' + encodeURIComponent(game.id) : '/games/';
@@ -225,7 +228,7 @@ function invitePage(game) {
 '<meta name="description" content="' + description + '">',
 '<meta property="og:type" content="website">',
 '<meta property="og:site_name" content="OSGARD PLAY">',
-'<meta property="og:title" content="' + title + ' — OSGARD PLAY">',
+'<meta property="og:title" content="' + socialTitle + ' — OSGARD PLAY">',
 '<meta property="og:description" content="' + description + '">',
 '<meta property="og:url" content="https://osgard.world' + slug + '">',
 '<meta property="og:image" content="' + image + '">',
@@ -235,13 +238,13 @@ function invitePage(game) {
 '<meta property="og:image:height" content="630">',
 '<meta property="og:image:alt" content="OSGARD PLAY — ' + title + ', персональное игровое приглашение">',
 '<meta name="twitter:card" content="summary_large_image">',
-'<meta name="twitter:title" content="' + title + ' — OSGARD PLAY">',
+'<meta name="twitter:title" content="' + socialTitle + ' — OSGARD PLAY">',
 '<meta name="twitter:description" content="' + description + '">',
 '<meta name="twitter:image" content="' + image + '">',
 '<meta name="twitter:image:alt" content="OSGARD PLAY — ' + title + ', персональное игровое приглашение">',
 '<link rel="canonical" href="https://osgard.world' + slug + '">',
 '<link rel="icon" href="/games/favicon.svg" type="image/svg+xml">',
-'<title>' + title + ' — OSGARD PLAY / приглашение</title>',
+'<title>' + socialTitle + ' — OSGARD PLAY / приглашение</title>',
 '<style>',
 ':root{color-scheme:dark;--bg:#080a0b;--panel:#101513;--ink:#f2f0e8;--muted:#a5aaa1;--line:#ffffff24;--acid:#d3ff69;--metal:#d2c9b4}*{box-sizing:border-box}body{margin:0;min-height:100svh;background:radial-gradient(ellipse at 78% 45%,#d3ff6912,transparent 33%),var(--bg);color:var(--ink);font:15px/1.7 Inter,Geist,system-ui,sans-serif}.shell{width:min(1040px,calc(100% - 32px));margin:auto;min-height:100svh;display:flex;flex-direction:column}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:26px 0;border-bottom:1px solid var(--line);font:10px ui-monospace,monospace;letter-spacing:.12em}.brand{display:flex;gap:10px;align-items:center;color:var(--ink);text-decoration:none}.brand-mark{display:grid;place-items:center;width:30px;height:30px;border:1px solid #d3ff6960;color:var(--acid);font-size:18px}.brand strong{letter-spacing:.1em}.top-tag{color:var(--muted);text-align:right}.main{flex:1;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(260px,.85fr);align-items:center;gap:clamp(30px,7vw,86px);padding:clamp(46px,9vw,100px) 0}.eyebrow{margin:0 0 22px;color:var(--acid);font:10px ui-monospace,monospace;letter-spacing:.18em;text-transform:uppercase}.eyebrow:before{content:"";display:inline-block;width:6px;height:6px;margin:0 10px 1px 0;border-radius:50%;background:var(--acid);box-shadow:0 0 14px #d3ff6970}.title{max-width:640px;margin:0;font:400 clamp(46px,8vw,90px)/.96 Georgia,serif;letter-spacing:-.065em;overflow-wrap:anywhere}.title em{color:var(--metal);font-weight:400}.copy{max-width:520px;margin:26px 0 0;color:var(--muted);font-size:15px}.actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}.cta{display:inline-flex;min-height:48px;align-items:center;justify-content:center;gap:18px;padding:0 18px;background:var(--acid);color:#11150d;font-weight:700;font-size:12px;text-decoration:none}.secondary{display:inline-flex;align-items:center;min-height:48px;padding:0 16px;border:1px solid var(--line);color:var(--ink);text-decoration:none;font-size:12px}.privacy{max-width:510px;margin:18px 0 0;color:#777f76;font-size:11px;line-height:1.65}.art{width:100%;max-width:460px;justify-self:center;filter:drop-shadow(0 18px 48px #0008)}.foot{display:flex;justify-content:space-between;gap:18px;padding:18px 0;border-top:1px solid var(--line);color:#7c837b;font:9px ui-monospace,monospace;letter-spacing:.12em}.cta:focus-visible,.secondary:focus-visible,.brand:focus-visible{outline:2px solid var(--metal);outline-offset:4px}@media(max-width:680px){.main{grid-template-columns:1fr;padding:54px 0 66px;gap:34px}.art{max-width:320px;grid-row:1}.title{font-size:clamp(44px,13vw,66px)}.top{padding:18px 0}.top-tag{max-width:120px;font-size:8px}.actions>*{width:100%}.foot{flex-wrap:wrap}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}',
 '</style>',
