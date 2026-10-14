@@ -62,7 +62,7 @@ test("owned-service promotion settings validate the public service allow-list an
   assert.equal(validateOwnedPromoConfig({ schemaVersion: 1 }).code, "OWNED_PROMO_SCHEMA_VERSION_INVALID");
 });
 
-test("owned-promo schema migration preserves explicit owner choices and excludes inactive services", () => {
+test("owned-promo schema migration applies current defaults to legacy settings and excludes inactive services", () => {
   const legacy = migrateOwnedPromoConfig({
     enabled: false,
     defaultFrequency: "every3",
@@ -73,47 +73,29 @@ test("owned-promo schema migration preserves explicit owner choices and excludes
   });
   assert.equal(legacy.ok, true);
   assert.equal(legacy.config.schemaVersion, 2);
-  assert.equal(legacy.config.enabled, false, "An existing global off switch must stay off");
-  assert.equal(legacy.config.defaultFrequency, "every3", "An existing frequency choice must be preserved");
+  assert.equal(legacy.config.enabled, true, "Legacy global-off settings migrate to the requested enabled default");
+  assert.equal(legacy.config.defaultFrequency, "each", "Legacy settings migrate to after-every-game defaults");
   assert.deepEqual(legacy.config.enabledServices, ["projects", "marcosa"]);
   assert.deepEqual(legacy.config.defaultSelectedServices, ["projects"]);
   assert.equal(legacy.config.spotlightService, "marcosa");
-  assert.equal(legacy.config.showShareRewards, false, "An existing reward off switch must stay off");
-  assert.equal(legacy.config.enabledServices.includes("gardvpn"), false, "Unverified VPN must remain excluded during migration");
+  assert.equal(legacy.config.showShareRewards, true, "Legacy settings migrate to enabled optional rewards");
+  assert.equal(legacy.config.enabledServices.includes("gardvpn"), false, "Unverified VPN must remain excluded from promotions");
 
-  const intentionallyEmpty = migrateOwnedPromoConfig({
-    enabled: true, defaultFrequency: "off",
-    enabledServices: [], defaultSelectedServices: [],
+  const emptyLegacy = migrateOwnedPromoConfig({
+    enabled: true,
+    defaultFrequency: "off",
+    enabledServices: [],
+    defaultSelectedServices: [],
   });
-  assert.equal(intentionallyEmpty.ok, true);
-  assert.deepEqual(intentionallyEmpty.config.enabledServices, []);
-  assert.deepEqual(intentionallyEmpty.config.defaultSelectedServices, []);
-  assert.equal(intentionallyEmpty.config.defaultFrequency, "off");
+  assert.equal(emptyLegacy.ok, true);
+  assert.deepEqual(emptyLegacy.config.enabledServices, [...OWNED_PROMO_SERVICE_IDS]);
+  assert.deepEqual(emptyLegacy.config.defaultSelectedServices, [...OWNED_PROMO_SERVICE_IDS]);
+  assert.equal(emptyLegacy.config.defaultFrequency, "each");
 
   assert.equal(migrateOwnedPromoConfig({ schemaVersion: 99 }).code, "OWNED_PROMO_SCHEMA_VERSION_INVALID");
-  const current = migrateOwnedPromoConfig({ schemaVersion: 2, enabledServices: ["projects"], defaultSelectedServices: ["projects"] });
-  assert.equal(current.ok, true);
-  assert.deepEqual(current.config.enabledServices, ["projects"]);
 });
 
-test("legacy owned-promo settings migrate to every-session defaults while schema v2 preserves operator choices", () => {
-  const legacy = migrateOwnedPromoConfig({
-    enabled: false,
-    defaultFrequency: "off",
-    enabledServices: ["projects", "marcosa", "projects"],
-    defaultSelectedServices: ["projects"],
-    spotlightService: "projects",
-    showShareRewards: false,
-  });
-  assert.equal(legacy.ok, true);
-  assert.equal(legacy.config.schemaVersion, 2);
-  assert.equal(legacy.config.enabled, true, "Legacy global-off setting migrates to the requested enabled default");
-  assert.equal(legacy.config.defaultFrequency, "each", "Legacy config defaults to a promo after every completed game");
-  assert.equal(legacy.config.showShareRewards, true, "Legacy config enables the optional SHARDS reward panel");
-  assert.deepEqual(legacy.config.enabledServices, ["projects", "marcosa"], "Valid allow-list entries are preserved and de-duplicated");
-  assert.deepEqual(legacy.config.defaultSelectedServices, ["projects"], "Valid default service choices are preserved");
-  assert.equal(legacy.config.spotlightService, "projects", "A valid selected spotlight remains intact");
-
+test("schema-v2 owned-promo operator choices remain explicit", () => {
   const current = migrateOwnedPromoConfig({
     schemaVersion: 2,
     enabled: false,
@@ -124,10 +106,13 @@ test("legacy owned-promo settings migrate to every-session defaults while schema
     showShareRewards: false,
   });
   assert.equal(current.ok, true);
-  assert.equal(current.config.enabled, false, "An explicit v2 global-off choice must be respected");
-  assert.equal(current.config.defaultFrequency, "off", "An explicit v2 schedule must be respected");
-  assert.equal(current.config.showShareRewards, false, "An explicit v2 reward setting must be respected");
-  assert.equal(migrateOwnedPromoConfig({ schemaVersion: 99 }).code, "OWNED_PROMO_SCHEMA_VERSION_INVALID");
+  assert.equal(current.config.schemaVersion, 2);
+  assert.equal(current.config.enabled, false);
+  assert.equal(current.config.defaultFrequency, "off");
+  assert.deepEqual(current.config.enabledServices, ["projects"]);
+  assert.deepEqual(current.config.defaultSelectedServices, ["projects"]);
+  assert.equal(current.config.spotlightService, "projects");
+  assert.equal(current.config.showShareRewards, false);
 });
 
 test("catalog is a fixed server-side allow-list", () => {
