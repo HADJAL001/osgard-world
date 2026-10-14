@@ -14,6 +14,7 @@ import {
   campaignFromRow, normalizeCampaignId, publicCampaignView, validateCampaignPayload,
 } from "./campaigns.mjs";
 import { buildCommercialReadiness } from "./readiness.mjs";
+import { generateGameCoachAdvice, isGameCoachConfigured } from "./game-coach.mjs";
 
 const { Pool } = pg;
 const app = express();
@@ -50,6 +51,7 @@ app.use(cors({
 app.use("/v1/checkout", rateLimit({ windowMs: 15 * 60 * 1000, limit: 20, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/leads", rateLimit({ windowMs: 60 * 60 * 1000, limit: 8, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/events", rateLimit({ windowMs: 5 * 60 * 1000, limit: 60, standardHeaders: "draft-8", legacyHeaders: false }));
+app.use("/v1/game-coach", rateLimit({ windowMs: 60 * 60 * 1000, limit: 5, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/referrals", rateLimit({ windowMs: 15 * 60 * 1000, limit: 30, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/admin", rateLimit({ windowMs: 5 * 60 * 1000, limit: 120, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/campaigns", rateLimit({ windowMs: 15 * 60 * 1000, limit: 120, standardHeaders: "draft-8", legacyHeaders: false }));
@@ -262,6 +264,32 @@ app.post("/v1/stripe/webhook", express.raw({ type: "application/json", limit: "1
 });
 
 app.use(express.json({ limit: "25kb", strict: true }));
+
+app.get("/v1/game-coach/status", (_req, res) => {
+  res.set("Cache-Control", "no-store, private");
+  return res.json({ enabled: isGameCoachConfigured().enabled });
+});
+
+app.post("/v1/game-coach", async (req, res) => {
+  // Input validation and the one-request consent acknowledgement happen in the
+  // game-coach service. The feature has a server-side flag and never accepts
+  // free-form user prompts, account data or client-supplied system instructions.
+  const result = await generateGameCoachAdvice(req.body);
+  if (!result.ok) {
+    const message = result.code === "GAME_COACH_CONSENT_REQUIRED"
+      ? "Подтверди разовое согласие на отправку краткой сводки сессии для AI-подсказки."
+      : result.code === "OPENAI_GAME_COACH_NOT_CONFIGURED"
+        ? "AI Coach пока не включён на сервере."
+        : result.code === "OPENAI_GAME_COACH_BUSY"
+          ? "AI Coach временно перегружен. Попробуй позже."
+          : result.status >= 500
+            ? "AI Coach временно недоступен. Игровой процесс не затронут."
+            : "Проверь параметры запроса.";
+    return res.status(result.status).json({ error: result.code, message });
+  }
+  res.set("Cache-Control", "no-store, private");
+  return res.json({ advice: result.advice });
+});
 
 function campaignColumns() {
   return "campaign_id, sponsor_name, title, description, target_url, placement, status, starts_at, ends_at, frequency_cap, created_at, updated_at";
