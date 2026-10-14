@@ -35,6 +35,7 @@ on:
       - "scripts/games-portal-smoke.mjs"
       - "scripts/cascade-lab-engineering-suite-smoke.mjs"
       - "scripts/cascade-lab-trajectory-xray-smoke.mjs"
+      - "scripts/cascade-lab-counterfactual-smoke.mjs"
       - "package.json"
       - ".github/workflows/osgard-play-qa.yml"
 
