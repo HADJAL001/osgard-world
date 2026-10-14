@@ -50,6 +50,10 @@
 <p class="message" id="refresh-status" role="status"></p>
 <div class="freshness" id="data-freshness" data-state="stale" role="status"><span class="dot" aria-hidden="true"></span><span id="freshness-label">Данные ещё не загружены</span></div>
 <div class="metrics" id="metrics" aria-live="polite"><article class="metric"><span>Статус</span><strong>Ожидание</strong></article></div>
+<section class="panel" aria-labelledby="decision-heading">
+<div class="row"><div><h2 id="decision-heading">Сигналы и качество данных</h2><p class="small">Объяснимые изменения по фактическим агрегатам. Порог — повод проверить, не автоматический вывод о причине или успехе.</p></div><button id="export-brief" class="btn secondary" type="button">Экспорт брифа JSON ↓</button></div>
+<pre class="data" id="decision-brief" aria-live="polite">Подключитесь к API, чтобы сформировать бриф без персональных полей.</pre>
+</section>
 <div class="notice"><strong>Граница данных.</strong> API учитывает только события/результаты, реально записанные игровым backend. Эта панель не показывает все анонимные посещения сайта, рекламные показы/eCPM, заявки, выручку или платёжную конверсию: соответствующие серверные контуры пока не подключены.</div>
 </div>
 <div class="columns">
@@ -60,7 +64,7 @@
 </section>
 <footer class="footer"><span>OSGARD LIVEOPS · Только агрегированная служебная аналитика</span><div class="footer-links"><a href="/games/operations/">Диагностика витрины</a><a href="/games/admin/partners/">Редактор партнёрских форматов</a><a href="/games/admin/campaigns/">Управление кампаниями</a><a href="/privacy/">Конфиденциальность</a><a href="mailto:osman.osmanov0099@gmail.com?subject=OSGARD%20LiveOps">Поддержка</a></div></footer>
 </div>
-<script src="/games/admin/analytics-core.js?v=20261015-1"></script>
+<script src="/games/admin/analytics-core.js?v=20261015-2"></script>
 <script>
 (function(){
 'use strict';
@@ -69,6 +73,7 @@ const analytics=window.OSGARDLiveOpsMetrics;
 if(!analytics)throw new Error('OSGARD LiveOps analytics core did not load.');
 let operatorToken='';
 let lastAggregateReport=null;
+let lastDecisionBrief=null;
 let lastSuccessAt=null;
 let activeController=null;
 let requestEpoch=0;
@@ -171,9 +176,10 @@ async function refresh({silent=false}={}){
   if(comparisonEnabled&&previousResult.status!=='fulfilled')degraded.push('сравнение');
   const generatedAt=new Date().toISOString();
   lastAggregateReport={generatedAt,range,previousRange:previousRange||null,summary,previousSummary:previous,cohorts,snapshots,comparisonStatus:comparisonEnabled?(previous?'available':'unavailable'):'disabled'};
+  lastDecisionBrief=analytics.buildDecisionBrief(lastAggregateReport,{now:Date.now()});
   lastSuccessAt=generatedAt;
   paintMetrics(summary,previous);
-  setJson('#summary-data',summary);setJson('#cohorts-data',cohorts);setJson('#snapshots-data',snapshots);
+  setJson('#summary-data',summary);setJson('#cohorts-data',cohorts);setJson('#snapshots-data',snapshots);setJson('#decision-brief',lastDecisionBrief);
   state.textContent=degraded.length?'API STATUS / ЧАСТИЧНО':'API STATUS / ПОДКЛЮЧЁН';
   setFreshness('fresh','Последний успешный ответ: '+new Date(generatedAt).toLocaleString('ru-RU')+' · диапазон '+new Date(range.from).toLocaleDateString('ru-RU')+' — '+new Date(range.to).toLocaleDateString('ru-RU'));
   const message='Сводка обновлена '+new Date(generatedAt).toLocaleTimeString('ru-RU')+(degraded.length?'; временно недоступны: '+degraded.join(', '):comparisonEnabled&&!previous?'; текущие показатели доступны, но сравнение не получено':'');
@@ -224,9 +230,9 @@ $('#disconnect').addEventListener('click',()=>{
  operatorToken='';requestEpoch++;
  if(activeController){activeController.abort();activeController=null}
  if(refreshTimer!==null){clearInterval(refreshTimer);refreshTimer=null}
- lastAggregateReport=null;lastSuccessAt=null;$('#auto-refresh').checked=false;
+ lastAggregateReport=null;lastDecisionBrief=null;lastSuccessAt=null;$('#auto-refresh').checked=false;
  $('#dashboard').hidden=true;$('#access-panel').hidden=false;$('#operator-token').value='';
- $('#summary-data').textContent='Нет данных';$('#cohorts-data').textContent='Нет данных';$('#snapshots-data').textContent='Нет данных';$('#metrics').replaceChildren();
+ $('#summary-data').textContent='Нет данных';$('#cohorts-data').textContent='Нет данных';$('#snapshots-data').textContent='Нет данных';$('#decision-brief').textContent='Данные очищены после отключения.';$('#metrics').replaceChildren();
  setFreshness('stale','Данные очищены после отключения');state.textContent='API STATUS / ОТКЛЮЧЁН';setMessage($('#access-status'),'Токен очищен из памяти вкладки.');
 });
 $('#export').addEventListener('click',async()=>{
@@ -240,6 +246,19 @@ $('#export').addEventListener('click',async()=>{
   const blob=new Blob([body],{type:'application/x-ndjson;charset=utf-8'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='osgard-games-aggregate-events.jsonl';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   setMessage($('#refresh-status'),'Агрегатный JSONL экспортирован. Строк: '+lines.length,'success');
  }catch(error){setMessage($('#refresh-status'),error instanceof Error?error.message:'Ошибка экспорта','error')}
+ finally{button.disabled=false}
+});
+$('#export-brief').addEventListener('click',()=>{
+ if(!operatorToken||!lastDecisionBrief){setMessage($('#refresh-status'),'Сначала подключитесь и обновите защищённые агрегаты.','error');return}
+ const button=$('#export-brief');button.disabled=true;
+ try{
+  const payload=JSON.stringify(lastDecisionBrief,null,2)+'\\n';
+  const blob=new Blob([payload],{type:'application/json;charset=utf-8'});
+  const url=URL.createObjectURL(blob),link=document.createElement('a');
+  link.href=url;link.download='osgard-liveops-decision-brief-'+new Date().toISOString().slice(0,10)+'.json';link.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  setMessage($('#refresh-status'),'Бриф экспортирован. В нём только whitelisted-агрегаты и метаданные периода.','success');
+ }catch(error){setMessage($('#refresh-status'),error instanceof Error?error.message:'Экспорт брифа не выполнен','error')}
  finally{button.disabled=false}
 });
 $('#export-csv').addEventListener('click',()=>{
