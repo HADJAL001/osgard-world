@@ -46,6 +46,8 @@ jobs:
         run: npm run qa:games-portal
       - name: OSGARD PLAY 30-check diagnostics contract
         run: npm run qa:games-diagnostics
+      - name: Contextual recommendations cover all catalogue games
+        run: npm run qa:game-recommendations
       - name: Game detail and route contract regression
         run: npm run qa:games-detail
       - name: Player Console 30-upgrade contract smoke
