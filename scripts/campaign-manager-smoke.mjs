@@ -64,10 +64,9 @@ assert.ok(core.includes("CAMPAIGN_EVENT_SOURCE_INVALID"), "Metrics need campaign
 assert.ok(analytics.includes("'sponsored_campaign_impression'") && analytics.includes("'sponsored_campaign_clicked'"));
 assert.ok(analytics.includes("if (!consentGranted())"), "Shared analytics must keep its consent gate");
 
-for (const marker of [
-  'id="osgard-live-sponsored"', '/games/sponsored-campaigns.js?v=__OSGARD_BUILD_VERSION__',
-  '/games/sponsored-campaigns.css?v=__OSGARD_BUILD_VERSION__',
-]) assert.ok(publicPage.includes(marker), "Games hub missing sponsored campaign integration: " + marker);
+assert.ok(publicPage.includes('id="osgard-live-sponsored"'), "Games hub must retain the labelled sponsor slot");
+assert.ok(publicPage.includes("loadScript('sponsored-campaigns.js')") && publicPage.includes("versioned(path)"), "Sponsor renderer must be loaded on demand with the current release version, not eagerly downloaded");
+assert.ok(publicScript.includes("'/games/sponsored-campaigns.css?v='") || publicScript.includes("sponsored-campaigns.css"), "Sponsor renderer must load its separately versioned stylesheet");
 assert.ok(publicPage.includes('id="catalog"'), "Existing playable catalog must remain");
 assert.ok(publicScript.includes("osgard.games.sponsor-exposures.v1"));
 assert.ok(publicScript.includes("if (consentGranted() && !storageForConsent()) return"), "When consent is enabled, hide sponsor cards if persistent frequency capping cannot be honoured");
