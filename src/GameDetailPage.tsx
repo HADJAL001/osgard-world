@@ -689,7 +689,7 @@ export function GameDetailPage({ slug }: { slug: string }) {
       'viewportClass=' + viewportClass,
       'fullscreenSupported=' + String(typeof document.documentElement.requestFullscreen === 'function'),
       'capturedAt=' + new Date().toISOString(),
-    ].join('\\n')
+    ].join('\n')
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(report)
