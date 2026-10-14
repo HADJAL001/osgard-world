@@ -102,7 +102,7 @@ async function writePassingPerformanceReport(path) {
       { id: 'perf:js-total-gzip', title: 'JS bytes are within budget', status: 'passed' },
       { id: 'perf:critical-gzip', title: 'Critical transfer is within budget', status: 'passed' },
     ],
-  }, null, 2) + '\\n');
+  }, null, 2) + '\n');
 }
 test('release attestation binds the exact passing performance report', async () => {
   const f = await fixture();
