@@ -26,6 +26,7 @@
     "qa:entertainment": "node scripts/entertainment-hub-smoke.mjs",
     "qa:games-detail": "node scripts/games-detail-smoke.mjs && npm run qa:cascade-lab-hypothesis",
     "qa:cascade-lab-hypothesis": "node scripts/cascade-lab-hypothesis-smoke.mjs",
+    "qa:cascade-lab-autopsy": "node scripts/cascade-lab-failure-autopsy-smoke.mjs",
     "qa:game-detail-runtime": "node scripts/game-detail-runtime-smoke.mjs",
     "qa:games-operations": "node scripts/games-operations-smoke.mjs",
     "qa:campaign-manager": "node scripts/campaign-manager-smoke.mjs",
