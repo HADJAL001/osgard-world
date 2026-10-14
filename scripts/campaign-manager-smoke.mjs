@@ -54,7 +54,7 @@ for (const text of [
 assert.ok(validator.includes("url.protocol !== \"https:\"") && validator.includes("url.username") && validator.includes("url.password"));
 assert.ok(core.includes('"sponsored_campaign_impression"') && core.includes('"sponsored_campaign_clicked"'));
 assert.ok(core.includes("CAMPAIGN_EVENT_SOURCE_INVALID"), "Metrics need campaign ID source allow-list");
-assert.ok(analytics.includes("'sponsored_campaign_impression'") && analytics.includes("'sponsored_campaign_clicked''));
+assert.ok(analytics.includes("'sponsored_campaign_impression'") && analytics.includes("'sponsored_campaign_clicked'"));
 assert.ok(analytics.includes("if (!consentGranted())"), "Shared analytics must keep its consent gate");
 
 for (const marker of [
