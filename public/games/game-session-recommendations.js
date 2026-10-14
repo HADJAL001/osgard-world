@@ -555,6 +555,12 @@ function shouldShowServicePromos(preferences,completedCount,now=Date.now()){
  if(preferences.frequency==='every3')return completedCount>0&&completedCount%3===0;
  return true;
 }
+function normalizeServiceSearchQuery(value){return String(value??'').normalize('NFKC').trim().toLocaleLowerCase().slice(0,100)}
+function matchesServiceFilter(category,selectedCategory,searchableText,query){
+ const categoryMatch=selectedCategory==='all'||category===selectedCategory;
+ const normalized=normalizeServiceSearchQuery(query);
+ return categoryMatch&&(!normalized||String(searchableText??'').normalize('NFKC').toLocaleLowerCase().includes(normalized));
+}
 function chooseSpotlightService(options,preferred,completedCount,frequency){
  const candidates=Array.isArray(options)?options.filter(id=>typeof id==='string'&&id.length>0):[];
  if(!candidates.length)return '';
@@ -742,12 +748,10 @@ function servicesShelf(gameId,showPromos,completedCount){
  function applyFilter(selected){
   activeServiceCategory=selected==='all'||filterDefs.some(item=>item[0]===selected)?selected:'all';
   filterButtons.forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.osgardServiceFilter===activeServiceCategory)));
-  const query=serviceSearch.value.trim().toLocaleLowerCase();
+  const query=normalizeServiceSearchQuery(serviceSearch.value);
   let visibleCount=0;
   cards.forEach(card=>{
-   const categoryMatch=activeServiceCategory==='all'||card.dataset.category===activeServiceCategory;
-   const matchesText=!query||String(card.textContent||'').toLocaleLowerCase().includes(query);
-   card.hidden=!(categoryMatch&&matchesText);
+   card.hidden=!matchesServiceFilter(card.dataset.category,activeServiceCategory,card.textContent,query);
    if(!card.hidden)visibleCount++;
   });
   serviceSearchStatus.textContent=query?'Найдено '+visibleCount+' из '+cards.length+' сервисов.':'В этой подборке '+visibleCount+' сервисов.';
