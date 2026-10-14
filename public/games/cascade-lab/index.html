@@ -2634,7 +2634,8 @@ try{Object.defineProperty(window,'CASCADELAB014',{value:Object.freeze({version:V
   const head = make('header', 'cl-ledger-head');
   const heading = make('div');
   heading.append(make('p', 'cl-ledger-eyebrow', 'CASCADE LAB / PERSONAL EXPERIMENT ARCHIVE'));
-  const h2 = make('h2', '', 'Твоя инженерная <em>летопись.</em>');
+  const h2 = make('h2');
+  h2.append(document.createTextNode('Твоя инженерная '), make('em', '', 'летопись.'));
   h2.id = 'clLedgerTitle';
   const description = make('p', 'cl-ledger-intro', 'Сравнивай свои попытки, возвращайся к удачным решениям и смотри, чему научили неудачные запуски. История хранится только в этом браузере.');
   description.id = 'clLedgerDescription';
@@ -2839,7 +2840,7 @@ try{Object.defineProperty(window,'CASCADELAB014',{value:Object.freeze({version:V
     url.searchParams.set('utm_source', 'cascade_lab');
     url.searchParams.set('utm_medium', 'share');
     url.searchParams.set('utm_campaign', 'experiment_ledger');
-    url.searchParams.set('utm_content', String(record.levelIndex || 'personal_result').slice(0, 40));
+    url.searchParams.set('utm_content', 'personal_result');
     return 'Мой результат в CASCADE LAB: ' + record.level + ' · ' + (record.won ? 'успех' : 'попытка не удалась') + ' · класс ' + record.grade + ' · ' + fmtSeconds(record.seconds) + '. Попробуй свою конструкцию: ' + url.href;
   }
   function notifyShare(method) {
