@@ -8,7 +8,7 @@
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://osgard.world/games/civic-cascade/">
 <title>CIVIC CASCADE — кризисная стратегия | OSGARD PLAY</title>
-<meta name="osgard-game-version" content="3.1.0-reproducible-decision-evidence">
+<meta name="osgard-game-version" content="3.2.0-three-level-stress-envelope">
 <style>
 :root{color-scheme:dark;--bg:#080d10;--panel:#10191d;--panel2:#142126;--line:#ffffff1c;--ink:#edf3ee;--muted:#91a29e;--mint:#b8f4cf;--cyan:#68d8d2;--gold:#e1c58a;--warn:#f2b27c;--bad:#ff827b;--mono:ui-monospace,Consolas,monospace;--serif:Georgia,serif}
 *{box-sizing:border-box}html{background:var(--bg);scroll-behavior:smooth}body{margin:0;color:var(--ink);background:radial-gradient(ellipse at 76% -18%,#234d453d,transparent 48%),var(--bg);font:14px/1.55 Inter,Geist,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}button,select{font:inherit}button,a,select{touch-action:manipulation}a{color:inherit;text-decoration:none}button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(--mint);outline-offset:3px}.wrap{max-width:1440px;padding:0 clamp(14px,2.8vw,42px);margin:auto}
@@ -305,7 +305,7 @@
    <button class="ctrl" id="cc-doctrine-reset" type="button" disabled>Сбросить расчёт</button>
   </div>
   <div class="doctrine-export-row"><button class="ctrl" id="cc-doctrine-export" type="button" disabled>⇩ Скачать досье решения · JSON</button><p>Досье включает снимок города, версию модели, прогноз базы, компромиссы Pareto и все стресс-профили. SHA-256 проверяет целостность экспортированного набора. Файл создаётся только по нажатию и остаётся у тебя.</p></div>
-  <p class="doctrine-footnote">Планировщик детерминированный и локальный: лучшие варианты проверяются в трёх контролируемых стресс-сценариях против базового решения под тем же стрессом. Он не отправляет игровые данные на сервер и не вызывает OpenAI API. Будущие случайные инциденты и решения игрока не предсказываются.</p>
+  <p class="doctrine-footnote">Планировщик детерминированный и локальный: до восьми лучших вариантов проверяются в девяти контролируемых стресс-экспериментах (три семейства по три уровня) против базового решения под тем же стрессом. Он не отправляет игровые данные на сервер и не вызывает OpenAI API. Будущие случайные инциденты и решения игрока не предсказываются.</p>
  </section>
  <ol class="command-list" id="cc-plan-list" aria-live="polite"><li class="command-empty">Очередь пуста. Поставь игру на паузу и добавь первый приказ.</li></ol>
  <div class="command-footer"><button class="ctrl" id="cc-plan-clear" type="button" disabled>Очистить очередь</button><button class="ctrl primary" id="cc-plan-execute" type="button" disabled>▶ Исполнить план · 0 приказов</button></div>
@@ -908,23 +908,54 @@ function doctrineStressProfiles(sourceState,nodeDefinitions){
   const bh=Number.isFinite(sourceState.nodeIntegrity?.[b.id])?sourceState.nodeIntegrity[b.id]:100;
   return ah-bh||a.id.localeCompare(b.id);
  })[0]||nodeDefinitions[0];
- return [
-  {id:'water-surge',label:'УСИЛЕНИЕ ПОДТОПЛЕНИЯ',apply(s){
-   s.water=clamp(s.water+8);
-   s.waterRate=Math.min(1,Math.max(-.02,s.waterRate+.08));
-   s.accessRate=Math.min(1,Math.max(0,s.accessRate+.02));
-  }},
-  {id:'grid-overload',label:'ПЕРЕГРУЗКА ЭНЕРГОСЕТИ',apply(s){
-   s.grid=clamp(s.grid-8);
-   s.gridRate=Math.min(1,Math.max(0,s.gridRate+.07));
-   s.waterRate=Math.min(1,Math.max(-.02,s.waterRate+.015));
-  }},
-  {id:'weak-node-shock',label:'ПОВРЕЖДЕНИЕ СЛАБЕЙШЕГО УЗЛА',targetNode:weakest?.id||null,apply(s){
-   if(weakest&&s.nodeIntegrity&&Number.isFinite(s.nodeIntegrity[weakest.id]))s.nodeIntegrity[weakest.id]=clamp(s.nodeIntegrity[weakest.id]-14);
-   s.supplies=clamp(s.supplies-10);
-   s.gridRate=Math.min(1,Math.max(0,s.gridRate+.025));
-  }}
+ const levels=[
+  {id:'mild',label:'МЯГКО',rank:1,scale:.5},
+  {id:'moderate',label:'СРЕДНЕ',rank:2,scale:1},
+  {id:'severe',label:'ТЯЖЕЛО',rank:3,scale:1.5}
  ];
+ const families=[
+  {
+   id:'water-surge',label:'ПОДТОПЛЕНИЕ',
+   perturbation:{waterDelta:8,waterRateDelta:.08,accessRateDelta:.02},
+   apply(s,scale){
+    s.water=clamp(s.water+8*scale);
+    s.waterRate=Math.min(1,Math.max(-.02,s.waterRate+.08*scale));
+    s.accessRate=Math.min(1,Math.max(0,s.accessRate+.02*scale));
+   }
+  },
+  {
+   id:'grid-overload',label:'ПЕРЕГРУЗКА СЕТИ',
+   perturbation:{gridDelta:-8,gridRateDelta:.07,waterRateDelta:.015},
+   apply(s,scale){
+    s.grid=clamp(s.grid-8*scale);
+    s.gridRate=Math.min(1,Math.max(0,s.gridRate+.07*scale));
+    s.waterRate=Math.min(1,Math.max(-.02,s.waterRate+.015*scale));
+   }
+  },
+  {
+   id:'weak-node-shock',label:'УДАР ПО СЛАБОМУ УЗЛУ',
+   targetNode:weakest?.id||null,
+   perturbation:{weakestIntegrityDelta:-14,suppliesDelta:-10,gridRateDelta:.025},
+   apply(s,scale){
+    if(weakest&&s.nodeIntegrity&&Number.isFinite(s.nodeIntegrity[weakest.id]))s.nodeIntegrity[weakest.id]=clamp(s.nodeIntegrity[weakest.id]-14*scale);
+    s.supplies=clamp(s.supplies-10*scale);
+    s.gridRate=Math.min(1,Math.max(0,s.gridRate+.025*scale));
+   }
+  }
+ ];
+ const profiles=[];
+ for(const family of families){
+  for(const level of levels){
+   profiles.push({
+    id:family.id+'-'+level.id,family:family.id,familyLabel:family.label,
+    severity:level.id,severityLabel:level.label,severityRank:level.rank,magnitude:level.scale,
+    label:family.label+' · '+level.label,targetNode:family.targetNode||null,
+    perturbation:{...family.perturbation,scale:level.scale},
+    apply(state){family.apply(state,level.scale)}
+   });
+  }
+ }
+ return profiles;
 }
 function assessDoctrineRobustness(sourceState,orders,nominalScore,simulateOrders,simulatePath,nodeDefinitions,mode){
  const horizons=[30,60,90],baselineDirect=simulateOrders([]),planDirect=simulateOrders(orders.map(order=>({...order})));
@@ -935,7 +966,7 @@ function assessDoctrineRobustness(sourceState,orders,nominalScore,simulateOrders
   const baselineForecast=simulatePath(baselineState,horizons),candidateForecast=simulatePath(candidateState,horizons);
   const baseEnd=baselineForecast[baselineForecast.length-1],candidateEnd=candidateForecast[candidateForecast.length-1];
   return {
-   id:profile.id,label:profile.label,targetNode:profile.targetNode||null,
+   id:profile.id,family:profile.family,familyLabel:profile.familyLabel,severity:profile.severity,severityLabel:profile.severityLabel,severityRank:profile.severityRank,magnitude:profile.magnitude,perturbation:{...profile.perturbation},label:profile.label,targetNode:profile.targetNode||null,
    baselineRisk90:baseEnd.risk,candidateRisk90:candidateEnd.risk,
    riskDelta90:candidateEnd.risk-baseEnd.risk,
    baselineWeakestIntegrity:baseEnd.weakestIntegrity,candidateWeakestIntegrity:candidateEnd.weakestIntegrity,
@@ -1117,7 +1148,7 @@ function buildDoctrineDossierPayload(sourceState,result,gameVersion,scenarioDefi
    worstIntegrityDelta:Number.isFinite(candidate.robustness?.worstIntegrityDelta)?candidate.robustness.worstIntegrityDelta:null,
    severeRegressions:candidate.robustness?.severeRegressions??0,
    profiles:(candidate.robustness?.profiles||[]).map(profile=>({
-    id:profile.id,label:profile.label,targetNode:profile.targetNode||null,
+    id:profile.id,family:profile.family,familyLabel:profile.familyLabel,severity:profile.severity,severityLabel:profile.severityLabel,severityRank:profile.severityRank,magnitude:profile.magnitude,perturbation:{...profile.perturbation},targetNode:profile.targetNode||null,
     baselineRisk90:profile.baselineRisk90,candidateRisk90:profile.candidateRisk90,riskDelta90:profile.riskDelta90,
     baselineWeakestIntegrity:profile.baselineWeakestIntegrity,candidateWeakestIntegrity:profile.candidateWeakestIntegrity,
     weakestIntegrityDelta:profile.weakestIntegrityDelta,criticalNodeDelta:profile.criticalNodeDelta
@@ -1128,10 +1159,10 @@ function buildDoctrineDossierPayload(sourceState,result,gameVersion,scenarioDefi
  return {
   schema:'osgard.civic-cascade.decision-dossier/v1',game:'CIVIC CASCADE',gameVersion:String(gameVersion||'unknown'),
   engine:{
-   id:'civic-cascade-deterministic-decision-engine',modelVersion:'3.1.0',
+   id:'civic-cascade-deterministic-decision-engine',modelVersion:'3.2.0',
    searchAlgorithm:'deterministic-bounded-beam-search',portfolioAlgorithm:'bounded-pareto-frontier',
-   objective:String(result.mode||'balanced'),limits:{maxCommands:4,beamWidth:6,stressCandidateLimit:8,portfolioLimit:3},
-   forecastHorizonsGameSeconds:[30,60,90],stressProfiles:['water-surge','grid-overload','weak-node-shock']
+   objective:String(result.mode||'balanced'),limits:{maxCommands:4,beamWidth:6,stressCandidateLimit:8,stressProfileCount:9,stressSeverityLevels:3,portfolioLimit:3},
+   forecastHorizonsGameSeconds:[30,60,90],stressFamilies:['water-surge','grid-overload','weak-node-shock'],stressSeverityLevels:['mild','moderate','severe'],stressProfiles:doctrineStressProfiles(sourceState,nodeDefinitions).map(profile=>profile.id)
   },
   scenario:{id:scenarioId,label:scenarioDefinitions?.[scenarioId]?.name||scenarioId},
   sourceState:{
@@ -1225,7 +1256,14 @@ function renderDoctrineResults(message){
   const weak=(nodes.find(node=>node.id===terminal.weakestNode)||{name:terminal.weakestNode}).name;
   const metrics=document.createElement('p');metrics.className='doctrine-option-metrics';
   metrics.textContent='РИСК T+90: '+baseRisk+' → '+terminal.risk+' ('+(riskDelta>0?'+':'')+riskDelta+') · СЛАБЫЙ УЗЕЛ: '+weak+' '+terminal.weakestIntegrity+'% · РЕСУРСЫ: '+candidate.cost+' · БРИГАДЫ: '+candidate.crewsUsed+' · КРИТИЧЕСКИЕ УЗЛЫ: '+terminal.criticalNodes.length;
-  const stress=document.createElement('p');stress.className='doctrine-option-metrics';stress.textContent='СТРЕСС-ПРОФИЛИ: '+robustness.profiles.map(profile=>profile.label+' — Δриска '+(profile.riskDelta90>0?'+':'')+profile.riskDelta90+'; слабый узел '+(profile.weakestIntegrityDelta>0?'+':'')+profile.weakestIntegrityDelta).join(' · ');
+  const stress=document.createElement('p');stress.className='doctrine-option-metrics';
+  const stressFamilies=[{id:'water-surge',label:'ПОДТОПЛЕНИЕ'},{id:'grid-overload',label:'ЭНЕРГОСЕТЬ'},{id:'weak-node-shock',label:'СЛАБЫЙ УЗЕЛ'}];
+  const stressSummary=stressFamilies.map(family=>{
+   const group=robustness.profiles.filter(profile=>profile.family===family.id);
+   const worst=group.slice().sort((a,b)=>b.riskDelta90-a.riskDelta90||a.weakestIntegrityDelta-b.weakestIntegrityDelta)[0];
+   return family.label+' '+(worst?.severityLabel||'—')+' · Δриска '+(worst&&worst.riskDelta90>0?'+':'')+(worst?.riskDelta90??'—');
+  }).join(' / ');
+  stress.textContent='СТРЕСС-КОНВЕРТ 9/9 · ХУДШИЙ УРОВЕНЬ: '+stressSummary;
   const rationale=document.createElement('p');rationale.className='doctrine-option-rationale';rationale.textContent=explainDoctrineTradeoff(candidate,baseline,result.alternatives);
   const choose=document.createElement('button');choose.type='button';choose.className='ctrl';choose.textContent=index===doctrineSelectedIndex?'✓ Вариант выбран':'Выбрать этот вариант';choose.disabled=index===doctrineSelectedIndex;
   choose.addEventListener('click',()=>{doctrineSelectedIndex=index;renderDoctrineResults();refreshDoctrineAvailability()});
