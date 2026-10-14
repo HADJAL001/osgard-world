@@ -20,12 +20,34 @@ const html=readFileSync(resolve(root,'index.html'),'utf8')
 const cascadePassport=readFileSync(resolve(root,'cascade-lab/case-passport.js'),'utf8')
 const cascadeXray=readFileSync(resolve(root,'cascade-lab/trajectory-xray.js'),'utf8')
 const cascadeDirector=readFileSync(resolve(root,'cascade-lab/mission-director.js'),'utf8')
+const cascadeEvidence=readFileSync(resolve(root,'cascade-lab/evidence-integrity.js'),'utf8')
 const catalogCards=[...html.matchAll(/<article\b[^>]*\bdata-game="([^"]+)"[^>]*\bdata-genres="([^"]+)"[^>]*>/g)].map(match=>({id:match[1],genres:match[2].trim().split(/\s+/).filter(Boolean)}))
 const deployWorkflow=readFileSync(resolve('.github/workflows/deploy-frontend.yml'),'utf8')
 const routeMatrix=readFileSync(resolve('scripts/production-route-matrix.mjs'),'utf8')
+const cascadeHtmlContract=readFileSync(resolve(root,'cascade-lab/index.html'),'utf8')
 assert.ok(routeMatrix.includes("route === '/games/invite/invite-landing.js'") && routeMatrix.includes("name: 'referral_link_opened'") && routeMatrix.includes("osgard.games.referral-attribution.v1"),'Production route matrix must validate invite JavaScript using its own referral-event contract, not the unrelated SkillCred contract')
 assert.ok(routeMatrix.includes('const ROUTE_TIMEOUT_MS = 10000') && routeMatrix.includes('const GODOT_ROUTE_TIMEOUT_MS = 20000') && routeMatrix.includes("route === '/games/null-shift-godot/' ? GODOT_ROUTE_TIMEOUT_MS : ROUTE_TIMEOUT_MS") && routeMatrix.includes('signal: AbortSignal.timeout(timeoutMs)'),'Production routes must have bounded timeouts and a bounded allowance for the Godot directory route')
-assert.ok(routeMatrix.includes('CASCADE LAB — Premium Physics Lab 0.25.0') && routeMatrix.includes('0.25.0-evidence-integrity') && routeMatrix.includes("'/games/cascade-lab/trajectory-xray.js'") && routeMatrix.includes("'/games/cascade-lab/case-passport.js'") && routeMatrix.includes("'/games/cascade-lab/mission-director.js'") && routeMatrix.includes("'/games/cascade-lab/evidence-integrity.js'") && routeMatrix.includes('data-cascade-lab-director="0.24.0"') && routeMatrix.includes('data-cascade-lab-upgrades="0.14.0"') && routeMatrix.includes('CASCADELAB014') && routeMatrix.includes('data-cascade-lab-ledger="0.15.0"') && routeMatrix.includes('CASCADELAB015') && routeMatrix.includes('id="CASCADELAB017"') && routeMatrix.includes('data-cascade-lab-delta="0.17.0"') && routeMatrix.includes('id="CASCADELAB018"') && routeMatrix.includes('id="CASCADELAB019"') && routeMatrix.includes('data-cascade-lab-engineering="0.19.0"') && routeMatrix.includes('id="CASCADELAB020"') && routeMatrix.includes('data-cascade-lab-studio="0.20.0"') && routeMatrix.includes('id="CASCADELAB021"') && routeMatrix.includes('data-cascade-lab-passport="0.21.0"') && routeMatrix.includes('id="CASCADELAB025"') && routeMatrix.includes('data-cascade-lab-evidence="0.25.0"') && routeMatrix.includes("SCHEMA = 'osgard.cascade-lab.evidence-integrity.v1'"), 'Production route matrix must validate CASCADE LAB 0.25.0 while retaining historical upgrade layers and the new evidence asset');
+const cascadeContractAssertions = [
+  ['page title', cascadeHtmlContract.includes('<title>CASCADE LAB — Premium Physics Lab 0.25.0</title>')],
+  ['release marker', cascadeHtmlContract.includes('name="osgard-game-version" content="0.25.0-evidence-integrity"')],
+  ['mission director layer', cascadeHtmlContract.includes('data-cascade-lab-director="0.24.0"')],
+  ['upgrades layer', cascadeHtmlContract.includes('data-cascade-lab-upgrades="0.14.0"') && cascadeHtmlContract.includes('CASCADELAB014')],
+  ['ledger layer', cascadeHtmlContract.includes('data-cascade-lab-ledger="0.15.0"') && cascadeHtmlContract.includes('CASCADELAB015')],
+  ['delta layer', cascadeHtmlContract.includes('id="CASCADELAB017"') && cascadeHtmlContract.includes('data-cascade-lab-delta="0.17.0"')],
+  ['hypothesis layer', cascadeHtmlContract.includes('id="CASCADELAB018"')],
+  ['engineering layer', cascadeHtmlContract.includes('id="CASCADELAB019"') && cascadeHtmlContract.includes('data-cascade-lab-engineering="0.19.0"')],
+  ['studio layer', cascadeHtmlContract.includes('id="CASCADELAB020"') && cascadeHtmlContract.includes('data-cascade-lab-studio="0.20.0"')],
+  ['passport layer', cascadeHtmlContract.includes('id="CASCADELAB021"') && cascadeHtmlContract.includes('data-cascade-lab-passport="0.21.0"')],
+  ['evidence layer', cascadeHtmlContract.includes('id="CASCADELAB025"') && cascadeHtmlContract.includes('data-cascade-lab-evidence="0.25.0"')],
+  ['trajectory route', routeMatrix.includes("'/games/cascade-lab/trajectory-xray.js'")],
+  ['passport route', routeMatrix.includes("'/games/cascade-lab/case-passport.js'")],
+  ['mission director route', routeMatrix.includes("'/games/cascade-lab/mission-director.js'")],
+  ['evidence asset route', routeMatrix.includes("'/games/cascade-lab/evidence-integrity.js'")],
+  ['evidence schema contract', /const SCHEMA = ['"]osgard\.cascade-lab\.evidence-integrity\.v1['"]/.test(cascadeEvidence) && /const ARCHIVE_SCHEMA = ['"]osgard\.cascade-lab\.evidence-integrity-archive\.v1['"]/.test(cascadeEvidence)],
+];
+for (const [contract, passed] of cascadeContractAssertions) {
+  assert.ok(passed, 'CASCADE LAB 0.25 release contract is missing or out of sync: ' + contract);
+}
 assert.ok(routeMatrix.includes('content="1.1.0-game-11-premium-session"'), 'Production route matrix must validate the current AETHER GRID premium-session build')
 assert.ok(routeMatrix.includes('id="CASCADELAB021"') && routeMatrix.includes('data-cascade-lab-passport="0.21.0"') && cascadePassport.includes("const VERSION='0.21.0'") && cascadePassport.includes('function verifyPassport('), 'Production route contract must validate the CASCADE LAB passport 0.21')
 assert.ok(!cascadePassport.includes('fetch(') && !cascadePassport.includes('XMLHttpRequest') && !cascadePassport.includes('sendBeacon') && !cascadePassport.includes('.innerHTML'), 'Passport must not upload local data or inject HTML')
