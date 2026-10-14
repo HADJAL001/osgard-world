@@ -153,7 +153,7 @@
         game.networkLabel, game.progressLabel, game.controlNote
       ].join(' '));
       const runtimeOk = runtime === 'all'
-        || (runtime === 'browser' && game.runtimeFamily.startsWith('browser'))
+        || (runtime === 'browser' && (game.runtimeFamily.startsWith('browser') || game.runtimeFamily === 'react-spa'))
         || (runtime === 'godot-web' && game.runtimeFamily === 'godot-web')
         || (runtime === 'unity-webgl' && game.runtimeFamily === 'unity-webgl');
       return (!q || haystack.includes(q))
