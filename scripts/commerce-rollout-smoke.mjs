@@ -15,6 +15,7 @@ const readiness = readFileSync(resolve(root, "src/readiness.mjs"), "utf8");
 const campaigns = readFileSync(resolve(root, "src/campaigns.mjs"), "utf8");
 const store = readFileSync(resolve("public/games/premium/index.html"), "utf8");
 const app = readFileSync(resolve("public/games/premium/app.js"), "utf8");
+const storeCore = readFileSync(resolve("public/games/premium/store-core.mjs"), "utf8");
 const admin = readFileSync(resolve("public/games/commerce-admin/index.html"), "utf8");
 const config = JSON.parse(readFileSync(resolve("public/games/commerce-config.json"), "utf8"));
 const nginx = readFileSync(resolve("nginx.conf"), "utf8");
@@ -52,9 +53,11 @@ for (const value of ["id=\"products\"", "id=\"buyer-email\"", "id=\"terms-accept
 for (const value of ["no-store", "Деньги не списаны", "termsAccepted"]) {
   assert.ok(app.includes(value), "Storefront behavior missing: " + value);
 }
-for (const value of ["/v1/products", "/v1/checkout/session", "https:", "checkout_started", "checkoutAttribution()", "attribution: checkoutAttribution()"]) {
+for (const value of ["/v1/products", "/v1/checkout/session", "checkout_started", "checkoutAttribution()", "attribution: checkoutAttribution()"]) {
   assert.ok(app.includes(value), "Storefront code missing: " + value);
 }
+assert.ok(storeCore.includes("url.protocol !== 'https:'") && storeCore.includes("checkout.stripe.com"), "Premium checkout must enforce HTTPS and a Stripe Checkout host allow-list.");
+assert.ok(storeCore.includes("credentials: 'omit'") && storeCore.includes("redirect: 'error'"), "Premium requests must omit credentials and reject redirects.");
 for (const value of ["type=\"password\"", "ADMIN_API_TOKEN", "/v1/admin/leads", "noindex,nofollow"]) {
   assert.ok(admin.includes(value), "Admin UI missing: " + value);
 }
