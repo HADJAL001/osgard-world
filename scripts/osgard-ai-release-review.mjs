@@ -12,6 +12,7 @@ const SAFE_REPORT_NAMES = new Set([
   'production-route-matrix.json',
   'release-manifest.json',
   'osgard-contract-audit.json',
+  'osgard-performance-budget.json',
   'release-attestation.json',
 ]);
 const SECRET_RE = /(sk-[A-Za-z0-9_-]{12,}|Bearer\s+[A-Za-z0-9._-]{12,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|xox[baprs]-[A-Za-z0-9-]{12,}|AKIA[A-Z0-9]{16}|AIza[0-9A-Za-z_-]{20,}|-----BEGIN [A-Z ]*PRIVATE KEY-----|(?:OPENAI_API_KEY|TOKEN|PASSWORD|SECRET)\s*[=:]\s*\S+)/gi;
@@ -169,6 +170,53 @@ export function projectReport(name, data) {
       warnings: asCount(data.qualityGate.warnings),
       contractFingerprint: /^[a-f0-9]{64}$/i.test(String(data.qualityGate.contractFingerprint || ''))
         ? String(data.qualityGate.contractFingerprint).toLowerCase() : null,
+    };
+  }
+
+  if (data?.performanceGate && typeof data.performanceGate === 'object') {
+    base.performanceGate = {
+      schema: safeText(data.performanceGate.schema, 100),
+      checkCount: asCount(data.performanceGate.checkCount),
+      passed: asCount(data.performanceGate.passed),
+      warnings: asCount(data.performanceGate.warnings),
+      criticalGzipBytes: asCount(data.performanceGate.criticalGzipBytes),
+      budgetFingerprint: /^[a-f0-9]{64}$/i.test(String(data.performanceGate.budgetFingerprint || ''))
+        ? String(data.performanceGate.budgetFingerprint).toLowerCase() : null,
+    };
+  }
+
+  if (data?.schema === 'osgard.performance-budget.v1' && data?.metrics && typeof data.metrics === 'object') {
+    const compactGroup = group => group && typeof group === 'object' ? {
+      count: asCount(group.count),
+      rawBytes: asCount(group.rawBytes),
+      gzipBytes: asCount(group.gzipBytes),
+      brotliBytes: asCount(group.brotliBytes),
+      largestFile: group.largestFile && typeof group.largestFile === 'object' ? {
+        path: safeText(group.largestFile.path, 140),
+        rawBytes: asCount(group.largestFile.rawBytes),
+        gzipBytes: asCount(group.largestFile.gzipBytes),
+        brotliBytes: asCount(group.largestFile.brotliBytes),
+      } : null,
+      largestGzipFile: group.largestGzipFile && typeof group.largestGzipFile === 'object' ? {
+        path: safeText(group.largestGzipFile.path, 140),
+        rawBytes: asCount(group.largestGzipFile.rawBytes),
+        gzipBytes: asCount(group.largestGzipFile.gzipBytes),
+      } : null,
+    } : null;
+    base.performance = {
+      criticalGzipBytes: asCount(data.metrics.criticalGzipBytes),
+      inventorySha256: /^[a-f0-9]{64}$/i.test(String(data.metrics.inventorySha256 || ''))
+        ? String(data.metrics.inventorySha256).toLowerCase() : null,
+      html: data.metrics.html && typeof data.metrics.html === 'object' ? {
+        rawBytes: asCount(data.metrics.html.rawBytes),
+        gzipBytes: asCount(data.metrics.html.gzipBytes),
+        brotliBytes: asCount(data.metrics.html.brotliBytes),
+      } : null,
+      js: compactGroup(data.metrics.js),
+      css: compactGroup(data.metrics.css),
+      budget: data.budget && /^[a-f0-9]{64}$/i.test(String(data.budget.sha256 || ''))
+        ? String(data.budget.sha256).toLowerCase() : null,
+      budgetStatus: safeText(data.status, 20),
     };
   }
 
