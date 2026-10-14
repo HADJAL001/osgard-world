@@ -46,6 +46,7 @@ on:
       - "scripts/cascade-lab-engineering-suite-smoke.mjs"
       - "scripts/cascade-lab-experiment-studio-smoke.mjs"
       - "scripts/cascade-lab-trajectory-xray-smoke.mjs"
+      - "scripts/cascade-lab-mission-director-smoke.mjs"
       - "docs/32_CASCADE_LAB_0.22.0_TRAJECTORY_XRAY.md"
       - "scripts/game-detail-runtime-smoke.mjs"
       - "scripts/games-monetization-smoke.mjs"
