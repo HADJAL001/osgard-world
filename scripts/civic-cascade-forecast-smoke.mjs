@@ -6,7 +6,7 @@ const manifest = JSON.parse(await readFile(new URL('../public/games/civic-cascad
 const check = (value, message) => assert.ok(value, message)
 
 assert.equal(manifest.gameId, 'civic-cascade')
-assert.equal(manifest.version, '2.5.0', 'release manifest must match this regression suite')
+assert.equal(manifest.version, '2.6.0', 'release manifest must match this regression suite')
 assert.equal(manifest.buildContract?.cascadeForecast?.enabled, true)
 assert.deepEqual(manifest.buildContract?.cascadeForecast?.horizonsGameSeconds, [30, 60, 90])
 assert.equal(manifest.buildContract?.cascadeForecast?.randomIncidentsForecasted, false)
@@ -14,6 +14,9 @@ assert.equal(manifest.buildContract?.infrastructureNetwork?.enabled, true)
 assert.equal(manifest.buildContract?.infrastructureNetwork?.nodeCount, 6)
 assert.equal(manifest.buildContract?.infrastructureNetwork?.directedDependencies, 6)
 assert.equal(manifest.buildContract?.infrastructureNetwork?.checkpointSchema, 2)
+assert.equal(manifest.buildContract?.adaptiveCrisisDirector?.enabled, true)
+assert.equal(manifest.buildContract?.adaptiveCrisisDirector?.criticalThreshold, 45)
+assert.deepEqual(manifest.buildContract?.adaptiveCrisisDirector?.nodes, ['substation','pump','bridge','hospital','shelter'])
 
 const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1])
 assert.equal(new Set(ids).size, ids.length, 'HTML IDs must be unique')
@@ -21,7 +24,7 @@ for (const id of [
   'cc-cascade-forecast', 'cc-cascade-30', 'cc-cascade-60', 'cc-cascade-90',
   'cc-cascade-wait-30', 'cc-cascade-plan-30', 'cc-cascade-wait-90',
   'cc-cascade-plan-90', 'cc-cascade-note', 'cc-node-inspector', 'cc-node-health',
-  'cc-node-health-bar', 'cc-node-status', 'cc-node-chain', 'cc-node-effect'
+  'cc-node-health-bar', 'cc-node-status', 'cc-node-chain', 'cc-node-effect', 'cc-adaptive-crisis'
 ]) check(ids.includes(id), 'missing forecast UI element: ' + id)
 
 const mainScript = html.match(/<script>([\s\S]*?)<\/script>/i)?.[1]
@@ -70,6 +73,8 @@ const makeState = scenario => {
   }
   state.nodeIntegrity = seedNodeIntegrity(state)
   state.nodeOutages = Object.fromEntries(nodes.map(node => [node.id, false]))
+  state.nodeIncidentFlags = Object.fromEntries(nodes.map(node => [node.id, false]))
+  state.pendingNodeIncidents = []
   return state
 }
 
@@ -135,6 +140,10 @@ advanceNodeIntegrity(healthyNetwork, 10)
 advanceNodeIntegrity(weakNetwork, 10)
 check(weakNetwork.nodeIntegrity.hub < healthyNetwork.nodeIntegrity.hub, 'weak upstream power node must accelerate dependent hub degradation')
 check(weakNetwork.nodeOutages.substation, 'critical infrastructure crossing threshold must create a node outage')
+check(weakNetwork.nodeIncidentFlags.substation, 'critical node must trigger only once per operation')
+check(weakNetwork.pendingNodeIncidents.includes('substation'), 'critical node must enqueue a dynamic incident')
+advanceNodeIntegrity(weakNetwork, 10)
+assert.equal(weakNetwork.pendingNodeIncidents.filter(id => id === 'substation').length, 1, 'a critical node must not enqueue duplicate incidents')
 check(weakNetwork.grid < scenarios.blackout.grid, 'node outage must damage associated city-wide service metric')
 
 const thresholdSource = makeState('blackout')
@@ -161,6 +170,8 @@ console.log(JSON.stringify({
     resourceValidation: 'PASS',
     nodeIntegrityBounds: 'PASS',
     dependencyPropagation: 'PASS',
-    nodeOutageEffects: 'PASS'
+    nodeOutageEffects: 'PASS',
+    adaptiveIncidentQueue: 'PASS',
+    oneIncidentPerNode: 'PASS'
   }
 }, null, 2))
