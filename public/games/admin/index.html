@@ -174,13 +174,18 @@ function applyPreset(preset){
  document.querySelectorAll('[data-range-preset]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.rangePreset===preset)));
  if(operatorToken)void refresh();
 }
+function cancelRefreshForInvalidRange(){
+ refreshSequence++;
+ if(refreshController){refreshController.abort();refreshController=null}
+ $('#refresh').disabled=false;
+}
 function rangeChanged(){
  document.querySelectorAll('[data-range-preset]').forEach(button=>button.setAttribute('aria-pressed','false'));
  if(!operatorToken)return;
- try{dateRange();void refresh()}catch(error){setMessage($('#refresh-status'),error instanceof Error?error.message:'Некорректный период','error')}
+ try{dateRange();void refresh()}catch(error){cancelRefreshForInvalidRange();setMessage($('#refresh-status'),error instanceof Error?error.message:'Некорректный период','error')}
 }
 document.querySelectorAll('[data-range-preset]').forEach(button=>button.addEventListener('click',()=>applyPreset(button.dataset.rangePreset)));
-$('#refresh').addEventListener('click',()=>{try{dateRange();void refresh()}catch(error){setMessage($('#refresh-status'),error instanceof Error?error.message:'Некорректный период','error')}});
+$('#refresh').addEventListener('click',()=>{try{dateRange();void refresh()}catch(error){cancelRefreshForInvalidRange();setMessage($('#refresh-status'),error instanceof Error?error.message:'Некорректный период','error')}});
 $('#from-date').addEventListener('change',rangeChanged);
 $('#to-date').addEventListener('change',rangeChanged);
 function disconnect(){
