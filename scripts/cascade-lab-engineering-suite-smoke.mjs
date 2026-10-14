@@ -8,8 +8,8 @@ const api = globalThis.__CASCADELAB019_TEST__;
 
 assert.ok(api && api.version === '0.19.0', 'pure Engineering OS test API must be available');
 assert.equal(api.improvements.length, 30, 'the release manifest must enumerate exactly 30 distinct improvements');
-assert.match(html, /osgard-game-version" content="0\.24\.0-shareable-contracts"/, 'CASCADE LAB metadata must identify application release 0.23.0');
-assert.match(html, /<title>CASCADE LAB — Premium Physics Lab 0\.24\.0<\/title>/, 'the browser title must identify application release 0.23.0');
+assert.match(html, /osgard-game-version" content="0\.24\.0-shareable-contracts"/, 'CASCADE LAB metadata must identify application release 0.24.0');
+assert.match(html, /<title>CASCADE LAB — Premium Physics Lab 0\.24\.0<\/title>/, 'the browser title must identify application release 0.24.0');
 assert.ok(html.includes('id="CASCADELAB018"') && html.includes('hypothesis-lab.js?v=0.18.0'), 'the v0.18 Hypothesis Lab must remain integrated');
 assert.ok(html.includes('id="CASCADELAB019"') && html.includes('engineering-suite.js?v=0.19.0'), 'Engineering OS must load with a cache-busted URL');
 assert.ok(html.includes('id="CASCADELAB020"') && html.includes('data-cascade-lab-studio="0.20.0"') && html.includes('experiment-studio.js?v=0.20.0'), 'Experiment Studio 0.20 must load without replacing Engineering OS 0.19');
