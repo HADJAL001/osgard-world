@@ -190,7 +190,7 @@ function loadConsentFeatures(){
 document.querySelector('#analytics-toggle')?.addEventListener('click',()=>{
  queueMicrotask(()=>{if(hasAnalyticsConsent())void loadConsentFeatures()});
 });
-window.addEventListener('storage',event=>{
+window.addEventListener?.('storage',event=>{
  if(event.key==='osgard.games.analytics-consent.v1'&&hasAnalyticsConsent())void loadConsentFeatures();
 });
 // Returning opted-in players keep their measurement continuity, but downloads are async.
@@ -290,7 +290,7 @@ try{
  const legacy=/^[a-f0-9]{12}$/.test(params.get('ref')||'')&&params.get('challenge')&&params.get('utm_source')==='osgard_games'&&params.get('utm_medium')==='referral'&&params.get('utm_campaign')==='play_with_a_friend';
  if(canonical||legacy)void loadRecommendations();
 }catch{}
-window.OSGARDGamesLazy=Object.freeze({loadPlayerRuntime,loadRecommendations});
+window.OSGARDGamesLazy=Object.freeze({loadPlayerRuntime,loadRecommendations,loadConsentFeatures});
 })();
 </script>
 <script id="games-deep-link-bridge">
