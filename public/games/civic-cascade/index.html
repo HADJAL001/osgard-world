@@ -1162,7 +1162,7 @@ function buildDoctrineDossierPayload(sourceState,result,gameVersion,scenarioDefi
    id:'civic-cascade-deterministic-decision-engine',modelVersion:'3.2.0',
    searchAlgorithm:'deterministic-bounded-beam-search',portfolioAlgorithm:'bounded-pareto-frontier',
    objective:String(result.mode||'balanced'),limits:{maxCommands:4,beamWidth:6,stressCandidateLimit:8,stressProfileCount:9,stressSeverityLevels:3,portfolioLimit:3},
-   forecastHorizonsGameSeconds:[30,60,90],stressFamilies:['water-surge','grid-overload','weak-node-shock'],stressSeverityLevels:['mild','moderate','severe'],stressProfiles:doctrineStressProfiles(sourceState,nodeDefinitions).map(profile=>profile.id)
+   forecastHorizonsGameSeconds:[30,60,90],stressFamilies:['water-surge','grid-overload','weak-node-shock'],stressSeverityLevels:['mild','moderate','severe'],stressProfiles:['water-surge-mild','water-surge-moderate','water-surge-severe','grid-overload-mild','grid-overload-moderate','grid-overload-severe','weak-node-shock-mild','weak-node-shock-moderate','weak-node-shock-severe']
   },
   scenario:{id:scenarioId,label:scenarioDefinitions?.[scenarioId]?.name||scenarioId},
   sourceState:{
