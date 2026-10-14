@@ -52,7 +52,7 @@ assert.ok(server.includes('app.post("/v1/admin/campaigns"') && server.includes('
 assert.ok(server.includes("CREATE TABLE IF NOT EXISTS commerce_campaigns") && server.includes("pg_advisory_xact_lock(20261014)"), "Campaign migration and serialized publish cap must exist.");
 assert.ok(campaigns.includes("CAMPAIGN_URL_MUST_BE_SAFE_HTTPS") && campaigns.includes("CAMPAIGN_DISCLOSURE_REQUIRED") && campaigns.includes("CAMPAIGN_PLACEMENT_NOT_INTEGRATED"), "Campaign input allow-lists and publishing guardrails missing.");
 
-const overviewStart = server.indexOf("const [orderStats, currencyStats, leadStats, leadAttributionStats, eventStats, topEvents, analyticsByGame, ownedPromoByService, ownedPromoVariantStats, analyticsFunnel, socialShareByNetwork, paidRevenueByAttribution, referralRewardStats]");
+const overviewStart = server.indexOf("const [orderStats, currencyStats, leadStats, leadAttributionStats, eventStats, topEvents, analyticsByGame, ownedPromoByService, ownedPromoVariantStats, productExperimentStats, analyticsFunnel, socialShareByNetwork, paidRevenueByAttribution, referralRewardStats]");
 const overviewEnd = server.indexOf("\n    ]);", overviewStart);
 assert.ok(overviewStart >= 0 && overviewEnd > overviewStart, "Admin overview Promise.all query block missing.");
 const overviewQueries = server.slice(overviewStart, overviewEnd);
@@ -66,6 +66,7 @@ const overviewQueryOrder = [
   "SELECT game_id AS",
   "split_part(source, ':', 3) AS",
   "split_part(source, ':', 4) AS variant",
+  "WITH experiment_sessions AS (",
   "WITH recent_events AS (",
   "SELECT\n          network,",
   "mode, currency, COUNT(*)::int AS orders",
