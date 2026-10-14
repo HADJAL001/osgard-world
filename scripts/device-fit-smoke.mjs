@@ -21,6 +21,12 @@ for (const id of gameIds) {
 assert.ok(page.includes('/games/device-fit.css?v=__OSGARD_BUILD_VERSION__'), 'device-fit CSS must be versioned with the catalog build');
 assert.ok(page.includes('/games/device-fit.js?v=__OSGARD_BUILD_VERSION__'), 'device-fit JS must be versioned with the catalog build');
 assert.ok(client.includes("canCreateContext('webgl2')"), 'must check WebGL 2 through the browser runtime');
+assert.ok(client.includes('function probeWebGL()'), 'WebGL probe must be isolated from initial rendering');
+assert.ok(client.includes('function readCapabilities()'), 'cheap capability hints must be read separately');
+const capabilityReader = client.slice(client.indexOf('function readCapabilities()'), client.indexOf('function init()'));
+assert.ok(!capabilityReader.includes('canCreateContext('), 'initial capability read must not create a GPU context');
+assert.ok(client.includes('if (!capabilities.webglChecked)'), 'WebGL probe must be explicitly user initiated');
+assert.ok(client.includes('WebGL пока не проверялся, чтобы не задерживать загрузку каталога.'), 'initial load must explain the lazy compatibility check');
 assert.ok(client.includes('navigator.maxTouchPoints'), 'must detect touch capability without claiming per-game touch support');
 assert.ok(client.includes('prefers-reduced-motion: reduce'), 'must respect reduced motion');
 assert.ok(client.includes('aria-live="polite"'), 'must announce filter results to assistive technology');
