@@ -3,8 +3,8 @@
   "gameId": "civic-cascade",
   "title": "CIVIC CASCADE",
   "edition": "Web Edition",
-  "version": "3.1.0",
-  "releaseId": "civic-cascade-web-3.1.0",
+  "version": "3.2.0",
+  "releaseId": "civic-cascade-web-3.2.0",
   "canonicalUrl": "https://osgard.world/games/civic-cascade/",
   "detailUrl": "https://osgard.world/game/civic-cascade",
   "entrypoint": "/games/civic-cascade/",
@@ -207,9 +207,15 @@
       "callsOpenAIAPI": false,
       "regressionSmokeTest": "scripts/civic-cascade-forecast-smoke.mjs",
       "robustnessProfiles": [
-        "water-surge",
-        "grid-overload",
-        "weak-node-shock"
+        "water-surge-mild",
+        "water-surge-moderate",
+        "water-surge-severe",
+        "grid-overload-mild",
+        "grid-overload-moderate",
+        "grid-overload-severe",
+        "weak-node-shock-mild",
+        "weak-node-shock-moderate",
+        "weak-node-shock-severe"
       ],
       "robustnessCandidateLimit": 8,
       "reranksCandidatesByStressAdjustedScore": true,
@@ -237,7 +243,26 @@
       "maximizesDistinctOpeningPrefixes": true,
       "portfolioDiversity": "maximum-available-distinct-first-two-command-prefixes",
       "reproducibleDossierExport": true,
-      "dossierSchema": "osgard.civic-cascade.decision-dossier/v1"
+      "dossierSchema": "osgard.civic-cascade.decision-dossier/v1",
+      "robustnessFamilies": [
+        "water-surge",
+        "grid-overload",
+        "weak-node-shock"
+      ],
+      "stressSeverityLevels": [
+        "mild",
+        "moderate",
+        "severe"
+      ],
+      "robustnessProfileCount": 9,
+      "comparesThreeSeverityLevelsPerFamily": true,
+      "severityScaleFactors": [
+        0.5,
+        1,
+        1.5
+      ],
+      "stressRankingUsesAllSeverityLevels": true,
+      "reportsWorstCaseByFamily": true
     },
     "decisionDossier": {
       "enabled": true,
@@ -262,7 +287,10 @@
       "showsStressWeakness": true,
       "comparesResourceCost": true,
       "labelsParetoMembership": true,
-      "tracksNoPersonalData": true
+      "tracksNoPersonalData": true,
+      "modelVersion": "3.2.0",
+      "stressProfileCount": 9,
+      "includesStressSeverityBands": true
     }
   },
   "cinematicExport": {
@@ -303,6 +331,6 @@
   "deployment": {
     "target": "https://osgard.world",
     "mechanism": "repository push triggers the site's production deployment workflow",
-    "liveStatus": "verify release 3.1.0 with production route checks after deployment"
+    "liveStatus": "verify release 3.2.0 with production route checks after deployment"
   }
 }
