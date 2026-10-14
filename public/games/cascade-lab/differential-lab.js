@@ -88,12 +88,9 @@ function pairGroup(baselineGroup, variantGroup) {
       ? {baselineIndex:left.index,variantIndex:right.index,baselineDevice:left,variantDevice:right}
       : {baselineIndex:right.index,variantIndex:left.index,baselineDevice:right,variantDevice:left};
   });
-  const removed = smallIsBaseline
-    ? large.filter((_,index)=>!used.has(index)).map(item=>({index:item.index,device:item}))
-    : [];
-  const added = smallIsBaseline
-    ? []
-    : large.filter((_,index)=>!used.has(index)).map(item=>({index:item.index,device:item}));
+  const unmatchedLarge = large.filter((_,index)=>!used.has(index)).map(item=>({index:item.index,device:item}));
+  const removed = smallIsBaseline ? [] : unmatchedLarge;
+  const added = smallIsBaseline ? unmatchedLarge : [];
   return {matches,removed,added};
 }
 function compareDesign(baseline, variant) {
@@ -140,7 +137,8 @@ function compareDesign(baseline, variant) {
   }
   const order = {changed:0,removed:1,added:2};
   operations.sort((a,b)=>order[a.kind]-order[b.kind] || String(a.type).localeCompare(String(b.type)) || (a.baselineIndex??99)-(b.baselineIndex??99));
-  const sameDesign = operations.length===0 && canonicalDesign(baseline)===canonicalDesign(variant);
+  const exactDesignMatch = canonicalDesign(baseline)===canonicalDesign(variant);
+  const sameDesign = operations.length===0;
   const singleEdit = operations.length===1 && factors.size===1;
   const factorNames = [...factors].map(key=>({position:'Положение устройства',angle:'Угол устройства',composition:'Состав / количество деталей'}[key]));
   let classification;
@@ -150,13 +148,13 @@ function compareDesign(baseline, variant) {
   else classification='multiple-factor-changes';
   return {
     ok:true, sameScenario:true, sameDesign,
-    baselineFingerprint:fingerprintDesign(baseline),variantFingerprint:fingerprintDesign(variant),
+    baselineFingerprint:fingerprintDesign(baseline),variantFingerprint:fingerprintDesign(variant),exactDesignMatch,
     baselineDeviceCount:baseDevices.length,variantDeviceCount:nextDevices.length,
     operationCount:operations.length,factorKeys:[...factors],factorNames,
     singleEdit,classification,operations,matches,
     added:added.length,removed:removed.length,
     note:sameDesign
-      ? 'Конструкция совпадает в пределах точности отпечатка. Различия результатов относятся к повторным наблюдениям, а не к новому варианту конструкции.'
+      ? (exactDesignMatch ? 'Чертёж совпадает точно. Различия результатов относятся к повторным наблюдениям, а не к новому варианту конструкции.' : 'Чертежи отличаются только в пределах практических порогов '+POSITION_TOLERANCE_PX+' px / '+rounded(ANGLE_TOLERANCE_RAD*180/Math.PI,1)+'°. Это считается повтором одного варианта в данном сравнении.')
       : singleEdit
         ? 'Зафиксировано одно локальное изменение одного типа. Это создаёт более чистое сравнение, но само по себе не доказывает причинность.'
         : 'Обнаружено несколько изменений или несколько затронутых факторов. По этой паре нельзя выделить вклад одного изменения.'
@@ -364,7 +362,7 @@ function drawBoard(canvas,run,changed) {
     const d=run.devices[i];const px=clamp(d.x,0,1000)*xScale,py=clamp(d.y,0,560)*yScale;const color=changed.has(i)?'#ffca73':(DEVICE_COLORS[d.type]||'#9db2be');
     counts[d.type]=(counts[d.type]||0)+1;
     ctx.save();ctx.translate(px,py);ctx.rotate(d.angle||0);ctx.shadowColor=color;ctx.shadowBlur=changed.has(i)?12:3;
-    ctx.fillStyle=changed.has(i)?'#4e3614':'#07141d';ctx.strokeStyle=color;ctx.lineWidth=changed.has(i)?2.8:1.8;ctx.beginPath();ctx.roundRect(-12,-10,24,20,5);ctx.fill();ctx.stroke();
+    ctx.fillStyle=changed.has(i)?'#4e3614':'#07141d';ctx.strokeStyle=color;ctx.lineWidth=changed.has(i)?2.8:1.8;ctx.beginPath();if(typeof ctx.roundRect==='function')ctx.roundRect(-12,-10,24,20,5);else ctx.rect(-12,-10,24,20);ctx.fill();ctx.stroke();
     ctx.shadowBlur=0;ctx.fillStyle=color;ctx.font='bold 8px ui-monospace,monospace';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(DEVICE_SYMBOLS[d.type]||'?',0,0);ctx.restore();
     ctx.fillStyle='#95aab7';ctx.font='8px ui-monospace,monospace';ctx.textAlign='left';ctx.fillText('#'+(i+1),px+13,py-10);
   }
@@ -441,7 +439,7 @@ function render(){
 function download(filename,body,type){
   const url=URL.createObjectURL(new Blob([body],{type}));const anchor=document.createElement('a');anchor.href=url;anchor.download=filename;anchor.hidden=true;panel.append(anchor);anchor.click();anchor.remove();window.setTimeout(()=>URL.revokeObjectURL(url),1200);
 }
-function exportJson(){if(!activeReport)return;download('cascade-lab-differential-'+activeReport.study.levelId+'-'+activeReport.variant.variantId+'.json',JSON.stringify(activeReport,null,2),'application/json;charset=utf-8');setStatus('Паспорт сравнения сохранён. Данные не отправлялись.','success');}
+function exportJson(){if(!activeReport)return;download('cascade-lab-differential-'+activeReport.study.levelId+'-'+activeReport.study.variantId+'.json',JSON.stringify(activeReport,null,2),'application/json;charset=utf-8');setStatus('Паспорт сравнения сохранён. Данные не отправлялись.','success');}
 function exportCsv(){
   if(!activeReport)return;
   const d=activeReport.construction;
