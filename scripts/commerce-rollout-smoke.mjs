@@ -4,13 +4,14 @@ import { resolve } from "node:path";
 
 const root = resolve("services/osgard-commerce-api");
 const requiredFiles = [
-  "src/server.mjs", "src/core.mjs", "src/campaigns.mjs", "test/core.test.mjs", "test/campaigns.test.mjs",
+  "src/server.mjs", "src/core.mjs", "src/campaigns.mjs", "src/readiness.mjs", "test/core.test.mjs", "test/campaigns.test.mjs", "test/readiness.test.mjs",
   "package.json", "Dockerfile", "README.md", ".env.example",
 ];
 for (const relative of requiredFiles) assert.ok(existsSync(resolve(root, relative)), "Missing commerce file: " + relative);
 
 const server = readFileSync(resolve(root, "src/server.mjs"), "utf8");
 const core = readFileSync(resolve(root, "src/core.mjs"), "utf8");
+const readiness = readFileSync(resolve(root, "src/readiness.mjs"), "utf8");
 const campaigns = readFileSync(resolve(root, "src/campaigns.mjs"), "utf8");
 const store = readFileSync(resolve("public/games/premium/index.html"), "utf8");
 const app = readFileSync(resolve("public/games/premium/app.js"), "utf8");
@@ -22,10 +23,13 @@ const routeMatrix = readFileSync(resolve("scripts/production-route-matrix.mjs"),
 for (const value of [
   "stripe.checkout.sessions.create", "stripe.webhooks.constructEvent",
   "express.raw", "commerce_stripe_events", "ON CONFLICT DO NOTHING",
-  "ENABLE_LIVE_PAYMENTS", "ADMIN_API_TOKEN", "/v1/admin/overview",
+  "ENABLE_LIVE_PAYMENTS", "ADMIN_API_TOKEN", "/v1/admin/overview", "/v1/admin/readiness", "PREMIUM_ENTITLEMENTS_IMPLEMENTED", "buildCommercialReadiness",
   "/v1/checkout/status", "validateEventBatch", "validateLeadPayload",
   "resolveCheckoutPaymentState", "no-store, private", "paidRevenueByAttribution", "attribution_game_id", "attribution_source", "attribution_campaign",
 ]) assert.ok(server.includes(value), "Commerce API missing required feature: " + value);
+for (const value of ["premiumEntitlementsImplemented", "adNetworkIntegrated", "test_only", "review_required", "not_integrated"]) assert.ok(readiness.includes(value), "Commercial readiness rules missing: " + value);
+assert.ok(server.includes('app.get("/v1/admin/readiness"'), "Commercial readiness endpoint must be present.");
+assert.ok(admin.includes('id="launch-readiness"') && admin.includes("renderReadiness"), "Protected admin UI must render commercial readiness.");
 for (const value of ["PRODUCT_DEFS", "termsAccepted", "verifyStripeSignature", "paymentsModeAllowed"]) {
   assert.ok(core.includes(value), "Core validation missing: " + value);
 }

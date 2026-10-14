@@ -13,6 +13,7 @@ import {
 import {
   campaignFromRow, normalizeCampaignId, publicCampaignView, validateCampaignPayload,
 } from "./campaigns.mjs";
+import { buildCommercialReadiness } from "./readiness.mjs";
 
 const { Pool } = pg;
 const app = express();
@@ -97,8 +98,9 @@ function paymentsAllowed() {
   return Boolean(stripe && pool && dbReady && webhookSecret &&
     paymentsModeAllowed(stripeSecret, process.env.ENABLE_LIVE_PAYMENTS === "true"));
 }
+const PREMIUM_ENTITLEMENTS_IMPLEMENTED = false; // Set true only after account entitlements, cancellation and revocation are implemented and tested.
 function premiumSalesAllowed() {
-  return process.env.ENABLE_OSGARD_PREMIUM_SALES === "true";
+  return process.env.ENABLE_OSGARD_PREMIUM_SALES === "true" && PREMIUM_ENTITLEMENTS_IMPLEMENTED;
 }
 function requireDatabase(res) {
   if (!pool || !dbReady) {
@@ -207,6 +209,30 @@ app.get("/healthz", (_req, res) => res.status(200).json({
 app.get("/readyz", (_req, res) => {
   const ready = Boolean(pool && dbReady && stripe && webhookSecret && paymentsModeAllowed(stripeSecret, process.env.ENABLE_LIVE_PAYMENTS === "true"));
   res.status(ready ? 200 : 503).json({ ready });
+});
+app.get("/v1/admin/readiness", requireAdmin, async (_req, res) => {
+  try {
+    // The existing catalog loader verifies configured Stripe prices without returning IDs or credentials.
+    const products = await loadPublicProducts();
+    const stripeMode = stripeSecret.startsWith("sk_test_") ? "test" : stripeSecret.startsWith("sk_live_") ? "live" : "missing";
+    return res.json(buildCommercialReadiness({
+      databaseConfigured: Boolean(pool),
+      databaseReady: dbReady,
+      databaseInitFailedAtBoot: dbErrorAtBoot,
+      adminTokenConfigured: String(process.env.ADMIN_API_TOKEN || "").length >= 32,
+      stripeConfigured: Boolean(stripe),
+      stripeMode,
+      webhookConfigured: Boolean(webhookSecret),
+      livePaymentsOptIn: process.env.ENABLE_LIVE_PAYMENTS === "true",
+      paymentsRuntimeReady: paymentsAllowed(),
+      premiumEntitlementsImplemented: PREMIUM_ENTITLEMENTS_IMPLEMENTED,
+      adNetworkIntegrated: false,
+      products,
+    }));
+  } catch (error) {
+    console.error("Commercial readiness report failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "READINESS_REPORT_UNAVAILABLE", message: "Не удалось собрать статус запуска. Повторите попытку позже." });
+  }
 });
 app.get("/v1/products", async (_req, res) => {
   try {
