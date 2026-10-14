@@ -53,4 +53,4 @@ for (const route of [
   '/games/cascade-lab/','/games/afterimage-run/','/games/aether-grid/','/games/heist-echo/'
 ]) assert.ok(routes.includes("route: '" + route + "'"), 'missing game route check: ' + route);
 
-console.log('PASS OSGARD PLAY diagnostics: exactly 30 checks, all 11 game routes, local-only report, JSON/CSV export and reduced-motion support.');
+console.log('PASS OSGARD PLAY diagnostics: exactly 31 checks, all 12 game routes, local-only report, JSON/CSV export and reduced-motion support.');
