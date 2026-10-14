@@ -5,7 +5,7 @@ import { runInNewContext } from 'node:vm';
 const root=resolve('public/games/cascade-lab'),html=readFileSync(resolve(root,'index.html'),'utf8');
 const manifest=JSON.parse(readFileSync(resolve(root,'manifest.webmanifest'),'utf8')),worker=readFileSync(resolve(root,'service-worker.js'),'utf8'),icon=readFileSync(resolve(root,'lab-icon.svg'),'utf8');
 const routeMatrix=readFileSync(resolve('scripts/production-route-matrix.mjs'),'utf8');
-assert.match(html,/osgard-game-pwa" content="0\.26\.0-offline-counterfactual-lab"/);
+assert.match(html,/osgard-game-pwa" content="0\.27\.0-offline-counterfactual-lab"/);
 assert.ok(html.includes('rel="manifest" href="./manifest.webmanifest"')&&html.includes('id="installLabButton"')&&html.includes("navigator.serviceWorker.register('./service-worker.js?v=0.27.0'"));
 assert.equal(manifest.name,'CASCADE LAB — Premium Physics Lab');assert.equal(manifest.scope,'./');assert.equal(manifest.display,'standalone');assert.equal(manifest.start_url,'./?source=pwa');assert.equal(manifest.icons[0].src,'./lab-icon.svg');assert.match(icon,/<svg[^>]+viewBox="0 0 512 512"/);
 const b=worker.match(/const PRECACHE=\[([\s\S]*?)\];/);assert.ok(b);const paths=[...b[1].matchAll(/'([^']+)'/g)].map(m=>m[1]);
