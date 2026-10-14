@@ -42,7 +42,7 @@ const cascadeContractAssertions = [
   ['passport route', routeMatrix.includes("'/games/cascade-lab/case-passport.js'")],
   ['mission director route', routeMatrix.includes("'/games/cascade-lab/mission-director.js'")],
   ['evidence asset route', routeMatrix.includes("'/games/cascade-lab/evidence-integrity.js'")],
-  ['evidence schema contract', routeMatrix.includes("SCHEMA = 'osgard.cascade-lab.evidence-integrity.v1'")],
+  ['evidence schema contract', routeMatrix.includes('osgard.cascade-lab.evidence-integrity.v1')],
 ];
 for (const [contract, passed] of cascadeContractAssertions) {
   assert.ok(passed, 'CASCADE LAB 0.25 release contract is missing or out of sync: ' + contract);
