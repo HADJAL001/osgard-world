@@ -400,7 +400,7 @@ const lazyRuntime=lazyRuntimeMatch[1]
 new Function(lazyRuntime)
 assert.ok(!html.includes('<script src="/games/sponsored-campaigns.js?v=__OSGARD_BUILD_VERSION__" defer></script>'), 'Sponsor renderer must not execute on first paint')
 for(const marker of ["function loadSponsorRenderer()","loadScript('sponsored-campaigns.js')","function watchSponsorRenderer()","rootMargin:'120px 0px'","watchSponsorRenderer()","loadSponsorRenderer})"]) assert.ok(lazyRuntime.includes(marker),'Lazy sponsor loader contract missing: '+marker)
-for(const marker of ["function loadPlayerRuntime()","function loadRecommendations()","function loadCatalogEnhancements()","function watchCatalogEnhancements()","rootMargin:'360px 0px'","loadScript('luxury.js')","loadScript('player-lifecycle.js')","loadScript('game-session-recommendations.js')","link.dataset.osgardLazy='recommendations-css'","event.stopImmediatePropagation()","playPending()","playerState==='failed'","meta[name=\"osgard-build\"]"]) assert.ok(lazyRuntime.includes(marker),'Lazy-load contract missing: '+marker)
+for(const marker of ["function loadPlayerRuntime()","function loadRecommendations()","function loadCatalogEnhancements()","function watchCatalogEnhancements()","rootMargin:'0px 0px -25% 0px'","loadScript('luxury.js')","loadScript('player-lifecycle.js')","loadScript('game-session-recommendations.js')","link.dataset.osgardLazy='recommendations-css'","event.stopImmediatePropagation()","playPending()","playerState==='failed'","meta[name=\"osgard-build\"]"]) assert.ok(lazyRuntime.includes(marker),'Lazy-load contract missing: '+marker)
 assert.ok(lazyRuntime.includes("params.get('og_ref')")&&lazyRuntime.includes("loadRecommendations()"),'Invite landings must lazily activate consent-aware referral UI')
 assert.ok(lazyRuntime.includes("script.async=true")&&lazyRuntime.includes("encodeURIComponent(version)"),'On-demand scripts must be asynchronous and release-versioned')
 
@@ -615,7 +615,8 @@ const css=html.match(/<style>([\s\S]*?)<\/style>/)?.[1]||''
 assert.ok(css.includes('@media(max-width:760px)'),'Responsive/mobile layout missing')
 assert.ok(css.includes('.player-view')&&css.includes('dialog::backdrop'),'Game dialog style missing')
 assert.ok(lazyRuntime.includes("loadScript('player-lifecycle.js')")&&lazyRuntime.includes("versioned('/games/'+path)"),'Self-hosted lifecycle module must be loaded on demand with the current release version')
-assert.ok(lazyRuntime.includes("document.querySelector('.filters')")&&lazyRuntime.includes("rootMargin:'360px 0px'")&&lazyRuntime.includes("anchor.addEventListener('focusin',activate"),'Premium noncritical catalog toolbar must load on approach/focus, not during the initial catalogue parse')
+assert.ok(lazyRuntime.includes("document.querySelector('.filters')")&&lazyRuntime.includes("rootMargin:'0px 0px -25% 0px'")&&lazyRuntime.includes("anchor.addEventListener('focusin',activate"),'Premium noncritical catalog toolbar must load on approach/focus, not during the initial catalogue parse')
+assert.ok(!lazyRuntime.includes("rootMargin:'360px 0px'"),'Premium toolbar must not hydrate 360px before it becomes visible on the mobile critical path')
 assert.ok(html.includes("$('.card',grid).forEach(c=>")&&!/(^|[^$])\$\('\.card',grid\)\.forEach/.test(html),'Catalog search/filter must iterate over every card; a single-element query caused a render TypeError')
 assert.ok(html.includes('<strong>OSGARD <span>WORLD</span></strong> <em>PLAY</em>')&&!html.includes('aria-label="OSGARD WORLD PLAY"'),'Brand accessible name must preserve the exact visible words')
 assert.ok(!/<a class="art art-[^"]+"[^>]*aria-label=/.test(html),'Artwork links must use their visible content for the accessible name')
