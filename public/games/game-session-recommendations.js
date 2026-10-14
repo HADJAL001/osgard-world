@@ -316,7 +316,7 @@ function disposeCurrentPostgame(){disposePostgameTree(root);disposePostgameTree(
 document.addEventListener('osgard:dispose-postgame',disposeCurrentPostgame);
 const selectConsentKey='osgard.games.analytics-consent.v1';
 const selectSessionKey='osgard.games.growth-session.v1';
-const selectAllowedEvents=new Set(['cross_promo_clicked','owned_promo_impression','owned_promo_intermission_skipped','owned_promo_preferences_saved','social_share_intent','social_reward_claimed','referral_reward_claimed','share_created','invite_link_prepared']);
+const selectAllowedEvents=new Set(['cross_promo_clicked','owned_promo_impression','owned_promo_intermission_skipped','owned_promo_preferences_saved','owned_promo_snoozed','social_share_intent','social_reward_claimed','referral_reward_claimed','share_created','invite_link_prepared']);
 function hasConsent(){try{return localStorage.getItem(selectConsentKey)==='yes'}catch{return false}}
 const promoImpressionKeyPrefix='osgard.games.promo-impression.v1:';
 const fallbackPromoImpressions=new Set();
@@ -958,6 +958,7 @@ function refreshCurrentServiceShelf(){
  disposePostgameTree(current);current.replaceWith(next);
 }
 document.addEventListener('osgard:service-preferences-updated',refreshCurrentServiceShelf);
+window.addEventListener('osgard:service-preferences-updated',refreshCurrentServiceShelf);
 window.addEventListener('storage',event=>{
  if(!event.key||[servicePreferencesKey,promoSnoozeKey,preferredServiceKey].includes(event.key))refreshCurrentServiceShelf();
 });
