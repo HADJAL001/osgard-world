@@ -7,7 +7,7 @@
   if (!grid || !filters || !search) return
 
   const RECENT_KEY = 'osgard.games.recent.v1'
-  const validIds = new Set(['null-shift', 'time', 'swarm', 'inherit', 'remix', 'civic-cascade', 'patina', 'signal-run', 'cascade-lab', 'afterimage-run', 'aether-grid'])
+  const validIds = new Set(['null-shift', 'time', 'swarm', 'inherit', 'remix', 'civic-cascade', 'patina', 'signal-run', 'cascade-lab', 'afterimage-run', 'aether-grid', 'heist-echo'])
   const catalogCount = Array.from(grid.querySelectorAll('.card[data-game]')).filter(card => validIds.has(card.dataset.game)).length
   const allCountBadge = filters.querySelector('[data-filter="all"] b')
   const catalogRange = document.querySelector('#catalog-range')
