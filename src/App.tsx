@@ -1,6 +1,5 @@
-﻿import { useEffect, useState, type CSSProperties } from 'react'
+﻿import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { ArrowDown, ArrowUpRight, Bot, ChevronRight, CircleHelp, Globe2, Menu, ShieldCheck, Sparkles, X } from 'lucide-react'
-import { LivingGlobe } from './LivingGlobe'
 import { ModuleMark } from './ModuleMark'
 import { OsgardLogo } from './OsgardLogo'
 import { Preloader } from './Preloader'
@@ -8,6 +7,8 @@ import { Development } from './Development'
 import { PlaySelectLoop } from './PlaySelectLoop'
 import { recordOsgardEvent } from './core/eventQueue'
 import { AnalyticsConsentControl } from './AnalyticsConsentControl'
+
+const LazyLivingGlobe = lazy(() => import('./LivingGlobe').then(module => ({ default: module.LivingGlobe })))
 
 type Locale = 'ru' | 'en'
 const botUrl = 'https://t.me/OSGARD_world_bot'
@@ -50,7 +51,7 @@ function Legal({ locale, back }: { locale: Locale, back: () => void }) { const i
 
 function PlayGateway({ locale, goto }: { locale: Locale, goto: (id: string) => void }) {
   const ru = locale === 'ru'
-  return <section className="play-gateway" id="play" aria-labelledby="play-title"><div className="play-gateway-head"><p className="eyebrow">02 / PLAY / OSGARD ENTERTAINMENT</p><h2 id="play-title">{ru ? 'Сначала игра. Затем следующий мир.' : 'Play first. Discover the next world.'}</h2><p>{ru ? 'Один живой вход в систему: короткая сессия, понятный результат и маршрут дальше.' : 'One living entry into the system: a short session, a clear result and a route forward.'}</p></div><div className="play-gateway-grid"><a className="play-feature" href="/games/null-shift-godot/"><span className="play-feature-art"><i/><b>NULL//SHIFT</b><small>THE BUILDING REMEMBERS.</small></span><span className="play-feature-copy"><em>FEATURED GAME / CO-OP RAID</em><strong>{ru ? 'Измени реальность. Забери ядро.' : 'Change reality. Extract the core.'}</strong><span>{ru ? '5–15 минут · 1–4 игрока' : '5–15 min · 1–4 players'}</span></span><ArrowUpRight /></a><button className="play-challenge" onClick={() => goto('worlds')}><span><em>TODAY'S CHALLENGE</em><strong>{ru ? 'Открой один мир.' : 'Open one world.'}</strong><small>{ru ? 'Выбери задачу и получи следующий маршрут.' : 'Choose a task and receive the next route.'}</small></span><ChevronRight /></button><a className="play-catalog-link" href="/games/"><span><em>OSGARD WORLD GAMING</em><strong>{ru ? 'Открыть игровой портал' : 'Open gaming portal'}</strong></span><ArrowUpRight /></a></div><nav className="play-quick-picks" aria-label={ru ? 'Быстрый запуск игр' : 'Quick launch games'}><span className="play-quick-label">{ru ? 'БЫСТРЫЙ ЗАПУСК' : 'QUICK START'}</span><a className="play-quick-link" href="/games/swarm/" aria-label={ru ? 'Играть в SWARM — командная тактика' : 'Play SWARM — co-op tactics'}><span><em>{ru ? '03 / КОМАНДНАЯ ТАКТИКА' : '03 / CO-OP TACTICS'}</em><strong>SWARM</strong></span><ArrowUpRight /></a><a className="play-quick-link" href="/games/inherit/" aria-label={ru ? 'Играть в INHERIT — живой мир' : 'Play INHERIT — living world'}><span><em>{ru ? '04 / ЖИВОЙ МИР' : '04 / LIVING WORLD'}</em><strong>INHERIT</strong></span><ArrowUpRight /></a><a className="play-quick-link" href="/games/signal-run/" aria-label={ru ? 'Играть в SIGNAL RUN — аркада' : 'Play SIGNAL RUN — arcade'}><span><em>{ru ? '08 / АРКАДА' : '08 / ARCADE'}</em><strong>SIGNAL RUN</strong></span><ArrowUpRight /></a></nav><section className="play-economy-strip" aria-label={ru ? 'Экономика игр и следующие шаги' : 'Game economy and next steps'}>
+  return <section className="play-gateway" id="play" aria-labelledby="play-title"><div className="play-gateway-head"><p className="eyebrow">02 / PLAY / OSGARD ENTERTAINMENT</p><h2 id="play-title">{ru ? 'Сначала игра. Затем следующий мир.' : 'Play first. Discover the next world.'}</h2><p>{ru ? 'Один живой вход в систему: короткая сессия, понятный результат и маршрут дальше.' : 'One living entry into the system: a short session, a clear result and a route forward.'}</p></div><div className="play-gateway-grid"><a className="play-feature" href="/games/null-shift-godot/"><span className="play-feature-art"><i/><b>NULL//SHIFT</b><small>THE BUILDING REMEMBERS.</small></span><span className="play-feature-copy"><em>FEATURED GAME / CO-OP RAID</em><strong>{ru ? 'Измени реальность. Забери ядро.' : 'Change reality. Extract the core.'}</strong><span>{ru ? '5–15 минут · 1–4 игрока' : '5–15 min · 1–4 players'}</span></span><ArrowUpRight /></a><button className="play-challenge" onClick={() => goto('worlds')}><span><em>TODAY'S CHALLENGE</em><strong>{ru ? 'Открой один мир.' : 'Open one world.'}</strong><small>{ru ? 'Выбери задачу и получи следующий маршрут.' : 'Choose a task and receive the next route.'}</small></span><ChevronRight /></button><a className="play-catalog-link" href={ru ? '/games/' : '/games/en/'}><span><em>OSGARD WORLD GAMING</em><strong>{ru ? 'Открыть игровой портал' : 'Open gaming portal'}</strong></span><ArrowUpRight /></a></div><nav className="play-quick-picks" aria-label={ru ? 'Быстрый запуск игр' : 'Quick launch games'}><span className="play-quick-label">{ru ? 'БЫСТРЫЙ ЗАПУСК' : 'QUICK START'}</span><a className="play-quick-link" href="/games/swarm/" aria-label={ru ? 'Играть в SWARM — командная тактика' : 'Play SWARM — co-op tactics'}><span><em>{ru ? '03 / КОМАНДНАЯ ТАКТИКА' : '03 / CO-OP TACTICS'}</em><strong>SWARM</strong></span><ArrowUpRight /></a><a className="play-quick-link" href="/games/inherit/" aria-label={ru ? 'Играть в INHERIT — живой мир' : 'Play INHERIT — living world'}><span><em>{ru ? '04 / ЖИВОЙ МИР' : '04 / LIVING WORLD'}</em><strong>INHERIT</strong></span><ArrowUpRight /></a><a className="play-quick-link" href="/games/signal-run/" aria-label={ru ? 'Играть в SIGNAL RUN — аркада' : 'Play SIGNAL RUN — arcade'}><span><em>{ru ? '08 / АРКАДА' : '08 / ARCADE'}</em><strong>SIGNAL RUN</strong></span><ArrowUpRight /></a></nav><section className="play-economy-strip" aria-label={ru ? 'Экономика игр и следующие шаги' : 'Game economy and next steps'}>
     <div className="play-economy-copy">
       <p className="play-economy-eyebrow">OSGARD SELECT / BETWEEN WORLDS</p>
       <h3>{ru ? 'Раунд окончен. Выбирай, что дальше.' : 'Round complete. Choose what comes next.'}</h3>
@@ -58,7 +59,7 @@ function PlayGateway({ locale, goto }: { locale: Locale, goto: (id: string) => v
       <small>{ru ? '+50 локальных SHARDS доступны после явного подтверждения публикации приглашения — не чаще раза в UTC-день на устройстве. Копирование ссылки само по себе не даёт награду. Это не деньги; публикацию нельзя проверить автоматически.' : 'One invitation action per day on this device may earn +50 local SHARDS. They are not money. Social posts are not automatically verified.'}</small>
     </div>
     <div className="play-economy-actions">
-      <a className="play-economy-primary" href="/games/?utm_source=osgard_world&amp;utm_medium=entertainment&amp;utm_campaign=between_worlds">{ru ? 'Выбрать игру и сервис ↗' : 'Choose a game and service ↗'}</a>
+      <a className="play-economy-primary" href={ru ? '/games/?utm_source=osgard_world&utm_medium=entertainment&utm_campaign=between_worlds' : '/games/en/?utm_source=osgard_world&utm_medium=entertainment&utm_campaign=between_worlds'}>{ru ? 'Выбрать игру и сервис ↗' : 'Choose a game and service ↗'}</a>
       <a className="play-economy-secondary" href="/games/monetization/?utm_source=osgard_world&amp;utm_medium=entertainment&amp;utm_campaign=economy_model">{ru ? 'Изучить модель экономики ↗' : 'Explore the economy model ↗'}</a>
     </div>
   </section><PlaySelectLoop locale={locale} /></section>
@@ -80,7 +81,45 @@ function PassportPanel({ locale, activeWorld, onOpenWorld }: { locale: Locale, a
   return <section className="passport-panel" aria-labelledby="passport-title"><div className="passport-copy"><p className="eyebrow">OSGARD ID / PASSPORT</p><h2 id="passport-title">{ru ? 'Моя констелляция.' : 'My constellation.'}</h2><p>{ru ? 'Каждый открытый мир остаётся в вашей карте и ведёт к следующему.' : 'Every world you open stays on your map and points to the next.'}</p><div className="passport-stats"><strong>{opened.length}<small>{ru ? ' миров открыто' : ' worlds opened'}</small></strong><strong>1<small>{ru ? ' игра завершена' : ' game completed'}</small></strong><strong>{Math.max(0, 7 - opened.length)}<small>{ru ? ' сигналов осталось' : ' signals remain'}</small></strong></div></div><div className="passport-orbit">{worlds.map((world, index) => <button key={world.name} className={`${opened.includes(index) ? 'is-open' : ''}${activeWorld === index ? ' is-active' : ''}`} onClick={() => open(index)} aria-label={world.name}><span>{world.n}</span><b>{world.name}</b></button>)}</div></section>
 }
 
-export default function App() {
+export default function DeferredLivingGlobe({ locale }: { locale: Locale }) {
+  const host = useRef<HTMLDivElement>(null)
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const element = host.current
+    if (!element) return
+    let timer = 0
+    const reveal = () => {
+      if (timer) return
+      timer = window.setTimeout(() => setVisible(true), 180)
+    }
+    if (typeof IntersectionObserver === 'undefined') {
+      reveal()
+      return () => window.clearTimeout(timer)
+    }
+    const observer = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) {
+        observer.disconnect()
+        reveal()
+      }
+    }, { rootMargin: '100px' })
+    observer.observe(element)
+    return () => {
+      observer.disconnect()
+      if (timer) window.clearTimeout(timer)
+    }
+  }, [])
+
+  return <div className="globe-mount" ref={host} data-globe-state={visible ? 'loading' : 'deferred'}>
+    {visible
+      ? <Suspense fallback={<div className="globe globe-fallback" role="img" aria-label={locale === 'ru' ? 'Визуализация экосистемы OSGARD загружается' : 'OSGARD ecosystem visual is loading'} />}>
+          <LazyLivingGlobe />
+        </Suspense>
+      : <div className="globe globe-fallback" role="img" aria-label={locale === 'ru' ? 'Модель экосистемы OSGARD' : 'OSGARD ecosystem model'} />}
+  </div>
+}
+
+function App() {
   const [locale, setLocale] = useState<Locale>('ru'); const [menu, setMenu] = useState(false); const [legal, setLegal] = useState(location.hash === '#timecoin-rules'); const [hours, setHours] = useState(8); const [ready, setReady] = useState(false); const [activeWorld, setActiveWorld] = useState(0); const t = locale === 'ru' ? { ...copy.ru, nav: ['Миры', 'AURUM', 'TimeCoin', 'Правила'], enter: 'Войти в OSGARD', learn: 'Исследовать экосистему', aurum: 'AURUM — Архитектор экосистемы.', aurumText: 'Координационный интеллект помогает видеть связь между продуктами и выбирать следующий шаг.', coin: 'TimeCoin. Активность в одном мире открывает возможности в семи.', coinText: 'Внутренняя бонусная единица OSGARD для доступа, статуса и специальных условий.', club: 'Ранний доступ для тех, кто хочет создавать вместе.', honest: 'Прозрачные условия. Без громких обещаний.', legal: 'Правила TimeCoin' } : copy.en; const active = worlds[activeWorld]
   useEffect(() => {
     const handleTap = (event: MouseEvent | TouchEvent) => {
@@ -112,7 +151,7 @@ export default function App() {
   }
   if (legal) return <Legal locale={locale} back={() => { history.replaceState(null, '', location.pathname); setLegal(false) }} />
   return <>{!ready && <Preloader onComplete={() => setReady(true)} />}<div className="ambient-field" aria-hidden="true"><i className="bg-orb bg-orb-one"/><i className="bg-orb bg-orb-two"/><i className="bg-orb bg-orb-three"/></div><main><header><a className="brand brand-logo" href="#top"><OsgardLogo /></a><nav>{t.nav.map((label, i) => <button key={label} onClick={() => i === 3 ? (history.replaceState(null, '', '#timecoin-rules'), setLegal(true)) : goto(['worlds','aurum','timecoin'][i])}>{label}</button>)}<button onClick={() => goto('development')}>{locale === 'ru' ? 'Разработка' : 'Development'}</button><a className="nav-entertainment" href="/entertainment/"><Sparkles />{locale === 'ru' ? 'РАЗВЛЕЧЕНИЯ' : 'ENTERTAINMENT'}</a><a className="nav-entertainment nav-skillcred" href="/skillcred/"><ShieldCheck />SkillCred</a></nav><div className="head-actions"><button className="language" onClick={() => setLocale(locale === 'ru' ? 'en' : 'ru')}><Globe2 />{locale.toUpperCase()}</button><a className="nav-cta" href={botUrl} target="_blank" rel="noreferrer">{t.enter}<ArrowUpRight /></a><button className="menu" onClick={() => setMenu(!menu)}>{menu ? <X/> : <Menu/>}</button></div>{menu && <div className="mobile-menu">{t.nav.map((label,i)=><button key={label} onClick={() => i === 3 ? setLegal(true) : goto(['worlds','aurum','timecoin'][i])}>{label}</button>)}<button onClick={() => goto('development')}>{locale === 'ru' ? 'Разработка' : 'Development'}</button><button onClick={() => { window.location.href = '/entertainment/' }}><Sparkles />{locale === 'ru' ? 'РАЗВЛЕЧЕНИЯ' : 'ENTERTAINMENT'}</button><button onClick={() => { window.location.href = '/skillcred/' }}><ShieldCheck />SkillCred</button></div>}</header>
-  <section className="hero" id="top"><div className="hero-copy"><p className="eyebrow">OSGARD · ECOSYSTEM · 2026</p><HeroTitle locale={locale} /><p className="hero-sub">{locale === 'ru' ? 'Исследуйте направления OSGARD: защита, мобильность, время, бизнес и создание продуктов. Семь модулей в единой экосистеме.' : 'Explore OSGARD across security, mobility, time, business and product creation. Seven modules, one connected ecosystem.'}</p><div className="hero-actions"><a className="cta hero-primary" href={botUrl} target="_blank" rel="noreferrer">{t.enter}<ArrowUpRight /></a><button className="quiet-cta hero-secondary" onClick={() => goto('worlds')}>{t.learn}<ArrowDown /></button></div><p className="early-note">{locale === 'ru' ? 'Ранний доступ и подключение модулей — через Telegram.' : 'Early access and module activation are available in Telegram.'}</p></div><div className="hero-art"><LivingGlobe /><div className="hero-satellites" aria-label="Ключевые показатели экосистемы"><button onClick={() => { setActiveWorld(0); goto('worlds') }}><b>GARD VPN</b><span>{locale === 'ru' ? 'сервис VPN' : 'VPN service'}</span></button><button onClick={() => { setActiveWorld(1); goto('worlds') }}><b>SENJORIO</b><span>{locale === 'ru' ? 'премиальное такси' : 'premium taxi'}</span></button><button onClick={() => { setActiveWorld(4); goto('worlds') }}><b>OSGARD DEV</b><span>{locale === 'ru' ? 'цифровая разработка' : 'digital development'}</span></button></div><div className="axis">07 / MODULES<hr/><span>AURUM<br/>COORDINATION</span></div></div></section>
+  <section className="hero" id="top"><div className="hero-copy"><p className="eyebrow">OSGARD · ECOSYSTEM · 2026</p><HeroTitle locale={locale} /><p className="hero-sub">{locale === 'ru' ? 'Исследуйте направления OSGARD: защита, мобильность, время, бизнес и создание продуктов. Семь модулей в единой экосистеме.' : 'Explore OSGARD across security, mobility, time, business and product creation. Seven modules, one connected ecosystem.'}</p><div className="hero-actions"><a className="cta hero-primary" href={botUrl} target="_blank" rel="noreferrer">{t.enter}<ArrowUpRight /></a><button className="quiet-cta hero-secondary" onClick={() => goto('worlds')}>{t.learn}<ArrowDown /></button></div><p className="early-note">{locale === 'ru' ? 'Ранний доступ и подключение модулей — через Telegram.' : 'Early access and module activation are available in Telegram.'}</p></div><div className="hero-art"><DeferredLivingGlobe locale={locale} /><div className="hero-satellites" aria-label="Ключевые показатели экосистемы"><button onClick={() => { setActiveWorld(0); goto('worlds') }}><b>GARD VPN</b><span>{locale === 'ru' ? 'сервис VPN' : 'VPN service'}</span></button><button onClick={() => { setActiveWorld(1); goto('worlds') }}><b>SENJORIO</b><span>{locale === 'ru' ? 'премиальное такси' : 'premium taxi'}</span></button><button onClick={() => { setActiveWorld(4); goto('worlds') }}><b>OSGARD DEV</b><span>{locale === 'ru' ? 'цифровая разработка' : 'digital development'}</span></button></div><div className="axis">07 / MODULES<hr/><span>AURUM<br/>COORDINATION</span></div></div></section>
   <PlayGateway locale={locale} goto={goto}/>
   <section className="constellation" id="worlds"><div className="showcase-heading"><p className="eyebrow">01 / ECOSYSTEM</p><h2>{locale === 'ru' ? 'Семь инструментов. Одна империя.' : 'Seven instruments. One empire.'}</h2><p>{locale === 'ru' ? 'Выберите задачу. Сцена покажет следующий шаг.' : 'Choose a task. The scene reveals how each world serves your next step.'}</p></div><div className={`world-showcase scene-${activeWorld}`}><div className="world-selector">{worlds.map((world, index) => <button key={world.name} className={activeWorld === index ? 'is-active' : ''} onMouseEnter={() => setActiveWorld(index)} onFocus={() => setActiveWorld(index)} onClick={() => setActiveWorld(index)}><small>{world.n}</small><span>{world.name}</span><ChevronRight /></button>)}</div><article className="world-stage" key={active.name}><div className="stage-art"><ModuleMark index={activeWorld} className="stage-mark" /><i/><i/><i/></div><div className="stage-copy"><p className="eyebrow">{active.name} / LIVE SYSTEM</p><div className="stage-metrics"><strong>{locale === 'ru' ? ruWorldCopy[activeWorld].metric : active.metric}</strong><span>{locale === 'ru' ? ruWorldCopy[activeWorld].metricRu : active.metricEn}</span></div><h3>{locale === 'ru' ? ruWorldCopy[activeWorld].headlineRu : active.headlineEn}</h3><p>{locale === 'ru' ? ruWorldCopy[activeWorld].bodyRu : active.bodyEn}</p><ul>{(locale === 'ru' ? ruWorldCopy[activeWorld].benefitsRu : active.benefitsEn).map(benefit => <li key={benefit}>{benefit}</li>)}</ul><a className="stage-cta" href={active.url} target="_blank" rel="noreferrer">{locale === 'ru' ? ruWorldCopy[activeWorld].ctaRu : active.ctaEn}<ArrowUpRight /></a></div></article></div></section>
   <PassportPanel locale={locale} activeWorld={activeWorld} onOpenWorld={setActiveWorld} />
