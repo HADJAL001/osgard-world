@@ -119,9 +119,11 @@ const playerLifecycle = readFileSync(resolve("public/games/player-lifecycle.js")
 const partners = readFileSync(resolve("public/games/partners/index.html"), "utf8");
 const privacy = readFileSync(resolve("public/privacy/index.html"), "utf8");
 const terms = readFileSync(resolve("public/terms/index.html"), "utf8");
-for (const value of ['href="/games/premium/"', 'name="dataConsent"', 'src="/games/commerce-client.js"']) {
+for (const value of ['href="/games/premium/"', 'name="dataConsent"']) {
   assert.ok(html.includes(value), "Games hub missing commerce integration: " + value);
 }
+assert.ok(html.includes("function watchLeadClient()") && html.includes("loadScript('commerce-client.js')"), "Games hub must load the commerce client on consent or lead-form intent rather than eagerly.");
+
 for (const value of ['id="campaign-form"', 'name="consent"', 'src="/games/commerce-client.js"']) {
   assert.ok(partners.includes(value), "Partner page missing lead integration: " + value);
 }
@@ -138,6 +140,8 @@ for (const [label, page] of [["Partners", partners], ["Premium", store]]) {
   const clientTag = page.indexOf('src="/games/commerce-client.js"');
   assert.ok(queueTag >= 0 && clientTag > queueTag, label + " must load consent queue before sending analytics.");
 }
+assert.ok(html.includes("loadScript('commerce-client.js')") && html.includes("function watchLeadClient()"), "Games hub commerce integration must be lazy-loaded by user intent.");
+
 assert.ok(!html.includes('<script src="/games/consented-analytics.js?v=__OSGARD_BUILD_VERSION__" defer></script>') &&
   html.includes("loadScript('consented-analytics.js')") &&
   html.includes("if(!hasAnalyticsConsent())return Promise.resolve(false)"),
