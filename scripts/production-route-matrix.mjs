@@ -166,8 +166,8 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
             text.includes('function proposalForPair(pair)') && text.includes('function reconcilePlan(') &&
             !text.includes('fetch(') && !text.includes('XMLHttpRequest') && !text.includes('sendBeacon')
         : route === '/games/cascade-lab/'
-          ? text.includes('<title>CASCADE LAB — Premium Physics Lab 0.22.0</title>') &&
-            text.includes('name="osgard-game-version" content="0.22.0-trajectory-xray"') &&
+          ? text.includes('<title>CASCADE LAB — Premium Physics Lab 0.23.0</title>') &&
+            text.includes('name="osgard-game-version" content="0.23.0-adaptive-missions"') &&
             text.includes('data-cascade-lab-upgrades="0.14.0"') && text.includes('CASCADELAB014') &&
             text.includes('data-cascade-lab-ledger="0.15.0"') && text.includes('CASCADELAB015') && text.includes('id="CASCADELAB017"') && text.includes('data-cascade-lab-delta="0.17.0"') &&
             text.includes('id="CASCADELAB018"') && text.includes('data-cascade-lab-experiment="0.18.0"') && text.includes('hypothesis-lab.js?v=0.18.0') &&
@@ -176,14 +176,14 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
             text.includes('id="runButton"') && text.includes('id="exportTelemetryButton"') &&
             text.includes('id="exportGrowthButton"') && text.includes('id="serviceAdDialog"') &&
             text.includes('id="serviceAdChoices"') && text.includes('Я поделился — получить +10 LC') &&
-            text.includes("notifyOsgardLifecycle('ready', { version: '0.22.0' })") && text.includes("notifyOsgardLifecycle('ready'") && text.includes("notifyOsgardLifecycle('started'") &&
+            text.includes("notifyOsgardLifecycle('ready', { version: '0.23.0' })") && text.includes("notifyOsgardLifecycle('ready'") && text.includes("notifyOsgardLifecycle('started'") &&
             text.includes("notifyOsgardLifecycle('paused'") && text.includes("notifyOsgardLifecycle('resumed'") &&
             text.includes("notifyOsgardLifecycle('level_completed'") && !text.includes("notifyOsgardLifecycle('completed'") &&
             text.includes('id="CASCADELAB019"') && text.includes('data-cascade-lab-engineering="0.19.0"') &&
             text.includes('id="CASCADELAB020"') && text.includes('data-cascade-lab-studio="0.20.0"') && text.includes('experiment-studio.js?v=0.20.0') && text.includes('id="CASCADELAB021"') && text.includes('data-cascade-lab-passport="0.21.0"') && text.includes('case-passport.js?v=0.21.0') && text.includes('restoreProject,undo') &&
             text.includes("new CustomEvent('cascade-lab:run-finished'") &&
             text.includes('id="CASCADELAB022"') && text.includes('data-cascade-lab-xray="0.22.0"') &&
-            text.includes('trajectory-xray.js?v=0.22.0') && text.includes('trajectory: Array.from({ length: Math.min(420, lastReplay.length) }')
+            text.includes('trajectory-xray.js?v=0.22.0') && text.includes('id="CASCADELAB023"') && text.includes('data-cascade-lab-director="0.23.0"') && text.includes('mission-director.js?v=0.23.0') && text.includes('trajectory: Array.from({ length: Math.min(420, lastReplay.length) }')
         : route.startsWith('/games/null-shift-godot')
           ? isGodotDirectory
             ? (response.headers.get('content-type') || '').toLowerCase().includes('text/html') &&
@@ -220,7 +220,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
     const isPartnerPage = route === '/games/partners/'
     const isEcosystemDirectory = route === '/games/ecosystem/'
     const isGodot = route.startsWith('/games/null-shift-godot')
-    const assetPaths = route === '/games/favicon.svg' || route === '/privacy/' || route === '/terms/' ? [] : isCampaignAdmin ? ['/games/admin/campaigns/admin.js', '/games/admin/campaigns/admin.css'] : isPartnerPage ? ['/games/partners/partners.js', '/games/partners/inventory.json'] : isEcosystemDirectory ? ['/games/ecosystem/directory.css', '/games/ecosystem/directory.js'] : route === '/games/diagnostics/' ? ['/games/diagnostics/diagnostics.js'] : isExpeditionPage ? ['/games/expedition/core.js','/games/expedition/app.js','/games/expedition/expedition.css'] : isGamesHub ? ['/games/consented-analytics.js','/games/player-lifecycle.js','/games/game-session-recommendations.js','/games/game-session-recommendations.css','/games/daily-circuit.js','/games/daily-circuit.css','/games/sponsored-campaigns.js','/games/sponsored-campaigns.css','/games/expedition/core.js','/games/expedition/catalog-runtime.js'] : route === '/skillcred/' ? ['/skillcred/styles.css', '/skillcred/app.js', '/skillcred/fonts/InterVariable.woff2', '/skillcred/fonts/InstrumentSerif-Italic.woff2', '/skillcred/fonts/JetBrainsMono-Regular.woff2'] : route === '/games/signal-run/' ? ['/games/signal-run/game.js'] : isGodot ? ['/games/null-shift-godot/index.js', '/games/null-shift-godot/index.wasm', '/games/null-shift-godot/index.pck'] : route.startsWith('/games/null-shift') ? ['/games/null-shift/styles.css', '/games/null-shift/game.js', '/games/null-shift/engine-3d.js'] : route.startsWith('/games/invite/') && route !== '/games/invite/invite-landing.js' ? ['/games/invite/invite-landing.js', '/games/share-cards/' + (route.split('/')[3] || 'catalog') + '.png'] : []
+    const assetPaths = route === '/games/favicon.svg' || route === '/privacy/' || route === '/terms/' ? [] : isCampaignAdmin ? ['/games/admin/campaigns/admin.js', '/games/admin/campaigns/admin.css'] : isPartnerPage ? ['/games/partners/partners.js', '/games/partners/inventory.json'] : isEcosystemDirectory ? ['/games/ecosystem/directory.css', '/games/ecosystem/directory.js'] : route === '/games/diagnostics/' ? ['/games/diagnostics/diagnostics.js'] : isExpeditionPage ? ['/games/expedition/core.js','/games/expedition/app.js','/games/expedition/expedition.css'] : isGamesHub ? ['/games/consented-analytics.js','/games/player-lifecycle.js','/games/game-session-recommendations.js','/games/game-session-recommendations.css','/games/daily-circuit.js','/games/daily-circuit.css','/games/sponsored-campaigns.js','/games/sponsored-campaigns.css','/games/expedition/core.js','/games/expedition/catalog-runtime.js'] : route === '/skillcred/' ? ['/skillcred/styles.css', '/skillcred/app.js', '/skillcred/fonts/InterVariable.woff2', '/skillcred/fonts/InstrumentSerif-Italic.woff2', '/skillcred/fonts/JetBrainsMono-Regular.woff2'] : route === '/games/cascade-lab/' ? ['/games/cascade-lab/case-passport.js','/games/cascade-lab/trajectory-xray.js','/games/cascade-lab/mission-director.js'] : route === '/games/signal-run/' ? ['/games/signal-run/game.js'] : isGodot ? ['/games/null-shift-godot/index.js', '/games/null-shift-godot/index.wasm', '/games/null-shift-godot/index.pck'] : route.startsWith('/games/null-shift') ? ['/games/null-shift/styles.css', '/games/null-shift/game.js', '/games/null-shift/engine-3d.js'] : route.startsWith('/games/invite/') && route !== '/games/invite/invite-landing.js' ? ['/games/invite/invite-landing.js', '/games/share-cards/' + (route.split('/')[3] || 'catalog') + '.png'] : []
     const assetChecks = await Promise.all(assetPaths.map(async path => {
       const expectedType = path.endsWith('.css') ? 'text/css' : path.endsWith('.json') ? 'json' : path.endsWith('.js') ? 'javascript' : path.endsWith('.png') ? 'png' : path.endsWith('.wasm') ? 'wasm' : path.endsWith('.pck') ? 'pack' : 'font'
       // Large immutable artifacts only need an existence/MIME/size check. HEAD avoids
@@ -291,7 +291,13 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
               ? content.includes('.og-expedition-band') && content.includes('prefers-reduced-motion:reduce')
               : path.endsWith('.css')
               ? normalized.includes('--acid:#c8ff3d') && normalized.includes('/skillcred/fonts/intervariable.woff2') && normalized.includes('/skillcred/fonts/instrumentserif-italic.woff2') && normalized.includes('/skillcred/fonts/jetbrainsmono-regular.woff2') && (!expectCurrentDesign || (normalized.includes('--hero-size:clamp(88px,6vw,104px)') && normalized.replace(/["']/g, '').includes('.trust-spine[data-state=revoked]')))
-              : content.includes('demo/issue') && content.includes('data-clock-step')
+              : path === '/games/cascade-lab/case-passport.js'
+              ? content.includes("const VERSION='0.21.0'") && content.includes("const SCHEMA='osgard.cascade-lab.case-passport.v1'") && content.includes('function verifyPassport(') && !content.includes('fetch(') && !content.includes('sendBeacon(')
+            : path === '/games/cascade-lab/trajectory-xray.js'
+              ? content.includes("const VERSION = '0.22.0'") && content.includes("const SCHEMA = 'osgard.cascade-lab.trajectory-xray.v1'") && content.includes('function trajectoryDeviation(') && !content.includes('fetch(') && !content.includes('sendBeacon(')
+            : path === '/games/cascade-lab/mission-director.js'
+              ? content.includes("const VERSION='0.23.0'") && content.includes("const SCHEMA='osgard.cascade-lab.mission-director.v1'") && content.includes('function buildRecommendations') && content.includes('function observeContract') && !content.includes('fetch(') && !content.includes('sendBeacon(') && !content.includes('.innerHTML')
+            : content.includes('demo/issue') && content.includes('data-clock-step')
       }
       return { path, status: asset.status, contentType, ok: asset.status === 200 && typeOk && nonEmpty }
     }))
