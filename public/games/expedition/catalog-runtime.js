@@ -1,0 +1,40 @@
+(() => {
+'use strict';
+const core=window.OSGARDExpeditionCore;
+if(!core||!document.querySelector('#games-grid'))return;
+const params=new URLSearchParams(location.search);
+const route=core.parseRoute(params.get('og_expedition')||'',params.get('og_expedition_theme')||'discovery');
+if(!route)return;
+if(params.get('og_expedition_code')&&params.get('og_expedition_code')!==route.code)return;
+if(!document.querySelector('link[data-expedition-runtime-css]')){const link=document.createElement('link');link.rel='stylesheet';link.href='/games/expedition/expedition.css';link.dataset.expeditionRuntimeCss='1';document.head.append(link)}
+const key='osgard.games.expedition-progress.v1:'+route.code,$=selector=>document.querySelector(selector);
+function readProgress(){try{return core.normalizeProgress(route,JSON.parse(localStorage.getItem(key)||'null'))}catch{return core.normalizeProgress(route,null)}}
+function storeProgress(value){try{localStorage.setItem(key,JSON.stringify(value));return true}catch{return false}}
+function randomHex(bytes){const data=new Uint8Array(bytes);try{crypto.getRandomValues(data)}catch{for(let i=0;i<data.length;i++)data[i]=Math.floor(Math.random()*256)}return Array.from(data,v=>v.toString(16).padStart(2,'0')).join('')}
+function track(name,gameId,stage){try{if(localStorage.getItem('osgard.games.analytics-consent.v1')!=='yes')return;const queue=window.OSGARD_CONSENTED_ANALYTICS;if(!queue||typeof queue.enqueue!=='function')return;let sid=sessionStorage.getItem('osgard.games.expedition-session.v1')||'';if(!/^session_[a-f0-9]{24}$/.test(sid)){sid='session_'+randomHex(12);sessionStorage.setItem('osgard.games.expedition-session.v1',sid)}void queue.enqueue({eventId:'evt_'+randomHex(12),name,sessionId:sid,gameId:gameId||route.ids[0],source:('expedition:'+route.code+(stage?':stage-'+stage:'')).slice(0,80),path:location.pathname,durationSeconds:0})}catch{}}
+const stageTitle=route.ids.map(id=>core.GAMES.find(game=>game.id===id).title).join(' → ');
+const section=document.createElement('section');section.className='og-expedition-band';section.dataset.theme=route.theme;section.setAttribute('aria-labelledby','og-expedition-title');
+const top=document.createElement('div');top.className='og-expedition-top';const headline=document.createElement('div'),eyebrow=document.createElement('p'),title=document.createElement('h2'),copy=document.createElement('p');
+eyebrow.className='og-expedition-eyebrow';eyebrow.textContent='OSGARD PLAY / EXPEDITION RELAY · '+route.code.toUpperCase();title.id='og-expedition-title';title.textContent='Твоя экспедиция';copy.textContent=core.THEMES[route.theme].description+' Маршрут: '+stageTitle+'. Прогресс сохраняется на этом устройстве только после завершения текущего игрового раунда.';headline.append(eyebrow,title,copy);
+const label=document.createElement('span');label.className='og-expedition-progress-label';top.append(headline,label);
+const meter=document.createElement('div');meter.className='og-expedition-meter';meter.setAttribute('role','progressbar');meter.setAttribute('aria-label','Прогресс экспедиции');meter.setAttribute('aria-valuemin','0');meter.setAttribute('aria-valuemax',String(route.ids.length));const fill=document.createElement('span');meter.append(fill);
+const stages=document.createElement('ol');stages.className='og-expedition-stages';const actions=document.createElement('div');actions.className='og-expedition-actions';
+const start=document.createElement('button');start.type='button';start.className='exp-btn exp-btn-primary';start.id='og-expedition-start';
+const share=document.createElement('button');share.type='button';share.className='exp-btn';share.textContent='Поделиться маршрутом ↗';
+const edit=document.createElement('a');edit.className='exp-btn';edit.textContent='Изменить экспедицию ↗';edit.href=core.routePageUrl(route,location.origin);
+const status=document.createElement('p');status.className='og-expedition-status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');actions.append(start,share,edit);section.append(top,meter,stages,actions,status);
+const hero=document.querySelector('.hero');if(hero)hero.insertAdjacentElement('afterend',section);else document.querySelector('#games-grid').before(section);
+let progress=readProgress();
+function render(message){
+ stages.replaceChildren();
+ route.ids.forEach((id,index)=>{const game=core.GAMES.find(item=>item.id===id),item=document.createElement('li'),no=document.createElement('span'),name=document.createElement('strong'),detail=document.createElement('span');item.className='og-expedition-stage'+(index<progress.nextIndex?' is-done':index===progress.nextIndex&&!progress.complete?' is-current':'');no.className='og-expedition-stage-no';no.textContent='STAGE '+String(index+1).padStart(2,'0');name.textContent=game.title;detail.textContent=index<progress.nextIndex?'Этап завершён на этом устройстве':index===progress.nextIndex&&!progress.complete?'Следующий этап · готов к запуску':'Сначала заверши предыдущий этап';item.append(no,name,detail);stages.append(item)});
+ label.textContent=String(progress.nextIndex).padStart(2,'0')+' / '+String(route.ids.length).padStart(2,'0');meter.setAttribute('aria-valuenow',String(progress.nextIndex));fill.style.width=(progress.nextIndex/route.ids.length*100)+'%';start.disabled=progress.complete;start.textContent=progress.complete?'Экспедиция пройдена ✓':'Запустить этап '+String(progress.nextIndex+1).padStart(2,'0')+' ↗';status.textContent=message||(progress.complete?'Маршрут завершён. Собери новый или передай этот маршрут другому игроку.':progress.nextIndex?'Есть прогресс на этом устройстве. Следующий этап не запускается автоматически.':'Маршрут готов. Ты сам управляешь началом каждого этапа.');
+}
+function launchNext(){progress=readProgress();if(progress.complete)return;const game=core.GAMES.find(item=>item.id===route.ids[progress.nextIndex]);if(!game)return;status.textContent='Запускается '+game.title+'. Этап отметится только после реального события завершения игры.';if(window.OSGARDGames&&typeof window.OSGARDGames.open==='function')window.OSGARDGames.open(game.id,new URL(game.href,location.origin).href,{source:'expedition',routeCode:route.code,stage:progress.nextIndex+1});else location.href=new URL(game.href,location.origin).href}
+async function shareRoute(){const url=core.routePageUrl(route,location.origin),message='Пойдём пройдём экспедицию в OSGARD PLAY: '+stageTitle;try{if(typeof navigator.share==='function'){await navigator.share({title:'OSGARD PLAY · EXPEDITION',text:message,url});status.textContent='Окно отправки закрыто. Факт публикации не подтверждается автоматически.'}else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(url);status.textContent='Ссылка на экспедицию скопирована.'}else status.textContent='Скопируй маршрут через редактор экспедиции.';track('expedition_share_intent',route.ids[progress.nextIndex]||route.ids[0],progress.nextIndex+1)}catch(error){if(error?.name!=='AbortError')status.textContent='Не удалось открыть отправку. Используй редактор экспедиции.'}}
+start.addEventListener('click',launchNext);share.addEventListener('click',()=>void shareRoute());
+document.addEventListener('osgard:game-completed',event=>{const detail=event.detail||{},next=core.advanceProgress(route,progress,detail.game,detail.sessionId);if(!next.changed)return;progress=next.state;storeProgress(progress);track('expedition_stage_completed',detail.game,next.stageIndex+1);render('Завершение подтверждено сигналом игрового плеера. Следующий этап открыт.')});
+document.addEventListener('osgard:game-level-completed',()=>{status.textContent='Уровень завершён; экспедиция ждёт завершения самой игры.'});
+window.addEventListener('storage',event=>{if(event.key===key){progress=readProgress();render()}});
+render();track('expedition_link_opened',route.ids[0],'expedition:'+route.code);
+})();

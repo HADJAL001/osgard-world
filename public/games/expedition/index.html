@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#080a0b">
+  <meta name="description" content="Собери персональную экспедицию из игровых миров OSGARD PLAY, передай другу один маршрут и проходи этапы по порядку.">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://osgard.world/games/expedition/">
+  <link rel="icon" href="/games/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="OSGARD PLAY">
+  <meta property="og:title" content="OSGARD PLAY — Конструктор экспедиций">
+  <meta property="og:description" content="Собери маршрут из двух–пяти игровых миров, передай вызов другу и открывай этап за этапом.">
+  <meta property="og:url" content="https://osgard.world/games/expedition/">
+  <meta property="og:image" content="https://osgard.world/games/share-cards/catalog.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <title>OSGARD PLAY — Конструктор экспедиций</title>
+  <link rel="stylesheet" href="/games/expedition/expedition.css">
+</head>
+<body class="expedition-page">
+  <a class="exp-skip" href="#expedition-builder">Перейти к конструктору</a>
+  <header class="exp-header">
+    <a class="exp-brand" href="/games/" aria-label="OSGARD PLAY — каталог">
+      <span class="exp-mark" aria-hidden="true">O</span>
+      <span><strong>OSGARD</strong><small>WORLD / PLAY</small></span>
+    </a>
+    <nav aria-label="Навигация"><a href="/games/">Игровые миры</a><a href="/entertainment/">Развлечения</a><a href="/games/ecosystem/">Экосистема</a></nav>
+  </header>
+  <main id="expedition-builder" class="exp-shell">
+    <section class="exp-hero">
+      <div class="exp-orbit-art" aria-hidden="true"><span class="exp-orbit exp-orbit-a"></span><span class="exp-orbit exp-orbit-b"></span><span class="exp-orbit exp-orbit-c"></span><span class="exp-core">OSG<br><small>FIELD / 01</small></span><span class="exp-coordinate exp-coordinate-a">ROUTE DATA</span><span class="exp-coordinate exp-coordinate-b">2—5 WORLDS</span></div>
+      <div class="exp-hero-copy"><p class="exp-kicker">OSGARD PLAY / EXPEDITION RELAY</p><h1>Не просто игра.<br><em>Собери маршрут.</em></h1><p class="exp-lede">Выбери от двух до пяти игровых миров, задай порядок и передай другу одну ссылку. Экспедиция будет двигаться дальше только после реального сигнала завершения игры.</p><div class="exp-facts"><span>01 / СОБСТВЕННЫЕ ИГРЫ</span><span>02 / ОДНА ССЫЛКА</span><span>03 / ПРОГРЕСС НА ЭТОМ УСТРОЙСТВЕ</span></div></div>
+    </section>
+    <section class="exp-builder-grid">
+      <div class="exp-panel exp-select-panel">
+        <div class="exp-panel-head"><div><p class="exp-kicker">01 / ROUTE DESIGN</p><h2>Собери экспедицию</h2><p>Отметь два–пять миров. Порядок можно менять стрелками.</p></div><span class="exp-count" id="selection-count">03 / 05</span></div>
+        <div class="exp-theme-field"><label for="route-theme">Настроение маршрута</label><select id="route-theme"><option value="discovery">Путешествие — разные игровые жанры</option><option value="night">Ночная операция — напряжённый маршрут</option><option value="systems">Системный вызов — стратегия и логика</option><option value="arcade">Реакция и скорость — короткие раунды</option></select></div>
+        <div id="game-options" class="exp-game-options" aria-label="Доступные игровые миры"></div>
+        <div class="exp-build-actions"><button id="build-route" class="exp-btn exp-btn-primary" type="button">Собрать экспедицию ↗</button><button id="reset-route" class="exp-btn exp-btn-quiet" type="button">Сбросить</button></div>
+        <p id="exp-status" class="exp-status" role="status" aria-live="polite">Выбери порядок, затем собери ссылку для себя или друга.</p>
+      </div>
+      <aside class="exp-panel exp-preview-panel"><p class="exp-kicker">02 / MISSION PREVIEW</p><h2>Этапы маршрута</h2><p class="exp-muted">Предпросмотр — это план, а не заявка на пройденные игры.</p><ol id="stage-preview" class="exp-stage-list"></ol><div class="exp-preview-foot"><span>OSGARD / FIELD ROUTE</span><span id="preview-length">3 STAGES</span></div></aside>
+    </section>
+    <section id="share-panel" class="exp-panel exp-share-panel" hidden aria-labelledby="share-title">
+      <div class="exp-share-heading"><div><p class="exp-kicker">03 / INVITE RELAY</p><h2 id="share-title">Маршрут готов к передаче.</h2><p id="share-description" class="exp-muted">Ссылка откроет этот маршрут, а друг сам решит, когда начать.</p></div><div class="exp-route-stamp"><span>ROUTE CODE</span><strong id="route-code">00000000</strong></div></div>
+      <ol id="share-stage-list" class="exp-share-stages"></ol>
+      <label class="exp-url-label" for="route-url">Персональная ссылка экспедиции</label><div class="exp-copy-field"><input id="route-url" type="url" readonly spellcheck="false"><button id="copy-route" class="exp-btn" type="button">Копировать</button></div>
+      <div class="exp-share-actions"><a id="open-catalog" class="exp-btn exp-btn-primary" href="/games/">Открыть маршрут в PLAY ↗</a><button id="native-share" class="exp-btn" type="button">Системное меню ↗</button><a id="share-telegram" class="exp-btn exp-network" target="_blank" rel="noopener noreferrer" href="#">Telegram ↗</a><a id="share-whatsapp" class="exp-btn exp-network" target="_blank" rel="noopener noreferrer" href="#">WhatsApp ↗</a><a id="share-vk" class="exp-btn exp-network" target="_blank" rel="noopener noreferrer" href="#">VK ↗</a><a id="share-x" class="exp-btn exp-network" target="_blank" rel="noopener noreferrer" href="#">X ↗</a><a id="share-facebook" class="exp-btn exp-network" target="_blank" rel="noopener noreferrer" href="#">Facebook ↗</a></div>
+      <p id="share-status" class="exp-status" role="status" aria-live="polite"></p><p class="exp-disclosure">Ссылка передаёт состав и порядок этапов. Прогресс хранится локально на устройстве игрока, не переносится по ссылке и не создаёт публичный рейтинг. Открытие соцсети не доказывает, что публикация завершена.</p>
+    </section>
+    <section class="exp-panel exp-saved-panel"><div class="exp-panel-head"><div><p class="exp-kicker">04 / YOUR ROUTES</p><h2>Недавние экспедиции</h2><p>Сохраняются только в этом браузере.</p></div></div><div id="saved-routes" class="exp-saved-routes"><p class="exp-muted">Пока нет сохранённых маршрутов.</p></div></section>
+  </main>
+  <footer class="exp-footer"><a href="/games/">← Вернуться в OSGARD PLAY</a><span>OWNED WORLDS · OWNED IDEAS · 2026</span><a href="/privacy/">Конфиденциальность</a></footer>
+  <script src="/games/expedition/core.js"></script><script src="/games/expedition/app.js"></script>
+</body>
+</html>
