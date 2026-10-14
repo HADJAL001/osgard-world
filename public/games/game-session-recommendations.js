@@ -286,6 +286,8 @@ function checkSelectConsentAfterToggle(){setTimeout(()=>{if(!hasConsent())cancel
 document.addEventListener('change',event=>{
  if(event.target&&event.target.id==='analytics-toggle'){
   checkSelectConsentAfterToggle();
+  // Re-arm visibility observers when consent changes without rebuilding or resetting the user's current filters.
+  setTimeout(()=>refreshCurrentServiceShelf(),0);
   setTimeout(()=>{const button=document.querySelector('.og-postgame-qualified-claim'),status=document.querySelector('.og-postgame-qualified-status');if(button&&status)void refreshQualifiedClaimButton(button,status)},0);
  }
 });
@@ -808,6 +810,15 @@ function servicesShelf(gameId,showPromos,completedCount){
   cardObserver=observer;
   cards.filter(card=>card.tagName==='A'&&!card.classList.contains('is-unavailable')).forEach(card=>observer.observe(card));
  }
+ section.__osgardRefreshImpressions=()=>{
+  watchSpotlight();
+  if(cardObserver){
+   cards.filter(card=>card.tagName==='A'&&!card.classList.contains('is-unavailable')&&!card.hidden).forEach(card=>{
+    cardObserver.unobserve(card);
+    cardObserver.observe(card);
+   });
+  }
+ };
  section.__osgardDispose=()=>{
   stopSpotlightWatcher();
   if(cardObserver){cardObserver.disconnect();cardObserver=null}
@@ -911,6 +922,10 @@ function refreshCurrentServiceShelf(){
  if(!titles[lastIntermissionGame])return;
  const current=root.querySelector('.og-postgame-services')||(outsideRoot&&outsideRoot.querySelector('.og-postgame-services'));
  if(!current)return;
+ if(typeof current.__osgardRefreshImpressions==='function'){
+  current.__osgardRefreshImpressions();
+  return;
+ }
  const next=servicesShelf(lastIntermissionGame,shouldShowServicePromos(readServicePreferences(),lastIntermissionCount),lastIntermissionCount);
  disposePostgameTree(current);current.replaceWith(next);
 }
