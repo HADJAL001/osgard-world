@@ -44,7 +44,7 @@ const mojibakeMarkers = ['вЂ', 'пїЅ', '\ufffd']
 for (const file of files.filter(item => item.endsWith('.html'))) {
   const html = await readFile(file, 'utf8')
   const marker = mojibakeMarkers.find(value => html.includes(value))
-  if (marker) throw new Error(\`HTML mojibake marker \${JSON.stringify(marker)} in \${relative(root, file)}\`)
+  if (marker) throw new Error(`HTML mojibake marker ${JSON.stringify(marker)} in ${relative(root, file)}`)
 }
 
 const normalizedFiles = files
