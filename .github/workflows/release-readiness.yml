@@ -30,6 +30,8 @@ jobs:
         run: npm run qa:performance-budget-tests
       - name: Test build-attestation tamper resistance
         run: npm run qa:release-attestation
+      - name: Verify premium LiveOps dashboard logic and privacy
+        run: npm run qa:liveops-dashboard
       - name: Verify Nginx fallback, English catalogue and route contracts
         run: node scripts/production-route-matrix-contract-smoke.mjs
       - name: Verify Games runtime minification and gzip integrity
