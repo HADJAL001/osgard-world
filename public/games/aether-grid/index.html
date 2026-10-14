@@ -487,6 +487,7 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
   }
   function resetPuzzle(){
     if(!won&&moves>0&&typeof window.confirm==='function'&&!window.confirm('Сбросить текущую попытку AETHER GRID? Сохранённый прогресс этого дня будет удалён.'))return;
+    // A confirmed reset must remove the saved run for this UTC puzzle day before rebuilding.
     try{localStorage.removeItem(runKeyPrefix+day)}catch{}
     buildPuzzle();toast('Исходная сетка дня восстановлена.');
   }
