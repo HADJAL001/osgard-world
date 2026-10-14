@@ -263,6 +263,7 @@ assert.ok(source.includes('const qualifiedClaims=[...current.claims,...accepted]
 assert.ok(source.includes("if(!known.has(code)){known.add(code);accepted.push(code)}") && source.includes("const amount=accepted.length*50"), 'Retrying a pending receipt must not award the same 50 SHARDS twice')
 assert.ok(source.includes('Серверное подтверждение временно недоступно; повторная проверка не начислит эти receipt-ID второй раз'), 'The player must get an explicit retry-safe status when acknowledgement temporarily fails')
 assert.ok(source.includes("const promoImpressionKeyPrefix='osgard.games.promo-impression.v1:'") && source.includes("function claimPromoImpression(key)"), 'Session-level promo impression deduplication key missing')
+assert.ok(source.includes("claimPromoImpression('spotlight-click:'+seenKey)") && source.includes("if(!hasConsent())return"), 'Spotlight CTA clicks must be deduplicated and require analytics consent')
 assert.ok(source.includes('getSessionSpotlightVariant()') && source.includes("osgard.games.select-spotlight-variant.v1"), 'Spotlight A/B cohort should remain stable across intermission rebuilds in one tab session')
 assert.ok(source.includes("claimPromoImpression('spotlight:'+seenKey)") && source.includes("claimPromoImpression('card:'+gameId+':'+serviceId)"), 'Spotlight and directory card impression deduplication must both be applied')
 const variantMatch=source.match(/function getSessionSpotlightVariant\(\)\{[\s\S]*?\n\}/)
@@ -288,6 +289,8 @@ const impressionStorage={getItem(key){return impressionValues.has(key)?impressio
 const claimImpression=vm.runInNewContext('('+impressionMatch[0]+')',{sessionStorage:impressionStorage,promoImpressionKeyPrefix:'osgard.games.promo-impression.v1:',fallbackPromoImpressions:new Set()})
 assert.equal(claimImpression('spotlight:swarm:marcosa:a'),true,'First valid exposure may be counted')
 assert.equal(claimImpression('spotlight:swarm:marcosa:a'),false,'A repeated exposure for the same session/service/variant must be deduplicated')
+assert.equal(claimImpression('spotlight-click:swarm:marcosa:a'),true,'First CTA click for a service/game/variant may be counted')
+assert.equal(claimImpression('spotlight-click:swarm:marcosa:a'),false,'Repeated CTA clicks in the same tab exposure must be deduplicated')
 assert.equal(claimImpression('card:swarm:marcosa'),true,'A separately visible directory card may be measured once')
 const deniedImpressionStorage={getItem(){throw new Error('blocked')},setItem(){throw new Error('blocked')}}
 const claimImpressionDenied=vm.runInNewContext('('+impressionMatch[0]+')',{sessionStorage:deniedImpressionStorage,promoImpressionKeyPrefix:'osgard.games.promo-impression.v1:',fallbackPromoImpressions:new Set()})
