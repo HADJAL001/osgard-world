@@ -342,3 +342,11 @@ The runtime smoke now checks combo thresholds, critical damage, the charge gate,
 - Calibrated the weapon ray to the vertical centerline of the actual hostile capsule. Shorter Stalker/Ranger silhouettes can now be hit by the same horizontal ray, instead of relying on the taller Heavy/Warden hitboxes.
 - Critical damage now requires the current aimed/locked hostile plus an upper-zone ray intersection; simply damaging an enemy through the helper does not masquerade as a precision shot.
 - Added an end-to-end headless test that positions a compact hostile, fires the real weapon ray, and verifies shot count, confirmed hit, two-point precision damage and critical telemetry, then restores the simulation state.
+
+
+## Release 2.7 — line-of-sight Overdrive chain arcs
+
+- Added a new combat mechanic to the Godot runtime: while the timed Overdrive is active, a confirmed weapon hit can conduct one violet arc to the nearest secondary guard within 7.5 metres.
+- The secondary hit uses 55% of regular Overdrive damage, rounded to at least one hit point. The arc respects physics line-of-sight and stops at solid geometry. It reuses the existing bounded beam, particle, ring and impact-light pools; it does not create a new per-hit node pool.
+- The chain is deliberately one hop only and never records a second fired shot, so accuracy and shot counts remain true to player input. The diagnostics HUD exposes the total successful arc count.
+- Added headless Godot runtime tests for the visible-target arc, reduced secondary damage, accuracy accounting, wall occlusion and inactive-Overdrive case, plus static source-contract guards.

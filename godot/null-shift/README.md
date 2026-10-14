@@ -232,3 +232,8 @@ Weapon fire and other transient beams use two crossed triangle ribbons plus a cr
 ## Release note — reactive operator rim lighting
 
 The Godot scene uses one shadowless OmniLight3D accent parented to the animated operator rig. The cyan rim improves suit separation against the dark arena; it shifts toward amber/red near a charging/active conduit or at low health. NULL SHIFT pushes the light toward violet, and dash briefly lifts it toward a cool white highlight. The light shares the existing local-light budget and is disabled in Performance and adaptive-degraded profiles. The headless runtime smoke checks rig attachment, state-driven energy/colour changes and quality gating. This is live scene lighting, not a baked screenshot or a claim of native 8K rendering.
+
+
+## Release 2.7 — Overdrive chain arcs
+
+While Overdrive is active, a weapon hit on a guard can conduct a single violet arc to the nearest other hostile within 7.5 metres. The secondary hit deals 55% of the normal Overdrive damage (rounded to a minimum of one point), uses the existing beam/spark/light pools, and requires an unobstructed physics ray to the second guard. One shot never fans out recursively, the arc cannot hit the primary target again, and secondary damage does not increment fired-shot/weapon-accuracy counters. The live diagnostics panel tracks successful arcs.

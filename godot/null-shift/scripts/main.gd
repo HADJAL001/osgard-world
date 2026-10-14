@@ -18,6 +18,8 @@ const PULSE_LANE_DISRUPTION_RANGE := 1.75
 const COMBAT_COMBO_WINDOW := 4.25
 const OVERDRIVE_MAX_CHARGE := 100.0
 const OVERDRIVE_DURATION := 5.0
+const OVERDRIVE_ARC_RADIUS := 7.5
+const OVERDRIVE_ARC_DAMAGE_SCALE := 0.55
 
 var player: CharacterBody3D
 var camera: Camera3D
@@ -157,6 +159,7 @@ var combo_breaks := 0
 var overdrive_charge := 0.0
 var overdrive_timer := 0.0
 var overdrive_activations := 0
+var overdrive_arc_chains := 0
 var mission_accuracy := 100.0
 var mission_score := 0
 var combat_score_total := 0
@@ -314,6 +317,7 @@ func _reset_runtime_collections() -> void:
 	overdrive_charge = 0.0
 	overdrive_timer = 0.0
 	overdrive_activations = 0
+	overdrive_arc_chains = 0
 	mission_accuracy = 100.0
 	mission_score = 0
 	combat_score_total = 0
@@ -2074,6 +2078,8 @@ func _fire_weapon() -> void:
 			if is_combat_hit and _is_hostile_target(collider as Node) and collider is Node3D:
 				var hit_position: Vector3 = hit["position"]
 				critical_hit = aim_target_node == (collider as Node3D) and hit_position.y >= (collider as Node3D).global_position.y + 0.42
+				if overdrive_timer > 0.0:
+					_try_overdrive_chain(collider as Node, beam_end)
 			_damage_target(collider as Node, critical_hit)
 	_record_weapon_shot(is_combat_hit)
 	_spawn_beam(from, beam_end, materials["cyan"], 0.09)
@@ -2084,11 +2090,59 @@ func _fire_weapon() -> void:
 		crosshair_hit_timer = 0.12
 	_play_sfx(680.0, 0.055, 0.08)
 
-func _damage_target(target: Node, critical_hit: bool = false) -> void:
+func _try_overdrive_chain(primary_target: Node, hit_position: Vector3) -> bool:
+	if overdrive_timer <= 0.0 or paused_game or mission_finished or not is_instance_valid(primary_target):
+		return false
+	if not (primary_target is CollisionObject3D):
+		return false
+	var source_is_hostile := false
+	for guard in guards:
+		if guard.get("node") == primary_target:
+			source_is_hostile = true
+			break
+	if not source_is_hostile:
+		return false
+	var primary_body := primary_target as CollisionObject3D
+	var best_body: Node3D
+	var best_distance := OVERDRIVE_ARC_RADIUS
+	for guard in guards:
+		var candidate := guard.get("node") as Node3D
+		if not is_instance_valid(candidate) or candidate == primary_target or int(guard.get("hp", 0)) <= 0:
+			continue
+		var target_point: Vector3 = candidate.global_position + Vector3.UP * 0.55
+		var distance_to_candidate: float = hit_position.distance_to(target_point)
+		if distance_to_candidate >= best_distance:
+			continue
+		var ray := PhysicsRayQueryParameters3D.create(hit_position, target_point)
+		var excluded: Array[RID] = [player.get_rid(), primary_body.get_rid()]
+		ray.exclude = excluded
+		ray.collision_mask = 3
+		var obstruction: Dictionary = get_world_3d().direct_space_state.intersect_ray(ray)
+		if obstruction.is_empty() or obstruction.get("collider") != candidate:
+			continue
+		best_body = candidate
+		best_distance = distance_to_candidate
+	if not is_instance_valid(best_body):
+		return false
+	var arc_end: Vector3 = best_body.global_position + Vector3.UP * 0.62
+	_spawn_beam(hit_position, arc_end, materials["violet"], 0.16)
+	_spawn_hit_sparks(arc_end, materials["violet"])
+	_spawn_impact_light(arc_end, Color(0.68, 0.34, 1.0), 1.65, 3.6, 0.16)
+	_spawn_ring_burst(best_body.global_position + Vector3.UP * 0.12, materials["violet"])
+	overdrive_arc_chains += 1
+	objective_text = "OVERDRIVE ARC · ЦЕПНАЯ ДУГА ПОРАЗИЛА ВТОРУЮ ЦЕЛЬ"
+	_screen_impulse(0.025, 0.055)
+	_play_sfx(345.0, 0.11, 0.08)
+	_damage_target(best_body, false, OVERDRIVE_ARC_DAMAGE_SCALE)
+	_update_hud()
+	return true
+
+func _damage_target(target: Node, critical_hit: bool = false, damage_scale: float = 1.0) -> void:
 	for index in range(guards.size() - 1, -1, -1):
 		var guard: Dictionary = guards[index]
 		if guard["node"] == target:
-			var damage_points: int = _combat_damage_per_hit(critical_hit, overdrive_timer > 0.0)
+			var base_damage_points: int = _combat_damage_per_hit(critical_hit, overdrive_timer > 0.0)
+			var damage_points: int = maxi(1, roundi(float(base_damage_points) * clampf(damage_scale, 0.0, 1.0)))
 			guard["hp"] = int(guard["hp"]) - damage_points
 			if critical_hit:
 				critical_hits += 1
@@ -4068,10 +4122,10 @@ func _update_hud() -> void:
 		var active_impact_lights: int = _active_impact_light_count()
 		var operator_rim_active: int = int(is_instance_valid(operator_rim_light) and operator_rim_light.visible)
 		var profile: String = "PERFORMANCE" if performance_quality else ("BALANCED" if not cinematic_quality else ("AUTO-OPTIMIZED" if adaptive_quality_degraded else "CINEMATIC"))
-		diagnostics_label.text = "LIVE DIAGNOSTICS\nFPS        %02d\nFRAME P95  %.1f ms\nFRAME NOW  %.1f ms\nDRAW CALLS %d\nFX ACTIVE  %02d\nFX POOLS   %02d BEAM / %02d RING / %02d SPARK\nFX DROPPED %d\nDASH TRAILS %04d\nGUARDS     %d\nDEVICES    %d\nLANE SUPPRESS %03d\nDASH EVADES %d\nDASH CD    %.1f s\nHIT LIGHTS %d / %d POOL\nOPERATOR RIM %d / 1\nPROFILE    %s" % [
+		diagnostics_label.text = "LIVE DIAGNOSTICS\nFPS        %02d\nFRAME P95  %.1f ms\nFRAME NOW  %.1f ms\nDRAW CALLS %d\nFX ACTIVE  %02d\nFX POOLS   %02d BEAM / %02d RING / %02d SPARK\nFX DROPPED %d\nDASH TRAILS %04d\nGUARDS     %d\nDEVICES    %d\nLANE SUPPRESS %03d\nDASH EVADES %d\nDASH CD    %.1f s\nHIT LIGHTS %d / %d POOL\nOPERATOR RIM %d / 1\nOVERDRIVE ARCS %d\nPROFILE    %s" % [
 			Engine.get_frames_per_second(), fps_p95_ms, current_frame_ms, draw_calls,
 			effects.size(), beam_pool.size(), ring_pool.size(), spark_pool.size(), effect_pool_exhaustions,
-			dash_trails_emitted, guards.size(), _living_device_count(), phase_lane_disruptions, dash_evasions, dash_cooldown, active_impact_lights, impact_light_pool.size(), operator_rim_active, profile
+			dash_trails_emitted, guards.size(), _living_device_count(), phase_lane_disruptions, dash_evasions, dash_cooldown, active_impact_lights, impact_light_pool.size(), operator_rim_active, overdrive_arc_chains, profile
 		]
 
 func _update_input_hint() -> void:

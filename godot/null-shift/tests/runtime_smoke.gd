@@ -975,6 +975,70 @@ func _run_smoke() -> void:
 		return
 	if not _expect(game._effective_guard_speed(game.guards[0]) < float(game.guards[0]["speed"]), "active Overdrive must slow enemy movement in the live guard simulation"):
 		return
+
+	print("RUNTIME_STAGE: Overdrive chain arc and line of sight")
+	var chain_primary: CharacterBody3D = game.guards[0]["node"] as CharacterBody3D
+	var chain_secondary: CharacterBody3D = game.guards[1]["node"] as CharacterBody3D
+	var primary_saved_position: Vector3 = chain_primary.global_position
+	var secondary_saved_position: Vector3 = chain_secondary.global_position
+	var primary_saved_stun: float = float(game.guards[0].get("stun", 0.0))
+	var secondary_saved_stun: float = float(game.guards[1].get("stun", 0.0))
+	var secondary_saved_hp: int = int(game.guards[1]["hp"])
+	var secondary_saved_max_hp: int = int(game.guards[1].get("max_hp", secondary_saved_hp))
+	chain_primary.global_position = game.player.global_position + Vector3(4.0, 0.0, 0.0)
+	chain_secondary.global_position = game.player.global_position + Vector3(6.0, 0.0, 0.0)
+	game.guards[0]["stun"] = 30.0
+	game.guards[1]["stun"] = 30.0
+	game.guards[1]["hp"] = 5
+	game.guards[1]["max_hp"] = 5
+	game.overdrive_timer = game.OVERDRIVE_DURATION
+	await physics_frame
+	var arcs_before: int = game.overdrive_arc_chains
+	var shots_before_arc: int = game.shots_fired
+	var hits_before_arc: int = game.shots_hit
+	var primary_hit_position: Vector3 = chain_primary.global_position + Vector3.UP * 0.55
+	var arc_connected: bool = game._try_overdrive_chain(chain_primary, primary_hit_position)
+	var expected_arc_damage: int = maxi(1, roundi(float(game._combat_damage_per_hit(false, true)) * game.OVERDRIVE_ARC_DAMAGE_SCALE))
+	if not _expect(arc_connected and game.overdrive_arc_chains == arcs_before + 1 and int(game.guards[1]["hp"]) == 5 - expected_arc_damage, "active Overdrive must chain one reduced-damage arc to the nearest visible secondary hostile"):
+		return
+	if not _expect(game.shots_fired == shots_before_arc and game.shots_hit == hits_before_arc, "secondary arc damage must not fabricate extra fired shots or inflate weapon accuracy"):
+		return
+	var saved_diagnostics: bool = game.diagnostics_enabled
+	game.diagnostics_enabled = true
+	game._update_hud()
+	if not _expect(game.diagnostics_label.text.contains("OVERDRIVE ARCS %d" % (arcs_before + 1)), "live diagnostics must report successful Overdrive arcs"):
+		return
+	game.diagnostics_enabled = saved_diagnostics
+	var blocker := StaticBody3D.new()
+	blocker.name = "OverdriveArcOccluderSmoke"
+	blocker.collision_layer = 1
+	blocker.collision_mask = 0
+	var blocker_shape := CollisionShape3D.new()
+	var blocker_box := BoxShape3D.new()
+	blocker_box.size = Vector3(0.8, 2.2, 1.0)
+	blocker_shape.shape = blocker_box
+	blocker.add_child(blocker_shape)
+	game.add_child(blocker)
+	blocker.global_position = (chain_primary.global_position + chain_secondary.global_position) * 0.5 + Vector3.UP * 0.45
+	game.guards[1]["hp"] = 5
+	await physics_frame
+	var blocked_arc: bool = game._try_overdrive_chain(chain_primary, primary_hit_position)
+	if not _expect(not blocked_arc and game.overdrive_arc_chains == arcs_before + 1 and int(game.guards[1]["hp"]) == 5, "opaque arena geometry must block the Overdrive arc"):
+		return
+	blocker.queue_free()
+	await physics_frame
+	game.overdrive_timer = 0.0
+	var inactive_arc: bool = game._try_overdrive_chain(chain_primary, primary_hit_position)
+	if not _expect(not inactive_arc and game.overdrive_arc_chains == arcs_before + 1, "Overdrive chain must remain inactive when its timed state is off"):
+		return
+	game.overdrive_timer = game.OVERDRIVE_DURATION
+	chain_primary.global_position = primary_saved_position
+	chain_secondary.global_position = secondary_saved_position
+	game.guards[0]["stun"] = primary_saved_stun
+	game.guards[1]["stun"] = secondary_saved_stun
+	game.guards[1]["hp"] = secondary_saved_hp
+	game.guards[1]["max_hp"] = secondary_saved_max_hp
+	game._update_hud()
 	game._update_combat_director(2.0)
 	if not _expect(game.overdrive_timer < game.OVERDRIVE_DURATION and game.overdrive_timer > 0.0, "Overdrive duration must tick down on unpaused simulation time"):
 		return
