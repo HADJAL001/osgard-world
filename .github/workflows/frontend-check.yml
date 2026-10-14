@@ -139,8 +139,8 @@ jobs:
         run: npm run qa:games-detail
       - name: Test game session clock and iframe lifecycle trust boundaries
         run: npm run qa:game-detail-runtime
-      - name: Verify monetization scenario formulas
-        run: npm run qa:games-model
+      - name: Verify premium decision dashboard, scenarios and financial exports
+        run: npm run qa:premium-dashboard
       - name: Test consent-gated commerce and referral event validation
         run: node --test services/osgard-commerce-api/test/core.test.mjs
       - name: Verify managed OSGARD SELECT promotion configuration and admin controls
