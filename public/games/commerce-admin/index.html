@@ -6,12 +6,14 @@
 <title>OSGARD Commerce · закрытая панель</title><link rel="icon" href="/games/favicon.svg" type="image/svg+xml">
 <style>
 :root{color-scheme:dark;--bg:#080a0b;--panel:#111514;--ink:#f2f0e8;--muted:#a5aaa1;--line:#ffffff20;--lime:#d3ff69;--gold:#d5bb82}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 85% 0,#30362155,transparent 35%),var(--bg);color:var(--ink);font:14px/1.6 system-ui,sans-serif}.wrap{width:min(1120px,calc(100% - 28px));margin:auto}.top{padding:20px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}.top a{color:var(--lime)}h1{font:clamp(36px,6vw,64px)/.98 Georgia,serif;font-weight:400;letter-spacing:-.04em;margin:36px 0 12px}.muted{color:var(--muted)}.panel{background:var(--panel);border:1px solid var(--line);padding:18px;margin:14px 0}.auth{display:flex;gap:10px;flex-wrap:wrap}.auth input{flex:1;min-width:220px;background:#070a09;border:1px solid var(--line);padding:13px;color:var(--ink)}button{background:var(--lime);border:1px solid var(--lime);padding:12px 18px;color:#10140b;font-weight:650;cursor:pointer}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.metric,.item{padding:14px;border:1px solid var(--line);overflow-wrap:anywhere}.metric b{display:block;font:27px/1.2 Georgia,serif;color:var(--gold)}.metric span,.item p{font-size:12px;color:var(--muted)}.list{display:grid;gap:8px}.item strong{color:var(--gold)}.item p{margin:4px 0;white-space:pre-wrap}.table-wrap{width:100%;overflow-x:auto;border:1px solid var(--line)}.analytics-table{width:100%;min-width:760px;border-collapse:collapse;font-size:11px}.analytics-table th,.analytics-table td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}.analytics-table th{color:var(--gold);font-weight:600;background:#ffffff05}.analytics-table td{color:var(--muted)}.analytics-table tbody tr:last-child td{border-bottom:0}.retention{font-size:11px;color:var(--muted);margin:0 0 14px}.status{min-height:24px;color:var(--gold)}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;color:var(--muted)}button:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-offset:3px}@media(max-width:680px){.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.panel{padding:13px}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+.readiness-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.readiness-item{border:1px solid var(--line);background:#ffffff03;padding:14px;min-width:0}.readiness-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.readiness-label{font-size:13px;color:var(--ink)}.readiness-status{display:inline-flex;flex-shrink:0;align-items:center;border:1px solid var(--line);border-radius:999px;padding:3px 8px;font:10px/1.4 ui-monospace,Consolas,monospace;color:var(--muted)}.readiness-status[data-state="ready"]{color:#c9ff8a;border-color:#c9ff8a55}.readiness-status[data-state="test_only"]{color:#94d8ff;border-color:#94d8ff55}.readiness-status[data-state="blocked"]{color:#ffb0a5;border-color:#ffb0a555}.readiness-status[data-state="armed"]{color:#ffcf7a;border-color:#ffcf7a66}.readiness-status[data-state="review_required"]{color:var(--gold);border-color:#d5bb8255}.readiness-status[data-state="not_integrated"]{color:#b9b4ff;border-color:#b9b4ff55}.readiness-item p{margin:8px 0 0;color:var(--muted);font-size:12px;line-height:1.55}.readiness-meta{font:10px/1.5 ui-monospace,Consolas,monospace;color:var(--muted)}@media(max-width:680px){.readiness-list{grid-template-columns:minmax(0,1fr)}.readiness-head{align-items:center}}
 </style></head>
 <body><div class="wrap">
 <header class="top"><strong>OSGARD WORLD / COMMERCE</strong><a href="/games/">← Игровой каталог</a></header>
 <main><h1>Контроль<br>коммерции.</h1><p class="muted">Закрытая панель заказов и заявок. Введите серверный ADMIN_API_TOKEN. Он хранится только в памяти открытой страницы — не сохраняется в браузере. Не пересылайте списки с контактными данными.</p>
 <section class="panel"><label for="token">Операторский токен</label><div class="auth"><input id="token" type="password" minlength="32" maxlength="512" autocomplete="off" placeholder="Токен из защищённых переменных сервера"><button id="load" type="button">Загрузить</button></div><p id="status" class="status" role="status" aria-live="polite"></p></section>
 <section class="panel"><h2>Сводка</h2><div class="metrics"><div class="metric"><b id="lead-total">—</b><span>Заявки, всего</span></div><div class="metric"><b id="lead-new">—</b><span>Новые заявки</span></div><div class="metric"><b id="order-total">—</b><span>Заказы</span></div><div class="metric"><b id="events-total">—</b><span>События за 30 дней</span></div></div><pre id="money"></pre></section>
+<section class="panel" id="launch-readiness" aria-labelledby="readiness-heading"><h2 id="readiness-heading">Готовность к коммерческому запуску</h2><p id="readiness-summary" class="status" role="status" aria-live="polite">Введите операторский токен и нажмите «Загрузить», чтобы получить серверный отчёт готовности.</p><div id="readiness-items" class="readiness-list"><article class="readiness-item"><strong class="readiness-label">Отчёт ещё не загружен</strong><p>Показываются только статусы, проверяемые сервером. Секреты в отчёт не входят.</p></article></div><p id="readiness-generated" class="readiness-meta">Read-only gate · no secrets · no launch flags changed</p></section>
 <section class="panel"><h2>OSGARD SELECT · 30 дней</h2><p class="retention">Собственные промо-появления считаются только после согласия на аналитику и если карточка была видна не менее чем наполовину в течение секунды. Это не показы сторонней рекламной сети.</p><div class="table-wrap"><table class="analytics-table" id="owned-promo-table"><thead><tr><th scope="col">Сервис</th><th scope="col">Игра</th><th scope="col">Видимые появления</th><th scope="col">Переходы</th><th scope="col">CTR по появлениям</th></tr></thead><tbody id="owned-promo-body"><tr><td colspan="5">Не загружено.</td></tr></tbody></table></div><div class="metrics" aria-label="Управление межигровыми предложениями"><div class="metric"><b id="owned-promo-snoozes">—</b><span>Паузы промо за 30 дней</span></div><div class="metric"><b id="owned-promo-snooze-clears">—</b><span>Возобновления промо</span></div></div><p class="retention">Пауза — добровольное действие пользователя. Учитываются только события при включённой аналитике; показатель не означает отказ от всех сервисов навсегда.</p><h3>Тест текста CTA · A/B</h3><p class="retention">Сравниваются два варианта главной кнопки OSGARD SELECT. Появление считается только при согласии и достаточной видимости; клики — по кнопке карточки. Это события, не уникальные люди.</p><div class="table-wrap"><table class="analytics-table" id="owned-promo-variant-table"><thead><tr><th scope="col">Вариант</th><th scope="col">Видимые появления</th><th scope="col">Клики по CTA</th><th scope="col">CTR</th></tr></thead><tbody id="owned-promo-variant-body"><tr><td colspan="4">Не загружено.</td></tr></tbody></table></div><p class="retention">Воронка соцсетей · только согласованные события</p><div class="metrics" aria-label="Социальные приглашения"><div class="metric"><b id="analytics-social-share-intents">—</b><span>Открытия форм публикации</span></div><div class="metric"><b id="analytics-social-reward-claims">—</b><span>Самоподтверждённые награды</span></div></div><p class="muted">Платформы соцсетей не подтверждают сайту факт публикации. Эти показатели отражают открытие формы и локальную награду после подтверждения игроком, а не проверенные репосты.</p></section>
 <section class="panel"><h2>Социальный канал · 30 дней</h2><p class="retention">Сравнивай кнопки публикации и самоподтверждённые награды по сети. «Награда / намерение» — не подтверждение реального репоста: соцсети не сообщают сайту факт публикации.</p><div class="table-wrap"><table class="analytics-table" id="social-network-table"><thead><tr><th scope="col">Канал</th><th scope="col">Открытия публикации</th><th scope="col">Запрошенные награды</th><th scope="col">Награды / открытия</th></tr></thead><tbody id="social-network-body"><tr><td colspan="4">Не загружено.</td></tr></tbody></table></div></section>
 <section class="panel"><h2>Игровая аналитика · 30 дней</h2><p id="analytics-retention" class="retention">Данные появятся после явного согласия игрока и записи событий в настроенный API.</p><div class="metrics"><div class="metric"><b id="analytics-catalog-views">—</b><span>Просмотры каталога</span></div><div class="metric"><b id="analytics-starts">—</b><span>Старты игры</span></div><div class="metric"><b id="analytics-completions">—</b><span>Завершения сессий</span></div><div class="metric"><b id="analytics-outbound-clicks">—</b><span>Переходы к проектам</span></div><div class="metric"><b id="analytics-lead-events">—</b><span>События заявок</span></div><div class="metric"><b id="analytics-premium-views">—</b><span>Просмотры Premium</span></div></div><p class="retention">Экспедиции · согласованные события за последние 30 дней · ссылки и этапы, не уникальные игроки и не доказательство фактической публикации.</p><div class="metrics" aria-label="Экспедиционный цикл"><div class="metric"><b id="analytics-expedition-created">—</b><span>Собранные маршруты</span></div><div class="metric"><b id="analytics-expedition-opened">—</b><span>Открытия маршрутов</span></div><div class="metric"><b id="analytics-expedition-shares">—</b><span>Намерения передать ссылку</span></div><div class="metric"><b id="analytics-expedition-stages">—</b><span>Завершённые этапы</span></div></div><p class="retention">Серверная награда за приглашения · 30 дней · квалифицированное завершение учитывается после открытия ссылки, начала игры и сессии не короче 30 секунд. Это не уникальные люди и не денежная выручка.</p><div class="metrics" aria-label="Серверные награды за приглашения"><div class="metric"><b id="analytics-qualified-referrals">—</b><span>Награды за приглашённые сессии</span></div><div class="metric"><b id="analytics-qualified-shards">—</b><span>Начислено косметических SHARDS</span></div></div><p class="retention">Вирусная петля · последние 30 дней · считаются уникальные коды, переданные в форму соцсети или системное меню, а не уникальные люди. Факт публикации не подтверждается автоматически.</p><div class="metrics" aria-label="Воронка приглашений"><div class="metric"><b id="analytics-invites">—</b><span>Ссылки, подготовленные для публикации</span></div><div class="metric"><b id="analytics-referral-opens">—</b><span>Ссылки с открытием</span></div><div class="metric"><b id="analytics-referred-starts">—</b><span>Ссылки со стартом игры</span></div><div class="metric"><b id="analytics-referred-completions">—</b><span>Ссылки с завершением игры</span></div><div class="metric"><b id="analytics-invite-open-rate">—</b><span>Открытие / созданные ссылки</span></div><div class="metric"><b id="analytics-invite-start-rate">—</b><span>Старт / открытые ссылки</span></div><div class="metric"><b id="analytics-invite-completion-rate">—</b><span>Завершение / старт</span></div></div><p class="muted">Учитываются только события после согласия; часть этапов может не совпадать, если согласие дано позже. Это измеряемая воронка ссылок, а не уникальная аудитория, подтверждённые рекламные показы или продажи.</p><div class="table-wrap"><table class="analytics-table" id="game-analytics-table"><thead><tr><th scope="col">Игра</th><th scope="col">События</th><th scope="col">Старты</th><th scope="col">Завершения</th><th scope="col">Средняя длительность завершённой сессии</th><th scope="col">Переходы</th><th scope="col">Сессии</th></tr></thead><tbody id="game-analytics-body"><tr><td colspan="7">Не загружено.</td></tr></tbody></table></div></section>
@@ -210,14 +212,61 @@ function renderGameAnalytics(rows) {
     body.append(row);
   }
 }
+const READINESS_LABELS = Object.freeze({
+  ready: 'ГОТОВО',
+  test_only: 'ТОЛЬКО ТЕСТ',
+  blocked: 'ЗАБЛОКИРОВАНО',
+  review_required: 'НУЖНА ПРОВЕРКА',
+  not_integrated: 'НЕ ПОДКЛЮЧЕНО',
+  armed: 'LIVE · ПРОВЕРИТЬ',
+});
+const READINESS_STATES = new Set(Object.keys(READINESS_LABELS));
+function renderReadiness(report) {
+  const root = $('#readiness-items');
+  root.replaceChildren();
+  const checks = Array.isArray(report?.checks) ? report.checks : [];
+  if (!checks.length) root.append(text('p', 'muted', 'Сервер не вернул список проверок.'));
+  for (const item of checks) {
+    const card = text('article', 'readiness-item', '');
+    const head = text('div', 'readiness-head', '');
+    head.append(text('strong', 'readiness-label', item.label || item.id || 'Проверка'));
+    const key = READINESS_STATES.has(item.status) ? item.status : 'review_required';
+    const badge = text('span', 'readiness-status', READINESS_LABELS[key]);
+    badge.dataset.state = key;
+    head.append(badge);
+    card.append(head);
+    card.append(text('p', '', item.detail || 'Описание не предоставлено.'));
+    root.append(card);
+  }
+  $('#readiness-summary').textContent = String(report?.summary || 'Сводка готовности не предоставлена.');
+  $('#readiness-generated').textContent = report?.generatedAt
+    ? 'Отчёт сформирован: ' + String(report.generatedAt) + ' UTC · read-only · секреты не возвращаются'
+    : 'Сервер не указал время проверки.';
+}
+function renderReadinessUnavailable(error) {
+  renderReadiness({
+    summary: 'Не удалось загрузить серверную готовность; это не означает, что система отключена.',
+    checks: [{
+      id: 'readiness-api',
+      label: 'Launch Readiness API',
+      status: 'blocked',
+      detail: String(error?.message || 'Маршрут ещё не развёрнут или API недоступен').slice(0, 300),
+    }],
+  });
+}
 async function load() {
   token = $('#token').value.trim();
   if (token.length < 32) { $('#status').textContent = 'Токен должен содержать не менее 32 символов.'; return; }
   $('#load').disabled = true; $('#status').textContent = 'Загружаем данные…';
   try {
-    const [overview, leads, orders] = await Promise.all([
-      api('/v1/admin/overview'), api('/v1/admin/leads?limit=30'), api('/v1/admin/orders?limit=30')
+    const [overview, leads, orders, readinessResult] = await Promise.all([
+      api('/v1/admin/overview'),
+      api('/v1/admin/leads?limit=30'),
+      api('/v1/admin/orders?limit=30'),
+      api('/v1/admin/readiness').then(data => ({ ok: true, data })).catch(error => ({ ok: false, error }))
     ]);
+    if (readinessResult.ok) renderReadiness(readinessResult.data);
+    else renderReadinessUnavailable(readinessResult.error);
     $('#lead-total').textContent = String(overview.leads?.total ?? 0);
     $('#lead-new').textContent = String(overview.leads?.new ?? 0);
     $('#order-total').textContent = String((overview.ordersByStatus || []).reduce((sum, item) => sum + Number(item.count || 0), 0));
