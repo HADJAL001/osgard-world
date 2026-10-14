@@ -51,6 +51,7 @@
     "qa:cascade-lab-dossier": "node scripts/cascade-lab-experiment-dossier-smoke.mjs",
     "qa:civic-cascade": "node scripts/civic-cascade-crisis-smoke.mjs",
     "qa:games-diagnostics": "node scripts/games-diagnostics-smoke.mjs",
+    "qa:device-fit": "node scripts/device-fit-smoke.mjs",
     "qa:cascade-lab-engineering": "node scripts/cascade-lab-engineering-suite-smoke.mjs"
   },
   "dependencies": {
