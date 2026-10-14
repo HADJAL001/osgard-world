@@ -3,6 +3,9 @@ import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import {
   PRODUCT_DEFS,
+  OWNED_PROMO_SERVICE_IDS,
+  DEFAULT_OWNED_PROMO_CONFIG,
+  validateOwnedPromoConfig,
   catalogConfiguration,
   validateCheckoutPayload,
   validateLeadPayload,
@@ -18,6 +21,42 @@ import {
   parseServiceAttributionTokenMap,
   isServiceAttributionTokenValid,
 } from "../src/core.mjs";
+
+test("owned-service promotion settings validate the public service allow-list and safe defaults", () => {
+  const defaults = validateOwnedPromoConfig({});
+  assert.equal(defaults.ok, true);
+  assert.equal(defaults.config.enabled, true);
+  assert.equal(defaults.config.defaultFrequency, "each");
+  assert.deepEqual(defaults.config.enabledServices, [...OWNED_PROMO_SERVICE_IDS]);
+  assert.deepEqual(defaults.config.defaultSelectedServices, [...OWNED_PROMO_SERVICE_IDS]);
+  assert.equal(defaults.config.spotlightService, "auto");
+  assert.equal(defaults.config.showShareRewards, true);
+  assert.deepEqual([...DEFAULT_OWNED_PROMO_CONFIG.enabledServices], [...OWNED_PROMO_SERVICE_IDS]);
+
+  const managed = validateOwnedPromoConfig({
+    enabled: true,
+    defaultFrequency: "every3",
+    enabledServices: ["marcosa", "projects", "vanguard"],
+    defaultSelectedServices: ["projects", "marcosa"],
+    spotlightService: "projects",
+    showShareRewards: false,
+  });
+  assert.equal(managed.ok, true);
+  assert.equal(managed.config.defaultFrequency, "every3");
+  assert.deepEqual(managed.config.enabledServices, ["marcosa", "projects", "vanguard"]);
+  assert.deepEqual(managed.config.defaultSelectedServices, ["projects", "marcosa"]);
+  assert.equal(managed.config.spotlightService, "projects");
+  assert.equal(managed.config.showShareRewards, false);
+
+  assert.equal(validateOwnedPromoConfig({ defaultFrequency: "hourly" }).code, "OWNED_PROMO_FREQUENCY_INVALID");
+  assert.equal(validateOwnedPromoConfig({ enabled: "true" }).code, "OWNED_PROMO_ENABLED_INVALID");
+  assert.equal(validateOwnedPromoConfig({ enabledServices: ["https://evil.example"] }).code, "OWNED_PROMO_SERVICE_NOT_ALLOWED");
+  assert.equal(validateOwnedPromoConfig({ enabledServices: ["marcosa", "marcosa"] }).code, "OWNED_PROMO_SERVICE_DUPLICATED");
+  assert.equal(validateOwnedPromoConfig({ enabledServices: ["projects"], defaultSelectedServices: ["marcosa"] }).code, "OWNED_PROMO_DEFAULT_NOT_ENABLED");
+  assert.equal(validateOwnedPromoConfig({ enabledServices: ["projects"], spotlightService: "marcosa" }).code, "OWNED_PROMO_SPOTLIGHT_NOT_ENABLED");
+  assert.equal(validateOwnedPromoConfig({ spotlightService: "../unexpected" }).code, "OWNED_PROMO_SPOTLIGHT_INVALID");
+  assert.equal(validateOwnedPromoConfig({ showShareRewards: 1 }).code, "OWNED_PROMO_REWARDS_INVALID");
+});
 
 test("catalog is a fixed server-side allow-list", () => {
   assert.deepEqual(PRODUCT_DEFS.map((item) => item.key), [
