@@ -21,6 +21,7 @@ const stressScenario = document.getElementById('stress-scenario');
 const stressUncertainty = document.getElementById('stress-uncertainty');
 let latestRiskSimulation = null;
 let riskInputsFingerprint = '';
+let riskSettingsFingerprint = '';
 const SNAPSHOT_KEY = 'osgard.monetization.snapshots.v1';
 const MAX_SNAPSHOTS = 8;
 const usd = new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
@@ -33,6 +34,14 @@ function readInputs() {
   const input = {};
   for (const [key, value] of data.entries()) input[key] = value;
   return normalizeInputs(input);
+}
+function stressSettingsKey(inputs = readInputs()) {
+  return JSON.stringify({
+    inputs,
+    iterations: Number(stressIterations.value),
+    uncertaintyPct: Number(stressUncertainty.value),
+    scenarioId: stressScenario.value,
+  });
 }
 function money(value) { return usd.format(Number.isFinite(value) ? value : 0); }
 function count(value) { return number.format(Number.isFinite(value) ? value : 0); }
@@ -280,6 +289,7 @@ function render() {
   if (latestRiskSimulation && currentRiskFingerprint !== riskInputsFingerprint) {
     latestRiskSimulation = null;
     riskInputsFingerprint = '';
+    riskSettingsFingerprint = '';
     renderStressSimulation(null);
   }
   const results = SCENARIOS.map((scenario) => ({ scenario, result: calculateScenario(inputs, scenario.id) }));
@@ -368,11 +378,21 @@ stressRunButton.addEventListener('click', () => {
     seed: 20261015,
   });
   riskInputsFingerprint = JSON.stringify(inputs);
+  riskSettingsFingerprint = stressSettingsKey(inputs);
   renderStressSimulation(latestRiskSimulation);
 });
+for (const control of [stressScenario, stressIterations, stressUncertainty]) {
+  control.addEventListener('change', () => {
+    if (latestRiskSimulation && riskSettingsFingerprint !== stressSettingsKey()) {
+      stressExportButton.disabled = true;
+      document.getElementById('stress-status').textContent =
+        'Параметры стресс-теста изменились. Запусти его повторно, чтобы обновить результаты и экспорт.';
+    }
+  });
+}
 stressExportButton.addEventListener('click', () => {
   const inputs = readInputs();
-  if (!latestRiskSimulation || riskInputsFingerprint !== JSON.stringify(inputs)) {
+  if (!latestRiskSimulation || riskInputsFingerprint !== JSON.stringify(inputs) || riskSettingsFingerprint !== stressSettingsKey(inputs)) {
     renderStressSimulation(null);
     return;
   }
@@ -414,7 +434,7 @@ exportButton.addEventListener('click', () => {
     breakEven: { baseMonthlyStartingVisitors: calculateBreakEvenMonthlyVisitors(inputs, 'base') },
     monthlyProjection: calculateMonthlyProjection(inputs, 'base', 12),
     sensitivity: calculateSensitivity(inputs, 'base', 20),
-    riskSimulation: latestRiskSimulation && riskInputsFingerprint === JSON.stringify(inputs)
+    riskSimulation: latestRiskSimulation && riskInputsFingerprint === JSON.stringify(inputs) && riskSettingsFingerprint === stressSettingsKey(inputs)
       ? { ...latestRiskSimulation, draws: undefined }
       : null,
     scenarios: SCENARIOS.map((scenario) => ({ label: scenario.label, assumptions: scenario, results: calculateScenario(inputs, scenario.id) })),
