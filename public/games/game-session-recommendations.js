@@ -626,7 +626,16 @@ function servicesShelf(gameId,showPromos,completedCount){
   const url=new URL(item[5],location.origin);url.searchParams.set('utm_source','osgard_games');url.searchParams.set('utm_medium','post_game');url.searchParams.set('utm_campaign','after_game');url.searchParams.set('utm_content',item[0]+'_'+gameId);
   open.href=url.href;open.target='_blank';open.rel='noopener noreferrer';open.dataset.service=item[0];open.dataset.game=gameId;
   open.dataset.promoVariant=variant;
-  open.addEventListener('click',()=>void sendSelectEvent('cross_promo_clicked',gameId,'osgard-select:click:'+item[0]+':'+variant));
+  open.addEventListener('click',()=>{
+   if(!hasConsent())return;
+   const seenKey=gameId+':'+item[0]+':'+variant;
+   if(!spotlight.hidden&&spotlight.isConnected&&document.visibilityState==='visible'&&claimPromoImpression('spotlight:'+seenKey)){
+    spotlightSeen.add(seenKey);clearSpotlightImpression();
+    if(spotlightObserver){spotlightObserver.disconnect();spotlightObserver=null}
+    void sendSelectEvent('owned_promo_impression',gameId,'osgard-select:spotlight:'+item[0]+':'+variant);
+   }
+   if(claimPromoImpression('spotlight-click:'+seenKey))void sendSelectEvent('cross_promo_clicked',gameId,'osgard-select:click:'+item[0]+':'+variant);
+  });
   const next=make('button','og-postgame-spotlight-next','Другой проект ↻');next.type='button';
   next.addEventListener('click',()=>{
    if(activeSelected.length<2){spotlightStatus.textContent='В настройках выбери ещё один проект, чтобы сменить рекомендацию.';return}
