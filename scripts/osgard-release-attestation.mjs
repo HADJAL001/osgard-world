@@ -96,7 +96,7 @@ function parseArgs(argv) {
   const args = argv.slice();
   const command = args.shift();
   if (!['create', 'verify'].includes(command)) {
-    throw new Error('Usage: node scripts/osgard-release-attestation.mjs <create|verify> [--root dist] [--output release-attestation.json | --input release-attestation.json]');
+    throw new Error('Usage: node scripts/osgard-release-attestation.mjs <create|verify> [--root dist] [--output release-attestation.json | --input release-attestation.json] [--contract-report osgard-contract-audit.json] [--performance-report osgard-performance-budget.json]');
   }
   const options = { command, root: resolve('dist'), output: resolve('release-attestation.json'), input: resolve('release-attestation.json'), contractReport: null, performanceReport: null };
   while (args.length) {
