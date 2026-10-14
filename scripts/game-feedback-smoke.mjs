@@ -17,6 +17,7 @@ for (const path of required) assert.ok(existsSync(resolve(path)), "Missing feedb
 const api = read("services/osgard-commerce-api/src/server.mjs");
 const validator = read("services/osgard-commerce-api/src/feedback.mjs");
 const ui = read("public/games/feedback/index.html");
+const playerFeedback = read("public/games/index.html");
 const client = read("public/games/feedback/feedback.js");
 const adminPage = read("public/games/admin/feedback/index.html");
 const admin = read("public/games/admin/feedback/admin.js");
@@ -43,6 +44,7 @@ assert.ok(!client.includes('OSGARD_CONSENTED_ANALYTICS') && !client.includes('se
 assert.ok(adminPage.includes('type="password"') && !admin.includes('localStorage') && !admin.includes('sessionStorage'), "Admin token must be ephemeral");
 assert.ok(admin.includes('textContent') && !admin.includes('innerHTML'), "Admin untrusted report fields must never be interpreted as HTML");
 assert.ok(ui.includes('name="consent"') && ui.includes('href="/privacy/"'), "Form must require acknowledgement and link privacy terms");
+assert.ok(playerFeedback.includes('id="player-feedback-link"') && playerFeedback.includes('/games/feedback/?game="+encodeURIComponent(id)'), "Player modal should retain game context when opening feedback");
 assert.ok(privacy.includes("GAME_FEEDBACK_RETENTION_DAYS") && privacy.includes("не включается в очередь игровой аналитики"), "Privacy page must disclose feedback data use and retention");
 assert.ok(ui.includes('id="export-report"') && ui.includes('id="copy-report"'), "Manual export is needed while API is not configured");
 assert.equal(config.apiBaseUrl, "", "Tests must not silently activate a production API");
