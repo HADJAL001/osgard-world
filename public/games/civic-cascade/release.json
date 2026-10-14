@@ -3,8 +3,8 @@
   "gameId": "civic-cascade",
   "title": "CIVIC CASCADE",
   "edition": "Web Edition",
-  "version": "2.2.0",
-  "releaseId": "civic-cascade-web-2.2.0",
+  "version": "2.3.0",
+  "releaseId": "civic-cascade-web-2.3.0",
   "canonicalUrl": "https://osgard.world/games/civic-cascade/",
   "detailUrl": "https://osgard.world/game/civic-cascade",
   "entrypoint": "/games/civic-cascade/",
@@ -14,7 +14,12 @@
     "htmlTitle": "CIVIC CASCADE — кризисная стратегия | OSGARD PLAY",
     "readinessMarkers": [
       "cc-game-root",
-      "cc-status"
+      "cc-status",
+      "cc-command-deck",
+      "cc-plan-action",
+      "cc-plan-add",
+      "cc-plan-list",
+      "cc-plan-execute"
     ],
     "checkpointSchema": "civic-cascade-checkpoint-v1",
     "approximateRiskForecast": true,
@@ -51,6 +56,20 @@
       "localScoringOnly": true,
       "globalLeaderboard": false,
       "attribution": "UTM parameters indicate a link campaign; they do not prove a share, unique person or referral conversion."
+    },
+    "commandPlanning": {
+      "enabled": true,
+      "queueLimit": 4,
+      "pauseRequired": true,
+      "executesActualGameActions": true,
+      "previewsDirectActionEffects": true,
+      "capturesRepairTargetAtQueueTime": true,
+      "reorderAndRemove": true,
+      "pausesOnCrisisIncident": true,
+      "remainingOrdersPreserved": true,
+      "localOnly": true,
+      "queueIncludedInCheckpoint": false,
+      "doesNotForecastFutureWeatherOrRandomIncidents": true
     }
   },
   "cinematicExport": {
@@ -91,6 +110,6 @@
   "deployment": {
     "target": "https://osgard.world",
     "mechanism": "repository push triggers the site's production deployment workflow",
-    "liveStatus": "verify release 2.2.0 with production route checks after merge and deployment"
+    "liveStatus": "verify release 2.3.0 with production route checks after deployment"
   }
 }

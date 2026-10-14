@@ -8,7 +8,7 @@
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://osgard.world/games/civic-cascade/">
 <title>CIVIC CASCADE — кризисная стратегия | OSGARD PLAY</title>
-<meta name="osgard-game-version" content="2.2.0-mission-challenges">
+<meta name="osgard-game-version" content="2.3.0-command-deck">
 <style>
 :root{color-scheme:dark;--bg:#080d10;--panel:#10191d;--panel2:#142126;--line:#ffffff1c;--ink:#edf3ee;--muted:#91a29e;--mint:#b8f4cf;--cyan:#68d8d2;--gold:#e1c58a;--warn:#f2b27c;--bad:#ff827b;--mono:ui-monospace,Consolas,monospace;--serif:Georgia,serif}
 *{box-sizing:border-box}html{background:var(--bg);scroll-behavior:smooth}body{margin:0;color:var(--ink);background:radial-gradient(ellipse at 76% -18%,#234d453d,transparent 48%),var(--bg);font:14px/1.55 Inter,Geist,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}button,select{font:inherit}button,a,select{touch-action:manipulation}a{color:inherit;text-decoration:none}button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(--mint);outline-offset:3px}.wrap{max-width:1440px;padding:0 clamp(14px,2.8vw,42px);margin:auto}
@@ -60,6 +60,15 @@
 @media(prefers-reduced-motion:reduce){.checkpoint-panel,.forecast-tile{scroll-behavior:auto;transition:none!important}}
 
 
+/* CIVIC CASCADE 2.3 — sequential command planning. */
+.command-deck{margin-top:12px;padding:15px;border:1px solid #68d8d24a;border-radius:12px;background:radial-gradient(ellipse at 100% 0%,#68d8d211,transparent 56%),linear-gradient(150deg,#0d1b1f,#0a1215);box-shadow:inset 0 1px #ffffff08}
+.command-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.command-head small{display:block;color:var(--cyan);font:8px var(--mono);letter-spacing:.13em}.command-head h3{margin:5px 0 0;font:19px var(--serif);font-weight:400}#cc-plan-status{max-width:45%;color:var(--muted);font:8px/1.5 var(--mono);text-align:right}
+.command-intro{margin:9px 0 12px;color:var(--muted);font-size:10px;line-height:1.65}.command-builder{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}.command-builder select{width:100%;min-width:0;min-height:43px;padding:0 10px;border:1px solid #ffffff25;border-radius:7px;background:#071013;color:var(--ink);font-size:10px}.command-builder .ctrl{min-height:43px;white-space:nowrap}
+.command-summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin:12px 0}.command-metric{min-width:0;padding:9px 7px;border:1px solid #ffffff12;border-radius:7px;background:#060d10}.command-metric span{display:block;color:var(--muted);font:7px var(--mono);letter-spacing:.06em}.command-metric strong{display:block;margin-top:6px;color:var(--mint);font:18px var(--serif);font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.command-metric[data-tone=warning] strong{color:var(--warn)}.command-metric[data-tone=danger] strong{color:var(--bad)}
+.command-list{display:grid;gap:6px;margin:0;padding:0;list-style:none}.command-empty{padding:13px 10px;border:1px dashed #ffffff20;border-radius:7px;color:#82928d;font-size:9px;line-height:1.6;text-align:center}.command-order{display:grid;grid-template-columns:27px minmax(0,1fr) auto;align-items:center;gap:9px;padding:9px;border:1px solid #ffffff15;border-radius:8px;background:#061013}.command-order[data-state=active]{border-color:#68d8d2a3;background:#0c2022;box-shadow:0 0 18px #68d8d20a}.command-order[data-state=done]{opacity:.58}.command-order-number{display:grid;place-items:center;width:25px;height:25px;border:1px solid #68d8d255;border-radius:50%;color:var(--cyan);font:9px var(--mono)}.command-order-copy{min-width:0}.command-order-copy strong{display:block;color:var(--ink);font-size:10px;font-weight:650}.command-order-copy small{display:block;margin-top:3px;color:var(--muted);font-size:8px;line-height:1.5}.command-order-tools{display:flex;gap:3px}.command-order-tools button{width:27px;height:27px;border:1px solid #ffffff17;border-radius:5px;background:#0c171a;color:#b7c8c1;font-size:11px;cursor:pointer}.command-order-tools button:hover:not(:disabled){border-color:#68d8d2;color:var(--cyan)}.command-order-tools button:disabled,.command-builder button:disabled,.command-footer button:disabled{opacity:.35;cursor:not-allowed}
+.command-footer{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:8px;margin-top:10px}.command-footer .ctrl{width:100%;min-height:43px;white-space:normal;line-height:1.3}.command-footer .primary{border-color:var(--cyan);background:#68d8d2;color:#071113;font-weight:750}.command-footer .primary:hover:not(:disabled){background:#a0f4ed}.command-note{margin:9px 0 0;color:#81938e;font-size:8px;line-height:1.65}
+@media(max-width:560px){.command-deck{padding:12px}.command-head{display:grid;grid-template-columns:1fr;gap:8px}#cc-plan-status{max-width:none;text-align:left}.command-builder{grid-template-columns:minmax(0,1fr)}.command-builder .ctrl{width:100%}.command-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.command-footer{grid-template-columns:1fr}.command-order{grid-template-columns:25px minmax(0,1fr)}.command-order-tools{grid-column:2;justify-content:flex-end}.command-order-copy strong{font-size:10px}}@media(prefers-reduced-motion:reduce){.command-deck,.command-order{scroll-behavior:auto;transition:none!important}}
+
 /* CIVIC CASCADE 2.1 — tactical incidents. The simulation pauses until the operator chooses. */
 .incident-card{margin:0 0 12px;padding:13px;border:1px solid #e1c58a73;background:radial-gradient(ellipse at 100% 0%,#e1c58a12,transparent 54%),linear-gradient(145deg,#201d17,#101719);box-shadow:inset 2px 0 #e1c58a55,0 12px 35px #0003}
 .incident-card[hidden]{display:none}
@@ -80,7 +89,7 @@
 @media(max-width:560px){.incident-card{padding:11px}.incident-card h4{font-size:20px}.incident-choice{min-height:48px;padding:8px}.incident-copy{font-size:10px}}
 @media(prefers-reduced-motion:reduce){.incident-card,.incident-choice{transition:none!important;animation:none!important}}
 
-/* CIVIC CASCADE 2.1.0 — cinematic field-record export */
+/* CIVIC CASCADE 2.3.0 — cinematic field-record export */
 .cc-film-panel{position:relative;margin:0 0 16px;padding:clamp(16px,2.1vw,26px);border:1px solid #b8f4cf2b;background:radial-gradient(ellipse at 90% 0%,#68d8d210,transparent 42%),linear-gradient(145deg,#ffffff06,transparent 58%),#0b1518;overflow:hidden}
 .cc-film-panel:before{content:"";position:absolute;top:0;left:0;width:108px;height:2px;background:linear-gradient(90deg,#b8f4cf,transparent)}
 .cc-film-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:8px}
@@ -153,9 +162,21 @@
 <button class="action-btn" id="cc-action-grid" data-action="grid"><span class="action-icon">ϟ</span><span class="action-copy"><b>Стабилизировать сеть</b><small>Восстанавливает мощность узлов</small></span><span class="cost">−20 ед.</span></button>
 <button class="action-btn" id="cc-action-route" data-action="route"><span class="action-icon">↗</span><span class="action-copy"><b>Открыть эвакуационный путь</b><small>Повышает доступность служб</small></span><span class="cost">−15 ед.</span></button>
 <button class="action-btn" id="cc-action-repair" data-action="repair"><span class="action-icon">⌁</span><span class="action-copy"><b>Отправить ремонтные бригады</b><small>Устраняет сбой выбранного узла</small></span><span class="cost">−12 ед.</span></button>
-</div></div><div class="controls"><button class="ctrl" id="cc-pause" type="button">Ⅱ Пауза</button><button class="ctrl" id="cc-speed" type="button">СКОРОСТЬ 1×</button><button class="ctrl" id="cc-reset" type="button">↻ Новая операция</button></div><div class="risk"><div><div class="risk-label">ИНДЕКС КРИЗИСА</div><strong id="cc-risk">61<small> / 100</small></strong></div><div class="risk-copy"><b id="cc-risk-label">РАЗВИВАЕТСЯ</b><span id="cc-risk-copy">Нагрузка на сети растёт. Выбери первичный узел.</span></div></div>
+</div></div>
+<section class="command-deck" id="cc-command-deck" aria-labelledby="cc-command-title">
+ <div class="command-head"><div><small>COMMAND DECK / SEQUENTIAL OPERATIONS · 2.3.0</small><h3 id="cc-command-title">План приказов</h3></div><span id="cc-plan-status" role="status" aria-live="polite">Постановка плана доступна на паузе</span></div>
+ <p class="command-intro">Поставь симуляцию на паузу, собери до четырёх приказов, сравни прямой прогноз воды, энергосети, доступа и бюджета, а затем исполни последовательность. Каждый приказ меняет состояние игры. Если возникнет кризисный инцидент, исполнение остановится, а оставшиеся приказы сохранятся в очереди.</p>
+ <div class="command-builder"><select id="cc-plan-action" aria-label="Приказ для добавления в очередь"><option value="pump">01 · Насосные группы — вода −12 · 18 ед.</option><option value="grid">02 · Стабилизация сети — мощность +15 · 20 ед. · бригада</option><option value="route">03 · Эвакуационный путь — доступ +17 · 15 ед.</option><option value="repair">04 · Ремонт выбранного узла — эффект по типу · 12 ед. · бригада</option></select><button class="ctrl" id="cc-plan-add" type="button">＋ Добавить приказ</button></div>
+ <div class="command-summary" aria-label="Прогноз прямых эффектов плана">
+  <div class="command-metric" id="cc-plan-cost-card"><span>РАСХОД / БЮДЖЕТ</span><strong id="cc-plan-cost">0 / 0</strong></div><div class="command-metric" id="cc-plan-water-card"><span>ВОДА ПОСЛЕ</span><strong id="cc-plan-water">—</strong></div><div class="command-metric" id="cc-plan-grid-card"><span>СЕТЬ ПОСЛЕ</span><strong id="cc-plan-grid">—</strong></div><div class="command-metric" id="cc-plan-access-card"><span>ДОСТУП ПОСЛЕ</span><strong id="cc-plan-access">—</strong></div><div class="command-metric" id="cc-plan-risk-card"><span>РИСК ПОСЛЕ</span><strong id="cc-plan-risk">—</strong></div>
+ </div>
+ <ol class="command-list" id="cc-plan-list" aria-live="polite"><li class="command-empty">Очередь пуста. Поставь игру на паузу и добавь первый приказ.</li></ol>
+ <div class="command-footer"><button class="ctrl" id="cc-plan-clear" type="button" disabled>Очистить очередь</button><button class="ctrl primary" id="cc-plan-execute" type="button" disabled>▶ Исполнить план · 0 приказов</button></div>
+ <p class="command-note" id="cc-plan-note">Прогноз показывает прямые эффекты приказов без будущих погодных изменений и случайных инцидентов. Приказ ремонта запоминает выбранный узел в момент добавления. Черновик очереди не включается в контрольную точку.</p>
+</section>
+<div class="controls"><button class="ctrl" id="cc-pause" type="button">Ⅱ Пауза</button><button class="ctrl" id="cc-speed" type="button">СКОРОСТЬ 1×</button><button class="ctrl" id="cc-reset" type="button">↻ Новая операция</button></div><div class="risk"><div><div class="risk-label">ИНДЕКС КРИЗИСА</div><strong id="cc-risk">61<small> / 100</small></strong></div><div class="risk-copy"><b id="cc-risk-label">РАЗВИВАЕТСЯ</b><span id="cc-risk-copy">Нагрузка на сети растёт. Выбери первичный узел.</span></div></div>
 <div class="checkpoint-panel" aria-label="Сохранение операции и краткосрочный прогноз">
-  <div class="checkpoint-head"><div><small>LOCAL OPERATION LAB / V2.1.0</small><strong>Контрольная точка</strong></div><span id="cc-checkpoint-status" role="status" aria-live="polite">Проверка сохранения…</span></div>
+  <div class="checkpoint-head"><div><small>LOCAL OPERATION LAB / V2.3.0</small><strong>Контрольная точка</strong></div><span id="cc-checkpoint-status" role="status" aria-live="polite">Проверка сохранения…</span></div>
   <p class="checkpoint-intro">Сохрани ход операции на этом устройстве и продолжи позже. Контрольная точка не отправляется на сервер.</p>
   <div class="checkpoint-tools"><button class="ctrl" id="cc-save" type="button">Сохранить операцию</button><button class="ctrl" id="cc-load" type="button" disabled>Восстановить сохранение</button></div>
   <div class="forecast-head"><b>ПРОГНОЗ НА 30 ИГРОВЫХ СЕКУНД</b><span>ОЦЕНКА ПО ТЕКУЩИМ ТРЕНДАМ</span></div>
@@ -172,7 +193,7 @@
 
 <section class="cc-film-panel" id="cc-film-panel" aria-labelledby="cc-film-title">
   <div class="cc-film-head">
-    <div><span class="cc-film-kicker">OSGARD PLAY / CINEMATIC FIELD RECORD · 2.2.0</span><h2 class="cc-film-title" id="cc-film-title">Запись <em>операции</em></h2></div>
+    <div><span class="cc-film-kicker">OSGARD PLAY / CINEMATIC FIELD RECORD · 2.3.0</span><h2 class="cc-film-title" id="cc-film-title">Запись <em>операции</em></h2></div>
     <div class="cc-film-status" id="cc-film-status" data-state="ready" role="status" aria-live="polite">ГОТОВО К ЗАПИСИ</div>
   </div>
   <p class="cc-film-copy">Запиши живую карту города с оперативными показателями в отдельный WebM-клип. Запись берёт текущий игровой холст и накладывает на него показатели воды, энергосети, доступа служб, запасов и риска.</p>
@@ -196,7 +217,7 @@
 
 <p class="notice">Это браузерная игровая редакция OSGARD PLAY. Показатели и последствия моделируются внутри игры и не являются реальными городскими данными. Состояние операции не отправляется на сервер.</p>
 </main>
-<footer class="footer"><span>© OSGARD WORLD / PLAY · CIVIC CASCADE WEB EDITION 2.2.0</span><span>КРИЗИСНАЯ СТРАТЕГИЯ · DESKTOP + TOUCH</span><span><a href="/games/">ВЕРНУТЬСЯ В КАТАЛОГ ↗</a></span></footer>
+<footer class="footer"><span>© OSGARD WORLD / PLAY · CIVIC CASCADE WEB EDITION 2.3.0</span><span>КРИЗИСНАЯ СТРАТЕГИЯ · DESKTOP + TOUCH</span><span><a href="/games/">ВЕРНУТЬСЯ В КАТАЛОГ ↗</a></span></footer>
 </div><div class="toast" id="cc-toast" role="status" aria-live="polite"></div>
 <script>
 (function(){
@@ -277,6 +298,8 @@ async function shareMissionChallenge(){
  }
 }
 const speeds=[1,1.5,2],buttons=['pump','grid','route','repair'];
+const PLAN_ACTIONS={pump:{label:'Развернуть насосы',detail:'Вода −12 пунктов · расход 18 ед.',cost:18,crew:0},grid:{label:'Стабилизировать энергосеть',detail:'Мощность +15 · расход 20 ед. · −1 бригада',cost:20,crew:1},route:{label:'Открыть эвакуационный путь',detail:'Доступ +17 · расход 15 ед.',cost:15,crew:0},repair:{label:'Отправить ремонтную бригаду',detail:'Эффект по типу узла · расход 12 ед. · −1 бригада',cost:12,crew:1}};
+let planOrders=[],planRunning=false,runningPlan=[],planIndex=0,planTimer=0,planNotice='',nextPlanOrderId=1;
 function clamp(n,min=0,max=100){return Math.max(min,Math.min(max,n))}
 function fmt(n){return String(Math.max(0,Math.floor(n))).padStart(2,'0')}
 function clock(s){s=Math.max(0,Math.floor(s));return fmt(Math.floor(s/60))+':'+fmt(s%60)}
@@ -394,7 +417,7 @@ function resolveIncident(choiceId){
  activeIncident=null;ui.incident.hidden=true;ui.incidentOptions.replaceChildren();paused=incidentResumePaused;incidentResumePaused=false;
  ui.status.textContent=paused?'ПАУЗА':'СИСТЕМА АКТИВНА';ui.stage.textContent=paused?'CHECKPOINT':'OPERATIONAL';$('cc-pause').textContent=paused?'▶ Продолжить':'Ⅱ Пауза';ui.incidentStatus.textContent='';
  addLog('<b>Решение принято:</b> '+choice.label+'. '+message);
- renderUI();draw(performance.now());updateCheckpointStatus();checkFinish();
+ renderUI();renderPlan();draw(performance.now());updateCheckpointStatus();checkFinish();
 }
 
 function fresh(scenario){
@@ -402,12 +425,13 @@ function fresh(scenario){
   activeChallenge=null;const banner=$('cc-challenge-banner');if(banner)banner.hidden=true;
  }
  const base=scenarioData[scenario]||scenarioData.flood;
+ if(planTimer)clearTimeout(planTimer);planTimer=0;planRunning=false;runningPlan=[];planIndex=0;planOrders=[];planNotice='Новая операция: составь свежий штабной план.';
  state={scenario:scenario,water:base.water,grid:base.grid,access:base.access,supplies:base.supplies,crews:4,maxCrews:4,waterRate:base.waterRate,gridRate:base.gridRate,accessRate:base.accessRate,riskOffset:base.riskOffset,openedRoutes:scenario==='blockade'?1:2,repairs:0,pumps:0,stabilized:0,actionCount:0,elapsed:0,score:0};
  elapsed=0;paused=false;speedIndex=0;finished=false;activeIncident=null;incidentResumePaused=false;ui.incident.hidden=true;ui.incidentOptions.replaceChildren();ui.incidentStatus.textContent='';selected=scenario==='blackout'?'substation':scenario==='blockade'?'bridge':'hub';logRows=[];particles=[];
  ui.resultOverlay.hidden=true;ui.status.textContent='СИСТЕМА АКТИВНА';ui.stage.textContent='OPERATIONAL';ui.missionTitle.textContent=base.mission;ui.missionCopy.textContent=base.copy;
  $('cc-pause').textContent='Ⅱ Пауза';$('cc-speed').textContent='СКОРОСТЬ 1×';$('cc-scenario').value=scenario;
  addLog('<b>Центр управления:</b> '+base.name+'. Операция началась, ресурсы ограничены.');
- renderUI();draw(performance.now());updateCheckpointStatus();sendLifecycle('started');lastTick=performance.now();
+ renderUI();renderPlan();draw(performance.now());updateCheckpointStatus();sendLifecycle('started');lastTick=performance.now();
 }
 function spend(amount){if(state.supplies<amount){toast('Недостаточно ресурсов. Выбери действие с меньшей стоимостью.');return false}state.supplies-=amount;return true}
 function act(action){
@@ -438,6 +462,99 @@ function act(action){
  if(crisisIncidents[state.actionCount])openIncident(crisisIncidents[state.actionCount]);
  renderUI();draw(performance.now());if(!activeIncident)checkFinish();
 }
+
+function projectedRisk(s){return Math.round(clamp(s.water*.38+(100-s.grid)*.34+(100-s.access)*.28+s.riskOffset))}
+function simulatePlannedOrders(orders){
+ const s={...state};let cost=0,valid=true;
+ for(const order of orders){
+  const meta=PLAN_ACTIONS[order.action];if(!meta){valid=false;break}
+  cost+=meta.cost;if(s.supplies<meta.cost||s.crews<meta.crew){valid=false;break}s.supplies-=meta.cost;
+  if(order.action==='pump'){s.water=clamp(s.water-12);s.waterRate=Math.max(-.02,s.waterRate-.12);s.pumps=(s.pumps||0)+1}
+  else if(order.action==='grid'){s.grid=clamp(s.grid+15);s.gridRate=Math.max(-.02,s.gridRate-.10);s.stabilized=(s.stabilized||0)+1;s.crews=Math.max(0,s.crews-1)}
+  else if(order.action==='route'){s.access=clamp(s.access+17);s.accessRate=Math.max(-.02,s.accessRate-.12);s.openedRoutes=(s.openedRoutes||0)+1}
+  else if(order.action==='repair'){
+   const node=nodes.find(n=>n.id===order.nodeId)||nodes[0];
+   if(node.type==='water'){s.water=clamp(s.water-8);s.waterRate-=.04}else if(node.type==='grid'){s.grid=clamp(s.grid+10);s.gridRate-=.04}else{s.access=clamp(s.access+9);s.accessRate-=.04}
+   s.repairs=(s.repairs||0)+1;s.crews=Math.max(0,s.crews-1);
+  }
+  const loss=Math.max(0,(s.water-55)*.5)+Math.max(0,(55-s.grid)*.36)+Math.max(0,(50-s.access)*.3);
+  s.riskOffset=clamp((s.scenario==='blackout'?6:s.scenario==='blockade'?4:0)+loss,0,50);s.actionCount=(s.actionCount||0)+1;
+ }
+ return {state:s,cost,valid,risk:projectedRisk(s)};
+}
+function planCrewDemand(orders){return orders.reduce((sum,order)=>sum+(PLAN_ACTIONS[order.action]?.crew||0),0)}
+function renderPlan(){
+ const list=$('cc-plan-list');if(!list)return;
+ const visibleOrders=planRunning?runningPlan:planOrders,previewOrders=planRunning?runningPlan.slice(planIndex):planOrders;
+ const forecast=simulatePlannedOrders(previewOrders),supply=Math.round(state.supplies||0);
+ $('cc-plan-cost').textContent=forecast.cost+' / '+supply+' ед.';$('cc-plan-water').textContent=Math.round(forecast.state.water)+'%';$('cc-plan-grid').textContent=Math.round(forecast.state.grid)+'%';$('cc-plan-access').textContent=Math.round(forecast.state.access)+'%';$('cc-plan-risk').textContent=forecast.risk+' / 100';
+ $('cc-plan-risk-card').dataset.tone=forecast.risk>=75?'danger':forecast.risk>=48?'warning':'';
+ $('cc-plan-water-card').dataset.tone=forecast.state.water>=78?'danger':forecast.state.water>=58?'warning':'';
+ $('cc-plan-grid-card').dataset.tone=forecast.state.grid<=20?'danger':forecast.state.grid<=40?'warning':'';
+ $('cc-plan-access-card').dataset.tone=forecast.state.access<=20?'danger':forecast.state.access<=40?'warning':'';
+ let status=planRunning?'ИСПОЛНЕНИЕ ПЛАНА · '+Math.min(planIndex+1,runningPlan.length)+' / '+runningPlan.length:activeIncident?'ПАУЗА ДО РЕШЕНИЯ КРИЗИСА':!paused?'ПОСТАНОВКА ПЛАНА ДОСТУПНА НА ПАУЗЕ':planOrders.length?'ГОТОВ К ИСПОЛНЕНИЮ · '+planOrders.length+' / 4':planNotice||'ОЧЕРЕДЬ ОЖИДАЕТ ПРИКАЗОВ';
+ $('cc-plan-status').textContent=status;list.replaceChildren();
+ if(!visibleOrders.length){const empty=document.createElement('li');empty.className='command-empty';empty.textContent=paused?'Очередь пуста. Добавь приказ и проверь прямой прогноз.':'Поставь симуляцию на паузу, чтобы составить план.';list.append(empty)}
+ else visibleOrders.forEach((order,index)=>{
+  const meta=PLAN_ACTIONS[order.action],li=document.createElement('li'),done=planRunning&&index<planIndex,active=planRunning&&index===planIndex;
+  li.className='command-order';li.dataset.state=done?'done':active?'active':'pending';
+  const num=document.createElement('span');num.className='command-order-number';num.textContent=String(index+1).padStart(2,'0');
+  const copy=document.createElement('div');copy.className='command-order-copy';const title=document.createElement('strong');title.textContent=meta.label;
+  const detail=document.createElement('small');detail.textContent=meta.detail+(order.action==='repair'?' · цель: '+((nodes.find(n=>n.id===order.nodeId)||nodes[0]).name):'');copy.append(title,detail);
+  const tools=document.createElement('div');tools.className='command-order-tools';
+  const up=document.createElement('button');up.type='button';up.textContent='↑';up.setAttribute('aria-label','Поднять приказ '+(index+1));up.disabled=planRunning||!paused||index===0;up.addEventListener('click',()=>movePlannedOrder(index,-1));
+  const down=document.createElement('button');down.type='button';down.textContent='↓';down.setAttribute('aria-label','Опустить приказ '+(index+1));down.disabled=planRunning||!paused||index===visibleOrders.length-1;down.addEventListener('click',()=>movePlannedOrder(index,1));
+  const remove=document.createElement('button');remove.type='button';remove.textContent='×';remove.setAttribute('aria-label','Убрать приказ '+(index+1));remove.disabled=planRunning||!paused;remove.addEventListener('click',()=>removePlannedOrder(order.id));
+  tools.append(up,down,remove);li.append(num,copy,tools);list.append(li);
+ });
+ const lock=finished||!paused||!!activeIncident||planRunning||planOrders.length>=4;
+ $('cc-plan-action').disabled=lock;$('cc-plan-add').disabled=lock;$('cc-plan-clear').disabled=planRunning||!planOrders.length;
+ $('cc-plan-execute').disabled=finished||!paused||!!activeIncident||planRunning||!planOrders.length;
+ $('cc-plan-execute').textContent=planRunning?'■ ИСПОЛНЯЕТСЯ '+Math.min(planIndex+1,runningPlan.length)+' / '+runningPlan.length:'▶ Исполнить план · '+planOrders.length+' приказ'+(planOrders.length===1?'':'а');
+}
+function addPlannedOrder(){
+ if(finished||planRunning||activeIncident)return;if(!paused){toast('Поставь симуляцию на паузу перед составлением плана.');return}
+ if(planOrders.length>=4){toast('В очереди максимум четыре приказа.');return}
+ const action=$('cc-plan-action').value,meta=PLAN_ACTIONS[action];if(!meta)return;
+ const cost=planOrders.reduce((sum,order)=>sum+PLAN_ACTIONS[order.action].cost,0);
+ if(cost+meta.cost>state.supplies){toast('План превышает остаток ресурсов.');return}
+ if(planCrewDemand(planOrders)+meta.crew>state.crews){toast('В плане больше бригад, чем доступно.');return}
+ planOrders.push({id:nextPlanOrderId++,action,nodeId:action==='repair'?selectedNode().id:null});
+ planNotice='Приказ добавлен. Проверь прямой прогноз и порядок исполнения.';renderPlan();toast('Приказ добавлен в штабную очередь.');
+}
+function movePlannedOrder(index,delta){
+ if(!paused||planRunning||index<0||index>=planOrders.length)return;const next=index+delta;if(next<0||next>=planOrders.length)return;
+ [planOrders[index],planOrders[next]]=[planOrders[next],planOrders[index]];planNotice='Порядок приказов изменён. Прогноз пересчитан.';renderPlan();
+}
+function removePlannedOrder(id){if(!paused||planRunning)return;const index=planOrders.findIndex(order=>order.id===id);if(index<0)return;planOrders.splice(index,1);planNotice='Приказ удалён из плана.';renderPlan()}
+function clearPlannedOrders(){if(planRunning)return;planOrders=[];planNotice='Очередь очищена.';renderPlan();toast('Штабной план очищен.')}
+function executePlannedOrders(){
+ if(planRunning||finished||activeIncident)return;if(!paused){toast('Поставь игру на паузу, чтобы исполнить план.');return}
+ if(!planOrders.length){toast('Сначала добавь хотя бы один приказ.');return}
+ if(!simulatePlannedOrders(planOrders).valid){toast('План не помещается в остаток ресурсов или бригад.');renderPlan();return}
+ runningPlan=planOrders.slice();planOrders=[];planRunning=true;planIndex=0;planNotice='';renderPlan();
+ const step=()=>{
+  if(!planRunning)return;
+  if(finished){planOrders=[];planRunning=false;runningPlan=[];planIndex=0;planNotice='Миссия завершилась до исполнения оставшихся приказов.';renderUI();renderPlan();return}
+  if(activeIncident){planOrders.push(...runningPlan.slice(planIndex));incidentResumePaused=true;planRunning=false;runningPlan=[];planIndex=0;paused=true;planNotice='Кризис остановил план. Разреши инцидент; неисполненные приказы сохранены.';renderUI();renderPlan();return}
+  if(planIndex>=runningPlan.length){
+   planRunning=false;runningPlan=[];planIndex=0;paused=true;ui.status.textContent='ПЛАН ВЫПОЛНЕН · СИМУЛЯЦИЯ НА ПАУЗЕ';ui.stage.textContent='CHECKPOINT';$('cc-pause').textContent='▶ Продолжить';
+   planNotice='Все приказы исполнены. Сравни конечные показатели с прогнозом.';addLog('<b>Штабной план:</b> вся очередь приказов исполнена.');renderUI();renderPlan();draw(performance.now());toast('План исполнен. Симуляция поставлена на паузу.');return;
+  }
+  const order=runningPlan[planIndex],meta=PLAN_ACTIONS[order.action];
+  if(!meta||state.supplies<meta.cost||state.crews<meta.crew){planOrders.push(...runningPlan.slice(planIndex));planRunning=false;runningPlan=[];planIndex=0;paused=true;planNotice='Остатка ресурсов или бригад не хватает. Очередь сохранена для редактирования.';renderUI();renderPlan();return}
+  const previousSelection=selected;if(order.action==='repair'&&order.nodeId)selected=order.nodeId;
+  paused=false;ui.status.textContent='ИСПОЛНЕНИЕ ПРИКАЗА';ui.stage.textContent='COMMAND '+(planIndex+1);
+  addLog('<b>Штабной приказ '+(planIndex+1)+'/'+runningPlan.length+':</b> '+meta.label+(order.action==='repair'?' · '+selectedNode().name:'')+'.');
+  act(order.action);selected=previousSelection;ui.selected.textContent='ВЫБРАНО: '+selectedNode().name.toUpperCase();
+  if(activeIncident){incidentResumePaused=true;planOrders.push(...runningPlan.slice(planIndex+1));planRunning=false;runningPlan=[];planIndex=0;paused=true;planNotice='Срочное событие прервало исполнение. После решения можно продолжить оставшиеся приказы.';renderUI();renderPlan();draw(performance.now());return}
+  if(finished){planOrders=[];planRunning=false;runningPlan=[];planIndex=0;paused=true;planNotice='Операция завершилась; оставшиеся приказы сняты с исполнения.';renderUI();renderPlan();return}
+  planIndex++;paused=true;ui.status.textContent='ПЛАН / ПАУЗА МЕЖДУ ПРИКАЗАМИ';ui.stage.textContent='CHECKPOINT';$('cc-pause').textContent='▶ Продолжить';renderUI();renderPlan();draw(performance.now());
+  if(planIndex<runningPlan.length)planTimer=setTimeout(step,540);else{step()}
+ };
+ step();
+}
+
 function renderUI(){
  const vals=[['water',state.water,ui.water,ui.waterBar,$('cc-metric-water')],['grid',state.grid,ui.grid,ui.gridBar,$('cc-metric-grid')],['access',state.access,ui.access,ui.accessBar,$('cc-metric-access')]];
  vals.forEach(([key,val,node,bar,card])=>{const value=Math.round(val);node.textContent=value+'%';bar.style.width=value+'%';card.dataset.tone=key==='water'?(value>=78?'danger':value>=58?'warning':''):(value<=20?'danger':value<=40?'warning':'')});
@@ -454,8 +571,9 @@ function renderUI(){
  if(activeIncident)$('cc-load').disabled=true;
  const goals=objectiveState();let completed=0;Object.entries(goals).forEach(([key,done])=>{const row=$('cc-objective-'+key);row.classList.toggle('done',done);if(done)completed++});
  ui.objectiveCount.textContent=completed+' / 3';
- buttons.forEach(id=>{$('cc-action-'+id).disabled=finished||paused||!!activeIncident||state.supplies<({pump:18,grid:20,route:15,repair:12}[id])||(id==='repair'&&state.crews<=0)||(id==='grid'&&state.crews<=0)});
- $('cc-pause').disabled=finished||!!activeIncident;$('cc-speed').disabled=finished||!!activeIncident;
+ buttons.forEach(id=>{$('cc-action-'+id).disabled=finished||paused||!!activeIncident||planRunning||state.supplies<({pump:18,grid:20,route:15,repair:12}[id])||(id==='repair'&&state.crews<=0)||(id==='grid'&&state.crews<=0)});
+ $('cc-pause').disabled=finished||!!activeIncident||planRunning;$('cc-speed').disabled=finished||!!activeIncident||planRunning;$('cc-reset').disabled=planRunning;$('cc-scenario').disabled=planRunning;
+ $('cc-plan-action').disabled=finished||!paused||!!activeIncident||planRunning||planOrders.length>=4;$('cc-plan-add').disabled=finished||!paused||!!activeIncident||planRunning||planOrders.length>=4;$('cc-plan-clear').disabled=planRunning||planOrders.length===0;$('cc-plan-execute').disabled=finished||!paused||!!activeIncident||planRunning||planOrders.length===0;
 }
 function checkFinish(){
  if(finished||activeIncident)return;
@@ -541,7 +659,8 @@ function pick(event){
 function sendLifecycle(status){if(window.parent===window)return;try{window.parent.postMessage({type:'osgard:game-lifecycle',game:'civic-cascade',state:status,at:Date.now()},location.origin)}catch(e){}}
 $('cc-map').addEventListener('pointerdown',pick);
 buttons.forEach(id=>$('cc-action-'+id).addEventListener('click',()=>act(id)));
-$('cc-pause').addEventListener('click',()=>{if(finished)return;paused=!paused;$('cc-pause').textContent=paused?'▶ Продолжить':'Ⅱ Пауза';ui.status.textContent=paused?'ПАУЗА':'СИСТЕМА АКТИВНА';renderUI();addLog(paused?'<b>Оператор:</b> симуляция приостановлена.':'<b>Оператор:</b> симуляция возобновлена.')});
+$('cc-plan-add').addEventListener('click',addPlannedOrder);$('cc-plan-clear').addEventListener('click',clearPlannedOrders);$('cc-plan-execute').addEventListener('click',executePlannedOrders);
+$('cc-pause').addEventListener('click',()=>{if(finished||planRunning)return;if(paused&&planOrders.length){toast('Сначала исполни очередь или очисти план перед снятием паузы.');return}paused=!paused;$('cc-pause').textContent=paused?'▶ Продолжить':'Ⅱ Пауза';ui.status.textContent=paused?'ПАУЗА':'СИСТЕМА АКТИВНА';renderUI();renderPlan();addLog(paused?'<b>Оператор:</b> симуляция приостановлена.':'<b>Оператор:</b> симуляция возобновлена.')});
 $('cc-speed').addEventListener('click',()=>{speedIndex=(speedIndex+1)%speeds.length;$('cc-speed').textContent='СКОРОСТЬ '+speeds[speedIndex]+'×';toast('Скорость симуляции: '+speeds[speedIndex]+'×')});
 $('cc-reset').addEventListener('click',()=>fresh($('cc-scenario').value));
 $('cc-scenario').addEventListener('change',e=>fresh(e.target.value));
