@@ -110,6 +110,18 @@ export function recordSession(raw, event, now = Date.now()) {
     return { progress, added: false, reason: 'not-a-started-session' };
   }
   const safeNow = Number.isFinite(now) ? now : Date.now();
+  const rawEventAt = event.at !== undefined ? event.at : event.queuedAt;
+  let sessionAt = safeNow;
+  if (rawEventAt !== undefined) {
+    const parsedAt = timestampOf(rawEventAt);
+    if (!Number.isFinite(parsedAt) || parsedAt < safeNow - PASSPORT_RETENTION_DAYS * DAY_MS) {
+      return { progress, added: false, reason: 'stale-session-event' };
+    }
+    if (parsedAt > safeNow + MAX_FUTURE_SKEW_MS) {
+      return { progress, added: false, reason: 'future-session-event' };
+    }
+    sessionAt = parsedAt;
+  }
   const suppliedId = typeof event.sessionId === 'string' && /^[a-z0-9:_-]{1,160}$/i.test(event.sessionId)
     ? event.sessionId
     : '';
@@ -117,7 +129,7 @@ export function recordSession(raw, event, now = Date.now()) {
     return { progress, added: false, reason: 'duplicate-session' };
   }
   const last = progress.sessions[progress.sessions.length - 1];
-  if (!suppliedId && last && last.gameId === event.game && safeNow >= Date.parse(last.at) && safeNow - Date.parse(last.at) < 2500) {
+  if (!suppliedId && last && last.gameId === event.game && sessionAt >= Date.parse(last.at) && sessionAt - Date.parse(last.at) < 2500) {
     return { progress, added: false, reason: 'duplicate-without-session-id' };
   }
   const sessionId = suppliedId || 'local_' + event.game + '_' + safeNow + '_' + progress.sessions.length;
@@ -125,14 +137,15 @@ export function recordSession(raw, event, now = Date.now()) {
   const item = {
     sessionId,
     gameId: event.game,
-    at: new Date(safeNow).toISOString(),
-    day: utcDayKey(safeNow),
+    at: new Date(sessionAt).toISOString(),
+    day: utcDayKey(sessionAt),
     durationSeconds: Number.isFinite(duration) && duration >= 0 ? Math.min(Math.floor(duration), MAX_SESSION_SECONDS) : 0,
     reason: ['closed_by_user', 'returned_to_catalog', 'completed', 'escape_to_catalog'].includes(event.reason)
       ? event.reason
       : 'ended'
   };
   progress.sessions.push(item);
+  progress.sessions.sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
   progress.sessions = progress.sessions.slice(-PASSPORT_MAX_SESSIONS);
   progress.updatedAt = new Date(safeNow).toISOString();
   return { progress, added: true, reason: 'recorded' };
