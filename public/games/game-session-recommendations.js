@@ -866,7 +866,32 @@ function servicesShelf(gameId,showPromos,completedCount){
  const state=make('div','og-postgame-service-empty');
  if(!showPromos)state.textContent=frequencySummary(preferences,completedCount);
  else if(!activeSelected.length)state.textContent='Сейчас ни один сервис не выбран. Открой «Настроить показ» и отметь интересующие проекты.';
- const foot=make('p','og-postgame-service-foot','Переход добровольный и открывается в новой вкладке. Результат сохраняется. Нет сторонней рекламной сети или фиктивных показов.');
+ const portfolioActions=make('div','og-postgame-portfolio-actions');
+ const portfolioCopy=make('div','og-postgame-portfolio-copy');
+ portfolioCopy.append(
+  make('p','og-postgame-portfolio-eyebrow','CONTINUE BEYOND THE ROUND / OSGARD WORLD'),
+  make('h4','og-postgame-portfolio-title','Следующий шаг — твой выбор.'),
+  make('p','og-postgame-portfolio-description','Открой каталог всех проектов или обсуди создание собственной игры, сайта или приложения.')
+ );
+ const portfolioLinks=make('div','og-postgame-portfolio-links');
+ const directoryLink=make('a','og-postgame-portfolio-link','Исследовать экосистему ↗');
+ const directoryUrl=new URL('/games/ecosystem/',location.origin);
+ directoryUrl.searchParams.set('utm_source','osgard_games');
+ directoryUrl.searchParams.set('utm_medium','post_game');
+ directoryUrl.searchParams.set('utm_campaign','between_worlds');
+ directoryUrl.searchParams.set('utm_content',gameId);
+ directoryLink.href=directoryUrl.href;directoryLink.target='_blank';directoryLink.rel='noopener noreferrer';
+ directoryLink.addEventListener('click',()=>{if(hasConsent())void sendSelectEvent('cross_promo_clicked',gameId,'osgard-select:ecosystem:'+gameId)});
+ const creationLink=make('a','og-postgame-portfolio-link is-primary','Создать свой цифровой продукт ↗');
+ const creationUrl=new URL('https://osgardbewworld.com/');
+ creationUrl.searchParams.set('utm_source','osgard_games');
+ creationUrl.searchParams.set('utm_medium','post_game');
+ creationUrl.searchParams.set('utm_campaign','custom_product_intake');
+ creationUrl.searchParams.set('utm_content',gameId);
+ creationLink.href=creationUrl.href;creationLink.target='_blank';creationLink.rel='noopener noreferrer';
+ creationLink.addEventListener('click',()=>{if(hasConsent())void sendSelectEvent('cross_promo_clicked',gameId,'osgard-select:development:'+gameId)});
+ portfolioLinks.append(directoryLink,creationLink);portfolioActions.append(portfolioCopy,portfolioLinks);
+ const foot=make('p','og-postgame-service-foot','Переход добровольный и открывается в новой вкладке. Это собственные проекты OSGARD; результаты кликов считаются только после согласия на аналитику. Нет сторонней рекламной сети или фиктивных показов.');
  const decision=make('div','og-postgame-service-decision');
  const skipButton=make('button','og-postgame-skip','Пропустить подборку');skipButton.type='button';
  const skipStatus=make('p','og-postgame-skip-status','Подборка скрыта. Игровой каталог и награда за приглашение остаются доступны.');skipStatus.hidden=true;skipStatus.setAttribute('role','status');skipStatus.setAttribute('aria-live','polite');
@@ -909,7 +934,7 @@ function servicesShelf(gameId,showPromos,completedCount){
  });
  section.append(head,settings);
  if(showPromos&&activeSelected.length)section.append(spotlight,quickPickHeading,quickPicks);
- if(showPromos&&activeSelected.length)section.append(searchLabel,filters,serviceSearchStatus,clearServiceSearch,grid,foot,decision);
+ if(showPromos&&activeSelected.length)section.append(searchLabel,filters,serviceSearchStatus,clearServiceSearch,grid,portfolioActions,foot,decision);
  else section.append(state,foot);
  // Count owned-service exposure only when a clickable card is at least half visible for a full second.
  // This remains consent-gated first-party measurement, not a third-party ad-network impression.
