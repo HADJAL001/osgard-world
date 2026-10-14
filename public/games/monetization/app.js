@@ -303,7 +303,7 @@ exportButton.addEventListener('click', () => {
   const payload = {
     kind: 'osgard-games-business-model',
     modelVersion: 7,
-    note: 'Illustrative scenario only. Subscriptions are calculated as first-year monthly cohorts with churn, separate from one-time purchases; month-12 MRR is shown separately. Checkout, Premium sales and ads are not activated by this model.',
+    note: 'Illustrative scenario only. Monthly projection uses a traffic ramp and retained subscriber cohorts; it is not actual revenue, accounting data or a guarantee. Checkout, Premium sales and ads are not activated by this model.',
     currency: 'USD',
     generatedAt: new Date().toISOString(),
     inputs,
@@ -357,3 +357,4 @@ exportCsvButton.addEventListener('click', () => {
   statusNode.textContent = 'CSV сохранён локально. Это модельные оценки, не фактическая выручка; данные не отправляются на сервер.';
 });
 render();
+renderSnapshots();
