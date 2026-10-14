@@ -1529,7 +1529,7 @@ async function handleCivicAdvisorConsentChange(){
  }
  if(status)status.textContent='Проверяю, включён ли AI-сервис. Состояние игры на этом шаге не отправляется.';
  try{
-  const response=await fetch('/v1/civic-cascade-advisor/status',{method:'GET',cache:'no-store',credentials:'same-origin',headers:{Accept:'application/json'}});
+  const response=await fetch('/commerce-api/v1/civic-cascade-advisor/status',{method:'GET',cache:'no-store',credentials:'same-origin',headers:{Accept:'application/json'}});
   const payload=await response.json().catch(()=>({}));
   if(!response.ok||payload.enabled!==true){
    consent.checked=false;civicAdvisorEnabled=false;
@@ -1565,7 +1565,7 @@ async function requestCivicAdvisorReview(){
  renderCivicAdvisorMessage('Проверяю компромиссы и слабые места. ИИ не меняет очередь и не исполняет команды.','');
  refreshDoctrineAvailability();
  try{
-  const response=await fetch('/v1/civic-cascade-advisor',{
+  const response=await fetch('/commerce-api/v1/civic-cascade-advisor',{
    method:'POST',cache:'no-store',credentials:'same-origin',
    headers:{'Content-Type':'application/json',Accept:'application/json'},
    body:JSON.stringify(request),signal:AbortSignal.timeout(17000)
