@@ -80,6 +80,10 @@ jobs:
         run: npm run qa:time-ui
       - name: Verify OSGARD Games portal and Lighthouse guardrails
         run: npm run qa:games-portal
+      - name: Verify OSGARD PLAY 30-check diagnostics
+        run: npm run qa:games-diagnostics
+      - name: Verify contextual recommendations for all catalogue games
+        run: npm run qa:game-recommendations
       - name: Verify premium Entertainment discovery, sharing and SEO
         run: npm run qa:entertainment
       - name: Verify OSGARD SELECT luxury spotlight and share-reward guardrails
