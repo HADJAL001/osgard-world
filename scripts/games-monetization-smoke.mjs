@@ -200,7 +200,7 @@ assert.ok(Number.isFinite(decisionDashboard.grossMarginPct), 'Gross margin indic
 console.log('PASS Premium decision cockpit: break-even search, 12-month traffic ramp, retained subscription cohorts, sensitivity ranking, local scenario library and model-only disclosure.');
 
 
-assert.ok(['stress-iterations','stress-uncertainty','run-stress-test','export-stress-csv','stress-net-p10','stress-net-p50','stress-net-p90','stress-target-hit','stress-gross-range','stress-positive-share','stress-downside-tail','stress-lead-backlog','stress-histogram','stress-status'].every((id) => page.includes('id="' + id + '"')), 'Premium stress lab inputs, risk KPIs and distribution chart are required');
+assert.ok(['stress-scenario','stress-iterations','stress-uncertainty','run-stress-test','export-stress-csv','stress-net-p10','stress-net-p50','stress-net-p90','stress-target-hit','stress-gross-range','stress-positive-share','stress-downside-tail','stress-lead-backlog','stress-histogram','stress-status'].every((id) => page.includes('id="' + id + '"')), 'Premium stress lab inputs, risk KPIs and distribution chart are required');
 assert.ok(app.includes('calculateRiskSimulation') && app.includes('run-stress-test') && app.includes('osgard-financial-stress-simulation.csv'), 'Stress lab must calculate on demand and export every simulation row');
 assert.ok(app.includes('riskInputsFingerprint') && app.includes('result is absent or stale') === false && app.includes('Результат отсутствует или устарел'), 'Risk outputs must be invalidated when assumptions change');
 assert.ok(page.includes('не калиброванные реальные вероятности') && page.includes('корреляций'), 'Stress test must disclose that its independent shocks are not calibrated real-world probabilities');
@@ -235,5 +235,15 @@ const boundedStress = calculateRiskSimulation(DEFAULT_INPUTS, { iterations: 20, 
 assert.equal(boundedStress.iterations, 100, 'Stress iteration count must clamp to its safe minimum');
 assert.equal(boundedStress.uncertaintyPct, 50, 'Stress range must clamp to the documented maximum');
 assert.equal(boundedStress.seed, 0x6d2b79f5, 'A zero seed must be replaced with the stable non-zero fallback');
+
+
+const conservativeZeroShock = calculateRiskSimulation(DEFAULT_INPUTS, { iterations: 100, uncertaintyPct: 0, seed: 9, scenarioId: 'conservative' });
+const optimisticZeroShock = calculateRiskSimulation(DEFAULT_INPUTS, { iterations: 100, uncertaintyPct: 0, seed: 9, scenarioId: 'optimistic' });
+const invalidScenarioStress = calculateRiskSimulation(DEFAULT_INPUTS, { iterations: 100, uncertaintyPct: 0, seed: 9, scenarioId: 'made-up' });
+assert.equal(conservativeZeroShock.scenarioId, 'conservative', 'Stress tests must support the conservative scenario');
+assert.equal(optimisticZeroShock.scenarioId, 'optimistic', 'Stress tests must support the optimistic scenario');
+assert.equal(invalidScenarioStress.scenarioId, 'base', 'Unknown scenario identifiers must fall back to base');
+assert.ok(optimisticZeroShock.summary.yearNetOperatingUsd.p50 > conservativeZeroShock.summary.yearNetOperatingUsd.p50,
+  'Optimistic deterministic stress baseline should exceed the conservative baseline for the documented assumptions');
 
 console.log('PASS Premium stress lab: seeded reproducibility, bounds, zero-shock reconciliation, quantiles, target coverage and export-ready draws.');
