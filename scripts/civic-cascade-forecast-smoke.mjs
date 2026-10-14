@@ -6,7 +6,7 @@ const manifest = JSON.parse(await readFile(new URL('../public/games/civic-cascad
 const check = (value, message) => assert.ok(value, message)
 
 assert.equal(manifest.gameId, 'civic-cascade')
-assert.equal(manifest.version, '2.9.0', 'release manifest must match this regression suite')
+assert.equal(manifest.version, '3.0.0', 'release manifest must match this regression suite')
 assert.equal(manifest.buildContract?.cascadeForecast?.enabled, true)
 assert.deepEqual(manifest.buildContract?.cascadeForecast?.horizonsGameSeconds, [30, 60, 90])
 assert.equal(manifest.buildContract?.cascadeForecast?.randomIncidentsForecasted, false)
@@ -31,6 +31,11 @@ assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.robustnessCandid
 assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.reranksCandidatesByStressAdjustedScore, true)
 assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.comparesAgainstNoInterventionUnderSameStress, true)
 assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.stressChangesOnlyClonedStates, true)
+assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.decisionPortfolio, 'bounded-pareto-frontier')
+assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.portfolioLimit, 3)
+assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.explainsCandidateTradeoffs, true)
+assert.equal(manifest.buildContract?.decisionDossier?.enabled, true)
+assert.equal(manifest.buildContract?.decisionDossier?.tracksNoPersonalData, true)
 assert.deepEqual(manifest.buildContract?.adaptiveCrisisDirector?.nodes, ['substation','pump','bridge','hospital','shelter'])
 
 const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1])
@@ -87,9 +92,10 @@ const simulatePath = startElapsed => new Function(
 )(startElapsed, clamp, projectedRisk, nodes, ensureNodeIntegrity, advanceNodeIntegrity)
 
 const doctrineSource = extractBetween('function doctrineObjectiveScore', 'let doctrineResult=null')
-const searchDoctrinePlans = new Function('nodes', 'PLAN_ACTIONS', 'clamp',
-  doctrineSource + '\nreturn searchDoctrinePlans;'
+const planner = new Function('nodes', 'PLAN_ACTIONS', 'clamp',
+  doctrineSource + '\nreturn {searchDoctrinePlans, doctrineDominates, doctrineParetoPortfolio};'
 )(nodes, actions, clamp)
+const {searchDoctrinePlans, doctrineDominates, doctrineParetoPortfolio} = planner
 const makeState = scenario => {
   const state = {
     ...scenarios[scenario], scenario, crews: 4, maxCrews: 4,
@@ -132,6 +138,12 @@ for (const scenario of ['flood', 'blackout', 'blockade']) {
   check(result.evaluatedCount > 0 && result.evaluatedCount <= 1000, scenario + ' doctrine search must stay bounded')
   check(Array.isArray(result.alternatives) && result.alternatives.length <= 3, scenario + ' planner must return at most three candidates')
 check(result.robustnessEvaluatedCount >= 0 && result.robustnessEvaluatedCount <= 8, scenario + ' stress ranking must stay within eight candidates')
+check(result.alternatives.every(candidate => typeof candidate.portfolioRole === 'string' && typeof candidate.paretoMember === 'boolean'), scenario + ' portfolio candidates must declare their selection role and dominance status')
+  const prefixes = result.alternatives.map(candidate => candidate.orders.slice(0,2).map(order => order.action + ':' + (order.nodeId || '-')).join('|'))
+  assert.equal(new Set(prefixes).size, Math.min(result.alternatives.length, result.openingPrefixCount), scenario + ' portfolio should maximize the available distinct opening command prefixes')
+  check(result.portfolioSize === result.alternatives.length, scenario + ' portfolio count must match returned options')
+  check(result.openingPrefixCount >= 1 && result.openingPrefixCount <= result.robustnessEvaluatedCount, scenario + ' available prefix diversity must be bounded')
+  check(result.paretoFrontSize >= 0 && result.paretoFrontSize <= result.robustnessEvaluatedCount, scenario + ' Pareto front size must be bounded')
   for (const candidate of result.alternatives) {
     check(candidate.robustness.profileCount === 3, scenario + ' candidate must be checked against all three stress profiles')
     check(candidate.robustness.profiles.length === 3, scenario + ' candidate must include all stress results')
@@ -153,6 +165,14 @@ check(result.robustnessEvaluatedCount >= 0 && result.robustnessEvaluatedCount <=
     scenario + ' planner must not mutate the live source state')
   doctrineResults[scenario] = {evaluated:result.evaluatedCount,stressEvaluated:result.robustnessEvaluatedCount,recommendations:result.alternatives.length,firstRisk:result.alternatives[0]?.forecast[2].risk ?? null,stableProfiles:result.alternatives[0]?.robustness.stableProfiles ?? null}
 }
+const paretoA={signature:'a',robustScore:1,cost:20,orders:[{action:'pump',nodeId:null},{action:'grid',nodeId:null}],robustness:{worstRiskDelta:0,worstIntegrityDelta:0,stableProfiles:3}}
+const paretoB={signature:'b',robustScore:2,cost:30,orders:[{action:'pump',nodeId:null},{action:'route',nodeId:null}],robustness:{worstRiskDelta:2,worstIntegrityDelta:-2,stableProfiles:2}}
+const paretoC={signature:'c',robustScore:1.5,cost:10,orders:[{action:'route',nodeId:null},{action:'grid',nodeId:null}],robustness:{worstRiskDelta:3,worstIntegrityDelta:1,stableProfiles:3}}
+check(doctrineDominates(paretoA,paretoB), 'Pareto dominance should exclude strictly worse candidates')
+check(!doctrineDominates(paretoA,paretoC) && !doctrineDominates(paretoC,paretoA), 'Pareto frontier should preserve meaningful cost/resilience trade-offs')
+const fixturePortfolio=doctrineParetoPortfolio([paretoB,paretoC,paretoA],3)
+assert.equal(fixturePortfolio[0].signature,'a','Pareto portfolio should put the robust score leader first')
+check(fixturePortfolio.some(candidate=>candidate.signature==='c'),'Pareto portfolio should keep a cheaper non-dominated option')
 const repeatBase = makeState('flood')
 const repeatSearch = () => searchDoctrinePlans(repeatBase, 'balanced', 'hub', simulateDirect(repeatBase), simulatePath(0), nodes, actions)
 const firstRepeat = repeatSearch(), secondRepeat = repeatSearch()
@@ -238,7 +258,7 @@ check(gridAt89.grid < floodThreshold.grid - floodThreshold.gridRate * 90,
 
 console.log(JSON.stringify({
   status: 'passed',
-  suite: 'CIVIC CASCADE robust doctrine search, deterministic stress profiles, causal debrief and infrastructure integrity',
+  suite: 'CIVIC CASCADE Pareto strategy portfolio, trade-off dossier, robust doctrine search and infrastructure integrity',
   release: manifest.version,
   scenarios: 3,
   horizons: [30, 60, 90],
@@ -267,6 +287,9 @@ console.log(JSON.stringify({
     doctrineDeterminism: 'PASS',
     doctrineStressProfiles: 'PASS',
     doctrineRobustReranking: 'PASS',
-    doctrineStressNoLiveMutation: 'PASS'
+    doctrineStressNoLiveMutation: 'PASS',
+    doctrineParetoDominance: 'PASS',
+    doctrinePortfolioDiversity: 'PASS',
+    doctrineTradeoffDossier: 'PASS'
   }
 }, null, 2))
