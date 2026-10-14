@@ -2127,18 +2127,18 @@ func _run_smoke() -> void:
 		return
 	var bounded_history: Array[Dictionary] = []
 	for record_number in range(1, game.MAX_OPERATOR_CHRONICLE_RECORDS + 4):
-		var bounded_record := game._operator_chronicle_record_from_report(chronicle_sample, record_number, "2026-10-14T12:00:00")
+		var bounded_record: Dictionary = game._operator_chronicle_record_from_report(chronicle_sample, record_number, "2026-10-14T12:00:00")
 		bounded_history = game._operator_chronicle_append(bounded_history, bounded_record)
 	if not _expect(bounded_history.size() == game.MAX_OPERATOR_CHRONICLE_RECORDS and str(bounded_history[0]["recordId"]) == "NS-R000004", "career archive must retain only the newest 24 normalized runs"):
 		return
-	var deduped_history := game._operator_chronicle_append(bounded_history, bounded_history[-1])
+	var deduped_history: Array[Dictionary] = game._operator_chronicle_append(bounded_history, bounded_history[-1])
 	if not _expect(deduped_history.size() == bounded_history.size(), "appending the same run ID twice must not duplicate career history"):
 		return
 	var failed_sample: Dictionary = chronicle_sample.duplicate(true)
 	failed_sample["outcome"] = "FAILED"
 	failed_sample["score"] = 1100
 	failed_sample["combat"]["damageTaken"] = 18.0
-	var failed_record := game._operator_chronicle_record_from_report(failed_sample, 99, "2026-10-14T12:01:00")
+	var failed_record: Dictionary = game._operator_chronicle_record_from_report(failed_sample, 99, "2026-10-14T12:01:00")
 	var mixed_history: Array[Dictionary] = bounded_history.duplicate(true)
 	mixed_history = game._operator_chronicle_append(mixed_history, failed_record)
 	var chronicle_stats: Dictionary = game._operator_chronicle_summary(mixed_history)
