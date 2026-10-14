@@ -6,7 +6,7 @@ const root=resolve('public/games/cascade-lab'),html=readFileSync(resolve(root,'i
 const manifest=JSON.parse(readFileSync(resolve(root,'manifest.webmanifest'),'utf8')),worker=readFileSync(resolve(root,'service-worker.js'),'utf8'),icon=readFileSync(resolve(root,'lab-icon.svg'),'utf8');
 const routeMatrix=readFileSync(resolve('scripts/production-route-matrix.mjs'),'utf8');
 assert.match(html,/osgard-game-pwa" content="0\.26\.0-offline-field-device"/);
-assert.ok(html.includes('rel="manifest" href="./manifest.webmanifest"')&&html.includes('id="installLabButton"')&&html.includes("navigator.serviceWorker.register('./service-worker.js?v=0.26.1'"));
+assert.ok(html.includes('rel="manifest" href="./manifest.webmanifest"')&&html.includes('id="installLabButton"')&&html.includes("navigator.serviceWorker.register('./service-worker.js?v=0.26.2'"));
 assert.equal(manifest.name,'CASCADE LAB — Premium Physics Lab');assert.equal(manifest.scope,'./');assert.equal(manifest.display,'standalone');assert.equal(manifest.start_url,'./?source=pwa');assert.equal(manifest.icons[0].src,'./lab-icon.svg');assert.match(icon,/<svg[^>]+viewBox="0 0 512 512"/);
 const b=worker.match(/const PRECACHE=\[([\s\S]*?)\];/);assert.ok(b);const paths=[...b[1].matchAll(/'([^']+)'/g)].map(m=>m[1]);
 for(const p of ['./','./index.html','./manifest.webmanifest','./lab-icon.svg'])assert.ok(paths.includes(p));
@@ -26,12 +26,12 @@ const S='https://osgard.world/games/cascade-lab/',events=Object.create(null),dat
 const response=(body,status=200)=>({body,status,ok:status>=200&&status<300,clone(){return this}});
 function cache(map){const key=x=>typeof x==='string'?x:x.url;return{async addAll(a){for(const p of a)map.set(new URL(p,S).href,response('cached:'+p));},async match(x){return map.get(key(x))||null;},async put(x,v){map.set(key(x),v);}};}
 const caches={async open(n){if(!data.has(n))data.set(n,new Map());return cache(data.get(n));},async keys(){return [...data.keys()]},async delete(n){return data.delete(n)}};
-data.set('osgard-cascade-lab-shell-v0.25.0',new Map());data.set('osgard-cascade-lab-shell-v0.26.0',new Map());data.set('unrelated-cache',new Map());
+data.set('osgard-cascade-lab-shell-v0.25.0',new Map());data.set('osgard-cascade-lab-shell-v0.26.1',new Map());data.set('unrelated-cache',new Map());
 const selfMock={registration:{scope:S},clients:{claim:async()=>{}},skipWaiting:async()=>{},addEventListener(n,h){events[n]=h;}};
 runInNewContext(worker,{self:selfMock,caches,URL,fetch:async()=>{throw Error('offline')},Response:{error:()=>response('offline',0)}});
 let pending;events.install({waitUntil(p){pending=p;}});await pending;
 const cache262=await caches.open('osgard-cascade-lab-shell-v0.26.2');assert.ok(await cache262.match(S));
-let act;events.activate({waitUntil(p){act=p;}});await act;assert.ok(!(await caches.keys()).includes('osgard-cascade-lab-shell-v0.25.0'));assert.ok(!(await caches.keys()).includes('osgard-cascade-lab-shell-v0.26.0'));assert.ok((await caches.keys()).includes('unrelated-cache'));
+let act;events.activate({waitUntil(p){act=p;}});await act;assert.ok(!(await caches.keys()).includes('osgard-cascade-lab-shell-v0.25.0'));assert.ok(!(await caches.keys()).includes('osgard-cascade-lab-shell-v0.26.1'));assert.ok((await caches.keys()).includes('unrelated-cache'));
 let nav;events.fetch({request:{method:'GET',mode:'navigate',url:S+'?source=pwa'},respondWith(p){nav=p;}});assert.equal((await nav).status,200);
 let post=false;events.fetch({request:{method:'POST',mode:'same-origin',url:S+'events'},respondWith(){post=true;}});assert.equal(post,false);
 let external=false;events.fetch({request:{method:'GET',mode:'cors',url:'https://marcosa.club/'},respondWith(){external=true;}});assert.equal(external,false);
