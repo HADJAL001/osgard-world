@@ -4,6 +4,7 @@
 const VERSION = '0.26.0';
 const SCHEMA = 'osgard.cascade-lab.robustness-suite.v1';
 const ARCHIVE_SCHEMA = 'osgard.cascade-lab.robustness-archive.v1';
+const REPORT_SCHEMA = 'osgard.cascade-lab.robustness-report.v1';
 const STORAGE_KEY = ARCHIVE_SCHEMA;
 const MAX_TRIALS = 48;
 const MAX_REPORTS = 12;
@@ -160,7 +161,7 @@ function csvCell(value) {
   return '"' + text.replace(/"/g, '""') + '"';
 }
 const pureApi = Object.freeze({
-  version: VERSION, schema: SCHEMA, archiveSchema: ARCHIVE_SCHEMA,
+  version: VERSION, schema: SCHEMA, archiveSchema: ARCHIVE_SCHEMA, reportSchema: REPORT_SCHEMA,
   maxTrials: MAX_TRIALS, maxReports: MAX_REPORTS, maxArchiveBytes: MAX_ARCHIVE_BYTES,
   axes: AXES, normalizeSweep, summarizeSweep, classifyFailure, percentile, csvCell
 });
@@ -336,7 +337,7 @@ function renderResult(raw){
 function exportLatestJson(){
   if(!latest)return;
   const checked=summarizeSweep(latest);if(!checked.ok)return;
-  download('cascade-lab-robustness-'+latest.level.id+'-'+latest.seed+'.json',JSON.stringify({schema:ARCHIVE_SCHEMA,schemaVersion:1,exportedAt:new Date().toISOString(),run:latest,summary:checked.summary},null,2),'application/json;charset=utf-8');
+  download('cascade-lab-robustness-'+latest.level.id+'-'+latest.seed+'.json',JSON.stringify({schema:REPORT_SCHEMA,schemaVersion:1,exportedAt:new Date().toISOString(),application:{name:'CASCADE LAB',version:VERSION},privacy:{delivery:'local-download-only',uploaded:false,accountIdentifierIncluded:false},run:latest,summary:checked.summary},null,2),'application/json;charset=utf-8');
 }
 function exportLatestCsv(){
   if(!latest)return;
