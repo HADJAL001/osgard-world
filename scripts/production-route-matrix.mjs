@@ -163,12 +163,18 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
                 text.includes('mailto:osman.osmanov0099@gmail.com') &&
                 text.includes('href="/privacy/"') &&
                 text.includes('href="/terms/"')
-            : text.includes('<div id="root">')
+            : route === '/games/feedback/'
+                ? text.includes('id="feedback-form"') && text.includes('id="export-report"') && text.includes('/games/feedback/feedback.js')
+                : route === '/games/admin/feedback/'
+                  ? text.includes('id="operator-token"') && text.includes('id="report-list"') && text.includes('/games/admin/feedback/admin.js')
+                  : text.includes('<div id="root">')
+    const isFeedbackForm = route === '/games/feedback/'
+    const isFeedbackAdmin = route === '/games/admin/feedback/'
     const isCampaignAdmin = route === '/games/admin/campaigns/'
     const isPartnerPage = route === '/games/partners/'
     const isEcosystemDirectory = route === '/games/ecosystem/'
     const isGodot = route.startsWith('/games/null-shift-godot')
-    const assetPaths = route === '/games/favicon.svg' || route === '/privacy/' || route === '/terms/' ? [] : isCampaignAdmin ? ['/games/admin/campaigns/admin.js', '/games/admin/campaigns/admin.css'] : isPartnerPage ? ['/games/partners/partners.js', '/games/partners/inventory.json'] : isEcosystemDirectory ? ['/games/ecosystem/directory.css', '/games/ecosystem/directory.js'] : isGamesHub ? ['/games/consented-analytics.js','/games/player-lifecycle.js','/games/game-session-recommendations.js','/games/game-session-recommendations.css','/games/daily-circuit.js','/games/daily-circuit.css','/games/sponsored-campaigns.js','/games/sponsored-campaigns.css'] : route === '/skillcred/' ? ['/skillcred/styles.css', '/skillcred/app.js', '/skillcred/fonts/InterVariable.woff2', '/skillcred/fonts/InstrumentSerif-Italic.woff2', '/skillcred/fonts/JetBrainsMono-Regular.woff2'] : route === '/games/signal-run/' ? ['/games/signal-run/game.js'] : isGodot ? ['/games/null-shift-godot/index.js', '/games/null-shift-godot/index.wasm', '/games/null-shift-godot/index.pck'] : route.startsWith('/games/null-shift') ? ['/games/null-shift/styles.css', '/games/null-shift/game.js', '/games/null-shift/engine-3d.js'] : route.startsWith('/games/invite/') && route !== '/games/invite/invite-landing.js' ? ['/games/invite/invite-landing.js', '/games/share-cards/' + (route.split('/')[3] || 'catalog') + '.png'] : []
+    const assetPaths = route === '/games/favicon.svg' || route === '/privacy/' || route === '/terms/' ? [] : isFeedbackForm ? ['/games/feedback/feedback.js', '/games/feedback/feedback.css'] : isFeedbackAdmin ? ['/games/admin/feedback/admin.js'] : isCampaignAdmin ? ['/games/admin/campaigns/admin.js', '/games/admin/campaigns/admin.css'] : isPartnerPage ? ['/games/partners/partners.js', '/games/partners/inventory.json'] : isEcosystemDirectory ? ['/games/ecosystem/directory.css', '/games/ecosystem/directory.js'] : isGamesHub ? ['/games/consented-analytics.js','/games/player-lifecycle.js','/games/game-session-recommendations.js','/games/game-session-recommendations.css','/games/daily-circuit.js','/games/daily-circuit.css','/games/sponsored-campaigns.js','/games/sponsored-campaigns.css'] : route === '/skillcred/' ? ['/skillcred/styles.css', '/skillcred/app.js', '/skillcred/fonts/InterVariable.woff2', '/skillcred/fonts/InstrumentSerif-Italic.woff2', '/skillcred/fonts/JetBrainsMono-Regular.woff2'] : route === '/games/signal-run/' ? ['/games/signal-run/game.js'] : isGodot ? ['/games/null-shift-godot/index.js', '/games/null-shift-godot/index.wasm', '/games/null-shift-godot/index.pck'] : route.startsWith('/games/null-shift') ? ['/games/null-shift/styles.css', '/games/null-shift/game.js', '/games/null-shift/engine-3d.js'] : route.startsWith('/games/invite/') && route !== '/games/invite/invite-landing.js' ? ['/games/invite/invite-landing.js', '/games/share-cards/' + (route.split('/')[3] || 'catalog') + '.png'] : []
     const assetChecks = await Promise.all(assetPaths.map(async path => {
       const expectedType = path.endsWith('.css') ? 'text/css' : path.endsWith('.json') ? 'json' : path.endsWith('.js') ? 'javascript' : path.endsWith('.png') ? 'png' : path.endsWith('.wasm') ? 'wasm' : path.endsWith('.pck') ? 'pack' : 'font'
       // Large immutable artifacts only need an existence/MIME/size check. HEAD avoids
@@ -199,6 +205,12 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
             ? content.includes('sponsored_campaign_impression') && content.includes("credentials: 'omit'") && content.includes('osgard.games.sponsor-exposures.v1')
           : isGamesHub && path === '/games/sponsored-campaigns.css'
             ? content.includes('.og-live-sponsored__card') && content.includes('prefers-reduced-motion:reduce')
+          : path === '/games/feedback/feedback.js'
+            ? content.includes('safeApiBase') && content.includes('Скачать JSON') && !content.includes('analytics.enqueue')
+          : path === '/games/admin/feedback/admin.js'
+            ? content.includes('/v1/admin/game-feedback') && content.includes('textContent') && !content.includes('innerHTML')
+          : path === '/games/feedback/feedback.css'
+            ? content.includes('.form-layout') && content.includes('prefers-reduced-motion:reduce')
           : isEcosystemDirectory
           ? (path.endsWith('.js') ? content.includes("getElementById('project-search')") && content.includes('aria-pressed') : content.includes('.project-grid{display:grid') && content.includes('prefers-reduced-motion:reduce'))
           : isPartnerPage
