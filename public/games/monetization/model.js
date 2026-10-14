@@ -376,6 +376,145 @@ export function calculateSensitivity(input = {}, scenarioId = 'base', requestedP
   }).sort((a, b) => b.impactRangeUsd - a.impactRangeUsd);
 }
 
+
+
+const RISK_DRIVERS = Object.freeze([
+  'monthlyVisitors',
+  'monthlyTrafficGrowthPct',
+  'gameStartRate',
+  'sessionsPerPlayer',
+  'adFillRate',
+  'ecpmUsd',
+  'paidConversionRate',
+  'subscriptionConversionRatePct',
+  'subscriptionMonthlyPriceUsd',
+  'subscriptionMonthlyChurnPct',
+  'leadRate',
+  'leadCloseRate',
+  'averageProjectValueUsd',
+  'maxProjectsPerMonth',
+  'monthlyOperatingCostUsd',
+  'shareRatePct',
+  'inviteConversionPct',
+  'sponsorDealsPerMonth',
+  'averageSponsorDealUsd',
+]);
+
+function createSeededRandom(seed) {
+  let state = (Math.trunc(Number(seed) || 0) >>> 0) || 0x6d2b79f5;
+  return () => {
+    state ^= state << 13;
+    state ^= state >>> 17;
+    state ^= state << 5;
+    return (state >>> 0) / 4294967296;
+  };
+}
+
+function quantile(sortedValues, q) {
+  if (sortedValues.length === 0) return 0;
+  const position = (sortedValues.length - 1) * Math.max(0, Math.min(1, q));
+  const lower = Math.floor(position);
+  const upper = Math.ceil(position);
+  const fraction = position - lower;
+  return roundMoney(sortedValues[lower] + (sortedValues[upper] - sortedValues[lower]) * fraction);
+}
+
+/**
+ * Reproducible stress distribution over declared assumptions.
+ * This is NOT a calibrated probability forecast: each selected driver receives an
+ * independent uniform shock within +/- uncertaintyPct. Correlation, seasonality,
+ * tax, acquisition cost and provider-specific limits are not inferred.
+ */
+export function calculateRiskSimulation(input = {}, options = {}) {
+  const values = normalizeInputs(input);
+  const requestedIterations = Number(options.iterations ?? 1000);
+  const iterations = Math.max(100, Math.min(5000,
+    Number.isFinite(requestedIterations) ? Math.round(requestedIterations) : 1000));
+  const requestedPct = Number(options.uncertaintyPct ?? 20);
+  const uncertaintyPct = Math.max(0, Math.min(50,
+    Number.isFinite(requestedPct) ? requestedPct : 20));
+  const requestedSeed = Number(options.seed ?? 20261015);
+  const seed = (Math.trunc(Number.isFinite(requestedSeed) ? requestedSeed : 20261015) >>> 0) || 0x6d2b79f5;
+  const random = createSeededRandom(seed);
+  const baselineProjection = calculateMonthlyProjection(values, 'base', 12);
+  const draws = [];
+
+  for (let index = 0; index < iterations; index += 1) {
+    const shocked = { ...values };
+    for (const key of RISK_DRIVERS) {
+      const multiplier = 1 + ((random() * 2) - 1) * (uncertaintyPct / 100);
+      shocked[key] = values[key] * multiplier;
+    }
+    const projected = calculateMonthlyProjection(normalizeInputs(shocked), 'base', 12);
+    const finalMonth = projected.rows[projected.rows.length - 1];
+    const endState = calculateScenario({ ...normalizeInputs(shocked), monthlyVisitors: finalMonth.startingVisitors }, 'base');
+    draws.push({
+      iteration: index + 1,
+      yearGrossRevenueUsd: roundMoney(projected.cumulativeRevenueUsd),
+      yearNetOperatingUsd: roundMoney(projected.cumulativeNetOperatingUsd),
+      month12NetOperatingUsd: roundMoney(finalMonth.netOperatingUsd),
+      month12StartingVisitors: finalMonth.startingVisitors,
+      month12UnprocessedLeads: roundMoney(endState.unprocessedLeads),
+      month12CapacityUtilizationPct: roundMoney(endState.capacityUtilizationPct),
+    });
+  }
+
+  const gross = draws.map((draw) => draw.yearGrossRevenueUsd).sort((a, b) => a - b);
+  const net = draws.map((draw) => draw.yearNetOperatingUsd).sort((a, b) => a - b);
+  const month12Net = draws.map((draw) => draw.month12NetOperatingUsd).sort((a, b) => a - b);
+  const month12Visitors = draws.map((draw) => draw.month12StartingVisitors).sort((a, b) => a - b);
+  const backlogs = draws.map((draw) => draw.month12UnprocessedLeads).sort((a, b) => a - b);
+  const capacity = draws.map((draw) => draw.month12CapacityUtilizationPct).sort((a, b) => a - b);
+  const downsideCount = Math.max(1, Math.ceil(iterations * 0.1));
+  const downsideTailMeanYearNetUsd = roundMoney(net.slice(0, downsideCount).reduce((sum, value) => sum + value, 0) / downsideCount);
+  const positiveNetCount = draws.filter((draw) => draw.yearNetOperatingUsd >= 0).length;
+  const targetHitCount = draws.filter((draw) => draw.yearGrossRevenueUsd >= values.annualRevenueTargetUsd).length;
+  const histogramBins = 16;
+  const minNet = net[0];
+  const maxNet = net[net.length - 1];
+  const binWidth = maxNet > minNet ? (maxNet - minNet) / histogramBins : 1;
+  const histogram = Array.from({ length: histogramBins }, (_, index) => ({
+    index,
+    fromUsd: roundMoney(minNet + binWidth * index),
+    toUsd: roundMoney(index === histogramBins - 1 ? maxNet : minNet + binWidth * (index + 1)),
+    count: 0,
+  }));
+  for (const value of net) {
+    const index = maxNet === minNet ? 0 : Math.min(histogramBins - 1, Math.floor((value - minNet) / binWidth));
+    histogram[index].count += 1;
+  }
+
+  return {
+    schema: 'osgard.financial-stress.v1',
+    modelVersion: 8,
+    method: 'independent-uniform-assumption-shocks',
+    seed,
+    iterations,
+    uncertaintyPct,
+    targetAnnualGrossUsd: values.annualRevenueTargetUsd,
+    baseline: {
+      yearGrossRevenueUsd: baselineProjection.cumulativeRevenueUsd,
+      yearNetOperatingUsd: baselineProjection.cumulativeNetOperatingUsd,
+      month12NetOperatingUsd: baselineProjection.rows[11].netOperatingUsd,
+    },
+    summary: {
+      yearGrossRevenueUsd: { p10: quantile(gross, 0.10), p50: quantile(gross, 0.50), p90: quantile(gross, 0.90) },
+      yearNetOperatingUsd: { p10: quantile(net, 0.10), p50: quantile(net, 0.50), p90: quantile(net, 0.90) },
+      month12NetOperatingUsd: { p10: quantile(month12Net, 0.10), p50: quantile(month12Net, 0.50), p90: quantile(month12Net, 0.90) },
+      month12StartingVisitors: { p10: quantile(month12Visitors, 0.10), p50: quantile(month12Visitors, 0.50), p90: quantile(month12Visitors, 0.90) },
+      month12UnprocessedLeadsP50: quantile(backlogs, 0.50),
+      month12CapacityUtilizationP50: quantile(capacity, 0.50),
+      positiveYearNetSharePct: roundMoney(positiveNetCount / iterations * 100),
+      annualTargetHitSharePct: roundMoney(targetHitCount / iterations * 100),
+      downsideTailMeanYearNetUsd,
+      downsideTailDrawCount: downsideCount,
+    },
+    histogram,
+    draws,
+    disclosure: 'Stress distribution from independent uniform shocks around user-entered assumptions; shares describe these simulations, not calibrated real-world probabilities or guaranteed outcomes.',
+  };
+}
+
 export function calculateDecisionDashboard(input = {}, scenarioId = 'base') {
   const values = normalizeInputs(input);
   const baseline = calculateScenario(values, scenarioId);
