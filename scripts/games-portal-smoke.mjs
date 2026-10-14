@@ -954,6 +954,8 @@ for(const host of ['osgardbewworld.com','o2system.art','senjorio.com','superday.
 for (const slug of ['time','swarm','null-shift','inherit','remix','signal-run','civic-cascade','patina','cascade-lab']) assert.ok(html.includes('href="/game/' + slug + '"'), 'Missing detail link: ' + slug)
 assert.ok(html.includes('href="/games/monetization/"'), 'Economics planner link missing')
 assert.ok(html.includes('id="load-device-fit"') && html.includes('Проверить совместимость'), 'Device compatibility action must be available from the Games catalog')
+assert.ok(!html.includes('id="load-device-fit" type="button" aria-controls="osgard-device-fit"'), 'The lazy button must not reference a panel that does not exist yet')
+assert.ok(html.includes("panel.setAttribute('tabindex','-1')") && html.includes('panel.focus()'), 'Opening the lazy panel must move keyboard focus to the new accessible region')
 assert.ok(html.includes("loadScript('device-fit.js')"), 'Device compatibility feature must remain available through the versioned lazy loader')
 assert.ok(html.includes('data-device-fit-css="/games/device-fit.css?v=__OSGARD_BUILD_VERSION__"'), 'Device compatibility CSS must retain a versioned asset contract')
 assert.ok(html.includes('data-device-fit-src="/games/device-fit.js?v=__OSGARD_BUILD_VERSION__"'), 'Device compatibility JS must retain a versioned asset contract')
