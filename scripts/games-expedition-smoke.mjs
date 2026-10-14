@@ -35,6 +35,7 @@ assert.ok(page.includes('<title>OSGARD PLAY — Конструктор эксп�
 assert.ok(page.includes('Telegram')&&page.includes('WhatsApp')&&page.includes('VK')&&page.includes('Facebook'));
 assert.ok(css.includes('prefers-reduced-motion:reduce')&&css.includes('@media(max-width:760px)'));
 assert.ok(hub.includes('href="/games/expedition/"')&&hub.includes("function loadExpeditionForInvite()")&&hub.includes("if(!params.has('og_expedition'))return")&&hub.includes("loadScript('expedition/core.js')")&&hub.includes("loadScript('expedition/catalog-runtime.js')"))
+assert.ok(hub.includes('expeditionPromise=loadScript')&&hub.includes('Promise.resolve(expeditionPromise).then('),'Shared route launches must wait until the expedition runtime can record completion')
 assert.ok(!hub.includes('<script src="/games/expedition/core.js?v=__OSGARD_BUILD_VERSION__" defer>')&&!hub.includes('<script src="/games/expedition/catalog-runtime.js?v=__OSGARD_BUILD_VERSION__" defer>'),'expedition-only JS must not block normal Games visits');
 assert.ok(entertainment.includes('href="/games/expedition/"')&&entertainment.includes('Собрать экспедицию'));assert.ok(sitemap.includes('https://osgard.world/games/expedition/'));
 for(const path of ['/games/expedition/','/games/expedition/core.js','/games/expedition/app.js','/games/expedition/expedition.css','/games/expedition/catalog-runtime.js'])assert.ok(serviceWorker.includes("'"+path+"'"),'PWA cache must include '+path);
