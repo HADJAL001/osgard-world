@@ -186,8 +186,8 @@ assert.ok(goldTrailStart>=0&&goldTrailEnd>goldTrailStart&&!afterimageGame.slice(
 const afterimageInline=[...afterimageGame.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]).filter(s=>s.trim())
 assert.equal(afterimageInline.length,1,'AFTERIMAGE should have one inline game script')
 new Function(afterimageInline[0])
-const afterimageElementIds=new Set([...afterimageGame.matchAll(/\\bid="([^"]+)"/g)].map(m=>m[1]))
-const afterimageMissingElementIds=[...new Set([...afterimageGame.matchAll(/\\$\\('([^']+)'\\)/g)].map(m=>m[1]).filter(id=>!afterimageElementIds.has(id)))]
+const afterimageElementIds=new Set([...afterimageGame.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]))
+const afterimageMissingElementIds=[...new Set([...afterimageGame.matchAll(/\$\('([^']+)'\)/g)].map(m=>m[1]).filter(id=>!afterimageElementIds.has(id)))]
 assert.deepEqual(afterimageMissingElementIds,[],'AFTERIMAGE literal getElementById lookups must all resolve to real DOM IDs')
 assert.ok(afterimageGame.includes('function resizeCanvas()')&&afterimageGame.includes('devicePixelRatio')&&afterimageGame.includes('Math.min(2.5')&&afterimageGame.includes('ctx.setTransform(canvas.width/W,0,0,canvas.height/H,0,0)')&&afterimageGame.includes('canvas.dataset.renderScale'),'AFTERIMAGE canvas must use capped HiDPI backing resolution and expose its render scale')
 assert.ok(afterimageGame.includes("window.addEventListener('resize',()=>{resizeCanvas();draw()})"),'AFTERIMAGE must redraw crisply on viewport/DPR changes')
