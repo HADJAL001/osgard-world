@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080a0b">
+<meta name="robots" content="index,follow">
+<meta name="description" content="Сообщить об ошибке или предложить улучшение для игр OSGARD PLAY.">
+<link rel="canonical" href="https://osgard.world/games/feedback/">
+<link rel="icon" href="/games/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/games/feedback/feedback.css">
+<title>Обратная связь — OSGARD PLAY</title>
+</head>
+<body>
+<a class="skip" href="#feedback-main">К форме обратной связи</a>
+<header class="top">
+  <a class="brand" href="/games/" aria-label="OSGARD PLAY — каталог игр">
+    <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 2 37 11.5v17L20 38 3 28.5v-17Z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M20 8 31 14.2v11.6L20 32 9 25.8V14.2Z" fill="none" stroke="currentColor" stroke-width="1"/><path d="M13 26V14h4.2l5.6 7v-7H27v12h-4.2l-5.6-7v7Z" fill="currentColor"/></svg>
+    <span>OSGARD <small>PLAY / PLAYER CARE</small></span>
+  </a>
+  <nav aria-label="Навигация"><a href="/games/">Каталог игр</a><a href="/privacy/">Конфиденциальность</a></nav>
+</header>
+<main id="feedback-main" class="wrap">
+  <section class="hero">
+    <p class="eyebrow">PLAYER CARE / BUILD A BETTER GAME</p>
+    <h1>Помоги нам<br><em>исправить миры.</em></h1>
+    <p class="intro">Опиши проблему, управление, производительность или идею улучшения. Чем точнее шаги воспроизведения, тем легче проверить причину. Не отправляй пароли, платёжные данные или другие секреты.</p>
+    <div class="trust-row"><span>● Без фиктивных рейтингов</span><span>● Контакт необязателен</span><span>● Данные не уходят в аналитику</span></div>
+  </section>
+  <section class="form-layout" aria-label="Форма и отправка">
+    <form id="feedback-form" novalidate>
+      <div class="section-head"><span>01 / ОТЧЁТ</span><h2>Что произошло?</h2></div>
+      <div class="field-grid">
+        <label>Игра
+          <select name="gameId" required>
+            <option value="catalog">Весь каталог / портал</option><option value="null-shift">NULL//SHIFT</option><option value="time">Империя времени</option>
+            <option value="swarm">SWARM</option><option value="inherit">INHERIT</option><option value="remix">REMIX</option>
+            <option value="civic-cascade">CIVIC CASCADE</option><option value="patina">PATINA ATELIER</option><option value="signal-run">SIGNAL RUN</option>
+            <option value="cascade-lab">CASCADE LAB</option><option value="afterimage-run">AFTERIMAGE//RUN</option><option value="aether-grid">AETHER GRID</option>
+          </select>
+        </label>
+        <label>Категория
+          <select name="category" required>
+            <option value="bug">Ошибка / не работает</option><option value="controls">Управление</option><option value="gameplay">Игровая механика</option>
+            <option value="performance">Производительность</option><option value="accessibility">Доступность</option><option value="visual">Графика / интерфейс</option>
+            <option value="monetization">Реклама / покупка</option><option value="other">Другое</option>
+          </select>
+        </label>
+        <label>Важность
+          <select name="severity" required><option value="minor">Небольшая</option><option value="major" selected>Серьёзная</option><option value="blocker">Не даёт играть</option></select>
+        </label>
+        <label>Заголовок <span class="hint">8–120 символов</span>
+          <input name="title" minlength="8" maxlength="120" required placeholder="Например: город перестаёт двигаться после паузы">
+        </label>
+      </div>
+      <label>Описание <span class="hint">20–3000 символов</span>
+        <textarea name="description" minlength="20" maxlength="3000" required rows="5" placeholder="Что ты сделал, что увидел и почему это мешает играть?"></textarea>
+        <span class="count" data-count="description">0 / 3000</span>
+      </label>
+      <label>Шаги воспроизведения <span class="hint">Необязательно</span>
+        <textarea name="stepsToReproduce" maxlength="1500" rows="3" placeholder="1. Открыл игру. 2. Запустил сценарий. 3. Нажал…"></textarea>
+      </label>
+      <div class="field-grid">
+        <label>Ожидалось <textarea name="expectedResult" maxlength="600" rows="2" placeholder="Что должно было произойти?"></textarea></label>
+        <label>Произошло <textarea name="actualResult" maxlength="600" rows="2" placeholder="Что произошло вместо этого?"></textarea></label>
+      </div>
+      <div class="section-head second"><span>02 / СРЕДА</span><h2>Устройство</h2></div>
+      <p class="minor-copy">Будут добавлены только класс устройства, семейство браузера и грубо округлённый размер окна. Полный User-Agent, IP-адрес, история просмотров и координаты не прикладываются к отчёту.</p>
+      <label>Email для ответа <span class="hint">Необязательно</span>
+        <input name="replyTo" type="email" maxlength="254" autocomplete="email" placeholder="you@example.com">
+      </label>
+      <label class="honeypot" aria-hidden="true">Оставьте поле пустым <input name="website" tabindex="-1" autocomplete="off"></label>
+      <label class="consent"><input type="checkbox" name="consent" required><span>Согласен передать эту заявку для диагностики и исправления проблем. Контакт необязателен; данные заявки и контакта хранятся ограниченный срок согласно настройкам сервиса. <a href="/privacy/">Политика конфиденциальности</a>.</span></label>
+      <div class="actions"><button class="button primary" id="submit-report" type="submit">Отправить отчёт <span>↗</span></button><button class="button" id="export-report" type="button">Скачать JSON</button><button class="button" id="copy-report" type="button">Копировать текст</button></div>
+      <p class="status" id="form-status" role="status" aria-live="polite">Проверяем доступность канала отправки…</p>
+    </form>
+    <aside class="side">
+      <div class="side-card"><span class="eyebrow">HOW IT WORKS</span><h2>Отчёт → проверка → исправление</h2><ol><li>Напиши, что произошло.</li><li>Добавь шаги и ожидаемое поведение.</li><li>Отправь отчёт, если сервер готов, или скачай его для ручной передачи.</li></ol></div>
+      <div class="side-card muted"><span class="eyebrow">PRIVACY BY DESIGN</span><h2>Без тихого трекинга</h2><p>Заполнение формы само по себе не включает рекламные пиксели и не отправляет содержимое в игровую аналитику. Отправка выполняется только после нажатия кнопки.</p></div>
+      <a class="back-link" href="/games/">← Вернуться в OSGARD PLAY</a>
+    </aside>
+  </section>
+</main>
+<footer><span>OSGARD PLAY · PLAYER CARE</span><span>Только реальные отчёты. Никакой выдуманной статистики.</span></footer>
+<script src="/games/feedback/feedback.js" defer></script>
+</body>
+</html>
