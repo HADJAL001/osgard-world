@@ -284,7 +284,9 @@ function createReport(baseline,candidate,runs,options={}) {
   const analysis=analyzeContrast(baseline,candidate,runs);
   if(!analysis.ok)return analysis;
   const stamp=options.now&&Number.isFinite(Date.parse(options.now))?new Date(options.now).toISOString():new Date().toISOString();
-  const id=clean(options.id||('eia_'+fnv1a(analysis.baseline.id+'|'+analysis.candidate.id+'|'+stamp).toLowerCase()+fnv1a(Math.random()+'|'+stamp).toLowerCase().slice(0,8)),80);
+  const reportKey=analysis.baseline.id+'|'+analysis.candidate.id+'|'+stamp;
+  const generatedId='eia_'+fnv1a(reportKey).toLowerCase()+fnv1a(reportKey+'|b').toLowerCase()+fnv1a(reportKey+'|c').toLowerCase().slice(0,4);
+  const id=clean(options.id||generatedId,80);
   if(!/^eia_[a-f0-9]{20}$/.test(id))return{ok:false,error:'Не удалось сформировать ID отчёта.'};
   return{ok:true,report:cleanAudit({schema:SCHEMA,id,createdAt:stamp,analysis}),analysis};
 }
