@@ -110,6 +110,7 @@ for (const command of [
 assert.ok(guide.includes('TestFlight') && guide.includes('capacitor://localhost') && guide.includes('App Review Guidelines'), 'Release guide is missing signing, CORS, or Apple-review notes.');
 assert.ok(supportPage.includes('mailto:osman.osmanov0099@gmail.com') && supportPage.includes('href="/privacy/"'), 'App Store Support URL must provide a real contact and privacy-policy link.');
 assert.ok(gamesCatalog.includes('href="/support/osgard-play/"'), 'The public Games catalogue must link to its support page.');
+assert.ok(gamesCatalog.includes('href="/games/platform-map/"'), 'The public Games catalogue must link to the capability map.');
 assert.ok(gamesCatalog.includes('/games/device-fit.css?v=__OSGARD_BUILD_VERSION__') && gamesCatalog.includes('/games/device-fit.js?v=__OSGARD_BUILD_VERSION__'), 'Smart Launch assets must be versioned in the public catalogue.');
 assert.ok(gamesCatalog.includes('/games/experiment-core.js?v=__OSGARD_BUILD_VERSION__') && gamesCatalog.includes('/games/experiment-runtime.js?v=__OSGARD_BUILD_VERSION__'), 'Product experiment assets must be versioned in the public catalogue.');
 assert.ok(sitemap.includes('https://osgard.world/support/osgard-play/'), 'The support URL must be present in sitemap.xml.');
@@ -143,6 +144,7 @@ if (builtWeb) {
     'dist/index.html', 'dist/games/index.html', 'dist/support/osgard-play/index.html',
     'dist/games/osgard-native-share.js', 'dist/games/commerce-config.json',
     'dist/games/device-fit.css', 'dist/games/device-fit.js', 'dist/games/experiment-core.js', 'dist/games/experiment-runtime.js',
+    'dist/games/platform-map/index.html', 'dist/games/platform-map/platform-map.css', 'dist/games/platform-map/platform-map.js', 'dist/games/game-registry.v1.json',
     ...Object.values(bundledGamePages),
   ]) mustExist(path);
   const catalog = read('dist/games/index.html');
@@ -158,6 +160,10 @@ if (builtWeb) {
   assert.ok(catalog.includes('/games/null-shift/index.html'), 'iOS catalogue must open the bundled WebGL version.');
   assert.ok(!/href=['"]\/game\/(?:null-shift|time|swarm|inherit|remix|civic-cascade|patina|signal-run|cascade-lab|afterimage-run|aether-grid)['"]/.test(catalog),
     'Standalone catalogue route should not go through the React web SPA.');
+  const platformMap = read('dist/games/platform-map/index.html');
+  const platformMapRegistry = JSON.parse(read('dist/games/game-registry.v1.json'));
+  assert.ok(platformMap.includes('https://osgard.world/games/platform-map/') && platformMap.includes('platform-map.js'), 'Capability map canonical route and runtime must ship in the iOS web payload.');
+  assert.equal(platformMapRegistry.games.length, 11, 'iOS web payload must include the full capability registry.');
   const shell = read('dist/index.html');
   assert.ok(shell.includes('OSGARD PLAY') && shell.includes('location.replace("/games/")'), 'App shell must land directly in the local Games hub.');
   const gamePage = read('dist/games/null-shift/index.html');
