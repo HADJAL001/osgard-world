@@ -1025,6 +1025,9 @@ func _run_smoke() -> void:
 	ray_guard.global_position = game.player.global_position + Vector3(0.0, 0.0, -5.0)
 	ray_guard.velocity = Vector3.ZERO
 	await physics_frame
+	# The live mouse/aim updater may run during a physics wait; pin the test ray only now.
+	game.player_aim = Vector3.FORWARD
+	game.aim_target_node = ray_guard
 	var ray_from: Vector3 = game.player.global_position + Vector3.UP * 0.48 + game.player_aim * 0.8
 	var ray_to: Vector3 = ray_from + game.player_aim * 37.0
 	var probe := PhysicsRayQueryParameters3D.create(ray_from, ray_to)
