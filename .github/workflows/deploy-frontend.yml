@@ -56,6 +56,7 @@ on:
       - "docs/32_CASCADE_LAB_0.22.0_TRAJECTORY_XRAY.md"
       - "scripts/game-detail-runtime-smoke.mjs"
       - "scripts/games-monetization-smoke.mjs"
+      - "scripts/game-detail-growth-cta-smoke.mjs"
       - "scripts/ecosystem-integrity-smoke.mjs"
       - "docs/09_OSGARD_GAMES_PLATFORM_AUDIT.md"
       - "docs/04_NULL_SHIFT_GAME_DESIGN.md"
@@ -95,6 +96,8 @@ jobs:
         run: npm run qa:consented-analytics-queue
       - name: Smoke-test individual game pages and SEO routes
         run: npm run qa:games-detail
+      - name: Validate game-to-business links and privacy-safe attribution
+        run: npm run qa:game-business-bridge
       - name: Validate CASCADE LAB experiment dossier export
         run: npm run qa:cascade-lab-dossier
       - name: Validate CASCADE LAB controlled Experiment Studio archive
