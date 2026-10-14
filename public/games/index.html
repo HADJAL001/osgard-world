@@ -344,7 +344,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   const root = document.getElementById('osgard-player-passport');
   if (!root) return;
   const trigger = root.querySelector('[data-passport-load]');
-  const status = root.querySelector('[data-passport-status]');
+  const status = root.querySelector('[data-passport-load-status]');
   const PENDING_KEY = 'osgard.games.player-passport.pending.v1';
   // Queue only locally confirmed sessions so lazy-loading the Passport cannot miss
   // a fast game round when the user has not scrolled to the Passport section yet.
@@ -390,6 +390,10 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     script.type = 'module';
     script.src = '/games/player-passport.js?v=__OSGARD_BUILD_VERSION__';
     script.onload = () => {
+      if (root.dataset.ready !== 'true') {
+        showRetry('Модуль загрузился, но паспорт не завершил инициализацию. Повтори попытку; игры остаются доступны.');
+        return;
+      }
       state = 'loaded';
       root.dataset.moduleLoaded = 'true';
       root.setAttribute('aria-busy', 'false');
