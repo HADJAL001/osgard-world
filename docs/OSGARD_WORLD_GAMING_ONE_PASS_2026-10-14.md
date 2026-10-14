@@ -123,7 +123,7 @@ This document does not certify legal compliance, current uptime, payment readine
 
 ## Reliability upgrade: bounded, auditable one-pass execution
 
-The one-pass runner coordinates 32 planned stages: the original ecosystem/release checks plus explicit Core state, analytics consent, product experiments, AI release-review policy, live bundle, player console and PWA checks. Every stage is bounded and evidence is persisted incrementally.
+The one-pass runner coordinates 33 planned stages: the original ecosystem/release checks plus explicit Core state, analytics consent, product experiments, AI release-review policy, live bundle, player console, PWA checks and a sanitized offline AI review packet generated after deterministic evidence exists. Every stage is bounded and evidence is persisted incrementally.
 
 ### Seven concrete engineering improvements
 
@@ -157,3 +157,14 @@ The --plan-only option validates the complete npm command map and prints the pla
 - SOURCE_READY_FOR_OPERATOR_REVIEW: all automated stages passed; this still does not mean production deployment, payment activation, ad-network approval, legal approval or external-project security approval has occurred.
 
 Network reachability is evidence about an HTTP response at a moment in time. It is not a security audit, uptime SLA, feature verification or approval to spend money on promotion. Payments and sponsor inventory remain disabled by default.
+
+
+### AI reviewer: safe-by-default integration
+
+The one-pass run now creates osgard-ai-release-review.json from sanitized QA summaries after release-readiness has generated its evidence. This is an offline preview: it makes no OpenAI request and has no API cost. It omits raw command output, source code, player data and secrets.
+
+For a deliberate, operator-controlled advisory review using OpenAI, run after the reports exist:
+
+    node scripts/osgard-ai-release-review.mjs --send-to-openai --report release-readiness.json --report production-route-matrix.json --output osgard-ai-release-review-openai.json
+
+This optional request requires OPENAI_API_KEY and may incur API charges. It sends minimized report summaries rather than source code or raw build logs. The AI result is advisory only; deterministic failures always win and a human remains responsible for approving release, payments or advertising. CI never enables this paid request automatically.
