@@ -43,6 +43,7 @@ on:
       - "scripts/remix-growth-smoke.mjs"
       - "scripts/games-detail-smoke.mjs"
       - "scripts/cascade-lab-experiment-dossier-smoke.mjs"
+      - "scripts/cascade-lab-engineering-suite-smoke.mjs"
       - "scripts/game-detail-runtime-smoke.mjs"
       - "scripts/games-monetization-smoke.mjs"
       - "scripts/ecosystem-integrity-smoke.mjs"
