@@ -7,6 +7,8 @@ const commandDeck = readFileSync(resolve("public/games/command-center/index.html
 const html = readFileSync(resolve("public/games/swarm/index.html"), "utf8");
 const css = readFileSync(resolve("public/games/swarm/styles.css"), "utf8");
 const game = readFileSync(resolve("public/games/swarm/game.js"), "utf8");
+const monetization = readFileSync(resolve("public/games/monetization/index.html"), "utf8");
+const csvExport = readFileSync(resolve("public/games/monetization/export.mjs"), "utf8");
 
 assert.ok(html.includes("<title>SWARM — One Body. Eight Minds.</title>"), "SWARM page title contract is missing.");
 assert.ok(html.includes('href="./styles.css"') && html.includes('src="./game.js"'), "SWARM page must load its local CSS and game entry point.");
@@ -45,4 +47,14 @@ assert.ok(commandDeck.includes('<title>OSGARD PLAY — Command Deck</title>') &&
   commandDeck.includes('id="run-checks"') && commandDeck.includes('id="download-report"') &&
   commandDeck.includes('noindex,nofollow,noarchive'),
   "Command Deck needs stable production test markers and noindex.");
+assert.ok(matrix.includes("'/games/monetization/export.mjs'") &&
+  matrix.includes("route === '/games/monetization/export.mjs'") &&
+  matrix.includes("export-csv") &&
+  matrix.includes("export function buildFinancialCsv"),
+  "Production route matrix must validate the CSV export UI and the served formatter module.");
+assert.ok(monetization.includes('id="export-csv"') &&
+  csvExport.includes('export function buildFinancialCsv') &&
+  csvExport.includes('FINANCIAL_CSV_NOTE') && csvExport.includes("firstMeaningful"),
+  "Financial model CSV export must remain available, explicit and spreadsheet-safe.");
+
 console.log("PASS SWARM route contract: game-specific asset checks, self-hosted fonts and reduced motion.");
