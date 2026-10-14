@@ -58,7 +58,7 @@ test('Daily completion objectives use dated completion events and remain backwar
   assert.match(js, /completionLog: \[\]/);
   assert.match(js, /stats\.completionLog = \[\.\.\.\(stats\.completionLog \|\| \[\]\), \{ game: id, at: new Date\(\)\.toISOString\(\) \}\]\.slice\(-MAX_LOG\)/);
   assert.match(js, /Array\.isArray\(raw\.completionLog\)/);
-  assert.match(js, /Array\.isArray\(parsed\.missions\)/);
+  assert.match(js, /validateMissionState\(parsed\.missions\)/);
   assert.match(js, /missions: missionState/);
   assert.match(js, /validateMissionState\(parsed\.missions\)/);
   assert.match(js, /KEY\.missions\]\)/);
