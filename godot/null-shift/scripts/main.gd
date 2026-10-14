@@ -29,6 +29,13 @@ const OVERDRIVE_ARC_DAMAGE_SCALE := 0.55
 const EXTRACTION_WINDOW_SECONDS := 30.0
 const EXTRACTION_PRESSURE_RATE := 1.18
 const EXTRACTION_OVERTIME_RATE := 1.12
+const DEVICE_EMP_RADIUS := 13.5
+const DEVICE_EMP_STUN_SECONDS := 3.2
+const DEVICE_CELL_RADIUS := 8.8
+const DEVICE_CELL_STUN_SECONDS := 2.15
+const DEVICE_CELL_OVERDRIVE_GAIN := 30.0
+const DEVICE_LANE_COLLAPSE_SECONDS := 6.5
+const DEVICE_LANE_MAX_Z_DISTANCE := 5.4
 
 var player: CharacterBody3D
 var camera: Camera3D
@@ -79,6 +86,10 @@ var phase_lane_labels: Array[Label] = []
 var phase_lane_status_row: HBoxContainer
 var phase_clock := 0.0
 var phase_lane_disruptions := 0
+var device_emp_overloads := 0
+var device_cell_novas := 0
+var device_lane_collapses := 0
+var device_hostiles_suppressed := 0
 var hazard_status_label: Label
 var health_bar: ProgressBar
 var health_bar_fill: StyleBoxFlat
@@ -371,6 +382,10 @@ func _reset_runtime_collections() -> void:
 	phase_lanes = phase_lanes.duplicate()
 	phase_lanes.clear()
 	phase_lane_disruptions = 0
+	device_emp_overloads = 0
+	device_cell_novas = 0
+	device_lane_collapses = 0
+	device_hostiles_suppressed = 0
 	extraction_pressure_active = false
 	extraction_window_remaining = 0.0
 	extraction_overload_triggered = false
@@ -2552,10 +2567,15 @@ func _damage_target(target: Node, critical_hit: bool = false, damage_scale: floa
 				_update_hud()
 
 func _destroy_device(index: int) -> void:
+	if index < 0 or index >= devices.size():
+		return
 	var device: Dictionary = devices[index]
+	if bool(device.get("destroyed", false)):
+		return
 	device["destroyed"] = true
+	devices[index] = device
 	var body: Node3D = device["node"]
-	var kind: String = device["kind"]
+	var kind: String = str(device["kind"])
 	_emit_combat_noise(body.global_position, 30.0, "device")
 	var flash_tint: Color = Color(1.0, 0.62, 0.23) if kind == "CELL" else (Color(0.65, 0.36, 1.0) if kind == "ANCHOR" else Color(0.12, 0.95, 0.82))
 	_spawn_impact_light(body.global_position + Vector3.UP * 0.7, flash_tint, 2.8, 5.2, 0.2)
@@ -2571,21 +2591,99 @@ func _destroy_device(index: int) -> void:
 	run_credits += 80
 	match kind:
 		"RELAY":
-			for guard in guards:
-				guard["stun"] = maxf(float(guard["stun"]), 2.8)
-			objective_text = "EMP RELAY РАЗРУШЕН · ОХРАНА ОГЛУШЕНА"
-			_play_sfx(170.0, 0.45, 0.16)
+			var relay_suppressed: int = _device_emp_burst(body.global_position)
+			objective_text = "EMP OVERLOAD · %d ЦЕЛЕЙ ПОДАВЛЕНО · RADIUS %.1f M" % [relay_suppressed, DEVICE_EMP_RADIUS]
+			_play_sfx(118.0, 0.52, 0.17)
 		"CELL":
+			var cell_suppressed: int = _device_cell_nova(body.global_position)
 			player_health = minf(player_max_health, player_health + 35.0)
-			pulse_cooldown = 0.0
-			objective_text = "ЭНЕРГОЯЧЕЙКА ПЕРЕЗАРЯЖЕНА · +80 КРЕДИТОВ"
-			_play_sfx(740.0, 0.22, 0.11)
+			objective_text = "ENERGY NOVA · +35 HP · OVERDRIVE +30 · ЦЕЛЕЙ %d" % cell_suppressed
+			_play_sfx(740.0, 0.32, 0.13)
 		"ANCHOR":
-			instability = minf(100.0, instability + 18.0)
-			null_shift_timer = maxf(null_shift_timer, 1.0)
-			objective_text = "ЯКОРЬ ФАЗЫ РАЗРУШЕН · НЕСТАБИЛЬНОСТЬ +18%"
-	run_credits += 0
+			var collapsed_lane: int = _phase_anchor_rupture(body.global_position)
+			if collapsed_lane >= 0:
+				objective_text = "PHASE RUPTURE · КОНТУР %d ОТКЛЮЧЁН НА %.1f С · НЕСТАБИЛЬНОСТЬ +18%%" % [collapsed_lane + 1, DEVICE_LANE_COLLAPSE_SECONDS]
+			else:
+				objective_text = "PHASE RUPTURE · НЕСТАБИЛЬНОСТЬ +18%%"
+			_play_sfx(92.0, 0.54, 0.15)
 	_update_hud()
+
+func _interrupt_guard_for_device(guard_index: int, duration: float) -> bool:
+	if guard_index < 0 or guard_index >= guards.size():
+		return false
+	var guard: Dictionary = guards[guard_index]
+	var body := guard.get("node") as CharacterBody3D
+	if not is_instance_valid(body):
+		return false
+	guard["stun"] = maxf(float(guard.get("stun", 0.0)), maxf(0.0, duration))
+	guard["windup"] = 0.0
+	guard["dash_windup"] = 0.0
+	guard["dash_timer"] = 0.0
+	guard["attack_lanes"] = []
+	guard["health_timer"] = maxf(float(guard.get("health_timer", 0.0)), 0.32)
+	guard["hit_flash_timer"] = maxf(float(guard.get("hit_flash_timer", 0.0)), 0.12)
+	body.velocity = Vector3.ZERO
+	guards[guard_index] = guard
+	return true
+
+func _device_emp_burst(at: Vector3, radius: float = DEVICE_EMP_RADIUS) -> int:
+	var affected := 0
+	for index in range(guards.size()):
+		var body := guards[index].get("node") as Node3D
+		if not is_instance_valid(body) or body.global_position.distance_to(at) > radius:
+			continue
+		if _interrupt_guard_for_device(index, DEVICE_EMP_STUN_SECONDS):
+			affected += 1
+	device_emp_overloads += 1
+	device_hostiles_suppressed += affected
+	_spawn_ring_burst(at + Vector3.UP * 0.12, materials["cyan"], DEVICE_EMP_RADIUS / 0.24)
+	_spawn_impact_light(at + Vector3.UP * 0.55, Color(0.12, 1.0, 0.86), 3.6, 7.5, 0.32)
+	_spawn_hit_sparks(at + Vector3.UP * 0.72, materials["white"])
+	return affected
+
+func _device_cell_nova(at: Vector3, radius: float = DEVICE_CELL_RADIUS) -> int:
+	var affected := 0
+	for index in range(guards.size()):
+		var body := guards[index].get("node") as Node3D
+		if not is_instance_valid(body) or body.global_position.distance_to(at) > radius:
+			continue
+		if _interrupt_guard_for_device(index, DEVICE_CELL_STUN_SECONDS):
+			affected += 1
+	pulse_cooldown = 0.0
+	overdrive_charge = minf(OVERDRIVE_MAX_CHARGE, overdrive_charge + DEVICE_CELL_OVERDRIVE_GAIN)
+	device_cell_novas += 1
+	device_hostiles_suppressed += affected
+	_spawn_ring_burst(at + Vector3.UP * 0.12, materials["amber"], DEVICE_CELL_RADIUS / 0.24)
+	_spawn_impact_light(at + Vector3.UP * 0.48, Color(1.0, 0.66, 0.24), 3.2, 6.8, 0.28)
+	_spawn_hit_sparks(at + Vector3.UP * 0.7, materials["amber"])
+	return affected
+
+func _collapse_nearest_phase_lane(at: Vector3, duration: float = DEVICE_LANE_COLLAPSE_SECONDS) -> int:
+	var nearest_index := -1
+	var nearest_distance := DEVICE_LANE_MAX_Z_DISTANCE
+	for index in range(phase_lanes.size()):
+		var lane: Dictionary = phase_lanes[index]
+		var distance := absf(at.z - float(lane["z"]))
+		if distance < nearest_distance:
+			nearest_distance = distance
+			nearest_index = index
+	if nearest_index < 0:
+		return -1
+	var lane: Dictionary = phase_lanes[nearest_index]
+	lane["disruption_remaining"] = maxf(float(lane.get("disruption_remaining", 0.0)), maxf(0.0, duration))
+	phase_lanes[nearest_index] = lane
+	phase_lane_disruptions += 1
+	device_lane_collapses += 1
+	_update_phase_lanes(0.0)
+	var surge_position := Vector3(at.x, 0.1, float(lane["z"]))
+	_spawn_ring_burst(surge_position, materials["violet"], DEVICE_LANE_MAX_Z_DISTANCE / 0.24)
+	_spawn_impact_light(surge_position + Vector3.UP * 0.34, Color(0.62, 0.30, 1.0), 3.1, 6.2, 0.26)
+	return nearest_index
+
+func _phase_anchor_rupture(at: Vector3) -> int:
+	instability = minf(100.0, instability + 18.0)
+	null_shift_timer = maxf(null_shift_timer, 1.0)
+	return _collapse_nearest_phase_lane(at, DEVICE_LANE_COLLAPSE_SECONDS)
 
 func _deploy_pulse() -> void:
 	if pulse_cooldown > 0.0 or paused_game or mission_finished:
@@ -4538,6 +4636,8 @@ func _update_hud() -> void:
 		telemetry_label.text += "  ·  DAILY / 2 MODS"
 	if extraction_reinforcements_spawned > 0:
 		telemetry_label.text += "  ·  EXFIL +%02d / BREACH %02d" % [extraction_reinforcements_spawned, extraction_overload_count]
+	if device_emp_overloads > 0 or device_cell_novas > 0 or device_lane_collapses > 0:
+		telemetry_label.text += "  ·  REACT EMP %02d / NOVA %02d / LANE %02d" % [device_emp_overloads, device_cell_novas, device_lane_collapses]
 	if is_instance_valid(combat_status_label):
 		var overdrive_readout := "LIVE %.1f S" % overdrive_timer if overdrive_timer > 0.0 else "CHARGE %03d%%" % int(roundf(overdrive_charge))
 		combat_status_label.text = "COMBO %02d · ×%.2f · ACC %.0f%% · %s" % [combat_combo, _combat_combo_multiplier(combat_combo), _combat_accuracy_percentage(), overdrive_readout]
@@ -4560,10 +4660,10 @@ func _update_hud() -> void:
 		var active_impact_lights: int = _active_impact_light_count()
 		var operator_rim_active: int = int(is_instance_valid(operator_rim_light) and operator_rim_light.visible)
 		var profile: String = "PERFORMANCE" if performance_quality else ("BALANCED" if not cinematic_quality else ("AUTO-OPTIMIZED" if adaptive_quality_degraded else "CINEMATIC"))
-		diagnostics_label.text = "LIVE DIAGNOSTICS\nFPS        %02d\nFRAME P95  %.1f ms\nFRAME NOW  %.1f ms\nDRAW CALLS %d\nFX ACTIVE  %02d\nFX POOLS   %02d BEAM / %02d RING / %02d SPARK\nFX DROPPED %d\nDASH TRAILS %04d\nGUARDS     %d\nDEVICES    %d\nLANE SUPPRESS %03d\nDASH EVADES %d\nDASH CD    %.1f s\nHIT LIGHTS %d / %d POOL\nOPERATOR RIM %d / 1\nOVERDRIVE ARCS %d\nEXFIL REINF %02d / BREACH %02d\nPROFILE    %s" % [
+		diagnostics_label.text = "LIVE DIAGNOSTICS\nFPS        %02d\nFRAME P95  %.1f ms\nFRAME NOW  %.1f ms\nDRAW CALLS %d\nFX ACTIVE  %02d\nFX POOLS   %02d BEAM / %02d RING / %02d SPARK\nFX DROPPED %d\nDASH TRAILS %04d\nGUARDS     %d\nDEVICES    %d\nLANE SUPPRESS %03d\nDASH EVADES %d\nDASH CD    %.1f s\nHIT LIGHTS %d / %d POOL\nOPERATOR RIM %d / 1\nOVERDRIVE ARCS %d\nDEVICE FX  EMP %02d / NOVA %02d / LANE %02d\nEXFIL REINF %02d / BREACH %02d\nPROFILE    %s" % [
 			Engine.get_frames_per_second(), fps_p95_ms, current_frame_ms, draw_calls,
 			effects.size(), beam_pool.size(), ring_pool.size(), spark_pool.size(), effect_pool_exhaustions,
-			dash_trails_emitted, guards.size(), _living_device_count(), phase_lane_disruptions, dash_evasions, dash_cooldown, active_impact_lights, impact_light_pool.size(), operator_rim_active, overdrive_arc_chains, extraction_reinforcements_spawned, extraction_overload_count, profile
+			dash_trails_emitted, guards.size(), _living_device_count(), phase_lane_disruptions, dash_evasions, dash_cooldown, active_impact_lights, impact_light_pool.size(), operator_rim_active, overdrive_arc_chains, device_emp_overloads, device_cell_novas, device_lane_collapses, extraction_reinforcements_spawned, extraction_overload_count, profile
 		]
 
 func _update_input_hint() -> void:
@@ -4778,7 +4878,8 @@ func _update_effect_expiry(delta: float) -> void:
 		else:
 			var progress: float = clampf(1.0 - remaining / duration, 0.0, 1.0)
 			var eased: float = 1.0 - pow(1.0 - progress, 2.2)
-			ring.scale = Vector3.ONE.lerp(Vector3.ONE * 14.0, eased)
+			var max_scale: float = maxf(1.0, float(state.get("max_scale", 14.0)))
+			ring.scale = Vector3.ONE.lerp(Vector3.ONE * max_scale, eased)
 			ring.transparency = clampf(progress * 0.88, 0.0, 0.9)
 			state["remaining"] = remaining
 			ring_effects[index] = state
@@ -4879,7 +4980,7 @@ func _spawn_beam(from: Vector3, to: Vector3, material: Material, lifetime: float
 	var duration: float = maxf(0.025, lifetime)
 	beam_effects.append({"node": instance, "remaining": duration, "duration": duration})
 	effects.append(instance)
-func _spawn_ring_burst(at: Vector3, material: Material) -> void:
+func _spawn_ring_burst(at: Vector3, material: Material, max_scale: float = 14.0) -> void:
 	var ring: MeshInstance3D
 	for pooled: MeshInstance3D in ring_pool:
 		if is_instance_valid(pooled) and not pooled.visible:
@@ -4906,7 +5007,7 @@ func _spawn_ring_burst(at: Vector3, material: Material) -> void:
 	ring.scale = Vector3.ONE
 	ring.transparency = 0.0
 	ring.visible = true
-	ring_effects.append({"node": ring, "remaining": 0.46, "duration": 0.46})
+	ring_effects.append({"node": ring, "remaining": 0.46, "duration": 0.46, "max_scale": maxf(1.0, max_scale)})
 	effects.append(ring)
 func _spawn_hit_sparks(at: Vector3, material: Material) -> void:
 	# Reuse a bounded one-shot emitter instead of allocating a node and timer for every hit.

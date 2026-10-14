@@ -376,3 +376,13 @@ The runtime smoke now checks combo thresholds, critical damage, the charge gate,
 - Precision hits during a live Warden attack telegraph interrupt the attack, clear its firing lanes, and apply a measurable 0.9-second stagger. Ordinary hits still deal damage but do not get this counterplay reward.
 - The phase transition is one-shot and driven by actual health state. The HUD surfaces phase-transition and stagger counts; headless Godot tests exercise the real damage path, the exact 50% threshold, live stat changes, 8-to-12 lane progression, visible boss labels and attack cancellation.
 - This is integrated into the existing extraction lockdown flow and keyboard, gamepad and touch combat controls; no separate demo scene or mocked encounter was introduced.
+
+
+## Godot release 0.15 — reactive arena overload network
+
+- Rebuilt the three destructible field devices as distinct, physically local combat decisions rather than three cosmetic reward switches.
+- **EMP Relay:** a 13.5 m spatial burst interrupts attack telegraphs, dashes and active hostile attack lanes for 3.2 seconds only for guards inside the effect radius; distant guards are not frozen. Its floor shockwave expands to match the real effect radius.
+- **Energy Cell:** an 8.8 m Nova suppresses nearby hostile attacks for 2.15 seconds, cancels their windups, instantly restores the Pulse cooldown and adds 30 points to Overdrive charge. The existing +35 health recovery remains on device destruction; its visual shockwave maps to the Nova radius.
+- **Phase Anchor:** rupture adds 18 instability and opens a brief one-second shift window, while the closest physical energy conduit is visibly disabled for 6.5 seconds. The conduit resumes through its normal phase state machine when the disruption expires.
+- Impact rings still share the bounded ring pool; each ring can now choose a target expansion scale while older visual effects keep their previous default sizing. Tactical telemetry and F3 diagnostics expose EMP, Nova and lane-collapse counts.
+- Expanded headless Godot runtime coverage to check radius boundaries, cancelled enemy telegraphs, resource recovery, nearest-lane suppression and the real 3D state. Regular combat, Warden phase logic, daily mutators, gamepad/touch input, local-only career and reward idempotency remain compatible.

@@ -1280,6 +1280,80 @@ func _run_smoke() -> void:
 	if not _expect(game._living_device_count() == 2, "device count must reflect destruction"):
 		return
 
+	print("RUNTIME_STAGE: reactive arena device overloads")
+	var overload_relay: Node3D = game.devices[0]["node"]
+	var overload_cell: Node3D = game.devices[1]["node"]
+	var overload_anchor: Node3D = game.devices[2]["node"]
+	var saved_guards_for_overload: Array[Dictionary] = game.guards
+	game.guards = game.guards.duplicate()
+	game.guards.clear()
+	game._spawn_guard(overload_relay.global_position + Vector3(1.0, 0.07, 0.0), false)
+	var overload_near_index: int = game.guards.size() - 1
+	game._spawn_guard(overload_relay.global_position + Vector3(18.0, 0.07, 0.0), false)
+	var overload_far_index: int = game.guards.size() - 1
+	var overload_near: CharacterBody3D = game.guards[overload_near_index]["node"] as CharacterBody3D
+	var overload_far: CharacterBody3D = game.guards[overload_far_index]["node"] as CharacterBody3D
+	var overload_emp_counter: int = game.device_emp_overloads
+	var overload_suppressed_counter: int = game.device_hostiles_suppressed
+	if not _expect(game._device_emp_burst(overload_relay.global_position) == 1, "relay EMP must suppress only the guard inside its physical radius"):
+		return
+	if not _expect(float(game.guards[overload_near_index]["stun"]) >= game.DEVICE_EMP_STUN_SECONDS and is_zero_approx(float(game.guards[overload_far_index]["stun"])), "relay EMP must interrupt the nearby hostile while preserving a distant hostile"):
+		return
+	if not _expect(game.device_emp_overloads == overload_emp_counter + 1 and game.device_hostiles_suppressed == overload_suppressed_counter + 1, "relay EMP must update deterministic overload and suppression telemetry"):
+		return
+	overload_near.global_position = overload_cell.global_position + Vector3(1.0, 0.07, 0.0)
+	overload_far.global_position = overload_cell.global_position + Vector3(14.0, 0.07, 0.0)
+	game.guards[overload_near_index]["stun"] = 0.0
+	game.guards[overload_far_index]["stun"] = 0.0
+	game.guards[overload_near_index]["windup"] = 0.72
+	game.guards[overload_near_index]["dash_windup"] = 0.28
+	var saved_pulse_cooldown_device: float = game.pulse_cooldown
+	var saved_overdrive_charge_device: float = game.overdrive_charge
+	game.pulse_cooldown = 4.0
+	game.overdrive_charge = 10.0
+	var overload_nova_counter: int = game.device_cell_novas
+	var nova_suppressed: int = game._device_cell_nova(overload_cell.global_position)
+	if not _expect(nova_suppressed == 1 and float(game.guards[overload_near_index]["stun"]) >= game.DEVICE_CELL_STUN_SECONDS and is_zero_approx(float(game.guards[overload_far_index]["stun"])), "cell Nova must be an actual radius-limited attack interrupt, not a global stun"):
+		return
+	if not _expect(game.pulse_cooldown == 0.0 and is_equal_approx(game.overdrive_charge, 40.0), "cell Nova must reset pulse cooldown and restore 30 points of Overdrive charge"):
+		return
+	if not _expect(is_zero_approx(float(game.guards[overload_near_index]["windup"])) and is_zero_approx(float(game.guards[overload_near_index]["dash_windup"])), "device reaction must cancel hostile telegraph and lunge windup immediately"):
+		return
+	if not _expect(game.device_cell_novas == overload_nova_counter + 1, "cell Nova activation must be visible in lifetime telemetry"):
+		return
+	var saved_phase_clock_device: float = game.phase_clock
+	var saved_phase_disruptions_device: int = game.phase_lane_disruptions
+	var saved_lane_remaining_device: float = float(game.phase_lanes[0]["disruption_remaining"])
+	var saved_device_lane_collapses: int = game.device_lane_collapses
+	var saved_instability_device: float = game.instability
+	var saved_null_shift_device: float = game.null_shift_timer
+	game.phase_clock = 6.6
+	game.instability = 0.0
+	game.null_shift_timer = 0.0
+	game._update_phase_lanes(0.0)
+	var anchor_lane_index: int = game._phase_anchor_rupture(overload_anchor.global_position)
+	if not _expect(anchor_lane_index == 0 and float(game.phase_lanes[anchor_lane_index]["disruption_remaining"]) >= game.DEVICE_LANE_COLLAPSE_SECONDS, "phase anchor rupture must collapse the physically nearest energy lane for 6.5 seconds"):
+		return
+	if not _expect(str(game.phase_lanes[anchor_lane_index]["state"]) == "disrupted" and not bool(game.phase_lanes[anchor_lane_index]["active_mesh"].visible), "anchor collapse must suppress the real lethal lane mesh and state"):
+		return
+	if not _expect(is_equal_approx(game.instability, 18.0) and is_equal_approx(game.null_shift_timer, 1.0) and game.device_lane_collapses > 0, "anchor rupture must expose its instability cost, brief phase window and collapse telemetry"):
+		return
+	game.phase_lanes[0]["disruption_remaining"] = saved_lane_remaining_device
+	game.phase_lane_disruptions = saved_phase_disruptions_device
+	game.device_lane_collapses = saved_device_lane_collapses
+	game.phase_clock = saved_phase_clock_device
+	game.instability = saved_instability_device
+	game.null_shift_timer = saved_null_shift_device
+	game._update_phase_lanes(0.0)
+	overload_near.queue_free()
+	overload_far.queue_free()
+	game.guards = saved_guards_for_overload
+	game.device_emp_overloads = overload_emp_counter
+	game.device_cell_novas = overload_nova_counter
+	game.device_hostiles_suppressed = overload_suppressed_counter
+	game.pulse_cooldown = saved_pulse_cooldown_device
+	game.overdrive_charge = saved_overdrive_charge_device
+
 	print("RUNTIME_STAGE: pulse and animation")
 	var close_guard: Node3D = game.guards[0]["node"]
 	close_guard.global_position = game.player.global_position + Vector3(0.0, 0.0, -4.0)
