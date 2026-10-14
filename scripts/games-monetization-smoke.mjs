@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { calculateScenario, calculateRequiredMonthlyVisitors, DEFAULT_INPUTS, normalizeInputs, SCENARIOS } from '../public/games/monetization/model.js';
+import { calculateScenario, calculateRequiredMonthlyVisitors, calculateBreakEvenMonthlyVisitors, calculateMonthlyProjection, calculateSensitivity, calculateDecisionDashboard, DEFAULT_INPUTS, normalizeInputs, SCENARIOS } from '../public/games/monetization/model.js';
 
 const root = process.cwd();
 const pagePath = resolve(root, 'public/games/monetization/index.html');
@@ -26,7 +26,7 @@ assert.ok(['target-mix-total','target-mix-ads','target-mix-paid','target-mix-sub
 assert.ok(['target-mix-total','target-mix-ads','target-mix-paid','target-mix-subscriptions','target-mix-services','target-mix-sponsors','target-mix-leads-contracts','target-mix-lead-overflow','target-mix-capacity'].every((id) => app.includes("getElementById('" + id + "')")), 'Target-scale source mix must be wired to computed target scenario');
 assert.ok(page.includes('name="annualRevenueTargetUsd"'), 'Editable annual gross revenue target input missing');
 assert.ok(['newVisitorSharePct','maxLeadsPerMonth','maxProjectsPerMonth','subscriptionConversionRatePct','subscriptionMonthlyPriceUsd','subscriptionMonthlyChurnPct'].every((id) => page.includes('id="' + id + '"') && page.includes('name="' + id + '"')), 'New-visitor share, subscription assumptions, enquiry processing and project capacity inputs are required');
-assert.ok(app.includes('targetScenario.capacityUtilizationPct') && app.includes('targetScenario.unprocessedLeads') && app.includes('modelVersion: 6') && app.includes('target-mix-subscriptions') && app.includes('subscriptionMrrMonth12Usd'), 'Capacity-aware outputs, cohort subscriptions and model export version must be wired');
+assert.ok(app.includes('targetScenario.capacityUtilizationPct') && app.includes('targetScenario.unprocessedLeads') && app.includes('modelVersion: 7') && app.includes('target-mix-subscriptions') && app.includes('subscriptionMrrMonth12Usd'), 'Capacity-aware outputs, cohort subscriptions and model export version must be wired');
 assert.ok(app.includes('calculateRequiredMonthlyVisitors') && app.includes('growthTarget:'), 'Required-traffic calculation must be visible and included in the local export');
 assert.ok(!/https?:\/\/(?:fonts\.googleapis\.com|fonts\.gstatic\.com|cdn\.jsdelivr\.net|unpkg\.com)/i.test(page), 'Financial planner unexpectedly depends on a remote asset CDN');
 assert.ok(app.includes('URL.createObjectURL') && app.includes('osgard-games-model.json') && app.includes('osgard-games-model.csv') && app.includes("import { buildFinancialCsv } from './export.mjs'"), 'Local JSON/CSV export not implemented');
@@ -144,3 +144,57 @@ assert.equal(boundedTarget.annualRevenueTargetUsd, 1000000000000, 'Annual target
 const boundedCommercial = normalizeInputs({ sponsorDealsPerMonth: 30000, averageSponsorDealUsd: -1 })
 assert.equal(boundedCommercial.sponsorDealsPerMonth, 10000, 'Sponsor deal count must be bounded')
 assert.equal(boundedCommercial.averageSponsorDealUsd, 0, 'Sponsor amount cannot be negative')
+
+
+assert.ok(page.includes('id="decision-dashboard-title"') && page.includes('class="decision-dashboard"'), 'Premium decision dashboard section missing');
+assert.ok(['break-even-visitors','projection-cumulative-net','projection-month12-net','projection-break-even-month','projection-chart','projection-rows','sensitivity-results','sensitivity-status'].every((id) => page.includes('id="' + id + '"') && app.includes("getElementById('" + id + "')")), 'Decision dashboard metrics/chart must be wired to computed model output');
+assert.ok(['snapshot-name','snapshot-select','save-snapshot','load-snapshot','delete-snapshot','snapshot-status','export-projection-csv'].every((id) => page.includes('id="' + id + '"') && app.includes("getElementById('" + id + "')")), 'Local scenario library and 12-month export controls must exist and be wired');
+assert.ok(page.includes('name="monthlyTrafficGrowthPct"') && page.includes('min="-50"') && page.includes('max="100"'), 'Monthly traffic ramp assumption must be visible and bounded');
+assert.ok(app.includes("osgard.monetization.snapshots.v1") && app.includes('MAX_SNAPSHOTS = 8') && app.includes('localStorage.setItem(SNAPSHOT_KEY'), 'Named assumptions must be stored locally with a strict cap');
+assert.ok(app.includes('calculateBreakEvenMonthlyVisitors') && app.includes('calculateMonthlyProjection') && app.includes('calculateSensitivity'), 'Decision dashboard model functions must be wired into the render loop');
+assert.ok(app.includes('osgard-12-month-projection.csv') && app.includes('month12') === false, '12-month output must have its own explicit CSV export');
+assert.equal(DEFAULT_INPUTS.monthlyTrafficGrowthPct, 5, 'Traffic ramp must have a defined starting assumption');
+assert.equal(normalizeInputs({ monthlyTrafficGrowthPct: 1000 }).monthlyTrafficGrowthPct, 100, 'Traffic growth upper bound must be enforced');
+assert.equal(normalizeInputs({ monthlyTrafficGrowthPct: -100 }).monthlyTrafficGrowthPct, -50, 'Traffic decline lower bound must be enforced');
+
+const breakEvenVisitors = calculateBreakEvenMonthlyVisitors(DEFAULT_INPUTS, 'base');
+assert.ok(Number.isInteger(breakEvenVisitors) && breakEvenVisitors > 0, 'Base assumptions should find a bounded break-even traffic threshold');
+assert.ok(calculateScenario({ ...DEFAULT_INPUTS, monthlyVisitors: breakEvenVisitors }, 'base').netOperatingUsd >= -1e-8, 'Break-even result must be non-negative at the returned integer traffic threshold');
+assert.ok(breakEvenVisitors === 0 || calculateScenario({ ...DEFAULT_INPUTS, monthlyVisitors: breakEvenVisitors - 1 }, 'base').netOperatingUsd < 0, 'Break-even search must return the smallest integer that reaches non-negative monthly operating result');
+const impossibleBreakEven = calculateBreakEvenMonthlyVisitors({
+  ...DEFAULT_INPUTS, adSlotsPerSession: 0, paidConversionRate: 0, subscriptionConversionRatePct: 0,
+  leadRate: 0, sponsorDealsPerMonth: 0, averageSponsorDealUsd: 0,
+}, 'base');
+assert.equal(impossibleBreakEven, null, 'Break-even must be unreachable when no variable revenue streams exist and fixed costs remain');
+
+const flatRamp = calculateMonthlyProjection({ ...DEFAULT_INPUTS, monthlyTrafficGrowthPct: 0 }, 'base', 12);
+assert.equal(flatRamp.rows.length, 12, 'Monthly projection must contain twelve months');
+assert.ok(flatRamp.rows.every((row, index) => row.month === index + 1 && row.startingVisitors === DEFAULT_INPUTS.monthlyVisitors), 'A zero-growth projection must keep starting traffic flat');
+assert.ok(Math.abs(flatRamp.cumulativeRevenueUsd - flatRamp.rows.reduce((sum, row) => sum + row.totalRevenueUsd, 0)) < 1e-7, 'Cumulative revenue must reconcile with its monthly rows');
+assert.ok(Math.abs(flatRamp.cumulativeNetOperatingUsd - flatRamp.rows.reduce((sum, row) => sum + row.netOperatingUsd, 0)) < 1e-7, 'Cumulative operating result must reconcile with monthly net rows');
+const growthRamp = calculateMonthlyProjection({ ...DEFAULT_INPUTS, monthlyTrafficGrowthPct: 5 }, 'base', 12);
+assert.ok(growthRamp.rows[11].startingVisitors > growthRamp.rows[0].startingVisitors, 'Positive traffic growth should compound by month');
+assert.ok(growthRamp.rows[11].activeSubscribers > growthRamp.rows[0].activeSubscribers, 'Subscriber model must aggregate retained monthly cohorts');
+assert.equal(calculateMonthlyProjection(DEFAULT_INPUTS, 'base', 99).rows.length, 36, 'Requested projection horizon must be capped at 36 months');
+const noSubscriberRamp = calculateMonthlyProjection({ ...DEFAULT_INPUTS, monthlyTrafficGrowthPct: 0, subscriptionConversionRatePct: 0 }, 'base', 12);
+assert.ok(noSubscriberRamp.rows.every((row) => row.activeSubscribers === 0 && row.subscriptionRevenueUsd === 0), 'Zero subscription conversion should produce no active subscriber revenue');
+const noChurnRamp = calculateMonthlyProjection({ ...DEFAULT_INPUTS, monthlyTrafficGrowthPct: 0, subscriptionMonthlyChurnPct: 0 }, 'base', 12);
+assert.ok(Math.abs(noChurnRamp.rows[11].activeSubscribers - noChurnRamp.rows.reduce((sum, row) => sum + row.newSubscribers, 0)) < 1e-7, 'Zero churn retains all acquired subscriber cohorts');
+const fullChurnRamp = calculateMonthlyProjection({ ...DEFAULT_INPUTS, monthlyTrafficGrowthPct: 0, subscriptionMonthlyChurnPct: 100 }, 'base', 12);
+assert.ok(Math.abs(fullChurnRamp.rows[11].activeSubscribers - fullChurnRamp.rows[11].newSubscribers) < 1e-7, '100% monthly churn should retain only the newest cohort');
+
+const sensitivity = calculateSensitivity(DEFAULT_INPUTS, 'base', 20);
+assert.equal(sensitivity.length, 10, 'Sensitivity sweep must cover ten material drivers');
+assert.ok(sensitivity.every((row) => row.impactRangeUsd >= 0 && Number.isFinite(row.lowNetOperatingUsd) && Number.isFinite(row.highNetOperatingUsd)), 'Sensitivity values must stay finite and non-negative in range');
+assert.ok(sensitivity.every((row, index) => index === 0 || sensitivity[index - 1].impactRangeUsd >= row.impactRangeUsd), 'Sensitivity drivers must be sorted by modeled impact');
+const noRevenueSensitivity = calculateSensitivity({
+  ...DEFAULT_INPUTS, adSlotsPerSession: 0, paidConversionRate: 0, subscriptionConversionRatePct: 0,
+  leadRate: 0, sponsorDealsPerMonth: 0, averageSponsorDealUsd: 0,
+}, 'base', 20);
+assert.ok(noRevenueSensitivity.every((row) => Number.isFinite(row.impactRangeUsd)), 'Sensitivity must remain finite for a zero-revenue scenario');
+const decisionDashboard = calculateDecisionDashboard(DEFAULT_INPUTS);
+assert.equal(decisionDashboard.projection.rows.length, 12, 'Combined dashboard result must include a twelve-month path');
+assert.equal(decisionDashboard.baseline.scenarioId, 'base', 'Dashboard should label which scenario was analyzed');
+assert.ok(Number.isFinite(decisionDashboard.grossMarginPct), 'Gross margin indicator should be finite when modeled revenue exists');
+
+console.log('PASS Premium decision cockpit: break-even search, 12-month traffic ramp, retained subscription cohorts, sensitivity ranking, local scenario library and model-only disclosure.');
