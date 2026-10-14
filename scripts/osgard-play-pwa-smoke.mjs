@@ -57,7 +57,18 @@ for (const path of ['/games/admin/', '/games/operations/', '/games/commerce-admi
   assert.ok(sw.includes(path), 'Private or API routes must be excluded from the offline cache: ' + path);
 }
 assert.ok(sw.includes("request.mode === 'navigate'") && sw.includes('/games/offline.html'));
-assert.ok(sw.includes("'/games/luxury.css'") && sw.includes("'/games/sponsored-campaigns.css'"), 'The cached catalogue must retain its primary styles offline.');
+const precacheStart = sw.indexOf('const PRECACHE_URLS = [');
+const precacheEnd = sw.indexOf('];', precacheStart);
+const precacheSource = sw.slice(precacheStart, precacheEnd);
+const precachePaths = [...precacheSource.matchAll(/'([^']+)'/g)].map(match => match[1]);
+assert.equal(precachePaths.length, new Set(precachePaths).size, 'PWA precache must not contain duplicate paths.');
+const staticAllowlistStart = sw.indexOf('const PUBLIC_STATIC_ALLOWLIST = new Set([');
+const staticAllowlistEnd = sw.indexOf(']);', staticAllowlistStart);
+const staticAllowlist = sw.slice(staticAllowlistStart, staticAllowlistEnd);
+for (const path of ['/games/luxury.css', '/games/sponsored-campaigns.css', '/games/favicon.svg']) {
+  assert.ok(precachePaths.includes(path), 'Core public shell asset must be precached: ' + path);
+  assert.ok(staticAllowlist.includes("'" + path + "'"), 'Core public shell asset must be allowed for cached fallback: ' + path);
+}
 assert.ok(sw.includes("cache.put('/games/'") && sw.includes('ignoreSearch: true'));
 assert.ok(sw.includes('CACHE_PREFIX') && sw.includes('caches.delete(name)'));
 assert.ok(!sw.includes("caches.match(request) || fetch(request)"), 'Do not use a stale generic cache-first strategy for the entire site.');
