@@ -35,6 +35,7 @@
     "qa:intermission-sponsor": "node scripts/game-intermission-sponsor-smoke.mjs",
     "qa:game-recommendations": "node scripts/game-recommendations-smoke.mjs",
     "qa:games-model": "node scripts/games-monetization-smoke.mjs",
+    "qa:growth-evidence": "node scripts/growth-experiment-evidence-smoke.mjs",
     "qa:null-shift-godot": "node scripts/null-shift-godot-smoke.mjs",
     "qa:partners-page": "node scripts/partners-page-smoke.mjs",
     "qa:ecosystem": "node scripts/ecosystem-integrity-smoke.mjs",
