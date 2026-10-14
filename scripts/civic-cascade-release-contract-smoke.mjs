@@ -7,9 +7,17 @@ const release = JSON.parse(readFileSync(resolve(root, "public/games/civic-cascad
 const matrix = readFileSync(resolve(root, "scripts/production-route-matrix.mjs"), "utf8");
 
 assert.equal(release.gameId, "civic-cascade");
-assert.equal(release.version, "3.3.0");
+assert.equal(release.version, "3.4.0");
 assert.equal(release.buildContract?.decisionDossier?.modelVersion, release.version,
   "Decision dossier model version must track the published CIVIC CASCADE release");
+assert.equal(release.buildContract?.decisionAssurance?.enabled, true);
+assert.equal(release.buildContract?.decisionAssurance?.schema, "osgard.civic-cascade.decision-assurance/v1");
+assert.equal(release.buildContract?.decisionAssurance?.includesFullRiskTrajectoryAtT0T30T60T90, true);
+assert.equal(release.buildContract?.decisionAssurance?.includesCommandAblationAttribution, true);
+assert.equal(release.buildContract?.decisionAssurance?.validatesStateFingerprintAgainstSnapshot, true);
+assert.equal(release.buildContract?.autonomousDoctrinePlanner?.reserveAwareScoring, true);
+assert.equal(release.buildContract?.autonomousDoctrinePlanner?.minimumSupplyReserve, 15);
+assert.equal(release.buildContract?.autonomousDoctrinePlanner?.minimumCrewReserve, 1);
 assert.equal(release.buildContract?.decisionDossier?.hashScope,
   "canonical recursively key-sorted JSON payload without exportMetadata",
   "The release must describe the canonical hash scope actually used by the verifier");
