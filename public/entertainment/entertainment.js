@@ -2,7 +2,7 @@
   'use strict';
 
   const FAVORITES_KEY = 'osgard.games.favorites.v1';
-  const RECENT_KEY = 'osgard.entertainment.recent.v1';
+  const RECENT_KEY = 'osgard.games.recent.v1';
   const CONSENT_KEY = 'osgard.games.analytics-consent.v1';
   const cards = Array.from(document.querySelectorAll('.world-card[data-game]'));
   const grid = document.querySelector('#world-grid');

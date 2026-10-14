@@ -26,7 +26,7 @@ const checks = [
   ['11 · Search supports title, tags and description', page.includes('id="game-search"') && js.includes('card.textContent')],
   ['12 · Genre filter buttons have pressed state for accessibility', page.includes('data-genre="tactics"') && js.includes("setAttribute('aria-pressed', String(active))")],
   ['13 · Favorites use the same local-storage key as the Games hub', js.includes("FAVORITES_KEY = 'osgard.games.favorites.v1'")],
-  ['14 · Recent-game continuation is local to this device', js.includes("RECENT_KEY = 'osgard.entertainment.recent.v1'") && js.includes('recordRecent(id)')],
+  ['14 · Recent-game continuation is local to this device', js.includes("RECENT_KEY = 'osgard.games.recent.v1'") && js.includes('recordRecent(id)')],
   ['15 · Alphabetical and recent sorting are implemented', js.includes("mode === 'az'") && js.includes("mode === 'recent'")],
   ['16 · The surprise-me action chooses from the current filtered set', js.includes("querySelector('#surprise-button')") && js.includes('currentVisibleCards()')],
   ['17 · Empty-state controls can reset the filters', page.includes('id="empty-reset"') && js.includes('function resetFilters()')],
