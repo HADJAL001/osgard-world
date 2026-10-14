@@ -459,8 +459,8 @@ assert.ok(signalJs.includes('async function buildSignalShareCard(score)')&&signa
 assert.ok(signalRun.includes('id="download-share-card"')&&signalRun.includes('СОХРАНИТЬ КАРТОЧКУ PNG'),'SIGNAL RUN must expose a result-card download control after a run')
 assert.ok(signalJs.includes("$('download-share-card')?.addEventListener('click'")&&signalJs.includes("URL.createObjectURL(blob)")&&signalJs.includes("URL.revokeObjectURL(url)")&&signalJs.includes("link.download='osgard-signal-run-'")&&signalJs.includes("status.textContent='КАРТОЧКА РЕЗУЛЬТАТА СОХРАНЕНА В PNG'"),'SIGNAL RUN PNG download must save a local image and release its object URL without fabricating a share event')
 assert.ok(inviteLandingScript.includes("const legacySignalRun = game === 'signal-run'")&&inviteLandingScript.includes("target.searchParams.set(key, value)")&&inviteLandingScript.includes("validDailyMode"),'Signal Run social preview must preserve only validated challenge and daily-mode parameters')
-assert.ok(html.includes('id="signal-run-referral-bridge"')&&html.includes("incoming.searchParams.get('play')!=='signal-run'")&&html.includes("requestAnimationFrame(()=>link.click())"),'SIGNAL RUN challenge links must launch through the existing game-player lifecycle')
-const signalReferralBridgeStart=html.indexOf('<script id="signal-run-referral-bridge">')+'<script id="signal-run-referral-bridge">'.length;
+assert.ok(html.includes('id="games-deep-link-bridge"')&&html.includes("incoming.searchParams.get('play')||''")&&html.includes("validGameIds.has(gameId)")&&html.includes("requestAnimationFrame(()=>link.click())"),'Supported game deep links must launch through the shared game-player lifecycle')
+const signalReferralBridgeStart=html.indexOf('<script id="games-deep-link-bridge">')+'<script id="games-deep-link-bridge">'.length;
 const signalReferralBridgeEnd=html.indexOf('</script>',signalReferralBridgeStart);
 assert.ok(signalReferralBridgeEnd>signalReferralBridgeStart,'SIGNAL RUN referral bridge must be a valid inline script');
 new Function(html.slice(signalReferralBridgeStart,signalReferralBridgeEnd));
