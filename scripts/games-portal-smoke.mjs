@@ -658,6 +658,7 @@ assert.ok(recommendationStyles.includes('#osgard-aftergame-intermission[hidden]'
 assert.ok(recommendationScript.includes("document.addEventListener('osgard:game-completed'")&&recommendationScript.includes("document.addEventListener('osgard:game-launching'"),'The deferred recommendation runtime must subscribe to the gameplay lifecycle')
 assert.ok(lifecycle.includes("document.dispatchEvent(new Event('osgard:game-launching'))")&&lifecycle.includes("new CustomEvent('osgard:game-completed'"),'Lifecycle wrapper must clear recommendations on launch and publish confirmed completion')
 assert.ok(recommendationScript.includes("document.addEventListener('osgard:game-completed'")&&recommendationScript.includes("document.addEventListener('osgard:game-launching'"),'Recommendation module must subscribe to game lifecycle events')
+assert.ok(recommendationScript.includes("const existingSuite=host.querySelector('.og-postgame-suite')")&&recommendationScript.includes('if(existingSuite)nodes.push(existingSuite)'),'Generic game recommendations must preserve OSGARD SELECT service/reward controls across paired lifecycle notifications')
 assert.ok(recommendationStyles.includes('.post-run-recommendations')&&recommendationStyles.includes('prefers-reduced-motion:reduce'),'Recommendation shelf must have responsive/reduced-motion styling')
 new Function(recommendationScript)
 const mockNode=()=>{const node={className:'',textContent:'',hidden:false,dataset:{},attributes:{},children:[],handlers:{},append(...nodes){this.children.push(...nodes)},replaceChildren(...nodes){this.children=nodes},setAttribute(name,value){this.attributes[name]=value},addEventListener(name,handler){(this.handlers[name]??=[]).push(handler)},focus(){this.focused=true},click(){for(const handler of this.handlers.click||[])handler({target:this,button:0})},querySelector(selector){return selector.startsWith('.')?this.children.find(child=>child.className===selector.slice(1))||null:null}};node.classList={toggle(name,force){let parts=node.className.split(/\s+/).filter(Boolean);const current=parts.includes(name),enabled=force===undefined?!current:Boolean(force);if(enabled&&!current)parts.push(name);if(!enabled&&current)parts=parts.filter(value=>value!==name);node.className=parts.join(' ');return enabled},add(name){this.toggle(name,true)},remove(name){this.toggle(name,false)},contains(name){return node.className.split(/\s+/).includes(name)}};return node}
@@ -707,7 +708,12 @@ const firstSessionId='session_swarm_qa_1000'
 mockDocument.dispatch('osgard:game-completed',{detail:{game:'swarm',sessionId:firstSessionId}})
 const firstProgress=JSON.parse(mockLocalStorage.getItem('osgard.games.postgame-service-progress.v1'))
 assert.equal(firstProgress.count,1,'The completed game event should count one OSGARD intermission')
+const firstInlineSuite=mockHost.children.find(node=>node.className==='og-postgame-suite')
+assert.ok(firstInlineSuite,'The first completed session must render the in-player intermission')
+mockDocument.dispatch('osgard:game-session-ended',{detail:{game:'swarm',sessionId:firstSessionId,reason:'game_completed',durationSeconds:31,sessionStarted:true}})
+assert.equal(mockHost.children.find(node=>node.className==='og-postgame-suite'),firstInlineSuite,'The paired completed/session-ended events for one session must not rebuild the chooser')
 mockDocument.dispatch('osgard:game-session-ended',{detail:{game:'swarm',sessionId:firstSessionId,reason:'closed_by_user',durationSeconds:31,sessionStarted:true}})
+assert.equal(mockHost.children.find(node=>node.className==='og-postgame-suite'),firstInlineSuite,'Closing a completed session must not rebuild a chooser inside the dialog that is closing')
 const afterSameSessionReturn=JSON.parse(mockLocalStorage.getItem('osgard.games.postgame-service-progress.v1'))
 assert.equal(afterSameSessionReturn.count,1,'Completion and closing the same game session must not increment cadence twice')
 assert.deepEqual(afterSameSessionReturn.sessions,[firstSessionId],'Intermission cadence should persist its idempotency key')
@@ -796,6 +802,8 @@ mockDocument.dispatch('osgard:game-session-ended',{detail:{game:'patina',reason:
 assert.equal(mockOutside.hidden,false,'Closing a live PATINA session should show the owned-service intermission outside the player dialog')
 const outsideSuite=mockOutside.children.find(node=>node.className==='og-postgame-suite og-postgame-outside-suite')
 assert.ok(outsideSuite,'Closed-session intermission should contain a standalone service/reward suite')
+assert.equal(outsideSuite.children[0].children[1].focused,true,'The outside intermission heading should receive keyboard focus after the player dialog closes')
+assert.ok(recommendationScript.includes('intermissionHeading.tabIndex=-1')&&recommendationScript.includes('intermissionHeading.focus({preventScroll:true})'),'Keyboard users must be moved to the post-session choices after closing the player')
 assert.equal(outsideSuite.children.find(node=>node.className==='og-postgame-services').children.find(node=>node.className==='og-postgame-service-grid').children.length,10,'Closed-session intermission should show all ten eligible services, including Partner Studio, while excluding the unverified VPN')
 assert.equal(outsideSuite.children.find(node=>node.className==='og-postgame-back').href,'#catalog','Players must have a clear path back to the next game');
 const outsideCards=outsideSuite.children.find(node=>node.className==='og-postgame-services').children.find(node=>node.className==='og-postgame-service-grid').children;
