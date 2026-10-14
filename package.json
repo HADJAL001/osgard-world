@@ -15,6 +15,7 @@
     "preview": "vite preview --host 0.0.0.0",
     "qa:api": "python ../osgard-game-api/test_api.py",
     "qa:production-routes": "node scripts/production-route-matrix.mjs",
+    "qa:route-matrix-report": "node scripts/production-route-matrix-report-smoke.mjs",
     "qa:release": "node scripts/release-readiness.mjs",
     "qa:queue": "node --experimental-strip-types scripts/event-queue-smoke.mjs",
     "qa:production-api": "node scripts/production-api-probe.mjs",
