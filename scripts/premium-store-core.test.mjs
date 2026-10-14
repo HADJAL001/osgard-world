@@ -232,6 +232,7 @@ test('premium page includes an accessible operations dashboard and uses module-b
   assert.ok(html.includes('type="module" src="/games/premium/app.js"'));
   assert.ok(app.includes('loadSequence') && app.includes('loadController?.abort()'), 'Stale refresh requests must be aborted and sequence-guarded');
   assert.ok(app.includes('checkoutInProgress') && app.includes('Do not retry this POST'), 'Checkout must serialize side-effecting session requests');
+  assert.ok(app.includes('refresh.disabled = true') && app.includes('refresh.disabled = false'), 'A refresh must not re-enable product purchase buttons during an in-flight checkout');
   assert.ok(app.includes('validateCheckoutUrl(result.url)'), 'Provider redirects must be allow-listed');
   assert.ok(!app.includes("config.apiBaseUrl || '/commerce-api'") && !app.includes("String(config.apiBaseUrl || '/commerce-api')"), 'Do not blindly fall back to an unverified relative API path');
   assert.ok(!app.includes('.innerHTML'), 'Untrusted product labels must not be rendered as HTML');
