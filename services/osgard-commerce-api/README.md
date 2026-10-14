@@ -58,7 +58,23 @@ The repository already has an Nginx frontend container and a deployment pipeline
 7. Run checkout success, decline, cancellation, delayed-payment, duplicate-webhook, refund and subscription-cancellation cases using Stripe test mode. Verify both the order state and the protected commerce dashboard.
 8. Only after seller identity, taxes, refunds, privacy, support and provider eligibility are reviewed should live processing be considered. Do not enable OSGARD PREMIUM until its benefits, cancellation and account entitlement/revocation flow are implemented.
 
-Never commit Stripe secrets, database URLs, or the admin token. Never embed them in HTML or `commerce-config.json`.
+## Optional CASCADE LAB OpenAI Research Director
+
+The `POST /v1/lab/research-director` endpoint is a separate, rate-limited analysis path. It requires the client's explicit `consentToOpenAI: true` and accepts only a bounded, allow-listed physics summary, compact trajectory samples and up to four attempts from the same scenario. It rejects mixed level/mode comparisons, raw notes and unknown request schemas. The model cannot run tools or change a puzzle automatically.
+
+- Set `OPENAI_API_KEY` in the private API service environment. Never put it in the web client, a mobile bundle, a public config file or Git.
+- Optional defaults: `OPENAI_LAB_MODEL=gpt-6-luna` and `OPENAI_LAB_DAILY_REQUEST_LIMIT=100`. The endpoint additionally limits each IP to five requests per 15 minutes and permits at most two concurrent requests per process.
+- Uses the OpenAI Responses API with strict Structured Outputs and `store: false`; OSGARD does not persist prompts or model responses. This does not override provider abuse-monitoring or account data controls; review those separately.
+- Without the key, the endpoint returns `503 AI_ADVISOR_NOT_CONFIGURED` and the game retains its deterministic, local-only tools. The front-end also offers a research brief that can be copied manually.
+- Keep API project spending limits and alerts configured in OpenAI. The in-process daily cap resets at UTC midnight and is a guardrail, not a billing system; multiple API replicas have independent counters.
+
+The model returns a hypothesis plus one controlled next experiment. Its output is schema-validated server-side, its evidence references must exist in the request, and the suggested variable must be among the current run's available controls. It never receives player names, account identifiers, local notes or a full saved archive.
+
+### Verification
+
+`npm test` covers the input allow-list, consent gate, output schema, evidence references, available-variable checks, timeout/provider failures, the `store: false` request contract and the daily concurrency budget. `npm run check` includes the module's syntax check.
+
+Never commit Stripe secrets, database URLs, the admin token or the OpenAI key. Never embed them in HTML or `commerce-config.json`.
 
 ## Static-site configuration
 
