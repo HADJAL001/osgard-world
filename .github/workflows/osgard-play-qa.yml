@@ -10,6 +10,9 @@ on:
       - "services/osgard-commerce-api/test/core.test.mjs"
       - "services/osgard-commerce-api/src/campaigns.mjs"
       - "services/osgard-commerce-api/src/server.mjs"
+      - "services/osgard-commerce-api/src/game-coach.mjs"
+      - "services/osgard-commerce-api/test/game-coach.test.mjs"
+      - "scripts/game-coach-smoke.mjs"
       - "services/osgard-commerce-api/test/campaigns.test.mjs"
       - "src/GameDetailPage.tsx"
       - "src/GameIntermissionSponsor.tsx"
@@ -74,3 +77,5 @@ jobs:
         run: node --test services/osgard-commerce-api/test/core.test.mjs
       - name: Test campaign placement, schedule and public projection
         run: node --test services/osgard-commerce-api/test/campaigns.test.mjs
+      - name: Test the opt-in OpenAI Game Coach
+        run: npm run qa:game-coach

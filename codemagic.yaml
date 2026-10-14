@@ -34,6 +34,7 @@ workflows:
           npm run check
           npm run qa:ios-appstore
           npm run qa:games-portal
+          npm run qa:game-coach
           npm run qa:games-detail
           npm run qa:null-shift
           npm run qa:games-model

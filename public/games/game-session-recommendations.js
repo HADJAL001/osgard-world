@@ -917,6 +917,77 @@ function rewardShelf(gameId){
  const note=make('p','og-postgame-reward-note','Награда за публикацию: +50 локальных SHARDS не чаще раза в UTC-день на этом устройстве — после самостоятельного подтверждения игроком. Копирование само по себе не считается репостом и не даёт награду. OSGARD не получает надёжный сигнал о факте публикации; социальные платформы не подтверждают факт поста. Отдельно доступны серверно-квалифицированные +50 SHARDS за приглашение, по которому друг открыл ссылку и завершил игровую сессию не короче 30 секунд. Эта проверка подтверждает последовательность событий и время, но не уникальную личность. Все SHARDS — только косметические очки, не имеют денежной стоимости и не являются платёжным средством; баланс публикации хранится локально и может быть сброшен очисткой данных браузера. В SIGNAL RUN их можно потратить на косметический профиль GOLD SIGNAL за 100 SHARDS; он меняет только цвета и не влияет на счёт или сложность.');
  section.append(head,actions,grid,claim,qualifiedClaim,qualifiedNote,qualifiedStatus,status,note);return section;
 }
+
+function gameCoachShelf(detail,gameId){
+ const section=make('section','og-postgame-ai-coach');
+ section.setAttribute('aria-labelledby','og-game-coach-title');
+ const header=make('div','og-game-coach-header');
+ const intro=make('div','og-game-coach-intro');
+ const title=make('h3','og-game-coach-title','Один полезный совет к следующему раунду.');
+ title.id='og-game-coach-title';
+ intro.append(
+  make('p','og-postgame-eyebrow','OSGARD AI / GAME COACH'),
+  title,
+  make('p','og-game-coach-copy','Необязательный совет от ИИ на основе этой игровой сессии. Без имени, email, ID аккаунта, кода приглашения или свободного текста.')
+ );
+ const badge=make('span','og-game-coach-badge','OPENAI · ПО ЗАПРОСУ');
+ header.append(intro,badge);
+ const consentLabel=make('label','og-game-coach-consent');
+ const checkbox=make('input','');checkbox.type='checkbox';checkbox.checked=false;
+ const consentText=make('span','','Я согласен один раз отправить минимальную сводку этой сессии в OpenAI для создания подсказки. Это отдельно от согласия на аналитику.');
+ consentLabel.append(checkbox,consentText);
+ const actions=make('div','og-game-coach-actions');
+ const run=make('button','og-game-coach-button','Получить AI-подсказку ↗');run.type='button';run.disabled=true;
+ const status=make('p','og-game-coach-status','Подсказка необязательна. Играть и получать игровые награды можно без неё.');
+ status.setAttribute('role','status');status.setAttribute('aria-live','polite');
+ const result=make('div','og-game-coach-result');result.hidden=true;
+ const privacy=make('p','og-game-coach-privacy','При нажатии сначала проверяется доступность сервера. Если AI Coach отключён, сводка игры не отправляется. В запрос входят только ID игры, язык, длительность и факт завершения; ответы не сохраняются в профиле OSGARD. OpenAI API key остаётся только на сервере.');
+ const values=detail&&typeof detail==='object'?detail:{};
+ const duration=Number.isSafeInteger(values.durationSeconds)&&values.durationSeconds>=0?Math.min(values.durationSeconds,14400):0;
+ function setBusy(busy){run.disabled=busy||!checkbox.checked;checkbox.disabled=busy;run.textContent=busy?'Готовим подсказку…':'Получить AI-подсказку ↗'}
+ checkbox.addEventListener('change',()=>{
+  run.disabled=!checkbox.checked;
+  status.textContent=checkbox.checked?'Согласие действует только для одного запроса. Нажми кнопку, чтобы продолжить.':'Сводка не отправлена.';
+  if(!checkbox.checked)result.hidden=true;
+ });
+ run.addEventListener('click',async()=>{
+  if(!checkbox.checked){status.textContent='Сначала подтверди разовое согласие. Сводка не отправлена.';return}
+  // Consent is consumed for this single button action, even when the server is disabled or unavailable.
+  setBusy(true);checkbox.checked=false;status.textContent='Проверяем, включён ли AI Coach…';result.hidden=true;result.replaceChildren();
+  try{
+   const api=await resolveReferralApiBase();
+   if(!api.ok){status.textContent=api.reason==='not-configured'?'AI Coach временно недоступен. Сервер не настроен; данные игры не отправлены.':'Не удалось проверить AI Coach. Данные игры не отправлены; попробуй позже.';return}
+   const credentials=api.base.startsWith(location.origin)?'same-origin':'omit';
+   const statusResponse=await fetch(api.base+'/v1/game-coach/status',{method:'GET',cache:'no-store',credentials,signal:AbortSignal.timeout(8000)});
+   const statusPayload=statusResponse.ok?await statusResponse.json().catch(()=>({})):({});
+   if(!statusResponse.ok||statusPayload.enabled!==true){status.textContent='AI Coach пока не активирован владельцем сервера. Данные этой сессии не отправлены. Можно продолжить играть.';return}
+   const body={consent:true,gameId,locale:document.documentElement.lang==='en'?'en':'ru',durationSeconds:duration,result:'session_ended'};
+   status.textContent='Отправляем краткую сводку и ждём один совет…';
+   const response=await fetch(api.base+'/v1/game-coach',{method:'POST',cache:'no-store',credentials,headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(15000)});
+   const payload=await response.json().catch(()=>({}));
+   if(!response.ok||!payload.advice||typeof payload.advice!=='object'){
+    status.textContent=response.status===429?'Лимит запросов достигнут. Попробуй позже.':'AI Coach не смог подготовить ответ. Игровой результат не изменён.';
+    return;
+   }
+   const advice=payload.advice;
+   result.append(make('p','og-game-coach-result-label','ПЕРСОНАЛЬНЫЙ СОВЕТ · '+String(titles[gameId]||'OSGARD PLAY').toUpperCase()));
+   result.append(make('h4','og-game-coach-result-title',advice.title));
+   result.append(make('p','og-game-coach-result-observation',advice.observation));
+   const tip=make('div','og-game-coach-tip');tip.append(make('strong','','Попробуй в следующем раунде'),make('p','',advice.tip));
+   const challenge=make('div','og-game-coach-challenge');challenge.append(make('strong','','Маленький эксперимент'),make('p','',advice.challenge));
+   result.append(tip,challenge);result.hidden=false;
+   status.textContent='Готово. Совет сформирован по этой сводке и не изменяет счёт, SHARDS или сложность игры.';
+   checkbox.checked=false;
+   checkbox.disabled=false;
+  }catch(error){
+   status.textContent=error&&error.name==='TimeoutError'?'Запрос занял слишком много времени. Ничего в игре не изменилось. Попробуй позже.':'Не удалось связаться с AI Coach. Игровой процесс не затронут.';
+  }finally{setBusy(false)}
+ });
+ section.append(header,consentLabel,actions,privacy,status,result);
+ actions.append(run);
+ return section;
+}
+
 let lastIntermissionGame='',lastIntermissionCount=0;
 function refreshCurrentServiceShelf(){
  if(!titles[lastIntermissionGame])return;
@@ -948,7 +1019,7 @@ function renderOutsideIntermission(detail){
  intro.append(make('h2','og-postgame-title','Раунд окончен. Выбери следующий шаг.'));
  intro.append(make('p','og-postgame-copy','Ты завершил сессию '+titles[id]+'. Выбери один из собственных проектов OSGARD, поделись приглашением или сразу вернись к каталогу.'));
  const back=make('a','og-postgame-back','Выбрать следующую игру ↗');back.href='#catalog';
- suite.append(intro,back,servicesShelf(id,shouldShowServicePromos(preferences,completedCount),completedCount),rewardShelf(id));
+ suite.append(intro,back,servicesShelf(id,shouldShowServicePromos(preferences,completedCount),completedCount),gameCoachShelf(detail,id),rewardShelf(id));
  outsideRoot.append(suite);outsideRoot.hidden=false;
  if(typeof outsideRoot.scrollIntoView==='function'){
   const reduced=typeof window.matchMedia==='function'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
