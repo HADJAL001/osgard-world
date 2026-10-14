@@ -20,6 +20,7 @@ const html=readFileSync(resolve(root,'index.html'),'utf8')
 const cascadePassport=readFileSync(resolve(root,'cascade-lab/case-passport.js'),'utf8')
 const cascadeXray=readFileSync(resolve(root,'cascade-lab/trajectory-xray.js'),'utf8')
 const cascadeDirector=readFileSync(resolve(root,'cascade-lab/mission-director.js'),'utf8')
+const cascadeEvidence=readFileSync(resolve(root,'cascade-lab/evidence-integrity.js'),'utf8')
 const catalogCards=[...html.matchAll(/<article\b[^>]*\bdata-game="([^"]+)"[^>]*\bdata-genres="([^"]+)"[^>]*>/g)].map(match=>({id:match[1],genres:match[2].trim().split(/\s+/).filter(Boolean)}))
 const deployWorkflow=readFileSync(resolve('.github/workflows/deploy-frontend.yml'),'utf8')
 const routeMatrix=readFileSync(resolve('scripts/production-route-matrix.mjs'),'utf8')
@@ -42,7 +43,7 @@ const cascadeContractAssertions = [
   ['passport route', routeMatrix.includes("'/games/cascade-lab/case-passport.js'")],
   ['mission director route', routeMatrix.includes("'/games/cascade-lab/mission-director.js'")],
   ['evidence asset route', routeMatrix.includes("'/games/cascade-lab/evidence-integrity.js'")],
-  ['evidence schema contract', routeMatrix.includes('osgard.cascade-lab.evidence-integrity.v1')],
+  ['evidence schema contract', /const SCHEMA = ['"]osgard\.cascade-lab\.evidence-integrity\.v1['"]/.test(cascadeEvidence) && /const ARCHIVE_SCHEMA = ['"]osgard\.cascade-lab\.evidence-integrity-archive\.v1['"]/.test(cascadeEvidence)],
 ];
 for (const [contract, passed] of cascadeContractAssertions) {
   assert.ok(passed, 'CASCADE LAB 0.25 release contract is missing or out of sync: ' + contract);
