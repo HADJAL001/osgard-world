@@ -213,12 +213,12 @@ const $ = selector => document.querySelector(selector);
 const host = make('section', 'cl-engineering');
 host.setAttribute('aria-labelledby', 'cl-eng-title');
 host.setAttribute('aria-live', 'polite');
-host.innerHTML = '';
 const header = make('div', 'cl-eng-head');
 header.append(make('p', 'cl-eng-kicker', 'CASCADE LAB / ENGINEERING OS'));
 header.append(make('span', 'cl-eng-pill', 'VERSION ' + VERSION));
-host.append(header, make('h3', '', 'Понимай запуск. Планируй следующий тест.'));
-host.querySelector = host.querySelector || (() => null);
+const mainHeading = make('h3', '', 'Понимай запуск. Планируй следующий тест.');
+mainHeading.id = 'cl-eng-title';
+host.append(header, mainHeading);
 const sub = make('p', 'cl-eng-sub', 'Локальная рабочая станция: диагноз по событиям движка, сравнение запусков, контрольный эксперимент и архив заметок. Гипотезы не выдаются за доказанные причины.');
 host.append(sub);
 
@@ -358,7 +358,6 @@ function persist() {
     status.textContent = 'Браузер не разрешил сохранение. Запись доступна только до закрытия этой вкладки.';
   }
 }
-function escapeHtmlNotNeeded() { return true; }
 function download(filename, content, type) {
   const url = URL.createObjectURL(new Blob([content], { type }));
   const link = document.createElement('a'); link.href = url; link.download = filename; link.hidden = true;
