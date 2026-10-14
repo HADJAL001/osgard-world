@@ -28,7 +28,7 @@ for (const game of registry.games) {
   assert.match(game.id, /^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Game IDs must be URL-safe.');
   assert.ok(game.title && game.genre && game.description, game.id + ' needs a basic catalogue identity.');
   assert.ok(game.route.startsWith('/games/') && !game.route.includes('..') && !/[?#]/.test(game.route), game.id + ' has an unsafe route.');
-  assert.ok(['browser-prototype','browser-js','browser-simulation','browser-lab','browser-canvas','browser-physics','browser-puzzle','godot-web','unity-webgl'].includes(game.runtimeFamily), game.id + ' has an unknown runtime family.');
+  assert.ok(['browser-prototype','browser-js','browser-simulation','browser-lab','browser-canvas','browser-physics','browser-puzzle','godot-web','unity-webgl','react-spa'].includes(game.runtimeFamily), game.id + ' has an unknown runtime family.');
   assert.ok(['local','api-for-online','not-verified'].includes(game.network), game.id + ' has an unknown network state.');
   assert.ok(['device-local','mode-dependent','not-documented'].includes(game.progressScope), game.id + ' has an unknown save scope.');
   assert.equal(game.touchValidation, 'not-device-verified', game.id + ' must not overstate physical-device validation.');
@@ -39,8 +39,9 @@ for (const game of registry.games) {
   const fallbackRelative = game.fallbackRoute?.replace(/^\/games\//, '').replace(/\/$/, '');
   const localFallback = fallbackRelative ? resolve(gamesRoot, fallbackRelative, 'index.html') : '';
   const generatedGodot = game.entrypointMode === 'ci-generated-godot-web-export';
-  assert.ok(existsSync(localEntry) || (fallbackRelative && existsSync(localFallback)) || generatedGodot,
-    game.id + ' route must be present or explicitly declared as a CI-generated Godot entrypoint.');
+  const reactSpa = game.entrypointMode === 'react-spa-route';
+  assert.ok(existsSync(localEntry) || (fallbackRelative && existsSync(localFallback)) || generatedGodot || (reactSpa && game.evidence.some(sourcePath => sourcePath.endsWith('GameDetailPage.tsx'))),
+    game.id + ' route must be present or explicitly declared as a generated or React SPA entrypoint.');
   if (game.fallbackRoute) {
     assert.ok(game.fallbackRoute.startsWith('/games/') && !game.fallbackRoute.includes('..') && !/[?#]/.test(game.fallbackRoute), game.id + ' has an unsafe fallback route.');
     assert.ok(existsSync(localFallback), game.id + ' fallback route must have a browser entrypoint.');
