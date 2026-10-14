@@ -79,6 +79,8 @@ assert.ok(multiDiff.factorKeys.includes('position') && multiDiff.factorKeys.incl
 assert.equal(api.compareDesign(base,run('other-mode',{mode:'daily'})).ok,false,'cross-mode comparisons must be rejected');
 assert.equal(api.compareDesign(base,run('other-level',{levelId:4})).ok,false,'cross-level comparisons must be rejected');
 assert.equal(api.compareDesign(base,run('same-design',{devices:base.devices.map(d=>({...d}))})).sameDesign,true);
+assert.equal(api.compareDesign(base,base).ok,false,'a run must not be compared to itself');
+assert.equal(api.observedDelta(base,base).comparable,false,'self-comparisons are not valid observations');
 assert.equal(api.fingerprintDesign(base),api.fingerprintDesign(run('clone',{devices:base.devices.map(d=>({...d}))})),'identical layouts must have the same design fingerprint');
 
 const observed=api.observedDelta(base,moved);
