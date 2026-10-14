@@ -11,6 +11,7 @@ on:
       - "scripts/osgard-ai-release-review.mjs"
       - "scripts/osgard-ai-release-review.test.mjs"
       - "docs/OSGARD_ENGINEERING_BLUEPRINT_2026_2029.md"
+      - "docs/OSGARD_AI_RELEASE_REVIEW.md"
       - ".github/workflows/osgard-ai-release-review.yml"
       - "godot/null-shift/scripts/main.gd"
       - "scripts/device-fit-smoke.mjs"
