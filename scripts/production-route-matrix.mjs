@@ -1,4 +1,5 @@
 import { isValidPartnerInventoryText } from './partner-inventory-contract.mjs'
+import { writeFile } from 'node:fs/promises'
 const base = process.env.OSGARD_BASE_URL || 'https://osgard.world'
 const expectCurrentDesign = process.env.SKILLCRED_EXPECT_CURRENT_DESIGN === '1'
 const expectedBuild = String(process.env.OSGARD_EXPECTED_BUILD || '').trim()
@@ -337,6 +338,11 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
   } catch (error) { results.push({ device, route, status: 0, ok: false, error: String(error), durationMs: Date.now() - started }) }
 }
 const failed = results.filter(item => !item.ok)
-const report = { base, checkedAt: new Date().toISOString(), routes: results.length, failed: failed.length, status: failed.length ? 'failed' : 'ready', results }
-console.log(JSON.stringify(report, null, 2))
+const report = { schema: 'osgard.production-route-matrix.v1', sourceRevision: expectedBuild || null, base, checkedAt: new Date().toISOString(), routes: results.length, failed: failed.length, status: failed.length ? 'failed' : 'ready', results }
+const reportPath = process.env.OSGARD_ROUTE_MATRIX_REPORT || 'production-route-matrix.json'
+if (reportPath !== 'production-route-matrix.json' && (reportPath.includes('/') || reportPath.includes('\\') || !reportPath.endsWith('.json'))) {
+  throw new Error('OSGARD_ROUTE_MATRIX_REPORT must be a root-level JSON filename')
+}
+await writeFile(reportPath, JSON.stringify(report, null, 2) + '\n', { mode: 0o600 })
+console.log(JSON.stringify({ schema: report.schema, sourceRevision: report.sourceRevision, routes: report.routes, failed: report.failed, status: report.status, reportPath }, null, 2))
 if (failed.length) process.exitCode = 1
