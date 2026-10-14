@@ -23,7 +23,40 @@ const lifecycleAnalytics = read('public/games/player-lifecycle.js');
 const guide = read('docs/IOS_APP_STORE_CODEMAGIC_RU.md');
 const supportPage = read('public/support/osgard-play/index.html');
 const gamesCatalog = read('public/games/index.html');
+const gameManifest = read('src/core/manifest.ts');
 const sitemap = read('public/sitemap.xml');
+
+const bundledGamePages = {
+  'null-shift': 'dist/games/null-shift/index.html',
+  time: 'dist/games/time/index.html',
+  swarm: 'dist/games/swarm/index.html',
+  inherit: 'dist/games/inherit/index.html',
+  remix: 'dist/games/remix/index.html',
+  'civic-cascade': 'dist/games/civic-cascade/index.html',
+  patina: 'dist/games/patina/index.html',
+  'signal-run': 'dist/games/signal-run/index.html',
+  'cascade-lab': 'dist/games/cascade-lab/index.html',
+  'afterimage-run': 'dist/games/afterimage-run/index.html',
+  'aether-grid': 'dist/games/aether-grid/index.html',
+};
+const extractCatalogGameIds = (html) =>
+  Array.from(html.matchAll(/<article\b[^>]*\bdata-game="([^"]+)"/g), (match) => match[1]);
+const sourceCatalogGameIds = extractCatalogGameIds(gamesCatalog);
+const manifestGamesMatch = gameManifest.match(/export const OSGARD_GAMES:[\s\S]*?=\s*\[([\s\S]*?)\n\]/);
+assert.ok(manifestGamesMatch, 'The shared OSGARD_GAMES launch registry must be parseable.');
+const manifestGameIds = Array.from(manifestGamesMatch[1].matchAll(/\bid:\s*'([^']+)'/g), (match) => match[1]);
+const expectedBundledGameIds = Object.keys(bundledGamePages).sort();
+assert.equal(new Set(sourceCatalogGameIds).size, sourceCatalogGameIds.length, 'Visible game card IDs must be unique.');
+assert.equal(new Set(manifestGameIds).size, manifestGameIds.length, 'The OSGARD_GAMES registry must not contain duplicate IDs.');
+assert.deepEqual([...sourceCatalogGameIds].sort(), expectedBundledGameIds,
+  'Every visible Games card must have exactly one declared local iOS page, including AETHER GRID.');
+assert.deepEqual([...manifestGameIds].sort(), expectedBundledGameIds,
+  'The shared OSGARD_GAMES registry and iOS game-page map must contain the same game IDs.');
+const mobileRouteRewriterMatch = prep.match(/const routes = new Set\(\[([\s\S]*?)\]\);/);
+assert.ok(mobileRouteRewriterMatch, 'iOS preparation script must declare a route-rewrite allowlist.');
+const mobileRouteRewriteIds = Array.from(mobileRouteRewriterMatch[1].matchAll(/'([^']+)'/g), (match) => match[1]);
+assert.deepEqual([...mobileRouteRewriteIds].sort(), expectedBundledGameIds,
+  'Every React game-detail URL in the web catalogue must be rewritten to its local game page in the iOS bundle.');
 const releaseTagPreflight = read('scripts/ios-release-tag-preflight.mjs');
 
 assert.equal(config.appId, 'com.osgardworld.play');
@@ -105,22 +138,22 @@ try {
 
 if (builtWeb) {
   for (const path of [
-    'dist/index.html', 'dist/games/index.html', 'dist/support/osgard-play/index.html', 'dist/games/osgard-native-share.js',
-    'dist/games/commerce-config.json', 'dist/games/null-shift/index.html',
-    'dist/games/time/index.html', 'dist/games/swarm/index.html',
-    'dist/games/inherit/index.html', 'dist/games/remix/index.html',
-    'dist/games/civic-cascade/index.html', 'dist/games/patina/index.html',
-    'dist/games/signal-run/index.html', 'dist/games/cascade-lab/index.html',
-    'dist/games/afterimage-run/index.html',
+    'dist/index.html', 'dist/games/index.html', 'dist/support/osgard-play/index.html',
+    'dist/games/osgard-native-share.js', 'dist/games/commerce-config.json',
+    ...Object.values(bundledGamePages),
   ]) mustExist(path);
   const catalog = read('dist/games/index.html');
+  const builtCatalogGameIds = extractCatalogGameIds(catalog);
+  assert.equal(new Set(builtCatalogGameIds).size, builtCatalogGameIds.length, 'Packaged game card IDs must be unique.');
+  assert.deepEqual([...builtCatalogGameIds].sort(), expectedBundledGameIds,
+    'The packaged iOS catalogue and the source catalogue must ship all 11 locally runnable games.');
   const apiConfig = JSON.parse(read('dist/games/commerce-config.json'));
   assert.equal(new URL(apiConfig.apiBaseUrl).protocol, 'https:', 'Native API must use HTTPS.');
   assert.ok(catalog.includes('/games/osgard-native-share.js'), 'Native share bridge not injected into the catalogue.');
   assert.ok(catalog.includes('href="/support/osgard-play/"'), 'The packaged Games catalogue must link to the support page.');
   assert.ok(catalog.includes('WEBGL · iOS') || catalog.includes('WEBGL / iOS'), 'Mobile NULL//SHIFT label not updated.');
   assert.ok(catalog.includes('/games/null-shift/index.html'), 'iOS catalogue must open the bundled WebGL version.');
-  assert.ok(!/href=['"]\/game\/(?:null-shift|time|swarm|inherit|remix|civic-cascade|patina|signal-run|cascade-lab|afterimage-run)['"]/.test(catalog),
+  assert.ok(!/href=['"]\/game\/(?:null-shift|time|swarm|inherit|remix|civic-cascade|patina|signal-run|cascade-lab|afterimage-run|aether-grid)['"]/.test(catalog),
     'Standalone catalogue route should not go through the React web SPA.');
   const shell = read('dist/index.html');
   assert.ok(shell.includes('OSGARD PLAY') && shell.includes('location.replace("/games/")'), 'App shell must land directly in the local Games hub.');
@@ -128,7 +161,7 @@ if (builtWeb) {
   assert.ok(gamePage.includes('osgard-native-share.js'), 'Native share bridge must be loaded on the local game.');
   const configText = readFileSync(join(root, 'dist/games/commerce-config.json'), 'utf8');
   assert.ok(!/sk_(?:live|test)_|whsec_|-----BEGIN (?:PRIVATE|RSA) KEY-----/.test(configText), 'Client config must not contain payment secrets.');
-  console.log('PASS iOS web bundle: local Games hub, 10 game entrypoints, iOS-safe NULL//SHIFT route, native share, HTTPS API config and no client payment secrets.');
+  console.log('PASS iOS web bundle: local Games hub, all 11 registry-aligned game entrypoints, iOS-safe NULL//SHIFT route, native share, HTTPS API config and no client payment secrets.');
 } else {
   console.log('PASS iOS source preflight: Capacitor app identity, TestFlight-only Codemagic workflow, pinned Capacitor 8 packages, privacy manifest, release guide and generated 1024px icon set.');
 }

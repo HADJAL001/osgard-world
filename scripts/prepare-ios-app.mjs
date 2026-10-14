@@ -68,7 +68,7 @@ function prepareWeb() {
     text = text.replaceAll('GODOT 4 · WEB', 'WEBGL · iOS');
     text = text.replaceAll('Основной вход — Godot-сборка; браузерный WebGL остаётся альтернативой.',
       'В iPhone-сборке используется локально упакованная WebGL-версия с сенсорным управлением.');
-    const routes = new Set(['null-shift', 'time', 'swarm', 'inherit', 'remix', 'civic-cascade', 'patina', 'signal-run', 'cascade-lab', 'afterimage-run']);
+    const routes = new Set(['null-shift', 'time', 'swarm', 'inherit', 'remix', 'civic-cascade', 'patina', 'signal-run', 'cascade-lab', 'afterimage-run', 'aether-grid']);
     text = text.replace(/href=(['"])\/game\/([a-z0-9-]+)\1/gi, (match, quote, slug) =>
       routes.has(slug) ? 'href=' + quote + '/games/' + slug + '/index.html' + quote : match);
     text = text.replaceAll('href="/games/time"', 'href="/games/time/index.html"');
