@@ -45,7 +45,8 @@
     "qa:ios-appstore": "node scripts/ios-appstore-preflight.mjs",
     "qa:privacy-consent": "node scripts/privacy-consent-center-smoke.mjs",
     "qa:core-analytics-consent": "node scripts/core-analytics-consent-smoke.mjs",
-    "qa:player-console": "node scripts/player-console-smoke.mjs"
+    "qa:player-console": "node scripts/player-console-smoke.mjs",
+    "qa:pwa": "node scripts/osgard-play-pwa-smoke.mjs"
   },
   "dependencies": {
     "@types/three": "^0.186.0",
