@@ -682,7 +682,7 @@ function renderStudy(study) {
   noteWrap.append(noteLabel, noteInput);
   card.append(noteWrap);
   const actions = make('div', 'ces-study-actions');
-  actions.append(button('JSON этого плана ↓', '', () => exportBlob('cascade-lab-study-' + study.id + '.json', 'application/json;charset=utf-8', JSON.stringify({ schema: ARCHIVE_SCHEMA, schemaVersion: 1, application: { name: 'CASCADE LAB', version: VERSION }, exportedAt: new Date().toISOString(), localOnly: true, uploaded: false, studies: [study] }, null, 2)));
+  actions.append(button('JSON этого плана ↓', '', () => exportBlob('cascade-lab-study-' + study.id + '.json', 'application/json;charset=utf-8', JSON.stringify({ schema: ARCHIVE_SCHEMA, schemaVersion: 1, application: { name: 'CASCADE LAB', version: VERSION }, exportedAt: new Date().toISOString(), localOnly: true, uploaded: false, studies: [study] }, null, 2))));
   actions.append(button('Продолжить серию ↻', 'quiet', () => {
     if (typeof window.confirm === 'function' && !window.confirm('Создать новый эксперимент с тем же планом и последней попыткой как новой базой?')) return;
     const repeated = startRepeat(study.id);
