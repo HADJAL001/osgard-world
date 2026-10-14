@@ -1,25 +1,26 @@
 (() => {
   'use strict';
 
+  const allowedGenres = new Set(['all', 'tactical', 'systems', 'social', 'creative', 'arcade']);
+  function normalizedState(raw) {
+    const genreCandidate = String(raw?.genre || 'all');
+    const genre = allowedGenres.has(genreCandidate) ? genreCandidate : 'all';
+    const query = String(raw?.query || '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, 100);
+    return { query, genre, favorites: Boolean(raw?.favorites) };
+  }
+  window.OSGARDCatalogState = Object.freeze({ normalizedState });
+
   const search = document.getElementById('game-search');
   const grid = document.getElementById('games-grid');
   const shareButton = document.getElementById('catalog-share-state');
   const shareStatus = document.getElementById('catalog-share-status');
   const favoriteButton = document.getElementById('favorites-filter');
   const clearButton = document.getElementById('clear-filters');
-  window.OSGARDCatalogState = Object.freeze({ normalizedState });
 
   if (!search || !grid) return;
 
-  const allowedGenres = new Set(['all', 'tactical', 'systems', 'social', 'creative', 'arcade']);
   let restoring = true;
   let replaceTimer = 0;
-
-  function normalizedState(raw) {
-    const genre = allowedGenres.has(String(raw?.genre || 'all')) ? String(raw?.genre || 'all') : 'all';
-    const query = String(raw?.query || '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, 100);
-    return { query, genre, favorites: Boolean(raw?.favorites) };
-  }
 
   function readStateFromPage() {
     const activeGenre = document.querySelector('[data-filter].active')?.dataset.filter || 'all';
