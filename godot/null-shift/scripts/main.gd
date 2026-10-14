@@ -2194,6 +2194,171 @@ func _move_player(_delta: float) -> void:
 	player.move_and_slide()
 	_update_player_aim()
 
+func _toggle_stealth_mode() -> void:
+	if paused_game or mission_finished or briefing_visible or terminal_active or not is_instance_valid(player):
+		return
+	stealth_mode_active = not stealth_mode_active
+	stealth_footstep_clock = 0.0
+	if not stealth_mode_active:
+		stealth_chain = 0
+	objective_text = "PHANTOM PROTOCOL · ТИХИЙ ШАГ / ОБХОД / УСТРАНЕНИЕ СО СПИНЫ" if stealth_mode_active else "PHANTOM PROTOCOL ОТКЛЮЧЁН · ВЕРНУЛСЯ ОБЫЧНЫЙ ШУМ ШАГОВ"
+	_record_raid_event("stealth_mode", "PHANTOM ON" if stealth_mode_active else "PHANTOM OFF", 1.0 if stealth_mode_active else 0.0, player.global_position)
+	_play_sfx(330.0 if stealth_mode_active else 230.0, 0.09, 0.045)
+	_update_input_hint()
+	_update_hud()
+
+func _can_stealth_takedown(guard: Dictionary, operator_position: Vector3, stealth_enabled: bool) -> bool:
+	if not stealth_enabled or bool(guard.get("warden", false)):
+		return false
+	if str(guard.get("ai_state", "PATROL")) not in ["PATROL", "SEARCHING"]:
+		return false
+	if float(guard.get("awareness", 0.0)) >= 0.72 or int(guard.get("hp", 0)) <= 0:
+		return false
+	var body := guard.get("node") as CharacterBody3D
+	if not is_instance_valid(body):
+		return false
+	var toward_operator := operator_position - body.global_position
+	toward_operator.y = 0.0
+	var distance: float = toward_operator.length()
+	if distance < 0.05 or distance > PHANTOM_TAKEDOWN_RANGE:
+		return false
+	var guard_forward := -body.global_transform.basis.z
+	guard_forward.y = 0.0
+	guard_forward = guard_forward.normalized()
+	return guard_forward.dot(toward_operator.normalized()) < -0.25
+
+func _try_stealth_takedown() -> bool:
+	if not stealth_mode_active or paused_game or mission_finished or briefing_visible or terminal_active or not is_instance_valid(player):
+		return false
+	var nearest_index := -1
+	var nearest_distance := PHANTOM_TAKEDOWN_RANGE
+	for index in range(guards.size()):
+		var candidate: Dictionary = guards[index]
+		if not _can_stealth_takedown(candidate, player.global_position, true):
+			continue
+		var candidate_body := candidate.get("node") as Node3D
+		if not is_instance_valid(candidate_body):
+			continue
+		var distance: float = player.global_position.distance_to(candidate_body.global_position)
+		if distance < nearest_distance:
+			nearest_distance = distance
+			nearest_index = index
+	if nearest_index < 0:
+		return false
+	var guard: Dictionary = guards[nearest_index]
+	var body := guard.get("node") as CharacterBody3D
+	if not is_instance_valid(body):
+		return false
+	var role := str(guard.get("role", "RANGER"))
+	body.velocity = Vector3.ZERO
+	body.collision_layer = 0
+	body.collision_mask = 0
+	var collision_shape := body.get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if is_instance_valid(collision_shape):
+		collision_shape.disabled = true
+	var old_position := body.global_position
+	body.global_position = Vector3(old_position.x, 0.32, old_position.z)
+	body.rotation = Vector3(PI * 0.5, body.rotation.y, body.rotation.z)
+	for readout_name in ["HealthReadout", "HitFeedback", "ScanReadout", "AwarenessReadout"]:
+		var readout := body.get_node_or_null(readout_name) as Label3D
+		if is_instance_valid(readout):
+			readout.visible = false
+	var role_tag := body.get_node_or_null("CombatRole") as Label3D
+	if is_instance_valid(role_tag):
+		role_tag.text = "DOWNED · EVIDENCE"
+		role_tag.modulate = Color(0.36, 0.95, 1.0, 1.0)
+	stealth_takedowns += 1
+	stealth_chain += 1
+	stealth_chain_best = maxi(stealth_chain_best, stealth_chain)
+	downed_bodies.append({"node": body, "remaining": PHANTOM_BODY_LIFETIME_SECONDS, "discovered": false, "role": role})
+	if aim_target_node == body:
+		aim_target_node = null
+		target_lock_has_position = false
+	guards.remove_at(nearest_index)
+	_register_hostile_elimination(guard, body, false)
+	var bonus: int = _stealth_reward_for_chain(stealth_chain)
+	run_credits += bonus
+	stealth_bonus_credits += bonus
+	_record_raid_event("stealth_takedown", role + " / PHANTOM CHAIN " + str(stealth_chain), float(bonus), body.global_position)
+	_spawn_ring_burst(body.global_position + Vector3.UP * 0.08, materials["cyan"])
+	objective_text = "ТИХОЕ УСТРАНЕНИЕ · +%d CR · GHOST CHAIN ×%d" % [bonus, stealth_chain]
+	_play_sfx(235.0 + float(mini(stealth_chain, 6)) * 28.0, 0.12, 0.055)
+	_update_hud()
+	return true
+
+func _stealth_reward_for_chain(chain_count: int) -> int:
+	return PHANTOM_TAKEDOWN_BASE_BONUS + mini(100, maxi(0, chain_count - 1) * 25)
+
+func _guard_can_discover_downed_body(guard_body: CharacterBody3D, downed_body: Node3D) -> bool:
+	if not is_instance_valid(guard_body) or not is_instance_valid(downed_body):
+		return false
+	if guard_body.global_position.distance_to(downed_body.global_position) > PHANTOM_BODY_DISCOVERY_RANGE:
+		return false
+	var eye_position := guard_body.global_position + Vector3.UP * 0.86
+	var sight_target := Vector3(downed_body.global_position.x, eye_position.y, downed_body.global_position.z)
+	if not _is_within_vision_cone(eye_position, -guard_body.global_transform.basis.z, sight_target, PHANTOM_BODY_DISCOVERY_RANGE, 122.0):
+		return false
+	var ray_target := downed_body.global_position + Vector3.UP * 0.2
+	var query := PhysicsRayQueryParameters3D.create(eye_position, ray_target)
+	query.collision_mask = 1
+	query.exclude = [guard_body.get_rid()]
+	return get_world_3d().direct_space_state.intersect_ray(query).is_empty()
+
+func _update_downed_bodies(delta: float) -> void:
+	for body_index in range(downed_bodies.size() - 1, -1, -1):
+		var evidence: Dictionary = downed_bodies[body_index]
+		var downed_body := evidence.get("node") as Node3D
+		if not is_instance_valid(downed_body):
+			downed_bodies.remove_at(body_index)
+			continue
+		var remaining: float = maxf(0.0, float(evidence.get("remaining", 0.0)) - maxf(0.0, delta))
+		if not bool(evidence.get("discovered", false)):
+			var discovered := false
+			for live_guard in guards:
+				if str(live_guard.get("ai_state", "PATROL")) == "ENGAGED":
+					continue
+				var live_body := live_guard.get("node") as CharacterBody3D
+				if _guard_can_discover_downed_body(live_body, downed_body):
+					discovered = true
+					break
+			if discovered:
+				evidence["discovered"] = true
+				remaining = 5.0
+				stealth_body_discoveries += 1
+				stealth_chain = 0
+				alarm_active = true
+				_broadcast_squad_contact(downed_body.global_position, "body-found", true)
+				_record_raid_event("body_discovered", "Patrol found a downed hostile", 1.0, downed_body.global_position)
+				objective_text = "PHANTOM COMPROMISED · ОБНАРУЖЕНО ТЕЛО · ОТРЯД ПОДНЯТ ПО ТРЕВОГЕ"
+				var body_tag := downed_body.get_node_or_null("CombatRole") as Label3D
+				if is_instance_valid(body_tag):
+					body_tag.text = "BODY FOUND · ALARM"
+					body_tag.modulate = Color(1.0, 0.34, 0.31, 1.0)
+				_update_hud()
+		evidence["remaining"] = remaining
+		if remaining <= 0.0:
+			downed_body.queue_free()
+			downed_bodies.remove_at(body_index)
+		else:
+			downed_bodies[body_index] = evidence
+
+func _update_footstep_signature(delta: float) -> void:
+	if not is_instance_valid(player) or terminal_active or dash_timer > 0.0:
+		stealth_footstep_clock = 0.0
+		return
+	var planar_speed := Vector2(player.velocity.x, player.velocity.z).length()
+	if planar_speed < 0.45:
+		stealth_footstep_clock = 0.0
+		return
+	stealth_footstep_clock += maxf(0.0, delta)
+	if stealth_footstep_clock < PHANTOM_FOOTSTEP_INTERVAL:
+		return
+	stealth_footstep_clock = 0.0
+	var quiet_step := stealth_mode_active
+	_emit_combat_noise(player.global_position, _footstep_noise_radius(quiet_step), "stealth-footstep" if quiet_step else "footstep")
+	if quiet_step:
+		stealth_quiet_steps += 1
+
 func _try_dash() -> void:
 	if dash_cooldown > 0.0 or paused_game or mission_finished or terminal_active or briefing_visible:
 		return
@@ -3489,6 +3654,8 @@ func _shift_layer() -> void:
 func _interact() -> void:
 	if paused_game or mission_finished:
 		return
+	if _try_stealth_takedown():
+		return
 	if not daily_supply_blackout and not medkit_used and _near(player, medkit, 2.7):
 		medkit_used = true
 		medkit.visible = false
@@ -3587,6 +3754,11 @@ func _submit_cipher_key(key: int) -> void:
 
 func _nearest_prompt() -> String:
 	var options: Array[Dictionary] = []
+	if stealth_mode_active and is_instance_valid(player):
+		for candidate in guards:
+			var candidate_body := candidate.get("node") as Node3D
+			if is_instance_valid(candidate_body) and _can_stealth_takedown(candidate, player.global_position, true):
+				options.append({"node": candidate_body, "text": "E · ТИХОЕ УСТРАНЕНИЕ"})
 	if not medkit_used:
 		options.append({"node": medkit, "text": "E · ВЗЯТЬ АПТЕЧКУ"})
 	if not terminal_unlocked:
