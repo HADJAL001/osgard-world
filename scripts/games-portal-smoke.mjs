@@ -955,7 +955,7 @@ for (const slug of ['time','swarm','null-shift','inherit','remix','signal-run','
 assert.ok(html.includes('href="/games/monetization/"'), 'Economics planner link missing')
 assert.ok(html.includes('id="load-device-fit"') && html.includes('Проверить совместимость'), 'Device compatibility action must be available from the Games catalog')
 assert.ok(html.includes("loadScript('device-fit.js')"), 'Device compatibility feature must remain available through the versioned lazy loader')
-assert.ok(!/src="\\/games\\/device-fit\\.js\\?v=__OSGARD_BUILD_VERSION__" defer/.test(html), 'Device compatibility logic must not execute with the initial deferred script batch')
+assert.ok(!html.includes('<script src="/games/device-fit.js?v=__OSGARD_BUILD_VERSION__" defer></script>'), 'Device compatibility logic must not execute with the initial deferred script batch')
 const expeditionHtml = readFileSync(resolve('public/games/expedition/index.html'),'utf8')
 const expeditionCss = readFileSync(resolve('public/games/expedition/expedition.css'),'utf8')
 const expeditionCore = readFileSync(resolve('public/games/expedition/core.js'),'utf8')
