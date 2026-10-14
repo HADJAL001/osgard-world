@@ -6,6 +6,10 @@ const html = readFileSync(new URL('../public/privacy/index.html', import.meta.ur
 const source = readFileSync(new URL('../public/privacy/consent-center.js', import.meta.url), 'utf8');
 
 assert.match(html, /id="analytics-settings"/, 'Privacy page must include the consent settings section');
+const gamesPrivacy = readFileSync(new URL('../public/privacy/index.html', import.meta.url), 'utf8');
+assert.match(gamesPrivacy, /osgard\.games\.player-passport\.v1/, 'Privacy notice must disclose the local Player Passport key');
+assert.match(gamesPrivacy, /500 сессий за 180 дней/, 'Privacy notice must disclose local Passport history limits');
+assert.match(gamesPrivacy, /публичный репост не подтверждается автоматически/, 'Privacy notice must not imply verified public sharing');
 assert.match(html, /id="analytics-allow"/, 'Allow action must be present');
 assert.match(html, /id="analytics-revoke"/, 'Revoke action must be present');
 assert.match(html, /role="status"[^>]*aria-live="polite"|aria-live="polite"[^>]*role="status"/, 'Consent status must be announced accessibly');
