@@ -28,7 +28,7 @@ function angleOffsets(stepDegrees = 5) {
 function safeScenarioSummary(raw, offsetDegrees) {
   if (!raw || typeof raw !== 'object' || !['won', 'lost'].includes(raw.status) ||
       !Number.isInteger(raw.levelId) || raw.levelId < 1 || raw.levelId > 5 ||
-      typeof raw.fingerprint !== 'string' || !Array.isArray(raw.trajectory) || raw.trajectory.length < 2) return null;
+      typeof raw.fingerprint !== 'string' || !(Array.isArray(raw.trajectory) ? raw.trajectory.length >= 2 : Number.isInteger(raw.trajectoryFrames) && raw.trajectoryFrames >= 2)) return null;
   return {
     schema: SCHEMA, engineVersion: clean(raw.engineVersion, 24),
     offsetDegrees: round(Number(offsetDegrees), 2),
@@ -47,7 +47,7 @@ function safeScenarioSummary(raw, offsetDegrees) {
       lastImpactSpeed: round(raw.telemetry?.lastImpactSpeed)
     },
     fingerprint: clean(raw.fingerprint, 48),
-    trajectoryFrames: clamp(raw.trajectory.length, 0, 420),
+    trajectoryFrames: clamp(Array.isArray(raw.trajectory) ? raw.trajectory.length : raw.trajectoryFrames, 0, 420),
     eventCount: clamp(list(raw.events).length, 0, 32)
   };
 }
@@ -87,6 +87,7 @@ function analyzeSweep(rawVariants, controlReplay = null) {
     ok: true, schema: SCHEMA, variantCount: variants.length,
     baselineFingerprint: baseline.fingerprint,
     baselineRepeatable,
+    controlRepeatFingerprint: controlReplay && typeof controlReplay.fingerprint === 'string' ? controlReplay.fingerprint : null,
     uniqueFingerprints: fingerprints.size,
     robustness: {
       successes: alternateSuccesses, tested: alternate.length, ratePercent: robustRate,
@@ -110,7 +111,7 @@ function cleanStoredStudy(raw) {
   const summary = raw.summary;
   const sanitizedVariants = summary.variants.map(item => safeScenarioSummary(item, item?.offsetDegrees));
   if (sanitizedVariants.some(item => !item)) return null;
-  const sanitizedAnalysis = analyzeSweep(summary.variants.map(item => ({ offsetDegrees: item.offsetDegrees, result: item })), { fingerprint: summary.baselineFingerprint });
+  const sanitizedAnalysis = analyzeSweep(summary.variants.map(item => ({ offsetDegrees: item.offsetDegrees, result: item })), { fingerprint: summary.controlRepeatFingerprint });
   if (!sanitizedAnalysis.ok) return null;
   return {
     schema: SCHEMA, id: raw.id.trim(), createdAt: new Date(Date.parse(raw.createdAt)).toISOString(),
@@ -333,7 +334,6 @@ function csvCell(value) {
 }
 function renderReport(report) {
   if (!report || !Array.isArray(report.variants)) return;
-  latestReport = report;
   const successCount = report.variants.filter(item => item.status === 'won').length;
   metricNodes['УСТОЙЧИВОСТЬ'].value.textContent = (report.robustness?.ratePercent ?? 0) + '%';
   metricNodes['УСТОЙЧИВОСТЬ'].hint.textContent = report.robustness?.label || 'По шести угловым отклонениям';
@@ -371,7 +371,8 @@ function renderReport(report) {
       (report.baselineRepeatable ? 'Два одинаковых виртуальных контрольных запуска дали совпадающий fingerprint.' : 'Повтор базы отличается: сначала исследуй воспроизводимость. ') +
       'Это результат модели текущей версии игры, не доказательство поведения реального устройства.';
   }
-  exportJson.disabled = false; exportCsv.disabled = false;
+  const hasFullReport = Boolean(latestReport && Array.isArray(latestReport.variants));
+  exportJson.disabled = !hasFullReport; exportCsv.disabled = !hasFullReport;
 }
 function runSweep() {
   if (!currentRun || !currentRun.devices.length) { status.dataset.kind = 'error'; status.textContent = 'Сначала заверши игровой запуск, где установлено хотя бы одно устройство.'; return; }
