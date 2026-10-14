@@ -22,6 +22,8 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
+      - name: Verify Windows release publisher safety contracts
+        run: npm run qa:windows-publisher
       - name: Typecheck
         run: npm run check
       - name: Validate NULL SHIFT standalone game
