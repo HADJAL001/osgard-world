@@ -17,7 +17,7 @@ assert.ok(admin.includes('id="token"') && admin.includes('id="save"') && admin.i
 assert.ok(adminJs.includes("const API = '/commerce-api/v1'") && adminJs.includes("authorization: 'Bearer ' + operatorToken"), 'Admin API must be same-origin and use Bearer authentication');
 assert.ok(!adminJs.includes('localStorage') && !adminJs.includes('sessionStorage'), 'Admin tokens must not be persisted in browser storage');
 assert.ok(!adminJs.includes('.innerHTML') && adminJs.includes('textContent'), 'Editable catalogue strings must be rendered as text, not injected HTML');
-assert.ok(adminJs.includes('/admin/game-catalog') && adminJs.includes('credentials: \\'same-origin\\'') && adminJs.includes("redirect: 'error'"), 'Admin API requests must be same-origin and reject redirects');
+assert.ok(adminJs.includes('/admin/game-catalog') && adminJs.includes("credentials: 'same-origin'") && adminJs.includes("redirect: 'error'"), 'Admin API requests must be same-origin and reject redirects');
 assert.ok(runtime.includes("fetch(endpoint") && runtime.includes("credentials: 'same-origin'") && runtime.includes('AbortSignal.timeout(4500)'), 'Public runtime override must use bounded same-origin requests');
 assert.ok(runtime.includes("card.hidden = !item.visible") && runtime.includes('textContent = item.title') && runtime.includes('grid.append(card)'), 'Overrides must support visibility, safe title updates and order');
 assert.ok(!runtime.includes('.innerHTML'), 'Public content must never be injected as HTML');
