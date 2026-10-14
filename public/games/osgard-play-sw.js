@@ -40,6 +40,7 @@ const PUBLIC_STATIC_ALLOWLIST = new Set([
   '/games/luxury.js',
   '/games/sponsored-campaigns.css',
   '/games/pwa-install.js',
+  '/games/deferred-enhancements.js',
   '/games/catalog-state.js',
   '/games/expedition/core.js',
   '/games/expedition/app.js',
