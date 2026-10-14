@@ -3,8 +3,8 @@
   "gameId": "civic-cascade",
   "title": "CIVIC CASCADE",
   "edition": "Web Edition",
-  "version": "2.3.1",
-  "releaseId": "civic-cascade-web-2.3.1",
+  "version": "2.4.0",
+  "releaseId": "civic-cascade-web-2.4.0",
   "canonicalUrl": "https://osgard.world/games/civic-cascade/",
   "detailUrl": "https://osgard.world/game/civic-cascade",
   "entrypoint": "/games/civic-cascade/",
@@ -19,7 +19,13 @@
       "cc-plan-action",
       "cc-plan-add",
       "cc-plan-list",
-      "cc-plan-execute"
+      "cc-plan-execute",
+      "cc-cascade-forecast",
+      "cc-cascade-30",
+      "cc-cascade-60",
+      "cc-cascade-90",
+      "cc-cascade-wait-30",
+      "cc-cascade-plan-30"
     ],
     "checkpointSchema": "civic-cascade-checkpoint-v1",
     "approximateRiskForecast": true,
@@ -72,6 +78,22 @@
       "doesNotForecastFutureWeatherOrRandomIncidents": true,
       "directRiskForecastPreservesCurrentRiskOffsetDuringPause": true,
       "clearsPendingPlanOnCheckpointRestore": true
+    },
+    "cascadeForecast": {
+      "enabled": true,
+      "horizonsGameSeconds": [
+        30,
+        60,
+        90
+      ],
+      "comparesPlanAgainstNoIntervention": true,
+      "clonesLiveState": true,
+      "usesStepSeconds": 0.25,
+      "replicatesCheckDriftRules": true,
+      "includesThresholdEffectsAt65And90Seconds": true,
+      "randomIncidentsForecasted": false,
+      "forecastsCurrentQueuedPlanAtStartOfHorizon": true,
+      "outputsWaterGridAccessRisk": true
     }
   },
   "cinematicExport": {
@@ -112,6 +134,6 @@
   "deployment": {
     "target": "https://osgard.world",
     "mechanism": "repository push triggers the site's production deployment workflow",
-    "liveStatus": "verify release 2.3.1 with production route checks after deployment"
+    "liveStatus": "verify release 2.4.0 with production route checks after deployment"
   }
 }
