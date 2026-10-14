@@ -170,11 +170,15 @@ check('catalog:jsonld-routes', itemListPaths.length === manifestGames.length && 
 check('catalog:genres', catalogCards.every(card => card.genres.length > 0 && unique(card.genres)),
   'Every catalogue card has at least one unique genre.', 'cards=' + catalogCards.length);
 
-const dynamicCatalogLimit = catalogState.includes('Math.min(100, allowed.size)') &&
-  catalogState.includes('Math.min(100, allowedGameIds.size)') && !/\.slice\(0,\s*11\s*\)/.test(catalogState);
+const hasSharedIdCap = /Math\.min\(100,\s*allowed\.size\)/.test(catalogState);
+const hasFavoriteIdCap = /Math\.min\(100,\s*allowedGameIds\.size\)/.test(catalogState);
+const hasStaleElevenCap = /\.slice\(0,\s*11\s*\)/.test(catalogState);
+const dynamicCatalogLimit = hasSharedIdCap && hasFavoriteIdCap && !hasStaleElevenCap;
 check('catalog:dynamic-id-cap', dynamicCatalogLimit,
   'Shared selections and favorites scale with the current allow-list instead of a stale 11-game hard cap.',
-  dynamicCatalogLimit ? 'Allow-list-derived cap (bounded at 100) detected.' : 'A static catalogue limit may truncate valid game IDs.');
+  dynamicCatalogLimit
+    ? 'Allow-list-derived caps (bounded at 100) detected.'
+    : 'sharedCap=' + hasSharedIdCap + '; favoriteCap=' + hasFavoriteIdCap + '; staleElevenCap=' + hasStaleElevenCap);
 
 equalIds('diagnostics:routes-vs-manifest', diagnosticIds, gameIds,
   'The player compatibility diagnostics cover every manifest game exactly once.');
@@ -259,9 +263,10 @@ check('privacy:diagnostics-local-only', diagnostics.includes("credentials: 'omit
   !['sendBeacon(', 'OSGARD_CONSENTED_ANALYTICS', '/v1/events', "fetch('https://"].some(token => diagnostics.includes(token)),
   'Browser diagnostics probe routes without credentials and do not transmit a report automatically.');
 
-check('docs:core-contract-current', /eleven|11/i.test(coreContract) && !/five game routes/i.test(coreContract),
-  'OSGARD Core documentation describes the current multi-game registry rather than the obsolete five-game snapshot.',
-  'The Core contract should name 11 current game identities and explain the registry is authoritative.');
+const currentRegistryContract = /game registry is the single source of truth for the currently registered game identities/i.test(coreContract);
+check('docs:core-contract-current', currentRegistryContract && !/five game routes/i.test(coreContract),
+  'OSGARD Core documentation makes the game registry authoritative without freezing the current game count.',
+  currentRegistryContract ? 'Registry-authoritative wording is current.' : 'Core contract should state that the manifest registry is authoritative for current game identities and routes.');
 
 const normalizedContract = {
   worlds: worldIds.slice().sort(),
