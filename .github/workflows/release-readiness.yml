@@ -24,6 +24,12 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
+      - name: Check cross-surface OSGARD product contracts
+        run: npm run qa:contracts
+      - name: Test static asset performance budgets
+        run: npm run qa:performance-budget-tests
+      - name: Test build-attestation tamper resistance
+        run: npm run qa:release-attestation
       - name: Verify Nginx fallback, English catalogue and route contracts
         run: node scripts/production-route-matrix-contract-smoke.mjs
       - name: Verify Games runtime minification and gzip integrity
@@ -48,6 +54,10 @@ jobs:
         run: npm run qa:partners-page
       - name: Build and archive preflight
         run: npm run build && npm run preflight:frontend
+      - name: Enforce production asset budgets
+        run: npm run qa:performance-budget
+      - name: Bind build to quality reports
+        run: npm run release:attest && npm run release:verify
       - name: Verify Imperium of Time gameplay and diagnostics
         run: npm run qa:time-ui
       - name: Verify production routes after deploy or manual request
@@ -68,3 +78,6 @@ jobs:
           path: |
             release-manifest.json
             production-route-matrix.json
+            osgard-contract-audit.json
+            osgard-performance-budget.json
+            release-attestation.json

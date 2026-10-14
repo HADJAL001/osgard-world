@@ -18,7 +18,7 @@ The client may emit intent events. Server-side services must validate scores, in
 
 ## World registry
 
-The registry is the single source of truth for the seven OSGARD worlds. The game registry is the single source of truth for the five game routes and each game's reason to exist:
+The registry is the single source of truth for the seven OSGARD worlds. The game registry is the single source of truth for the current eleven game identities, canonical launch paths, and each game's reason to exist. Mirrored catalogue, diagnostics, launcher, referral, recommendation, share-card, production-route, and SEO surfaces are checked by the OSGARD Contract Integrity Engine.
 
 `TIME -> управлять`, `SWARM -> координироваться`, `NULL//SHIFT -> проникать`, `INHERIT -> наследовать`, `REMIX -> создавать`.
 
