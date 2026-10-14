@@ -582,3 +582,16 @@ The Chronicle uses the existing local career save and Godot runtime—no backend
 - The real Godot Web shell carries the machine-readable release marker `0.22.0-operator-chronicle` and displays `RELEASE 0.22.0` in the loading interface. Project metadata, the source smoke test and exported HTML must agree.
 - The production route matrix reads the published `/games/null-shift-godot/index.html` body and fails if the version marker is absent or stale. The paired `.js`, `.wasm` and `.pck` assets are checked separately.
 - This makes the 30-improvement Operator Chronicle release verifiable at the serving edge, not only in the repository. No external runtime dependency or analytics endpoint was added.
+
+
+## Godot release 0.23 — Phantom Protocol / seven gameplay upgrades
+
+1. **Phantom stance:** press B, click the controller left stick, or use the mobile GHOST control. Movement slows, and standard patrol vision uses a shorter distance and narrower field of view.
+2. **Acoustic footsteps:** footsteps enter the actual squad hearing/investigation channel. Phantom footsteps have a smaller signature, so route and pace become tactical decisions.
+3. **Progressive detection:** ordinary guards build a visible signature meter before visual contact becomes an attack. Breaking sight lets awareness decay; Warden remains an elite counter.
+4. **Rear takedowns:** E silently eliminates an unaware standard hostile at close range from behind. Front approaches, alerted enemies and Warden are rejected by live facing and AI-state checks.
+5. **Persistent evidence:** downed hostiles remain briefly in the 3D arena. Patrolling guards can discover bodies at close range with a clear forward view; discovery broadcasts a squad radio alert.
+6. **Ghost-chain economy:** consecutive silent takedowns award a capped credit bonus. Detection, found evidence or loud actions break the chain; eliminations continue through the shared combat, combo and salvage pipeline.
+7. **Career proof:** local after-action JSON records Phantom stance time, quiet steps, detections, takedowns, evidence discoveries and bonus credits. Three takedowns in a successful run unlock the PHANTOM OPERATOR medal. Headless tests exercise input state, detection, direction checks, elite immunity, body discovery/expiry and report fields.
+
+This release keeps the local-only reporting model and the existing Godot 3D/Web/mobile renderer; no third-party runtime dependency is added. The Web export must be regenerated with the exact 0.23.0-phantom-protocol release marker.
