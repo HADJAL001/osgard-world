@@ -30,6 +30,32 @@ assert.ok(api.includes('database_migration_deferred') && api.includes('AND confi
 assert.ok(admin.includes('schemaVersion: 3'), 'Admin saves must persist the current configuration schema');
 assert.ok(player.includes('const migrated={schemaVersion:2,frequency,selected}') && player.includes('const next={schemaVersion:2,frequency:'), 'Player preferences must migrate to schema v2 without losing frequency or selection');
 assert.ok(player.includes('if(raw.schemaVersion!==undefined&&raw.schemaVersion!==1&&raw.schemaVersion!==2&&raw.schemaVersion!==3)return null'), 'Player client must fail closed on unknown future config schemas');
+
+const normalizerStart = player.indexOf('function normalizeManagedPromoConfig(raw){');
+assert.ok(normalizerStart >= 0, 'Client promo config normalizer must exist');
+const normalizerEnd = player.indexOf('\n}', normalizerStart);
+assert.ok(normalizerEnd > normalizerStart, 'Client promo config normalizer must have a closed function body');
+const normalizerSource = player.slice(normalizerStart, normalizerEnd + 2);
+const normalizeClientPromo = new Function('availableServiceIds', 'frequencyValues', 'return (' + normalizerSource + ');')(
+  ['marcosa', 'projects', 'o2-system', 'senjorio', 'superday', 'myosa', 'gold-glamour', 'osgard-business', 'vanguard', 'partner-studio'],
+  ['each', 'every3', 'off'],
+);
+const migratedClientPromo = normalizeClientPromo({
+  schemaVersion: 2, enabled: false, defaultFrequency: 'off',
+  enabledServices: [], defaultSelectedServices: [], spotlightService: 'auto', showShareRewards: false,
+});
+assert.equal(migratedClientPromo.schemaVersion, 3, 'Client cache migration must produce the current schema');
+assert.equal(migratedClientPromo.enabled, true, 'Cached schema-v2 promo off switch must migrate to the new requested defaults');
+assert.equal(migratedClientPromo.defaultFrequency, 'each', 'Cached schema-v2 promo defaults must show after every game');
+assert.equal(migratedClientPromo.showShareRewards, true, 'Cached schema-v2 reward switch must migrate to the current default');
+assert.ok(migratedClientPromo.enabledServices.includes('projects') && migratedClientPromo.defaultSelectedServices.includes('projects'), 'Empty legacy service lists must recover the approved current choices');
+const explicitClientV3 = normalizeClientPromo({
+  schemaVersion: 3, enabled: false, defaultFrequency: 'off',
+  enabledServices: ['projects'], defaultSelectedServices: ['projects'], spotlightService: 'projects', showShareRewards: false,
+});
+assert.equal(explicitClientV3.enabled, false, 'Current schema-v3 admin disable must not be overridden');
+assert.equal(explicitClientV3.defaultFrequency, 'off', 'Current schema-v3 cadence must not be overridden');
+assert.equal(explicitClientV3.showShareRewards, false, 'Current schema-v3 reward preference must not be overridden');
 for (const code of [
   'OWNED_PROMO_FREQUENCY_INVALID',
   'OWNED_PROMO_SERVICE_NOT_ALLOWED',
