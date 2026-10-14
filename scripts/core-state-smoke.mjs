@@ -8,7 +8,7 @@ if (!lower.lastConsequence.includes('Lower tax') || lower.energy >= higher.energ
 const steady = applyTax(lower, 5)
 if (!steady.lastConsequence.includes('steady tax')) throw new Error('TIME steady-tax transition failed')
 
-const plan = { taxRate: 14, policy: 'GREEN' as const }
+const plan = { taxRate: 14, policy: 'GREEN' }
 const a = resolveTimeTurn(initial, plan)
 const b = resolveTimeTurn(initial, plan)
 if (JSON.stringify(a) !== JSON.stringify(b)) throw new Error('TIME incident sequence is not deterministic')
