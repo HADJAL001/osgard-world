@@ -17,6 +17,7 @@ on:
       - "scripts/games-lighthouse-report.mjs"
       - "scripts/external-project-healthcheck.mjs"
       - "scripts/external-project-healthcheck-smoke.mjs"
+      - "scripts/project-intake-smoke.mjs"
       - ".github/workflows/games-lighthouse.yml"
       - "public/games/**"
       - "public/entertainment/**"
@@ -110,6 +111,8 @@ jobs:
         run: npm run qa:partners-page
       - name: Verify ecosystem links, claims, contacts and privacy boundaries
         run: npm run qa:ecosystem
+      - name: Verify project intake, attribution and safe API fallback
+        run: npm run qa:project-intake
       - name: Validate static archive and HTML
         run: npm run preflight:frontend
       - name: Install pinned Capacitor packages for the iOS bundle smoke test
