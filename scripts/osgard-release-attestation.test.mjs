@@ -114,6 +114,25 @@ test('build inventory reports large JavaScript bundles without silently hiding t
     assert.ok(report.artifact.warnings.some(item => item.code === 'large-javascript' && item.path === 'assets/large.js'));
   } finally { await rm(f.base, { recursive: true, force: true }); }
 });
+test('empty root index is rejected', async () => {
+  const f = await fixture();
+  try {
+    await writeFile(join(f.root, 'index.html'), '');
+    const result = run('create', f.root, f.report);
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /non-empty root index\.html/i);
+  } finally { await rm(f.base, { recursive: true, force: true }); }
+});
+test('a symlink cannot be used as the build root', async () => {
+  const f = await fixture();
+  try {
+    const linkedRoot = join(f.base, 'dist-link');
+    await symlink(f.root, linkedRoot, 'dir');
+    const result = run('create', linkedRoot, f.report);
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /real directory/i);
+  } finally { await rm(f.base, { recursive: true, force: true }); }
+});
 test('malformed attestation cannot silently verify', async () => {
   const f = await fixture();
   try {
