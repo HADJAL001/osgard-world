@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { runInNewContext } from 'node:vm'
 import { execFileSync } from 'node:child_process'
 import { readFileSync, existsSync } from 'node:fs'
 
@@ -37,6 +38,7 @@ const cascadeDelta = read('public/games/cascade-lab/delta-lens.js')
 const cascadeHypothesis = read('public/games/cascade-lab/hypothesis-lab.js')
 const cascadeEngineering = read('public/games/cascade-lab/engineering-suite.js')
 const cascadeStudio = read('public/games/cascade-lab/experiment-studio.js')
+const cascadePassport = read('public/games/cascade-lab/case-passport.js')
 const afterimageGame = read('public/games/afterimage-run/index.html')
 const aetherGame = read('public/games/aether-grid/index.html')
 
@@ -155,7 +157,21 @@ assert.ok(cascadeGame.includes('id="CASCADELAB018"') && cascadeGame.includes('da
 assert.ok(cascadeGame.includes('id="CASCADELAB019"') && cascadeGame.includes('data-cascade-lab-engineering="0.19.0"') && cascadeGame.includes('engineering-suite.js?v=0.19.0'), 'CASCADE LAB Engineering OS loader marker missing')
 assert.ok(cascadeGame.includes("new CustomEvent('cascade-lab:run-finished'") && cascadeEngineering.includes("const SCHEMA = 'osgard.cascade-lab.engineering-suite.v1'") && cascadeEngineering.includes('const IMPROVEMENTS = Object.freeze(['), 'CASCADE LAB run-summary contract and Engineering OS schema missing')
 assert.ok(cascadeGame.includes('id="CASCADELAB020"') && cascadeGame.includes('data-cascade-lab-studio="0.20.0"') && cascadeGame.includes('experiment-studio.js?v=0.20.0'), 'CASCADE LAB Experiment Studio 0.20 must load above the preserved Engineering OS layer')
-assert.ok(cascadeGame.includes('content="0.20.0-experiment-studio"') && cascadeGame.includes("notifyOsgardLifecycle('ready', { version: '0.20.0' })"), 'the canonical game version and lifecycle handshake must identify v0.20')
+assert.ok(cascadeGame.includes('id="CASCADELAB021"') && cascadeGame.includes('data-cascade-lab-passport="0.21.0"') && cascadeGame.includes('case-passport.js?v=0.21.0') && cascadePassport.includes("const VERSION='0.21.0'") && cascadePassport.includes("osgard.cascade-lab.case-passport.v1") && cascadePassport.includes('function verifyPassport(') && cascadePassport.includes('fingerprintProject'), 'CASCADE LAB 0.21 passport must load and expose integrity checks')
+assert.ok(cascadeGame.includes('content="0.21.0-case-passport"') && cascadeGame.includes("notifyOsgardLifecycle('ready', { version: '0.21.0' })"), 'the canonical game version and lifecycle handshake must identify v0.21')
+assert.ok(cascadeGame.includes('restoreProject,undo') && cascadeGame.includes('dailyDate: activeDailyChallenge?.date || null') && cascadeEngineering.includes('function importRun(raw)') && cascadeEngineering.includes('importRun, exportArchive'), 'Passport restore/import bridge must preserve run provenance')
+assert.ok(!cascadePassport.includes('fetch(') && !cascadePassport.includes('XMLHttpRequest') && !cascadePassport.includes('sendBeacon') && !cascadePassport.includes('.innerHTML'), 'Passport must remain local-first and use safe DOM rendering')
+new Function(cascadePassport)
+const passportContext = {}; runInNewContext(cascadePassport, passportContext)
+const passportApi = passportContext.__CASCADELAB021_TEST__
+assert.ok(passportApi && passportApi.version === '0.21.0' && passportApi.schema === 'osgard.cascade-lab.case-passport.v1', 'Passport validation API is missing')
+const fixtureProject = { app: 'CASCADE LAB', schemaVersion: 1, levelId: 1, dailyDate: null, devices: [{ type: 'belt', x: 120, y: 480, angle: 0 }] }
+const fixtureRun = { id: 'passport-fixture', at: '2026-10-14T00:00:00.000Z', status: 'won', levelId: 1, mode: 'campaign', dailyDate: null, devices: [{ type: 'belt', x: 120, y: 480, angle: 0 }] }
+const fixturePayload = { game: 'CASCADE LAB', gameVersion: '0.21.0', run: fixtureRun, project: fixtureProject, fingerprint: passportApi.fingerprintProject(fixtureProject), analysis: { title: 'Fixture', evidence: ['Observed'], hypothesis: 'Test', nextTest: 'Repeat' } }
+const fixtureEnvelope = { schema: passportApi.schema, schemaVersion: 1, createdAt: '2026-10-14T00:00:00.000Z', payload: fixturePayload, integrity: { algorithm: 'FNV-1A-32', digest: '12345678' } }
+assert.ok(passportApi.validateShape(fixtureEnvelope).ok, 'Valid passport should pass structural validation')
+fixtureEnvelope.payload.project.devices[0].x = 999
+assert.ok(!passportApi.validateShape(fixtureEnvelope).ok, 'Tampering with blueprint must fail fingerprint validation')
 assert.ok(cascadeStudio.includes("const VERSION = '0.20.0'") && cascadeStudio.includes("const STUDY_SCHEMA = 'osgard.cascade-lab.experiment-study.v1'") && cascadeStudio.includes('MAX_STUDIES = 40') && cascadeStudio.includes('MAX_OBSERVATIONS = 5') && cascadeStudio.includes('MAX_IMPORT_BYTES = 512 * 1024'), 'Experiment Studio schema, controlled observations and archive bounds are required')
 assert.ok(cascadeStudio.includes('function startStudy(input)') && cascadeStudio.includes('function reconcile()') && cascadeStudio.includes('function calculateDelta(') && cascadeStudio.includes('function importArchive(payload)'), 'Experiment Studio must support study creation, same-protocol observations, comparisons and import validation')
 assert.ok(cascadeStudio.includes("platform === 'telegram'") && cascadeStudio.includes("platform === 'whatsapp'") && cascadeStudio.includes("platform === 'vk'") && cascadeStudio.includes("platform === 'x'") && cascadeStudio.includes("platform === 'linkedin'"), 'Experiment Studio needs share-intent links for five networks')

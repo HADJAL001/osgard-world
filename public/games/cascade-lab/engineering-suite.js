@@ -50,7 +50,8 @@ function cleanRun(raw) {
   }));
   return {
     schema: SCHEMA, id, at: new Date(at).toISOString(), status: raw.status,
-    levelId, levelTitle: text(raw.levelTitle, 140), par: Number.isInteger(raw.par) ? clamp(raw.par, 0, 12) : null,
+    levelId, levelTitle: text(raw.levelTitle, 140), mode: text(raw.mode || '', 40),
+    dailyDate: typeof raw.dailyDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw.dailyDate) ? raw.dailyDate : null, par: Number.isInteger(raw.par) ? clamp(raw.par, 0, 12) : null,
     parTime: n(raw.parTime), fragile: raw.fragile === true, gateCount: clamp(Math.round(n(raw.gateCount) || 0), 0, 20),
     gateOpen: raw.gateOpen === true,
     switchZone: raw.switchZone && typeof raw.switchZone === 'object' ? { x: n(raw.switchZone.x), y: n(raw.switchZone.y) } : null,
@@ -486,6 +487,18 @@ function onRunFinished(raw) {
   runs.unshift(candidate); runs = runs.slice(0, MAX_RUNS);
   persist(); renderReport(candidate); renderRecords();
 }
+function importRun(raw) {
+  const candidate = cleanRun(raw);
+  if (!candidate) return { ok: false, reason: 'Запуск не прошёл проверку журнала.' };
+  const existing = runs.find(item => item.id === candidate.id);
+  if (existing) {
+    latestRunId = existing.id; renderReport(existing); renderRecords();
+    return { ok: true, duplicate: true, run: existing };
+  }
+  runs.unshift(candidate); runs = runs.slice(0, MAX_RUNS); latestRunId = candidate.id;
+  persist(); renderReport(candidate); renderRecords();
+  return { ok: true, duplicate: false, run: candidate };
+}
 function currentRun() { return runs.find(run => run.id === latestRunId) || null; }
 function saveEdits() {
   const run = currentRun();
@@ -567,7 +580,7 @@ if (lastSaved) renderReport(lastSaved); else resetReport();
 renderRecords();
 Object.defineProperty(window, 'CASCADELAB019', {
   value: Object.freeze({ version: VERSION, schema: SCHEMA, improvements: IMPROVEMENTS, diagnoseRun, compareRuns,
-    getRuns: () => runs.map(cleanRun), exportArchive, renderRecords }),
+    getRuns: () => runs.map(cleanRun), importRun, exportArchive, renderRecords }),
   configurable: false, enumerable: false, writable: false
 });
 })();
