@@ -6,6 +6,7 @@ export const SCENARIOS = Object.freeze([
 
 export const DEFAULT_INPUTS = Object.freeze({
   monthlyVisitors: 10000,
+  monthlyTrafficGrowthPct: 5,
   gameStartRate: 30,
   sessionsPerPlayer: 3,
   adSlotsPerSession: 2,
@@ -34,6 +35,7 @@ export const DEFAULT_INPUTS = Object.freeze({
 
 const bounds = {
   monthlyVisitors: [0, 1000000000],
+  monthlyTrafficGrowthPct: [-50, 100],
   gameStartRate: [0, 100],
   sessionsPerPlayer: [0, 100],
   adSlotsPerSession: [0, 100],
@@ -68,6 +70,7 @@ export function normalizeInputs(input = {}) {
     normalized[key] = Math.min(max, Math.max(min, value));
   }
   normalized.monthlyVisitors = Math.round(normalized.monthlyVisitors);
+  normalized.monthlyTrafficGrowthPct = Math.round(normalized.monthlyTrafficGrowthPct * 100) / 100;
   normalized.maxLeadsPerMonth = Math.round(normalized.maxLeadsPerMonth);
   normalized.maxProjectsPerMonth = Math.round(normalized.maxProjectsPerMonth);
   normalized.subscriptionConversionRatePct = Math.round(normalized.subscriptionConversionRatePct * 100) / 100;
@@ -238,4 +241,155 @@ export function calculateRequiredMonthlyVisitors(input = {}, annualTargetUsd) {
     else low = mid;
   }
   return high;
+}
+
+
+const SENSITIVITY_DRIVERS = Object.freeze([
+  { key: 'monthlyVisitors', label: 'Стартовый трафик', unit: 'visitors' },
+  { key: 'gameStartRate', label: 'Запуск игры', unit: 'percent' },
+  { key: 'ecpmUsd', label: 'Рекламный eCPM', unit: 'usd' },
+  { key: 'paidConversionRate', label: 'Конверсия в первую покупку', unit: 'percent' },
+  { key: 'subscriptionConversionRatePct', label: 'Конверсия в Premium', unit: 'percent' },
+  { key: 'subscriptionMonthlyChurnPct', label: 'Отток Premium', unit: 'percent' },
+  { key: 'leadCloseRate', label: 'Закрытие заявок', unit: 'percent' },
+  { key: 'averageProjectValueUsd', label: 'Средний чек разработки', unit: 'usd' },
+  { key: 'maxProjectsPerMonth', label: 'Мощность команды', unit: 'count' },
+  { key: 'monthlyOperatingCostUsd', label: 'Операционные расходы', unit: 'usd' },
+]);
+
+function roundMoney(value) {
+  return Math.round((Number.isFinite(value) ? value : 0) * 100) / 100;
+}
+
+/**
+ * Returns a conservative, explicitly assumption-based monthly break-even threshold.
+ * The search uses the selected model scenario and the full operating-cost calculation.
+ * Returns null when non-negative operating results are unreachable within the traffic cap.
+ */
+export function calculateBreakEvenMonthlyVisitors(input = {}, scenarioId = 'base') {
+  const values = normalizeInputs(input);
+  const netAt = (monthlyVisitors) => calculateScenario({ ...values, monthlyVisitors }, scenarioId).netOperatingUsd;
+  if (netAt(0) >= 0) return 0;
+  const maxVisitors = 1000000000;
+  let low = 0;
+  let high = Math.max(1, Math.min(maxVisitors, values.monthlyVisitors || 1));
+  while (high < maxVisitors && netAt(high) < 0) high = Math.min(maxVisitors, high * 2);
+  if (netAt(high) < 0) return null;
+  while (low + 1 < high) {
+    const mid = low + Math.floor((high - low) / 2);
+    if (netAt(mid) >= 0) high = mid;
+    else low = mid;
+  }
+  return high;
+}
+
+/**
+ * Produces a monthly ramp with explicit traffic growth and a real subscriber-cohort
+ * schedule. It is a scenario model, not accounting data or a measured revenue forecast.
+ */
+export function calculateMonthlyProjection(input = {}, scenarioId = 'base', requestedMonths = 12) {
+  const values = normalizeInputs(input);
+  const months = Math.max(1, Math.min(36, Math.round(Number(requestedMonths) || 12)));
+  const growth = values.monthlyTrafficGrowthPct / 100;
+  const cohorts = [];
+  const rows = [];
+  let cumulativeRevenueUsd = 0;
+  let cumulativeNetOperatingUsd = 0;
+  let firstBreakEvenMonth = null;
+
+  for (let index = 0; index < months; index += 1) {
+    const monthlyVisitors = Math.min(1000000000, Math.round(values.monthlyVisitors * ((1 + growth) ** index)));
+    const result = calculateScenario({ ...values, monthlyVisitors }, scenarioId);
+    cohorts.push({
+      acquired: result.subscriptionNewCustomersPerMonth,
+      retention: Math.max(0, 1 - result.subscriptionMonthlyChurnPct / 100),
+    });
+    let activeSubscribers = 0;
+    for (let cohortIndex = 0; cohortIndex < cohorts.length; cohortIndex += 1) {
+      const cohort = cohorts[cohortIndex];
+      const age = index - cohortIndex;
+      activeSubscribers += cohort.acquired * (cohort.retention ** age);
+    }
+    const subscriptionRevenueUsd = activeSubscribers * values.subscriptionMonthlyPriceUsd;
+    const totalRevenueUsd = Math.max(0, result.totalRevenueUsd - result.subscriptionRevenueUsd) + subscriptionRevenueUsd;
+    const paymentFeesUsd = (result.paidRevenueUsd + subscriptionRevenueUsd) * values.paymentFeeRate / 100;
+    const netOperatingUsd = totalRevenueUsd - paymentFeesUsd - result.operatingCostUsd;
+    cumulativeRevenueUsd += totalRevenueUsd;
+    cumulativeNetOperatingUsd += netOperatingUsd;
+    if (firstBreakEvenMonth === null && netOperatingUsd >= 0) firstBreakEvenMonth = index + 1;
+    rows.push({
+      month: index + 1,
+      startingVisitors: monthlyVisitors,
+      visitorsIncludingInvites: result.visitors,
+      sessions: result.sessions,
+      newSubscribers: result.subscriptionNewCustomersPerMonth,
+      activeSubscribers,
+      adRevenueUsd: result.adRevenueUsd,
+      paidRevenueUsd: result.paidRevenueUsd,
+      subscriptionRevenueUsd,
+      servicesRevenueUsd: result.servicesRevenueUsd,
+      sponsorRevenueUsd: result.sponsorRevenueUsd,
+      totalRevenueUsd,
+      paymentFeesUsd,
+      operatingCostUsd: result.operatingCostUsd,
+      netOperatingUsd,
+      cumulativeRevenueUsd,
+      cumulativeNetOperatingUsd,
+    });
+  }
+  return {
+    scenarioId: SCENARIOS.some(item => item.id === scenarioId) ? scenarioId : 'base',
+    months,
+    monthlyTrafficGrowthPct: growth * 100,
+    firstBreakEvenMonth,
+    cumulativeRevenueUsd,
+    cumulativeNetOperatingUsd,
+    rows,
+  };
+}
+
+/**
+ * A one-at-a-time sensitivity sweep. Each assumption is moved by the requested
+ * percentage around the current value; bounded normalization is reused so the
+ * sweep never bypasses model input limits. These are deltas, not probabilities.
+ */
+export function calculateSensitivity(input = {}, scenarioId = 'base', requestedPct = 20) {
+  const values = normalizeInputs(input);
+  const pct = Math.max(1, Math.min(50, Number.isFinite(Number(requestedPct)) ? Number(requestedPct) : 20));
+  const baseline = calculateScenario(values, scenarioId).netOperatingUsd;
+  return SENSITIVITY_DRIVERS.map((driver) => {
+    const current = values[driver.key];
+    const lowInputs = normalizeInputs({ ...values, [driver.key]: current * (1 - pct / 100) });
+    const highInputs = normalizeInputs({ ...values, [driver.key]: current * (1 + pct / 100) });
+    const lowNet = calculateScenario(lowInputs, scenarioId).netOperatingUsd;
+    const highNet = calculateScenario(highInputs, scenarioId).netOperatingUsd;
+    return {
+      ...driver,
+      currentValue: current,
+      lowNetOperatingUsd: lowNet,
+      highNetOperatingUsd: highNet,
+      lowDeltaUsd: roundMoney(lowNet - baseline),
+      highDeltaUsd: roundMoney(highNet - baseline),
+      impactRangeUsd: roundMoney(Math.abs(highNet - lowNet)),
+      sensitivityPct: pct,
+    };
+  }).sort((a, b) => b.impactRangeUsd - a.impactRangeUsd);
+}
+
+export function calculateDecisionDashboard(input = {}, scenarioId = 'base') {
+  const values = normalizeInputs(input);
+  const baseline = calculateScenario(values, scenarioId);
+  const breakEvenMonthlyVisitors = calculateBreakEvenMonthlyVisitors(values, scenarioId);
+  const projection = calculateMonthlyProjection(values, scenarioId, 12);
+  const sensitivity = calculateSensitivity(values, scenarioId, 20);
+  return {
+    scenarioId,
+    baseline,
+    breakEvenMonthlyVisitors,
+    projection,
+    sensitivity,
+    grossMarginPct: baseline.totalRevenueUsd > 0
+      ? (baseline.totalRevenueUsd - baseline.paymentFeesUsd - baseline.operatingCostUsd) / baseline.totalRevenueUsd * 100
+      : null,
+  };
 }
