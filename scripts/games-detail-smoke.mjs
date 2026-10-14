@@ -19,6 +19,14 @@ const nginx = read('nginx.conf')
 const sitemap = read('public/sitemap.xml')
 const css = read('src/games-hub.css')
 const routeMatrix = read('scripts/production-route-matrix.mjs')
+const cascadeShellSmokeSources = [
+  read('scripts/cascade-lab-hypothesis-smoke.mjs'),
+  read('scripts/cascade-lab-engineering-suite-smoke.mjs'),
+  read('scripts/cascade-lab-experiment-dossier-smoke.mjs'),
+  read('scripts/cascade-lab-experiment-studio-smoke.mjs'),
+  read('scripts/cascade-lab-mission-director-smoke.mjs'),
+  read('scripts/cascade-lab-trajectory-xray-smoke.mjs'),
+]
 
 
 for (const [label, source] of [['SPA route SEO', app], ['game detail UI', detail], ['legacy game catalogue', entertainmentCatalog]]) {
@@ -31,6 +39,8 @@ for (const [label, source] of [['SPA route SEO', app], ['legacy section pages', 
   assert.ok(!source.includes('�') && !source.includes('пїЅ') && !source.includes('РЎР') && !source.includes('РР'), label + ' contains a damaged text-encoding sequence')
 }
 assert.ok(!app.includes('const seo: Record') && app.includes('const cleanSeo: Record'), 'Only the clean, authoritative SPA SEO registry should remain')
+const staleCascadeShellMarkers = ['0.24.0-shareable-contracts', '0\\.24.0', '0\\.24\\.0', 'Premium Physics Lab 0.24.0', 'Premium Physics Lab 0\\.24.0', 'Premium Physics Lab 0\\.24\\.0']
+assert.ok(cascadeShellSmokeSources.every(source => staleCascadeShellMarkers.every(marker => !source.includes(marker))), 'Every CASCADE LAB layer smoke test must expect the 0.25.0 HTML shell while preserving the 0.24.0 contract schema')
 
 const civicGame = read('public/games/civic-cascade/index.html')
 const cascadeGame = read('public/games/cascade-lab/index.html')
