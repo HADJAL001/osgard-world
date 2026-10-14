@@ -10,6 +10,21 @@ const artifact = join(temporary, 'artifact')
 const manifestPath = join(temporary, 'release-manifest.json')
 const tool = 'scripts/frontend-archive-preflight.mjs'
 const revision = 'a'.repeat(40)
+const contractPath = join(temporary, 'osgard-contract-audit.json')
+const contractReport = {
+  schema: 'osgard.contract-integrity.v1',
+  generatedAt: '2026-10-14T00:00:00.000Z',
+  status: 'ready',
+  summary: { checks: 3, passed: 3, failed: 0, warnings: 0 },
+  contract: { sha256: 'b'.repeat(64) },
+  checks: [
+    { id: 'catalog', title: 'catalog matches manifest', status: 'passed' },
+    { id: 'routes', title: 'route matrix covers game launch paths', status: 'passed' },
+    { id: 'privacy', title: 'analytics remains consent gated', status: 'passed' },
+  ],
+}
+writeFileSync(contractPath, JSON.stringify(contractReport, null, 2) + '\n')
+const originalContractReport = readFileSync(contractPath, 'utf8')
 const env = {
   ...process.env,
   GITHUB_SHA: 'b'.repeat(40),
@@ -20,6 +35,7 @@ const env = {
   GITHUB_RUN_ATTEMPT: '2',
   npm_config_user_agent: 'npm/10.8.1 node/v20.20.0 linux x64',
   OSGARD_FRONTEND_MANIFEST: manifestPath,
+  OSGARD_CONTRACT_AUDIT: contractPath,
 }
 try {
   mkdirSync(join(artifact, 'assets'), { recursive: true })
@@ -54,6 +70,39 @@ try {
     expectedTree.update(bytes)
   }
   assert.equal(manifest.sha256, expectedTree.digest('hex'), 'Artifact digest must bind sorted paths and exact file bytes')
+  assert.equal(manifest.qualityGate.schema, 'osgard.contract-integrity.v1')
+  assert.equal(manifest.qualityGate.contractFingerprint, 'b'.repeat(64))
+  assert.equal(manifest.qualityGate.checkCount, 3)
+  assert.match(manifest.qualityGate.reportSha256, /^[a-f0-9]{64}$/)
+  const verified = JSON.parse(execFileSync(process.execPath, ['scripts/verify-release-manifest.mjs', artifact], { encoding: 'utf8', env }))
+  assert.equal(verified.status, 'verified')
+  assert.equal(verified.contractFingerprint, 'b'.repeat(64))
+
+  const modifiedContract = JSON.parse(originalContractReport)
+  modifiedContract.generatedAt = '2026-10-14T00:00:01.000Z'
+  writeFileSync(contractPath, JSON.stringify(modifiedContract, null, 2) + '\n')
+  assert.throws(() => execFileSync(process.execPath, ['scripts/verify-release-manifest.mjs', artifact], { encoding: 'utf8', env }),
+    error => /Contract report no longer matches release manifest field/.test(String(error.stderr || '') + String(error.message || '')))
+  writeFileSync(contractPath, originalContractReport)
+
+  writeFileSync(join(artifact, 'assets', 'app.js'), 'globalThis.appReady = false;\n')
+  assert.throws(() => execFileSync(process.execPath, ['scripts/verify-release-manifest.mjs', artifact], { encoding: 'utf8', env }),
+    error => /Release manifest integrity mismatch/.test(String(error.stderr || '') + String(error.message || '')))
+  writeFileSync(join(artifact, 'assets', 'app.js'), 'globalThis.appReady = true;\n')
+  writeFileSync(join(artifact, '.env.production'), 'MUST_NOT_SHIP=true\n')
+  assert.throws(() => execFileSync(process.execPath, [tool, artifact], { encoding: 'utf8', env }),
+    error => /Secret-like file is not permitted/.test(String(error.stderr || '') + String(error.message || '')))
+  rmSync(join(artifact, '.env.production'))
+
+  const blockedContract = JSON.parse(originalContractReport)
+  blockedContract.status = 'blocked'
+  blockedContract.summary.failed = 1
+  blockedContract.summary.passed = 2
+  blockedContract.checks[0].status = 'failed'
+  writeFileSync(contractPath, JSON.stringify(blockedContract, null, 2) + '\n')
+  assert.throws(() => execFileSync(process.execPath, [tool, artifact], { encoding: 'utf8', env }),
+    error => /Contract audit report is blocked/.test(String(error.stderr || '') + String(error.message || '')))
+  writeFileSync(contractPath, originalContractReport)
 
   assert.throws(() => execFileSync(process.execPath, [tool, artifact], {
     encoding: 'utf8',
