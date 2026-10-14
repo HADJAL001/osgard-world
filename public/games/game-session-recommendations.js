@@ -473,7 +473,7 @@ function readServicePreferences(){
  const selected=Array.isArray(stored.selected)?availableServiceIds.filter(id=>stored.selected.includes(id)):fallback.selected.slice();
  // Existing player preferences survive the schema upgrade. Newly added services are added to
  // the chooser, while the player's explicit frequency choice ("each/every3/off") is preserved.
- if(stored.schemaVersion!==2&&managedPromoConfig.enabledServices.includes('gardvpn')&&!selected.includes('gardvpn'))selected.push('gardvpn');
+ if(stored.schemaVersion!==2&&selected.length>0&&managedPromoConfig.enabledServices.includes('gardvpn')&&!selected.includes('gardvpn'))selected.push('gardvpn');
  if(stored.schemaVersion!==2){
   const migrated={schemaVersion:2,frequency,selected};
   memoryServicePreferences={frequency,selected:selected.slice()};
