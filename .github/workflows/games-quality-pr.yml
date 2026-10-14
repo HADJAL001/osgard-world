@@ -11,6 +11,8 @@ on:
       - "scripts/games-*.mjs"
       - "scripts/device-fit-smoke.mjs"
       - "scripts/production-route-matrix.mjs"
+      - "scripts/runtime-content-probe*.mjs"
+      - "docs/27_RUNTIME_BUNDLE_CONTENT_PROBE_2026-10-14.md"
       - "package.json"
       - "package-lock.json"
       - "docs/09_OSGARD_GAMES_PLATFORM_AUDIT.md"
@@ -41,6 +43,8 @@ jobs:
         run: npm ci
       - name: TypeScript check
         run: npm run check
+      - name: Runtime bundle content probe regression
+        run: npm run qa:runtime-content-smoke
       - name: Games operations route-contract smoke
         run: npm run qa:games-operations
       - name: Games catalog and consented analytics regression
