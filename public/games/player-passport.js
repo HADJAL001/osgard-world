@@ -41,7 +41,7 @@ import {
   const $ = (selector, parent = root) => parent.querySelector(selector);
   const content = $('[data-passport-content]');
   const loadButton = $('[data-passport-load]');
-  const status = $('[data-passport-status]');
+  const status = $('#passport-status');
   let storageAvailable = true;
   let passport = readPassport();
 
