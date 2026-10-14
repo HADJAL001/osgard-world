@@ -810,12 +810,12 @@ function servicesShelf(gameId,showPromos,completedCount){
  snoozeButton.addEventListener('click',()=>{
   const wasPaused=readPromoSnoozeUntil()>Date.now();
   if(wasPaused){
-   clearServicePromoSnooze();
+   const persisted=clearServicePromoSnooze();
    if(hasConsent())void sendSelectEvent('owned_promo_snooze_cleared',gameId,'osgard-select:snooze-resume:'+completedCount);
    const replacement=servicesShelf(gameId,shouldShowServicePromos(readServicePreferences(),completedCount),completedCount);
    disposePostgameTree(section);section.replaceWith(replacement);
    const stateNode=replacement.querySelector('.og-postgame-service-empty');
-   if(stateNode)stateNode.textContent='Пауза отменена. Подборка снова следует выбранному расписанию; награды за приглашение остаются доступны.';
+   if(stateNode)stateNode.textContent=persisted?'Пауза отменена. Подборка снова следует выбранному расписанию; награды за приглашение остаются доступны.':'Пауза отменена в этой вкладке. Браузер не разрешил сохранить изменение; в других вкладках пауза может действовать до закрытия.';
    return;
   }
   const result=snoozeServicePromosForDay();
