@@ -108,12 +108,12 @@ const causalSource = extractBetween('function operationSnapshot(s)', 'function o
 const causal = new Function('clamp', 'nodes', 'ensureNodeIntegrity', 'clock', 'elapsed', causalSource + '\nreturn { operationSnapshot, cleanOperationSnapshot, operationDelta, recordOperationEvent };')(clamp, nodes, ensureNodeIntegrity, seconds => 'T+' + seconds, 7)
 const { operationSnapshot, cleanOperationSnapshot, recordOperationEvent } = causal
 const projectedRisk = new Function('clamp', riskSource + '\nreturn projectedRisk;')(clamp)
-const directSource = extractBetween('function simulatePlannedOrders(orders)', 'function planCrewDemand')
+const directSource = extractBetween('function simulatePlannedOrders(orders,sourceStateOverride)', 'function planCrewDemand')
 const simulateDirect = state => new Function(
   'state', 'PLAN_ACTIONS', 'clamp', 'nodes', 'projectedRisk', 'ensureNodeIntegrity', 'applyNodeActionIntegrity',
   directSource + '\nreturn simulatePlannedOrders;'
 )(state, actions, clamp, nodes, projectedRisk, ensureNodeIntegrity, applyNodeActionIntegrity)
-const pathSource = extractBetween('function simulateCascadingPath(source,horizons)', 'function renderCascadeForecast')
+const pathSource = extractBetween('function simulateCascadingPath(source,horizons,startElapsed=elapsed)', 'function renderCascadeForecast')
 const simulatePath = startElapsed => new Function(
   'elapsed', 'clamp', 'projectedRisk', 'nodes', 'ensureNodeIntegrity', 'advanceNodeIntegrity',
   pathSource + '\nreturn simulateCascadingPath;'
