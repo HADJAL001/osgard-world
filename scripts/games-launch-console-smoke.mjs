@@ -19,6 +19,7 @@ assert.ok(html.includes('livePayments:') && html.includes('premiumEntitlements:'
 assert.ok(html.includes('/games/commerce-admin/') && html.includes('/games/growth-studio/') && html.includes('/games/partners/') && html.includes('/games/ecosystem/'), 'The console must link to existing owner workflows')
 assert.ok(html.includes('https://wa.me/79640027222') && html.includes('mailto:osman.osmanov0099@gmail.com'), 'Owner contact routes must remain correct')
 assert.ok(operations.includes("path:'/games/command-center/'"), 'Deployment operations must include the command deck route')
+assert.ok(operations.includes('href="/games/command-center/"'), 'Operations navigation must expose the command deck shortcut')
 assert.ok(routeMatrix.includes("'/games/command-center/'"), 'Production route matrix must exercise the command deck')
 assert.ok(packageJson.scripts['qa:games-operations']?.includes('games-launch-console-smoke.mjs'), 'The established operations test must run the new command-deck contract')
 
