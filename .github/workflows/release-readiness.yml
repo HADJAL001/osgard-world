@@ -24,6 +24,8 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
+      - name: Verify premium commerce dashboard and checkout safety
+        run: npm run qa:premium-store
       - name: Check cross-surface OSGARD product contracts
         run: npm run qa:contracts
       - name: Test static asset performance budgets
