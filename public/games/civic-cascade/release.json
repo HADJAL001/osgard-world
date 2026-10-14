@@ -256,7 +256,13 @@
       "callsOpenAIAPI": false,
       "includesPersonalData": false,
       "validatesCurrentStateFingerprintBeforeExport": true,
-      "regressionSmokeTest": "scripts/civic-cascade-forecast-smoke.mjs"
+      "regressionSmokeTest": "scripts/civic-cascade-forecast-smoke.mjs",
+      "source": "deterministic-local-planner",
+      "showsNominalRiskDelta": true,
+      "showsStressWeakness": true,
+      "comparesResourceCost": true,
+      "labelsParetoMembership": true,
+      "tracksNoPersonalData": true
     }
   },
   "cinematicExport": {
