@@ -3,8 +3,8 @@
   "gameId": "civic-cascade",
   "title": "CIVIC CASCADE",
   "edition": "Web Edition",
-  "version": "3.2.0",
-  "releaseId": "civic-cascade-web-3.2.0",
+  "version": "3.3.0",
+  "releaseId": "civic-cascade-web-3.3.0",
   "canonicalUrl": "https://osgard.world/games/civic-cascade/",
   "detailUrl": "https://osgard.world/game/civic-cascade",
   "entrypoint": "/games/civic-cascade/",
@@ -50,7 +50,8 @@
       "cc-doctrine-results",
       "cc-doctrine-apply",
       "cc-doctrine-reset",
-      "cc-doctrine-export"
+      "cc-doctrine-export",
+      "cc-doctrine-reserve"
     ],
     "checkpointSchema": "civic-cascade-checkpoint-v1",
     "approximateRiskForecast": true,
@@ -262,7 +263,55 @@
         1.5
       ],
       "stressRankingUsesAllSeverityLevels": true,
-      "reportsWorstCaseByFamily": true
+      "reportsWorstCaseByFamily": true,
+      "reservePolicies": [
+        {
+          "id": "none",
+          "minimumRemainingSupplies": 0,
+          "minimumRemainingCrews": 0
+        },
+        {
+          "id": "balanced",
+          "minimumRemainingSupplies": 10,
+          "minimumRemainingCrews": 1
+        },
+        {
+          "id": "emergency",
+          "minimumRemainingSupplies": 20,
+          "minimumRemainingCrews": 2
+        }
+      ],
+      "rejectsPlansThatBreachSelectedReserve": true,
+      "crossScenarioTransferTest": {
+        "enabled": true,
+        "scenarios": [
+          "flood",
+          "blackout",
+          "blockade"
+        ],
+        "comparesAgainstNoIntervention": true,
+        "reportsFeasibilityAndRiskDeltas": true,
+        "usesFreshScenarioSnapshots": true
+      },
+      "commandMarginalAnalysis": {
+        "enabled": true,
+        "method": "leave-one-command-out deterministic re-simulation",
+        "reportsRiskChangeAndResourceSavings": true,
+        "claimsRealWorldCausality": false
+      },
+      "searchDiagnostics": [
+        "sequenceChecks",
+        "invalidResourceOrCrew",
+        "reserveRejected",
+        "invalidForecast",
+        "validDirectPlans",
+        "eligibleForStress",
+        "stressEvaluated",
+        "scenarioTransferChecks"
+      ],
+      "stressMatrixVisible": true,
+      "decisionDossierIncludesTransferAndCommandAttribution": true,
+      "invalidatesOnNodeIncidentFlagChanges": true
     },
     "decisionDossier": {
       "enabled": true,
@@ -331,6 +380,6 @@
   "deployment": {
     "target": "https://osgard.world",
     "mechanism": "repository push triggers the site's production deployment workflow",
-    "liveStatus": "verify release 3.2.0 with production route checks after deployment"
+    "liveStatus": "verify release 3.3.0 with production route checks after deployment"
   }
 }
