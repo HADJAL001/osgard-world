@@ -76,7 +76,7 @@ const passChecks = [
   ['20 · Earned badges are derived from validated local metrics', pass.includes('function passBadgeList()') && pass.includes("id: 'all-worlds'")],
   ['21 · Curator badge reads the shared Games Hub favorites key', pass.includes('const favoriteCount = favorites.size') && js.includes("FAVORITES_KEY = 'osgard.games.favorites.v1'")],
   ['22 · Three-day streak badge uses active launch days', pass.includes("id: 'streak-3'") && pass.includes('streak >= 3')],
-  ['23 · Launch tracking listens only to known launch links', pass.includes("querySelectorAll('[data-launch]')") && pass.includes('recordPassLaunch(link.dataset.launch)')],
+  ['23 · Launch tracking listens only to known launch links', pass.includes("querySelectorAll('[data-launch]')") && pass.includes('recordPassLaunch(link.dataset.launch)') && pass.includes('function gameIdForPassLink(link)') && pass.includes("querySelectorAll('.hero-actions a.button-primary, #continue-link')")],
   ['24 · Route-of-day CTA resolves to a real catalogue launch element', pass.includes("document.querySelector('[data-launch=\"' + id + '\"]')")],
   ['25 · Daily route stores an opened route, not a completion', pass.includes('dailyRouteOpened[today] = id') && pass.includes('завершение уровня здесь не подтверждается')],
   ['26 · Sharing discloses local metrics and not a public leaderboard', pass.includes('не публичный рейтинг') && pass.includes('Факт публикации не проверяется')],
