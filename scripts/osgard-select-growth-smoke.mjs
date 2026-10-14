@@ -227,6 +227,9 @@ assert.ok(serviceCopyStart >= 0 && serviceCopyEnd > serviceCopyStart &&
   serviceShareCode.slice(serviceCopyStart, serviceCopyEnd).includes('Копирование само по себе не считается репостом и не даёт SHARDS') &&
   !serviceShareCode.slice(serviceCopyStart, serviceCopyEnd).includes('setServiceSharePending'),
   'Copying a service URL must never unlock the social reward');
+assert.ok(serviceShareCode.includes("copyServiceLink.addEventListener('click',async()=>{\n   pendingServiceShare='';serviceShareClaim.hidden=true;serviceShareClaim.disabled=false;") &&
+  serviceShareCode.includes("nativeShare.addEventListener('click',async()=>{\n   pendingServiceShare='';serviceShareClaim.hidden=true;serviceShareClaim.disabled=false;"),
+  'Copying or cancelling a new native-share flow must clear any stale pending reward claim');
 assert.ok(source.includes('osgard:shards-wallet-updated') &&
   css.includes('.og-postgame-service-share-networks') &&
   css.includes('@media(max-width:600px)') &&
