@@ -7,7 +7,7 @@ const release = JSON.parse(readFileSync(resolve(root, "public/games/civic-cascad
 const matrix = readFileSync(resolve(root, "scripts/production-route-matrix.mjs"), "utf8");
 
 assert.equal(release.gameId, "civic-cascade");
-assert.equal(release.version, "3.3.0");
+assert.equal(release.version, "3.4.0");
 assert.equal(release.buildContract?.decisionDossier?.modelVersion, release.version,
   "Decision dossier model version must track the published CIVIC CASCADE release");
 assert.equal(release.buildContract?.decisionDossier?.hashScope,
@@ -27,6 +27,15 @@ assert.ok(release.buildContract?.decisionDossier?.verifierEnabled === true &&
   release.buildContract?.dossierVerification?.neverExecutesImportedOrders === true &&
   release.buildContract?.dossierVerification?.networkRequests === false,
   "The release must preserve the read-only, local-only dossier verifier contract");
+
+assert.equal(release.buildContract?.aiStrategyAdvisor?.enabled, true)
+assert.equal(release.buildContract?.aiStrategyAdvisor?.modelVersion, release.version)
+assert.equal(release.buildContract?.aiStrategyAdvisor?.explicitPerRequestConsent, true)
+assert.equal(release.buildContract?.aiStrategyAdvisor?.disabledUnlessServerFlagAndKeyPresent, true)
+assert.equal(release.buildContract?.aiStrategyAdvisor?.apiKeyClientSide, false)
+assert.equal(release.buildContract?.aiStrategyAdvisor?.canExecuteOrders, false)
+assert.ok(["cc-ai-advisor","cc-ai-advisor-consent","cc-ai-advisor-run","cc-ai-advisor-status","cc-ai-advisor-result"].every(marker => release.buildContract.readinessMarkers.includes(marker)))
+assert.ok(matrix.includes("aiStrategyAdvisor?.enabled"), "The production route matrix must validate the optional AI Advisor contract.")
 
 console.log("PASS CIVIC CASCADE release contract: release v" + release.version +
   ", canonical dossier hash scope, read-only verifier and production matrix consistency.");
