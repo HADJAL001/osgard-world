@@ -94,14 +94,14 @@
 
 /* PATINA Atelier card accent */
 .luxury-entertainment .art-patina{--accent:#e2c783;--glow:#b3c9a22a;background:radial-gradient(ellipse at 50% 50%,rgba(199,198,143,.2),transparent 56%),linear-gradient(145deg,#293426,#090e0b)}
-.luxury-entertainment .art-patina svg{filter:drop-shadow(0 12px 18px #0007)}
+.luxury-entertainment .art-patina svg,.luxury-entertainment .art-patina .game-art-image{filter:drop-shadow(0 12px 18px #0007)}
 .luxury-entertainment .art-patina strong span{color:#e2c783}
 
 .luxury-entertainment .art-signal{--accent:#d3ff69;--glow:#8bc84a29;background:radial-gradient(ellipse at 50% 45%,rgba(139,200,74,.16),transparent 38%),linear-gradient(135deg,#18291d,#090e0b)}
 
 /* CASCADE LAB — chain-reaction laboratory identity */
 .luxury-entertainment .art-cascade-lab{background:radial-gradient(ellipse at 52% 45%,rgba(98,219,255,.16),transparent 48%),linear-gradient(145deg,#0d1d27,#080c11 72%);border-color:rgba(98,219,255,.2)}
-.luxury-entertainment .art-cascade-lab svg{filter:drop-shadow(0 0 13px rgba(98,219,255,.1))}
+.luxury-entertainment .art-cascade-lab svg,.luxury-entertainment .art-cascade-lab .game-art-image{filter:drop-shadow(0 0 13px rgba(98,219,255,.1))}
 .luxury-entertainment .art-cascade-lab strong span{color:#62dbff}
 
 
@@ -118,7 +118,7 @@
  .luxury-entertainment .hero-art svg{animation:none!important;transform:none!important}
  .luxury-entertainment .art:before{filter:none}
  .luxury-entertainment .art strong{text-shadow:none}
- .luxury-entertainment .card,.luxury-entertainment .art svg,.luxury-entertainment .orbit{transition:none}
+ .luxury-entertainment .card,.luxury-entertainment .art svg,.luxury-entertainment .art .game-art-image,.luxury-entertainment .orbit{transition:none}
  .luxury-entertainment .card:hover{transform:none}
 }
 
@@ -165,7 +165,7 @@
   .filters .chips{gap:10px 12px}
   .filters .chip,.filters .fav-filter{min-height:44px;padding:10px 13px}
   .card .favorite{width:44px;height:44px;min-width:44px;min-height:44px}
-  .card .game-actions{gap:10px 18px}
+  .card .game-actions{column-gap:32px;row-gap:28px}
   .card .play-link,.card .secondary-link,.card .detail-link{display:inline-flex;align-items:center;min-height:44px;padding-block:8px}
   .catalog-share-button{min-height:44px;padding:10px 14px}
   .consent-controls .consent{min-height:44px;padding:0 14px}
