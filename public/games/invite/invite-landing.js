@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const game = document.body.dataset.game || '';
-  const validGameIds = new Set(['null-shift','time','swarm','inherit','remix','civic-cascade','patina','signal-run','cascade-lab','afterimage-run','aether-grid']);
+  const validGameIds = new Set(['null-shift','time','swarm','inherit','remix','civic-cascade','patina','signal-run','cascade-lab','afterimage-run','aether-grid','heist-echo']);
   const params = new URLSearchParams(location.search);
   const code = params.get('og_ref') || '';
   const requestedGame = params.get('og_game') || '';
