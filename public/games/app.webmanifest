@@ -1,0 +1,46 @@
+{
+  "id": "/games/",
+  "name": "OSGARD WORLD GAMING",
+  "short_name": "OSGARD PLAY",
+  "description": "Игровые миры OSGARD: тактика, головоломки и эксперименты.",
+  "lang": "ru",
+  "start_url": "/games/?utm_source=osgard_play&utm_medium=pwa&utm_campaign=return_visit",
+  "scope": "/games/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "orientation": "any",
+  "background_color": "#080907",
+  "theme_color": "#080907",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "/games/osgard-play-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "CIVIC CASCADE",
+      "short_name": "CIVIC CASCADE",
+      "description": "Стратегия управления городским кризисом.",
+      "url": "/games/civic-cascade/",
+      "icons": [{ "src": "/games/osgard-play-icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "AFTERIMAGE RUN",
+      "short_name": "AFTERIMAGE",
+      "description": "Аркадный забег с собственным темпом.",
+      "url": "/games/afterimage-run/",
+      "icons": [{ "src": "/games/osgard-play-icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "AETHER GRID",
+      "short_name": "AETHER GRID",
+      "description": "Логическая головоломка с маршрутами сигнала.",
+      "url": "/games/aether-grid/",
+      "icons": [{ "src": "/games/osgard-play-icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    }
+  ]
+}
