@@ -15,9 +15,10 @@ async function fixture() {
   await writeFile(join(root, 'assets', 'app.js'), 'console.log("ok");');
   return { base, root, report };
 }
-function run(command, root, report, contractReport = null) {
+function run(command, root, report, contractReport = null, performanceReport = null) {
   const args = [script, command, '--root', root, command === 'create' ? '--output' : '--input', report];
   if (contractReport) args.push('--contract-report', contractReport);
+  if (performanceReport) args.push('--performance-report', performanceReport);
   return spawnSync(process.execPath, args, { encoding: 'utf8' });
 }
 async function writePassingContractReport(path) {
@@ -86,6 +87,61 @@ test('release attestation refuses a blocked contract report', async () => {
     const result = run('create', f.root, f.report, contractReport);
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, /quality gate is missing, blocked, or malformed/i);
+  } finally { await rm(f.base, { recursive: true, force: true }); }
+});
+async function writePassingPerformanceReport(path) {
+  await writeFile(path, JSON.stringify({
+    schema: 'osgard.performance-budget.v1',
+    generatedAt: '2026-10-14T00:00:00.000Z',
+    status: 'ready',
+    summary: { checks: 2, passed: 2, failed: 0, warnings: 0 },
+    budgets: { criticalGzipBytes: 524288 },
+    metrics: { criticalGzipBytes: 1234, js: { gzipBytes: 800 }, css: { gzipBytes: 200 } },
+    budget: { sha256: 'd'.repeat(64) },
+    checks: [
+      { id: 'perf:js-total-gzip', title: 'JS bytes are within budget', status: 'passed' },
+      { id: 'perf:critical-gzip', title: 'Critical transfer is within budget', status: 'passed' },
+    ],
+  }, null, 2) + '\\n');
+}
+test('release attestation binds the exact passing performance report', async () => {
+  const f = await fixture();
+  const performanceReport = join(f.base, 'osgard-performance-budget.json');
+  try {
+    await writePassingPerformanceReport(performanceReport);
+    const created = run('create', f.root, f.report, null, performanceReport);
+    assert.equal(created.status, 0, created.stderr);
+    const attestation = JSON.parse(await readFile(f.report, 'utf8'));
+    assert.equal(attestation.performanceGate.schema, 'osgard.performance-budget.v1');
+    assert.equal(attestation.performanceGate.budgetFingerprint, 'd'.repeat(64));
+    assert.match(attestation.performanceGate.reportSha256, /^[a-f0-9]{64}$/);
+    assert.equal(attestation.performanceGate.criticalGzipBytes, 1234);
+    const verified = run('verify', f.root, f.report, null, performanceReport);
+    assert.equal(verified.status, 0, verified.stderr);
+    assert.equal(JSON.parse(verified.stdout).performanceGateVerified, true);
+    await writePassingPerformanceReport(performanceReport);
+    const modified = JSON.parse(await readFile(performanceReport, 'utf8'));
+    modified.metrics.criticalGzipBytes = 2345;
+    await writeFile(performanceReport, JSON.stringify(modified));
+    const mismatch = run('verify', f.root, f.report, null, performanceReport);
+    assert.notEqual(mismatch.status, 0);
+    assert.match(mismatch.stderr, /performance report mismatch/i);
+  } finally { await rm(f.base, { recursive: true, force: true }); }
+});
+test('release attestation refuses a blocked performance report', async () => {
+  const f = await fixture();
+  const performanceReport = join(f.base, 'osgard-performance-budget.json');
+  try {
+    await writePassingPerformanceReport(performanceReport);
+    const blocked = JSON.parse(await readFile(performanceReport, 'utf8'));
+    blocked.status = 'blocked';
+    blocked.summary.failed = 1;
+    blocked.summary.passed = 1;
+    blocked.checks[0].status = 'failed';
+    await writeFile(performanceReport, JSON.stringify(blocked));
+    const result = run('create', f.root, f.report, null, performanceReport);
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /performance budget is missing, blocked, or malformed/i);
   } finally { await rm(f.base, { recursive: true, force: true }); }
 });
 test('verification detects modified files', async () => {
