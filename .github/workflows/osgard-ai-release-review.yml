@@ -37,6 +37,47 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
+      - name: Generate deterministic contract audit for review
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          npm run qa:contracts > /tmp/osgard-contract-audit.log 2>&1
+          code=$?
+          cat /tmp/osgard-contract-audit.log
+          if [ "$code" -ne 0 ] || [ ! -s osgard-contract-audit.json ]; then
+            OSGARD_CONTRACT_EXIT_CODE="$code" node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const path = 'osgard-contract-audit.json';
+          let report;
+          try { report = JSON.parse(fs.readFileSync(path, 'utf8')); } catch { report = {}; }
+          report.schema = 'osgard.contract-integrity.v1';
+          report.status = 'blocked';
+          report.contract = report.contract && typeof report.contract === 'object' ? report.contract : {};
+          if (!/^[a-f0-9]{64}$/.test(String(report.contract.sha256 || ''))) report.contract.sha256 = '0000000000000000000000000000000000000000000000000000000000000000';
+          report.checks = Array.isArray(report.checks) ? report.checks : [];
+          report.checks.push({ id: 'qa-contracts-command', title: 'The full qa:contracts command did not pass', status: 'failed', detail: 'exit code ' + process.env.OSGARD_CONTRACT_EXIT_CODE });
+          report.summary = report.summary && typeof report.summary === 'object' ? report.summary : {};
+          report.summary.checks = report.checks.length;
+          report.summary.failed = report.checks.filter(item => item && ['failed', 'failure', 'blocked', 'error'].includes(String(item.status).toLowerCase())).length;
+          report.summary.warnings = report.checks.filter(item => item && ['warning', 'warn'].includes(String(item.status).toLowerCase())).length;
+          report.summary.passed = report.checks.length - report.summary.failed - report.summary.warnings;
+          fs.writeFileSync(path, JSON.stringify(report, null, 2) + '\n');
+          NODE
+          fi
+          echo "Contract audit exit code: $code"
+      - name: Build and attest the exact artifact for review
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          (npm run build && npm run preflight:frontend && npm run release:attest && npm run release:verify) > /tmp/osgard-build-attestation.log 2>&1
+          code=$?
+          cat /tmp/osgard-build-attestation.log
+          if [ "$code" -ne 0 ] || [ ! -s release-attestation.json ]; then
+            node --input-type=module -e "import fs from 'node:fs'; fs.writeFileSync('release-attestation.json', JSON.stringify({schema:'osgard.release-attestation.v1',status:'blocked',artifact:{fileCount:0,totalBytes:0,rootSha256:null},qualityGate:{schema:'osgard.contract-integrity.v1',checkCount:0,passed:0,warnings:0,contractFingerprint:null}},null,2)+'\\n')"
+          fi
+          echo "Build/attestation exit code: $code"
       - name: Run release readiness and preserve report on failure
         continue-on-error: true
         run: |
@@ -47,8 +88,8 @@ jobs:
           if [ ! -s release-readiness.json ]; then
             node -e "require('node:fs').writeFileSync('release-readiness.json', JSON.stringify({status:'blocked',checks:[{name:'release-readiness-report',status:'failed'}]}, null, 2))"
           fi
-      - name: Prepare AI advisory review
-        run: node scripts/osgard-ai-release-review.mjs --report release-readiness.json --send-to-openai
+      - name: Prepare AI advisory review from three independent evidence reports
+        run: node scripts/osgard-ai-release-review.mjs --report release-readiness.json --report osgard-contract-audit.json --report release-attestation.json --send-to-openai
       - name: Upload AI review and machine evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -57,3 +98,6 @@ jobs:
           if-no-files-found: warn
           path: |
             osgard-ai-release-review.json
+            release-readiness.json
+            osgard-contract-audit.json
+            release-attestation.json
