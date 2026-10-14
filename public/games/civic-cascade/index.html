@@ -8,7 +8,7 @@
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://osgard.world/games/civic-cascade/">
 <title>CIVIC CASCADE — кризисная стратегия | OSGARD PLAY</title>
-<meta name="osgard-game-version" content="3.3.0-auditable-dossier-verifier">
+<meta name="osgard-game-version" content="3.4.0-auditable-dossier-verifier">
 <style>
 :root{color-scheme:dark;--bg:#080d10;--panel:#10191d;--panel2:#142126;--line:#ffffff1c;--ink:#edf3ee;--muted:#91a29e;--mint:#b8f4cf;--cyan:#68d8d2;--gold:#e1c58a;--warn:#f2b27c;--bad:#ff827b;--mono:ui-monospace,Consolas,monospace;--serif:Georgia,serif}
 *{box-sizing:border-box}html{background:var(--bg);scroll-behavior:smooth}body{margin:0;color:var(--ink);background:radial-gradient(ellipse at 76% -18%,#234d453d,transparent 48%),var(--bg);font:14px/1.55 Inter,Geist,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}button,select{font:inherit}button,a,select{touch-action:manipulation}a{color:inherit;text-decoration:none}button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(--mint);outline-offset:3px}.wrap{max-width:1440px;padding:0 clamp(14px,2.8vw,42px);margin:auto}
@@ -157,6 +157,24 @@
 .doctrine-verification-result[data-status="invalid"]{border-color:#e58d7777;color:#f0b6a9}
 .doctrine-verification-result[data-status="warning"]{border-color:#e1c58a66;color:#e1c58a}
 .doctrine-verification-title{margin:0 0 6px;font:8px var(--mono);letter-spacing:.08em}
+
+.doctrine-ai-advisor{display:grid;gap:8px;margin-top:12px;padding:12px;border:1px solid #9c8bff55;border-radius:9px;background:radial-gradient(ellipse at 100% 0%,#9c8bff10,transparent 52%),linear-gradient(145deg,#11151e,#091014)}
+.doctrine-ai-advisor-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.doctrine-ai-advisor-head strong{color:#b9adff;font:8px var(--mono);letter-spacing:.1em}
+.doctrine-ai-advisor-head span{color:var(--muted);font:7px var(--mono)}
+.doctrine-ai-advisor-intro,.doctrine-ai-advisor-footnote{margin:0;color:#a7b7b0;font-size:9px;line-height:1.65}
+.doctrine-ai-consent{display:grid;grid-template-columns:20px minmax(0,1fr);gap:8px;align-items:start;padding:9px;border:1px solid #ffffff1c;border-radius:6px;color:#d1d8d5;font-size:9px;line-height:1.65;cursor:pointer}
+.doctrine-ai-consent input{width:17px;height:17px;margin:1px 0 0;accent-color:#b9adff}
+.doctrine-ai-consent input:focus-visible{outline:2px solid #b9adff;outline-offset:3px}
+.doctrine-ai-advisor .ctrl{min-height:42px;width:100%;white-space:normal;line-height:1.4}
+.doctrine-ai-advisor .ctrl.primary{border-color:#b9adff;background:#b9adff;color:#111321}
+.doctrine-ai-advisor .ctrl:disabled{opacity:.35;cursor:not-allowed}
+.doctrine-ai-advisor-status{margin:0;color:#b0bbb5;font-size:8px;line-height:1.6}
+.doctrine-ai-advisor-result{display:grid;gap:7px;padding:10px;border:1px dashed #b9adff4d;border-radius:7px;color:#bac7c1;font-size:9px;line-height:1.65;overflow-wrap:anywhere}
+.doctrine-ai-advisor-result[data-status="ready"]{border-style:solid;border-color:#68d8d277}
+.doctrine-ai-advisor-result[data-status="error"]{border-color:#e58d7777;color:#f0b6a9}
+.doctrine-ai-advisor-result p{margin:0}
+.doctrine-ai-advisor-result strong{color:#e5ddff;font:8px var(--mono);letter-spacing:.06em}
 .doctrine-verification-list{margin:0;padding-left:17px}
 .doctrine-verification-list li{margin:3px 0}
 
@@ -332,7 +350,24 @@
   <p id="cc-doctrine-verify-help">Лимит файла — 1 МиБ. Проверка не импортирует очередь и не исполняет команды из файла. SHA-256 выявляет изменение после экспорта, но сам по себе не подтверждает личность автора.</p>
   <div class="doctrine-verification-result" id="cc-doctrine-verification-result" role="status" aria-live="polite">Досье ещё не выбрано. Никакие файлы не отправляются на сервер.</div>
  </div>
-  <p class="doctrine-footnote">Планировщик детерминированный и локальный: до восьми лучших вариантов проверяются в девяти контролируемых стресс-экспериментах (три семейства по три уровня) против базового решения под тем же стрессом. Он не отправляет игровые данные на сервер и не вызывает OpenAI API. Будущие случайные инциденты и решения игрока не предсказываются.</p>
+
+  <div class="doctrine-ai-advisor" id="cc-ai-advisor">
+   <div class="doctrine-ai-advisor-head">
+    <strong>OPENAI STRATEGY REVIEW</strong>
+    <span>ОПЦИОНАЛЬНО · ОДИН ЗАПРОС ПО СОГЛАСИЮ</span>
+   </div>
+   <p class="doctrine-ai-advisor-intro">AI-критик сравнит только найденные стратегии, бюджет и результаты девяти синтетических стресс-тестов. Он не запускает команды и не меняет состояние города.</p>
+   <label class="doctrine-ai-consent" for="cc-ai-advisor-consent">
+    <input id="cc-ai-advisor-consent" type="checkbox">
+    <span>Я отдельно соглашаюсь отправить ограниченную сводку этого плана в OpenAI для одного разбора. В ней нет имени, аккаунта, свободного текста или журнала событий.</span>
+   </label>
+   <button class="ctrl primary" id="cc-ai-advisor-run" type="button" disabled>✦ Запросить AI-критику стратегий</button>
+   <p class="doctrine-ai-advisor-status" id="cc-ai-advisor-status" role="status" aria-live="polite">Без отметки и нажатия кнопки данные игры не отправляются. Если серверный AI-советник выключен, запрос не выполняется.</p>
+   <div class="doctrine-ai-advisor-result" id="cc-ai-advisor-result" aria-live="polite">AI-разбор ещё не запрашивался.</div>
+   <p class="doctrine-ai-advisor-footnote">Совет ограничен переданными метриками симуляции. Детерминированный расчёт остаётся источником истины; AI-ответ не доказывает реальную причинность и не считается командой к исполнению. Ключ API хранится только на сервере.</p>
+  </div>
+  <p class="doctrine-footnote">Планировщик, прогноз, экспорт и проверка досье остаются локальными. Отдельный AI Advisor является внешним и работает только по разовому согласию: отправляется ограниченная сводка состояния и кандидатов без личных данных и журнала событий. Ответ не меняет игру и не исполняет команды. Если серверный флаг выключен, игровая сводка не отправляется. Синтетические стресс-профили не являются прогнозом реальной погоды.</p>
+  <p class="doctrine-footnote"> до восьми лучших вариантов проверяются в девяти контролируемых стресс-экспериментах (три семейства по три уровня) против базового решения под тем же стрессом. Он не отправляет игровые данные на сервер и не вызывает OpenAI API. Будущие случайные инциденты и решения игрока не предсказываются.</p>
  </section>
  <ol class="command-list" id="cc-plan-list" aria-live="polite"><li class="command-empty">Очередь пуста. Поставь игру на паузу и добавь первый приказ.</li></ol>
  <div class="command-footer"><button class="ctrl" id="cc-plan-clear" type="button" disabled>Очистить очередь</button><button class="ctrl primary" id="cc-plan-execute" type="button" disabled>▶ Исполнить план · 0 приказов</button></div>
@@ -1296,7 +1331,7 @@ function buildDoctrineDossierPayload(sourceState,result,gameVersion,scenarioDefi
  return {
   schema:'osgard.civic-cascade.decision-dossier/v1',game:'CIVIC CASCADE',gameVersion:String(gameVersion||'unknown'),
   engine:{
-   id:'civic-cascade-deterministic-decision-engine',modelVersion:'3.3.0',
+   id:'civic-cascade-deterministic-decision-engine',modelVersion:'3.4.0',
    searchAlgorithm:'deterministic-bounded-beam-search',portfolioAlgorithm:'bounded-pareto-frontier',
    objective:String(result.mode||'balanced'),limits:{maxCommands:4,beamWidth:6,stressCandidateLimit:8,stressProfileCount:9,stressSeverityLevels:3,portfolioLimit:3},
    forecastHorizonsGameSeconds:[30,60,90],stressFamilies:['water-surge','grid-overload','weak-node-shock'],stressSeverityLevels:['mild','moderate','severe'],stressProfiles:['water-surge-mild','water-surge-moderate','water-surge-severe','grid-overload-mild','grid-overload-moderate','grid-overload-severe','weak-node-shock-mild','weak-node-shock-moderate','weak-node-shock-severe']
@@ -1419,6 +1454,144 @@ async function verifyDoctrineDossierFile(){
 }
 
 let doctrineResult=null,doctrineSelectedIndex=0,doctrineStaleMessage='';
+let civicAdvisorEnabled=false,civicAdvisorBusy=false;
+
+function clearCivicAdvisorReview(message){
+ civicAdvisorEnabled=false;civicAdvisorBusy=false;
+ const consent=$('cc-ai-advisor-consent'),button=$('cc-ai-advisor-run'),status=$('cc-ai-advisor-status'),root=$('cc-ai-advisor-result');
+ if(consent)consent.checked=false;
+ if(button)button.disabled=true;
+ if(status)status.textContent=message||'План изменился. Запусти поиск заново, прежде чем просить AI-критику.';
+ if(root){root.replaceChildren();root.dataset.status='';const p=document.createElement('p');p.textContent='AI-разбор ещё не запрашивался.';root.append(p)}
+}
+function buildCivicAdvisorRequest(){
+ const gameVersion=document.querySelector('meta[name="osgard-game-version"]')?.content||'unknown';
+ const dossier=buildDoctrineDossierPayload(state,doctrineResult,gameVersion,scenarioData,nodes,doctrineSelectedIndex);
+ const encodeForecast=forecast=>forecast.map(row=>({
+  seconds:row.seconds,water:row.water,grid:row.grid,access:row.access,risk:row.risk,
+  weakestNode:row.weakestNode,weakestIntegrity:row.weakestIntegrity,criticalNodes:(row.criticalNodes||[]).slice(0,6)
+ }));
+ return {
+  consent:true,locale:document.documentElement.lang==='en'?'en':'ru',
+  modelVersion:dossier.engine.modelVersion,scenarioId:dossier.scenario.id,objective:doctrineResult.mode,
+  sourceMetrics:dossier.sourceState.metrics,nodeIntegrity:dossier.sourceState.nodeIntegrity,
+  baselineForecast:encodeForecast(dossier.baseline.forecast),
+  candidates:dossier.candidates.map(candidate=>({
+   rank:candidate.rank,paretoMember:candidate.paretoMember===true,
+   resourceCost:candidate.resourceCost,crewsUsed:candidate.crewsUsed,scores:candidate.scores,
+   orders:candidate.orders.map(order=>({position:order.position,action:order.action,nodeId:order.nodeId})),
+   forecast:encodeForecast(candidate.forecast),
+   robustness:{
+    profileCount:candidate.robustness.profileCount,stableProfiles:candidate.robustness.stableProfiles,
+    worstRiskDelta:candidate.robustness.worstRiskDelta,worstIntegrityDelta:candidate.robustness.worstIntegrityDelta,
+    profiles:candidate.robustness.profiles.map(profile=>({
+     id:profile.id,family:profile.family,severity:profile.severity,riskDelta90:profile.riskDelta90,
+     weakestIntegrityDelta:profile.weakestIntegrityDelta,criticalNodeDelta:profile.criticalNodeDelta
+    }))
+   }
+  }))
+ };
+}
+function renderCivicAdvisorMessage(message,status='error'){
+ const root=$('cc-ai-advisor-result');if(!root)return;
+ root.replaceChildren();root.dataset.status=status;
+ const p=document.createElement('p');p.textContent=message;root.append(p);
+}
+function renderCivicAdvisorAdvice(advice,candidateCount){
+ const root=$('cc-ai-advisor-result');if(!root)return;
+ root.replaceChildren();root.dataset.status='ready';
+ const rank=document.createElement('p');rank.className='doctrine-verification-title';
+ rank.textContent=advice.recommendedRank===0?'AI НЕ ВЫБРАЛ ОДНОГО ЛИДЕРА':'AI ПРЕДЛАГАЕТ ПРОВЕРИТЬ ВАРИАНТ №'+advice.recommendedRank+' ИЗ '+candidateCount;
+ const add=(label,value)=>{
+  const block=document.createElement('div'),heading=document.createElement('strong'),text=document.createElement('p');
+  heading.textContent=label;text.textContent=value;block.append(heading,text);root.append(block);
+ };
+ root.append(rank);
+ add('ЗАГОЛОВОК',advice.headline);
+ add('ОБОСНОВАНИЕ',advice.rationale);
+ add('КОМПРОМИСС',advice.tradeoff);
+ add('ЗА ЧЕМ СЛЕДИТЬ',advice.riskToWatch);
+ add('СЛЕДУЮЩИЙ ТЕСТ',advice.validationStep);
+ add('ОГРАНИЧЕНИЯ',advice.limitations);
+}
+async function handleCivicAdvisorConsentChange(){
+ const consent=$('cc-ai-advisor-consent'),button=$('cc-ai-advisor-run'),status=$('cc-ai-advisor-status');
+ civicAdvisorEnabled=false;
+ if(button)button.disabled=true;
+ if(!consent?.checked){
+  if(status)status.textContent='Согласие снято. AI-запрос не отправлен.';
+  refreshDoctrineAvailability();return;
+ }
+ if(!doctrineResult||doctrineResult.fingerprint!==doctrineFingerprint()||!doctrineResult.alternatives.length){
+  consent.checked=false;
+  if(status)status.textContent='Сначала поставь игру на паузу и найди допустимый план. Сводка ещё не отправлена.';
+  refreshDoctrineAvailability();return;
+ }
+ if(status)status.textContent='Проверяю, включён ли AI-сервис. Состояние игры на этом шаге не отправляется.';
+ try{
+  const response=await fetch('/v1/civic-cascade-advisor/status',{method:'GET',cache:'no-store',credentials:'same-origin',headers:{Accept:'application/json'}});
+  const payload=await response.json().catch(()=>({}));
+  if(!response.ok||payload.enabled!==true){
+   consent.checked=false;civicAdvisorEnabled=false;
+   if(status)status.textContent='AI-сервис выключен или недоступен. Игровая сводка не отправлена.';
+  }else{
+   civicAdvisorEnabled=true;
+   if(status)status.textContent='AI-сервис доступен. Нажми кнопку отдельно, чтобы отправить одну ограниченную сводку.';
+  }
+ }catch(_){
+  consent.checked=false;civicAdvisorEnabled=false;
+  if(status)status.textContent='Не удалось проверить AI-сервис. Игровая сводка не отправлена.';
+ }
+ refreshDoctrineAvailability();
+}
+async function requestCivicAdvisorReview(){
+ const consent=$('cc-ai-advisor-consent'),button=$('cc-ai-advisor-run'),status=$('cc-ai-advisor-status');
+ if(!consent?.checked||!civicAdvisorEnabled||civicAdvisorBusy){
+  if(status)status.textContent='Для одного запроса нужно отдельно подтвердить согласие и нажать кнопку.';
+  return;
+ }
+ if(!paused||finished||activeIncident||planRunning||!doctrineResult||doctrineResult.fingerprint!==doctrineFingerprint()){
+  clearCivicAdvisorReview('Сначала поставь симуляцию на паузу и пересчитай устаревший план. Данные не отправлены.');
+  toast('План устарел. AI-запрос не отправлен.');return;
+ }
+ let request;
+ try{request=buildCivicAdvisorRequest()}catch(_){
+  if(status)status.textContent='Не удалось собрать безопасную сводку. Данные не отправлены.';return;
+ }
+ const fingerprint=doctrineFingerprint(),candidateCount=doctrineResult.alternatives.length;
+ civicAdvisorBusy=true;consent.checked=false;
+ if(button)button.disabled=true;
+ if(status)status.textContent='Отправлена одна ограниченная сводка по твоему согласию. Ожидаю критический разбор…';
+ renderCivicAdvisorMessage('Проверяю компромиссы и слабые места. ИИ не меняет очередь и не исполняет команды.','');
+ refreshDoctrineAvailability();
+ try{
+  const response=await fetch('/v1/civic-cascade-advisor',{
+   method:'POST',cache:'no-store',credentials:'same-origin',
+   headers:{'Content-Type':'application/json',Accept:'application/json'},
+   body:JSON.stringify(request),signal:AbortSignal.timeout(17000)
+  });
+  const payload=await response.json().catch(()=>({}));
+  if(fingerprint!==doctrineFingerprint()){
+   clearCivicAdvisorReview('Состояние города изменилось во время запроса. Старый AI-ответ отброшен. Запусти новый поиск.');
+   return;
+  }
+  if(!response.ok||!payload.advice){
+   civicAdvisorEnabled=response.status!==503;
+   const message=typeof payload.message==='string'?payload.message.slice(0,220):'AI-разбор временно недоступен. План не изменён.';
+   renderCivicAdvisorMessage(message,'error');
+   if(status)status.textContent='AI-разбор не завершён. Для следующего запроса потребуется новое согласие.';
+   return;
+  }
+  renderCivicAdvisorAdvice(payload.advice,candidateCount);
+  if(status)status.textContent='Разбор получен. Это критика модели, не команда к исполнению; согласие автоматически сброшено.';
+ }catch(_){
+  renderCivicAdvisorMessage('AI-разбор не завершён из-за сетевой ошибки или тайм-аута. План не изменён.','error');
+  if(status)status.textContent='Запрос завершён без ответа. Для повторной попытки потребуется новое согласие.';
+ }finally{
+  civicAdvisorBusy=false;consent.checked=false;refreshDoctrineAvailability();
+ }
+}
+
 function doctrineFingerprint(){
  const names=['water','grid','access','supplies','crews','riskOffset','waterRate','gridRate','accessRate','actionCount','scenario'];
  const metrics=names.map(key=>[key,state[key]]);
@@ -1470,14 +1643,16 @@ function renderDoctrineResults(message){
 function refreshDoctrineAvailability(){
  const canWork=paused&&!finished&&!activeIncident&&!planRunning;
  const run=$('cc-doctrine-run'),mode=$('cc-doctrine-mode'),apply=$('cc-doctrine-apply'),reset=$('cc-doctrine-reset'),exportButton=$('cc-doctrine-export'),status=$('cc-doctrine-status');
+ const advisorButton=$('cc-ai-advisor-run'),advisorConsent=$('cc-ai-advisor-consent');
  if(doctrineResult&&doctrineResult.fingerprint!==doctrineFingerprint()){
   doctrineResult=null;doctrineSelectedIndex=0;doctrineStaleMessage='Состояние города изменилось после расчёта. Запусти новый поиск, чтобы не использовать устаревший план.';
-  renderDoctrineResults(doctrineStaleMessage);
+  clearCivicAdvisorReview(doctrineStaleMessage);renderDoctrineResults(doctrineStaleMessage);
  }
  if(run)run.disabled=!canWork;
  if(mode)mode.disabled=!canWork;
  if(apply)apply.disabled=!canWork||!doctrineResult||!doctrineResult.alternatives[doctrineSelectedIndex];
  if(reset)reset.disabled=!doctrineResult&&!doctrineStaleMessage;
+ if(advisorButton)advisorButton.disabled=!canWork||!doctrineResult||doctrineResult.fingerprint!==doctrineFingerprint()||!civicAdvisorEnabled||!advisorConsent?.checked||civicAdvisorBusy;
  if(exportButton)exportButton.disabled=!canWork||!doctrineResult||doctrineResult.fingerprint!==doctrineFingerprint();
  if(status){
   if(doctrineResult)status.textContent='ГОТОВО · '+doctrineResult.evaluatedCount+' ВАРИАНТОВ · ПАРЕТО '+doctrineResult.paretoFrontSize+' · СТРЕСС-ПРОВЕРЕНО '+doctrineResult.robustnessEvaluatedCount+' · '+doctrineResult.durationMs+' МС';
@@ -1490,12 +1665,12 @@ function runDoctrinePlanner(){
  const mode=$('cc-doctrine-mode').value,started=performance.now();
  const result=searchDoctrinePlans(state,mode,selectedNode().id,simulatePlannedOrders,simulateCascadingPath,nodes,PLAN_ACTIONS);
  result.durationMs=Math.round(performance.now()-started);result.fingerprint=doctrineFingerprint();
- doctrineResult=result;doctrineSelectedIndex=0;doctrineStaleMessage='';
+ doctrineResult=result;doctrineSelectedIndex=0;doctrineStaleMessage='';clearCivicAdvisorReview('Новый план готов. Для отдельного AI-разбора нужно снова дать согласие.');
  renderDoctrineResults();refreshDoctrineAvailability();
  if(!result.alternatives.length)toast('По выбранной цели убедительный допустимый план не найден.');else toast('Найден вариант штабного плана. Проверь прогноз перед применением.');
 }
 function resetDoctrinePlanner(){
- doctrineResult=null;doctrineSelectedIndex=0;doctrineStaleMessage='';
+ doctrineResult=null;doctrineSelectedIndex=0;doctrineStaleMessage='';clearCivicAdvisorReview('Найди план и дай отдельное согласие, чтобы запросить AI-критику.');
  renderDoctrineResults();refreshDoctrineAvailability();
 }
 function applyDoctrinePlan(){
@@ -1690,6 +1865,7 @@ buttons.forEach(id=>$('cc-action-'+id).addEventListener('click',()=>act(id)));
 $('cc-plan-add').addEventListener('click',addPlannedOrder);$('cc-plan-clear').addEventListener('click',clearPlannedOrders);$('cc-plan-execute').addEventListener('click',executePlannedOrders);
 $('cc-doctrine-run').addEventListener('click',runDoctrinePlanner);$('cc-doctrine-apply').addEventListener('click',applyDoctrinePlan);$('cc-doctrine-reset').addEventListener('click',resetDoctrinePlanner);$('cc-doctrine-mode').addEventListener('change',setDoctrineObjective);$('cc-doctrine-export').addEventListener('click',exportDoctrineDossier);
 $('cc-doctrine-import-file').addEventListener('change',()=>{$('cc-doctrine-verify-import').disabled=!$('cc-doctrine-import-file').files?.length});$('cc-doctrine-verify-import').addEventListener('click',verifyDoctrineDossierFile);
+$('cc-ai-advisor-consent').addEventListener('change',handleCivicAdvisorConsentChange);$('cc-ai-advisor-run').addEventListener('click',requestCivicAdvisorReview);
 $('cc-pause').addEventListener('click',()=>{if(finished||planRunning)return;if(paused&&planOrders.length){toast('Сначала исполни очередь или очисти план перед снятием паузы.');return}paused=!paused;$('cc-pause').textContent=paused?'▶ Продолжить':'Ⅱ Пауза';ui.status.textContent=paused?'ПАУЗА':'СИСТЕМА АКТИВНА';renderUI();renderPlan();addLog(paused?'<b>Оператор:</b> симуляция приостановлена.':'<b>Оператор:</b> симуляция возобновлена.')});
 $('cc-speed').addEventListener('click',()=>{speedIndex=(speedIndex+1)%speeds.length;$('cc-speed').textContent='СКОРОСТЬ '+speeds[speedIndex]+'×';toast('Скорость симуляции: '+speeds[speedIndex]+'×')});
 $('cc-reset').addEventListener('click',()=>fresh($('cc-scenario').value));
