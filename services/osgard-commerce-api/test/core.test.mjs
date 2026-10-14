@@ -96,6 +96,40 @@ test("owned-promo schema migration preserves explicit owner choices and excludes
   assert.deepEqual(current.config.enabledServices, ["projects"]);
 });
 
+test("legacy owned-promo settings migrate to every-session defaults while schema v2 preserves operator choices", () => {
+  const legacy = migrateOwnedPromoConfig({
+    enabled: false,
+    defaultFrequency: "off",
+    enabledServices: ["projects", "marcosa", "projects"],
+    defaultSelectedServices: ["projects"],
+    spotlightService: "projects",
+    showShareRewards: false,
+  });
+  assert.equal(legacy.ok, true);
+  assert.equal(legacy.config.schemaVersion, 2);
+  assert.equal(legacy.config.enabled, true, "Legacy global-off setting migrates to the requested enabled default");
+  assert.equal(legacy.config.defaultFrequency, "each", "Legacy config defaults to a promo after every completed game");
+  assert.equal(legacy.config.showShareRewards, true, "Legacy config enables the optional SHARDS reward panel");
+  assert.deepEqual(legacy.config.enabledServices, ["projects", "marcosa"], "Valid allow-list entries are preserved and de-duplicated");
+  assert.deepEqual(legacy.config.defaultSelectedServices, ["projects"], "Valid default service choices are preserved");
+  assert.equal(legacy.config.spotlightService, "projects", "A valid selected spotlight remains intact");
+
+  const current = migrateOwnedPromoConfig({
+    schemaVersion: 2,
+    enabled: false,
+    defaultFrequency: "off",
+    enabledServices: ["projects"],
+    defaultSelectedServices: ["projects"],
+    spotlightService: "projects",
+    showShareRewards: false,
+  });
+  assert.equal(current.ok, true);
+  assert.equal(current.config.enabled, false, "An explicit v2 global-off choice must be respected");
+  assert.equal(current.config.defaultFrequency, "off", "An explicit v2 schedule must be respected");
+  assert.equal(current.config.showShareRewards, false, "An explicit v2 reward setting must be respected");
+  assert.equal(migrateOwnedPromoConfig({ schemaVersion: 99 }).code, "OWNED_PROMO_SCHEMA_VERSION_INVALID");
+});
+
 test("catalog is a fixed server-side allow-list", () => {
   assert.deepEqual(PRODUCT_DEFS.map((item) => item.key), [
     "support-osgard", "osgard-premium-monthly", "development-deposit",
