@@ -25,7 +25,7 @@ OSGARD PARTNER STUDIO is also present as an internal B2B offering. The catalogue
 
 Project links are allow-listed by the server-owned service IDs and receive first-party UTM fields identifying the source, placement, service and current game. External services open in a new tab with rel="noopener noreferrer". Click and visible-impression events are sent through the existing consent-gated OSGARD analytics queue. Intermission impression measurement requires the panel to be visible at least 50% for one second, and persistent frequency/exposure analytics is not stored without consent.
 
-The public promo configuration is versioned as schema 2. A legacy server response/configuration is upgraded in the player to include GARD VPN and every-game default for users without an older local preference. Local preferences are also migrated: GARD VPN is added to the service chooser while existing selected services and the player's saved frequency choice are preserved. The backend migrator upgrades old PostgreSQL config rows on public/admin reads and writes the schema-2 representation when possible.
+The public promo configuration is versioned as schema 2. A legacy server response/configuration is upgraded in the player to include GARD VPN and every-game default for users without an older local preference. Local preferences are also migrated: GARD VPN is added to an existing non-empty service selection while the player's saved frequency choice is preserved; an explicit empty selection (show no services) remains empty. The backend migrator upgrades old PostgreSQL config rows on public/admin reads and writes the schema-2 representation when possible.
 
 ## Social sharing and rewards
 
