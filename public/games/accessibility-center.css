@@ -1,0 +1,32 @@
+/* OSGARD PLAY accessibility centre: opt-in display preferences. */
+.osgard-a11y-trigger{position:fixed;z-index:39;right:18px;bottom:18px;display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:8px 13px;border:1px solid #d3ff6960;border-radius:3px;background:#111611ee;color:#f2f0e8;box-shadow:0 12px 36px #0008;backdrop-filter:blur(14px);font:600 12px/1.2 Inter,system-ui,sans-serif;cursor:pointer}
+.osgard-a11y-trigger:hover{border-color:#d3ff69;background:#1a2114}
+.osgard-a11y-trigger .osgard-a11y-mark{display:grid;place-items:center;width:24px;height:24px;border:1px solid #d3ff697a;color:#d3ff69;font-size:12px}
+.osgard-a11y-dialog{width:min(520px,calc(100vw - 24px));max-width:520px;max-height:min(86dvh,760px);padding:0;border:1px solid #d3ff6948;border-radius:8px;background:#0c100d;color:#f2f0e8;box-shadow:0 30px 100px #000b}
+.osgard-a11y-dialog::backdrop{background:#020503bf;backdrop-filter:blur(8px)}
+.osgard-a11y-shell{padding:clamp(18px,4vw,28px)}
+.osgard-a11y-kicker{margin:0 0 8px;color:#d3ff69;font:10px/1.4 ui-monospace,Consolas,monospace;letter-spacing:.16em;text-transform:uppercase}
+.osgard-a11y-dialog h2{margin:0;font:500 clamp(27px,5vw,35px)/1.1 Inter,system-ui,sans-serif;letter-spacing:-.04em}
+.osgard-a11y-intro{color:#bec4b8;font-size:13px;line-height:1.7;margin:12px 0 22px}
+.osgard-a11y-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(145px,.76fr);gap:15px;align-items:center;padding:14px 0;border-top:1px solid #ffffff20}
+.osgard-a11y-row label,.osgard-a11y-row .osgard-a11y-label{font-size:13px;font-weight:650}
+.osgard-a11y-row small{display:block;margin-top:4px;color:#9aa196;font-size:11px;font-weight:400;line-height:1.5}
+.osgard-a11y-dialog select{width:100%;min-height:44px;border:1px solid #ffffff36;border-radius:3px;padding:9px 10px;background:#171c17;color:#f2f0e8}
+.osgard-a11y-check{justify-self:end;width:25px;height:25px;accent-color:#d3ff69}
+.osgard-a11y-actions{display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap;margin-top:22px}
+.osgard-a11y-actions button{min-height:44px;padding:10px 14px;border:1px solid #ffffff32;border-radius:3px;background:#161b16;color:#f2f0e8;font:600 12px/1.3 Inter,system-ui,sans-serif;cursor:pointer}
+.osgard-a11y-actions .primary{border-color:#d3ff69;background:#d3ff69;color:#10140b}
+.osgard-a11y-status{min-height:1.5em;margin:12px 0 0;color:#aab2a1;font-size:11px}
+.osgard-a11y-dialog button:focus-visible,.osgard-a11y-dialog select:focus-visible,.osgard-a11y-trigger:focus-visible{outline:3px solid #d3ff69;outline-offset:3px}
+html.osgard-a11y-contrast{--line:#ffffff68;--muted:#e1e7dc;color-scheme:dark}
+html.osgard-a11y-contrast body{color:#fff;background:#000}
+html.osgard-a11y-contrast .card,html.osgard-a11y-contrast .panel,html.osgard-a11y-contrast .filters,html.osgard-a11y-contrast .result-line{border-color:#ffffff62}
+html.osgard-a11y-contrast a,html.osgard-a11y-contrast button{color:#fff}
+html.osgard-a11y-contrast .primary,html.osgard-a11y-contrast .btn.primary{background:#e2ff94;color:#000}
+html.osgard-a11y-large-type body{font-size:17px}
+html.osgard-a11y-large-type .lede,html.osgard-a11y-large-type .copy>p,html.osgard-a11y-large-type .post-run-copy{font-size:calc(1em + 2px)}
+html.osgard-a11y-large-type .nav a,html.osgard-a11y-large-type .head-right>a{font-size:14px}
+html.osgard-a11y-large-targets button,html.osgard-a11y-large-targets .btn,html.osgard-a11y-large-targets .chip,html.osgard-a11y-large-targets .play-link,html.osgard-a11y-large-targets .detail-link,html.osgard-a11y-large-targets .secondary-link,html.osgard-a11y-large-targets footer a{min-height:44px}
+html[data-osgard-motion="reduced"] *,html[data-osgard-motion="reduced"] *::before,html[data-osgard-motion="reduced"] *::after{scroll-behavior:auto!important;animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-animation:none!important}
+@media(prefers-reduced-motion:reduce){html:not([data-osgard-motion="full"]) *,html:not([data-osgard-motion="full"]) *::before,html:not([data-osgard-motion="full"]) *::after{scroll-behavior:auto!important;animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
+@media(max-width:620px){.osgard-a11y-trigger{right:10px;bottom:10px;padding:7px 10px}.osgard-a11y-trigger>span:last-child{font-size:11px}.osgard-a11y-row{grid-template-columns:minmax(0,1fr) minmax(120px,.7fr);gap:9px}.osgard-a11y-shell{padding:18px}}
