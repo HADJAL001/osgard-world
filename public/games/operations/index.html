@@ -140,8 +140,18 @@
           const config = JSON.parse(body);
           const base = typeof config.apiBaseUrl === 'string' ? config.apiBaseUrl.trim() : '';
           if (!base) {
-            if (state === 'pass') state = 'warn';
-            detail = (detail ? detail + ' ' : '') + 'Commerce API не настроен: оплата, лиды и заказная аналитика не подключены.';
+            let discovered = false;
+            try {
+              const healthResponse = await fetch('/commerce-api/healthz', { cache: 'no-store', credentials: 'omit' });
+              const health = healthResponse.ok ? await healthResponse.json().catch(() => ({})) : {};
+              discovered = healthResponse.ok && health.service === 'osgard-commerce-api' && health.databaseReady === true;
+            } catch { discovered = false; }
+            if (discovered) {
+              detail = (detail ? detail + ' ' : '') + 'apiBaseUrl пустой; same-origin Commerce API обнаружен и база готова. Клиентская аналитика/заявки могут использовать безопасный маршрут. Это не подтверждает checkout, платежи или активную рекламу.';
+            } else {
+              if (state === 'pass') state = 'warn';
+              detail = (detail ? detail + ' ' : '') + 'Commerce API не настроен или база не готова: оплата, лиды и заказная аналитика остаются в безопасном резервном режиме.';
+            }
           } else {
             const apiUrl = new URL(base, location.origin);
             if (apiUrl.protocol !== 'https:' && !(['localhost','127.0.0.1'].includes(apiUrl.hostname) && apiUrl.protocol === 'http:')) {
