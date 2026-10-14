@@ -1,0 +1,11 @@
+{
+  "schema": "osgard.experiment-config.v1",
+  "enabled": false,
+  "experimentId": "catalog-cta-v1",
+  "variants": {
+    "a": { "cta": "Исследовать игры ↘" },
+    "b": { "cta": "Выбрать игру ↘" }
+  },
+  "allocation": { "a": 50, "b": 50 },
+  "ownerNote": "Оставь enabled=false до проверки Commerce API, согласия аналитики, корректности экспозиции/конверсии и маршрута отката. Включение флага запускает только CTA-тест; платёжные/рекламные функции не активируются."
+}
