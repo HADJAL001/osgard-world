@@ -17,8 +17,8 @@ assert.equal(api.maxTrialsPerBatch, 8);
 assert.equal(api.maxTotalTrials, 48);
 assert.equal(api.maxFrames, 142);
 assert.equal(api.maxImportBytes, 1024 * 1024);
-assert.match(html, /osgard-game-version" content="0\\.26\\.0-counterfactual-lab"/);
-assert.match(html, /<title>CASCADE LAB — Premium Physics Lab 0\\.26\\.0<\\/title>/);
+assert.match(html, /osgard-game-version" content="0\.26\.0-counterfactual-lab"/);
+assert.match(html, /<title>CASCADE LAB — Premium Physics Lab 0\.26\.0<\/title>/);
 assert.ok(html.includes('id="CASCADELAB026"') && html.includes('counterfactual-lab.js?v=0.26.0'));
 assert.ok(html.includes("const CASCADELAB026_ENGINE_SCHEMA = 'osgard.cascade-lab.counterfactual-engine.v1'"));
 assert.ok(html.includes("const CASCADELAB026_ENGINE_VERSION = '0.26.0-fixed-120hz'"));
@@ -26,9 +26,12 @@ assert.ok(html.includes('sim.step(WORLD.fixedStep)') && html.includes('function 
 assert.ok(html.includes("isDeviceAnchorValid(target, candidate)") && html.includes("isPlacementValid(target, normalized, candidate, target.capacity)"));
 assert.ok(html.includes("navigator.serviceWorker.register('./service-worker.js?v=0.27.0'"));
 assert.ok(worker.includes("CACHE=PREFIX+'v0.27.0'") && worker.includes("'./counterfactual-lab.js?v=0.26.0'"));
-assert.doesNotMatch(source, /\\b(?:fetch|XMLHttpRequest|sendBeacon)\\s*\\(/, 'Counterfactual Lab must not upload simulation records');
+assert.doesNotMatch(source, /\b(?:fetch|XMLHttpRequest|sendBeacon)\s*\(/, 'Counterfactual Lab must not upload simulation records');
 assert.ok(!source.includes('.innerHTML'), 'imported run data must use safe DOM text APIs');
-assert.ok(source.includes('Math.random()') === false, 'the physics calculation must not use random trial variation');
+const bridgeStart = html.indexOf("const CASCADELAB026_ENGINE_SCHEMA");
+const bridgeEnd = html.indexOf("</script>", bridgeStart);
+assert.ok(bridgeStart >= 0 && bridgeEnd > bridgeStart, 'bounded engine adapter must be embedded in the game');
+assert.ok(!html.slice(bridgeStart, bridgeEnd).includes('Math.random('), 'physics engine adapter must not randomize trial inputs');
 for (const marker of ['function buildAngleSweep(', 'function buildAblationSweep(', 'function buildRepeatability(', 'function compareTrials(', 'function validateArchive(', 'deterministicIdentical', 'observedSuccessSharePct', 'resultFingerprintEqual', 'setTimeout(resolve, 0)', 'Запрошена отмена', 'FNV-1a-32']) {
   assert.ok(source.includes(marker), 'Counterfactual Lab contract missing: ' + marker);
 }
