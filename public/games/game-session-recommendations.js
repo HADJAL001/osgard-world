@@ -520,6 +520,18 @@ function inviteFor(id){
 }
 function getWallet(){try{const w=JSON.parse(localStorage.getItem(walletKey)||'{}'),claims=Array.isArray(w.qualifiedClaims)?[...new Set(w.qualifiedClaims.filter(code=>/^og_[a-f0-9]{8}$/.test(String(code))))].slice(-5000):[];return{balance:Number.isSafeInteger(w.balance)&&w.balance>=0?Math.min(w.balance,1e9):0,day:typeof w.lastRewardDay==='string'?w.lastRewardDay:'',claims}}catch{return{balance:0,day:'',claims:[]}}}
 function award(source){const current=getWallet(),day=new Date().toISOString().slice(0,10);if(current.day===day)return{ok:false,already:true,balance:current.balance};const next={balance:Math.min(1e9,current.balance+dailyReward),lastRewardDay:day,lastSource:String(source||'share').slice(0,60),qualifiedClaims:current.claims,updatedAt:new Date().toISOString()};try{localStorage.setItem(walletKey,JSON.stringify(next));try{window.dispatchEvent(new CustomEvent('osgard:shards-wallet-updated',{detail:{balance:next.balance,lastRewardDay:day}}))}catch{}return{ok:true,balance:next.balance}}catch{return{ok:false,balance:current.balance}}}
+function syncShardsWalletUI(){
+ const wallet=getWallet(),today=new Date().toISOString().slice(0,10);
+ document.querySelectorAll('.og-postgame-wallet').forEach(node=>{node.textContent='OSGARD SHARDS · '+wallet.balance});
+ if(wallet.day!==today)return;
+ document.querySelectorAll('.og-postgame-service-share-claim,.og-postgame-claim').forEach(button=>{
+  if(button.hidden)return;
+  button.disabled=true;
+  button.textContent='Дневная награда уже получена';
+ });
+}
+window.addEventListener('osgard:shards-wallet-updated',syncShardsWalletUI);
+window.addEventListener('storage',event=>{if(!event.key||event.key===walletKey)syncShardsWalletUI()});
 function servicesShelf(gameId,showPromos,completedCount){
  const preferences=readServicePreferences();
  const section=make('section','og-postgame-services'),head=make('div','og-postgame-service-head'),intro=make('div');
