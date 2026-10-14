@@ -34,9 +34,9 @@ assert.ok(html.includes('id="CASCADELAB020"') && html.includes('data-cascade-lab
 assert.ok(hypothesis.includes("const SCHEMA = 'osgard.cascade-lab.next-experiment.v1'") && hypothesis.includes('function proposalForPair(pair)') && hypothesis.includes('function reconcilePlan('), 'Hypothesis Lab must plan and observe controlled experiments');
 assert.ok(!hypothesis.includes('fetch(') && !hypothesis.includes('XMLHttpRequest') && !hypothesis.includes('sendBeacon'), 'Hypothesis Lab must not upload local history');
 
-assert.match(passport, /\\bVERSION\\s*=\\s*['"]0\\.21\\.0['"]/, 'Case Passport VERSION marker should be checked independent of const grouping');
-assert.match(passport, /\\bSCHEMA\\s*=\\s*['"]osgard\\.cascade-lab\\.case-passport\\.v1['"]/, 'Case Passport SCHEMA marker should be checked independent of const grouping');
+assert.match(passport, /\bVERSION\s*=\s*['"]0\.21\.0['"]/, 'Case Passport VERSION marker should be checked independent of const grouping');
+assert.match(passport, /\bSCHEMA\s*=\s*['"]osgard\.cascade-lab\.case-passport\.v1['"]/, 'Case Passport SCHEMA marker should be checked independent of const grouping');
 assert.ok(passport.includes('function verifyPassport(') && !passport.includes('fetch(') && !passport.includes('sendBeacon('), 'Case Passport must remain a local verifier');
-assert.ok(productionRouteMatrix.includes(String.raw`/\\bSCHEMA\\s*=\\s*['"]osgard\\.cascade-lab\\.case-passport\\.v1['"]/.test(content)`) && !productionRouteMatrix.includes("const SCHEMA='osgard.cascade-lab.case-passport.v1'"), 'Production route checking must accept grouped VERSION/SCHEMA constants without false negatives');
+assert.ok(productionRouteMatrix.includes(String.raw`/\bSCHEMA\s*=\s*['"]osgard\.cascade-lab\.case-passport\.v1['"]/.test(content)`) && !productionRouteMatrix.includes("const SCHEMA='osgard.cascade-lab.case-passport.v1'"), 'Production route checking must accept grouped VERSION/SCHEMA constants without false negatives');
 new Function(hypothesis);
 console.log('CASCADE LAB dossier smoke: PASS — v0.23.0 metadata, local report and Hypothesis Lab wiring.');
