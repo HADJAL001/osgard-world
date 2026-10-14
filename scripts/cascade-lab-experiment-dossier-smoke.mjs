@@ -21,7 +21,7 @@ for (const field of [
   "entries: eventRows",
   "retainedSampleLimit: 240",
   "retainedEventLimit: 64"
-]) assert.ok(exporter.includes(field), \`dossier must include \${field}\`);
+]) assert.ok(exporter.includes(field), `dossier must include ${field}`);
 assert.match(exporter, /URL\.createObjectURL/, 'dossier must download a local JSON file');
 assert.doesNotMatch(exporter, /\b(?:fetch|XMLHttpRequest|sendBeacon)\s*\(/, 'export must not send telemetry over the network');
 
