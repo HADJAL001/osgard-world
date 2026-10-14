@@ -15,11 +15,18 @@
   let promptShownTracked = false;
   let dismissed = false;
 
-  function storageRead(storage, key) {
-    try { return storage.getItem(key) || ''; } catch { return ''; }
+  function storageRead(storageName, key) {
+    try {
+      const storage = storageName === 'session' ? window.sessionStorage : window.localStorage;
+      return storage.getItem(key) || '';
+    } catch { return ''; }
   }
-  function storageWrite(storage, key, value) {
-    try { storage.setItem(key, value); return true; } catch { return false; }
+  function storageWrite(storageName, key, value) {
+    try {
+      const storage = storageName === 'session' ? window.sessionStorage : window.localStorage;
+      storage.setItem(key, value);
+      return true;
+    } catch { return false; }
   }
   function token(bytes = 12) {
     const data = new Uint8Array(bytes);
@@ -28,16 +35,16 @@
     return Array.from(data, byte => byte.toString(16).padStart(2, '0')).join('');
   }
   function consentGranted() {
-    return storageRead(localStorage, CONSENT_KEY) === 'yes';
+    return storageRead('local', CONSENT_KEY) === 'yes';
   }
   function track(name) {
     if (!consentGranted()) return false;
     const queue = window.OSGARD_CONSENTED_ANALYTICS;
     if (!queue || typeof queue.enqueue !== 'function') return false;
-    let sessionId = storageRead(sessionStorage, 'osgard.play.analytics-session.v1');
+    let sessionId = storageRead('session', 'osgard.play.analytics-session.v1');
     if (!/^session_[a-f0-9]{24}$/.test(sessionId)) {
       sessionId = 'session_' + token(12);
-      storageWrite(sessionStorage, 'osgard.play.analytics-session.v1', sessionId);
+      storageWrite('session', 'osgard.play.analytics-session.v1', sessionId);
     }
     try {
       void queue.enqueue({
@@ -73,13 +80,13 @@
       ? 'На iPhone или iPad открой страницу в Safari, нажми «Поделиться» и выбери «На экран “Домой”».'
       : 'Открой меню браузера и выбери «Установить приложение» или «Добавить на главный экран». Если пункта нет, этот браузер не поддерживает установку PWA.';
   }
-  function alreadyDismissed() { return storageRead(localStorage, DISMISSED_KEY) === 'yes'; }
+  function alreadyDismissed() { return storageRead('local', DISMISSED_KEY) === 'yes'; }
 
   if (isStandalone()) {
     hidePanel();
-    if (storageRead(sessionStorage, STANDALONE_KEY) !== 'yes') {
+    if (storageRead('session', STANDALONE_KEY) !== 'yes') {
       track('pwa_standalone_opened');
-      storageWrite(sessionStorage, STANDALONE_KEY, 'yes');
+      storageWrite('session', STANDALONE_KEY, 'yes');
     }
   } else if (alreadyDismissed()) {
     dismissed = true;
@@ -116,7 +123,7 @@
 
   dismissButton?.addEventListener('click', () => {
     dismissed = true;
-    storageWrite(localStorage, DISMISSED_KEY, 'yes');
+    storageWrite('local', DISMISSED_KEY, 'yes');
     track('pwa_install_dismissed');
     hidePanel();
   });
