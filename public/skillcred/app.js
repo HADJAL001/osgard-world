@@ -260,7 +260,7 @@ if(heroStarted||document.visibilityState==="hidden")return;heroStarted=true;var 
 if(visual)visual.dataset.state="pending";if(card)card.dataset.phase="signature";text("heroFrameState","CALCULATING SIGNATURE");text("heroLiveStatus","Получаем документ у демо-издателя…");
 try{
 var issuePromise=request("/demo/issue","POST",{}).then(function(value){return{value:value};},function(error){return{error:error};});
-await wait(Math.max(0,(reduced||mobileLite?0:1850)-(performance.now()-started)));
+var heroSceneDelay=mobileLite?0:(reduced?0:1850);await wait(Math.max(0,heroSceneDelay-(performance.now()-started)));
 var issueResult=await issuePromise;if(issueResult.error)throw issueResult.error;var out=issueResult.value;if(!out.ok||!out.data||!out.data.credentialSubject||!out.data.proof)throw new Error("API не выдал проверяемое удостоверение.");issued=out.data;await renderCredential(issued);text("heroLiveStatus","Подпись вычисляется · запускаем проверку");
 var check=await request("/demo/verify","POST",{credential:issued});if(!check.ok)throw new Error("API не подтвердил подпись.");var d=check.data||{};if(d.signature_valid!==true||d.valid!==true||String(d.status).toLowerCase()!=="active")throw new Error("Сервер не подтвердил подпись и статус ACTIVE.");
 verified=true;revoked=false;setStatus("active");verificationResult("active",check);text("heroLiveStatus","Подпись: валидна · статус: active");text("heroFrameState","SIGNATURE VALID");setResult("Живое демо подключено. Это синтетическое удостоверение с настоящим ответом API, не статическая картинка. Можно выдать другое или отозвать его.","ok");setBusy(false);steps();if(card){card.dataset.phase="valid";card.setAttribute("aria-busy","false");}
