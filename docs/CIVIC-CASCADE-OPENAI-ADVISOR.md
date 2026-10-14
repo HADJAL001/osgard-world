@@ -14,9 +14,9 @@ A frontend deploy by itself does not set Commerce API secrets or enable the serv
 
 ## Request lifecycle
 1. The consent checkbox starts unchecked.
-2. Checking it triggers only GET /v1/civic-cascade-advisor/status. That status request carries no gameplay data.
-3. Only a separate button press after the positive status response sends one allow-listed snapshot to POST /v1/civic-cascade-advisor.
-4. The server validates scenario and objective enums, release/model version, numeric bounds, six node health values, baseline forecast horizons, no more than three candidates, at most four actions per candidate, resource costs, and all nine unique stress profiles. Unknown client fields and free-form prompts are discarded.
+2. Checking it triggers only GET /commerce-api/v1/civic-cascade-advisor/status. That status request carries no gameplay data.
+3. Only a separate button press after the positive status response sends one allow-listed snapshot to POST /commerce-api/v1/civic-cascade-advisor.
+4. Nginx exposes the endpoint under /commerce-api/ and strips that prefix before forwarding to Node; internal service routes remain /v1/.... The server validates scenario and objective enums, release/model version, numeric bounds, six node health values, baseline forecast horizons, no more than three candidates, at most four actions per candidate, resource costs, and all nine unique stress profiles. Unknown client fields and free-form prompts are discarded.
 5. The server calls the OpenAI Responses API with strict JSON Schema, store=false, no tools, a fixed output limit and a bounded timeout. It validates the returned object a second time.
 6. The answer can recommend only one of the provided candidate ranks or abstain with rank 0. It is rendered via textContent and cannot edit the command queue, alter the game state, award points, or run commands. Consent is cleared after the single request.
 
