@@ -18,16 +18,15 @@
     return Date.now().toString(36) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
   }
   function availableStorage() {
-    for (const candidate of [() => localStorage, () => sessionStorage]) {
-      try {
-        const target = candidate();
-        const testKey = STORAGE_KEY + '.test';
-        target.setItem(testKey, '1');
-        target.removeItem(testKey);
-        return target;
-      } catch { /* try the next browser storage surface */ }
+    try {
+      const target = localStorage;
+      const testKey = STORAGE_KEY + '.test';
+      target.setItem(testKey, '1');
+      target.removeItem(testKey);
+      return target;
+    } catch {
+      return null; // Do not fall back to session storage: it cannot enforce the 24-hour cap.
     }
-    return null;
   }
   function storageForConsent() {
     if (!consentGranted()) return null;
@@ -224,7 +223,7 @@
     }
   }
   // Defer even the API request until the catalog slot is close to the viewport.
-  if (storage && 'IntersectionObserver' in window) {
+  if ('IntersectionObserver' in window) {
     const catalogTrigger = document.getElementById('catalog') || root;
     const lazyObserver = new IntersectionObserver(entries => {
       if (!entries.some(entry => entry.isIntersecting)) return;
