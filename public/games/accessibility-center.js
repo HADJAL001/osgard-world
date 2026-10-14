@@ -68,13 +68,49 @@
     '<div class="osgard-a11y-actions"><button type="button" id="osgard-a11y-reset">Сбросить</button><button type="button" id="osgard-a11y-close" class="primary">Готово</button></div>' +
     '<p class="osgard-a11y-status" id="osgard-a11y-status" role="status" aria-live="polite"></p></div>';
   document.body.append(trigger, dialog);
-  trigger.addEventListener('click', () => {
-    lastTrigger = document.activeElement;
-    if (typeof dialog.showModal === 'function') dialog.showModal();
-    else dialog.setAttribute('open', '');
+  let fallbackOpen = false;
+  let nativeModalActive = false;
+  trigger.setAttribute('aria-expanded', 'false');
+  function isDialogOpen() { return dialog.open === true || fallbackOpen; }
+  function restoreFocus() {
+    trigger.setAttribute('aria-expanded', 'false');
+    dialog.removeAttribute('aria-modal');
+    if (lastTrigger && typeof lastTrigger.focus === 'function' && lastTrigger.isConnected !== false) lastTrigger.focus();
+    lastTrigger = null;
+  }
+  function openDialog() {
+    if (isDialogOpen()) return;
+    lastTrigger = document.activeElement || trigger;
+    trigger.setAttribute('aria-expanded', 'true');
+    if (typeof dialog.showModal === 'function') {
+      try { dialog.showModal(); nativeModalActive = true; }
+      catch {
+        fallbackOpen = true;
+        dialog.setAttribute('open', '');
+        dialog.setAttribute('role', 'dialog');
+        dialog.setAttribute('aria-modal', 'true');
+      }
+    } else {
+      fallbackOpen = true;
+      dialog.setAttribute('open', '');
+      dialog.setAttribute('role', 'dialog');
+      dialog.setAttribute('aria-modal', 'true');
+    }
     $('osgard-a11y-motion')?.focus();
-  });
-  $('osgard-a11y-close').addEventListener('click', () => dialog.close());
+  }
+  function closeDialog() {
+    if (!isDialogOpen()) return;
+    if (typeof dialog.close === 'function' && dialog.open) {
+      dialog.close();
+      return;
+    }
+    fallbackOpen = false;
+    nativeModalActive = false;
+    dialog.removeAttribute('open');
+    restoreFocus();
+  }
+  trigger.addEventListener('click', openDialog);
+  $('osgard-a11y-close').addEventListener('click', closeDialog);
   $('osgard-a11y-reset').addEventListener('click', () => {
     state = { ...DEFAULTS }; saveAndApply(); announce('Возвращены настройки по умолчанию.');
   });
@@ -84,13 +120,34 @@
   [['osgard-a11y-contrast', 'contrast'], ['osgard-a11y-large-type', 'largeType'], ['osgard-a11y-large-targets', 'largeTargets']].forEach(([id, key]) => {
     $(id).addEventListener('change', (event) => { state[key] = event.target.checked === true; saveAndApply(); });
   });
-  dialog.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); });
-  dialog.addEventListener('close', () => { if (lastTrigger && typeof lastTrigger.focus === 'function') lastTrigger.focus(); });
+  dialog.addEventListener('click', (event) => { if (event.target === dialog) closeDialog(); });
+  dialog.addEventListener('close', () => {
+    fallbackOpen = false;
+    nativeModalActive = false;
+    restoreFocus();
+  });
   document.addEventListener('keydown', (event) => {
+    if (isDialogOpen() && !nativeModalActive && event.key === 'Escape') {
+      event.preventDefault(); closeDialog(); return;
+    }
+    if (isDialogOpen() && !nativeModalActive && event.key === 'Tab') {
+      const focusable = [...dialog.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')]
+        .filter(element => !element.hidden && element.getAttribute('aria-hidden') !== 'true');
+      if (!focusable.length) {
+        event.preventDefault();
+        if (typeof dialog.focus === 'function') dialog.focus();
+      } else if (event.shiftKey && document.activeElement === focusable[0]) {
+        event.preventDefault(); focusable[focusable.length - 1].focus();
+      } else if (!event.shiftKey && document.activeElement === focusable[focusable.length - 1]) {
+        event.preventDefault(); focusable[0].focus();
+      }
+      return;
+    }
     const target = event.target;
     const typing = target && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
-    if (typing || event.ctrlKey || event.metaKey || event.shiftKey || event.key.toLowerCase() !== 'a' || !event.altKey) return;
-    event.preventDefault(); if (!dialog.open) trigger.click(); else dialog.close();
+    if (typing || event.ctrlKey || event.metaKey || event.shiftKey || !event.key || event.key.toLowerCase() !== 'a' || !event.altKey) return;
+    event.preventDefault();
+    if (!isDialogOpen()) openDialog(); else closeDialog();
   });
   window.addEventListener('storage', (event) => {
     if (event.key === KEY || event.key === null) { state = readState(); applyState(); }
