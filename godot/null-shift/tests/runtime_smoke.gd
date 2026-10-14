@@ -918,10 +918,16 @@ func _run_smoke() -> void:
 	var heavy_state: Dictionary = game.guards[1]
 	var heavy_body: CharacterBody3D = heavy_state["node"]
 	var heavy_origin: Vector3 = heavy_body.global_position
+	var heavy_origin_rotation: Vector3 = heavy_body.global_rotation
+	var heavy_saved_overdrive_timer: float = game.overdrive_timer
 	heavy_body.global_position = game.player.global_position + Vector3(0.0, 0.0, -8.0)
+	heavy_body.look_at(Vector3(game.player.global_position.x, heavy_body.global_position.y, game.player.global_position.z), Vector3.UP)
+	game.overdrive_timer = 0.0
 	heavy_state["stun"] = 0.0
 	heavy_state["windup"] = 0.0
-	heavy_state["cooldown"] = 0.016
+	# The test needs an expired cooldown, not a frame-duration assumption; the AI
+	# intentionally ticks slower while overdrive is active in normal gameplay.
+	heavy_state["cooldown"] = 0.0
 	heavy_state["attack_lanes"] = []
 	game.guards[1] = heavy_state
 	game._update_guards(0.016)
@@ -936,7 +942,9 @@ func _run_smoke() -> void:
 	if not _expect(not game._player_inside_lanes(heavy_lanes, 14.5, 0.88, heavy_body), "Heavy's telegraphed lane must be dodgeable with lateral movement"):
 		return
 	game.player.global_position = heavy_test_position
+	game.overdrive_timer = heavy_saved_overdrive_timer
 	heavy_body.global_position = heavy_origin
+	heavy_body.global_rotation = heavy_origin_rotation
 	heavy_state = game.guards[1]
 	heavy_state["cooldown"] = 12.0
 	heavy_state["windup"] = 0.0
