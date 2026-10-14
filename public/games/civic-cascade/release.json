@@ -58,7 +58,8 @@
       "cc-doctrine-ai-consent",
       "cc-doctrine-ai-run",
       "cc-doctrine-ai-status",
-      "cc-doctrine-ai-result"
+      "cc-doctrine-ai-result",
+      "cc-doctrine-transferability-contract"
     ],
     "checkpointSchema": "civic-cascade-checkpoint-v1",
     "approximateRiskForecast": true,
@@ -270,7 +271,33 @@
         1.5
       ],
       "stressRankingUsesAllSeverityLevels": true,
-      "reportsWorstCaseByFamily": true
+      "reportsWorstCaseByFamily": true,
+      "scenarioTransferability": {
+        "enabled": true,
+        "scenarios": [
+          "flood",
+          "blackout",
+          "blockade"
+        ],
+        "comparesAgainstNoInterventionInSameScenario": true,
+        "horizonsGameSeconds": [
+          30,
+          60,
+          90
+        ],
+        "evaluatedOnlyForFinalPortfolio": true,
+        "usesFreshClonedScenarioState": true,
+        "mutatesLiveState": false,
+        "ranksWithTransferPenalty": true,
+        "thresholds": {
+          "maxRiskRegression": 2,
+          "minWeakestIntegrityDelta": -8,
+          "maxCriticalNodeRegression": 1
+        },
+        "recordsPerScenarioRiskAndInfrastructureDeltas": true,
+        "exportInDecisionDossier": true,
+        "regressionSmokeTest": "scripts/civic-cascade-forecast-smoke.mjs"
+      }
     },
     "decisionDossier": {
       "enabled": true,
