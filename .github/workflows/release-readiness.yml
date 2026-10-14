@@ -22,6 +22,8 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
+      - name: Test release attestation against tampering and unsafe artifacts
+        run: npm run qa:release-attestation
       - name: Verify cross-surface OSGARD product contracts
         run: npm run qa:contracts
       - name: Typecheck
@@ -38,6 +40,8 @@ jobs:
         run: npm run qa:partners-page
       - name: Build and archive preflight
         run: npm run build && npm run preflight:frontend
+      - name: Create and verify production build attestation
+        run: npm run release:attest && npm run release:verify
       - name: Verify Imperium of Time gameplay and diagnostics
         run: npm run qa:time-ui
       - name: Verify production routes after deploy or manual request
@@ -58,3 +62,4 @@ jobs:
             release-manifest.json
             production-route-matrix.json
             osgard-contract-audit.json
+            release-attestation.json
