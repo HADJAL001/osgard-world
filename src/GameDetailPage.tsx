@@ -299,6 +299,12 @@ function track(name: OsgardEventName, payload: Record<string, unknown>, consent:
   try { recordOsgardEvent(name, payload) } catch { /* analytics must never block gameplay */ }
 }
 
+function formatSessionTime(totalSeconds: number) {
+  const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0')
+  const seconds = (totalSeconds % 60).toString().padStart(2, '0')
+  return minutes + ':' + seconds
+}
+
 function gameTitle(game: GameDefinition, locale: Locale) {
   return locale === 'ru' ? game.titleRu : game.titleEn
 }
@@ -377,18 +383,48 @@ export function GameDetailPage({ slug }: { slug: string }) {
   const frameAttemptRef = useRef(1)
   const frameResolvedAttemptRef = useRef(0)
   const detailTracked = useRef<string | null>(null)
-  const [sessionStatus, setSessionStatus] = useState<'ready' | 'active' | 'completed' | 'error'>('ready')
+  const [sessionStatus, setSessionStatus] = useState<'ready' | 'active' | 'paused' | 'completed' | 'error'>('ready')
+  const [sessionElapsedSeconds, setSessionElapsedSeconds] = useState(0)
   const consentRef = useRef(consent)
   consentRef.current = consent
   const sessionStartedAtRef = useRef<number | null>(null)
   const detailSessionIdRef = useRef<string | null>(null)
   const sessionTrackingAllowedRef = useRef(false)
+  const sessionClockRef = useRef<number | null>(null)
+  const sessionPausedAtRef = useRef<number | null>(null)
+  const sessionPausedDurationMsRef = useRef(0)
+
+  const getSessionElapsedSeconds = () => {
+    const startedAt = sessionStartedAtRef.current
+    if (startedAt === null) return 0
+    const now = sessionPausedAtRef.current ?? Date.now()
+    return Math.max(0, Math.floor((now - startedAt - sessionPausedDurationMsRef.current) / 1000))
+  }
+
+  const clearSessionClock = () => {
+    if (sessionClockRef.current !== null) window.clearInterval(sessionClockRef.current)
+    sessionClockRef.current = null
+  }
+
+  const startSessionClock = () => {
+    clearSessionClock()
+    sessionClockRef.current = window.setInterval(() => {
+      setSessionElapsedSeconds(getSessionElapsedSeconds())
+    }, 1000)
+  }
 
   const finishDetailSession = (reason: string) => {
     const startedAt = sessionStartedAtRef.current
     const sessionId = detailSessionIdRef.current
-    if (!game || startedAt === null || !sessionId) return
-    const durationSeconds = Math.max(0, Math.floor((Date.now() - startedAt) / 1000))
+    if (!game || startedAt === null || !sessionId) {
+      clearSessionClock()
+      return
+    }
+    const durationSeconds = getSessionElapsedSeconds()
+    clearSessionClock()
+    setSessionElapsedSeconds(durationSeconds)
+    sessionPausedAtRef.current = null
+    sessionPausedDurationMsRef.current = 0
     if (sessionTrackingAllowedRef.current) {
       track('game_session_completed', {
         game: game.id,
@@ -491,8 +527,12 @@ export function GameDetailPage({ slug }: { slug: string }) {
         const sessionId = 'detail_' + game.id + '_' + startedAt + '_' + Math.random().toString(36).slice(2, 8)
         sessionStartedAtRef.current = startedAt
         detailSessionIdRef.current = sessionId
+        sessionPausedAtRef.current = null
+        sessionPausedDurationMsRef.current = 0
         sessionTrackingAllowedRef.current = consentRef.current === 'granted'
+        setSessionElapsedSeconds(0)
         setSessionStatus('active')
+        startSessionClock()
         if (sessionTrackingAllowedRef.current) {
           track('game_session_started', {
             game: game.id,
@@ -501,6 +541,25 @@ export function GameDetailPage({ slug }: { slug: string }) {
             startMethod: 'same-origin-game-lifecycle',
           }, consentRef.current)
         }
+        return
+      }
+
+      if (message.state === 'paused') {
+        if (sessionStartedAtRef.current === null || sessionPausedAtRef.current !== null) return
+        sessionPausedAtRef.current = Date.now()
+        clearSessionClock()
+        setSessionElapsedSeconds(getSessionElapsedSeconds())
+        setSessionStatus('paused')
+        return
+      }
+
+      if (message.state === 'resumed') {
+        if (sessionStartedAtRef.current === null || sessionPausedAtRef.current === null) return
+        sessionPausedDurationMsRef.current += Date.now() - sessionPausedAtRef.current
+        sessionPausedAtRef.current = null
+        setSessionElapsedSeconds(getSessionElapsedSeconds())
+        setSessionStatus('active')
+        startSessionClock()
         return
       }
 
@@ -559,6 +618,7 @@ export function GameDetailPage({ slug }: { slug: string }) {
     setLoadErrorKind(null)
     setSlowLoad(false)
     setSessionStatus('ready')
+    setSessionElapsedSeconds(0)
     setPlaying(true)
     window.setTimeout(() => stageRef.current?.querySelector('iframe')?.focus({ preventScroll: true }), 0)
   }
@@ -572,6 +632,7 @@ export function GameDetailPage({ slug }: { slug: string }) {
     setLoadErrorKind(null)
     setSlowLoad(false)
     setSessionStatus('ready')
+    setSessionElapsedSeconds(0)
   }
 
   const closePlaying = () => {
@@ -625,7 +686,7 @@ export function GameDetailPage({ slug }: { slug: string }) {
         </section>
         <section className="gh-detail-info-grid"><article><p className="gh-eyebrow">01 / INPUT</p><h2>{ru ? 'Управление' : 'Controls'}</h2><p>{ru ? game.controlsRu : game.controlsEn}</p></article><article><p className="gh-eyebrow">02 / PLATFORM</p><h2>{ru ? 'Совместимость' : 'Compatibility'}</h2><p>{ru ? game.supportRu : game.supportEn}</p><small>{ru ? 'Фактическую производительность проверяйте на целевом устройстве и браузере.' : 'Verify actual performance on the target device and browser.'}</small></article><article><p className="gh-eyebrow">03 / FEATURES</p><h2>{ru ? 'Что внутри' : 'What is inside'}</h2><ul>{(ru ? game.featuresRu : game.featuresEn).map(feature => <li key={feature}><Check size={14} />{feature}</li>)}</ul></article></section>
       </> : <section className="gh-play-screen">
-        <div className="gh-play-toolbar"><div><span className={'gh-play-live gh-play-live--' + sessionStatus} /><strong>{gameTitle(game, locale)}</strong><small>{sessionStatus === 'active' ? (ru ? 'Сессия активна' : 'Session active') : sessionStatus === 'completed' ? (ru ? 'Раунд завершён' : 'Round completed') : sessionStatus === 'error' ? (ru ? 'Проблема запуска' : 'Launch issue') : loadingGame ? (ru ? 'Загрузка клиента' : 'Loading client') : (ru ? 'Клиент готов · начни игру внутри окна' : 'Client ready · start inside the game')}</small></div><div><a href={game.href} target="_blank" rel="noopener noreferrer">{ru ? 'Открыть в отдельной вкладке' : 'Open in new tab'}<ExternalLink size={14} /></a><button type="button" aria-pressed={isFullscreen} onClick={toggleFullscreen}><Maximize2 size={15} />{isFullscreen ? (ru ? 'Выйти из полного экрана' : 'Exit fullscreen') : (ru ? 'На весь экран' : 'Fullscreen')}</button><button type="button" onClick={closePlaying}><X size={15} />{ru ? 'Закрыть игру' : 'Close game'}</button></div></div>
+        <div className="gh-play-toolbar"><div><span className={'gh-play-live gh-play-live--' + sessionStatus} /><strong>{gameTitle(game, locale)}</strong><small aria-live="polite">{sessionStatus === 'active' ? (ru ? 'Сессия активна · ' : 'Session active · ') + formatSessionTime(sessionElapsedSeconds) : sessionStatus === 'paused' ? (ru ? 'Пауза · ' : 'Paused · ') + formatSessionTime(sessionElapsedSeconds) : sessionStatus === 'completed' ? (sessionElapsedSeconds > 0 ? (ru ? 'Раунд завершён · ' : 'Round completed · ') + formatSessionTime(sessionElapsedSeconds) : (ru ? 'Раунд завершён' : 'Round completed')) : sessionStatus === 'error' ? (ru ? 'Проблема запуска' : 'Launch issue') : loadingGame ? (ru ? 'Загрузка клиента' : 'Loading client') : (ru ? 'Клиент готов · начни игру внутри окна' : 'Client ready · start inside the game')}</small></div><div><a href={game.href} target="_blank" rel="noopener noreferrer">{ru ? 'Открыть в отдельной вкладке' : 'Open in new tab'}<ExternalLink size={14} /></a><button type="button" aria-pressed={isFullscreen} onClick={toggleFullscreen}><Maximize2 size={15} />{isFullscreen ? (ru ? 'Выйти из полного экрана' : 'Exit fullscreen') : (ru ? 'На весь экран' : 'Fullscreen')}</button><button type="button" onClick={closePlaying}><X size={15} />{ru ? 'Закрыть игру' : 'Close game'}</button></div></div>
         <div className="gh-game-stage" ref={stageRef} tabIndex={-1} aria-label={ru ? 'Игровая область' : 'Game area'} aria-busy={loadingGame && !frameError}>
           {loadingGame && !frameError && <div className="gh-game-loading" role="status" aria-live="polite" aria-atomic="true"><span className="gh-loader" aria-hidden="true" /><p>{slowLoad ? (ru ? 'Загрузка занимает больше обычного. Проверяем, что игра действительно запустилась…' : 'This is taking longer than usual. Checking whether the game actually started…') : (ru ? 'Подключаем игровой мир…' : 'Loading game world…')}</p><div className="gh-loading-meter" role="progressbar" aria-label={ru ? 'Загрузка игрового клиента' : 'Loading game client'}><span /></div><small>{ru ? 'Если запуск не подтвердится за 15 секунд, появятся варианты восстановления.' : 'If startup is not confirmed within 15 seconds, recovery options will appear.'}</small></div>}
           {frameError ? <div className="gh-game-error" role="alert" aria-live="assertive"><p>{loadErrorKind === 'timeout' ? (ru ? 'Игровой клиент не ответил за 15 секунд.' : 'The game client did not respond within 15 seconds.') : loadErrorKind === 'invalid-content' ? (ru ? 'По этому адресу не найден ожидаемый интерфейс игры.' : 'The expected game interface was not found at this address.') : loadErrorKind === 'load-event' ? (ru ? 'Браузер сообщил об ошибке загрузки игры.' : 'The browser reported an error loading the game.') : (ru ? 'Не удалось определить причину запуска.' : 'The reason for the launch failure could not be determined.')}</p><p>{ru ? 'Можно повторить запуск или открыть клиент отдельно — прогресс не объявляется потерянным.' : 'Retry the launch or open the client separately — progress is not assumed to be lost.'}</p><div className="gh-error-actions"><button className="gh-primary" type="button" onClick={retryGame}><Play size={15} />{ru ? 'Повторить запуск' : 'Retry launch'}</button><button className="gh-secondary" type="button" onClick={() => void shareGame()}><Share2 size={14} />{ru ? 'Поделиться ссылкой' : 'Share link'}</button><a className="gh-secondary" href={game.href} target="_blank" rel="noopener noreferrer">{ru ? 'Открыть отдельно' : 'Open separately'}<ExternalLink size={14} /></a></div></div> : <iframe key={game.id + ':' + retryKey} title={gameTitle(game, locale)} src={game.href} onLoad={() => {
