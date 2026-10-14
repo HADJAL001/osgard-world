@@ -352,9 +352,11 @@ export async function runOnePass({ plan = buildPlan(), reportDir = REPORT_DIR, t
             .filter((check) => check.status === 'failed')
             .map((check) => String(check.name || 'unnamed check').slice(0, 200)),
         };
-        if (releaseReadiness.failedChecks.length > 0 && record.status === 'PASS') {
+        const readinessSaysBlocked = ['blocked', 'failed', 'failure', 'error']
+          .includes(releaseReadiness.status.toLowerCase());
+        if ((readinessSaysBlocked || releaseReadiness.failedChecks.length > 0) && record.status === 'PASS') {
           record.status = 'BLOCK';
-          record.detail = 'Release-readiness report contains failed checks despite a zero process exit code: ' +
+          record.detail = 'Release-readiness report is blocked or contains failed checks despite a zero process exit code: ' +
             releaseReadiness.failedChecks.join(', ').slice(0, 3000);
         }
       } catch {
