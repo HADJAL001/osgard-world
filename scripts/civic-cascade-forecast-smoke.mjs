@@ -7,7 +7,7 @@ const manifest = JSON.parse(await readFile(new URL('../public/games/civic-cascad
 const check = (value, message) => assert.ok(value, message)
 
 assert.equal(manifest.gameId, 'civic-cascade')
-assert.equal(manifest.version, '3.3.0', 'release manifest must match this regression suite')
+assert.equal(manifest.version, '3.4.0', 'release manifest must match this regression suite')
 assert.equal(manifest.buildContract?.cascadeForecast?.enabled, true)
 assert.deepEqual(manifest.buildContract?.cascadeForecast?.horizonsGameSeconds, [30, 60, 90])
 assert.equal(manifest.buildContract?.cascadeForecast?.randomIncidentsForecasted, false)
@@ -122,13 +122,27 @@ const simulatePath = startElapsed => new Function(
 const doctrineSource = extractBetween('function doctrineObjectiveScore', 'let doctrineResult=null')
 const dossierSource = extractBetween('function buildDoctrineDossierPayload', 'async function exportDoctrineDossier')
 const buildDoctrineDossierPayload = new Function(dossierSource + '\nreturn buildDoctrineDossierPayload;')()
+
+const replaySource = extractBetween('function replayDoctrineDossier', 'function renderDoctrineDossierVerification')
+const replayDoctrineDossier = new Function(replaySource + '\nreturn replayDoctrineDossier;')()
+const replayDossier = (dossier, currentVersion) => replayDoctrineDossier(dossier, currentVersion, {
+  searchDoctrinePlans,
+  simulateOrders: (orders, sourceState) => simulateDirect(sourceState)(orders),
+  simulatePath: (sourceState, horizons, startElapsed = 0) => simulatePath(startElapsed)(sourceState, horizons),
+  buildDossierPayload: buildDoctrineDossierPayload,
+  scenarioDefinitions: scenarios,
+  nodeDefinitions: nodes,
+  actionMetadata: actions,
+  canonicalStringify: canonicalDossierStringify
+})
+
 const planner = new Function('nodes', 'PLAN_ACTIONS', 'clamp',
   doctrineSource + '\nreturn {searchDoctrinePlans, doctrineDominates, doctrineParetoPortfolio, doctrineStressProfiles, canonicalDossierStringify, validateDoctrineDossierStructure, assessDoctrineDossierIntegrity};'
 )(nodes, actions, clamp)
 const {searchDoctrinePlans, doctrineDominates, doctrineParetoPortfolio, doctrineStressProfiles, canonicalDossierStringify, validateDoctrineDossierStructure, assessDoctrineDossierIntegrity} = planner
 const makeState = scenario => {
   const state = {
-    ...scenarios[scenario], scenario, crews: 4, maxCrews: 4,
+    ...scenarios[scenario], scenario, elapsed: 0, crews: 4, maxCrews: 4,
     openedRoutes: scenario === 'blockade' ? 1 : 2,
     repairs: 0, pumps: 0, stabilized: 0, actionCount: 0, score: 0
   }
@@ -162,13 +176,13 @@ const doctrineResults = {}
 const dossierVerifierCases = {}
 const verifierBase = makeState('flood')
 const verifierSearch = searchDoctrinePlans(verifierBase, 'balanced', 'hub', simulateDirect(verifierBase), simulatePath(0), nodes, actions)
-const verifierPayload = buildDoctrineDossierPayload(verifierBase, verifierSearch, '3.3.0-auditable-dossier-verifier', scenarios, nodes, 0)
+const verifierPayload = buildDoctrineDossierPayload(verifierBase, verifierSearch, '3.4.0-replayable-decision-dossier', scenarios, nodes, 0)
 const canonicalA = canonicalDossierStringify({z:1,a:{y:2,x:3}})
 const canonicalB = canonicalDossierStringify({a:{x:3,y:2},z:1})
 assert.equal(canonicalA, canonicalB, 'canonical JSON must ignore object key insertion order')
 const verifierDigest = createHash('sha256').update(canonicalDossierStringify(verifierPayload), 'utf8').digest('hex')
 const verifierDossier = {...verifierPayload, exportMetadata:{exportedAtUtc:'2026-10-14T00:00:00.000Z',integrity:{algorithm:'SHA-256',scope:'canonical recursively key-sorted JSON payload without exportMetadata',status:'computed',digest:verifierDigest}}}
-const currentValidation = validateDoctrineDossierStructure(verifierDossier, '3.3.0')
+const currentValidation = validateDoctrineDossierStructure(verifierDossier, '3.4.0')
 assert.equal(currentValidation.valid, true, 'a correctly structured current dossier must pass validation: '+currentValidation.errors.join('; '))
 assert.equal(currentValidation.modelCompatible, true)
 assert.equal(assessDoctrineDossierIntegrity(verifierDossier,verifierDigest).verified,true)
@@ -183,9 +197,9 @@ const alteredPayload=(({exportMetadata,...payload})=>payload)(alteredDossier)
 const alteredDigest=createHash('sha256').update(canonicalDossierStringify(alteredPayload),'utf8').digest('hex')
 assert.equal(assessDoctrineDossierIntegrity(verifierDossier,alteredDigest).verified,false,'an altered payload must not pass the embedded SHA-256 check')
 const badSchema=JSON.parse(JSON.stringify(verifierDossier));badSchema.schema='untrusted.schema/v9'
-check(!validateDoctrineDossierStructure(badSchema,'3.3.0').valid,'unsupported dossier schema must be rejected')
+check(!validateDoctrineDossierStructure(badSchema,'3.4.0').valid,'unsupported dossier schema must be rejected')
 const badPrivacy=JSON.parse(JSON.stringify(verifierDossier));badPrivacy.assumptions.personalDataIncluded=true
-check(!validateDoctrineDossierStructure(badPrivacy,'3.3.0').valid,'a dossier that claims personal data is included must be rejected')
+check(!validateDoctrineDossierStructure(badPrivacy,'3.4.0').valid,'a dossier that claims personal data is included must be rejected')
 const badOrder=JSON.parse(JSON.stringify(verifierDossier));badOrder.candidates[0].orders[0].action='javascript:alert(1)'
 check(!validateDoctrineDossierStructure(badOrder,'3.3.0').valid,'unknown or executable-looking actions must be rejected')
 const badStress=JSON.parse(JSON.stringify(verifierDossier));badStress.candidates[0].robustness.profiles.pop()
@@ -194,17 +208,17 @@ const historicalDossier=JSON.parse(JSON.stringify(verifierDossier))
 historicalDossier.engine.modelVersion='3.2.0'
 historicalDossier.exportMetadata.integrity.scope='UTF-8 JSON payload without exportMetadata'
 historicalDossier.exportMetadata.integrity.digest=createHash('sha256').update(JSON.stringify((({exportMetadata,...payload})=>payload)(historicalDossier)),'utf8').digest('hex')
-const historicalValidation=validateDoctrineDossierStructure(historicalDossier,'3.3.0')
+const historicalValidation=validateDoctrineDossierStructure(historicalDossier,'3.4.0')
 assert.equal(historicalValidation.valid,true,'historically valid dossiers remain readable: '+historicalValidation.errors.join('; '))
 assert.equal(historicalValidation.modelCompatible,false,'historical model versions must be flagged read-only')
 check(historicalValidation.warnings.length>0,'historical import must disclose model/hash compatibility warnings')
-const futureValidation=validateDoctrineDossierStructure(verifierDossier,'3.4.0')
+const futureValidation=validateDoctrineDossierStructure(verifierDossier,'3.5.0')
 assert.equal(futureValidation.valid,true,'other model versions remain readable in audit mode')
 assert.equal(futureValidation.modelCompatible,false)
 const badDepth=JSON.parse(JSON.stringify(verifierDossier));let deep=badDepth;for(let i=0;i<35;i++){deep.child={};deep=deep.child}
-check(!validateDoctrineDossierStructure(badDepth,'3.3.0').valid,'pathologically deep JSON structures must be rejected')
+check(!validateDoctrineDossierStructure(badDepth,'3.4.0').valid,'pathologically deep JSON structures must be rejected')
 const unavailableHashDossier=JSON.parse(JSON.stringify(verifierDossier));unavailableHashDossier.exportMetadata.integrity.status='unavailable';unavailableHashDossier.exportMetadata.integrity.digest=null
-const unavailableValidation=validateDoctrineDossierStructure(unavailableHashDossier,'3.3.0')
+const unavailableValidation=validateDoctrineDossierStructure(unavailableHashDossier,'3.4.0')
 assert.equal(unavailableValidation.valid,true,'Web Crypto-less exports may be structurally inspected with a warning')
 assert.equal(assessDoctrineDossierIntegrity(unavailableHashDossier,null).verified,false,'unavailable hash must never be presented as verified')
 dossierVerifierCases.current='PASS'
