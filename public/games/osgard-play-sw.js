@@ -6,7 +6,7 @@
  * admin, operator, checkout-success or cross-origin requests.
  */
 const CACHE_PREFIX = 'osgard-play-shell-';
-const CACHE_NAME = 'osgard-play-shell-v1.0.1';
+const CACHE_NAME = 'osgard-play-shell-v1.0.2';
 const PRECACHE_URLS = [
   '/games/',
   '/games/index.html',
@@ -26,7 +26,9 @@ const PRECACHE_URLS = [
   '/games/expedition/catalog-runtime.js',
   '/games/expedition/expedition.css',
   '/games/device-fit.css',
-  '/games/device-fit.js'
+  '/games/device-fit.js',
+  '/games/experiment-core.js',
+  '/games/experiment-runtime.js'
 ];
 const PUBLIC_STATIC_ALLOWLIST = new Set([
   '/games/app.webmanifest',
@@ -44,6 +46,8 @@ const PUBLIC_STATIC_ALLOWLIST = new Set([
   '/games/expedition/expedition.css',
   '/games/device-fit.css',
   '/games/device-fit.js',
+  '/games/experiment-core.js',
+  '/games/experiment-runtime.js',
   '/games/favicon.svg'
 ]);
 
