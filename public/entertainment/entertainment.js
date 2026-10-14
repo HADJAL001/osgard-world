@@ -492,6 +492,26 @@
   }
   buildPlayPass();
   renderPlayPass();
+  function gameIdForPassLink(link) {
+    const explicit = link.dataset.launch || '';
+    if (knownGameIds.has(explicit)) return explicit;
+    try {
+      const target = new URL(link.href, location.origin);
+      if (target.origin !== location.origin) return '';
+      const normalizePath = value => value.replace(/\\/+$/, '') || '/';
+      for (const [id, game] of allowedGames) {
+        const candidate = new URL(game.href, location.origin);
+        if (candidate.origin === location.origin && normalizePath(candidate.pathname) === normalizePath(target.pathname)) return id;
+      }
+    } catch { /* Invalid or external destinations do not count as game launches. */ }
+    return '';
+  }
+  document.querySelectorAll('.hero-actions a.button-primary, #continue-link').forEach(link => link.addEventListener('click', () => {
+    const id = gameIdForPassLink(link);
+    if (!id || link.matches('[data-launch]')) return;
+    recordRecent(id);
+    recordPassLaunch(id);
+  }));
   document.querySelectorAll('[data-launch]').forEach(link => link.addEventListener('click', () => recordPassLaunch(link.dataset.launch)));
   document.querySelector('#pass-play-daily').addEventListener('click', () => {
     const today = utcDateKey(), id = gameForUtcDay(today), link = document.querySelector('[data-launch="' + id + '"]');
