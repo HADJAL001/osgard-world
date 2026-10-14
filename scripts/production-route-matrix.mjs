@@ -165,6 +165,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
             text.includes("const VERSION = '0.26.0'") &&
             text.includes("const SCHEMA = 'osgard.cascade-lab.robustness-suite.v1'") &&
             text.includes("const ARCHIVE_SCHEMA = 'osgard.cascade-lab.robustness-archive.v1'") &&
+            text.includes("const REPORT_SCHEMA = 'osgard.cascade-lab.robustness-report.v1'") &&
             text.includes('function normalizeSweep(') && text.includes('function summarizeSweep(') &&
             text.includes('MAX_TRIALS = 48') && text.includes('function renderCanvas(') &&
             !text.includes('fetch(') && !text.includes('XMLHttpRequest') && !text.includes('sendBeacon') && !text.includes('.innerHTML')
@@ -197,7 +198,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
             text.includes('id="CASCADELAB020"') && text.includes('data-cascade-lab-studio="0.20.0"') && text.includes('experiment-studio.js?v=0.20.0') && text.includes('id="CASCADELAB021"') && text.includes('data-cascade-lab-passport="0.21.0"') && text.includes('case-passport.js?v=0.21.0') && text.includes('restoreProject,undo') &&
             text.includes("new CustomEvent('cascade-lab:run-finished'") &&
             text.includes('id="CASCADELAB022"') && text.includes('data-cascade-lab-xray="0.22.0"') &&
-            text.includes('trajectory-xray.js?v=0.22.0') && text.includes('id="CASCADELAB024"') && text.includes('data-cascade-lab-director="0.24.0"') && text.includes('mission-director.js?v=0.24.0') && text.includes('id="CASCADELAB025"') && text.includes('data-cascade-lab-evidence="0.25.0"') && text.includes('evidence-integrity.js?v=0.25.0') && text.includes("SCHEMA = 'osgard.cascade-lab.evidence-integrity.v1'") && text.includes('trajectory: Array.from({ length: Math.min(420, lastReplay.length) }') &&
+            text.includes('trajectory-xray.js?v=0.22.0') && text.includes('id="CASCADELAB024"') && text.includes('data-cascade-lab-director="0.24.0"') && text.includes('mission-director.js?v=0.24.0') && text.includes('id="CASCADELAB025"') && text.includes('data-cascade-lab-evidence="0.25.0"') && text.includes('evidence-integrity.js?v=0.25.0') && text.includes('trajectory: Array.from({ length: Math.min(420, lastReplay.length) }') &&
             text.includes('id="CASCADELAB026"') && text.includes('data-cascade-lab-robustness="0.26.0"') &&
             text.includes("window, 'CASCADELAB026_CORE'") && text.includes('new PhysicsWorld(levelSnapshot, blueprint)') &&
             text.includes('world.step(WORLD.fixedStep')
