@@ -8,8 +8,9 @@
   });
   const MAX_RANGE_MS=366*24*60*60*1000;
   function parseDateRange(fromValue,toValue,nowMs=Date.now()){
+    const shape=/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
     const from=Date.parse(fromValue),to=Date.parse(toValue);
-    if(!Number.isFinite(from)||!Number.isFinite(to)||from>=to)
+    if(typeof fromValue!=='string'||typeof toValue!=='string'||!shape.test(fromValue)||!shape.test(toValue)||!Number.isFinite(from)||!Number.isFinite(to)||from>=to)
       throw new Error('Укажите корректный диапазон: начало должно быть раньше конца.');
     if(to>nowMs+5*60*1000)
       throw new Error('Конец периода находится в будущем. Выберите прошедшее время.');
