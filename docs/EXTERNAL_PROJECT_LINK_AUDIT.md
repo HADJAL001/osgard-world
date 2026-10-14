@@ -38,3 +38,7 @@ The contract test covers same-host HTTPS responses, the www alias, an unexpected
 node scripts/external-project-healthcheck-smoke.mjs
 npm run qa:external-project-healthcheck
 ```
+
+## Publication-linked verification — 14 October 2026
+
+This audit has been attached to the OSGARD publication review so that changing this file runs the existing pull-request homepage check. Use the resulting timestamped GitHub Actions artifact for the actual HTTP statuses and redirect destinations. A report from this one CI region is a reachability snapshot only; it does not confirm login, API health, product function, ownership, legal compliance, or suitability for paid promotion. Keep paid promotion blocked pending manual review even if every homepage returns 2xx/3xx.

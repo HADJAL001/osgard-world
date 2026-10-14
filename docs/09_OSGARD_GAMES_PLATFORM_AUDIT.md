@@ -231,3 +231,32 @@ The important commercial boundary remains: owned-service cross-promotion is impl
 ## 10. Пакет из 30 улучшений — игровые страницы и учёт сессий
 
 Реализация вынесена в [GAME_DETAIL_30_IMPROVEMENTS.md](./GAME_DETAIL_30_IMPROVEMENTS.md). Пакет добавляет проверку lifecycle-сообщений игрового iframe, таймер без учёта пауз и фоновой вкладки, восстановление после ошибки, клавиатурный фокус, корректное состояние fullscreen, сохранение языка и межвкладочную синхронизацию пользовательских настроек. Runtime-smoke содержит 37 детерминированных сценариев и включён в frontend CI, deploy smoke и release-readiness. Изменения находятся в отдельной ветке; факт публикации подтвердится только реальным результатом deploy workflow.
+
+## Publication readiness review — 14 October 2026
+
+This addendum is based on a source-level audit of `HADJAL001/osgard-world` on the `master` branch and the release workflows present in the repository. It is not, by itself, proof that the newest release is currently serving production traffic.
+
+### Checklist
+
+- [x] Repository access confirmed; default branch is `master`, and the linked account has push/admin permissions.
+- [x] Existing production deployment workflow is present: `.github/workflows/deploy-frontend.yml`. It serializes deploys, runs build/QA and release-archive checks, then uses protected GitHub Actions secrets for remote activation.
+- [x] Existing post-deploy readiness workflow is present: `.github/workflows/release-readiness.yml`. It can run a production route matrix after a successful deploy.
+- [x] The public game portal declares 11 games, with catalog search/filtering, recent sessions/favorites, individual game routes, share assets, mobile/PWA support and SEO metadata in source.
+- [x] Owned-project cross-promotion and attribution are implemented in source; destination links are owner-listed and clearly treated as owned services.
+- [x] Optional analytics is consent-gated in source. Source contracts distinguish card-open, successful game start and session-end events rather than treating an iframe load as a successful session.
+- [x] Scheduled external-project homepage checks and conservative paid-promotion gates exist. A successful HTTP response never automatically approves a destination for paid campaigns.
+- [ ] Production release is not marked verified by this addendum; the corresponding deployment and post-deploy route-check workflow must complete successfully.
+- [ ] Live ad-network revenue is not enabled/verified. A publisher account, provider approval, consent review and real ad-slot validation remain external requirements.
+- [ ] Live checkout, server-authoritative purchases and subscription entitlements are not enabled/verified. A payment provider, secret configuration, signed webhooks, refunds and entitlement lifecycle tests remain required.
+- [ ] External-project pages still require manual review of product function, domain control, privacy/terms and key user flows before paid promotion.
+- [ ] Privacy/terms pages are initial product copy, not a claim of legal compliance; identify the operator/jurisdiction, retention rules and obtain legal review before commercial scale.
+
+### Release decision
+
+**Source architecture: READY FOR CI REVIEW. Production: UNVERIFIED UNTIL WORKFLOW EVIDENCE IS GREEN. Paid ads and live payments: NOT READY.**
+
+The approved publication sequence is: run the pull-request quality gates and external homepage audit; merge only after the relevant CI checks are successful; let the existing master-branch deployment workflow build and activate the release; then use the post-deploy readiness report/route matrix to mark production verified. Do not bypass the release gate or place provider secrets in client-side code.
+
+### One high-potential product experiment
+
+Prioritize a **cross-game “OSGARD Relay”** over building more portal UI: one daily challenge chain that starts in one title and sends a player to a second title only after a real gameplay milestone, with a shareable invite code and a small cosmetic-only local reward. Instrument the funnel as `relay_seen → game_1_started → milestone_reached → game_2_started → invite_accepted → D7_return`. Keep it opt-in, no pay-to-win, no forced ad, and label local rewards as local until a server-authoritative wallet exists. A first controlled experiment should compare this chain with the current single-game end screen and decide from completed second-game sessions and seven-day return—not click count alone.
