@@ -316,7 +316,9 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         const content = await asset.text()
         const normalized = content.toLowerCase()
       const compact = normalized.replace(/\s+/g, '')
-        nonEmpty = path === '/games/diagnostics/diagnostics.js'
+        nonEmpty = path === '/games/favicon.svg'
+          ? content.includes('<svg') && content.includes('viewBox="0 0 64 64"')
+          : nonEmpty = path === '/games/diagnostics/diagnostics.js'
           ? content.includes('window.OSGARDDiagnostics') && content.includes("schema: 'osgard.play.diagnostics.v1'") && !content.includes('sendBeacon(')
           : isCatalogAdmin
           ? content.includes("const API = '/commerce-api/v1'") && content.includes('/admin/game-catalog') && !content.includes('localStorage') && !content.includes('sessionStorage') && !content.includes('.innerHTML')
