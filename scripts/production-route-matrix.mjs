@@ -35,7 +35,10 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
       : route === '/games/admin/catalog/catalog.js'
         ? (response.headers.get('content-type') || '').toLowerCase().includes('javascript') && text.includes('/admin/game-catalog') && text.includes("authorization: 'Bearer ' + operatorToken") && !text.includes('localStorage') && !text.includes('sessionStorage')
       : route === '/games/catalog-runtime.js'
-        ? (response.headers.get('content-type') || '').toLowerCase().includes('javascript') && text.includes('catalogContentSource') && text.includes('textContent = item.title') && !text.includes('.innerHTML')
+        ? (response.headers.get('content-type') || '').toLowerCase().includes('javascript') &&
+          text.includes('catalogContentSource') &&
+          /\\.textContent\\s*=\\s*item\\.title/.test(text) &&
+          !text.includes('.innerHTML')
       : route === '/skillcred/'
       ? text.includes('id="issueBtn"') &&
         text.includes('id="verifyBtn"') &&
