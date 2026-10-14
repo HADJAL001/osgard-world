@@ -127,11 +127,11 @@ const simulatePath = startElapsed => new Function(
 
 const doctrineSource = extractBetween('function doctrineObjectiveScore', 'let doctrineResult=null')
 const dossierSource = extractBetween('function buildDoctrineDossierPayload', 'async function exportDoctrineDossier')
-const buildDoctrineDossierPayload = new Function('canonicalDossierStringify', dossierSource + '\nreturn buildDoctrineDossierPayload;')(canonicalDossierStringify)
 const planner = new Function('nodes', 'PLAN_ACTIONS', 'clamp',
   doctrineSource + '\nreturn {searchDoctrinePlans, doctrineDominates, doctrineParetoPortfolio, doctrineStressProfiles, canonicalDossierStringify, validateDoctrineDossierStructure, assessDoctrineDossierIntegrity, validateDoctrineForecast, doctrineRiskExposure, analyzeDoctrineCommandContributions, assessDoctrineSafety};'
 )(nodes, actions, clamp)
 const {searchDoctrinePlans, doctrineDominates, doctrineParetoPortfolio, doctrineStressProfiles, canonicalDossierStringify, validateDoctrineDossierStructure, assessDoctrineDossierIntegrity, validateDoctrineForecast, doctrineRiskExposure, analyzeDoctrineCommandContributions, assessDoctrineSafety} = planner
+const buildDoctrineDossierPayload = new Function('canonicalDossierStringify', dossierSource + '\nreturn buildDoctrineDossierPayload;')(canonicalDossierStringify)
 const makeState = scenario => {
   const state = {
     ...scenarios[scenario], scenario, crews: 4, maxCrews: 4,
