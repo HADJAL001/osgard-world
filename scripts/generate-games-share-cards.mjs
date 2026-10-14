@@ -17,6 +17,7 @@ const GAMES = [
   { id: 'cascade-lab', title: 'CASCADE LAB', colour: [158, 255, 190], order: '09 / 11' },
   { id: 'afterimage-run', title: 'AFTERIMAGE//RUN', colour: [183, 163, 255], order: '10 / 11' },
   { id: 'aether-grid', title: 'AETHER GRID', colour: [119, 233, 230], order: '11 / 11' },
+  { id: 'heist-echo', title: 'HEIST//ECHO', colour: [102, 230, 224], order: '12 / 12' },
 ];
 const CATALOG = { id: '', title: 'OSGARD PLAY', colour: [211, 255, 105], order: '11 WORLDS / ONE HUB' };
 const CARDS = [...GAMES, CATALOG];
