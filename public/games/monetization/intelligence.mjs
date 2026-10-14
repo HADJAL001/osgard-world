@@ -184,7 +184,7 @@ export function analyzeSensitivity(input = {}, scenarioId = 'base', shockPct = 2
       deltaAtLowUsd: lowNet - baseline,
       deltaAtHighUsd: highNet - baseline,
       impactUsd: Math.abs(highNet - lowNet),
-      favorableDirection: driver.inverse ? (improvement === 'increase' ? 'decrease' : 'increase') : improvement,
+      favorableDirection: improvement,
       shockPct: shock * 100,
     };
   }).sort((a, b) => b.impactUsd - a.impactUsd);
