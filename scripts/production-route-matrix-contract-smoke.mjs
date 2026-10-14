@@ -15,6 +15,7 @@ const russianGames = readFileSync(resolve("public/games/index.html"), "utf8");
 const sitemap = readFileSync(resolve("public/sitemap.xml"), "utf8");
 const catalogueFallback = JSON.parse(readFileSync(resolve("public/games/game-catalog-fallback.json"), "utf8"));
 const assetOptimizer = readFileSync(resolve("scripts/optimize-games-static-assets.mjs"), "utf8");
+const deployWorkflow = readFileSync(resolve(".github/workflows/deploy-frontend.yml"), "utf8");
 
 
 assert.ok(html.includes("<title>SWARM — One Body. Eight Minds.</title>"), "SWARM page title contract is missing.");
@@ -90,6 +91,7 @@ assert.ok(nginx.includes('location = /games/catalog-runtime.js') && nginx.includ
 assert.ok(nginx.includes('location = /commerce-api/v1/game-catalog') && nginx.includes('error_page 502 503 504 =200 /games/game-catalog-fallback.json;'), "The public read-only catalogue must use a safe static fallback only during API outages.");
 assert.ok(nginx.includes('location = /commerce-api/v1/admin/game-catalog') && nginx.includes('error_page 502 504 =503 @osgard_commerce_unavailable;') && nginx.includes('COMMERCE_API_UNAVAILABLE'), "Operator catalogue calls must fail with a clear JSON 503, never fabricated admin success.");
 assert.ok(assetOptimizer.includes("'catalog-runtime.js'"), "The catalogue runtime must be non-empty and minified during build.");
+assert.ok(deployWorkflow.includes('const compact=source.replace(/' + String.fromCharCode(92) + 's+/g,"")') && deployWorkflow.includes('compact.includes(".textContent=")') && deployWorkflow.includes('compact.includes(".title")') && deployWorkflow.includes('compact.includes(".innerHTML")') && deployWorkflow.includes('!body.equals(inflated)'), "Deployment archive validation must accept minified code while verifying safe rendering and exact gzip bytes.");
 assert.ok(matrix.includes("'/games/en/'") && matrix.includes("'/games/game-catalog-fallback.json'") && matrix.includes("compact.includes('.textContent=')"), "The production route matrix must validate the global entry, fallback payload and minified runtime.");
 
 console.log("PASS SWARM route contract: game-specific asset checks, self-hosted fonts and reduced motion.");
