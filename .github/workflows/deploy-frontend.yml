@@ -25,6 +25,7 @@ on:
       - "scripts/games-catalog-asset-smoke.mjs"
       - "scripts/game-catalog-admin-smoke.mjs"
       - "scripts/production-route-matrix.mjs"
+      - "scripts/optimize-games-static-assets.mjs"
       - "scripts/games-static-assets-smoke.mjs"
       - ".github/workflows/deploy-frontend.yml"
       - "services/osgard-commerce-api/test/campaigns.test.mjs"
