@@ -48,12 +48,13 @@ assert.ok(commandDeck.includes('<title>OSGARD PLAY — Command Deck</title>') &&
   commandDeck.includes('id="run-checks"') && commandDeck.includes('id="download-report"') &&
   commandDeck.includes('noindex,nofollow,noarchive'),
   "Command Deck needs stable production test markers and noindex.");
-const mjsLocation = nginx.indexOf("location ~* \\\\.mjs$");
-const genericStaticLocation = nginx.indexOf("location ~* \\\\.(?:css|js|png|jpg|jpeg|gif|svg|woff2?)$");
+const nginxLines = nginx.split("\n");
+const mjsLocation = nginxLines.findIndex(line => line.includes("location") && line.includes("mjs$"));
+const genericStaticLocation = nginxLines.findIndex(line => line.includes("location") && line.includes("(?:css|js|png|jpg|jpeg|gif|svg|woff2?)$"));
 assert.ok(mjsLocation >= 0 && genericStaticLocation > mjsLocation,
   "Nginx must handle .mjs before the generic static-asset matcher.");
-assert.ok(nginx.slice(mjsLocation, genericStaticLocation).includes("default_type application/javascript;") &&
-  !nginx.slice(genericStaticLocation).split("\\n")[0].includes("mjs"),
+assert.ok(nginxLines.slice(mjsLocation, genericStaticLocation).some(line => line.includes("default_type application/javascript;")) &&
+  !nginxLines[genericStaticLocation].includes("mjs"),
   "Nginx must serve .mjs as JavaScript rather than a generic binary or text response.");
 
 assert.ok(matrix.includes("'/games/monetization/export.mjs'") &&
