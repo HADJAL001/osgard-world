@@ -94,7 +94,7 @@ new Function(mainScript)
 check(mainScript.includes("fetch('/v1/civic-cascade-advisor'"), 'AI advisor must send only to the same-origin server endpoint')
 check(mainScript.includes("consent:true") && mainScript.includes("cc-ai-advisor-consent"), 'AI advisor must require explicit one-request consent')
 check(!mainScript.includes("fetch('https://api.openai.com") && !html.includes("OPENAI_API_KEY") && !html.includes("Bearer "), 'browser bundle must never contain an API key or direct provider call')
-check(html.includes("server-side AI-советник") && html.includes("не меняет игру"), 'AI advisor privacy and non-execution boundaries must be visible')
+check(html.includes("Отдельный AI Advisor является внешним") && html.includes("не меняет игру"), 'AI advisor privacy and non-execution boundaries must be visible')
 check(html.includes('window.crypto.subtle.digest'), 'decision dossier export must compute SHA-256 over the canonical payload')
 check(html.includes('function exportDoctrineDossier()'), 'decision dossier export handler must be present')
 
