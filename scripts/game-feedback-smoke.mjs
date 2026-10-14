@@ -18,6 +18,7 @@ const api = read("services/osgard-commerce-api/src/server.mjs");
 const validator = read("services/osgard-commerce-api/src/feedback.mjs");
 const ui = read("public/games/feedback/index.html");
 const client = read("public/games/feedback/feedback.js");
+const adminPage = read("public/games/admin/feedback/index.html");
 const admin = read("public/games/admin/feedback/admin.js");
 const config = JSON.parse(read("public/games/commerce-config.json"));
 const routeMatrix = read("scripts/production-route-matrix.mjs");
@@ -38,7 +39,7 @@ assert.ok(client.includes("credentials: 'omit'") && client.includes("cache: 'no-
 assert.ok(client.includes('Сервер приёма отчётов не настроен. Ничего не отправлено'), "Offline/error mode must clearly say no report was sent");
 assert.ok(client.includes('safeApiBase') && client.includes("endsWith('.osgard.world')"), "Public form must restrict API destination");
 assert.ok(!client.includes('OSGARD_CONSENTED_ANALYTICS') && !client.includes('sendBeacon') && !client.includes('analytics.enqueue'), "Report body must not be sent to analytics");
-assert.ok(admin.includes('type="password"') && !admin.includes('localStorage') && !admin.includes('sessionStorage'), "Admin token must be ephemeral");
+assert.ok(adminPage.includes('type="password"') && !admin.includes('localStorage') && !admin.includes('sessionStorage'), "Admin token must be ephemeral");
 assert.ok(admin.includes('textContent') && !admin.includes('innerHTML'), "Admin untrusted report fields must never be interpreted as HTML");
 assert.ok(ui.includes('name="consent"') && ui.includes('href="/privacy/"'), "Form must require acknowledgement and link privacy terms");
 assert.ok(ui.includes('id="export-report"') && ui.includes('id="copy-report"'), "Manual export is needed while API is not configured");
