@@ -2091,7 +2091,7 @@ func _update_guard_perception(guard: Dictionary, body: CharacterBody3D, sees_pla
 	return guard
 
 func _guard_flank_target(guard: Dictionary, target_position: Vector3) -> Vector3:
-	var role := str(guard.get("role", "RANGER"))
+	var role: String = str(guard.get("role", "RANGER"))
 	var radius := 6.2
 	match role:
 		"STALKER":
