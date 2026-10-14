@@ -72,7 +72,7 @@ export const ALLOWED_EVENTS = new Set([
 const GAME_IDS = new Set([
   "null-shift", "time", "swarm", "inherit", "remix",
   "civic-cascade", "patina", "signal-run", "cascade-lab",
-  "afterimage-run", "aether-grid", "unknown",
+  "afterimage-run", "aether-grid", "heist-echo", "unknown",
 ]);
 
 // Public IDs only. GARD VPN is deliberately absent until its core service is verified.

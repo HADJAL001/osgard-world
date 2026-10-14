@@ -23,9 +23,9 @@ assert.deepEqual(
   'Browser and server analytics must accept the same game IDs; drift can silently discard share/promo events',
 );
 assert.deepEqual(actualGameIds, [
-  'aether-grid', 'afterimage-run', 'cascade-lab', 'civic-cascade', 'inherit',
+  'aether-grid', 'afterimage-run', 'cascade-lab', 'civic-cascade', 'heist-echo', 'inherit',
   'null-shift', 'patina', 'remix', 'signal-run', 'swarm', 'time', 'unknown',
-], 'Every released game, including AETHER GRID, must be admitted by both analytics allow-lists');
+], 'Every released game, including HEIST//ECHO, must be admitted by both analytics allow-lists');
 assert.deepEqual(
   extractEventNames(source, 'Browser analytics queue'),
   extractEventNames(commerceCore, 'Commerce API'),

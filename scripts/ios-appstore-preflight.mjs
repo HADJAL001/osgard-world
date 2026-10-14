@@ -38,6 +38,7 @@ const bundledGamePages = {
   'cascade-lab': 'dist/games/cascade-lab/index.html',
   'afterimage-run': 'dist/games/afterimage-run/index.html',
   'aether-grid': 'dist/games/aether-grid/index.html',
+  'heist-echo': 'dist/games/heist-echo/index.html',
 };
 const extractCatalogGameIds = (html) =>
   Array.from(html.matchAll(/<article\b[^>]*\bdata-game="([^"]+)"/g), (match) => match[1]);
@@ -49,7 +50,7 @@ const expectedBundledGameIds = Object.keys(bundledGamePages).sort();
 assert.equal(new Set(sourceCatalogGameIds).size, sourceCatalogGameIds.length, 'Visible game card IDs must be unique.');
 assert.equal(new Set(manifestGameIds).size, manifestGameIds.length, 'The OSGARD_GAMES registry must not contain duplicate IDs.');
 assert.deepEqual([...sourceCatalogGameIds].sort(), expectedBundledGameIds,
-  'Every visible Games card must have exactly one declared local iOS page, including AETHER GRID.');
+  'Every visible Games card must have exactly one declared local iOS page, including HEIST//ECHO.');
 assert.deepEqual([...manifestGameIds].sort(), expectedBundledGameIds,
   'The shared OSGARD_GAMES registry and iOS game-page map must contain the same game IDs.');
 const mobileRouteRewriterMatch = prep.match(/const routes = new Set\(\[([\s\S]*?)\]\);/);
@@ -152,14 +153,14 @@ if (builtWeb) {
   const builtCatalogGameIds = extractCatalogGameIds(catalog);
   assert.equal(new Set(builtCatalogGameIds).size, builtCatalogGameIds.length, 'Packaged game card IDs must be unique.');
   assert.deepEqual([...builtCatalogGameIds].sort(), expectedBundledGameIds,
-    'The packaged iOS catalogue and the source catalogue must ship all 11 locally runnable games.');
+    'The packaged iOS catalogue and the source catalogue must ship all 12 locally runnable games.');
   const apiConfig = JSON.parse(read('dist/games/commerce-config.json'));
   assert.equal(new URL(apiConfig.apiBaseUrl).protocol, 'https:', 'Native API must use HTTPS.');
   assert.ok(catalog.includes('/games/osgard-native-share.js'), 'Native share bridge not injected into the catalogue.');
   assert.ok(catalog.includes('href="/support/osgard-play/"'), 'The packaged Games catalogue must link to the support page.');
   assert.ok(catalog.includes('WEBGL · iOS') || catalog.includes('WEBGL / iOS'), 'Mobile NULL//SHIFT label not updated.');
   assert.ok(catalog.includes('/games/null-shift/index.html'), 'iOS catalogue must open the bundled WebGL version.');
-  assert.ok(!/href=['"]\/game\/(?:null-shift|time|swarm|inherit|remix|civic-cascade|patina|signal-run|cascade-lab|afterimage-run|aether-grid)['"]/.test(catalog),
+  assert.ok(!/href=['"]\/game\/(?:null-shift|time|swarm|inherit|remix|civic-cascade|patina|signal-run|cascade-lab|afterimage-run|aether-grid|heist-echo)['"]/.test(catalog),
     'Standalone catalogue route should not go through the React web SPA.');
   const shell = read('dist/index.html');
   assert.ok(shell.includes('OSGARD PLAY') && shell.includes('location.replace("/games/")'), 'App shell must land directly in the local Games hub.');
@@ -167,7 +168,7 @@ if (builtWeb) {
   assert.ok(gamePage.includes('osgard-native-share.js'), 'Native share bridge must be loaded on the local game.');
   const configText = readFileSync(join(root, 'dist/games/commerce-config.json'), 'utf8');
   assert.ok(!/sk_(?:live|test)_|whsec_|-----BEGIN (?:PRIVATE|RSA) KEY-----/.test(configText), 'Client config must not contain payment secrets.');
-  console.log('PASS iOS web bundle: local Games hub, all 11 registry-aligned game entrypoints, iOS-safe NULL//SHIFT route, native share, HTTPS API config and no client payment secrets.');
+  console.log('PASS iOS web bundle: local Games hub, all 12 registry-aligned game entrypoints, iOS-safe NULL//SHIFT route, native share, HTTPS API config and no client payment secrets.');
 } else {
   console.log('PASS iOS source preflight: Capacitor app identity, TestFlight-only Codemagic workflow, pinned Capacitor 8 packages, privacy manifest, release guide and generated 1024px icon set.');
 }

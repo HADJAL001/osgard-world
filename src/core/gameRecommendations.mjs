@@ -10,6 +10,7 @@ const CURATED_RELATED_IDS = Object.freeze({
   'cascade-lab': ['signal-run', 'afterimage-run', 'remix'],
   'afterimage-run': ['signal-run', 'cascade-lab', 'null-shift'],
   'aether-grid': ['signal-run', 'cascade-lab', 'patina'],
+  'heist-echo': ['null-shift', 'remix', 'cascade-lab'],
 });
 
 const asStringSet = value => new Set(

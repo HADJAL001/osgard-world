@@ -7,7 +7,8 @@ const valid = () => ({ schemaVersion: GAME_CATALOG_SCHEMA_VERSION, items: DEFAUL
 test("default catalogue contains all registered games with fixed local routes", () => {
   const result = validateGameCatalogPayload(valid());
   assert.equal(result.ok, true);
-  assert.equal(result.catalog.items.length, 11);
+  assert.equal(result.catalog.items.length, 12);
+  assert.equal(result.catalog.items.at(-1).id, 'heist-echo');
   assert.equal(result.catalog.items[0].id, "null-shift");
   assert.ok(result.catalog.items.every((item) => item.href.startsWith("/games/")));
 });

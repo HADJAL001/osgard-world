@@ -18,7 +18,7 @@
       item.genres.every((genre) => Object.prototype.hasOwnProperty.call(genreLabels, genre));
   }
   function applyCatalog(payload) {
-    if (!payload || payload.schemaVersion !== 1 || !Array.isArray(payload.items) || payload.items.length > 11 || !payload.items.every(safeItem)) return;
+    if (!payload || payload.schemaVersion !== 1 || !Array.isArray(payload.items) || payload.items.length > 100 || !payload.items.every(safeItem)) return;
     const grid = document.getElementById('games-grid');
     if (!grid) return;
     const items = new Map(payload.items.map((item) => [item.id, item]));

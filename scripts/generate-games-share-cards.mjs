@@ -6,19 +6,20 @@ const ROOT = resolve('public/games');
 const WIDTH = 1200;
 const HEIGHT = 630;
 const GAMES = [
-  { id: 'null-shift', title: 'NULL//SHIFT', colour: [211, 255, 105], order: '01 / 11' },
-  { id: 'time', title: 'Империя времени', cardTitle: 'EMPIRE OF TIME', colour: [220, 195, 132], order: '02 / 11' },
-  { id: 'swarm', title: 'SWARM', colour: [255, 151, 103], order: '03 / 11' },
-  { id: 'inherit', title: 'INHERIT', colour: [120, 228, 255], order: '04 / 11' },
-  { id: 'remix', title: 'REMIX', colour: [186, 150, 255], order: '05 / 11' },
-  { id: 'civic-cascade', title: 'CIVIC CASCADE', colour: [133, 189, 255], order: '06 / 11' },
-  { id: 'patina', title: 'PATINA Atelier', cardTitle: 'PATINA ATELIER', colour: [241, 168, 191], order: '07 / 11' },
-  { id: 'signal-run', title: 'SIGNAL RUN', colour: [112, 246, 216], order: '08 / 11' },
-  { id: 'cascade-lab', title: 'CASCADE LAB', colour: [158, 255, 190], order: '09 / 11' },
-  { id: 'afterimage-run', title: 'AFTERIMAGE//RUN', colour: [183, 163, 255], order: '10 / 11' },
-  { id: 'aether-grid', title: 'AETHER GRID', colour: [119, 233, 230], order: '11 / 11' },
+  { id: 'null-shift', title: 'NULL//SHIFT', colour: [211, 255, 105], order: '01 / 12' },
+  { id: 'time', title: 'Империя времени', cardTitle: 'EMPIRE OF TIME', colour: [220, 195, 132], order: '02 / 12' },
+  { id: 'swarm', title: 'SWARM', colour: [255, 151, 103], order: '03 / 12' },
+  { id: 'inherit', title: 'INHERIT', colour: [120, 228, 255], order: '04 / 12' },
+  { id: 'remix', title: 'REMIX', colour: [186, 150, 255], order: '05 / 12' },
+  { id: 'civic-cascade', title: 'CIVIC CASCADE', colour: [133, 189, 255], order: '06 / 12' },
+  { id: 'patina', title: 'PATINA Atelier', cardTitle: 'PATINA ATELIER', colour: [241, 168, 191], order: '07 / 12' },
+  { id: 'signal-run', title: 'SIGNAL RUN', colour: [112, 246, 216], order: '08 / 12' },
+  { id: 'cascade-lab', title: 'CASCADE LAB', colour: [158, 255, 190], order: '09 / 12' },
+  { id: 'afterimage-run', title: 'AFTERIMAGE//RUN', colour: [183, 163, 255], order: '10 / 12' },
+  { id: 'aether-grid', title: 'AETHER GRID', colour: [119, 233, 230], order: '11 / 12' },
+  { id: 'heist-echo', title: 'HEIST//ECHO', colour: [102, 230, 224], order: '12 / 12' },
 ];
-const CATALOG = { id: '', title: 'OSGARD PLAY', colour: [211, 255, 105], order: '11 WORLDS / ONE HUB' };
+const CATALOG = { id: '', title: 'OSGARD PLAY', colour: [211, 255, 105], order: '12 WORLDS / ONE HUB' };
 const CARDS = [...GAMES, CATALOG];
 
 const FONT = {

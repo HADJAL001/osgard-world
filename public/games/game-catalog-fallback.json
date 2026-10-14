@@ -155,6 +155,20 @@
       "sortOrder": 11,
       "status": "playable",
       "href": "/games/aether-grid/"
+    },
+    {
+      "id": "heist-echo",
+      "title": "HEIST//ECHO",
+      "description": "Тактическая симуляция: создавай карты, проверяй маршруты патрулей и разбирай операцию в Black Box.",
+      "genres": [
+        "tactical",
+        "creative"
+      ],
+      "visible": true,
+      "featured": false,
+      "sortOrder": 12,
+      "status": "playable",
+      "href": "/games/heist-echo/"
     }
   ]
 }

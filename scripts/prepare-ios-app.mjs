@@ -38,6 +38,7 @@ function prepareWeb() {
   const builtAppIndex = readFileSync(join(dist, 'index.html'), 'utf8');
   assertFile(catalog, 'Games catalogue');
   assertFile(join(gamesDir, 'null-shift', 'index.html'), 'Mobile WebGL NULL//SHIFT game');
+  assertFile(join(gamesDir, 'heist-echo', 'index.html'), 'HEIST//ECHO standalone game');
   assertFile(join(gamesDir, 'osgard-native-share.js'), 'Native share bridge bundle');
   assertFile(join(gamesDir, 'commerce-config.json'), 'Commerce config');
 
@@ -68,7 +69,7 @@ function prepareWeb() {
     text = text.replaceAll('GODOT 4 · WEB', 'WEBGL · iOS');
     text = text.replaceAll('Основной вход — Godot-сборка; браузерный WebGL остаётся альтернативой.',
       'В iPhone-сборке используется локально упакованная WebGL-версия с сенсорным управлением.');
-    const routes = new Set(['null-shift', 'time', 'swarm', 'inherit', 'remix', 'civic-cascade', 'patina', 'signal-run', 'cascade-lab', 'afterimage-run', 'aether-grid']);
+    const routes = new Set(['null-shift', 'time', 'swarm', 'inherit', 'remix', 'civic-cascade', 'patina', 'signal-run', 'cascade-lab', 'afterimage-run', 'aether-grid', 'heist-echo']);
     text = text.replace(/href=(['"])\/game\/([a-z0-9-]+)\1/gi, (match, quote, slug) =>
       routes.has(slug) ? 'href=' + quote + '/games/' + slug + '/index.html' + quote : match);
     text = text.replaceAll('href="/games/time"', 'href="/games/time/index.html"');

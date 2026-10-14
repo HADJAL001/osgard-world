@@ -6,12 +6,12 @@ const client = readFileSync('public/games/diagnostics/diagnostics.js', 'utf8');
 const manifest = readFileSync('src/core/manifest.ts', 'utf8');
 const expectedGames = [
   'null-shift', 'time', 'swarm', 'inherit', 'remix', 'civic-cascade',
-  'patina', 'signal-run', 'cascade-lab', 'afterimage-run', 'aether-grid',
+  'patina', 'signal-run', 'cascade-lab', 'afterimage-run', 'aether-grid', 'heist-echo',
 ];
 
 assert.ok(page.includes('<title>OSGARD PLAY — Проверка совместимости</title>'));
 assert.ok(page.includes('id="diagnostics-app"') || page.includes('data-og-diagnostics="1"'));
-assert.ok(page.includes('30 диагностических проверок'));
+assert.ok(page.includes('31 диагностических проверок'));
 assert.ok(page.includes('prefers-reduced-motion:reduce'));
 assert.ok(page.includes('Перейти к проверкам'));
 assert.ok(/ничего автоматически не отправляется/i.test(page));
@@ -25,12 +25,12 @@ const capabilityIds = [...capabilities.matchAll(/id: '([^']+)'/g)].map((match) =
 const gameRouteIds = [...routes.matchAll(/gameId: '([^']+)'/g)].map((match) => match[1]);
 assert.equal(capabilityIds.length, 19, 'exactly 19 device/browser checks should exist');
 assert.equal(new Set(capabilityIds).size, 19, 'capability IDs must be unique');
-assert.equal(gameRouteIds.length, 11, 'exactly 11 game routes should exist');
-assert.deepEqual(gameRouteIds, expectedGames, 'diagnostics must cover all eleven catalogue games in stable order');
-assert.equal(new Set(gameRouteIds).size, 11, 'game IDs must be unique');
+assert.equal(gameRouteIds.length, 12, 'exactly 12 game routes should exist');
+assert.deepEqual(gameRouteIds, expectedGames, 'diagnostics must cover all twelve catalogue games in stable order');
+assert.equal(new Set(gameRouteIds).size, 12, 'game IDs must be unique');
 for (const id of expectedGames) assert.ok(manifest.includes("'" + id + "'"), 'game ID missing from source manifest: ' + id);
 
-assert.equal(capabilityIds.length + gameRouteIds.length, 30, 'diagnostic matrix must contain exactly 30 checks');
+assert.equal(capabilityIds.length + gameRouteIds.length, 31, 'diagnostic matrix must contain exactly 31 checks');
 assert.ok(client.includes("schema: 'osgard.play.diagnostics.v1'"));
 assert.ok(client.includes("credentials: 'omit'"), 'route checks must not send cookies/credentials');
 assert.ok(client.includes("method: 'GET'") && client.includes("AbortSignal.timeout(8000)"));
@@ -50,7 +50,7 @@ for (const feature of ['share-or-clipboard','touch-capability','reduced-motion',
 for (const route of [
   '/games/null-shift-godot/','/games/time','/games/swarm/index.html','/games/inherit/index.html',
   '/games/remix/index.html','/games/civic-cascade/','/games/patina/','/games/signal-run/',
-  '/games/cascade-lab/','/games/afterimage-run/','/games/aether-grid/'
+  '/games/cascade-lab/','/games/afterimage-run/','/games/aether-grid/','/games/heist-echo/'
 ]) assert.ok(routes.includes("route: '" + route + "'"), 'missing game route check: ' + route);
 
-console.log('PASS OSGARD PLAY diagnostics: exactly 30 checks, all 11 game routes, local-only report, JSON/CSV export and reduced-motion support.');
+console.log('PASS OSGARD PLAY diagnostics: exactly 31 checks, all 12 game routes, local-only report, JSON/CSV export and reduced-motion support.');
