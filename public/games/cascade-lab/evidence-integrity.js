@@ -245,14 +245,43 @@ function cleanAudit(raw) {
     !Array.isArray(a.changes)||a.changes.length>24||!a.comparison||!a.interpretation)return null;
   const safeChanges=a.changes.map(change=>{
     if(!change||!['position','angle','removed','added'].includes(change.kind))return null;
-    const normalized = {kind:change.kind,label:clean(change.label,100),before:change.before&&typeof change.before==='object'?change.before:null,after:change.after&&typeof change.after==='object'?change.after:null,magnitude:finite(change.magnitude)?round(change.magnitude,3):null};
+    return {
+      kind:change.kind,label:clean(change.label,100),
+      before:change.before&&typeof change.before==='object'?change.before:null,
+      after:change.after&&typeof change.after==='object'?change.after:null,
+      magnitude:finite(change.magnitude)?round(change.magnitude,3):null
+    };
   });
   if(safeChanges.some(change=>!change))return null;
-  return {
-    schema:SCHEMA,id:raw.id,createdAt:new Date(Date.parse(raw.createdAt)).toISOString(),
-    baseline:{id:clean(a.baseline.id,90),levelId:a.baseline.levelId,levelTitle:clean(a.baseline.levelTitle,120),mode:clean(a.baseline.mode,24),dailyDate:typeof a.baseline.dailyDate==='string'?a.baseline.dailyDate:null,status:a.baseline.status==='won'?'won':'lost',timeSeconds:finite(a.baseline.timeSeconds)?clamp(a.baseline.timeSeconds,0,120):null,deviceCount:Number.isInteger(a.baseline.deviceCount)?clamp(a.baseline.deviceCount,0,12):null,signature:clean(a.baseline.signature,24),at:clean(a.baseline.at,40)},
-    candidate:{id:clean(a.candidate.id,90),levelId:a.candidate.levelId,levelTitle:clean(a.candidate.levelTitle,120),mode:clean(a.candidate.mode,24),dailyDate:typeof a.candidate.dailyDate==='string'?a.candidate.dailyDate:null,status:a.candidate.status==='won'?'won':'lost',timeSeconds:finite(a.candidate.timeSeconds)?clamp(a.candidate.timeSeconds,0,120):null,deviceCount:Number.isInteger(a.candidate.deviceCount)?clamp(a.candidate.deviceCount,0,12):null,signature:clean(a.candidate.signature,24),at:clean(a.candidate.at,40)},
-    compatible:a.compatible===true,tier:a.tier,changedVariables:clamp(Math.round(Number(a.changedVariables)||0),0,24),sameBlueprint:a.sameBlueprint===true,changes:safeChanges,
+  const safeGroup=group=>{
+    const g=group&&typeof group==='object'?group:{};
+    return {
+      count:clamp(Math.round(Number(g.count)||0),0,MAX_RUNS),
+      successes:clamp(Math.round(Number(g.successes)||0),0,MAX_RUNS),
+      successRate:finite(g.successRate)?clamp(g.successRate,0,100):null,
+      medianTimeSeconds:finite(g.medianTimeSeconds)?clamp(g.medianTimeSeconds,0,120):null,
+      allRunMedianSeconds:finite(g.allRunMedianSeconds)?clamp(g.allRunMedianSeconds,0,120):null,
+      timeMedianAbsoluteDeviationSeconds:finite(g.timeMedianAbsoluteDeviationSeconds)?clamp(g.timeMedianAbsoluteDeviationSeconds,0,120):null
+    };
+  };
+  const safeRun=run=>({
+    id:clean(run.id,90),at:clean(run.at,40),
+    levelId:run.levelId,levelTitle:clean(run.levelTitle,120),mode:clean(run.mode,24),
+    dailyDate:typeof run.dailyDate==='string'?run.dailyDate:null,
+    status:run.status==='won'?'won':'lost',
+    timeSeconds:finite(run.timeSeconds)?clamp(run.timeSeconds,0,120):null,
+    deviceCount:Number.isInteger(run.deviceCount)?clamp(run.deviceCount,0,12):null,
+    signature:clean(run.signature,24)
+  });
+  const normalizedAnalysis={
+    schema:SCHEMA,
+    baseline:safeRun(a.baseline),
+    candidate:safeRun(a.candidate),
+    compatible:a.compatible===true,
+    tier:a.tier,
+    changedVariables:clamp(Math.round(Number(a.changedVariables)||0),0,24),
+    sameBlueprint:a.sameBlueprint===true,
+    changes:safeChanges,
     comparison:{
       outcomeDeltaPercentagePoints:finite(a.comparison.outcomeDeltaPercentagePoints)?clamp(a.comparison.outcomeDeltaPercentagePoints,-100,100):null,
       timeDeltaSeconds:finite(a.comparison.timeDeltaSeconds)?clamp(a.comparison.timeDeltaSeconds,-120,120):null,
@@ -263,28 +292,17 @@ function cleanAudit(raw) {
       distanceDelta:finite(a.comparison.distanceDelta)?clamp(a.comparison.distanceDelta,-1000000,1000000):null,
       meanTrajectoryDeviation:finite(a.comparison.meanTrajectoryDeviation)?clamp(a.comparison.meanTrajectoryDeviation,0,2000):null
     },
-    baselineGroup:{count:clamp(Math.round(Number(a.baselineGroup&&a.baselineGroup.count)||0),0,MAX_RUNS),successes:clamp(Math.round(Number(a.baselineGroup&&a.baselineGroup.successes)||0),0,MAX_RUNS),successRate:finite(a.baselineGroup&&a.baselineGroup.successRate)?clamp(a.baselineGroup.successRate,0,100):null,medianTimeSeconds:finite(a.baselineGroup&&a.baselineGroup.medianTimeSeconds)?clamp(a.baselineGroup.medianTimeSeconds,0,120):null,allRunMedianSeconds:finite(a.baselineGroup&&a.baselineGroup.allRunMedianSeconds)?clamp(a.baselineGroup.allRunMedianSeconds,0,120):null,timeMedianAbsoluteDeviationSeconds:finite(a.baselineGroup&&a.baselineGroup.timeMedianAbsoluteDeviationSeconds)?clamp(a.baselineGroup.timeMedianAbsoluteDeviationSeconds,0,120):null},
-    candidateGroup:{count:clamp(Math.round(Number(a.candidateGroup&&a.candidateGroup.count)||0),0,MAX_RUNS),successes:clamp(Math.round(Number(a.candidateGroup&&a.candidateGroup.successes)||0),0,MAX_RUNS),successRate:finite(a.candidateGroup&&a.candidateGroup.successRate)?clamp(a.candidateGroup.successRate,0,100):null,medianTimeSeconds:finite(a.candidateGroup&&a.candidateGroup.medianTimeSeconds)?clamp(a.candidateGroup.medianTimeSeconds,0,120):null,allRunMedianSeconds:finite(a.candidateGroup&&a.candidateGroup.allRunMedianSeconds)?clamp(a.candidateGroup.allRunMedianSeconds,0,120):null,timeMedianAbsoluteDeviationSeconds:finite(a.candidateGroup&&a.candidateGroup.timeMedianAbsoluteDeviationSeconds)?clamp(a.candidateGroup.timeMedianAbsoluteDeviationSeconds,0,120):null},
-    interpretation:{title:clean(a.interpretation.title,120),guidance:clean(a.interpretation.guidance,500),limitation:clean(a.interpretation.limitation,500)}
+    baselineGroup:safeGroup(a.baselineGroup),
+    candidateGroup:safeGroup(a.candidateGroup),
+    interpretation:{
+      title:clean(a.interpretation.title,120),
+      guidance:clean(a.interpretation.guidance,500),
+      limitation:clean(a.interpretation.limitation,500)
+    }
   };
   return {
-    schema: SCHEMA,
-    id: normalized.id,
-    createdAt: normalized.createdAt,
-    analysis: {
-      schema: SCHEMA,
-      baseline: normalized.baseline,
-      candidate: normalized.candidate,
-      compatible: normalized.compatible,
-      tier: normalized.tier,
-      changedVariables: normalized.changedVariables,
-      sameBlueprint: normalized.sameBlueprint,
-      changes: normalized.changes,
-      comparison: normalized.comparison,
-      baselineGroup: normalized.baselineGroup,
-      candidateGroup: normalized.candidateGroup,
-      interpretation: normalized.interpretation
-    }
+    schema:SCHEMA,id:raw.id,createdAt:new Date(Date.parse(raw.createdAt)).toISOString(),
+    analysis:normalizedAnalysis
   };
 }
 function validateArchive(raw) {
