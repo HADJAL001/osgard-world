@@ -28,6 +28,8 @@ jobs:
         run: npm run qa:contracts
       - name: Test release attestation against tampering
         run: npm run qa:release-attestation
+      - name: Test app-shell performance budgets
+        run: npm run qa:performance-budget-test
       - name: Verify proof-carrying release manifest fixture
         run: npm run qa:release-manifest
       - name: Test OpenAI reviewer offline (no API call)
@@ -46,8 +48,8 @@ jobs:
         run: npm run qa:osgard-select
       - name: Verify partner inventory and enquiry form
         run: npm run qa:partners-page
-      - name: Build and archive preflight
-        run: npm run build && npm run preflight:frontend
+      - name: Build, archive preflight and measure app-shell performance
+        run: npm run build && npm run preflight:frontend && npm run qa:performance-budget
       - name: Bind build to the passing contract report
         run: npm run release:attest && npm run release:verify
       - name: Verify Imperium of Time gameplay and diagnostics
@@ -71,4 +73,5 @@ jobs:
             release-manifest.json
             production-route-matrix.json
             osgard-contract-audit.json
+            osgard-performance-budget.json
             release-attestation.json
