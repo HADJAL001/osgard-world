@@ -5078,7 +5078,7 @@ func _layout_compact_controls(viewport_size: Vector2) -> void:
 	mobile_move_panel.offset_bottom = -8.0
 	mobile_action_panel.offset_left = -8.0 - action_width
 	mobile_action_panel.offset_right = -8.0
-	mobile_action_panel.offset_top = -330.0
+	mobile_action_panel.offset_top = -286.0
 	mobile_action_panel.offset_bottom = -8.0
 	var move_size: float = 36.0 if width < 400.0 else (44.0 if width < 520.0 else 52.0)
 	var move_button_height: float = 32.0 if width < 400.0 else 36.0
@@ -5087,8 +5087,9 @@ func _layout_compact_controls(viewport_size: Vector2) -> void:
 	for spacer in mobile_move_spacers:
 		spacer.custom_minimum_size = Vector2(move_size, move_button_height)
 	var action_button_width: float = floor((action_width - 32.0) * 0.5)
+	var action_button_height: float = 29.0 if width < 400.0 else 31.0
 	for button in mobile_action_buttons:
-		button.custom_minimum_size = Vector2(action_button_width, 34.0)
+		button.custom_minimum_size = Vector2(action_button_width, action_button_height)
 	var utility_button_width: float = floor((action_width - 32.0) / 3.0)
 	mobile_quality_button.custom_minimum_size = Vector2(utility_button_width, 27.0)
 	mobile_diagnostics_button.custom_minimum_size = Vector2(utility_button_width, 27.0)
