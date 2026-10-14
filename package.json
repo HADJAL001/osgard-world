@@ -23,7 +23,7 @@
     "qa:live-bundle": "node scripts/live-bundle-audit.mjs",
     "qa:time-ui": "node scripts/time-prototype-smoke.mjs",
     "qa:null-shift": "node scripts/null-shift-premium-smoke.mjs",
-    "qa:games-portal": "node scripts/games-portal-smoke.mjs && npm run qa:civic-cascade && npm run qa:games-expedition && npm run qa:civic-release-contract && node scripts/game-catalog-admin-smoke.mjs && node scripts/games-catalog-asset-smoke.mjs public/games && node --test services/osgard-commerce-api/test/game-catalog.test.mjs && bash -n scripts/deploy-commerce-api-remote.sh",
+    "qa:games-portal": "node scripts/games-portal-smoke.mjs && npm run qa:games-mobile-lighthouse-fixes && npm run qa:civic-cascade && npm run qa:games-expedition && npm run qa:civic-release-contract && node scripts/game-catalog-admin-smoke.mjs && node scripts/games-catalog-asset-smoke.mjs public/games && node --test services/osgard-commerce-api/test/game-catalog.test.mjs && bash -n scripts/deploy-commerce-api-remote.sh",
     "qa:entertainment": "node scripts/entertainment-hub-smoke.mjs",
     "qa:games-detail": "node scripts/games-detail-smoke.mjs && npm run qa:cascade-lab-hypothesis && npm run qa:cascade-lab-engineering && npm run qa:cascade-lab-experiment-studio && npm run qa:cascade-lab-trajectory-xray && npm run qa:cascade-lab-mission-director && npm run qa:cascade-lab-evidence-integrity && npm run qa:cascade-lab-pwa",
     "qa:game-business-bridge": "node scripts/game-detail-growth-cta-smoke.mjs",
@@ -81,7 +81,8 @@
     "qa:performance-budget-tests": "node --test scripts/osgard-performance-budget.test.mjs",
     "qa:release-attestation": "node --test scripts/osgard-release-attestation.test.mjs",
     "release:attest": "node scripts/osgard-release-attestation.mjs create --contract-report osgard-contract-audit.json --performance-report osgard-performance-budget.json",
-    "release:verify": "node scripts/osgard-release-attestation.mjs verify --contract-report osgard-contract-audit.json --performance-report osgard-performance-budget.json"
+    "release:verify": "node scripts/osgard-release-attestation.mjs verify --contract-report osgard-contract-audit.json --performance-report osgard-performance-budget.json",
+    "qa:games-mobile-lighthouse-fixes": "node scripts/games-mobile-lighthouse-fixes-smoke.mjs"
   },
   "dependencies": {
     "@types/three": "^0.186.0",
