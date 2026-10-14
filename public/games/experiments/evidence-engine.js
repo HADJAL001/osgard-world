@@ -43,6 +43,7 @@ function aggregateEventRows(events) {
   const ambiguous = new Set();
   const warnings = [];
   let matched = 0;
+  let invalidSessionEvents = 0;
   for (const event of events) {
     if (!event || typeof event !== 'object' || Array.isArray(event)) continue;
     const source = String(event.source ?? '');
@@ -57,7 +58,7 @@ function aggregateEventRows(events) {
     matched += 1;
     const session = String(event.sessionId ?? event.session_id ?? '').trim();
     if (!/^[a-zA-Z0-9_-]{12,96}$/.test(session)) {
-      warnings.push('Событие без допустимого session ID пропущено.');
+      invalidSessionEvents += 1;
       continue;
     }
     if (isExposure) {
@@ -73,6 +74,7 @@ function aggregateEventRows(events) {
     }
   }
   if (!matched) throw new Error('В импортированном файле не найдены события catalog-hero-cta-v1.');
+  if (invalidSessionEvents) warnings.push(invalidSessionEvents + ' событий без допустимого session ID пропущены.');
   if (ambiguous.size) warnings.push(ambiguous.size + ' сессий с показами сразу вариантов A и B исключены из обоих вариантов.');
   let orphanConversions = 0;
   const rows = ['a', 'b'].map(variant => {
