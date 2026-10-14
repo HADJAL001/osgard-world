@@ -267,7 +267,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
              : path === '/games/expedition/app.js'
                ? content.includes('function buildRoute(') && content.includes("track('expedition_route_created'")
              : path === '/games/expedition/catalog-runtime.js'
-               ? content.includes("document.addEventListener('osgard:game-completed'") && content.includes('.og-expedition-band')
+               ? content.includes("document.addEventListener('osgard:game-completed'") && content.includes("section.className='og-expedition-band'")
              : path === '/games/consented-analytics.js'
               ? content.includes('window.OSGARD_CONSENTED_ANALYTICS') && content.includes('analytics-pending.v1') && content.includes('analytics-consent.v1') && content.includes('referral_link_opened') && content.includes('game_session_completed') && content.includes('/v1/events') && content.includes('accepted')
              : path === '/games/player-lifecycle.js'
