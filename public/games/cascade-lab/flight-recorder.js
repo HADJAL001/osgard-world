@@ -12,6 +12,7 @@ const finite = value => typeof value === 'number' && Number.isFinite(value);
 const boundedText = (value, max = 140) => String(value == null ? '' : value).replace(/\s+/g, ' ').trim().slice(0, max);
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const round = (value, places = 2) => finite(value) ? Number(value.toFixed(places)) : null;
+const utf8Size = value => { const source = String(value); try { return new TextEncoder().encode(source).byteLength; } catch { return source.length * 2; } };
 const list = value => Array.isArray(value) ? value : [];
 function normalisePoint(raw) {
   if (!raw || typeof raw !== 'object' || !finite(raw.t) || !finite(raw.x) || !finite(raw.y)) return null;
@@ -51,7 +52,7 @@ function normaliseRun(raw) {
 function validateArchive(raw) {
   if(!raw||typeof raw!=='object'||raw.schema!==SCHEMA||raw.schemaVersion!==1||!Array.isArray(raw.runs))return {ok:false,reason:'Неизвестная схема записи.'};
   if(raw.runs.length>MAX_RUNS)return {ok:false,reason:'Архив превышает лимит в '+MAX_RUNS+' запусков.'};
-  let sourceSize=0;try{sourceSize=new TextEncoder().encode(JSON.stringify(raw)).byteLength;}catch{return {ok:false,reason:'Архив не удалось прочитать.'};}
+  let sourceSize=0;try{sourceSize=utf8Size(JSON.stringify(raw));}catch{return {ok:false,reason:'Архив не удалось прочитать.'};}
   if(sourceSize>MAX_ARCHIVE_BYTES)return {ok:false,reason:'Архив превышает 120 KiB.'};
   const runs=raw.runs.map(normaliseRun);
   if(runs.some(run=>!run))return {ok:false,reason:'Запись не прошла проверку структуры или траектории.'};
@@ -115,7 +116,7 @@ function persistRuns(){
  runs=runs.slice().sort((a,b)=>Date.parse(b.capturedAt)-Date.parse(a.capturedAt)).slice(0,MAX_RUNS);
  const buildPayload=()=>({schema:SCHEMA,schemaVersion:1,exportedAt:new Date().toISOString(),runs});
  let serialized=JSON.stringify(buildPayload());
- while(runs.length&&new TextEncoder().encode(serialized).byteLength>MAX_ARCHIVE_BYTES){runs.pop();serialized=JSON.stringify(buildPayload());}
+ while(runs.length&&utf8Size(serialized)>MAX_ARCHIVE_BYTES){runs.pop();serialized=JSON.stringify(buildPayload());}
  try{window.localStorage.setItem(STORAGE_KEY,serialized);status.dataset.kind='success';status.textContent='Траектория сохранена локально. Архив автоматически удерживается в пределах 120 KiB; серверу данные не отправлялись.';}
  catch{status.dataset.kind='warning';status.textContent='Хранилище браузера недоступно: запись останется только в этой вкладке.';}
 }
