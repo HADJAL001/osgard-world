@@ -919,9 +919,13 @@ func _run_smoke() -> void:
 	var heavy_body: CharacterBody3D = heavy_state["node"]
 	var heavy_origin: Vector3 = heavy_body.global_position
 	heavy_body.global_position = game.player.global_position + Vector3(0.0, 0.0, -8.0)
+	heavy_body.look_at(Vector3(game.player.global_position.x, heavy_body.global_position.y, game.player.global_position.z), Vector3.UP)
+	game.overdrive_timer = 0.0
 	heavy_state["stun"] = 0.0
 	heavy_state["windup"] = 0.0
-	heavy_state["cooldown"] = 0.016
+	# The test needs an expired cooldown, not a frame-duration assumption; the AI
+	# intentionally ticks slower while overdrive is active in normal gameplay.
+	heavy_state["cooldown"] = 0.0
 	heavy_state["attack_lanes"] = []
 	game.guards[1] = heavy_state
 	game._update_guards(0.016)
