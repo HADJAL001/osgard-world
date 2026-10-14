@@ -173,6 +173,11 @@ jobs:
           cp -a dist/. osgard-release/html/
           ASSET_VERSION="${GITHUB_SHA:0:12}"
           sed -i "s|__OSGARD_BUILD_VERSION__|$ASSET_VERSION|g" osgard-release/html/games/index.html
+          sed -i "s|__OSGARD_BUILD_VERSION__|$ASSET_VERSION|g" osgard-release/html/games/vault/index.html
+          grep -Fq "<meta name=\"osgard-build\" content=\"$ASSET_VERSION\">" osgard-release/html/games/vault/index.html
+          for asset in vault-core.js vault-app.js; do grep -Fq "$asset?v=$ASSET_VERSION" osgard-release/html/games/vault/index.html || { echo "Missing versioned PLAYER VAULT asset: $asset" >&2; exit 1; }; done
+          for asset in index.html vault-core.js vault-app.js; do test -s "osgard-release/html/games/vault/$asset" || { echo "Missing PLAYER VAULT asset in release archive: $asset" >&2; exit 1; }; done
+          
           grep -Fq "<meta name=\"osgard-build\" content=\"$ASSET_VERSION\">" osgard-release/html/games/index.html
           for asset in luxury.css luxury.js daily-circuit.css daily-circuit.js pwa-install.css pwa-install.js catalog-state.js app.webmanifest; do grep -Fq "$asset?v=$ASSET_VERSION" osgard-release/html/games/index.html || { echo "Missing versioned Games asset: $asset" >&2; exit 1; }; done
           grep -Fq "versioned('/games/'+path)" osgard-release/html/games/index.html || { echo "Missing versioned lazy asset URL builder" >&2; exit 1; }
