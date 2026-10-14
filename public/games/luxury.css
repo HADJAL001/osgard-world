@@ -151,6 +151,8 @@
 /* The mobile catalogue has eleven SVG-rich cards. Skip the off-screen grid as a subtree,
    while reserving an approximate intrinsic height to avoid a blank jump on scroll. */
 @media(max-width:760px){
- .luxury-entertainment .catalog .grid{content-visibility:auto;contain-intrinsic-size:auto 5700px}
+ /* Keep the grid's geometry real while each off-screen card remains lazy; otherwise a skipped parent can make long card actions overlap the following artwork. */
+ .luxury-entertainment .catalog .grid{content-visibility:visible;contain-intrinsic-size:none}
+ .luxury-entertainment .catalog .grid>.civic-update-card{content-visibility:visible;contain-intrinsic-size:none}
  .luxury-entertainment .daily-circuit-slot{content-visibility:auto;contain-intrinsic-size:auto 460px}
 }
