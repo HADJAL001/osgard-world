@@ -162,6 +162,14 @@ func _run_smoke() -> void:
 	game.squad_alert_serial = saved_squad_serial
 	game.squad_alert_source = saved_squad_source
 	print("RUNTIME_STAGE: Phase Echo decoy, squad diversion and elite resistance")
+	var saved_echo_mission_finished: bool = game.mission_finished
+	var saved_echo_paused: bool = game.paused_game
+	var saved_echo_briefing: bool = game.briefing_visible
+	var saved_echo_terminal: bool = game.terminal_active
+	game.mission_finished = false
+	game.paused_game = false
+	game.briefing_visible = false
+	game.terminal_active = false
 	game.player.global_position = Vector3(0.0, 0.82, 0.0)
 	game.player_aim = Vector3.FORWARD
 	game.phase_echo_cooldown = 0.0
@@ -197,6 +205,10 @@ func _run_smoke() -> void:
 	game.phase_echo_cooldown = saved_echo_cooldown
 	game.phase_echo_activations = saved_echo_activations
 	game.phase_echo_lures = saved_echo_lures
+	game.mission_finished = saved_echo_mission_finished
+	game.paused_game = saved_echo_paused
+	game.briefing_visible = saved_echo_briefing
+	game.terminal_active = saved_echo_terminal
 	game.combat_noise_position = saved_noise_position
 	game.combat_noise_radius = saved_noise_radius
 	game.combat_noise_timer = saved_noise_timer
