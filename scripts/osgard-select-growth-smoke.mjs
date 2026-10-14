@@ -257,7 +257,7 @@ assert.ok(source.includes("postReferralRequest('/v1/referrals/prepare-claim'") &
 const walletSaveOffset=source.indexOf('const saved=addQualifiedReferralShards(result.claims)')
 const walletAckOffset=source.indexOf("postReferralRequest('/v1/referrals/ack'",walletSaveOffset)
 assert.ok(walletSaveOffset>=0&&walletAckOffset>walletSaveOffset, 'Persist receipt IDs in the local wallet before acknowledging them to the server')
-assert.ok(source.includes('qualifiedClaims:[...current.claims,...accepted].slice(-5000)') && source.includes('current.claims,updatedAt'), 'Wallet must deduplicate receipt IDs and preserve them when daily social rewards are written')
+assert.ok(source.includes('const qualifiedClaims=[...current.claims,...accepted].slice(-5000)') && source.includes('current.claims,updatedAt'), 'Wallet must deduplicate receipt IDs and preserve them when daily social rewards are written')
 assert.ok(source.includes("if(!known.has(code)){known.add(code);accepted.push(code)}") && source.includes("const amount=accepted.length*50"), 'Retrying a pending receipt must not award the same 50 SHARDS twice')
 assert.ok(source.includes('Серверное подтверждение временно недоступно; повторная проверка не начислит эти receipt-ID второй раз'), 'The player must get an explicit retry-safe status when acknowledgement temporarily fails')
 assert.ok(source.includes("const promoImpressionKeyPrefix='osgard.games.promo-impression.v1:'") && source.includes("function claimPromoImpression(key)"), 'Session-level promo impression deduplication key missing')
@@ -279,7 +279,7 @@ const claimImpression=vm.runInNewContext('('+impressionMatch[0]+')',{sessionStor
 assert.equal(claimImpression('spotlight:swarm:marcosa:a'),true,'First valid exposure may be counted')
 assert.equal(claimImpression('spotlight:swarm:marcosa:a'),false,'A repeated exposure for the same session/service/variant must be deduplicated')
 assert.equal(claimImpression('card:swarm:marcosa'),true,'A separately visible directory card may be measured once')
-assert.ok(source.includes("source:'qualified-referral-retry'"), 'Retrying a previously saved receipt should not be mistaken for a newly created award')
+assert.ok(source.includes("lastSource:accepted.length?'qualified-referral':'qualified-referral-retry'"), 'Retrying a previously saved receipt should not be mistaken for a newly created award')
 
 console.log(JSON.stringify({
   status: 'passed',
