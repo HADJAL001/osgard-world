@@ -3,7 +3,7 @@ import { createSessionClock, isTrustedGameLifecycleMessage } from '../src/core/g
 let passed=0;
 function check(name,fn){fn();passed++;console.log('PASS '+String(passed).padStart(2,'0')+' · '+name)}
 const origin='https://osgard.world',child={};
-const valid=(state='started',o={})=>({origin:o.origin??origin,expectedOrigin:o.expectedOrigin??origin,source:o.source??child,expectedSource:o.expectedSource??child,data:o.data??{type:'osgard:game-lifecycle',game:'aether-grid',state,at:10000},gameId:o.gameId??'aether-grid',launchedAt:o.launchedAt??9500,now:o.now??10000});
+const valid=(state='started',o={})=>({origin:o.origin??origin,expectedOrigin:o.expectedOrigin??origin,source:Object.prototype.hasOwnProperty.call(o,'source')?o.source:child,expectedSource:Object.prototype.hasOwnProperty.call(o,'expectedSource')?o.expectedSource:child,data:o.data??{type:'osgard:game-lifecycle',game:'aether-grid',state,at:10000},gameId:o.gameId??'aether-grid',launchedAt:o.launchedAt??9500,now:o.now??10000});
 check('first explicit start is accepted',()=>{const c=createSessionClock();assert.equal(c.start(100),true);assert.equal(c.isStarted(),true)});
 check('new clock starts at zero',()=>{const c=createSessionClock();c.start(100);assert.equal(c.elapsedMs(100),0)});
 check('active time advances',()=>{const c=createSessionClock();c.start(100);assert.equal(c.elapsedMs(450),350)});
@@ -12,7 +12,7 @@ check('pause freezes the clock',()=>{const c=createSessionClock();c.start(100);a
 check('duplicate pause is rejected',()=>{const c=createSessionClock();c.start(100);c.pause(250);assert.equal(c.pause(700),false);assert.equal(c.elapsedMs(900),150)});
 check('resume restarts active time',()=>{const c=createSessionClock();c.start(100);c.pause(250);assert.equal(c.resume(900),true);assert.equal(c.elapsedMs(1000),250)});
 check('duplicate resume is rejected',()=>{const c=createSessionClock();c.start(100);c.pause(250);c.resume(900);assert.equal(c.resume(950),false);assert.equal(c.elapsedMs(1000),250)});
-check('multiple pause intervals are excluded',()=>{const c=createSessionClock();c.start(0);c.pause(100);c.resume(500);c.pause(700);c.resume(1000);assert.equal(c.elapsedMs(1250),450)});
+check('multiple pause intervals are excluded',()=>{const c=createSessionClock();c.start(0);c.pause(100);c.resume(500);c.pause(700);c.resume(1000);assert.equal(c.elapsedMs(1250),550)});
 check('finish returns a stable summary',()=>{const c=createSessionClock();c.start(100);assert.deepEqual(c.finish(600),{startedAt:100,finishedAt:600,durationMs:500})});
 check('finished duration excludes paused time',()=>{const c=createSessionClock();c.start(100);c.pause(300);c.resume(900);assert.equal(c.finish(1100).durationMs,400)});
 check('finish is idempotent',()=>{const c=createSessionClock();c.start(10);assert.equal(c.finish(20).durationMs,10);assert.equal(c.finish(30),null)});
