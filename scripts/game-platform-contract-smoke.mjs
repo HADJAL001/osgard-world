@@ -52,7 +52,7 @@ for (const game of registry.games) {
 for (const id of ids) assert.ok(catalog.includes('data-game="' + id + '"'), 'Catalog is missing ' + id);
 assert.ok(page.includes('<link rel="canonical" href="https://osgard.world/games/platform-map/">'), 'Platform map needs a canonical URL.');
 assert.ok(page.includes('id="game-search"') && page.includes('id="runtime-filter"') && page.includes('id="network-filter"') && page.includes('id="save-filter"'), 'Capability filters are incomplete.');
-assert.ok(page.includes('/games/game-registry.v1.json') && page.includes('platform-map.js') && page.includes('platform-map.css'), 'Page must use its versioned registry runtime and styles.');
+assert.ok(page.includes('platform-map.js') && page.includes('platform-map.css') && runtime.includes("const REGISTRY_URL = '/games/game-registry.v1.json'"), 'Page/runtime must use the versioned registry endpoint and styles.');
 assert.ok(page.includes('href="https://wa.me/79640027222') && page.includes('href="mailto:osman.osmanov0099@gmail.com"'), 'Commercial/contact CTA routes are missing.');
 assert.ok(!/https?:\/\/(?:cdn\.|unpkg\.com|jsdelivr\.net|fonts\.googleapis\.com)/i.test(page + runtime + styles), 'New page must not add external CDN dependencies.');
 assert.ok(styles.includes('prefers-reduced-motion:reduce') && styles.includes(':focus-visible'), 'Map must honor reduced motion and keyboard focus.');
