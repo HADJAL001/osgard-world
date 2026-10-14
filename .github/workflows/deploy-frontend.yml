@@ -18,6 +18,15 @@ on:
       - "services/osgard-commerce-api/test/game-coach.test.mjs"
       - "scripts/game-coach-smoke.mjs"
       - "services/osgard-commerce-api/src/server.mjs"
+      - "services/osgard-commerce-api/src/game-catalog.mjs"
+      - "services/osgard-commerce-api/Dockerfile"
+      - "services/osgard-commerce-api/test/game-catalog.test.mjs"
+      - "scripts/deploy-commerce-api-remote.sh"
+      - "scripts/games-catalog-asset-smoke.mjs"
+      - "scripts/game-catalog-admin-smoke.mjs"
+      - "scripts/production-route-matrix.mjs"
+      - "scripts/games-static-assets-smoke.mjs"
+      - ".github/workflows/deploy-frontend.yml"
       - "services/osgard-commerce-api/test/campaigns.test.mjs"
       - "scripts/game-intermission-sponsor-smoke.mjs"
       - "public/entertainment/**"
@@ -190,7 +199,14 @@ jobs:
       - name: Verify Imperium of Time visuals and real diagnostics
         run: npm run qa:time-ui
       - name: Check deployment shell syntax
-        run: bash -n scripts/activate-frontend-remote.sh
+        run: bash -n scripts/activate-frontend-remote.sh && bash -n scripts/deploy-commerce-api-remote.sh
+      - name: Build private Commerce API runtime image
+        run: |
+          IMAGE="osgard-commerce-api:release-${GITHUB_SHA:0:12}"
+          docker build --pull -f services/osgard-commerce-api/Dockerfile -t "$IMAGE" services/osgard-commerce-api
+          docker save "$IMAGE" | gzip -1 > osgard-commerce-api-image.tar.gz
+          test -s osgard-commerce-api-image.tar.gz
+          printf 'Built private commerce runtime image: %s (%s bytes compressed)\n' "$IMAGE" "$(wc -c < osgard-commerce-api-image.tar.gz)"
       - name: Package HTML assets and matching Nginx config
         run: |
           mkdir -p osgard-release/html
@@ -198,8 +214,11 @@ jobs:
           ASSET_VERSION="${GITHUB_SHA:0:12}"
           sed -i "s|__OSGARD_BUILD_VERSION__|$ASSET_VERSION|g" osgard-release/html/games/index.html
           grep -Fq "<meta name=\"osgard-build\" content=\"$ASSET_VERSION\">" osgard-release/html/games/index.html
-          for asset in luxury.css luxury.js daily-circuit.css daily-circuit.js pwa-install.css pwa-install.js catalog-state.js app.webmanifest; do grep -Fq "$asset?v=$ASSET_VERSION" osgard-release/html/games/index.html || { echo "Missing versioned Games asset: $asset" >&2; exit 1; }; done
+          for asset in luxury.css luxury.js daily-circuit.css daily-circuit.js pwa-install.css pwa-install.js catalog-state.js catalog-runtime.js app.webmanifest; do grep -Fq "$asset?v=$ASSET_VERSION" osgard-release/html/games/index.html || { echo "Missing versioned Games asset: $asset" >&2; exit 1; }; done
           grep -Fq "versioned('/games/'+path)" osgard-release/html/games/index.html || { echo "Missing versioned lazy asset URL builder" >&2; exit 1; }
+           test -s osgard-release/html/games/catalog-runtime.js || { echo "Missing non-empty Games catalogue runtime" >&2; exit 1; }
+           test -s osgard-release/html/games/catalog-runtime.js.gz || { echo "Missing precompressed Games catalogue runtime" >&2; exit 1; }
+           node --input-type=module -e 'import {readFileSync} from "node:fs";import {gunzipSync} from "node:zlib";const p="osgard-release/html/games/catalog-runtime.js";const body=readFileSync(p);const inflated=gunzipSync(readFileSync(p+".gz"));if(body.length<1000||!body.toString("utf8").includes("textContent = item.title")||!body.equals(inflated)){console.error("Catalogue JS archive is empty, compressed incorrectly, or stale");process.exit(1)}console.log("PASS catalogue asset: "+body.length+" bytes; gzip round-trip exact")'
           grep -Fq "loadScript('player-lifecycle.js')" osgard-release/html/games/index.html || { echo "Missing lazy player lifecycle loader" >&2; exit 1; }
           grep -Fq "loadScript('game-session-recommendations.js')" osgard-release/html/games/index.html || { echo "Missing lazy recommendation loader" >&2; exit 1; }
           grep -Fq "game-session-recommendations.css" osgard-release/html/games/index.html || { echo "Missing lazy recommendation stylesheet path" >&2; exit 1; }
@@ -228,6 +247,38 @@ jobs:
           printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/osgard_deploy
           chmod 600 ~/.ssh/osgard_deploy
           ssh-keyscan -H "${{ secrets.OSGARD_DEPLOY_HOST }}" >> ~/.ssh/known_hosts
+      - name: Deploy Commerce API on the private OSGARD Docker network
+        env:
+          HOST: ${{ secrets.OSGARD_DEPLOY_HOST }}
+          USER: ${{ secrets.OSGARD_DEPLOY_USER }}
+          OSGARD_COMMERCE_DATABASE_URL: ${{ secrets.OSGARD_COMMERCE_DATABASE_URL }}
+          OSGARD_COMMERCE_ADMIN_API_TOKEN: ${{ secrets.OSGARD_COMMERCE_ADMIN_API_TOKEN }}
+        run: |
+          IMAGE="osgard-commerce-api:release-${GITHUB_SHA:0:12}"
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          fields = {
+            "PORT": "8080",
+            "PUBLIC_BASE_URL": "https://osgard.world",
+            "ALLOWED_ORIGINS": "https://osgard.world,https://www.osgard.world",
+            "TRUST_PROXY": "true",
+            "DATABASE_URL": os.environ.get("OSGARD_COMMERCE_DATABASE_URL", ""),
+            "ADMIN_API_TOKEN": os.environ.get("OSGARD_COMMERCE_ADMIN_API_TOKEN", ""),
+          }
+          for key, value in fields.items():
+            if "\n" in value or "\r" in value:
+              raise SystemExit("Commerce API environment values must be single-line")
+          Path("osgard-commerce-api.env").write_text("".join(f"{key}={value}\n" for key, value in fields.items()), encoding="utf-8")
+          os.chmod("osgard-commerce-api.env", 0o600)
+          print("Commerce API env prepared: database=" + ("configured" if fields["DATABASE_URL"] else "safe static fallback") + ", admin-token=" + ("configured" if len(fields["ADMIN_API_TOKEN"]) >= 32 else "not configured") + ", Stripe/checkout secrets supplied=none")
+          PY
+          chmod 600 osgard-commerce-api.env
+          sha256sum osgard-commerce-api-image.tar.gz > osgard-commerce-api-image.sha256
+          REMOTE_STAGE="/tmp/osgard-commerce-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          ssh -i ~/.ssh/osgard_deploy "$USER@$HOST" "rm -rf '$REMOTE_STAGE' && mkdir -p '$REMOTE_STAGE'"
+          scp -i ~/.ssh/osgard_deploy osgard-commerce-api-image.tar.gz osgard-commerce-api-image.sha256 osgard-commerce-api.env scripts/deploy-commerce-api-remote.sh "$USER@$HOST:$REMOTE_STAGE/"
+          ssh -i ~/.ssh/osgard_deploy "$USER@$HOST" "set +e; cd '$REMOTE_STAGE' && sha256sum -c osgard-commerce-api-image.sha256 && gzip -dc osgard-commerce-api-image.tar.gz | docker load && chmod 700 deploy-commerce-api-remote.sh && OSGARD_COMMERCE_IMAGE='$IMAGE' OSGARD_COMMERCE_ENV_FILE='$REMOTE_STAGE/osgard-commerce-api.env' OSGARD_FRONTEND_CONTAINER=osgard-world /bin/bash '$REMOTE_STAGE/deploy-commerce-api-remote.sh'; status=\$?; rm -rf '$REMOTE_STAGE'; exit \$status"
       - name: Stage archive and verify checksum
         env:
           HOST: ${{ secrets.OSGARD_DEPLOY_HOST }}

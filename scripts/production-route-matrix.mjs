@@ -311,7 +311,13 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
           ? content.includes('window.OSGARDDiagnostics') && content.includes("schema: 'osgard.play.diagnostics.v1'") && !content.includes('sendBeacon(')
           : isCatalogAdmin
           ? content.includes("const API = '/commerce-api/v1'") && content.includes('/admin/game-catalog') && !content.includes('localStorage') && !content.includes('sessionStorage') && !content.includes('.innerHTML')
-          : isCampaignAdmin
+          : path === '/games/catalog-runtime.js'
+           ? content.includes("const endpoint = '/commerce-api/v1/game-catalog'") &&
+             content.includes('function safeItem(') &&
+             content.includes('textContent = item.title') &&
+             content.includes('AbortSignal.timeout(4500)') &&
+             !content.includes('.innerHTML')
+           : isCampaignAdmin
           ? (path.endsWith('.js') ? content.includes('apiBaseFromConfig') && content.includes('/v1/admin/campaigns') && !content.includes('localStorage.setItem(') : content.includes('.campaign-card') && content.includes('prefers-reduced-motion:reduce'))
           : isGamesHub && path === '/games/sponsored-campaigns.js'
             ? content.includes('sponsored_campaign_impression') && content.includes("credentials: 'omit'") && content.includes('osgard.games.sponsor-exposures.v1')
