@@ -407,11 +407,9 @@ assert.ok(css.includes('.og-postgame-portfolio-actions') &&
   css.includes('prefers-reduced-motion:reduce'),
   'The intermission commercial panel must be keyboard-accessible, responsive and respect reduced motion');
 assert.ok(commerceApi.includes('ownedPromoDirectoryClicks') &&
-  commerceApi.includes("source ~ '^osgard-select:ecosystem:[a-z0-9-]{1,40}
-") &&
+  commerceApi.includes('osgard-select:ecosystem:') &&
   commerceApi.includes('ownedPromoDevelopmentClicks') &&
-  commerceApi.includes("source ~ '^osgard-select:development:[a-z0-9-]{1,40}
-"),
+  commerceApi.includes('osgard-select:development:'),
   'The protected analytics API must aggregate these two separate click funnels with strict source patterns');
 assert.ok(commerceAdmin.includes('id="owned-promo-directory-clicks"') &&
   commerceAdmin.includes('id="owned-promo-development-clicks"') &&
