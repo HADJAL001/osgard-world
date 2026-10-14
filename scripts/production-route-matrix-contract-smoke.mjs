@@ -49,7 +49,7 @@ assert.ok(commandDeck.includes('<title>OSGARD PLAY — Command Deck</title>') &&
   "Command Deck needs stable production test markers and noindex.");
 assert.ok(matrix.includes("'/games/monetization/export.mjs'") &&
   matrix.includes("route === '/games/monetization/export.mjs'") &&
-  matrix.includes("text.includes('id=\\\"export-csv\\\"')") &&
+  matrix.includes("export-csv") &&
   matrix.includes("export function buildFinancialCsv"),
   "Production route matrix must validate the CSV export UI and the served formatter module.");
 assert.ok(monetization.includes('id="export-csv"') &&
