@@ -101,7 +101,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
           ? text.includes('<title>Signal Atlas — OSGARD PLAY</title>') &&
             text.includes('id="game-grid"') && text.includes('id="game-search"') &&
             text.includes('id="runtime-filter"') && text.includes('id="network-filter"') &&
-            text.includes('href="/games/ecosystem/"') && text.includes('not a benchmark') &&
+            text.includes('href="/games/ecosystem/"') && text.includes('не бенчмарк') &&
             text.includes('platform-map.js') && text.includes('platform-map.css')
         : route === '/games/platform-map/platform-map.js'
           ? (response.headers.get('content-type') || '').toLowerCase().includes('javascript') &&
