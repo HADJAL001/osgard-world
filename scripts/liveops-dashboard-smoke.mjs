@@ -11,7 +11,7 @@ assert.ok(html.includes('<script src="/games/admin/analytics-core.js?v=20261015-
 for (const id of [
   'operator-token', 'from-date', 'to-date', 'refresh', 'compare-period', 'auto-refresh',
   'data-freshness', 'freshness-label', 'metrics', 'cohorts-data', 'snapshots-data',
-  'summary-data', 'export', 'export-csv', 'disconnect',
+  'summary-data', 'decision-brief', 'export', 'export-csv', 'export-brief', 'disconnect',
 ]) assert.ok(html.includes('id="' + id + '"'), 'Missing dashboard control: ' + id);
 for (const period of ['24h', '7d', '30d', '90d']) {
   assert.ok(html.includes('data-period="' + period + '"'), 'Missing analytics period preset: ' + period);
@@ -34,5 +34,7 @@ assert.ok(!/method:\s*['"]POST['"]|method:\s*['"]DELETE['"]/i.test(inline[0]), '
 const sandbox = { console, Intl, Date, Number, Set, Map, Object, Math, TypeError, RangeError };
 runInNewContext(core, sandbox, { filename: 'analytics-core.js', timeout: 1000 });
 assert.equal(typeof sandbox.OSGARDLiveOpsMetrics?.compareMetrics, 'function');
+assert.equal(typeof sandbox.OSGARDLiveOpsMetrics?.buildDecisionBrief, 'function', 'decision brief core must be loaded');
+assert.ok(inline[0].includes("$('#export-brief').addEventListener('click'"), 'decision brief export control must be wired');
 assert.equal(sandbox.OSGARDLiveOpsMetrics.validateRange({ from: Date.now() - 1000, to: Date.now() }).ok, true);
 console.log('PASS LiveOps dashboard: protected read-only contract, period controls, freshness, timeout/cancellation, opt-in auto-refresh and first-party analytics core.');
