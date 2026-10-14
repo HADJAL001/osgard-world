@@ -34,8 +34,14 @@
       path: location.pathname.slice(0, 120) || '/games/', durationSeconds: 0
     };
     // Never send typed search text, complete URLs, form values or personal identifiers.
-    void analytics.enqueue(event);
-    return true;
+    // A storage/API failure must not become an unhandled rejection or break the UI.
+    try {
+      const queued = analytics.enqueue(event);
+      if (queued && typeof queued.then === 'function') void Promise.resolve(queued).catch(() => {});
+      return queued !== false;
+    } catch {
+      return false;
+    }
   }
   const search = document.getElementById('game-search');
   search?.addEventListener('input', () => {
