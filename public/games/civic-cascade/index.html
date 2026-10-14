@@ -8,7 +8,7 @@
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://osgard.world/games/civic-cascade/">
 <title>CIVIC CASCADE — кризисная стратегия | OSGARD PLAY</title>
-<meta name="osgard-game-version" content="3.0.0-pareto-strategy-dossier">
+<meta name="osgard-game-version" content="3.1.0-reproducible-decision-evidence">
 <style>
 :root{color-scheme:dark;--bg:#080d10;--panel:#10191d;--panel2:#142126;--line:#ffffff1c;--ink:#edf3ee;--muted:#91a29e;--mint:#b8f4cf;--cyan:#68d8d2;--gold:#e1c58a;--warn:#f2b27c;--bad:#ff827b;--mono:ui-monospace,Consolas,monospace;--serif:Georgia,serif}
 *{box-sizing:border-box}html{background:var(--bg);scroll-behavior:smooth}body{margin:0;color:var(--ink);background:radial-gradient(ellipse at 76% -18%,#234d453d,transparent 48%),var(--bg);font:14px/1.55 Inter,Geist,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}button,select{font:inherit}button,a,select{touch-action:manipulation}a{color:inherit;text-decoration:none}button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(--mint);outline-offset:3px}.wrap{max-width:1440px;padding:0 clamp(14px,2.8vw,42px);margin:auto}
@@ -137,6 +137,10 @@
 .doctrine-footer .primary{border-color:var(--cyan);background:#68d8d2;color:#071113;font-weight:750}
 .doctrine-footer button:disabled,.doctrine-tools button:disabled{opacity:.35;cursor:not-allowed}
 .doctrine-footnote{margin:9px 0 0;color:#81938e;font-size:8px;line-height:1.65}
+
+.doctrine-export-row{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;margin-top:9px}
+.doctrine-export-row .ctrl{width:100%;min-height:42px;border-color:#68d8d277;color:var(--cyan);white-space:normal}
+.doctrine-export-row p{margin:0;color:#81938e;font-size:8px;line-height:1.65}
 @media(max-width:560px){.doctrine-lab{padding:11px}.doctrine-head{display:grid;grid-template-columns:1fr;gap:7px}#cc-doctrine-status{max-width:none;text-align:left}.doctrine-tools{grid-template-columns:minmax(0,1fr)}.doctrine-tools label{margin-top:2px}.doctrine-tools select,.doctrine-tools .ctrl{width:100%}.doctrine-footer{grid-template-columns:1fr}.doctrine-option-head{align-items:flex-start;flex-direction:column;gap:4px}}
 
 /* CIVIC CASCADE 2.1 — tactical incidents. The simulation pauses until the operator chooses. */
@@ -300,6 +304,7 @@
    <button class="ctrl primary" id="cc-doctrine-apply" type="button" disabled>Загрузить выбранный план в очередь</button>
    <button class="ctrl" id="cc-doctrine-reset" type="button" disabled>Сбросить расчёт</button>
   </div>
+  <div class="doctrine-export-row"><button class="ctrl" id="cc-doctrine-export" type="button" disabled>⇩ Скачать досье решения · JSON</button><p>Досье включает снимок города, версию модели, прогноз базы, компромиссы Pareto и все стресс-профили. SHA-256 проверяет целостность экспортированного набора. Файл создаётся только по нажатию и остаётся у тебя.</p></div>
   <p class="doctrine-footnote">Планировщик детерминированный и локальный: лучшие варианты проверяются в трёх контролируемых стресс-сценариях против базового решения под тем же стрессом. Он не отправляет игровые данные на сервер и не вызывает OpenAI API. Будущие случайные инциденты и решения игрока не предсказываются.</p>
  </section>
  <ol class="command-list" id="cc-plan-list" aria-live="polite"><li class="command-empty">Очередь пуста. Поставь игру на паузу и добавь первый приказ.</li></ol>
@@ -1077,6 +1082,114 @@ function searchDoctrinePlans(sourceState,mode,selectedNodeId,simulateOrders,simu
  return {baseline,alternatives:portfolio,evaluatedCount:explored.size,robustnessEvaluatedCount:robustCandidates.length,portfolioSize:portfolio.length,openingPrefixCount,paretoFrontSize:robustCandidates.filter(candidate=>!robustCandidates.some(other=>other.signature!==candidate.signature&&doctrineDominates(other,candidate))).length,mode};
 }
 
+
+function buildDoctrineDossierPayload(sourceState,result,gameVersion,scenarioDefinitions,nodeDefinitions,selectedIndex){
+ const metricKeys=['water','grid','access','supplies','crews','riskOffset','waterRate','gridRate','accessRate','actionCount'];
+ const metrics={};
+ for(const key of metricKeys)metrics[key]=Number.isFinite(sourceState[key])?sourceState[key]:null;
+ const nodeIntegrity={},nodeOutages={},nodeIncidentFlags={};
+ for(const node of nodeDefinitions){
+  nodeIntegrity[node.id]=Number.isFinite(sourceState.nodeIntegrity?.[node.id])?sourceState.nodeIntegrity[node.id]:null;
+  nodeOutages[node.id]=Boolean(sourceState.nodeOutages?.[node.id]);
+  nodeIncidentFlags[node.id]=Boolean(sourceState.nodeIncidentFlags?.[node.id]);
+ }
+ const encodeForecast=forecast=>(Array.isArray(forecast)?forecast:[]).map(sample=>({
+  seconds:Number.isFinite(sample.seconds)?sample.seconds:null,
+  water:Number.isFinite(sample.water)?sample.water:null,
+  grid:Number.isFinite(sample.grid)?sample.grid:null,
+  access:Number.isFinite(sample.access)?sample.access:null,
+  risk:Number.isFinite(sample.risk)?sample.risk:null,
+  weakestNode:sample.weakestNode??null,
+  weakestIntegrity:Number.isFinite(sample.weakestIntegrity)?sample.weakestIntegrity:null,
+  criticalNodes:Array.isArray(sample.criticalNodes)?sample.criticalNodes.slice():[]
+ }));
+ const encodeCandidate=(candidate,rank)=>({
+  rank,signature:candidate.signature,portfolioRole:candidate.portfolioRole||null,paretoMember:Boolean(candidate.paretoMember),
+  orders:(candidate.orders||[]).map((order,index)=>({position:index+1,action:order.action,nodeId:order.nodeId||null})),
+  resourceCost:Number.isFinite(candidate.cost)?candidate.cost:null,
+  crewsUsed:Number.isFinite(candidate.crewsUsed)?candidate.crewsUsed:null,
+  scores:{nominal:Number.isFinite(candidate.score)?candidate.score:null,stressAdjusted:Number.isFinite(candidate.robustScore)?candidate.robustScore:null},
+  forecast:encodeForecast(candidate.forecast),
+  robustness:{
+   profileCount:candidate.robustness?.profileCount??0,stableProfiles:candidate.robustness?.stableProfiles??0,
+   averageRiskDelta:Number.isFinite(candidate.robustness?.averageRiskDelta)?candidate.robustness.averageRiskDelta:null,
+   worstRiskDelta:Number.isFinite(candidate.robustness?.worstRiskDelta)?candidate.robustness.worstRiskDelta:null,
+   worstIntegrityDelta:Number.isFinite(candidate.robustness?.worstIntegrityDelta)?candidate.robustness.worstIntegrityDelta:null,
+   severeRegressions:candidate.robustness?.severeRegressions??0,
+   profiles:(candidate.robustness?.profiles||[]).map(profile=>({
+    id:profile.id,label:profile.label,targetNode:profile.targetNode||null,
+    baselineRisk90:profile.baselineRisk90,candidateRisk90:profile.candidateRisk90,riskDelta90:profile.riskDelta90,
+    baselineWeakestIntegrity:profile.baselineWeakestIntegrity,candidateWeakestIntegrity:profile.candidateWeakestIntegrity,
+    weakestIntegrityDelta:profile.weakestIntegrityDelta,criticalNodeDelta:profile.criticalNodeDelta
+   }))
+  }
+ });
+ const scenarioId=String(sourceState.scenario||'unknown'),chosen=result.alternatives?.[selectedIndex]||null;
+ return {
+  schema:'osgard.civic-cascade.decision-dossier/v1',game:'CIVIC CASCADE',gameVersion:String(gameVersion||'unknown'),
+  engine:{
+   id:'civic-cascade-deterministic-decision-engine',modelVersion:'3.1.0',
+   searchAlgorithm:'deterministic-bounded-beam-search',portfolioAlgorithm:'bounded-pareto-frontier',
+   objective:String(result.mode||'balanced'),limits:{maxCommands:4,beamWidth:6,stressCandidateLimit:8,portfolioLimit:3},
+   forecastHorizonsGameSeconds:[30,60,90],stressProfiles:['water-surge','grid-overload','weak-node-shock']
+  },
+  scenario:{id:scenarioId,label:scenarioDefinitions?.[scenarioId]?.name||scenarioId},
+  sourceState:{
+   elapsedSeconds:Number.isFinite(sourceState.elapsed)?sourceState.elapsed:null,metrics,nodeIntegrity,nodeOutages,nodeIncidentFlags,
+   pendingNodeIncidents:Array.isArray(sourceState.pendingNodeIncidents)?sourceState.pendingNodeIncidents.slice():[]
+  },
+  search:{
+   evaluatedCandidateCount:result.evaluatedCount??0,stressEvaluatedCandidateCount:result.robustnessEvaluatedCount??0,
+   paretoFrontSize:result.paretoFrontSize??0,portfolioSize:result.portfolioSize??result.alternatives?.length??0,
+   distinctOpeningPrefixesAvailable:result.openingPrefixCount??0,returnedCandidates:result.alternatives?.length??0
+  },
+  baseline:{forecast:encodeForecast(result.baseline?.forecast)},
+  selectedCandidate:chosen?{rank:selectedIndex+1,signature:chosen.signature}:null,
+  candidates:(result.alternatives||[]).map(encodeCandidate),
+  assumptions:{
+   forecastIsApproximate:true,futureRandomIncidentsIncluded:false,stressProfilesAreSyntheticPerturbations:true,
+   comparesAgainstNoInterventionUnderSameStress:true,openAIAPIUsed:false,telemetrySent:false,personalDataIncluded:false,
+   modelOutputsDescribeImplementedRulesOnly:true
+  },
+  limitations:[
+   'Forecasts represent the implemented deterministic game model, not a real-world city model.',
+   'Stress profiles are controlled synthetic perturbations, not weather forecasts or observed external events.',
+   'The exported dossier records computed evidence; it does not prove a counterfactual real-world outcome.'
+  ]
+ };
+}
+async function exportDoctrineDossier(){
+ if(!doctrineResult||doctrineResult.fingerprint!==doctrineFingerprint()){
+  resetDoctrinePlanner();toast('Снимок изменился. Повтори поиск перед экспортом досье.');return;
+ }
+ if(!paused||finished||activeIncident||planRunning){toast('Для экспорта досье поставь симуляцию на паузу.');return}
+ const button=$('cc-doctrine-export'),status=$('cc-doctrine-status');
+ if(button)button.disabled=true;
+ try{
+  const version=document.querySelector('meta[name="osgard-game-version"]')?.content||'unknown';
+  const payload=buildDoctrineDossierPayload(state,doctrineResult,version,scenarioData,nodes,doctrineSelectedIndex);
+  const canonicalPayload=JSON.stringify(payload);
+  let integrity={algorithm:'SHA-256',scope:'UTF-8 JSON payload without exportMetadata',status:'unavailable',digest:null};
+  try{
+   if(!window.crypto?.subtle)throw new Error('Web Crypto unavailable');
+   const digest=await window.crypto.subtle.digest('SHA-256',new TextEncoder().encode(canonicalPayload));
+   integrity={...integrity,status:'computed',digest:Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,'0')).join('')};
+  }catch(_){}
+  const dossier={...payload,exportMetadata:{exportedAtUtc:new Date().toISOString(),integrity}};
+  const blob=new Blob([JSON.stringify(dossier,null,2)],{type:'application/json;charset=utf-8'});
+  const url=URL.createObjectURL(blob),anchor=document.createElement('a'),scenarioName=String(payload.scenario.id).replace(/[^a-z0-9_-]/gi,'-');
+  anchor.href=url;anchor.download='civic-cascade-decision-dossier-'+scenarioName+'-'+new Date().toISOString().replace(/[:.]/g,'-')+'.json';
+  document.body.appendChild(anchor);anchor.click();anchor.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+  if(status)status.textContent='ДОСЬЕ СОЗДАНО · '+(integrity.status==='computed'?'SHA-256 OK':'БЕЗ SHA-256');
+  toast('Досье JSON скачано локально. Игровое состояние не изменено.');
+ }catch(error){
+  toast('Не удалось создать досье: '+String(error?.message||'ошибка экспорта').slice(0,100));
+ }finally{
+  if(button)button.disabled=!paused||!doctrineResult||doctrineResult.fingerprint!==doctrineFingerprint()||finished||activeIncident||planRunning;
+ }
+}
+
 let doctrineResult=null,doctrineSelectedIndex=0,doctrineStaleMessage='';
 function doctrineFingerprint(){
  const names=['water','grid','access','supplies','crews','riskOffset','waterRate','gridRate','accessRate','actionCount','scenario'];
@@ -1121,7 +1234,7 @@ function renderDoctrineResults(message){
 }
 function refreshDoctrineAvailability(){
  const canWork=paused&&!finished&&!activeIncident&&!planRunning;
- const run=$('cc-doctrine-run'),mode=$('cc-doctrine-mode'),apply=$('cc-doctrine-apply'),reset=$('cc-doctrine-reset'),status=$('cc-doctrine-status');
+ const run=$('cc-doctrine-run'),mode=$('cc-doctrine-mode'),apply=$('cc-doctrine-apply'),reset=$('cc-doctrine-reset'),exportButton=$('cc-doctrine-export'),status=$('cc-doctrine-status');
  if(doctrineResult&&doctrineResult.fingerprint!==doctrineFingerprint()){
   doctrineResult=null;doctrineSelectedIndex=0;doctrineStaleMessage='Состояние города изменилось после расчёта. Запусти новый поиск, чтобы не использовать устаревший план.';
   renderDoctrineResults(doctrineStaleMessage);
@@ -1130,6 +1243,7 @@ function refreshDoctrineAvailability(){
  if(mode)mode.disabled=!canWork;
  if(apply)apply.disabled=!canWork||!doctrineResult||!doctrineResult.alternatives[doctrineSelectedIndex];
  if(reset)reset.disabled=!doctrineResult&&!doctrineStaleMessage;
+ if(exportButton)exportButton.disabled=!canWork||!doctrineResult||doctrineResult.fingerprint!==doctrineFingerprint();
  if(status){
   if(doctrineResult)status.textContent='ГОТОВО · '+doctrineResult.evaluatedCount+' ВАРИАНТОВ · ПАРЕТО '+doctrineResult.paretoFrontSize+' · СТРЕСС-ПРОВЕРЕНО '+doctrineResult.robustnessEvaluatedCount+' · '+doctrineResult.durationMs+' МС';
   else if(doctrineStaleMessage)status.textContent='НУЖЕН ПЕРЕСЧЁТ';
@@ -1339,7 +1453,7 @@ function sendLifecycle(status){if(window.parent===window)return;try{window.paren
 $('cc-map').addEventListener('pointerdown',pick);
 buttons.forEach(id=>$('cc-action-'+id).addEventListener('click',()=>act(id)));
 $('cc-plan-add').addEventListener('click',addPlannedOrder);$('cc-plan-clear').addEventListener('click',clearPlannedOrders);$('cc-plan-execute').addEventListener('click',executePlannedOrders);
-$('cc-doctrine-run').addEventListener('click',runDoctrinePlanner);$('cc-doctrine-apply').addEventListener('click',applyDoctrinePlan);$('cc-doctrine-reset').addEventListener('click',resetDoctrinePlanner);$('cc-doctrine-mode').addEventListener('change',setDoctrineObjective);
+$('cc-doctrine-run').addEventListener('click',runDoctrinePlanner);$('cc-doctrine-apply').addEventListener('click',applyDoctrinePlan);$('cc-doctrine-reset').addEventListener('click',resetDoctrinePlanner);$('cc-doctrine-mode').addEventListener('change',setDoctrineObjective);$('cc-doctrine-export').addEventListener('click',exportDoctrineDossier);
 $('cc-pause').addEventListener('click',()=>{if(finished||planRunning)return;if(paused&&planOrders.length){toast('Сначала исполни очередь или очисти план перед снятием паузы.');return}paused=!paused;$('cc-pause').textContent=paused?'▶ Продолжить':'Ⅱ Пауза';ui.status.textContent=paused?'ПАУЗА':'СИСТЕМА АКТИВНА';renderUI();renderPlan();addLog(paused?'<b>Оператор:</b> симуляция приостановлена.':'<b>Оператор:</b> симуляция возобновлена.')});
 $('cc-speed').addEventListener('click',()=>{speedIndex=(speedIndex+1)%speeds.length;$('cc-speed').textContent='СКОРОСТЬ '+speeds[speedIndex]+'×';toast('Скорость симуляции: '+speeds[speedIndex]+'×')});
 $('cc-reset').addEventListener('click',()=>fresh($('cc-scenario').value));
