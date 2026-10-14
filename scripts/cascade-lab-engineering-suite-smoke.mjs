@@ -13,7 +13,7 @@ assert.match(html, /<title>CASCADE LAB — Premium Physics Lab 0\.26\.0<\/title>
 assert.ok(html.includes('id="CASCADELAB018"') && html.includes('hypothesis-lab.js?v=0.18.0'), 'the v0.18 Hypothesis Lab must remain integrated');
 assert.ok(html.includes('id="CASCADELAB019"') && html.includes('engineering-suite.js?v=0.19.0'), 'Engineering OS must load with a cache-busted URL');
 assert.ok(html.includes('id="CASCADELAB020"') && html.includes('data-cascade-lab-studio="0.20.0"') && html.includes('experiment-studio.js?v=0.20.0'), 'Experiment Studio 0.20 must load without replacing Engineering OS 0.19');
-assert.ok(html.includes("new CustomEvent('cascade-lab:run-finished'") && html.includes("notifyOsgardLifecycle('ready', { version: '0.26.0' })"), 'game must publish a summary for completed runs');
+assert.ok(html.includes("new CustomEvent('cascade-lab:run-finished'") && html.includes("schema: 'osgard.cascade-lab.physics-contract.v1'") && html.includes("notifyOsgardLifecycle('ready', { version: '0.26.0' })"), 'game must publish a versioned physics contract for completed runs');
 assert.doesNotMatch(source, /\b(?:fetch|XMLHttpRequest|sendBeacon)\s*\(/, 'Engineering OS must not upload game history');
 assert.ok(!source.includes('.innerHTML'), 'untrusted notes and imported data must use text-safe DOM updates');
 for (const item of ['MAX_RUNS = 50','MAX_IMPORT_BYTES = 200 * 1024','function cleanRun(','function validateArchive(','function compareRuns(','function diagnoseRun(','function exportCsv(','function importArchive(','controlRun','oneVariable','outcomeRecorded','aria-live','prefers-reduced-motion']) {
