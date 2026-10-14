@@ -17,6 +17,21 @@ type Category = 'all' | 'strategy' | 'coop' | 'tactical' | 'world' | 'creative'
 type DeviceFilter = 'all' | 'desktop' | 'mobile'
 type Consent = 'granted' | 'denied' | null
 
+/** First-party, validated-at-submission attribution for game-originated commercial enquiries. */
+function gameConversionUrl(kind: 'development' | 'sponsorship', gameId: string): string {
+  const params = new URLSearchParams({
+    utm_source: 'osgard_games',
+    utm_medium: 'cross_promo',
+    utm_campaign: kind === 'development' ? 'game_detail_intake' : 'game_detail_sponsorship',
+    utm_content: gameId,
+    game_id: gameId,
+  })
+  if (kind === 'sponsorship') params.set('format', 'Спонсорское событие или уровень')
+  return kind === 'development'
+    ? '/development?' + params.toString() + '#project-intake'
+    : '/games/partners/?' + params.toString() + '#brief'
+}
+
 type GameDefinition = {
   id: string
   mark: string
@@ -697,6 +712,22 @@ export function GameDetailPage({ slug }: { slug: string }) {
       </section>}
 
       <section className="gh-related"><div className="gh-section-heading"><div><p className="gh-eyebrow">NEXT / CONTINUE EXPLORING</p><h2>{ru ? 'Другие игровые миры' : 'More game worlds'}</h2></div><a className="gh-text-link" href="/games">{ru ? 'Весь каталог' : 'Full catalog'}<ArrowUpRight size={15} /></a></div><div className="gh-related-grid">{relatedGames.map(({ game: item, reason }) => <a href={'/game/' + item.id} key={item.id} className={'gh-related-card gh-related-card--' + item.theme}><span>{item.mark}</span><div><small>{ru ? item.genreRu : item.genreEn}</small><strong>{gameTitle(item, locale)}</strong><em className="gh-related-reason">{recommendationReasonLabel(reason, locale)}</em></div><ArrowUpRight size={15} /></a>)}</div></section>
+      <section className="gh-commercial-bridge" aria-labelledby="gh-commercial-bridge-title">
+        <div className="gh-commercial-bridge__copy">
+          <p className="gh-eyebrow">OSGARD / FROM PLAY TO PRODUCT</p>
+          <h2 id="gh-commercial-bridge-title">{ru ? <>Есть идея своей игры?<br /><em>Превратим её в продукт.</em></> : <>Have a game idea?<br /><em>Let's turn it into a product.</em></>}</h2>
+          <p>{ru ? 'От игровой механики до собственного браузерного мира, приложения или полноценной платформы. Начните с задачи — без обязательств и без скрытой оплаты.' : 'From a game mechanic to your own browser world, app or full platform. Start with a brief — no obligation and no hidden charge.'}</p>
+        </div>
+        <div className="gh-commercial-bridge__actions">
+          <a className="gh-primary gh-commercial-bridge__action" href={gameConversionUrl('development', game.id)} onClick={() => recordOsgardEvent('cross_promo_clicked', { gameId: game.id, surface: 'game-detail', destination: 'development-intake' })}>
+            <span>{ru ? 'Обсудить создание игры' : 'Discuss game development'}<small>{ru ? 'Заявка с источником этой игры' : 'Enquiry attributed to this game'}</small></span><ArrowUpRight size={18} />
+          </a>
+          <a className="gh-secondary gh-commercial-bridge__action" href={gameConversionUrl('sponsorship', game.id)} onClick={() => recordOsgardEvent('cross_promo_clicked', { gameId: game.id, surface: 'game-detail', destination: 'sponsorship-inquiry' })}>
+            <span>{ru ? 'Обсудить спонсорство' : 'Discuss sponsorship'}<small>{ru ? 'Форматы и условия подтверждаются отдельно' : 'Formats and terms are confirmed separately'}</small></span><ArrowUpRight size={18} />
+          </a>
+        </div>
+        <p className="gh-commercial-bridge__note">{ru ? 'Переход сам по себе не отправляет данные. Заявка передаётся только после явного согласия в форме; если сервер не подключён, интерфейс предложит ручную отправку.' : 'Opening a link does not submit data. An enquiry is sent only after explicit consent; if the server is not configured, the form offers a manual handoff.'}</p>
+      </section>
     </div>
 
     <footer className="gh-footer"><a href="/" className="gh-footer-brand"><OsgardLogo variant="footer" /></a><span>© OSGARD WORLD · PLAY WITH PURPOSE</span><div><a href="/privacy">{ru ? 'Конфиденциальность' : 'Privacy'}</a><a href="/terms">{ru ? 'Условия' : 'Terms'}</a><button type="button" onClick={() => setConsentPanelOpen(true)}>{ru ? 'Настройки аналитики' : 'Analytics settings'}</button></div></footer>
