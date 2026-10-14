@@ -58,6 +58,69 @@ function classifyHttp(status, isHtml, title) {
   return 'reachable'
 }
 
+function normalizedHost(value) {
+  try {
+    const host = new URL(value).hostname.toLowerCase().replace(/\\.$/, '')
+    return host.startsWith('www.') ? host.slice(4) : host
+  } catch {
+    return ''
+  }
+}
+
+// This is deliberately a safety gate, not a domain-trust verdict. A successful
+// homepage GET can never auto-approve paid promotion or establish product safety.
+export function evaluatePromotionGate(projectUrl, finalUrl, statusCode) {
+  if (!finalUrl) {
+    return {
+      promotionGate: 'blocked_no_response',
+      promotionReason: 'No final URL/response; retry from another network and review the destination manually.',
+      destinationHostMatches: false,
+    }
+  }
+
+  let final
+  try { final = new URL(finalUrl) } catch {
+    return {
+      promotionGate: 'blocked_invalid_final_url',
+      promotionReason: 'The final response URL could not be parsed; paid promotion must remain blocked.',
+      destinationHostMatches: false,
+    }
+  }
+
+  if (typeof statusCode !== 'number' || statusCode < 200 || statusCode >= 400) {
+    return {
+      promotionGate: 'blocked_http_status',
+      promotionReason: 'The final HTTP status is outside 2xx/3xx; verify the homepage before promotion.',
+      destinationHostMatches: false,
+    }
+  }
+
+  if (final.protocol !== 'https:') {
+    return {
+      promotionGate: 'blocked_https_downgrade',
+      promotionReason: 'The final destination is not HTTPS; investigate the redirect chain before promotion.',
+      destinationHostMatches: false,
+    }
+  }
+
+  const expectedHost = normalizedHost(projectUrl)
+  const finalHost = normalizedHost(finalUrl)
+  const destinationHostMatches = Boolean(expectedHost && finalHost && expectedHost === finalHost)
+  if (!destinationHostMatches) {
+    return {
+      promotionGate: 'blocked_redirect_host_mismatch',
+      promotionReason: 'The final hostname differs from the owner-listed hostname (allowing only the www alias); inspect the redirect chain and confirm domain ownership.',
+      destinationHostMatches: false,
+    }
+  }
+
+  return {
+    promotionGate: 'manual_review_required',
+    promotionReason: 'HTTPS and hostname checks passed only. Owner review of identity, page purpose, terms, privacy, primary action and browser warnings is still required before paid promotion.',
+    destinationHostMatches: true,
+  }
+}
+
 export async function checkProject(project, {
   fetchImpl = globalThis.fetch,
   timeoutMs = 12000,
@@ -91,6 +154,7 @@ export async function checkProject(project, {
       let finalHost = null
       try { finalHost = new URL(finalUrl).hostname } catch {}
       const outcome = classifyHttp(response.status, isHtml, title)
+      const promotionAssessment = evaluatePromotionGate(project.url, finalUrl, response.status)
       return {
         id: project.id,
         name: project.name,
@@ -104,6 +168,7 @@ export async function checkProject(project, {
         pageTitle: title,
         metaDescription: isHtml ? extractMetaDescription(body) : null,
         outcome,
+        ...promotionAssessment,
         reachable: response.status >= 200 && response.status < 400,
         responseMs: Math.max(0, Date.now() - started),
         attempts: attempt,
@@ -121,6 +186,7 @@ export async function checkProject(project, {
       const causeMessage = cause && (cause.message || cause.code) ? String(cause.message || cause.code).slice(0, MAX_ERROR_LENGTH) : null
       const errorCode = cause && typeof cause.code === 'string' ? cause.code : null
       const outcome = name === 'TimeoutError' || name === 'AbortError' ? 'timeout' : 'network_error'
+      const promotionAssessment = evaluatePromotionGate(project.url, null, null)
       return {
         id: project.id,
         name: project.name,
@@ -134,6 +200,7 @@ export async function checkProject(project, {
         pageTitle: null,
         metaDescription: null,
         outcome,
+        ...promotionAssessment,
         reachable: false,
         responseMs: Math.max(0, Date.now() - started),
         attempts: attempt,
@@ -162,14 +229,25 @@ export async function runAudit({
     return counts
   }, {})
   const reachableCount = results.filter(result => result.reachable).length
+  const promotionGateCounts = results.reduce((counts, result) => {
+    counts[result.promotionGate] = (counts[result.promotionGate] || 0) + 1
+    return counts
+  }, {})
+  const paidPromotionBlockedCount = results.filter(result => result.promotionGate.startsWith('blocked_')).length
+  const paidPromotionReviewCount = results.filter(result => result.promotionGate === 'manual_review_required').length
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     checkedAt,
-    scope: 'Homepage HTTP reachability and visible HTML metadata only',
+    scope: 'Homepage HTTP reachability, visible HTML metadata and conservative paid-promotion preflight only',
     projectCount: results.length,
     reachableCount,
     unavailableCount: results.length - reachableCount,
     outcomeCounts,
+    promotionGateCounts,
+    paidPromotionBlockedCount,
+    paidPromotionReviewCount,
+    paidPromotionEligibleCount: 0,
+    promotionPolicy: 'No homepage healthcheck result auto-approves paid promotion; manual destination review is required even after a same-host HTTPS response.',
     results,
   }
 }
@@ -185,7 +263,7 @@ async function appendStepSummary(report) {
     const status = result.statusCode === null ? '—' : String(result.statusCode)
     const host = result.finalHost || '—'
     const title = result.pageTitle || result.error || 'No title returned'
-    return '| ' + mdCell(result.name) + ' | ' + mdCell(result.outcome) + ' | ' + status + ' | ' + result.responseMs + ' ms | ' + mdCell(host) + ' | ' + mdCell(title) + ' |'
+    return '| ' + mdCell(result.name) + ' | ' + mdCell(result.outcome) + ' | ' + mdCell(result.promotionGate) + ' | ' + status + ' | ' + result.responseMs + ' ms | ' + mdCell(host) + ' | ' + mdCell(title) + ' |'
   })
   const content = [
     '## OSGARD external project homepage check',
@@ -194,10 +272,12 @@ async function appendStepSummary(report) {
     '',
     'Reachable homepages: **' + report.reachableCount + '/' + report.projectCount + '**. Unavailable or HTTP-error results: **' + report.unavailableCount + '**.',
     '',
-    '> Intended roles are owner-provided descriptions. A 2xx response checks only that a homepage responded; it does not verify product capabilities, security, service reliability or purchase flows.',
+    'Paid-promotion preflight: **' + report.paidPromotionBlockedCount + ' blocked**, **' + report.paidPromotionReviewCount + ' require manual review**, **' + report.paidPromotionEligibleCount + ' auto-approved**.',
     '',
-    '| Project | Outcome | HTTP | Response | Final host | Returned page title / error |',
-    '|---|---|---:|---:|---|---|',
+    '> A successful HTTPS homepage response is only a technical reachability signal. No project is auto-approved for paid campaigns; verify business identity, content, terms, privacy, browser warnings and the primary action manually.',
+    '',
+    '| Project | Homepage outcome | Promotion gate | HTTP | Response | Final host | Returned page title / error |',
+    '|---|---|---|---:|---:|---|---|',
     ...rows,
     '',
     'Full JSON report is attached as a workflow artifact.',
@@ -221,11 +301,15 @@ export async function main(argv = process.argv.slice(2)) {
     reachableCount: report.reachableCount,
     unavailableCount: report.unavailableCount,
     outcomeCounts: report.outcomeCounts,
+    promotionGateCounts: report.promotionGateCounts,
+    paidPromotionBlockedCount: report.paidPromotionBlockedCount,
+    paidPromotionReviewCount: report.paidPromotionReviewCount,
+    paidPromotionEligibleCount: report.paidPromotionEligibleCount,
     reportPath: outPath,
   }, null, 2))
   for (const result of report.results) {
     const code = result.statusCode === null ? '—' : result.statusCode
-    console.log('[' + result.outcome + '] ' + result.name + ': HTTP ' + code + '; ' + result.responseMs + ' ms; ' + (result.finalUrl || result.error || 'no final URL'))
+    console.log('[' + result.outcome + ' / ' + result.promotionGate + '] ' + result.name + ': HTTP ' + code + '; ' + result.responseMs + ' ms; ' + (result.finalUrl || result.error || 'no final URL'))
   }
   if (strict && report.unavailableCount > 0) process.exitCode = 1
   return report
