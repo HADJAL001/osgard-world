@@ -48,6 +48,10 @@ export function buildCommercialReadiness(input = {}) {
   const paymentsRuntimeReady = input.paymentsRuntimeReady === true;
   const premiumEntitlementsImplemented = input.premiumEntitlementsImplemented === true;
   const adNetworkIntegrated = input.adNetworkIntegrated === true;
+  const serviceAttributionServiceCountRaw = Number(input.serviceAttributionServiceCount || 0);
+  const serviceAttributionServiceCount = Number.isSafeInteger(serviceAttributionServiceCountRaw) && serviceAttributionServiceCountRaw > 0
+    ? Math.min(100, serviceAttributionServiceCountRaw)
+    : 0;
   const products = Array.isArray(input.products) ? input.products : [];
   const productByKey = new Map(products.map((item) => [String(item?.key || ""), item]));
   const checks = [];
@@ -123,6 +127,15 @@ export function buildCommercialReadiness(input = {}) {
     detail: databaseReady
       ? "Серверный инвентарь кампаний и административные маршруты есть. Это не означает, что инвентарь продан или сеть рекламы подключена."
       : "Кампаниями нельзя безопасно управлять, пока серверное хранилище недоступно.",
+  });
+  checks.push({
+    id: "service-attribution", label: "Серверные конверсии экосистемы",
+    status: serviceAttributionServiceCount > 0 ? (databaseReady ? "ready" : "blocked") : "not_integrated",
+    detail: serviceAttributionServiceCount > 0
+      ? databaseReady
+        ? "Настроены отдельные серверные токены для " + serviceAttributionServiceCount + " сервиса(ов). Это готовность входного API, а не доказательство, что целевые домены уже отправляют конверсии."
+        : "Настроены сервисные токены, но база данных не готова сохранять конверсии."
+      : "Мост server-to-server ещё не настроен: добавьте OSGARD_ATTRIBUTION_TOKENS_JSON и установите вызов API в серверной части хотя бы одного целевого сервиса.",
   });
   checks.push({
     id: "ad-network", label: "Сторонняя рекламная сеть",
