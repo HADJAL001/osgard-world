@@ -3,8 +3,8 @@
   "gameId": "civic-cascade",
   "title": "CIVIC CASCADE",
   "edition": "Web Edition",
-  "version": "2.4.1",
-  "releaseId": "civic-cascade-web-2.4.1",
+  "version": "2.5.0",
+  "releaseId": "civic-cascade-web-2.5.0",
   "canonicalUrl": "https://osgard.world/games/civic-cascade/",
   "detailUrl": "https://osgard.world/game/civic-cascade",
   "entrypoint": "/games/civic-cascade/",
@@ -28,7 +28,13 @@
       "cc-cascade-plan-30",
       "cc-cascade-wait-90",
       "cc-cascade-plan-90",
-      "cc-cascade-note"
+      "cc-cascade-note",
+      "cc-node-inspector",
+      "cc-node-health",
+      "cc-node-health-bar",
+      "cc-node-status",
+      "cc-node-chain",
+      "cc-node-effect"
     ],
     "checkpointSchema": "civic-cascade-checkpoint-v1",
     "approximateRiskForecast": true,
@@ -99,6 +105,23 @@
       "outputsWaterGridAccessRisk": true,
       "actionSimulationMatchesLiveRateBounds": true,
       "crewExhaustionRiskOffsetModeled": true,
+      "regressionSmokeTest": "scripts/civic-cascade-forecast-smoke.mjs",
+      "nodeIntegrityIncluded": true,
+      "nodeOutagesAffectServiceMetrics": true,
+      "usesSameIntegrityModelAsLiveSimulation": true
+    },
+    "infrastructureNetwork": {
+      "enabled": true,
+      "nodeCount": 6,
+      "directedDependencies": 6,
+      "perNodeIntegrity": true,
+      "dependencyStressPropagation": true,
+      "nodeOutageThreshold": 27,
+      "oneTimeServicePenaltyOnOutage": true,
+      "targetedRepairRestoresNode": true,
+      "planSimulationClonesNodeState": true,
+      "forecastUsesSameIntegrityModel": true,
+      "checkpointSchema": 2,
       "regressionSmokeTest": "scripts/civic-cascade-forecast-smoke.mjs"
     }
   },
@@ -140,6 +163,6 @@
   "deployment": {
     "target": "https://osgard.world",
     "mechanism": "repository push triggers the site's production deployment workflow",
-    "liveStatus": "verify release 2.4.1 with production route checks after deployment"
+    "liveStatus": "verify release 2.5.0 with production route checks after deployment"
   }
 }
