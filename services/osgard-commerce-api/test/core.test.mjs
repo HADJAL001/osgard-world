@@ -416,3 +416,28 @@ test("service conversion API tokens are parsed securely and validated per servic
   assert.equal(isServiceAttributionTokenValid("unknown", projectsToken, tokens), false);
   assert.equal(isServiceAttributionTokenValid("projects", "wrong-token", tokens), false);
 });
+
+
+test("Games accessibility funnel events require consent and match the shared allow-list", () => {
+  const names = [
+    "catalog_search_used",
+    "catalog_filter_changed",
+    "game_favorite_toggled",
+    "game_player_fullscreen_opened",
+    "game_player_retry_requested",
+    "game_player_error_shown",
+    "accessibility_preferences_changed",
+  ];
+  const base = {
+    eventId: "evt_games_funnel_contract_123456",
+    sessionId: "session_games_funnel_123456",
+    gameId: "signal-run",
+    source: "games-hub-test",
+    path: "/games/",
+    durationSeconds: 0,
+  };
+  for (const name of names) {
+    assert.equal(validateEventBatch({ consent: true, events: [{ ...base, name }] }).ok, true, name + " should be accepted with explicit consent");
+    assert.equal(validateEventBatch({ consent: false, events: [{ ...base, name }] }).code, "ANALYTICS_CONSENT_REQUIRED", name + " must never bypass analytics consent");
+  }
+});
