@@ -5,8 +5,8 @@ import { runInNewContext } from 'node:vm';
 const html = readFileSync(new URL('../public/games/cascade-lab/index.html', import.meta.url), 'utf8');
 const source = readFileSync(new URL('../public/games/cascade-lab/hypothesis-lab.js', import.meta.url), 'utf8');
 
-assert.match(html, /osgard-game-version" content="0\.21.0-case-passport"/, 'the shell metadata must identify CASCADE LAB 0.21.0 while preserving the v0.18 hypothesis layer');
-assert.match(html, /<title>CASCADE LAB — Premium Physics Lab 0\.21.0<\/title>/, 'the browser title must match the current 0.21.0 shell');
+assert.ok(html.includes('name="osgard-game-version" content="0.21.0-case-passport"'), 'CASCADE LAB shell metadata must identify the current 0.21.0 passport release while preserving the v0.18 hypothesis layer');
+assert.ok(html.includes('<title>CASCADE LAB — Premium Physics Lab 0.21.0</title>'), 'the browser title must match the current 0.21.0 shell');
 assert.ok(html.includes('id="CASCADELAB018"') && html.includes('data-cascade-lab-experiment="0.18.0"') && html.includes('hypothesis-lab.js?v=0.18.0'), 'the hypothesis layer must be versioned and cache-busted');
 assert.ok(html.includes('id="CASCADELAB020"') && html.includes('data-cascade-lab-studio="0.20.0"') && html.includes('experiment-studio.js?v=0.20.0'), 'the 0.20 Experiment Studio must load as the latest experiment layer');
 for (const marker of [
