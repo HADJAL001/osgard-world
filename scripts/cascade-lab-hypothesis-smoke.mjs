@@ -5,10 +5,10 @@ import { runInNewContext } from 'node:vm';
 const html = readFileSync(new URL('../public/games/cascade-lab/index.html', import.meta.url), 'utf8');
 const source = readFileSync(new URL('../public/games/cascade-lab/hypothesis-lab.js', import.meta.url), 'utf8');
 
-assert.match(html, /osgard-game-version" content="0\.20.0-experiment-studio"/, 'the game release metadata must identify the v0.19 application release');
-assert.match(html, /<title>CASCADE LAB — Premium Physics Lab 0\.20.0<\/title>/, 'the browser title must match the v0.19 application release');
+assert.match(html, /osgard-game-version" content="0\.21.0-case-passport"/, 'canonical game metadata must identify Passport 0.21.0');
+assert.match(html, /<title>CASCADE LAB — Premium Physics Lab 0\.21.0<\/title>/, 'the browser title must match Passport 0.21.0');
 assert.ok(html.includes('id="CASCADELAB018"') && html.includes('data-cascade-lab-experiment="0.18.0"') && html.includes('hypothesis-lab.js?v=0.18.0'), 'the hypothesis layer must be versioned and cache-busted');
-assert.ok(html.includes('id="CASCADELAB020"') && html.includes('data-cascade-lab-studio="0.20.0"') && html.includes('experiment-studio.js?v=0.20.0'), 'the 0.20 Experiment Studio must load as the latest experiment layer');
+assert.ok(html.includes('id="CASCADELAB020"') && html.includes('data-cascade-lab-studio="0.20.0"') && html.includes('experiment-studio.js?v=0.20.0'), 'Experiment Studio 0.20 must remain integrated beneath Passport 0.21');
 for (const marker of [
   "osgard.cascade-lab.next-experiment.v1",
   "function proposalForPair(pair)",
