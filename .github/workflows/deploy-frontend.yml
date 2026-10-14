@@ -13,6 +13,10 @@ on:
       - "public/skillcred/**"
       - "public/games/**"
       - "services/osgard-commerce-api/src/campaigns.mjs"
+      - "services/osgard-commerce-api/src/game-coach.mjs"
+      - "services/osgard-commerce-api/package.json"
+      - "services/osgard-commerce-api/test/game-coach.test.mjs"
+      - "scripts/game-coach-smoke.mjs"
       - "services/osgard-commerce-api/src/server.mjs"
       - "services/osgard-commerce-api/test/campaigns.test.mjs"
       - "scripts/game-intermission-sponsor-smoke.mjs"
@@ -75,6 +79,8 @@ jobs:
           node-version: 20
       - run: npm ci
       - run: npm run check
+      - name: Verify the opt-in OpenAI Game Coach
+        run: npm run qa:game-coach
       - run: npm run qa:null-shift
       - name: Smoke-test the OSGARD Games hub
         run: npm run qa:games-portal
