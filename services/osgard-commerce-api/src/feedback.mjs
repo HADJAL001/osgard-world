@@ -9,7 +9,7 @@ export const FEEDBACK_CATEGORIES = Object.freeze([
 export const FEEDBACK_SEVERITIES = Object.freeze(["minor", "major", "blocker"]);
 export const FEEDBACK_STATUSES = Object.freeze(["new", "triaged", "in_progress", "resolved", "wontfix"]);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const REPORT_ID = /^fb_[0-9a-f-]{36}$/i;
+const REPORT_ID = /^fb_[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const EMAIL = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
 
 function clean(value, max) {
