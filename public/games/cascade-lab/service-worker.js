@@ -1,6 +1,6 @@
 'use strict';
-const PREFIX='osgard-cascade-lab-shell-',CACHE=PREFIX+'v0.26.0',ROOT=new URL('./',self.registration.scope).href;
-const PRECACHE=['./','./index.html','./manifest.webmanifest','./lab-icon.svg','./delta-lens.js','./hypothesis-lab.js?v=0.18.0','./engineering-suite.js?v=0.19.0','./experiment-studio.js?v=0.20.0','./case-passport.js?v=0.21.0','./trajectory-xray.js?v=0.22.0','./mission-director.js?v=0.24.0','./evidence-integrity.js?v=0.25.0'];
+const PREFIX='osgard-cascade-lab-shell-',CACHE=PREFIX+'v0.27.0',ROOT=new URL('./',self.registration.scope).href;
+const PRECACHE=['./','./index.html','./manifest.webmanifest','./lab-icon.svg','./delta-lens.js','./hypothesis-lab.js?v=0.18.0','./engineering-suite.js?v=0.19.0','./experiment-studio.js?v=0.20.0','./case-passport.js?v=0.21.0','./trajectory-xray.js?v=0.22.0','./mission-director.js?v=0.24.0','./evidence-integrity.js?v=0.25.0','./research-director.js?v=0.26.0'];
 function inside(url){const u=new URL(url),s=new URL(self.registration.scope);return u.origin===s.origin&&u.pathname.startsWith(s.pathname);}
 self.addEventListener('install',e=>e.waitUntil((async()=>{const c=await caches.open(CACHE);await c.addAll(PRECACHE);await self.skipWaiting();})()));
 self.addEventListener('activate',e=>e.waitUntil((async()=>{const names=await caches.keys();await Promise.all(names.filter(n=>n.startsWith(PREFIX)&&n!==CACHE).map(n=>caches.delete(n)));await self.clients.claim();})()));
