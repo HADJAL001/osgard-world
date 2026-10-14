@@ -16,6 +16,7 @@ const MINIFY_ASSETS = [
   'experiment-core.js',
   'experiment-runtime.js',
 ]
+const OPTIONAL_MINIFY_ASSETS = ['en/styles.css', 'en/app.js']
 
 function walk(directory) {
   const files = []
@@ -34,9 +35,12 @@ export async function optimizeGamesStaticAssets(rootInput) {
   }
 
   const minified = []
-  for (const relativePath of MINIFY_ASSETS) {
+  for (const relativePath of [...MINIFY_ASSETS, ...OPTIONAL_MINIFY_ASSETS]) {
     const file = join(root, relativePath)
-    if (!existsSync(file)) throw new Error('Required Games asset is missing: ' + relativePath)
+    if (!existsSync(file)) {
+      if (OPTIONAL_MINIFY_ASSETS.includes(relativePath)) continue
+      throw new Error('Required Games asset is missing: ' + relativePath)
+    }
 
     const original = readFileSync(file)
     const loader = extname(file) === '.css' ? 'css' : 'js'
