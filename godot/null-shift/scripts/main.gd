@@ -298,7 +298,13 @@ var daily_last_completed_date := ""
 var last_daily_streak_bonus := 0
 var daily_streak_label: Label
 var result_reward_label: Label
+var result_intel_label: Label
 var result_share_label: Label
+const MAX_RAID_EVENT_COUNT := 64
+const AFTER_ACTION_REPORT_SCHEMA := "osgard.nullshift.after-action/v1"
+var raid_event_ledger: Array[Dictionary] = []
+var daily_run_seed := 0
+var mission_success := false
 var amber_style_button: Button
 var violet_style_button: Button
 var daily_challenge_button: Button
@@ -327,6 +333,18 @@ func _ready() -> void:
 		gamepad_device_id = int(connected_gamepads[0])
 	_load_career()
 	_resolve_shared_challenge()
+	if daily_challenge_active:
+		daily_run_seed = _daily_seed_for_code(daily_challenge_code)
+		if daily_run_seed > 0:
+			seed(daily_run_seed)
+		else:
+			daily_challenge_active = false
+			daily_challenge_code = ""
+			daily_run_seed = 0
+			randomize()
+	else:
+		daily_run_seed = 0
+		randomize()
 	_create_materials()
 	_create_procedural_surface_textures()
 	_create_lighting()
@@ -339,6 +357,7 @@ func _ready() -> void:
 	_create_initial_guards()
 	_create_ui()
 	_configure_daily_mutators()
+	_record_raid_event("raid_started", "DAILY" if daily_challenge_active else "STANDARD", float(daily_run_seed))
 	_refresh_loadout()
 	_apply_quality_mode()
 	_update_hud()
@@ -352,6 +371,12 @@ func _reset_runtime_collections() -> void:
 	# Duplicate each collection before clearing it so repeated scene instances cannot cross-contaminate.
 	materials = materials.duplicate()
 	materials.clear()
+	raid_event_ledger = raid_event_ledger.duplicate(true)
+	raid_event_ledger.clear()
+	daily_run_seed = 0
+	mission_success = false
+	mission_finished = false
+	elapsed = 0.0
 	daily_mutators = daily_mutators.duplicate()
 	daily_mutators.clear()
 	daily_mutator_ids = daily_mutator_ids.duplicate()
@@ -1092,6 +1117,7 @@ func _update_extraction_director(delta: float) -> void:
 	extraction_pressure_active = false
 	extraction_overload_triggered = true
 	extraction_overload_count += 1
+	_record_raid_event("extraction_overload", "Lockdown breach", float(extraction_overload_count), extraction.global_position)
 	alarm_active = true
 	objective_text = "ОКНО ЭВАКУАЦИИ ЗАКРЫТО · СЕТЬ ПЕРЕХВАТА ВЫЗВАЛА ЭЛИТУ"
 	if not warden_spawned:
@@ -1903,6 +1929,7 @@ func _try_dash() -> void:
 		dash_direction = Vector3.FORWARD
 	dash_timer = DASH_DURATION
 	_record_tactical_action("dash")
+	_record_raid_event("dash", "Tactical evade", 1.0, player.global_position)
 	dash_cooldown = DASH_COOLDOWN
 	dash_trail_clock = 0.0
 	dash_trail_last_position = player.global_position
@@ -2435,6 +2462,7 @@ func _fire_weapon() -> void:
 					_try_overdrive_chain(collider as Node, beam_end)
 			_damage_target(collider as Node, critical_hit)
 	_record_weapon_shot(is_combat_hit)
+	_record_raid_event("weapon_shot", "CRITICAL" if critical_hit else ("HIT" if is_combat_hit else "MISS"), 1.0 if critical_hit or is_combat_hit else 0.0, beam_end)
 	_spawn_beam(from, beam_end, materials["cyan"], 0.09)
 	_spawn_hit_sparks(beam_end, materials["cyan"])
 	_screen_impulse(0.018, 0.055)
@@ -2525,6 +2553,7 @@ func _transition_warden_phase(index: int) -> bool:
 		health_readout.text = "HP %d / %d · PII" % [int(guard["hp"]), maximum_hp]
 		health_readout.modulate = Color(1.0, 0.72, 0.32)
 	warden_phase_transitions += 1
+	_record_raid_event("warden_phase", "Phase II", 2.0, body.global_position)
 	_emit_combat_noise(body.global_position, 42.0, "warden-phase")
 	_spawn_ring_burst(body.global_position + Vector3.UP * 0.18, materials["gold"])
 	_spawn_impact_light(body.global_position + Vector3.UP * 0.85, Color(1.0, 0.54, 0.16), 3.8, 6.2, 0.38)
@@ -2549,6 +2578,7 @@ func _try_stagger_warden(index: int, precision_hit: bool) -> bool:
 	guard["stun"] = maxf(float(guard.get("stun", 0.0)), 0.9)
 	guards[index] = guard
 	warden_staggers += 1
+	_record_raid_event("warden_stagger", "Precision interrupt", 0.9, body.global_position)
 	_spawn_ring_burst(body.global_position + Vector3.UP * 0.2, materials["white"])
 	_spawn_impact_light(body.global_position + Vector3.UP * 0.85, Color(0.55, 0.94, 1.0), 2.8, 4.7, 0.24)
 	_play_sfx(520.0, 0.19, 0.12)
@@ -2630,6 +2660,7 @@ func _destroy_device(index: int) -> void:
 	var body: Node3D = device["node"]
 	var kind: String = str(device["kind"])
 	_emit_combat_noise(body.global_position, 30.0, "device")
+	_record_raid_event("device_destroyed", kind, 80.0, body.global_position)
 	var flash_tint: Color = Color(1.0, 0.62, 0.23) if kind == "CELL" else (Color(0.65, 0.36, 1.0) if kind == "ANCHOR" else Color(0.12, 0.95, 0.82))
 	_spawn_impact_light(body.global_position + Vector3.UP * 0.7, flash_tint, 2.8, 5.2, 0.2)
 	_spawn_ring_burst(body.global_position + Vector3.UP * 0.15, materials["amber"] if kind == "CELL" else (materials["violet"] if kind == "ANCHOR" else materials["cyan"]))
@@ -2744,6 +2775,7 @@ func _deploy_pulse() -> void:
 		return
 	pulse_cooldown = maxf(2.0, 5.0 - float(pulse_level) * 0.7)
 	_record_tactical_action("pulse")
+	_record_raid_event("pulse", "Field suppression", 0.0, player.global_position)
 	_emit_combat_noise(player.global_position, 26.0, "pulse")
 	var count := 0
 	var suppressed_count := 0
@@ -2776,6 +2808,7 @@ func _shift_layer() -> void:
 	null_shift_timer = 3.8
 	_record_tactical_action("phase")
 	_emit_combat_noise(player.global_position, _phase_noise_radius(), "phase")
+	_record_raid_event("phase_shift", "NULL SHIFT", instability, player.global_position)
 	instability = minf(100.0, instability + 24.0 + daily_shift_instability_bonus)
 	phase_flash_timer = maxf(phase_flash_timer, 0.34)
 	_screen_impulse(0.105, 0.2)
@@ -2806,6 +2839,7 @@ func _interact() -> void:
 		_play_sfx(390.0, 0.12, 0.08)
 	elif terminal_unlocked and not core_secured and _near(player, quantum_core, 3.0):
 		core_secured = true
+		_record_raid_event("core_secured", "Extraction pressure started", 750.0, quantum_core.global_position)
 		quantum_core.visible = false
 		core_ring.visible = false
 		core_light.visible = false
@@ -2872,6 +2906,7 @@ func _submit_cipher_key(key: int) -> void:
 	_play_sfx(520.0 + terminal_progress * 75.0, 0.09, 0.08)
 	if terminal_progress >= CIPHER.size():
 		terminal_unlocked = true
+		_record_raid_event("terminal_unlocked", "Cipher solved", float(CIPHER.size()), terminal.global_position)
 		terminal_active = false
 		keypad_panel.visible = false
 		alarm_active = true
@@ -2934,6 +2969,7 @@ func _damage_player(amount: float, attacker: Node3D = null) -> void:
 	var old_health: float = player_health
 	player_health = maxf(0.0, player_health - mitigated_amount)
 	damage_taken_total += old_health - player_health
+	_record_raid_event("damage_taken", "Operator hit", old_health - player_health, player.global_position)
 	_spawn_impact_light(player.global_position + Vector3.UP * 0.82, Color(1.0, 0.12, 0.22), 2.5, 4.7, 0.19)
 	if is_instance_valid(attacker):
 		_show_damage_direction(attacker)
@@ -2949,6 +2985,8 @@ func _finish_mission(success: bool) -> void:
 	mission_score = _calculate_mission_score(eliminations, critical_hits, combat_combo_best, mission_accuracy, damage_taken_total, elapsed)
 	mission_grade = _mission_grade_for_score(mission_score)
 	mission_finished = true
+	mission_success = success
+	_record_raid_event("mission_finished", "SUCCESS" if success else "FAILED", float(mission_score), player.global_position if is_instance_valid(player) else Vector3.ZERO)
 	paused_game = false
 	extraction_pressure_active = false
 	extraction_window_remaining = 0.0
@@ -2984,6 +3022,8 @@ func _finish_mission(success: bool) -> void:
 			result_share_label.text = "ВЫЗОВ ДРУГУ: %s" % _today_challenge_code()
 		objective_text = "ОПЕРАТОР НЕ ВЕРНУЛСЯ · ПЕРЕЗАПУСТИТЕ РЕЙД"
 		_play_sfx(70.0, 0.9, 0.18)
+	if is_instance_valid(result_intel_label):
+		result_intel_label.text = "MISSION INTEL · " + _after_action_insights_text()
 	result_panel.visible = true
 	if OS.has_feature("web"):
 		JavaScriptBridge.eval("if(window.OSGARDGameLifecycle){window.OSGARDGameLifecycle({type:'osgard:game-lifecycle',game:'null-shift',state:'completed',at:Date.now()});}else if(window.parent!==window){window.parent.postMessage({type:'osgard:game-lifecycle',game:'null-shift',state:'completed',at:Date.now()},window.location.origin);}")
@@ -3057,6 +3097,7 @@ func _register_hostile_elimination(guard: Dictionary, body: Node3D, precision_fi
 	combat_score_total += points
 	var charge_gain := 28.0 + (10.0 if precision_finisher else 0.0) + (15.0 if bool(guard.get("warden", false)) else 0.0)
 	overdrive_charge = minf(OVERDRIVE_MAX_CHARGE, overdrive_charge + charge_gain)
+	_record_raid_event("elimination", role + (" / PRECISION" if precision_finisher else ""), float(points), body.global_position)
 	objective_text = "ЛИКВИДАЦИЯ · +%d CR · COMBO %d · ×%.2f" % [credits, combat_combo, multiplier]
 	_play_sfx(170.0 + minf(520.0, float(combat_combo) * 42.0), 0.2, 0.12)
 	if overdrive_charge >= OVERDRIVE_MAX_CHARGE and overdrive_timer <= 0.0:
@@ -3102,9 +3143,45 @@ func _activate_overdrive() -> void:
 func _effective_guard_speed(guard: Dictionary) -> float:
 	return float(guard.get("speed", 1.0)) * (0.66 if overdrive_timer > 0.0 else 1.0)
 
+func _record_raid_event(event_type: String, detail: String, value: float = 0.0, at: Vector3 = Vector3.ZERO) -> void:
+	# Fixed-capacity local black box; no account data, network calls or full replay payloads.
+	while raid_event_ledger.size() >= MAX_RAID_EVENT_COUNT:
+		raid_event_ledger.pop_front()
+	var event: Dictionary = {
+		"t": snappedf(maxf(0.0, elapsed), 0.01),
+		"type": event_type.substr(0, 32),
+		"detail": detail.substr(0, 120),
+		"value": snappedf(value, 0.01)
+	}
+	if at != Vector3.ZERO:
+		event["position"] = {
+			"x": snappedf(at.x, 0.1),
+			"y": snappedf(at.y, 0.1),
+			"z": snappedf(at.z, 0.1)
+		}
+	raid_event_ledger.append(event)
+
+func _mission_score_breakdown(kills: int, precision: int, best_chain: int, accuracy: float, taken_damage: float, duration: float) -> Dictionary:
+	var elimination_points: int = maxi(0, kills) * 120
+	var precision_points: int = maxi(0, precision) * 35
+	var combo_points: int = maxi(0, best_chain) * 18
+	var accuracy_points: int = roundi(clampf(accuracy, 0.0, 100.0) * 2.0)
+	var damage_penalty: int = roundi(maxf(0.0, taken_damage) * 2.5)
+	var time_penalty: int = roundi(maxf(0.0, duration) * 0.5)
+	var raw_total: int = elimination_points + precision_points + combo_points + accuracy_points - damage_penalty - time_penalty
+	return {
+		"elimination_points": elimination_points,
+		"precision_points": precision_points,
+		"combo_points": combo_points,
+		"accuracy_points": accuracy_points,
+		"damage_penalty": damage_penalty,
+		"time_penalty": time_penalty,
+		"raw_total": raw_total,
+		"total": maxi(0, raw_total)
+	}
+
 func _calculate_mission_score(kills: int, precision: int, best_chain: int, accuracy: float, taken_damage: float, duration: float) -> int:
-	var raw_score := kills * 120 + precision * 35 + best_chain * 18 + roundi(clampf(accuracy, 0.0, 100.0) * 2.0) - roundi(maxf(0.0, taken_damage) * 2.5) - roundi(maxf(0.0, duration) * 0.5)
-	return maxi(0, raw_score)
+	return int(_mission_score_breakdown(kills, precision, best_chain, accuracy, taken_damage, duration)["total"])
 
 func _mission_grade_for_score(score: int) -> String:
 	if score >= 900:
@@ -3126,6 +3203,111 @@ func _mission_grade_bonus(grade: String) -> int:
 		_:
 			return 150
 
+func _after_action_insights() -> Array[String]:
+	var insights: Array[String] = []
+	if mission_accuracy < 55.0:
+		insights.append("ТОЧНОСТЬ: сокращай дистанцию и дожидайся захвата цели")
+	if insights.size() < 3 and damage_taken_total >= 35.0:
+		insights.append("ЗАЩИТА: чаще используй укрытия, импульс и фазовый сдвиг")
+	if insights.size() < 3 and combat_combo_best < 3:
+		insights.append("КОМБО: связывай устранения в одну серию")
+	if insights.size() < 3 and warden_spawned and warden_staggers == 0:
+		insights.append("WARDEN: точный выстрел во время телеграфа срывает атаку")
+	if insights.size() < 3 and extraction_overload_count > 0:
+		insights.append("ЭВАКУАЦИЯ: после ядра есть 30 секунд до блокировки")
+	if insights.size() < 3 and device_emp_overloads + device_cell_novas + device_lane_collapses == 0:
+		insights.append("АРЕНА: уничтожай полевые устройства — это меняет ход боя")
+	if insights.is_empty():
+		insights.append("ХОРОШИЙ БАЛАНС: повтори контракт и попробуй улучшить SCORE")
+	return insights
+
+func _after_action_insights_text() -> String:
+	var output := ""
+	for part in _after_action_insights():
+		if not output.is_empty():
+			output += "\n"
+		output += "· " + part
+	return output
+
+func _build_after_action_report() -> Dictionary:
+	var device_summary: Dictionary = {"destroyed": 0, "RELAY": 0, "CELL": 0, "ANCHOR": 0}
+	for device in devices:
+		if not bool(device.get("destroyed", false)):
+			continue
+		device_summary["destroyed"] = int(device_summary["destroyed"]) + 1
+		var kind := str(device.get("kind", "UNKNOWN"))
+		if device_summary.has(kind):
+			device_summary[kind] = int(device_summary[kind]) + 1
+	var outcome := "IN_PROGRESS"
+	if mission_finished:
+		outcome = "SUCCESS" if mission_success else "FAILED"
+	var score_data := _mission_score_breakdown(eliminations, critical_hits, combat_combo_best, mission_accuracy, damage_taken_total, elapsed)
+	return {
+		"schema": AFTER_ACTION_REPORT_SCHEMA,
+		"game": "NULL//SHIFT",
+		"gameVersion": "0.17.0-black-box",
+		"outcome": outcome,
+		"challengeCode": daily_challenge_code if daily_challenge_active else "",
+		"runSeed": daily_run_seed,
+		"contract": {"index": current_contract + 1, "name": str(career_names[current_contract])},
+		"elapsedSeconds": snappedf(maxf(0.0, elapsed), 0.01),
+		"score": int(score_data["total"]),
+		"grade": mission_grade,
+		"scoreBreakdown": score_data,
+		"combat": {
+			"eliminations": eliminations,
+			"criticalHits": critical_hits,
+			"shotsFired": shots_fired,
+			"shotsHit": shots_hit,
+			"accuracyPercent": snappedf(mission_accuracy, 0.1),
+			"damageTaken": snappedf(damage_taken_total, 0.1),
+			"bestCombo": combat_combo_best,
+			"comboBreaks": combo_breaks,
+			"dashEvasions": dash_evasions,
+			"overdriveActivations": overdrive_activations,
+			"overdriveArcs": overdrive_arc_chains
+		},
+		"devices": device_summary,
+		"extraction": {
+			"pressureStarted": extraction_reinforcements_spawned > 0,
+			"reinforcementsSpawned": extraction_reinforcements_spawned,
+			"overloadCount": extraction_overload_count,
+			"pressureActiveAtExport": extraction_pressure_active
+		},
+		"warden": {
+			"spawned": warden_spawned,
+			"phaseTransitions": warden_phase_transitions,
+			"precisionStaggers": warden_staggers
+		},
+		"counterplay": {
+			"doctrine": adaptive_doctrine,
+			"doctrineChanges": tactical_doctrine_changes,
+			"actions": tactical_action_counts.duplicate(true)
+		},
+		"anomalies": daily_mutator_ids.duplicate(),
+		"insights": _after_action_insights(),
+		"events": raid_event_ledger.duplicate(true)
+	}
+
+func _export_after_action_report() -> void:
+	if not mission_finished:
+		objective_text = "ОТЧЁТ ПОЯВИТСЯ ПОСЛЕ ЗАВЕРШЕНИЯ РЕЙДА"
+		_update_hud()
+		return
+	var report_text := JSON.stringify(_build_after_action_report(), "\t")
+	if OS.has_feature("web"):
+		# User-initiated Blob download; the report is not transmitted to any service.
+		var encoded_report := JSON.stringify(report_text)
+		var script := "(function(){const d=" + encoded_report + ";const b=new Blob([d],{type:'application/json;charset=utf-8'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='null-shift-after-action-'+Date.now()+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500);})();"
+		JavaScriptBridge.eval(script)
+		if is_instance_valid(result_intel_label):
+			result_intel_label.text = "ОТЧЁТ JSON СКАЧАН ЛОКАЛЬНО · ДАННЫЕ НЕ ОТПРАВЛЯЛИСЬ"
+	else:
+		DisplayServer.clipboard_set(report_text)
+		if is_instance_valid(result_intel_label):
+			result_intel_label.text = "ОТЧЁТ JSON СКОПИРОВАН В БУФЕР · ЛОКАЛЬНЫЙ ЭКСПОРТ"
+	_update_hud()
+
 func _daily_mutator_catalog() -> Array[Dictionary]:
 	return [
 		{"id": "hunter", "name": "HUNTER PROTOCOL", "short": "HUNTER", "detail": "ОХОТА · СТРАЖА ДВИЖЕТСЯ НА 18% БЫСТРЕЕ"},
@@ -3136,16 +3318,23 @@ func _daily_mutator_catalog() -> Array[Dictionary]:
 		{"id": "radar", "name": "RADAR GHOST", "short": "RADAR OFF", "detail": "ПОМЕХИ · ТАКТИЧЕСКИЙ РАДАР ЗАГЛУШЁН"}
 	]
 
-func _daily_mutator_ids_for_code(code: String) -> Array[String]:
-	var ids: Array[String] = []
+func _daily_seed_for_code(code: String) -> int:
 	if _contract_index_from_challenge_code(code) < 0:
-		return ids
-	# FNV-1a over UTF-8; don't use String.hash(), whose value isn't a cross-runtime contract.
+		return 0
+	# Stable 31-bit FNV-style seed: same challenge URL gets the same procedural setup.
+	# This synchronizes starting procedural choices without claiming deterministic physics.
 	var seed_value: int = 2166136261
 	for byte_value in code.to_utf8_buffer():
 		seed_value = int((seed_value ^ int(byte_value)) * 16777619) & 0x7fffffff
+	return maxi(seed_value, 1)
+
+func _daily_mutator_ids_for_code(code: String) -> Array[String]:
+	var ids: Array[String] = []
+	var stable_seed := _daily_seed_for_code(code)
+	if stable_seed <= 0:
+		return ids
 	var rng := RandomNumberGenerator.new()
-	rng.seed = maxi(seed_value, 1)
+	rng.seed = stable_seed
 	var pool: Array[Dictionary] = []
 	for mutator in _daily_mutator_catalog():
 		pool.append(mutator.duplicate(true))
@@ -3959,9 +4148,12 @@ func _create_ui() -> void:
 	_label(result_stack, "РЕЙД ЗАВЕРШЁН · КАРЬЕРА ОБНОВЛЕНА", 12, Color(0.82, 0.92, 0.9))
 	result_reward_label = _label(result_stack, "УСТРАНЕНИЙ 0 · DAILY OPS · КАРЬЕРА", 10, Color(1.0, 0.77, 0.39))
 	result_reward_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	result_intel_label = _label(result_stack, "MISSION INTEL · ЛОКАЛЬНЫЙ АНАЛИЗ РЕЙДА", 9, Color(0.61, 0.86, 0.82))
+	result_intel_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	result_share_label = _label(result_stack, "ЕЖЕДНЕВНЫЙ КОД ВЫЗОВА ГОТОВ", 10, Color(0.38, 1.0, 0.86))
 	result_share_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_add_button(result_stack, "ПОДЕЛИТЬСЯ РЕЗУЛЬТАТОМ / ВЫЗВАТЬ ДРУГА", _share_run, Vector2(result_button_width, 40.0))
+	_add_button(result_stack, "ЭКСПОРТ AFTER-ACTION JSON", _export_after_action_report, Vector2(result_button_width, 34.0))
+	_add_button(result_stack, "ПОДЕЛИТЬСЯ РЕЗУЛЬТАТОМ / ВЫЗВАТЬ ДРУГА", _share_run, Vector2(result_button_width, 38.0))
 	_add_button(result_stack, "НОВЫЙ РЕЙД", _restart_game, Vector2(result_button_width, 42.0))
 	_add_button(result_stack, "МОДУЛИ И КОСМЕТИКА", _show_loadout_from_result, Vector2(result_button_width, 38.0))
 

@@ -404,3 +404,60 @@ The runtime smoke now checks combo thresholds, critical damage, the charge gate,
 - Recovery is progressive: four stable windows move Hard Optimize back to Soft Optimize, and four more restore full Cinematic quality. Manual Cinematic/Balanced/Performance settings stay independent from automatic decisions and remain user-controlled.
 - Live diagnostics now expose the share of recent frames exceeding the 16.67 ms/60 FPS budget, engine process time, physics process time, rendered primitives and scene-node count, alongside FPS/P95/draw calls and bounded effect-pool health. CPU counters are not labeled as GPU execution time.
 - Headless Godot runtime smoke covers both optimization steps and both recovery steps. The Node source contract requires the Performance monitors and new labels to exist in the engine build.
+
+
+## Godot release 0.17 — reproducible daily setup and After-Action Black Box
+
+This release adds a 64-event, local-only mission recorder and an exportable after-action report. It does not add a network analytics endpoint or send game telemetry.
+
+The implementation bundles more than 30 concrete engineering refinements:
+
+1. A reusable stable seed resolver validates the daily challenge code before producing a seed.
+2. Invalid or malformed challenge codes produce no seed.
+3. Valid daily runs apply the seed before the procedural world is built.
+4. Standard free runs retain fresh randomized setups.
+5. The seed is carried through the report so players can identify the setup they played.
+6. The challenge code remains tied to the existing contract-selection rules.
+7. The six daily mutators use the same seed resolver as world setup.
+8. The event tape has a hard capacity of 64 records.
+9. Overflow removes the oldest evidence rather than growing memory without bounds.
+10. Event timestamps use the game's elapsed clock, not personal wall-clock data.
+11. Timestamp precision is reduced to hundredths of a second.
+12. Event names are length-capped.
+13. Event detail strings are length-capped.
+14. World coordinates are quantized to tenths of a metre.
+15. Position data is omitted when an event has no meaningful world location.
+16. A raid-start event records standard versus daily play.
+17. Cipher completion creates a terminal-unlocked event.
+18. Weapon events distinguish hit, miss and critical hit.
+19. Eliminations record hostile role and score value.
+20. Dashes record tactical-evasion activations.
+21. Pulse activations record field-suppression decisions.
+22. NULL Shift records phase-transition choices.
+23. Accepted player damage records actual mitigated health loss.
+24. Device events identify RELAY, CELL or ANCHOR.
+25. Securing the core records the transition into extraction pressure.
+26. Extraction overload records lockdown and escalation count.
+27. Warden Phase II transitions enter the tape.
+28. Precision interrupts enter the tape separately from ordinary damage.
+29. Successful and failed mission endings are explicitly distinguished.
+30. Mission-score math exposes positive components and separate damage/time penalties.
+31. The published score remains mathematically identical to the existing scoring function.
+32. Negative raw totals clamp to zero.
+33. A versioned report schema is included in the exported object.
+34. The report contains outcome, challenge code, seed, contract and elapsed time.
+35. The report contains combat accuracy, hits, misses, criticals, damage, combo and dash evasions.
+36. Device destruction is aggregated by device type.
+37. Extraction pressure, reinforcement and overload data are included.
+38. Warden phase and precision-stagger metrics are included.
+39. The adaptive counterplay doctrine and local action counts are included.
+40. Active daily anomalies are preserved in the report.
+41. Up to three coaching suggestions are generated from measured run performance.
+42. The result screen exposes an explicit JSON-export action.
+43. Web export uses a browser-generated Blob download after the player presses the button.
+44. Native desktop export copies the same JSON report to the clipboard.
+45. The report contains no account identifier, email address or remote telemetry channel.
+46. Runtime tests prove seed repeatability, score reconciliation, event-cap enforcement and report integrity.
+47. Source smoke checks ensure export code contains no fetch, XMLHttpRequest or sendBeacon upload path.
+
+The WebAssembly build keeps the same Godot GL Compatibility runtime and existing OSgard World route. Exporting the report is a local player action, not an external analytics integration.

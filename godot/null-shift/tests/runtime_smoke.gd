@@ -1696,6 +1696,62 @@ func _run_smoke() -> void:
 	if not _expect(after_gap_reward == 400 and game.daily_streak == 1 and game.daily_longest_streak == 7, "missing a UTC day must reset the active streak but preserve the record"):
 		return
 
+	print("RUNTIME_STAGE: reproducible daily setup and after-action black box")
+	var original_ledger: Array[Dictionary] = game.raid_event_ledger.duplicate(true)
+	var original_seed: int = game.daily_run_seed
+	var original_mission_finished: bool = game.mission_finished
+	var original_mission_success: bool = game.mission_success
+	var original_mission_score: int = game.mission_score
+	var original_mission_grade: String = game.mission_grade
+	var original_mission_accuracy: float = game.mission_accuracy
+	var original_elapsed: float = game.elapsed
+	var original_daily_mutator_ids: Array[String] = game.daily_mutator_ids.duplicate()
+	var valid_daily_code: String = game._challenge_code_for_date("20261014")
+	var seed_a: int = game._daily_seed_for_code(valid_daily_code)
+	var seed_b: int = game._daily_seed_for_code(valid_daily_code)
+	if not _expect(seed_a > 0 and seed_a == seed_b and game._daily_seed_for_code("not-a-challenge") == 0, "shared daily code must resolve to one stable positive seed and invalid codes must resolve to zero"):
+		return
+	seed(seed_a)
+	var deterministic_roll_a: int = randi()
+	seed(seed_b)
+	var deterministic_roll_b: int = randi()
+	if not _expect(deterministic_roll_a == deterministic_roll_b, "the stable daily seed must reproduce the same initial procedural RNG stream"):
+		return
+
+	var score_parts: Dictionary = game._mission_score_breakdown(5, 3, 6, 90.0, 10.0, 120.0)
+	var score_from_parts: int = int(score_parts["elimination_points"]) + int(score_parts["precision_points"]) + int(score_parts["combo_points"]) + int(score_parts["accuracy_points"]) - int(score_parts["damage_penalty"]) - int(score_parts["time_penalty"])
+	if not _expect(int(score_parts["total"]) == score_from_parts and int(score_parts["total"]) == game._calculate_mission_score(5, 3, 6, 90.0, 10.0, 120.0), "auditable score components must sum to exactly the established mission score"):
+		return
+	if not _expect(int(game._mission_score_breakdown(0, 0, 0, 0.0, 10000.0, 10000.0)["total"]) == 0, "score breakdown must clamp extreme penalties to a non-negative total"):
+		return
+
+	game.raid_event_ledger.clear()
+	for event_index in range(game.MAX_RAID_EVENT_COUNT + 19):
+		game.elapsed = float(event_index) * 0.25
+		game._record_raid_event("test_event", "bounded sample %d" % event_index, float(event_index), Vector3(float(event_index), 0.82, -float(event_index)))
+	if not _expect(game.raid_event_ledger.size() == game.MAX_RAID_EVENT_COUNT, "raid black box must stay within its fixed 64-event memory limit"):
+		return
+	if not _expect(str(game.raid_event_ledger[0]["detail"]) == "bounded sample 19" and str(game.raid_event_ledger[-1]["detail"]) == "bounded sample 82", "event overflow must evict oldest records and preserve the newest evidence"):
+		return
+	if not _expect(float(game.raid_event_ledger[0]["t"]) <= float(game.raid_event_ledger[-1]["t"]) and game.raid_event_ledger[-1].has("position"), "black-box records must retain ordered elapsed time and quantized world positions"):
+		return
+	game.daily_run_seed = seed_a
+	game.daily_mutator_ids = daily_mutators_first.duplicate()
+	game.mission_finished = true
+	game.mission_success = true
+	game.mission_accuracy = game._combat_accuracy_percentage()
+	game.mission_score = game._calculate_mission_score(game.eliminations, game.critical_hits, game.combat_combo_best, game.mission_accuracy, game.damage_taken_total, game.elapsed)
+	game.mission_grade = game._mission_grade_for_score(game.mission_score)
+	var after_action: Dictionary = game._build_after_action_report()
+	if not _expect(str(after_action.get("schema", "")) == "osgard.nullshift.after-action/v1" and str(after_action.get("outcome", "")) == "SUCCESS", "after-action report must be versioned and distinguish a successful extraction from a failed raid"):
+		return
+	if not _expect(int(after_action.get("runSeed", 0)) == seed_a and str(after_action.get("challengeCode", "")) == valid_daily_code and after_action.get("anomalies", []).size() == daily_mutators_first.size(), "after-action report must include the matching challenge code, run seed and active anomaly pair"):
+		return
+	if not _expect(int(after_action.get("scoreBreakdown", {}).get("total", -1)) == int(after_action.get("score", -2)) and after_action.get("combat", {}).has("shotsFired") and after_action.get("devices", {}).has("RELAY") and after_action.get("warden", {}).has("precisionStaggers"), "after-action report must reconcile score with combat, device and boss telemetry"):
+		return
+	if not _expect(after_action.get("events", []).size() == game.MAX_RAID_EVENT_COUNT and after_action.get("insights", []).size() > 0, "after-action report must include the bounded event tape and actionable, locally computed coaching"):
+		return
+
 	game.career_credits = saved_credits
 	game.operator_style = saved_style
 	game.owns_amber_style = saved_owns_amber
@@ -1707,6 +1763,15 @@ func _run_smoke() -> void:
 	game.daily_longest_streak = saved_daily_longest
 	game.daily_last_completed_date = saved_daily_last_date
 	game.last_daily_streak_bonus = saved_streak_bonus
+	game.raid_event_ledger = original_ledger.duplicate(true)
+	game.daily_run_seed = original_seed
+	game.daily_mutator_ids = original_daily_mutator_ids.duplicate()
+	game.mission_finished = original_mission_finished
+	game.mission_success = original_mission_success
+	game.mission_score = original_mission_score
+	game.mission_grade = original_mission_grade
+	game.mission_accuracy = original_mission_accuracy
+	game.elapsed = original_elapsed
 	game._save_career()
 	game._update_player_material()
 	game._refresh_loadout()
