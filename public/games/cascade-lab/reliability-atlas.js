@@ -63,12 +63,27 @@ function normalizeRun(raw) {
   const id = clean(raw.id, 100), stamp = Date.parse(raw.at);
   if (!id || !Number.isFinite(stamp) || !Number.isInteger(raw.levelId) || raw.levelId < 1 || raw.levelId > 5 ||
       !['won','lost'].includes(raw.status)) return null;
-  const trajectory = normalizeTrajectory(raw.trajectory);
+  const sourceTrajectory = list(raw.trajectory);
+  if (sourceTrajectory.length < 2 || sourceTrajectory.length > 420 ||
+      sourceTrajectory.some((point, index) => !point || typeof point !== 'object' || !finite(point.t) ||
+        !finite(point.x) || !finite(point.y) || point.t < 0 || point.t > 120 ||
+        (index > 0 && point.t < sourceTrajectory[index - 1].t))) return null;
+  const sourceDevices = list(raw.devices);
+  if (sourceDevices.length > 12 || sourceDevices.some(device => !device || !DEVICE_TYPES.has(device.type) ||
+      !finite(device.x) || !finite(device.y) || !finite(device.angle) ||
+      device.x < -100 || device.x > 1200 || device.y < -100 || device.y > 700 ||
+      device.angle < -400 || device.angle > 400)) return null;
+  if (raw.mode != null && !['campaign','daily','duel'].includes(raw.mode)) return null;
+  if (raw.dailyDate != null && (typeof raw.dailyDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(raw.dailyDate))) return null;
+  const trajectory = normalizeTrajectory(sourceTrajectory);
   if (trajectory.length < 2) return null;
-  const devices = normalizeDevices(raw.devices);
+  const devices = normalizeDevices(sourceDevices);
+  const mode = raw.mode == null ? 'campaign' : raw.mode;
+  const dailyDate = raw.dailyDate || null;
+  if (mode === 'daily' && !dailyDate) return null;
+  if (raw.deviceCount != null && (!Number.isInteger(raw.deviceCount) || raw.deviceCount < 0 ||
+      raw.deviceCount > 12 || raw.deviceCount !== devices.length)) return null;
   if (!devices.length && Number(raw.deviceCount) > 0) return null;
-  const mode = ['campaign','daily','duel'].includes(raw.mode) ? raw.mode : 'campaign';
-  const dailyDate = typeof raw.dailyDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw.dailyDate) ? raw.dailyDate : null;
   const timeSeconds = finite(raw.timeSeconds) ? clamp(raw.timeSeconds, 0, 120) : trajectory[trajectory.length - 1].t;
   const events = list(raw.telemetry && raw.telemetry.events).slice(-12).map(event => ({
     type: clean(event && event.type, 32), label: clean(event && (event.label || event.type), 100),
