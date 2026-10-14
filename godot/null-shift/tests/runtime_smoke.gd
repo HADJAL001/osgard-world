@@ -2108,7 +2108,7 @@ func _run_smoke() -> void:
 		"elapsedSeconds": 91.3,
 		"score": 4820,
 		"grade": "A",
-		"combat": {"eliminations": 8, "criticalHits": 9, "shotsFired": 10, "shotsHit": 9, "accuracyPercent": 90.0, "damageTaken": 0.0, "bestCombo": 10, "overdriveArcs": 2},
+		"combat": {"eliminations": 8, "criticalHits": 9, "shotsFired": 10, "shotsHit": 9, "accuracyPercent": 95.0, "damageTaken": 0.0, "bestCombo": 10, "overdriveArcs": 2},
 		"devices": {"destroyed": 2},
 		"suppression": {"pressureBreaks": 3},
 		"phaseEcho": {"confirmedLures": 1},
