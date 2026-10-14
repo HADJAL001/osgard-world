@@ -24,6 +24,12 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
+      - name: Check cross-surface OSGARD product contracts
+        run: npm run qa:contracts
+      - name: Test static asset performance budgets
+        run: npm run qa:performance-budget-tests
+      - name: Test build-attestation tamper resistance
+        run: npm run qa:release-attestation
       - name: Verify Nginx fallback, English catalogue and route contracts
         run: node scripts/production-route-matrix-contract-smoke.mjs
       - name: Verify Games runtime minification and gzip integrity
@@ -68,3 +74,6 @@ jobs:
           path: |
             release-manifest.json
             production-route-matrix.json
+            osgard-contract-audit.json
+            osgard-performance-budget.json
+            release-attestation.json
