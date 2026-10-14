@@ -10,7 +10,7 @@ import {
   validateEventBatch, validateReferralRegistrationPayload, validateReferralClaimPayload,
   validateReferralClaimAckPayload, validateServiceAttributionConversion,
   parseServiceAttributionTokenMap, isServiceAttributionTokenValid,
-  DEFAULT_OWNED_PROMO_CONFIG, validateOwnedPromoConfig,
+  DEFAULT_OWNED_PROMO_CONFIG, validateOwnedPromoConfig, migrateOwnedPromoConfig,
   paymentsModeAllowed, resolveCheckoutPaymentState, safeEqual,
 } from "./core.mjs";
 import {
@@ -325,11 +325,22 @@ app.get("/v1/owned-promo/config", async (_req, res) => {
       );
       const row = result.rows[0];
       if (row) {
-        const checked = validateOwnedPromoConfig(row.config);
+        const checked = migrateOwnedPromoConfig(row.config);
         if (checked.ok) {
           config = checked.config;
-          source = "database";
+          source = row.config?.schemaVersion === 2 ? "database" : "database_migrated";
           updatedAt = row.updated_at;
+          if (row.config?.schemaVersion !== 2) {
+            try {
+              const migrated = await pool.query(
+                "UPDATE commerce_owned_promo_config SET config = $1::jsonb, updated_at = NOW() WHERE config_id = 1 RETURNING updated_at",
+                [JSON.stringify(checked.config)],
+              );
+              updatedAt = migrated.rows[0]?.updated_at || updatedAt;
+            } catch (migrationError) {
+              console.error("Owned-promo config migration deferred:", migrationError?.message || "unknown error");
+            }
+          }
         }
       }
     } catch (error) {
@@ -349,9 +360,22 @@ app.get("/v1/admin/owned-promo/config", requireAdmin, async (_req, res) => {
     );
     const row = result.rows[0];
     if (!row) return res.json({ config: DEFAULT_OWNED_PROMO_CONFIG, updatedAt: null, source: "fallback" });
-    const checked = validateOwnedPromoConfig(row.config);
+    const checked = migrateOwnedPromoConfig(row.config);
     if (!checked.ok) return res.status(503).json({ error: "OWNED_PROMO_CONFIG_INVALID" });
-    return res.json({ config: checked.config, updatedAt: row.updated_at, source: "database" });
+    let updatedAt = row.updated_at;
+    let source = row.config?.schemaVersion === 2 ? "database" : "database_migrated";
+    if (row.config?.schemaVersion !== 2) {
+      try {
+        const migrated = await pool.query(
+          "UPDATE commerce_owned_promo_config SET config = $1::jsonb, updated_at = NOW() WHERE config_id = 1 RETURNING updated_at",
+          [JSON.stringify(checked.config)],
+        );
+        updatedAt = migrated.rows[0]?.updated_at || updatedAt;
+      } catch (migrationError) {
+        console.error("Admin owned-promo config migration deferred:", migrationError?.message || "unknown error");
+      }
+    }
+    return res.json({ config: checked.config, updatedAt, source });
   } catch (error) {
     console.error("Admin owned-promo config read failed:", error?.message || "unknown error");
     return res.status(503).json({ error: "OWNED_PROMO_CONFIG_READ_FAILED" });
