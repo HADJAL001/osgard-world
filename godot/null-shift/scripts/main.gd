@@ -4335,6 +4335,10 @@ func _after_action_insights() -> Array[String]:
 	var insights: Array[String] = []
 	if mission_accuracy < 55.0:
 		insights.append("ТОЧНОСТЬ: сокращай дистанцию и дожидайся захвата цели")
+	if insights.size() < 3 and stealth_mode_active and stealth_takedowns == 0:
+		insights.append("PHANTOM: B включает тихий шаг; подойди со спины и нажми E")
+	if insights.size() < 3 and stealth_body_discoveries > 0:
+		insights.append("СКРЫТНОСТЬ: патруль нашёл тело; меняй маршрут после устранения")
 	if insights.size() < 3 and damage_taken_total >= 35.0:
 		insights.append("ЗАЩИТА: чаще используй укрытия, импульс и фазовый сдвиг")
 	if insights.size() < 3 and combat_combo_best < 3:
@@ -4381,7 +4385,7 @@ func _build_after_action_report() -> Dictionary:
 	return {
 		"schema": AFTER_ACTION_REPORT_SCHEMA,
 		"game": "NULL//SHIFT",
-		"gameVersion": "0.22.0-operator-chronicle",
+		"gameVersion": "0.23.0-phantom-protocol",
 		"outcome": outcome,
 		"challengeCode": daily_challenge_code if daily_challenge_active else "",
 		"runSeed": daily_run_seed,
@@ -4442,6 +4446,16 @@ func _build_after_action_report() -> Dictionary:
 			"doctrine": adaptive_doctrine,
 			"doctrineChanges": tactical_doctrine_changes,
 			"actions": tactical_action_counts.duplicate(true)
+		},
+		"stealth": {
+			"stanceSeconds": snappedf(stealth_stance_seconds, 0.1),
+			"quietFootsteps": stealth_quiet_steps,
+			"silentTakedowns": stealth_takedowns,
+			"bestTakedownChain": stealth_chain_best,
+			"bodiesDiscovered": stealth_body_discoveries,
+			"visualDetections": stealth_detections,
+			"bonusCredits": stealth_bonus_credits,
+			"modeActiveAtExport": stealth_mode_active
 		},
 		"mastery": {
 			"arc9Rank": _weapon_mastery_rank(),
@@ -4752,6 +4766,7 @@ func _operator_chronicle_achievement_catalog() -> Array[Dictionary]:
 	return [
 		{"id": "first-extraction", "title": "FIRST EXTRACTION", "detail": "Вернись живым хотя бы один раз"},
 		{"id": "ghost-extraction", "title": "GHOST", "detail": "Заверши рейд без полученного урона"},
+		{"id": "phantom-operator", "title": "PHANTOM OPERATOR", "detail": "Заверши успешный рейд минимум с тремя тихими устранениями"},
 		{"id": "sharpshooter", "title": "SHARPSHOOTER", "detail": "Победа с точностью не ниже 90% и минимум 8 выстрелами"},
 		{"id": "apex-combo", "title": "APEX", "detail": "Собери серию из 10 устранений"},
 		{"id": "warden-breaker", "title": "WARDEN BREAKER", "detail": "Оглуши Warden точным попаданием"},
@@ -4780,6 +4795,9 @@ func _operator_chronicle_unlocks_for_report(report: Dictionary, previous_success
 	var shots_fired: int = int(combat.get("shotsFired", 0))
 	var best_combo: int = int(combat.get("bestCombo", 0))
 	var overdrive_arcs: int = int(combat.get("overdriveArcs", 0))
+	var stealth: Dictionary = report.get("stealth", {})
+	if outcome == "SUCCESS" and int(stealth.get("silentTakedowns", 0)) >= 3:
+		unlocked.append("phantom-operator")
 	if outcome == "SUCCESS" and previous_successes == 0:
 		unlocked.append("first-extraction")
 	if outcome == "SUCCESS" and damage_taken <= 0.0:
@@ -4868,7 +4886,7 @@ func _build_operator_chronicle_export() -> Dictionary:
 	return {
 		"schema": OPERATOR_CHRONICLE_SCHEMA,
 		"game": "NULL//SHIFT",
-		"gameVersion": "0.22.0-operator-chronicle",
+		"gameVersion": "0.23.0-phantom-protocol",
 		"generatedAtUtc": Time.get_datetime_string_from_system(true),
 		"localOnly": true,
 		"networkUpload": false,
@@ -6378,12 +6396,17 @@ func _create_mobile_controls(parent: Control) -> void:
 		{"key": "overdrive", "label": "OVERDRIVE"},
 		{"key": "scan", "label": "СКАН"},
 		{"key": "vent", "label": "VENT"},
-		{"key": "echo", "label": "ЭХО"}
+		{"key": "echo", "label": "ЭХО"},
+		{"key": "stealth", "label": "GHOST"}
 	]
 	for item in combat_actions:
 		var action_button := _add_button(action_grid, item["label"], func(): pass, Vector2(84.0, 38.0))
-		action_button.button_down.connect(_set_mobile_action.bind(item["key"], true))
-		action_button.button_up.connect(_set_mobile_action.bind(item["key"], false))
+		if str(item["key"]) == "stealth":
+			mobile_stealth_button = action_button
+			action_button.pressed.connect(_toggle_stealth_mode)
+		else:
+			action_button.button_down.connect(_set_mobile_action.bind(item["key"], true))
+			action_button.button_up.connect(_set_mobile_action.bind(item["key"], false))
 		if str(item["key"]) != "scan" and str(item["key"]) != "vent" and str(item["key"]) != "echo":
 			mobile_action_buttons.append(action_button)
 		if str(item["key"]) == "dash":
@@ -6401,6 +6424,9 @@ func _create_mobile_controls(parent: Control) -> void:
 		if str(item["key"]) == "echo":
 			mobile_echo_button = action_button
 			mobile_echo_button.add_theme_font_size_override("font_size", 8)
+		if str(item["key"]) == "stealth":
+			mobile_stealth_button = action_button
+			mobile_stealth_button.add_theme_font_size_override("font_size", 8)
 	var utility_row := HBoxContainer.new()
 	utility_row.add_theme_constant_override("separation", 4)
 	action_stack.add_child(utility_row)
@@ -6619,6 +6645,8 @@ func _layout_compact_controls(viewport_size: Vector2) -> void:
 		mobile_vent_button.custom_minimum_size = Vector2(action_button_width, action_button_height)
 	if is_instance_valid(mobile_echo_button):
 		mobile_echo_button.custom_minimum_size = Vector2(action_button_width, action_button_height)
+	if is_instance_valid(mobile_stealth_button):
+		mobile_stealth_button.custom_minimum_size = Vector2(action_button_width, action_button_height)
 	mobile_quality_button.custom_minimum_size = Vector2(utility_button_width, 27.0)
 	mobile_diagnostics_button.custom_minimum_size = Vector2(utility_button_width, 27.0)
 	mobile_motion_button.custom_minimum_size = Vector2(utility_button_width, 27.0)
@@ -6796,6 +6824,10 @@ func _update_hud() -> void:
 	if is_instance_valid(mobile_echo_button):
 		mobile_echo_button.text = "ЭХО %.1f" % phase_echo_cooldown if phase_echo_cooldown > 0.02 else "ЭХО"
 		mobile_echo_button.disabled = phase_echo_cooldown > 0.02 or is_instance_valid(phase_echo_node) or paused_game or mission_finished or terminal_active or briefing_visible
+	if is_instance_valid(mobile_stealth_button):
+		mobile_stealth_button.text = "GHOST ON" if stealth_mode_active else "GHOST"
+		mobile_stealth_button.disabled = paused_game or mission_finished or terminal_active or briefing_visible
+		mobile_stealth_button.add_theme_color_override("font_color", Color(0.36, 0.95, 1.0) if stealth_mode_active else Color(0.84, 0.9, 0.9))
 	var engaged_guards := 0
 	var investigating_guards := 0
 	for guard in guards:
@@ -6818,7 +6850,11 @@ func _update_hud() -> void:
 	if is_instance_valid(combat_status_label):
 		var overdrive_readout := "LIVE %.1f S" % overdrive_timer if overdrive_timer > 0.0 else "CHARGE %03d%%" % int(roundf(overdrive_charge))
 		combat_status_label.text = "COMBO %02d · %s · ×%.2f · ACC %.0f%% · %s · %s" % [combat_combo, _combo_mastery_label(_combo_mastery_tier(combat_combo)), _combat_combo_multiplier(combat_combo), _combat_accuracy_percentage(), overdrive_readout, _threat_forecast_text()]
-		combat_status_label.add_theme_color_override("font_color", Color(0.92, 0.72, 1.0) if overdrive_timer > 0.0 else (Color(1.0, 0.77, 0.39) if combat_combo >= 4 else Color(0.38, 1.0, 0.86)))
+		if stealth_mode_active:
+			combat_status_label.text += " · PHANTOM / CHAIN %d" % stealth_chain
+		elif stealth_takedowns > 0:
+			combat_status_label.text += " · SILENT %d" % stealth_takedowns
+		combat_status_label.add_theme_color_override("font_color", Color(0.36, 0.95, 1.0) if stealth_mode_active else (Color(0.92, 0.72, 1.0) if overdrive_timer > 0.0 else (Color(1.0, 0.77, 0.39) if combat_combo >= 4 else Color(0.38, 1.0, 0.86)))
 	if is_instance_valid(thermal_status_label):
 		if weapon_overheated:
 			thermal_status_label.text = "THERMAL LOCKOUT · %.0f%% · V VENT · ARC MK-%d" % [weapon_heat, _weapon_mastery_rank()]
@@ -6861,11 +6897,11 @@ func _update_input_hint() -> void:
 		return
 	var hint: String
 	if mobile_controls_visible:
-		hint = "TOUCH · MOVE / FIRE / ACTION · SCAN · VENT · ECHO · DASH · PULSE · PHASE"
+		hint = "TOUCH · GHOST · MOVE / FIRE / ACTION · SCAN · VENT · ECHO · DASH · PULSE · PHASE"
 	elif gamepad_mode_active:
-		hint = "GAMEPAD · LS MOVE · RS AIM · RT/RB FIRE · R-STICK OVERDRIVE · DPAD RIGHT ECHO / UP SCAN / DOWN VENT"
+		hint = "GAMEPAD · LS MOVE / CLICK GHOST · RS AIM · RT/RB FIRE · R-STICK OVERDRIVE · DPAD ECHO / SCAN / VENT"
 	else:
-		hint = "WASD / ARROWS MOVE · MOUSE FIRE · E ACTION · Q PULSE · T ECHO · Z SCAN · V VENT · R OVERDRIVE · SPACE DASH · SHIFT PHASE"
+		hint = "WASD / ARROWS MOVE · B GHOST · E ACTION / REAR TAKEDOWN · MOUSE FIRE · Q PULSE · T ECHO · Z SCAN · V VENT · R OVERDRIVE · SPACE DASH · SHIFT PHASE"
 	if bottom_hint.text != hint:
 		bottom_hint.text = hint
 
