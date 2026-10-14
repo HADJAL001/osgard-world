@@ -1115,7 +1115,7 @@ function gameCoachShelf(detail,gameId){
  return section;
 }
 
-let lastIntermissionGame='',lastIntermissionCount=0;
+let lastIntermissionGame='',lastIntermissionCount=0,lastInlineIntermissionSession='';
 function refreshCurrentServiceShelf(forceRebuild=false){
  if(!titles[lastIntermissionGame])return;
  const current=root.querySelector('.og-postgame-services')||(outsideRoot&&outsideRoot.querySelector('.og-postgame-services'));
@@ -1134,7 +1134,7 @@ window.addEventListener('osgard:owned-promo-config-updated',()=>refreshCurrentSe
 window.addEventListener('storage',event=>{
  if(!event.key||[servicePreferencesKey,promoSnoozeKey,preferredServiceKey].includes(event.key))refreshCurrentServiceShelf();
 });
-document.addEventListener('osgard:game-launching',()=>{lastIntermissionGame='';lastIntermissionCount=0});
+document.addEventListener('osgard:game-launching',()=>{lastIntermissionGame='';lastIntermissionCount=0;lastInlineIntermissionSession=''});
 function renderOutsideIntermission(detail){
  const id=detail&&detail.game;
  if(!outsideRoot||!titles[id]||!detail||detail.sessionStarted!==true||detail.reason!=='closed_by_user')return;
@@ -1145,13 +1145,17 @@ function renderOutsideIntermission(detail){
  const suite=make('section','og-postgame-suite og-postgame-outside-suite');
  const intro=make('div','og-postgame-outside-intro');
  intro.append(make('p','og-postgame-eyebrow','OSGARD SELECT / BETWEEN WORLDS'));
- intro.append(make('h2','og-postgame-title','Раунд окончен. Выбери следующий шаг.'));
+ const intermissionHeading=make('h2','og-postgame-title','Раунд окончен. Выбери следующий шаг.');
+ intermissionHeading.tabIndex=-1;
+ intro.append(intermissionHeading);
  intro.append(make('p','og-postgame-copy','Ты завершил сессию '+titles[id]+'. Выбери один из собственных проектов OSGARD, поделись приглашением или сразу вернись к каталогу.'));
  const back=make('a','og-postgame-back','Выбрать следующую игру ↗');back.href='#catalog';
  const panels=[servicesShelf(id,shouldShowServicePromos(preferences,completedCount),completedCount),gameCoachShelf(detail,id)];
  if(managedPromoConfig.showShareRewards)panels.push(rewardShelf(id));
  suite.append(intro,back,...panels);
  outsideRoot.append(suite);outsideRoot.hidden=false;
+ // Restore keyboard focus after the player dialog closes.
+ if(typeof intermissionHeading.focus==='function')intermissionHeading.focus({preventScroll:true});
  if(typeof outsideRoot.scrollIntoView==='function'){
   const reduced=typeof window.matchMedia==='function'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   outsideRoot.scrollIntoView({behavior:reduced?'auto':'smooth',block:'start'});
@@ -1166,11 +1170,15 @@ document.addEventListener('osgard:game-launching',()=>{
 });
 function renderOsgardSelect(gameId,sessionId){
  const id=gameId;if(!titles[id])return;
- const completedCount=recordCompletedRound(id,sessionId),preferences=readServicePreferences();
+ const key=typeof sessionId==='string'&&/^[a-z0-9:_-]{1,160}$/i.test(sessionId)?sessionId:'';
+ // A natural completion emits both session-ended and game-completed. Render once per session.
+ if(key&&key===lastInlineIntermissionSession&&root.querySelector('.og-postgame-suite'))return;
+ const completedCount=recordCompletedRound(id,key),preferences=readServicePreferences();
+ lastInlineIntermissionSession=key;
  lastIntermissionGame=id;lastIntermissionCount=completedCount;
  const previousSuite=root.querySelector('.og-postgame-suite');if(previousSuite){disposePostgameTree(previousSuite);previousSuite.remove()}
  const suite=make('section','og-postgame-suite');const panels=[servicesShelf(id,shouldShowServicePromos(preferences,completedCount),completedCount)];if(managedPromoConfig.showShareRewards)panels.push(rewardShelf(id));suite.append(...panels);root.append(suite);
 }
 document.addEventListener('osgard:game-completed',event=>renderOsgardSelect(event.detail&&event.detail.game,event.detail&&event.detail.sessionId));
-document.addEventListener('osgard:game-session-ended',event=>{if(event.detail&&event.detail.sessionStarted===true)renderOsgardSelect(event.detail.game,event.detail.sessionId)});
+document.addEventListener('osgard:game-session-ended',event=>{const detail=event.detail;if(detail&&detail.sessionStarted===true&&detail.reason!=='closed_by_user')renderOsgardSelect(detail.game,detail.sessionId)});
 })();
