@@ -559,7 +559,7 @@ assert.ok(lifecycle.includes("document.dispatchEvent(new Event('osgard:game-laun
 assert.ok(recommendationScript.includes("document.addEventListener('osgard:game-completed'")&&recommendationScript.includes("document.addEventListener('osgard:game-launching'"),'Recommendation module must subscribe to game lifecycle events')
 assert.ok(recommendationStyles.includes('.post-run-recommendations')&&recommendationStyles.includes('prefers-reduced-motion:reduce'),'Recommendation shelf must have responsive/reduced-motion styling')
 new Function(recommendationScript)
-const mockNode=()=>{const node={className:'',textContent:'',hidden:false,dataset:{},attributes:{},children:[],handlers:{},append(...nodes){this.children.push(...nodes)},replaceChildren(...nodes){this.children=nodes},setAttribute(name,value){this.attributes[name]=value},addEventListener(name,handler){(this.handlers[name]??=[]).push(handler)},click(){for(const handler of this.handlers.click||[])handler({target:this,button:0})},querySelector(selector){return selector.startsWith('.')?this.children.find(child=>child.className===selector.slice(1))||null:null}};node.classList={toggle(name,force){let parts=node.className.split(/\s+/).filter(Boolean);const current=parts.includes(name),enabled=force===undefined?!current:Boolean(force);if(enabled&&!current)parts.push(name);if(!enabled&&current)parts=parts.filter(value=>value!==name);node.className=parts.join(' ');return enabled},add(name){this.toggle(name,true)},remove(name){this.toggle(name,false)},contains(name){return node.className.split(/\s+/).includes(name)}};return node}
+const mockNode=()=>{const node={className:'',textContent:'',hidden:false,dataset:{},attributes:{},children:[],handlers:{},append(...nodes){this.children.push(...nodes)},replaceChildren(...nodes){this.children=nodes},setAttribute(name,value){this.attributes[name]=value},addEventListener(name,handler){(this.handlers[name]??=[]).push(handler)},focus(){this.focused=true},click(){for(const handler of this.handlers.click||[])handler({target:this,button:0})},querySelector(selector){return selector.startsWith('.')?this.children.find(child=>child.className===selector.slice(1))||null:null}};node.classList={toggle(name,force){let parts=node.className.split(/\s+/).filter(Boolean);const current=parts.includes(name),enabled=force===undefined?!current:Boolean(force);if(enabled&&!current)parts.push(name);if(!enabled&&current)parts=parts.filter(value=>value!==name);node.className=parts.join(' ');return enabled},add(name){this.toggle(name,true)},remove(name){this.toggle(name,false)},contains(name){return node.className.split(/\s+/).includes(name)}};return node}
 const mockHost=mockNode();mockHost.hidden=true
 const mockOutside=mockNode();mockOutside.hidden=true
 const mockClasses=new Set()
@@ -581,16 +581,21 @@ const cadenceStart=recommendationScript.indexOf('function shouldShowServicePromo
 const cadenceEnd=recommendationScript.indexOf('\nfunction chooseSpotlightService(',cadenceStart)
 assert.ok(cadenceStart>=0&&cadenceEnd>cadenceStart,'Service promotion cadence gate must be independently testable')
 const cadenceSource=recommendationScript.slice(cadenceStart,cadenceEnd)
-const shouldShowPromo=new Function('preferences','completedCount',cadenceSource+';return shouldShowServicePromos(preferences,completedCount)')
-assert.equal(shouldShowPromo(defaultPreferences,1),true,'Default cadence must show after the first completed round')
-assert.equal(shouldShowPromo(defaultPreferences,2),true,'Default cadence must show after each completed round')
-assert.equal(shouldShowPromo({frequency:'every3'},1),false,'An explicit lower-frequency preference must skip the first round')
-assert.equal(shouldShowPromo({frequency:'every3'},2),false,'An explicit lower-frequency preference must skip the second round')
-assert.equal(shouldShowPromo({frequency:'every3'},3),true,'An explicit lower-frequency preference must show after the third round')
-assert.equal(shouldShowPromo({frequency:'off'},3),false,'Opting out must suppress owned-service promotions')
+const shouldShowPromo=new Function('preferences','completedCount','readPromoSnoozeUntil',cadenceSource+';return shouldShowServicePromos(preferences,completedCount)')
+const noPromoPause=()=>0
+assert.equal(shouldShowPromo(defaultPreferences,1,noPromoPause),true,'Default cadence must show after the first completed round')
+assert.equal(shouldShowPromo(defaultPreferences,2,noPromoPause),true,'Default cadence must show after each completed round')
+assert.equal(shouldShowPromo({frequency:'every3'},1,noPromoPause),false,'An explicit lower-frequency preference must skip the first round')
+assert.equal(shouldShowPromo({frequency:'every3'},2,noPromoPause),false,'An explicit lower-frequency preference must skip the second round')
+assert.equal(shouldShowPromo({frequency:'every3'},3,noPromoPause),true,'An explicit lower-frequency preference must show after the third round')
+assert.equal(shouldShowPromo({frequency:'off'},3,noPromoPause),false,'Opting out must suppress owned-service promotions')
+assert.equal(shouldShowPromo(defaultPreferences,1,()=>Date.now()+3600000),false,'A live 24-hour snooze must suppress the promo intermission')
+assert.equal(shouldShowPromo(defaultPreferences,1,noPromoPause),true,'Once the pause is cleared, the saved frequency takes effect again')
 mockLocalStorage.setItem('osgard.games.postgame-service-preferences.v1',JSON.stringify({frequency:'each',selected:serviceIdsForCadence}))
 
-new Function('document','window','location','localStorage','sessionStorage',recommendationScript)(mockDocument,{}, {search:'',origin:'https://osgard.world',pathname:'/games/'},mockLocalStorage,mockSessionStorage)
+const mockWindowHandlers={}
+const mockWindow={OSGARD_CONSENTED_ANALYTICS:null,location:{origin:'https://osgard.world',pathname:'/games/'},addEventListener(name,handler){(mockWindowHandlers[name]??=[]).push(handler)},dispatchEvent(event){(mockWindowHandlers[event.type]||[]).forEach(handler=>handler(event));return true}}
+new Function('document','window','location','localStorage','sessionStorage',recommendationScript)(mockDocument,mockWindow, {search:'',origin:'https://osgard.world',pathname:'/games/'},mockLocalStorage,mockSessionStorage)
 const firstSessionId='session_swarm_qa_1000'
 mockDocument.dispatch('osgard:game-completed',{detail:{game:'swarm',sessionId:firstSessionId}})
 const firstProgress=JSON.parse(mockLocalStorage.getItem('osgard.games.postgame-service-progress.v1'))
