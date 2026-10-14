@@ -45,6 +45,10 @@ on:
       - "scripts/generate-ios-app-icon.mjs"
       - "docs/IOS_APP_STORE_CODEMAGIC_RU.md"
       - "services/osgard-commerce-api/**"
+      - "public/games/premium/**"
+      - "scripts/premium-store-core.test.mjs"
+      - "public/games/commerce-config.json"
+      - "services/osgard-commerce-api/src/server.mjs"
       - "godot/null-shift/**"
       - "scripts/null-shift-godot-smoke.mjs"
       - "scripts/null-shift-diagnostics-contract-smoke.mjs"
@@ -87,6 +91,8 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
+      - name: Verify premium commerce dashboard and checkout safety
+        run: npm run qa:premium-store
       - name: Check cross-surface OSGARD product contracts
         run: npm run qa:contracts
       - name: Test static asset performance budgets
