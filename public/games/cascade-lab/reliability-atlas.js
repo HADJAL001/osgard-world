@@ -264,11 +264,11 @@ const selector=document.createElement('select');selector.className='cl-rel-selec
 panel.append(controls);
 const toolbar=make('div','cl-rel-toolbar');
 const exportJson=make('button','cl-rel-button primary','Экспорт атласа JSON');exportJson.type='button';
-const exportCsv=make('button','cl-rel-button','Экспорт измерений CSV');exportCsv.type='button';
+const exportCsvButton=make('button','cl-rel-button','Экспорт измерений CSV');exportCsvButton.type='button';
 const importButton=make('button','cl-rel-button','Импорт архива');importButton.type='button';
 const clearButton=make('button','cl-rel-button danger','Очистить атлас');clearButton.type='button';
 const fileInput=document.createElement('input');fileInput.type='file';fileInput.accept='application/json,.json';fileInput.hidden=true;
-toolbar.append(exportJson,exportCsv,importButton,clearButton);panel.append(toolbar,fileInput);
+toolbar.append(exportJson,exportCsvButton,importButton,clearButton);panel.append(toolbar,fileInput);
 const recordList=make('div','cl-rel-records');panel.append(recordList);
 const status=make('p','cl-rel-status');status.setAttribute('role','status');status.setAttribute('aria-live','polite');panel.append(status);
 panel.append(make('p','cl-rel-foot','ЛОКАЛЬНЫЕ ДАННЫЕ · JSON ДО 400 KiB · МАКС. 50 ПОПЫТОК · ИНТЕРВАЛ УИЛСОНА 95% · ПОВТОРЫ НЕ ДОКАЗЫВАЮТ ПРИЧИННОСТЬ'));
@@ -435,7 +435,7 @@ function seedFromXray() {
 }
 selector.addEventListener('change',()=>{selectedSignature=selector.value||null;render();});
 exportJson.addEventListener('click',exportArchive);
-exportCsv.addEventListener('click',exportCsv);
+exportCsvButton.addEventListener('click',exportCsv);
 importButton.addEventListener('click',()=>fileInput.click());
 fileInput.addEventListener('change',()=>importArchive(fileInput.files&&fileInput.files[0]));
 clearButton.addEventListener('click',()=>{
