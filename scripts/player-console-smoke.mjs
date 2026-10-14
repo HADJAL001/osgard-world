@@ -64,6 +64,11 @@ test('activity-day validator accepts real calendar dates and rejects impossible 
   assert.equal(validate('2026-1-2'), false);
   assert.equal(validate('not-a-date'), false);
 });
+test('share-composer close does not claim a verified public social post', () => {
+  assert.match(js, /Системное меню завершило работу/);
+  assert.match(js, /не получает подтверждение публичной публикации/);
+  assert.doesNotMatch(js, /Ссылка на '\s*\+ game\.title \+ '\s*отправлена через системное меню/);
+});
 test('Player Lab measures visible game time with a monotonic clock', () => {
   assert.match(js, /const monotonicNow = \(\) =>[\s\S]*performance\.now\(\)/);
   assert.match(js, /activeStartedMonotonic = monotonicNow\(\)/);
