@@ -31,6 +31,8 @@ assert.match(source, /15000/);
 assert.match(lifecycle, /35000/);
 assert.match(html, /id="player-dialog"/);
 assert.match(source, /player-diagnostics-download/);
+assert.ok(source.includes(".observe(dialog, { attributes:true, attributeFilter:['open','data-game'] })"), 'Dialog observation must not restart the watchdog on child text changes');
+assert.ok(source.includes('active.gameId !== dialogGame || active.state === \'idle\' || active.state === \'closed\''), 'A new launch starts only for a changed game or a reopened idle/closed dialog');
 assert.doesNotMatch(source, /\bfetch\s*\(|sendBeacon\s*\(|XMLHttpRequest/);
 assert.match(source, /Blob/);
 assert.match(source, /aria-live/);
