@@ -49,6 +49,7 @@ assert.ok(install.includes('navigator.serviceWorker.register') && install.includ
 assert.ok(install.includes('osgard.games.analytics-consent.v1'), 'PWA analytics must use the existing consent key');
 assert.ok(install.includes("track('pwa_install_prompt_shown')") && install.includes("track('pwa_install_accepted')") && install.includes("track('pwa_install_dismissed')"));
 assert.ok(install.includes('Safari') && install.includes('На экран') && install.includes('aria-hidden'));
+assert.ok(install.includes("storageName === 'session'") && install.includes('window.localStorage'), 'Install flow must degrade safely when browser storage access is blocked.');
 assert.ok(!install.includes('document.cookie') && !install.includes('fetch('), 'Install helper must not add non-consented trackers or network APIs');
 assert.ok(sw.includes("if (request.method !== 'GET') return"));
 assert.ok(sw.includes('url.origin !== self.location.origin'));
@@ -56,6 +57,7 @@ for (const path of ['/games/admin/', '/games/operations/', '/games/commerce-admi
   assert.ok(sw.includes(path), 'Private or API routes must be excluded from the offline cache: ' + path);
 }
 assert.ok(sw.includes("request.mode === 'navigate'") && sw.includes('/games/offline.html'));
+assert.ok(sw.includes("'/games/luxury.css'") && sw.includes("'/games/sponsored-campaigns.css'"), 'The cached catalogue must retain its primary styles offline.');
 assert.ok(sw.includes("cache.put('/games/'") && sw.includes('ignoreSearch: true'));
 assert.ok(sw.includes('CACHE_PREFIX') && sw.includes('caches.delete(name)'));
 assert.ok(!sw.includes("caches.match(request) || fetch(request)"), 'Do not use a stale generic cache-first strategy for the entire site.');
