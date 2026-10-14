@@ -620,7 +620,7 @@ func _run_smoke() -> void:
 	game.player_aim = Vector3.FORWARD
 
 	print("RUNTIME_STAGE: tactical operator dash, visual response and timed evade")
-	if not _expect(is_instance_valid(game.mobile_dash_button) and game.mobile_action_buttons.size() == 5, "mobile HUD must expose a dedicated fifth dash action"):
+	if not _expect(is_instance_valid(game.mobile_dash_button) and game.mobile_action_buttons.size() == 6 and game.mobile_action_buttons[4] == game.mobile_dash_button and is_instance_valid(game.mobile_overdrive_button) and game.mobile_action_buttons[5] == game.mobile_overdrive_button, "mobile HUD must keep dash as action five and expose Overdrive as action six"):
 		return
 	var dash_saved_position: Vector3 = game.player.global_position
 	var dash_saved_velocity: Vector3 = game.player.velocity
