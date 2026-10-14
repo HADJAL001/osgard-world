@@ -78,8 +78,8 @@ function createInvitation(rawContract,options={}){
  return{ok:true,invitation:checked.invitation,url};
 }
 function queryInvitation(search){
- const raw=String(search||'').replace(/^\\?/,'');
- for(const part of raw.split('&')){if(!part)continue;const i=part.indexOf('=');let key;try{key=decodeURIComponent((i<0?part:part.slice(0,i)).replace(/\\+/g,' '));}catch{continue;}if(key!=='clmd')continue;if(i<0)return{ok:false,reason:'В ссылке отсутствует содержимое приглашения.'};let value;try{value=decodeURIComponent(part.slice(i+1).replace(/\\+/g,' '));}catch{return{ok:false,reason:'Не удалось декодировать ссылку приглашения.'};}if(value.length>MAX_INVITE_URL_LENGTH)return{ok:false,reason:'Ссылка приглашения превышает допустимый размер.'};try{return{ok:true,raw:JSON.parse(value)};}catch{return{ok:false,reason:'Данные приглашения не являются корректным JSON.'};}}
+ const raw=String(search||'').replace(/^\?/,'');
+ for(const part of raw.split('&')){if(!part)continue;const i=part.indexOf('=');let key;try{key=decodeURIComponent((i<0?part:part.slice(0,i)).replace(/\+/g,' '));}catch{continue;}if(key!=='clmd')continue;if(i<0)return{ok:false,reason:'В ссылке отсутствует содержимое приглашения.'};let value;try{value=decodeURIComponent(part.slice(i+1).replace(/\+/g,' '));}catch{return{ok:false,reason:'Не удалось декодировать ссылку приглашения.'};}if(value.length>MAX_INVITE_URL_LENGTH)return{ok:false,reason:'Ссылка приглашения превышает допустимый размер.'};try{return{ok:true,raw:JSON.parse(value)};}catch{return{ok:false,reason:'Данные приглашения не являются корректным JSON.'};}}
  return{ok:false,reason:'Ссылка не содержит параметр clmd.'};
 }
 function parseInvitation(search,options={}){
