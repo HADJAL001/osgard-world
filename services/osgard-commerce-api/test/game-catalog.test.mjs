@@ -53,7 +53,7 @@ test("catalogue normalizes text, genre arrays, and order without accepting route
   const payload = valid();
   payload.items[0].title = "  NULL   SHIFT  ";
   payload.items[0].description = "  A sufficiently detailed updated summary for this game.  ";
-  payload.items[0].sortOrder = 11; payload.items[1].sortOrder = 1;
+  payload.items[0].sortOrder = 2; payload.items[1].sortOrder = 1;
   const result = validateGameCatalogPayload(payload);
   assert.equal(result.ok, true);
   assert.equal(result.catalog.items[0].id, "time");
