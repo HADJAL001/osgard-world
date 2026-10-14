@@ -91,6 +91,9 @@ jobs:
       - name: Build the production site
         run: npm run build
       - name: Create and verify production build attestation
+        env:
+          OSGARD_GIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          OSGARD_GIT_REF: ${{ github.event.pull_request.head.ref || github.ref_name }}
         run: npm run release:attest && npm run release:verify
       - name: Verify live SkillCred page wiring
         run: npm run qa:skillcred
