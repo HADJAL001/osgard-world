@@ -94,4 +94,9 @@ assert.ok(assetOptimizer.includes("'catalog-runtime.js'"), "The catalogue runtim
 assert.ok(deployWorkflow.includes('const compact=source.replace(/' + String.fromCharCode(92) + 's+/g,"")') && deployWorkflow.includes('compact.includes(".textContent=")') && deployWorkflow.includes('compact.includes(".title")') && deployWorkflow.includes('compact.includes(".innerHTML")') && deployWorkflow.includes('!body.equals(inflated)'), "Deployment archive validation must accept minified code while verifying safe rendering and exact gzip bytes.");
 assert.ok(matrix.includes("'/games/en/'") && matrix.includes("'/games/game-catalog-fallback.json'") && matrix.includes("compact.includes('.textContent=')"), "The production route matrix must validate the global entry, fallback payload and minified runtime.");
 
+assert.ok(matrix.includes("nonEmpty = path === '/games/favicon.svg'") &&
+  matrix.includes("content.includes('<svg')") &&
+  matrix.includes('viewBox="0 0 64 64"'),
+  "SVG assets must be checked for non-empty markup and viewBox rather than a JavaScript-only fallback.");
+
 console.log("PASS SWARM route contract: game-specific asset checks, self-hosted fonts and reduced motion.");
