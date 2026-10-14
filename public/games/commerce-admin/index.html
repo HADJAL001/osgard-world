@@ -133,7 +133,7 @@ async function savePromoSettings() {
   const enabledServices = Array.from(document.querySelectorAll('[data-promo-enabled]:checked')).map(input=>input.dataset.promoEnabled);
   const defaultSelectedServices = Array.from(document.querySelectorAll('[data-promo-default]:checked')).map(input=>input.dataset.promoDefault).filter(id=>enabledServices.includes(id));
   const config = {
-    schemaVersion: 2,
+    schemaVersion: 3,
     enabled: $('#promo-global-enabled').checked,
     defaultFrequency: $('#promo-default-frequency').value,
     enabledServices,
