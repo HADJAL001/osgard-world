@@ -368,7 +368,7 @@
     url.searchParams.set('utm_content', id);
     const shareData = { title: game.title + ' — OSGARD PLAY', text: 'Попробуй ' + game.title + ' в OSGARD PLAY.', url: url.href };
     if (navigator.share) {
-      navigator.share(shareData).then(() => setStatus('Ссылка на ' + game.title + ' отправлена через системное меню.'), error => {
+      navigator.share(shareData).then(() => setStatus('Системное меню завершило работу. OSGARD не получает подтверждение публичной публикации.'), error => {
         if (error && error.name === 'AbortError') setStatus('Отправка ссылки отменена.');
         else copyUrl(url.href, game.title);
       });
