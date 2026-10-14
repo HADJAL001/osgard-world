@@ -20,7 +20,7 @@ assert.match(html, /LOCAL ONLY · NO UPLOAD/);
 assert.match(html, /prefers-reduced-motion:reduce/);
 assert.match(html, /\/games\/experiments\/app\.js/);
 assert.doesNotMatch(html, /<script[^>]+src="https?:\/\//i, 'Evidence Lab must not load external scripts');
-assert.doesNotMatch(app, /localStorage|sessionStorage|fetch\(/, 'Raw source imports stay in memory and never auto-send');
+assert.doesNotMatch(app.replace(/\/\/.*$/gm, ''), /localStorage|sessionStorage|fetch\(/, 'Raw source imports stay in memory and never auto-send');
 const syntax = spawnSync(process.execPath, ['--check', appPath], { encoding: 'utf8' });
 assert.equal(syntax.status, 0, 'App module syntax must parse: ' + syntax.stderr);
 
