@@ -74,7 +74,7 @@ const passChecks = [
   ['18 · Progress bar exposes its role and numeric value', pass.includes('role=\"progressbar\"') && pass.includes("setAttribute('aria-valuenow'")],
   ['19 · Status messages are screen-reader live regions', pass.includes('aria-live=\"polite\"') && pass.includes('id=\"pass-status\"')],
   ['20 · Earned badges are derived from validated local metrics', pass.includes('function passBadgeList()') && pass.includes("id: 'all-worlds'")],
-  ['21 · Curator badge reads the shared Games Hub favorites key', pass.includes('const favoriteCount = favorites.size') && s.includes("FAVORITES_KEY = 'osgard.games.favorites.v1'")],
+  ['21 · Curator badge reads the shared Games Hub favorites key', pass.includes('const favoriteCount = favorites.size') && js.includes("FAVORITES_KEY = 'osgard.games.favorites.v1'")],
   ['22 · Three-day streak badge uses active launch days', pass.includes("id: 'streak-3'") && pass.includes('streak >= 3')],
   ['23 · Launch tracking listens only to known launch links', pass.includes("querySelectorAll('[data-launch]')") && pass.includes('recordPassLaunch(link.dataset.launch)')],
   ['24 · Route-of-day CTA resolves to a real catalogue launch element', pass.includes("document.querySelector('[data-launch=\"' + id + '\"]')")],
