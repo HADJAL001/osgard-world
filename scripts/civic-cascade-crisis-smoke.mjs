@@ -24,7 +24,7 @@ const seedState = () => ({
   riskOffset: 0, openedRoutes: 2, repairs: 0, pumps: 0, stabilized: 0,
   actionCount: 0, elapsed: 0, score: 0,
 });
-const createDeck = (state) => new Function('state', 'clamp', deckSource + '\\nreturn crisisIncidents;')(state, clamp);
+const createDeck = (state) => new Function('state', 'clamp', deckSource + '\nreturn crisisIncidents;')(state, clamp);
 const probeState = seedState();
 const deck = createDeck(probeState);
 assert.deepEqual(Object.keys(deck).map(Number), [2, 4, 6], 'Exactly three ordered incident checkpoints should exist');
