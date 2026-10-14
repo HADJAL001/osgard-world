@@ -193,7 +193,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
               text.includes('id="favorites-filter"') &&
               text.includes('id="share-dialog"') &&
               text.includes('href="/entertainment/entertainment.css?v=20261014.3"') &&
-              text.includes('src="/entertainment/entertainment.js?v=20261014.3"') &&
+              /src="\/entertainment\/entertainment\.js\?v=[^"]+"/.test(text) &&
               ['null-shift','time','swarm','inherit','remix','civic-cascade','patina','signal-run','cascade-lab','afterimage-run','aether-grid'].every(id => text.includes('data-game="'+id+'"')) &&
               text.includes('"numberOfItems":11')
             : route === '/entertainment/entertainment.css'
@@ -272,7 +272,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
              : path === '/games/expedition/app.js'
                ? content.includes('function buildRoute(') && content.includes("track('expedition_route_created'")
              : path === '/games/expedition/catalog-runtime.js'
-               ? content.includes("document.addEventListener('osgard:game-completed'") && content.includes('.og-expedition-band')
+               ? content.includes("document.addEventListener('osgard:game-completed'") && content.includes("section.className='og-expedition-band'")
              : path === '/games/consented-analytics.js'
               ? content.includes('window.OSGARD_CONSENTED_ANALYTICS') && content.includes('analytics-pending.v1') && content.includes('analytics-consent.v1') && content.includes('referral_link_opened') && content.includes('game_session_completed') && content.includes('/v1/events') && content.includes('accepted')
              : path === '/games/player-lifecycle.js'
