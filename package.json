@@ -75,7 +75,7 @@
     "qa:civic-release-contract": "node scripts/civic-cascade-release-contract-smoke.mjs",
     "qa:ecosystem-release": "node scripts/osgard-ecosystem-release-preflight.mjs && node scripts/osgard-ecosystem-release-preflight-smoke.mjs",
     "qa:one-pass": "node --test scripts/osgard-one-pass-release.test.mjs && node scripts/osgard-one-pass-release-smoke.mjs",
-    "qa:civic-cascade-advisor": "node --test services/osgard-commerce-api/test/civic-cascade-advisor.test.mjs && node --check services/osgard-commerce-api/src/civic-cascade-advisor.mjs && node scripts/civic-cascade-advisor-smoke.mjs"
+    "qa:civic-cascade-advisor": "node --test services/osgard-commerce-api/test/civic-cascade-advisor.test.mjs && node --check services/osgard-commerce-api/src/civic-cascade-advisor.mjs && node scripts/civic-cascade-advisor-smoke.mjs && node scripts/civic-cascade-release-contract-smoke.mjs && node scripts/civic-cascade-forecast-smoke.mjs && node scripts/civic-cascade-crisis-smoke.mjs"
   },
   "dependencies": {
     "@types/three": "^0.186.0",
