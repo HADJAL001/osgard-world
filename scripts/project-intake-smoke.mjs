@@ -46,6 +46,7 @@ check('credentials and query parameters are rejected', () => {
 });
 check('unapproved API path is rejected', () => {
   assert.equal(resolvePublicApiBase('https://commerce.example.test/api/v1', 'https://osgard.world'), '');
+  assert.equal(resolvePublicApiBase('https://evil.example/commerce-api', 'https://osgard.world'), '');
 });
 check('fallback message is understandable and bounded', () => {
   const message = buildLeadMessage({
