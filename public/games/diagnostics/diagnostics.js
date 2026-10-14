@@ -39,7 +39,8 @@
     { id: 'game-signal-run', gameId: 'signal-run', title: 'SIGNAL RUN', route: '/games/signal-run/', description: 'Аркадное испытание на реакцию.' },
     { id: 'game-cascade-lab', gameId: 'cascade-lab', title: 'CASCADE LAB', route: '/games/cascade-lab/', description: 'Физическая головоломка и эксперименты.' },
     { id: 'game-afterimage-run', gameId: 'afterimage-run', title: 'AFTERIMAGE//RUN', route: '/games/afterimage-run/', description: 'Забеги и сравнение времени.' },
-    { id: 'game-aether-grid', gameId: 'aether-grid', title: 'AETHER GRID', route: '/games/aether-grid/', description: 'Ежедневная логическая головоломка.' }
+    { id: 'game-aether-grid', gameId: 'aether-grid', title: 'AETHER GRID', route: '/games/aether-grid/', description: 'Ежедневная логическая головоломка.' },
+    { id: 'game-heist-echo', gameId: 'heist-echo', title: 'HEIST//ECHO', route: '/games/heist-echo/', description: 'Тактическая симуляция, проверка маршрутов и разбор операции.' }
   ];
 
   const checks = capabilityChecks.map((item) => ({ ...item, group: 'device', category: 'device' }))
