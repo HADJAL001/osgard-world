@@ -70,7 +70,7 @@ for (const path of ['/games/luxury.css', '/games/sponsored-campaigns.css', '/gam
   assert.ok(staticAllowlist.includes("'" + path + "'"), 'Core public shell asset must be allowed for cached fallback: ' + path);
 }
 assert.ok(precachePaths.includes('/games/expedition/') && precachePaths.includes('/games/expedition/index.html'), 'The expedition builder shell must remain available offline');
-assert.ok(sw.includes("url.pathname === '/games/expedition/'") && sw.includes("cache.match('/games/expedition/')"), 'Offline navigation should return the cached expedition builder when available');
+assert.ok(sw.includes("url.pathname === '/games/expedition/'") && sw.includes("const cachedExpedition = await cache.match(url.pathname === '/games/expedition/' ? '/games/expedition/' : '/games/expedition/index.html')"), 'Offline navigation should return the cached expedition builder when available');
 assert.ok(sw.includes("cache.put('/games/'") && sw.includes('ignoreSearch: true'));
 assert.ok(sw.includes('CACHE_PREFIX') && sw.includes('caches.delete(name)'));
 assert.ok(!sw.includes("caches.match(request) || fetch(request)"), 'Do not use a stale generic cache-first strategy for the entire site.');
