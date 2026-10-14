@@ -59,7 +59,12 @@
     "qa:games-expedition": "node scripts/games-expedition-smoke.mjs",
     "qa:cascade-lab-trajectory-xray": "node scripts/cascade-lab-trajectory-xray-smoke.mjs",
     "qa:cascade-lab-mission-director": "node scripts/cascade-lab-mission-director-smoke.mjs",
-    "qa:cascade-lab-evidence-integrity": "node scripts/cascade-lab-evidence-integrity-smoke.mjs"
+    "qa:cascade-lab-evidence-integrity": "node scripts/cascade-lab-evidence-integrity-smoke.mjs",
+    "preqa:contracts": "node scripts/generate-games-share-cards.mjs",
+    "qa:contracts": "node scripts/osgard-contract-audit.mjs && node scripts/catalog-state-scale-smoke.mjs",
+    "release:attest": "node scripts/osgard-release-attestation.mjs create",
+    "release:verify": "node scripts/osgard-release-attestation.mjs verify",
+    "qa:release-attestation": "node --test scripts/osgard-release-attestation.test.mjs"
   },
   "dependencies": {
     "@types/three": "^0.186.0",
