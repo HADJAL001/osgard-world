@@ -53,7 +53,7 @@ test("owned-service promotion settings validate the public service allow-list an
   assert.equal(validateOwnedPromoConfig({ enabledServices: ["https://evil.example"] }).code, "OWNED_PROMO_SERVICE_NOT_ALLOWED");
   assert.equal(validateOwnedPromoConfig({ enabledServices: ["marcosa", "marcosa"] }).code, "OWNED_PROMO_SERVICE_DUPLICATED");
   assert.equal(validateOwnedPromoConfig({ enabledServices: ["projects"], defaultSelectedServices: ["marcosa"] }).code, "OWNED_PROMO_DEFAULT_NOT_ENABLED");
-  assert.equal(validateOwnedPromoConfig({ enabledServices: ["projects"], spotlightService: "marcosa" }).code, "OWNED_PROMO_SPOTLIGHT_NOT_ENABLED");
+  assert.equal(validateOwnedPromoConfig({ enabledServices: ["projects"], defaultSelectedServices: ["projects"], spotlightService: "marcosa" }).code, "OWNED_PROMO_SPOTLIGHT_NOT_ENABLED");
   assert.equal(validateOwnedPromoConfig({ spotlightService: "../unexpected" }).code, "OWNED_PROMO_SPOTLIGHT_INVALID");
   assert.equal(validateOwnedPromoConfig({ showShareRewards: 1 }).code, "OWNED_PROMO_REWARDS_INVALID");
 });
