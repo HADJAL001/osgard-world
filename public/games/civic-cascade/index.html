@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#080d10">
-<meta name="description" content="CIVIC CASCADE 2.2 — тактическая кризисная стратегия OSGARD. Стабилизируйте город, принимайте решения при авариях и бросайте друзьям челлендж на лучший результат.">
+<meta name="description" content="CIVIC CASCADE 2.5 — кризисная стратегия OSGARD с целостностью инфраструктуры, цепочками отказов и прогнозом последствий.">
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://osgard.world/games/civic-cascade/">
 <title>CIVIC CASCADE — кризисная стратегия | OSGARD PLAY</title>
-<meta name="osgard-game-version" content="2.4.1-cascade-forecast">
+<meta name="osgard-game-version" content="2.5.0-infrastructure-network">
 <style>
 :root{color-scheme:dark;--bg:#080d10;--panel:#10191d;--panel2:#142126;--line:#ffffff1c;--ink:#edf3ee;--muted:#91a29e;--mint:#b8f4cf;--cyan:#68d8d2;--gold:#e1c58a;--warn:#f2b27c;--bad:#ff827b;--mono:ui-monospace,Consolas,monospace;--serif:Georgia,serif}
 *{box-sizing:border-box}html{background:var(--bg);scroll-behavior:smooth}body{margin:0;color:var(--ink);background:radial-gradient(ellipse at 76% -18%,#234d453d,transparent 48%),var(--bg);font:14px/1.55 Inter,Geist,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}button,select{font:inherit}button,a,select{touch-action:manipulation}a{color:inherit;text-decoration:none}button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(--mint);outline-offset:3px}.wrap{max-width:1440px;padding:0 clamp(14px,2.8vw,42px);margin:auto}
@@ -149,6 +149,21 @@
 @media(max-width:680px){.cc-film-head{display:grid;grid-template-columns:1fr;gap:12px}.cc-film-status{max-width:none;text-align:left}.cc-film-controls{grid-template-columns:minmax(0,1fr)}.cc-film-record{width:100%}.cc-film-copy{margin-bottom:14px}.cc-film-panel{padding:16px}}
 @media(prefers-reduced-motion:reduce){.cc-film-record,.cc-film-progress::-webkit-progress-value{transition:none}.cc-film-record:hover:not(:disabled){transform:none}}
 
+
+.node-inspector{margin-bottom:12px;border-color:#8ce4d23b;background:linear-gradient(135deg,#132126f5,#0d171bf5)}
+.node-inspector .panel-head small{font-family:var(--mono);letter-spacing:.08em}
+.node-inspector .panel-head small[data-tone="warning"]{color:var(--warn)}
+.node-inspector .panel-head small[data-tone="danger"]{color:var(--bad)}
+.node-inspector-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(120px,.8fr);align-items:center;gap:16px}
+.node-inspector-name b{display:block;font-size:15px;letter-spacing:.01em}
+.node-inspector-name small,.node-inspector-effect{display:block;margin-top:5px;color:var(--muted);font-size:10px;line-height:1.5}
+.node-health-readout{display:grid;grid-template-columns:auto minmax(50px,1fr);align-items:center;gap:10px}
+.node-health-readout strong{font:700 17px var(--mono);font-variant-numeric:tabular-nums}
+.node-health-track{height:7px;border-radius:99px;overflow:hidden;background:#ffffff10;border:1px solid #ffffff12}
+.node-health-track span{display:block;width:100%;height:100%;background:var(--mint);box-shadow:0 0 14px #b8f4cf35;transition:width .22s ease,background .22s ease}
+.node-inspector-chain{margin:12px 0 0;color:#d1e4dc;font-size:11px;line-height:1.6}
+.node-inspector-effect{padding-top:9px;border-top:1px solid var(--line)}
+@media(max-width:560px){.node-inspector-body{grid-template-columns:1fr;gap:10px}.node-health-readout{grid-template-columns:70px minmax(0,1fr)}}
 </style>
 </head>
 <body>
@@ -172,6 +187,7 @@
 <div class="metric" id="cc-metric-access"><div class="metric-top"><span>ДОСТУПНОСТЬ</span><i></i></div><b id="cc-access">49%</b><small id="cc-access-note">2 пути открыты</small><div class="meter"><span id="cc-access-bar"></span></div></div>
 <div class="metric" id="cc-metric-supplies"><div class="metric-top"><span>РЕСУРСЫ</span><i></i></div><b id="cc-supplies">74</b><small>пункты обеспечения</small><div class="meter"><span id="cc-supplies-bar"></span></div></div>
 </div>
+<div class="panel node-inspector" id="cc-node-inspector" aria-live="polite"><div class="panel-head"><strong>ЦЕЛОСТНОСТЬ ИНФРАСТРУКТУРЫ</strong><small id="cc-node-status" data-tone="">УСТОЙЧИВ</small></div><div class="node-inspector-body"><div class="node-inspector-name"><b id="cc-node-name">Центр сети</b><small>Состояние выбранного объекта</small></div><div class="node-health-readout"><strong id="cc-node-health">—%</strong><div class="node-health-track"><span id="cc-node-health-bar"></span></div></div></div><p class="node-inspector-chain" id="cc-node-chain">Входящие связи и зависимые городские службы появятся здесь.</p><small class="node-inspector-effect" id="cc-node-effect">Ремонт выбранного узла также помогает зависимым объектам.</small></div>
 <div class="panel" style="margin-top:12px"><div class="panel-head"><strong>02 / ЖУРНАЛ ОПЕРАЦИИ</strong><small id="cc-log-count">0 СОБЫТИЙ</small></div><div class="log" id="cc-log" aria-live="polite"><div class="log-entry"><time>00:00</time><span><b>Центр управления:</b> получена тревога. Выбери действия в пределах выделенного бюджета.</span></div></div></div>
 </section>
 <aside class="side">
@@ -203,7 +219,7 @@
    <article class="cascade-window" id="cc-cascade-60"><h4>T+60 СЕК <small>СРЕДНИЙ ГОРИЗОНТ</small></h4><div class="cascade-track" data-path="wait"><div class="cascade-track-label">БЕЗ НОВЫХ ПРИКАЗОВ</div><p id="cc-cascade-wait-60">—</p></div><div class="cascade-track" data-path="plan"><div class="cascade-track-label">С ТЕКУЩИМ ПЛАНОМ</div><p id="cc-cascade-plan-60">—</p></div></article>
    <article class="cascade-window" id="cc-cascade-90"><h4>T+90 СЕК <small>ДАЛЬНИЙ ГОРИЗОНТ</small></h4><div class="cascade-track" data-path="wait"><div class="cascade-track-label">БЕЗ НОВЫХ ПРИКАЗОВ</div><p id="cc-cascade-wait-90">—</p></div><div class="cascade-track" data-path="plan"><div class="cascade-track-label">С ТЕКУЩИМ ПЛАНОМ</div><p id="cc-cascade-plan-90">—</p></div></article>
   </div>
-  <p class="cascade-forecast-note" id="cc-cascade-note">Детерминированный прогноз повторяет текущие правила изменения воды, сети, доступности и пороговых эффектов. Случайные кризисные события, будущие решения и меняющиеся внешние условия не предсказываются.</p>
+  <p class="cascade-forecast-note" id="cc-cascade-note">Детерминированный прогноз учитывает целостность узлов, слабые входящие связи и каскады отказов. Случайные кризисные события, будущие решения и меняющиеся внешние условия не предсказываются.</p>
  </section>
  <ol class="command-list" id="cc-plan-list" aria-live="polite"><li class="command-empty">Очередь пуста. Поставь игру на паузу и добавь первый приказ.</li></ol>
  <div class="command-footer"><button class="ctrl" id="cc-plan-clear" type="button" disabled>Очистить очередь</button><button class="ctrl primary" id="cc-plan-execute" type="button" disabled>▶ Исполнить план · 0 приказов</button></div>
@@ -252,7 +268,7 @@
 
 <p class="notice">Это браузерная игровая редакция OSGARD PLAY. Показатели и последствия моделируются внутри игры и не являются реальными городскими данными. Состояние операции не отправляется на сервер.</p>
 </main>
-<footer class="footer"><span>© OSGARD WORLD / PLAY · CIVIC CASCADE WEB EDITION 2.4.1</span><span>КРИЗИСНАЯ СТРАТЕГИЯ · DESKTOP + TOUCH</span><span><a href="/games/">ВЕРНУТЬСЯ В КАТАЛОГ ↗</a></span></footer>
+<footer class="footer"><span>© OSGARD WORLD / PLAY · CIVIC CASCADE WEB EDITION 2.5.0</span><span>КРИЗИСНАЯ СТРАТЕГИЯ · DESKTOP + TOUCH</span><span><a href="/games/">ВЕРНУТЬСЯ В КАТАЛОГ ↗</a></span></footer>
 </div><div class="toast" id="cc-toast" role="status" aria-live="polite"></div>
 <script>
 (function(){
@@ -281,6 +297,71 @@ const nodes=[
 {id:'substation',name:'Подстанция',x:.64,y:.25,type:'grid',label:'GRID NODE'},
 {id:'shelter',name:'Пункт эвакуации',x:.33,y:.30,type:'access',label:'SHELTER'}
 ];
+const NODE_DEPENDENCIES=[
+ {from:'substation',to:'hub',kind:'power'},
+ {from:'hub',to:'pump',kind:'power'},
+ {from:'hub',to:'hospital',kind:'power'},
+ {from:'pump',to:'bridge',kind:'flood-control'},
+ {from:'bridge',to:'hospital',kind:'access'},
+ {from:'hospital',to:'shelter',kind:'medical-access'}
+];
+function seedNodeIntegrity(s){
+ return {
+  hub:clamp(s.grid+15),
+  pump:clamp(100-s.water+12),
+  hospital:clamp(s.access*.55+s.grid*.25+20),
+  bridge:clamp(s.access+16),
+  substation:clamp(s.grid+5),
+  shelter:clamp(s.access+22)
+ };
+}
+function ensureNodeIntegrity(s){
+ if(!s.nodeIntegrity||!nodes.every(n=>Number.isFinite(s.nodeIntegrity[n.id])&&s.nodeIntegrity[n.id]>=0&&s.nodeIntegrity[n.id]<=100))s.nodeIntegrity=seedNodeIntegrity(s);
+ if(!s.nodeOutages||typeof s.nodeOutages!=='object')s.nodeOutages={};
+ nodes.forEach(n=>{if(typeof s.nodeOutages[n.id]!=='boolean')s.nodeOutages[n.id]=false});
+ return s.nodeIntegrity;
+}
+function bumpNodeIntegrity(s,nodeId,amount){
+ ensureNodeIntegrity(s);
+ if(Object.prototype.hasOwnProperty.call(s.nodeIntegrity,nodeId))s.nodeIntegrity[nodeId]=clamp(s.nodeIntegrity[nodeId]+amount);
+}
+function applyNodeActionIntegrity(s,action,nodeId){
+ ensureNodeIntegrity(s);
+ if(action==='pump'){bumpNodeIntegrity(s,'pump',24);bumpNodeIntegrity(s,'bridge',5)}
+ else if(action==='grid'){bumpNodeIntegrity(s,'hub',21);bumpNodeIntegrity(s,'substation',17);bumpNodeIntegrity(s,'hospital',5)}
+ else if(action==='route'){bumpNodeIntegrity(s,'bridge',19);bumpNodeIntegrity(s,'hospital',8);bumpNodeIntegrity(s,'shelter',8)}
+ else if(action==='repair'){
+  const target=nodes.some(n=>n.id===nodeId)?nodeId:nodes[0].id;
+  bumpNodeIntegrity(s,target,30);
+  NODE_DEPENDENCIES.filter(edge=>edge.from===target).forEach(edge=>bumpNodeIntegrity(s,edge.to,7));
+ }
+}
+function advanceNodeIntegrity(s,dt){
+ ensureNodeIntegrity(s);
+ const prior={...s.nodeIntegrity},next={...prior};
+ for(const node of nodes){
+  const metric=node.type==='grid'?s.grid:node.type==='water'?100-s.water:s.access;
+  const threshold=node.type==='grid'?58:node.type==='water'?45:55;
+  const stress=clamp((threshold-metric)/threshold,0,1);
+  const weakParents=NODE_DEPENDENCIES.filter(edge=>edge.to===node.id&&prior[edge.from]<48).length;
+  let strain=.008+stress*.09+weakParents*.035;
+  if(node.id==='pump'&&s.water>70)strain+=.03;
+  if(node.type==='grid'&&s.grid<35)strain+=.025;
+  if(node.type==='access'&&s.grid<32)strain+=.02;
+  next[node.id]=clamp(prior[node.id]-strain*Math.max(0,dt));
+ }
+ s.nodeIntegrity=next;
+ for(const node of nodes){
+  const health=next[node.id];
+  if(health<=27&&!s.nodeOutages[node.id]){
+   s.nodeOutages[node.id]=true;
+   if(node.type==='water'){s.water=clamp(s.water+3);s.waterRate=Math.min(1,s.waterRate+.025)}
+   else if(node.type==='grid'){s.grid=clamp(s.grid-3);s.gridRate=Math.min(1,s.gridRate+.025)}
+   else{s.access=clamp(s.access-3);s.accessRate=Math.min(1,s.accessRate+.025)}
+  }else if(health>=48&&s.nodeOutages[node.id])s.nodeOutages[node.id]=false;
+ }
+ return s.nodeIntegrity;
+}
 let state={},selected='hub',paused=false,speedIndex=0,elapsed=0,lastTick=performance.now(),raf=0,logRows=[],toastTimer=0,finished=false,dirty=.25,particles=[],frameCount=0,fpsTime=0,fps=60,activeIncident=null,incidentResumePaused=false;
 let activeChallenge=null,lastResult=null;
 function parseMissionChallenge(search){
@@ -349,7 +430,7 @@ function readCheckpoint(){
  try{
   const raw=localStorage.getItem(CHECKPOINT_KEY);if(!raw)return null;
   const item=JSON.parse(raw),s=item&&item.state;
-  if(!item||item.schemaVersion!==1||!s||item.finished!==false)return null;
+  if(!item||![1,2].includes(item.schemaVersion)||!s||item.finished!==false)return null;
   if(!Object.prototype.hasOwnProperty.call(scenarioData,s.scenario))return null;
   const ranges={water:[0,100],grid:[0,100],access:[0,100],supplies:[0,100],crews:[0,8],maxCrews:[1,8],waterRate:[-1,1],gridRate:[-1,1],accessRate:[-1,1],riskOffset:[0,100],openedRoutes:[0,999],repairs:[0,999],pumps:[0,999],stabilized:[0,999],score:[0,1000000],actionCount:[0,999]};
   for(const key of Object.keys(ranges)){let v=s[key];const range=ranges[key];if(key==='actionCount'&&v===undefined)v=0;if(typeof v!=='number'||!Number.isFinite(v)||v<range[0]||v>range[1])return null;}
@@ -359,7 +440,16 @@ function readCheckpoint(){
   if(!Number.isInteger(item.speedIndex)||item.speedIndex<0||item.speedIndex>=speeds.length||typeof item.paused!=='boolean')return null;
   if(!nodes.some(n=>n.id===item.selected))return null;
   const logs=Array.isArray(item.logs)?item.logs.slice(0,6).filter(x=>x&&typeof x.time==='string'&&typeof x.text==='string').map(x=>({time:x.time.slice(0,8),text:x.text.replace(/<[^>]*>/g,'').slice(0,320)})):[];
-  const cleanState={scenario:s.scenario};Object.keys(ranges).forEach(key=>{cleanState[key]=key==='actionCount'&&s[key]===undefined?0:s[key]});cleanState.elapsed=item.elapsed;
+  const cleanState={scenario:s.scenario};Object.keys(ranges).forEach(key=>{cleanState[key]=key==='actionCount'&&s[key]===undefined?0:s[key]});
+  if(item.schemaVersion===2){
+   if(!s.nodeIntegrity||!s.nodeOutages||!nodes.every(n=>typeof s.nodeIntegrity[n.id]==='number'&&Number.isFinite(s.nodeIntegrity[n.id])&&s.nodeIntegrity[n.id]>=0&&s.nodeIntegrity[n.id]<=100&&typeof s.nodeOutages[n.id]==='boolean'))return null;
+   cleanState.nodeIntegrity=Object.fromEntries(nodes.map(n=>[n.id,s.nodeIntegrity[n.id]]));
+   cleanState.nodeOutages=Object.fromEntries(nodes.map(n=>[n.id,s.nodeOutages[n.id]]));
+  }else{
+   cleanState.nodeIntegrity=seedNodeIntegrity(cleanState);
+   cleanState.nodeOutages=Object.fromEntries(nodes.map(n=>[n.id,false]));
+  }
+  cleanState.elapsed=item.elapsed;
   return {state:cleanState,elapsed:item.elapsed,selected:item.selected,speedIndex:item.speedIndex,paused:item.paused,logs:logs,savedAt:typeof item.savedAt==='string'?item.savedAt:''};
  }catch(_){return null}
 }
@@ -372,7 +462,7 @@ function updateCheckpointStatus(){
 function saveCheckpoint(){
  if(finished||activeIncident){toast(activeIncident?'Сначала выбери ответ на срочное событие.':'Завершённую операцию нельзя сохранить как продолжение. Начни новую миссию.');return}
  try{
-  const snapshot={schemaVersion:1,savedAt:new Date().toISOString(),state:{...state},elapsed:elapsed,selected:selected,speedIndex:speedIndex,paused:paused,finished:false,logs:logRows.slice(0,6).map(x=>({time:String(x.time).slice(0,8),text:String(x.text).replace(/<[^>]*>/g,'').slice(0,320)}))};
+  const snapshot={schemaVersion:2,savedAt:new Date().toISOString(),state:{...state},elapsed:elapsed,selected:selected,speedIndex:speedIndex,paused:paused,finished:false,logs:logRows.slice(0,6).map(x=>({time:String(x.time).slice(0,8),text:String(x.text).replace(/<[^>]*>/g,'').slice(0,320)}))};
   localStorage.setItem(CHECKPOINT_KEY,JSON.stringify(snapshot));
   if(!readCheckpoint())throw new Error('invalid checkpoint');
   updateCheckpointStatus();toast('Контрольная точка сохранена на этом устройстве.');
@@ -407,6 +497,25 @@ function updateForecast(){
 }
 
 function selectedNode(){return nodes.find(n=>n.id===selected)||nodes[0]}
+function renderNodeInspector(){
+ if(!state||!state.scenario)return;
+ ensureNodeIntegrity(state);
+ const node=selectedNode(),health=Math.round(state.nodeIntegrity[node.id]);
+ const status=health<=27?'ОТКАЗ':health<=48?'КРИТИЧЕСКИЙ':health<=68?'НАГРУЗКА':'УСТОЙЧИВ';
+ const tone=health<=27?'danger':health<=48?'warning':'';
+ const metric=node.type==='grid'?Math.round(state.grid):node.type==='water'?Math.round(100-state.water):Math.round(state.access);
+ const service=node.type==='grid'?'энергосеть':node.type==='water'?'защита от затопления':'доступ городских служб';
+ const incoming=NODE_DEPENDENCIES.filter(edge=>edge.to===node.id).map(edge=>nodes.find(n=>n.id===edge.from)?.name).filter(Boolean);
+ const outgoing=NODE_DEPENDENCIES.filter(edge=>edge.from===node.id).map(edge=>nodes.find(n=>n.id===edge.to)?.name).filter(Boolean);
+ $('cc-node-name').textContent=node.name;
+ $('cc-node-health').textContent=health+'%';
+ $('cc-node-health-bar').style.width=health+'%';
+ $('cc-node-health-bar').style.background=health<=27?'var(--bad)':health<=48?'var(--warn)':'var(--mint)';
+ $('cc-node-status').textContent=status;
+ $('cc-node-status').dataset.tone=tone;
+ $('cc-node-chain').textContent='Входящие: '+(incoming.join(' → ')||'внешний источник')+'. Зависимые: '+(outgoing.join(', ')||'нет downstream-узлов')+'.';
+ $('cc-node-effect').textContent='Узел обслуживает: '+service+' ('+metric+'%). Ремонт действует на выбранный объект и немного укрепляет зависимые узлы.';
+}
 
 const crisisIncidents={
  2:{id:'medical-backup',kicker:'INCIDENT 01 / MEDICAL',title:'Резервное питание больницы',copy:'Медицинский квартал сообщает о потере автономного питания. Решение может усилить энергосеть или открыть доступ медикам.',choices:[
@@ -463,6 +572,7 @@ function fresh(scenario){
  const base=scenarioData[scenario]||scenarioData.flood;
  if(planTimer)clearTimeout(planTimer);planTimer=0;planRunning=false;runningPlan=[];planIndex=0;planOrders=[];planNotice='Новая операция: составь свежий штабной план.';
  state={scenario:scenario,water:base.water,grid:base.grid,access:base.access,supplies:base.supplies,crews:4,maxCrews:4,waterRate:base.waterRate,gridRate:base.gridRate,accessRate:base.accessRate,riskOffset:base.riskOffset,openedRoutes:scenario==='blockade'?1:2,repairs:0,pumps:0,stabilized:0,actionCount:0,elapsed:0,score:0};
+ state.nodeIntegrity=seedNodeIntegrity(state);state.nodeOutages=Object.fromEntries(nodes.map(n=>[n.id,false]));
  elapsed=0;paused=false;speedIndex=0;finished=false;activeIncident=null;incidentResumePaused=false;ui.incident.hidden=true;ui.incidentOptions.replaceChildren();ui.incidentStatus.textContent='';selected=scenario==='blackout'?'substation':scenario==='blockade'?'bridge':'hub';logRows=[];particles=[];
  ui.resultOverlay.hidden=true;ui.status.textContent='СИСТЕМА АКТИВНА';ui.stage.textContent='OPERATIONAL';ui.missionTitle.textContent=base.mission;ui.missionCopy.textContent=base.copy;
  $('cc-pause').textContent='Ⅱ Пауза';$('cc-speed').textContent='СКОРОСТЬ 1×';$('cc-scenario').value=scenario;
@@ -491,6 +601,7 @@ function act(action){
   state.repairs++;state.crews=Math.max(0,state.crews-1);state.score+=75;
   addLog('<b>Ремонтная бригада:</b> '+n.name+' восстановлен. Последствия аварии снижены.');
  }
+ applyNodeActionIntegrity(state,action,n.id);
  if(state.crews===0 && state.repairs+state.stabilized>0)state.riskOffset=Math.max(0,state.riskOffset-1);
  state.waterRate=Math.max(-.03,state.waterRate);state.gridRate=Math.max(-.03,state.gridRate);state.accessRate=Math.max(-.03,state.accessRate);
  state.score+=Math.round((100-riskValue())*.05);
@@ -501,7 +612,7 @@ function act(action){
 
 function projectedRisk(s){return Math.round(clamp(s.water*.38+(100-s.grid)*.34+(100-s.access)*.28+s.riskOffset))}
 function simulatePlannedOrders(orders){
- const s={...state};let cost=0,valid=true;
+ const s={...state,nodeIntegrity:{...(state.nodeIntegrity||{})},nodeOutages:{...(state.nodeOutages||{})}};ensureNodeIntegrity(s);let cost=0,valid=true;
  for(const order of orders){
   const meta=PLAN_ACTIONS[order.action];if(!meta){valid=false;break}
   cost+=meta.cost;if(s.supplies<meta.cost||s.crews<meta.crew){valid=false;break}s.supplies-=meta.cost;
@@ -513,6 +624,7 @@ function simulatePlannedOrders(orders){
    if(node.type==='water'){s.water=clamp(s.water-8);s.waterRate-=.04}else if(node.type==='grid'){s.grid=clamp(s.grid+10);s.gridRate-=.04}else{s.access=clamp(s.access+9);s.accessRate-=.04}
    s.repairs=(s.repairs||0)+1;s.crews=Math.max(0,s.crews-1);
   }
+  applyNodeActionIntegrity(s,order.action,order.nodeId);
   // Keep the direct-effect copy aligned with act(): crew exhaustion can reduce the risk offset, and every action applies the same minimum-rate bounds.
   if(s.crews===0&&(s.repairs+s.stabilized>0))s.riskOffset=Math.max(0,s.riskOffset-1);
   s.waterRate=Math.max(-.03,s.waterRate);s.gridRate=Math.max(-.03,s.gridRate);s.accessRate=Math.max(-.03,s.accessRate);
@@ -522,7 +634,7 @@ function simulatePlannedOrders(orders){
 }
 function planCrewDemand(orders){return orders.reduce((sum,order)=>sum+(PLAN_ACTIONS[order.action]?.crew||0),0)}
 function simulateCascadingPath(source,horizons){
- const s={...source},samples=[];let progressed=0;
+ const s={...source,nodeIntegrity:{...(source.nodeIntegrity||{})},nodeOutages:{...(source.nodeOutages||{})}},samples=[];ensureNodeIntegrity(s);let progressed=0;
  const weather=s.scenario==='flood'?1:s.scenario==='blackout'?.8:.9;
  for(const horizon of horizons){
   while(progressed<horizon-1e-9){
@@ -532,17 +644,19 @@ function simulateCascadingPath(source,horizons){
    s.access=clamp(s.access-s.accessRate*dt*(s.water>72?1.15:1));
    if(futureElapsed>65&&s.grid<40)s.access=clamp(s.access-.025*dt);
    if(futureElapsed>90&&s.water>70)s.grid=clamp(s.grid-.018*dt);
+   advanceNodeIntegrity(s,dt);
    const loss=Math.max(0,(s.water-55)*.5)+Math.max(0,(55-s.grid)*.36)+Math.max(0,(50-s.access)*.3);
    s.riskOffset=clamp((s.scenario==='blackout'?6:s.scenario==='blockade'?4:0)+loss,0,50);
    progressed+=dt;
   }
-  samples.push({seconds:horizon,water:Math.round(s.water),grid:Math.round(s.grid),access:Math.round(s.access),risk:projectedRisk(s)});
+  const weakest=nodes.reduce((best,node)=>s.nodeIntegrity[node.id]<s.nodeIntegrity[best.id]?node:best,nodes[0]);
+  samples.push({seconds:horizon,water:Math.round(s.water),grid:Math.round(s.grid),access:Math.round(s.access),risk:projectedRisk(s),nodeIntegrity:{...s.nodeIntegrity},nodeOutages:{...s.nodeOutages},weakestNode:weakest.id,weakestIntegrity:Math.round(s.nodeIntegrity[weakest.id])});
  }
  return samples;
 }
 function renderCascadeForecast(planProjection,orders){
  const horizons=[30,60,90],baseline=simulateCascadingPath({...state},horizons),planned=planProjection.valid?simulateCascadingPath({...planProjection.state},horizons):baseline;
- const format=s=>'Вода '+s.water+'% · Сеть '+s.grid+'% · Доступ '+s.access+'% · Риск '+s.risk;
+ const format=s=>'Вода '+s.water+'% · Сеть '+s.grid+'% · Доступ '+s.access+'% · Риск '+s.risk+' · Слабейший узел '+(nodes.find(n=>n.id===s.weakestNode)?.name||s.weakestNode)+' '+s.weakestIntegrity+'%';
  horizons.forEach((horizon,index)=>{
   const wait=baseline[index],plan=planned[index],delta=plan.risk-wait.risk;
   $('cc-cascade-wait-'+horizon).textContent=format(wait);
@@ -642,7 +756,7 @@ function renderUI(){
  const risk=riskValue();ui.risk.textContent=risk;const small=document.createElement('small');small.textContent=' / 100';ui.risk.append('');ui.risk.append(small);ui.riskMini.textContent=risk+' / 100';
  ui.riskLabel.textContent=risk>=75?'КРИТИЧЕСКИЙ':risk>=48?'РАЗВИВАЕТСЯ':'ПОД КОНТРОЛЕМ';ui.riskCopy.textContent=risk>=75?'Системы близки к каскадному отказу.':risk>=48?'Нагрузка сохраняется. Выбери первичный узел.':'У города есть запас для восстановления.';
  ui.riskLabel.style.color=risk>=75?'var(--bad)':risk>=48?'var(--warn)':'var(--mint)';
- updateForecast();
+ updateForecast();renderNodeInspector();
  $('cc-save').disabled=finished||!!activeIncident;
  if(activeIncident)$('cc-load').disabled=true;
  const goals=objectiveState();let completed=0;Object.entries(goals).forEach(([key,done])=>{const row=$('cc-objective-'+key);row.classList.toggle('done',done);if(done)completed++});
@@ -679,6 +793,7 @@ function checkDrift(dt){
  if(elapsed>65&&state.grid<40)state.access=clamp(state.access-.025*dt);
  if(elapsed>90&&state.water>70)state.grid=clamp(state.grid-.018*dt);
  if(Math.floor(elapsed)%30===0&&Math.floor(elapsed)>0&&Math.floor(elapsed)!==Math.floor(elapsed-dt)){addLog('<b>Сводка:</b> вода '+Math.round(state.water)+'%, сеть '+Math.round(state.grid)+'%, доступ '+Math.round(state.access)+'%.');}
+ advanceNodeIntegrity(state,dt);
  const loss=Math.max(0,(state.water-55)*.5)+Math.max(0,(55-state.grid)*.36)+Math.max(0,(50-state.access)*.3);
  state.riskOffset=clamp((state.scenario==='blackout'?6:state.scenario==='blockade'?4:0)+loss,0,50);
 }
@@ -708,17 +823,41 @@ function draw(now){
   ctx.fillStyle='#9ddcc442';for(let wx=x+8;wx<x+wid-5;wx+=14)for(let wy=y+8;wy<y+hei-4;wy+=14)ctx.fillRect(wx,wy,5,6);
   ctx.fillStyle='#a9c1ad24';ctx.fillRect(x+6,y+hei-7,wid-12,2);
  }}
- // Infrastructure links.
- ctx.save();ctx.strokeStyle='#8ce4d2';ctx.globalAlpha=.65;ctx.lineWidth=1.4;ctx.setLineDash([4,9]);
- const power=[[500,236],[640,147],[730,338],[500,410],[220,355],[320,170]];
- power.forEach(p=>{ctx.beginPath();ctx.moveTo(500,236);ctx.lineTo(p[0],p[1]);ctx.stroke()});ctx.restore();
+ // Directional infrastructure links; color indicates the weaker endpoint.
+ ctx.save();ctx.lineWidth=1.7;ctx.lineCap='round';
+ const nodeLookup=Object.fromEntries(nodes.map(n=>[n.id,n]));
+ NODE_DEPENDENCIES.forEach(edge=>{
+  const from=nodeLookup[edge.from],to=nodeLookup[edge.to];
+  if(!from||!to)return;
+  const a=Number.isFinite(state.nodeIntegrity?.[edge.from])?state.nodeIntegrity[edge.from]:100;
+  const b=Number.isFinite(state.nodeIntegrity?.[edge.to])?state.nodeIntegrity[edge.to]:100;
+  const health=Math.min(a,b);
+  ctx.strokeStyle=health<=27?'#ff827b':health<=48?'#f2b27c':'#8ce4d2';
+  ctx.globalAlpha=health<=27?.9:health<=48?.78:.48;
+  ctx.setLineDash(health<=48?[3,5]:[4,9]);
+  ctx.beginPath();ctx.moveTo(from.x*w,from.y*h);ctx.lineTo(to.x*w,to.y*h);ctx.stroke();
+  if(health<=48){ctx.setLineDash([]);ctx.fillStyle=ctx.strokeStyle;ctx.beginPath();ctx.arc((from.x*w+to.x*w)/2,(from.y*h+to.y*h)/2,2.5,0,Math.PI*2);ctx.fill()}
+ });
+ ctx.setLineDash([]);ctx.restore();
  // Flooded and blocked segments.
  const closed=(state.access<55||state.water>65);
  [[200,270,55],[705,258,62],[806,311,60]].forEach((p,i)=>{ctx.save();ctx.translate(p[0],p[1]);ctx.rotate(i===2?.62:-.2);ctx.fillStyle=state.access>70?'#b8f4cf':'#f2b27c';ctx.globalAlpha=.8;ctx.fillRect(-p[2]/2,-2,p[2],4);if(closed){ctx.strokeStyle='#071012';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-8,-8);ctx.lineTo(8,8);ctx.moveTo(8,-8);ctx.lineTo(-8,8);ctx.stroke()}ctx.restore()});
  // Animated response vehicles.
  for(let i=0;i<4;i++){const t=(now/4200+i*.26)%1;const x=40+t*900,y=260-45*Math.sin(t*Math.PI*2+i)*.8;ctx.save();ctx.translate(x,y);ctx.fillStyle=i%2?'#b8f4cf':'#f0c78c';ctx.fillRect(-8,-4,16,8);ctx.fillStyle='#071012';ctx.fillRect(-5,-2,10,4);ctx.fillStyle='#eef9eb';ctx.fillRect(2,-2,3,2);ctx.restore()}
- // Selected node callouts.
- nodes.forEach(n=>{const x=n.x*w,y=n.y*h;const is=selected===n.id;const color=n.type==='grid'?'#b8f4cf':n.type==='water'?'#68d8d2':'#e1c58a';ctx.save();ctx.translate(x,y);ctx.strokeStyle=color;ctx.fillStyle='#071013d9';ctx.lineWidth=is?2.2:1.3;ctx.beginPath();ctx.arc(0,0,is?18:12,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(-7,0);ctx.lineTo(7,0);ctx.moveTo(0,-7);ctx.lineTo(0,7);ctx.stroke();if(is){ctx.strokeStyle=color;ctx.globalAlpha=.45;ctx.beginPath();ctx.arc(0,0,27+Math.sin(now/220)*3,0,Math.PI*2);ctx.stroke();ctx.globalAlpha=1;ctx.font='9px ui-monospace,monospace';ctx.textAlign='center';ctx.fillStyle='#d9eee4';ctx.fillText(n.label,0,-27)}ctx.restore()});
+ // Node shell = condition; inner reticle = infrastructure type.
+ nodes.forEach(n=>{
+  const x=n.x*w,y=n.y*h,is=selected===n.id;
+  const typeColor=n.type==='grid'?'#b8f4cf':n.type==='water'?'#68d8d2':'#e1c58a';
+  const health=Number.isFinite(state.nodeIntegrity?.[n.id])?state.nodeIntegrity[n.id]:100;
+  const healthColor=health<=27?'#ff827b':health<=48?'#f2b27c':'#b8f4cf';
+  ctx.save();ctx.translate(x,y);
+  ctx.fillStyle='#071013e8';ctx.strokeStyle=typeColor;ctx.lineWidth=is?2.2:1.3;
+  ctx.beginPath();ctx.arc(0,0,is?18:12,0,Math.PI*2);ctx.fill();ctx.stroke();
+  ctx.beginPath();ctx.moveTo(-7,0);ctx.lineTo(7,0);ctx.moveTo(0,-7);ctx.lineTo(0,7);ctx.stroke();
+  ctx.strokeStyle=healthColor;ctx.lineWidth=is?3.4:2.6;ctx.beginPath();ctx.arc(0,0,is?25:17,-Math.PI/2,-Math.PI/2+(Math.PI*2*health/100));ctx.stroke();
+  if(is){ctx.strokeStyle=typeColor;ctx.globalAlpha=.35;ctx.beginPath();ctx.arc(0,0,30+Math.sin(now/220)*2.5,0,Math.PI*2);ctx.stroke();ctx.globalAlpha=1;ctx.font='9px ui-monospace,monospace';ctx.textAlign='center';ctx.fillStyle='#d9eee4';ctx.fillText(n.label+' · '+Math.round(health)+'%',0,-34)}
+  ctx.restore();
+ });
  // Rain, scaled with crisis intensity.
  ctx.save();ctx.strokeStyle='#a9e6df';ctx.globalAlpha=Math.min(.33,.04+state.water/330);ctx.lineWidth=1;
  for(let i=0;i<36;i++){const x=((i*173+now*.19)%1040)-20,y=((i*97+now*.58)%610)-10;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-5,y+12);ctx.stroke()}ctx.restore();
