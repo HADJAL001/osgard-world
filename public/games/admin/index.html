@@ -151,7 +151,9 @@ async function refresh(seed){
   setMessage($('#refresh-status'),'Обновлено '+new Date().toLocaleString('ru-RU')+'. Сравнение использует два смежных окна одинаковой длительности.','success');
  }catch(error){
   if(controller.signal.aborted||sequence!==refreshSequence||tokenAtStart!==operatorToken||epoch!==operationEpoch)return;
-  setMessage($('#refresh-status'),error instanceof Error?error.message:'Ошибка API','error');state.textContent='API STATUS / ОШИБКА';
+  const message=error instanceof Error?error.message:'Ошибка API';
+  if(message.startsWith('Доступ отклонён:')){disconnect();setMessage($('#access-status'),message,'error');return}
+  setMessage($('#refresh-status'),message,'error');state.textContent='API STATUS / ОШИБКА';
  }finally{
   if(sequence===refreshSequence){if(refreshController===controller)refreshController=null;button.disabled=false}
  }
