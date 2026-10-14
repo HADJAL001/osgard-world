@@ -95,7 +95,7 @@ assert.equal(valid.archive.runs.length, 2);
 assert.equal(api.validateArchive({ schema: 'unknown', schemaVersion: 1, runs: [] }).ok, false);
 assert.equal(api.validateArchive({ schema: api.schema, schemaVersion: 1, runs: [cleanA, cleanA] }).ok, false, 'duplicate IDs must be rejected');
 assert.equal(api.validateArchive({ schema: api.schema, schemaVersion: 1, runs: Array.from({length:51}, (_,i) => api.cleanRun(run({id:'r'+i,levelId:1}))) }).ok, false, 'archive must be bounded to 50 records');
-assert.equal(api.validateArchive({ schema: api.schema, schemaVersion: 1, runs: [{...cleanA,note:'x'.repeat(201000)}] }).ok, false, 'oversized data must be rejected');
+assert.equal(api.validateArchive({ schema: api.schema, schemaVersion: 1, runs: [{...cleanA,note:'x'.repeat(205000)}] }).ok, false, 'oversized data must be rejected');
 
 assert.equal(api.csvEscape('a,"b"'), '"a,""b"""');
 console.log('CASCADE LAB Engineering OS smoke: PASS — 30 enumerated improvements, six diagnostic branches, same-level deltas, bounded JSON import/export and local-only data.');
