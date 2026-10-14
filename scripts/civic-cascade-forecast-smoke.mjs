@@ -6,7 +6,7 @@ const manifest = JSON.parse(await readFile(new URL('../public/games/civic-cascad
 const check = (value, message) => assert.ok(value, message)
 
 assert.equal(manifest.gameId, 'civic-cascade')
-assert.equal(manifest.version, '2.7.0', 'release manifest must match this regression suite')
+assert.equal(manifest.version, '2.8.0', 'release manifest must match this regression suite')
 assert.equal(manifest.buildContract?.cascadeForecast?.enabled, true)
 assert.deepEqual(manifest.buildContract?.cascadeForecast?.horizonsGameSeconds, [30, 60, 90])
 assert.equal(manifest.buildContract?.cascadeForecast?.randomIncidentsForecasted, false)
@@ -72,6 +72,11 @@ const simulatePath = startElapsed => new Function(
   'elapsed', 'clamp', 'projectedRisk', 'nodes', 'ensureNodeIntegrity', 'advanceNodeIntegrity',
   pathSource + '\nreturn simulateCascadingPath;'
 )(startElapsed, clamp, projectedRisk, nodes, ensureNodeIntegrity, advanceNodeIntegrity)
+
+const doctrineSource = extractBetween('function doctrineObjectiveScore', 'let doctrineResult=null')
+const searchDoctrinePlans = new Function('nodes', 'PLAN_ACTIONS',
+  doctrineSource + '\nreturn searchDoctrinePlans;'
+)(nodes, actions)
 const makeState = scenario => {
   const state = {
     ...scenarios[scenario], scenario, crews: 4, maxCrews: 4,
@@ -103,6 +108,38 @@ for (const scenario of ['flood', 'blackout', 'blockade']) {
     }
   }
 }
+
+const doctrineResults = {}
+for (const scenario of ['flood', 'blackout', 'blockade']) {
+  const base = makeState(scenario)
+  const before = JSON.stringify({water:base.water,grid:base.grid,access:base.access,supplies:base.supplies,crews:base.crews,nodeIntegrity:base.nodeIntegrity})
+  const runOrders = simulateDirect(base)
+  const runPath = simulatePath(0)
+  const result = searchDoctrinePlans(base, 'balanced', 'hub', runOrders, runPath, nodes, actions)
+  check(result.evaluatedCount > 0 && result.evaluatedCount <= 1000, scenario + ' doctrine search must stay bounded')
+  check(Array.isArray(result.alternatives) && result.alternatives.length <= 3, scenario + ' planner must return at most three candidates')
+  for (const candidate of result.alternatives) {
+    check(candidate.orders.length >= 1 && candidate.orders.length <= 4, scenario + ' candidate length must respect queue limit')
+    const feasibility = runOrders(candidate.orders)
+    check(feasibility.valid, scenario + ' candidate must satisfy supply and crew constraints')
+    check(candidate.forecast.length === 3, scenario + ' candidate must include all forecast horizons')
+    for (const sample of candidate.forecast) {
+      check(Number.isFinite(sample.risk) && sample.risk >= 0 && sample.risk <= 100, scenario + ' planner risk must remain bounded')
+      check(Number.isFinite(sample.weakestIntegrity) && sample.weakestIntegrity >= 0 && sample.weakestIntegrity <= 100, scenario + ' planner integrity must remain bounded')
+    }
+  }
+  assert.equal(JSON.stringify({water:base.water,grid:base.grid,access:base.access,supplies:base.supplies,crews:base.crews,nodeIntegrity:base.nodeIntegrity}), before,
+    scenario + ' planner must not mutate the live source state')
+  doctrineResults[scenario] = {evaluated:result.evaluatedCount,recommendations:result.alternatives.length,firstRisk:result.alternatives[0]?.forecast[2].risk ?? null}
+}
+const repeatBase = makeState('flood')
+const repeatSearch = () => searchDoctrinePlans(repeatBase, 'balanced', 'hub', simulateDirect(repeatBase), simulatePath(0), nodes, actions)
+const firstRepeat = repeatSearch(), secondRepeat = repeatSearch()
+assert.deepEqual(firstRepeat.alternatives.map(plan => ({signature:plan.signature,score:plan.score})),
+  secondRepeat.alternatives.map(plan => ({signature:plan.signature,score:plan.score})), 'doctrine search must be deterministic')
+const protectBase = makeState('blackout')
+const protectedPlan = searchDoctrinePlans(protectBase, 'protect', 'hub', simulateDirect(protectBase), simulatePath(0), nodes, actions)
+check(protectedPlan.mode === 'protect', 'infrastructure-protection objective must be selectable')
 
 const causalState = makeState('flood')
 const causalBefore = operationSnapshot(causalState)
@@ -180,12 +217,13 @@ check(gridAt89.grid < floodThreshold.grid - floodThreshold.gridRate * 90,
 
 console.log(JSON.stringify({
   status: 'passed',
-  suite: 'CIVIC CASCADE causal operation debrief, infrastructure integrity and deterministic cascade forecast',
+  suite: 'CIVIC CASCADE autonomous doctrine search, causal debrief, infrastructure integrity and deterministic cascade forecast',
   release: manifest.version,
   scenarios: 3,
   horizons: [30, 60, 90],
   boundedMetricAssertions: 36,
   keyAssertions: 20,
+  doctrineSearch: doctrineResults,
   results: {
     floodPlanRiskImprovement: noAction90.risk - withPump90.risk,
     lowGridThreshold: { accessAtT30FromT64: thresholdForecast.access },
@@ -199,6 +237,11 @@ console.log(JSON.stringify({
     oneIncidentPerNode: 'PASS',
     causalImmediateDeltas: 'PASS',
     causalLedgerBound: 'PASS',
-    causalSnapshotValidation: 'PASS'
+    causalSnapshotValidation: 'PASS',
+    autonomousDoctrineSearch: 'PASS',
+    doctrineBoundedSearch: 'PASS',
+    doctrineResourceAndCrewValidation: 'PASS',
+    doctrineNoLiveMutation: 'PASS',
+    doctrineDeterminism: 'PASS'
   }
 }, null, 2))
