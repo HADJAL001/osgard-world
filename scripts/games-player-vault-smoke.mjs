@@ -119,7 +119,7 @@ await test('rejects duplicate records, invalid favorites and oversized files', a
   }), webcrypto, encoder, new Date('2026-10-14T05:00:00.000Z'));
   const duplicate = structuredClone(created.backup);
   duplicate.entries.push(structuredClone(duplicate.entries[0]));
-  await assert.rejects(async () => core.validateBackup(await withDigest(duplicate), webcrypto, encoder), /повторяющейся запись/);
+  await assert.rejects(async () => core.validateBackup(await withDigest(duplicate), webcrypto, encoder), /повторяющаяся запись/);
   const invalid = structuredClone(created.backup);
   invalid.entries[0].value = 'not-an-array';
   await assert.rejects(async () => core.validateBackup(await withDigest(invalid), webcrypto, encoder), /не прошли проверку/);
