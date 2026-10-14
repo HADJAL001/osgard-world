@@ -24,6 +24,7 @@ assert.ok(html.includes('id="CASCADELAB027"') && html.includes('reproducibility-
 assert.ok(html.includes("notifyOsgardLifecycle('ready', { version: '0.27.0' })"), 'parent-portal lifecycle must reflect the release');
 assert.ok(html.includes("engineVersion: '0.27.0'") && html.includes('simulationProfile: {') && html.includes('WORLD.fixedStep'), 'finished runs must provide engine and physics-profile metadata');
 assert.ok(html.includes("new CustomEvent('cascade-lab:run-finished'") && html.includes("cascade-lab:repeat-identical-run-request"), 'completed runs and controlled repeats must be wired');
+assert.ok(html.includes("request.engineVersion !== '0.27.0'") && source.includes("if(run.engineVersion!=='0.27.0')"), 'controlled repeats must not silently compare across physics-engine versions');
 assert.ok(!source.includes('fetch(') && !source.includes('XMLHttpRequest') && !source.includes('sendBeacon('), 'the reliability lab must not transmit run history');
 assert.ok(!source.includes('.innerHTML'), 'imported data and notes must not be rendered through HTML interpolation');
 assert.ok(worker.includes("CACHE=PREFIX+'v0.27.1'") && worker.includes("'./reproducibility-lab.js?v=0.27.0'"), 'offline cache must include the new versioned module');
@@ -98,6 +99,7 @@ assert.equal(wrappedAngle.scenarioSignature, baseline.scenarioSignature, 'equiva
 assert.equal(api.compareRuns(baseline, changedBlueprint), null, 'the same-setup gate must refuse changed setups');
 assert.equal(api.normalizeRun({ ...baseline, mode: 'unrecognised' }), null, 'unknown run modes must be rejected');
 assert.equal(api.normalizeRun({ ...baseline, simulationProfile: undefined }), null, 'the physics profile is mandatory');
+assert.equal(api.normalizeRun({ ...baseline, simulationProfile: { world: {}, level: { id: 2 } } }), null, 'the complete physics profile is mandatory');
 assert.equal(api.normalizeRun({ ...baseline, trajectory: [{ t: 0, x: 1, y: 2 }] }), null, 'a single-frame trace is not a replay');
 
 const longTrace = Array.from({ length: 900 }, (_, i) => ({ t: i / 30, x: i, y: i / 2, vx: 30, vy: 15, gateOpen: false, checkpoints: [] }));
