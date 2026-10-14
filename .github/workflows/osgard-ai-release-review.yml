@@ -45,8 +45,25 @@ jobs:
           npm run qa:contracts > /tmp/osgard-contract-audit.log 2>&1
           code=$?
           cat /tmp/osgard-contract-audit.log
-          if [ ! -s osgard-contract-audit.json ]; then
-            node --input-type=module -e "import fs from 'node:fs'; fs.writeFileSync('osgard-contract-audit.json', JSON.stringify({schema:'osgard.contract-integrity.v1',status:'blocked',summary:{checks:1,passed:0,failed:1,warnings:0},contract:{sha256:'0000000000000000000000000000000000000000000000000000000000000000'},checks:[{id:'contract-audit-run',title:'Audit did not produce a report',status:'failed'}]},null,2)+'\\n')"
+          if [ "$code" -ne 0 ] || [ ! -s osgard-contract-audit.json ]; then
+            OSGARD_CONTRACT_EXIT_CODE="$code" node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const path = 'osgard-contract-audit.json';
+          let report;
+          try { report = JSON.parse(fs.readFileSync(path, 'utf8')); } catch { report = {}; }
+          report.schema = 'osgard.contract-integrity.v1';
+          report.status = 'blocked';
+          report.contract = report.contract && typeof report.contract === 'object' ? report.contract : {};
+          if (!/^[a-f0-9]{64}$/.test(String(report.contract.sha256 || ''))) report.contract.sha256 = '0000000000000000000000000000000000000000000000000000000000000000';
+          report.checks = Array.isArray(report.checks) ? report.checks : [];
+          report.checks.push({ id: 'qa-contracts-command', title: 'The full qa:contracts command did not pass', status: 'failed', detail: 'exit code ' + process.env.OSGARD_CONTRACT_EXIT_CODE });
+          report.summary = report.summary && typeof report.summary === 'object' ? report.summary : {};
+          report.summary.checks = report.checks.length;
+          report.summary.failed = report.checks.filter(item => item && ['failed', 'failure', 'blocked', 'error'].includes(String(item.status).toLowerCase())).length;
+          report.summary.warnings = report.checks.filter(item => item && ['warning', 'warn'].includes(String(item.status).toLowerCase())).length;
+          report.summary.passed = report.checks.length - report.summary.failed - report.summary.warnings;
+          fs.writeFileSync(path, JSON.stringify(report, null, 2) + '\n');
+          NODE
           fi
           echo "Contract audit exit code: $code"
       - name: Build and attest the exact artifact for review
