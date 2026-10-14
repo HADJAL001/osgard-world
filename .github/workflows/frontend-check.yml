@@ -116,6 +116,8 @@ jobs:
         run: npm run qa:ecosystem
       - name: Verify project intake, attribution and safe API fallback
         run: npm run qa:project-intake
+      - name: Verify secure lead pipeline workflow and CRM UI
+        run: npm run qa:lead-workflow
       - name: Validate static archive and HTML
         run: npm run preflight:frontend
       - name: Install pinned Capacitor packages for the iOS bundle smoke test
