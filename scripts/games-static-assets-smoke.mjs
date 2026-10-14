@@ -13,7 +13,7 @@ try {
   ).join('\n')
   const longJs = 'const tones=[' + Array.from({ length: 300 }, (_, i) => "'tone-" + i + "'").join(',') + '];\nfunction pickTone(n) { return tones[Math.max(0, Math.min(tones.length - 1, n))]; }\n'
   for (const path of ['luxury.css', 'daily-circuit.css', 'device-fit.css']) writeFileSync(join(root, path), longCss)
-  for (const path of ['consented-analytics.js', 'commerce-client.js', 'luxury.js', 'daily-circuit.js', 'device-fit.js', 'experiment-core.js', 'experiment-runtime.js']) writeFileSync(join(root, path), longJs)
+  for (const path of ['consented-analytics.js', 'commerce-client.js', 'luxury.js', 'daily-circuit.js', 'device-fit.js', 'experiment-core.js', 'experiment-runtime.js', 'deferred-enhancements.js']) writeFileSync(join(root, path), longJs)
   writeFileSync(join(root, 'nested', 'lazy.mjs'), longJs + '\nexport { pickTone }\n')
 
   const result = await optimizeGamesStaticAssets(root)
