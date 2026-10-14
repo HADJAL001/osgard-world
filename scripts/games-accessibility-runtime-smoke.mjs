@@ -134,6 +134,7 @@ assert.deepEqual({ ...api.getPreferences() }, { motion: 'system', contrast: true
 const dialog = document.getElementById('osgard-accessibility-dialog');
 const trigger = document.getElementById('osgard-accessibility-open');
 assert.ok(dialog && trigger, 'the launcher and settings dialog must be mounted');
+trigger.focus(); // Simulate a keyboard/mouse activation so focus restoration has a real opener.
 api.open();
 assert.equal(dialog.open, true, 'fallback dialog should open when showModal is unavailable');
 assert.equal(dialog.getAttribute('aria-modal'), 'true', 'fallback dialog must announce modal semantics');
