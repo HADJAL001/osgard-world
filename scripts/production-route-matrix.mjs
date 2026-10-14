@@ -106,10 +106,16 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         : route === '/games/signal-run/'
           ? text.includes('<title>SIGNAL RUN — OSGARD WORLD</title>') && text.includes('id="arena"') && text.includes('game.js')
                 : route === '/games/afterimage-run/'
-          ? text.includes('<title>AFTERIMAGE//RUN — OSGARD PLAY</title>') && text.includes('<meta name="osgard-game-version" content="1.6.0">') && text.includes('id="runnerCanvas"') && text.includes('id="run-start"') && text.includes('id="daily-seed"') && text.includes('id="share-telegram"') && text.includes('id="claim-share-reward"') && text.includes('id="focus-mode"') && text.includes('osgard:game-lifecycle')
+          ? text.includes('<title>AFTERIMAGE//RUN — OSGARD PLAY</title>') &&
+            text.includes('<meta name="osgard-game-version" content="1.7.0">') &&
+            text.includes('id="runnerCanvas"') && text.includes('id="run-start"') && text.includes('id="daily-seed"') &&
+            text.includes('id="share-telegram"') && text.includes('id="claim-share-reward"') && text.includes('id="focus-mode"') &&
+            text.includes('id="phase-splits"') && text.includes('id="split-delta"') && text.includes('id="split-history"') &&
+            text.includes("const RELEASE_VERSION='1.7.0'") && text.includes("schema:'osgard.afterimage.run-report.v3'") &&
+            text.includes('osgard:game-lifecycle')
         : route === '/games/cascade-lab/'
-          ? text.includes('<title>CASCADE LAB — Premium Physics Lab 0.15.0</title>') &&
-            text.includes('name="osgard-game-version" content="0.15.0-experiment-ledger"') &&
+          ? text.includes('<title>CASCADE LAB — Premium Physics Lab 0.16.0</title>') &&
+            text.includes('name="osgard-game-version" content="0.16.0-experiment-dossier"') &&
             text.includes('data-cascade-lab-upgrades="0.14.0"') && text.includes('CASCADELAB014') &&
             text.includes('data-cascade-lab-ledger="0.15.0"') && text.includes('CASCADELAB015') &&
             text.includes('osgard.cascade-lab.experiment-ledger.v1') &&
