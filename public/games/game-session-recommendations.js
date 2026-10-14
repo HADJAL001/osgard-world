@@ -206,16 +206,17 @@ const serviceProgressKey='osgard.games.postgame-service-progress.v1';
 const availableServiceIds=services.filter(item=>item[7]!==false).map(item=>item[0]);
 const frequencyValues=['each','every3','off'];
 const preferredServiceKey='osgard.games.preferred-service.v1';
-const defaultManagedPromoConfig={enabled:true,defaultFrequency:'each',enabledServices:availableServiceIds.slice(),defaultSelectedServices:availableServiceIds.slice(),spotlightService:'auto',showShareRewards:true};
+const defaultManagedPromoConfig={schemaVersion:2,enabled:true,defaultFrequency:'each',enabledServices:availableServiceIds.slice(),defaultSelectedServices:availableServiceIds.slice(),spotlightService:'auto',showShareRewards:true};
 let managedPromoConfig={...defaultManagedPromoConfig,enabledServices:availableServiceIds.slice(),defaultSelectedServices:availableServiceIds.slice()};
 function normalizeManagedPromoConfig(raw){
  if(!raw||typeof raw!=='object'||Array.isArray(raw))return null;
+ if(raw.schemaVersion!==undefined&&raw.schemaVersion!==1&&raw.schemaVersion!==2)return null;
  const enabledServices=Array.isArray(raw.enabledServices)?[...new Set(raw.enabledServices.filter(id=>availableServiceIds.includes(id)))]:availableServiceIds.slice();
  const selectedSource=Array.isArray(raw.defaultSelectedServices)?raw.defaultSelectedServices:availableServiceIds;
  const defaultSelectedServices=[...new Set(selectedSource.filter(id=>availableServiceIds.includes(id)&&enabledServices.includes(id)))];
  const defaultFrequency=frequencyValues.includes(raw.defaultFrequency)?raw.defaultFrequency:'each';
  const spotlightService=raw.spotlightService==='auto'||(availableServiceIds.includes(raw.spotlightService)&&enabledServices.includes(raw.spotlightService))?raw.spotlightService:'auto';
- return {enabled:typeof raw.enabled==='boolean'?raw.enabled:true,defaultFrequency,enabledServices,defaultSelectedServices,spotlightService,showShareRewards:typeof raw.showShareRewards==='boolean'?raw.showShareRewards:true};
+ return {schemaVersion:2,enabled:typeof raw.enabled==='boolean'?raw.enabled:true,defaultFrequency,enabledServices,defaultSelectedServices,spotlightService,showShareRewards:typeof raw.showShareRewards==='boolean'?raw.showShareRewards:true};
 }
 async function refreshManagedPromoConfig(){
  try{
@@ -468,11 +469,19 @@ function readServicePreferences(){
  let stored=null;
  try{const raw=localStorage.getItem(servicePreferencesKey);if(raw)stored=JSON.parse(raw)}catch{return memoryServicePreferences?{frequency:memoryServicePreferences.frequency,selected:memoryServicePreferences.selected.slice()}:fallback}
  if(!stored||typeof stored!=='object')return memoryServicePreferences?{frequency:memoryServicePreferences.frequency,selected:memoryServicePreferences.selected.slice()}:fallback;
- return {frequency:frequencyValues.includes(stored.frequency)?stored.frequency:'each',selected:Array.isArray(stored.selected)?availableServiceIds.filter(id=>stored.selected.includes(id)):fallback.selected};
+ if(stored.schemaVersion!==undefined&&stored.schemaVersion!==1&&stored.schemaVersion!==2)return fallback;
+ const frequency=frequencyValues.includes(stored.frequency)?stored.frequency:fallback.frequency;
+ const selected=Array.isArray(stored.selected)?availableServiceIds.filter(id=>stored.selected.includes(id)):fallback.selected.slice();
+ if(stored.schemaVersion!==2){
+  const migrated={schemaVersion:2,frequency,selected};
+  memoryServicePreferences={frequency,selected:selected.slice()};
+  try{localStorage.setItem(servicePreferencesKey,JSON.stringify(migrated))}catch{}
+ }
+ return {frequency,selected};
 }
 function writeServicePreferences(value){
- const next={frequency:frequencyValues.includes(value.frequency)?value.frequency:'each',selected:availableServiceIds.filter(id=>Array.isArray(value.selected)&&value.selected.includes(id))};
- memoryServicePreferences=next;
+ const next={schemaVersion:2,frequency:frequencyValues.includes(value.frequency)?value.frequency:managedPromoConfig.defaultFrequency,selected:availableServiceIds.filter(id=>Array.isArray(value.selected)&&value.selected.includes(id))};
+ memoryServicePreferences={frequency:next.frequency,selected:next.selected.slice()};
  try{localStorage.setItem(servicePreferencesKey,JSON.stringify(next));return true}catch{return false}
 }
 function readServiceProgress(){

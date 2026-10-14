@@ -23,6 +23,12 @@ const player = read('player');
 assert.ok(core.includes('export const OWNED_PROMO_SERVICE_IDS'), 'Server-controlled promo service allow-list missing');
 assert.ok(core.includes('export const DEFAULT_OWNED_PROMO_CONFIG'), 'Safe startup defaults missing');
 assert.ok(core.includes('export function validateOwnedPromoConfig'), 'Strict promotion-setting validation missing');
+assert.ok(core.includes('export function migrateOwnedPromoConfig') && core.includes('schemaVersion: 2'), 'Versioned safe owned-promo migration missing');
+assert.ok(api.includes('migrateOwnedPromoConfig(row.config)'), 'Public and admin config reads must normalize legacy database settings');
+assert.ok(api.includes('database_migration_deferred') && api.includes('AND config = $2::jsonb'), 'Migration writes must tolerate concurrent admin updates without overwriting newer settings');
+assert.ok(admin.includes('schemaVersion: 2'), 'Admin saves must persist the current configuration schema');
+assert.ok(player.includes('const migrated={schemaVersion:2,frequency,selected}') && player.includes('const next={schemaVersion:2,frequency:'), 'Player preferences must migrate to schema v2 without losing frequency or selection');
+assert.ok(player.includes('if(raw.schemaVersion!==undefined&&raw.schemaVersion!==1&&raw.schemaVersion!==2)return null'), 'Player client must fail closed on unknown future config schemas');
 for (const code of [
   'OWNED_PROMO_FREQUENCY_INVALID',
   'OWNED_PROMO_SERVICE_NOT_ALLOWED',
