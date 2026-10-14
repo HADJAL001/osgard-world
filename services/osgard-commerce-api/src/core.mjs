@@ -125,7 +125,7 @@ export function validateLeadPayload(body) {
   if (projectType.length < 2) return { ok: false, status: 400, code: "PROJECT_TYPE_REQUIRED" };
   if (contact.length < 3) return { ok: false, status: 400, code: "CONTACT_REQUIRED" };
   if (description.length < 10) return { ok: false, status: 400, code: "DESCRIPTION_TOO_SHORT" };
-  return { ok: true, bot: false, projectType, budget, contact, description };
+  return { ok: true, bot: false, projectType, budget, contact, description, attribution: normalizeCheckoutAttribution(input.attribution) };
 }
 
 const REFERRAL_CODE_PATTERN = /^og_[a-f0-9]{8}$/;
