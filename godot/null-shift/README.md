@@ -18,8 +18,9 @@ The first launch opens a pausing Russian-language field briefing with the three 
 1. Reach the terminal and interact with E or the mobile action button.
 2. Enter the directional cipher: up, left, down, right.
 3. Fight or evade guards and destroy the EMP relay, energy cell, or phase anchor for different tactical effects. A pulse (Q) also suppresses a nearby charging/active phase conduit for 1.85 seconds, creating a short safe window at the cost of its cooldown.
-4. Secure the quantum core and reach extraction.
-5. Bank career credits, install persistent local upgrades, and replay one of three contracts.
+4. Secure the quantum core and reach extraction. This starts a 30-second Extraction Pressure window: two interceptors enter the exit lane, and the three phase conduits accelerate by 18%. The live HUD shows a color-changing countdown and progress bar.
+5. If the window expires, the network escalates into Lockdown Breach and dispatches a Warden (or a capped backup guard if the Warden is already active). Extraction remains possible; the phase conduits keep a smaller 12% speed increase so the missed window creates pressure rather than an arbitrary game-over.
+6. Bank career credits, install persistent local upgrades, and replay one of three contracts.
 
 ## Controls
 
@@ -237,3 +238,12 @@ The Godot scene uses one shadowless OmniLight3D accent parented to the animated 
 ## Release 2.7 — Overdrive chain arcs
 
 While Overdrive is active, a weapon hit on a guard can conduct a single violet arc to the nearest other hostile within 7.5 metres. The secondary hit deals 55% of the normal Overdrive damage (rounded to a minimum of one point), uses the existing beam/spark/light pools, and requires an unobstructed physics ray to the second guard. One shot never fans out recursively, the arc cannot hit the primary target again, and secondary damage does not increment fired-shot/weapon-accuracy counters. The live diagnostics panel tracks successful arcs.
+
+
+## Release 2.8 — Extraction Pressure and Lockdown Breach
+
+- Securing the quantum core now transitions the raid into a distinct 30-second extraction phase. Two real Godot guards spawn on the extraction approach, the exit ring changes to amber and pulses (respects Reduced Motion), and a live countdown/progress bar appears in the mission-control HUD.
+- Phase conduits accelerate by 18% while the extraction window is active. If it expires, the game transitions once into Lockdown Breach, warns the player in red, and spawns a Warden intercept unless an elite is already active; a capped backup guard is used in that case. The extraction is still reachable, but conduit cycles retain a measured 12% speed increase, so expiry escalates difficulty instead of silently failing the mission.
+- The event director freezes while the raid is paused, is reset on a fresh instance, clears after a successful/failed mission, and reports reinforcements and breaches in both the live HUD telemetry and diagnostics.
+- Godot headless smoke tests now exercise the actual core interaction, two physical reinforcements, countdown delta, accelerated hazard multiplier, timeout, Warden spawn, warning display and clean HUD teardown after successful extraction.
+- Godot remains the primary engine project and CI installs the pinned Godot 4.7.2 stable engine/template. This is a gameplay/UX milestone, not a claim of native 8K rendering; device-specific frame performance still needs physical-device testing.

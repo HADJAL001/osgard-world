@@ -1357,12 +1357,47 @@ func _run_smoke() -> void:
 
 	print("RUNTIME_STAGE: core and extraction")
 	game.player.global_position = game.quantum_core.global_position + Vector3(1.0, 0.0, 0.0)
+	var guards_before_extraction: int = game.guards.size()
 	game._interact()
 	if not _expect(game.core_secured, "operator must collect the core after hacking"):
 		return
+	if not _expect(game.extraction_pressure_active and is_equal_approx(game.extraction_window_remaining, game.EXTRACTION_WINDOW_SECONDS), "securing the quantum core must start a real 30-second extraction pressure phase"):
+		return
+	if not _expect(game.guards.size() == guards_before_extraction + 2 and game.extraction_reinforcements_spawned == 2, "core breach must physically spawn two extraction-lane reinforcements"):
+		return
+	if not _expect(is_instance_valid(game.extraction_event_label) and game.extraction_event_label.visible and game.extraction_event_label.text.contains("EXTRACTION WINDOW") and game.extraction_event_bar.visible and game.extraction_event_bar.value == game.EXTRACTION_WINDOW_SECONDS, "extraction phase must show a live labelled countdown and progress bar"):
+		return
+	if not _expect(game._extraction_hazard_rate() > 1.0, "phase conduits must accelerate during extraction pressure"):
+		return
+	var previous_extraction_timer: float = game.extraction_window_remaining
+	game._update_extraction_director(5.0)
+	if not _expect(is_equal_approx(game.extraction_window_remaining, previous_extraction_timer - 5.0), "extraction timer must advance using the real simulation delta"):
+		return
+	var saved_warden_spawned: bool = game.warden_spawned
+	game.warden_spawned = false
+	game.extraction_window_remaining = 0.1
+	game._update_extraction_director(0.2)
+	if not _expect(not game.extraction_pressure_active and game.extraction_overload_triggered and game.extraction_overload_count == 1, "missing the extraction window must transition once into lockdown breach"):
+		return
+	if not _expect(game._extraction_hazard_rate() > 1.0 and game.extraction_event_label.visible and game.extraction_event_label.text.contains("LOCKDOWN BREACH"), "lockdown breach must keep hazards accelerated and show the elite-intercept warning"):
+		return
+	if not _expect(game.warden_spawned and game.guards.back()["warden"], "missed extraction window must spawn a real Warden intercept"):
+		return
+	var siege_warden: Node3D = game.guards.back()["node"] as Node3D
+	game.guards.pop_back()
+	siege_warden.queue_free()
+	game.warden_spawned = saved_warden_spawned
+	game.extraction_overload_triggered = false
+	game.extraction_window_remaining = 0.0
+	game.extraction_pressure_active = false
+	game.extraction_reinforcements_spawned = 0
+	game._refresh_extraction_event_layout()
+	game._update_hud()
 	game.player.global_position = game.extraction.global_position + Vector3(1.0, 0.0, 0.0)
 	game._interact()
 	if not _expect(game.mission_finished and game.career_credits >= 750, "successful extraction must bank mission credits"):
+		return
+	if not _expect(not game.extraction_pressure_active and not game.extraction_event_label.visible and not game.extraction_event_bar.visible, "successful extraction must close the pressure event and clear its HUD layer"):
 		return
 
 	print("RUNTIME_STAGE: persistence and upgrades")

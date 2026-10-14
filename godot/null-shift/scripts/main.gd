@@ -26,6 +26,9 @@ const GUARD_FLANK_GOLDEN_ANGLE := 2.399963229728653
 const GUARD_NAVIGATION_RAY := 1.55
 const OVERDRIVE_ARC_RADIUS := 7.5
 const OVERDRIVE_ARC_DAMAGE_SCALE := 0.55
+const EXTRACTION_WINDOW_SECONDS := 30.0
+const EXTRACTION_PRESSURE_RATE := 1.18
+const EXTRACTION_OVERTIME_RATE := 1.12
 
 var player: CharacterBody3D
 var camera: Camera3D
@@ -133,6 +136,14 @@ var terminal_active := false
 var terminal_unlocked := false
 var terminal_progress := 0
 var core_secured := false
+var extraction_pressure_active := false
+var extraction_window_remaining := 0.0
+var extraction_overload_triggered := false
+var extraction_reinforcements_spawned := 0
+var extraction_overload_count := 0
+var extraction_event_label: Label
+var extraction_event_bar: ProgressBar
+var extraction_event_fill: StyleBoxFlat
 var medkit_used := false
 var alarm_active := false
 var warden_spawned := false
@@ -356,6 +367,11 @@ func _reset_runtime_collections() -> void:
 	phase_lanes = phase_lanes.duplicate()
 	phase_lanes.clear()
 	phase_lane_disruptions = 0
+	extraction_pressure_active = false
+	extraction_window_remaining = 0.0
+	extraction_overload_triggered = false
+	extraction_reinforcements_spawned = 0
+	extraction_overload_count = 0
 	dash_trail_clock = 0.0
 	dash_trail_last_position = Vector3.ZERO
 	dash_trails_emitted = 0
@@ -409,6 +425,7 @@ func _process(delta: float) -> void:
 	if not paused_game and not mission_finished and not briefing_visible:
 		elapsed += dt
 		_update_combat_director(dt)
+		_update_extraction_director(dt)
 		_update_phase_lanes(dt)
 	scene_clock += dt
 	damage_flash_timer = maxf(0.0, damage_flash_timer - dt)
@@ -1006,6 +1023,42 @@ func _create_phase_lanes() -> void:
 			"pulse_light": pulse_light
 		})
 
+func _extraction_hazard_rate() -> float:
+	if extraction_pressure_active:
+		return EXTRACTION_PRESSURE_RATE
+	if extraction_overload_triggered:
+		return EXTRACTION_OVERTIME_RATE
+	return 1.0
+
+func _update_extraction_director(delta: float) -> void:
+	if not extraction_pressure_active or mission_finished:
+		return
+	extraction_window_remaining = maxf(0.0, extraction_window_remaining - maxf(0.0, delta))
+	if extraction_window_remaining > 0.0:
+		return
+	extraction_pressure_active = false
+	extraction_overload_triggered = true
+	extraction_overload_count += 1
+	alarm_active = true
+	objective_text = "ОКНО ЭВАКУАЦИИ ЗАКРЫТО · СЕТЬ ПЕРЕХВАТА ВЫЗВАЛА ЭЛИТУ"
+	if not warden_spawned:
+		warden_spawned = true
+		_spawn_guard(extraction.global_position + Vector3(-4.0, 0.82, -4.0), true)
+		extraction_reinforcements_spawned += 1
+	elif guards.size() < 8:
+		_spawn_guard(extraction.global_position + Vector3(3.2, 0.82, -4.5), false)
+		extraction_reinforcements_spawned += 1
+	_spawn_ring_burst(extraction.global_position + Vector3.UP * 0.12, materials["red"])
+	_spawn_impact_light(extraction.global_position + Vector3.UP * 0.6, Color(1.0, 0.12, 0.24), 3.8, 7.0, 0.34)
+	_screen_impulse(0.24, 0.34)
+	_play_sfx(74.0, 0.72, 0.17)
+	if is_instance_valid(extraction_event_label):
+		extraction_event_label.visible = true
+	if is_instance_valid(extraction_event_bar):
+		extraction_event_bar.visible = true
+	_refresh_extraction_event_layout()
+	_update_hud()
+
 func _update_phase_lanes(delta: float) -> void:
 	phase_clock += maxf(0.0, delta)
 	var active_count: int = 0
@@ -1013,7 +1066,7 @@ func _update_phase_lanes(delta: float) -> void:
 	var disrupted_count: int = 0
 	for index in range(phase_lanes.size()):
 		var lane: Dictionary = phase_lanes[index]
-		var cycle: float = fposmod(phase_clock * daily_phase_rate + float(lane["offset"]), 8.4)
+		var cycle: float = fposmod(phase_clock * daily_phase_rate * _extraction_hazard_rate() + float(lane["offset"]), 8.4)
 		var next_state: String = "safe"
 		if cycle >= 4.95 and cycle < 6.3:
 			next_state = "warning"
@@ -2521,8 +2574,23 @@ func _interact() -> void:
 		core_ring.visible = false
 		core_light.visible = false
 		run_credits += 750
-		objective_text = "ЯДРО ИЗВЛЕЧЕНО · НАПРАВЛЯЙТЕСЬ К ТОЧКЕ ЭВАКУАЦИИ"
+		extraction_pressure_active = true
+		extraction_window_remaining = EXTRACTION_WINDOW_SECONDS
+		extraction_overload_triggered = false
+		alarm_active = true
+		_spawn_guard(Vector3(16.2, 0.82, 14.0), false)
+		_spawn_guard(Vector3(23.0, 0.82, 7.0), false)
+		extraction_reinforcements_spawned += 2
+		objective_text = "ЯДРО ИЗВЛЕЧЕНО · ОКНО ЭВАКУАЦИИ 30 С · ПЕРЕХВАТ НАЧАТ"
+		if is_instance_valid(extraction_event_label):
+			extraction_event_label.visible = true
+		if is_instance_valid(extraction_event_bar):
+			extraction_event_bar.visible = true
+		_refresh_extraction_event_layout()
+		_spawn_ring_burst(quantum_core.global_position + Vector3.UP * 0.1, materials["amber"])
+		_spawn_impact_light(quantum_core.global_position + Vector3.UP * 0.6, Color(1.0, 0.58, 0.15), 3.2, 6.0, 0.3)
 		_play_sfx(880.0, 0.42, 0.13)
+		_update_hud()
 	elif core_secured and _near(player, extraction, 3.5):
 		_finish_mission(true)
 	elif not terminal_unlocked and _near(player, quantum_core, 3.0):
@@ -2646,6 +2714,10 @@ func _finish_mission(success: bool) -> void:
 	mission_grade = _mission_grade_for_score(mission_score)
 	mission_finished = true
 	paused_game = false
+	extraction_pressure_active = false
+	extraction_window_remaining = 0.0
+	extraction_overload_triggered = false
+	_refresh_extraction_event_layout()
 	if success:
 		var daily_bonus := _claim_daily_challenge_reward()
 		var grade_bonus := _mission_grade_bonus(mission_grade)
@@ -3431,6 +3503,26 @@ func _create_ui() -> void:
 	objective_label = _label(objective_stack, objective_text, 12, Color(0.88, 0.96, 0.95))
 	objective_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	objective_label.custom_minimum_size = Vector2(285.0, 64.0)
+	extraction_event_label = _label(objective_stack, "EXTRACTION WINDOW · 30.0 S", 9, Color(1.0, 0.72, 0.34))
+	extraction_event_label.visible = false
+	extraction_event_bar = ProgressBar.new()
+	extraction_event_bar.name = "ExtractionPressure"
+	extraction_event_bar.min_value = 0.0
+	extraction_event_bar.max_value = EXTRACTION_WINDOW_SECONDS
+	extraction_event_bar.value = EXTRACTION_WINDOW_SECONDS
+	extraction_event_bar.show_percentage = false
+	extraction_event_bar.custom_minimum_size = Vector2(278.0, 5.0)
+	extraction_event_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	extraction_event_bar.visible = false
+	var extraction_bar_background := StyleBoxFlat.new()
+	extraction_bar_background.bg_color = Color(0.035, 0.078, 0.086, 0.98)
+	extraction_bar_background.set_corner_radius_all(3)
+	extraction_event_bar.add_theme_stylebox_override("background", extraction_bar_background)
+	extraction_event_fill = StyleBoxFlat.new()
+	extraction_event_fill.bg_color = Color(1.0, 0.62, 0.25)
+	extraction_event_fill.set_corner_radius_all(3)
+	extraction_event_bar.add_theme_stylebox_override("fill", extraction_event_fill)
+	objective_stack.add_child(extraction_event_bar)
 	telemetry_label = _label(objective_stack, "HOSTILES 03  ·  DEVICES 03  ·  CONTRACT 01", 10, Color(0.48, 0.72, 0.72))
 	combat_status_label = _label(objective_stack, "COMBO 00 · MULT ×1.00 · ACC 100%", 9, Color(0.38, 1.0, 0.86))
 	overdrive_bar = ProgressBar.new()
@@ -4082,6 +4174,19 @@ func _set_mobile_action(action: String, pressed: bool) -> void:
 				"overdrive":
 					_activate_overdrive()
 
+func _refresh_extraction_event_layout() -> void:
+	if not is_instance_valid(objective_panel):
+		return
+	var event_extra: float = 26.0 if extraction_pressure_active or extraction_overload_triggered else 0.0
+	var daily_extra: float = 26.0 if daily_challenge_active and not daily_mutators.is_empty() else 0.0
+	if mobile_controls_visible:
+		objective_panel.offset_bottom = 266.0 + daily_extra + event_extra
+	else:
+		objective_panel.offset_bottom = 250.0 + daily_extra + event_extra
+		if is_instance_valid(tactical_radar_panel):
+			tactical_radar_panel.offset_top = 264.0 + daily_extra + event_extra
+			tactical_radar_panel.offset_bottom = 458.0 + daily_extra + event_extra
+
 func _update_mobile_layout() -> void:
 	# Godot may dispatch a first layout frame before the platform reports a valid viewport.
 	# Do not touch controls until the full HUD tree and viewport have been constructed.
@@ -4128,7 +4233,7 @@ func _update_mobile_layout() -> void:
 		objective_panel.offset_left = 10.0
 		objective_panel.offset_right = -10.0
 		objective_panel.offset_top = 148.0
-		objective_panel.offset_bottom = 292.0 if daily_challenge_active and not daily_mutators.is_empty() else 266.0
+		objective_panel.offset_bottom = 266.0 + (26.0 if daily_challenge_active and not daily_mutators.is_empty() else 0.0) + (26.0 if extraction_pressure_active or extraction_overload_triggered else 0.0)
 		objective_title.visible = false
 		telemetry_label.visible = false
 		objective_actions.visible = false
@@ -4153,10 +4258,11 @@ func _update_mobile_layout() -> void:
 		objective_panel.offset_left = -334.0
 		objective_panel.offset_top = 18.0
 		objective_panel.offset_right = -18.0
-		objective_panel.offset_bottom = 276.0 if daily_challenge_active and not daily_mutators.is_empty() else 250.0
+		objective_panel.offset_bottom = 250.0 + (26.0 if daily_challenge_active and not daily_mutators.is_empty() else 0.0) + (26.0 if extraction_pressure_active or extraction_overload_triggered else 0.0)
 		if is_instance_valid(tactical_radar_panel):
-			tactical_radar_panel.offset_top = 290.0 if daily_challenge_active and not daily_mutators.is_empty() else 264.0
-			tactical_radar_panel.offset_bottom = 484.0 if daily_challenge_active and not daily_mutators.is_empty() else 458.0
+			var panel_extra: float = (26.0 if daily_challenge_active and not daily_mutators.is_empty() else 0.0) + (26.0 if extraction_pressure_active or extraction_overload_triggered else 0.0)
+			tactical_radar_panel.offset_top = 264.0 + panel_extra
+			tactical_radar_panel.offset_bottom = 458.0 + panel_extra
 		objective_title.visible = true
 		telemetry_label.visible = true
 		objective_actions.visible = true
@@ -4307,6 +4413,20 @@ func _update_hud() -> void:
 	objective_label.text = objective_text
 	if daily_challenge_active and not daily_mutators.is_empty():
 		objective_label.text += "\nDAILY ANOMALIES · " + _daily_mutators_hud_text()
+	var extraction_event_visible: bool = not mission_finished and (extraction_pressure_active or extraction_overload_triggered)
+	if is_instance_valid(extraction_event_label):
+		extraction_event_label.visible = extraction_event_visible
+		if extraction_pressure_active:
+			extraction_event_label.text = "EXTRACTION WINDOW · %.1f S" % extraction_window_remaining
+			extraction_event_label.add_theme_color_override("font_color", Color(0.38, 1.0, 0.86) if extraction_window_remaining > 12.0 else (Color(1.0, 0.72, 0.34) if extraction_window_remaining > 6.0 else Color(1.0, 0.25, 0.34)))
+		elif extraction_overload_triggered:
+			extraction_event_label.text = "LOCKDOWN BREACH · WARDEN TRACKING"
+			extraction_event_label.add_theme_color_override("font_color", Color(1.0, 0.25, 0.34))
+	if is_instance_valid(extraction_event_bar):
+		extraction_event_bar.visible = extraction_event_visible
+		extraction_event_bar.value = clampf(extraction_window_remaining, 0.0, EXTRACTION_WINDOW_SECONDS)
+		if is_instance_valid(extraction_event_fill):
+			extraction_event_fill.bg_color = Color(0.38, 0.96, 0.76) if extraction_window_remaining > 12.0 else (Color(1.0, 0.62, 0.25) if extraction_window_remaining > 6.0 else Color(1.0, 0.22, 0.31))
 	if is_instance_valid(dash_status_label):
 		if dash_timer > 0.0:
 			dash_status_label.text = "РЫВОК АКТИВЕН · %.1f С" % dash_timer
@@ -4331,6 +4451,8 @@ func _update_hud() -> void:
 	telemetry_label.text = "HOSTILES %02d  ·  DEVICES %02d  ·  CONTRACT %02d · AI C%02d I%02d" % [guards.size(), _living_device_count(), current_contract + 1, engaged_guards, investigating_guards]
 	if daily_challenge_active and not daily_mutators.is_empty():
 		telemetry_label.text += "  ·  DAILY / 2 MODS"
+	if extraction_reinforcements_spawned > 0:
+		telemetry_label.text += "  ·  EXFIL +%02d / BREACH %02d" % [extraction_reinforcements_spawned, extraction_overload_count]
 	if is_instance_valid(combat_status_label):
 		var overdrive_readout := "LIVE %.1f S" % overdrive_timer if overdrive_timer > 0.0 else "CHARGE %03d%%" % int(roundf(overdrive_charge))
 		combat_status_label.text = "COMBO %02d · ×%.2f · ACC %.0f%% · %s" % [combat_combo, _combat_combo_multiplier(combat_combo), _combat_accuracy_percentage(), overdrive_readout]
@@ -4353,10 +4475,10 @@ func _update_hud() -> void:
 		var active_impact_lights: int = _active_impact_light_count()
 		var operator_rim_active: int = int(is_instance_valid(operator_rim_light) and operator_rim_light.visible)
 		var profile: String = "PERFORMANCE" if performance_quality else ("BALANCED" if not cinematic_quality else ("AUTO-OPTIMIZED" if adaptive_quality_degraded else "CINEMATIC"))
-		diagnostics_label.text = "LIVE DIAGNOSTICS\nFPS        %02d\nFRAME P95  %.1f ms\nFRAME NOW  %.1f ms\nDRAW CALLS %d\nFX ACTIVE  %02d\nFX POOLS   %02d BEAM / %02d RING / %02d SPARK\nFX DROPPED %d\nDASH TRAILS %04d\nGUARDS     %d\nDEVICES    %d\nLANE SUPPRESS %03d\nDASH EVADES %d\nDASH CD    %.1f s\nHIT LIGHTS %d / %d POOL\nOPERATOR RIM %d / 1\nOVERDRIVE ARCS %d\nPROFILE    %s" % [
+		diagnostics_label.text = "LIVE DIAGNOSTICS\nFPS        %02d\nFRAME P95  %.1f ms\nFRAME NOW  %.1f ms\nDRAW CALLS %d\nFX ACTIVE  %02d\nFX POOLS   %02d BEAM / %02d RING / %02d SPARK\nFX DROPPED %d\nDASH TRAILS %04d\nGUARDS     %d\nDEVICES    %d\nLANE SUPPRESS %03d\nDASH EVADES %d\nDASH CD    %.1f s\nHIT LIGHTS %d / %d POOL\nOPERATOR RIM %d / 1\nOVERDRIVE ARCS %d\nEXFIL REINF %02d / BREACH %02d\nPROFILE    %s" % [
 			Engine.get_frames_per_second(), fps_p95_ms, current_frame_ms, draw_calls,
 			effects.size(), beam_pool.size(), ring_pool.size(), spark_pool.size(), effect_pool_exhaustions,
-			dash_trails_emitted, guards.size(), _living_device_count(), phase_lane_disruptions, dash_evasions, dash_cooldown, active_impact_lights, impact_light_pool.size(), operator_rim_active, overdrive_arc_chains, profile
+			dash_trails_emitted, guards.size(), _living_device_count(), phase_lane_disruptions, dash_evasions, dash_cooldown, active_impact_lights, impact_light_pool.size(), operator_rim_active, overdrive_arc_chains, extraction_reinforcements_spawned, extraction_overload_count, profile
 		]
 
 func _update_input_hint() -> void:
@@ -4484,6 +4606,9 @@ func _animate_world(delta: float) -> void:
 		core_ring.rotate_x(sin(scene_clock * 0.8) * delta * 0.25)
 	if is_instance_valid(extraction_ring):
 		extraction_ring.rotate_y(-delta * 0.32)
+		var extraction_pulse: float = 1.0 + (0.045 * absf(sin(scene_clock * 5.0)) if not reduced_motion else 0.0) if extraction_pressure_active else 1.0
+		extraction_ring.scale = Vector3.ONE * extraction_pulse
+		extraction_ring.material_override = materials["amber"] if extraction_pressure_active else (materials["red"] if extraction_overload_triggered else materials["cyan"])
 	_update_objective_beacon(delta)
 	if is_instance_valid(terminal_light):
 		terminal_light.light_energy = 1.45 + sin(scene_clock * 3.0) * 0.25
