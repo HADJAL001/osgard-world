@@ -75,7 +75,9 @@ function normalizeTrial(raw) {
   if (!id || !scenarioId || !label) return null;
   const createdAt = Date.parse(raw.createdAt);
   if (!Number.isFinite(createdAt)) return null;
-  if (!/^[0-9A-F]{8}$/i.test(String(raw.configurationFingerprint || '')) || !/^[0-9A-F]{8}$/i.test(String(raw.resultFingerprint || ''))) return null;
+  const configurationFingerprint = String(raw.configurationFingerprint || '').toUpperCase();
+  const resultFingerprint = String(raw.resultFingerprint || '').toUpperCase();
+  if (!/^[0-9A-F]{8}$/.test(configurationFingerprint) || !/^[0-9A-F]{8}$/.test(resultFingerprint)) return null;
   const devices = Array.isArray(raw.devices) ? raw.devices.slice(0, 5).map(normalizeDevice) : null;
   const trajectory = Array.isArray(raw.trajectory) ? raw.trajectory.slice(0, MAX_FRAMES).map(normalizeFrame) : null;
   if (!devices || devices.some(d => !d) || !trajectory || trajectory.length < 2 || trajectory.some(p => !p)) return null;
@@ -84,32 +86,42 @@ function normalizeTrial(raw) {
   if (events.some(e => !e)) return null;
   const timeSeconds = num(raw.timeSeconds);
   if (!finite(timeSeconds) || timeSeconds < 0 || timeSeconds > 31) return null;
+  const engineVersion = text(raw.engineVersion, 60);
+  if (engineVersion !== '0.26.0-fixed-120hz') return null;
+  const normalizedTelemetry = {
+    distance: clamp(num(t.distance, 0), 0, 1000000),
+    peakSpeed: clamp(num(t.peakSpeed, 0), 0, 100000),
+    maxHeight: clamp(num(t.maxHeight, 0), 0, 10000),
+    contacts: clamp(Number.isInteger(t.contacts) ? t.contacts : 0, 0, 10000),
+    impacts: clamp(Number.isInteger(t.impacts) ? t.impacts : 0, 0, 10000),
+    activations: clamp(Number.isInteger(t.activations) ? t.activations : 0, 0, 10000),
+    lastImpactSpeed: clamp(num(t.lastImpactSpeed, 0), 0, 100000),
+    events
+  };
+  const reason = text(raw.reason || '', 240);
+  const gateOpen = raw.gateOpen === true;
+  const checkpointsReached = Array.isArray(raw.checkpointsReached) ? raw.checkpointsReached.slice(0, 20).map(v => text(v, 80)).sort() : [];
+  const stableDevices = devices.map(d => ({ type: d.type, x: d.x, y: d.y, angle: d.angle }));
+  const expectedConfiguration = checksum(canonicalize({ levelId: raw.levelId, devices: stableDevices }));
+  if (expectedConfiguration !== configurationFingerprint) return null;
+  const stableResult = {
+    schema: ENGINE_SCHEMA, engineVersion, levelId: raw.levelId, status: raw.status, reason,
+    timeSeconds: round(timeSeconds, 5), gateOpen, checkpointsReached, telemetry: normalizedTelemetry, trajectory
+  };
+  const expectedResult = checksum(canonicalize({ configurationFingerprint, ...stableResult }));
+  if (expectedResult !== resultFingerprint) return null;
   return {
     schema: SCHEMA, engineSchema: ENGINE_SCHEMA, id, scenarioId, label,
     kind: allowedKinds.has(raw.kind) ? raw.kind : 'repeatability',
     createdAt: new Date(createdAt).toISOString(),
     levelId: raw.levelId, levelTitle: text(raw.levelTitle || ('Протокол #' + raw.levelId), 120),
-    status: raw.status, reason: text(raw.reason || '', 240), timeSeconds: round(timeSeconds, 5),
+    engineVersion, status: raw.status, reason, timeSeconds: round(timeSeconds, 5),
     par: Number.isInteger(raw.par) ? clamp(raw.par, 0, 12) : null,
     parTime: finite(raw.parTime) ? clamp(raw.parTime, 0, 120) : null,
     deviceCount: Number.isInteger(raw.deviceCount) ? clamp(raw.deviceCount, 0, 5) : devices.length,
-    gateOpen: raw.gateOpen === true,
-    checkpointsReached: Array.isArray(raw.checkpointsReached) ? raw.checkpointsReached.slice(0, 20).map(v => text(v, 80)) : [],
-    telemetry: {
-      distance: clamp(num(t.distance, 0), 0, 1000000),
-      peakSpeed: clamp(num(t.peakSpeed, 0), 0, 100000),
-      maxHeight: clamp(num(t.maxHeight, 0), 0, 10000),
-      contacts: clamp(Number.isInteger(t.contacts) ? t.contacts : 0, 0, 10000),
-      impacts: clamp(Number.isInteger(t.impacts) ? t.impacts : 0, 0, 10000),
-      activations: clamp(Number.isInteger(t.activations) ? t.activations : 0, 0, 10000),
-      lastImpactSpeed: clamp(num(t.lastImpactSpeed, 0), 0, 100000),
-      events
-    },
-    devices, trajectory,
+    gateOpen, checkpointsReached, telemetry: normalizedTelemetry, devices, trajectory,
     stepCount: clamp(Number.isInteger(raw.stepCount) ? raw.stepCount : 0, 0, 3600),
-    frameCount: trajectory.length,
-    configurationFingerprint: String(raw.configurationFingerprint).toUpperCase(),
-    resultFingerprint: String(raw.resultFingerprint).toUpperCase(),
+    frameCount: trajectory.length, configurationFingerprint, resultFingerprint,
     fingerprintAlgorithm: 'FNV-1a-32 (reproducibility checksum, not a cryptographic signature)'
   };
 }
@@ -236,7 +248,7 @@ function validateArchive(raw) {
 const pureApi = Object.freeze({
   version: VERSION, schema: SCHEMA, archiveSchema: ARCHIVE_SCHEMA, engineSchema: ENGINE_SCHEMA,
   improvements: IMPROVEMENTS, compareTrials, summarizeBatch, buildAngleSweep, buildAblationSweep, buildRepeatability,
-  normalizeTrial, normalizeBatch, validateArchive, checksum,
+  normalizeTrial, normalizeBatch, validateArchive, checksum, canonicalize,
   maxBatches: MAX_BATCHES, maxTrialsPerBatch: MAX_TRIALS_PER_BATCH, maxTotalTrials: MAX_TOTAL_TRIALS,
   maxFrames: MAX_FRAMES, maxImportBytes: MAX_IMPORT_BYTES
 });
