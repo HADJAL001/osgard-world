@@ -4,8 +4,8 @@ import { readFileSync } from 'node:fs';
 const html = readFileSync(new URL('../public/games/cascade-lab/index.html', import.meta.url), 'utf8');
 const hypothesis = readFileSync(new URL('../public/games/cascade-lab/hypothesis-lab.js', import.meta.url), 'utf8');
 
-assert.match(html, /osgard-game-version" content="0\.25\.0-evidence-integrity"/, 'CASCADE LAB metadata must identify application release 0.25.0');
-assert.match(html, /<title>CASCADE LAB — Premium Physics Lab 0\.25\.0<\/title>/, 'the browser title must identify application release 0.25.0');
+assert.match(html, /osgard-game-version" content="0\.27\.0-reproducibility-lab"/, 'CASCADE LAB metadata must identify application release 0.25.0');
+assert.match(html, /<title>CASCADE LAB — Premium Physics Lab 0\.27\.0<\/title>/, 'the browser title must identify application release 0.25.0');
 assert.ok(html.includes('id="CASCADELAB017"') && html.includes('data-cascade-lab-delta="0.17.0"') && html.includes('src="./delta-lens.js"'), 'Delta Lens must load as the current experiment layer');
 assert.match(html, /id="exportDossierButton"[^>]*>↓ JSON<\/button>/, 'JSON dossier control must be visible');
 assert.match(html, /\$\('exportDossierButton'\)\.addEventListener\('click', downloadExperimentDossier\)/, 'JSON control must be wired');
