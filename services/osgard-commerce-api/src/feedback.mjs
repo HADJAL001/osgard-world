@@ -60,10 +60,10 @@ export function validateGameFeedbackPayload(raw) {
   if (!gameId) return { ok: false, status: 400, code: "FEEDBACK_GAME_INVALID" };
   if (!category) return { ok: false, status: 400, code: "FEEDBACK_CATEGORY_INVALID" };
   if (!severity) return { ok: false, status: 400, code: "FEEDBACK_SEVERITY_INVALID" };
-  if (title.length < 8) return { ok: false, status: 400, code: "FEEDBACK_TITLE_TOO_SHORT" };
   if (typeof body.title !== "string" || body.title.length > 120) return { ok: false, status: 400, code: "FEEDBACK_TITLE_INVALID" };
-  if (description.length < 20) return { ok: false, status: 400, code: "FEEDBACK_DESCRIPTION_TOO_SHORT" };
+  if (title.length < 8) return { ok: false, status: 400, code: "FEEDBACK_TITLE_TOO_SHORT" };
   if (typeof body.description !== "string" || body.description.length > 3000) return { ok: false, status: 400, code: "FEEDBACK_DESCRIPTION_INVALID" };
+  if (description.length < 20) return { ok: false, status: 400, code: "FEEDBACK_DESCRIPTION_TOO_SHORT" };
   if (steps === null || expected === null || actual === null || replyTo === null) return { ok: false, status: 400, code: "FEEDBACK_OPTION_TOO_LONG" };
   if (replyTo && !EMAIL.test(replyTo)) return { ok: false, status: 400, code: "FEEDBACK_EMAIL_INVALID" };
   if (viewportWidth === null || viewportHeight === null) return { ok: false, status: 400, code: "FEEDBACK_VIEWPORT_INVALID" };
