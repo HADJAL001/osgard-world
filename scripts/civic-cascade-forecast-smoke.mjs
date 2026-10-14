@@ -127,7 +127,7 @@ const simulatePath = startElapsed => new Function(
 
 const doctrineSource = extractBetween('function doctrineObjectiveScore', 'let doctrineResult=null')
 const dossierSource = extractBetween('function buildDoctrineDossierPayload', 'async function exportDoctrineDossier')
-const buildDoctrineDossierPayload = new Function(dossierSource + '\nreturn buildDoctrineDossierPayload;')()
+const buildDoctrineDossierPayload = new Function('canonicalDossierStringify', dossierSource + '\nreturn buildDoctrineDossierPayload;')(canonicalDossierStringify)
 const planner = new Function('nodes', 'PLAN_ACTIONS', 'clamp',
   doctrineSource + '\nreturn {searchDoctrinePlans, doctrineDominates, doctrineParetoPortfolio, doctrineStressProfiles, canonicalDossierStringify, validateDoctrineDossierStructure, assessDoctrineDossierIntegrity, validateDoctrineForecast, doctrineRiskExposure, analyzeDoctrineCommandContributions, assessDoctrineSafety};'
 )(nodes, actions, clamp)
@@ -183,6 +183,7 @@ const reorderedDossier = {...reorderedPayload,exportMetadata:verifierDossier.exp
 const reorderedDigest=createHash('sha256').update(canonicalDossierStringify(reorderedPayload),'utf8').digest('hex')
 assert.equal(reorderedDigest,verifierDigest,'key order must not change the canonical payload hash')
 assert.equal(assessDoctrineDossierIntegrity(reorderedDossier,reorderedDigest).verified,true,'key-reordered JSON must preserve its verified digest')
+assert.equal(validateDoctrineDossierStructure(reorderedDossier,'3.4.0').valid,true,'key-reordered source-state JSON must preserve its diagnostic fingerprint')
 const alteredDossier=JSON.parse(JSON.stringify(verifierDossier))
 alteredDossier.candidates[0].scores.stressAdjusted+=1
 const alteredPayload=(({exportMetadata,...payload})=>payload)(alteredDossier)
