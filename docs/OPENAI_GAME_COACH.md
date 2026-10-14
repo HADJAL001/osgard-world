@@ -62,3 +62,15 @@ The new test set covers consent, game and metric allow-lists, removal of extra c
 - [Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs)
 - [Data controls](https://developers.openai.com/api/docs/guides/your-data)
 - [GPT-6 Luna model and current API pricing](https://developers.openai.com/api/docs/models/gpt-6-luna)
+
+
+## CIVIC CASCADE Strategy Advisor (release 3.4.0)
+
+The optional strategy adviser is separate from the post-session Game Coach.
+
+- GET /v1/civic-cascade-advisor/status returns only whether the feature is configured. The browser checks it before sending game metrics.
+- POST /v1/civic-cascade-advisor accepts a minimal strategy summary only after per-request consent. It is limited to three candidates, four actions per candidate, and one worst-stress summary from each of three stress families.
+- Configure OPENAI_CIVIC_CASCADE_ADVISOR_ENABLED=true, OPENAI_API_KEY, and optionally OPENAI_CIVIC_CASCADE_ADVISOR_MODEL in the private Commerce API runtime environment. The committed template keeps the feature flag false.
+- The route is limited to 3 requests/hour per client IP. The Responses request uses store:false, strict JSON Schema, 500 output tokens, and a 12-second timeout. The server validates responses and does not expose provider error payloads.
+- No names, account identifiers, free-text prompts, full decision dossiers or session identifiers are sent. The response is not persisted and cannot alter the local ranking or execute a plan.
+- Local deterministic planning remains functional when OpenAI is disabled or unavailable. A successful frontend deployment does not mean the adviser is enabled: configure the Commerce API secrets and verify a consented request separately.
