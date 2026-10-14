@@ -6,7 +6,7 @@ const html=read('public/games/cascade-lab/index.html'),source=read('public/games
 assert.match(html,/osgard-game-version" content="0\.26\.0-evidence-integrity"/);
 assert.match(html,/<title>CASCADE LAB — Premium Physics Lab 0\.26\.0<\/title>/);
 assert.ok(html.includes('id="CASCADELAB024"')&&html.includes('data-cascade-lab-director="0.24.0"')&&html.includes('mission-director.js?v=0.24.0'));
-assert.ok(html.includes("notifyOsgardLifecycle('ready', { version: '0.25.0' })"));
+assert.ok(html.includes("notifyOsgardLifecycle('ready', { version: '0.26.0' })"));
 assert.doesNotMatch(source,/\b(?:fetch|XMLHttpRequest|sendBeacon)\s*\(/,'must remain local-only');
 assert.doesNotMatch(source,/\.innerHTML/,'must render with safe DOM nodes');
 new Function(source);
