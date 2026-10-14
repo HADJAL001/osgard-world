@@ -64,7 +64,8 @@
     "qa:cascade-lab-trajectory-xray": "node scripts/cascade-lab-trajectory-xray-smoke.mjs",
     "qa:cascade-lab-mission-director": "node scripts/cascade-lab-mission-director-smoke.mjs",
     "qa:cascade-lab-evidence-integrity": "node scripts/cascade-lab-evidence-integrity-smoke.mjs",
-    "qa:game-coach": "node --test services/osgard-commerce-api/test/game-coach.test.mjs && node --check services/osgard-commerce-api/src/game-coach.mjs && node --check services/osgard-commerce-api/src/server.mjs && node --check public/games/game-session-recommendations.js && node scripts/game-coach-smoke.mjs"
+    "qa:game-coach": "node --test services/osgard-commerce-api/test/game-coach.test.mjs && node --check services/osgard-commerce-api/src/game-coach.mjs && node --check services/osgard-commerce-api/src/server.mjs && node --check public/games/game-session-recommendations.js && node scripts/game-coach-smoke.mjs",
+    "qa:ai-release-review": "node --test scripts/osgard-ai-release-review.test.mjs"
   },
   "dependencies": {
     "@types/three": "^0.186.0",
