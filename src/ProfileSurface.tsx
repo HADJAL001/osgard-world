@@ -1,3 +1,4 @@
+import './profile.css'
 import { Award, Bell, Crown, Palette, UserRound } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { listPlayerNotifications, loadPlayerProfile, savePlayerProfile, type PlayerNotification } from './core/playerApi'
