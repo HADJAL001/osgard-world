@@ -1901,7 +1901,7 @@ func _run_smoke() -> void:
 	if not _expect(game.scan_activations == scans_before_cooldown and game.scan_cooldown > 0.0, "tactical scan cooldown must prevent immediate repeat activation"):
 		return
 	var new_report: Dictionary = game._build_after_action_report()
-	if not _expect(str(new_report.get("gameVersion", "")) == "0.18.0-thermal-sovereignty" and new_report.get("thermal", {}).has("overheatEvents") and new_report.get("thermal", {}).has("ventHostilesInterrupted"), "after-action export must include versioned thermal metrics"):
+	if not _expect(str(new_report.get("gameVersion", "")) == "0.19.0-phase-echo" and new_report.get("thermal", {}).has("overheatEvents") and new_report.get("thermal", {}).has("ventHostilesInterrupted"), "after-action export must include versioned thermal metrics"):
 		return
 	if not _expect(new_report.get("recon", {}).has("scanActivations") and new_report.get("recon", {}).has("devicesRevealed"), "after-action export must include local tactical scan metrics"):
 		return
