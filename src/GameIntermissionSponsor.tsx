@@ -24,7 +24,7 @@ type AnalyticsEvent = {
   path: string
   durationSeconds: number
 }
-type AnalyticsBridge = { enqueue: (event: AnalyticsEvent) => Promise<boolean> }
+type AnalyticsBridge = { enqueue: (event: AnalyticsEvent) => Promise<boolean>; clear?: () => void }
 declare global {
   interface Window { OSGARD_CONSENTED_ANALYTICS?: AnalyticsBridge }
 }
@@ -113,7 +113,7 @@ function getAnalyticsBridge(): Promise<AnalyticsBridge | null> {
   if (!hasConsent()) return Promise.resolve(null)
   if (window.OSGARD_CONSENTED_ANALYTICS) return Promise.resolve(window.OSGARD_CONSENTED_ANALYTICS)
   if (!analyticsBridgePromise) {
-    analyticsBridgePromise = new Promise(resolve => {
+    analyticsBridgePromise = new Promise<AnalyticsBridge | null>(resolve => {
       const script = document.createElement('script')
       script.src = '/games/consented-analytics.js'
       script.async = true
@@ -121,9 +121,14 @@ function getAnalyticsBridge(): Promise<AnalyticsBridge | null> {
       script.onload = () => resolve(window.OSGARD_CONSENTED_ANALYTICS ?? null)
       script.onerror = () => resolve(null)
       document.head.appendChild(script)
-    }).finally(() => { analyticsBridgePromise = null })
+    })
   }
-  return analyticsBridgePromise
+  const pending = analyticsBridgePromise
+  if (!pending) return Promise.resolve(null)
+  return pending.then(bridge => {
+    if (analyticsBridgePromise === pending) analyticsBridgePromise = null
+    return bridge
+  })
 }
 
 function sendEvent(campaign: Campaign, gameId: string, name: AnalyticsEvent['name']) {
@@ -147,9 +152,12 @@ function campaignFrom(value: unknown): Campaign | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null
   const item = value as Record<string, unknown>
   const target = allowedTarget(item.targetUrl)
+  const disclosure = typeof item.sponsorDisclosure === 'string' && DISCLOSURES.has(item.sponsorDisclosure)
+    ? item.sponsorDisclosure as Campaign['sponsorDisclosure']
+    : null
   if (!CAMPAIGN_ID.test(String(item.id || '')) ||
       item.placement !== 'after_session' ||
-      !DISCLOSURES.has(String(item.sponsorDisclosure)) ||
+      !disclosure ||
       typeof item.sponsorName !== 'string' || item.sponsorName.length < 2 || item.sponsorName.length > 100 ||
       typeof item.title !== 'string' || item.title.length < 3 || item.title.length > 100 ||
       typeof item.description !== 'string' || item.description.length < 10 || item.description.length > 500 ||
@@ -159,7 +167,7 @@ function campaignFrom(value: unknown): Campaign | null {
       Date.parse(item.startsAt) > Date.now() || Date.parse(item.endsAt) <= Date.now()) return null
   return {
     id: String(item.id), sponsorName: item.sponsorName, title: item.title, description: item.description,
-    targetUrl: target.href, placement: 'after_session', sponsorDisclosure: item.sponsorDisclosure,
+    targetUrl: target.href, placement: 'after_session', sponsorDisclosure: disclosure,
     frequencyCap: Number(item.frequencyCap), startsAt: item.startsAt, endsAt: item.endsAt,
   }
 }
