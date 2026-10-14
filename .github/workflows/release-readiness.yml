@@ -50,7 +50,7 @@ jobs:
         run: npm run qa:partners-page
       - name: Build, archive preflight and measure app-shell performance
         run: npm run build && npm run preflight:frontend && npm run qa:performance-budget
-      - name: Bind build to the passing contract report
+      - name: Bind build to passing contract and performance reports
         run: npm run release:attest && npm run release:verify
       - name: Verify Imperium of Time gameplay and diagnostics
         run: npm run qa:time-ui
