@@ -91,6 +91,14 @@
       durationSeconds: 0,
     });
   }
+  function isActuallyVisible(card) {
+    if (!card.isConnected || document.hidden) return false;
+    const rect = card.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return false;
+    const width = Math.max(0, Math.min(rect.right, window.innerWidth) - Math.max(rect.left, 0));
+    const height = Math.max(0, Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0));
+    return width * height >= rect.width * rect.height * 0.5;
+  }
   function registerVisible(card, item) {
     if (impressionsSent.has(item.id)) return;
     if (!recordExposure(item.id, item.frequencyCap)) {
@@ -179,11 +187,16 @@
           for (const entry of entries) {
             if (!entry.isIntersecting || entry.intersectionRatio < 0.5) continue;
             const card = entry.target;
-            observer.unobserve(card);
             const item = card.__campaign;
-            if (!item) continue;
+            if (!item || card.dataset.impressionPending === 'true' || impressionsSent.has(item.id)) continue;
+            card.dataset.impressionPending = 'true';
             window.setTimeout(() => {
-              if (card.isConnected && !document.hidden && card.getBoundingClientRect().width > 0) registerVisible(card, item);
+              card.dataset.impressionPending = 'false';
+              if (!card.isConnected) return;
+              if (isActuallyVisible(card)) {
+                observer.unobserve(card);
+                registerVisible(card, item);
+              }
             }, 1000);
           }
         }, { threshold: [0.5] });
