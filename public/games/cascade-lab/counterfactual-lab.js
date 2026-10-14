@@ -202,7 +202,7 @@ spreadField.append(make('label', '', 'ШАГ УГЛА'));
 const spreadSelect = document.createElement('select');
 spreadSelect.className = 'cl-cf-input';
 spreadSelect.setAttribute('aria-label', 'Шаг изменения угла');
-for (const [value, label] of [['2','±2°'],['5','±5°'],['10','±10°']) {
+for (const [value, label] of [['2','±2°'],['5','±5°'],['10','±10°']]) {
   const option = document.createElement('option'); option.value = value; option.textContent = label; spreadSelect.append(option);
 }
 spreadSelect.value = '5';
