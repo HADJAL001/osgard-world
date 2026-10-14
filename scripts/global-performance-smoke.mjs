@@ -36,6 +36,10 @@ for(const host of hosts)assert.ok(en.includes('https://'+host+'/?utm_source=osga
 assert.equal((en.match(/utm_campaign=ecosystem_directory/g)||[]).length,10);
 assert.ok(en.includes('mailto:osman.osmanov0099@gmail.com')&&en.includes('https://wa.me/79640027222'));
 assert.ok(en.includes('no ad network or live checkout is represented as active'));
+assert.ok(en.includes('id="analytics-toggle"') && en.includes('/games/consented-analytics.js?v=__OSGARD_BUILD_VERSION__'), 'English catalog must expose the opt-in control and reuse the existing same-origin consent-gated queue');
+assert.ok(enJs.includes("localStorage.getItem(CONSENT_KEY) === 'yes'") && enJs.includes("localStorage.setItem(CONSENT_KEY, enabled ? 'no' : 'yes')"), 'Events must be disabled by default and follow explicit analytics opt-in/out');
+for(const eventName of ['catalog_viewed','catalog_search_used','catalog_filter_changed','game_favorite_toggled','game_launched','cross_promo_clicked','share_created']) assert.ok(enJs.includes("'" + eventName + "'"), 'Expected consented event missing: '+eventName);
+assert.ok(enJs.includes("if (!analyticsEnabled() || typeof ANALYTICS?.enqueue !== 'function') return false"), 'Analytics event enqueue must check explicit consent first');
 assert.ok(enCss.includes('@media(max-width:760px)')&&enCss.includes('prefers-reduced-motion:reduce')&&enCss.includes(':focus-visible'));
 assert.equal(pkg.scripts['qa:global-performance'],'node scripts/global-performance-smoke.mjs');
 assert.ok(matrix.includes("'/games/en/'")&&matrix.includes("route === '/games/en/app.js'")&&matrix.includes("route === '/games/en/styles.css'"));
