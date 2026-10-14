@@ -540,7 +540,7 @@ function exportJson() {
   if(!currentStudy)return;
   const output={schema:SCHEMA,schemaVersion:1,exportedAt:new Date().toISOString(),localOnly:true,uploaded:false,study:currentStudy};
   const value=JSON.stringify(output,null,2);
-  if(value.length>MAX_EXPORT_BYTES*8){setStatus('Отчёт слишком велик для одного экспорта.','error');return;}
+  if(value.length>MAX_EXPORT_BYTES){setStatus('Отчёт слишком велик для одного экспорта.','error');return;}
   download('cascade-lab-counterfactual-'+currentStudy.source.levelId+'-'+currentStudy.reportFingerprint+'.json',value,'application/json;charset=utf-8');
   setStatus('JSON-отчёт сохранён на твоё устройство. Виртуальные запуски не добавлены в историю игры.');
 }
@@ -592,7 +592,7 @@ clearButton.addEventListener('click',()=>{
 fields['cl-cf-source'].addEventListener('change',()=>{refreshDevices();});
 fields['cl-cf-parameter'].addEventListener('change',refreshStepOptions);
 window.addEventListener('cascade-lab:run-finished',event=>{
-  refreshSources(event.detail&&event.detail.levelId?undefined:undefined);
+  refreshSources();
   setStatus('Новый игровой запуск доступен в X-Ray. Нажми Foundry, чтобы проверить его чертёж.');
 });
 const publicApi = Object.freeze({
