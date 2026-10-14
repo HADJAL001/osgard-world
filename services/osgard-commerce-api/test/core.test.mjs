@@ -139,6 +139,26 @@ test("analytics is disabled unless consent is explicit and event names are allow
   }
 });
 
+  for (const name of [
+    "pwa_install_prompt_shown",
+    "pwa_install_accepted",
+    "pwa_install_dismissed",
+    "pwa_standalone_opened",
+  ]) {
+    const pwaEvent = { ...event, name, eventId: "evt_" + name + "_123456" };
+    assert.equal(
+      validateEventBatch({ consent: true, events: [pwaEvent] }).ok,
+      true,
+      name + " should be accepted when consent is explicit",
+    );
+    assert.equal(
+      validateEventBatch({ consent: false, events: [pwaEvent] }).code,
+      "ANALYTICS_CONSENT_REQUIRED",
+      name + " must not bypass explicit analytics consent",
+    );
+  }
+});
+
 test("consented analytics accept stable event IDs and new page-view events, while rejecting malformed IDs", () => {
   const baseEvent = { name: "catalog_viewed", sessionId: "session_123456789", gameId: "unknown", source: "page-view", path: "/games/?campaign=private", durationSeconds: 0 };
   const first = validateEventBatch({ consent: true, events: [{ ...baseEvent, eventId: "evt_session_123456789" }] });
