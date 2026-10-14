@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readdir, readFile, lstat, writeFile, mkdir } from 'node:fs/promises';
-import { dirname, relative, resolve, sep, basename, extname } from 'node:path';
+import { dirname, relative, resolve, sep, basename, extname, isAbsolute } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const SCHEMA = 'osgard.release-attestation.v1';
 const SECRET_EXACT = new Set([
@@ -103,7 +104,7 @@ function parseArgs(argv) {
   }
   if (options.command === 'create') {
     const outputRelative = relative(options.root, options.output);
-    if (outputRelative === '' || (!outputRelative.startsWith('..' + sep) && outputRelative !== '..' && !resolve(outputRelative).startsWith(sep))) {
+    if (outputRelative === '' || (!outputRelative.startsWith('..' + sep) && outputRelative !== '..' && !isAbsolute(outputRelative))) {
       throw new Error('Attestation output must be outside the build root so it cannot modify files after hashing.');
     }
   }
@@ -121,7 +122,7 @@ export async function createAttestation(rootPath, outputPath) {
   const root = resolve(rootPath);
   const output = resolve(outputPath);
   const outputRelative = relative(root, output);
-  if (outputRelative === '' || (!outputRelative.startsWith('..' + sep) && outputRelative !== '..' && !outputRelative.startsWith('..'))) {
+  if (outputRelative === '' || (!outputRelative.startsWith('..' + sep) && outputRelative !== '..' && !isAbsolute(outputRelative))) {
     throw new Error('Attestation output must be outside the build root.');
   }
   const data = await inventory(root);
@@ -215,7 +216,7 @@ async function main() {
   const result = await verifyAttestation(options.root, options.input);
   console.log(JSON.stringify(result, null, 2));
 }
-if (process.argv[1] && resolve(process.argv[1]) === resolve(new URL(import.meta.url).pathname)) {
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   main().catch(error => {
     console.error('OSGARD release attestation failed: ' + String(error.message || error));
     process.exitCode = 1;
