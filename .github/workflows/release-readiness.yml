@@ -12,6 +12,8 @@ on:
 jobs:
   readiness:
     if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    env:
+      OSGARD_SOURCE_REVISION: ${{ github.event.workflow_run.head_sha || github.event.pull_request.head.sha || github.sha }}
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
@@ -48,6 +50,7 @@ jobs:
         if: github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_run'
         env:
           OSGARD_BASE_URL: https://osgard.world
+          OSGARD_EXPECTED_BUILD: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: npm run qa:production-routes
       - name: Probe authenticated production API when configured
         env:
