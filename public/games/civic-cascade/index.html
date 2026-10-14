@@ -1073,7 +1073,8 @@ function searchDoctrinePlans(sourceState,mode,selectedNodeId,simulateOrders,simu
   return {...candidate,robustness,robustScore:robustness.adjustedScore};
  }).sort((a,b)=>a.robustScore-b.robustScore||a.score-b.score||a.cost-b.cost||a.signature.localeCompare(b.signature));
  const portfolio=doctrineParetoPortfolio(robustCandidates,3);
- return {baseline,alternatives:portfolio,evaluatedCount:explored.size,robustnessEvaluatedCount:robustCandidates.length,portfolioSize:portfolio.length,paretoFrontSize:robustCandidates.filter(candidate=>!robustCandidates.some(other=>other.signature!==candidate.signature&&doctrineDominates(other,candidate))).length,mode};
+ const openingPrefixCount=new Set(robustCandidates.map(candidate=>candidate.orders.slice(0,2).map(order=>order.action+':'+(order.nodeId||'-')).join('|'))).size;
+ return {baseline,alternatives:portfolio,evaluatedCount:explored.size,robustnessEvaluatedCount:robustCandidates.length,portfolioSize:portfolio.length,openingPrefixCount,paretoFrontSize:robustCandidates.filter(candidate=>!robustCandidates.some(other=>other.signature!==candidate.signature&&doctrineDominates(other,candidate))).length,mode};
 }
 
 let doctrineResult=null,doctrineSelectedIndex=0,doctrineStaleMessage='';
