@@ -1001,6 +1001,10 @@ func _run_smoke() -> void:
 	await physics_frame
 	# Use a deterministic open corridor in the arena centre, away from cover and the gate.
 	game.player.global_position = Vector3(0.0, 0.82, 10.2)
+	game.player.velocity = Vector3.ZERO
+	game.dash_timer = 0.0
+	game.gamepad_move = Vector2.ZERO
+	game.gamepad_aim = Vector2.ZERO
 	game.player_aim = Vector3.FORWARD
 	game.aim_target_node = null
 	var fire_test_position: Vector3 = game.player.global_position
@@ -1009,9 +1013,17 @@ func _run_smoke() -> void:
 	var ray_guard_index: int = game.guards.size() - 1
 	var ray_guard: CharacterBody3D = game.guards[ray_guard_index]["node"] as CharacterBody3D
 	var ray_guard_hp: int = int(game.guards[ray_guard_index]["hp"])
+	game.guards[ray_guard_index]["stun"] = 5.0
+	game.guards[ray_guard_index]["cooldown"] = 12.0
 	game.aim_target_node = ray_guard
 	game.fire_cooldown = 0.0
 	await physics_frame
+	await physics_frame
+	# Re-anchor both bodies after a physics sync; a running AI frame must not move the fixture target.
+	game.player.global_position = Vector3(0.0, 0.82, 10.2)
+	game.player.velocity = Vector3.ZERO
+	ray_guard.global_position = game.player.global_position + Vector3(0.0, 0.0, -5.0)
+	ray_guard.velocity = Vector3.ZERO
 	await physics_frame
 	var ray_from: Vector3 = game.player.global_position + Vector3.UP * 0.48 + game.player_aim * 0.8
 	var ray_to: Vector3 = ray_from + game.player_aim * 37.0
@@ -1019,7 +1031,9 @@ func _run_smoke() -> void:
 	probe.exclude = [game.player.get_rid()]
 	probe.collision_mask = 0xFFFFFFFF
 	var probe_hit: Dictionary = game.get_world_3d().direct_space_state.intersect_ray(probe)
-	if not _expect(not probe_hit.is_empty() and probe_hit.get("collider") == ray_guard, "deterministic weapon-ray fixture must have a clear line to the compact hostile capsule"):
+	var probe_collider: Object = probe_hit.get("collider") as Object if not probe_hit.is_empty() else null
+	var probe_name: String = str(probe_collider.name) if probe_collider is Node else "<no hit>"
+	if not _expect(not probe_hit.is_empty() and probe_hit.get("collider") == ray_guard, "deterministic weapon-ray fixture must hit its compact hostile capsule; actual collider=" + probe_name):
 		return
 	game._fire_weapon()
 	if not _expect(game.shots_fired == fire_saved_shots + 1 and game.shots_hit == fire_saved_hits + 1, "weapon ray must connect with a compact hostile capsule at its body height"):
