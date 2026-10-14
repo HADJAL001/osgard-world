@@ -4,6 +4,7 @@ import vm from 'node:vm';
 
 const read = (path) => readFileSync(path, 'utf8');
 const source = read('public/games/game-session-recommendations.js');
+const gamesPortal = read('public/games/index.html');
 const css = read('public/games/game-session-recommendations.css');
 const core = read('services/osgard-commerce-api/src/core.mjs');
 const commerceApi = read('services/osgard-commerce-api/src/server.mjs');
@@ -243,6 +244,42 @@ assert.ok(!signalShareHandler.includes("life('share_created'"),
   'SIGNAL RUN must not report a completed share before the player confirms it');
 assert.ok(signalRun.slice(claimSignal).includes("life('share_created',{shareMethod:method,dailyMode,dailyDate:dailyMode?dailyDate:null,rewardConfirmedByPlayer:true})"),
   'SIGNAL RUN completed-share analytics must follow the explicit reward confirmation');
+
+
+assert.ok(gamesPortal.includes('<dialog id="osgard-select-intermission"') &&
+  gamesPortal.includes('id="osgard-select-intermission-content"') &&
+  gamesPortal.includes('id="osgard-select-intermission-close"') &&
+  gamesPortal.includes('id="osgard-select-intermission-resume"') &&
+  gamesPortal.includes('id="osgard-select-intermission-catalog"'),
+  'The premium intermission must expose an accessible dialog, content mount and close/resume/catalog actions');
+assert.ok(css.includes('dialog.og-select-intermission{') &&
+  css.includes('dialog.og-select-intermission::backdrop') &&
+  css.includes('@media(max-width:760px)') &&
+  css.includes('@media(max-width:420px)') &&
+  css.includes('prefers-reduced-motion:reduce'),
+  'Premium intermission requires responsive mobile layout, backdrop and reduced-motion handling');
+assert.ok(source.includes("function openPremiumIntermission(gameId,sessionId)") &&
+  source.includes("intermissionDialog.showModal()") &&
+  source.includes("shownIntermissionSessions.has(key)") &&
+  source.includes("recordCompletedRound(gameId,key)"),
+  'The full-screen intermission must open from the session lifecycle while deduplicating completed sessions');
+assert.ok(source.includes("document.querySelector('#osgard-select-intermission-close')") &&
+  source.includes("document.querySelector('#osgard-select-intermission-resume')") &&
+  source.includes("document.querySelector('#osgard-select-intermission-catalog')") &&
+  source.includes("intermissionDialog.addEventListener('close',cleanupIntermission)"),
+  'Closing, resuming and returning to catalog must dispose listeners/observers rather than stacking interstitials');
+assert.ok(source.includes("nextLink.dataset.play=nextId") &&
+  source.includes("servicesShelf(gameId,shouldShowServicePromos(preferences,completedCount),completedCount)") &&
+  source.includes("rewardShelf(gameId)"),
+  'The between-worlds dialog must connect a next-game route, user-controlled OSGARD service choices and the existing share reward');
+assert.ok(source.includes("function intermissionKey(gameId,sessionId)") &&
+  source.includes("if(shownIntermissionSessions.has(key))return true"),
+  'Duplicate completion and session-ended events must not show the same promotion twice');
+const intermissionKeyMatch=source.match(/function intermissionKey\(gameId,sessionId\)\{[\s\S]*?\n\}/);
+assert.ok(intermissionKeyMatch,'Intermission session-key helper must be independently testable');
+const intermissionKey=vm.runInNewContext('('+intermissionKeyMatch[0]+')',{Date});
+assert.equal(intermissionKey('signal-run','session_signal-run_2_123456'),'session_signal-run_2_123456');
+assert.match(intermissionKey('signal-run','invalid session'),/^fallback:signal-run:/);
 
 console.log(JSON.stringify({
   status: 'passed',
