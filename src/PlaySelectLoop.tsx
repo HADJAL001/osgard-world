@@ -15,6 +15,7 @@ const services = [
   { id: 'gardvpn', name: 'GARD VPN', category: 'PRIVACY / VPN', ru: 'VPN-сервис временно исключён из межигровых предложений до проверки фактического подключения.', en: 'Temporarily excluded from between-game promotion until VPN connectivity is verified.', url: 'https://gardvpn.is/' },
   { id: 'osgard-business', name: 'OSGARD OS', category: 'BUSINESS DEVELOPMENT', ru: 'Направление развития бизнеса.', en: 'Business development.', url: 'https://osgardos.com/' },
   { id: 'vanguard', name: 'OSGARD VANGUARD STUDIO', category: 'VIDEO STUDIO', ru: 'Создание видео для цифровых продуктов и кампаний.', en: 'Video production for digital products and campaigns.', url: 'https://osgardvanguard.studio/' },
+  { id: 'partner-studio', name: 'OSGARD PARTNER STUDIO', category: 'BRANDED GAMES / B2B', ru: 'Заказные мини-игры и брендированные игровые события для компаний.', en: 'Custom mini-games and branded game events for companies.', url: '/games/partners/' },
 ] as const
 
 type PromoFrequency = 'each' | 'every3' | 'off'
@@ -268,7 +269,7 @@ export function PlaySelectLoop({ locale }: { locale: Locale }) {
       <div className="play-select-service-grid">
         {services.map((service, index) => {
           const limitedVerification = service.id === 'gardvpn'
-          const url = new URL(service.url)
+          const url = new URL(service.url, window.location.origin)
           url.searchParams.set('utm_source', 'osgard_world')
           url.searchParams.set('utm_medium', 'entertainment_select')
           url.searchParams.set('utm_campaign', 'between_worlds')
