@@ -32,6 +32,7 @@ await check('production-api-probe', npm, ['run', 'qa:production-api'])
 await check('production-api-probe-smoke', npm, ['run', 'qa:production-api-smoke'])
 await check('production-build', npm, ['run', 'build'])
 await check('frontend-archive-preflight', npm, ['run', 'preflight:frontend'])
+await check('release-manifest-contract', npm, ['run', 'qa:release-manifest'])
 await check('production-route-matrix', npm, ['run', 'qa:production-routes'])
 await check('live-bundle-audit', npm, ['run', 'qa:live-bundle'])
 const briefPath = process.env.OSGARD_BRIEF_PATH || 'A:\\HADJAL\\Рабочий стол\\игры ОСГАРД.txt'

@@ -78,6 +78,8 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
+      - name: Verify proof-carrying release manifest fixture
+        run: npm run qa:release-manifest
       - run: npm run check
       - name: Verify the opt-in OpenAI Game Coach
         run: npm run qa:game-coach

@@ -61,14 +61,14 @@ The North Star is proof-carrying releases: every release has a source revision, 
 - Remove known flaky or stale smoke assertions; replace release-version magic strings with assertions against versioned release metadata.
 - Make game lifecycle and HUD diagnostics independently testable.
 - Ensure every failed/blocked/skipped check has a structured reason; failed deployment probes trigger safe rollback and retain logs.
-- Establish a release manifest with immutable commit SHA, build ID, toolchain versions, artifact hash and route-matrix outcome.
+- Establish a release manifest outside the artifact with immutable source SHA, build/run ID, toolchain versions, sorted per-file SHA-256 inventory and a deterministic tree digest. Keep production route-matrix evidence separate and bind both reports to the same source revision.
 - Add a human-reviewed deployment runbook and staging-only default.
 - Introduce the local test command for the AI reviewer; keep live API use manual and optional.
 
 **Acceptance gates**
 - 100% of critical game entry routes are represented in a route matrix.
 - All release-critical tests are required rather than silently skipped.
-- A release artifact can be rebuilt, hashed, and verified from a clean checkout.
+- A release artifact can be rebuilt from a clean checkout; the manifest verifies every regular file, a deterministic path-plus-bytes tree digest, the source revision and toolchain metadata. Symlinks, mojibake HTML and self-referential manifests fail closed.
 - An invalid or blocked quality report cannot be labelled ready.
 - A simulated failed post-deploy health check exercises rollback in a disposable fixture.
 - AI review sends no request unless explicitly enabled and a server-side API key is present.
