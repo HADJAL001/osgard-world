@@ -25,7 +25,7 @@ const readyzEnd = server.indexOf("\n});", readyzStart);
 assert.ok(readyzStart >= 0 && readyzEnd > readyzStart, "General service readiness endpoint must exist.");
 const readyzHandler = server.slice(readyzStart, readyzEnd);
 assert.ok(readyzHandler.includes("buildServiceReadiness"), "General service readiness must use the isolated readiness model.");
-const readyzLogic = readyzHandler.replace(/\\/\\/.*$/gm, "");
+const readyzLogic = readyzHandler.split("\n").filter((line) => !line.trim().startsWith("//")).join("\n");
 assert.doesNotMatch(readyzLogic, /stripe|webhookSecret|paymentsModeAllowed|ENABLE_LIVE_PAYMENTS/i,
   "General service readiness must not depend on Stripe or live-payment flags.");
 assert.ok(readiness.includes("export function buildServiceReadiness"), "Database-backed service readiness contract must exist.");
