@@ -229,39 +229,47 @@ export function runStep(step, options = {}) {
   };
 }
 
-export async function runOnePass({ plan = buildPlan() } = {}) {
-  await mkdir(REPORT_DIR, { recursive: true });
-  try { await unlink(EXTERNAL_PATH); } catch {}
-  const steps = [];
-  for (const step of plan) {
-    // Continue through independent gates to give the operator a complete report.
-    steps.push(runStep(step));
-  }
-  let externalReport = null;
-  try { externalReport = JSON.parse(await readFile(EXTERNAL_PATH, 'utf8')); } catch {}
-  let releaseReadiness = null;
-  try { releaseReadiness = JSON.parse(await readFile(path.join(ROOT, 'release-readiness.json'), 'utf8')); } catch {}
+function createReport(steps, plan, metadata = {}) {
   const summary = summarizeReport(steps);
-  const report = {
-    schemaVersion: 1,
+  const complete = metadata.complete === true && steps.length === plan.length;
+  const planProjection = plan.map((step) => ({
+    id: step.id, command: step.command, args: step.args.map(displayArgument),
+    critical: step.critical !== false, kind: step.kind || 'qa',
+    timeoutMs: step.timeoutMs ?? DEFAULT_STEP_TIMEOUT_MS,
+  }));
+  const resultProjection = steps.map((step) => ({
+    id: step.id, status: step.status, exitCode: step.exitCode,
+    timedOut: step.timedOut, detail: step.detail,
+  }));
+  const finalStatus = !complete ? 'RUNNING_OR_PARTIAL' :
+    summary.block > 0 ? 'BLOCKED' :
+    summary.review > 0 ? 'REVIEW_REQUIRED' : 'SOURCE_READY_FOR_OPERATOR_REVIEW';
+  return {
+    schemaVersion: 2,
+    schema: 'osgard.one-pass-release.v2',
+    runId: metadata.runId || null,
+    runState: complete ? 'COMPLETE' : 'RUNNING',
+    startedAt: metadata.startedAt || null,
     generatedAt: new Date().toISOString(),
     repository: 'HADJAL001/osgard-world',
-    scope: 'source QA, build/release checks, external homepage HTTP audit; not a production deployment or payment/ad activation',
-    summary,
+    source: {
+      commit: String(process.env.GITHUB_SHA || process.env.OSGARD_GIT_SHA || 'local').slice(0, 100),
+      ref: String(process.env.GITHUB_REF || process.env.OSGARD_GIT_REF || 'local').slice(0, 200),
+      workflowRunId: String(process.env.GITHUB_RUN_ID || '').slice(0, 80) || null,
+      node: process.version,
+      platform: process.platform,
+      architecture: process.arch,
+    },
+    scope: 'source QA, build/release checks and external homepage HTTP audit; not a production deployment or payment/ad activation',
+    status: finalStatus,
+    summary: { ...summary, status: finalStatus },
+    plannedSteps: plan.length,
+    executedSteps: steps.length,
+    planSha256: reportDigest(planProjection),
+    resultsSha256: reportDigest(resultProjection),
     steps,
-    externalProjects: externalReport ? {
-      checkedAt: externalReport.checkedAt,
-      projectCount: externalReport.projectCount,
-      reachableCount: externalReport.reachableCount,
-      unavailableCount: externalReport.unavailableCount,
-      paidPromotionEligibleCount: externalReport.paidPromotionEligibleCount,
-      promotionGateCounts: externalReport.promotionGateCounts,
-      report: 'artifacts/external-project-health.json',
-    } : null,
-    releaseReadiness: releaseReadiness ? {
-      status: releaseReadiness.status,
-      failedChecks: (releaseReadiness.checks || []).filter((check) => check.status === 'failed').map((check) => check.name),
-    } : null,
+    externalProjects: metadata.externalProjects || null,
+    releaseReadiness: metadata.releaseReadiness || null,
     manualGates: [
       { id: 'live-ad-network', status: 'REVIEW', reason: 'Provider approval, account IDs, legal disclosures, consent and real test impressions are operator-controlled; no fake impressions or clicks are allowed.' },
       { id: 'live-payments', status: 'REVIEW', reason: 'Stripe/database secrets, price IDs, signed webhook deployment, entitlements/refunds and explicit opt-in remain required; live checkout defaults OFF.' },
@@ -273,17 +281,163 @@ export async function runOnePass({ plan = buildPlan() } = {}) {
       paymentsAreNotEnabledByThisScript: true,
       analyticsRequiresConsent: true,
       externalNetworkFailuresAreReviewOnly: true,
+      timeoutEnforcedForEveryStage: true,
+      checkpointSavedAfterEveryStage: true,
     },
   };
-  await writeFile(REPORT_PATH, JSON.stringify(report, null, 2) + '\n', 'utf8');
+}
+
+async function writeEvidence(report, reportPath, runPath) {
+  await writeAtomicJson(reportPath, report);
+  if (runPath) await writeAtomicJson(runPath, report);
+  const summaryPath = process.env.GITHUB_STEP_SUMMARY;
+  if (summaryPath) {
+    const lines = [
+      '# OSGARD one-pass release',
+      '',
+      '- **Status:** ' + report.status,
+      '- **Commit:** ' + report.source.commit,
+      '- **Run:** ' + String(report.runId || 'local'),
+      '- **Steps:** ' + report.executedSteps + '/' + report.plannedSteps,
+      '- **PASS / REVIEW / BLOCK:** ' + report.summary.pass + ' / ' + report.summary.review + ' / ' + report.summary.block,
+      '- **Plan SHA-256:** ' + report.planSha256,
+      '- **Results SHA-256:** ' + report.resultsSha256,
+      '',
+      '| Status | Step | Duration | Details |',
+      '|---|---|---:|---|',
+      ...report.steps.map((step) => '| ' + step.status + ' | ' +
+        step.label.replace(/\|/g, '\\|').replace(/\r?\n/g, ' ') + ' | ' +
+        (step.durationMs / 1000).toFixed(1) + 's | ' +
+        redactText(step.detail || '').replace(/\|/g, '\\|').replace(/\r?\n/g, ' ').slice(0, 240) + ' |'),
+      '',
+      'This report is source/release evidence, not confirmation of production deployment or authorization to activate payments/ads.',
+      '',
+    ].join('\n');
+    await writeFile(summaryPath, lines, 'utf8');
+  }
+}
+
+export async function runOnePass({ plan = buildPlan(), reportDir = REPORT_DIR, timeoutMs = null } = {}) {
+  const packageJson = JSON.parse(readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+  validatePlan(plan, packageJson.scripts);
+  const reportPath = path.join(reportDir, 'osgard-one-pass-release.json');
+  const externalPath = path.join(reportDir, 'external-project-health.json');
+  const runId = new Date().toISOString().replace(/[:.]/g, '-') + '-' + process.pid;
+  const runPath = path.join(reportDir, 'runs', runId + '.json');
+  const startedAt = new Date().toISOString();
+  await mkdir(reportDir, { recursive: true });
+  for (const stale of [externalPath, path.join(ROOT, 'release-readiness.json')]) {
+    try { await unlink(stale); } catch {}
+  }
+
+  const steps = [];
+  let externalProjects = null;
+  let releaseReadiness = null;
+  let currentReport = createReport(steps, plan, {
+    runId, startedAt, complete: false, externalProjects, releaseReadiness,
+  });
+  await writeEvidence(currentReport, reportPath, runPath);
+
+  for (const step of plan) {
+    const record = runStep(step, { timeoutMs: timeoutMs || undefined, externalReportPath: externalPath });
+    steps.push(record);
+
+    if (step.id === 'full-release-readiness') {
+      try {
+        const readiness = JSON.parse(await readFile(path.join(ROOT, 'release-readiness.json'), 'utf8'));
+        releaseReadiness = {
+          status: String(readiness.status || 'unknown'),
+          failedChecks: (readiness.checks || [])
+            .filter((check) => check.status === 'failed')
+            .map((check) => String(check.name || 'unnamed check').slice(0, 200)),
+        };
+        if (releaseReadiness.failedChecks.length > 0 && record.status === 'PASS') {
+          record.status = 'BLOCK';
+          record.detail = 'Release-readiness report contains failed checks despite a zero process exit code: ' +
+            releaseReadiness.failedChecks.join(', ').slice(0, 3000);
+        }
+      } catch {
+        if (record.status === 'PASS') {
+          record.status = 'BLOCK';
+          record.detail = 'Release-readiness command exited successfully but did not produce a readable fresh release-readiness.json report.';
+        }
+      }
+    }
+
+    try {
+      const ext = JSON.parse(await readFile(externalPath, 'utf8'));
+      const assess = evaluateExternalReport(ext);
+      if (assess.status !== 'REVIEW') {
+        externalProjects = {
+          checkedAt: ext.checkedAt || null,
+          projectCount: ext.projectCount,
+          reachableCount: ext.reachableCount,
+          unavailableCount: ext.unavailableCount ?? Math.max(0, ext.projectCount - ext.reachableCount),
+          paidPromotionEligibleCount: ext.paidPromotionEligibleCount ?? 0,
+          promotionGateCounts: ext.promotionGateCounts || null,
+          report: 'artifacts/external-project-health.json',
+        };
+      }
+    } catch {}
+
+    currentReport = createReport(steps, plan, {
+      runId, startedAt, complete: steps.length === plan.length, externalProjects, releaseReadiness,
+    });
+    await writeEvidence(currentReport, reportPath, runPath);
+  }
+
   console.log('\nOSGARD ONE-PASS SUMMARY');
-  console.log(JSON.stringify({ summary, reportPath: path.relative(ROOT, REPORT_PATH), externalReachable: report.externalProjects?.reachableCount ?? null, releaseReadiness: report.releaseReadiness?.status ?? 'not produced' }, null, 2));
-  if (summary.block > 0) process.exitCode = 1;
-  return report;
+  console.log(JSON.stringify({
+    status: currentReport.status,
+    summary: currentReport.summary,
+    reportPath: path.relative(ROOT, reportPath),
+    runEvidencePath: path.relative(ROOT, runPath),
+    externalReachable: currentReport.externalProjects?.reachableCount ?? null,
+    releaseReadiness: currentReport.releaseReadiness?.status ?? 'not produced',
+    planSha256: currentReport.planSha256,
+    resultsSha256: currentReport.resultsSha256,
+  }, null, 2));
+  return currentReport;
+}
+function parseArgs(argv) {
+  const options = { planOnly: false, timeoutMs: null };
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg === '--plan-only') options.planOnly = true;
+    else if (arg === '--timeout-ms') {
+      const value = Number(argv[++i]);
+      if (!Number.isSafeInteger(value) || value < 1000 || value > MAX_STEP_TIMEOUT_MS) {
+        throw new Error('--timeout-ms must be an integer between 1000 and ' + MAX_STEP_TIMEOUT_MS + '.');
+      }
+      options.timeoutMs = value;
+    } else {
+      throw new Error('Unknown argument: ' + arg + '. Supported: --plan-only, --timeout-ms <1000..' + MAX_STEP_TIMEOUT_MS + '>.');
+    }
+  }
+  return options;
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  runOnePass().catch((error) => {
+  (async () => {
+    const options = parseArgs(process.argv.slice(2));
+    const plan = buildPlan();
+    const packageJson = JSON.parse(readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+    const validation = validatePlan(plan, packageJson.scripts);
+    if (options.planOnly) {
+      console.log(JSON.stringify({
+        schema: 'osgard.one-pass-plan.v1',
+        stepCount: validation.count,
+        ids: validation.ids,
+        steps: plan.map((step) => ({
+          id: step.id, label: step.label, command: commandForReport(step),
+          critical: step.critical !== false, timeoutMs: step.timeoutMs,
+        })),
+      }, null, 2));
+      return;
+    }
+    const report = await runOnePass({ plan, timeoutMs: options.timeoutMs });
+    if (report.summary.block > 0) process.exitCode = 1;
+  })().catch((error) => {
     console.error(error instanceof Error ? error.stack : String(error));
     process.exitCode = 1;
   });
