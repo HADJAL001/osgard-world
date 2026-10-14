@@ -127,7 +127,7 @@ assert.ok(!successPage.includes("Статус: '+String(result.paymentStatus||re
 assert.ok(successPage.includes("if(accepted.ok){try{sessionStorage.setItem('osgard.purchase.tracked.'+sessionId,'yes');}catch{}}"), "Purchase analytics must only be deduplicated after the server accepts the consented event.");
 assert.ok(successPage.includes("let alreadyTracked=false;try{alreadyTracked=sessionStorage.getItem"), "Blocked sessionStorage must not prevent displaying a server-verified payment result.");
 assert.ok(successPage.includes("replace(/\\/+$/"), "Checkout status page URL base trimming must be valid.");
-for (const value of ["socialShareByNetwork", "osgard-social-share:(telegram|whatsapp|vk|x|facebook)", "osgard-social-reward:(telegram|whatsapp|vk|x|facebook)"]) {
+for (const value of ["socialShareByNetwork", "osgard-social-share:(telegram|whatsapp|vk|x|facebook|native-share)", "osgard-social-reward:(telegram|whatsapp|vk|x|facebook|native-share)"]) {
   assert.ok(server.includes(value), "Per-network social analytics missing: " + value);
 }
 for (const value of ["ANALYTICS_RETENTION_DAYS", "purgeExpiredAnalytics", "game_id AS", "analyticsByGame", "analyticsFunnel", "event.eventId || crypto.randomUUID()"]) {

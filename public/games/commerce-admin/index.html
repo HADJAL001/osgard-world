@@ -133,7 +133,7 @@ function renderSocialChannels(rows) {
     body.append(row);
     return;
   }
-  const labels = { telegram: 'Telegram', whatsapp: 'WhatsApp', vk: 'VK', x: 'X', facebook: 'Facebook' };
+  const labels = { telegram: 'Telegram', whatsapp: 'WhatsApp', vk: 'VK', x: 'X', facebook: 'Facebook', 'native-share': 'Системное меню отправки' };
   for (const item of rows) {
     const row = document.createElement('tr');
     const intents = Number(item.intents || 0);
