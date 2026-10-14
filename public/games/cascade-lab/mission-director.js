@@ -168,5 +168,5 @@ function onRunFinished(event){if(!state.active||state.active.status!=='active'){
 panel.addEventListener('click',event=>{const node=event.target instanceof Element?event.target.closest('[data-action]'):null;if(!node)return;const a=node.dataset.action||'';if(a==='copy-invite'&&state.active){copyInvitation(state.active);return;}if(a==='accept-invite'){acceptIncomingInvitation();return;}if(a==='dismiss-invite'){dismissInvitation();return;}if(a.startsWith('accept:')){accept(a.slice(7));return;}if(a==='open-active'&&state.active){openProtocol(state.active.levelId);return;}if(a==='export'){exportArchive();return;}if(a==='abandon'&&state.active){if(!window.confirm('Закрыть текущий контракт? Его попытки останутся в летописи.'))return;state.active.status='expired';addHistory(state.active);state.active=null;saveState();setStatus('Контракт закрыт. История сохранена локально.','info');render();}});
 window.addEventListener('cascade-lab:run-finished',onRunFinished);
 window.addEventListener('storage',event=>{if(event.key===STORE_KEY){state=readState();render();}});
-render();try{Object.defineProperty(window,'CASCADELAB023',{value:api,configurable:false,enumerable:false,writable:false});}catch{}
+render();try{Object.defineProperty(window,'CASCADELAB024',{value:api,configurable:false,enumerable:false,writable:false});}catch{}
 })();
