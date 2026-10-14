@@ -22,8 +22,10 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
     const text = typeof responseBody === 'string' ? responseBody : ''
     const isExpeditionPage = route === '/games/expedition/' || route === '/games/expedition/index.html'
     const isGamesHub = route === '/games/' || route === '/games/index.html'
-    const actualBuild = isGamesHub ? (text.match(/<meta name="osgard-build" content="([a-f0-9]{12})">/i)?.[1] || '') : ''
-    const expectedBuildMatches = !isGamesHub || (actualBuild.length === 12 && (!expectedBuild || actualBuild === expectedBuild.slice(0, 12)))
+    const isEnglishGamesHub = route === '/games/en/' || route === '/games/en/index.html'
+    const isVersionedGamesHub = isGamesHub || isEnglishGamesHub
+    const actualBuild = isVersionedGamesHub ? (text.match(/<meta name="osgard-build" content="([a-f0-9]{12})">/i)?.[1] || '') : ''
+    const expectedBuildMatches = !isVersionedGamesHub || (actualBuild.length === 12 && (!expectedBuild || actualBuild === expectedBuild.slice(0, 12)))
     const shellOk = route.startsWith('/api/v1/')
       ? [401, 403].includes(response.status) && (response.headers.get('content-type') || '').toLowerCase().includes('application/json') && (() => { try { JSON.parse(text); return true } catch { return false } })()
       : route === '/commerce-api/v1/game-catalog'
@@ -37,7 +39,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
       : route === '/games/catalog-runtime.js'
         ? (response.headers.get('content-type') || '').toLowerCase().includes('javascript') && text.includes('catalogContentSource') && text.includes('textContent = item.title') && !text.includes('.innerHTML')
       : route === '/games/en/' || route === '/games/en/index.html'
-        ? text.includes('<html lang="en">') && text.includes('rel="canonical" href="https://osgard.world/games/en/"') && text.includes('hreflang="ru"') && text.includes('hreflang="en"') && text.includes('Worlds worth') && text.includes('data-game="aether-grid"') && text.includes('numberOfItems":11')
+        ? text.includes('<html lang="en">') && text.includes('rel="canonical" href="https://osgard.world/games/en/"') && text.includes('hreflang="ru"') && text.includes('hreflang="en"') && text.includes('Worlds worth') && text.includes('data-game="aether-grid"') && text.includes('numberOfItems":11') && text.includes('id="analytics-toggle"') && /\/games\/consented-analytics\\.js\\?v=[a-f0-9]{12}/i.test(text) && actualBuild.length === 12 && expectedBuildMatches
       : route === '/games/en/styles.css'
         ? (response.headers.get('content-type') || '').toLowerCase().includes('text/css') && text.includes('.game-grid') && text.includes('@media(max-width:760px)') && text.includes('prefers-reduced-motion')
       : route === '/games/en/app.js'
@@ -383,7 +385,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
     }))
     const assetsOk = assetChecks.every(asset => asset.ok)
     const statusOk = route.startsWith('/api/v1/') ? [401, 403].includes(response.status) : route === '/commerce-api/v1/admin/game-catalog' ? [401, 403, 503].includes(response.status) : response.status === 200
-    results.push({ device, route, status: response.status, ...(isGamesHub ? { build: { expected: expectedBuild ? expectedBuild.slice(0, 12) : null, actual: actualBuild || null, matches: expectedBuildMatches } } : {}), checks: { statusOk, shellOk, assetsOk }, assets: assetChecks, ok: statusOk && shellOk && assetsOk, durationMs: Date.now() - started })
+    results.push({ device, route, status: response.status, ...(isVersionedGamesHub ? { build: { expected: expectedBuild ? expectedBuild.slice(0, 12) : null, actual: actualBuild || null, matches: expectedBuildMatches } } : {}), checks: { statusOk, shellOk, assetsOk }, assets: assetChecks, ok: statusOk && shellOk && assetsOk, durationMs: Date.now() - started })
   } catch (error) { results.push({ device, route, status: 0, ok: false, error: String(error), durationMs: Date.now() - started }) }
 }
 const failed = results.filter(item => !item.ok)
