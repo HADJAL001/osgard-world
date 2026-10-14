@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const matrix = readFileSync(resolve("scripts/production-route-matrix.mjs"), "utf8");
+const commandDeck = readFileSync(resolve("public/games/command-center/index.html"), "utf8");
 const html = readFileSync(resolve("public/games/swarm/index.html"), "utf8");
 const css = readFileSync(resolve("public/games/swarm/styles.css"), "utf8");
 const game = readFileSync(resolve("public/games/swarm/game.js"), "utf8");
@@ -36,4 +37,12 @@ assert.ok(matrix.includes("compact.includes('constroles=[')") &&
   matrix.includes("compact.includes('recordinviteopen')"),
   "Production route matrix must validate the SWARM game script instead of the generic site fallback.");
 
+assert.ok(matrix.includes("route === '/games/command-center/'") &&
+  matrix.includes("reportType: 'osgard-play-command-deck'") &&
+  matrix.includes('id="download-report"') && matrix.includes('databaseReady !== true'),
+  "Production route matrix must validate Command Deck's actual HTML and commerce-readiness contract.");
+assert.ok(commandDeck.includes('<title>OSGARD PLAY — Command Deck</title>') &&
+  commandDeck.includes('id="run-checks"') && commandDeck.includes('id="download-report"') &&
+  commandDeck.includes('noindex,nofollow,noarchive'),
+  "Command Deck needs stable production test markers and noindex.");
 console.log("PASS SWARM route contract: game-specific asset checks, self-hosted fonts and reduced motion.");

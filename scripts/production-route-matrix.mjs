@@ -73,6 +73,13 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
           ? text.includes('#og-pc-launcher') && text.includes('.og-pc-high-contrast') && text.includes('.og-pc-reduced-motion') && text.includes('.og-pc-mission-hero') && text.includes('.og-pc-mission-meter')
         : route === '/games/operations/'
           ? text.includes('<title>OSGARD PLAY — диагностика публикации</title>') && text.includes('id="run-checks"') && text.includes('const TARGETS = [') && text.includes("reportType:'osgard-games-readonly-route-health'") && text.includes("credentials: 'omit'")
+        : route === '/games/command-center/'
+          ? text.includes('<title>OSGARD PLAY — Command Deck</title>') &&
+            text.includes('id="run-checks"') &&
+            text.includes('id="download-report"') &&
+            text.includes("reportType: 'osgard-play-command-deck'") &&
+            text.includes('databaseReady !== true') &&
+            text.includes('noindex,nofollow,noarchive')
         : route === '/games/admin/'
           ? text.includes('<meta name="robots" content="noindex,nofollow,noarchive">') && text.includes('id="access-form"') && text.includes('X-Moderation-Token') && text.includes('/api/v1/analytics/summary')
       : route === '/games/admin/campaigns/'
