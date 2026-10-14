@@ -67,9 +67,12 @@ function normalizeContract(raw, levelId) {
   if (!engineRevision || fixedStepSeconds === null || maxStepSeconds === null || Object.values(normalizedWorld).some(value => value === null)) return null;
   const source = raw.physics || {};
   const physicsKeys = [
-    'startVelocityX','fanRangeX','fanAccelX','fanAccelY','magnetRadius','magnetStrength',
-    'springSpeed','bumperSpeedX','bumperSpeedY','dragPer60Hz','minVelocityX','maxVelocityX',
-    'minVelocityY','maxVelocityY','fragileImpactLimit','switchRadius','maxSimulationSeconds'
+    'startVelocityX','fanRangeX','fanMinDy','fanMaxDy','fanAccelX','fanAccelY',
+    'magnetRadius','magnetStrength','springSpeed','springSurfaceCooldown','bumperFieldSpeedX','bumperFieldSpeedY',
+    'bumperFieldCooldown','bumperSurfaceSpeedX','bumperSurfaceSpeedY','bumperSurfaceCooldown',
+    'beltAirAcceleration','beltSurfaceAcceleration','dragPer60Hz','minVelocityX','maxVelocityX',
+    'minVelocityY','maxVelocityY','fragileImpactLimit','switchRadius','maxSimulationSeconds',
+    'checkpointExtraRadius','goalVerticalTolerance','goalMinVerticalVelocity'
   ];
   const physics = {};
   for (const key of physicsKeys) {
@@ -98,13 +101,15 @@ function normalizeContract(raw, levelId) {
     switchZone = vec2(sourceLevel.switchZone);
     if (!switchZone) return null;
   }
+  const par = Number.isInteger(sourceLevel.par) ? clamp(sourceLevel.par,0,12) : null;
+  const parTime = inRange(sourceLevel.parTime,0,120);
   return {
     schema:CONTRACT_SCHEMA, engineRevision,
     fixedStepSeconds:round(fixedStepSeconds,8), maxStepSeconds:round(maxStepSeconds,8),
     world:Object.fromEntries(Object.entries(normalizedWorld).map(([key,value]) => [key,round(value,4)])),
     physics,
     level:{
-      id:levelId, start, goal, platforms, gates, checkpoints, switchZone,
+      id:levelId, start, goal, par, parTime, platforms, gates, checkpoints, switchZone,
       fragile:sourceLevel.fragile === true
     }
   };
@@ -162,7 +167,8 @@ function signatures(run) {
     devices:run.devices
   }));
   const traceFingerprint = fnv1a(canonicalize({
-    status:run.status, gateOpen:run.gateOpen,
+    status:run.status, reason:run.reason, grade:run.grade, timeSeconds:run.timeSeconds,
+    deviceCount:run.deviceCount, gateOpen:run.gateOpen, par:run.par, parTime:run.parTime,
     checkpointsReached:run.checkpointsReached,
     trajectory:run.trajectory,
     telemetry:run.telemetry
@@ -234,6 +240,12 @@ function verifyPassport(raw) {
     reason:Object.values(checks).every(Boolean)?'Все три отпечатка совпадают.':'Содержимое не совпадает с записанными отпечатками.',
     fingerprints:computed
   };
+}
+function validatePassportEnvelope(raw) {
+  if (!raw || typeof raw !== 'object' || raw.schema !== SCHEMA || raw.schemaVersion !== 1 || !raw.run) return {ok:false,reason:'Неизвестный формат паспорта запуска.'};
+  const verification = verifyPassport(raw.run);
+  if (!verification.ok) return {ok:false,reason:verification.reason};
+  return {ok:true,archive:{schema:ARCHIVE_SCHEMA,schemaVersion:1,exportedAt:new Date().toISOString(),runs:[normalizeRun(raw.run)]}};
 }
 function validateArchive(raw) {
   if (!raw || typeof raw !== 'object' || raw.schema !== ARCHIVE_SCHEMA || raw.schemaVersion !== 1 || !Array.isArray(raw.runs)) {
@@ -315,7 +327,7 @@ const api=Object.freeze({
   version:VERSION,schema:SCHEMA,contractSchema:CONTRACT_SCHEMA,archiveSchema:ARCHIVE_SCHEMA,
   engineRevision:ENGINE_REVISION,maxRuns:MAX_RUNS,maxFrames:MAX_FRAMES,maxImportBytes:MAX_IMPORT_BYTES,improvements:IMPROVEMENTS,
   canonicalize,fnv1a,normalizeContract,normalizeFrames,normalizeRun,signatures,verifyPassport,validateArchive,
-  scenarioKey,trajectoryDeviation,compareRuns
+  scenarioKey,trajectoryDeviation,compareRuns,validatePassportEnvelope
 });
 if (typeof window==='undefined' || !window.document) {
   globalThis.__CASCADELAB026_TEST__=api;
@@ -591,7 +603,8 @@ async function importArchive(file){
   if(!file)return;
   if(file.size>MAX_IMPORT_BYTES){setStatus('Файл больше 900 KiB. Импорт отклонён.','error');return;}
   try{
-    const incoming=validateArchive(JSON.parse(await file.text()));
+    const parsed=JSON.parse(await file.text());
+    const incoming=parsed&&parsed.schema===SCHEMA?validatePassportEnvelope(parsed):validateArchive(parsed);
     if(!incoming.ok)throw new Error(incoming.reason);
     const combined=[...incoming.archive.runs,...runs],seen=new Set();
     runs=combined.filter(run=>!seen.has(run.id)&&seen.add(run.id)).sort((a,b)=>Date.parse(b.at)-Date.parse(a.at)).slice(0,MAX_RUNS);
