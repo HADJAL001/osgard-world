@@ -308,11 +308,11 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
             : path === '/games/cascade-lab/mission-director.js'
               ? content.includes("const VERSION='0.24.0'") && content.includes("const SCHEMA='osgard.cascade-lab.mission-director.v1'") && content.includes('function buildRecommendations') && content.includes('function observeContract') && !content.includes('fetch(') && !content.includes('sendBeacon(') && !content.includes('.innerHTML')
             : path === '/games/cascade-lab/evidence-integrity.js'
-              ? /VERSION\\s*=\\s*['"]0\\.25\\.0['"]/.test(content) &&
-                /SCHEMA\\s*=\\s*['"]osgard\\.cascade-lab\\.evidence-integrity\\.v1['"]/.test(content) &&
-                /ARCHIVE_SCHEMA\\s*=\\s*['"]osgard\\.cascade-lab\\.evidence-integrity-archive\\.v1['"]/.test(content) &&
-                !/\\bfetch\\s*\\(/.test(content) && !/\\bXMLHttpRequest\\b/.test(content) &&
-                !/\\bsendBeacon\\b/.test(content) && !/\\.innerHTML\\b/.test(content)
+              ? /VERSION\s*=\s*['"]0\.25\.0['"]/.test(content) &&
+                /SCHEMA\s*=\s*['"]osgard\.cascade-lab\.evidence-integrity\.v1['"]/.test(content) &&
+                /ARCHIVE_SCHEMA\s*=\s*['"]osgard\.cascade-lab\.evidence-integrity-archive\.v1['"]/.test(content) &&
+                !/\bfetch\s*\(/.test(content) && !/\bXMLHttpRequest\b/.test(content) &&
+                !/\bsendBeacon\b/.test(content) && !/\.innerHTML\b/.test(content)
             : content.includes('demo/issue') && content.includes('data-clock-step')
       }
       return { path, status: asset.status, contentType, ok: asset.status === 200 && typeOk && nonEmpty }
