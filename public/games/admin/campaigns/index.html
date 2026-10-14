@@ -46,7 +46,7 @@
       <label class="field"><span>Официальная HTTPS-ссылка без query/hash</span><input name="targetUrl" type="url" inputmode="url" maxlength="1024" required placeholder="https://example.com/offer"></label>
       <p class="small">Для атрибуции интерфейс добавит UTM-параметры при переходе. Исходный URL не должен содержать токены, персональные данные или готовые tracking-параметры.</p>
       <div class="fields three">
-        <label class="field"><span>Размещение</span><select name="placement"><option value="catalog_feature">Каталог · подключено</option><option value="after_session">Между сессиями · не подключено</option><option value="game_event">Событие в игре · не подключено</option></select></label>
+        <label class="field"><span>Размещение</span><select name="placement"><option value="catalog_feature">Каталог · подключено</option><option value="after_session">Между игровыми сессиями · подключено</option><option value="game_event">Событие в игре · не подключено</option></select></label>
         <label class="field"><span>Статус</span><select name="status"><option value="draft">Черновик</option><option value="scheduled">Запланирована</option><option value="active">Активна · публикация</option><option value="paused">Приостановлена</option></select></label>
         <label class="field"><span>Лимит показов на устройство / 24 ч</span><input name="frequencyCap" type="number" min="1" max="20" step="1" value="3" required></label>
       </div>
@@ -55,7 +55,7 @@
         <label class="field"><span>Окончание — локальное время</span><input name="endsAt" type="datetime-local"></label>
         <label class="field"><span>Маркировка</span><select name="sponsorDisclosure" required><option>Реклама</option><option>Партнёрский материал</option><option>Спонсорский материал</option></select></label>
       </div>
-      <div class="rule-note"><b>Публикация разрешена только для слота «Каталог».</b> Для активного статуса нужны корректные даты, которые включают текущий момент. Остальные placement остаются черновиками до интеграции и QA конкретного игрового экрана.</div>
+      <div class="rule-note"><b>Публикация разрешена для слота «Каталог» или экрана между игровыми сессиями.</b> Для активного статуса нужны корректные даты, включающие текущий момент. «Событие в игре» остаётся закрытым до отдельной проверки точки интеграции.</div>
       <div class="actions"><button class="button" id="save-button" type="submit" disabled>Сохранить черновик</button><button class="button secondary" id="new-button" type="button">Очистить форму</button></div>
       <p id="form-status" class="status" role="status" aria-live="polite"></p>
     </form>
