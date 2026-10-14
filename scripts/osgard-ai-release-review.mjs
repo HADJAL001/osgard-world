@@ -333,12 +333,17 @@ export async function requestOpenAIReview(payload, options = {}) {
   return validateAssessment(parsed);
 }
 
-async function writePrivateJson(path, data) {
+export async function writePrivateJson(path, data) {
+  if (typeof path !== 'string' || path !== basename(path) ||
+      !/^[A-Za-z0-9][A-Za-z0-9._-]{0,100}\.json$/.test(path) || path.startsWith('.')) {
+    throw new Error('Output must be a simple root-level JSON filename; paths and protected repository files are not accepted.');
+  }
   const output = resolve(ROOT, path);
   const rel = relative(ROOT, output);
   if (!rel || rel === '..' || rel.startsWith('..' + sep) || isAbsolute(rel) ||
-      rel.split(sep).includes('dist') || rel.split(sep).includes('node_modules')) {
-    throw new Error('Output must be a safe path inside the repository and outside dist/node_modules.');
+      rel.split(sep).includes('dist') || rel.split(sep).includes('node_modules') ||
+      ['package.json', 'package-lock.json', 'tsconfig.json', 'vite.config.json'].includes(path)) {
+    throw new Error('Output must be a safe root-level report path outside build/dependency directories.');
   }
   await mkdir(dirname(output), { recursive: true });
   const temp = output + '.tmp-' + process.pid + '-' + Date.now();
