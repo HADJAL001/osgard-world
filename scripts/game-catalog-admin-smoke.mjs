@@ -10,6 +10,9 @@ const matrix = readFileSync('scripts/production-route-matrix.mjs', 'utf8');
 const apiModule = readFileSync('services/osgard-commerce-api/src/game-catalog.mjs', 'utf8');
 const server = readFileSync('services/osgard-commerce-api/src/server.mjs', 'utf8');
 const servicePackage = JSON.parse(readFileSync('services/osgard-commerce-api/package.json', 'utf8'));
+const brandPage = readFileSync(root + 'brand-kit/index.html', 'utf8');
+const brandFiles = ['logo-option-a.svg','logo-option-b.svg','logo-option-c.svg','logo-osgard-play.svg','favicon-gaming.svg','social-template-1200x630.svg','sponsor-template-1200x630.svg'].map((name) => [name, readFileSync(root + 'brand-kit/' + name, 'utf8')]);
+const sitemap = readFileSync('public/sitemap.xml', 'utf8');
 
 assert.ok(catalog.includes('/games/catalog-runtime.js?v=__OSGARD_BUILD_VERSION__'), 'The games hub must load the runtime catalogue override');
 assert.ok(admin.includes('<meta name="robots" content="noindex,nofollow,noarchive">'), 'The operator page must not be indexed');
@@ -25,6 +28,10 @@ assert.ok(apiModule.includes('validateGameCatalogPayload') && apiModule.includes
 assert.ok(server.includes('app.get("/v1/game-catalog"') && server.includes('app.get("/v1/admin/game-catalog"') && server.includes('app.post("/v1/admin/game-catalog"'), 'Public/read and authenticated/write API endpoints must exist');
 assert.ok(server.includes('requireAdmin, gameCatalogWriteLimiter'), 'Writes must use the existing server-side operator auth plus rate limit');
 assert.ok(servicePackage.scripts.test && servicePackage.scripts.check, 'Commerce API tests and static checks must remain available');
+assert.ok(brandPage.includes('<title>OSGARD WORLD GAMING — Brand Kit</title>') && brandPage.includes('Eclipse Gate') && brandPage.includes('sponsor-template-1200x630.svg'), 'Brand kit page must expose the selected gaming identity and campaign template');
+assert.ok(brandFiles.length === 7 && brandFiles.every(([name, svg]) => svg.includes('<svg') && svg.includes('</svg>')), 'All original logo, favicon, social and sponsor assets must be SVG documents');
+assert.ok(brandFiles.find(([name]) => name === 'sponsor-template-1200x630.svg')?.[1].includes('РЕКЛАМА'), 'Sponsor template must include an explicit advertising disclosure');
+assert.ok(catalog.includes('<a href="/games/brand-kit/">Бренд и материалы ↗</a>') && sitemap.includes('https://osgard.world/games/brand-kit/'), 'Brand kit must be discoverable from the Games footer and sitemap');
 assert.ok(matrix.includes("'/games/admin/catalog/'") && matrix.includes("'/games/admin/catalog/catalog.js'") && matrix.includes("'/games/catalog-runtime.js'"), 'Production route matrix must include new catalogue assets');
 assert.ok(matrix.includes("'/commerce-api/v1/game-catalog'") && matrix.includes("'/commerce-api/v1/admin/game-catalog'"), 'Production route matrix must include catalogue API contracts');
 console.log('PASS OSGARD managed game catalogue: route allow-list, safe render, token handling, route matrix and API wiring.');
