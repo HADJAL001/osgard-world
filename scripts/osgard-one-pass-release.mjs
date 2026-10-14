@@ -37,6 +37,10 @@ const node = (id, label, args, options = {}) => ({
 export function buildPlan() {
   return [
     npm('source-preflight', 'Source architecture, catalogue, legal, privacy and monetization gate', 'qa:ecosystem-release'),
+    npm('core-state', 'Core state machine and event-model contract', 'qa:core'),
+    npm('core-analytics-consent', 'Core analytics opt-in/revoke state contract', 'qa:core-analytics-consent'),
+    npm('product-experiments', 'Product experiment engine and deterministic assignment contracts', 'qa:product-experiments'),
+    npm('ai-release-review', 'AI release-review schema and policy tests (offline test suite; no model call)', 'qa:ai-release-review'),
     npm('games-portal', 'Games catalogue, launch routes and portal contracts', 'qa:games-portal'),
     npm('game-details', 'Game details, progression, sharing and CASCADE LAB regression suites', 'qa:games-detail'),
     npm('entertainment', 'Entertainment hub and cross-surface discovery', 'qa:entertainment'),
@@ -54,8 +58,11 @@ export function buildPlan() {
     npm('project-intake', 'Project enquiry validation, consent and safe manual fallback', 'qa:project-intake'),
     npm('game-business-bridge', 'Game-to-development enquiry attribution', 'qa:game-business-bridge'),
     npm('games-assets', 'Generated game assets, static asset integrity and mobile assets', 'qa:games-assets'),
+    npm('live-bundle-audit', 'Live production bundle integrity and unexpected asset audit', 'qa:live-bundle'),
     npm('economics-model', 'Three-scenario financial model and spreadsheet-safe export', 'qa:games-model'),
     npm('device-fit', 'Responsive layout and local-only device capability contracts', 'qa:device-fit'),
+    npm('player-console', 'Player console state, history and local-control contracts', 'qa:player-console'),
+    npm('pwa', 'Installability, offline shell and service-worker source contracts', 'qa:pwa'),
     npm('null-shift-godot', 'Godot game asset/runtime-source contract (not a desktop-editor launch)', 'qa:null-shift-godot'),
     npm('ios-payload', 'iOS App Store web payload source preflight', 'qa:ios-appstore'),
     npm('external-health-contract', 'External-project audit safety and schema contract', 'qa:external-project-healthcheck'),
