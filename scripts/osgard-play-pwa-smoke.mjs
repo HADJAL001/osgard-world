@@ -14,6 +14,9 @@ const css = read(root + '/pwa-install.css');
 const install = read(root + '/pwa-install.js');
 const sw = read(root + '/osgard-play-sw.js');
 const stateScript = read(root + '/catalog-state.js');
+const vaultPage = read(root + '/vault/index.html');
+const vaultCore = read(root + '/vault/vault-core.js');
+const vaultApp = read(root + '/vault/vault-app.js');
 const clientAnalytics = read(root + '/consented-analytics.js');
 const serverCore = read('services/osgard-commerce-api/src/core.mjs');
 const packageJson = JSON.parse(read('package.json'));
@@ -22,7 +25,7 @@ const workflow = read('.github/workflows/osgard-play-qa.yml');
 for (const path of [
   root + '/app.webmanifest', root + '/osgard-play-icon.svg', root + '/offline.html',
   root + '/pwa-install.css', root + '/pwa-install.js', root + '/device-fit.css', root + '/device-fit.js', root + '/experiment-core.js', root + '/experiment-runtime.js', root + '/osgard-play-sw.js',
-  root + '/catalog-state.js'
+  root + '/catalog-state.js', root + '/vault/index.html', root + '/vault/vault-core.js', root + '/vault/vault-app.js'
 ]) assert.ok(existsSync(resolve(path)), 'Missing PWA asset: ' + path);
 
 assert.equal(manifest.scope, '/games/');
@@ -41,6 +44,11 @@ assert.ok(offline.includes('Вернуться в каталог'));
 assert.ok(page.includes('rel="manifest"') && page.includes('app.webmanifest'));
 assert.ok(page.includes('id="pwa-install-panel"') && page.includes('id="pwa-install-button"'));
 assert.ok(page.includes('id="catalog-share-state"') && page.includes('id="catalog-share-status"'));
+assert.ok(page.includes('href="/games/vault/"'), 'Games hub must link to PLAYER VAULT.');
+assert.ok(vaultPage.includes('<title>PLAYER VAULT — OSGARD PLAY</title>') && vaultPage.includes('id="backup-file"') && vaultPage.includes('id="restore-button"'));
+assert.ok(vaultPage.includes('vault-core.js?v=__OSGARD_BUILD_VERSION__') && vaultPage.includes('vault-app.js?v=__OSGARD_BUILD_VERSION__'));
+assert.ok(vaultCore.includes('osgard.games.favorites.v1') && vaultCore.includes('inherit-world-v1') && vaultCore.includes('osgard.signal-run.daily-streak.v1'));
+assert.ok(!/\\bfetch\\s*\\(|sendBeacon|XMLHttpRequest/.test(vaultCore + vaultApp), 'PLAYER VAULT must not upload local saves or emit analytics.');
 assert.ok(page.includes('/games/pwa-install.css?v=__OSGARD_BUILD_VERSION__'));
 assert.ok(page.includes('/games/pwa-install.js?v=__OSGARD_BUILD_VERSION__'));
 assert.ok(page.includes('/games/device-fit.css?v=__OSGARD_BUILD_VERSION__'));
@@ -77,6 +85,9 @@ for (const path of ['/games/luxury.css', '/games/device-fit.css', '/games/device
 }
 assert.ok(precachePaths.includes('/games/expedition/') && precachePaths.includes('/games/expedition/index.html'), 'The expedition builder shell must remain available offline');
 assert.ok(sw.includes("url.pathname === '/games/expedition/'") && sw.includes("const cachedExpedition = await cache.match(url.pathname === '/games/expedition/' ? '/games/expedition/' : '/games/expedition/index.html')"), 'Offline navigation should return the cached expedition builder when available');
+for (const path of ['/games/vault/', '/games/vault/index.html', '/games/vault/vault-core.js', '/games/vault/vault-app.js']) assert.ok(precachePaths.includes(path), 'PLAYER VAULT public shell must be precached: ' + path);
+for (const path of ['/games/vault/vault-core.js', '/games/vault/vault-app.js']) assert.ok(staticAllowlist.includes("'" + path + "'"), 'PLAYER VAULT runtime asset must be cacheable offline: ' + path);
+assert.ok(sw.includes("url.pathname === '/games/vault/'") && sw.includes("const cachedVault = await cache.match(url.pathname === '/games/vault/' ? '/games/vault/' : '/games/vault/index.html')"), 'Offline navigation should return the cached PLAYER VAULT page when available');
 assert.ok(sw.includes("cache.put('/games/'") && sw.includes('ignoreSearch: true'));
 assert.ok(sw.includes('CACHE_PREFIX') && sw.includes('caches.delete(name)'));
 assert.ok(!sw.includes("caches.match(request) || fetch(request)"), 'Do not use a stale generic cache-first strategy for the entire site.');
