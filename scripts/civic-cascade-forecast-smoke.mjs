@@ -112,7 +112,7 @@ const doctrineSource = extractBetween('function doctrineObjectiveScore', 'let do
 const dossierSource = extractBetween('function buildDoctrineDossierPayload', 'async function exportDoctrineDossier')
 const buildDoctrineDossierPayload = new Function(dossierSource + '\nreturn buildDoctrineDossierPayload;')()
 const planner = new Function('nodes', 'PLAN_ACTIONS', 'clamp',
-  doctrineSource + '\nreturn {searchDoctrinePlans, doctrineDominates, doctrineParetoPortfolio};'
+  doctrineSource + '\nreturn {searchDoctrinePlans, doctrineDominates, doctrineParetoPortfolio, doctrineStressProfiles};'
 )(nodes, actions, clamp)
 const {searchDoctrinePlans, doctrineDominates, doctrineParetoPortfolio, doctrineStressProfiles} = planner
 const makeState = scenario => {
