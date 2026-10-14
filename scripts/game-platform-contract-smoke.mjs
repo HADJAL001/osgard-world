@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { Script } from 'node:vm';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -51,6 +52,7 @@ assert.ok(page.includes('href="https://wa.me/79640027222') && page.includes('hre
 assert.ok(!/https?:\/\/(?:cdn\.|unpkg\.com|jsdelivr\.net|fonts\.googleapis\.com)/i.test(page + runtime + styles), 'New page must not add external CDN dependencies.');
 assert.ok(styles.includes('prefers-reduced-motion:reduce') && styles.includes(':focus-visible'), 'Map must honor reduced motion and keyboard focus.');
 assert.ok(runtime.includes('credentials: \'same-origin\'') && runtime.includes('OSGARD_CONSENTED_ANALYTICS') && !runtime.includes('innerHTML') && !runtime.includes('sendBeacon'), 'Runtime must use safe DOM updates and the existing consent-gated analytics queue.');
+assert.doesNotThrow(() => new Script(runtime), 'Capability-map runtime must pass a JavaScript syntax check.');
 assert.ok(runtime.includes('not-device-verified') && runtime.includes('fetch('), 'Runtime must surface the physical-device validation boundary and load the source registry.');
 assert.ok(!runtime.includes('document.cookie') && !runtime.includes('localStorage.setItem') && !runtime.includes('sessionStorage.setItem'), 'Map must not introduce new tracking persistence.');
 
