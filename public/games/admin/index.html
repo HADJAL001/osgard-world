@@ -60,15 +60,22 @@
 </section>
 <footer class="footer"><span>OSGARD LIVEOPS · Только агрегированная служебная аналитика</span><div class="footer-links"><a href="/games/operations/">Диагностика витрины</a><a href="/games/admin/partners/">Редактор партнёрских форматов</a><a href="/games/admin/campaigns/">Управление кампаниями</a><a href="/privacy/">Конфиденциальность</a><a href="mailto:osman.osmanov0099@gmail.com?subject=OSGARD%20LiveOps">Поддержка</a></div></footer>
 </div>
+<script src="/games/admin/analytics-core.js"></script>
 <script>
 (function(){
 'use strict';
 const $=selector=>document.querySelector(selector);
+const analytics=window.OSGARDLiveOpsMetrics;
+if(!analytics)throw new Error('OSGARD LiveOps analytics core did not load.');
 let operatorToken='';
 let lastAggregateReport=null;
+let lastSuccessAt=null;
+let activeController=null;
+let requestEpoch=0;
+let refreshTimer=null;
+let selectedPreset='30d';
 const state=$('#connection-state');
 const setMessage=(node,message,kind='')=>{node.textContent=message;node.dataset.kind=kind};
-const escapeText=value=>String(value??'');
 const dateInputValue=date=>{const offset=date.getTimezoneOffset();return new Date(date.getTime()-offset*60000).toISOString().slice(0,16)};
 const tokenHeaders=()=>({'X-Moderation-Token':operatorToken,'Accept':'application/json','Cache-Control':'no-store'});
 async function readApi(path,options={}){
@@ -83,75 +90,154 @@ async function readApi(path,options={}){
  }
  return data;
 }
-const labels={events:'Игровые события',eventCount:'Игровые события',distinctPlayers:'Уникальные игроки',players:'Игроки',playerCount:'Игроки',results:'Результаты',resultCount:'Результаты',games:'Игры с активностью',reports:'Жалобы',openReports:'Открытые жалобы',sessions:'Сессии'};
-function collectMetrics(source){
- const found=[],seen=new Set();
- function visit(value,path,depth){
-  if(!value||typeof value!=='object'||depth>3)return;
-  if(Array.isArray(value))return;
-  for(const [key,item] of Object.entries(value)){
-   const nice=labels[key]||labels[key[0]?.toLowerCase()+key.slice(1)];
-   if(nice&&typeof item==='number'&&Number.isFinite(item)&&!seen.has(nice)){seen.add(nice);found.push({label:nice,value:item})}
-   else if(item&&typeof item==='object')visit(item,path?path+'.'+key:key,depth+1);
-  }
- }
- visit(source,'',0);return found.slice(0,9);
-}
-function paintMetrics(data){
- const root=$('#metrics');root.replaceChildren();
- const rows=collectMetrics(data);
- if(!rows.length){const card=document.createElement('article');card.className='metric';const l=document.createElement('span'),v=document.createElement('strong');l.textContent='Сводка';v.textContent='Полный JSON ниже';card.append(l,v);root.append(card);return}
- for(const row of rows){const card=document.createElement('article');card.className='metric';const label=document.createElement('span'),value=document.createElement('strong');label.textContent=row.label;value.textContent=new Intl.NumberFormat('ru-RU').format(row.value);card.append(label,value);root.append(card)}
-}
+function setFreshness(kind,text){const root=$('#data-freshness');root.dataset.state=kind;$('#freshness-label').textContent=text}
 function setJson(selector,data){$(selector).textContent=JSON.stringify(data,null,2).slice(0,12000)}
 function dateRange(){
- const fromValue=$('#from-date').value,toValue=$('#to-date').value;
- const from=Date.parse(fromValue),to=Date.parse(toValue);
- if(!Number.isFinite(from)||!Number.isFinite(to)||from>=to)throw new Error('Укажите корректный диапазон: начало раньше конца.');
- return {from,to};
+ const from=Date.parse($('#from-date').value),to=Date.parse($('#to-date').value);
+ const valid=analytics.validateRange({from,to});
+ if(!valid.ok)throw new Error(valid.reason);
+ return {from:valid.from,to:valid.to};
 }
-async function refresh(){
+function paintMetrics(current,previous){
+ const root=$('#metrics');root.replaceChildren();
+ const rows=previous?analytics.compareMetrics(current,previous):analytics.collectMetrics(current).map(row=>({...row,comparison:null}));
+ if(!rows.length){
+  const card=document.createElement('article');card.className='metric';
+  const label=document.createElement('span');label.textContent='Сводка';
+  const value=document.createElement('strong');value.textContent='Нет числовых показателей';
+  const note=document.createElement('p');note.className='metric-compare';note.textContent='Полный ответ API доступен ниже.';
+  card.append(label,value,note);root.append(card);return;
+ }
+ for(const row of rows){
+  const card=document.createElement('article');card.className='metric';
+  const label=document.createElement('span');label.textContent=row.label;
+  const main=document.createElement('div');main.className='metric-main';
+  const value=document.createElement('strong');value.textContent=new Intl.NumberFormat('ru-RU',{maximumFractionDigits:2}).format(row.value);
+  const compare=document.createElement('p');compare.className='metric-compare';
+  if(row.comparison){
+   compare.dataset.direction=row.comparison.direction;
+   compare.textContent=analytics.formatComparison(row.comparison);
+   compare.title='Предыдущий период: '+new Intl.NumberFormat('ru-RU').format(row.comparison.previousValue);
+  }else compare.textContent=$('#compare-period').checked?'Сравнение недоступно':'Сравнение выключено';
+  main.append(value);card.append(label,main,compare);root.append(card);
+ }
+}
+function selectPreset(preset){
+ selectedPreset=preset;
+ document.querySelectorAll('[data-period]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.period===preset)));
+ const range=analytics.presetRange(preset);
+ $('#from-date').value=dateInputValue(new Date(range.from));
+ $('#to-date').value=dateInputValue(new Date(range.to));
+}
+function configureAutoRefresh(){
+ if(refreshTimer!==null){clearInterval(refreshTimer);refreshTimer=null}
+ if(!$('#auto-refresh').checked||!operatorToken)return;
+ refreshTimer=setInterval(()=>{
+  if(operatorToken&&document.visibilityState==='visible'&&activeController===null)void refresh({silent:true});
+ },60000);
+}
+async function refresh({silent=false}={}){
  if(!operatorToken)return;
- const button=$('#refresh');button.disabled=true;setMessage($('#refresh-status'),'Запрашиваю защищённые агрегаты…');
+ if(activeController)activeController.abort();
+ const controller=new AbortController();
+ activeController=controller;
+ const epoch=++requestEpoch;
+ const panel=$('#dashboard');panel.setAttribute('aria-busy','true');
+ $('#refresh').disabled=true;
+ if(!silent)setMessage($('#refresh-status'),'Запрашиваю защищённые агрегаты…');
+ setFreshness('loading',lastSuccessAt?'Обновление; последние успешные данные от '+new Date(lastSuccessAt).toLocaleString('ru-RU'):'Загрузка первого набора данных');
+ const timeout=setTimeout(()=>controller.abort(new DOMException('Запрос к API превысил лимит 15 секунд.','TimeoutError')),15000);
  try{
-  const {from,to}=dateRange();
-  const [summary,cohorts,snapshots]=await Promise.all([
-   readApi('/api/v1/analytics/summary?from='+encodeURIComponent(from)+'&to='+encodeURIComponent(to)),
-   readApi('/api/v1/analytics/cohorts'),
-   readApi('/api/v1/analytics/snapshots')
+  const range=dateRange();
+  const comparisonEnabled=$('#compare-period').checked;
+  const previousRange=comparisonEnabled?analytics.previousRange(range):null;
+  const urlFor=period=>'/api/v1/analytics/summary?from='+encodeURIComponent(period.from)+'&to='+encodeURIComponent(period.to);
+  const [summaryResult,cohortsResult,snapshotsResult,previousResult]=await Promise.allSettled([
+   readApi(urlFor(range),{signal:controller.signal}),
+   readApi('/api/v1/analytics/cohorts',{signal:controller.signal}),
+   readApi('/api/v1/analytics/snapshots',{signal:controller.signal}),
+   comparisonEnabled?readApi(urlFor(previousRange),{signal:controller.signal}):Promise.resolve(null)
   ]);
-  lastAggregateReport={generatedAt:new Date().toISOString(),range:{from,to},summary,cohorts,snapshots};
-  paintMetrics(summary);setJson('#summary-data',summary);setJson('#cohorts-data',cohorts);setJson('#snapshots-data',snapshots);
-  state.textContent='API STATUS / ПОДКЛЮЧЁН';setMessage($('#refresh-status'),'Обновлено '+new Date().toLocaleString('ru-RU'),'success');
- }catch(error){setMessage($('#refresh-status'),error instanceof Error?error.message:'Ошибка API','error');state.textContent='API STATUS / ОШИБКА'}
- finally{button.disabled=false}
+  if(epoch!==requestEpoch||controller.signal.aborted)return;
+  if(summaryResult.status!=='fulfilled')throw summaryResult.reason;
+  const summary=summaryResult.value;
+  const previous=previousResult.status==='fulfilled'?previousResult.value:null;
+  const cohorts=cohortsResult.status==='fulfilled'?cohortsResult.value:{unavailable:true,reason:String(cohortsResult.reason?.message||'API временно недоступен')};
+  const snapshots=snapshotsResult.status==='fulfilled'?snapshotsResult.value:{unavailable:true,reason:String(snapshotsResult.reason?.message||'API временно недоступен')};
+  const degraded=[];
+  if(cohortsResult.status!=='fulfilled')degraded.push('когорты');
+  if(snapshotsResult.status!=='fulfilled')degraded.push('снимки');
+  if(comparisonEnabled&&previousResult.status!=='fulfilled')degraded.push('сравнение');
+  const generatedAt=new Date().toISOString();
+  lastAggregateReport={generatedAt,range,previousRange:previousRange||null,summary,previousSummary:previous,cohorts,snapshots,comparisonStatus:comparisonEnabled?(previous?'available':'unavailable'):'disabled'};
+  lastSuccessAt=generatedAt;
+  paintMetrics(summary,previous);
+  setJson('#summary-data',summary);setJson('#cohorts-data',cohorts);setJson('#snapshots-data',snapshots);
+  state.textContent=degraded.length?'API STATUS / ЧАСТИЧНО':'API STATUS / ПОДКЛЮЧЁН';
+  setFreshness('fresh','Последний успешный ответ: '+new Date(generatedAt).toLocaleString('ru-RU')+' · диапазон '+new Date(range.from).toLocaleDateString('ru-RU')+' — '+new Date(range.to).toLocaleDateString('ru-RU'));
+  const message='Сводка обновлена '+new Date(generatedAt).toLocaleTimeString('ru-RU')+(degraded.length?'; временно недоступны: '+degraded.join(', '):comparisonEnabled&&!previous?'; текущие показатели доступны, но сравнение не получено':'');
+  setMessage($('#refresh-status'),message,degraded.length?'error':'success');
+ }catch(error){
+  if(epoch!==requestEpoch)return;
+  if(controller.signal.aborted&&controller.signal.reason?.name!=='TimeoutError')return;
+  const message=controller.signal.reason?.name==='TimeoutError'?controller.signal.reason.message:(error instanceof Error?error.message:'Ошибка API');
+  setMessage($('#refresh-status'),message+' Последний успешный снимок сохранён на экране; новые данные не подменяли его.','error');
+  state.textContent='API STATUS / ОШИБКА';
+  setFreshness('stale',lastSuccessAt?'Устаревшие данные · последний успех '+new Date(lastSuccessAt).toLocaleString('ru-RU'):'Свежие данные пока не получены');
+ }finally{
+  clearTimeout(timeout);
+  if(epoch===requestEpoch){
+   activeController=null;panel.removeAttribute('aria-busy');$('#refresh').disabled=false;
+  }
+ }
 }
 $('#access-form').addEventListener('submit',async event=>{
  event.preventDefault();operatorToken=$('#operator-token').value.trim();
  if(operatorToken.length<8){setMessage($('#access-status'),'Введите токен оператора.','error');return}
  $('#connect-button').disabled=true;setMessage($('#access-status'),'Проверка доступа к API…');
+ const controller=new AbortController();
+ const timeout=setTimeout(()=>controller.abort(),15000);
  try{
-  // The protected summary endpoint validates the secret; it is never stored in local/session storage.
   const {from,to}=dateRange();
-  const data=await readApi('/api/v1/analytics/summary?from='+encodeURIComponent(from)+'&to='+encodeURIComponent(to));
+  await readApi('/api/v1/analytics/summary?from='+encodeURIComponent(from)+'&to='+encodeURIComponent(to),{signal:controller.signal});
   $('#dashboard').hidden=false;$('#operator-token').value='';$('#access-panel').hidden=true;
-  paintMetrics(data);setJson('#summary-data',data);state.textContent='API STATUS / ПОДКЛЮЧЁН';
-  setMessage($('#refresh-status'),'Токен принят. Загружаются дополнительные агрегаты…','success');
-  await refresh();
- }catch(error){operatorToken='';setMessage($('#access-status'),error instanceof Error?error.message:'Ошибка API','error');state.textContent='API STATUS / ДОСТУП НЕ ПОДТВЕРЖДЁН'}
- finally{$('#connect-button').disabled=false}
+  state.textContent='API STATUS / ПОДКЛЮЧЁН';
+  setMessage($('#refresh-status'),'Токен принят. Загружается защищённая сводка…','success');
+  await refresh();configureAutoRefresh();
+ }catch(error){
+  operatorToken='';
+  setMessage($('#access-status'),controller.signal.aborted?'API не ответил за 15 секунд.':(error instanceof Error?error.message:'Ошибка API'),'error');
+  state.textContent='API STATUS / ДОСТУП НЕ ПОДТВЕРЖДЁН';
+ }finally{clearTimeout(timeout);$('#connect-button').disabled=false}
 });
-$('#refresh').addEventListener('click',refresh);
-$('#from-date').addEventListener('change',()=>{if(operatorToken)refresh()});
-$('#to-date').addEventListener('change',()=>{if(operatorToken)refresh()});
-$('#disconnect').addEventListener('click',()=>{operatorToken='';$('#dashboard').hidden=true;$('#access-panel').hidden=false;$('#operator-token').value='';$('#summary-data').textContent='Нет данных';$('#cohorts-data').textContent='Нет данных';$('#snapshots-data').textContent='Нет данных';$('#metrics').replaceChildren();state.textContent='API STATUS / ОТКЛЮЧЁН';setMessage($('#access-status'),'Токен очищен из памяти вкладки.');});
+$('#refresh').addEventListener('click',()=>void refresh());
+document.querySelectorAll('[data-period]').forEach(button=>button.addEventListener('click',()=>{
+ selectPreset(button.dataset.period);if(operatorToken)void refresh();
+}));
+$('#from-date').addEventListener('change',()=>{selectedPreset='custom';document.querySelectorAll('[data-period]').forEach(b=>b.setAttribute('aria-pressed','false'));if(operatorToken)void refresh()});
+$('#to-date').addEventListener('change',()=>{selectedPreset='custom';document.querySelectorAll('[data-period]').forEach(b=>b.setAttribute('aria-pressed','false'));if(operatorToken)void refresh()});
+$('#compare-period').addEventListener('change',()=>{if(operatorToken)void refresh()});
+$('#auto-refresh').addEventListener('change',configureAutoRefresh);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&$('#auto-refresh').checked&&operatorToken&&activeController===null)void refresh({silent:true})});
+$('#disconnect').addEventListener('click',()=>{
+ operatorToken='';requestEpoch++;
+ if(activeController){activeController.abort();activeController=null}
+ if(refreshTimer!==null){clearInterval(refreshTimer);refreshTimer=null}
+ lastAggregateReport=null;lastSuccessAt=null;$('#auto-refresh').checked=false;
+ $('#dashboard').hidden=true;$('#access-panel').hidden=false;$('#operator-token').value='';
+ $('#summary-data').textContent='Нет данных';$('#cohorts-data').textContent='Нет данных';$('#snapshots-data').textContent='Нет данных';$('#metrics').replaceChildren();
+ setFreshness('stale','Данные очищены после отключения');state.textContent='API STATUS / ОТКЛЮЧЁН';setMessage($('#access-status'),'Токен очищен из памяти вкладки.');
+});
 $('#export').addEventListener('click',async()=>{
  if(!operatorToken)return;
  const button=$('#export');button.disabled=true;
  try{
-  const {from,to}=dateRange();const text=await fetch('/api/v1/analytics/export?from='+encodeURIComponent(from)+'&to='+encodeURIComponent(to),{headers:tokenHeaders(),cache:'no-store',credentials:'same-origin',redirect:'error'}).then(async r=>{const body=await r.text();if(!r.ok)throw new Error('Экспорт не выполнен (HTTP '+r.status+').');return body});
-  const lines=text.split(/\r?\n/).filter(Boolean);for(const line of lines)JSON.parse(line);
-  const blob=new Blob([text],{type:'application/x-ndjson;charset=utf-8'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='osgard-games-aggregate-events.jsonl';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);setMessage($('#refresh-status'),'Агрегатный JSONL экспортирован. Строк: '+lines.length,'success');
+  const range=dateRange();
+  const response=await fetch('/api/v1/analytics/export?from='+encodeURIComponent(range.from)+'&to='+encodeURIComponent(range.to),{headers:tokenHeaders(),cache:'no-store',credentials:'same-origin',redirect:'error'});
+  const body=await response.text();if(!response.ok)throw new Error('Экспорт не выполнен (HTTP '+response.status+').');
+  const lines=body.split(/\r?\n/).filter(Boolean);for(const line of lines)JSON.parse(line);
+  const blob=new Blob([body],{type:'application/x-ndjson;charset=utf-8'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='osgard-games-aggregate-events.jsonl';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  setMessage($('#refresh-status'),'Агрегатный JSONL экспортирован. Строк: '+lines.length,'success');
  }catch(error){setMessage($('#refresh-status'),error instanceof Error?error.message:'Ошибка экспорта','error')}
  finally{button.disabled=false}
 });
@@ -166,26 +252,18 @@ $('#export-csv').addEventListener('click',()=>{
    if(rows.length>10000||depth>8||!path.split('.').every(part=>!blocked.test(part)))return;
    if(Array.isArray(value)){value.slice(0,2000).forEach((item,index)=>visit(item,path+'['+(index+1)+']',section,depth+1));return}
    if(value&&typeof value==='object'){for(const [key,item] of Object.entries(value))visit(item,path?path+'.'+key:key,section,depth+1);return}
-   if(value===null||value===undefined)return;
-   if(!['string','number','boolean'].includes(typeof value))return;
-   const text=String(value).slice(0,1000);
-   rows.push([section,path,text]);
+   if(value===null||value===undefined||!['string','number','boolean'].includes(typeof value))return;
+   rows.push([section,path,String(value).slice(0,1000)]);
   }
-  for(const key of ['range','summary','cohorts','snapshots'])visit(lastAggregateReport[key],key,'consented-aggregate',0);
-  const escape=value=>{
-   let text=String(value??'');
-   if(/^\s*[=+\-@]/.test(text))text="'"+text;
-   return '"'+text.replace(/"/g,'""')+'"';
-  };
-  const csv='\uFEFF'+rows.map(row=>row.map(escape).join(',')).join('\r\n')+'\r\n';
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),link=document.createElement('a');
-  link.href=url;link.download='osgard-games-aggregate-report-'+new Date().toISOString().slice(0,10)+'.csv';link.click();
-  setTimeout(()=>URL.revokeObjectURL(url),1000);
-  setMessage($('#refresh-status'),'CSV экспортирован: '+(rows.length-1)+' агрегированных строк. Персональные поля исключены.','success');
+  for(const key of ['range','previousRange','comparisonStatus','summary','previousSummary','cohorts','snapshots'])visit(lastAggregateReport[key],key,'consented-aggregate',0);
+  const escape=value=>{let text=String(value??'');if(/^\\s*[=+\\-@]/.test(text))text="'"+text;return '"'+text.replace(/"/g,'""')+'"'};
+  const csv='\\uFEFF'+rows.map(row=>row.map(escape).join(',')).join('\\r\\n')+'\\r\\n';
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='osgard-games-aggregate-report-'+new Date().toISOString().slice(0,10)+'.csv';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  setMessage($('#refresh-status'),'CSV экспортирован: '+(rows.length-1)+' строк. Персональные поля исключаются фильтром колонок.','success');
  }catch(error){setMessage($('#refresh-status'),error instanceof Error?error.message:'CSV экспорт не выполнен','error')}
  finally{button.disabled=false}
 });
-const now=new Date(),monthAgo=new Date(now.getTime()-30*24*60*60*1000);$('#from-date').value=dateInputValue(monthAgo);$('#to-date').value=dateInputValue(now);
+selectPreset('30d');
 })();
 </script>
 </body>
