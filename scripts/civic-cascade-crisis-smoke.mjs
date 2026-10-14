@@ -5,8 +5,20 @@ const html = readFileSync('public/games/civic-cascade/index.html', 'utf8');
 const inline = (html.match(/<script>([\s\S]*?)<\/script>/) || [])[1];
 assert.ok(inline && inline.length > 5000, 'CIVIC CASCADE inline runtime missing');
 new Function(inline);
-assert.ok(html.includes('name="osgard-game-version" content="2.1.0-crisis-director"'), 'CIVIC CASCADE 2.1 release marker missing');
+const parserMatch = inline.match(/function parseMissionChallenge\(search\)\{[\s\S]*?\n\}/);
+assert.ok(parserMatch, 'Challenge URL validator must exist');
+const parseChallenge = new Function('search', 'scenarioData', parserMatch[0] + '\nreturn parseMissionChallenge(search);');
+const challengeScenarios = { flood: { name: 'Flood' }, blackout: { name: 'Blackout' }, blockade: { name: 'Blockade' } };
+assert.deepEqual(parseChallenge('?cc_challenge=1&cc_scenario=blackout&cc_target=850&cc_ref=cc_0123abcd', challengeScenarios), { scenario: 'blackout', target: 850, ref: 'cc_0123abcd' });
+assert.equal(parseChallenge('?cc_challenge=1&cc_scenario=unknown&cc_target=850', challengeScenarios), null, 'Unknown scenarios must not be accepted');
+assert.equal(parseChallenge('?cc_challenge=1&cc_scenario=flood&cc_target=1000001', challengeScenarios), null, 'Challenge target must be bounded');
+assert.equal(parseChallenge('?cc_challenge=1&cc_scenario=flood&cc_target=4.5', challengeScenarios), null, 'Fractional scores must be rejected');
+assert.equal(parseChallenge('?cc_scenario=flood&cc_target=850', challengeScenarios), null, 'Ordinary visits must not become challenge sessions');
+assert.ok(html.includes('name="osgard-game-version" content="2.2.0-mission-challenges"'), 'CIVIC CASCADE 2.2 release marker missing');
 assert.ok(html.includes('id="cc-incident"') && html.includes('id="cc-incident-options"'), 'Crisis decision UI is missing');
+assert.ok(html.includes('id="cc-result-challenge"') && html.includes('id="cc-challenge-banner"'), 'Shareable score challenge UI is missing');
+assert.ok(inline.includes('function createMissionChallengeUrl') && inline.includes('utm_campaign','civic_cascade_friend_challenge'), 'Challenge URLs need explicit campaign attribution');
+assert.ok(inline.includes('localStorage') && inline.includes('function parseMissionChallenge'), 'Challenge routing must preserve the existing local-save architecture');
 assert.ok(inline.includes('state.actionCount=(state.actionCount||0)+1'), 'Tactical action counter is not wired');
 assert.ok(inline.includes('if(crisisIncidents[state.actionCount])openIncident(crisisIncidents[state.actionCount])'), 'Crisis triggers are not connected to tactical actions');
 assert.ok(inline.includes('if(finished||activeIncident)return'), 'Mission completion must wait for an active crisis choice');
@@ -52,4 +64,6 @@ for (const [actionNumber, incident] of Object.entries(deck)) {
 }
 
 assert.equal(testedChoices, 9, 'All nine crisis responses should be evaluated');
-console.log('PASS CIVIC CASCADE 2.1: release marker, three action-triggered incidents, pause-before-victory, legacy checkpoint migration, nine effects and no-supplies fallbacks.');
+console.log('PASS CIVIC CASCADE 2.2: mission challenges, safe query validation, three action-triggered incidents, pause-before-victory, legacy checkpoint migration, nine effects and no-supplies fallbacks.');
+// Previous-version smoke summary replaced for 2.2.0 release.
+// PASS CIVIC CASCADE 2.1: release marker, three action-triggered incidents, pause-before-victory, legacy checkpoint migration, nine effects and no-supplies fallbacks.');
