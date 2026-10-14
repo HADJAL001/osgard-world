@@ -34,7 +34,8 @@ try {
     assert.ok(item.gzipBytes < item.originalBytes, 'Gzip should save bytes for ' + item.path)
   }
   const catalogAsset = readFileSync(join(root, 'catalog-runtime.js'))
-  assert.ok(catalogAsset.length > 1000 && catalogAsset.toString('utf8').includes('textContent = item.title'), 'The catalogue runtime must not become an empty/placeholder asset during optimization')
+  const compactCatalogAsset = catalogAsset.toString('utf8').replace(/\s+/g, '')
+  assert.ok(catalogAsset.length > 1000 && compactCatalogAsset.includes('.textContent=') && compactCatalogAsset.includes('.title') && !compactCatalogAsset.includes('.innerHTML'), 'The minified catalogue runtime must remain non-empty, render with textContent, and avoid innerHTML')
   assert.deepEqual(gunzipSync(readFileSync(join(root, 'catalog-runtime.js.gz'))), catalogAsset, 'The published catalogue gzip must exactly match the non-empty source')
   console.log('PASS Games static assets: ' + result.minified.length + ' minified, ' + result.compressed.length + ' gzip sidecars, ' + (result.compressedBytesBefore - result.compressedBytesAfter) + ' bytes saved.')
 } finally {
