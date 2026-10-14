@@ -13,6 +13,7 @@ async function check(name, command, args, shell = process.platform === 'win32') 
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm'
 await check('typecheck', npm, ['run', 'check'])
 await check('games-portal-smoke', npm, ['run', 'qa:games-portal'])
+await check('player-vault-smoke', npm, ['run', 'qa:player-vault'])
 await check('games-diagnostics-smoke', npm, ['run', 'qa:games-diagnostics'])
 await check('device-fit-smoke', npm, ['run', 'qa:device-fit'])
 await check('osgard-select-growth-smoke', npm, ['run', 'qa:osgard-select'])
