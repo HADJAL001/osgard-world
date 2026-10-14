@@ -63,6 +63,7 @@ function normalizeSource(raw) {
     status: ['won', 'lost'].includes(raw.status) ? raw.status : 'unknown',
     timeSeconds: finite(raw.timeSeconds) ? Math.max(0, Math.min(120, raw.timeSeconds)) : null,
     deviceCount: Number.isInteger(raw.deviceCount) ? Math.max(0, Math.min(12, raw.deviceCount)) : devices.length,
+    devices,
     telemetry: raw.telemetry && typeof raw.telemetry === 'object' ? raw.telemetry : {},
     trajectory: Array.isArray(raw.trajectory) ? raw.trajectory.filter(point =>
       point && finite(point.t) && finite(point.x) && finite(point.y)
