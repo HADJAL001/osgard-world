@@ -17,7 +17,7 @@ const sitemap = read('public/sitemap.xml');
 
 assert.equal(registry.schemaVersion, 1, 'Capability registry schema must be v1.');
 assert.equal(registry.games.length, 11, 'Registry and release catalogue currently contract to 11 games.');
-assert.match(registry.registryVersion, /^\d{4}\.\d{2}\.\d+$/, 'Registry version must be explicit.');
+assert.match(registry.registryVersion, /^\d{4}\.\d{2}\.\d{2}\.\d+$/, 'Registry version must be explicit.');
 assert.ok(registry.verificationScope.includes('not a benchmark'), 'Registry must disclose its source-only verification scope.');
 
 const ids = registry.games.map(game => game.id);
