@@ -24,6 +24,31 @@ func _run_smoke() -> void:
 	if not _expect(game.get_script() != null, "main scene script must load without GDScript parse errors"):
 		return
 
+	print("RUNTIME_STAGE: premium accessibility and rendering controls")
+	var saved_palette: bool = game.color_safe_mode
+	var saved_haptics: bool = game.haptics_enabled
+	var saved_hud_scale: int = game.hud_scale_step
+	game.color_safe_mode = false
+	var standard_active: Color = game._hazard_color("active")
+	game.color_safe_mode = true
+	var accessible_warning: Color = game._hazard_color("warning")
+	var accessible_active: Color = game._hazard_color("active")
+	if not _expect(standard_active.r > standard_active.g and accessible_warning.b > accessible_warning.r and accessible_active.r > accessible_active.g and accessible_active.r > accessible_active.b, "colour-safe mode must use distinct blue warning and orange active hazard colours"):
+		return
+	if not _expect(game._hud_scale_value() > 0.9 and game._hud_scale_value() < 1.1, "HUD scale must stay inside the three safe values"):
+		return
+	game.haptics_enabled = false
+	game.gamepad_device_id = -1
+	if not _expect(not game._haptic_output_available() and not game._pulse_gamepad(0.3, 0.7, 0.1), "haptics must safely no-op when disabled or no controller is connected"):
+		return
+	game.color_safe_mode = saved_palette
+	game.haptics_enabled = saved_haptics
+	game.hud_scale_step = saved_hud_scale
+	game._apply_hazard_palette()
+	game._update_phase_lanes(0.0)
+	game._apply_hud_scale()
+	game._update_accessibility_buttons()
+
 	print("RUNTIME_STAGE: adaptive counterplay doctrine")
 	if not _expect(game._select_tactical_doctrine({"dash": 6.0, "pulse": 1.0, "phase": 1.0}) == "INTERCEPT", "dash-heavy behaviour must select the telegraphed INTERCEPT doctrine"):
 		return
@@ -762,8 +787,31 @@ func _run_smoke() -> void:
 	game._update_phase_lanes(0.0)
 
 	print("RUNTIME_STAGE: three graphics presets and touch utility buttons")
-	if not _expect(is_instance_valid(game.mobile_quality_button) and is_instance_valid(game.mobile_diagnostics_button), "touch devices must expose dedicated graphics and diagnostics controls"):
+	if not _expect(is_instance_valid(game.mobile_quality_button) and is_instance_valid(game.mobile_diagnostics_button) and is_instance_valid(game.mobile_palette_button) and is_instance_valid(game.mobile_hud_scale_button) and is_instance_valid(game.mobile_haptics_button), "touch HUD must expose graphics, diagnostics and accessibility controls"):
 		return
+	var saved_msaa: int = game.get_viewport().msaa_3d
+	game.cinematic_quality = true
+	game.performance_quality = false
+	game.adaptive_quality_level = 0
+	game.adaptive_quality_degraded = false
+	game._apply_quality_mode()
+	if not _expect(game.get_viewport().msaa_3d == Viewport.MSAA_4X and game.key_light.directional_shadow_max_distance == 48.0, "Cinematic preset must request 4x MSAA and full shadows"):
+		return
+	game.cinematic_quality = false
+	game.performance_quality = false
+	game._apply_quality_mode()
+	if not _expect(game.get_viewport().msaa_3d == Viewport.MSAA_2X and game.key_light.directional_shadow_max_distance == 34.0, "Balanced preset must request 2x MSAA and shorter shadows"):
+		return
+	game.performance_quality = true
+	game._apply_quality_mode()
+	if not _expect(game.get_viewport().msaa_3d == Viewport.MSAA_DISABLED and not game.key_light.shadow_enabled, "Performance preset must disable MSAA and dynamic shadows"):
+		return
+	game.cinematic_quality = true
+	game.performance_quality = false
+	game.adaptive_quality_level = 0
+	game.adaptive_quality_degraded = false
+	game.get_viewport().msaa_3d = saved_msaa
+	game._apply_quality_mode()
 	game.cinematic_quality = true
 	game.performance_quality = false
 	game.adaptive_quality_degraded = false

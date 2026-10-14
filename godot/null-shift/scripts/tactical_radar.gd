@@ -25,12 +25,24 @@ func world_to_radar(world_position: Vector3, area: Rect2) -> Vector2:
 	var z_ratio: float = clampf((world_position.z - WORLD_MIN_Z) / (WORLD_MAX_Z - WORLD_MIN_Z), 0.0, 1.0)
 	return area.position + Vector2(x_ratio, z_ratio) * area.size
 
-func state_color(state: String) -> Color:
+func state_color(state: String, accessible_mode: bool = false) -> Color:
+	if accessible_mode:
+		match state:
+			"active":
+				return Color(1.0, 0.48, 0.08, 0.96)
+			"warning":
+				return Color(0.16, 0.58, 1.0, 0.96)
+			"disrupted":
+				return Color(0.88, 0.94, 1.0, 0.9)
+			_:
+				return Color(0.12, 0.74, 0.66, 0.5)
 	match state:
 		"active":
 			return Color(1.0, 0.16, 0.24, 0.88)
 		"warning":
 			return Color(1.0, 0.65, 0.24, 0.82)
+		"disrupted":
+			return Color(0.75, 0.92, 1.0, 0.76)
 		_:
 			return Color(0.12, 0.84, 0.72, 0.36)
 
@@ -62,13 +74,18 @@ func _draw() -> void:
 			var lane: Dictionary = lane_variant
 			var lane_z: float = float(lane.get("z", 0.0))
 			var lane_state: String = str(lane.get("state", "safe"))
-			var lane_color: Color = state_color(lane_state)
+			var lane_color: Color = state_color(lane_state, bool(game_root.get("color_safe_mode")))
 			var lane_y: float = world_to_radar(Vector3(0.0, 0.0, lane_z), plot).y
 			draw_line(Vector2(plot.position.x, lane_y), Vector2(plot.end.x, lane_y), lane_color, 3.0 if lane_state == "active" else 1.7, true)
 			if lane_state == "warning":
 				for mark in range(16):
 					var stripe_x: float = plot.position.x + plot.size.x * float(mark) / 16.0
-					draw_line(Vector2(stripe_x, lane_y - 1.5), Vector2(stripe_x + 2.0, lane_y + 1.5), Color(1.0, 0.7, 0.28, 0.68), 1.0, true)
+					draw_line(Vector2(stripe_x, lane_y - 1.5), Vector2(stripe_x + 2.0, lane_y + 1.5), lane_color, 1.0, true)
+			elif lane_state == "active" and bool(game_root.get("color_safe_mode")):
+				for mark in range(0, 19):
+					var dot_x: float = plot.position.x + plot.size.x * float(mark) / 18.0
+					draw_circle(Vector2(dot_x, lane_y), 1.8, Color(0.025, 0.035, 0.04, 0.96), true)
+					draw_circle(Vector2(dot_x, lane_y), 1.0, lane_color, true)
 
 	var gate: Node3D = game_root.get("security_gate") as Node3D
 	if is_instance_valid(gate) and gate.visible:

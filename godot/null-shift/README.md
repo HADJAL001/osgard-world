@@ -254,3 +254,16 @@ While Overdrive is active, a weapon hit on a guard can conduct a single violet a
 - Gameplay impact impulses now trigger a screen-space energy ring in the existing vignette shader. The ring expands from the centre, fades on a live timer, and shifts toward violet during NULL SHIFT or red at critical health. It never pauses, delays, or changes combat simulation.
 - The effect reuses one fullscreen ColorRect/ShaderMaterial; no per-impact nodes, textures, or allocations are created. Intensity and duration are reduced when Reduced Motion is enabled.
 - Headless Godot runtime smoke validates initial shader strength, half-life radius, fade progression, and Reduced Motion attenuation. This is a lightweight procedural post effect, not a full post-processing stack or a claim of native 8K rendering.
+
+
+## Release 3.0 — seven-step premium usability and rendering upgrade
+
+1. **Real graphics requests:** Cinematic requests 4× MSAA and 48 m directional shadows; Balanced requests 2× and 34 m; Performance disables MSAA and dynamic shadows. A driver or renderer may cap the request.
+2. **Colour-safe hazard palette:** F5 makes warnings high-luminance blue and active hazards orange. The radar shares the same palette and uses a dotted pattern for active lanes; state labels remain explicit.
+3. **Persistent HUD scale:** F6 cycles 92%, 100% and 108%, with centre-based scaling and full-screen overlay compensation. The setting is saved locally.
+4. **Optional controller haptics:** F7 and touch UI toggle vibration for dash, critical hit, damage and mission result. It only emits through a connected compatible gamepad and safely no-ops without one.
+5. **Mobile accessibility:** touchscreen players can change hazard colours, HUD size and haptics without a keyboard.
+6. **Honest live telemetry:** FPS/frame time/CPU/render counters now sit alongside the requested MSAA level, HUD scale, colour palette and rumble status.
+7. **Regression checks:** headless smoke checks palette separation, HUD bounds, missing-controller fallback, touch controls and all three quality profiles.
+
+Controls: **F2** graphics, **F3** diagnostics, **F4** reduced motion, **F5** colour-safe hazards, **F6** HUD scale, **F7** controller haptics. This is a native Godot rendering/accessibility upgrade, not native 8K output; verify frame pacing on physical target devices.

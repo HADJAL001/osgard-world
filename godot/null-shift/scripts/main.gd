@@ -212,6 +212,9 @@ const GAMEPAD_MOVE_DEADZONE := 0.20
 const GAMEPAD_AIM_DEADZONE := 0.24
 var sound_enabled := true
 var reduced_motion := false
+var color_safe_mode := false
+var haptics_enabled := true
+var hud_scale_step := 1
 var player_aim := Vector3.FORWARD
 var career_names := ["STANDARD RAID", "BLACKOUT RUN", "IRON VEIL"]
 var contract_bonus := [0, 350, 550]
@@ -298,6 +301,9 @@ var quality_button: Button
 var mobile_quality_button: Button
 var mobile_diagnostics_button: Button
 var mobile_motion_button: Button
+var mobile_palette_button: Button
+var mobile_hud_scale_button: Button
+var mobile_haptics_button: Button
 var mobile_modules_button: Button
 var mobile_dash_button: Button
 var dash_status_label: Label
@@ -407,6 +413,10 @@ func _ready() -> void:
 	_record_raid_event("raid_started", "DAILY" if daily_challenge_active else "STANDARD", float(daily_run_seed))
 	_refresh_loadout()
 	_apply_quality_mode()
+	_apply_hazard_palette()
+	_update_phase_lanes(0.0)
+	_apply_hud_scale()
+	_update_accessibility_buttons()
 	_update_hud()
 	if not bool(career.get_value("settings", "briefing_seen", false)):
 		_show_briefing()
@@ -701,6 +711,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			_toggle_diagnostics()
 		KEY_F4:
 			_toggle_reduced_motion()
+		KEY_F5:
+			_toggle_color_safe_mode()
+		KEY_F6:
+			_cycle_hud_scale()
+		KEY_F7:
+			_toggle_haptics()
 		KEY_ESCAPE:
 			_set_pause(not paused_game)
 		KEY_C:
@@ -738,6 +754,25 @@ func _set_gamepad_mode(enabled: bool) -> void:
 		return
 	gamepad_mode_active = enabled
 	_update_input_hint()
+
+func _haptic_output_available() -> bool:
+	return haptics_enabled and gamepad_device_id >= 0 and Input.get_connected_joypads().has(gamepad_device_id)
+
+func _pulse_gamepad(weak_magnitude: float, strong_magnitude: float, duration: float) -> bool:
+	if not _haptic_output_available():
+		return false
+	Input.start_joy_vibration(gamepad_device_id, clampf(weak_magnitude, 0.0, 1.0), clampf(strong_magnitude, 0.0, 1.0), clampf(duration, 0.0, 0.32))
+	return true
+
+func _toggle_haptics() -> void:
+	haptics_enabled = not haptics_enabled
+	career.set_value("settings", "haptics_enabled", haptics_enabled)
+	_save_career()
+	_update_accessibility_buttons()
+	objective_text = "ТАКТИЛЬНЫЙ ОТКЛИК ВКЛЮЧЁН" if haptics_enabled else "ТАКТИЛЬНЫЙ ОТКЛИК ОТКЛЮЧЁН"
+	if not haptics_enabled and gamepad_device_id >= 0 and Input.get_connected_joypads().has(gamepad_device_id):
+		Input.stop_joy_vibration(gamepad_device_id)
+	_update_hud()
 
 func _apply_gamepad_deadzone(value: Vector2, deadzone: float = GAMEPAD_MOVE_DEADZONE) -> Vector2:
 	var magnitude: float = minf(value.length(), 1.0)
@@ -1273,13 +1308,13 @@ func _update_phase_lanes(delta: float) -> void:
 		pulse_light.visible = next_state != "safe" and not performance_quality and not adaptive_quality_degraded
 		match next_state:
 			"warning":
-				pulse_light.light_color = Color(1.0, 0.58, 0.2)
+				pulse_light.light_color = _hazard_color("warning")
 				pulse_light.light_energy = 0.82 + pulse * 0.34
 			"active":
-				pulse_light.light_color = Color(1.0, 0.12, 0.19)
+				pulse_light.light_color = _hazard_color("active")
 				pulse_light.light_energy = 1.35 + pulse * 0.5
 			"disrupted":
-				pulse_light.light_color = Color(0.16, 1.0, 0.78)
+				pulse_light.light_color = _hazard_color("disrupted")
 				pulse_light.light_energy = 0.48 + pulse * 0.18
 			_:
 				pulse_light.light_energy = 0.0
@@ -1300,16 +1335,16 @@ func _update_phase_lanes(delta: float) -> void:
 			match next_state:
 				"warning":
 					lane_label.text = "К%d · ЗАРЯД" % [index + 1]
-					lane_label.add_theme_color_override("font_color", Color(1.0, 0.72, 0.34))
+					lane_label.add_theme_color_override("font_color", _hazard_color("warning"))
 				"active":
 					lane_label.text = "К%d · ОПАСНО" % [index + 1]
-					lane_label.add_theme_color_override("font_color", Color(1.0, 0.3, 0.36))
+					lane_label.add_theme_color_override("font_color", _hazard_color("active"))
 				"disrupted":
 					lane_label.text = "К%d · ПОДАВЛЕН" % [index + 1]
-					lane_label.add_theme_color_override("font_color", Color(0.38, 1.0, 0.86))
+					lane_label.add_theme_color_override("font_color", _hazard_color("disrupted"))
 				_:
 					lane_label.text = "К%d · НОРМА" % [index + 1]
-					lane_label.add_theme_color_override("font_color", Color(0.38, 0.9, 0.82))
+					lane_label.add_theme_color_override("font_color", _hazard_color("safe"))
 		if next_state != old_state and next_state == "warning":
 			_play_sfx(340.0 + float(index) * 45.0, 0.07, 0.045)
 		phase_lanes[index] = lane
@@ -1317,16 +1352,16 @@ func _update_phase_lanes(delta: float) -> void:
 		return
 	if active_count > 0:
 		hazard_status_label.text = "ОПАСНО · ЭНЕРГОКОНТУР АКТИВЕН"
-		hazard_status_label.add_theme_color_override("font_color", Color(1.0, 0.27, 0.34))
+		hazard_status_label.add_theme_color_override("font_color", _hazard_color("active"))
 	elif warning_count > 0:
 		hazard_status_label.text = "ВНИМАНИЕ · КОНТУР ЗАРЯЖАЕТСЯ"
-		hazard_status_label.add_theme_color_override("font_color", Color(1.0, 0.72, 0.34))
+		hazard_status_label.add_theme_color_override("font_color", _hazard_color("warning"))
 	elif disrupted_count > 0:
 		hazard_status_label.text = "ИМПУЛЬС · КОНТУР ПОДАВЛЕН"
-		hazard_status_label.add_theme_color_override("font_color", Color(0.38, 1.0, 0.86))
+		hazard_status_label.add_theme_color_override("font_color", _hazard_color("disrupted"))
 	else:
 		hazard_status_label.text = "ЭНЕРГОКОНТУРЫ · СТАБИЛЬНО"
-		hazard_status_label.add_theme_color_override("font_color", Color(0.38, 0.9, 0.82))
+		hazard_status_label.add_theme_color_override("font_color", _hazard_color("safe"))
 
 func _is_player_inside_phase_lane(lane_z: float, half_width: float = 0.72) -> bool:
 	if not is_instance_valid(player):
@@ -2034,6 +2069,7 @@ func _try_dash() -> void:
 	if dash_direction.length_squared() < 0.001:
 		dash_direction = Vector3.FORWARD
 	dash_timer = DASH_DURATION
+	_pulse_gamepad(0.12, 0.44, 0.075)
 	_record_tactical_action("dash")
 	_record_raid_event("dash", "Tactical evade", 1.0, player.global_position)
 	dash_cooldown = DASH_COOLDOWN
@@ -2867,6 +2903,7 @@ func _damage_target(target: Node, critical_hit: bool = false, damage_scale: floa
 			guard = guards[index]
 			if critical_hit:
 				critical_hits += 1
+				_pulse_gamepad(0.16, 0.44, 0.06)
 			guard["health_timer"] = 1.8
 			guard["hit_flash_timer"] = 0.14
 			guard["hit_label_timer"] = 0.52
@@ -3374,6 +3411,7 @@ func _damage_player(amount: float, attacker: Node3D = null) -> void:
 	var old_health: float = player_health
 	player_health = maxf(0.0, player_health - mitigated_amount)
 	damage_taken_total += old_health - player_health
+	_pulse_gamepad(0.35, 0.8, 0.16)
 	_record_raid_event("damage_taken", "Operator hit", old_health - player_health, player.global_position)
 	_spawn_impact_light(player.global_position + Vector3.UP * 0.82, Color(1.0, 0.12, 0.22), 2.5, 4.7, 0.19)
 	if is_instance_valid(attacker):
@@ -3391,6 +3429,7 @@ func _finish_mission(success: bool) -> void:
 	mission_grade = _mission_grade_for_score(mission_score)
 	mission_finished = true
 	mission_success = success
+	_pulse_gamepad(0.28, 0.78 if success else 0.42, 0.22 if success else 0.13)
 	_clear_phase_echo()
 	_record_raid_event("mission_finished", "SUCCESS" if success else "FAILED", float(mission_score), player.global_position if is_instance_valid(player) else Vector3.ZERO)
 	paused_game = false
@@ -4168,11 +4207,14 @@ func _apply_quality_mode() -> void:
 	_apply_surface_detail_quality()
 	var cinematic_effects: bool = cinematic_quality and adaptive_quality_level < 2
 	var balanced_effects: bool = not performance_quality and adaptive_quality_level < 2
+	# Actual viewport MSAA request; platform drivers may cap the available level.
+	get_viewport().msaa_3d = Viewport.MSAA_4X if cinematic_effects and adaptive_quality_level == 0 else (Viewport.MSAA_2X if balanced_effects else Viewport.MSAA_DISABLED)
 	if is_instance_valid(world_environment) and is_instance_valid(world_environment.environment):
 		world_environment.environment.glow_enabled = cinematic_effects
 		world_environment.environment.glow_intensity = 0.48 if cinematic_quality and adaptive_quality_level == 1 else 0.72
 	if is_instance_valid(key_light):
 		key_light.shadow_enabled = balanced_effects
+		key_light.directional_shadow_max_distance = 48.0 if cinematic_effects and adaptive_quality_level == 0 else (34.0 if balanced_effects else 18.0)
 	if is_instance_valid(fill_light):
 		fill_light.visible = balanced_effects
 	for light in local_lights:
@@ -4257,6 +4299,97 @@ func _update_reduced_motion_ui() -> void:
 	mobile_motion_button.text = "MOT LOW" if reduced_motion else "MOT ON"
 	mobile_motion_button.tooltip_text = "Сниженное движение ВКЛ: мягкая камера и спокойные экранные эффекты." if reduced_motion else "Сниженное движение ВЫКЛ: полная кинематографическая камера и пульсация."
 
+func _hazard_color(state: String) -> Color:
+	if color_safe_mode:
+		match state:
+			"warning":
+				return Color(0.16, 0.58, 1.0, 1.0)
+			"active":
+				return Color(1.0, 0.48, 0.08, 1.0)
+			"disrupted":
+				return Color(0.88, 0.94, 1.0, 1.0)
+			_:
+				return Color(0.12, 0.74, 0.66, 1.0)
+	match state:
+		"warning":
+			return Color(1.0, 0.58, 0.2, 1.0)
+		"active":
+			return Color(1.0, 0.12, 0.19, 1.0)
+		"disrupted":
+			return Color(0.16, 1.0, 0.78, 1.0)
+		_:
+			return Color(0.12, 0.84, 0.72, 1.0)
+
+func _apply_hazard_palette() -> void:
+	for lane_variant: Variant in phase_lanes:
+		if not (lane_variant is Dictionary):
+			continue
+		var lane: Dictionary = lane_variant
+		for state in ["warning", "active"]:
+			var material: StandardMaterial3D = lane.get(str(state) + "_material") as StandardMaterial3D
+			if not is_instance_valid(material):
+				continue
+			var tint: Color = _hazard_color(str(state))
+			material.albedo_color = tint
+			material.emission = tint
+			material.emission_enabled = true
+		if lane.has("pulse_light"):
+			var pulse_light: OmniLight3D = lane["pulse_light"] as OmniLight3D
+			if is_instance_valid(pulse_light):
+				pulse_light.light_color = _hazard_color(str(lane.get("state", "safe")))
+	if is_instance_valid(hazard_status_label):
+		hazard_status_label.add_theme_color_override("font_color", _hazard_color("safe"))
+	if is_instance_valid(tactical_radar_map):
+		tactical_radar_map.queue_redraw()
+
+func _toggle_color_safe_mode() -> void:
+	color_safe_mode = not color_safe_mode
+	career.set_value("settings", "color_safe_mode", color_safe_mode)
+	_save_career()
+	_apply_hazard_palette()
+	_update_phase_lanes(0.0)
+	_update_accessibility_buttons()
+	objective_text = "ЦВЕТОВАЯ СХЕМА: %s" % ("COLOR SAFE" if color_safe_mode else "STANDARD")
+	_update_hud()
+
+func _hud_scale_value() -> float:
+	var scales: Array[float] = [0.92, 1.0, 1.08]
+	return scales[clampi(hud_scale_step, 0, 2)]
+
+func _apply_hud_scale() -> void:
+	if not is_instance_valid(hud_root):
+		return
+	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+	hud_root.pivot_offset = viewport_size * 0.5
+	hud_root.scale = Vector2.ONE * _hud_scale_value()
+	# Full-screen shaders stay full-screen even when the HUD is scaled.
+	for overlay in [cinematic_vignette, impact_overlay]:
+		if is_instance_valid(overlay):
+			overlay.pivot_offset = viewport_size * 0.5
+			overlay.scale = Vector2.ONE / _hud_scale_value()
+
+func _cycle_hud_scale() -> void:
+	hud_scale_step = (hud_scale_step + 1) % 3
+	career.set_value("settings", "hud_scale_step", hud_scale_step)
+	_save_career()
+	_apply_hud_scale()
+	_update_accessibility_buttons()
+	objective_text = "РАЗМЕР HUD: %d%%" % int(round(_hud_scale_value() * 100.0))
+	_update_hud()
+
+func _update_accessibility_buttons() -> void:
+	if is_instance_valid(mobile_palette_button):
+		mobile_palette_button.text = "CLR SAFE" if color_safe_mode else "CLR STD"
+		mobile_palette_button.tooltip_text = "F5: цветобезопасные сигналы — синий для предупреждения, оранжевый для опасности."
+	if is_instance_valid(mobile_hud_scale_button):
+		mobile_hud_scale_button.text = "HUD %d%%" % int(round(_hud_scale_value() * 100.0))
+		mobile_hud_scale_button.tooltip_text = "F6: изменить размер интерфейса."
+	if is_instance_valid(mobile_haptics_button):
+		mobile_haptics_button.text = "RUM ON" if haptics_enabled else "RUM OFF"
+		mobile_haptics_button.tooltip_text = "F7: тактильная отдача совместимого геймпада."
+	if is_instance_valid(status_shortcuts):
+		status_shortcuts.text = "HELP H · FPS F3 · GFX F2 · MOT F4 · CLR F5 · HUD F6 · RUMBLE F7"
+
 func _toggle_reduced_motion() -> void:
 	reduced_motion = not reduced_motion
 	if reduced_motion:
@@ -4336,6 +4469,9 @@ func _load_career() -> void:
 		cinematic_quality = false
 	sound_enabled = bool(career.get_value("settings", "sound_enabled", true))
 	reduced_motion = bool(career.get_value("settings", "reduced_motion", false))
+	color_safe_mode = bool(career.get_value("settings", "color_safe_mode", false))
+	haptics_enabled = bool(career.get_value("settings", "haptics_enabled", true))
+	hud_scale_step = clampi(int(career.get_value("settings", "hud_scale_step", 1)), 0, 2)
 	operator_style = str(career.get_value("cosmetics", "operator_style", "cyan"))
 	if operator_style not in ["cyan", "amber", "violet"]:
 		operator_style = "cyan"
@@ -4356,6 +4492,9 @@ func _save_career() -> void:
 	career.set_value("upgrades", "weapon", weapon_level)
 	career.set_value("raid", "contract", current_contract)
 	career.set_value("settings", "reduced_motion", reduced_motion)
+	career.set_value("settings", "color_safe_mode", color_safe_mode)
+	career.set_value("settings", "haptics_enabled", haptics_enabled)
+	career.set_value("settings", "hud_scale_step", hud_scale_step)
 	career.set_value("cosmetics", "operator_style", operator_style)
 	career.set_value("cosmetics", "owns_amber", owns_amber_style)
 	career.set_value("cosmetics", "owns_violet", owns_violet_style)
@@ -4429,7 +4568,7 @@ func _create_ui() -> void:
 		lane_chip.custom_minimum_size = Vector2(82.0, 16.0)
 		lane_chip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		phase_lane_labels.append(lane_chip)
-	status_shortcuts = _label(status_stack, "ПОМОЩЬ / H · FPS / F3 · ГРАФИКА / F2 · ДВИЖ. / F4", 8, Color(0.48, 0.6, 0.62))
+	status_shortcuts = _label(status_stack, "HELP H · FPS F3 · GFX F2 · MOT F4 · CLR F5 · HUD F6 · RUMBLE F7", 8, Color(0.48, 0.6, 0.62))
 
 	objective_panel = _make_panel(hud_root, Control.PRESET_TOP_RIGHT, Rect2(-334.0, 18.0, 316.0, 178.0))
 	var objective_stack := _panel_stack(objective_panel)
@@ -5139,6 +5278,16 @@ func _create_mobile_controls(parent: Control) -> void:
 	mobile_motion_button.add_theme_font_size_override("font_size", 7)
 	mobile_motion_button.tooltip_text = "Сниженное движение уменьшает тряску камеры, изменение поля зрения и пульсацию эффектов."
 	_update_reduced_motion_ui()
+	var accessibility_row := HBoxContainer.new()
+	accessibility_row.add_theme_constant_override("separation", 4)
+	action_stack.add_child(accessibility_row)
+	mobile_palette_button = _add_button(accessibility_row, "CLR STD", _toggle_color_safe_mode, Vector2(54.0, 27.0))
+	mobile_palette_button.add_theme_font_size_override("font_size", 7)
+	mobile_hud_scale_button = _add_button(accessibility_row, "HUD 100%", _cycle_hud_scale, Vector2(54.0, 27.0))
+	mobile_hud_scale_button.add_theme_font_size_override("font_size", 7)
+	mobile_haptics_button = _add_button(accessibility_row, "RUM ON", _toggle_haptics, Vector2(54.0, 27.0))
+	mobile_haptics_button.add_theme_font_size_override("font_size", 7)
+	_update_accessibility_buttons()
 	mobile_modules_button = _add_button(action_stack, "МОДУЛИ", _toggle_loadout, Vector2(176.0, 28.0))
 	sound_button = _add_button(action_stack, "ЗВУК / ВКЛ" if sound_enabled else "ЗВУК / ВЫКЛ", _toggle_sound, Vector2(176.0, 27.0))
 
@@ -5197,6 +5346,7 @@ func _update_mobile_layout() -> void:
 		return
 	last_layout_size = viewport_size
 	last_layout_touch = touch_device
+	_apply_hud_scale()
 	var width: float = viewport_size.x
 	var compact: bool = width < 880.0 or touch_device
 	mobile_controls_visible = compact
@@ -5324,6 +5474,9 @@ func _layout_compact_controls(viewport_size: Vector2) -> void:
 	var action_button_height: float = 29.0 if width < 400.0 else 31.0
 	for button in mobile_action_buttons:
 		button.custom_minimum_size = Vector2(action_button_width, action_button_height)
+	for button in [mobile_palette_button, mobile_hud_scale_button, mobile_haptics_button]:
+		if is_instance_valid(button):
+			button.custom_minimum_size = Vector2(utility_button_width, 27.0)
 	if is_instance_valid(mobile_scan_button):
 		mobile_scan_button.custom_minimum_size = Vector2(action_button_width, action_button_height)
 	if is_instance_valid(mobile_vent_button):
@@ -5439,10 +5592,11 @@ func _update_live_diagnostics() -> void:
 	var active_impact_lights: int = _active_impact_light_count()
 	var operator_rim_active: int = int(is_instance_valid(operator_rim_light) and operator_rim_light.visible)
 	var profile: String = "PERFORMANCE" if performance_quality else ("BALANCED" if not cinematic_quality else ("AUTO-OPTIMIZED II" if adaptive_quality_level >= 2 else ("AUTO-OPTIMIZED I" if adaptive_quality_level == 1 else "CINEMATIC")))
-	diagnostics_label.text = "LIVE DIAGNOSTICS\nFPS        %02d\nFRAME P95  %.1f ms\nFRAME NOW  %.1f ms\n60 FPS MISSES %.0f%%\nPROCESS CPU %.2f ms\nPHYSICS CPU %.2f ms\nDRAW / TRI / NODES %d / %d / %d\nFX ACTIVE  %02d\nFX POOLS   %02d BEAM / %02d RING / %02d SPARK\nFX DROPPED %d\nDASH TRAILS %04d\nGUARDS     %d\nDEVICES    %d\nLANE SUPPRESS %03d\nDASH EVADES %d\nDASH CD    %.1f s\nHIT LIGHTS %d / %d POOL\nOPERATOR RIM %d / 1\nOVERDRIVE ARCS %d\nDEVICE FX  EMP %02d / NOVA %02d / LANE %02d\nEXFIL REINF %02d / BREACH %02d\nCOUNTERPLAY %s / SWITCHES %02d\nPROFILE    %s" % [
+	var msaa_label: String = "4X" if get_viewport().msaa_3d == Viewport.MSAA_4X else ("2X" if get_viewport().msaa_3d == Viewport.MSAA_2X else "OFF")
+	diagnostics_label.text = "LIVE DIAGNOSTICS\nFPS        %02d\nFRAME P95  %.1f ms\nFRAME NOW  %.1f ms\n60 FPS MISSES %.0f%%\nPROCESS CPU %.2f ms\nPHYSICS CPU %.2f ms\nDRAW / TRI / NODES %d / %d / %d\nFX ACTIVE  %02d\nFX POOLS   %02d BEAM / %02d RING / %02d SPARK\nFX DROPPED %d\nDASH TRAILS %04d\nGUARDS     %d\nDEVICES    %d\nLANE SUPPRESS %03d\nDASH EVADES %d\nDASH CD    %.1f s\nHIT LIGHTS %d / %d POOL\nOPERATOR RIM %d / 1\nOVERDRIVE ARCS %d\nDEVICE FX  EMP %02d / NOVA %02d / LANE %02d\nEXFIL REINF %02d / BREACH %02d\nCOUNTERPLAY %s / SWITCHES %02d\nMSAA %s · HUD %.0f%% · PALETTE %s · RUMBLE %s\nPROFILE    %s" % [
 		Engine.get_frames_per_second(), fps_p95_ms, current_frame_ms, budget_miss_percent, process_cpu_ms, physics_cpu_ms, draw_calls, primitives, scene_nodes,
 		effects.size(), beam_pool.size(), ring_pool.size(), spark_pool.size(), effect_pool_exhaustions,
-		dash_trails_emitted, guards.size(), _living_device_count(), phase_lane_disruptions, dash_evasions, dash_cooldown, active_impact_lights, impact_light_pool.size(), operator_rim_active, overdrive_arc_chains, device_emp_overloads, device_cell_novas, device_lane_collapses, extraction_reinforcements_spawned, extraction_overload_count, adaptive_doctrine, tactical_doctrine_changes, profile
+		dash_trails_emitted, guards.size(), _living_device_count(), phase_lane_disruptions, dash_evasions, dash_cooldown, active_impact_lights, impact_light_pool.size(), operator_rim_active, overdrive_arc_chains, device_emp_overloads, device_cell_novas, device_lane_collapses, extraction_reinforcements_spawned, extraction_overload_count, adaptive_doctrine, tactical_doctrine_changes, msaa_label, _hud_scale_value() * 100.0, "COLOR SAFE" if color_safe_mode else "STANDARD", "ON" if haptics_enabled else "OFF", profile
 	]
 
 
