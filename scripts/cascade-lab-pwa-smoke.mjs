@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { runInNewContext } from 'node:vm';
 const root=resolve('public/games/cascade-lab'),html=readFileSync(resolve(root,'index.html'),'utf8');
 const manifest=JSON.parse(readFileSync(resolve(root,'manifest.webmanifest'),'utf8')),worker=readFileSync(resolve(root,'service-worker.js'),'utf8'),icon=readFileSync(resolve(root,'lab-icon.svg'),'utf8');
+const routeMatrix=readFileSync(resolve('scripts/production-route-matrix.mjs'),'utf8');
 assert.match(html,/osgard-game-pwa" content="0\.26\.0-offline-field-device"/);
 assert.ok(html.includes('rel="manifest" href="./manifest.webmanifest"')&&html.includes('id="installLabButton"')&&html.includes("navigator.serviceWorker.register('./service-worker.js?v=0.26.1'"));
 assert.equal(manifest.name,'CASCADE LAB — Premium Physics Lab');assert.equal(manifest.scope,'./');assert.equal(manifest.display,'standalone');assert.equal(manifest.start_url,'./?source=pwa');assert.equal(manifest.icons[0].src,'./lab-icon.svg');assert.match(icon,/<svg[^>]+viewBox="0 0 512 512"/);
@@ -11,6 +12,16 @@ const b=worker.match(/const PRECACHE=\[([\s\S]*?)\];/);assert.ok(b);const paths=
 for(const p of ['./','./index.html','./manifest.webmanifest','./lab-icon.svg'])assert.ok(paths.includes(p));
 for(const [,src] of html.matchAll(/<script\b[^>]*\bsrc="([^"]+)"/g)){assert.ok(paths.includes(src),'Module must be in offline cache: '+src);assert.ok(existsSync(resolve(root,src.replace(/^\.\//,'').split('?')[0])));}
 assert.ok(worker.includes("r.method!=='GET'")&&worker.includes("r.mode==='navigate'")&&worker.includes('Response.error()'));
+const cacheVersion=worker.match(/CACHE=PREFIX\+'v(\d+\.\d+\.\d+)'/);
+const registrationVersion=html.match(/serviceWorker\.register\('\.\/service-worker\.js\?v=(\d+\.\d+\.\d+)'/);
+assert.ok(cacheVersion&&registrationVersion&&cacheVersion[1]===registrationVersion[1],
+  'PWA registration must reference the exact service-worker cache version.');
+const workerBranchStart=routeMatrix.indexOf("route === '/games/cascade-lab/service-worker.js'");
+const workerBranchEnd=routeMatrix.indexOf(": route === '/games/cascade-lab/lab-icon.svg'",workerBranchStart);
+assert.ok(workerBranchStart>=0&&workerBranchEnd>workerBranchStart,'Production route matrix must include a dedicated service-worker contract.');
+const workerRouteContract=routeMatrix.slice(workerBranchStart,workerBranchEnd);
+assert.ok(workerRouteContract.includes("v\\d+\\.\\d+\\.\\d+")&&!workerRouteContract.includes("v0\\.26\\.0"),
+  'Production service-worker check must accept semantic cache versions rather than pinning an old one.');
 const S='https://osgard.world/games/cascade-lab/',events=Object.create(null),data=new Map();
 const response=(body,status=200)=>({body,status,ok:status>=200&&status<300,clone(){return this}});
 function cache(map){const key=x=>typeof x==='string'?x:x.url;return{async addAll(a){for(const p of a)map.set(new URL(p,S).href,response('cached:'+p));},async match(x){return map.get(key(x))||null;},async put(x,v){map.set(key(x),v);}};}
