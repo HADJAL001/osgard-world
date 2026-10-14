@@ -30,7 +30,10 @@ async function scanAssets(root){
       if(!info.isFile())throw new Error('Unsupported build entry: '+path);
       const ext=entry.name.toLowerCase();
       const kind=ext.endsWith('.js')||ext.endsWith('.mjs')?'js':ext.endsWith('.css')?'css':ext.endsWith('.map')?'map':'other';
-      if(kind!=='other')files.push({path,kind,...compressed(await readFile(full))});
+      if(kind!=='other'){
+        const data=await readFile(full);
+        files.push({path,kind,...compressed(data),sha256:sha(data)});
+      }
     }
   }
   await visit(resolve(root,'assets'));
@@ -39,9 +42,11 @@ async function scanAssets(root){
 function summarize(files,kind){
   const list=files.filter(f=>f.kind===kind);
   const largest=list.slice().sort((a,b)=>b.rawBytes-a.rawBytes||a.path.localeCompare(b.path,'en'))[0]||null;
+  const largestGzip=list.slice().sort((a,b)=>b.gzipBytes-a.gzipBytes||a.path.localeCompare(b.path,'en'))[0]||null;
   return {count:list.length,rawBytes:list.reduce((n,f)=>n+f.rawBytes,0),gzipBytes:list.reduce((n,f)=>n+f.gzipBytes,0),
     brotliBytes:list.reduce((n,f)=>n+f.brotliBytes,0),
-    largestFile:largest?{path:largest.path,rawBytes:largest.rawBytes,gzipBytes:largest.gzipBytes,brotliBytes:largest.brotliBytes}:null};
+    largestFile:largest?{path:largest.path,rawBytes:largest.rawBytes,gzipBytes:largest.gzipBytes,brotliBytes:largest.brotliBytes}:null,
+    largestGzipFile:largestGzip?{path:largestGzip.path,rawBytes:largestGzip.rawBytes,gzipBytes:largestGzip.gzipBytes,brotliBytes:largestGzip.brotliBytes}:null};
 }
 export async function auditPerformanceBudget(rootPath=resolve('dist'),outputPath=DEFAULT_REPORT){
   const root=resolve(rootPath),output=resolve(outputPath),rootInfo=await lstat(root).catch(()=>null);
@@ -52,16 +57,17 @@ export async function auditPerformanceBudget(rootPath=resolve('dist'),outputPath
   if(!htmlInfo?.isFile()||htmlInfo.isSymbolicLink())throw new Error('A regular root index.html is required.');
   const assetsInfo=await lstat(resolve(root,'assets')).catch(()=>null);
   if(!assetsInfo?.isDirectory()||assetsInfo.isSymbolicLink())throw new Error('A real assets directory is required.');
-  const html={path:'index.html',...compressed(await readFile(htmlPath))};
+  const htmlData=await readFile(htmlPath);
+  const html={path:'index.html',...compressed(htmlData),sha256:sha(htmlData)};
   const files=await scanAssets(root),js=summarize(files,'js'),css=summarize(files,'css');
   const metrics={html,js,css,sourceMapFiles:files.filter(f=>f.kind==='map').map(f=>f.path),
     criticalGzipBytes:html.gzipBytes+js.gzipBytes+css.gzipBytes,
-    inventorySha256:sha(files.map(f=>[f.path,f.rawBytes,f.gzipBytes,f.brotliBytes].join('\0')).join('\n')+'\n'+[html.rawBytes,html.gzipBytes,html.brotliBytes].join('\0'))};
+    inventorySha256:sha(files.map(f=>[f.path,f.rawBytes,f.gzipBytes,f.brotliBytes,f.sha256].join('\0')).join('\n')+'\n'+[html.path,html.rawBytes,html.gzipBytes,html.brotliBytes,html.sha256].join('\0'))};
   const checks=[];
   const add=(id,title,ok,detail,severity='error')=>checks.push({id,title,status:ok?'passed':severity==='warning'?'warning':'failed',detail});
   add('perf:html-gzip','HTML gzip budget',html.gzipBytes<=BUDGETS.htmlGzipBytes,html.gzipBytes+' / '+BUDGETS.htmlGzipBytes+' bytes');
   add('perf:js-file-raw','Largest JS raw size',!js.largestFile||js.largestFile.rawBytes<=BUDGETS.jsFileRawBytes,(js.largestFile?.path||'none')+': '+(js.largestFile?.rawBytes||0)+' / '+BUDGETS.jsFileRawBytes);
-  add('perf:js-file-gzip','Largest JS gzip size',!js.largestFile||js.largestFile.gzipBytes<=BUDGETS.jsFileGzipBytes,(js.largestFile?.path||'none')+': '+(js.largestFile?.gzipBytes||0)+' / '+BUDGETS.jsFileGzipBytes);
+  add('perf:js-file-gzip','Largest JS gzip size',!js.largestGzipFile||js.largestGzipFile.gzipBytes<=BUDGETS.jsFileGzipBytes,(js.largestGzipFile?.path||'none')+': '+(js.largestGzipFile?.gzipBytes||0)+' / '+BUDGETS.jsFileGzipBytes);
   add('perf:js-total-gzip','Total JS gzip size',js.gzipBytes<=BUDGETS.jsTotalGzipBytes,js.gzipBytes+' / '+BUDGETS.jsTotalGzipBytes+' bytes');
   add('perf:css-file-raw','Largest CSS raw size',!css.largestFile||css.largestFile.rawBytes<=BUDGETS.cssFileRawBytes,(css.largestFile?.path||'none')+': '+(css.largestFile?.rawBytes||0)+' / '+BUDGETS.cssFileRawBytes);
   add('perf:css-total-gzip','Total CSS gzip size',css.gzipBytes<=BUDGETS.cssTotalGzipBytes,css.gzipBytes+' / '+BUDGETS.cssTotalGzipBytes+' bytes');
@@ -77,7 +83,7 @@ export async function auditPerformanceBudget(rootPath=resolve('dist'),outputPath
     failed:checks.filter(c=>c.status==='failed').length,warnings:checks.filter(c=>c.status==='warning').length};
   const stable={budgets:BUDGETS,metrics,checks:checks.map(c=>({id:c.id,status:c.status}))};
   const report={schema:'osgard.performance-budget.v1',generatedAt:new Date().toISOString(),
-    status:summary.failed===0?'ready':'blocked',summary,budgets:BUDGETS,metrics,budget:{sha256:sha(JSON.stringify(stable))},checks};
+    status:summary.failed===0?'ready':'blocked',summary,budgets:BUDGETS,metrics,assets:files.map(f=>({path:f.path,kind:f.kind,rawBytes:f.rawBytes,gzipBytes:f.gzipBytes,brotliBytes:f.brotliBytes,sha256:f.sha256})),budget:{sha256:sha(JSON.stringify(stable))},checks};
   await writeFile(output,JSON.stringify(report,null,2)+'\n',{mode:0o600});
   return report;
 }
