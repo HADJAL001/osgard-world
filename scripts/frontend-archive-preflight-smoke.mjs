@@ -12,7 +12,8 @@ const tool = 'scripts/frontend-archive-preflight.mjs'
 const revision = 'a'.repeat(40)
 const env = {
   ...process.env,
-  GITHUB_SHA: revision,
+  GITHUB_SHA: 'b'.repeat(40),
+  OSGARD_SOURCE_REVISION: revision,
   GITHUB_REPOSITORY: 'OSGARD/test-fixture',
   GITHUB_REF_NAME: 'test-branch',
   GITHUB_RUN_ID: '12345',
