@@ -182,19 +182,20 @@ export function migrateOwnedPromoConfig(body) {
     (OWNED_PROMO_SERVICE_ID_SET.has(oldSpotlight) && enabledServices.includes(oldSpotlight))
     ? oldSpotlight : "auto";
 
+  // A legacy configuration predates the current user-requested between-game
+  // promotion defaults. Migrate only that old schema to enabled / every game /
+  // share rewards. Explicit schema-v2 operator settings remain untouched.
+  // Service allow-lists and a valid spotlight are preserved.
   return validateOwnedPromoConfig({
     schemaVersion: 2,
-    enabled: typeof input.enabled === "boolean" ? input.enabled : DEFAULT_OWNED_PROMO_CONFIG.enabled,
-    defaultFrequency: OWNED_PROMO_FREQUENCIES.has(input.defaultFrequency)
-      ? input.defaultFrequency : DEFAULT_OWNED_PROMO_CONFIG.defaultFrequency,
+    enabled: true,
+    defaultFrequency: "each",
     enabledServices,
     defaultSelectedServices,
     spotlightService,
-    showShareRewards: typeof input.showShareRewards === "boolean"
-      ? input.showShareRewards : DEFAULT_OWNED_PROMO_CONFIG.showShareRewards,
+    showShareRewards: true,
   });
 }
-
 export function cleanText(value, max = 500) {
   return String(value ?? "")
     .replace(/[\u0000-\u001f\u007f]/g, " ")
