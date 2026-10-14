@@ -188,6 +188,7 @@
       previous: row.previous,
       delta: row.delta,
       percent: row.percent,
+      zeroBaseline: row.zeroBaseline,
       ...row.signal,
     }));
     const actions = [...new Set(signals.map(signal => signal.recommendedCheck))];
