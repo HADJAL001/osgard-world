@@ -94,6 +94,26 @@ test('attestation cannot be written inside dist', async () => {
     assert.match(result.stderr, /outside the build root/i);
   } finally { await rm(f.base, { recursive: true, force: true }); }
 });
+test('root fingerprint is deterministic for identical artifact bytes', async () => {
+  const f = await fixture();
+  try {
+    assert.equal(run('create', f.root, f.report).status, 0);
+    const first = JSON.parse(await readFile(f.report, 'utf8'));
+    assert.equal(run('create', f.root, f.report).status, 0);
+    const second = JSON.parse(await readFile(f.report, 'utf8'));
+    assert.equal(first.artifact.rootSha256, second.artifact.rootSha256);
+    assert.deepEqual(first.files, second.files);
+  } finally { await rm(f.base, { recursive: true, force: true }); }
+});
+test('build inventory reports large JavaScript bundles without silently hiding them', async () => {
+  const f = await fixture();
+  try {
+    await writeFile(join(f.root, 'assets', 'large.js'), 'x'.repeat(610 * 1024));
+    assert.equal(run('create', f.root, f.report).status, 0);
+    const report = JSON.parse(await readFile(f.report, 'utf8'));
+    assert.ok(report.artifact.warnings.some(item => item.code === 'large-javascript' && item.path === 'assets/large.js'));
+  } finally { await rm(f.base, { recursive: true, force: true }); }
+});
 test('malformed attestation cannot silently verify', async () => {
   const f = await fixture();
   try {
