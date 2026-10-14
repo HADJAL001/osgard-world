@@ -137,7 +137,6 @@ test("analytics is disabled unless consent is explicit and event names are allow
     assert.equal(validateEventBatch({ consent: false, events: [{ ...event, name, source }] }).code, "ANALYTICS_CONSENT_REQUIRED",
       name + " must not bypass explicit analytics consent");
   }
-});
 
   for (const name of [
     "pwa_install_prompt_shown",
