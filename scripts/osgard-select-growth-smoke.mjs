@@ -281,9 +281,22 @@ const intermissionKey=vm.runInNewContext('('+intermissionKeyMatch[0]+')',{Date})
 assert.equal(intermissionKey('signal-run','session_signal-run_2_123456'),'session_signal-run_2_123456');
 assert.match(intermissionKey('signal-run','invalid session'),/^fallback:signal-run:/);
 
+
+const playerShareStart=gamesPortal.indexOf("$('#player-share').addEventListener('click'");
+const playerShareEnd=gamesPortal.indexOf("$('#menu-toggle').addEventListener",playerShareStart);
+assert.ok(playerShareStart>=0&&playerShareEnd>playerShareStart,'Catalog share button must have an independently checkable handler');
+const playerShareHandler=gamesPortal.slice(playerShareStart,playerShareEnd);
+assert.ok(!playerShareHandler.includes("eventIfAllowed('share_created'")&&!playerShareHandler.includes("name:'share_created'"),
+  'The player share button must not report a copy or generic share-sheet action as a verified share');
+assert.ok(playerShareHandler.includes("eventIfAllowed('invite_link_prepared'")&&playerShareHandler.includes("eventIfAllowed('social_share_intent'")&&
+  playerShareHandler.includes("Копирование само по себе не считается репостом"),
+  'Player sharing must distinguish invite preparation from social intent and disclose that a copy is not a verified repost');
+assert.ok(commerceApi.includes('"invite_link_prepared"')&&commerceApi.includes('"social_share_intent"'),
+  'Commerce API must allow existing preparation/intent events so the player share button does not spoof share_created');
+
 console.log(JSON.stringify({
   status: 'passed',
   serviceDestinations: services.length,
   gameContexts: 9,
-  checks: 52, notes: 'Source-level guardrails; social publication is self-confirmed, not verified by social-network APIs.'
+  checks: 64, notes: 'Source-level guardrails; social publication is self-confirmed, not verified by social-network APIs.'
 }));
