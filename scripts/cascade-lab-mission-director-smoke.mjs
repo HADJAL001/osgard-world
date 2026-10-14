@@ -9,6 +9,9 @@ assert.ok(html.includes('id="CASCADELAB024"')&&html.includes('data-cascade-lab-d
 assert.ok(html.includes("notifyOsgardLifecycle('ready', { version: '0.25.0' })"));
 assert.doesNotMatch(source,/\b(?:fetch|XMLHttpRequest|sendBeacon)\s*\(/,'must remain local-only');
 assert.doesNotMatch(source,/\.innerHTML/,'must render with safe DOM nodes');
+assert.ok(source.includes("function notifyPortalShare") && source.includes("state:'share_created'") && source.includes("flowType:'friend-invite'"), 'Mission Director must report only a confirmed clipboard copy to the existing portal lifecycle')
+assert.ok(source.includes("navigator.clipboard.writeText(result.url).then(()=>{notifyPortalShare(result.url,'clipboard')"), 'Share telemetry must be sent after clipboard copy succeeds, not when a social link is merely opened')
+
 new Function(source);
 const context={};runInNewContext(source,context);const api=context.__CASCADELAB024_TEST__;
 assert.ok(api&&api.version==='0.24.0');
