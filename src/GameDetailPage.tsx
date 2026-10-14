@@ -307,7 +307,7 @@ function storeStringList(key: string, items: string[]) {
 function storeConsent(value: Exclude<Consent, null>) {
   try {
     const result = updateAnalyticsConsent(value === 'yes')
-    if (value === 'no') window.OSGARD_CONSENTED_ANALYTICS?.clear()
+    if (value === 'no') window.OSGARD_CONSENTED_ANALYTICS?.clear?.()
     return result.ok
   } catch { return false }
 }
