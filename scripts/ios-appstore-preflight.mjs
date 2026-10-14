@@ -52,6 +52,11 @@ assert.deepEqual([...sourceCatalogGameIds].sort(), expectedBundledGameIds,
   'Every visible Games card must have exactly one declared local iOS page, including AETHER GRID.');
 assert.deepEqual([...manifestGameIds].sort(), expectedBundledGameIds,
   'The shared OSGARD_GAMES registry and iOS game-page map must contain the same game IDs.');
+const mobileRouteRewriterMatch = prep.match(/const routes = new Set\(\[([\s\S]*?)\]\);/);
+assert.ok(mobileRouteRewriterMatch, 'iOS preparation script must declare a route-rewrite allowlist.');
+const mobileRouteRewriteIds = Array.from(mobileRouteRewriterMatch[1].matchAll(/'([^']+)'/g), (match) => match[1]);
+assert.deepEqual([...mobileRouteRewriteIds].sort(), expectedBundledGameIds,
+  'Every React game-detail URL in the web catalogue must be rewritten to its local game page in the iOS bundle.');
 const releaseTagPreflight = read('scripts/ios-release-tag-preflight.mjs');
 
 assert.equal(config.appId, 'com.osgardworld.play');
