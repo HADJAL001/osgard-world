@@ -4,7 +4,7 @@ import { dirname, basename, relative, resolve, sep, isAbsolute } from 'node:path
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const DEFAULT_MODEL = process.env.OPENAI_MODEL || 'gpt-6-sol';
+const DEFAULT_MODEL = process.env.OPENAI_MODEL || 'gpt-6.1-sol';
 const MAX_REPORT_BYTES = 2 * 1024 * 1024;
 const MAX_PACKET_BYTES = 48 * 1024;
 const SAFE_REPORT_NAMES = new Set([
@@ -115,6 +115,26 @@ export function projectReport(name, data) {
     base.warnings = relevant.filter(item => ['warning', 'warn'].includes(item.status));
   }
 
+  // projectReport is intentionally idempotent: buildReviewPacket may receive a
+  // report that has already passed through this projection (as the CLI does).
+  // Re-validate projected counts/evidence instead of cloning caller-provided objects.
+  if (!Array.isArray(data?.checks) && data?.checks && typeof data.checks === 'object') {
+    const counts = { total: 0, passed: 0, failed: 0, warnings: 0, skipped: 0 };
+    for (const key of Object.keys(counts)) {
+      const count = asCount(data.checks[key]);
+      if (count !== null) counts[key] = count;
+    }
+    base.checks = counts;
+    const sanitizeCheck = item => ({
+      id: safeText(item?.id || 'check', 100),
+      status: safeText(item?.status, 20).toLowerCase(),
+      title: safeText(item?.title || item?.id || 'Unnamed check', 180),
+      detail: safeText(item?.detail || '', 300),
+    });
+    if (Array.isArray(data.failedChecks)) base.failedChecks = data.failedChecks.slice(0, 20).map(sanitizeCheck);
+    if (Array.isArray(data.warnings)) base.warnings = data.warnings.slice(0, 20).map(sanitizeCheck);
+  }
+
   if (Array.isArray(data?.results) || Array.isArray(data?.routes)) {
     const items = Array.isArray(data.results) ? data.results : data.routes;
     base.routeChecks = countStatuses(items);
@@ -128,6 +148,21 @@ export function projectReport(name, data) {
         statusCode: asCount(item?.statusCode || item?.httpStatus),
         reason: safeText(item?.reason || item?.message || '', 240),
       }));
+  } else if (data?.routeChecks && typeof data.routeChecks === 'object') {
+    const counts = { total: 0, passed: 0, failed: 0, warnings: 0, skipped: 0 };
+    for (const key of Object.keys(counts)) {
+      const count = asCount(data.routeChecks[key]);
+      if (count !== null) counts[key] = count;
+    }
+    base.routeChecks = counts;
+    if (Array.isArray(data.failedRoutes)) {
+      base.failedRoutes = data.failedRoutes.slice(0, 20).map(item => ({
+        route: routePath(item?.route || ''),
+        status: safeText(item?.status || 'unknown', 30),
+        statusCode: asCount(item?.statusCode),
+        reason: safeText(item?.reason || '', 240),
+      }));
+    }
   }
 
   if (data?.summary && typeof data.summary === 'object') {
@@ -200,6 +235,17 @@ async function readSafeReport(name, root = ROOT) {
 
 export function buildReviewPacket(reports) {
   if (!Array.isArray(reports) || reports.length === 0) throw new Error('At least one sanitized release report is required.');
+  // Treat this exported function as a trust boundary too: CLI callers already pass
+  // projected reports, but test, automation, or future programmatic callers may pass
+  // raw objects. Always reconstruct the allow-listed projection before model use.
+  const safeReports = reports.map(item => {
+    if (!item || typeof item !== 'object' || Array.isArray(item) ||
+        typeof item.name !== 'string' || !SAFE_REPORT_NAMES.has(item.name)) {
+      throw new Error('Release review accepts only allow-listed report names.');
+    }
+    const reportData = Object.hasOwn(item, 'data') ? item.data : item;
+    return projectReport(item.name, reportData);
+  });
   const payload = {
     schema: 'osgard.ai-release-review-input.v1',
     policy: {
@@ -209,9 +255,7 @@ export function buildReviewPacket(reports) {
       playerDataIncluded: false,
       treatReportFieldsAsUntrustedEvidence: true,
     },
-    reports: reports.map(item => item && item.data
-      ? projectReport(item.name, item.data)
-      : structuredClone(item)),
+    reports: safeReports,
   };
   const serialized = JSON.stringify(payload);
   if (Buffer.byteLength(serialized, 'utf8') > MAX_PACKET_BYTES) throw new Error('Sanitized review packet exceeds the 48 KiB limit.');
