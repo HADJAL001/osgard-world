@@ -206,3 +206,25 @@ dialog#player-dialog[data-postgame-intermission="1"] .post-run-recommendations{m
 .og-postgame-signal-cta:hover,.og-postgame-signal-cta:focus-visible{border-color:#f1dca8;background:#cbb06b16;outline:2px solid transparent}
 @media(max-width:760px){.og-postgame-signal-cta{width:100%;min-height:42px}}
 @media(prefers-reduced-motion:reduce){.og-postgame-signal-cta{transition:none}}
+
+
+/* Intermission control expansion: pause, searchable directory, and mobile-safe controls. */
+.og-postgame-service-head-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}
+.og-postgame-snooze:not(:disabled){border-color:rgba(218,192,133,.48);color:#ead7a5}
+.og-postgame-snooze:disabled{cursor:default;opacity:.58}
+.og-postgame-service-search-wrap{display:grid;gap:7px;margin:4px 0 8px}
+.og-postgame-service-search-caption{color:#bfae7c;font:8px/1.5 ui-monospace,Consolas,monospace;letter-spacing:.14em}
+.og-postgame-service-search{width:100%;min-height:42px;padding:10px 13px;border:1px solid rgba(218,192,133,.28);border-radius:7px;background:#0b0d0b;color:#f3f0e8;font:12px/1.4 system-ui,sans-serif}
+.og-postgame-service-search::placeholder{color:#83877b}
+.og-postgame-service-search:focus-visible,.og-postgame-search-clear:focus-visible,.og-postgame-snooze:focus-visible{outline:2px solid #ead7a5;outline-offset:3px}
+.og-postgame-service-search-status{margin:0 0 8px;color:#aaa99b;font-size:10px;line-height:1.5}
+.og-postgame-search-clear{min-height:34px;margin:0 0 10px;padding:7px 10px;border:1px solid rgba(218,192,133,.24);border-radius:6px;background:#10120f;color:#d7c99f;font-size:10px;cursor:pointer}
+.og-postgame-search-clear:hover{border-color:#d8c084}
+@media(max-width:600px){
+ .og-postgame-service-head-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%}
+ .og-postgame-service-head-actions>*{width:100%;min-width:0}
+ .og-postgame-service-search{font-size:16px}
+}
+@media(prefers-reduced-motion:reduce){
+ .og-postgame-service-search,.og-postgame-search-clear,.og-postgame-snooze{scroll-behavior:auto;animation:none;transition:none}
+}
