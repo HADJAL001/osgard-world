@@ -1,4 +1,4 @@
-import { DEFAULT_INPUTS, SCENARIOS, calculateScenario, calculateRequiredMonthlyVisitors, calculateBreakEvenMonthlyVisitors, calculateMonthlyProjection, calculateSensitivity, normalizeInputs } from './model.js';
+import { DEFAULT_INPUTS, SCENARIOS, calculateScenario, calculateRequiredMonthlyVisitors, calculateBreakEvenMonthlyVisitors, calculateMonthlyProjection, calculateSensitivity, calculateRiskSimulation, normalizeInputs } from './model.js';
 import { buildFinancialCsv } from './export.mjs';
 
 const form = document.getElementById('assumptions-form');
@@ -14,6 +14,12 @@ const snapshotSave = document.getElementById('save-snapshot');
 const snapshotLoad = document.getElementById('load-snapshot');
 const snapshotDelete = document.getElementById('delete-snapshot');
 const projectionExportButton = document.getElementById('export-projection-csv');
+const stressRunButton = document.getElementById('run-stress-test');
+const stressExportButton = document.getElementById('export-stress-csv');
+const stressIterations = document.getElementById('stress-iterations');
+const stressUncertainty = document.getElementById('stress-uncertainty');
+let latestRiskSimulation = null;
+let riskInputsFingerprint = '';
 const SNAPSHOT_KEY = 'osgard.monetization.snapshots.v1';
 const MAX_SNAPSHOTS = 8;
 const usd = new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
@@ -190,6 +196,50 @@ function renderSensitivity(rows, baseline) {
   const status = document.getElementById('sensitivity-status');
   status.textContent = 'Базовый операционный результат: ' + money(baseline) + '. Каждая переменная меняется отдельно на ±20%; это диапазон чувствительности, не вероятность и не прогноз.';
 }
+function renderStressSimulation(result) {
+  const ids = [
+    'stress-net-p10','stress-net-p50','stress-net-p90','stress-target-hit','stress-gross-range',
+    'stress-positive-share','stress-downside-tail','stress-lead-backlog',
+  ];
+  if (!result) {
+    for (const id of ids) document.getElementById(id).textContent = '—';
+    document.getElementById('stress-histogram').replaceChildren();
+    document.getElementById('stress-histogram-min').textContent = 'Запусти тест для распределения';
+    document.getElementById('stress-histogram-max').textContent = '';
+    document.getElementById('stress-status').textContent = 'Результат отсутствует или устарел. После изменения допущений запусти стресс-тест повторно.';
+    stressExportButton.disabled = true;
+    return;
+  }
+  const summary = result.summary;
+  document.getElementById('stress-net-p10').textContent = money(summary.yearNetOperatingUsd.p10);
+  document.getElementById('stress-net-p50').textContent = money(summary.yearNetOperatingUsd.p50);
+  document.getElementById('stress-net-p90').textContent = money(summary.yearNetOperatingUsd.p90);
+  document.getElementById('stress-target-hit').textContent = percent(summary.annualTargetHitSharePct);
+  document.getElementById('stress-gross-range').textContent =
+    money(summary.yearGrossRevenueUsd.p10) + ' / ' + money(summary.yearGrossRevenueUsd.p50) + ' / ' + money(summary.yearGrossRevenueUsd.p90);
+  document.getElementById('stress-positive-share').textContent = percent(summary.positiveYearNetSharePct);
+  document.getElementById('stress-downside-tail').textContent = money(summary.downsideTailMeanYearNetUsd);
+  document.getElementById('stress-lead-backlog').textContent = count(summary.month12UnprocessedLeadsP50);
+  const chart = document.getElementById('stress-histogram');
+  chart.replaceChildren();
+  const maxCount = Math.max(1, ...result.histogram.map((bin) => bin.count));
+  for (const bin of result.histogram) {
+    const bar = node('span', 'stress-bin');
+    bar.style.height = Math.max(2, bin.count / maxCount * 100) + '%';
+    bar.title = money(bin.fromUsd) + ' — ' + money(bin.toUsd) + ': ' + count(bin.count) + ' прогонов';
+    bar.setAttribute('aria-label', bar.title);
+    chart.append(bar);
+  }
+  const min = result.histogram[0];
+  const max = result.histogram[result.histogram.length - 1];
+  document.getElementById('stress-histogram-min').textContent = money(min.fromUsd);
+  document.getElementById('stress-histogram-max').textContent = money(max.toUsd);
+  document.getElementById('stress-status').textContent =
+    count(result.iterations) + ' прогонов · ±' + percent(result.uncertaintyPct) +
+    ' · seed ' + result.seed + ' · доля сценарных вариаций, достигших цели: ' + percent(summary.annualTargetHitSharePct) +
+    '. Это распределение заданных допущений, не вероятность реального бизнеса.';
+  stressExportButton.disabled = false;
+}
 function renderDecisionDashboard(inputs, base) {
   const breakEven = calculateBreakEvenMonthlyVisitors(inputs, 'base');
   const projection = calculateMonthlyProjection(inputs, 'base', 12);
@@ -225,6 +275,12 @@ function csvField(value) { return '"' + String(value ?? '').replace(/"/g, '""') 
 
 function render() {
   const inputs = readInputs();
+  const currentRiskFingerprint = JSON.stringify(inputs);
+  if (latestRiskSimulation && currentRiskFingerprint !== riskInputsFingerprint) {
+    latestRiskSimulation = null;
+    riskInputsFingerprint = '';
+    renderStressSimulation(null);
+  }
   const results = SCENARIOS.map((scenario) => ({ scenario, result: calculateScenario(inputs, scenario.id) }));
   resultsNode.innerHTML = results.map(({ scenario, result }) => {
     const netClass = result.netOperatingUsd < 0 ? 'loss' : 'profit';
@@ -302,6 +358,36 @@ function render() {
 }
 
 form.addEventListener('input', render);
+stressRunButton.addEventListener('click', () => {
+  const inputs = readInputs();
+  latestRiskSimulation = calculateRiskSimulation(inputs, {
+    iterations: Number(stressIterations.value),
+    uncertaintyPct: Number(stressUncertainty.value),
+    seed: 20261015,
+  });
+  riskInputsFingerprint = JSON.stringify(inputs);
+  renderStressSimulation(latestRiskSimulation);
+});
+stressExportButton.addEventListener('click', () => {
+  const inputs = readInputs();
+  if (!latestRiskSimulation || riskInputsFingerprint !== JSON.stringify(inputs)) {
+    renderStressSimulation(null);
+    return;
+  }
+  const lines = [
+    ['Прогон','Годовая валовая выручка USD','Годовой операционный результат USD','Результат М12 USD','Стартовый трафик М12','Очередь заявок М12','Загрузка мощности М12 %'],
+    ...latestRiskSimulation.draws.map((row) => [
+      row.iteration,row.yearGrossRevenueUsd.toFixed(2),row.yearNetOperatingUsd.toFixed(2),
+      row.month12NetOperatingUsd.toFixed(2),row.month12StartingVisitors,row.month12UnprocessedLeads.toFixed(2),
+      row.month12CapacityUtilizationPct.toFixed(2),
+    ]),
+  ];
+  downloadBlob('osgard-financial-stress-simulation.csv',
+    '\uFEFF' + lines.map((line) => line.map(csvField).join(',')).join('\r\n'),
+    'text/csv;charset=utf-8;');
+  document.getElementById('stress-status').textContent =
+    'CSV со всеми ' + count(latestRiskSimulation.iterations) + ' стресс-прогонами создан локально.';
+});
 snapshotSave.addEventListener('click', saveSnapshot);
 snapshotLoad.addEventListener('click', loadSnapshot);
 snapshotDelete.addEventListener('click', deleteSnapshot);
@@ -317,7 +403,7 @@ exportButton.addEventListener('click', () => {
   const inputs = readInputs();
   const payload = {
     kind: 'osgard-games-business-model',
-    modelVersion: 7,
+    modelVersion: 8,
     note: 'Illustrative scenario only. Monthly projection uses a traffic ramp and retained subscriber cohorts; it is not actual revenue, accounting data or a guarantee. Checkout, Premium sales and ads are not activated by this model.',
     currency: 'USD',
     generatedAt: new Date().toISOString(),
@@ -326,6 +412,9 @@ exportButton.addEventListener('click', () => {
     breakEven: { baseMonthlyStartingVisitors: calculateBreakEvenMonthlyVisitors(inputs, 'base') },
     monthlyProjection: calculateMonthlyProjection(inputs, 'base', 12),
     sensitivity: calculateSensitivity(inputs, 'base', 20),
+    riskSimulation: latestRiskSimulation && riskInputsFingerprint === JSON.stringify(inputs)
+      ? { ...latestRiskSimulation, draws: undefined }
+      : null,
     scenarios: SCENARIOS.map((scenario) => ({ label: scenario.label, assumptions: scenario, results: calculateScenario(inputs, scenario.id) })),
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
