@@ -68,6 +68,8 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
+      - name: Verify cross-surface OSGARD product contracts
+        run: npm run qa:contracts
       - name: Validate production activation shell before build and tests
         run: bash -n scripts/activate-frontend-remote.sh
       - name: Type-check the frontend
