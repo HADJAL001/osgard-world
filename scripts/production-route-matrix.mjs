@@ -106,7 +106,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         : route === '/games/platform-map/platform-map.js'
           ? (response.headers.get('content-type') || '').toLowerCase().includes('javascript') &&
             text.includes('REGISTRY_URL') && text.includes('OSGARD_CONSENTED_ANALYTICS') &&
-            text.includes('not-device-verified') && !text.includes('innerHTML')
+            text.includes('not-device-verified') && text.includes('fallbackRoute') && !text.includes('innerHTML')
         : route === '/games/platform-map/platform-map.css'
           ? (response.headers.get('content-type') || '').toLowerCase().includes('text/css') &&
             text.includes('.game-grid') && text.includes('prefers-reduced-motion:reduce') &&
