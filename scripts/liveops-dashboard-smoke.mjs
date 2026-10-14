@@ -19,7 +19,7 @@ for(const contract of [
   "credentials:'same-origin'","redirect:'error'","cache:'no-store'",
   "X-Moderation-Token","new Blob([csv]",
   "if(/^\\s*[=+\\-@]/.test(text))text=\"'\"+text",
-  'Активные запросы отменены','Токен очищен из памяти вкладки'
+  'активные запросы отменены','Токен очищен из памяти вкладки'
 ]) assert.ok(html.includes(contract),'Missing dashboard UX/safety contract: '+contract);
 for(const contract of [
   'function parseDateRange(', 'MAX_RANGE_MS', 'function previousPeriod(',
