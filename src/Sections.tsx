@@ -15,7 +15,7 @@ const products = [
   ['O2 SYSTEM', 'o2system.art/', 'ACCOUNTING', 'Cash and transaction accounting for exchange offices.'],
   ['OSGARD VANGUARD STUDIO', 'osgardvanguard.studio/', 'VIDEO', 'Video creation for digital products and campaigns.'],
 ]
-const sectionLinks = [['Worlds', '/worlds'], ['Catalog', '/catalog'], ['Chronicle', '/chronicle'], ['Founders', '/masters'], ['Entertainment', '/games/'], ['SkillCred', '/skillcred/'], ['Club', '/club']]
+const sectionLinks = [['Worlds', '/worlds'], ['Catalog', '/catalog'], ['Chronicle', '/chronicle'], ['Founders', '/masters'], ['Entertainment', '/entertainment/'], ['SkillCred', '/skillcred/'], ['Club', '/club']]
 const ruSectionLabels: Record<string, string> = { Worlds: 'Миры', Catalog: 'Каталог', Chronicle: 'Хроника', Founders: 'Основатели', Entertainment: 'Развлечения', SkillCred: 'SkillCred', Club: 'Клуб' }
 
 function SectionNav({ locale }: { locale: Locale }) {

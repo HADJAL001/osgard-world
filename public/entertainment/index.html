@@ -2,20 +2,223 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="robots" content="noindex,follow">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#080a0b">
-  <link rel="canonical" href="https://osgard.world/games/">
-  <meta http-equiv="refresh" content="0;url=/games/">
-  <title>OSGARD Entertainment — Игры OSGARD</title>
-  <script>window.location.replace('/games/');</script>
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="OSGARD ENTERTAINMENT — единый премиальный вход в 11 игровых миров: тактика, стратегия, головоломки, аркады и интерактивные эксперименты.">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://osgard.world/entertainment/">
+  <link rel="icon" href="/osgard-mark.svg" type="image/svg+xml">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="OSGARD WORLD">
+  <meta property="og:title" content="OSGARD ENTERTAINMENT — Играй. Исследуй. Передавай вызов.">
+  <meta property="og:description" content="11 игровых миров OSGARD. Найди игру под своё настроение, сохрани избранное и пригласи друга.">
+  <meta property="og:url" content="https://osgard.world/entertainment/">
+  <meta property="og:image" content="https://osgard.world/games/share-cards/catalog.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="OSGARD ENTERTAINMENT">
+  <meta name="twitter:description" content="11 игровых миров. Один премиальный вход.">
+  <meta name="twitter:image" content="https://osgard.world/games/share-cards/catalog.png">
+  <title>OSGARD ENTERTAINMENT — Играй. Исследуй. Передавай вызов.</title>
+  <link rel="stylesheet" href="/entertainment/entertainment.css?v=20261014.1">
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"CollectionPage","name":"OSGARD ENTERTAINMENT","url":"https://osgard.world/entertainment/","inLanguage":"ru-RU","description":"Каталог 11 игровых миров OSGARD с тактикой, стратегией, аркадами, головоломками и интерактивными симуляциями.","mainEntity":{"@type":"ItemList","numberOfItems":11,"itemListElement":[
+    {"@type":"ListItem","position":1,"name":"NULL//SHIFT","url":"https://osgard.world/games/null-shift-godot/"},
+    {"@type":"ListItem","position":2,"name":"Империя времени","url":"https://osgard.world/games/time"},
+    {"@type":"ListItem","position":3,"name":"SWARM","url":"https://osgard.world/games/swarm/"},
+    {"@type":"ListItem","position":4,"name":"INHERIT","url":"https://osgard.world/games/inherit/"},
+    {"@type":"ListItem","position":5,"name":"REMIX","url":"https://osgard.world/games/remix/"},
+    {"@type":"ListItem","position":6,"name":"CIVIC CASCADE","url":"https://osgard.world/games/civic-cascade/"},
+    {"@type":"ListItem","position":7,"name":"PATINA Atelier","url":"https://osgard.world/games/patina/"},
+    {"@type":"ListItem","position":8,"name":"SIGNAL RUN","url":"https://osgard.world/games/signal-run/"},
+    {"@type":"ListItem","position":9,"name":"CASCADE LAB","url":"https://osgard.world/games/cascade-lab/"},
+    {"@type":"ListItem","position":10,"name":"AFTERIMAGE//RUN","url":"https://osgard.world/games/afterimage-run/"},
+    {"@type":"ListItem","position":11,"name":"AETHER GRID","url":"https://osgard.world/games/aether-grid/"}
+  ]}}
+  </script>
 </head>
-<body style="margin:0;padding:32px;background:#080a0b;color:#e9e5d8;font:16px system-ui">
+<body>
+  <a class="skip-link" href="#world-catalog">Перейти к игровому каталогу</a>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="OSGARD WORLD — главная">
+      <span class="brand-mark" aria-hidden="true">O</span>
+      <span class="brand-type"><strong>OSGARD</strong><small>WORLD / ENTERTAINMENT</small></span>
+    </a>
+    <nav class="primary-nav" aria-label="Основная навигация">
+      <a class="nav-current" href="/entertainment/" aria-current="page">Развлечения</a>
+      <a href="/games/">Игровой портал</a>
+      <a href="/games/ecosystem/">Экосистема</a>
+      <a href="/games/partners/">Партнёрам</a>
+    </nav>
+    <div class="header-actions">
+      <a class="header-cta" href="/games/">Открыть игры <span aria-hidden="true">↗</span></a>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-nav" aria-label="Открыть меню">☰</button>
+    </div>
+    <nav class="mobile-nav" id="mobile-nav" aria-label="Мобильная навигация" hidden>
+      <a href="/entertainment/" aria-current="page">Развлечения</a><a href="/games/">Игровой портал</a><a href="/games/ecosystem/">Экосистема</a><a href="/games/partners/">Партнёрам</a>
+    </nav>
+  </header>
+
   <main>
-    <p style="color:#d3ff69;letter-spacing:.16em;font-size:11px">OSGARD / ENTERTAINMENT</p>
-    <h1>Игровая платформа переехала.</h1>
-    <p>Открываем единый каталог игр OSGARD.</p>
-    <a href="/games/" style="color:#d3ff69">Открыть каталог игр →</a>
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="signal-dot"></span> OSGARD WORLD · INTERACTIVE WORLDS · 2026</p>
+        <h1 id="hero-title">Не просто <em>играй.</em><br>Выбирай свой мир.</h1>
+        <p class="hero-lede">Тактические вылазки, решения на уровне целого города, физические эксперименты и ежедневные испытания. Выбери настроение — мы откроем подходящий игровой маршрут.</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="/games/null-shift-godot/">Начать с NULL//SHIFT <span aria-hidden="true">↗</span></a>
+          <button class="button button-ghost" id="surprise-button" type="button">Удиви меня <span aria-hidden="true">⤨</span></button>
+        </div>
+        <div class="hero-proof" aria-label="Состав каталога">
+          <div><strong id="world-count">11</strong><span>игровых маршрутов</span></div>
+          <i aria-hidden="true"></i>
+          <div><strong>01</strong><span>единый игровой вход</span></div>
+          <i aria-hidden="true"></i>
+          <div><strong>0</strong><span>фиктивных рейтингов</span></div>
+        </div>
+      </div>
+      <div class="hero-art" aria-label="Абстрактная эмблема OSGARD: пространственные кольца вокруг светового ядра">
+        <div class="art-grid"></div><div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div><div class="art-orbit orbit-three"></div>
+        <div class="art-core"><span>OSG</span><b>PLAY</b></div>
+        <div class="art-label art-label-top">SYSTEM / 01</div><div class="art-label art-label-bottom">CHOOSE YOUR NEXT WORLD</div>
+        <span class="art-coordinate coordinate-one">59°</span><span class="art-coordinate coordinate-two">∞</span>
+      </div>
+      <div class="hero-index"><span>01 — 11</span><span>SCROLL TO EXPLORE ↓</span></div>
+    </section>
+
+    <section class="continue-section" id="continue-section" hidden aria-labelledby="continue-title">
+      <div class="continue-mark" aria-hidden="true">↻</div>
+      <div><p class="eyebrow">YOUR LAST ROUTE · THIS DEVICE</p><h2 id="continue-title">Продолжить знакомство</h2><p id="continue-copy">Недавно открытая игра сохранена только в этом браузере.</p></div>
+      <a class="text-link" id="continue-link" href="/games/">Продолжить <span aria-hidden="true">↗</span></a>
+    </section>
+
+    <section class="catalog-section" id="world-catalog" aria-labelledby="catalog-title">
+      <div class="section-heading">
+        <div><p class="eyebrow">01 / DISCOVERY SYSTEM</p><h2 id="catalog-title">Выбери <em>направление.</em></h2><p class="section-description">Ищи по названию, фильтруй по жанру, сохраняй любимые игры. Избранное хранится локально на твоём устройстве.</p></div>
+        <div class="catalog-side-note"><span class="mini-seal">O</span><span>CURATED WORLDS<br><b>NO FAKE RATINGS</b></span></div>
+      </div>
+      <div class="catalog-tools">
+        <label class="search-box" for="game-search"><span aria-hidden="true">⌕</span><input id="game-search" type="search" autocomplete="off" placeholder="Найти игровой мир…" aria-label="Поиск игр"><kbd>/</kbd></label>
+        <label class="sort-label" for="sort-mode"><span>ПОРЯДОК</span><select id="sort-mode"><option value="curated">Рекомендуемый</option><option value="az">По алфавиту</option><option value="recent">Недавно открытые</option></select></label>
+      </div>
+      <div class="filter-row" id="genre-filters" role="group" aria-label="Фильтр по жанру">
+        <button class="filter-chip is-active" type="button" data-genre="all" aria-pressed="true">Все миры <span>11</span></button>
+        <button class="filter-chip" type="button" data-genre="tactics" aria-pressed="false">Тактика</button>
+        <button class="filter-chip" type="button" data-genre="strategy" aria-pressed="false">Стратегия</button>
+        <button class="filter-chip" type="button" data-genre="puzzle" aria-pressed="false">Головоломки</button>
+        <button class="filter-chip" type="button" data-genre="arcade" aria-pressed="false">Аркады</button>
+        <button class="filter-chip" type="button" data-genre="world" aria-pressed="false">Миры и симуляции</button>
+        <button class="filter-chip filter-chip-special" type="button" id="favorites-filter" aria-pressed="false">☆ Избранное <span id="favorites-count">0</span></button>
+      </div>
+      <div class="results-line"><p id="results-label" aria-live="polite">Показано 11 игровых миров</p><button type="button" id="clear-filters" class="clear-filters" hidden>Сбросить фильтры ×</button></div>
+
+      <div class="world-grid" id="world-grid">
+        <article class="world-card tone-void" data-game="null-shift" data-title="NULL//SHIFT" data-genre="tactics" data-tags="tactical raid action godot coop" data-mode="solo coop" data-order="1">
+          <div class="card-art"><span class="card-index">01 / RAID</span><div class="card-symbol symbol-void">N<span>//</span>S</div><span class="card-art-caption">CHANGE REALITY</span></div>
+          <div class="card-body"><div class="card-meta"><span>ТАКТИЧЕСКИЙ РЕЙД</span><span>GODOT 4 / WEB</span></div><h3>NULL//SHIFT</h3><p>Взломай терминал, забери квантовое ядро и выйди из меняющейся арены.</p><div class="card-tags"><span>Тактика</span><span>Рейд</span><span>Соло / Кооператив</span></div>
+            <div class="card-actions"><a class="play-link" href="/games/null-shift-godot/" data-launch="null-shift">Войти в мир <b aria-hidden="true">↗</b></a><button class="icon-button favorite-button" type="button" data-favorite="null-shift" aria-pressed="false" aria-label="Добавить NULL//SHIFT в избранное">☆</button><button class="icon-button share-button" type="button" data-share="null-shift" aria-label="Поделиться вызовом NULL//SHIFT">↗</button></div>
+          </div>
+        </article>
+        <article class="world-card tone-time" data-game="time" data-title="Империя времени" data-genre="strategy" data-tags="strategy city economy politics" data-mode="solo" data-order="2">
+          <div class="card-art"><span class="card-index">02 / STATE</span><div class="card-symbol symbol-time">T<span>∶</span>∞</div><span class="card-art-caption">EVERY DECISION LEAVES A TRACE</span></div>
+          <div class="card-body"><div class="card-meta"><span>СТРАТЕГИЯ</span><span>БРАУЗЕРНЫЙ ПРОТОТИП</span></div><h3>Империя времени</h3><p>Управляй казной, энергией, районами и политическими фракциями. Решения меняют баланс города.</p><div class="card-tags"><span>Город</span><span>Экономика</span><span>Решения</span></div>
+            <div class="card-actions"><a class="play-link" href="/games/time" data-launch="time">Войти в мир <b aria-hidden="true">↗</b></a><button class="icon-button favorite-button" type="button" data-favorite="time" aria-pressed="false" aria-label="Добавить Империю времени в избранное">☆</button><button class="icon-button share-button" type="button" data-share="time" aria-label="Поделиться вызовом Империя времени">↗</button></div>
+          </div>
+        </article>
+        <article class="world-card tone-swarm" data-game="swarm" data-title="SWARM" data-genre="tactics" data-tags="tactics team coop action" data-mode="solo coop" data-order="3">
+          <div class="card-art"><span class="card-index">03 / TEAM</span><div class="card-symbol symbol-swarm"><i></i><i></i><i></i><i></i><i></i></div><span class="card-art-caption">ONE BODY. EIGHT MINDS.</span></div>
+          <div class="card-body"><div class="card-meta"><span>КОМАНДНАЯ ТАКТИКА</span><span>БРАУЗЕР</span></div><h3>SWARM</h3><p>Координируй роли, захвати ядро и доберись до выхода. Думай как команда.</p><div class="card-tags"><span>Тактика</span><span>Команда</span><span>Роли</span></div>
+            <div class="card-actions"><a class="play-link" href="/games/swarm/" data-launch="swarm">Войти в мир <b aria-hidden="true">↗</b></a><button class="icon-button favorite-button" type="button" data-favorite="swarm" aria-pressed="false" aria-label="Добавить SWARM в избранное">☆</button><button class="icon-button share-button" type="button" data-share="swarm" aria-label="Поделиться вызовом SWARM">↗</button></div>
+          </div>
+        </article>
+        <article class="world-card tone-inherit" data-game="inherit" data-title="INHERIT" data-genre="world" data-tags="world legacy sandbox exploration" data-mode="solo" data-order="4">
+          <div class="card-art"><span class="card-index">04 / LEGACY</span><div class="card-symbol symbol-inherit">I<span>·</span>I</div><span class="card-art-caption">LEAVE ONE TRACE. PASS IT ON.</span></div>
+          <div class="card-body"><div class="card-meta"><span>МИР-НАСЛЕДИЕ</span><span>ЛОКАЛЬНОЕ СОХРАНЕНИЕ</span></div><h3>INHERIT</h3><p>Оставляй следы в спокойном мире, чтобы следующие поколения находили твои решения.</p><div class="card-tags"><span>Исследование</span><span>Мир</span><span>Наследие</span></div>
+            <div class="card-actions"><a class="play-link" href="/games/inherit/" data-launch="inherit">Войти в мир <b aria-hidden="true">↗</b></a><button class="icon-button favorite-button" type="button" data-favorite="inherit" aria-pressed="false" aria-label="Добавить INHERIT в избранное">☆</button><button class="icon-button share-button" type="button" data-share="inherit" aria-label="Поделиться вызовом INHERIT">↗</button></div>
+          </div>
+        </article>
+        <article class="world-card tone-remix" data-game="remix" data-title="REMIX" data-genre="arcade" data-tags="challenge arena webgl competition" data-mode="solo coop" data-order="5">
+          <div class="card-art"><span class="card-index">05 / ARENA</span><div class="card-symbol symbol-remix">R<span>/</span>X</div><span class="card-art-caption">CREATE A CHALLENGE. LEAVE A REPLAY.</span></div>
+          <div class="card-body"><div class="card-meta"><span>ОНЛАЙН-ИСПЫТАНИЯ</span><span>WEBGL + API</span></div><h3>REMIX</h3><p>Создавай испытания и оставляй повтор. Сетевой матч зависит от доступности игрового API.</p><div class="card-tags"><span>Арена</span><span>Испытание</span><span>Онлайн</span></div>
+            <div class="card-actions"><a class="play-link" href="/games/remix/" data-launch="remix">Войти в мир <b aria-hidden="true">↗</b></a><button class="icon-button favorite-button" type="button" data-favorite="remix" aria-pressed="false" aria-label="Добавить REMIX в избранное">☆</button><button class="icon-button share-button" type="button" data-share="remix" aria-label="Поделиться вызовом REMIX">↗</button></div>
+          </div>
+        </article>
+        <article class="world-card tone-civic" data-game="civic-cascade" data-title="CIVIC CASCADE" data-genre="strategy" data-tags="strategy crisis city simulation risk" data-mode="solo" data-order="6">
+          <div class="card-art"><span class="card-index">06 / CITY LAB</span><div class="card-symbol symbol-civic">CC<span>▥</span></div><span class="card-art-caption">HOLD THE CITY. BREAK THE CASCADE.</span></div>
+          <div class="card-body"><div class="card-meta"><span>КРИЗИСНАЯ СТРАТЕГИЯ</span><span>ПРОГНОЗ РИСКА</span></div><h3>CIVIC CASCADE</h3><p>Управляй городом во время цепочки кризисов, прогнозируй риски и распределяй ресурсы.</p><div class="card-tags"><span>Город</span><span>Риск</span><span>Тактическое решение</span></div>
+            <div class="card-actions"><a class="play-link" href="/games/civic-cascade/" data-launch="civic-cascade">Войти в мир <b aria-hidden="true">↗</b></a><button class="icon-button favorite-button" type="button" data-favorite="civic-cascade" aria-pressed="false" aria-label="Добавить CIVIC CASCADE в избранное">☆</button><button class="icon-button share-button" type="button" data-share="civic-cascade" aria-label="Поделиться вызовом CIVIC CASCADE">↗</button></div>
+          </div>
+        </article>
+        <article class="world-card tone-patina" data-game="patina" data-title="PATINA Atelier" data-genre="puzzle" data-tags="puzzle restoration ceramic art calm" data-mode="solo" data-order="7">
+          <div class="card-art"><span class="card-index">07 / ATELIER</span><div class="card-symbol symbol-patina">A<span>◌</span></div><span class="card-art-caption">DO NOT ERASE HISTORY.</span></div>
+          <div class="card-body"><div class="card-meta"><span>БЕРЕЖНАЯ РЕСТАВРАЦИЯ</span><span>ИНТЕРАКТИВНАЯ ЛАБОРАТОРИЯ</span></div><h3>PATINA Atelier</h3><p>Исследуй керамику 1898 года, отличай загрязнение от оригинальной глазури и восстанавливай бережно.</p><div class="card-tags"><span>Пазл</span><span>Искусство</span><span>Спокойный темп</span></div>
+            <div class="card-actions"><a class="play-link" href="/games/patina/" data-launch="patina">Войти в мир <b aria-hidden="true">↗</b></a><button class="icon-button favorite-button" type="button" data-favorite="patina" aria-pressed="false" aria-label="Добавить PATINA Atelier в избранное">☆</button><button class="icon-button share-button" type="button" data-share="patina" aria-label="Поделиться вызовом PATINA Atelier">↗</button></div>
+          </div>
+        </article>
+        <article class="world-card tone-signal" data-game="signal-run" data-title="SIGNAL RUN" data-genre="arcade" data-tags="arcade reaction reflex action" data-mode="solo" data-order="8">
+          <div class="card-art"><span class="card-index">08 / REACTION</span><div class="card-symbol symbol-signal">S<span>↯</span>R</div><span class="card-art-caption">RIDE THE SIGNAL. BEAT THE STATIC.</span></div>
+          <div class="card-body"><div class="card-meta"><span>РЕАКЦИЯ / АРКАДА</span><span>CANVAS</span></div><h3>SIGNAL RUN</h3><p>Меняй полосу, собирай сигналы и уклоняйся от цифровых помех в коротком раунде на реакцию.</p><div class="card-tags"><span>Аркада</span><span>Реакция</span><span>Рекорд</span></div>
+            <div class="card-actions"><a class="play-link" href="/games/signal-run/" data-launch="signal-run">Войти в мир <b aria-hidden="true">↗</b></a><button class="icon-button favorite-button" type="button" data-favorite="signal-run" aria-pressed="false" aria-label="Добавить SIGNAL RUN в избранное">☆</button><button class="icon-button share-button" type="button" data-share="signal-run" aria-label="Поделиться вызовом SIGNAL RUN">↗</button></div>
+          </div>
+        </article>
+        <article class="world-card tone-cascade" data-game="cascade-lab" data-title="CASCADE LAB" data-genre="puzzle" data-tags="puzzle physics builder simulation" data-mode="solo" data-order="9">
+          <div class="card-art"><span class="card-index">09 / PHYSICS</span><div class="card-symbol symbol-cascade">C<span>→</span>L</div><span class="card-art-caption">BUILD THE REACTION. READ THE PHYSICS.</span></div>
+          <div class="card-body"><div class="card-meta"><span>ФИЗИКА / ПАЗЛ</span><span>2D МОДЕЛЬ</span></div><h3>CASCADE LAB</h3><p>Собирай цепные реакции из рампы, пружины, турбины, магнита, переключателя и отбойника.</p><div class="card-tags"><span>Физика</span><span>Конструктор</span><span>Эксперименты</span></div>
+            <div class="card-actions"><a class="play-link" href="/games/cascade-lab/" data-launch="cascade-lab">Войти в мир <b aria-hidden="true">↗</b></a><button class="icon-button favorite-button" type="button" data-favorite="cascade-lab" aria-pressed="false" aria-label="Добавить CASCADE LAB в избранное">☆</button><button class="icon-button share-button" type="button" data-share="cascade-lab" aria-label="Поделиться вызовом CASCADE LAB">↗</button></div>
+          </div>
+        </article>
+        <article class="world-card tone-afterimage" data-game="afterimage-run" data-title="AFTERIMAGE//RUN" data-genre="arcade" data-tags="arcade speedrun daily challenge ghost" data-mode="solo" data-order="10">
+          <div class="card-art"><span class="card-index">10 / DAILY RUN</span><div class="card-symbol symbol-afterimage">A<span>///</span>R</div><span class="card-art-caption">ONE SEED. ONE GHOST. YOUR NEXT RECORD.</span></div>
+          <div class="card-body"><div class="card-meta"><span>ЕЖЕДНЕВНЫЙ СПИДРАН</span><span>ЛОКАЛЬНЫЙ ПРИЗРАК</span></div><h3>AFTERIMAGE//RUN</h3><p>Находи фазовые ворота, соревнуйся со своим призраком и передавай другу вызов с тем же seed.</p><div class="card-tags"><span>Аркада</span><span>Ежедневно</span><span>Вызов другу</span></div>
+            <div class="card-actions"><a class="play-link" href="/games/afterimage-run/" data-launch="afterimage-run">Войти в мир <b aria-hidden="true">↗</b></a><button class="icon-button favorite-button" type="button" data-favorite="afterimage-run" aria-pressed="false" aria-label="Добавить AFTERIMAGE//RUN в избранное">☆</button><button class="icon-button share-button" type="button" data-share="afterimage-run" aria-label="Поделиться вызовом AFTERIMAGE//RUN">↗</button></div>
+          </div>
+        </article>
+        <article class="world-card tone-aether" data-game="aether-grid" data-title="AETHER GRID" data-genre="puzzle" data-tags="puzzle logic grid daily challenge" data-mode="solo" data-order="11">
+          <div class="card-art"><span class="card-index">11 / LOGIC</span><div class="card-symbol symbol-aether">A<span>·</span>G</div><span class="card-art-caption">ONE SIGNAL. ONE DAILY CHALLENGE.</span></div>
+          <div class="card-body"><div class="card-meta"><span>ЛОГИЧЕСКАЯ ЗАДАЧА</span><span>25 УЗЛОВ</span></div><h3>AETHER GRID</h3><p>Соедини источник с ядром в сетке из 25 узлов. Одна ежедневная задача для всех и вызов другу.</p><div class="card-tags"><span>Логика</span><span>Сетка</span><span>Ежедневно</span></div>
+            <div class="card-actions"><a class="play-link" href="/games/aether-grid/" data-launch="aether-grid">Войти в мир <b aria-hidden="true">↗</b></a><button class="icon-button favorite-button" type="button" data-favorite="aether-grid" aria-pressed="false" aria-label="Добавить AETHER GRID в избранное">☆</button><button class="icon-button share-button" type="button" data-share="aether-grid" aria-label="Поделиться вызовом AETHER GRID">↗</button></div>
+          </div>
+        </article>
+        <div class="empty-state" id="empty-state" hidden><span aria-hidden="true">∅</span><h3>В этой подборке пока пусто.</h3><p>Попробуй другой жанр или сбрось фильтры.</p><button class="button button-primary" type="button" id="empty-reset">Показать все миры</button></div>
+      </div>
+    </section>
+
+    <section class="network-section" aria-labelledby="network-title">
+      <div class="network-frame">
+        <div class="network-art" aria-hidden="true"><div class="network-ring"></div><span>OSG / WORLD</span></div>
+        <div class="network-copy"><p class="eyebrow">02 / BEYOND THE GAME</p><h2 id="network-title">Игра заканчивается.<br><em>Возможности — нет.</em></h2><p>OSGARD — экосистема собственных цифровых продуктов. Здесь нет сторонних рекламодателей под чужой маской: это честное продвижение сервисов OSGARD.</p>
+          <div class="network-actions"><a class="button button-primary" href="https://osgardbewworld.com/?utm_source=osgard_entertainment&amp;utm_medium=cross_promo&amp;utm_campaign=build_from_play&amp;utm_content=hero" target="_blank" rel="noopener noreferrer" data-service="projects">Создать свою игру, сайт или приложение ↗</a><a class="text-link" href="/games/ecosystem/">Открыть карту экосистемы <span aria-hidden="true">↗</span></a></div>
+        </div>
+      </div>
+      <div class="network-services" aria-label="Сервисы экосистемы OSGARD">
+        <a href="https://marcosa.club/?utm_source=osgard_entertainment&amp;utm_medium=cross_promo&amp;utm_campaign=network_discovery&amp;utm_content=marcosa" target="_blank" rel="noopener noreferrer" data-service="marcosa"><span>05 / SOCIAL</span><strong>MARCOSA</strong><small>Социальная сеть нового поколения</small><b aria-hidden="true">↗</b></a>
+        <a href="https://myosa.world/?utm_source=osgard_entertainment&amp;utm_medium=cross_promo&amp;utm_campaign=network_discovery&amp;utm_content=myosa" target="_blank" rel="noopener noreferrer" data-service="myosa"><span>06 / AI</span><strong>MYOSA</strong><small>Платформа искусственного интеллекта</small><b aria-hidden="true">↗</b></a>
+        <a href="https://superday.run/?utm_source=osgard_entertainment&amp;utm_medium=cross_promo&amp;utm_campaign=network_discovery&amp;utm_content=superday" target="_blank" rel="noopener noreferrer" data-service="superday"><span>04 / MAP</span><strong>SUPERDAY</strong><small>Умная карта и планировщик дня</small><b aria-hidden="true">↗</b></a>
+      </div>
+    </section>
+
+    <section class="social-section" aria-labelledby="social-title">
+      <div><p class="eyebrow">03 / PLAY TOGETHER</p><h2 id="social-title">Передай <em>вызов дальше.</em></h2><p>У каждой игры есть своя история для друга. Поделись ссылкой на конкретный мир, чтобы получатель мог открыть его напрямую.</p></div>
+      <div class="social-actions"><a href="/games/" class="button button-primary">Открыть приглашения и SHARDS ↗</a><p>Награды за социальные действия доступны в игровом портале. Сайт не выдаёт награду за сам факт открытия окна публикации: социальные сети не подтверждают этот факт автоматически.</p></div>
+    </section>
   </main>
+
+  <footer class="site-footer">
+    <a class="brand footer-brand" href="/"><span class="brand-mark" aria-hidden="true">O</span><span class="brand-type"><strong>OSGARD</strong><small>WORLD / ENTERTAINMENT</small></span></a>
+    <p>Премиальная игровая экосистема. Без фиктивных рейтингов и нарисованных показателей.</p>
+    <nav aria-label="Правовая информация"><a href="/privacy/">Конфиденциальность</a><a href="/terms/">Условия использования</a><a href="/support/osgard-play/">Поддержка</a><a href="/games/">Игровой портал</a><a href="mailto:osman.osmanov0099@gmail.com">Связаться с OSGARD</a><a href="https://wa.me/79640027222?text=%D0%9F%D0%BE%D0%BC%D0%BE%D0%B3%D0%B8%D1%82%D0%B5%20%D1%81%20OSGARD%20ENTERTAINMENT" target="_blank" rel="noopener noreferrer">WhatsApp ↗</a></nav>
+    <p class="footer-meta">© <span id="footer-year">2026</span> OSGARD WORLD · OWNED WORLDS, OWNED IDEAS.</p>
+  </footer>
+
+  <dialog class="share-dialog" id="share-dialog" aria-labelledby="share-title">
+    <form method="dialog" class="share-dialog-top"><div><p class="eyebrow">PASS THE CHALLENGE</p><h2 id="share-title">Пригласи друга.</h2></div><button class="icon-button" aria-label="Закрыть окно публикации">×</button></form>
+    <p id="share-copy" class="share-copy">Выбери, как передать ссылку.</p>
+    <div class="share-options"><a id="share-whatsapp" href="#" target="_blank" rel="noopener noreferrer">WhatsApp ↗</a><a id="share-telegram" href="#" target="_blank" rel="noopener noreferrer">Telegram ↗</a><a id="share-x" href="#" target="_blank" rel="noopener noreferrer">X / Twitter ↗</a><button type="button" id="share-native">Системное меню ↗</button><button type="button" id="share-copy-link">Скопировать ссылку</button></div>
+    <p class="share-status" id="share-status" role="status" aria-live="polite"></p>
+    <p class="share-disclosure">Открытие окна публикации не доказывает, что пост действительно опубликован. Не выдаём за это подтверждённые награды.</p>
+  </dialog>
+
+  <script src="/games/consented-analytics.js?v=20261014.1" defer></script>
+  <script src="/entertainment/entertainment.js?v=20261014.1" defer></script>
 </body>
 </html>

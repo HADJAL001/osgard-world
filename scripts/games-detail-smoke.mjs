@@ -58,7 +58,7 @@ assert.ok(detail.includes("game.id === 'cascade-lab'") && detail.includes("datas
 assert.ok(hub.includes('/games/null-shift-godot/'), 'Catalog must use the deployment-generated Godot build as its primary route')
 assert.ok(hub.includes('href="/games/null-shift/">WebGL-версия'), 'Browser WebGL alternate is missing')
 assert.ok(godotProject.includes('config/name="NULL SHIFT"') && deployWorkflow.includes('--export-release Web') && deployWorkflow.includes('public/games/null-shift-godot/index.html') && godotSmoke.includes("process.argv[2] === '--export-check'")&&deployWorkflow.includes('node scripts/null-shift-godot-smoke.mjs --export-check public/games/null-shift-godot'), 'Godot project export and artifact contract must be verified')
-assert.ok(!nginx.includes('return 302 /games/null-shift/;') && nginx.includes('return 301 /games/;'), 'Nginx must not override Godot and must preserve the entertainment canonical redirect')
+assert.ok(!nginx.includes('return 302 /games/null-shift/;') && nginx.includes('location = /entertainment {') && nginx.includes('return 301 /entertainment/;') && !nginx.includes('location ^~ /entertainment/'), 'Nginx must not override Godot and must serve the dedicated Entertainment page with only a slash-normalization redirect')
 assert.ok(detail.includes('attempts < 20') && detail.includes('window.setTimeout(validateFrame, 250)'), 'React game mount must have a bounded iframe startup grace period')
 assert.ok(detail.includes("querySelector('.time-game')"), 'Strategy-game readiness must use the actual mounted game root')
 assert.ok(detail.includes("track('game_opened', { game: game.id, surface: 'game-detail' }, consent)"), 'Detail views are logged once with consent')

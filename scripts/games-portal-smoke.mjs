@@ -843,11 +843,10 @@ assert.ok(lifecycle.includes("'cascade-lab':{title:'CASCADE LAB',url:'/games/cas
 assert.ok(manifest.includes("'cascade-lab'") && manifest.includes("title: 'CASCADE LAB'") && sitemap.includes('<loc>https://osgard.world/games/cascade-lab/</loc>'), 'CASCADE LAB must be present in manifest and sitemap')
 
 
-assert.ok(entertainmentAlias.includes('content="0;url=/games/"') && entertainmentAlias.includes("window.location.replace('/games/')"), 'Legacy /entertainment path must forward to the canonical Games hub')
-assert.ok(nginx.includes('location = /entertainment {') && nginx.includes('location = /entertainment/ {'), 'Both legacy Entertainment URL variants need server-side redirects')
-assert.ok(nginx.split("return 301 /games/;").length >= 3, 'Entertainment redirects must target the canonical /games/ route')
-assert.ok(mainSource.includes("function EntertainmentRedirect()") && mainSource.includes("path === '/entertainment' ? <EntertainmentRedirect />") && !mainSource.includes("import { EntertainmentCatalog }"), 'React /entertainment route must forward to the canonical Games hub')
-assert.ok(sectionSource.includes("['Entertainment', '/games/']"), 'Secondary OSGARD navigation must link Entertainment directly to Games hub')
+assert.ok(!entertainmentAlias.includes('http-equiv="refresh"') && !entertainmentAlias.includes("window.location.replace('/games/')") && entertainmentAlias.includes('<title>OSGARD ENTERTAINMENT — Играй. Исследуй. Передавай вызов.</title>') && entertainmentAlias.includes('id="world-catalog"') && entertainmentAlias.includes('data-game="aether-grid"'), 'The dedicated Entertainment hub must replace the old redirect and include all game discovery content')
+assert.ok(nginx.includes('location = /entertainment {') && nginx.includes('return 301 /entertainment/;') && !nginx.includes('location ^~ /entertainment/'), 'Only the no-slash alias should normalize; the page and its assets must remain serveable')
+assert.ok(mainSource.includes("import { AurumPage, CatalogPage, ChroniclePage, ClubPage, DevelopmentPage, EntertainmentPage, MastersPage, TimeCoinPage, WorldsPage } from './Sections'") && mainSource.includes("path === '/entertainment' ? <EntertainmentPage locale={locale} setLocale={setLocale} />"), 'React fallback must render the Entertainment route, not bounce visitors to the Games hub')
+assert.ok(sectionSource.includes("['Entertainment', '/entertainment/']"), 'Secondary OSGARD navigation must link directly to the dedicated Entertainment page')
 assert.ok(rootIndex.includes('href="/osgard-mark.svg"') && rootIndex.includes('"logo":"https://osgard.world/osgard-mark.svg"'), 'Root page must use the original OSGARD brand mark for favicon and organization schema')
 assert.ok(existsSync(resolve('public/osgard-mark.svg')), 'Original OSGARD brand mark is present')
 
