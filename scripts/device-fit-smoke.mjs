@@ -16,7 +16,7 @@ for (const id of gameIds) {
 }
 assert.ok(page.includes('/games/device-fit.css?v=__OSGARD_BUILD_VERSION__'), 'device-fit CSS must be versioned with the catalog build');
 assert.ok(page.includes('/games/device-fit.js?v=__OSGARD_BUILD_VERSION__'), 'device-fit JS must be versioned with the catalog build');
-assert.ok(client.includes('getContext(\'webgl2\''), 'must check WebGL 2 through the browser runtime');
+assert.ok(client.includes("canCreateContext('webgl2')"), 'must check WebGL 2 through the browser runtime');
 assert.ok(client.includes('navigator.maxTouchPoints'), 'must detect touch capability without claiming per-game touch support');
 assert.ok(client.includes('prefers-reduced-motion: reduce'), 'must respect reduced motion');
 assert.ok(client.includes('aria-live="polite"'), 'must announce filter results to assistive technology');
