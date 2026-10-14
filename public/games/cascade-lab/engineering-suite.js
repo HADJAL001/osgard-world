@@ -199,7 +199,7 @@ const css = [
   '.cl-engineering{margin:18px 0 22px;padding:clamp(14px,2vw,22px);border:1px solid #7ad8ff32;border-radius:16px;background:radial-gradient(ellipse at 90% 0%,#1761821d,transparent 44%),linear-gradient(145deg,#0b1824,#050d15);color:#e6f1f7;box-shadow:0 16px 45px #0002,inset 0 1px #ffffff08}',
   '.cl-eng-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}.cl-eng-kicker{margin:0;color:#70dbff;font:8px ui-monospace,monospace;letter-spacing:.17em}.cl-eng-pill{padding:5px 8px;border:1px solid #e9ba6a40;border-radius:5px;color:#e9ba6a;font:8px ui-monospace,monospace}',
   '.cl-engineering h3{margin:0;color:#f3f8fb;font:400 clamp(23px,3vw,34px)/1.1 Georgia,serif;letter-spacing:-.025em}.cl-eng-sub{margin:8px 0 13px;color:#9ab1bf;font-size:10px;line-height:1.65}',
-  '.cl-eng-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.cl-eng-card{min-width:0;padding:11px;border:1px solid #8db7cb23;border-radius:10px;background:#06111b}.cl-eng-card small{display:block;color:#6e9aad;font:7px ui-monospace,monospace;letter-spacing:.1em}.cl-eng-card p{margin:6px 0 0;color:#bed0da;font-size:10px;line-height:1.6;overflow-wrap:anywhere}',
+  '.cl-eng-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.cl-eng-card{min-width:0;padding:11px;border:1px solid #8db7cb23;border-radius:10px;background:#06111b}.cl-eng-card small{display:block;color:#6e9aad;font:7px ui-monospace,monospace;letter-spacing:.1em}.cl-eng-card p{margin:6px 0 0;color:#bed0da;font-size:10px;line-height:1.6;overflow-wrap:anywhere}.cl-eng-card:last-child{grid-column:1/-1}.cl-eng-event-list{display:grid;gap:5px;margin-top:7px}.cl-eng-event{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;padding:5px 7px;border:1px solid #83b8cc19;border-radius:6px;background:#07141d;color:#96b3c2;font:8px/1.45 ui-monospace,monospace}.cl-eng-event time{color:#5f8498;white-space:nowrap}.cl-eng-event span{overflow-wrap:anywhere}.cl-eng-event-empty{color:#728f9d;font-size:9px;line-height:1.5}'
   '.cl-eng-next{margin-top:9px;padding:11px 12px;border-left:2px solid #e9ba6a;border-radius:0 8px 8px 0;background:#e9ba6a0b}.cl-eng-next small{color:#b99c68;font:7px ui-monospace,monospace;letter-spacing:.1em}.cl-eng-next p{margin:5px 0 0;color:#edf4f8;font-size:11px;line-height:1.6}',
   '.cl-eng-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:9px}.cl-eng-metric{padding:8px 9px;border:1px solid #81bdd01e;border-radius:8px;background:#07131d}.cl-eng-metric span{display:block;color:#68899a;font:7px ui-monospace,monospace}.cl-eng-metric b{display:block;margin-top:5px;color:#eaf5fa;font:600 16px Georgia,serif;overflow-wrap:anywhere}',
   '.cl-eng-toolbar{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}.cl-eng-button{min-height:36px;padding:8px 10px;border:1px solid #7cc9e638;border-radius:8px;background:#0b2432;color:#b9eaff;font:750 9px system-ui,sans-serif;cursor:pointer}.cl-eng-button.primary{border-color:#e9ba6a;background:linear-gradient(120deg,#f5d28d,#d89b42);color:#211808}.cl-eng-button.danger{border-color:#ff9b8b4a;color:#ffb6a5;background:#2b1619}.cl-eng-button:hover{filter:brightness(1.13)}.cl-eng-button:focus-visible,.cl-eng-input:focus-visible,.cl-eng-check input:focus-visible{outline:2px solid #8ae9ff;outline-offset:3px}',
@@ -226,6 +226,8 @@ host.setAttribute('aria-live', 'polite');
 const header = make('div', 'cl-eng-head');
 header.append(make('p', 'cl-eng-kicker', 'CASCADE LAB / ENGINEERING OS'));
 header.append(make('span', 'cl-eng-pill', 'VERSION ' + VERSION));
+const confidenceBadge = make('span', 'cl-eng-pill', 'ДОВЕРИТЕЛЬНОСТЬ —');
+header.append(confidenceBadge);
 const mainHeading = make('h3', '', 'Понимай запуск. Планируй следующий тест.');
 mainHeading.id = 'cl-eng-title';
 host.append(header, mainHeading);
@@ -241,7 +243,11 @@ const hypothesisCard = make('article', 'cl-eng-card');
 hypothesisCard.append(make('small', '', 'ГИПОТЕЗА · НЕ ФАКТ'));
 const hypothesisBody = make('p', '', 'Сначала наблюдение, затем контролируемая проверка.');
 hypothesisCard.append(hypothesisBody);
-diagnosisGrid.append(evidenceCard, hypothesisCard);
+const eventsCard = make('article', 'cl-eng-card');
+eventsCard.append(make('small', '', 'ПОСЛЕДНИЕ СОБЫТИЯ ДВИЖКА'));
+const eventList = make('div', 'cl-eng-event-list');
+eventsCard.append(eventList);
+diagnosisGrid.append(evidenceCard, hypothesisCard, eventsCard);
 host.append(diagnosisGrid);
 const nextBlock = make('div', 'cl-eng-next');
 nextBlock.append(make('small', '', 'СЛЕДУЮЩИЙ КОНТРОЛИРУЕМЫЙ ТЕСТ'));
@@ -411,11 +417,13 @@ function renderComparison(run) {
   const previous = sameLevelPrevious(run);
   if (!previous) return;
   const comparison = compareRuns(run, previous);
-  evidenceBody.textContent += ' Предыдущая попытка этого протокола: ' + previous.status + ', ' + previous.timeSeconds.toFixed(2) + ' с, ' + previous.deviceCount + ' деталей.';
+  const outcomeText = comparison.outcome === 'recovered' ? 'неудача → успех' : comparison.outcome === 'regressed' ? 'успех → неудача' : 'исход не изменился';
+  evidenceBody.textContent += ' Предыдущая попытка этого протокола: ' + previous.status + ', ' + previous.timeSeconds.toFixed(2) + ' с, ' + previous.deviceCount + ' деталей. Сравнение исхода: ' + outcomeText + '.';
   const impact = showDelta(comparison.impactSpeedDelta, ' px/s');
   nextBody.textContent += ' Дельта к базе: время ' + showDelta(comparison.secondsDelta, ' с') +
     '; детали ' + showDelta(comparison.devicesDelta, '') + '; пик ' + showDelta(comparison.peakSpeedDelta, ' px/s') +
-    '; удар ' + impact + '. Разница наблюдаемая, не причинная.';
+    '; удар ' + impact + '; активации ' + showDelta(comparison.activationsDelta, '') +
+    '; путь ' + showDelta(comparison.distanceDelta, ' px') + '. Разница наблюдаемая, не причинная.';
   status.textContent = 'Сравнение двух записей одного протокола. Повтори контроль перед причинными выводами.';
 }
 function fillFields(run, diagnosis) {
@@ -438,6 +446,17 @@ function renderReport(run) {
   metricEls['ПОСЛЕДНИЙ УДАР'].textContent = Number.isFinite(run.telemetry.lastImpactSpeed) ? Math.round(run.telemetry.lastImpactSpeed) + ' px/s' : '—';
   const result = host.querySelector ? host.querySelector('h3') : null;
   if (result) result.textContent = d.title;
+  const confidenceText = d.confidence === 'HIGH' ? 'ВЫСОКАЯ' : d.confidence === 'MEDIUM' ? 'СРЕДНЯЯ' : 'НИЗКАЯ';
+  confidenceBadge.textContent = 'ДОСТОВЕРНОСТЬ: ' + confidenceText;
+  confidenceBadge.dataset.confidence = d.confidence;
+  eventList.replaceChildren();
+  const recent = run.telemetry.events.slice(-4);
+  if (!recent.length) eventList.append(make('p', 'cl-eng-event-empty', 'Дополнительных событий нет.'));
+  for (const item of recent) {
+    const eventRow = make('div', 'cl-eng-event');
+    eventRow.append(make('time', '', item.t.toFixed(2) + ' с'), make('span', '', item.label));
+    eventList.append(eventRow);
+  }
   fillFields(run, d);
   renderComparison(run);
 }
@@ -447,6 +466,9 @@ function resetReport() {
   hypothesisBody.textContent = 'Сначала наблюдение, затем контролируемая проверка.';
   nextBody.textContent = 'Повтори тот же протокол без изменений как контроль.';
   for (const value of Object.values(metricEls)) value.textContent = '—';
+  confidenceBadge.textContent = 'ДОВЕРИТЕЛЬНОСТЬ —';
+  confidenceBadge.dataset.confidence = 'NONE';
+  eventList.replaceChildren(make('p', 'cl-eng-event-empty', 'Дополнительных событий нет.'));
   hypothesisInput.value = ''; nextInput.value = ''; noteInput.value = '';
   for (const checkbox of Object.values(checkInputs)) checkbox.checked = false;
 }
