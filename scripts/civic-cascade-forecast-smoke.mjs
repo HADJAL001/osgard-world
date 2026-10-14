@@ -263,7 +263,7 @@ const emergencyPlan=searchDoctrinePlans(emergencyBase,'conserve','hub',simulateD
 check(emergencyPlan.reserveRequirements.supplies===20&&emergencyPlan.reserveRequirements.crews===2,'emergency reserve values must be attached to planner result')
 check(emergencyPlan.alternatives.every(candidate=>candidate.remainingSupplies>=20&&candidate.remainingCrews>=2),'critical reserve must not return a plan below twenty supplies or two crews')
 check(emergencyPlan.searchDiagnostics.reserveRejected>=0,'emergency reserve rejection count must be explicit and finite')
-check(explainDoctrineCommandContributions(emergencyBase,emergencyPlan.alternatives[0]||{orders:[],forecast:[]},simulateDirect(emergencyBase),simulatePath(0)).length === (emergencyPlan.alternatives[0]?.orders.length||0),'command attribution count must match the plan length')
+check(explainDoctrineCommandContributions(emergencyPlan.alternatives[0]||{orders:[],forecast:[]},simulateDirect(emergencyBase),simulatePath(0)).length === (emergencyPlan.alternatives[0]?.orders.length||0),'command attribution count must match the plan length')
 
 const causalState = makeState('flood')
 const causalBefore = operationSnapshot(causalState)
