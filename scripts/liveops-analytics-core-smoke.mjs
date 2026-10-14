@@ -108,6 +108,6 @@ const safeJson = JSON.stringify(safeBrief);
 for (const secret of ['private@example.com', 'another@example.com', 'player-secret', 'do-not-export', 'secret-session']) {
   assert.equal(safeJson.includes(secret), false, 'decision brief must not export raw or personal API fields');
 }
-assert.deepEqual(safeBrief.metrics.map(item => item.key), ['events'], 'only whitelisted aggregate metric keys may be exported');
+assert.deepEqual(JSON.parse(JSON.stringify(safeBrief.metrics.map(item => item.key))), ['events'], 'only whitelisted aggregate metric keys may be exported');
 
 console.log('PASS LiveOps analytics core: bounded metrics, period comparison, zero baseline, presets and date validation.');
