@@ -51,6 +51,8 @@ jobs:
         run: npm run qa:pwa
       - name: Regress the complete gaming portal
         run: npm run qa:games-portal
+      - name: Validate CASCADE LAB Failure Autopsy diagnostics
+        run: npm run qa:cascade-lab-autopsy
       - name: Regress sponsor campaign privacy and server contracts
         run: npm run qa:campaign-manager
       - name: Test Commerce API allow-lists and consent gates
