@@ -345,6 +345,19 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
   } catch (error) { results.push({ device, route, status: 0, ok: false, error: String(error), durationMs: Date.now() - started }) }
 }
 const failed = results.filter(item => !item.ok)
+const failureSummary = failed.map(item => ({
+  device: item.device,
+  route: item.route,
+  status: item.status,
+  ...(item.error ? { error: item.error.slice(0, 500) } : {}),
+  ...(item.build && !item.build.matches ? { build: item.build } : {}),
+  ...(item.assets ? { failedAssets: item.assets.filter(asset => !asset.ok).map(asset => ({ path: asset.path, status: asset.status, contentType: asset.contentType })) } : {}),
+  durationMs: item.durationMs
+}))
+if (failureSummary.length) {
+  console.error('OSGARD production route failures (' + failureSummary.length + '):')
+  console.error(JSON.stringify(failureSummary, null, 2))
+}
 const failureDetails = summarizeRouteFailures(failed)
 const report = { schema: 'osgard.production-route-matrix.v1', sourceRevision: expectedBuild || null, base, checkedAt: new Date().toISOString(), routes: results.length, failed: failed.length, status: failed.length ? 'failed' : 'ready', ...(failureDetails.length ? { failureDetails } : {}), results }
 const reportPath = process.env.OSGARD_ROUTE_MATRIX_REPORT || 'production-route-matrix.json'
