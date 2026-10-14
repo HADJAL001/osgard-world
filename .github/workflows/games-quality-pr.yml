@@ -54,5 +54,7 @@ jobs:
         run: npm run qa:player-console
       - name: Sponsor campaign manager safety and route smoke
         run: npm run qa:campaign-manager
+      - name: Player feedback intake and admin privacy checks
+        run: npm run qa:game-feedback
       - name: Economy model regression
         run: npm run qa:games-model
