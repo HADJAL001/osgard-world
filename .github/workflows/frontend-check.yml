@@ -25,6 +25,8 @@ on:
       - "scripts/osgard-performance-budget.test.mjs"
       - "scripts/osgard-release-attestation.mjs"
       - "scripts/osgard-release-attestation.test.mjs"
+      - "scripts/liveops-dashboard-logic.test.mjs"
+      - "scripts/liveops-dashboard-smoke.mjs"
       - "scripts/generate-games-share-cards.mjs"
       - "docs/34_OSGARD_CONTRACT_INTEGRITY_ENGINE_2026-10-14.md"
       - "docs/35_OSGARD_RELEASE_QUALITY_ATTESTATION_2026-10-14.md"
@@ -93,6 +95,8 @@ jobs:
         run: npm run qa:performance-budget-tests
       - name: Test build-attestation tamper resistance
         run: npm run qa:release-attestation
+      - name: Verify premium LiveOps dashboard logic and privacy
+        run: npm run qa:liveops-dashboard
       - name: Test OpenAI reviewer offline (no API call)
         run: npm run qa:ai-release-review
       - name: Verify Godot diagnostics fault contract
