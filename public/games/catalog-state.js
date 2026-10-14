@@ -11,7 +11,7 @@
   function cleanGameIds(raw, allowedIds = []) {
     const allowed = allowedIds instanceof Set ? allowedIds : new Set(Array.isArray(allowedIds) ? allowedIds : []);
     const candidates = String(raw ?? '').split(',').map(value => value.trim().toLowerCase());
-    return Array.from(new Set(candidates.filter(id => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id) && allowed.has(id)))).slice(0, 11);
+    return Array.from(new Set(candidates.filter(id => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id) && allowed.has(id)))).slice(0, Math.min(100, allowed.size));
   }
   window.OSGARDCatalogState = Object.freeze({ normalizedState, cleanGameIds });
 
@@ -39,7 +39,7 @@
   function readStoredFavorites() {
     try {
       const values = JSON.parse(localStorage.getItem('osgard.games.favorites.v1') || '[]');
-      return Array.isArray(values) ? Array.from(new Set(values.filter(id => typeof id === 'string' && allowedGameIds.has(id)))).slice(0, 11) : [];
+      return Array.isArray(values) ? Array.from(new Set(values.filter(id => typeof id === 'string' && allowedGameIds.has(id)))).slice(0, Math.min(100, allowedGameIds.size)) : [];
     } catch { return []; }
   }
 
