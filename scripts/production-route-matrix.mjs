@@ -166,8 +166,9 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
             text.includes('function proposalForPair(pair)') && text.includes('function reconcilePlan(') &&
             !text.includes('fetch(') && !text.includes('XMLHttpRequest') && !text.includes('sendBeacon')
         : route === '/games/cascade-lab/'
-          ? text.includes('<title>CASCADE LAB — Premium Physics Lab 0.24.0</title>') &&
-            text.includes('name="osgard-game-version" content="0.24.0-shareable-contracts"') &&
+          ? text.includes('<title>CASCADE LAB — Premium Physics Lab 0.25.0</title>') &&
+            text.includes('name="osgard-game-version" content="0.25.0-evidence-integrity"') &&
+            text.includes('data-cascade-lab-evidence="0.25.0"') &&
             text.includes('data-cascade-lab-upgrades="0.14.0"') && text.includes('CASCADELAB014') &&
             text.includes('data-cascade-lab-ledger="0.15.0"') && text.includes('CASCADELAB015') && text.includes('id="CASCADELAB017"') && text.includes('data-cascade-lab-delta="0.17.0"') &&
             text.includes('id="CASCADELAB018"') && text.includes('data-cascade-lab-experiment="0.18.0"') && text.includes('hypothesis-lab.js?v=0.18.0') &&
@@ -176,7 +177,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
             text.includes('id="runButton"') && text.includes('id="exportTelemetryButton"') &&
             text.includes('id="exportGrowthButton"') && text.includes('id="serviceAdDialog"') &&
             text.includes('id="serviceAdChoices"') && text.includes('Я поделился — получить +10 LC') &&
-            text.includes("notifyOsgardLifecycle('ready', { version: '0.24.0' })") && text.includes("notifyOsgardLifecycle('ready'") && text.includes("notifyOsgardLifecycle('started'") &&
+            text.includes("notifyOsgardLifecycle('ready', { version: '0.25.0' })") && text.includes("notifyOsgardLifecycle('ready'") && text.includes("notifyOsgardLifecycle('started'") &&
             text.includes("notifyOsgardLifecycle('paused'") && text.includes("notifyOsgardLifecycle('resumed'") &&
             text.includes("notifyOsgardLifecycle('level_completed'") && !text.includes("notifyOsgardLifecycle('completed'") &&
             text.includes('id="CASCADELAB019"') && text.includes('data-cascade-lab-engineering="0.19.0"') &&
