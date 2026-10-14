@@ -629,7 +629,7 @@ function servicesShelf(gameId,showPromos,completedCount){
   open.addEventListener('click',()=>{
    if(!hasConsent())return;
    const seenKey=gameId+':'+item[0]+':'+variant;
-   if(!spotlight.hidden&&spotlight.isConnected&&document.visibilityState==='visible'&&claimPromoImpression('spotlight:'+seenKey)){
+   if(canCountSpotlightImpression(spotlightIsVisible,hasConsent(),spotlight.isConnected,spotlight.hidden,document.visibilityState!=='visible',spotlight.dataset.service,item[0])&&claimPromoImpression('spotlight:'+seenKey)){
     spotlightSeen.add(seenKey);clearSpotlightImpression();
     if(spotlightObserver){spotlightObserver.disconnect();spotlightObserver=null}
     void sendSelectEvent('owned_promo_impression',gameId,'osgard-select:spotlight:'+item[0]+':'+variant);
