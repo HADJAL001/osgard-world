@@ -22,6 +22,8 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
+      - name: Test the OpenAI reviewer offline
+        run: npm run qa:ai-release-review
       - name: Typecheck
         run: npm run check
       - name: Validate NULL SHIFT standalone game
