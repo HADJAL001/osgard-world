@@ -64,6 +64,8 @@ for (const marker of [
 assert.ok(publicPage.includes('id="catalog"'), "Existing playable catalog must remain");
 assert.ok(publicScript.includes("osgard.games.sponsor-exposures.v1"));
 assert.ok(publicScript.includes("if (consentGranted() && !storageForConsent()) return"), "When consent is enabled, hide sponsor cards if persistent frequency capping cannot be honoured");
+assert.ok(publicScript.includes("if ('IntersectionObserver' in window) {") && publicScript.includes("rootMargin: '400px 0px'"), "Lazy loading must start before any storage check, including when consent is declined.");
+assert.ok(!publicScript.includes("() => sessionStorage"), "24-hour frequency caps must not silently degrade to per-tab session storage.");
 assert.ok(publicScript.includes("if (!consentGranted()) return true; // Ads may display, but no persistent cap/metrics are stored."), "Declined analytics consent must not create persistent local tracking.");
 assert.ok(publicScript.includes("entry.intersectionRatio < 0.5") && publicScript.includes("}, 1000)"), "Impressions must require real visible time");
 assert.ok(publicScript.includes("window.OSGARD_CONSENTED_ANALYTICS") && publicScript.includes("sponsored_campaign_clicked"));
