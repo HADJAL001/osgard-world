@@ -82,8 +82,8 @@
       setStatus('#restore-status', 'Локальные данные изменились после резервного копирования. Скачайте свежую копию перед восстановлением.', 'warn');
     }
   }
-  function downloadFile(name, payload) {
-    const blob = new Blob([payload], { type: 'application/json;charset=utf-8' });
+  function downloadFile(name, payload, mimeType) {
+    const blob = new Blob([payload], { type: mimeType || 'application/json;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
@@ -102,11 +102,12 @@
       const inventory = safeInventory();
       state.current = inventory;
       const result = await core.createBackup(window.localStorage, window.crypto, encoder, new Date());
+      state.current = result.inventory;
       const serialized = JSON.stringify(result.backup, null, 2) + '\n';
       if (encoder.encode(serialized).byteLength > core.MAX_BACKUP_BYTES) throw new Error('Файл превышает допустимый размер.');
       downloadFile('osgard-player-vault-' + safeFileDate(new Date()) + '.json', serialized);
       if (markAsBackup) {
-        state.backupMarker = signature(inventory.entries);
+        state.backupMarker = signature(result.inventory.entries);
         setStatus('#inventory-status', 'Резервная копия текущего состояния скачана. Теперь можно безопасно восстановить выбранный файл.', 'good');
       } else {
         setStatus('#inventory-status', 'Резервная копия скачана. Файл не зашифрован — храните его в безопасном месте.', 'good');
@@ -214,7 +215,7 @@
       'Резервная копия не отправляется на сервер. Она не включает токены, согласия, аналитику, коды приглашений, платёжные данные или sessionStorage.',
       'Поддержка: избранное каталога, локальный мир INHERIT, этапы INHERIT, серия и дневные рекорды SIGNAL RUN.'
     ].join('\n');
-    downloadFile('osgard-player-vault-report-' + safeFileDate(new Date()) + '.txt', summary);
+    downloadFile('osgard-player-vault-report-' + safeFileDate(new Date()) + '.txt', summary, 'text/plain;charset=utf-8');
   });
   $('#menu-toggle').addEventListener('click', () => {
     const nav = $('#mobile-nav');
