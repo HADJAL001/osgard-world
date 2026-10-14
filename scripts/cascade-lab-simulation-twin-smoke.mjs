@@ -11,7 +11,7 @@ assert.match(html, /osgard-game-version" content="0\.26\.0-simulation-twin"/);
 assert.match(html, /<title>CASCADE LAB — Premium Physics Lab 0\.26\.0<\/title>/);
 assert.ok(html.includes('id="CASCADELAB026"') && html.includes('physics-twin.js?v=0.26.0') && html.includes('data-cascade-lab-twin="0.26.0"'));
 assert.ok(html.includes('osgard-game-pwa" content="0.26.0-offline-field-device'));
-assert.ok(html.includes('new CustomEvent(\\'cascade-lab:run-finished\\''));
+assert.ok(html.includes("new CustomEvent('cascade-lab:run-finished'"));
 assert.ok(html.includes("notifyOsgardLifecycle('ready', { version: '0.26.0' })"));
 assert.ok(worker.includes("'./physics-twin.js?v=0.26.0'"), 'the Simulation Twin module must be precached for offline installations');
 assert.ok(!source.includes('fetch(') && !source.includes('XMLHttpRequest') && !source.includes('sendBeacon('), 'the UI must not upload simulations');
@@ -20,10 +20,10 @@ assert.ok(source.includes('runtime.runControl') && source.includes('runtime.angl
 assert.ok(routeMatrix.includes("'/games/cascade-lab/physics-twin.js?v=0.26.0'") || routeMatrix.includes("'/games/cascade-lab/physics-twin.js'"), 'production route matrix must include the new asset');
 
 const levelStart = html.indexOf('const LEVELS = [');
-const levelEnd = html.indexOf('\\nfunction getLevel', levelStart);
+const levelEnd = html.indexOf('\nfunction getLevel', levelStart);
 const worldStart = html.indexOf('const WORLD = {');
 const twinStart = html.indexOf('// CASCADE LAB 0.26 — isolated deterministic runs powered by the shipping physics engine.');
-const twinEnd = html.indexOf('\\n\\nfunction findPlacementAnchor', twinStart);
+const twinEnd = html.indexOf('\n\nfunction findPlacementAnchor', twinStart);
 assert.ok(levelStart >= 0 && levelEnd > levelStart, 'the production level registry must be extractable for headless test');
 assert.ok(worldStart > levelEnd && twinStart > worldStart && twinEnd > twinStart, 'the actual production physics engine and Simulation Twin runtime must be present');
 
@@ -41,7 +41,7 @@ const buildHarness = new Function('window', [
   'let devices = ' + JSON.stringify(testDevices) + ';',
   twinRuntime,
   'return window.CASCADELAB026_RUNTIME;'
-].join('\\n'));
+].join('\n'));
 const api = buildHarness({});
 assert.ok(api && api.version === '0.26.0', 'runtime adapter must be exposed by the real game code');
 assert.equal(api.schema, 'osgard.cascade-lab.simulation-twin.v1');
