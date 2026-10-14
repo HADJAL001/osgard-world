@@ -122,6 +122,7 @@ function persistRuns(){
 }
 function stopPlayback(){if(playback!==null)window.clearInterval(playback);playback=null;playButton.textContent='▶ Прокрутить';}
 function selectedPoint(){return currentRun&&currentRun.points.length?currentRun.points[clamp(currentIndex,0,currentRun.points.length-1)]:null;}
+function previousRunFor(run){return run?runs.find(other=>other.id!==run.id&&other.levelId===run.levelId&&Date.parse(other.capturedAt)<Date.parse(run.capturedAt))||null:null;}
 function nearestIndex(run,seconds){if(!run||!run.points.length)return 0;let bestIndex=0,bestDistance=Infinity;run.points.forEach((point,index)=>{const distance=Math.abs(point.t-seconds);if(distance<bestDistance){bestDistance=distance;bestIndex=index;}});return bestIndex;}
 function mapPoint(point){return{x:46+clamp(point.x/WORLD.width,0,1)*914,y:38+clamp(point.y/WORLD.height,0,1)*470};}
 function plotLine(points,cls){if(points.length<2)return null;const coords=points.map(mapPoint);return svgNode('polyline',{class:cls,points:coords.map(p=>p.x.toFixed(1)+','+p.y.toFixed(1)).join(' ')});}
@@ -135,7 +136,7 @@ function renderPlot(){
  const defs=svgNode('defs'),grad=svgNode('linearGradient',{id:'clFlightGradient',x1:'0%',y1:'0%',x2:'100%',y2:'0%'});
  grad.append(svgNode('stop',{offset:'0%','stop-color':'#68d7ff'}),svgNode('stop',{offset:'58%','stop-color':'#8bafff'}),svgNode('stop',{offset:'100%','stop-color':'#e9ba6a'}));defs.append(grad);svg.append(defs);addGrid();
  if(!currentRun||currentRun.points.length<2){const empty=svgNode('text',{x:500,y:270,'text-anchor':'middle'});empty.textContent='Заверши запуск — и траектория появится здесь';svg.append(empty);return;}
- const previous=runs.find(run=>run.id!==currentRun.id&&run.levelId===currentRun.levelId);
+ const previous=previousRunFor(currentRun);
  if(compareEnabled&&previous){const baseline=plotLine(previous.points,'trace-compare');if(baseline)svg.append(baseline);}
  const trace=plotLine(currentRun.points,'trace-line');if(trace)svg.append(trace);
  const first=mapPoint(currentRun.points[0]),last=mapPoint(currentRun.points[currentRun.points.length-1]);
@@ -144,7 +145,7 @@ function renderPlot(){
   if(!finite(event.x)||!finite(event.y))continue;
   const pos=mapPoint({x:event.x,y:event.y}),mark=svgNode('circle',{class:'flight-event',cx:pos.x,cy:pos.y,r:5,tabindex:0,role:'button','aria-label':event.label+', '+event.t.toFixed(2)+' seconds'});
   const title=svgNode('title');title.textContent=event.label+' · '+event.t.toFixed(2)+' с';mark.append(title);
-  const jump=()=>{currentIndex=nearestIndex(currentRun,event.t);renderFrame();};mark.addEventListener('click',jump);
+  const jump=()=>{stopPlayback();currentIndex=nearestIndex(currentRun,event.t);renderFrame();};mark.addEventListener('click',jump);
   mark.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();jump();}});svg.append(mark);
  }
  const point=selectedPoint();
@@ -160,7 +161,7 @@ function renderPlot(){
 }
 function deltaText(value,unit){return value===null?'—':(value>0?'+':'')+String(value).replace('.',',')+(unit||'');}
 function renderComparisonText(){
- if(!currentRun)return;const previous=runs.find(run=>run.id!==currentRun.id&&run.levelId===currentRun.levelId);if(!previous)return;
+ if(!currentRun)return;const previous=previousRunFor(currentRun);if(!previous)return;
  const d=compareRuns(currentRun,previous),outcome=d.outcome==='recovered'?'неудача → успех':d.outcome==='regressed'?'успех → неудача':'исход без изменений';
  status.textContent='Сравнение того же уровня: '+outcome+'; время '+deltaText(d.secondsDelta,' с')+'; детали '+deltaText(d.deviceDelta,'')+'. Золотая линия — предыдущая запись. Это визуальное сравнение, а не доказательство причинности.';
 }
