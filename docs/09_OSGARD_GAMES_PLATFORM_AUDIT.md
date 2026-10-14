@@ -226,3 +226,10 @@ The current Games hub includes a first-party “between worlds” promotion surf
 - **Test coverage:** `npm run qa:games-portal`, `npm run qa:osgard-select` and `npm run qa:consented-analytics-queue` enforce the service destinations, shared preference keys, default cadence, self-confirmation, local daily cap, analytics allow-list and no-copy-reward rule.
 
 The important commercial boundary remains: owned-service cross-promotion is implemented; an external ad network, independently verified social post, and server-authoritative/cross-device SHARDS wallet are not claimed as live features.
+
+
+## 8. Embedded player hardening — 14 October 2026
+
+This pass targets the actual game-detail iframe rather than rebuilding features already in the portal. It adds a 15-second startup watchdog, a slow-start hint at 4.5 seconds, per-attempt guards to ignore stale iframe callbacks, cleanup for all scheduled timers, a retry that remounts the iframe, separate error reasons, a loading progress indicator without invented percentages, polite/urgent accessible status announcements, focus return, Escape-to-close from the parent UI, synchronized fullscreen state and an explicit retry/share/standalone recovery panel. The new CSS handles narrow screens and `prefers-reduced-motion`. `games-detail-smoke.mjs` now guards these contracts in CI.
+
+The code has been committed to an isolated feature branch; type-check/build/smoke must pass in GitHub Actions before merge. No production deployment or device-level testing is claimed.
