@@ -84,11 +84,11 @@ try {
     error => /Contract report no longer matches release manifest field/.test(String(error.stderr || '') + String(error.message || '')))
   writeFileSync(contractPath, originalContractReport)
 
-  writeFileSync(join(artifact, 'assets', 'app.js'), 'globalThis.appReady = false;\\n')
+  writeFileSync(join(artifact, 'assets', 'app.js'), 'globalThis.appReady = false;\n')
   assert.throws(() => execFileSync(process.execPath, ['scripts/verify-release-manifest.mjs', artifact], { encoding: 'utf8', env }),
     error => /Release manifest integrity mismatch/.test(String(error.stderr || '') + String(error.message || '')))
-  writeFileSync(join(artifact, 'assets', 'app.js'), 'globalThis.appReady = true;\\n')
-  writeFileSync(join(artifact, '.env.production'), 'MUST_NOT_SHIP=true\\n')
+  writeFileSync(join(artifact, 'assets', 'app.js'), 'globalThis.appReady = true;\n')
+  writeFileSync(join(artifact, '.env.production'), 'MUST_NOT_SHIP=true\n')
   assert.throws(() => execFileSync(process.execPath, [tool, artifact], { encoding: 'utf8', env }),
     error => /Secret-like file is not permitted/.test(String(error.stderr || '') + String(error.message || '')))
   rmSync(join(artifact, '.env.production'))
