@@ -592,7 +592,9 @@ assert.equal(shouldShowPromo(defaultPreferences,1,()=>Date.now()+3600000),false,
 assert.equal(shouldShowPromo(defaultPreferences,1,noPromoPause),true,'Once the pause is cleared, the saved frequency takes effect again')
 mockLocalStorage.setItem('osgard.games.postgame-service-preferences.v1',JSON.stringify({frequency:'each',selected:serviceIdsForCadence}))
 
-new Function('document','window','location','localStorage','sessionStorage',recommendationScript)(mockDocument,{}, {search:'',origin:'https://osgard.world',pathname:'/games/'},mockLocalStorage,mockSessionStorage)
+const mockWindowHandlers={}
+const mockWindow={OSGARD_CONSENTED_ANALYTICS:null,location:{origin:'https://osgard.world',pathname:'/games/'},addEventListener(name,handler){(mockWindowHandlers[name]??=[]).push(handler)},dispatchEvent(event){(mockWindowHandlers[event.type]||[]).forEach(handler=>handler(event));return true}}
+new Function('document','window','location','localStorage','sessionStorage',recommendationScript)(mockDocument,mockWindow, {search:'',origin:'https://osgard.world',pathname:'/games/'},mockLocalStorage,mockSessionStorage)
 const firstSessionId='session_swarm_qa_1000'
 mockDocument.dispatch('osgard:game-completed',{detail:{game:'swarm',sessionId:firstSessionId}})
 const firstProgress=JSON.parse(mockLocalStorage.getItem('osgard.games.postgame-service-progress.v1'))
