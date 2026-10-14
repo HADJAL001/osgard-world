@@ -1006,12 +1006,14 @@ function assessDoctrineRobustness(sourceState,orders,nominalScore,simulateOrders
   const baseValid=validateDoctrineForecast(baselineForecast,horizons,nodeDefinitions),candidateValid=validateDoctrineForecast(candidateForecast,horizons,nodeDefinitions);
   if(!baseValid.valid||!candidateValid.valid)throw new Error('Stress simulation returned an invalid forecast for '+profile.id);
   const baseEnd=baselineForecast[baselineForecast.length-1],candidateEnd=candidateForecast[candidateForecast.length-1];
-  const baselineRiskTrajectory=[baselineDirect.risk,...baselineForecast.map(sample=>sample.risk)];
-  const candidateRiskTrajectory=[planDirect.risk,...candidateForecast.map(sample=>sample.risk)];
-  const baselineRiskExposure=doctrineRiskExposure(baselineDirect.risk,baselineForecast);
-  const candidateRiskExposure=doctrineRiskExposure(planDirect.risk,candidateForecast);
+  const baselineRiskAtT0=doctrineRiskForState(baselineState),candidateRiskAtT0=doctrineRiskForState(candidateState);
+  const baselineWeakestAtT0=Math.min(...Object.values(baselineState.nodeIntegrity||{})),candidateWeakestAtT0=Math.min(...Object.values(candidateState.nodeIntegrity||{}));
+  const baselineRiskTrajectory=[baselineRiskAtT0,...baselineForecast.map(sample=>sample.risk)];
+  const candidateRiskTrajectory=[candidateRiskAtT0,...candidateForecast.map(sample=>sample.risk)];
+  const baselineRiskExposure=doctrineRiskExposure(baselineRiskAtT0,baselineForecast);
+  const candidateRiskExposure=doctrineRiskExposure(candidateRiskAtT0,candidateForecast);
   const trajectory=[
-   {seconds:0,baselineRisk:baselineDirect.risk,candidateRisk:planDirect.risk,riskDelta:planDirect.risk-baselineDirect.risk},
+   {seconds:0,baselineRisk:baselineRiskAtT0,candidateRisk:candidateRiskAtT0,riskDelta:candidateRiskAtT0-baselineRiskAtT0},
    ...horizons.map((seconds,index)=>({seconds,baselineRisk:baselineForecast[index].risk,candidateRisk:candidateForecast[index].risk,riskDelta:candidateForecast[index].risk-baselineForecast[index].risk}))
   ];
   return {
@@ -1025,8 +1027,8 @@ function assessDoctrineRobustness(sourceState,orders,nominalScore,simulateOrders
    baselineRiskExposure,candidateRiskExposure,riskExposureDelta:candidateRiskExposure-baselineRiskExposure,
    peakRiskBaseline:Math.max(...baselineRiskTrajectory),peakRiskCandidate:Math.max(...candidateRiskTrajectory),
    peakRiskDelta:Math.max(...candidateRiskTrajectory)-Math.max(...baselineRiskTrajectory),
-   baselineWeakestTrajectory:[Math.min(...Object.values(baselineDirect.state.nodeIntegrity||{})),...baselineForecast.map(sample=>sample.weakestIntegrity)],
-   candidateWeakestTrajectory:[Math.min(...Object.values(planDirect.state.nodeIntegrity||{})),...candidateForecast.map(sample=>sample.weakestIntegrity)]
+   baselineWeakestTrajectory:[baselineWeakestAtT0,...baselineForecast.map(sample=>sample.weakestIntegrity)],
+   candidateWeakestTrajectory:[candidateWeakestAtT0,...candidateForecast.map(sample=>sample.weakestIntegrity)]
   };
  });
  const averageRiskDelta=profiles.reduce((sum,p)=>sum+p.riskDelta90,0)/Math.max(1,profiles.length);
@@ -1119,6 +1121,7 @@ function explainDoctrineTradeoff(candidate,baseline,visibleCandidates){
 
 const DOCTRINE_MIN_SUPPLY_RESERVE=15;
 const DOCTRINE_MIN_CREW_RESERVE=1;
+function doctrineRiskForState(s){return Math.round(clamp(s.water*.38+(100-s.grid)*.34+(100-s.access)*.28+s.riskOffset))}
 function validateDoctrineForecast(samples,horizons,nodeDefinitions){
  const errors=[],fail=message=>errors.push(message);
  if(!Array.isArray(samples)||samples.length!==horizons.length){return {valid:false,errors:['Прогноз должен содержать заданное число горизонтов.']}}
