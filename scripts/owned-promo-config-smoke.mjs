@@ -80,4 +80,8 @@ assert.ok(player.includes('managedPromoConfig.spotlightService!==\'auto\''), 'Ad
 assert.ok(player.includes('if(managedPromoConfig.showShareRewards)panels.push(rewardShelf(id))'), 'Admin reward switch must govern the intermission reward shelf');
 assert.ok(player.includes("document.addEventListener('osgard:owned-promo-config-updated'"), 'Open intermission must refresh after configuration arrives');
 assert.ok(player.includes('localStorage.getItem(servicePreferencesKey)'), 'Existing individual preferences must be retained');
+assert.ok(player.includes('stored.schemaVersion!==2&&managedPromoConfig.enabledServices.includes(\'gardvpn\')&&!selected.includes(\'gardvpn\')'), 'Saved preferences from before schema v2 must add GARD VPN without losing the previously selected services');
+assert.ok(player.includes('const migrated={schemaVersion:2,frequency,selected}'), 'Player preference migration must be persisted as schema v2');
+assert.ok(player.includes('frequency:frequencyValues.includes(stored.frequency)?stored.frequency:fallback.frequency'), 'Existing frequency choices remain intact during migration');
+
 console.log('PASS OSGARD SELECT managed config: allow-list, validation, PostgreSQL persistence, protected/rate-limited writes, admin controls and player intermission wiring.');
