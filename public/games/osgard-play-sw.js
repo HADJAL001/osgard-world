@@ -6,7 +6,7 @@
  * admin, operator, checkout-success or cross-origin requests.
  */
 const CACHE_PREFIX = 'osgard-play-shell-';
-const CACHE_NAME = 'osgard-play-shell-v1.0.0';
+const CACHE_NAME = 'osgard-play-shell-v1.0.1';
 const PRECACHE_URLS = [
   '/games/',
   '/games/index.html',
@@ -25,7 +25,9 @@ const PRECACHE_URLS = [
   '/games/expedition/app.js',
   '/games/expedition/catalog-runtime.js',
   '/games/expedition/expedition.css'
-];
+
+  '/games/device-fit.js',
+  '/games/device-fit.css',];
 const PUBLIC_STATIC_ALLOWLIST = new Set([
   '/games/app.webmanifest',
   '/games/osgard-play-icon.svg',
@@ -41,7 +43,9 @@ const PUBLIC_STATIC_ALLOWLIST = new Set([
   '/games/expedition/catalog-runtime.js',
   '/games/expedition/expedition.css',
   '/games/favicon.svg'
-]);
+
+  '/games/device-fit.js',
+  '/games/device-fit.css',]);
 
 function mustBypass(pathname) {
   return pathname === '/games/commerce-config.json'
