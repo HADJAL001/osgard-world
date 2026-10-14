@@ -41,7 +41,13 @@
       const date = new Date(aetherDay + 'T00:00:00.000Z');
       return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === aetherDay;
     })();
-    if (game === 'aether-grid' && validAetherDay) target.searchParams.set('day', aetherDay);
+    if (['aether-grid','signal-run','null-shift'].includes(game) && validAetherDay) target.searchParams.set('day', aetherDay);
+    if (game === 'signal-run' && validAetherDay && params.get('og_daily_mode') === 'daily') target.searchParams.set('mode', 'daily');
+    if (game === 'null-shift' && validAetherDay) {
+      const month = Number(aetherDay.slice(5,7)), date = Number(aetherDay.slice(8,10));
+      const expectedChallenge = 'NS-' + aetherDay.replace(/-/g,'') + '-C' + (((month + date) % 3) + 1);
+      if (params.get('og_challenge') === expectedChallenge) target.searchParams.set('challenge', expectedChallenge);
+    }
     if (game && validGameIds.has(game)) target.searchParams.set('og_game', game);
     if (valid) {
       target.searchParams.set('og_ref', code);
