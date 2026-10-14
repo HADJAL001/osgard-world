@@ -569,7 +569,8 @@ const mockHead=mockNode()
 const mockDocument={head:mockHead,querySelector(selector){return selector==='#post-run-recommendations'?mockHost:selector==='#osgard-aftergame-intermission'?mockOutside:selector==='#player-dialog'?mockDialog:null},createElement(){return mockNode()},addEventListener(name,handler){(mockHandlers[name]??=[]).push(handler)},dispatch(name,event={}){const handlers=mockHandlers[name]||[];assert.ok(handlers.length,'Missing recommendation/growth lifecycle listener: '+name);handlers.forEach(handler=>handler(event))}}
 const mockStorage=()=>{const values=new Map();return{getItem(key){return values.has(key)?values.get(key):null},setItem(key,value){values.set(key,String(value))},removeItem(key){values.delete(key)}}}
 const mockLocalStorage=mockStorage(),mockSessionStorage=mockStorage()
-const serviceIdsForCadence=['marcosa','projects','o2-system','senjorio','superday','myosa','gold-glamour','osgard-business','vanguard']
+const serviceIdsForCadence=['marcosa','projects','o2-system','senjorio','superday','myosa','gold-glamour','osgard-business','vanguard','partner-studio']
+const legacyServicePreferenceIds=serviceIdsForCadence.filter(id=>id!=='partner-studio')
 const preferenceStart=recommendationScript.indexOf('function readServicePreferences(){')
 const preferenceEnd=recommendationScript.indexOf('\nfunction writeServicePreferences(',preferenceStart)
 assert.ok(preferenceStart>=0&&preferenceEnd>preferenceStart,'Service preference reader must be independently testable')
@@ -577,6 +578,7 @@ const preferenceReaderSource=recommendationScript.slice(preferenceStart,preferen
 const emptyPreferenceStorage={getItem(){return null}}
 const defaultPreferences=new Function('localStorage','memoryServicePreferences','servicePreferencesKey','availableServiceIds','frequencyValues',preferenceReaderSource+';return readServicePreferences()')(emptyPreferenceStorage,null,'osgard.games.postgame-service-preferences.v1',serviceIdsForCadence,['each','every3','off'])
 assert.equal(defaultPreferences.frequency,'each','A new player should see the owned-service chooser after every completed round')
+assert.ok(!new Function('localStorage','memoryServicePreferences','servicePreferencesKey','availableServiceIds','frequencyValues',preferenceReaderSource+';return readServicePreferences()')(emptyPreferenceStorage,null,'osgard.games.postgame-service-preferences.v1',legacyServicePreferenceIds,['each','every3','off']).selected.includes('partner-studio'),'An existing explicit preference list must not silently opt the user into a new promotional service')
 const cadenceStart=recommendationScript.indexOf('function shouldShowServicePromos(')
 const cadenceEnd=recommendationScript.indexOf('\nfunction chooseSpotlightService(',cadenceStart)
 assert.ok(cadenceStart>=0&&cadenceEnd>cadenceStart,'Service promotion cadence gate must be independently testable')
@@ -619,9 +621,9 @@ const postGameServiceShelf=mockSuite.children[0];
 const postGamePreferences=postGameServiceShelf.children.find(node=>node.className==='og-postgame-preferences');
 const postGameServiceOptions=postGamePreferences?.children.find(node=>node.className==='og-postgame-service-options');
 assert.ok(postGamePreferences&&postGamePreferences.hidden,'Service preferences must be available but collapsed by default')
-assert.equal(postGameServiceOptions?.children.length,10,'Service preferences must offer all ten owned projects')
+assert.equal(postGameServiceOptions?.children.length,11,'Service preferences must show all eleven owned services, including the disabled VPN choice')
 const servicePreferenceInputs=(postGameServiceOptions?.children||[]).map(option=>option.children[0]);
-assert.equal(servicePreferenceInputs.filter(input=>input.checked&&!input.disabled).length,9,'Default preferences select only the nine eligible promotional services')
+assert.equal(servicePreferenceInputs.filter(input=>input.checked&&!input.disabled).length,10,'The saved preference list selects ten eligible services, including Partner Studio, but excludes the disabled VPN')
 const unavailableServiceChoice=servicePreferenceInputs.find(input=>input.dataset.servicePreference==='gardvpn');
 assert.ok(unavailableServiceChoice&&unavailableServiceChoice.disabled,'GARD VPN remains visible in preferences but disabled until functional VPN connectivity is verified')
 const frequencyField=postGamePreferences.children.find(node=>node.className==='og-postgame-frequency-label');
@@ -637,7 +639,7 @@ assert.ok(recommendationScript.includes("'signal-run':['myosa','projects','super
 assert.ok(recommendationScript.includes("const spotlightOptions=[...relevantOrder,...selectedIds.filter(id=>!relevantOrder.includes(id))]"),'The alternate-project control must cycle relevant suggestions first, then all other services selected by the player')
 assert.ok(spotlight.children.some(node=>node.className==='og-postgame-spotlight-copy'),'Spotlight needs an editorial service description and action controls')
 const serviceFilters=servicesSection.children.find(node=>node.className==='og-postgame-service-filters')
-assert.equal(serviceFilters.children[0].textContent,'Все доступные · 9','The all-services filter must count only the nine currently eligible promotional projects')
+assert.equal(serviceFilters.children[0].textContent,'Все доступные · 10','The all-services filter must count only the ten eligible promotional services and exclude the disabled VPN')
 const serviceGrid=servicesSection.children.find(node=>node.className==='og-postgame-service-grid')
 const serviceCards=serviceGrid.children
 assert.equal(serviceGrid.hidden,true,'The full service directory should be collapsed under the spotlight by default')
