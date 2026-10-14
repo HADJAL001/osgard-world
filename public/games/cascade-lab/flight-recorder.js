@@ -51,7 +51,7 @@ function normaliseRun(raw) {
 function validateArchive(raw) {
   if(!raw||typeof raw!=='object'||raw.schema!==SCHEMA||raw.schemaVersion!==1||!Array.isArray(raw.runs))return {ok:false,reason:'Неизвестная схема записи.'};
   if(raw.runs.length>MAX_RUNS)return {ok:false,reason:'Архив превышает лимит в '+MAX_RUNS+' запусков.'};
-  let sourceSize=0;try{sourceSize=JSON.stringify(raw).length;}catch{return {ok:false,reason:'Архив не удалось прочитать.'};}
+  let sourceSize=0;try{sourceSize=new TextEncoder().encode(JSON.stringify(raw)).byteLength;}catch{return {ok:false,reason:'Архив не удалось прочитать.'};}
   if(sourceSize>MAX_ARCHIVE_BYTES)return {ok:false,reason:'Архив превышает 120 KiB.'};
   const runs=raw.runs.map(normaliseRun);
   if(runs.some(run=>!run))return {ok:false,reason:'Запись не прошла проверку структуры или траектории.'};
@@ -111,7 +111,14 @@ const anchor=document.querySelector('.cl-engineering'),hypothesis=document.query
 if(anchor&&typeof anchor.after==='function')anchor.after(host);else if(hypothesis&&typeof hypothesis.after==='function')hypothesis.after(host);else if(bottomGrid&&typeof bottomGrid.after==='function')bottomGrid.after(host);else if(footer&&typeof footer.before==='function')footer.before(host);else return;
 let runs=loadRuns(),currentId=runs.length?runs[0].id:null,currentIndex=0,compareEnabled=true,playback=null,currentRun=runs.find(run=>run.id===currentId)||null;
 function loadRuns(){try{const raw=window.localStorage.getItem(STORAGE_KEY);if(!raw)return[];const checked=validateArchive(JSON.parse(raw));return checked.ok?checked.archive.runs.sort((a,b)=>Date.parse(b.capturedAt)-Date.parse(a.capturedAt)).slice(0,MAX_RUNS):[];}catch{return[];}}
-function persistRuns(){runs=runs.slice().sort((a,b)=>Date.parse(b.capturedAt)-Date.parse(a.capturedAt)).slice(0,MAX_RUNS);try{window.localStorage.setItem(STORAGE_KEY,JSON.stringify({schema:SCHEMA,schemaVersion:1,exportedAt:new Date().toISOString(),runs}));status.dataset.kind='success';status.textContent='Траектория сохранена в этом браузере. Серверу она не отправлялась.';}catch{status.dataset.kind='warning';status.textContent='Хранилище браузера недоступно: запись останется только в этой вкладке.';}}
+function persistRuns(){
+ runs=runs.slice().sort((a,b)=>Date.parse(b.capturedAt)-Date.parse(a.capturedAt)).slice(0,MAX_RUNS);
+ const buildPayload=()=>({schema:SCHEMA,schemaVersion:1,exportedAt:new Date().toISOString(),runs});
+ let serialized=JSON.stringify(buildPayload());
+ while(runs.length&&new TextEncoder().encode(serialized).byteLength>MAX_ARCHIVE_BYTES){runs.pop();serialized=JSON.stringify(buildPayload());}
+ try{window.localStorage.setItem(STORAGE_KEY,serialized);status.dataset.kind='success';status.textContent='Траектория сохранена локально. Архив автоматически удерживается в пределах 120 KiB; серверу данные не отправлялись.';}
+ catch{status.dataset.kind='warning';status.textContent='Хранилище браузера недоступно: запись останется только в этой вкладке.';}
+}
 function stopPlayback(){if(playback!==null)window.clearInterval(playback);playback=null;playButton.textContent='▶ Прокрутить';}
 function selectedPoint(){return currentRun&&currentRun.points.length?currentRun.points[clamp(currentIndex,0,currentRun.points.length-1)]:null;}
 function nearestIndex(run,seconds){if(!run||!run.points.length)return 0;let bestIndex=0,bestDistance=Infinity;run.points.forEach((point,index)=>{const distance=Math.abs(point.t-seconds);if(distance<bestDistance){bestDistance=distance;bestIndex=index;}});return bestIndex;}
