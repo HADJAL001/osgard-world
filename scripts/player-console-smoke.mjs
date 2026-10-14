@@ -28,6 +28,52 @@ test('all 30 product improvements have code contracts', () => {
     'og-pc-reduced-motion', 'og-pc-high-contrast', 'data-pc-scale'
   ]) assert.ok(js.includes(token), 'Missing contract: ' + token);
 });
+test('Daily Expeditions expose four locally measured, non-monetary missions', () => {
+  for (const token of [
+    'data-pc-tab="missions"', 'data-pc-panel="missions"', 'data-pc-missions-list',
+    'DAILY_MISSIONS = Object.freeze([', "id: 'open-one'", "id: 'visit-two'",
+    "id: 'complete-one'", "id: 'queue-three'", 'getMissionProgress(mission, today',
+    'data-pc-claim-mission', 'claimMission(button.dataset.pcClaimMission)',
+    'data-pc-xp-total', 'data-pc-streak', 'data-pc-mission-date'
+  ]) assert.ok(js.includes(token), 'Missing Daily Expeditions contract: ' + token);
+  assert.match(js, /Цикл UTC:/);
+  assert.match(js, /не имеет денежной стоимости/);
+  assert.match(js, /Денежной стоимости нет/);
+  assert.match(js, /validateMissionState\(parsed\.missions\)/);
+});
+test('Daily Expeditions reward claims are capped, date-scoped, deduplicated and local', () => {
+  assert.match(js, /MAX_MISSION_CLAIMS = 4000/);
+  assert.match(js, /MAX_MISSION_XP = 10000000/);
+  assert.match(js, /row\.day === today && row\.id === id/);
+  assert.match(js, /missionState\.totalXp = Math\.min\(MAX_MISSION_XP/);
+  assert.match(js, /missionState\.claims = missionState\.claims\.slice\(-MAX_MISSION_CLAIMS\)/);
+  assert.match(js, /safeWrite\(KEY\.missions, missionState\)/);
+  assert.match(js, /const validIds = new Set\(DAILY_MISSIONS\.map/);
+  assert.match(js, /isValidDateKey\(row\.day\)/);
+  assert.match(js, /typeof row\.at === 'string' && Number\.isFinite\(Date\.parse\(row\.at\)\)/);
+});
+test('Daily completion objectives use dated completion events and remain backward compatible', () => {
+  assert.match(js, /completionLog: \[\]/);
+  assert.match(js, /stats\.completionLog = \[\.\.\.\(stats\.completionLog \|\| \[\]\), \{ game: id, at: new Date\(\)\.toISOString\(\), \.\.\./);
+  assert.match(js, /Array\.isArray\(raw\.completionLog\)/);
+  assert.match(js, /document\.addEventListener\('osgard:game-completed', recordGameCompletion\)/);
+  assert.match(js, /document\.addEventListener\('osgard:game-level-completed', recordGameCompletion\)/);
+  assert.match(js, /row\.game === id && row\.sessionId === sessionId/);
+  assert.match(js, /validateMissionState\(parsed\.missions\)/);
+  assert.match(js, /missions: missionState/);
+  assert.match(js, /validateMissionState\(parsed\.missions\)/);
+  assert.match(js, /KEY\.missions\]\)/);
+});
+test('Mission rendering refreshes when the queue, launch history or a game result changes', () => {
+  assert.match(js, /renderMissions\(\);\s*\}/);
+  assert.match(js, /renderOverview\(\); renderMissions\(\);/);
+  assert.match(js, /renderMissions\(\);\s*\}\s*function addToQueue/);
+  assert.match(js, /version: '1\.1\.0'/);
+  assert.match(css, /\.og-pc-mission-hero/);
+  assert.match(css, /\.og-pc-missions-list/);
+  assert.match(css, /\.og-pc-mission-meter/);
+  assert.match(js, /setAttribute\('aria-valuenow'/);
+});
 test('catalogue checks remain same-origin and do not send events to third parties', () => {
   assert.match(js, /route\.origin !== location\.origin/);
   assert.match(js, /credentials: 'same-origin'/);
@@ -50,7 +96,7 @@ test('lifetime Player Lab aggregates survive the bounded recent-launch log', () 
   assert.match(js, /stats\.activityDays = \[\.\.\.new Set\(\[\.\.\.stats\.activityDays, dateKey\(activeWallAt\)\]\)\]/);
   assert.match(js, /const unique = stats\.gameIdsEver\.length/);
   assert.match(js, /const days = stats\.activityDays\.length/);
-  assert.match(js, /return \{ schema: 1, launches, totalLaunches, gameIdsEver, activityDays, secondsByGame, completions \}/, 'Exports/imports must preserve the validated aggregates');
+  assert.match(js, /return \{ schema: 1, launches, totalLaunches, gameIdsEver, activityDays, secondsByGame, completions, completionLog \}/, 'Exports/imports must preserve completion history and lifetime aggregates');
 });
 test('activity-day validator accepts real calendar dates and rejects impossible ones', () => {
   const start = js.indexOf('function isValidDateKey(value) {');
