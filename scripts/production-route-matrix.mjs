@@ -51,7 +51,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         : route === '/games/commerce-client.js'
           ? text.includes('/v1/leads') && text.includes('wa.me/79640027222') && !/(sk_(?:live|test)_|whsec_)/i.test(text)
         : route === '/games/player-console.js'
-          ? text.includes('window.OSGARDPlayerConsole') && text.includes('MAX_QUEUE = 5') && text.includes('MAX_IMPORT_BYTES = 100 * 1024') && text.includes('data-pc-missions-list') && text.includes('validateMissionState') && text.includes('MAX_MISSION_CLAIMS = 4000') && text.includes('completionLog')
+          ? text.includes('window.OSGARDPlayerConsole') && text.includes('MAX_QUEUE = 5') && text.includes('MAX_IMPORT_BYTES = 100 * 1024') && text.includes('data-pc-missions-list') && text.includes('validateMissionState') && text.includes('MAX_MISSION_CLAIMS = 4000') && text.includes('completionLog') && text.includes("osgard:game-level-completed")
         : route === '/games/player-console.css'
           ? text.includes('#og-pc-launcher') && text.includes('.og-pc-high-contrast') && text.includes('.og-pc-reduced-motion') && text.includes('.og-pc-mission-hero') && text.includes('.og-pc-mission-meter')
         : route === '/games/operations/'
