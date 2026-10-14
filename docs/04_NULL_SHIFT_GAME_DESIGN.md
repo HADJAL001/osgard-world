@@ -461,3 +461,8 @@ The implementation bundles more than 30 concrete engineering refinements:
 47. Source smoke checks ensure export code contains no fetch, XMLHttpRequest or sendBeacon upload path.
 
 The WebAssembly build keeps the same Godot GL Compatibility runtime and existing OSgard World route. Exporting the report is a local player action, not an external analytics integration.
+
+
+## Godot release 0.18 — Thermal Sovereignty / tactical recon
+
+This release contains 30 connected gameplay improvements: ARC-9 shot heat; weapon-upgrade heat scaling; lower Overdrive heat; hard firing lockout at 100%; passive cooling; faster lockout recovery; a separate unlock threshold; V / gamepad D-pad-down emergency vent; minimum vent threshold; independent vent cooldown; safe heat reset; enemy windup interruption; Stalker dash interruption; radial pushback; bounded area damage; pooled visual burst; distinct sound; bounded local black-box events; live heat percentage; danger-stage colours; touch vent control; after-action thermal state; overheat/vent counters; mission coaching; Z / D-pad-up Tactical Scan; finite scan radius/duration/cooldown; real enemy enumeration; through-cover role/HP/distance signatures; temporary reveal of ordinarily hidden field-device labels; and local recon metrics in after-action JSON. No network telemetry or account data is added. Regression tests cover lockout, cooling, vent interrupts, reveals, cooldowns and report integrity.

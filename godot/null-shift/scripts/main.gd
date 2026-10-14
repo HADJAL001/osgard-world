@@ -36,6 +36,19 @@ const DEVICE_CELL_STUN_SECONDS := 2.15
 const DEVICE_CELL_OVERDRIVE_GAIN := 30.0
 const DEVICE_LANE_COLLAPSE_SECONDS := 6.5
 const DEVICE_LANE_MAX_Z_DISTANCE := 5.4
+const WEAPON_HEAT_LIMIT := 100.0
+const WEAPON_HEAT_PER_SHOT := 10.5
+const WEAPON_HEAT_COOLING_RATE := 18.0
+const WEAPON_OVERHEAT_COOLING_RATE := 34.0
+const WEAPON_OVERHEAT_RELEASE_HEAT := 34.0
+const WEAPON_VENT_MIN_HEAT := 35.0
+const WEAPON_VENT_COOLDOWN_SECONDS := 5.5
+const WEAPON_VENT_RESET_HEAT := 18.0
+const WEAPON_VENT_RADIUS := 6.8
+const WEAPON_VENT_STAGGER_SECONDS := 0.85
+const TACTICAL_SCAN_RADIUS := 23.0
+const TACTICAL_SCAN_DURATION := 5.2
+const TACTICAL_SCAN_COOLDOWN := 10.0
 
 var player: CharacterBody3D
 var camera: Camera3D
@@ -62,7 +75,12 @@ var credits_label: Label
 var threat_label: Label
 var telemetry_label: Label
 var combat_status_label: Label
+var thermal_status_label: Label
+var thermal_bar: ProgressBar
+var thermal_bar_fill: StyleBoxFlat
 var overdrive_bar: ProgressBar
+var mobile_scan_button: Button
+var mobile_vent_button: Button
 var mobile_overdrive_button: Button
 var diagnostics_label: Label
 var keypad_panel: PanelContainer
@@ -204,6 +222,17 @@ var overdrive_charge := 0.0
 var overdrive_timer := 0.0
 var overdrive_activations := 0
 var overdrive_arc_chains := 0
+var weapon_heat := 0.0
+var weapon_overheated := false
+var weapon_overheat_events := 0
+var weapon_vent_cooldown := 0.0
+var weapon_vent_uses := 0
+var weapon_vent_hits := 0
+var scan_cooldown := 0.0
+var scan_active_timer := 0.0
+var scan_activations := 0
+var scan_hostiles_revealed_total := 0
+var scan_devices_revealed_total := 0
 var warden_phase_transitions := 0
 var warden_staggers := 0
 var mission_accuracy := 100.0
@@ -414,6 +443,17 @@ func _reset_runtime_collections() -> void:
 	overdrive_timer = 0.0
 	overdrive_activations = 0
 	overdrive_arc_chains = 0
+	weapon_heat = 0.0
+	weapon_overheated = false
+	weapon_overheat_events = 0
+	weapon_vent_cooldown = 0.0
+	weapon_vent_uses = 0
+	weapon_vent_hits = 0
+	scan_cooldown = 0.0
+	scan_active_timer = 0.0
+	scan_activations = 0
+	scan_hostiles_revealed_total = 0
+	scan_devices_revealed_total = 0
 	warden_phase_transitions = 0
 	warden_staggers = 0
 	mission_accuracy = 100.0
@@ -548,6 +588,7 @@ func _physics_process(delta: float) -> void:
 	dash_cooldown = maxf(0.0, dash_cooldown - dt)
 	pulse_cooldown = maxf(0.0, pulse_cooldown - dt)
 	damage_cooldown = maxf(0.0, damage_cooldown - dt)
+	_update_weapon_systems(dt)
 	combat_noise_timer = maxf(0.0, combat_noise_timer - dt)
 	squad_alert_timer = maxf(0.0, squad_alert_timer - dt)
 	null_shift_timer = maxf(0.0, null_shift_timer - dt)
@@ -608,6 +649,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			_deploy_pulse()
 		KEY_R:
 			_activate_overdrive()
+		KEY_V:
+			_activate_weapon_vent()
+		KEY_Z:
+			_activate_tactical_scan()
 		KEY_SPACE:
 			_try_dash()
 		KEY_SHIFT:
@@ -738,6 +783,10 @@ func _handle_gamepad_button(event: InputEventJoypadButton) -> void:
 			_toggle_diagnostics()
 		JOY_BUTTON_RIGHT_STICK:
 			_activate_overdrive()
+		JOY_BUTTON_DPAD_UP:
+			_activate_tactical_scan()
+		JOY_BUTTON_DPAD_DOWN:
+			_activate_weapon_vent()
 		JOY_BUTTON_LEFT_SHOULDER:
 			_toggle_loadout()
 		# RB/RT fires while held; polling keeps the trigger responsive with no key-repeat.
@@ -1529,7 +1578,7 @@ func _update_objective_beacon(delta: float) -> void:
 		objective_beacon_light.light_energy = 0.55 + pulse * 0.55
 
 
-func _add_world_tag(parent: Node3D, tag_text: String, material: Material) -> void:
+func _add_world_tag(parent: Node3D, tag_text: String, material: Material) -> Label3D:
 	var tag := Label3D.new()
 	tag.text = tag_text
 	tag.font_size = 28
@@ -1541,6 +1590,7 @@ func _add_world_tag(parent: Node3D, tag_text: String, material: Material) -> voi
 	tag.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	tag.no_depth_test = true
 	parent.add_child(tag)
+	return tag
 
 func _add_cube(parent: Node3D, local_position: Vector3, size: Vector3, material: Material) -> MeshInstance3D:
 	var mesh := BoxMesh.new()
@@ -1605,9 +1655,10 @@ func _create_device(at: Vector3, kind: String, label: String) -> void:
 	visual.material_override = materials["violet"] if kind == "ANCHOR" else (materials["amber"] if kind == "CELL" else materials["cyan"])
 	body.add_child(visual)
 	_add_cube(body, Vector3(0.0, 0.1, -0.54), Vector3(0.28, 0.42, 0.07), materials["white"])
-	_add_world_tag(body, label, materials["violet"] if kind == "ANCHOR" else (materials["amber"] if kind == "CELL" else materials["cyan"]))
+	var device_tag: Label3D = _add_world_tag(body, label, materials["violet"] if kind == "ANCHOR" else (materials["amber"] if kind == "CELL" else materials["cyan"]))
+	device_tag.visible = false
 	add_child(body)
-	devices.append({"node": body, "hp": 2, "kind": kind, "destroyed": false})
+	devices.append({"node": body, "hp": 2, "kind": kind, "destroyed": false, "tag": device_tag, "scan_timer": 0.0})
 
 func _create_player() -> void:
 	player = CharacterBody3D.new()
@@ -1846,6 +1897,19 @@ func _spawn_guard(at: Vector3, is_warden: bool) -> void:
 	tag.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	tag.no_depth_test = true
 	body.add_child(tag)
+	var scan_readout := Label3D.new()
+	scan_readout.name = "ScanReadout"
+	scan_readout.text = "SCAN / %s" % role
+	scan_readout.font_size = 19
+	scan_readout.pixel_size = 0.013
+	scan_readout.outline_size = 8
+	scan_readout.outline_modulate = Color(0.003, 0.018, 0.024, 0.98)
+	scan_readout.modulate = Color(0.35, 1.0, 0.96, 1.0)
+	scan_readout.position = Vector3(0.0, 2.88 if is_warden else 2.55, 0.0)
+	scan_readout.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	scan_readout.no_depth_test = true
+	scan_readout.visible = false
+	body.add_child(scan_readout)
 	add_child(body)
 	guards.append({
 		"node": body,
@@ -1879,6 +1943,8 @@ func _spawn_guard(at: Vector3, is_warden: bool) -> void:
 		"heard_noise_serial": combat_noise_serial,
 		"heard_squad_serial": squad_alert_serial,
 		"role_tag": tag,
+		"scan_readout": scan_readout,
+		"scan_reveal_timer": 0.0,
 		"displayed_ai_state": "PATROL"
 	})
 	_apply_daily_mutators_to_guard(guards.size() - 1)
@@ -2435,10 +2501,161 @@ func _trigger_muzzle_flash() -> void:
 		muzzle_light.light_energy = 2.8 + float(weapon_level) * 0.25
 		muzzle_light.visible = cinematic_quality and not adaptive_quality_degraded
 
+
+func _weapon_heat_per_shot() -> float:
+	return maxf(5.5, WEAPON_HEAT_PER_SHOT - float(weapon_level) * 0.9)
+
+func _apply_weapon_heat(amount: float) -> void:
+	if weapon_overheated:
+		return
+	weapon_heat = clampf(weapon_heat + maxf(0.0, amount), 0.0, WEAPON_HEAT_LIMIT)
+	if weapon_heat < WEAPON_HEAT_LIMIT:
+		return
+	weapon_heat = WEAPON_HEAT_LIMIT
+	weapon_overheated = true
+	weapon_overheat_events += 1
+	_record_raid_event("weapon_overheat", "ARC-9 thermal lockout", weapon_heat, player.global_position if is_instance_valid(player) else Vector3.ZERO)
+	_spawn_impact_light(player.global_position + Vector3.UP * 0.7, Color(1.0, 0.22, 0.28), 2.6, 4.6, 0.24)
+	_play_sfx(118.0, 0.36, 0.12)
+	objective_text = "ARC-9 OVERHEAT · ОТПУСТИ ОГОНЬ ИЛИ НАЖМИ V ДЛЯ СБРОСА"
+	_update_hud()
+
+func _update_weapon_systems(delta: float) -> void:
+	var dt: float = maxf(0.0, delta)
+	weapon_vent_cooldown = maxf(0.0, weapon_vent_cooldown - dt)
+	scan_cooldown = maxf(0.0, scan_cooldown - dt)
+	scan_active_timer = maxf(0.0, scan_active_timer - dt)
+	var firing := mouse_firing or touch_firing or gamepad_fire_held
+	if weapon_overheated or not firing:
+		var cooling_rate: float = WEAPON_OVERHEAT_COOLING_RATE if weapon_overheated else WEAPON_HEAT_COOLING_RATE
+		weapon_heat = maxf(0.0, weapon_heat - cooling_rate * dt)
+		if weapon_overheated and weapon_heat <= WEAPON_OVERHEAT_RELEASE_HEAT:
+			weapon_overheated = false
+			_record_raid_event("weapon_recovered", "ARC-9 thermal lockout cleared", weapon_heat, player.global_position if is_instance_valid(player) else Vector3.ZERO)
+			objective_text = "ARC-9 ГОТОВ · ТЕПЛОВОЙ КОНТУР В НОРМЕ"
+			_play_sfx(470.0, 0.12, 0.045)
+	for index in range(guards.size() - 1, -1, -1):
+		var guard: Dictionary = guards[index]
+		guard["scan_reveal_timer"] = maxf(0.0, float(guard.get("scan_reveal_timer", 0.0)) - dt)
+		var reveal_remaining: float = float(guard.get("scan_reveal_timer", 0.0))
+		var scan_readout := guard.get("scan_readout") as Label3D
+		if is_instance_valid(scan_readout):
+			scan_readout.visible = reveal_remaining > 0.0
+			if reveal_remaining > 0.0:
+				var guard_body := guard.get("node") as Node3D
+				var distance_to_operator: float = guard_body.global_position.distance_to(player.global_position) if is_instance_valid(guard_body) and is_instance_valid(player) else 0.0
+				scan_readout.text = "%s · HP %d/%d · %.0f M" % [str(guard.get("role", "HOSTILE")), maxi(0, int(guard.get("hp", 0))), int(guard.get("max_hp", 1)), distance_to_operator]
+		guards[index] = guard
+	for index in range(devices.size()):
+		var device: Dictionary = devices[index]
+		device["scan_timer"] = maxf(0.0, float(device.get("scan_timer", 0.0)) - dt)
+		var device_tag := device.get("tag") as Label3D
+		if is_instance_valid(device_tag):
+			device_tag.visible = float(device.get("scan_timer", 0.0)) > 0.0 and not bool(device.get("destroyed", false))
+		devices[index] = device
+
+func _activate_tactical_scan() -> void:
+	if paused_game or mission_finished or briefing_visible or terminal_active or not is_instance_valid(player):
+		return
+	if scan_cooldown > 0.0:
+		objective_text = "TACTICAL SCAN RECHARGING · %.1f S" % scan_cooldown
+		_update_hud()
+		return
+	scan_cooldown = TACTICAL_SCAN_COOLDOWN
+	scan_active_timer = TACTICAL_SCAN_DURATION
+	scan_activations += 1
+	var hostiles_found := 0
+	var devices_found := 0
+	for index in range(guards.size()):
+		var guard: Dictionary = guards[index]
+		var guard_body := guard.get("node") as Node3D
+		if not is_instance_valid(guard_body) or int(guard.get("hp", 0)) <= 0:
+			continue
+		var distance_to_operator: float = guard_body.global_position.distance_to(player.global_position)
+		if distance_to_operator > TACTICAL_SCAN_RADIUS:
+			continue
+		guard["scan_reveal_timer"] = TACTICAL_SCAN_DURATION
+		var scan_readout := guard.get("scan_readout") as Label3D
+		if is_instance_valid(scan_readout):
+			scan_readout.visible = true
+			scan_readout.text = "%s · HP %d/%d · %.0f M" % [str(guard.get("role", "HOSTILE")), int(guard.get("hp", 0)), int(guard.get("max_hp", 1)), distance_to_operator]
+		guards[index] = guard
+		hostiles_found += 1
+		_spawn_impact_light(guard_body.global_position + Vector3.UP * 0.9, Color(0.28, 0.96, 1.0), 1.2, 2.8, 0.16)
+	for index in range(devices.size()):
+		var device: Dictionary = devices[index]
+		var device_body := device.get("node") as Node3D
+		if bool(device.get("destroyed", false)) or not is_instance_valid(device_body):
+			continue
+		if device_body.global_position.distance_to(player.global_position) > TACTICAL_SCAN_RADIUS:
+			continue
+		device["scan_timer"] = TACTICAL_SCAN_DURATION
+		var device_tag := device.get("tag") as Label3D
+		if is_instance_valid(device_tag):
+			device_tag.visible = true
+		devices[index] = device
+		devices_found += 1
+	scan_hostiles_revealed_total += hostiles_found
+	scan_devices_revealed_total += devices_found
+	_emit_combat_noise(player.global_position, 7.5, "scan")
+	_record_raid_event("tactical_scan", "%02d hostiles / %02d devices" % [hostiles_found, devices_found], float(hostiles_found + devices_found), player.global_position)
+	_spawn_ring_burst(player.global_position + Vector3.UP * 0.12, materials["cyan"], 16.0)
+	_spawn_impact_light(player.global_position + Vector3.UP * 0.7, Color(0.24, 0.95, 1.0), 2.0, TACTICAL_SCAN_RADIUS * 0.35, 0.24)
+	_play_sfx(520.0, 0.28, 0.07)
+	objective_text = "TACTICAL SCAN · %02d HOSTILES / %02d DEVICES · REVEAL %.1f S" % [hostiles_found, devices_found, TACTICAL_SCAN_DURATION]
+	_update_hud()
+
+func _activate_weapon_vent() -> void:
+	if paused_game or mission_finished or briefing_visible or terminal_active or not is_instance_valid(player):
+		return
+	if weapon_vent_cooldown > 0.0:
+		objective_text = "THERMAL VENT RECHARGING · %.1f S" % weapon_vent_cooldown
+		_update_hud()
+		return
+	if weapon_heat < WEAPON_VENT_MIN_HEAT and not weapon_overheated:
+		objective_text = "THERMAL VENT NEEDS %.0f%% HEAT · NOW %.0f%%" % [WEAPON_VENT_MIN_HEAT, weapon_heat]
+		_update_hud()
+		return
+	weapon_vent_cooldown = WEAPON_VENT_COOLDOWN_SECONDS
+	weapon_vent_uses += 1
+	weapon_heat = WEAPON_VENT_RESET_HEAT
+	weapon_overheated = false
+	mouse_firing = false
+	touch_firing = false
+	gamepad_fire_held = false
+	var vent_hits := 0
+	for index in range(guards.size() - 1, -1, -1):
+		var guard: Dictionary = guards[index]
+		var guard_body := guard.get("node") as CharacterBody3D
+		if not is_instance_valid(guard_body) or guard_body.global_position.distance_to(player.global_position) > WEAPON_VENT_RADIUS:
+			continue
+		guard["stun"] = maxf(float(guard.get("stun", 0.0)), WEAPON_VENT_STAGGER_SECONDS)
+		guard["windup"] = 0.0
+		guard["dash_windup"] = 0.0
+		guard["attack_lanes"] = []
+		var retreat := guard_body.global_position - player.global_position
+		retreat.y = 0.0
+		if retreat.length_squared() > 0.01:
+			guard_body.velocity = retreat.normalized() * 4.2
+		guards[index] = guard
+		vent_hits += 1
+		weapon_vent_hits += 1
+		_damage_target(guard_body, false, 0.55)
+	_emit_combat_noise(player.global_position, 15.0, "vent")
+	_record_raid_event("thermal_vent", "%02d hostiles interrupted" % vent_hits, float(vent_hits), player.global_position)
+	_spawn_ring_burst(player.global_position + Vector3.UP * 0.12, materials["amber"], 10.5)
+	_spawn_impact_light(player.global_position + Vector3.UP * 0.7, Color(1.0, 0.53, 0.16), 3.2, WEAPON_VENT_RADIUS * 0.9, 0.22)
+	_play_sfx(128.0, 0.4, 0.13)
+	objective_text = "THERMAL VENT · HEAT RESET TO %d%% · %02d HOSTILES INTERRUPTED" % [int(WEAPON_VENT_RESET_HEAT), vent_hits]
+	_update_hud()
+
 func _fire_weapon() -> void:
+	if weapon_overheated:
+		return
 	if fire_cooldown > 0.0 or paused_game or mission_finished or terminal_active:
 		return
 	fire_cooldown = maxf(0.09, 0.17 - float(weapon_level) * 0.022)
+	_apply_weapon_heat(_weapon_heat_per_shot() * (0.68 if overdrive_timer > 0.0 else 1.0))
 	_trigger_muzzle_flash()
 	_emit_combat_noise(player.global_position, 24.0 if null_shift_timer <= 0.0 else 15.0, "weapon")
 	var from := player.global_position + Vector3.UP * 0.48 + player_aim * 0.8
@@ -3215,6 +3432,10 @@ func _after_action_insights() -> Array[String]:
 		insights.append("WARDEN: точный выстрел во время телеграфа срывает атаку")
 	if insights.size() < 3 and extraction_overload_count > 0:
 		insights.append("ЭВАКУАЦИЯ: после ядра есть 30 секунд до блокировки")
+	if insights.size() < 3 and weapon_overheat_events >= 2:
+		insights.append("ТЕПЛОВОЙ КОНТУР: отпускай огонь для охлаждения или сбрасывай тепло через V")
+	if insights.size() < 3 and scan_activations == 0 and not guards.is_empty():
+		insights.append("РАЗВЕДКА: Z выявляет роли, здоровье противников и устройства сквозь укрытия")
 	if insights.size() < 3 and device_emp_overloads + device_cell_novas + device_lane_collapses == 0:
 		insights.append("АРЕНА: уничтожай полевые устройства — это меняет ход боя")
 	if insights.is_empty():
@@ -3245,7 +3466,7 @@ func _build_after_action_report() -> Dictionary:
 	return {
 		"schema": AFTER_ACTION_REPORT_SCHEMA,
 		"game": "NULL//SHIFT",
-		"gameVersion": "0.17.0-black-box",
+		"gameVersion": "0.18.0-thermal-sovereignty",
 		"outcome": outcome,
 		"challengeCode": daily_challenge_code if daily_challenge_active else "",
 		"runSeed": daily_run_seed,
@@ -3266,6 +3487,18 @@ func _build_after_action_report() -> Dictionary:
 			"dashEvasions": dash_evasions,
 			"overdriveActivations": overdrive_activations,
 			"overdriveArcs": overdrive_arc_chains
+		},
+		"thermal": {
+			"heatPercentAtExport": snappedf(weapon_heat, 0.1),
+			"overheated": weapon_overheated,
+			"overheatEvents": weapon_overheat_events,
+			"ventUses": weapon_vent_uses,
+			"ventHostilesInterrupted": weapon_vent_hits
+		},
+		"recon": {
+			"scanActivations": scan_activations,
+			"hostilesRevealed": scan_hostiles_revealed_total,
+			"devicesRevealed": scan_devices_revealed_total
 		},
 		"devices": device_summary,
 		"extraction": {
@@ -4046,6 +4279,25 @@ func _create_ui() -> void:
 	overdrive_bar_fill.set_corner_radius_all(3)
 	overdrive_bar.add_theme_stylebox_override("fill", overdrive_bar_fill)
 	objective_stack.add_child(overdrive_bar)
+	thermal_status_label = _label(objective_stack, "WEAPON THERMAL · 00% · V VENT / Z SCAN", 8, Color(0.38, 1.0, 0.86))
+	thermal_bar = ProgressBar.new()
+	thermal_bar.name = "WeaponThermal"
+	thermal_bar.min_value = 0.0
+	thermal_bar.max_value = WEAPON_HEAT_LIMIT
+	thermal_bar.value = 0.0
+	thermal_bar.show_percentage = false
+	thermal_bar.custom_minimum_size = Vector2(278.0, 5.0)
+	thermal_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	thermal_bar.tooltip_text = "ARC-9 thermal load. Release fire to cool; press V / D-pad down to vent."
+	var thermal_bar_background := StyleBoxFlat.new()
+	thermal_bar_background.bg_color = Color(0.035, 0.078, 0.086, 0.98)
+	thermal_bar_background.set_corner_radius_all(3)
+	thermal_bar.add_theme_stylebox_override("background", thermal_bar_background)
+	thermal_bar_fill = StyleBoxFlat.new()
+	thermal_bar_fill.bg_color = Color(0.38, 0.96, 0.76)
+	thermal_bar_fill.set_corner_radius_all(3)
+	thermal_bar.add_theme_stylebox_override("fill", thermal_bar_fill)
+	objective_stack.add_child(thermal_bar)
 	objective_actions = HBoxContainer.new()
 	objective_actions.add_theme_constant_override("separation", 6)
 	objective_stack.add_child(objective_actions)
@@ -4617,7 +4869,7 @@ func _create_mobile_controls(parent: Control) -> void:
 			button.button_down.connect(_set_mobile_action.bind(action, true))
 			button.button_up.connect(_set_mobile_action.bind(action, false))
 			mobile_move_buttons.append(button)
-	mobile_action_panel = _make_panel(parent, Control.PRESET_BOTTOM_RIGHT, Rect2(-222.0, -286.0, 206.0, 270.0))
+	mobile_action_panel = _make_panel(parent, Control.PRESET_BOTTOM_RIGHT, Rect2(-222.0, -330.0, 206.0, 314.0))
 	var action_stack := _panel_stack(mobile_action_panel)
 	_label(action_stack, "COMBAT / СИСТЕМЫ", 9, Color(0.38, 0.9, 0.82))
 	var action_grid := GridContainer.new()
@@ -4631,7 +4883,9 @@ func _create_mobile_controls(parent: Control) -> void:
 		{"key": "pulse", "label": "ИМПУЛЬС"},
 		{"key": "shift", "label": "СДВИГ"},
 		{"key": "dash", "label": "РЫВОК"},
-		{"key": "overdrive", "label": "OVERDRIVE"}
+		{"key": "overdrive", "label": "OVERDRIVE"},
+		{"key": "scan", "label": "СКАН"},
+		{"key": "vent", "label": "VENT"}
 	]
 	for item in combat_actions:
 		var action_button := _add_button(action_grid, item["label"], func(): pass, Vector2(84.0, 38.0))
@@ -4644,6 +4898,12 @@ func _create_mobile_controls(parent: Control) -> void:
 		if str(item["key"]) == "overdrive":
 			mobile_overdrive_button = action_button
 			mobile_overdrive_button.add_theme_font_size_override("font_size", 7)
+		if str(item["key"]) == "scan":
+			mobile_scan_button = action_button
+			mobile_scan_button.add_theme_font_size_override("font_size", 8)
+		if str(item["key"]) == "vent":
+			mobile_vent_button = action_button
+			mobile_vent_button.add_theme_font_size_override("font_size", 8)
 	var utility_row := HBoxContainer.new()
 	utility_row.add_theme_constant_override("separation", 4)
 	action_stack.add_child(utility_row)
@@ -4680,6 +4940,10 @@ func _set_mobile_action(action: String, pressed: bool) -> void:
 					_try_dash()
 				"overdrive":
 					_activate_overdrive()
+				"scan":
+					_activate_tactical_scan()
+				"vent":
+					_activate_weapon_vent()
 
 func _refresh_extraction_event_layout() -> void:
 	if not is_instance_valid(objective_panel):
@@ -4689,10 +4953,10 @@ func _refresh_extraction_event_layout() -> void:
 	if mobile_controls_visible:
 		objective_panel.offset_bottom = 266.0 + daily_extra + event_extra
 	else:
-		objective_panel.offset_bottom = 250.0 + daily_extra + event_extra
+		objective_panel.offset_bottom = 274.0 + daily_extra + event_extra
 		if is_instance_valid(tactical_radar_panel):
-			tactical_radar_panel.offset_top = 264.0 + daily_extra + event_extra
-			tactical_radar_panel.offset_bottom = 458.0 + daily_extra + event_extra
+			tactical_radar_panel.offset_top = 288.0 + daily_extra + event_extra
+			tactical_radar_panel.offset_bottom = 482.0 + daily_extra + event_extra
 
 func _update_mobile_layout() -> void:
 	# Godot may dispatch a first layout frame before the platform reports a valid viewport.
@@ -4744,6 +5008,10 @@ func _update_mobile_layout() -> void:
 		objective_title.visible = false
 		telemetry_label.visible = false
 		objective_actions.visible = false
+		if is_instance_valid(thermal_status_label):
+			thermal_status_label.visible = false
+		if is_instance_valid(thermal_bar):
+			thermal_bar.visible = false
 		objective_label.add_theme_font_size_override("font_size", 11)
 		objective_label.custom_minimum_size = Vector2(maxf(240.0, width - 52.0), 50.0 if daily_challenge_active and not daily_mutators.is_empty() else 34.0)
 		mid_panel.visible = false
@@ -4765,11 +5033,15 @@ func _update_mobile_layout() -> void:
 		objective_panel.offset_left = -334.0
 		objective_panel.offset_top = 18.0
 		objective_panel.offset_right = -18.0
-		objective_panel.offset_bottom = 250.0 + (26.0 if daily_challenge_active and not daily_mutators.is_empty() else 0.0) + (26.0 if extraction_pressure_active or extraction_overload_triggered else 0.0)
+		objective_panel.offset_bottom = 274.0 + (26.0 if daily_challenge_active and not daily_mutators.is_empty() else 0.0) + (26.0 if extraction_pressure_active or extraction_overload_triggered else 0.0)
 		if is_instance_valid(tactical_radar_panel):
 			var panel_extra: float = (26.0 if daily_challenge_active and not daily_mutators.is_empty() else 0.0) + (26.0 if extraction_pressure_active or extraction_overload_triggered else 0.0)
-			tactical_radar_panel.offset_top = 264.0 + panel_extra
-			tactical_radar_panel.offset_bottom = 458.0 + panel_extra
+			tactical_radar_panel.offset_top = 288.0 + panel_extra
+			tactical_radar_panel.offset_bottom = 482.0 + panel_extra
+		if is_instance_valid(thermal_status_label):
+			thermal_status_label.visible = true
+		if is_instance_valid(thermal_bar):
+			thermal_bar.visible = true
 		objective_title.visible = true
 		telemetry_label.visible = true
 		objective_actions.visible = true
@@ -4783,7 +5055,7 @@ func _update_mobile_layout() -> void:
 		mobile_move_panel.offset_bottom = -16.0
 		mobile_action_panel.offset_left = -222.0
 		mobile_action_panel.offset_right = -16.0
-		mobile_action_panel.offset_top = -218.0
+		mobile_action_panel.offset_top = -330.0
 		mobile_action_panel.offset_bottom = -16.0
 		for button in mobile_move_buttons:
 			button.custom_minimum_size = Vector2(52.0, 38.0)
@@ -4806,7 +5078,7 @@ func _layout_compact_controls(viewport_size: Vector2) -> void:
 	mobile_move_panel.offset_bottom = -8.0
 	mobile_action_panel.offset_left = -8.0 - action_width
 	mobile_action_panel.offset_right = -8.0
-	mobile_action_panel.offset_top = -286.0
+	mobile_action_panel.offset_top = -330.0
 	mobile_action_panel.offset_bottom = -8.0
 	var move_size: float = 36.0 if width < 400.0 else (44.0 if width < 520.0 else 52.0)
 	var move_button_height: float = 32.0 if width < 400.0 else 36.0
@@ -4998,6 +5270,35 @@ func _update_hud() -> void:
 		var overdrive_readout := "LIVE %.1f S" % overdrive_timer if overdrive_timer > 0.0 else "CHARGE %03d%%" % int(roundf(overdrive_charge))
 		combat_status_label.text = "COMBO %02d · ×%.2f · ACC %.0f%% · %s · AI %s" % [combat_combo, _combat_combo_multiplier(combat_combo), _combat_accuracy_percentage(), overdrive_readout, adaptive_doctrine]
 		combat_status_label.add_theme_color_override("font_color", Color(0.92, 0.72, 1.0) if overdrive_timer > 0.0 else (Color(1.0, 0.77, 0.39) if combat_combo >= 4 else Color(0.38, 1.0, 0.86)))
+	if is_instance_valid(thermal_status_label):
+		if weapon_overheated:
+			thermal_status_label.text = "THERMAL LOCKOUT · %.0f%% · V TO EMERGENCY VENT" % weapon_heat
+			thermal_status_label.add_theme_color_override("font_color", Color(1.0, 0.28, 0.3))
+		elif weapon_heat >= 75.0:
+			thermal_status_label.text = "THERMAL HIGH · %.0f%% · V TO VENT" % weapon_heat
+			thermal_status_label.add_theme_color_override("font_color", Color(1.0, 0.62, 0.26))
+		else:
+			thermal_status_label.text = "WEAPON THERMAL · %.0f%% · SCAN %s" % [weapon_heat, "READY" if scan_cooldown <= 0.0 else "%.1fS" % scan_cooldown]
+			thermal_status_label.add_theme_color_override("font_color", Color(0.38, 1.0, 0.86))
+	if is_instance_valid(thermal_bar):
+		thermal_bar.value = clampf(weapon_heat, 0.0, WEAPON_HEAT_LIMIT)
+		thermal_bar.visible = not mobile_controls_visible
+		thermal_bar.tooltip_text = "THERMAL %.0f%% · cooling %.0f/s · VENT cooldown %.1fs" % [weapon_heat, WEAPON_OVERHEAT_COOLING_RATE if weapon_overheated else WEAPON_HEAT_COOLING_RATE, weapon_vent_cooldown]
+		if is_instance_valid(thermal_bar_fill):
+			thermal_bar_fill.bg_color = Color(1.0, 0.22, 0.3) if weapon_overheated or weapon_heat >= 90.0 else (Color(1.0, 0.62, 0.26) if weapon_heat >= 65.0 else Color(0.38, 0.96, 0.76))
+	if is_instance_valid(thermal_status_label):
+		thermal_status_label.visible = not mobile_controls_visible
+	if is_instance_valid(mobile_scan_button):
+		mobile_scan_button.text = "СКАН" if scan_cooldown <= 0.0 else "СКАН %.0f" % scan_cooldown
+		mobile_scan_button.disabled = scan_cooldown > 0.0 or paused_game or mission_finished or terminal_active or briefing_visible
+	if is_instance_valid(mobile_vent_button):
+		if weapon_vent_cooldown > 0.0:
+			mobile_vent_button.text = "VENT %.0f" % weapon_vent_cooldown
+		elif weapon_overheated:
+			mobile_vent_button.text = "VENT / HOT"
+		else:
+			mobile_vent_button.text = "VENT %02.0f%%" % weapon_heat
+		mobile_vent_button.disabled = weapon_vent_cooldown > 0.0 or (weapon_heat < WEAPON_VENT_MIN_HEAT and not weapon_overheated) or paused_game or mission_finished or terminal_active or briefing_visible
 	if is_instance_valid(overdrive_bar):
 		overdrive_bar.value = clampf(overdrive_charge, 0.0, OVERDRIVE_MAX_CHARGE)
 		overdrive_bar.tooltip_text = "OVERDRIVE · R / CLICK RIGHT STICK / TOUCH · 5 СЕКУНД"
@@ -5011,11 +5312,11 @@ func _update_input_hint() -> void:
 		return
 	var hint: String
 	if mobile_controls_visible:
-		hint = "TOUCH · MOVE / FIRE / ACTION · DASH · PULSE · PHASE SHIFT"
+		hint = "TOUCH · MOVE / FIRE / ACTION · SCAN · VENT · DASH · PULSE · PHASE"
 	elif gamepad_mode_active:
-		hint = "GAMEPAD · LS MOVE · RS AIM · RT/RB FIRE · R-STICK OVERDRIVE · A ACTION · B DASH · X PULSE · Y PHASE"
+		hint = "GAMEPAD · LS MOVE · RS AIM · RT/RB FIRE · R-STICK OVERDRIVE · DPAD UP SCAN / DOWN VENT"
 	else:
-		hint = "WASD / ARROWS MOVE · MOUSE AIM / FIRE · E ACTION · Q PULSE · R OVERDRIVE · SPACE DASH · SHIFT PHASE"
+		hint = "WASD / ARROWS MOVE · MOUSE FIRE · E ACTION · Q PULSE · Z SCAN · V VENT · R OVERDRIVE · SPACE DASH · SHIFT PHASE"
 	if bottom_hint.text != hint:
 		bottom_hint.text = hint
 

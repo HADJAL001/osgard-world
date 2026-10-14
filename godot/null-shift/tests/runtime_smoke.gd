@@ -1754,6 +1754,83 @@ func _run_smoke() -> void:
 	if not _expect(after_action.get("events", []).size() == game.MAX_RAID_EVENT_COUNT and after_action.get("insights", []).size() > 0, "after-action report must include the bounded event tape and actionable, locally computed coaching"):
 		return
 
+	print("RUNTIME_STAGE: thermal sovereignty and tactical recon")
+	var previous_mission_finished: bool = game.mission_finished
+	var previous_paused: bool = game.paused_game
+	var previous_briefing: bool = game.briefing_visible
+	var previous_terminal: bool = game.terminal_active
+	var previous_player_position: Vector3 = game.player.global_position
+	game.mission_finished = false
+	game.paused_game = false
+	game.briefing_visible = false
+	game.terminal_active = false
+	game.player.global_position = Vector3(0.0, 0.82, 0.0)
+	game.weapon_heat = 0.0
+	game.weapon_overheated = false
+	game.weapon_overheat_events = 0
+	game.weapon_vent_cooldown = 0.0
+	game.weapon_vent_uses = 0
+	game.weapon_vent_hits = 0
+	game.scan_cooldown = 0.0
+	game.scan_active_timer = 0.0
+	game.scan_activations = 0
+	game.scan_hostiles_revealed_total = 0
+	game.scan_devices_revealed_total = 0
+	game._spawn_guard(Vector3(2.0, 0.82, 0.0), false)
+	var scanned_guard_index: int = game.guards.size() - 1
+	var scanned_guard: Dictionary = game.guards[scanned_guard_index]
+	scanned_guard["hp"] = 5
+	scanned_guard["max_hp"] = 5
+	scanned_guard["scan_reveal_timer"] = 0.0
+	game.guards[scanned_guard_index] = scanned_guard
+	var scan_readout: Label3D = scanned_guard["scan_readout"]
+	game._create_device(Vector3(3.0, 0.82, 0.0), "CELL", "SCAN TEST CELL")
+	var scanned_device_index: int = game.devices.size() - 1
+	var scanned_device: Dictionary = game.devices[scanned_device_index]
+	var scanned_device_tag: Label3D = scanned_device["tag"]
+	if not _expect(not scan_readout.visible and not scanned_device_tag.visible, "enemy scan signatures and device labels must be hidden before the tactical reveal"):
+		return
+	game._apply_weapon_heat(game.WEAPON_HEAT_LIMIT)
+	if not _expect(game.weapon_overheated and is_equal_approx(game.weapon_heat, 100.0) and game.weapon_overheat_events == 1, "thermal lockout must trigger at 100 percent"):
+		return
+	game._update_weapon_systems(1.0)
+	if not _expect(game.weapon_overheated and game.weapon_heat < 100.0, "overheated weapon must cool at the faster lockout rate"):
+		return
+	game._update_weapon_systems(1.1)
+	if not _expect(not game.weapon_overheated and game.weapon_heat <= game.WEAPON_OVERHEAT_RELEASE_HEAT, "thermal lockout must clear only after cooling below the release threshold"):
+		return
+	game.weapon_heat = 82.0
+	game._activate_weapon_vent()
+	var vented_guard: Dictionary = game.guards[scanned_guard_index]
+	if not _expect(not game.weapon_overheated and game.weapon_vent_uses == 1 and is_equal_approx(game.weapon_heat, game.WEAPON_VENT_RESET_HEAT), "manual vent must reset heat and clear a thermal lockout"):
+		return
+	if not _expect(int(vented_guard.get("hp", 0)) < 5 and float(vented_guard.get("stun", 0.0)) >= game.WEAPON_VENT_STAGGER_SECONDS, "manual vent must damage and interrupt nearby hostiles"):
+		return
+	if not _expect(game.weapon_vent_cooldown > 0.0 and game.weapon_vent_hits >= 1, "thermal vent must track a real cooldown and confirmed hostile interrupts"):
+		return
+	game.scan_cooldown = 0.0
+	game._activate_tactical_scan()
+	var revealed_guard: Dictionary = game.guards[scanned_guard_index]
+	var revealed_device: Dictionary = game.devices[scanned_device_index]
+	if not _expect(game.scan_activations == 1 and float(revealed_guard.get("scan_reveal_timer", 0.0)) > 0.0 and scan_readout.visible, "tactical scan must reveal enemy signatures and nearby device labels"):
+		return
+	if not _expect(float(revealed_device.get("scan_timer", 0.0)) > 0.0 and scanned_device_tag.visible and game.scan_hostiles_revealed_total >= 1 and game.scan_devices_revealed_total >= 1, "tactical scan must reveal nearby devices and count real recon results"):
+		return
+	var scans_before_cooldown: int = game.scan_activations
+	game._activate_tactical_scan()
+	if not _expect(game.scan_activations == scans_before_cooldown and game.scan_cooldown > 0.0, "tactical scan cooldown must prevent immediate repeat activation"):
+		return
+	var new_report: Dictionary = game._build_after_action_report()
+	if not _expect(str(new_report.get("gameVersion", "")) == "0.18.0-thermal-sovereignty" and new_report.get("thermal", {}).has("overheatEvents") and new_report.get("thermal", {}).has("ventHostilesInterrupted"), "after-action export must include versioned thermal metrics"):
+		return
+	if not _expect(new_report.get("recon", {}).has("scanActivations") and new_report.get("recon", {}).has("devicesRevealed"), "after-action export must include local tactical scan metrics"):
+		return
+	game.player.global_position = previous_player_position
+	game.mission_finished = previous_mission_finished
+	game.paused_game = previous_paused
+	game.briefing_visible = previous_briefing
+	game.terminal_active = previous_terminal
+
 	game.career_credits = saved_credits
 	game.operator_style = saved_style
 	game.owns_amber_style = saved_owns_amber
