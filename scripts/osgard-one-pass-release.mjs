@@ -323,12 +323,19 @@ export async function runOnePass({ plan = buildPlan(), reportDir = REPORT_DIR, t
   validatePlan(plan, packageJson.scripts);
   const reportPath = path.join(reportDir, 'osgard-one-pass-release.json');
   const externalPath = path.join(reportDir, 'external-project-health.json');
+  const readinessPath = path.resolve(process.env.OSGARD_RELEASE_REPORT || path.join(ROOT, 'release-readiness.json'));
   const runId = new Date().toISOString().replace(/[:.]/g, '-') + '-' + process.pid;
   const runPath = path.join(reportDir, 'runs', runId + '.json');
   const startedAt = new Date().toISOString();
   await mkdir(reportDir, { recursive: true });
-  for (const stale of [externalPath, path.join(ROOT, 'release-readiness.json')]) {
-    try { await unlink(stale); } catch {}
+  for (const stale of [externalPath, readinessPath]) {
+    try {
+      await unlink(stale);
+    } catch (error) {
+      if (error?.code !== 'ENOENT') {
+        throw new Error('Cannot clear stale evidence before the release run (' + stale + '): ' + String(error.message || error));
+      }
+    }
   }
 
   const steps = [];
@@ -345,7 +352,7 @@ export async function runOnePass({ plan = buildPlan(), reportDir = REPORT_DIR, t
 
     if (step.id === 'full-release-readiness') {
       try {
-        const readiness = JSON.parse(await readFile(path.join(ROOT, 'release-readiness.json'), 'utf8'));
+        const readiness = JSON.parse(await readFile(readinessPath, 'utf8'));
         releaseReadiness = {
           status: String(readiness.status || 'unknown'),
           failedChecks: (readiness.checks || [])
