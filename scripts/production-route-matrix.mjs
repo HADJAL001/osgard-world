@@ -135,6 +135,16 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
             text.includes('const IMPROVEMENTS = Object.freeze([') &&
             text.includes('function validateArchive(') && text.includes('function diagnoseRun(') &&
             !text.includes('fetch(') && !text.includes('XMLHttpRequest') && !text.includes('sendBeacon') && !text.includes('.innerHTML')
+        : route === '/games/cascade-lab/differential-lab.js'
+          ? (response.headers.get('content-type') || '').toLowerCase().includes('javascript') &&
+            text.includes("const VERSION = '0.24.0'") &&
+            text.includes("const SCHEMA = 'osgard.cascade-lab.differential-lab.v1'") &&
+            text.includes('function compareDesign(') &&
+            text.includes('function summarizeRepeatability(') &&
+            text.includes('function buildReport(') &&
+            text.includes('causalClaim:false') &&
+            !text.includes('fetch(') && !text.includes('XMLHttpRequest') &&
+            !text.includes('sendBeacon') && !text.includes('.innerHTML')
         : route === '/games/cascade-lab/trajectory-xray.js'
           ? (response.headers.get('content-type') || '').toLowerCase().includes('javascript') &&
             text.includes("const VERSION = '0.22.0'") &&
