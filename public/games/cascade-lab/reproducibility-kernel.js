@@ -69,8 +69,8 @@ function normalizeContract(raw, levelId) {
   const physicsKeys = [
     'startVelocityX','fanRangeX','fanMinDy','fanMaxDy','fanAccelX','fanAccelY',
     'magnetRadius','magnetStrength','springSpeed','springSurfaceCooldown','bumperFieldSpeedX','bumperFieldSpeedY',
-    'bumperFieldCooldown','bumperSurfaceSpeedX','bumperSurfaceSpeedY','bumperSurfaceCooldown',
-    'beltAirAcceleration','beltSurfaceAcceleration','dragPer60Hz','minVelocityX','maxVelocityX',
+    'bumperFieldCooldown','bumperFieldDistance','bumperSurfaceSpeedX','bumperSurfaceSpeedY','bumperSurfaceCooldown',
+    'beltDeviceImpulse','beltSurfaceAcceleration','dragPer60Hz','minVelocityX','maxVelocityX',
     'minVelocityY','maxVelocityY','fragileImpactLimit','switchRadius','maxSimulationSeconds',
     'checkpointExtraRadius','goalVerticalTolerance','goalMinVerticalVelocity'
   ];
