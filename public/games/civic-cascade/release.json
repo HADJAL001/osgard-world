@@ -3,8 +3,8 @@
   "gameId": "civic-cascade",
   "title": "CIVIC CASCADE",
   "edition": "Web Edition",
-  "version": "3.3.0",
-  "releaseId": "civic-cascade-web-3.3.0",
+  "version": "3.4.0",
+  "releaseId": "civic-cascade-web-3.4.0",
   "canonicalUrl": "https://osgard.world/games/civic-cascade/",
   "detailUrl": "https://osgard.world/game/civic-cascade",
   "entrypoint": "/games/civic-cascade/",
@@ -309,7 +309,7 @@
     },
     "dossierVerification": {
       "enabled": true,
-      "mode": "local-only read-only audit",
+      "mode": "local-only structure, integrity and deterministic replay audit",
       "fileFormat": "application/json",
       "maxImportBytes": 1048576,
       "maxDepth": 32,
@@ -317,14 +317,20 @@
       "checks": [
         "schema",
         "game-and-engine-id",
-        "model-version-compatibility",
         "source-state-metrics",
         "baseline-forecast-horizons",
         "candidate-order-allowlist",
         "resource-bounds",
         "all-nine-stress-profiles",
         "privacy-flags",
-        "sha256-payload-integrity"
+        "sha256-payload-integrity",
+        "model-version-compatibility",
+        "replay-critical operational counters",
+        "selected repair-target scope",
+        "deterministic re-execution of nominal search",
+        "recomputed Pareto portfolio",
+        "all-nine-stress-profile replay",
+        "canonical evidence comparison"
       ],
       "neverExecutesImportedOrders": true,
       "neverMutatesGameState": true,
@@ -332,7 +338,25 @@
       "sendsTelemetry": false,
       "networkRequests": false,
       "reportsHashIsNotDigitalSignature": true,
-      "regressionSmokeTest": "scripts/civic-cascade-forecast-smoke.mjs"
+      "regressionSmokeTest": "scripts/civic-cascade-forecast-smoke.mjs",
+      "replayVerification": {
+        "enabled": true,
+        "contract": "deterministic-evidence-rebuild/v1",
+        "requiresExactModelVersion": true,
+        "replayablePayloadVersions": [
+          "3.4.0"
+        ],
+        "reconstructsOperationalCounters": true,
+        "reconstructsElapsedThresholdOrigin": true,
+        "recomputesSearchAndStressEnvelope": true,
+        "comparesEvidenceFields": 12,
+        "neverExecutesImportedOrders": true,
+        "neverMutatesLiveGameState": true,
+        "neverCallsNetwork": true,
+        "legacyVersionsReadOnly": true
+      },
+      "reportsIntegrityAndReplaySeparately": true,
+      "sha256IsNotSignature": true
     }
   },
   "cinematicExport": {
@@ -373,6 +397,6 @@
   "deployment": {
     "target": "https://osgard.world",
     "mechanism": "repository push triggers the site's production deployment workflow",
-    "liveStatus": "verify release 3.3.0 via production route matrix after deploy"
+    "liveStatus": "verify release 3.4.0 with production route checks after deployment"
   }
 }
