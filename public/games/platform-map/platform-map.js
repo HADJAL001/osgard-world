@@ -130,6 +130,14 @@
     } else {
       foot.append(node('span', 'launch-link', 'Маршрут требует проверки'));
     }
+    const fallbackRoute = safeRoute(game.fallbackRoute);
+    if (fallbackRoute) {
+      const fallbackLink = node('a', 'fallback-link', 'Веб-резерв ↗');
+      fallbackLink.href = fallbackRoute;
+      fallbackLink.setAttribute('aria-label', 'Открыть альтернативную браузерную версию ' + game.title);
+      fallbackLink.addEventListener('click', () => track('game_launched', game.id));
+      foot.append(fallbackLink);
+    }
     article.append(top, art, copy, foot);
     return article;
   }
