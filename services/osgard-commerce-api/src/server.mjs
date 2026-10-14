@@ -14,6 +14,7 @@ import {
   campaignFromRow, normalizeCampaignId, publicCampaignView, validateCampaignPayload,
 } from "./campaigns.mjs";
 import { buildCommercialReadiness } from "./readiness.mjs";
+import { createDailyBudget, ResearchDirectorError, requestResearchDirector, validateResearchDirectorRequest } from "./research-director.mjs";
 
 const { Pool } = pg;
 const app = express();
@@ -34,6 +35,8 @@ const pool = process.env.DATABASE_URL ? new Pool({
 }) : null;
 let dbReady = false;
 let dbErrorAtBoot = false;
+const requestedLabDailyLimit = Number.parseInt(String(process.env.OPENAI_LAB_DAILY_REQUEST_LIMIT || "100"), 10);
+const researchDirectorBudget = createDailyBudget({ limit: Number.isInteger(requestedLabDailyLimit) ? requestedLabDailyLimit : 100, maxConcurrent: 2 });
 
 app.disable("x-powered-by");
 app.set("trust proxy", process.env.TRUST_PROXY === "true" ? 1 : false);
@@ -53,6 +56,10 @@ app.use("/v1/events", rateLimit({ windowMs: 5 * 60 * 1000, limit: 60, standardHe
 app.use("/v1/referrals", rateLimit({ windowMs: 15 * 60 * 1000, limit: 30, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/admin", rateLimit({ windowMs: 5 * 60 * 1000, limit: 120, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/campaigns", rateLimit({ windowMs: 15 * 60 * 1000, limit: 120, standardHeaders: "draft-8", legacyHeaders: false }));
+app.use("/v1/lab/research-director", rateLimit({
+  windowMs: 15 * 60 * 1000, limit: 5, standardHeaders: "draft-8", legacyHeaders: false,
+  handler: (_req, res) => res.status(429).json({ error: "AI_RATE_LIMIT", message: "Слишком много AI-разборов. Попробуй позже." }),
+}));
 
 async function ensureSchema() {
   if (!pool) return false;
@@ -234,6 +241,53 @@ app.get("/v1/admin/readiness", requireAdmin, async (_req, res) => {
     return res.status(503).json({ error: "READINESS_REPORT_UNAVAILABLE", message: "Не удалось собрать статус запуска. Повторите попытку позже." });
   }
 });
+app.get("/v1/lab/research-director/status", (_req, res) => {
+  res.set("Cache-Control", "no-store, private");
+  return res.status(200).json({ available: String(process.env.OPENAI_API_KEY || "").trim().length >= 20 });
+});
+app.post("/v1/lab/research-director", async (req, res) => {
+  res.set("Cache-Control", "no-store, private");
+  res.set("Pragma", "no-cache");
+  res.set("X-Content-Type-Options", "nosniff");
+  if (!String(process.env.OPENAI_API_KEY || "").trim()) {
+    return res.status(503).json({ error: "AI_ADVISOR_NOT_CONFIGURED", message: "AI Research Director ещё не настроен на сервере. Используй локальный разбор или экспорт исследовательского брифа." });
+  }
+  let byteLength = 0;
+  try { byteLength = Buffer.byteLength(JSON.stringify(req.body ?? null), "utf8"); }
+  catch { return res.status(400).json({ error: "INVALID_REQUEST" }); }
+  if (byteLength > 12000) return res.status(413).json({ error: "AI_CONTEXT_TOO_LARGE", message: "Сводка эксперимента превышает допустимый размер." });
+  const checked = validateResearchDirectorRequest(req.body);
+  if (!checked.ok) return res.status(400).json({ error: checked.code, message: checked.message });
+  const lease = researchDirectorBudget.acquire();
+  if (!lease) return res.status(429).json({ error: "AI_DAILY_BUDGET_EXHAUSTED", message: "Достигнут дневной лимит AI-разборов. Повтори завтра или используй локальный режим." });
+  try {
+    const response = await requestResearchDirector(checked.value, {
+      apiKey: process.env.OPENAI_API_KEY,
+      model: process.env.OPENAI_LAB_MODEL || "gpt-6-luna",
+    });
+    return res.status(200).json({
+      schema: "osgard.cascade-lab.research-director.response.v1",
+      result: response.result,
+      model: response.model,
+      provider: { store: false, persistence: "not-stored-by-osgard" },
+    });
+  } catch (error) {
+    const status = error instanceof ResearchDirectorError ? error.status : 502;
+    const code = error instanceof ResearchDirectorError ? error.code : "AI_PROVIDER_FAILED";
+    if (status >= 500) console.error("CASCADE LAB Research Director failed:", code);
+    const message = code === "AI_ADVISOR_NOT_CONFIGURED"
+      ? "AI Research Director не настроен на сервере."
+      : status === 429
+        ? "AI-сервис временно ограничил запросы. Попробуй позже."
+        : status === 504
+          ? "AI-разбор не успел завершиться. Повтори попытку позже."
+          : "Не удалось получить проверяемый AI-отчёт. Локальная лаборатория продолжает работать.";
+    return res.status(status).json({ error: code, message });
+  } finally {
+    lease.release();
+  }
+});
+
 app.get("/v1/products", async (_req, res) => {
   try {
     res.set("Cache-Control", "no-store");
