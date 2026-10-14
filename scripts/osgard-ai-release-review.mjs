@@ -115,6 +115,26 @@ export function projectReport(name, data) {
     base.warnings = relevant.filter(item => ['warning', 'warn'].includes(item.status));
   }
 
+  // projectReport is intentionally idempotent: buildReviewPacket may receive a
+  // report that has already passed through this projection (as the CLI does).
+  // Re-validate projected counts/evidence instead of cloning caller-provided objects.
+  if (!Array.isArray(data?.checks) && data?.checks && typeof data.checks === 'object') {
+    const counts = { total: 0, passed: 0, failed: 0, warnings: 0, skipped: 0 };
+    for (const key of Object.keys(counts)) {
+      const count = asCount(data.checks[key]);
+      if (count !== null) counts[key] = count;
+    }
+    base.checks = counts;
+    const sanitizeCheck = item => ({
+      id: safeText(item?.id || 'check', 100),
+      status: safeText(item?.status, 20).toLowerCase(),
+      title: safeText(item?.title || item?.id || 'Unnamed check', 180),
+      detail: safeText(item?.detail || '', 300),
+    });
+    if (Array.isArray(data.failedChecks)) base.failedChecks = data.failedChecks.slice(0, 20).map(sanitizeCheck);
+    if (Array.isArray(data.warnings)) base.warnings = data.warnings.slice(0, 20).map(sanitizeCheck);
+  }
+
   if (Array.isArray(data?.results) || Array.isArray(data?.routes)) {
     const items = Array.isArray(data.results) ? data.results : data.routes;
     base.routeChecks = countStatuses(items);
@@ -128,6 +148,21 @@ export function projectReport(name, data) {
         statusCode: asCount(item?.statusCode || item?.httpStatus),
         reason: safeText(item?.reason || item?.message || '', 240),
       }));
+  } else if (data?.routeChecks && typeof data.routeChecks === 'object') {
+    const counts = { total: 0, passed: 0, failed: 0, warnings: 0, skipped: 0 };
+    for (const key of Object.keys(counts)) {
+      const count = asCount(data.routeChecks[key]);
+      if (count !== null) counts[key] = count;
+    }
+    base.routeChecks = counts;
+    if (Array.isArray(data.failedRoutes)) {
+      base.failedRoutes = data.failedRoutes.slice(0, 20).map(item => ({
+        route: routePath(item?.route || ''),
+        status: safeText(item?.status || 'unknown', 30),
+        statusCode: asCount(item?.statusCode),
+        reason: safeText(item?.reason || '', 240),
+      }));
+    }
   }
 
   if (data?.summary && typeof data.summary === 'object') {
