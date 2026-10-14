@@ -252,6 +252,9 @@ var damage_direction_source: Node3D
 var damage_direction_fallback := Vector2.UP
 var current_frame_ms := 0.0
 var impact_flash_timer := 0.0
+var impact_wave_timer := 0.0
+var impact_wave_duration := 0.34
+var impact_wave_strength := 0.0
 var phase_flash_timer := 0.0
 var crosshair_kick := 0.0
 var crosshair_hit_timer := 0.0
@@ -460,6 +463,9 @@ func _reset_runtime_collections() -> void:
 	mission_score = 0
 	combat_score_total = 0
 	mission_grade = "C"
+	impact_wave_timer = 0.0
+	impact_wave_duration = 0.34
+	impact_wave_strength = 0.0
 	objective_beacon_beam_materials = objective_beacon_beam_materials.duplicate()
 	objective_beacon_beam_materials.clear()
 	objective_beacon_target = null
@@ -546,6 +552,9 @@ func _process(delta: float) -> void:
 	damage_flash_timer = maxf(0.0, damage_flash_timer - dt)
 	camera_shake_timer = maxf(0.0, camera_shake_timer - dt)
 	impact_flash_timer = maxf(0.0, impact_flash_timer - dt)
+	impact_wave_timer = maxf(0.0, impact_wave_timer - dt)
+	if impact_wave_timer <= 0.0:
+		impact_wave_strength = 0.0
 	damage_direction_timer = maxf(0.0, damage_direction_timer - dt)
 	phase_flash_timer = maxf(0.0, phase_flash_timer - dt)
 	crosshair_kick = move_toward(crosshair_kick, 0.0, dt * 5.6)
@@ -4500,6 +4509,8 @@ uniform float vignette_strength : hint_range(0.0, 0.45) = 0.28;
 uniform float danger : hint_range(0.0, 1.0) = 0.0;
 uniform float phase_shift : hint_range(0.0, 1.0) = 0.0;
 uniform float motion_reduction : hint_range(0.0, 1.0) = 0.0;
+uniform float impact_wave_progress : hint_range(0.0, 1.0) = 0.0;
+uniform float impact_wave_strength : hint_range(0.0, 1.0) = 0.0;
 void fragment() {
 	vec2 centered = (UV - vec2(0.5)) * vec2(1.0, 0.86);
 	float distance_from_center = length(centered);
@@ -4508,12 +4519,19 @@ void fragment() {
 	float pulse = mix(pulse_wave, 1.0, motion_reduction);
 	float danger_edge = danger * 0.14 * pulse;
 	float alpha = edge * (vignette_strength + danger_edge + phase_shift * 0.055);
+	float wave_radius = impact_wave_progress * 0.76;
+	float wave_width = 0.009 + impact_wave_progress * 0.012;
+	float wave_ring = (1.0 - smoothstep(0.0, wave_width, abs(distance_from_center - wave_radius))) * impact_wave_strength;
 	vec3 base = vec3(0.003, 0.009, 0.012);
 	vec3 phase_tint = vec3(0.025, 0.004, 0.05);
 	vec3 low_health_tint = vec3(0.035, 0.004, 0.009);
+	vec3 wave_tint = vec3(0.24, 0.98, 0.82);
 	base = mix(base, phase_tint, phase_shift * 0.42);
 	base = mix(base, low_health_tint, danger * 0.34);
-	COLOR = vec4(base, clamp(alpha, 0.0, 0.44));
+	wave_tint = mix(wave_tint, vec3(0.46, 0.12, 0.92), phase_shift * 0.76);
+	wave_tint = mix(wave_tint, vec3(1.0, 0.12, 0.20), danger * 0.78);
+	base = mix(base, wave_tint, wave_ring * 0.92);
+	COLOR = vec4(base, clamp(alpha + wave_ring * 0.24, 0.0, 0.58));
 }
 """
 	cinematic_vignette_material = ShaderMaterial.new()
@@ -4533,6 +4551,14 @@ func _update_cinematic_vignette() -> void:
 	cinematic_vignette_material.set_shader_parameter("danger", danger)
 	cinematic_vignette_material.set_shader_parameter("phase_shift", phase_weight)
 	cinematic_vignette_material.set_shader_parameter("motion_reduction", 1.0 if reduced_motion else 0.0)
+	var wave_progress: float = 0.0
+	var wave_envelope: float = 0.0
+	if impact_wave_timer > 0.0 and impact_wave_duration > 0.0:
+		var wave_life: float = clampf(impact_wave_timer / impact_wave_duration, 0.0, 1.0)
+		wave_progress = 1.0 - wave_life
+		wave_envelope = impact_wave_strength * wave_life * (0.1 if reduced_motion else 1.0)
+	cinematic_vignette_material.set_shader_parameter("impact_wave_progress", wave_progress)
+	cinematic_vignette_material.set_shader_parameter("impact_wave_strength", wave_envelope)
 	cinematic_vignette.visible = true
 
 func _create_damage_direction_ui() -> void:
@@ -4777,6 +4803,11 @@ func _screen_impulse(strength: float, duration: float) -> void:
 	camera_shake_strength = maxf(camera_shake_strength, strength * motion_scale)
 	camera_shake_timer = maxf(camera_shake_timer, duration * duration_scale)
 	camera_shake_duration = maxf(camera_shake_duration, duration * duration_scale)
+	# A shader-driven energy ring adds an impact cue without changing combat timing.
+	# The visual is attenuated by Reduced Motion and reuses the existing HUD layer.
+	impact_wave_duration = clampf(duration * (0.62 if reduced_motion else 1.0), 0.12, 0.48)
+	impact_wave_timer = impact_wave_duration
+	impact_wave_strength = clampf(strength * 2.4, 0.0, 0.92) * motion_scale
 
 func _make_panel(parent: Control, preset: int, rect: Rect2) -> PanelContainer:
 	var panel := PanelContainer.new()
