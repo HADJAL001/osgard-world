@@ -22,6 +22,7 @@ const adminPage = read("public/games/admin/feedback/index.html");
 const admin = read("public/games/admin/feedback/admin.js");
 const config = JSON.parse(read("public/games/commerce-config.json"));
 const routeMatrix = read("scripts/production-route-matrix.mjs");
+const privacy = read("public/privacy/index.html");
 const packageJson = JSON.parse(read("package.json"));
 
 for (const route of [
@@ -42,6 +43,7 @@ assert.ok(!client.includes('OSGARD_CONSENTED_ANALYTICS') && !client.includes('se
 assert.ok(adminPage.includes('type="password"') && !admin.includes('localStorage') && !admin.includes('sessionStorage'), "Admin token must be ephemeral");
 assert.ok(admin.includes('textContent') && !admin.includes('innerHTML'), "Admin untrusted report fields must never be interpreted as HTML");
 assert.ok(ui.includes('name="consent"') && ui.includes('href="/privacy/"'), "Form must require acknowledgement and link privacy terms");
+assert.ok(privacy.includes("GAME_FEEDBACK_RETENTION_DAYS") && privacy.includes("не включает в очередь игровой аналитики"), "Privacy page must disclose feedback data use and retention");
 assert.ok(ui.includes('id="export-report"') && ui.includes('id="copy-report"'), "Manual export is needed while API is not configured");
 assert.equal(config.apiBaseUrl, "", "Tests must not silently activate a production API");
 assert.ok(routeMatrix.includes("'/games/feedback/'") && routeMatrix.includes("'/games/admin/feedback/'"), "Feedback routes must enter production route matrix");
