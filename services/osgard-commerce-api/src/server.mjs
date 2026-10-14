@@ -8,7 +8,7 @@ import pg from "pg";
 import {
   catalogConfiguration, validateCheckoutPayload, validateLeadPayload,
   validateEventBatch, validateReferralRegistrationPayload, validateReferralClaimPayload,
-  paymentsModeAllowed, resolveCheckoutPaymentState, safeEqual,
+  validateReferralClaimAckPayload, paymentsModeAllowed, resolveCheckoutPaymentState, safeEqual,
 } from "./core.mjs";
 import {
   campaignFromRow, normalizeCampaignId, publicCampaignView, validateCampaignPayload,
@@ -495,6 +495,127 @@ app.post("/v1/referrals/register", async (req, res) => {
   } catch (error) {
     console.error("Referral registration failed:", error?.message || "unknown error");
     return res.status(503).json({ error: "REFERRAL_REGISTRATION_UNAVAILABLE" });
+  }
+});
+
+app.post("/v1/referrals/prepare-claim", async (req, res) => {
+  const input = validateReferralClaimPayload(req.body);
+  if (!input.ok) return res.status(input.status).json({ error: input.code });
+  if (!requireDatabase(res)) return;
+  const ownerHash = crypto.createHash("sha256").update(input.ownerToken, "utf8").digest("hex");
+  let client;
+  try {
+    client = await pool.connect();
+    await client.query("BEGIN");
+    const eligible = await client.query(
+      `WITH session_candidates AS (
+        SELECT
+          i.referral_code,
+          i.game_id,
+          e.session_id,
+          MIN(e.received_at) FILTER (WHERE e.event_name = 'game_session_started') AS started_at,
+          MIN(e.received_at) FILTER (WHERE e.event_name = 'game_session_completed') AS completed_at,
+          MAX(e.duration_seconds) FILTER (WHERE e.event_name = 'game_session_completed') AS duration_seconds
+        FROM commerce_referral_invites i
+        JOIN commerce_events e
+          ON e.game_id = i.game_id
+         AND e.source = 'referral:' || i.referral_code || ':' || i.game_id
+         AND e.event_name IN ('game_session_started', 'game_session_completed')
+         AND e.received_at >= i.created_at
+         AND e.received_at <= i.created_at + INTERVAL '7 days'
+        WHERE i.owner_hash = $1
+          AND i.reward_claimed_at IS NULL
+          AND EXISTS (
+            SELECT 1 FROM commerce_events opened
+            WHERE opened.event_name = 'referral_link_opened'
+              AND opened.source = 'referral-link:' || i.referral_code
+              AND opened.received_at >= i.created_at - INTERVAL '5 minutes'
+              AND opened.received_at <= i.created_at + INTERVAL '7 days'
+          )
+        GROUP BY i.referral_code, i.game_id, e.session_id
+        HAVING
+          MIN(e.received_at) FILTER (WHERE e.event_name = 'game_session_started') IS NOT NULL
+          AND MIN(e.received_at) FILTER (WHERE e.event_name = 'game_session_completed') IS NOT NULL
+          AND MIN(e.received_at) FILTER (WHERE e.event_name = 'game_session_completed')
+            >= MIN(e.received_at) FILTER (WHERE e.event_name = 'game_session_started') + INTERVAL '30 seconds'
+          AND MAX(e.duration_seconds) FILTER (WHERE e.event_name = 'game_session_completed') >= 30
+      ),
+      one_per_code AS (
+        SELECT DISTINCT ON (candidate.referral_code)
+          candidate.referral_code, candidate.game_id, candidate.session_id, candidate.completed_at
+        FROM session_candidates candidate
+        WHERE EXISTS (
+          SELECT 1 FROM commerce_events opened
+          WHERE opened.event_name = 'referral_link_opened'
+            AND opened.source = 'referral-link:' || candidate.referral_code
+            AND opened.received_at <= candidate.started_at
+            AND opened.received_at >= candidate.started_at - INTERVAL '7 days'
+        )
+        ORDER BY candidate.referral_code, candidate.completed_at ASC
+      )
+      SELECT i.referral_code, i.reward_amount, c.session_id, c.completed_at
+      FROM one_per_code c
+      JOIN commerce_referral_invites i
+        ON i.referral_code = c.referral_code
+       AND i.owner_hash = $1
+      WHERE i.reward_claimed_at IS NULL
+      ORDER BY c.completed_at ASC
+      LIMIT 10
+      FOR UPDATE OF i SKIP LOCKED`,
+      [ownerHash],
+    );
+    const claims = [];
+    for (const row of eligible.rows) {
+      const prepared = await client.query(
+        `UPDATE commerce_referral_invites
+         SET qualified_session_id = COALESCE(qualified_session_id, $2),
+             qualified_at = COALESCE(qualified_at, $3)
+         WHERE referral_code = $1 AND owner_hash = $4 AND reward_claimed_at IS NULL
+         RETURNING referral_code, reward_amount`,
+        [row.referral_code, row.session_id, row.completed_at, ownerHash],
+      );
+      const claim = prepared.rows[0];
+      if (claim) claims.push({ referralCode: claim.referral_code, amount: Math.max(0, Number(claim.reward_amount || 0)) });
+    }
+    await client.query("COMMIT");
+    return res.json({
+      claims,
+      rewardPerQualifiedInvite: 50,
+      qualification: "A registered invite plus a recorded referral open, game start and completion. Server-received start/completion must be at least 30 seconds apart and the completed session must report at least 30 seconds of play.",
+      note: "Claim preparation is retryable. The client persists receipt IDs before acknowledging; SHARDS are cosmetic and have no cash value. Event timing does not prove a unique human."
+    });
+  } catch (error) {
+    await client?.query("ROLLBACK").catch(() => {});
+    console.error("Referral reward preparation failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "REFERRAL_REWARD_UNAVAILABLE" });
+  } finally {
+    client?.release();
+  }
+});
+
+app.post("/v1/referrals/ack", async (req, res) => {
+  const input = validateReferralClaimAckPayload(req.body);
+  if (!input.ok) return res.status(input.status).json({ error: input.code });
+  if (!requireDatabase(res)) return;
+  const ownerHash = crypto.createHash("sha256").update(input.ownerToken, "utf8").digest("hex");
+  try {
+    const acknowledged = await pool.query(
+      `UPDATE commerce_referral_invites
+       SET reward_claimed_at = COALESCE(reward_claimed_at, NOW())
+       WHERE owner_hash = $1
+         AND referral_code = ANY($2::text[])
+         AND qualified_session_id IS NOT NULL
+       RETURNING referral_code`,
+      [ownerHash, input.referralCodes],
+    );
+    return res.json({
+      acknowledged: Number(acknowledged.rowCount || 0),
+      requested: input.referralCodes.length,
+      note: "Acknowledgement is idempotent; an already acknowledged referral does not create another reward."
+    });
+  } catch (error) {
+    console.error("Referral reward acknowledgement failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "REFERRAL_REWARD_ACK_UNAVAILABLE" });
   }
 });
 
