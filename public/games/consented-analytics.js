@@ -101,7 +101,17 @@
       const response = await fetch('/games/commerce-config.json', { cache: 'no-store', credentials: 'same-origin', signal });
       const config = response.ok ? await response.json() : {};
       const raw = typeof config.apiBaseUrl === 'string' ? config.apiBaseUrl.trim() : '';
-      if (!raw) return '';
+      if (!raw) {
+        // Empty config never means “assume an API exists”: probe only the documented
+        // same-origin route, with no cookies, and require explicit database readiness.
+        const healthResponse = await fetch('/commerce-api/healthz', {
+          cache: 'no-store', credentials: 'omit', signal,
+        });
+        const health = healthResponse.ok ? await healthResponse.json().catch(() => ({})) : {};
+        return healthResponse.ok && health.service === 'osgard-commerce-api' && health.databaseReady === true
+          ? location.origin + '/commerce-api'
+          : '';
+      }
       try {
         const parsed = new URL(raw, location.origin);
         const localApi = ['localhost', '127.0.0.1'].includes(parsed.hostname);
