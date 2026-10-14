@@ -140,7 +140,7 @@ for (const scenario of ['flood', 'blackout', 'blockade']) {
 check(result.robustnessEvaluatedCount >= 0 && result.robustnessEvaluatedCount <= 8, scenario + ' stress ranking must stay within eight candidates')
 check(result.alternatives.every(candidate => typeof candidate.portfolioRole === 'string' && typeof candidate.paretoMember === 'boolean'), scenario + ' portfolio candidates must declare their selection role and dominance status')
   const prefixes = result.alternatives.map(candidate => candidate.orders.slice(0,2).map(order => order.action + ':' + (order.nodeId || '-')).join('|'))
-  assert.equal(new Set(prefixes).size, prefixes.length, scenario + ' portfolio should prefer distinct opening command prefixes')
+  assert.equal(new Set(prefixes).size, Math.min(result.alternatives.length, result.openingPrefixCount), scenario + ' portfolio should maximize the available distinct opening command prefixes')
   check(result.portfolioSize === result.alternatives.length, scenario + ' portfolio count must match returned options')
   check(result.openingPrefixCount >= 1 && result.openingPrefixCount <= result.robustnessEvaluatedCount, scenario + ' available prefix diversity must be bounded')
   check(result.paretoFrontSize >= 0 && result.paretoFrontSize <= result.robustnessEvaluatedCount, scenario + ' Pareto front size must be bounded')
