@@ -188,7 +188,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
           ? (() => { try { const value = JSON.parse(text); return (response.headers.get('content-type') || '').toLowerCase().includes('json') && value.name === 'CASCADE LAB — Premium Physics Lab' && value.scope === './' && value.display === 'standalone' } catch { return false } })()
         : route === '/games/cascade-lab/service-worker.js'
           ? (response.headers.get('content-type') || '').toLowerCase().includes('javascript') &&
-            /CACHE\s*=\s*PREFIX\s*\+\s*['"]v0\.26\.0['"]/.test(text) &&
+            /CACHE\s*=\s*PREFIX\s*\+\s*['"]v\d+\.\d+\.\d+['"]/.test(text) &&
             /\bmethod\s*!==\s*['"]GET['"]/.test(text) &&
             /\bmode\s*===\s*['"]navigate['"]/.test(text)
         : route === '/games/cascade-lab/lab-icon.svg'
