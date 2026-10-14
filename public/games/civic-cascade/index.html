@@ -1085,10 +1085,12 @@ function doctrineDominates(a,b){
   [a.cost,b.cost,'min'],
   [ar.worstRiskDelta??Infinity,br.worstRiskDelta??Infinity,'min'],
   [ar.worstIntegrityDelta??-Infinity,br.worstIntegrityDelta??-Infinity,'max'],
-  [ar.stableProfiles??0,br.stableProfiles??0,'max'],
-  [a.scenarioTransfer?.transferPenalty??Infinity,b.scenarioTransfer?.transferPenalty??Infinity,'min'],
-  [a.scenarioTransfer?.stableScenarios??0,b.scenarioTransfer?.stableScenarios??0,'max']
+  [ar.stableProfiles??0,br.stableProfiles??0,'max']
  ];
+ if(a.scenarioTransfer&&b.scenarioTransfer){
+  dimensions.push([a.scenarioTransfer.transferPenalty,b.scenarioTransfer.transferPenalty,'min']);
+  dimensions.push([a.scenarioTransfer.stableScenarios,b.scenarioTransfer.stableScenarios,'max']);
+ }
  let strictlyBetter=false;
  for(const [left,right,direction] of dimensions){
   if(!Number.isFinite(left)||!Number.isFinite(right))return false;
