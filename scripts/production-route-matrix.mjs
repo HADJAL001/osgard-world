@@ -227,6 +227,9 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
               ['/games/null-shift-godot/', '/games/null-shift-godot/index.html'].includes(new URL(response.url).pathname)
             : /<canvas/i.test(text) && /godot/i.test(text) && text.includes('index.wasm') && text.includes('index.pck') &&
               text.includes('data-nullshift-shell="premium-v1"') &&
+              text.includes('data-nullshift-release="0.22.0-operator-chronicle"') &&
+              text.includes('name="osgard-game-version" content="0.22.0-operator-chronicle"') &&
+              text.includes('RELEASE 0.22.0') &&
               text.includes('Engine.isWebGLAvailable(2)') &&
               text.includes('onProgress') &&
               text.includes('НАЧАТЬ ОПЕРАЦИЮ') && text.includes('osgard:game-lifecycle')

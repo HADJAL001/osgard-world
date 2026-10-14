@@ -575,3 +575,10 @@ Regression coverage exercises weakpoint exposure, countershot timing, salvage co
 30. JSON archive export is explicitly local-only; the headless Godot runtime checks record normalization, 24-entry capacity, duplicate protection, statistics, all medal rules and the real UI wiring.
 
 The Chronicle uses the existing local career save and Godot runtime—no backend, third-party package or hidden analytics upload. Existing after-action JSON remains available as the detailed single-run report.
+
+
+## Production publication contract — NULL//SHIFT 0.22.0
+
+- The real Godot Web shell carries the machine-readable release marker `0.22.0-operator-chronicle` and displays `RELEASE 0.22.0` in the loading interface. Project metadata, the source smoke test and exported HTML must agree.
+- The production route matrix reads the published `/games/null-shift-godot/index.html` body and fails if the version marker is absent or stale. The paired `.js`, `.wasm` and `.pck` assets are checked separately.
+- This makes the 30-improvement Operator Chronicle release verifiable at the serving edge, not only in the repository. No external runtime dependency or analytics endpoint was added.

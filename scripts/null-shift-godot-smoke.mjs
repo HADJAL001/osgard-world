@@ -27,6 +27,8 @@ const entertainmentCatalog = readFileSync('src/EntertainmentCatalog.tsx', 'utf8'
 const staticEntertainment = readFileSync('public/entertainment/index.html', 'utf8')
 const packageJson = JSON.parse(readFileSync('package.json', 'utf8'))
 assert.match(project, /config\/name="NULL SHIFT"/, 'Safe Godot export project name missing')
+assert.match(project, /config\/version="0\.22\.0"/, 'Godot project release must match Operator Chronicle')
+assert.ok(shell.includes('data-nullshift-release="0.22.0-operator-chronicle"') && shell.includes('name="osgard-game-version" content="0.22.0-operator-chronicle"') && shell.includes('RELEASE 0.22.0'), 'Loading shell must identify the exact Operator Chronicle build')
 assert.match(project, /config\/features=PackedStringArray\("4\.7", "GL Compatibility"\)/, 'Godot 4.7 compatibility renderer target missing')
 assert.match(project, /renderer\/rendering_method="gl_compatibility"/, 'Web-compatible renderer missing')
 assert.match(preset, /name="Web"/, 'Web export preset missing')
@@ -212,7 +214,7 @@ if (process.argv[2] === '--export-check') {
   }
   const exportedHtml = readFileSync(join(dir, 'index.html'), 'utf8')
   assert.ok(/canvas/i.test(exportedHtml), 'Exported HTML canvas was not found')
-  assert.ok(exportedHtml.includes('data-nullshift-shell="premium-v1"') && exportedHtml.includes('Engine.isWebGLAvailable(2)') && exportedHtml.includes('onProgress:'), 'Premium loading shell was not applied to the actual Web export')
+  assert.ok(exportedHtml.includes('data-nullshift-shell="premium-v1"') && exportedHtml.includes('data-nullshift-release="0.22.0-operator-chronicle"') && exportedHtml.includes('name="osgard-game-version" content="0.22.0-operator-chronicle"') && exportedHtml.includes('RELEASE 0.22.0') && exportedHtml.includes('Engine.isWebGLAvailable(2)') && exportedHtml.includes('onProgress:'), 'Versioned premium shell was not applied to the actual Web export')
   assert.ok(/index\.wasm/i.test(exportedHtml) && /index\.pck/i.test(exportedHtml), 'Exported HTML does not refer to matching engine assets')
   console.log('PASS NULL//SHIFT Godot export files: HTML, JS, WebAssembly and PCK payload are present')
 }

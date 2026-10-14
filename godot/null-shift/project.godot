@@ -2,9 +2,10 @@ config_version=5
 
 [application]
 config/name="NULL SHIFT"
+config/version="0.22.0"
 run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
-config/description="A cinematic 3D tactical extraction raid built with Godot."
+config/description="NULL//SHIFT 0.22.0 Operator Chronicle: cinematic 3D tactical extraction, deterministic daily anomalies, tactical mastery, bounded local career archive and private JSON export."
 
 [display]
 window/size/viewport_width=1600
