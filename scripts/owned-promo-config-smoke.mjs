@@ -67,7 +67,7 @@ assert.ok(admin.includes('updatePromoDefaultChoices()'), 'Default selections mus
 const adminPage = readFileSync(resolve(root, 'public/games/commerce-admin/index.html'), 'utf8')
 const ownedPromoPlayer = readFileSync(resolve(root, 'public/games/game-session-recommendations.js'), 'utf8')
 assert.ok(adminPage.includes('<option value="gardvpn">GARD VPN</option>'), 'GARD VPN must be selectable as the admin spotlight')
-assert.ok(ownedPromoPlayer.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN','VPN-сервис GARD VPN. Открой официальный сайт, чтобы изучить доступные условия.','https://gardvpn.is/']"), 'GARD VPN must be selectable without claiming that VPN connectivity was independently verified')
+assert.ok(ownedPromoPlayer.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN','Промо временно отключено, пока подключение VPN не подтверждено. Официальный сайт: доступен для ознакомления.','https://gardvpn.is/',false,false]"), 'GARD VPN must remain in the owned-service inventory but not be promoted before VPN connectivity is verified')
 
 
 assert.ok(player.includes("fetch('/commerce-api/v1/owned-promo/config'"), 'Game intermission must consume the server-published configuration');
