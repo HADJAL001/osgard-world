@@ -8,7 +8,7 @@
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://osgard.world/games/civic-cascade/">
 <title>CIVIC CASCADE — кризисная стратегия | OSGARD PLAY</title>
-<meta name="osgard-game-version" content="3.3.0-auditable-dossier-verifier">
+<meta name="osgard-game-version" content="3.4.0-openai-civic-advisor">
 <style>
 :root{color-scheme:dark;--bg:#080d10;--panel:#10191d;--panel2:#142126;--line:#ffffff1c;--ink:#edf3ee;--muted:#91a29e;--mint:#b8f4cf;--cyan:#68d8d2;--gold:#e1c58a;--warn:#f2b27c;--bad:#ff827b;--mono:ui-monospace,Consolas,monospace;--serif:Georgia,serif}
 *{box-sizing:border-box}html{background:var(--bg);scroll-behavior:smooth}body{margin:0;color:var(--ink);background:radial-gradient(ellipse at 76% -18%,#234d453d,transparent 48%),var(--bg);font:14px/1.55 Inter,Geist,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}button,select{font:inherit}button,a,select{touch-action:manipulation}a{color:inherit;text-decoration:none}button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(--mint);outline-offset:3px}.wrap{max-width:1440px;padding:0 clamp(14px,2.8vw,42px);margin:auto}
@@ -233,6 +233,23 @@
 .node-inspector-chain{margin:12px 0 0;color:#d1e4dc;font-size:11px;line-height:1.6}
 .node-inspector-effect{padding-top:9px;border-top:1px solid var(--line)}
 @media(max-width:560px){.node-inspector-body{grid-template-columns:1fr;gap:10px}.node-health-readout{grid-template-columns:70px minmax(0,1fr)}}
+
+/* Optional OpenAI strategy adviser — consent-first and read-only. */
+.doctrine-ai-advisor{margin-top:12px;padding:13px;border:1px solid #ad91ff36;border-radius:10px;background:radial-gradient(ellipse at 0 0,#ad91ff12,transparent 52%),linear-gradient(145deg,#151222,#0b1014)}
+.doctrine-ai-advisor .doctrine-verifier-head strong{color:#cab8ff}
+.doctrine-ai-copy{margin:10px 0;color:#b5b3c6;font-size:10px;line-height:1.7}
+.doctrine-ai-consent{display:flex;align-items:flex-start;gap:9px;margin:10px 0;padding:10px;border:1px solid #ffffff1c;border-radius:7px;color:#d9d9e8;font-size:10px;line-height:1.65;cursor:pointer}
+.doctrine-ai-consent input{width:17px;height:17px;flex:0 0 17px;margin:1px 0 0;accent-color:#b69cff}
+.doctrine-ai-button{width:100%;min-height:42px;white-space:normal;line-height:1.35}
+.doctrine-ai-button:disabled{opacity:.38;cursor:not-allowed}
+.doctrine-ai-status{margin:9px 0;color:#b8a9e8;font:8px/1.7 var(--mono)}
+.doctrine-ai-result{display:grid;gap:7px;margin-top:8px;padding:11px;border-radius:7px;background:#070b11;border:1px solid #ffffff17;color:#cad4d6;font-size:10px;line-height:1.7;overflow-wrap:anywhere}
+.doctrine-ai-result:empty{display:none}
+.doctrine-ai-result strong{color:#e6dfff;font:8px var(--mono);letter-spacing:.06em}
+.doctrine-ai-result p{margin:0}
+.doctrine-ai-footnote{margin:9px 0 0;color:#85869a;font-size:8px;line-height:1.65}
+@media(max-width:560px){.doctrine-ai-advisor{padding:10px}.doctrine-ai-consent{font-size:11px}.doctrine-ai-copy{font-size:11px}}
+
 </style>
 </head>
 <body>
@@ -332,6 +349,16 @@
   <p id="cc-doctrine-verify-help">Лимит файла — 1 МиБ. Проверка не импортирует очередь и не исполняет команды из файла. SHA-256 выявляет изменение после экспорта, но сам по себе не подтверждает личность автора.</p>
   <div class="doctrine-verification-result" id="cc-doctrine-verification-result" role="status" aria-live="polite">Досье ещё не выбрано. Никакие файлы не отправляются на сервер.</div>
  </div>
+
+ <section class="doctrine-ai-advisor" id="cc-doctrine-ai-advisor" aria-labelledby="cc-doctrine-ai-title">
+  <div class="doctrine-verifier-head"><strong id="cc-doctrine-ai-title">OPENAI · СОВЕТНИК ПО СТРАТЕГИИ</strong><span>ОТДЕЛЬНЫЙ ЗАПРОС · ПО СОГЛАСИЮ</span></div>
+  <p class="doctrine-ai-copy">Локальный штаб отвечает за расчёты и допустимость приказов. OpenAI может прочитать краткую сводку до трёх найденных вариантов, выделить компромисс и предложить следующий проверяемый эксперимент. Советник не меняет рейтинг, не загружает план в очередь и не исполняет команды.</p>
+  <label class="doctrine-ai-consent" for="cc-doctrine-ai-consent"><input id="cc-doctrine-ai-consent" type="checkbox"><span>Разрешаю отправить OpenAI краткую структурированную сводку сценария и до трёх вариантов для этой одной консультации. Имя, аккаунт, сохранение, произвольный текст и полное досье не отправляются.</span></label>
+  <button class="ctrl primary doctrine-ai-button" id="cc-doctrine-ai-run" type="button" disabled>✦ Получить независимый разбор OpenAI</button>
+  <p class="doctrine-ai-status" id="cc-doctrine-ai-status" role="status" aria-live="polite">Советник выключен, пока серверный флаг и приватный API-ключ не настроены.</p>
+  <div class="doctrine-ai-result" id="cc-doctrine-ai-result" aria-live="polite">AI-рекомендация будет показана отдельно от детерминированного рейтинга. Без согласия и активного сервера данные не отправляются.</div>
+  <p class="doctrine-ai-footnote">Ответ модели — второе мнение, а не доказательство и не источник истины. Он не входит в хешированное досье, не сохраняется в профиле и не влияет на город. При недоступности OpenAI локальная игра продолжает работать.</p>
+ </section>
   <p class="doctrine-footnote">Планировщик детерминированный и локальный: до восьми лучших вариантов проверяются в девяти контролируемых стресс-экспериментах (три семейства по три уровня) против базового решения под тем же стрессом. Он не отправляет игровые данные на сервер и не вызывает OpenAI API. Будущие случайные инциденты и решения игрока не предсказываются.</p>
  </section>
  <ol class="command-list" id="cc-plan-list" aria-live="polite"><li class="command-empty">Очередь пуста. Поставь игру на паузу и добавь первый приказ.</li></ol>
@@ -1296,7 +1323,7 @@ function buildDoctrineDossierPayload(sourceState,result,gameVersion,scenarioDefi
  return {
   schema:'osgard.civic-cascade.decision-dossier/v1',game:'CIVIC CASCADE',gameVersion:String(gameVersion||'unknown'),
   engine:{
-   id:'civic-cascade-deterministic-decision-engine',modelVersion:'3.3.0',
+   id:'civic-cascade-deterministic-decision-engine',modelVersion:'3.4.0',
    searchAlgorithm:'deterministic-bounded-beam-search',portfolioAlgorithm:'bounded-pareto-frontier',
    objective:String(result.mode||'balanced'),limits:{maxCommands:4,beamWidth:6,stressCandidateLimit:8,stressProfileCount:9,stressSeverityLevels:3,portfolioLimit:3},
    forecastHorizonsGameSeconds:[30,60,90],stressFamilies:['water-surge','grid-overload','weak-node-shock'],stressSeverityLevels:['mild','moderate','severe'],stressProfiles:['water-surge-mild','water-surge-moderate','water-surge-severe','grid-overload-mild','grid-overload-moderate','grid-overload-severe','weak-node-shock-mild','weak-node-shock-moderate','weak-node-shock-severe']
@@ -1418,6 +1445,72 @@ async function verifyDoctrineDossierFile(){
  }
 }
 
+
+let civicCascadeAdvisorBusy=false;
+function buildCivicCascadeAdvisorPayload(){
+ const result=doctrineResult,baseline=result?.baseline?.forecast?.[2];
+ if(!result||!baseline)return null;
+ const familyIds=['water-surge','grid-overload','weak-node-shock'];
+ const candidates=(result.alternatives||[]).slice(0,3).map((candidate,index)=>{
+  const worstStressByFamily=familyIds.map(family=>{
+   const profiles=(candidate.robustness?.profiles||[]).filter(profile=>profile.family===family);
+   profiles.sort((a,b)=>b.riskDelta90-a.riskDelta90||a.weakestIntegrityDelta-b.weakestIntegrityDelta);
+   const worst=profiles[0];
+   return worst?{family,severity:worst.severity,
+    riskDelta90:Number.isFinite(worst.riskDelta90)?Math.round(worst.riskDelta90*10)/10:0,
+    weakestIntegrityDelta:Number.isFinite(worst.weakestIntegrityDelta)?Math.round(worst.weakestIntegrityDelta*10)/10:0,
+    criticalNodeDelta:Number.isFinite(worst.criticalNodeDelta)?worst.criticalNodeDelta:0
+   }:{family,severity:'moderate',riskDelta90:0,weakestIntegrityDelta:0,criticalNodeDelta:0};
+  });
+  const terminal=candidate.forecast?.[2]||{};
+  return {rank:index+1,role:candidate.paretoMember?'pareto':'reserve',
+   orders:(candidate.orders||[]).map(order=>({action:order.action,nodeId:order.action==='repair'?(order.nodeId||null):null})),
+   resourceCost:candidate.cost,crewsUsed:candidate.crewsUsed,nominalScore:candidate.score,stressAdjustedScore:candidate.robustScore,
+   riskT90:terminal.risk,riskDeltaT90:terminal.risk-baseline.risk,weakestIntegrityT90:terminal.weakestIntegrity,
+   stableProfiles:candidate.robustness?.stableProfiles||0,profileCount:candidate.robustness?.profileCount||9,worstStressByFamily};
+ });
+ return {consent:true,scenario:state.scenario,objective:result.mode,locale:document.documentElement.lang==='en'?'en':'ru',
+  evaluatedCandidateCount:Math.max(0,Math.min(1000,result.evaluatedCount||0)),
+  baseline:{riskT90:baseline.risk,weakestIntegrityT90:baseline.weakestIntegrity,criticalNodesT90:Array.isArray(baseline.criticalNodes)?baseline.criticalNodes.length:0},
+  candidates};
+}
+function refreshCivicCascadeAdvisorAvailability(){
+ const button=$('cc-doctrine-ai-run'),consent=$('cc-doctrine-ai-consent');
+ if(button)button.disabled=civicCascadeAdvisorBusy||!paused||finished||Boolean(activeIncident)||planRunning||!doctrineResult||doctrineResult.fingerprint!==doctrineFingerprint()||!Array.isArray(doctrineResult.alternatives)||doctrineResult.alternatives.length===0||!consent?.checked;
+}
+function renderCivicCascadeAdvisorResult(advice){
+ const root=$('cc-doctrine-ai-result');if(!root)return;root.replaceChildren();
+ const add=(label,value)=>{const item=document.createElement('p'),heading=document.createElement('strong'),copy=document.createElement('span');heading.textContent=label+' · ';copy.textContent=String(value||'');item.append(heading,copy);root.append(item)};
+ add('СОВЕТНИК',advice.title);
+ if(advice.recommendedRank==='none')add('ВЫВОД','Данных недостаточно, чтобы уверенно выбрать один вариант.');
+ else add('РЕКОМЕНДУЕМЫЙ ВАРИАНТ','№ '+advice.recommendedRank+' — только второе мнение; локальный рейтинг не изменён.');
+ add('СВОДКА',advice.summary);add('ОСНОВАНИЕ',advice.evidence);add('КОМПРОМИСС',advice.tradeoff);add('ОГРАНИЧЕНИЕ',advice.caution);add('СЛЕДУЮЩИЙ ТЕСТ',advice.nextExperiment);
+}
+async function runCivicCascadeAdvisor(){
+ const checkbox=$('cc-doctrine-ai-consent'),status=$('cc-doctrine-ai-status'),button=$('cc-doctrine-ai-run');
+ if(!checkbox?.checked){toast('Для отдельной консультации требуется явное согласие.');return}
+ if(!paused||finished||activeIncident||planRunning||!doctrineResult||doctrineResult.fingerprint!==doctrineFingerprint()){status.textContent='Состояние изменилось или операция активна. Поставь игру на паузу и повтори поиск.';return}
+ civicCascadeAdvisorBusy=true;refreshCivicCascadeAdvisorAvailability();status.textContent='Проверяю доступность серверного советника…';
+ try{
+  const availability=await fetch('/v1/civic-cascade-advisor/status',{method:'GET',credentials:'same-origin',cache:'no-store',headers:{Accept:'application/json'}});
+  if(!availability.ok)throw new Error('status-unavailable');
+  const statusPayload=await availability.json();
+  if(statusPayload.enabled!==true){status.textContent='Советник выключен на сервере. Сводка города не отправлена.';return}
+  if(!doctrineResult||doctrineResult.fingerprint!==doctrineFingerprint()){status.textContent='Снимок изменился перед отправкой. Запусти локальный поиск заново; данные не отправлены.';return}
+  const payload=buildCivicCascadeAdvisorPayload();
+  if(!payload||!payload.candidates.length){status.textContent='Нет проверенных планов для консультации. Данные не отправлены.';return}
+  status.textContent='Отправляю только структурированную сводку по явному согласию…';
+  const response=await fetch('/v1/civic-cascade-advisor',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(payload)});
+  const responsePayload=await response.json().catch(()=>({}));
+  if(!response.ok||!responsePayload.advice){
+   const code=String(responsePayload.error||'');
+   status.textContent=code==='OPENAI_CIVIC_ADVISOR_NOT_CONFIGURED'?'Советник отключён или не настроен. Сводка не сохранена.':code==='OPENAI_CIVIC_ADVISOR_BUSY'?'Лимит или нагрузка сервиса достигнуты. Попробуй позже.':'OpenAI временно недоступен или вернул некорректный ответ. Локальная игра не затронута.';return
+  }
+  renderCivicCascadeAdvisorResult(responsePayload.advice);status.textContent='Консультация завершена. Она не меняет локальный рейтинг, досье или очередь команд.';
+ }catch(_){status.textContent='Не удалось связаться с серверным советником. Игра продолжает работать локально; сводка не сохранена.'}
+ finally{civicCascadeAdvisorBusy=false;if(checkbox)checkbox.checked=false;if(button)button.disabled=true;refreshCivicCascadeAdvisorAvailability()}
+}
+
 let doctrineResult=null,doctrineSelectedIndex=0,doctrineStaleMessage='';
 function doctrineFingerprint(){
  const names=['water','grid','access','supplies','crews','riskOffset','waterRate','gridRate','accessRate','actionCount','scenario'];
@@ -1484,6 +1577,7 @@ function refreshDoctrineAvailability(){
   else if(doctrineStaleMessage)status.textContent='НУЖЕН ПЕРЕСЧЁТ';
   else status.textContent=canWork?'ГОТОВ К РАСЧЁТУ · ПАУЗА':'ПОСТАВЬ СИМУЛЯЦИЮ НА ПАУЗУ';
  }
+ refreshCivicCascadeAdvisorAvailability();
 }
 function runDoctrinePlanner(){
  if(finished||planRunning||activeIncident||!paused){toast('Поставь симуляцию на паузу перед поиском плана.');return}
@@ -1689,6 +1783,7 @@ $('cc-map').addEventListener('pointerdown',pick);
 buttons.forEach(id=>$('cc-action-'+id).addEventListener('click',()=>act(id)));
 $('cc-plan-add').addEventListener('click',addPlannedOrder);$('cc-plan-clear').addEventListener('click',clearPlannedOrders);$('cc-plan-execute').addEventListener('click',executePlannedOrders);
 $('cc-doctrine-run').addEventListener('click',runDoctrinePlanner);$('cc-doctrine-apply').addEventListener('click',applyDoctrinePlan);$('cc-doctrine-reset').addEventListener('click',resetDoctrinePlanner);$('cc-doctrine-mode').addEventListener('change',setDoctrineObjective);$('cc-doctrine-export').addEventListener('click',exportDoctrineDossier);
+$('cc-doctrine-ai-consent').addEventListener('change',refreshCivicCascadeAdvisorAvailability);$('cc-doctrine-ai-run').addEventListener('click',runCivicCascadeAdvisor);
 $('cc-doctrine-import-file').addEventListener('change',()=>{$('cc-doctrine-verify-import').disabled=!$('cc-doctrine-import-file').files?.length});$('cc-doctrine-verify-import').addEventListener('click',verifyDoctrineDossierFile);
 $('cc-pause').addEventListener('click',()=>{if(finished||planRunning)return;if(paused&&planOrders.length){toast('Сначала исполни очередь или очисти план перед снятием паузы.');return}paused=!paused;$('cc-pause').textContent=paused?'▶ Продолжить':'Ⅱ Пауза';ui.status.textContent=paused?'ПАУЗА':'СИСТЕМА АКТИВНА';renderUI();renderPlan();addLog(paused?'<b>Оператор:</b> симуляция приостановлена.':'<b>Оператор:</b> симуляция возобновлена.')});
 $('cc-speed').addEventListener('click',()=>{speedIndex=(speedIndex+1)%speeds.length;$('cc-speed').textContent='СКОРОСТЬ '+speeds[speedIndex]+'×';toast('Скорость симуляции: '+speeds[speedIndex]+'×')});
