@@ -13,6 +13,8 @@
   const games = new Set(['null-shift', 'time', 'swarm', 'inherit', 'remix', 'civic-cascade', 'patina', 'signal-run', 'cascade-lab', 'afterimage-run', 'aether-grid', 'catalog']);
   let busy = false;
   let apiBase = '';
+  let activeSubmissionId = '';
+  let activeFingerprint = '';
 
   function status(message, kind) {
     statusNode.textContent = message;
@@ -70,10 +72,9 @@
   function currentReport() {
     const width = Math.max(0, Math.min(10000, Number(window.innerWidth) || 0));
     const height = Math.max(0, Math.min(10000, Number(window.innerHeight) || 0));
-    return {
+    const report = {
       schema: 'osgard-game-feedback.v1',
       createdAt: new Date().toISOString(),
-      submissionId: randomId(),
       gameId: value('gameId'),
       category: value('category'),
       severity: value('severity'),
@@ -89,6 +90,17 @@
       viewportHeight: Math.floor(height / 50) * 50,
       consent: form.elements.namedItem('consent').checked
     };
+    // Reuse the ID on an unchanged retry; changed report content becomes a new submission.
+    const fingerprint = JSON.stringify([
+      report.gameId, report.category, report.severity, report.title, report.description,
+      report.stepsToReproduce, report.expectedResult, report.actualResult, report.replyTo, report.consent
+    ]);
+    if (!activeSubmissionId || fingerprint !== activeFingerprint) {
+      activeSubmissionId = randomId();
+      activeFingerprint = fingerprint;
+    }
+    report.submissionId = activeSubmissionId;
+    return report;
   }
   function safeReportForExport() {
     const report = currentReport();
@@ -184,6 +196,8 @@
       }
       status(result.reportId ? (result.duplicate ? 'Отчёт уже сохранён. Номер: ' + result.reportId : 'Отчёт сохранён. Номер: ' + result.reportId) : 'Запрос принят.', 'success');
       form.reset();
+      activeSubmissionId = '';
+      activeFingerprint = '';
       updateCount();
     } catch (error) {
       status((error && error.message) || 'Отправка не удалась. Сохрани JSON для ручной передачи.', 'error');
