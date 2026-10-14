@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
+import { trackGameConversionClick } from '../src/core/gameConversionAnalytics.mjs'
 
 const detail = readFileSync('src/GameDetailPage.tsx', 'utf8')
 const styles = readFileSync('src/games-hub.css', 'utf8')
@@ -55,3 +56,58 @@ assert.ok(!/https?:\/\/(?:fonts\.googleapis|cdn\.jsdelivr|unpkg\.com)/i.test(det
 assert.ok(packageJson.scripts['qa:game-business-bridge'], 'Package scripts must expose the new smoke check')
 
 console.log('PASS OSGARD game-to-business bridge: 11-game allowlist, contextual links, consent-gated events, validated server attribution, responsive focus and manual fallback.')
+
+
+// Exercise the actual analytics helper with browser-like storage/fetch stubs.
+const originalWindowDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'window')
+const originalStorageDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage')
+const values = new Map()
+const testStorage = {
+  getItem(key) { return values.has(key) ? values.get(key) : null },
+  setItem(key, value) { values.set(key, String(value)) },
+  removeItem(key) { values.delete(key) },
+}
+const requests = []
+const fakeWindow = {
+  sessionStorage: testStorage,
+  location: { pathname: '/game/cascade-lab' },
+  fetch: async (url, options) => {
+    requests.push({ url, options })
+    return { ok: true, status: 202 }
+  },
+}
+try {
+  Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: testStorage })
+  Object.defineProperty(globalThis, 'window', { configurable: true, value: fakeWindow })
+  assert.equal(await trackGameConversionClick('cascade-lab', 'development-intake'), false, 'A CTA event must not send before explicit analytics consent')
+  assert.equal(requests.length, 0, 'Pre-consent CTA must not call the analytics API')
+  testStorage.setItem('osgard.games.analytics-consent.v1', 'yes')
+  assert.equal(await trackGameConversionClick('cascade-lab', 'development-intake'), true, 'Consented first-party event should report the successful response')
+  assert.equal(requests.length, 1, 'One consented CTA should produce one request')
+  assert.equal(requests[0].url, '/commerce-api/v1/events', 'Events must use the same-origin API')
+  assert.equal(requests[0].options.credentials, 'omit', 'Events must not send ambient credentials')
+  assert.equal(requests[0].options.keepalive, true, 'Request should survive supported page transitions')
+  const submitted = JSON.parse(requests[0].options.body)
+  assert.equal(submitted.consent, true, 'Batch must carry explicit consent')
+  assert.equal(submitted.events.length, 1, 'A CTA should send only one event')
+  assert.equal(submitted.events[0].name, 'cross_promo_clicked', 'Event name must match the server allow-list')
+  assert.equal(submitted.events[0].gameId, 'cascade-lab', 'Known game ID should be preserved')
+  assert.equal(submitted.events[0].source, 'game-detail-development-intake', 'Source must be a fixed allowed label')
+  assert.equal(submitted.events[0].path, '/game/cascade-lab', 'Path must exclude query parameters')
+  assert.match(submitted.events[0].eventId, /^[a-zA-Z0-9_-]{12,96}$/, 'Event id must satisfy API contract')
+  assert.match(submitted.events[0].sessionId, /^[a-zA-Z0-9_-]{12,96}$/, 'Session id must satisfy API contract')
+  assert.equal(Object.hasOwn(submitted.events[0], 'contact'), false, 'No contact data may be present')
+  assert.equal(Object.hasOwn(submitted.events[0], 'referrer'), false, 'No referrer data may be present')
+  assert.equal(await trackGameConversionClick('cascade-lab', 'arbitrary-url'), false, 'Unknown CTA destination must be rejected')
+  assert.equal(requests.length, 1, 'Rejected destination must not create a network request')
+  testStorage.setItem('osgard.games.analytics-consent.v1', 'no')
+  assert.equal(await trackGameConversionClick('cascade-lab', 'sponsorship-inquiry'), false, 'Revoked consent must stop new events')
+  assert.equal(requests.length, 1, 'Revoked consent must not create a network request')
+} finally {
+  if (originalWindowDescriptor) Object.defineProperty(globalThis, 'window', originalWindowDescriptor)
+  else delete globalThis.window
+  if (originalStorageDescriptor) Object.defineProperty(globalThis, 'localStorage', originalStorageDescriptor)
+  else delete globalThis.localStorage
+}
+
+console.log('PASS runtime conversion analytics: default-deny, consent, same-origin request, payload allow-lists, no credentials/PII and revoke boundary.')
