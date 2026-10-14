@@ -105,6 +105,10 @@ jobs:
         run: npm run qa:ios-appstore
       - name: Build the production site
         run: npm run build
+      - name: Enforce production asset budgets
+        run: npm run qa:performance-budget
+      - name: Bind build to quality reports
+        run: npm run release:attest && npm run release:verify
       - name: Verify live SkillCred page wiring
         run: npm run qa:skillcred
       - name: Verify Imperium of Time game systems and visual diagnostics
