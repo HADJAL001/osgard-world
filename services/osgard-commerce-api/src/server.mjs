@@ -10,6 +10,7 @@ import {
   validateEventBatch, validateReferralRegistrationPayload, validateReferralClaimPayload,
   validateReferralClaimAckPayload, validateServiceAttributionConversion,
   parseServiceAttributionTokenMap, isServiceAttributionTokenValid,
+  DEFAULT_OWNED_PROMO_CONFIG, validateOwnedPromoConfig,
   paymentsModeAllowed, resolveCheckoutPaymentState, safeEqual,
 } from "./core.mjs";
 import {
@@ -82,9 +83,14 @@ async function ensureSchema() {
     "CREATE UNIQUE INDEX IF NOT EXISTS commerce_referral_qualified_session_idx ON commerce_referral_invites(qualified_session_id) WHERE qualified_session_id IS NOT NULL;\n" +
     "CREATE TABLE IF NOT EXISTS commerce_campaigns (campaign_id TEXT PRIMARY KEY, sponsor_name TEXT NOT NULL, title TEXT NOT NULL, description TEXT NOT NULL, target_url TEXT NOT NULL, placement TEXT NOT NULL CHECK (placement IN ('catalog_feature','after_session','game_event')), sponsor_disclosure TEXT NOT NULL CHECK (sponsor_disclosure IN ('Реклама','Партнёрский материал','Спонсорский материал')), status TEXT NOT NULL CHECK (status IN ('draft','scheduled','active','paused')), starts_at TIMESTAMPTZ, ends_at TIMESTAMPTZ, frequency_cap SMALLINT NOT NULL DEFAULT 3 CHECK (frequency_cap BETWEEN 1 AND 20), created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
     "CREATE INDEX IF NOT EXISTS commerce_campaigns_public_idx ON commerce_campaigns(status, placement, starts_at, ends_at, updated_at DESC);\n" +
+    "CREATE TABLE IF NOT EXISTS commerce_owned_promo_config (config_id SMALLINT PRIMARY KEY CHECK (config_id = 1), config JSONB NOT NULL, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
     "CREATE TABLE IF NOT EXISTS commerce_attribution_conversions (service_id TEXT NOT NULL, event_id TEXT NOT NULL, conversion_type TEXT NOT NULL CHECK (conversion_type IN ('account_created','lead_qualified','trial_started','booking_confirmed','purchase_paid','purchase_refunded','subscription_started','subscription_renewed','subscription_refunded','subscription_cancelled')), game_id TEXT NOT NULL DEFAULT 'unknown', source TEXT NOT NULL DEFAULT 'direct', campaign TEXT NOT NULL DEFAULT '', referral_code TEXT, currency TEXT, amount_minor BIGINT CHECK (amount_minor IS NULL OR amount_minor > 0), received_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), PRIMARY KEY (service_id, event_id));\n" +
     "CREATE INDEX IF NOT EXISTS commerce_attribution_received_idx ON commerce_attribution_conversions(received_at DESC, service_id);\n" +
     "CREATE INDEX IF NOT EXISTS commerce_attribution_source_idx ON commerce_attribution_conversions(service_id, source, campaign, received_at DESC)");
+  await pool.query(
+    "INSERT INTO commerce_owned_promo_config (config_id, config) VALUES (1, $1::jsonb) ON CONFLICT (config_id) DO NOTHING",
+    [JSON.stringify(DEFAULT_OWNED_PROMO_CONFIG)],
+  );
   dbReady = true;
   return true;
 }
@@ -306,6 +312,79 @@ app.post("/v1/game-coach", rateLimit({ windowMs: 60 * 60 * 1000, limit: 5, stand
   }
   res.set("Cache-Control", "no-store, private");
   return res.json({ advice: result.advice });
+});
+
+app.get("/v1/owned-promo/config", async (_req, res) => {
+  let config = DEFAULT_OWNED_PROMO_CONFIG;
+  let source = "fallback";
+  let updatedAt = null;
+  if (pool && dbReady) {
+    try {
+      const result = await pool.query(
+        "SELECT config, updated_at FROM commerce_owned_promo_config WHERE config_id = 1",
+      );
+      const row = result.rows[0];
+      if (row) {
+        const checked = validateOwnedPromoConfig(row.config);
+        if (checked.ok) {
+          config = checked.config;
+          source = "database";
+          updatedAt = row.updated_at;
+        }
+      }
+    } catch (error) {
+      console.error("Public owned-promo config read failed:", error?.message || "unknown error");
+    }
+  }
+  res.set("Cache-Control", "public, max-age=30, stale-while-revalidate=60");
+  return res.json({ config, source, updatedAt });
+});
+
+app.get("/v1/admin/owned-promo/config", requireAdmin, async (_req, res) => {
+  if (!pool || !dbReady) return res.status(503).json({ error: "OWNED_PROMO_CONFIG_NOT_READY" });
+  res.set("Cache-Control", "no-store, private");
+  try {
+    const result = await pool.query(
+      "SELECT config, updated_at FROM commerce_owned_promo_config WHERE config_id = 1",
+    );
+    const row = result.rows[0];
+    if (!row) return res.json({ config: DEFAULT_OWNED_PROMO_CONFIG, updatedAt: null, source: "fallback" });
+    const checked = validateOwnedPromoConfig(row.config);
+    if (!checked.ok) return res.status(503).json({ error: "OWNED_PROMO_CONFIG_INVALID" });
+    return res.json({ config: checked.config, updatedAt: row.updated_at, source: "database" });
+  } catch (error) {
+    console.error("Admin owned-promo config read failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "OWNED_PROMO_CONFIG_READ_FAILED" });
+  }
+});
+
+const ownedPromoConfigWriteLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 30,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+});
+app.post("/v1/admin/owned-promo/config", requireAdmin, ownedPromoConfigWriteLimiter, async (req, res) => {
+  if (!pool || !dbReady) return res.status(503).json({ error: "OWNED_PROMO_CONFIG_NOT_READY" });
+  const checked = validateOwnedPromoConfig(req.body);
+  if (!checked.ok) return res.status(checked.status).json({ error: checked.code });
+  try {
+    const result = await pool.query(
+      "INSERT INTO commerce_owned_promo_config (config_id, config, updated_at) VALUES (1, $1::jsonb, NOW()) " +
+      "ON CONFLICT (config_id) DO UPDATE SET config = EXCLUDED.config, updated_at = NOW() RETURNING updated_at",
+      [JSON.stringify(checked.config)],
+    );
+    res.set("Cache-Control", "no-store, private");
+    return res.json({
+      config: checked.config,
+      updatedAt: result.rows[0]?.updated_at || null,
+      source: "database",
+      note: "Настройки применяются к новым предпочтениям пользователей; глобальное отключение и временно выключенные сервисы применяются ко всем пользователям.",
+    });
+  } catch (error) {
+    console.error("Admin owned-promo config write failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "OWNED_PROMO_CONFIG_WRITE_FAILED" });
+  }
 });
 
 function campaignColumns() {
