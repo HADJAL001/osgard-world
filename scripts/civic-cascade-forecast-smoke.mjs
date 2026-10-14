@@ -34,7 +34,7 @@ assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.robustnessProfil
 assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.comparesThreeSeverityLevelsPerFamily, true)
 assert.deepEqual(manifest.buildContract?.autonomousDoctrinePlanner?.severityScaleFactors, [0.5,1,1.5])
 assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.stressRankingUsesAllSeverityLevels, true)
-assert.equal(manifest.buildContract?.decisionDossier?.modelVersion, '3.2.0')
+assert.equal(manifest.buildContract?.decisionDossier?.modelVersion, '3.3.0')
 assert.equal(manifest.buildContract?.decisionDossier?.stressProfileCount, 9)
 assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.robustnessCandidateLimit, 8)
 assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.reranksCandidatesByStressAdjustedScore, true)
