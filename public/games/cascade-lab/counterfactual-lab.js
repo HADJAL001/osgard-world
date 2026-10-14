@@ -30,7 +30,7 @@ function safeScenarioSummary(raw, offsetDegrees) {
       !Number.isInteger(raw.levelId) || raw.levelId < 1 || raw.levelId > 5 ||
       typeof raw.fingerprint !== 'string' || !(Array.isArray(raw.trajectory) ? raw.trajectory.length >= 2 : Number.isInteger(raw.trajectoryFrames) && raw.trajectoryFrames >= 2)) return null;
   return {
-    schema: SCHEMA, engineVersion: clean(raw.engineVersion, 24),
+    schema: SCHEMA, engineVersion: clean(raw.engineVersion, 24), levelId: raw.levelId,
     offsetDegrees: round(Number(offsetDegrees), 2),
     status: raw.status, reason: clean(raw.reason, 240),
     timeSeconds: round(raw.timeSeconds),
@@ -48,7 +48,7 @@ function safeScenarioSummary(raw, offsetDegrees) {
     },
     fingerprint: clean(raw.fingerprint, 48),
     trajectoryFrames: clamp(Array.isArray(raw.trajectory) ? raw.trajectory.length : raw.trajectoryFrames, 0, 420),
-    eventCount: clamp(list(raw.events).length, 0, 32)
+    eventCount: clamp(Array.isArray(raw.events) ? raw.events.length : (Number.isInteger(raw.eventCount) ? raw.eventCount : 0), 0, 32)
   };
 }
 
