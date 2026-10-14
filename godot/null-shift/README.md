@@ -28,14 +28,14 @@ The first launch opens a pausing Russian-language field briefing with the three 
 - Mouse: aim; hold left mouse button: fire.
 - Gamepad: left stick moves, right stick aims with restrained target assist, RT/RB fires, A interacts, B dashes, X emits the pulse, Y activates phase shift, Start pauses, Back toggles diagnostics, LB opens loadout. The D-pad enters the terminal cipher; controller hot-plug is detected automatically.
 - E: interact; Q: pulse; Space: tactical dash (short burst with one-hit evade window and 1.65 s cooldown); Shift: phase shift.
-- F2 cycles three persisted graphics profiles: Cinematic (glow + shadows), Balanced (shadows + practical fill lights), and Performance (reduced dynamic lighting). Cinematic mode still adapts down under sustained frame-time pressure and restores effects after stable pacing.
+- F2 cycles three persisted graphics profiles: Cinematic (glow + shadows), Balanced (shadows + practical fill lights), and Performance (reduced dynamic lighting). Cinematic mode uses a two-stage adaptive governor: Soft Optimize first reduces particles while preserving glow/shadows, and Hard Optimize only activates after further sustained pressure. Recovery restores one tier at a time.
 - F3 toggles live diagnostics; F4 toggles and persists Reduced Motion (less camera shake, field-of-view breathing and vignette pulsing); M toggles and persists sound; Esc pauses; C rotates contracts; U opens loadout; 1/2/3 buy upgrades.
 - Touch controls include a dedicated MOT button for Reduced Motion with a live ON/LOW state and tooltip; the setting persists locally and never changes combat timing, damage or collision behavior.
 - Touch screens include dedicated graphics-profile and FPS/diagnostics buttons alongside movement, fire, action, pulse, phase-shift and dash controls; the dash button shows cooldown and aiming is assisted.
 
 ## Live diagnostics
 
-The game reads the current engine frame rate, rolling 95th percentile of uncapped frame intervals, actual frame interval, draw calls, hostiles and remaining devices. The reticle follows desktop aim and hides during touch-assisted aiming; damage and phase changes trigger brief camera and screen feedback. Values are calculated in the running game, not demonstration placeholders. Career and upgrades are saved locally by the engine.
+The game reads FPS, rolling frame-time P95, current frame interval, percentage of recent frames exceeding the 16.67 ms / 60 FPS budget, engine process and physics-process time, draw calls, rendered primitives, scene-node count, effect-pool usage, hostiles and remaining devices. The reticle follows desktop aim and hides during touch-assisted aiming; damage and phase changes trigger brief camera and screen feedback. Values are calculated in the running game, not demonstration placeholders. Career and upgrades are saved locally by the engine.
 
 ## Browser launch shell
 

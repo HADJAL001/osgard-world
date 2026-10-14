@@ -396,3 +396,11 @@ The runtime smoke now checks combo thresholds, critical damage, the charge gate,
 - ECHO TRACK: phase shifts become easier for security to hear, extending the existing acoustic investigation system; it does not reveal the player through walls.
 - BALANCED remains the default for weak or mixed evidence. The active doctrine and switch count are visible in the HUD/diagnostics. Signals stay in memory for the run; no remote telemetry, account profiling or external API dependency is added.
 - Headless runtime tests cover selection thresholds, all three doctrines, a real widened flank, acoustic radius changes, bounded movement prediction and doctrine transitions.
+
+
+## Release 2.9 — staged adaptive quality and frame-budget telemetry
+
+- The cinematic governor now has two adaptive stages instead of an all-at-once downgrade. After two sustained slow windows it enters Soft Optimize: particles drop from 72 to 46 and glow intensity is trimmed while shadows, local lighting and PBR detail maps remain active. Another pair of slow windows escalates to Hard Optimize.
+- Recovery is progressive: four stable windows move Hard Optimize back to Soft Optimize, and four more restore full Cinematic quality. Manual Cinematic/Balanced/Performance settings stay independent from automatic decisions and remain user-controlled.
+- Live diagnostics now expose the share of recent frames exceeding the 16.67 ms/60 FPS budget, engine process time, physics process time, rendered primitives and scene-node count, alongside FPS/P95/draw calls and bounded effect-pool health. CPU counters are not labeled as GPU execution time.
+- Headless Godot runtime smoke covers both optimization steps and both recovery steps. The Node source contract requires the Performance monitors and new labels to exist in the engine build.

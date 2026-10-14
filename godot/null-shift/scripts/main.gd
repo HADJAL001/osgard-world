@@ -135,11 +135,19 @@ var instability := 0.0
 var elapsed := 0.0
 var hud_clock := 0.0
 var frame_samples: Array[float] = []
+var frame_budget_misses: Array[float] = []
 var fps_p95_ms := 0.0
 var diagnostics_enabled := false
 var cinematic_quality := true
 var performance_quality := false
-var adaptive_quality_degraded := false
+var adaptive_quality_level := 0 # 0=Cinematic, 1=soft optimization, 2=hard optimization
+var adaptive_quality_degraded: bool = false:
+	set(value):
+		adaptive_quality_degraded = value
+		if value:
+			adaptive_quality_level = 2
+		elif adaptive_quality_level >= 2:
+			adaptive_quality_level = 0
 var adaptive_quality_clock := 0.0
 var adaptive_slow_windows := 0
 var adaptive_fast_windows := 0
@@ -436,6 +444,12 @@ func _reset_runtime_collections() -> void:
 	operator_leg_pivots.clear()
 	frame_samples = frame_samples.duplicate()
 	frame_samples.clear()
+	frame_budget_misses = frame_budget_misses.duplicate()
+	frame_budget_misses.clear()
+	adaptive_quality_level = 0
+	adaptive_quality_degraded = false
+	adaptive_slow_windows = 0
+	adaptive_fast_windows = 0
 	local_lights = local_lights.duplicate()
 	local_lights.clear()
 	mobile_move_buttons = mobile_move_buttons.duplicate()
@@ -474,8 +488,11 @@ func _process(delta: float) -> void:
 	if camera_shake_timer <= 0.0:
 		camera_shake_strength = 0.0
 	frame_samples.append(current_frame_ms)
+	frame_budget_misses.append(1.0 if current_frame_ms > (1000.0 / 60.0) else 0.0)
 	if frame_samples.size() > 120:
 		frame_samples.pop_front()
+	if frame_budget_misses.size() > 120:
+		frame_budget_misses.pop_front()
 	adaptive_quality_clock += maxf(0.0, delta)
 	if adaptive_quality_clock >= 1.25:
 		adaptive_quality_clock = fmod(adaptive_quality_clock, 1.25)
@@ -3526,14 +3543,16 @@ func _toggle_quality() -> void:
 
 func _apply_quality_mode() -> void:
 	if not cinematic_quality:
+		adaptive_quality_level = 0
 		adaptive_quality_degraded = false
 		adaptive_slow_windows = 0
 		adaptive_fast_windows = 0
 	_apply_surface_detail_quality()
-	var cinematic_effects: bool = cinematic_quality and not adaptive_quality_degraded
-	var balanced_effects: bool = not performance_quality and not adaptive_quality_degraded
+	var cinematic_effects: bool = cinematic_quality and adaptive_quality_level < 2
+	var balanced_effects: bool = not performance_quality and adaptive_quality_level < 2
 	if is_instance_valid(world_environment) and is_instance_valid(world_environment.environment):
 		world_environment.environment.glow_enabled = cinematic_effects
+		world_environment.environment.glow_intensity = 0.48 if cinematic_quality and adaptive_quality_level == 1 else 0.72
 	if is_instance_valid(key_light):
 		key_light.shadow_enabled = balanced_effects
 	if is_instance_valid(fill_light):
@@ -3546,13 +3565,14 @@ func _apply_quality_mode() -> void:
 		if is_instance_valid(impact_light):
 			impact_light.visible = float(impact_state.get("remaining", 0.0)) > 0.0 and balanced_effects
 	if is_instance_valid(atmosphere_particles):
-		atmosphere_particles.amount = 72 if cinematic_effects else (32 if balanced_effects else 8)
-		atmosphere_particles.speed_scale = 1.0 if cinematic_effects else 0.72
-		atmosphere_particles.emitting = not performance_quality and not adaptive_quality_degraded
+		atmosphere_particles.amount = 72 if cinematic_effects and adaptive_quality_level == 0 else (46 if cinematic_effects and adaptive_quality_level == 1 else (32 if balanced_effects else 8))
+		atmosphere_particles.speed_scale = 1.0 if cinematic_effects and adaptive_quality_level == 0 else (0.82 if cinematic_effects and adaptive_quality_level == 1 else 0.72)
+		atmosphere_particles.emitting = not performance_quality and adaptive_quality_level < 2
 		atmosphere_particles.visible = atmosphere_particles.emitting
 	var mode_name: String = "CINEMATIC" if cinematic_quality else ("PERFORMANCE" if performance_quality else "BALANCED")
+	var adaptive_mode_name: String = "AUTO-OPTIMIZED II" if adaptive_quality_level >= 2 else ("AUTO-OPTIMIZED I" if adaptive_quality_level == 1 else mode_name)
 	if is_instance_valid(status_subtitle):
-		status_subtitle.text = "PHASE TRANSIT / AUTO-OPTIMIZED" if adaptive_quality_degraded else "PHASE TRANSIT / %s" % mode_name
+		status_subtitle.text = "PHASE TRANSIT / %s" % adaptive_mode_name
 	if is_instance_valid(quality_button):
 		quality_button.text = "QUALITY / %s" % mode_name
 	if is_instance_valid(mobile_quality_button):
@@ -3566,7 +3586,7 @@ func _apply_quality_mode() -> void:
 
 func _apply_surface_detail_quality() -> void:
 	# Albedo remains on in all profiles; normal and roughness maps scale with the GPU budget.
-	var use_detail_maps: bool = not performance_quality and not adaptive_quality_degraded
+	var use_detail_maps: bool = not performance_quality and adaptive_quality_level < 2
 	for material_name in ["floor", "wall", "wall_trim"]:
 		var surface_material: StandardMaterial3D = materials.get(material_name) as StandardMaterial3D
 		if not is_instance_valid(surface_material):
@@ -3596,14 +3616,18 @@ func _evaluate_adaptive_quality(mean_ms: float, p95_ms: float) -> void:
 	if mean_ms >= 20.0 or p95_ms >= 28.0:
 		adaptive_slow_windows += 1
 		adaptive_fast_windows = 0
-		if adaptive_slow_windows >= 2 and not adaptive_quality_degraded:
-			adaptive_quality_degraded = true
+		if adaptive_slow_windows >= 2 and adaptive_quality_level < 2:
+			adaptive_quality_level += 1
+			adaptive_quality_degraded = adaptive_quality_level >= 2
+			adaptive_slow_windows = 0
 			_apply_quality_mode()
 	elif mean_ms <= 16.8 and p95_ms <= 21.0:
 		adaptive_fast_windows += 1
 		adaptive_slow_windows = 0
-		if adaptive_fast_windows >= 4 and adaptive_quality_degraded:
-			adaptive_quality_degraded = false
+		if adaptive_fast_windows >= 4 and adaptive_quality_level > 0:
+			adaptive_quality_level -= 1
+			adaptive_quality_degraded = adaptive_quality_level >= 2
+			adaptive_fast_windows = 0
 			_apply_quality_mode()
 	else:
 		adaptive_slow_windows = 0
@@ -4767,11 +4791,19 @@ func _update_hud() -> void:
 			p95 = samples[clampi(int(ceil(float(samples.size() - 1) * 0.95)), 0, samples.size() - 1)]
 		fps_p95_ms = p95
 		var draw_calls := int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
+		var primitives := int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME))
+		var scene_nodes := int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
+		var process_cpu_ms: float = float(Performance.get_monitor(Performance.TIME_PROCESS)) * 1000.0
+		var physics_cpu_ms: float = float(Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS)) * 1000.0
+		var budget_misses := 0.0
+		for miss in frame_budget_misses:
+			budget_misses += miss
+		var budget_miss_percent: float = budget_misses / maxf(1.0, float(frame_budget_misses.size())) * 100.0
 		var active_impact_lights: int = _active_impact_light_count()
 		var operator_rim_active: int = int(is_instance_valid(operator_rim_light) and operator_rim_light.visible)
-		var profile: String = "PERFORMANCE" if performance_quality else ("BALANCED" if not cinematic_quality else ("AUTO-OPTIMIZED" if adaptive_quality_degraded else "CINEMATIC"))
-		diagnostics_label.text = "LIVE DIAGNOSTICS\nFPS        %02d\nFRAME P95  %.1f ms\nFRAME NOW  %.1f ms\nDRAW CALLS %d\nFX ACTIVE  %02d\nFX POOLS   %02d BEAM / %02d RING / %02d SPARK\nFX DROPPED %d\nDASH TRAILS %04d\nGUARDS     %d\nDEVICES    %d\nLANE SUPPRESS %03d\nDASH EVADES %d\nDASH CD    %.1f s\nHIT LIGHTS %d / %d POOL\nOPERATOR RIM %d / 1\nOVERDRIVE ARCS %d\nDEVICE FX  EMP %02d / NOVA %02d / LANE %02d\nEXFIL REINF %02d / BREACH %02d\nCOUNTERPLAY %s / SWITCHES %02d\nPROFILE    %s" % [
-			Engine.get_frames_per_second(), fps_p95_ms, current_frame_ms, draw_calls,
+		var profile: String = "PERFORMANCE" if performance_quality else ("BALANCED" if not cinematic_quality else ("AUTO-OPTIMIZED II" if adaptive_quality_level >= 2 else ("AUTO-OPTIMIZED I" if adaptive_quality_level == 1 else "CINEMATIC")))
+		diagnostics_label.text = "LIVE DIAGNOSTICS\nFPS        %02d\nFRAME P95  %.1f ms\nFRAME NOW  %.1f ms\n60 FPS MISSES %.0f%%\nPROCESS CPU %.2f ms\nPHYSICS CPU %.2f ms\nDRAW / TRI / NODES %d / %d / %d\nFX ACTIVE  %02d\nFX POOLS   %02d BEAM / %02d RING / %02d SPARK\nFX DROPPED %d\nDASH TRAILS %04d\nGUARDS     %d\nDEVICES    %d\nLANE SUPPRESS %03d\nDASH EVADES %d\nDASH CD    %.1f s\nHIT LIGHTS %d / %d POOL\nOPERATOR RIM %d / 1\nOVERDRIVE ARCS %d\nDEVICE FX  EMP %02d / NOVA %02d / LANE %02d\nEXFIL REINF %02d / BREACH %02d\nCOUNTERPLAY %s / SWITCHES %02d\nPROFILE    %s" % [
+			Engine.get_frames_per_second(), fps_p95_ms, current_frame_ms, budget_miss_percent, process_cpu_ms, physics_cpu_ms, draw_calls, primitives, scene_nodes,
 			effects.size(), beam_pool.size(), ring_pool.size(), spark_pool.size(), effect_pool_exhaustions,
 			dash_trails_emitted, guards.size(), _living_device_count(), phase_lane_disruptions, dash_evasions, dash_cooldown, active_impact_lights, impact_light_pool.size(), operator_rim_active, overdrive_arc_chains, device_emp_overloads, device_cell_novas, device_lane_collapses, extraction_reinforcements_spawned, extraction_overload_count, adaptive_doctrine, tactical_doctrine_changes, profile
 		]

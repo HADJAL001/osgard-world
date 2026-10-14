@@ -607,8 +607,24 @@ func _run_smoke() -> void:
 	game.phase_clock = 0.0
 	game._update_phase_lanes(0.0)
 
+	print("RUNTIME_STAGE: live frame-budget diagnostics")
+	var saved_diagnostics_enabled: bool = game.diagnostics_enabled
+	var saved_frame_samples: Array[float] = game.frame_samples.duplicate()
+	var saved_budget_samples: Array[float] = game.frame_budget_misses.duplicate()
+	game.diagnostics_enabled = true
+	game.frame_samples = [10.0, 17.0, 29.0]
+	game.frame_budget_misses = [0.0, 1.0, 1.0]
+	game._update_hud()
+	if not _expect(game.diagnostics_label.text.contains("60 FPS MISSES") and game.diagnostics_label.text.contains("PROCESS CPU") and game.diagnostics_label.text.contains("PHYSICS CPU") and game.diagnostics_label.text.contains("DRAW / TRI / NODES"), "live diagnostics must expose frame-budget misses, process/physics timing, draw calls, primitives and scene nodes"):
+		return
+	game.diagnostics_enabled = saved_diagnostics_enabled
+	game.frame_samples = saved_frame_samples
+	game.frame_budget_misses = saved_budget_samples
+	game._update_hud()
+
 	print("RUNTIME_STAGE: adaptive graphics quality")
 	game.cinematic_quality = true
+	game.adaptive_quality_level = 0
 	game.adaptive_quality_degraded = false
 	game.adaptive_slow_windows = 0
 	game.adaptive_fast_windows = 0
@@ -616,16 +632,24 @@ func _run_smoke() -> void:
 	if not _expect(is_instance_valid(game.atmosphere_particles) and game.atmosphere_particles.emitting and game.atmosphere_particles.amount == 72, "cinematic profile must enable the high-quality suspended dust field"):
 		return
 	game._evaluate_adaptive_quality(25.0, 34.0)
-	if not _expect(not game.adaptive_quality_degraded, "adaptive quality must require sustained slow windows"):
+	if not _expect(not game.adaptive_quality_degraded and game.adaptive_quality_level == 0, "adaptive quality must require sustained slow windows"):
 		return
 	game._evaluate_adaptive_quality(25.0, 34.0)
-	if not _expect(game.adaptive_quality_degraded, "sustained frame-time pressure must enable the optimized profile"):
+	if not _expect(not game.adaptive_quality_degraded and game.adaptive_quality_level == 1 and game.atmosphere_particles.amount == 46 and game.atmosphere_particles.emitting and game.world_environment.environment.glow_enabled and game.key_light.shadow_enabled, "first optimization tier must reduce particle density while preserving the cinematic lights and glow"):
 		return
-	if not _expect(not game.world_environment.environment.glow_enabled and not game.key_light.shadow_enabled and not game.fill_light.visible and not game.atmosphere_particles.emitting and not game.atmosphere_particles.visible, "optimized profile must lower expensive cinematic effects and suspend atmospheric particles"):
+	game._evaluate_adaptive_quality(25.0, 34.0)
+	game._evaluate_adaptive_quality(25.0, 34.0)
+	if not _expect(game.adaptive_quality_degraded and game.adaptive_quality_level == 2, "continued pressure must escalate to the hard optimization tier only after another sustained window"):
+		return
+	if not _expect(not game.world_environment.environment.glow_enabled and not game.key_light.shadow_enabled and not game.fill_light.visible and not game.atmosphere_particles.emitting and not game.atmosphere_particles.visible, "hard optimized profile must lower expensive cinematic effects and suspend atmospheric particles"):
 		return
 	for _window in range(4):
 		game._evaluate_adaptive_quality(15.5, 19.5)
-	if not _expect(not game.adaptive_quality_degraded and game.world_environment.environment.glow_enabled and game.key_light.shadow_enabled and game.fill_light.visible and game.atmosphere_particles.emitting and game.atmosphere_particles.amount == 72, "stable frame pacing must restore cinematic effects and atmosphere density"):
+	if not _expect(not game.adaptive_quality_degraded and game.adaptive_quality_level == 1 and game.world_environment.environment.glow_enabled and game.key_light.shadow_enabled and game.fill_light.visible and game.atmosphere_particles.emitting and game.atmosphere_particles.amount == 46, "first recovery tier must restore cinematic lights while retaining a reduced particle density"):
+		return
+	for _window in range(4):
+		game._evaluate_adaptive_quality(15.5, 19.5)
+	if not _expect(not game.adaptive_quality_degraded and game.adaptive_quality_level == 0 and game.atmosphere_particles.amount == 72, "continued stable frame pacing must fully restore cinematic atmosphere density"):
 		return
 	game.performance_quality = true
 	game._apply_quality_mode()
