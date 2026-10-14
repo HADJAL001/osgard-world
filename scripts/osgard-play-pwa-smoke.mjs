@@ -56,8 +56,8 @@ assert.ok(install.includes('function scheduleInstallPanelReveal()') && install.i
   'The optional install banner must wait for idle and a short post-paint delay instead of causing a late initial-layout shift.');
 assert.ok(install.includes('function registerServiceWorkerWhenIdle()') && install.includes('window.setTimeout(scheduleIdle, 3000)') && install.includes('window.requestIdleCallback(register, { timeout: 2500 })'),
   'Service-worker registration must wait until after first paint and an idle opportunity while preserving offline support.');
-assert.ok(install.includes('serviceWorkerRegistrationStarted') && install.includes("document.addEventListener('load'") === false,
-  'Deferred PWA registration must remain single-shot and use a valid load readiness path.');
+assert.ok(install.includes('serviceWorkerRegistrationStarted') && install.includes("window.addEventListener('load', afterLoad, { once: true })") && install.includes("document.readyState === 'complete'"),
+  'Deferred PWA registration must remain single-shot and work whether the script runs before or after window load.');
 assert.ok(install.includes('osgard.games.analytics-consent.v1'), 'PWA analytics must use the existing consent key');
 assert.ok(install.includes("track('pwa_install_prompt_shown')") && install.includes("track('pwa_install_accepted')") && install.includes("track('pwa_install_dismissed')"));
 assert.ok(install.includes('Safari') && install.includes('На экран') && install.includes('aria-hidden'));
