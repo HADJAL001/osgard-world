@@ -3,8 +3,8 @@
   "gameId": "civic-cascade",
   "title": "CIVIC CASCADE",
   "edition": "Web Edition",
-  "version": "3.3.0",
-  "releaseId": "civic-cascade-web-3.3.0",
+  "version": "3.4.0",
+  "releaseId": "civic-cascade-web-3.4.0",
   "canonicalUrl": "https://osgard.world/games/civic-cascade/",
   "detailUrl": "https://osgard.world/game/civic-cascade",
   "entrypoint": "/games/civic-cascade/",
@@ -53,7 +53,8 @@
       "cc-doctrine-export",
       "cc-doctrine-import-file",
       "cc-doctrine-verify-import",
-      "cc-doctrine-verification-result"
+      "cc-doctrine-verification-result",
+      "cc-doctrine-assurance-note"
     ],
     "checkpointSchema": "civic-cascade-checkpoint-v1",
     "approximateRiskForecast": true,
@@ -265,7 +266,47 @@
         1.5
       ],
       "stressRankingUsesAllSeverityLevels": true,
-      "reportsWorstCaseByFamily": true
+      "reportsWorstCaseByFamily": true,
+      "modelVersion": "3.4.0",
+      "forecastQualityGate": true,
+      "forecastQualityChecks": [
+        "horizon-order",
+        "bounded-city-metrics",
+        "node-integrity-map",
+        "weakest-node-consistency",
+        "critical-node-threshold-consistency"
+      ],
+      "fullStressRiskTrajectories": [
+        0,
+        30,
+        60,
+        90
+      ],
+      "riskExposureMetric": "normalized trapezoidal mean risk over the 0–90 second horizon",
+      "sensitivityAcrossSeverityBands": true,
+      "leaveOneCommandOutAttribution": true,
+      "attributionHorizonsGameSeconds": [
+        30,
+        60,
+        90
+      ],
+      "attributionIsAdditive": false,
+      "reserveAwareScoring": true,
+      "minimumSupplyReserve": 15,
+      "minimumCrewReserve": 1,
+      "decisionSafetyGate": {
+        "enabled": true,
+        "levels": [
+          "green",
+          "amber",
+          "red"
+        ],
+        "redRequiresExplicitConfirmation": true,
+        "amberRequiresExplicitConfirmation": true,
+        "executesAutomatically": false
+      },
+      "dossierDecisionAssurance": true,
+      "dossierModelVersion": "3.4.0"
     },
     "decisionDossier": {
       "enabled": true,
@@ -291,7 +332,7 @@
       "comparesResourceCost": true,
       "labelsParetoMembership": true,
       "tracksNoPersonalData": true,
-      "modelVersion": "3.3.0",
+      "modelVersion": "3.4.0",
       "stressProfileCount": 9,
       "includesStressSeverityBands": true,
       "canonicalization": "recursive object-key sort; array order preserved; JSON.stringify scalar encoding",
@@ -333,6 +374,22 @@
       "networkRequests": false,
       "reportsHashIsNotDigitalSignature": true,
       "regressionSmokeTest": "scripts/civic-cascade-forecast-smoke.mjs"
+    },
+    "decisionAssurance": {
+      "enabled": true,
+      "schema": "osgard.civic-cascade.decision-assurance/v1",
+      "includesStateFingerprint": true,
+      "fingerprintAlgorithm": "FNV-1a-32-over-source-state-json",
+      "fingerprintIsCryptographic": false,
+      "requiresSha256PayloadIntegrity": true,
+      "includesFullRiskTrajectoryAtT0T30T60T90": true,
+      "includesNormalizedRiskExposure": true,
+      "includesCommandAblationAttribution": true,
+      "includesReserveMargins": true,
+      "includesSafetyVerdicts": true,
+      "validatesStateFingerprintAgainstSnapshot": true,
+      "historicalDossierReadOnlyCompatibility": true,
+      "regressionSmokeTest": "scripts/civic-cascade-forecast-smoke.mjs"
     }
   },
   "cinematicExport": {
@@ -373,6 +430,6 @@
   "deployment": {
     "target": "https://osgard.world",
     "mechanism": "repository push triggers the site's production deployment workflow",
-    "liveStatus": "verify release 3.3.0 via production route matrix after deploy"
+    "liveStatus": "verify release 3.4.0 with production route checks after deployment"
   }
 }
