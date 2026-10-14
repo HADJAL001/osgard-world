@@ -12,6 +12,9 @@ on:
       - "src/**"
       - "public/skillcred/**"
       - "public/games/**"
+      - "services/osgard-commerce-api/src/core.mjs"
+      - "services/osgard-commerce-api/test/core.test.mjs"
+      - "scripts/owned-promo-config-smoke.mjs"
       - "services/osgard-commerce-api/src/campaigns.mjs"
       - "services/osgard-commerce-api/src/game-coach.mjs"
       - "services/osgard-commerce-api/package.json"
@@ -97,6 +100,8 @@ jobs:
         run: npm run qa:pwa
       - name: Smoke-test the consent-gated sponsored campaign slot
         run: npm run qa:campaign-manager
+      - name: Verify managed owned-service promotion defaults and migration
+        run: npm run qa:owned-promo-config
       - name: Verify premium Entertainment discovery, share and SEO
         run: npm run qa:entertainment
       - name: Smoke-test read-only Games operations diagnostics

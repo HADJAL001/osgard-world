@@ -68,15 +68,16 @@ const GAME_IDS = new Set([
   "afterimage-run", "aether-grid", "unknown",
 ]);
 
-// Public IDs only. GARD VPN is deliberately absent until its core service is verified.
+// Public service IDs for opt-in cross-promotion. The listing makes no uptime or service-quality guarantee.
 export const OWNED_PROMO_SERVICE_IDS = Object.freeze([
   "marcosa", "projects", "o2-system", "senjorio", "superday",
-  "myosa", "gold-glamour", "osgard-business", "vanguard", "partner-studio",
+  "myosa", "gold-glamour", "gardvpn", "osgard-business", "vanguard", "partner-studio",
 ]);
 const OWNED_PROMO_SERVICE_ID_SET = new Set(OWNED_PROMO_SERVICE_IDS);
 const OWNED_PROMO_FREQUENCIES = new Set(["each", "every3", "off"]);
 
 export const DEFAULT_OWNED_PROMO_CONFIG = Object.freeze({
+  schemaVersion: 2,
   enabled: true,
   defaultFrequency: "each",
   enabledServices: OWNED_PROMO_SERVICE_IDS,
@@ -87,6 +88,8 @@ export const DEFAULT_OWNED_PROMO_CONFIG = Object.freeze({
 
 export function validateOwnedPromoConfig(body) {
   const input = body && typeof body === "object" && !Array.isArray(body) ? body : {};
+  const schemaVersion = input.schemaVersion === undefined ? 2 : input.schemaVersion;
+  if (schemaVersion !== 2) return { ok: false, status: 400, code: "OWNED_PROMO_SCHEMA_VERSION_INVALID" };
   const enabled = input.enabled === undefined ? DEFAULT_OWNED_PROMO_CONFIG.enabled : input.enabled;
   const showShareRewards = input.showShareRewards === undefined
     ? DEFAULT_OWNED_PROMO_CONFIG.showShareRewards : input.showShareRewards;
@@ -136,6 +139,7 @@ export function validateOwnedPromoConfig(body) {
   return {
     ok: true,
     config: {
+      schemaVersion: 2,
       enabled,
       defaultFrequency,
       enabledServices: enabledServices.ids,
@@ -144,6 +148,44 @@ export function validateOwnedPromoConfig(body) {
       showShareRewards,
     },
   };
+}
+
+/**
+ * Upgrades pre-v2 persisted settings to the current owner-approved defaults.
+ * Legacy settings did not have a schema version and had no GARD VPN entry.
+ * Preserve valid existing service choices, add GARD VPN and apply the new
+ * explicit defaults (visible after each completed game, opt-in share rewards).
+ */
+export function migrateOwnedPromoConfig(body) {
+  const input = body && typeof body === "object" && !Array.isArray(body) ? body : {};
+  if (input.schemaVersion === 2) return validateOwnedPromoConfig(input);
+  if (input.schemaVersion !== undefined && input.schemaVersion !== 1) {
+    return { ok: false, status: 400, code: "OWNED_PROMO_SCHEMA_VERSION_INVALID" };
+  }
+
+  const normalizeLegacyIds = (value, fallback) => {
+    if (!Array.isArray(value)) return [...fallback];
+    return [...new Set(value.filter((id) => typeof id === "string" && OWNED_PROMO_SERVICE_ID_SET.has(id)))];
+  };
+  const enabledServices = normalizeLegacyIds(input.enabledServices, OWNED_PROMO_SERVICE_IDS);
+  if (!enabledServices.includes("gardvpn")) enabledServices.push("gardvpn");
+  const defaultSelectedServices = normalizeLegacyIds(input.defaultSelectedServices, enabledServices)
+    .filter((id) => enabledServices.includes(id));
+  if (!defaultSelectedServices.includes("gardvpn")) defaultSelectedServices.push("gardvpn");
+  const oldSpotlight = typeof input.spotlightService === "string" ? input.spotlightService : "auto";
+  const spotlightService = oldSpotlight === "auto" ||
+    (OWNED_PROMO_SERVICE_ID_SET.has(oldSpotlight) && enabledServices.includes(oldSpotlight))
+    ? oldSpotlight : "auto";
+
+  return validateOwnedPromoConfig({
+    schemaVersion: 2,
+    enabled: true,
+    defaultFrequency: "each",
+    enabledServices,
+    defaultSelectedServices,
+    spotlightService,
+    showShareRewards: true,
+  });
 }
 
 export function cleanText(value, max = 500) {

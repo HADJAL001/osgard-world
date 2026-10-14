@@ -190,7 +190,7 @@ const services=[
  ['superday','04','SUPERDAY','MAP / DAILY PLANNING','Умная карта и планировщик дня','https://superday.run/'],
  ['myosa','06','MYOSA','AI PLATFORM','Платформа искусственного интеллекта нового поколения','https://myosa.world/'],
  ['gold-glamour','07','GOLD GLAMOUR','LUXURY SERVICES','Премиальные услуги с золотом и выездным обслуживанием','https://gold-glamour.online/'],
- ['gardvpn','08','GARD VPN','PRIVACY / VPN','Временно не продвигается: главная страница не подтверждает, что VPN-соединение действительно устанавливается.','https://gardvpn.is/',false,false],
+ ['gardvpn','08','GARD VPN','PRIVACY / VPN','Промо временно отключено, пока подключение VPN не подтверждено. Официальный сайт: доступен для ознакомления.','https://gardvpn.is/',false,false],
  ['osgard-business','09','OSGARD OS','BUSINESS INTELLIGENCE','Диагностика бизнеса, развитие и рекомендации по росту','https://osgardos.com/'],
  ['vanguard','10','OSGARD VANGUARD STUDIO','VIDEO STUDIO','Создание видео и визуальных проектов','https://osgardvanguard.studio/'],
  ['partner-studio','11','OSGARD PARTNER STUDIO','BRANDED GAMES / B2B','Заказные мини-игры и брендированные игровые события для компаний','/games/partners/']
@@ -203,16 +203,20 @@ const serviceProgressKey='osgard.games.postgame-service-progress.v1';
 const availableServiceIds=services.filter(item=>item[7]!==false).map(item=>item[0]);
 const frequencyValues=['each','every3','off'];
 const preferredServiceKey='osgard.games.preferred-service.v1';
-const defaultManagedPromoConfig={enabled:true,defaultFrequency:'each',enabledServices:availableServiceIds.slice(),defaultSelectedServices:availableServiceIds.slice(),spotlightService:'auto',showShareRewards:true};
+const defaultManagedPromoConfig={schemaVersion:2,enabled:true,defaultFrequency:'each',enabledServices:availableServiceIds.slice(),defaultSelectedServices:availableServiceIds.slice(),spotlightService:'auto',showShareRewards:true};
 let managedPromoConfig={...defaultManagedPromoConfig,enabledServices:availableServiceIds.slice(),defaultSelectedServices:availableServiceIds.slice()};
 function normalizeManagedPromoConfig(raw){
  if(!raw||typeof raw!=='object'||Array.isArray(raw))return null;
+ // Migrate cached/server settings created before GARD VPN was added to the public service allow-list.
+ const legacy=raw.schemaVersion!==2;
  const enabledServices=Array.isArray(raw.enabledServices)?[...new Set(raw.enabledServices.filter(id=>availableServiceIds.includes(id)))]:availableServiceIds.slice();
- const selectedSource=Array.isArray(raw.defaultSelectedServices)?raw.defaultSelectedServices:availableServiceIds;
+ if(legacy&&!enabledServices.includes('gardvpn'))enabledServices.push('gardvpn');
+ const selectedSource=Array.isArray(raw.defaultSelectedServices)?raw.defaultSelectedServices:enabledServices;
  const defaultSelectedServices=[...new Set(selectedSource.filter(id=>availableServiceIds.includes(id)&&enabledServices.includes(id)))];
- const defaultFrequency=frequencyValues.includes(raw.defaultFrequency)?raw.defaultFrequency:'each';
+ if(legacy&&enabledServices.includes('gardvpn')&&!defaultSelectedServices.includes('gardvpn'))defaultSelectedServices.push('gardvpn');
+ const defaultFrequency=legacy?'each':(frequencyValues.includes(raw.defaultFrequency)?raw.defaultFrequency:'each');
  const spotlightService=raw.spotlightService==='auto'||(availableServiceIds.includes(raw.spotlightService)&&enabledServices.includes(raw.spotlightService))?raw.spotlightService:'auto';
- return {enabled:typeof raw.enabled==='boolean'?raw.enabled:true,defaultFrequency,enabledServices,defaultSelectedServices,spotlightService,showShareRewards:typeof raw.showShareRewards==='boolean'?raw.showShareRewards:true};
+ return {schemaVersion:2,enabled:legacy?true:(typeof raw.enabled==='boolean'?raw.enabled:true),defaultFrequency,enabledServices,defaultSelectedServices,spotlightService,showShareRewards:legacy?true:(typeof raw.showShareRewards==='boolean'?raw.showShareRewards:true)};
 }
 async function refreshManagedPromoConfig(){
  try{
@@ -465,11 +469,21 @@ function readServicePreferences(){
  let stored=null;
  try{const raw=localStorage.getItem(servicePreferencesKey);if(raw)stored=JSON.parse(raw)}catch{return memoryServicePreferences?{frequency:memoryServicePreferences.frequency,selected:memoryServicePreferences.selected.slice()}:fallback}
  if(!stored||typeof stored!=='object')return memoryServicePreferences?{frequency:memoryServicePreferences.frequency,selected:memoryServicePreferences.selected.slice()}:fallback;
- return {frequency:frequencyValues.includes(stored.frequency)?stored.frequency:'each',selected:Array.isArray(stored.selected)?availableServiceIds.filter(id=>stored.selected.includes(id)):fallback.selected};
+ const frequency=frequencyValues.includes(stored.frequency)?stored.frequency:fallback.frequency;
+ const selected=Array.isArray(stored.selected)?availableServiceIds.filter(id=>stored.selected.includes(id)):fallback.selected.slice();
+ // Existing player preferences survive the schema upgrade. Newly added services are added to
+ // the chooser, while the player's explicit frequency choice ("each/every3/off") is preserved.
+ if(stored.schemaVersion!==2&&selected.length>0&&managedPromoConfig.enabledServices.includes('gardvpn')&&!selected.includes('gardvpn'))selected.push('gardvpn');
+ if(stored.schemaVersion!==2){
+  const migrated={schemaVersion:2,frequency,selected};
+  memoryServicePreferences={frequency,selected:selected.slice()};
+  try{localStorage.setItem(servicePreferencesKey,JSON.stringify(migrated))}catch{}
+ }
+ return {frequency,selected};
 }
 function writeServicePreferences(value){
- const next={frequency:frequencyValues.includes(value.frequency)?value.frequency:'each',selected:availableServiceIds.filter(id=>Array.isArray(value.selected)&&value.selected.includes(id))};
- memoryServicePreferences=next;
+ const next={schemaVersion:2,frequency:frequencyValues.includes(value.frequency)?value.frequency:'each',selected:availableServiceIds.filter(id=>Array.isArray(value.selected)&&value.selected.includes(id))};
+ memoryServicePreferences={frequency:next.frequency,selected:next.selected.slice()};
  try{localStorage.setItem(servicePreferencesKey,JSON.stringify(next));return true}catch{return false}
 }
 function readServiceProgress(){
