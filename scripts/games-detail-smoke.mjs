@@ -20,6 +20,25 @@ const sitemap = read('public/sitemap.xml')
 const css = read('src/games-hub.css')
 const routeMatrix = read('scripts/production-route-matrix.mjs')
 
+const heistLauncher = read('public/games/heist-echo/index.html')
+const heistWorker = read('public/games/heist-echo/sw.js')
+const heistManifestText = read('public/games/heist-echo/manifest.webmanifest')
+const heistIcon = read('public/games/heist-echo/icon.svg')
+const heistManifest = JSON.parse(heistManifestText)
+assert.ok(heistLauncher.includes('data-heist-echo-launcher="4.0.0"') && heistLauncher.includes('id="launch"') && heistLauncher.includes("payload-01.txt") && heistLauncher.includes("payload-05.txt"), 'HEIST//ECHO must ship a lightweight launcher that lazily loads all five payload parts')
+assert.ok(heistLauncher.length < 400 * 1024, 'HEIST//ECHO launcher must stay inside the production individual HTML budget')
+assert.ok(heistWorker.includes("const CACHE='heist-echo-4.0.0-release-2'") && heistWorker.includes("self.addEventListener('fetch'") && heistWorker.includes("url.origin!==self.location.origin"), 'HEIST//ECHO service worker must use a versioned cache and same-origin boundary')
+assert.equal(heistManifest.name, 'HEIST//ECHO — Operations Frontier')
+assert.equal(heistManifest.start_url, './')
+assert.equal(heistManifest.scope, './')
+assert.ok(heistIcon.includes('viewBox="0 0 512 512"'), 'HEIST//ECHO install icon must be a valid 512 square SVG')
+for (let i = 1; i <= 5; i += 1) {
+  const payload = read('public/games/heist-echo/payload-' + String(i).padStart(2, '0') + '.txt')
+  assert.ok(payload.length >= 200000, 'HEIST//ECHO payload part ' + i + ' must be present and non-empty')
+  if (i === 1) assert.ok(payload.startsWith('<!doctype html>') && payload.includes('data-heist-echo-release="4.0.0"'), 'HEIST//ECHO first payload part must start with the expected engine release')
+}
+assert.ok(routeMatrix.includes("'/games/heist-echo/'") && routeMatrix.includes("'/games/heist-echo/payload-05.txt'") && routeMatrix.includes('data-heist-echo-launcher="4.0.0"'), 'Production route matrix must perform content-aware checks for the published HEIST//ECHO route and payload')
+
 
 for (const [label, source] of [['SPA route SEO', app], ['game detail UI', detail], ['legacy game catalogue', entertainmentCatalog]]) {
   assert.ok(!source.includes('�') && !source.includes('пїЅ') && !source.includes('РЎР'), label + ' contains a damaged text-encoding sequence')
