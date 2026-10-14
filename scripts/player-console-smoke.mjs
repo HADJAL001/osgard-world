@@ -54,8 +54,10 @@ test('Daily Expeditions reward claims are capped, date-scoped, deduplicated and 
 });
 test('Daily completion objectives use dated completion events and remain backward compatible', () => {
   assert.match(js, /completionLog: \[\]/);
-  assert.match(js, /stats\.completionLog = \[\.\.\.\(stats\.completionLog \|\| \[\]\), \{ game: id, at: new Date\(\)\.toISOString\(\) \}\]\.slice\(-MAX_LOG\)/);
+  assert.match(js, /stats\.completionLog = \[\.\.\.\(stats\.completionLog \|\| \[\]\), \{ game: id, at: new Date\(\)\.toISOString\(\), \.\.\./);
   assert.match(js, /Array\.isArray\(raw\.completionLog\)/);
+  assert.match(js, /document\.addEventListener\('osgard:game-level-completed', recordGameCompletion\)/);
+  assert.match(js, /row\.game === id && row\.sessionId === sessionId/);
   assert.match(js, /validateMissionState\(parsed\.missions\)/);
   assert.match(js, /missions: missionState/);
   assert.match(js, /validateMissionState\(parsed\.missions\)/);
