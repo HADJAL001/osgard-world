@@ -130,7 +130,7 @@ consentToggle.setAttribute('aria-pressed',consent);$('b',consentToggle).textCont
 (()=>{'use strict';
 const version=document.querySelector('meta[name="osgard-build"]')?.content||'';
 const scriptPromises=new Map();
-let playerState='idle',playerPromise=null,pendingGameLink=null,catalogEnhancementPromise=null,catalogEnhancementObserver=null;
+let playerState='idle',playerPromise=null,pendingGameLink=null,catalogEnhancementPromise=null,catalogEnhancementObserver=null,expeditionPromise=Promise.resolve(false);
 function versioned(path){return path+(path.includes('?')?'&':'?')+'v='+encodeURIComponent(version)}
 function loadCatalogEnhancements(){
  if(catalogEnhancementPromise)return catalogEnhancementPromise;
@@ -175,10 +175,12 @@ function loadExpeditionForInvite(){
  const params=new URLSearchParams(location.search);
  // The expedition builder runtime is only needed on shared-route URLs.
  // Avoid parsing and executing ~13 KB of optional JavaScript for ordinary catalog visits.
- if(!params.has('og_expedition'))return;
- void loadScript('expedition/core.js')
+ if(!params.has('og_expedition'))return expeditionPromise;
+ expeditionPromise=loadScript('expedition/core.js')
   .then(()=>loadScript('expedition/catalog-runtime.js'))
-  .catch(()=>{ /* The regular game catalog must remain usable if an invite route fails. */ });
+  .then(()=>true)
+  .catch(()=>false);
+ return expeditionPromise;
 }
 let deviceFitPromise=null;
 function loadDeviceFit(){
@@ -223,7 +225,11 @@ function loadRecommendations(){
 function playPending(){
  const link=pendingGameLink;pendingGameLink=null;
  if(!link||!link.isConnected)return;
- link.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,view:window,button:0}));
+ // Do not launch an expedition-stage game until its progress listener has been attached.
+ void Promise.resolve(expeditionPromise).then(()=>{
+  if(!link.isConnected)return;
+  link.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,view:window,button:0}));
+ });
 }
 function loadPlayerRuntime(){
  if(playerPromise)return playerPromise;
