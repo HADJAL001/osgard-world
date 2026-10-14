@@ -667,7 +667,7 @@ const legacyPromoTestConfig={...defaultPromoTestConfig,enabledServices:legacySer
 assert.ok(!new Function('localStorage','memoryServicePreferences','servicePreferencesKey','availableServiceIds','frequencyValues','managedPromoConfig',preferenceReaderSource+';return readServicePreferences()')(emptyPreferenceStorage,null,'osgard.games.postgame-service-preferences.v1',legacyServicePreferenceIds,['each','every3','off'],legacyPromoTestConfig).selected.includes('partner-studio'),'A config with a smaller approved list must not opt new players into excluded services')
 assert.ok(recommendationScript.includes('localStorage.getItem(servicePreferencesKey)'),'Existing explicit local player preferences must remain readable')
 const cadenceStart=recommendationScript.indexOf('function shouldShowServicePromos(')
-const cadenceEnd=recommendationScript.indexOf('\\nfunction normalizeServiceSearchQuery(',cadenceStart)
+const cadenceEnd=recommendationScript.indexOf('\nfunction normalizeServiceSearchQuery(',cadenceStart)
 assert.ok(cadenceStart>=0&&cadenceEnd>cadenceStart,'Service promotion cadence gate must be independently testable')
 const cadenceSource=recommendationScript.slice(cadenceStart,cadenceEnd)
 const shouldShowPromoImpl=new Function('preferences','completedCount','readPromoSnoozeUntil','managedPromoConfig',cadenceSource+';return shouldShowServicePromos(preferences,completedCount)')
