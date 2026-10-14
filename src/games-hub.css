@@ -387,3 +387,23 @@
 .gh-game-stage:focus-visible{outline:2px solid var(--gh-mint);outline-offset:3px}
 @media(max-width:520px){.gh-game-error-actions{display:grid;grid-template-columns:minmax(0,1fr)}.gh-game-error-actions>*{justify-content:center}}
 @media(prefers-reduced-motion:reduce){.gh-game-loading .gh-loader{animation:none}}
+
+
+/* Detail player recovery, elapsed-time status, and reduced-motion support. */
+.gh-loading-meter{width:min(250px,70%);height:3px;overflow:hidden;border-radius:99px;background:rgba(118,230,206,.14)}
+.gh-loading-meter span{display:block;width:38%;height:100%;background:var(--gh-mint);animation:gh-load-sweep 1.3s ease-in-out infinite}
+@keyframes gh-load-sweep{0%{transform:translateX(-115%)}100%{transform:translateX(290%)}}
+.gh-game-loading small{max-width:420px;padding:0 18px;color:#657570;font-size:10px;line-height:1.6}
+.gh-game-loading[role=status],.gh-game-error[role=alert]{padding:clamp(18px,3vw,32px)}
+.gh-game-error p{max-width:560px;line-height:1.7}
+.gh-game-error-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:9px;max-width:620px;margin-top:6px}
+.gh-game-error-actions button,.gh-game-error-actions a{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:43px;padding:10px 14px;font-size:11px;text-decoration:none}
+.gh-game-error-actions .gh-secondary{border:1px solid var(--gh-line);background:transparent;color:var(--gh-muted)}
+.gh-game-error-actions .gh-secondary:hover,.gh-game-error-actions .gh-secondary:focus-visible{border-color:rgba(118,230,206,.5);color:var(--gh-mint)}
+.gh-game-stage:focus-visible{outline:2px solid var(--gh-mint);outline-offset:3px}
+.gh-session-duration{font-variant-numeric:tabular-nums;color:var(--gh-mint);letter-spacing:.06em}
+.gh-play-live--paused{background:#d7bc85;box-shadow:0 0 10px rgba(215,188,133,.45)}
+.gh-play-live--completed{background:#a8e2ad;box-shadow:0 0 10px rgba(168,226,173,.4)}
+.gh-play-live--error{background:#ff8e8e;box-shadow:0 0 10px rgba(255,142,142,.4)}
+@media(max-width:520px){.gh-game-error-actions{width:100%;display:grid;grid-template-columns:minmax(0,1fr)}.gh-game-error-actions>*{width:100%;justify-content:center}.gh-game-loading small{font-size:9px}.gh-play-toolbar small{max-width:62vw}}
+@media(prefers-reduced-motion:reduce){.gh-loading-meter span{animation:none;width:70%}.gh-loader{animation:none}}
