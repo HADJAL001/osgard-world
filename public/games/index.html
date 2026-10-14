@@ -171,6 +171,15 @@ function loadScript(path){
  });
  scriptPromises.set(path,promise);return promise;
 }
+function loadExpeditionForInvite(){
+ const params=new URLSearchParams(location.search);
+ // The expedition builder runtime is only needed on shared-route URLs.
+ // Avoid parsing and executing ~13 KB of optional JavaScript for ordinary catalog visits.
+ if(!params.has('og_expedition'))return;
+ void loadScript('expedition/core.js')
+  .then(()=>loadScript('expedition/catalog-runtime.js'))
+  .catch(()=>{ /* The regular game catalog must remain usable if an invite route fails. */ });
+}
 let deviceFitPromise=null;
 function loadDeviceFit(){
  const button=document.querySelector('#load-device-fit');
@@ -241,6 +250,8 @@ document.addEventListener('click',event=>{
 // Keep the optional sort/random/resume toolbar off the initial mobile critical path.
 // Load it when the user reaches the catalogue controls; gameplay and filtering remain available.
 watchCatalogEnhancements();
+// Shared expeditions get their own progressive enhancement; visitors without an invitation pay no runtime cost.
+loadExpeditionForInvite();
 // Invite landings retain acquisition measurement, while ordinary catalogue views
 // don't pay the referral module's startup cost until gameplay is requested.
 try{
@@ -355,4 +366,4 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     window.addEventListener('load', () => window.setTimeout(loadDailyCircuit, 2500), { once: true });
   }
 })();
-</script><script src="/games/catalog-state.js?v=__OSGARD_BUILD_VERSION__" defer></script><script src="/games/expedition/core.js?v=__OSGARD_BUILD_VERSION__" defer></script><script src="/games/expedition/catalog-runtime.js?v=__OSGARD_BUILD_VERSION__" defer></script><script src="/games/pwa-install.js?v=__OSGARD_BUILD_VERSION__" defer></script><script src="/games/experiment-core.js?v=__OSGARD_BUILD_VERSION__" defer></script><script src="/games/experiment-runtime.js?v=__OSGARD_BUILD_VERSION__" defer></script></body></html>
+</script><script src="/games/catalog-state.js?v=__OSGARD_BUILD_VERSION__" defer></script><script src="/games/pwa-install.js?v=__OSGARD_BUILD_VERSION__" defer></script><script src="/games/experiment-core.js?v=__OSGARD_BUILD_VERSION__" defer></script><script src="/games/experiment-runtime.js?v=__OSGARD_BUILD_VERSION__" defer></script></body></html>
