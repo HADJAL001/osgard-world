@@ -9,6 +9,8 @@ on:
       - "public/privacy/**"
       - "public/terms/**"
       - "scripts/games-*.mjs"
+      - "scripts/osgard-ecosystem-release-preflight*.mjs"
+      - "docs/OSGARD_ONE_PASS_DELIVERY_2026-10-14.md"
       - "scripts/game-detail-growth-cta-smoke.mjs"
       - "scripts/device-fit-smoke.mjs"
       - "scripts/production-route-matrix.mjs"
@@ -64,3 +66,5 @@ jobs:
         run: npm run qa:games-model
       - name: Growth experiment evidence and privacy regression
         run: npm run qa:growth-evidence
+      - name: One-pass ecosystem source preflight and activation-gate contract
+        run: npm run qa:ecosystem-release
