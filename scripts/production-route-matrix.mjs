@@ -197,7 +197,9 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
       } else {
         const content = await asset.text()
         const normalized = content.toLowerCase()
-        nonEmpty = isCampaignAdmin
+        nonEmpty = path === '/games/diagnostics/diagnostics.js'
+          ? content.includes('window.OSGARDDiagnostics') && content.includes("schema: 'osgard.play.diagnostics.v1'") && !content.includes('sendBeacon(')
+          : isCampaignAdmin
           ? (path.endsWith('.js') ? content.includes('apiBaseFromConfig') && content.includes('/v1/admin/campaigns') && !content.includes('localStorage.setItem(') : content.includes('.campaign-card') && content.includes('prefers-reduced-motion:reduce'))
           : isGamesHub && path === '/games/sponsored-campaigns.js'
             ? content.includes('sponsored_campaign_impression') && content.includes("credentials: 'omit'") && content.includes('osgard.games.sponsor-exposures.v1')
