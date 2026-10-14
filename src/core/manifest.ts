@@ -18,6 +18,7 @@ export type OsgardEventName =
   | 'share_link_copied'
   | 'share_dialog_opened'
   | 'partner_cta_clicked'
+  | 'cross_promo_clicked'
   | 'result_card_exported'
   | 'result_card_shared'
   | 'product_experiment_exposed'
