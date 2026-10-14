@@ -964,6 +964,11 @@ func _run_smoke() -> void:
 	game.fire_cooldown = 0.0
 	await physics_frame
 	await physics_frame
+	# The live player-aim updater intentionally follows the current camera/mouse each physics frame.
+	# Re-establish deterministic test aim after the awaited frames so this checks raycast damage,
+	# rather than whichever cursor position the headless runner happened to use.
+	game.player_aim = Vector3.FORWARD
+	game.aim_target_node = ray_guard
 	game._fire_weapon()
 	if not _expect(game.shots_fired == fire_saved_shots + 1 and game.shots_hit == fire_saved_hits + 1, "weapon ray must connect with a compact hostile capsule at its body height"):
 		return
