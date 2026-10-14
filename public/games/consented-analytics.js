@@ -15,7 +15,8 @@
     'owned_promo_impression', 'owned_promo_intermission_skipped',
     'owned_promo_preferences_saved', 'social_share_intent', 'social_reward_claimed', 'referral_reward_claimed', 'invite_link_prepared',
     'game_launched', 'game_session_completed', 'lead_submitted', 'partner_inquiry',
-    'sponsored_campaign_impression', 'sponsored_campaign_clicked'
+    'sponsored_campaign_impression', 'sponsored_campaign_clicked',
+    'pwa_install_prompt_shown', 'pwa_install_accepted', 'pwa_install_dismissed', 'pwa_standalone_opened'
   ]);
   const GAME_IDS = new Set([
     'null-shift', 'time', 'swarm', 'inherit', 'remix', 'civic-cascade',
