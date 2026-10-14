@@ -40,7 +40,13 @@ jobs:
                   "$page" == *"daily-circuit.css?v=$expected"* &&
                   "$page" == *"daily-circuit.js?v=$expected"* &&
                   "$page" == *"versioned('/games/'+path)"* &&
-                  "$page" == *"loadScript('player-lifecycle.js')"* ]]; then
+                  "$page" == *"loadScript('player-lifecycle.js')"* &&
+                  "$page" == *"loadScript('consented-analytics.js')"* &&
+                  "$page" == *"loadScript('experiment-core.js')"* &&
+                  "$page" == *"loadScript('experiment-runtime.js')"* &&
+                  "$page" != *"<script src=\\\"/games/consented-analytics.js?v="* &&
+                  "$page" != *"<script src=\\\"/games/experiment-core.js?v="* &&
+                  "$page" != *"<script src=\\\"/games/experiment-runtime.js?v="* ]]; then
               echo "Confirmed deployed Games release $expected"
               exit 0
             fi
