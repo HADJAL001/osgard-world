@@ -14,6 +14,7 @@ import {
   campaignFromRow, normalizeCampaignId, publicCampaignView, validateCampaignPayload,
 } from "./campaigns.mjs";
 import { buildCommercialReadiness } from "./readiness.mjs";
+import { generateOpsReview } from "./ai-ops.mjs";
 
 const { Pool } = pg;
 const app = express();
@@ -210,25 +211,29 @@ app.get("/readyz", (_req, res) => {
   const ready = Boolean(pool && dbReady && stripe && webhookSecret && paymentsModeAllowed(stripeSecret, process.env.ENABLE_LIVE_PAYMENTS === "true"));
   res.status(ready ? 200 : 503).json({ ready });
 });
+async function currentCommercialReadiness() {
+  const products = await loadPublicProducts();
+  const stripeMode = stripeSecret.startsWith("sk_test_") ? "test" : stripeSecret.startsWith("sk_live_") ? "live" : "missing";
+  return buildCommercialReadiness({
+    databaseConfigured: Boolean(pool),
+    databaseReady: dbReady,
+    databaseInitFailedAtBoot: dbErrorAtBoot,
+    adminTokenConfigured: String(process.env.ADMIN_API_TOKEN || "").length >= 32,
+    stripeConfigured: Boolean(stripe),
+    stripeMode,
+    webhookConfigured: Boolean(webhookSecret),
+    livePaymentsOptIn: process.env.ENABLE_LIVE_PAYMENTS === "true",
+    paymentsRuntimeReady: paymentsAllowed(),
+    premiumEntitlementsImplemented: PREMIUM_ENTITLEMENTS_IMPLEMENTED,
+    adNetworkIntegrated: false,
+    products,
+  });
+}
+
 app.get("/v1/admin/readiness", requireAdmin, async (_req, res) => {
   try {
-    // The existing catalog loader verifies configured Stripe prices without returning IDs or credentials.
-    const products = await loadPublicProducts();
-    const stripeMode = stripeSecret.startsWith("sk_test_") ? "test" : stripeSecret.startsWith("sk_live_") ? "live" : "missing";
-    return res.json(buildCommercialReadiness({
-      databaseConfigured: Boolean(pool),
-      databaseReady: dbReady,
-      databaseInitFailedAtBoot: dbErrorAtBoot,
-      adminTokenConfigured: String(process.env.ADMIN_API_TOKEN || "").length >= 32,
-      stripeConfigured: Boolean(stripe),
-      stripeMode,
-      webhookConfigured: Boolean(webhookSecret),
-      livePaymentsOptIn: process.env.ENABLE_LIVE_PAYMENTS === "true",
-      paymentsRuntimeReady: paymentsAllowed(),
-      premiumEntitlementsImplemented: PREMIUM_ENTITLEMENTS_IMPLEMENTED,
-      adNetworkIntegrated: false,
-      products,
-    }));
+    res.set("Cache-Control", "no-store, private");
+    return res.json(await currentCommercialReadiness());
   } catch (error) {
     console.error("Commercial readiness report failed:", error?.message || "unknown error");
     return res.status(503).json({ error: "READINESS_REPORT_UNAVAILABLE", message: "Не удалось собрать статус запуска. Повторите попытку позже." });
@@ -262,6 +267,30 @@ app.post("/v1/stripe/webhook", express.raw({ type: "application/json", limit: "1
 });
 
 app.use(express.json({ limit: "25kb", strict: true }));
+
+/**
+ * Human-invoked, read-only advisory. Browser input is ignored: OpenAI sees only
+ * current server-generated readiness status and count metadata.
+ */
+app.post("/v1/admin/ai-ops/review",
+  rateLimit({ windowMs: 60 * 60 * 1000, limit: 8, standardHeaders: "draft-8", legacyHeaders: false }),
+  requireAdmin,
+  async (_req, res) => {
+    res.set("Cache-Control", "no-store, private");
+    try {
+      const result = await generateOpsReview({
+        apiKey: process.env.OPENAI_API_KEY || "",
+        model: process.env.OPENAI_OPS_MODEL || "gpt-5-mini",
+        readiness: await currentCommercialReadiness(),
+      });
+      if (!result.ok) return res.status(result.status).json({ error: result.code, message: result.message });
+      return res.json(result.data);
+    } catch (error) {
+      console.error("AI Ops review failed:", error?.message || "unknown error");
+      return res.status(503).json({ error: "AI_OPS_REVIEW_UNAVAILABLE", message: "Не удалось сформировать AI-план. Обычная readiness-проверка остаётся доступной." });
+    }
+  });
+
 
 function campaignColumns() {
   return "campaign_id, sponsor_name, title, description, target_url, placement, status, starts_at, ends_at, frequency_cap, created_at, updated_at";

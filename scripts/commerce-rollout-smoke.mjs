@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 
 const root = resolve("services/osgard-commerce-api");
 const requiredFiles = [
-  "src/server.mjs", "src/core.mjs", "src/campaigns.mjs", "src/readiness.mjs", "test/core.test.mjs", "test/campaigns.test.mjs", "test/readiness.test.mjs",
+  "src/server.mjs", "src/core.mjs", "src/campaigns.mjs", "src/readiness.mjs", "src/ai-ops.mjs", "test/core.test.mjs", "test/campaigns.test.mjs", "test/readiness.test.mjs", "test/ai-ops.test.mjs",
   "package.json", "Dockerfile", "README.md", ".env.example",
 ];
 for (const relative of requiredFiles) assert.ok(existsSync(resolve(root, relative)), "Missing commerce file: " + relative);
@@ -13,6 +13,8 @@ const server = readFileSync(resolve(root, "src/server.mjs"), "utf8");
 const core = readFileSync(resolve(root, "src/core.mjs"), "utf8");
 const readiness = readFileSync(resolve(root, "src/readiness.mjs"), "utf8");
 const campaigns = readFileSync(resolve(root, "src/campaigns.mjs"), "utf8");
+const aiOps = readFileSync(resolve(root, "src/ai-ops.mjs"), "utf8");
+const commerceEnv = readFileSync(resolve(root, ".env.example"), "utf8");
 const store = readFileSync(resolve("public/games/premium/index.html"), "utf8");
 const app = readFileSync(resolve("public/games/premium/app.js"), "utf8");
 const admin = readFileSync(resolve("public/games/commerce-admin/index.html"), "utf8");
@@ -24,12 +26,18 @@ for (const value of [
   "stripe.checkout.sessions.create", "stripe.webhooks.constructEvent",
   "express.raw", "commerce_stripe_events", "ON CONFLICT DO NOTHING",
   "ENABLE_LIVE_PAYMENTS", "ADMIN_API_TOKEN", "/v1/admin/overview", "/v1/admin/readiness", "PREMIUM_ENTITLEMENTS_IMPLEMENTED", "buildCommercialReadiness",
-  "/v1/checkout/status", "validateEventBatch", "validateLeadPayload",
+  "/v1/checkout/status", "/v1/admin/ai-ops/review", "generateOpsReview", "currentCommercialReadiness", "validateEventBatch", "validateLeadPayload",
   "resolveCheckoutPaymentState", "no-store, private", "paidRevenueByAttribution", "attribution_game_id", "attribution_source", "attribution_campaign",
 ]) assert.ok(server.includes(value), "Commerce API missing required feature: " + value);
 for (const value of ["premiumEntitlementsImplemented", "adNetworkIntegrated", "test_only", "review_required", "not_integrated"]) assert.ok(readiness.includes(value), "Commercial readiness rules missing: " + value);
 assert.ok(server.includes('app.get("/v1/admin/readiness"'), "Commercial readiness endpoint must be present.");
 assert.ok(admin.includes('id="launch-readiness"') && admin.includes("renderReadiness"), "Protected admin UI must render commercial readiness.");
+assert.ok(admin.includes('id="ai-ops-copilot"') && admin.includes('id="ai-ops-review"') && admin.includes("runAiOpsReview"), "Protected admin UI must expose the manually-triggered AI Ops review.");
+assert.ok(admin.includes("base({ requireDatabaseReady: false })") && admin.includes("credentials: 'omit'"), "AI Ops must inspect readiness even when the database is not ready and must omit cookies.");
+assert.ok(admin.includes("advisoryOnly") && admin.includes("textContent"), "AI Ops output must be advisory and rendered as text.");
+for (const value of ["OPENAI_API_KEY=", "OPENAI_OPS_MODEL="]) assert.ok(commerceEnv.includes(value), "Optional server-only OpenAI configuration missing: " + value);
+for (const value of ["store: false", "json_schema", "buildOpsReviewContext", "AI_OPS_NOT_CONFIGURED", "evidenceIds", "AbortSignal.timeout"]) assert.ok(aiOps.includes(value), "AI Ops security contract missing: " + value);
+assert.ok(!admin.includes("sk-proj-") && !admin.includes("Bearer sk-"), "OpenAI key must never be embedded in browser HTML.");
 for (const value of ["PRODUCT_DEFS", "termsAccepted", "verifyStripeSignature", "paymentsModeAllowed"]) {
   assert.ok(core.includes(value), "Core validation missing: " + value);
 }
