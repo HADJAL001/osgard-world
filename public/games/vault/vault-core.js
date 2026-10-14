@@ -34,6 +34,7 @@
     return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
   }
   function safeInteger(value, min, max) {
+    if (value === null || value === undefined || value === '') return null;
     const number = typeof value === 'number' ? value : Number(value);
     return Number.isSafeInteger(number) && number >= min && number <= max ? number : null;
   }
