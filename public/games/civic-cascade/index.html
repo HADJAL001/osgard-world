@@ -394,11 +394,12 @@ function setupCinematicCapture(){
   '4k':{label:'4K UHD',width:3840,height:2160,maxSeconds:15,bitrate:30000000},
   '8k':{label:'8K UHD',width:7680,height:4320,maxSeconds:10,bitrate:55000000}
  };
- let recorder=null,chunks=[],stream=null,exportCanvas=null,exportContext=null,drawFrameId=0,limitTimer=0,progressTimer=0,startedAt=0,stopReason='manual',lastObjectUrl='';
+ let recorder=null,chunks=[],stream=null,exportCanvas=null,exportContext=null,drawFrameId=0,limitTimer=0,progressTimer=0,startedAt=0,lastPaintAt=0,lastObjectUrl='';
  const setStatus=(message,stateName)=>{statusNode.textContent=message;statusNode.dataset.state=stateName||'ready'};
  const formatSeconds=value=>{const n=Math.max(0,Math.floor(value));return String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0')};
- function paintVideoFrame(){
+ function paintVideoFrame(now){
   if(!recorder||recorder.state!=='recording'||!exportCanvas||!exportContext)return;
+  if(now-lastPaintAt<1000/30){drawFrameId=requestAnimationFrame(paintVideoFrame);return}lastPaintAt=now;
   const w=exportCanvas.width,h=exportCanvas.height,scale=w/1920,c=exportContext;
   c.fillStyle='#061014';c.fillRect(0,0,w,h);
   const sourceW=canvas.width,sourceH=canvas.height,ratio=Math.min(w/sourceW,h/sourceH);
@@ -443,8 +444,12 @@ function setupCinematicCapture(){
  }
  function finishRecording(){
   const type=recorder&&recorder.mimeType?recorder.mimeType:'video/webm',blob=new Blob(chunks,{type:type});
+  const selectedProfile=profileSelect.value||'1080';
+  const maxSeconds=selectedProfile==='8k'?10:selectedProfile==='4k'?15:30;
+  const recordedSeconds=Math.max(1,Math.round((Date.now()-startedAt)/1000));
   cleanupCapture();
   if(blob.size<1024){setStatus('ЗАПИСЬ НЕ СОЗДАЛА ВИДЕО · ПОПРОБУЙ ДРУГОЙ ПРОФИЛЬ','error');note.textContent='Браузер не выдал готовый видеопоток. Проверь поддержку MediaRecorder и попробуй профиль меньшего разрешения.';return}
+  progress.value=Math.min(100,recordedSeconds/maxSeconds*100);progressLabel.textContent=formatSeconds(recordedSeconds)+' / '+formatSeconds(maxSeconds);
   if(lastObjectUrl)URL.revokeObjectURL(lastObjectUrl);
   lastObjectUrl=URL.createObjectURL(blob);const profileName=profileSelect.value||'1080';
   download.href=lastObjectUrl;download.download='civic-cascade-'+profileName+'-'+new Date().toISOString().replace(/[:.]/g,'-')+'.webm';download.hidden=false;
