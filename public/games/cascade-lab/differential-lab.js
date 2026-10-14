@@ -70,8 +70,8 @@ function pairGroup(baselineGroup, variantGroup) {
       const bit = 1 << j;
       if (mask & bit) continue;
       const left = small[index], right = large[j];
-      const dx = right.device.x - left.device.x, dy = right.device.y - left.device.y;
-      const rotation = angleDelta(left.device.angle, right.device.angle);
+      const dx = right.x - left.x, dy = right.y - left.y;
+      const rotation = angleDelta(left.angle, right.angle);
       const cost = Math.hypot(dx,dy) + rotation * 28;
       const rest = solve(index+1,mask|bit);
       const total = cost + rest.cost;
