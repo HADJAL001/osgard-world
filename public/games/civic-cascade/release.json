@@ -3,8 +3,8 @@
   "gameId": "civic-cascade",
   "title": "CIVIC CASCADE",
   "edition": "Web Edition",
-  "version": "3.0.0",
-  "releaseId": "civic-cascade-web-3.0.0",
+  "version": "3.1.0",
+  "releaseId": "civic-cascade-web-3.1.0",
   "canonicalUrl": "https://osgard.world/games/civic-cascade/",
   "detailUrl": "https://osgard.world/game/civic-cascade",
   "entrypoint": "/games/civic-cascade/",
@@ -49,7 +49,8 @@
       "cc-doctrine-status",
       "cc-doctrine-results",
       "cc-doctrine-apply",
-      "cc-doctrine-reset"
+      "cc-doctrine-reset",
+      "cc-doctrine-export"
     ],
     "checkpointSchema": "civic-cascade-checkpoint-v1",
     "approximateRiskForecast": true,
@@ -234,16 +235,28 @@
       "reportsDominanceStatus": true,
       "comparesOnlyDeterministicModelOutputs": true,
       "maximizesDistinctOpeningPrefixes": true,
-      "portfolioDiversity": "maximum-available-distinct-first-two-command-prefixes"
+      "portfolioDiversity": "maximum-available-distinct-first-two-command-prefixes",
+      "reproducibleDossierExport": true,
+      "dossierSchema": "osgard.civic-cascade.decision-dossier/v1"
     },
     "decisionDossier": {
       "enabled": true,
-      "source": "deterministic-local-planner",
-      "showsNominalRiskDelta": true,
-      "showsStressWeakness": true,
-      "comparesResourceCost": true,
-      "labelsParetoMembership": true,
-      "tracksNoPersonalData": true
+      "schema": "osgard.civic-cascade.decision-dossier/v1",
+      "exportFormat": "application/json",
+      "includesModelAndGameVersion": true,
+      "includesSourceStateSnapshot": true,
+      "includesBaselineAndCandidateForecasts": true,
+      "includesParetoAndTradeoffEvidence": true,
+      "includesAllStressProfileMetrics": true,
+      "payloadIntegrityHash": "SHA-256",
+      "hashScope": "canonical JSON payload before export metadata",
+      "userInitiatedDownloadOnly": true,
+      "localOnly": true,
+      "sendsTelemetry": false,
+      "callsOpenAIAPI": false,
+      "includesPersonalData": false,
+      "validatesCurrentStateFingerprintBeforeExport": true,
+      "regressionSmokeTest": "scripts/civic-cascade-forecast-smoke.mjs"
     }
   },
   "cinematicExport": {
@@ -284,6 +297,6 @@
   "deployment": {
     "target": "https://osgard.world",
     "mechanism": "repository push triggers the site's production deployment workflow",
-    "liveStatus": "verify release 3.0.0 with production route checks after deployment"
+    "liveStatus": "verify release 3.1.0 with production route checks after deployment"
   }
 }
