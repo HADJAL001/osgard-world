@@ -34,14 +34,12 @@ test('Daily Expeditions expose four locally measured, non-monetary missions', ()
     'DAILY_MISSIONS = Object.freeze([', "id: 'open-one'", "id: 'visit-two'",
     "id: 'complete-one'", "id: 'queue-three'", 'getMissionProgress(mission, today',
     'data-pc-claim-mission', 'claimMission(button.dataset.pcClaimMission)',
-    'data-pc-xp-total', 'data-pc-streak', 'data-pc-mission-date',
-    'daily missions must only progress from local play state'
-  ]) if (token !== 'daily missions must only progress from local play state') {
-    assert.ok(js.includes(token), 'Missing Daily Expeditions contract: ' + token);
-  }
+    'data-pc-xp-total', 'data-pc-streak', 'data-pc-mission-date'
+  ]) assert.ok(js.includes(token), 'Missing Daily Expeditions contract: ' + token);
   assert.match(js, /Цикл UTC:/);
   assert.match(js, /не имеет денежной стоимости/);
   assert.match(js, /Денежной стоимости нет/);
+  assert.match(js, /validateMissionState\(parsed\.missions\)/);
 });
 test('Daily Expeditions reward claims are capped, date-scoped, deduplicated and local', () => {
   assert.match(js, /MAX_MISSION_CLAIMS = 4000/);
