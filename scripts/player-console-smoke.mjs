@@ -96,7 +96,7 @@ test('lifetime Player Lab aggregates survive the bounded recent-launch log', () 
   assert.match(js, /stats\.activityDays = \[\.\.\.new Set\(\[\.\.\.stats\.activityDays, dateKey\(activeWallAt\)\]\)\]/);
   assert.match(js, /const unique = stats\.gameIdsEver\.length/);
   assert.match(js, /const days = stats\.activityDays\.length/);
-  assert.match(js, /return \{ schema: 1, launches, totalLaunches, gameIdsEver, activityDays, secondsByGame, completions \}/, 'Exports/imports must preserve the validated aggregates');
+  assert.match(js, /return \{ schema: 1, launches, totalLaunches, gameIdsEver, activityDays, secondsByGame, completions, completionLog \}/, 'Exports/imports must preserve the validated aggregates and dated completion log');
 });
 test('activity-day validator accepts real calendar dates and rejects impossible ones', () => {
   const start = js.indexOf('function isValidDateKey(value) {');
