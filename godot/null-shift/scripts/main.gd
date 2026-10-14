@@ -2653,7 +2653,7 @@ func _update_guard_perception(guard: Dictionary, body: CharacterBody3D, sees_pla
 			awareness_readout.modulate = Color(1.0, 0.34, 0.31) if awareness >= 0.72 else (Color(1.0, 0.72, 0.34) if awareness >= 0.42 else Color(0.36, 0.95, 1.0))
 	var role_tag := guard.get("role_tag") as Label3D
 	if is_instance_valid(role_tag) and str(guard.get("displayed_ai_state", "")) != state:
-		var role_name := str(guard.get("role", "RANGER"))
+		var role_name: String = str(guard.get("role", "RANGER"))
 		match state:
 			"ENGAGED":
 				role_tag.text = role_name + " · CONTACT"
