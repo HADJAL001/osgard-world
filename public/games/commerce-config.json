@@ -1,4 +1,4 @@
 {
   "apiBaseUrl": "",
-  "notes": "Public URL only. Set apiBaseUrl to the HTTPS origin of the deployed Commerce API, for example https://commerce-api.example.com, or to the explicit same-origin Nginx prefix https://osgard.world/commerce-api. Leave empty until the API is deployed and ready. Never place secrets here."
+  "notes": "Public URL only, never secrets. When blank, browser clients probe the same-origin /commerce-api/healthz route and use /commerce-api only if service=osgard-commerce-api and databaseReady=true. Otherwise forms and analytics stay in safe fallback mode. An explicit remote base must use HTTPS."
 }

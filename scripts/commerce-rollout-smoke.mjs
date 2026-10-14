@@ -88,6 +88,8 @@ assert.ok(html.includes("id=\"project-form\""), "Existing project form must rema
 assert.ok(existsSync(resolve("public/games/commerce-client.js")), "Existing contact forms need a shared API/fallback client.");
 const sharedClient = readFileSync(resolve("public/games/commerce-client.js"), "utf8");
 const consentQueue = readFileSync(resolve("public/games/consented-analytics.js"), "utf8");
+const recommendations = readFileSync(resolve("public/games/game-session-recommendations.js"), "utf8");
+const operations = readFileSync(resolve("public/games/operations/index.html"), "utf8");
 assert.ok(existsSync(resolve("public/games/consented-analytics.js")), "Consent-gated delivery queue is missing.");
 new Function(consentQueue);
 const playerLifecycle = readFileSync(resolve("public/games/player-lifecycle.js"), "utf8");
@@ -101,9 +103,13 @@ for (const value of ['id="campaign-form"', 'name="consent"', 'src="/games/commer
   assert.ok(partners.includes(value), "Partner page missing lead integration: " + value);
 }
 assert.ok(sharedClient.includes("/v1/leads") && sharedClient.includes("wa.me/79640027222"), "Lead API and manual fallback must both exist.");
-assert.ok(sharedClient.includes("if (!raw) return ''") && sharedClient.includes("if (!base) throw new Error('COMMERCE_API_NOT_CONFIGURED')"), "Lead forms must fail closed and disclose manual fallback when commerce is not configured.");
-assert.ok(consentQueue.includes("if (!raw) return ''") && consentQueue.includes("if (!base || !consentGranted()"), "Analytics must not route to the SPA fallback when API configuration is missing.");
-assert.ok(admin.includes("if (!raw) return ''") && admin.includes("if (!apiBase) throw new Error('Commerce API не настроен."), "Admin must require an explicitly configured Commerce API URL before using its bearer token.");
+assert.ok(sharedClient.includes("'/commerce-api/healthz'") && sharedClient.includes("health.service === 'osgard-commerce-api'") && sharedClient.includes("health.databaseReady === true"), "Lead forms may auto-discover only a healthy, database-ready first-party Commerce API.");
+assert.ok(sharedClient.includes("credentials: 'omit'") && sharedClient.includes("if (!base) throw new Error('COMMERCE_API_NOT_CONFIGURED')"), "Lead API discovery must omit cookies and preserve the disclosed manual fallback.");
+assert.ok(consentQueue.includes("'/commerce-api/healthz'") && consentQueue.includes("health.service === 'osgard-commerce-api'") && consentQueue.includes("health.databaseReady === true"), "Analytics must auto-discover only the verified same-origin Commerce API.");
+assert.ok(consentQueue.includes("credentials: 'omit'") && consentQueue.includes("if (!base || !consentGranted()"), "Analytics API discovery must omit cookies and remain consent-gated.");
+assert.ok(recommendations.includes("async function resolveReferralApiBase()") && recommendations.includes("health.databaseReady===true") && recommendations.includes("'/commerce-api/healthz'"), "Qualified referral rewards must probe the same-origin API before use.");
+assert.ok(operations.includes("health.service === 'osgard-commerce-api'") && operations.includes("health.databaseReady === true"), "Read-only operations console must distinguish a ready API from an empty static config.");
+assert.ok(admin.includes("'/commerce-api/healthz'") && admin.includes("health.databaseReady === true") && admin.includes("credentials: 'omit'"), "Admin must discover only a database-ready first-party API and never send cookies with the operator token.");
 for (const [label, page] of [["Games", html], ["Partners", partners], ["Premium", store]]) {
   const queueTag = page.indexOf('src="/games/consented-analytics.js?v=__OSGARD_BUILD_VERSION__"');
   const clientTag = page.indexOf('src="/games/commerce-client.js"');

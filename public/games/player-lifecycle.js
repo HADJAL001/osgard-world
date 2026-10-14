@@ -39,16 +39,23 @@ function sendCommerceEvent(name,payload){
  const event={eventId:'evt_'+(window.crypto?.randomUUID?.()||Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,15)).replace(/[^a-zA-Z0-9_-]/g,''),name,sessionId:id,gameId:activeGame,source,path,durationSeconds:duration};
  const queue=window.OSGARD_CONSENTED_ANALYTICS;
  if(queue&&typeof queue.enqueue==='function'){void queue.enqueue(event);return}
- fetch('/games/commerce-config.json',{cache:'no-store'}).then(r=>r.ok?r.json():{}).catch(()=>({})).then(config=>{
+ fetch('/games/commerce-config.json',{cache:'no-store'}).then(r=>r.ok?r.json():{}).catch(()=>({})).then(async config=>{
   const raw=typeof config.apiBaseUrl==='string'?config.apiBaseUrl.trim():'';
-  if(!raw)return null;
-  let parsed;
-  try{parsed=new URL(raw,location.origin)}catch{return null}
-  const localApi=['localhost','127.0.0.1'].includes(parsed.hostname);
-  const allowedPath=parsed.pathname==='/'||(parsed.pathname==='/commerce-api'&&(parsed.origin===location.origin||parsed.origin==='https://osgard.world'));
-  if((parsed.protocol!=='https:'&&!(localApi&&parsed.protocol==='http:'))||parsed.username||parsed.password||!allowedPath||parsed.search||parsed.hash)return null;
-  const base=parsed.origin+(parsed.pathname==='/'?'':parsed.pathname);
-  return fetch(base+'/v1/events',{method:'POST',keepalive:true,headers:{'content-type':'application/json'},body:JSON.stringify({consent:true,events:[event]})});
+  let base='';
+  if(!raw){
+   const healthResponse=await fetch('/commerce-api/healthz',{cache:'no-store',credentials:'omit'});
+   const health=healthResponse.ok?await healthResponse.json().catch(()=>({})):{};
+   if(!healthResponse.ok||health.service!=='osgard-commerce-api'||health.databaseReady!==true)return null;
+   base=location.origin+'/commerce-api';
+  }else{
+   let parsed;
+   try{parsed=new URL(raw,location.origin)}catch{return null}
+   const localApi=['localhost','127.0.0.1'].includes(parsed.hostname);
+   const allowedPath=parsed.pathname==='/'||(parsed.pathname==='/commerce-api'&&(parsed.origin===location.origin||parsed.origin==='https://osgard.world'));
+   if((parsed.protocol!=='https:'&&!(localApi&&parsed.protocol==='http:'))||parsed.username||parsed.password||!allowedPath||parsed.search||parsed.hash)return null;
+   base=parsed.origin+(parsed.pathname==='/'?'':parsed.pathname);
+  }
+  return fetch(base+'/v1/events',{method:'POST',keepalive:true,credentials:'omit',headers:{'content-type':'application/json'},body:JSON.stringify({consent:true,events:[event]})});
  }).catch(()=>{})
 }
 function allowedEvent(name,payload){sendCommerceEvent(name,payload);if(!activeGame||activeGame==='time')return;let consent=false,token='';try{consent=localStorage.getItem('osgard.games.analytics-consent.v1')==='yes';token=localStorage.getItem('osgard.auth.accessToken')||''}catch{}if(!consent||!token)return;const event={id:window.crypto?.randomUUID?.()||name+'-'+Date.now()+'-'+Math.random().toString(36).slice(2),name,world:'play',game:activeGame,payload:Object.assign({source:'games_catalog',catalogVersion:2},payload||{}),occurredAt:new Date().toISOString(),schemaVersion:1};fetch('/api/v1/player/events',{method:'POST',credentials:'same-origin',keepalive:true,headers:{authorization:'Bearer '+token,'content-type':'application/json'},body:JSON.stringify({event})}).catch(()=>{})}

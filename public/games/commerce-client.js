@@ -19,10 +19,25 @@
       return /^[a-zA-Z0-9_-]{1,60}$/.test(value) ? [key + '=' + value] : [];
     });
   }
+  async function discoverSameOriginCommerceApi() {
+    let controller = null, timer = 0;
+    try {
+      controller = typeof AbortController === 'function' ? new AbortController() : null;
+      if (controller) timer = setTimeout(() => controller.abort(), 2500);
+      const response = await fetch('/commerce-api/healthz', {
+        cache: 'no-store', credentials: 'omit', ...(controller ? { signal: controller.signal } : {}),
+      });
+      const health = response.ok ? await response.json().catch(() => ({})) : {};
+      return response.ok && health.service === 'osgard-commerce-api' && health.databaseReady === true
+        ? location.origin + '/commerce-api'
+        : '';
+    } catch { return ''; }
+    finally { if (timer) clearTimeout(timer); }
+  }
   const apiBase = async () => {
     const config = await loadConfig();
     const raw = typeof config.apiBaseUrl === 'string' ? config.apiBaseUrl.trim() : '';
-    if (!raw) return '';
+    if (!raw) return discoverSameOriginCommerceApi();
     try {
       const parsed = new URL(raw, location.origin);
       const localApi = ['localhost', '127.0.0.1'].includes(parsed.hostname);

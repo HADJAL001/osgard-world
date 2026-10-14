@@ -31,7 +31,12 @@ async function base() {
   const response = await fetch('/games/commerce-config.json', { cache: 'no-store' }).catch(() => null);
   const config = response?.ok ? await response.json().catch(() => ({})) : {};
   const raw = typeof config.apiBaseUrl === 'string' ? config.apiBaseUrl.trim() : '';
-  if (!raw) return '';
+  if (!raw) {
+    const healthResponse = await fetch('/commerce-api/healthz', { cache: 'no-store', credentials: 'omit' }).catch(() => null);
+    const health = healthResponse?.ok ? await healthResponse.json().catch(() => ({})) : {};
+    return healthResponse?.ok && health.service === 'osgard-commerce-api' && health.databaseReady === true
+      ? location.origin + '/commerce-api' : '';
+  }
   try {
     const parsed = new URL(raw, location.origin);
     const localApi = ['localhost', '127.0.0.1'].includes(parsed.hostname);
@@ -44,8 +49,8 @@ async function base() {
 }
 async function api(path) {
   const apiBase = await base();
-  if (!apiBase) throw new Error('Commerce API не настроен. Введите токен только после развёртывания API и задания commerce-config.json.');
-  const response = await fetch(apiBase + path, { headers: { Authorization: 'Bearer ' + token }, cache: 'no-store' });
+  if (!apiBase) throw new Error('Commerce API не готов: same-origin /healthz не подтвердил service и databaseReady. Токен не отправлялся.');
+  const response = await fetch(apiBase + path, { headers: { Authorization: 'Bearer ' + token }, cache: 'no-store', credentials: 'omit' });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.message || data.error || 'HTTP ' + response.status);
   return data;
