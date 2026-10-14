@@ -107,7 +107,7 @@ for (const name of eventNames) {
   assert.ok(clientAnalytics.includes("'" + name + "'"), 'Client analytics must allow ' + name);
   assert.ok(serverCore.includes('"' + name + '"'), 'Server analytics must allow ' + name);
 }
-assert.equal(packageJson.scripts['qa:pwa'], 'node scripts/osgard-play-pwa-smoke.mjs');
+assert.equal(packageJson.scripts['qa:pwa'], 'node scripts/osgard-play-pwa-smoke.mjs && node scripts/deferred-enhancements-smoke.mjs');
 assert.ok(workflow.includes('npm run qa:pwa') && workflow.includes('npm run qa:games-portal'));
 
 const context = {
