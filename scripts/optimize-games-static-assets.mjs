@@ -7,10 +7,12 @@ import { transform } from 'esbuild'
 const MINIFY_ASSETS = [
   'luxury.css',
   'daily-circuit.css',
+  'device-fit.css',
   'consented-analytics.js',
   'commerce-client.js',
   'luxury.js',
   'daily-circuit.js',
+  'device-fit.js',
 ]
 
 function walk(directory) {

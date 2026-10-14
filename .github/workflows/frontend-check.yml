@@ -8,6 +8,7 @@ on:
       - "scripts/skillcred-page-smoke.mjs"
       - "scripts/time-prototype-smoke.mjs"
       - "scripts/games-portal-smoke.mjs"
+      - "scripts/device-fit-smoke.mjs"
       - "scripts/games-detail-smoke.mjs"
       - "scripts/game-detail-runtime-smoke.mjs"
       - "scripts/entertainment-hub-smoke.mjs"
@@ -82,6 +83,8 @@ jobs:
         run: npm run qa:games-portal
       - name: Verify OSGARD PLAY 30-check diagnostics
         run: npm run qa:games-diagnostics
+      - name: Verify OSGARD PLAY Smart Launch privacy, mobile and accessibility contracts
+        run: npm run qa:device-fit
       - name: Verify contextual recommendations for all catalogue games
         run: npm run qa:game-recommendations
       - name: Verify premium Entertainment discovery, sharing and SEO
