@@ -284,7 +284,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
     const isCatalogAdmin = route === '/games/admin/catalog/'
     const assetPaths = isEnglishGamesHub ? ['/games/favicon.svg', '/games/share-cards/catalog.png'] : isCatalogAdmin ? ['/games/admin/catalog/catalog.js'] : route.startsWith('/games/swarm/') ? ['/games/swarm/styles.css', '/games/swarm/game.js'] : route === '/games/favicon.svg' || route === '/privacy/' || route === '/terms/' ? [] : isCampaignAdmin ? ['/games/admin/campaigns/admin.js', '/games/admin/campaigns/admin.css'] : isPartnerPage ? ['/games/partners/partners.js', '/games/partners/inventory.json'] : isEcosystemDirectory ? ['/games/ecosystem/directory.css', '/games/ecosystem/directory.js'] : route === '/games/diagnostics/' ? ['/games/diagnostics/diagnostics.js'] : isExpeditionPage ? ['/games/expedition/core.js','/games/expedition/app.js','/games/expedition/expedition.css'] : isGamesHub ? ['/games/consented-analytics.js','/games/player-lifecycle.js','/games/game-session-recommendations.js','/games/game-session-recommendations.css','/games/daily-circuit.js','/games/daily-circuit.css','/games/sponsored-campaigns.js','/games/sponsored-campaigns.css','/games/expedition/core.js','/games/expedition/catalog-runtime.js','/games/catalog-runtime.js'] : route === '/skillcred/' ? ['/skillcred/styles.css', '/skillcred/app.js', '/skillcred/fonts/InterVariable.woff2', '/skillcred/fonts/InstrumentSerif-Italic.woff2', '/skillcred/fonts/JetBrainsMono-Regular.woff2'] : route === '/games/cascade-lab/' ? ['/games/cascade-lab/case-passport.js','/games/cascade-lab/trajectory-xray.js','/games/cascade-lab/mission-director.js','/games/cascade-lab/evidence-integrity.js'] : route === '/games/signal-run/' ? ['/games/signal-run/game.js'] : isGodot ? ['/games/null-shift-godot/index.js', '/games/null-shift-godot/index.wasm', '/games/null-shift-godot/index.pck'] : route.startsWith('/games/null-shift') ? ['/games/null-shift/styles.css', '/games/null-shift/game.js', '/games/null-shift/engine-3d.js'] : route.startsWith('/games/invite/') && route !== '/games/invite/invite-landing.js' ? ['/games/invite/invite-landing.js', '/games/share-cards/' + (route.split('/')[3] || 'catalog') + '.png'] : []
     const assetChecks = await Promise.all(assetPaths.map(async path => {
-      const expectedType = path.endsWith('.css') ? 'text/css' : path.endsWith('.json') ? 'json' : path.endsWith('.js') ? 'javascript' : path.endsWith('.png') ? 'png' : path.endsWith('.wasm') ? 'wasm' : path.endsWith('.pck') ? 'pack' : 'font'
+      const expectedType = path.endsWith('.css') ? 'text/css' : path.endsWith('.json') ? 'json' : path.endsWith('.js') ? 'javascript' : path.endsWith('.png') ? 'png' : path.endsWith('.svg') ? 'svg' : path.endsWith('.wasm') ? 'wasm' : path.endsWith('.pck') ? 'pack' : 'font'
       // Large immutable artifacts only need an existence/MIME/size check. HEAD avoids
       // downloading Godot WebAssembly, PCK and font files for both device profiles.
       const sizeOnlyTypes = new Set(['font','wasm','pack'])
@@ -296,7 +296,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
       const asset = await fetch(assetUrl, { method: sizeOnly ? 'HEAD' : 'GET', headers: { 'user-agent': userAgent, 'cache-control': 'no-cache', pragma: 'no-cache' }, cache: 'no-store', signal: AbortSignal.timeout(ROUTE_TIMEOUT_MS) })
       const contentType = asset.headers.get('content-type') || ''
       const mime = contentType.toLowerCase()
-      const typeOk = expectedType === 'text/css' ? mime.includes('text/css') : expectedType === 'json' ? mime.includes('application/json') || mime.includes('text/json') || mime.includes('text/plain') : expectedType === 'javascript' ? mime.includes('javascript') || mime.includes('ecmascript') : expectedType === 'png' ? mime.includes('image/png') : expectedType === 'wasm' ? mime.includes('wasm') || mime.includes('octet-stream') : expectedType === 'pack' ? mime.length > 0 : mime.includes('font/woff2') || mime.includes('application/octet-stream')
+      const typeOk = expectedType === 'text/css' ? mime.includes('text/css') : expectedType === 'json' ? mime.includes('application/json') || mime.includes('text/json') || mime.includes('text/plain') : expectedType === 'javascript' ? mime.includes('javascript') || mime.includes('ecmascript') : expectedType === 'png' ? mime.includes('image/png') : expectedType === 'svg' ? mime.includes('image/svg+xml') : expectedType === 'wasm' ? mime.includes('wasm') || mime.includes('octet-stream') : expectedType === 'pack' ? mime.length > 0 : mime.includes('font/woff2') || mime.includes('application/octet-stream')
       let nonEmpty = false
       if (sizeOnly) {
         const size = Number(asset.headers.get('content-length') || 0)
@@ -308,6 +308,10 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         const bytes = new Uint8Array(buffer)
         const view = new DataView(buffer)
         nonEmpty = size > 5000 && bytes[0] === 137 && bytes[1] === 80 && bytes[2] === 78 && bytes[3] === 71 && view.getUint32(16) === 1200 && view.getUint32(20) === 630
+      } else if (expectedType === 'svg') {
+        const content = await asset.text()
+        const normalized = content.toLowerCase()
+        nonEmpty = normalized.length > 50 && normalized.includes('<svg') && normalized.includes('viewbox=')
       } else {
         const content = await asset.text()
         const normalized = content.toLowerCase()
@@ -317,11 +321,11 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
           : isCatalogAdmin
           ? content.includes("const API = '/commerce-api/v1'") && content.includes('/admin/game-catalog') && !content.includes('localStorage') && !content.includes('sessionStorage') && !content.includes('.innerHTML')
           : path === '/games/catalog-runtime.js'
-           ? content.includes("const endpoint = '/commerce-api/v1/game-catalog'") &&
-             content.includes('function safeItem(') &&
-             content.includes('textContent = item.title') &&
-             content.includes('AbortSignal.timeout(4500)') &&
-             !content.includes('.innerHTML')
+           ? compact.includes('/commerce-api/v1/game-catalog') &&
+             compact.includes('.textcontent=') &&
+             compact.includes('.title') &&
+             compact.includes('abortsignal.timeout(4500)') &&
+             !compact.includes('.innerhtml')
            : isCampaignAdmin
           ? (path.endsWith('.js') ? content.includes('apiBaseFromConfig') && content.includes('/v1/admin/campaigns') && !content.includes('localStorage.setItem(') : content.includes('.campaign-card') && content.includes('prefers-reduced-motion:reduce'))
           : isGamesHub && path === '/games/sponsored-campaigns.js'
