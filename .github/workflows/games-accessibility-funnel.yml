@@ -1,0 +1,45 @@
+name: OSGARD Games accessibility and funnel QA
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - 'public/games/index.html'
+      - 'public/games/accessibility-center.css'
+      - 'public/games/accessibility-center.js'
+      - 'public/games/catalog-funnel-events.js'
+      - 'public/games/consented-analytics.js'
+      - 'public/games/admin/index.html'
+      - 'services/osgard-commerce-api/src/core.mjs'
+      - 'services/osgard-commerce-api/test/core.test.mjs'
+      - 'scripts/consented-analytics-queue-smoke.mjs'
+      - 'scripts/games-accessibility-funnel-smoke.mjs'
+      - 'scripts/games-accessibility-runtime-smoke.mjs'
+      - 'package.json'
+      - '.github/workflows/games-accessibility-funnel.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: games-accessibility-funnel-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check accessibility and event contracts
+        run: node scripts/games-accessibility-funnel-smoke.mjs
+      - name: Test accessibility dialog and analytics failure boundaries
+        run: node scripts/games-accessibility-runtime-smoke.mjs
+      - name: Test consent-gated client queue
+        run: node scripts/consented-analytics-queue-smoke.mjs
+      - name: Test API schema and validation
+        run: node --test services/osgard-commerce-api/test/core.test.mjs
+      - name: Check changed JavaScript syntax
+        run: |
+          node --check public/games/accessibility-center.js
+          node --check public/games/catalog-funnel-events.js
