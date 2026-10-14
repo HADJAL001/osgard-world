@@ -23,7 +23,7 @@ The widget's values are compatibility hints, not a performance benchmark, proof 
 
 ## Release engineering change
 
-The release readiness runner now runs the new Smart Launch contract test and additional existing release checks covering mobile PWA, Player Lab, campaign controls, recommendations, operations diagnostics, analytics consent and queue behavior, privacy controls, asset checks, ecosystem integrity and the Cascade Lab experiment dossier.
+The release readiness runner now runs the new Smart Launch contract test and additional existing release checks covering mobile PWA, Player Lab, campaign controls, recommendations, operations diagnostics, analytics consent and queue behavior, privacy controls, asset checks, ecosystem integrity and the Cascade Lab experiment dossier. Smart Launch CSS/JS are part of the critical minify/gzip asset set, are included in the public PWA shell cache with a cache-version bump, and are required by the local iOS bundle preflight.
 
 The runner reports per-check durations and a compact summary alongside the existing per-check output. Existing critical failures still block the report; the new checks do not activate payment, sponsor or analytics services.
 
