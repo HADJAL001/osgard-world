@@ -12,6 +12,7 @@ export const DEFAULT_GAME_CATALOG = Object.freeze([
   { id: "cascade-lab", title: "CASCADE LAB", description: "Собирай цепные реакции, исследуй траекторию и физику, разбирай причины отказов и сравнивай контролируемые эксперименты.", genres: ["creative", "tactical"], visible: true, featured: false, sortOrder: 9, status: "playable", href: "/games/cascade-lab/" },
   { id: "afterimage-run", title: "AFTERIMAGE//RUN", description: "Ежедневный sci-fi забег с общим seed, фазовыми воротами и призраком личного рекорда. Поделись испытанием и сравни результат.", genres: ["arcade", "creative"], visible: true, featured: false, sortOrder: 10, status: "playable", href: "/games/afterimage-run/" },
   { id: "aether-grid", title: "AETHER GRID", description: "Ежедневная логическая головоломка: соедини источник с ядром в сетке из узлов и брось вызов другу.", genres: ["creative", "tactical"], visible: true, featured: false, sortOrder: 11, status: "playable", href: "/games/aether-grid/" },
+  { id: "heist-echo", title: "HEIST//ECHO", description: "Тактическая симуляция: создавай карты, проверяй маршруты патрулей и разбирай операцию в Black Box.", genres: ["tactical", "creative"], visible: true, featured: false, sortOrder: 12, status: "playable", href: "/games/heist-echo/" },
 ]);
 
 const GAME_IDS = new Set(DEFAULT_GAME_CATALOG.map((item) => item.id));
