@@ -173,4 +173,14 @@ assert.equal(
   true,
   'Invite preparation events must be accepted by the shared retry queue',
 );
+
+const newGamesEvents = ["catalog_search_used","catalog_filter_changed","game_favorite_toggled","game_player_fullscreen_opened","game_player_retry_requested","game_player_error_shown","accessibility_preferences_changed"];
+for (const [index, name] of newGamesEvents.entries()) {
+  const eventId = 'evt_games_' + String(index).padStart(2, '0') + '_123456';
+  assert.equal(
+    await configured.queue.enqueue({ ...event, eventId, gameId: 'cascade-lab', name, source: 'games-hub-qa' }),
+    true,
+    'New Games funnel event must be accepted by the consented client queue: ' + name,
+  );
+}
 console.log('PASS consented analytics queue: fail-closed API configuration, offline persistence, stable IDs, acknowledged retry, consent withdrawal, and schema allowlist.');

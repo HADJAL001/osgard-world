@@ -70,7 +70,8 @@
     "qa:ai-release-review": "node --test scripts/osgard-ai-release-review.test.mjs",
     "qa:null-shift-diagnostics-contract": "node scripts/null-shift-diagnostics-contract-smoke.mjs",
     "qa:release-manifest": "node scripts/frontend-archive-preflight-smoke.mjs",
-    "qa:owned-promo-config": "node scripts/owned-promo-config-smoke.mjs"
+    "qa:owned-promo-config": "node scripts/owned-promo-config-smoke.mjs",
+    "qa:games-accessibility-funnel": "node scripts/games-accessibility-funnel-smoke.mjs && node scripts/consented-analytics-queue-smoke.mjs && node --test services/osgard-commerce-api/test/core.test.mjs"
   },
   "dependencies": {
     "@types/three": "^0.186.0",
