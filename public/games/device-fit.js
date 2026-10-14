@@ -6,7 +6,19 @@
     remix: Object.freeze({ level: 'heavy', webgl2: true, label: 'Unity WebGL', note: 'WebGL-плеер с повышенной графической нагрузкой' }),
   });
   const FALLBACK_ORDER = Object.freeze(['aether-grid', 'signal-run', 'afterimage-run', 'civic-cascade']);
+  const CARD_BATCH_LIMIT = 2;
   const $ = (selector, root = document) => root.querySelector(selector);
+
+  // Keep catalogue setup responsive on lower-end phones. requestIdleCallback is
+  // bounded by a timeout; older browsers fall back to one small task per turn.
+  // This changes scheduling only: all cards are still evaluated, in their original order.
+  function scheduleIdle(callback) {
+    if (typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(callback, { timeout: 250 });
+      return;
+    }
+    window.setTimeout(() => callback({ didTimeout: true, timeRemaining: () => 0 }), 0);
+  }
 
   // Do not create and destroy real GPU contexts while rendering the catalog.
   // Some mobile drivers block the main thread for hundreds of milliseconds on the
@@ -87,7 +99,36 @@
     setSignal('osgard-fit-motion', capabilities.reducedMotion ? 'Меньше движения' : 'Обычный режим', 'neutral');
 
     const profileById = new Map();
-    for (const card of cards) {
+    let cardIndex = 0;
+    let filtering = false;
+    const filterButton = $('#osgard-fit-filter', panel);
+    const status = $('#osgard-fit-status', panel);
+
+    function applyFilter() {
+      for (const card of cards) {
+        const id = String(card.dataset.game || '');
+        const profile = profileById.get(id);
+        const unsuitableHeavy = profile?.level === 'heavy' && (capabilities.constrained || !capabilities.webgl2);
+        card.toggleAttribute('data-osgard-fit-hidden', filtering && unsuitableHeavy);
+      }
+      if (filterButton) {
+        filterButton.setAttribute('aria-pressed', filtering ? 'true' : 'false');
+        filterButton.textContent = filtering ? 'Показать все игры' : 'Показать подходящие';
+      }
+      if (status) {
+        status.textContent = filtering
+          ? 'Скрыты только тяжёлые WebGL-игры, если браузер не подтвердил WebGL 2 или найден режим экономии ресурсов. Их всё равно можно открыть, отключив фильтр.'
+          : 'Игры не блокируются автоматически. Для игр без известного профиля совместимость проверяется внутри самой игры.';
+      }
+    }
+
+    filterButton?.addEventListener('click', () => {
+      filtering = !filtering;
+      applyFilter();
+    });
+    applyFilter();
+
+    function annotateCard(card) {
       const id = String(card.dataset.game || '');
       const profile = PROFILES[id] || { level: 'unmeasured', webgl2: false, label: 'Браузерная игра', note: 'Совместимость дополнительно проверяется при запуске' };
       let fit = 'unmeasured';
@@ -113,44 +154,35 @@
       }
     }
 
-    const recommendedId = capabilities.webgl2 && !capabilities.constrained
-      ? 'null-shift'
-      : FALLBACK_ORDER.find(id => cards.some(card => card.dataset.game === id)) || cards[0]?.dataset.game;
-    const recommendedCard = cards.find(card => card.dataset.game === recommendedId);
-    const recommendedLink = $('a[data-play]', recommendedCard) || $('a[href]', recommendedCard);
-    const launch = $('#osgard-fit-launch', panel);
-    if (launch && recommendedLink) {
-      launch.href = recommendedLink.getAttribute('href') || '/games/';
-      const title = $('h3', recommendedCard)?.textContent?.trim() || recommendedId;
-      launch.textContent = 'Начать с ' + title + ' ↗';
-      launch.setAttribute('aria-label', 'Открыть рекомендованную игру: ' + title);
+    function finishSetup() {
+      const recommendedId = capabilities.webgl2 && !capabilities.constrained
+        ? 'null-shift'
+        : FALLBACK_ORDER.find(id => cards.some(card => card.dataset.game === id)) || cards[0]?.dataset.game;
+      const recommendedCard = cards.find(card => card.dataset.game === recommendedId);
+      const recommendedLink = $('a[data-play]', recommendedCard) || $('a[href]', recommendedCard);
+      const launch = $('#osgard-fit-launch', panel);
+      if (launch && recommendedLink) {
+        launch.href = recommendedLink.getAttribute('href') || '/games/';
+        const title = $('h3', recommendedCard)?.textContent?.trim() || recommendedId;
+        launch.textContent = 'Начать с ' + title + ' ↗';
+        launch.setAttribute('aria-label', 'Открыть рекомендованную игру: ' + title);
+      }
+      // Apply once more after all profiles have been registered so a fast tap on
+      // the filter button during the idle pass still takes effect deterministically.
+      applyFilter();
     }
 
-    let filtering = false;
-    const filterButton = $('#osgard-fit-filter', panel);
-    const status = $('#osgard-fit-status', panel);
-    function applyFilter() {
-      for (const card of cards) {
-        const id = String(card.dataset.game || '');
-        const profile = profileById.get(id);
-        const unsuitableHeavy = profile?.level === 'heavy' && (capabilities.constrained || !capabilities.webgl2);
-        card.toggleAttribute('data-osgard-fit-hidden', filtering && unsuitableHeavy);
-      }
-      if (filterButton) {
-        filterButton.setAttribute('aria-pressed', filtering ? 'true' : 'false');
-        filterButton.textContent = filtering ? 'Показать все игры' : 'Показать подходящие';
-      }
-      if (status) {
-        status.textContent = filtering
-          ? 'Скрыты только тяжёлые WebGL-игры, если браузер не подтвердил WebGL 2 или найден режим экономии ресурсов. Их всё равно можно открыть, отключив фильтр.'
-          : 'Игры не блокируются автоматически. Для игр без известного профиля совместимость проверяется внутри самой игры.';
-      }
+    function processCardBatch() {
+      const end = Math.min(cardIndex + CARD_BATCH_LIMIT, cards.length);
+      while (cardIndex < end) annotateCard(cards[cardIndex++]);
+      if (cardIndex < cards.length) scheduleIdle(processCardBatch);
+      else finishSetup();
     }
-    filterButton?.addEventListener('click', () => {
-      filtering = !filtering;
-      applyFilter();
-    });
-    applyFilter();
+
+    // The panel and capability signals appear immediately. Card decoration is
+    // split into small idle tasks so one large DOM traversal cannot monopolize
+    // a mobile main-thread task; all cards still receive their original labels.
+    scheduleIdle(processCardBatch);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });

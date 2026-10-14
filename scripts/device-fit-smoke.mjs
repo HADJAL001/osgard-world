@@ -41,4 +41,129 @@ assert.ok(/@media\(max-width:760px\)/.test(css), 'panel must include a mobile la
 assert.equal(pkg.scripts['qa:device-fit'], 'node scripts/device-fit-smoke.mjs', 'package QA command is missing');
 assert.ok(release.includes("check('device-fit-smoke'"), 'release readiness must run the new contract test');
 assert.ok(pwaSmoke.includes('new Script(sw)'), 'PWA smoke should validate service worker parser contract');
+
+assert.doesNotThrow(() => new Script(client), 'Smart Launch JavaScript must parse');
+assert.ok(client.includes('const CARD_BATCH_LIMIT = 2'), 'catalog card work must use a small bounded batch');
+assert.ok(client.includes('window.requestIdleCallback(callback, { timeout: 250 })'), 'catalog batching must yield to idle time with a bounded timeout');
+assert.ok(client.includes('function annotateCard(card)') && client.includes('function processCardBatch()'), 'card annotation must be isolated from the initial setup task');
+assert.ok(client.includes('if (cardIndex < cards.length) scheduleIdle(processCardBatch)'), 'remaining cards must be scheduled as separate tasks');
+
+function makeRuntimeHarness() {
+  const idleQueue = [];
+  const doc = {
+    readyState: 'complete',
+    panel: null,
+    chipsAdded: 0,
+    querySelector(selector) {
+      if (selector === '#games-grid') return this.grid;
+      if (selector === '#osgard-device-fit') return this.panel;
+      return null;
+    },
+    createElement(tag) { return new FakeElement(tag, this); },
+  };
+  class FakeElement {
+    constructor(tag, ownerDocument) {
+      this.tagName = tag;
+      this.ownerDocument = ownerDocument;
+      this.dataset = {};
+      this.attributes = {};
+      this.children = [];
+      this.named = new Map();
+      this.listeners = {};
+      this.textContent = '';
+      this.className = '';
+      this.href = '';
+      this.title = '';
+      this.parentNode = null;
+      this.strong = null;
+      this._innerHTML = '';
+    }
+    set innerHTML(value) {
+      this._innerHTML = value;
+      for (const match of value.matchAll(/\bid="([^"]+)"/g)) {
+        const id = match[1];
+        const node = new FakeElement('div', this.ownerDocument);
+        this.named.set(id, node);
+        if (['osgard-fit-webgl', 'osgard-fit-input', 'osgard-fit-network', 'osgard-fit-motion'].includes(id)) {
+          node.strong = new FakeElement('strong', this.ownerDocument);
+        }
+      }
+    }
+    get innerHTML() { return this._innerHTML; }
+    setAttribute(name, value) { this.attributes[name] = String(value); }
+    getAttribute(name) { return this.attributes[name] || (name === 'href' ? this.href : null); }
+    querySelector(selector) {
+      if (selector.startsWith('#')) return this.named.get(selector.slice(1)) || null;
+      if (selector === 'strong') return this.strong;
+      return null;
+    }
+    addEventListener(name, callback) { this.listeners[name] = callback; }
+    appendChild(child) {
+      this.children.push(child);
+      if (child.className === 'osgard-fit-chip') this.ownerDocument.chipsAdded += 1;
+      return child;
+    }
+    toggleAttribute(name, force) {
+      if (force) this.attributes[name] = '';
+      else delete this.attributes[name];
+      return Boolean(force);
+    }
+  }
+
+  const cards = [
+    'null-shift', 'time', 'swarm', 'inherit', 'remix', 'civic-cascade',
+    'patina', 'signal-run', 'cascade-lab', 'afterimage-run', 'aether-grid',
+  ].map(id => {
+    const card = new FakeElement('article', doc);
+    card.dataset.game = id;
+    const kicker = new FakeElement('div', doc);
+    const anchor = new FakeElement('a', doc);
+    anchor.href = '/games/' + id + '/';
+    const heading = new FakeElement('h3', doc);
+    heading.textContent = id.toUpperCase();
+    card.querySelector = selector => {
+      if (selector === '.kicker' || selector === '.copy') return kicker;
+      if (selector === 'a[data-play]' || selector === 'a[href]') return anchor;
+      if (selector === 'h3') return heading;
+      return null;
+    };
+    return card;
+  });
+  const grid = new FakeElement('div', doc);
+  grid.querySelectorAll = selector => selector === '[data-game]' ? cards : [];
+  grid.parentNode = { insertBefore(panel) { doc.panel = panel; } };
+  doc.grid = grid;
+  const window = {
+    WebGL2RenderingContext: function WebGL2RenderingContext() {},
+    WebGLRenderingContext: function WebGLRenderingContext() {},
+    matchMedia: () => ({ matches: false }),
+    requestIdleCallback(callback) { idleQueue.push(callback); },
+    setTimeout(callback) { idleQueue.push(callback); },
+  };
+  const navigator = { maxTouchPoints: 0, onLine: true, deviceMemory: 8 };
+  return { doc, window, navigator, idleQueue, cards };
+}
+
+const runtime = makeRuntimeHarness();
+new Script(client).runInNewContext({
+  document: runtime.doc,
+  window: runtime.window,
+  navigator: runtime.navigator,
+  performance: { now: () => 0 },
+});
+assert.equal(runtime.doc.chipsAdded, 0, 'first render must not decorate every catalogue card synchronously');
+assert.equal(runtime.idleQueue.length, 1, 'first annotation batch must be scheduled');
+let batches = 0;
+while (runtime.idleQueue.length && batches < 10) {
+  const callback = runtime.idleQueue.shift();
+  const before = runtime.doc.chipsAdded;
+  callback({ didTimeout: false, timeRemaining: () => 20 });
+  const added = runtime.doc.chipsAdded - before;
+  assert.ok(added <= 2, 'each idle task must annotate no more than two cards');
+  batches += 1;
+}
+assert.equal(runtime.doc.chipsAdded, 11, 'all eleven catalogue cards must eventually receive the compatibility chip');
+assert.equal(runtime.idleQueue.length, 0, 'all catalog work must finish');
+assert.ok(batches >= 6, 'eleven cards must be split over at least six short tasks');
+
 console.log('PASS OSGARD Smart Launch: 11 catalog entries, local-only capability checks, reversible filtering, PWA syntax, mobile and reduced-motion contracts.');
