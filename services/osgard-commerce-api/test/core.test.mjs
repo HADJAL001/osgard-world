@@ -6,6 +6,7 @@ import {
   OWNED_PROMO_SERVICE_IDS,
   DEFAULT_OWNED_PROMO_CONFIG,
   validateOwnedPromoConfig,
+  migrateOwnedPromoConfig,
   catalogConfiguration,
   validateCheckoutPayload,
   validateLeadPayload,
@@ -56,6 +57,26 @@ test("owned-service promotion settings validate the public service allow-list an
   assert.equal(validateOwnedPromoConfig({ enabledServices: ["projects"], defaultSelectedServices: ["projects"], spotlightService: "marcosa" }).code, "OWNED_PROMO_SPOTLIGHT_NOT_ENABLED");
   assert.equal(validateOwnedPromoConfig({ spotlightService: "../unexpected" }).code, "OWNED_PROMO_SPOTLIGHT_INVALID");
   assert.equal(validateOwnedPromoConfig({ showShareRewards: 1 }).code, "OWNED_PROMO_REWARDS_INVALID");
+});
+
+test("legacy owned-promo settings migrate to schema v2 with GARD VPN and every-session rewards", () => {
+  const legacyIds = OWNED_PROMO_SERVICE_IDS.filter((id) => id !== "gardvpn");
+  const migrated = migrateOwnedPromoConfig({
+    enabled: false,
+    defaultFrequency: "every3",
+    enabledServices: legacyIds,
+    defaultSelectedServices: legacyIds,
+    spotlightService: "auto",
+    showShareRewards: false,
+  });
+  assert.equal(migrated.ok, true);
+  assert.equal(migrated.config.schemaVersion, 2);
+  assert.equal(migrated.config.enabled, true);
+  assert.equal(migrated.config.defaultFrequency, "each");
+  assert.equal(migrated.config.showShareRewards, true);
+  assert.ok(migrated.config.enabledServices.includes("gardvpn"));
+  assert.ok(migrated.config.defaultSelectedServices.includes("gardvpn"));
+  assert.equal(migrateOwnedPromoConfig({ schemaVersion: 99 }).code, "OWNED_PROMO_SCHEMA_VERSION_INVALID");
 });
 
 test("catalog is a fixed server-side allow-list", () => {
