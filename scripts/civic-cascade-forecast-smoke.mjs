@@ -77,7 +77,7 @@ for (const id of [
   'cc-cascade-plan-90', 'cc-cascade-note', 'cc-node-inspector', 'cc-node-health',
   'cc-node-health-bar', 'cc-node-status', 'cc-node-chain', 'cc-node-effect', 'cc-adaptive-crisis',
   'cc-causal-debrief', 'cc-causal-summary', 'cc-causal-count', 'cc-causal-risk-change', 'cc-causal-weakest', 'cc-causal-best', 'cc-causal-ledger',
-  'cc-doctrine-lab', 'cc-doctrine-mode', 'cc-doctrine-run', 'cc-doctrine-status', 'cc-doctrine-results', 'cc-doctrine-apply', 'cc-doctrine-reset', 'cc-doctrine-export', 'cc-doctrine-import-file', 'cc-doctrine-verify-import', 'cc-doctrine-verification-result', 'cc-doctrine-ai-advisor', 'cc-doctrine-ai-consent', 'cc-doctrine-ai-run', 'cc-doctrine-ai-status', 'cc-doctrine-ai-result, 'cc-doctrine-ai-advisor', 'cc-doctrine-ai-consent', 'cc-doctrine-ai-run', 'cc-doctrine-ai-status', 'cc-doctrine-ai-result'
+  'cc-doctrine-lab', 'cc-doctrine-mode', 'cc-doctrine-run', 'cc-doctrine-status', 'cc-doctrine-results', 'cc-doctrine-apply', 'cc-doctrine-reset', 'cc-doctrine-export', 'cc-doctrine-import-file', 'cc-doctrine-verify-import', 'cc-doctrine-verification-result', 'cc-doctrine-ai-advisor', 'cc-doctrine-ai-consent', 'cc-doctrine-ai-run', 'cc-doctrine-ai-status', 'cc-doctrine-ai-result'
 ]) check(ids.includes(id), 'missing forecast UI element: ' + id)
 
 const mainScript = html.match(/<script>([\s\S]*?)<\/script>/i)?.[1]
