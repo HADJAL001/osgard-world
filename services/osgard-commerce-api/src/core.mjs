@@ -60,6 +60,13 @@ export const ALLOWED_EVENTS = new Set([
   "pwa_standalone_opened",
   "product_experiment_exposed",
   "product_experiment_converted",
+  "catalog_search_used",
+  "catalog_filter_changed",
+  "game_favorite_toggled",
+  "game_player_fullscreen_opened",
+  "game_player_retry_requested",
+  "game_player_error_shown",
+  "accessibility_preferences_changed",
 ]);
 
 const GAME_IDS = new Set([
