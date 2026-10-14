@@ -3,8 +3,8 @@
   "gameId": "civic-cascade",
   "title": "CIVIC CASCADE",
   "edition": "Web Edition",
-  "version": "3.2.0",
-  "releaseId": "civic-cascade-web-3.2.0",
+  "version": "3.3.0",
+  "releaseId": "civic-cascade-web-3.3.0",
   "canonicalUrl": "https://osgard.world/games/civic-cascade/",
   "detailUrl": "https://osgard.world/game/civic-cascade",
   "entrypoint": "/games/civic-cascade/",
@@ -50,7 +50,10 @@
       "cc-doctrine-results",
       "cc-doctrine-apply",
       "cc-doctrine-reset",
-      "cc-doctrine-export"
+      "cc-doctrine-export",
+      "cc-doctrine-import-file",
+      "cc-doctrine-verify-import",
+      "cc-doctrine-verification-result"
     ],
     "checkpointSchema": "civic-cascade-checkpoint-v1",
     "approximateRiskForecast": true,
@@ -274,7 +277,7 @@
       "includesParetoAndTradeoffEvidence": true,
       "includesAllStressProfileMetrics": true,
       "payloadIntegrityHash": "SHA-256",
-      "hashScope": "canonical JSON payload before export metadata",
+      "hashScope": "canonical recursively key-sorted JSON payload without exportMetadata",
       "userInitiatedDownloadOnly": true,
       "localOnly": true,
       "sendsTelemetry": false,
@@ -288,9 +291,48 @@
       "comparesResourceCost": true,
       "labelsParetoMembership": true,
       "tracksNoPersonalData": true,
-      "modelVersion": "3.2.0",
+      "modelVersion": "3.3.0",
       "stressProfileCount": 9,
-      "includesStressSeverityBands": true
+      "includesStressSeverityBands": true,
+      "canonicalization": "recursive object-key sort; array order preserved; JSON.stringify scalar encoding",
+      "verifierEnabled": true,
+      "maxImportBytes": 1048576,
+      "verifiesSha256BeforeReportingIntegrityPass": true,
+      "detectsPostExportMutation": true,
+      "supportsHistoricalReadOnlyInspection": true,
+      "importedPlanExecution": false,
+      "verifiesStructureAndResourceBounds": true,
+      "rejectsUnknownActionsAndNodeTargets": true,
+      "maxJsonDepth": 32,
+      "maxJsonNodes": 50000,
+      "canonicalKeyOrderIndependent": true
+    },
+    "dossierVerification": {
+      "enabled": true,
+      "mode": "local-only read-only audit",
+      "fileFormat": "application/json",
+      "maxImportBytes": 1048576,
+      "maxDepth": 32,
+      "maxNodes": 50000,
+      "checks": [
+        "schema",
+        "game-and-engine-id",
+        "model-version-compatibility",
+        "source-state-metrics",
+        "baseline-forecast-horizons",
+        "candidate-order-allowlist",
+        "resource-bounds",
+        "all-nine-stress-profiles",
+        "privacy-flags",
+        "sha256-payload-integrity"
+      ],
+      "neverExecutesImportedOrders": true,
+      "neverMutatesGameState": true,
+      "usesTextContentForImportedData": true,
+      "sendsTelemetry": false,
+      "networkRequests": false,
+      "reportsHashIsNotDigitalSignature": true,
+      "regressionSmokeTest": "scripts/civic-cascade-forecast-smoke.mjs"
     }
   },
   "cinematicExport": {
@@ -331,6 +373,6 @@
   "deployment": {
     "target": "https://osgard.world",
     "mechanism": "repository push triggers the site's production deployment workflow",
-    "liveStatus": "verify release 3.2.0 with production route checks after deployment"
+    "liveStatus": "verify release 3.3.0 via production route matrix after deploy"
   }
 }
