@@ -7,6 +7,9 @@ assert.match(release.version, /^\d+\.\d+\.\d+$/, 'release.json must declare a se
 assert.equal(release.releaseId, 'civic-cascade-web-' + release.version, 'release ID must match release.json version');
 assert.equal(release.buildContract.missionChallenges.enabled, true, 'Mission challenge contract missing');
 assert.equal(release.buildContract.missionChallenges.globalLeaderboard, false, 'Release must not claim a global leaderboard');
+assert.equal(release.buildContract.operationDebrief?.enabled, true, 'Causal operation debrief contract missing');
+assert.equal(release.buildContract.operationDebrief?.maxEvents, 20, 'Causal ledger must be bounded');
+for (const marker of ['cc-causal-debrief','cc-causal-summary','cc-causal-count','cc-causal-risk-change','cc-causal-weakest','cc-causal-best','cc-causal-ledger']) assert.ok(html.includes('id="'+marker+'"'), 'Causal debrief DOM marker missing: '+marker);
 const inline = (html.match(/<script>([\s\S]*?)<\/script>/) || [])[1];
 assert.ok(inline && inline.length > 5000, 'CIVIC CASCADE inline runtime missing');
 new Function(inline);
@@ -69,5 +72,5 @@ for (const [actionNumber, incident] of Object.entries(deck)) {
 }
 
 assert.equal(testedChoices, 9, 'All nine crisis responses should be evaluated');
-console.log('PASS CIVIC CASCADE 2.2: mission challenges, safe query validation, three action-triggered incidents, pause-before-victory, legacy checkpoint migration, nine effects and no-supplies fallbacks.');
+console.log('PASS CIVIC CASCADE 2.7.0: mission challenges, safe query validation, three action-triggered incidents, pause-before-victory, legacy checkpoint migration, nine effects and no-supplies fallbacks.');
 
