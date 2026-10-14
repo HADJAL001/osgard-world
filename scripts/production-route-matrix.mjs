@@ -4,7 +4,7 @@ const expectCurrentDesign = process.env.SKILLCRED_EXPECT_CURRENT_DESIGN === '1'
 const expectedBuild = String(process.env.OSGARD_EXPECTED_BUILD || '').trim()
 const ROUTE_TIMEOUT_MS = 10000
 const GODOT_ROUTE_TIMEOUT_MS = 20000
-const routes = ['/','/skillcred/','/skillcred-api/health','/skillcred-api/ready','/skillcred-api/issuer','/entertainment','/entertainment/','/entertainment/entertainment.css','/entertainment/entertainment.js','/games/','/games/index.html','/games/diagnostics/','/games/diagnostics/diagnostics.js','/games/expedition/','/games/expedition/index.html','/games/expedition/core.js','/games/expedition/app.js','/games/expedition/catalog-runtime.js','/games/expedition/expedition.css','/sitemap.xml','/games/civic-cascade/','/games/civic-cascade/release.json','/games/patina/','/games/cascade-lab/','/games/cascade-lab/manifest.webmanifest','/games/cascade-lab/service-worker.js','/games/cascade-lab/lab-icon.svg','/games/cascade-lab/hypothesis-lab.js','/games/cascade-lab/engineering-suite.js','/games/cascade-lab/experiment-studio.js','/games/cascade-lab/case-passport.js','/games/cascade-lab/trajectory-xray.js','/games/cascade-lab/evidence-integrity.js','/games/afterimage-run/','/games/aether-grid/','/games/partners/','/games/ecosystem/','/games/growth-studio/','/games/monetization/','/games/premium/','/games/premium/success/','/games/commerce-admin/','/games/commerce-config.json','/games/commerce-client.js','/games/admin/','/games/admin/campaigns/','/games/operations/','/games/player-console.js','/games/player-console.css','/games/admin/partners/','/games/invite/','/games/invite/null-shift/','/games/invite/time/','/games/invite/swarm/','/games/invite/inherit/','/games/invite/remix/','/games/invite/civic-cascade/','/games/invite/patina/','/games/invite/signal-run/','/games/invite/cascade-lab/','/games/invite/afterimage-run/','/games/invite/aether-grid/','/games/invite/invite-landing.js','/games/share-cards/catalog.png','/games/share-cards/null-shift.png','/games/share-cards/afterimage-run.png','/games/share-cards/aether-grid.png','/games/favicon.svg','/privacy/','/terms/','/support/osgard-play/','/community','/stream','/archive','/profile','/api/v1/player/profile','/api/v1/analytics/summary?from=0&to=1','/r/1842','/games/time','/game/time','/game/swarm','/game/null-shift','/game/inherit','/game/remix','/game/signal-run','/game/civic-cascade','/game/patina','/game/cascade-lab','/game/afterimage-run','/game/aether-grid','/games/signal-run/','/games/null-shift/','/games/null-shift/index.html','/games/null-shift-godot/','/games/null-shift-godot/index.html','/play/swarm','/play/null-shift','/play/inherit','/play/remix','/media','/business','/create','/mobility']
+const routes = ['/','/skillcred/','/skillcred-api/health','/skillcred-api/ready','/skillcred-api/issuer','/entertainment','/entertainment/','/entertainment/entertainment.css','/entertainment/entertainment.js','/games/','/games/index.html','/games/diagnostics/','/games/diagnostics/diagnostics.js','/games/expedition/','/games/expedition/index.html','/games/expedition/core.js','/games/expedition/app.js','/games/expedition/catalog-runtime.js','/games/expedition/expedition.css','/sitemap.xml','/games/civic-cascade/','/games/civic-cascade/release.json','/games/patina/','/games/cascade-lab/','/games/cascade-lab/manifest.webmanifest','/games/cascade-lab/service-worker.js','/games/cascade-lab/lab-icon.svg','/games/cascade-lab/hypothesis-lab.js','/games/cascade-lab/engineering-suite.js','/games/cascade-lab/experiment-studio.js','/games/cascade-lab/case-passport.js','/games/cascade-lab/trajectory-xray.js','/games/cascade-lab/evidence-integrity.js','/games/cascade-lab/reproducibility-kernel.js','/games/afterimage-run/','/games/aether-grid/','/games/partners/','/games/ecosystem/','/games/growth-studio/','/games/monetization/','/games/premium/','/games/premium/success/','/games/commerce-admin/','/games/commerce-config.json','/games/commerce-client.js','/games/admin/','/games/admin/campaigns/','/games/operations/','/games/player-console.js','/games/player-console.css','/games/admin/partners/','/games/invite/','/games/invite/null-shift/','/games/invite/time/','/games/invite/swarm/','/games/invite/inherit/','/games/invite/remix/','/games/invite/civic-cascade/','/games/invite/patina/','/games/invite/signal-run/','/games/invite/cascade-lab/','/games/invite/afterimage-run/','/games/invite/aether-grid/','/games/invite/invite-landing.js','/games/share-cards/catalog.png','/games/share-cards/null-shift.png','/games/share-cards/afterimage-run.png','/games/share-cards/aether-grid.png','/games/favicon.svg','/privacy/','/terms/','/support/osgard-play/','/community','/stream','/archive','/profile','/api/v1/player/profile','/api/v1/analytics/summary?from=0&to=1','/r/1842','/games/time','/game/time','/game/swarm','/game/null-shift','/game/inherit','/game/remix','/game/signal-run','/game/civic-cascade','/game/patina','/game/cascade-lab','/game/afterimage-run','/game/aether-grid','/games/signal-run/','/games/null-shift/','/games/null-shift/index.html','/games/null-shift-godot/','/games/null-shift-godot/index.html','/play/swarm','/play/null-shift','/play/inherit','/play/remix','/media','/business','/create','/mobility']
 const agents = { desktop: 'OSGARD-Route-Matrix/1.1 Desktop', mobile: 'OSGARD-Route-Matrix/1.1 Mobile' }
 const results = []
 for (const [device, userAgent] of Object.entries(agents)) for (const route of routes) {
@@ -133,6 +133,14 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
             text.includes('id="phase-splits"') && text.includes('id="split-delta"') && text.includes('id="split-history"') &&
             text.includes("const RELEASE_VERSION='1.7.0'") && text.includes("schema:'osgard.afterimage.run-report.v3'") &&
             text.includes('osgard:game-lifecycle')
+        : route === '/games/cascade-lab/reproducibility-kernel.js'
+          ? (response.headers.get('content-type') || '').toLowerCase().includes('javascript') &&
+            text.includes("const VERSION = '0.26.0'") &&
+            text.includes("const SCHEMA = 'osgard.cascade-lab.reproducibility-kernel.v1'") &&
+            text.includes("const CONTRACT_SCHEMA = 'osgard.cascade-lab.physics-contract.v1'") &&
+            text.includes('function verifyPassport(') && text.includes('function compareRuns(') &&
+            text.includes('MAX_FRAMES = 420') && text.includes('cryptographic:false') &&
+            !text.includes('fetch(') && !text.includes('XMLHttpRequest') && !text.includes('sendBeacon') && !text.includes('.innerHTML')
         : route === '/games/cascade-lab/engineering-suite.js'
           ? (response.headers.get('content-type') || '').toLowerCase().includes('javascript') &&
             text.includes("const VERSION = '0.19.0'") &&
@@ -180,14 +188,14 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
           ? (() => { try { const value = JSON.parse(text); return (response.headers.get('content-type') || '').toLowerCase().includes('json') && value.name === 'CASCADE LAB — Premium Physics Lab' && value.scope === './' && value.display === 'standalone' } catch { return false } })()
         : route === '/games/cascade-lab/service-worker.js'
           ? (response.headers.get('content-type') || '').toLowerCase().includes('javascript') &&
-            /CACHE\s*=\s*PREFIX\s*\+\s*['"]v0\.26\.0['"]/.test(text) &&
+            /CACHE\s*=\s*PREFIX\s*\+\s*['"]v0\.27\.0['"]/.test(text) &&
             /\bmethod\s*!==\s*['"]GET['"]/.test(text) &&
             /\bmode\s*===\s*['"]navigate['"]/.test(text)
         : route === '/games/cascade-lab/lab-icon.svg'
           ? (response.headers.get('content-type') || '').toLowerCase().includes('image/svg+xml') && text.includes('<svg') && text.includes('CASCADE LAB')
         : route === '/games/cascade-lab/'
-          ? text.includes('<title>CASCADE LAB — Premium Physics Lab 0.25.0</title>') &&
-            text.includes('name="osgard-game-version" content="0.25.0-evidence-integrity"') &&
+          ? text.includes('<title>CASCADE LAB — Premium Physics Lab 0.26.0</title>') &&
+            text.includes('name="osgard-game-version" content="0.26.0-reproducibility-kernel"') &&
             text.includes('data-cascade-lab-upgrades="0.14.0"') && text.includes('CASCADELAB014') &&
             text.includes('data-cascade-lab-ledger="0.15.0"') && text.includes('CASCADELAB015') && text.includes('id="CASCADELAB017"') && text.includes('data-cascade-lab-delta="0.17.0"') &&
             text.includes('id="CASCADELAB018"') && text.includes('data-cascade-lab-experiment="0.18.0"') && text.includes('hypothesis-lab.js?v=0.18.0') &&
@@ -196,12 +204,15 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
             text.includes('id="runButton"') && text.includes('id="exportTelemetryButton"') &&
             text.includes('id="exportGrowthButton"') && text.includes('id="serviceAdDialog"') &&
             text.includes('id="serviceAdChoices"') && text.includes('Я поделился — получить +10 LC') &&
-            text.includes("notifyOsgardLifecycle('ready', { version: '0.25.0' })") && text.includes("notifyOsgardLifecycle('ready'") && text.includes("notifyOsgardLifecycle('started'") &&
+            text.includes("notifyOsgardLifecycle('ready', { version: '0.26.0' })") && text.includes("notifyOsgardLifecycle('ready'") && text.includes("notifyOsgardLifecycle('started'") &&
             text.includes("notifyOsgardLifecycle('paused'") && text.includes("notifyOsgardLifecycle('resumed'") &&
             text.includes("notifyOsgardLifecycle('level_completed'") && !text.includes("notifyOsgardLifecycle('completed'") &&
             text.includes('id="CASCADELAB019"') && text.includes('data-cascade-lab-engineering="0.19.0"') &&
             text.includes('id="CASCADELAB020"') && text.includes('data-cascade-lab-studio="0.20.0"') && text.includes('experiment-studio.js?v=0.20.0') && text.includes('id="CASCADELAB021"') && text.includes('data-cascade-lab-passport="0.21.0"') && text.includes('case-passport.js?v=0.21.0') && text.includes('restoreProject,undo') &&
             text.includes("new CustomEvent('cascade-lab:run-finished'") &&
+            text.includes('id="CASCADELAB026"') && text.includes('data-cascade-lab-reproducibility="0.26.0"') &&
+            text.includes('reproducibility-kernel.js?v=0.26.0') && text.includes("schema: 'osgard.cascade-lab.physics-contract.v1'") &&
+            text.includes('fixedStepSeconds: WORLD.fixedStep') && text.includes('engineRevision: CASCADE_PHYSICS_ENGINE_REVISION') &&
             text.includes('id="CASCADELAB022"') && text.includes('data-cascade-lab-xray="0.22.0"') &&
             text.includes('trajectory-xray.js?v=0.22.0') && text.includes('id="CASCADELAB024"') && text.includes('data-cascade-lab-director="0.24.0"') && text.includes('mission-director.js?v=0.24.0') && text.includes('id="CASCADELAB025"') && text.includes('data-cascade-lab-evidence="0.25.0"') && text.includes('evidence-integrity.js?v=0.25.0') && text.includes('trajectory: Array.from({ length: Math.min(420, lastReplay.length) }')
         : route.startsWith('/games/null-shift-godot')
@@ -321,6 +332,8 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
               ? content.includes("const VERSION = '0.22.0'") && content.includes("const SCHEMA = 'osgard.cascade-lab.trajectory-xray.v1'") && content.includes('function trajectoryDeviation(') && !content.includes('fetch(') && !content.includes('sendBeacon(')
             : path === '/games/cascade-lab/mission-director.js'
               ? content.includes("const VERSION='0.24.0'") && content.includes("const SCHEMA='osgard.cascade-lab.mission-director.v1'") && content.includes('function buildRecommendations') && content.includes('function observeContract') && !content.includes('fetch(') && !content.includes('sendBeacon(') && !content.includes('.innerHTML')
+            : path === '/games/cascade-lab/reproducibility-kernel.js'
+              ? content.includes("const VERSION = '0.26.0'") && content.includes("const SCHEMA = 'osgard.cascade-lab.reproducibility-kernel.v1'") && content.includes('function verifyPassport(') && !content.includes('fetch(') && !content.includes('sendBeacon(') && !content.includes('.innerHTML')
             : path === '/games/cascade-lab/evidence-integrity.js'
               ? /VERSION\s*=\s*['"]0\.25\.0['"]/.test(content) &&
                 /SCHEMA\s*=\s*['"]osgard\.cascade-lab\.evidence-integrity\.v1['"]/.test(content) &&
