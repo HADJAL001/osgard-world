@@ -51,7 +51,7 @@ app.use(cors({
 app.use("/v1/checkout", rateLimit({ windowMs: 15 * 60 * 1000, limit: 20, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/leads", rateLimit({ windowMs: 60 * 60 * 1000, limit: 8, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/events", rateLimit({ windowMs: 5 * 60 * 1000, limit: 60, standardHeaders: "draft-8", legacyHeaders: false }));
-app.use("/v1/game-coach", rateLimit({ windowMs: 60 * 60 * 1000, limit: 5, standardHeaders: "draft-8", legacyHeaders: false }));
+
 app.use("/v1/referrals", rateLimit({ windowMs: 15 * 60 * 1000, limit: 30, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/admin", rateLimit({ windowMs: 5 * 60 * 1000, limit: 120, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/campaigns", rateLimit({ windowMs: 15 * 60 * 1000, limit: 120, standardHeaders: "draft-8", legacyHeaders: false }));
@@ -270,7 +270,7 @@ app.get("/v1/game-coach/status", (_req, res) => {
   return res.json({ enabled: isGameCoachConfigured().enabled });
 });
 
-app.post("/v1/game-coach", async (req, res) => {
+app.post("/v1/game-coach", rateLimit({ windowMs: 60 * 60 * 1000, limit: 5, standardHeaders: "draft-8", legacyHeaders: false }), async (req, res) => {
   // Input validation and the one-request consent acknowledgement happen in the
   // game-coach service. The feature has a server-side flag and never accepts
   // free-form user prompts, account data or client-supplied system instructions.
