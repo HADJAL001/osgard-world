@@ -9,7 +9,7 @@ assert.equal(release.buildContract.missionChallenges.enabled, true, 'Mission cha
 assert.equal(release.buildContract.missionChallenges.globalLeaderboard, false, 'Release must not claim a global leaderboard');
 assert.equal(release.buildContract.operationDebrief?.enabled, true, 'Causal operation debrief contract missing');
 assert.equal(release.buildContract.operationDebrief?.maxEvents, 20, 'Causal ledger must be bounded');
-for (const marker of ['cc-causal-debrief','cc-causal-summary','cc-causal-count','cc-causal-risk-change','cc-causal-weakest','cc-causal-best','cc-causal-ledger']) assert.ok(html.includes('id="'+marker+'"'), 'Causal debrief DOM marker missing: '+marker);
+for (const marker of ['cc-causal-debrief','cc-causal-summary','cc-causal-count','cc-causal-risk-change','cc-causal-weakest','cc-causal-best','cc-causal-ledger','cc-doctrine-ai-advisor','cc-doctrine-ai-consent','cc-doctrine-ai-run','cc-doctrine-ai-status','cc-doctrine-ai-result]) assert.ok(html.includes('id="'+marker+'"'), 'Causal debrief DOM marker missing: '+marker);
 const inline = (html.match(/<script>([\s\S]*?)<\/script>/) || [])[1];
 assert.ok(inline && inline.length > 5000, 'CIVIC CASCADE inline runtime missing');
 new Function(inline);
