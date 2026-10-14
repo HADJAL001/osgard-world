@@ -257,8 +257,8 @@ $('#export-csv').addEventListener('click',()=>{
    rows.push([section,path,String(value).slice(0,1000)]);
   }
   for(const key of ['range','previousRange','comparisonStatus','summary','previousSummary','cohorts','snapshots'])visit(lastAggregateReport[key],key,'consented-aggregate',0);
-  const escape=value=>{let text=String(value??'');if(/^\\s*[=+\\-@]/.test(text))text="'"+text;return '"'+text.replace(/"/g,'""')+'"'};
-  const csv='\\uFEFF'+rows.map(row=>row.map(escape).join(',')).join('\\r\\n')+'\\r\\n';
+  const escape=value=>{let text=String(value??'');if(/^\s*[=+\-@]/.test(text))text="'"+text;return '"'+text.replace(/"/g,'""')+'"'};
+  const csv='\uFEFF'+rows.map(row=>row.map(escape).join(',')).join('\r\n')+'\r\n';
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='osgard-games-aggregate-report-'+new Date().toISOString().slice(0,10)+'.csv';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   setMessage($('#refresh-status'),'CSV экспортирован: '+(rows.length-1)+' строк. Персональные поля исключаются фильтром колонок.','success');
  }catch(error){setMessage($('#refresh-status'),error instanceof Error?error.message:'CSV экспорт не выполнен','error')}
