@@ -70,6 +70,9 @@ export function buildPlan() {
       path.join(ROOT, 'scripts/external-project-healthcheck.mjs'), '--out', EXTERNAL_PATH,
     ], { critical: false, kind: 'external' }),
     npm('full-release-readiness', 'Full release suite: typecheck, dependency audit, build, archive preflight and production route/API probes', 'qa:release'),
+    node('ai-review-preview', 'Build sanitized offline AI release-review packet from generated QA evidence (no API request)', [
+      path.join(ROOT, 'scripts/osgard-ai-release-review.mjs'), '--output', 'osgard-ai-release-review.json',
+    ], { timeoutMs: 60 * 1000 }),
   ];
 }
 
