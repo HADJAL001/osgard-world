@@ -1,41 +1,38 @@
 import React, { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './styles.css'
-import './miniapp.css'
-import './founders.css'
 import './brand.css'
 import './navigation.css'
-import './create.css'
-import './mobility.css'
-import './surfaces.css'
-import './time.css'
-import './online.css'
-import './legacy.css'
-import './week.css'
-import './recommendations.css'
-import './archive.css'
-import './profile.css'
-import './community.css'
-import './stream.css'
-import App from './App'
-import MiniApp from './MiniApp'
-import { AurumPage, CatalogPage, ChroniclePage, ClubPage, DevelopmentPage, EntertainmentPage, MastersPage, TimeCoinPage, WorldsPage } from './Sections'
-import { ResultPage } from './ResultPage'
-import { BusinessDiagnostic } from './BusinessDiagnostic'
-import { CreatePrototype } from './CreatePrototype'
-import { MobilityPrototype } from './MobilityPrototype'
-import { TimePrototype } from './TimePrototype'
-import { WeekSurface } from './WeekSurface'
-import { Recommendations } from './Recommendations'
-import { ArchiveSurface } from './ArchiveSurface'
-import { ProfileSurface } from './ProfileSurface'
-import { InheritPrototype, RemixPrototype } from './LegacyCreatorPrototypes'
-import { OnlineGamePrototype } from './OnlineGamePrototype'
-import { CoreEvents } from './CoreEvents'
-import { EcosystemSurface } from './EcosystemSurfaces'
-import { CommunitySurface } from './CommunitySurface'
-import { StreamSurface } from './StreamSurface'
-import { GameDetailPage } from './GameDetailPage'
+// Route components are loaded on demand. The shared shell stays small; each product page
+// downloads only its own JavaScript chunk when the route is opened.
+const App = React.lazy(() => import('./App'))
+const MiniApp = React.lazy(() => import('./MiniApp'))
+const AurumPage = React.lazy(() => import('./Sections').then(module => ({ default: module.AurumPage })))
+const CatalogPage = React.lazy(() => import('./Sections').then(module => ({ default: module.CatalogPage })))
+const ChroniclePage = React.lazy(() => import('./Sections').then(module => ({ default: module.ChroniclePage })))
+const ClubPage = React.lazy(() => import('./Sections').then(module => ({ default: module.ClubPage })))
+const DevelopmentPage = React.lazy(() => import('./Sections').then(module => ({ default: module.DevelopmentPage })))
+const EntertainmentPage = React.lazy(() => import('./Sections').then(module => ({ default: module.EntertainmentPage })))
+const MastersPage = React.lazy(() => import('./Sections').then(module => ({ default: module.MastersPage })))
+const TimeCoinPage = React.lazy(() => import('./Sections').then(module => ({ default: module.TimeCoinPage })))
+const WorldsPage = React.lazy(() => import('./Sections').then(module => ({ default: module.WorldsPage })))
+const ResultPage = React.lazy(() => import('./ResultPage').then(module => ({ default: module.ResultPage })))
+const BusinessDiagnostic = React.lazy(() => import('./BusinessDiagnostic').then(module => ({ default: module.BusinessDiagnostic })))
+const CreatePrototype = React.lazy(() => import('./CreatePrototype').then(module => ({ default: module.CreatePrototype })))
+const MobilityPrototype = React.lazy(() => import('./MobilityPrototype').then(module => ({ default: module.MobilityPrototype })))
+const TimePrototype = React.lazy(() => import('./TimePrototype').then(module => ({ default: module.TimePrototype })))
+const WeekSurface = React.lazy(() => import('./WeekSurface').then(module => ({ default: module.WeekSurface })))
+const Recommendations = React.lazy(() => import('./Recommendations').then(module => ({ default: module.Recommendations })))
+const ArchiveSurface = React.lazy(() => import('./ArchiveSurface').then(module => ({ default: module.ArchiveSurface })))
+const ProfileSurface = React.lazy(() => import('./ProfileSurface').then(module => ({ default: module.ProfileSurface })))
+const InheritPrototype = React.lazy(() => import('./LegacyCreatorPrototypes').then(module => ({ default: module.InheritPrototype })))
+const RemixPrototype = React.lazy(() => import('./LegacyCreatorPrototypes').then(module => ({ default: module.RemixPrototype })))
+const OnlineGamePrototype = React.lazy(() => import('./OnlineGamePrototype').then(module => ({ default: module.OnlineGamePrototype })))
+const CoreEvents = React.lazy(() => import('./CoreEvents').then(module => ({ default: module.CoreEvents })))
+const EcosystemSurface = React.lazy(() => import('./EcosystemSurfaces').then(module => ({ default: module.EcosystemSurface })))
+const CommunitySurface = React.lazy(() => import('./CommunitySurface').then(module => ({ default: module.CommunitySurface })))
+const StreamSurface = React.lazy(() => import('./StreamSurface').then(module => ({ default: module.StreamSurface })))
+const GameDetailPage = React.lazy(() => import('./GameDetailPage').then(module => ({ default: module.GameDetailPage })))
 
 const cleanSeo: Record<string, { title: string; description: string }> = {
   '/': { title: 'OSGARD WORLD — цифровая экосистема', description: 'OSGARD объединяет продукты для защиты, мобильности, бизнеса, времени и создания цифровых решений.' },
@@ -101,4 +98,18 @@ function RoutedRoot() {
   const page = path === '/marcosa' ? <EcosystemSurface kind="marcosa" /> : path === '/media' ? <EcosystemSurface kind="media" /> : path === '/core-events' ? <CoreEvents /> : path === '/mobility' ? <MobilityPrototype /> : path === '/create' ? <CreatePrototype /> : path === '/business' ? <BusinessDiagnostic /> : path.startsWith('/r/') ? <ResultPage id={path.split('/')[2] || '1842'} /> : path === '/worlds' ? <WorldsPage locale={locale} setLocale={setLocale} /> : path === '/aurum' ? <AurumPage locale={locale} setLocale={setLocale} /> : path === '/timecoin' ? <TimeCoinPage locale={locale} setLocale={setLocale} /> : path === '/development' ? <DevelopmentPage locale={locale} setLocale={setLocale} /> : path === '/catalog' ? <CatalogPage locale={locale} setLocale={setLocale} /> : path === '/chronicle' ? <EcosystemSurface kind="chronicle" /> : path === '/masters' ? <MastersPage locale={locale} setLocale={setLocale} /> : path === '/club' ? <ClubPage locale={locale} setLocale={setLocale} /> : path === '/entertainment' ? <EntertainmentPage locale={locale} setLocale={setLocale} /> : <App />
   return <><Seo path={path} />{page}</>
 }
-createRoot(document.getElementById('root')!).render(<StrictMode><RoutedRoot /></StrictMode>)
+function RouteLoading() {
+  const isRussian = (navigator.language || '').toLowerCase().startsWith('ru')
+  return <main className="route-loading" role="status" aria-live="polite">
+    <span className="route-loading-mark" aria-hidden="true">O</span>
+    <p>{isRussian ? 'Подготавливаем цифровой мир…' : 'Preparing your digital world…'}</p>
+  </main>
+}
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <React.Suspense fallback={<RouteLoading />}>
+      <RoutedRoot />
+    </React.Suspense>
+  </StrictMode>
+)
