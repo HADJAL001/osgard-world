@@ -208,8 +208,8 @@ const serviceShareEnd = source.indexOf('spotlight.append(copy,serviceShare,spotl
 assert.ok(serviceShareStart >= 0 && serviceShareEnd > serviceShareStart, 'Selected-service share UI must live in the current service spotlight');
 const serviceShareCode = source.slice(serviceShareStart, serviceShareEnd + 'spotlight.append(copy,serviceShare,spotlightStatus);'.length);
 assert.ok(serviceShareCode.includes("const serviceShareUrl=new URL(item[5],location.origin)") &&
-  serviceShareCode.includes("url.searchParams.set('utm_campaign','owned_service_share')") &&
-  serviceShareCode.includes("url.searchParams.set('utm_content',item[0]+'_'+gameId)"),
+  serviceShareCode.includes("serviceShareUrl.searchParams.set('utm_campaign','owned_service_share')") &&
+  serviceShareCode.includes("serviceShareUrl.searchParams.set('utm_content',item[0]+'_'+gameId)"),
   'Sharing a service must use the user-selected service destination and label its attribution');
 assert.ok(['Telegram','WhatsApp','VK','X','Facebook'].every(network => serviceShareCode.includes("['"+network+"'")),
   'Selected-service share must expose supported social publishing buttons');
