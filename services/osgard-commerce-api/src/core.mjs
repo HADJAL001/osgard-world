@@ -68,6 +68,84 @@ const GAME_IDS = new Set([
   "afterimage-run", "aether-grid", "unknown",
 ]);
 
+// Public IDs only. GARD VPN is deliberately absent until its core service is verified.
+export const OWNED_PROMO_SERVICE_IDS = Object.freeze([
+  "marcosa", "projects", "o2-system", "senjorio", "superday",
+  "myosa", "gold-glamour", "osgard-business", "vanguard", "partner-studio",
+]);
+const OWNED_PROMO_SERVICE_ID_SET = new Set(OWNED_PROMO_SERVICE_IDS);
+const OWNED_PROMO_FREQUENCIES = new Set(["each", "every3", "off"]);
+
+export const DEFAULT_OWNED_PROMO_CONFIG = Object.freeze({
+  enabled: true,
+  defaultFrequency: "each",
+  enabledServices: OWNED_PROMO_SERVICE_IDS,
+  defaultSelectedServices: OWNED_PROMO_SERVICE_IDS,
+  spotlightService: "auto",
+  showShareRewards: true,
+});
+
+export function validateOwnedPromoConfig(body) {
+  const input = body && typeof body === "object" && !Array.isArray(body) ? body : {};
+  const enabled = input.enabled === undefined ? DEFAULT_OWNED_PROMO_CONFIG.enabled : input.enabled;
+  const showShareRewards = input.showShareRewards === undefined
+    ? DEFAULT_OWNED_PROMO_CONFIG.showShareRewards : input.showShareRewards;
+  if (typeof enabled !== "boolean") return { ok: false, status: 400, code: "OWNED_PROMO_ENABLED_INVALID" };
+  if (typeof showShareRewards !== "boolean") return { ok: false, status: 400, code: "OWNED_PROMO_REWARDS_INVALID" };
+
+  const defaultFrequency = input.defaultFrequency === undefined
+    ? DEFAULT_OWNED_PROMO_CONFIG.defaultFrequency : input.defaultFrequency;
+  if (!OWNED_PROMO_FREQUENCIES.has(defaultFrequency)) {
+    return { ok: false, status: 400, code: "OWNED_PROMO_FREQUENCY_INVALID" };
+  }
+
+  const readIds = (key, fallback) => {
+    const value = input[key] === undefined ? fallback : input[key];
+    if (!Array.isArray(value) || value.length > OWNED_PROMO_SERVICE_IDS.length) {
+      return { ok: false, status: 400, code: "OWNED_PROMO_SERVICE_LIST_INVALID" };
+    }
+    const seen = new Set();
+    for (const raw of value) {
+      if (typeof raw !== "string" || !OWNED_PROMO_SERVICE_ID_SET.has(raw)) {
+        return { ok: false, status: 400, code: "OWNED_PROMO_SERVICE_NOT_ALLOWED" };
+      }
+      if (seen.has(raw)) return { ok: false, status: 400, code: "OWNED_PROMO_SERVICE_DUPLICATED" };
+      seen.add(raw);
+    }
+    return { ok: true, ids: [...seen] };
+  };
+  const enabledServices = readIds("enabledServices", DEFAULT_OWNED_PROMO_CONFIG.enabledServices);
+  if (!enabledServices.ok) return enabledServices;
+  const defaultSelectedServices = readIds("defaultSelectedServices", DEFAULT_OWNED_PROMO_CONFIG.defaultSelectedServices);
+  if (!defaultSelectedServices.ok) return defaultSelectedServices;
+  const enabledSet = new Set(enabledServices.ids);
+  if (defaultSelectedServices.ids.some((id) => !enabledSet.has(id))) {
+    return { ok: false, status: 400, code: "OWNED_PROMO_DEFAULT_NOT_ENABLED" };
+  }
+
+  const spotlightService = input.spotlightService === undefined
+    ? DEFAULT_OWNED_PROMO_CONFIG.spotlightService : input.spotlightService;
+  if (typeof spotlightService !== "string" ||
+      (spotlightService !== "auto" && !OWNED_PROMO_SERVICE_ID_SET.has(spotlightService))) {
+    return { ok: false, status: 400, code: "OWNED_PROMO_SPOTLIGHT_INVALID" };
+  }
+  if (spotlightService !== "auto" && !enabledSet.has(spotlightService)) {
+    return { ok: false, status: 400, code: "OWNED_PROMO_SPOTLIGHT_NOT_ENABLED" };
+  }
+
+  return {
+    ok: true,
+    config: {
+      enabled,
+      defaultFrequency,
+      enabledServices: enabledServices.ids,
+      defaultSelectedServices: defaultSelectedServices.ids,
+      spotlightService,
+      showShareRewards,
+    },
+  };
+}
+
 export function cleanText(value, max = 500) {
   return String(value ?? "")
     .replace(/[\u0000-\u001f\u007f]/g, " ")
