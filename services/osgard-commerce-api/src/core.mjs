@@ -71,7 +71,7 @@ const GAME_IDS = new Set([
 // Public IDs only. GARD VPN is deliberately absent until its core service is verified.
 export const OWNED_PROMO_SERVICE_IDS = Object.freeze([
   "marcosa", "projects", "o2-system", "senjorio", "superday",
-  "myosa", "gold-glamour", "osgard-business", "vanguard", "partner-studio",
+  "myosa", "gold-glamour", "gardvpn", "osgard-business", "vanguard", "partner-studio",
 ]);
 const OWNED_PROMO_SERVICE_ID_SET = new Set(OWNED_PROMO_SERVICE_IDS);
 const OWNED_PROMO_FREQUENCIES = new Set(["each", "every3", "off"]);
