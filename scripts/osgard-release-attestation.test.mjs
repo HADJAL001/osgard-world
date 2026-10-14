@@ -114,6 +114,19 @@ test('build inventory reports large JavaScript bundles without silently hiding t
     assert.ok(report.artifact.warnings.some(item => item.code === 'large-javascript' && item.path === 'assets/large.js'));
   } finally { await rm(f.base, { recursive: true, force: true }); }
 });
+test('attestation records hashes and paths but never embeds file contents', async () => {
+  const f = await fixture();
+  const sentinel = 'PRIVATE_CONTENT_SENTINEL_DO_NOT_EXPORT_9f2a';
+  try {
+    await writeFile(join(f.root, 'index.html'), '<!doctype html><p>' + sentinel + '</p>');
+    const created = run('create', f.root, f.report);
+    assert.equal(created.status, 0, created.stderr);
+    const reportText = await readFile(f.report, 'utf8');
+    assert.ok(!reportText.includes(sentinel), 'attestation must not store the contents of public build files');
+    const report = JSON.parse(reportText);
+    assert.ok(report.files.some(file => file.path === 'index.html' && /^[a-f0-9]{64}$/.test(file.sha256)));
+  } finally { await rm(f.base, { recursive: true, force: true }); }
+});
 test('malformed attestation cannot silently verify', async () => {
   const f = await fixture();
   try {
