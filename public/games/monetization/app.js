@@ -307,6 +307,51 @@ document.getElementById('delete-snapshot').addEventListener('click', () => {
   renderSavedSnapshots();
   setSnapshotStatus('Сценарий удалён из этого браузера.');
 });
+document.getElementById('import-model-json').addEventListener('click', () => {
+  document.getElementById('import-model-file').click();
+});
+document.getElementById('import-model-file').addEventListener('change', async (event) => {
+  const file = event.currentTarget.files?.[0];
+  event.currentTarget.value = '';
+  if (!file) return;
+  if (file.size > 1000000) {
+    setSnapshotStatus('Импорт остановлен: JSON больше 1 МБ.');
+    return;
+  }
+  try {
+    const payload = JSON.parse(await file.text());
+    if (payload?.kind !== 'osgard-games-business-model' ||
+        !Number.isSafeInteger(payload.modelVersion) || payload.modelVersion < 1 ||
+        !payload.inputs || typeof payload.inputs !== 'object' || Array.isArray(payload.inputs)) {
+      throw new Error('Файл не является поддерживаемым экспортом финансовой модели OSGARD.');
+    }
+    const normalizedInputs = normalizeInputs(payload.inputs);
+    for (const [key, value] of Object.entries(normalizedInputs)) {
+      const field = form.elements.namedItem(key);
+      if (field) field.value = String(value);
+    }
+    if (Array.isArray(payload.savedScenarios) && payload.savedScenarios.length > 0 &&
+        window.confirm('В JSON есть сохранённые сценарии. Импортировать до 8 версий и заменить текущий локальный список?')) {
+      const imported = payload.savedScenarios.slice(0, 50)
+        .filter((item) => item && typeof item.name === 'string' && item.inputs && typeof item.inputs === 'object' && !Array.isArray(item.inputs))
+        .slice(0, SNAPSHOT_LIMIT)
+        .map((item) => ({
+          id: (globalThis.crypto && typeof globalThis.crypto.randomUUID === 'function')
+            ? globalThis.crypto.randomUUID().replace(/[^a-zA-Z0-9_-]/g, '')
+            : ('snap_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12)),
+          name: item.name.replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, 60) || 'Импортированный сценарий',
+          createdAt: typeof item.createdAt === 'string' && Number.isFinite(Date.parse(item.createdAt)) ? item.createdAt : new Date().toISOString(),
+          inputs: normalizeInputs(item.inputs),
+        }));
+      if (!writeSnapshots(imported)) throw new Error('Браузер не разрешил сохранить импортированные сценарии.');
+      renderSavedSnapshots();
+    }
+    render();
+    setSnapshotStatus('Допущения импортированы локально и нормализованы. Сетевых запросов не выполнялось.');
+  } catch (error) {
+    setSnapshotStatus('Импорт отклонён: ' + String(error?.message || 'неверный JSON').slice(0, 220));
+  }
+});
 document.getElementById('risk-iterations').addEventListener('change', render);
 document.getElementById('risk-recompute').addEventListener('click', render);
 renderSavedSnapshots();
@@ -331,7 +376,7 @@ exportButton.addEventListener('click', () => {
     growthTarget: { annualRevenueTargetUsd: inputs.annualRevenueTargetUsd, requiredMonthlyStartingVisitors: calculateRequiredMonthlyVisitors(inputs, inputs.annualRevenueTargetUsd) },
     scenarios: SCENARIOS.map((scenario) => ({ label: scenario.label, assumptions: scenario, results: calculateScenario(inputs, scenario.id) })),
     decisionIntelligence: latestIntelligence || renderIntelligence(inputs, calculateScenario(inputs, 'base')),
-    savedScenarioCount: readSnapshots().length,
+    savedScenarios: readSnapshots().map((item) => ({ name: item.name, createdAt: item.createdAt, inputs: item.inputs })),
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const href = URL.createObjectURL(blob);
