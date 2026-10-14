@@ -165,7 +165,7 @@ function validateArchive(raw) {
   if (!raw || typeof raw !== 'object' || raw.schema !== SCHEMA || raw.schemaVersion !== 1 || !Array.isArray(raw.runs)) return { ok: false, reason: 'Неизвестная схема архива.' };
   if (raw.runs.length > MAX_RUNS) return { ok: false, reason: 'В архиве больше ' + MAX_RUNS + ' запусков.' };
   let bytes;
-  try { bytes = JSON.stringify(raw).length; } catch { return { ok:false, reason:'Архив не сериализуется.' }; }
+  try { const serialized = JSON.stringify(raw); bytes = typeof TextEncoder === 'function' ? new TextEncoder().encode(serialized).byteLength : serialized.length; } catch { return { ok:false, reason:'Архив не сериализуется.' }; }
   if (bytes > MAX_IMPORT_BYTES) return { ok: false, reason: 'Архив больше 600 KiB.' };
   const runs = raw.runs.map(normalizeRun);
   if (runs.some(run => !run)) return { ok: false, reason: 'Одна или несколько траекторий не прошли проверку.' };
