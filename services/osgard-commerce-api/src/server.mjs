@@ -766,23 +766,23 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
           COUNT(*) FILTER (
             WHERE event_name = 'owned_promo_impression'
               AND (
-                source ~ '^osgard-select:spotlight:[a-z0-9-]{1,40}:[ab]$'
+                source ~ '^osgard-select:spotlight:[a-z0-9-]{1,40}:[abc]$'
                 OR source ~ '^osgard-select:impression:[a-z0-9-]{1,40}$'
               )
           )::int AS impressions,
           COUNT(*) FILTER (
             WHERE event_name = 'cross_promo_clicked'
-              AND source ~ '^osgard-select:click:[a-z0-9-]{1,40}(:[ab])?$'
+              AND source ~ '^osgard-select:click:[a-z0-9-]{1,40}(:[abc])?$'
           )::int AS clicks
         FROM commerce_events
         WHERE received_at >= NOW() - INTERVAL '30 days'
           AND (
             (event_name = 'owned_promo_impression' AND (
-              source ~ '^osgard-select:spotlight:[a-z0-9-]{1,40}:[ab]$'
+              source ~ '^osgard-select:spotlight:[a-z0-9-]{1,40}:[abc]$'
               OR source ~ '^osgard-select:impression:[a-z0-9-]{1,40}$'
             ))
             OR
-            (event_name = 'cross_promo_clicked' AND source ~ '^osgard-select:click:[a-z0-9-]{1,40}(:[ab])?$')
+            (event_name = 'cross_promo_clicked' AND source ~ '^osgard-select:click:[a-z0-9-]{1,40}(:[abc])?$')
           )
         GROUP BY split_part(source, ':', 3), game_id
         ORDER BY impressions DESC, clicks DESC, "serviceId" ASC
@@ -795,7 +795,7 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
           COUNT(*) FILTER (WHERE event_name = 'cross_promo_clicked')::int AS clicks
         FROM commerce_events
         WHERE received_at >= NOW() - INTERVAL '30 days'
-          AND source ~ '^osgard-select:(spotlight|click):[a-z0-9-]{1,40}:[ab]$'
+          AND source ~ '^osgard-select:(spotlight|click):[a-z0-9-]{1,40}:[abc]$'
           AND event_name IN ('owned_promo_impression', 'cross_promo_clicked')
         GROUP BY split_part(source, ':', 4)
         ORDER BY variant ASC
