@@ -143,7 +143,9 @@ function normalizeRun(raw) {
   const levelId=raw.levelId;
   if (!id||!Number.isFinite(stamp)||!Number.isInteger(levelId)||levelId<1||levelId>5) return null;
   if (!['won','lost'].includes(raw.status)) return null;
-  const mode=MODES.has(raw.mode)?raw.mode:'campaign';
+  if (!MODES.has(raw.mode)) return null;
+  if (!raw.simulationProfile || typeof raw.simulationProfile !== 'object' || !raw.simulationProfile.world || !raw.simulationProfile.level) return null;
+  const mode=raw.mode;
   const dailyDate=typeof raw.dailyDate==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(raw.dailyDate)?raw.dailyDate:null;
   const engineVersion=clean(raw.engineVersion||'',32);
   if (!engineVersion) return null;
