@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#080a0b">
+  <meta name="color-scheme" content="dark">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="description" content="OSGARD Experiment Intelligence — проверяемые A/B-эксперименты, измерение конверсии, защитные метрики и оценка достаточности выборки.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="OSGARD WORLD GAMING">
+  <meta property="og:title" content="OSGARD Experiment Intelligence">
+  <meta property="og:description" content="Не угадывай. Измеряй. Эксперименты с прозрачными правилами и защитой от ложных победителей.">
+  <link rel="canonical" href="https://osgard.world/games/experiments/">
+  <link rel="icon" href="/games/favicon.svg" type="image/svg+xml">
+  <title>Experiment Intelligence — OSGARD PLAY</title>
+  <style>
+    :root{color-scheme:dark;--bg:#080a0b;--panel:#111514;--panel2:#161d19;--ink:#f1f0e8;--muted:#a1aa9e;--line:#ffffff20;--lime:#d3ff69;--cyan:#87e5dc;--gold:#d6c29a;--red:#ff9991;--serif:Georgia,"Times New Roman",serif;--sans:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;--mono:ui-monospace,Consolas,monospace}
+    *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:90px}body{margin:0;background:radial-gradient(ellipse at 85% -10%,#c1ed5c12,transparent 34%),radial-gradient(ellipse at 0% 28%,#70dcd90b,transparent 30%),var(--bg);color:var(--ink);font:14px/1.65 var(--sans);-webkit-font-smoothing:antialiased}
+    a{color:inherit;text-decoration:none}button,input,select{font:inherit}button,a,input,select{outline-offset:4px}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--lime)}button{cursor:pointer}
+    .wrap{width:min(1220px,calc(100% - 36px));margin:auto}.top{min-height:74px;display:flex;align-items:center;justify-content:space-between;gap:18px;border-bottom:1px solid var(--line)}.brand{display:flex;align-items:center;gap:11px;font:650 12px var(--mono);letter-spacing:.13em}.mark{display:grid;place-items:center;width:34px;height:34px;border:1px solid #d3ff6960;clip-path:polygon(50% 0,96% 25%,96% 75%,50% 100%,4% 75%,4% 25%);color:var(--lime);font:500 22px var(--serif)}.brand small{display:block;color:var(--muted);font-size:9px;letter-spacing:.17em;margin-top:4px}.nav{display:flex;gap:18px;flex-wrap:wrap;color:var(--muted);font-size:12px}.nav a:hover{color:var(--lime)}.eyebrow{font:10px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--lime)}.hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(260px,.9fr);gap:38px;align-items:end;padding:65px 0 50px}.hero h1{font:400 clamp(42px,7vw,82px)/.95 var(--serif);letter-spacing:-.055em;margin:14px 0 19px;max-width:850px}.hero h1 em{font-weight:400;color:var(--lime)}.hero p{max-width:700px;color:var(--muted);font-size:15px;line-height:1.8}.hero-visual{min-height:260px;position:relative;border:1px solid var(--line);background:linear-gradient(138deg,#d3ff690a,transparent 54%),#0e1210;overflow:hidden;display:grid;place-items:center}.rings,.rings:before,.rings:after{position:absolute;border:1px solid #d3ff6945;border-radius:50%;width:220px;height:220px}.rings:before,.rings:after{content:"";inset:22px;width:auto;height:auto;border-color:#87e5dc4e;transform:rotate(38deg) scaleX(.72)}.rings:after{inset:47px;border-color:#d6c29a7a;transform:rotate(-32deg) scaleX(.72)}.core{width:74px;height:74px;display:grid;place-items:center;border:1px solid var(--lime);border-radius:50%;background:#d3ff6910;box-shadow:0 0 50px #d3ff6920;color:var(--lime);font:28px var(--serif)}.visual-label{position:absolute;font:9px var(--mono);letter-spacing:.12em;color:#a7b09f}.visual-label.a{top:20px;left:20px}.visual-label.b{right:20px;bottom:18px}.section{padding:26px 0 60px}.section-head{display:flex;justify-content:space-between;align-items:end;gap:20px;border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:22px}.section-head h2{font:400 clamp(30px,4vw,46px)/1.05 var(--serif);margin:5px 0}.section-head p{margin:0;color:var(--muted);max-width:720px}.tag{display:inline-flex;border:1px solid var(--line);border-radius:100px;padding:6px 10px;color:var(--muted);font:9px var(--mono);letter-spacing:.08em;white-space:nowrap}.panel{border:1px solid var(--line);background:linear-gradient(145deg,#ffffff04,transparent 55%),var(--panel);padding:clamp(17px,3vw,28px);margin-bottom:16px}.panel h3{font:400 25px var(--serif);margin:0 0 8px}.panel>p{color:var(--muted);font-size:12px;max-width:820px;margin-top:0}.form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.field{display:grid;gap:6px}.field label{font-size:11px;color:var(--muted)}.field input,.field select{width:100%;min-width:0;background:#090c0a;border:1px solid var(--line);padding:12px;color:var(--ink);border-radius:3px}.field input::placeholder{color:#636d61}.field small{font-size:10px;color:#7e887c}.arms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.arm{border:1px solid var(--line);padding:16px;background:#0b0e0c;min-width:0}.arm h4{font:400 22px var(--serif);margin:0 0 14px}.arm h4 span{font:10px var(--mono);color:var(--lime);margin-left:6px}.arm-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:18px}.btn{border:1px solid var(--line);padding:11px 15px;background:#171d18;color:var(--ink);font-weight:600;font-size:12px}.btn.primary{background:var(--lime);border-color:var(--lime);color:#10150a}.btn.quiet{background:transparent}.btn:disabled{opacity:.45;cursor:not-allowed}.status{min-height:1.5em;color:var(--muted);font-size:12px}.status[data-kind=success]{color:var(--lime)}.status[data-kind=error]{color:var(--red)}.warning{border-left:2px solid var(--gold);padding:11px 14px;background:#d6c29a0b;color:#d0c8b6;font-size:12px;margin:16px 0}.results{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.metric{padding:16px;border:1px solid var(--line);background:#0c100e;min-width:0}.metric span{display:block;font-size:10px;color:var(--muted);margin-bottom:9px}.metric strong{display:block;font:400 clamp(20px,2.8vw,30px) var(--serif);overflow-wrap:anywhere}.metric small{display:block;color:var(--muted);font-size:10px;margin-top:8px}.decision{border:1px solid var(--line);padding:18px;margin-top:12px;background:#0a0e0c}.decision[data-state=win]{border-color:#d3ff6960}.decision[data-state=stop]{border-color:#ff999160}.decision h3{margin:0 0 6px}.decision p{margin:0;color:var(--muted);font-size:12px}.bar-row{display:grid;grid-template-columns:75px 1fr 68px;align-items:center;gap:12px;margin:13px 0;font-size:11px}.bar-track{height:9px;background:#ffffff10;overflow:hidden}.bar-fill{height:100%;background:var(--lime);width:0;transition:width .35s ease}.bar-fill.b{background:var(--cyan)}.upload{display:block;border:1px dashed #ffffff40;padding:15px;color:var(--muted);font-size:12px}.upload input{max-width:100%;display:block;margin-top:10px}.footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);font-size:11px}.footer-row{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}.mono{font-family:var(--mono);font-size:10px;letter-spacing:.07em}.small-link{color:var(--lime);text-underline-offset:4px}.guardrails{display:grid;grid-template-columns:1fr 1fr;gap:15px}.guardrails li{color:var(--muted);font-size:12px;margin:8px 0}.divider{height:1px;background:var(--line);margin:20px 0}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    @media(max-width:820px){.hero{grid-template-columns:1fr;gap:22px;padding-top:42px}.hero-visual{min-height:220px}.form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.results{grid-template-columns:repeat(2,minmax(0,1fr))}.nav{gap:10px}}
+    @media(max-width:560px){.wrap{width:min(100% - 24px,1220px)}.top{align-items:flex-start;padding:17px 0;flex-direction:column}.nav{font-size:11px}.hero{padding:34px 0 28px}.hero h1{font-size:clamp(40px,15vw,62px)}.section{padding-bottom:38px}.section-head{display:block}.section-head .tag{margin-top:12px}.form-grid,.arms,.arm-fields,.guardrails{grid-template-columns:1fr}.results{grid-template-columns:repeat(2,minmax(0,1fr))}.metric{padding:12px}.bar-row{grid-template-columns:56px 1fr 58px;gap:8px}}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <a class="brand" href="/games/" aria-label="OSGARD PLAY — каталог игр">
+        <span class="mark" aria-hidden="true">O</span>
+        <span>OSGARD <small>WORLD / EXPERIMENT INTELLIGENCE</small></span>
+      </a>
+      <nav class="nav" aria-label="Навигация">
+        <a href="/games/">Каталог ↗</a>
+        <a href="/games/growth-studio/">Growth Studio ↗</a>
+        <a href="/games/operations/">Проверка маршрутов ↗</a>
+        <a href="/games/monetization/">Экономика ↗</a>
+      </nav>
+    </header>
+    <main id="main">
+      <section class="hero" aria-labelledby="hero-title">
+        <div>
+          <p class="eyebrow">OSGARD PLAY / DECISION SYSTEM 01</p>
+          <h1 id="hero-title">Не угадывай.<br><em>Измеряй.</em></h1>
+          <p>Рабочая лаборатория A/B-экспериментов: конверсия, интервалы неопределённости, контроль качества и оценка необходимой выборки. Система не назначает победителя при малом количестве наблюдений и не подменяет данные предположениями.</p>
+          <div class="actions">
+            <a class="btn primary" href="#experiment">Разобрать эксперимент ↓</a>
+            <a class="btn quiet" href="#live-data">Подключить фактические данные</a>
+          </div>
+          <p class="warning">Новые счётчики изначально пустые. Нулевой или отсутствующий отчёт не означает, что на сайте не было игроков. Анонимные посещения без согласия не включаются в аналитику.</p>
+        </div>
+        <div class="hero-visual" aria-label="Схема сравнения двух вариантов">
+          <span class="visual-label a">VARIANT A / CONTROL</span>
+          <div class="rings" aria-hidden="true"></div><div class="core" aria-hidden="true">↗</div>
+          <span class="visual-label b">VARIANT B / CHALLENGER</span>
+        </div>
+      </section>
+      <section class="section" id="experiment" aria-labelledby="experiment-title">
+        <div class="section-head">
+          <div><p class="eyebrow">01 / OBSERVATIONS</p><h2 id="experiment-title">Сравнение вариантов</h2><p>Внеси проверенные агрегаты вручную или загрузи экспорт. Результат включает абсолютную разницу, относительный прирост, интервалы и защитные метрики.</p></div>
+          <span class="tag">NO PRELOADED METRICS</span>
+        </div>
+        <form class="panel" id="experiment-form">
+          <div class="form-grid">
+            <div class="field"><label for="experiment-id">Ключ эксперимента</label><input id="experiment-id" name="experimentId" value="catalog-cta-v1" pattern="[a-z0-9-]{1,40}" maxlength="40" required><small>Латиница в нижнем регистре, цифры и дефис.</small></div>
+            <div class="field"><label for="experiment-name">Название для отчёта</label><input id="experiment-name" name="experimentName" value="Главный CTA каталога" maxlength="100" required></div>
+            <div class="field"><label for="guardrail-limit">Допустимое ухудшение сбоев, п.п.</label><input id="guardrail-limit" name="guardrailTolerancePct" type="number" value="1.5" min="0" max="50" step="0.1" required><small>Защитная граница, а не цель.</small></div>
+          </div>
+          <div class="divider"></div>
+          <div class="arms">
+            <fieldset class="arm"><legend class="sr-only">Вариант A — контроль</legend><h4>Вариант A <span>CONTROL</span></h4><div class="arm-fields">
+              <div class="field"><label for="a-exposures">Показы/допуски</label><input id="a-exposures" name="aExposures" type="number" min="0" max="1000000000" step="1" placeholder="Пока нет данных" value=""></div>
+              <div class="field"><label for="a-conversions">Целевые действия</label><input id="a-conversions" name="aConversions" type="number" min="0" max="1000000000" step="1" placeholder="Пока нет данных" value=""></div>
+              <div class="field"><label for="a-guardrails">Сбои/жалобы</label><input id="a-guardrails" name="aGuardrailFailures" type="number" min="0" max="1000000000" step="1" placeholder="Нет данных" value=""></div>
+            </div></fieldset>
+            <fieldset class="arm"><legend class="sr-only">Вариант B — тест</legend><h4>Вариант B <span>CHALLENGER</span></h4><div class="arm-fields">
+              <div class="field"><label for="b-exposures">Показы/допуски</label><input id="b-exposures" name="bExposures" type="number" min="0" max="1000000000" step="1" placeholder="Пока нет данных" value=""></div>
+              <div class="field"><label for="b-conversions">Целевые действия</label><input id="b-conversions" name="bConversions" type="number" min="0" max="1000000000" step="1" placeholder="Пока нет данных" value=""></div>
+              <div class="field"><label for="b-guardrails">Сбои/жалобы</label><input id="b-guardrails" name="bGuardrailFailures" type="number" min="0" max="1000000000" step="1" placeholder="Нет данных" value=""></div>
+            </div></fieldset>
+          </div>
+          <div class="actions"><button class="btn primary" type="submit">Рассчитать результат</button><button class="btn quiet" id="export-json" type="button">Экспорт JSON ↓</button><button class="btn quiet" id="export-csv" type="button">Экспорт CSV ↓</button><button class="btn quiet" id="reset-form" type="button">Очистить значения</button></div>
+          <p class="status" id="analysis-status" role="status" aria-live="polite">Ожидаются фактические наблюдения. Пустая форма не содержит данных сайта.</p>
+        </form>
+        <div class="panel" aria-labelledby="results-title">
+          <h3 id="results-title">Результат анализа</h3>
+          <p>95%-е интервалы Уилсона для долей и интервал Ньюкомба для разницы. p-value — приближение двухстороннего Z-теста, не причинное доказательство. Решение остаётся предварительным.</p>
+          <div class="results" id="result-metrics" aria-live="polite">
+            <article class="metric"><span>Конверсия A</span><strong>—</strong><small>Нет наблюдений</small></article>
+            <article class="metric"><span>Конверсия B</span><strong>—</strong><small>Нет наблюдений</small></article>
+            <article class="metric"><span>Абсолютная разница</span><strong>—</strong><small>B − A</small></article>
+            <article class="metric"><span>p-value</span><strong>—</strong><small>Нужны данные обоих вариантов</small></article>
+          </div>
+          <div class="decision" id="decision-panel" data-state="wait"><h3>Решение не принято</h3><p>Загрузи реальные наблюдения. При малой выборке система не назначит победителя.</p></div>
+          <div id="conversion-bars" aria-label="Сравнение конверсии"></div>
+          <p class="status" id="live-data-status" role="status" aria-live="polite"></p>
+        </div>
+      </section>
+      <section class="section" id="sample-size" aria-labelledby="sample-title">
+        <div class="section-head"><div><p class="eyebrow">02 / STUDY DESIGN</p><h2 id="sample-title">Какой размер выборки нужен?</h2><p>Планировщик оценивает количество наблюдений на вариант до старта теста. Это расчёт на основании предположений, а не прогноз фактического трафика.</p></div><span class="tag">MODELLED ASSUMPTIONS</span></div>
+        <form class="panel" id="sample-form">
+          <div class="form-grid">
+            <div class="field"><label for="baseline-rate">Базовая конверсия, %</label><input id="baseline-rate" type="number" value="10" min="0.1" max="99" step="0.1" required></div>
+            <div class="field"><label for="mde">Минимальный эффект, п.п.</label><input id="mde" type="number" value="2" min="0.1" max="50" step="0.1" required></div>
+            <div class="field"><label for="alpha">Уровень значимости</label><select id="alpha"><option value="0.05" selected>5% — стандартное допущение</option><option value="0.1">10% — исследовательский сигнал</option></select></div>
+            <div class="field"><label for="power">Мощность теста</label><select id="power"><option value="0.8" selected>80%</option><option value="0.9">90%</option></select></div>
+          </div>
+          <div class="actions"><button class="btn primary" type="submit">Рассчитать выборку</button></div>
+          <div class="results" id="sample-results" aria-live="polite"><article class="metric"><span>Наблюдений на вариант</span><strong>—</strong><small>Введите предположения</small></article><article class="metric"><span>Итого</span><strong>—</strong><small>A + B</small></article></div>
+          <p class="status" id="sample-status" role="status" aria-live="polite">10% и +2 п.п. — редактируемые исходные предположения, а не данные OSGARD.</p>
+        </form>
+      </section>
+      <section class="section" id="live-data" aria-labelledby="live-title">
+        <div class="section-head"><div><p class="eyebrow">03 / CONNECTED AGGREGATES</p><h2 id="live-title">Подключить фактические данные</h2><p>Доступен защищённый агрегат Commerce API, если сервис развёрнут, база готова и публичный API URL настроен. Токен используется только в памяти этой вкладки.</p></div><span class="tag">READ ONLY</span></div>
+        <form class="panel" id="live-form">
+          <div class="form-grid">
+            <div class="field"><label for="operator-token">Административный API-токен</label><input id="operator-token" type="password" autocomplete="off" spellcheck="false" placeholder="Не вводи пароль или Stripe-ключ" required><small>Не сохраняется в localStorage, sessionStorage или URL.</small></div>
+            <div class="field"><label>Диапазон</label><input value="Последние 30 дней (API)" disabled></div>
+            <div class="field"><label>Источник</label><input value="/v1/admin/overview · только агрегаты" disabled></div>
+          </div>
+          <div class="actions"><button class="btn primary" id="load-live" type="submit">Загрузить агрегаты</button><button class="btn quiet" id="clear-token" type="button">Очистить токен</button></div>
+          <p class="status" id="api-status" role="status" aria-live="polite">API не проверен. Публичный конфиг сейчас может не содержать apiBaseUrl.</p>
+          <label class="upload" for="import-file">Импортировать экспорт с локального компьютера
+            <input id="import-file" type="file" accept=".json,.csv,application/json,text/csv">
+            <small>Максимум 64 КБ. Разрешены только агрегаты A/B: показы, целевые действия и счётчик сбоев. Не загружайте имена, email, IP или другие персональные данные.</small>
+          </label>
+        </form>
+      </section>
+      <section class="section" aria-labelledby="rules-title">
+        <div class="section-head"><div><p class="eyebrow">04 / DECISION GUARDRAILS</p><h2 id="rules-title">Правила против ложной победы</h2><p>Система помогает принять решение; она не гарантирует причинность и не отменяет проверку продукта.</p></div></div>
+        <div class="panel">
+          <ul class="guardrails">
+            <li>Нельзя назвать вариант победителем, если в любой группе меньше 100 наблюдений или 10 целевых действий.</li>
+            <li>Для предварительной победы нужны p &lt; 0,05 и интервал разницы, не пересекающий ноль.</li>
+            <li>Если сбои/жалобы в варианте B превышают A на настроенную границу, рекомендация — остановить B независимо от конверсии.</li>
+            <li>Не менять одновременно несколько ключевых элементов в одном тесте без заранее описанного дизайна.</li>
+            <li>Не включать эксперимент до проверки маршрута, события экспозиции, события конверсии и возврата контроля.</li>
+            <li>Учитывать только согласованные события. События браузера не доказывают уникальность человека и могут содержать ошибки измерения.</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+    <footer class="footer"><div class="footer-row"><span>OSGARD WORLD GAMING / EXPERIMENT INTELLIGENCE / v1</span><span><a class="small-link" href="/privacy/">Конфиденциальность</a> · <a class="small-link" href="/terms/">Условия</a> · <a class="small-link" href="/games/">Вернуться в каталог</a></span></div><p>Числа появляются только из введённых/импортированных агрегатов или защищённого API. Прогнозы и пороги явно отмечены; эта лаборатория не активирует рекламу, оплату или эксперимент сама по себе.</p></footer>
+  </div>
+  <script type="module" src="./experiment-lab.js"></script>
+</body>
+</html>
