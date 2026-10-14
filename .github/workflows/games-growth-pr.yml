@@ -10,6 +10,7 @@ on:
       - "scripts/product-experiment-engine-smoke.mjs"
       - "scripts/games-detail-smoke.mjs"
       - "scripts/games-monetization-smoke.mjs"
+      - "scripts/game-detail-growth-cta-smoke.mjs"
       - "scripts/remix-growth-smoke.mjs"
       - "scripts/ecosystem-integrity-smoke.mjs"
       - "scripts/partners-page-smoke.mjs"
@@ -47,6 +48,8 @@ jobs:
         run: npm run qa:games-detail
       - name: Game economy and monetization assumptions
         run: npm run qa:games-model
+      - name: Game-to-business funnel attribution and consent contract
+        run: npm run qa:game-business-bridge
       - name: Referral growth loop and sponsor safety
         run: npm run qa:remix-growth
       - name: Ecosystem links, claims and privacy boundaries
