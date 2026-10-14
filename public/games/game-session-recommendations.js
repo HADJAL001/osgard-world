@@ -232,13 +232,11 @@ const recommendationByGame={
  time:['o2-system','osgard-business','superday','projects'],
  swarm:['marcosa','superday','projects'],
  inherit:['marcosa','myosa','projects'],
- remix:['marcosa','vanguard','projects'],
+ remix:['marcosa','vanguard','projects','partner-studio'],
  'civic-cascade':['osgard-business','superday','o2-system'],
- patina:['gold-glamour','vanguard','projects'],
+ patina:['gold-glamour','vanguard','projects','partner-studio'],
  'signal-run':['myosa','projects','superday'],
  'cascade-lab':['projects','myosa','vanguard'],
- 'remix':['marcosa','vanguard','projects','partner-studio'],
- 'patina':['gold-glamour','vanguard','projects','partner-studio'],
  'afterimage-run':['superday','projects','vanguard','partner-studio'],
  'aether-grid':['projects','myosa','vanguard','partner-studio']
 };
