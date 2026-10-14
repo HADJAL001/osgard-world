@@ -26,7 +26,7 @@ Run:
 
     npm run qa:contracts
 
-The npm pre-step regenerates the 1200×630 share-card PNGs from their versioned source, then the audit command writes osgard-contract-audit.json and exits non-zero on a failed contract. A separate regression check runs the actual catalogue-state normalizer with 12 and 120 IDs to prove that future games are not silently truncated. The JSON report includes stable check IDs, actionable missing/extra IDs or routes, counts and a SHA-256 fingerprint of the normalized product contract. The fingerprint excludes generated time and other volatile fields, so it can be compared across builds. Override the output path with OSGARD_CONTRACT_REPORT.
+The command explicitly regenerates the 1200×630 share-card PNGs from their versioned source, then writes osgard-contract-audit.json and exits non-zero on a failed contract. A separate regression check runs the actual catalogue-state normalizer with 12 and 120 IDs to prove that future games are not silently truncated. The JSON report includes stable check IDs, actionable missing/extra IDs or routes, counts and a SHA-256 fingerprint of the normalized product contract. The fingerprint excludes generated time and other volatile fields, so it can be compared across builds. Override the output path with OSGARD_CONTRACT_REPORT.
 
 The audit makes no network requests and emits no player data. CI uploads the report as a build artifact, allowing a release reviewer to inspect what was checked.
 
