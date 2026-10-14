@@ -18,7 +18,7 @@ Set OPENAI_API_KEY in your local process environment and, if necessary, OPENAI_M
 
     node scripts/osgard-ai-release-review.mjs --report release-readiness.json --send-to-openai
 
-The default model is gpt-6-sol; availability and pricing can differ by API project and can change, so override OPENAI_MODEL when required. API calls may incur charges.
+The default model is gpt-6.1-sol, OpenAI's current intelligence/cost balance model; availability and pricing can differ by API project and can change, so override OPENAI_MODEL when required. API calls may incur charges.
 
 The manual workflow is in GitHub Actions under “OSGARD AI release review (manual, opt-in)”. Its boolean input defaults to false. The workflow uses only the Actions secret OPENAI_API_KEY; do not place a key in source code, the frontend, workflow YAML, or the report.
 
