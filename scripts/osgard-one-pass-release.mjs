@@ -26,7 +26,6 @@ const CONSOLE_OUTPUT_LIMIT = 40000;
 const npm = (id, label, scriptName, options = {}) => ({
   id, label, command: npmCommand, args: ['run', scriptName],
   critical: options.critical !== false, kind: options.kind || 'qa',
-  timeoutMs: options.timeoutMs || (options.kind === 'external' ? 60 * 1000 : DEFAULT_STEP_TIMEOUT_MS),
   timeoutMs: options.timeoutMs || (scriptName === 'qa:release' ? 35 * 60 * 1000 : DEFAULT_STEP_TIMEOUT_MS),
 });
 const node = (id, label, args, options = {}) => ({
