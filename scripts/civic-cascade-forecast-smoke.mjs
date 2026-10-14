@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
-import { createHash } from 'node:crypto'
 
 const html = await readFile(new URL('../public/games/civic-cascade/index.html', import.meta.url), 'utf8')
 const manifest = JSON.parse(await readFile(new URL('../public/games/civic-cascade/release.json', import.meta.url), 'utf8'))
@@ -60,6 +59,8 @@ for (const id of [
 const mainScript = html.match(/<script>([\s\S]*?)<\/script>/i)?.[1]
 check(mainScript, 'inline game script must exist')
 new Function(mainScript)
+check(mainScript.includes('window.crypto?.subtle.digest'), 'decision dossier export must compute SHA-256 over the canonical payload')
+check(mainScript.includes('function exportDoctrineDossier()'), 'decision dossier export handler must be present')
 
 function extractBetween(startMarker, endMarker) {
   const start = html.indexOf(startMarker)
@@ -159,11 +160,6 @@ for (const scenario of ['flood', 'blackout', 'blockade']) {
   check(!/email|phone|userId|accessToken|password/i.test(JSON.stringify(dossier)),'dossier export must not include personal data or secrets')
   assert.deepEqual(dossier,buildDoctrineDossierPayload(base,result,'3.1.0-reproducible-decision-evidence',scenarios,nodes,0),
     scenario+' dossier payload must be byte-for-byte reproducible before export metadata')
-  const dossierCanonical=JSON.stringify(dossier)
-  const digestA=createHash('sha256').update(dossierCanonical,'utf8').digest('hex')
-  const digestB=createHash('sha256').update(JSON.stringify(buildDoctrineDossierPayload(base,result,'3.1.0-reproducible-decision-evidence',scenarios,nodes,0)),'utf8').digest('hex')
-  assert.match(digestA,/^[a-f0-9]{64}$/,'dossier SHA-256 digest must be a 64-character lowercase hex string')
-  assert.equal(digestA,digestB,scenario+' dossier SHA-256 digest must remain stable for the same canonical payload')
   check(Array.isArray(result.alternatives) && result.alternatives.length <= 3, scenario + ' planner must return at most three candidates')
 check(result.robustnessEvaluatedCount >= 0 && result.robustnessEvaluatedCount <= 8, scenario + ' stress ranking must stay within eight candidates')
 check(result.alternatives.every(candidate => typeof candidate.portfolioRole === 'string' && typeof candidate.paretoMember === 'boolean'), scenario + ' portfolio candidates must declare their selection role and dominance status')
