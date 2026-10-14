@@ -62,3 +62,5 @@ jobs:
         run: npm run qa:campaign-manager
       - name: Economy model regression
         run: npm run qa:games-model
+      - name: Growth experiment evidence and privacy regression
+        run: npm run qa:growth-evidence
