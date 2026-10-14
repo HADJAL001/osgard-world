@@ -8,12 +8,12 @@ const api = globalThis.__CASCADELAB019_TEST__;
 
 assert.ok(api && api.version === '0.19.0', 'pure Engineering OS test API must be available');
 assert.equal(api.improvements.length, 30, 'the release manifest must enumerate exactly 30 distinct improvements');
-assert.match(html, /osgard-game-version" content="0\.25\.0-evidence-integrity"/, 'CASCADE LAB metadata must identify application release 0.25.0');
-assert.match(html, /<title>CASCADE LAB — Premium Physics Lab 0\.25\.0<\/title>/, 'the browser title must identify application release 0.25.0');
+assert.match(html, /osgard-game-version" content="0\.26\.0-reproducibility-kernel"/, 'CASCADE LAB metadata must identify application release 0.26.0');
+assert.match(html, /<title>CASCADE LAB — Premium Physics Lab 0\.26\.0<\/title>/, 'the browser title must identify application release 0.26.0');
 assert.ok(html.includes('id="CASCADELAB018"') && html.includes('hypothesis-lab.js?v=0.18.0'), 'the v0.18 Hypothesis Lab must remain integrated');
 assert.ok(html.includes('id="CASCADELAB019"') && html.includes('engineering-suite.js?v=0.19.0'), 'Engineering OS must load with a cache-busted URL');
 assert.ok(html.includes('id="CASCADELAB020"') && html.includes('data-cascade-lab-studio="0.20.0"') && html.includes('experiment-studio.js?v=0.20.0'), 'Experiment Studio 0.20 must load without replacing Engineering OS 0.19');
-assert.ok(html.includes("new CustomEvent('cascade-lab:run-finished'") && html.includes("notifyOsgardLifecycle('ready', { version: '0.25.0' })"), 'game must publish a summary for completed runs');
+assert.ok(html.includes("new CustomEvent('cascade-lab:run-finished'") && html.includes("notifyOsgardLifecycle('ready', { version: '0.26.0' })"), 'game must publish a summary for completed runs');
 assert.doesNotMatch(source, /\b(?:fetch|XMLHttpRequest|sendBeacon)\s*\(/, 'Engineering OS must not upload game history');
 assert.ok(!source.includes('.innerHTML'), 'untrusted notes and imported data must use text-safe DOM updates');
 for (const item of ['MAX_RUNS = 50','MAX_IMPORT_BYTES = 200 * 1024','function cleanRun(','function validateArchive(','function compareRuns(','function diagnoseRun(','function exportCsv(','function importArchive(','controlRun','oneVariable','outcomeRecorded','aria-live','prefers-reduced-motion']) {
