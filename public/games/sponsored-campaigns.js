@@ -206,5 +206,14 @@
       root.hidden = true;
     }
   }
-  init();
+  // Defer even the API request until the catalog slot is close to the viewport.
+  if (storage && 'IntersectionObserver' in window) {
+    const catalogTrigger = document.getElementById('catalog') || root;
+    const lazyObserver = new IntersectionObserver(entries => {
+      if (!entries.some(entry => entry.isIntersecting)) return;
+      lazyObserver.disconnect();
+      void init();
+    }, { rootMargin: '400px 0px', threshold: 0 });
+    lazyObserver.observe(catalogTrigger);
+  }
 })();
