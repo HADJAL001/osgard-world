@@ -1,0 +1,30 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+
+const root = 'public/games/';
+const catalog = readFileSync(root + 'index.html', 'utf8');
+const runtime = readFileSync(root + 'catalog-runtime.js', 'utf8');
+const admin = readFileSync(root + 'admin/catalog/index.html', 'utf8');
+const adminJs = readFileSync(root + 'admin/catalog/catalog.js', 'utf8');
+const matrix = readFileSync('scripts/production-route-matrix.mjs', 'utf8');
+const apiModule = readFileSync('services/osgard-commerce-api/src/game-catalog.mjs', 'utf8');
+const server = readFileSync('services/osgard-commerce-api/src/server.mjs', 'utf8');
+const servicePackage = JSON.parse(readFileSync('services/osgard-commerce-api/package.json', 'utf8'));
+
+assert.ok(catalog.includes('/games/catalog-runtime.js?v=__OSGARD_BUILD_VERSION__'), 'The games hub must load the runtime catalogue override');
+assert.ok(admin.includes('<meta name="robots" content="noindex,nofollow,noarchive">'), 'The operator page must not be indexed');
+assert.ok(admin.includes('id="token"') && admin.includes('id="save"') && admin.includes('id="game-list"'), 'Operator page must expose token connect and catalogue editor states');
+assert.ok(adminJs.includes("const API = '/commerce-api/v1'") && adminJs.includes("authorization: 'Bearer ' + operatorToken"), 'Admin API must be same-origin and use Bearer authentication');
+assert.ok(!adminJs.includes('localStorage') && !adminJs.includes('sessionStorage'), 'Admin tokens must not be persisted in browser storage');
+assert.ok(!adminJs.includes('.innerHTML') && adminJs.includes('textContent'), 'Editable catalogue strings must be rendered as text, not injected HTML');
+assert.ok(adminJs.includes('/admin/game-catalog') && adminJs.includes("credentials: 'same-origin'") && adminJs.includes("redirect: 'error'"), 'Admin API requests must be same-origin and reject redirects');
+assert.ok(runtime.includes("fetch(endpoint") && runtime.includes("credentials: 'same-origin'") && runtime.includes('AbortSignal.timeout(4500)'), 'Public runtime override must use bounded same-origin requests');
+assert.ok(runtime.includes("card.hidden = !item.visible") && runtime.includes('textContent = item.title') && runtime.includes('grid.append(card)'), 'Overrides must support visibility, safe title updates and order');
+assert.ok(!runtime.includes('.innerHTML'), 'Public content must never be injected as HTML');
+assert.ok(apiModule.includes('validateGameCatalogPayload') && apiModule.includes('GAME_ROUTES.get(id)'), 'Server catalog validation must enforce canonical game launch routes');
+assert.ok(server.includes('app.get("/v1/game-catalog"') && server.includes('app.get("/v1/admin/game-catalog"') && server.includes('app.post("/v1/admin/game-catalog"'), 'Public/read and authenticated/write API endpoints must exist');
+assert.ok(server.includes('requireAdmin, gameCatalogWriteLimiter'), 'Writes must use the existing server-side operator auth plus rate limit');
+assert.ok(servicePackage.scripts.test && servicePackage.scripts.check, 'Commerce API tests and static checks must remain available');
+assert.ok(matrix.includes("'/games/admin/catalog/'") && matrix.includes("'/games/admin/catalog/catalog.js'") && matrix.includes("'/games/catalog-runtime.js'"), 'Production route matrix must include new catalogue assets');
+assert.ok(matrix.includes("'/commerce-api/v1/game-catalog'") && matrix.includes("'/commerce-api/v1/admin/game-catalog'"), 'Production route matrix must include catalogue API contracts');
+console.log('PASS OSGARD managed game catalogue: route allow-list, safe render, token handling, route matrix and API wiring.');

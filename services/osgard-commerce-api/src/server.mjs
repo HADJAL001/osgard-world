@@ -18,6 +18,7 @@ import {
 } from "./campaigns.mjs";
 import { buildCommercialReadiness, buildServiceReadiness } from "./readiness.mjs";
 import { generateGameCoachAdvice, isGameCoachConfigured } from "./game-coach.mjs";
+import { DEFAULT_GAME_CATALOG, validateGameCatalogPayload } from "./game-catalog.mjs";
 
 const { Pool } = pg;
 const app = express();
@@ -90,6 +91,13 @@ async function ensureSchema() {
   await pool.query(
     "INSERT INTO commerce_owned_promo_config (config_id, config) VALUES (1, $1::jsonb) ON CONFLICT (config_id) DO NOTHING",
     [JSON.stringify(DEFAULT_OWNED_PROMO_CONFIG)],
+  );
+  await pool.query(
+    "CREATE TABLE IF NOT EXISTS commerce_game_catalog (catalog_id SMALLINT PRIMARY KEY CHECK (catalog_id = 1), items JSONB NOT NULL, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())",
+  );
+  await pool.query(
+    "INSERT INTO commerce_game_catalog (catalog_id, items) VALUES (1, $1::jsonb) ON CONFLICT (catalog_id) DO NOTHING",
+    [JSON.stringify(DEFAULT_GAME_CATALOG)],
   );
   dbReady = true;
   return true;
@@ -287,6 +295,60 @@ app.post("/v1/stripe/webhook", express.raw({ type: "application/json", limit: "1
 });
 
 app.use(express.json({ limit: "25kb", strict: true }));
+
+// Public game catalogue: static defaults remain available if the database has not initialized.
+app.get("/v1/game-catalog", async (_req, res) => {
+  res.set("Cache-Control", "public, max-age=30, stale-while-revalidate=60");
+  if (!pool || !dbReady) {
+    return res.json({ schemaVersion: 1, items: DEFAULT_GAME_CATALOG, source: "defaults", updatedAt: null });
+  }
+  try {
+    const result = await pool.query("SELECT items, updated_at FROM commerce_game_catalog WHERE catalog_id = 1");
+    const row = result.rows[0];
+    const checked = row ? validateGameCatalogPayload({ schemaVersion: 1, items: row.items }) : { ok: true, catalog: { schemaVersion: 1, items: DEFAULT_GAME_CATALOG } };
+    if (!checked.ok) {
+      return res.json({ schemaVersion: 1, items: DEFAULT_GAME_CATALOG, source: "defaults", updatedAt: null });
+    }
+    return res.json({ ...checked.catalog, source: row ? "database" : "defaults", updatedAt: row?.updated_at || null });
+  } catch (error) {
+    console.error("Public game catalogue read failed:", error?.message || "unknown error");
+    return res.json({ schemaVersion: 1, items: DEFAULT_GAME_CATALOG, source: "defaults", updatedAt: null });
+  }
+});
+
+app.get("/v1/admin/game-catalog", requireAdmin, async (_req, res) => {
+  if (!pool || !dbReady) return res.status(503).json({ error: "GAME_CATALOG_NOT_READY", message: "Каталог пока не готов: проверьте подключение базы данных." });
+  try {
+    const result = await pool.query("SELECT items, updated_at FROM commerce_game_catalog WHERE catalog_id = 1");
+    const row = result.rows[0];
+    const checked = row ? validateGameCatalogPayload({ schemaVersion: 1, items: row.items }) : { ok: true, catalog: { schemaVersion: 1, items: DEFAULT_GAME_CATALOG } };
+    if (!checked.ok) return res.status(503).json({ error: "GAME_CATALOG_DATA_INVALID", message: "Данные каталога не прошли проверку. Изменения не применены." });
+    return res.json({ ...checked.catalog, updatedAt: row?.updated_at || null, source: row ? "database" : "defaults" });
+  } catch (error) {
+    console.error("Admin game catalogue read failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "GAME_CATALOG_READ_FAILED", message: "Не удалось загрузить каталог. Попробуйте позже." });
+  }
+});
+
+const gameCatalogWriteLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 30, standardHeaders: "draft-8", legacyHeaders: false });
+app.post("/v1/admin/game-catalog", requireAdmin, gameCatalogWriteLimiter, async (req, res) => {
+  if (!pool || !dbReady) return res.status(503).json({ error: "GAME_CATALOG_NOT_READY", message: "Каталог пока не готов: проверьте подключение базы данных." });
+  const checked = validateGameCatalogPayload(req.body);
+  if (!checked.ok) return res.status(checked.status).json({ error: checked.code, message: "Данные каталога не прошли проверку." });
+  try {
+    const result = await pool.query(
+      "INSERT INTO commerce_game_catalog (catalog_id, items, updated_at) VALUES (1, $1::jsonb, NOW()) " +
+      "ON CONFLICT (catalog_id) DO UPDATE SET items = EXCLUDED.items, updated_at = NOW() RETURNING updated_at",
+      [JSON.stringify(checked.catalog.items)],
+    );
+    res.set("Cache-Control", "no-store, private");
+    return res.json({ ...checked.catalog, source: "database", updatedAt: result.rows[0]?.updated_at || null });
+  } catch (error) {
+    console.error("Admin game catalogue save failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "GAME_CATALOG_SAVE_FAILED", message: "Не удалось сохранить изменения. Каталог не изменён." });
+  }
+});
+
 
 app.get("/v1/game-coach/status", (_req, res) => {
   res.set("Cache-Control", "no-store, private");
