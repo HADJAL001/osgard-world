@@ -42,6 +42,16 @@
       return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === aetherDay;
     })();
     if (['aether-grid','signal-run','null-shift'].includes(game) && validAetherDay) target.searchParams.set('day', aetherDay);
+    // AETHER GRID protocol links open the actual standalone puzzle with validated rules,
+    // rather than dropping the selected rule set on the general games catalogue.
+    const requestedAetherProtocol = params.get('og_protocol') || '';
+    const validAetherProtocol = new Set(['no-hints','no-undo','iron-circuit']).has(requestedAetherProtocol);
+    if (game === 'aether-grid' && validAetherDay && validAetherProtocol) {
+      target.pathname = '/games/aether-grid/';
+      target.searchParams.delete('play');
+      target.searchParams.set('day', aetherDay);
+      target.searchParams.set('protocol', requestedAetherProtocol);
+    }
     if (game === 'signal-run' && validAetherDay && params.get('og_daily_mode') === 'daily') target.searchParams.set('mode', 'daily');
     if (game === 'null-shift' && validAetherDay) {
       const month = Number(aetherDay.slice(5,7)), date = Number(aetherDay.slice(8,10));
