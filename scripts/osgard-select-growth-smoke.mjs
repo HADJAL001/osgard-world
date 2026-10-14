@@ -271,6 +271,10 @@ const getVariant=vm.runInNewContext('('+variantMatch[0]+')',{sessionStorage:sess
 const variantFirst=getVariant(),variantSecond=getVariant()
 assert.ok(variantFirst==='a'||variantFirst==='b')
 assert.equal(variantSecond,variantFirst,'Re-rendering a spotlight must not move a player to a different A/B variant in the same tab')
+const deniedSessionStorage={getItem(){throw new Error('blocked')},setItem(){throw new Error('blocked')}}
+const getVariantDenied=vm.runInNewContext('('+variantMatch[0]+')',{sessionStorage:deniedSessionStorage,Math,memorySpotlightVariant:''})
+const deniedVariantFirst=getVariantDenied(),deniedVariantSecond=getVariantDenied()
+assert.equal(deniedVariantSecond,deniedVariantFirst,'A/B cohort must remain stable in memory even when session storage is blocked')
 const impressionMatch=source.match(/function claimPromoImpression\(key\)\{[\s\S]*?\n\}/)
 assert.ok(impressionMatch, 'Impression dedupe helper missing')
 const impressionValues=new Map()
@@ -279,6 +283,10 @@ const claimImpression=vm.runInNewContext('('+impressionMatch[0]+')',{sessionStor
 assert.equal(claimImpression('spotlight:swarm:marcosa:a'),true,'First valid exposure may be counted')
 assert.equal(claimImpression('spotlight:swarm:marcosa:a'),false,'A repeated exposure for the same session/service/variant must be deduplicated')
 assert.equal(claimImpression('card:swarm:marcosa'),true,'A separately visible directory card may be measured once')
+const deniedImpressionStorage={getItem(){throw new Error('blocked')},setItem(){throw new Error('blocked')}}
+const claimImpressionDenied=vm.runInNewContext('('+impressionMatch[0]+')',{sessionStorage:deniedImpressionStorage,promoImpressionKeyPrefix:'osgard.games.promo-impression.v1:',fallbackPromoImpressions:new Set()})
+assert.equal(claimImpressionDenied('spotlight:time:myosa:a'),true,'First visible impression may be recorded with an in-memory fallback')
+assert.equal(claimImpressionDenied('spotlight:time:myosa:a'),false,'The in-memory fallback must deduplicate impression events if browser storage is blocked')
 assert.ok(source.includes("lastSource:accepted.length?'qualified-referral':'qualified-referral-retry'"), 'Retrying a previously saved receipt should not be mistaken for a newly created award')
 
 console.log(JSON.stringify({
