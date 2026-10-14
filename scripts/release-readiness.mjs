@@ -59,7 +59,7 @@ await check('production-build', npm, ['run', 'build'])
 await check('frontend-archive-preflight', npm, ['run', 'preflight:frontend'])
 await check('production-route-matrix', npm, ['run', 'qa:production-routes'])
 await check('live-bundle-audit', npm, ['run', 'qa:live-bundle'])
-const briefPath = process.env.OSGARD_BRIEF_PATH || 'A:\\\\HADJAL\\\\Рабочий стол\\\\игры ОСГАРД.txt'
+const briefPath = process.env.OSGARD_BRIEF_PATH || 'A:\\HADJAL\\Рабочий стол\\игры ОСГАРД.txt'
 if (existsSync(briefPath)) await check('brief-source-audit', process.execPath, ['scripts/brief-coverage-audit.mjs', briefPath], false)
 else checks.push({ name: 'brief-source-audit', status: 'skipped', durationMs: 0, output: `Source not present at ${briefPath}; repository-only CI continues without external brief file.` })
 const passed = checks.filter(item => item.status === 'passed').length
