@@ -59,7 +59,7 @@ const overviewQueries = server.slice(overviewStart, overviewEnd);
 const overviewQueryOrder = [
   "SELECT status, COUNT(*)::int AS count FROM commerce_orders GROUP BY status",
   "SELECT currency, SUM(amount_total)",
-  "SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE status='new')::int AS new FROM commerce_leads",
+  "SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE status='new')::int AS new, COUNT(*) FILTER (WHERE status='contacted')::int AS contacted",
   "NULLIF(attribution_campaign, '') AS campaign, COUNT(*)::int AS leads",
   "SELECT COUNT(*)::int AS total_30d FROM commerce_events",
   "SELECT event_name, COUNT(*)::int AS count FROM commerce_events",
@@ -75,6 +75,8 @@ const overviewQueryOrder = [
 const overviewPositions = overviewQueryOrder.map((needle) => overviewQueries.indexOf(needle));
 assert.ok(overviewPositions.every((position) => position >= 0), "Admin overview is missing one or more expected query slots.");
 assert.ok(overviewPositions.every((position, index) => index === 0 || overviewPositions[index - 1] < position), "Admin overview query order must match its destructured response fields.");
+assert.ok(overviewQueries.includes("status='qualified'") && overviewQueries.includes("status='converted'") && overviewQueries.includes("status='lost'") && overviewQueries.includes("AS \\"overdueFollowUps\\""), "Admin overview must preserve legacy lead counts and expose the validated CRM pipeline.");
+assert.ok(server.includes("commerce_lead_activities") && server.includes('app.patch("/v1/admin/leads/:id"') && server.includes('app.get("/v1/admin/leads/:id/activities"'), "Protected lead workflow routes and change history must be present.");
 
 assert.ok(!server.includes("sk_live_abc123"), "No live secret may be committed.");
 assert.ok(!admin.includes("Bearer sk_"), "No payment secret may be embedded in admin HTML.");
