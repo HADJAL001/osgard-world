@@ -202,11 +202,8 @@ assert.equal(tamperValidation.valid, true, 'changed score remains in range and m
 const tamperReplay = replayDossier(recomputedTamper, '3.4.0')
 assert.equal(tamperReplay.verified, false, 'recomputed hash must not make altered decision evidence reproducible')
 check(tamperReplay.mismatches.includes('candidates'), 'replay should identify the changed candidate evidence')
-const historicalReplay = replayDossier(historicalDossier, '3.4.0')
-assert.equal(historicalReplay.available, false, 'historical dossiers must stay read-only')
 dossierVerifierCases.deterministicReplay = 'PASS'
 dossierVerifierCases.recomputedHashStillFailsReplay = 'PASS'
-dossierVerifierCases.historicalReplayReadOnly = 'PASS'
 const reorderedPayload = Object.fromEntries(Object.entries(verifierPayload).reverse())
 const reorderedDossier = {...reorderedPayload,exportMetadata:verifierDossier.exportMetadata}
 const reorderedDigest=createHash('sha256').update(canonicalDossierStringify(reorderedPayload),'utf8').digest('hex')
@@ -222,9 +219,9 @@ check(!validateDoctrineDossierStructure(badSchema,'3.4.0').valid,'unsupported do
 const badPrivacy=JSON.parse(JSON.stringify(verifierDossier));badPrivacy.assumptions.personalDataIncluded=true
 check(!validateDoctrineDossierStructure(badPrivacy,'3.4.0').valid,'a dossier that claims personal data is included must be rejected')
 const badOrder=JSON.parse(JSON.stringify(verifierDossier));badOrder.candidates[0].orders[0].action='javascript:alert(1)'
-check(!validateDoctrineDossierStructure(badOrder,'3.3.0').valid,'unknown or executable-looking actions must be rejected')
+check(!validateDoctrineDossierStructure(badOrder,'3.4.0').valid,'unknown or executable-looking actions must be rejected')
 const badStress=JSON.parse(JSON.stringify(verifierDossier));badStress.candidates[0].robustness.profiles.pop()
-check(!validateDoctrineDossierStructure(badStress,'3.3.0').valid,'incomplete stress evidence must be rejected')
+check(!validateDoctrineDossierStructure(badStress,'3.4.0').valid,'incomplete stress evidence must be rejected')
 const historicalDossier=JSON.parse(JSON.stringify(verifierDossier))
 historicalDossier.engine.modelVersion='3.2.0'
 historicalDossier.exportMetadata.integrity.scope='UTF-8 JSON payload without exportMetadata'
@@ -232,6 +229,9 @@ historicalDossier.exportMetadata.integrity.digest=createHash('sha256').update(JS
 const historicalValidation=validateDoctrineDossierStructure(historicalDossier,'3.4.0')
 assert.equal(historicalValidation.valid,true,'historically valid dossiers remain readable: '+historicalValidation.errors.join('; '))
 assert.equal(historicalValidation.modelCompatible,false,'historical model versions must be flagged read-only')
+const historicalReplay = replayDossier(historicalDossier, '3.4.0')
+assert.equal(historicalReplay.available, false, 'historical dossiers must stay read-only')
+dossierVerifierCases.historicalReplayReadOnly = 'PASS'
 check(historicalValidation.warnings.length>0,'historical import must disclose model/hash compatibility warnings')
 const futureValidation=validateDoctrineDossierStructure(verifierDossier,'3.5.0')
 assert.equal(futureValidation.valid,true,'other model versions remain readable in audit mode')
