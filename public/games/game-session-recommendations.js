@@ -945,10 +945,24 @@ function rewardShelf(gameId){
  const note=make('p','og-postgame-reward-note','Награда за публикацию: +50 локальных SHARDS не чаще раза в UTC-день на этом устройстве — после самостоятельного подтверждения игроком. Копирование само по себе не считается репостом и не даёт награду. OSGARD не получает надёжный сигнал о факте публикации; социальные платформы не подтверждают факт поста. Отдельно доступны серверно-квалифицированные +50 SHARDS за приглашение, по которому друг открыл ссылку и завершил игровую сессию не короче 30 секунд. Эта проверка подтверждает последовательность событий и время, но не уникальную личность. Все SHARDS — только косметические очки, не имеют денежной стоимости и не являются платёжным средством; баланс публикации хранится локально и может быть сброшен очисткой данных браузера. В SIGNAL RUN их можно потратить на косметический профиль GOLD SIGNAL за 100 SHARDS; он меняет только цвета и не влияет на счёт или сложность.');
  section.append(head,actions,grid,claim,qualifiedClaim,qualifiedNote,qualifiedStatus,status,note);return section;
 }
+let lastIntermissionGame='',lastIntermissionCount=0;
+function refreshCurrentServiceShelf(){
+ if(!titles[lastIntermissionGame])return;
+ const current=root.querySelector('.og-postgame-services')||(outsideRoot&&outsideRoot.querySelector('.og-postgame-services'));
+ if(!current)return;
+ const next=servicesShelf(lastIntermissionGame,shouldShowServicePromos(readServicePreferences(),lastIntermissionCount),lastIntermissionCount);
+ disposePostgameTree(current);current.replaceWith(next);
+}
+document.addEventListener('osgard:service-preferences-updated',refreshCurrentServiceShelf);
+window.addEventListener('storage',event=>{
+ if(!event.key||[servicePreferencesKey,promoSnoozeKey,preferredServiceKey].includes(event.key))refreshCurrentServiceShelf();
+});
+document.addEventListener('osgard:game-launching',()=>{lastIntermissionGame='';lastIntermissionCount=0});
 function renderOutsideIntermission(detail){
  const id=detail&&detail.game;
  if(!outsideRoot||!titles[id]||!detail||detail.sessionStarted!==true||detail.reason!=='closed_by_user')return;
  const completedCount=recordCompletedRound(id,detail.sessionId),preferences=readServicePreferences();
+ lastIntermissionGame=id;lastIntermissionCount=completedCount;
  disposePostgameTree(outsideRoot);
  outsideRoot.replaceChildren();
  const suite=make('section','og-postgame-suite og-postgame-outside-suite');
@@ -974,6 +988,7 @@ document.addEventListener('osgard:game-launching',()=>{
 function renderOsgardSelect(gameId,sessionId){
  const id=gameId;if(!titles[id])return;
  const completedCount=recordCompletedRound(id,sessionId),preferences=readServicePreferences();
+ lastIntermissionGame=id;lastIntermissionCount=completedCount;
  const previousSuite=root.querySelector('.og-postgame-suite');if(previousSuite){disposePostgameTree(previousSuite);previousSuite.remove()}
  const suite=make('section','og-postgame-suite');suite.append(servicesShelf(id,shouldShowServicePromos(preferences,completedCount),completedCount),rewardShelf(id));root.append(suite);
 }
