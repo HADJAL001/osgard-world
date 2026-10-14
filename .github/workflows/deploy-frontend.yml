@@ -45,6 +45,8 @@ on:
       - "scripts/cascade-lab-experiment-dossier-smoke.mjs"
       - "scripts/cascade-lab-engineering-suite-smoke.mjs"
       - "scripts/cascade-lab-experiment-studio-smoke.mjs"
+      - "scripts/cascade-lab-trajectory-xray-smoke.mjs"
+      - "docs/32_CASCADE_LAB_0.22.0_TRAJECTORY_XRAY.md"
       - "scripts/game-detail-runtime-smoke.mjs"
       - "scripts/games-monetization-smoke.mjs"
       - "scripts/ecosystem-integrity-smoke.mjs"
@@ -86,6 +88,8 @@ jobs:
         run: npm run qa:consented-analytics-queue
       - name: Smoke-test individual game pages and SEO routes
         run: npm run qa:games-detail
+      - name: Verify CASCADE LAB trajectory plots, event timeline and privacy boundaries
+        run: npm run qa:cascade-lab-trajectory-xray
       - name: Validate CASCADE LAB experiment dossier export
         run: npm run qa:cascade-lab-dossier
       - name: Validate CASCADE LAB controlled Experiment Studio archive
