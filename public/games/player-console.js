@@ -203,7 +203,7 @@
     stats.launches = stats.launches.slice(-MAX_LOG);
     stats.totalLaunches = Math.min(MAX_TOTAL_LAUNCHES, Math.max(Number.isSafeInteger(stats.totalLaunches) ? stats.totalLaunches : 0, stats.launches.length));
     stats.gameIdsEver = [...new Set([...cleanIds(stats.gameIdsEver, getGames().length), ...stats.launches.map(row => row.game)])].slice(0, getGames().length);
-    stats.completionLog = (Array.isArray(stats.completionLog) ? stats.completionLog : []).filter(row => row && gameMap().has(row.game) && Number.isFinite(Date.parse(row.at))).map(row => ({ game: row.game, at: new Date(row.at).toISOString() })).slice(-MAX_LOG);
+    stats.completionLog = (Array.isArray(stats.completionLog) ? stats.completionLog : []).filter(row => row && gameMap().has(row.game) && Number.isFinite(Date.parse(row.at))).map(row => ({ game: row.game, at: new Date(row.at).toISOString(), ...(typeof row.sessionId === 'string' && /^[a-zA-Z0-9_-]{1,120}$/.test(row.sessionId) ? { sessionId: row.sessionId } : {}) })).slice(-MAX_LOG);
     stats.activityDays = [...new Set([...(Array.isArray(stats.activityDays) ? stats.activityDays.filter(isValidDateKey).slice(-MAX_ACTIVITY_DAYS) : []), ...stats.launches.map(row => dateKey(Date.parse(row.at)))])].sort().slice(-MAX_ACTIVITY_DAYS);
     if (!safeWrite(KEY.stats, stats)) setStatus('Хранилище браузера недоступно: изменения остаются только до закрытия страницы.', 'warning');
   }
