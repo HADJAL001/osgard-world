@@ -7,6 +7,7 @@ on:
       - "src/**"
       - "public/games/**"
       - "scripts/games-portal-smoke.mjs"
+      - "scripts/osgard-select-growth-smoke.mjs"
       - "scripts/games-detail-smoke.mjs"
       - "scripts/games-monetization-smoke.mjs"
       - "scripts/remix-growth-smoke.mjs"
@@ -48,6 +49,8 @@ jobs:
         run: npm run qa:games-model
       - name: Referral growth loop and sponsor safety
         run: npm run qa:remix-growth
+      - name: OSGARD SELECT between-worlds intermission and share rewards
+        run: npm run qa:osgard-select
       - name: Ecosystem links, claims and privacy boundaries
         run: npm run qa:ecosystem
       - name: Partner inventory disclosure and inactivity checks
