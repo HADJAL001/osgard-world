@@ -4,12 +4,12 @@ import { readFileSync } from 'node:fs';
 const html = readFileSync(new URL('../public/games/cascade-lab/index.html', import.meta.url), 'utf8');
 const hypothesis = readFileSync(new URL('../public/games/cascade-lab/hypothesis-lab.js', import.meta.url), 'utf8');
 
-assert.match(html, /osgard-game-version" content="0\.19\.0-engineering-suite"/, 'release metadata must identify 0.19.0');
-assert.match(html, /<title>CASCADE LAB — Premium Physics Lab 0\.19\.0<\/title>/, 'browser title must match release');
+assert.match(html, /osgard-game-version" content="0\.20\.0-experiment-studio"/, 'release metadata must identify 0.19.0');
+assert.match(html, /<title>CASCADE LAB — Premium Physics Lab 0\.20.0<\/title>/, 'browser title must match release');
 assert.ok(html.includes('id="CASCADELAB017"') && html.includes('data-cascade-lab-delta="0.17.0"') && html.includes('src="./delta-lens.js"'), 'Delta Lens must load as the current experiment layer');
 assert.match(html, /id="exportDossierButton"[^>]*>↓ JSON<\/button>/, 'JSON dossier control must be visible');
 assert.match(html, /\$\('exportDossierButton'\)\.addEventListener\('click', downloadExperimentDossier\)/, 'JSON control must be wired');
-assert.match(html, /application: \{ name: 'CASCADE LAB', version: '0\.19\.0' \}/, 'local growth report must carry the current app version');
+assert.match(html, /application: \{ name: 'CASCADE LAB', version: '0\.20.0' \}/, 'local growth report must carry the current app version');
 
 const functionMatch = html.match(/function downloadExperimentDossier\(\) \{([\s\S]*?)\n\}\n\nfunction draw\(/);
 assert.ok(functionMatch, 'experiment dossier exporter must be defined before the renderer');
@@ -28,6 +28,7 @@ assert.match(exporter, /URL\.createObjectURL/, 'dossier must download a local JS
 assert.doesNotMatch(exporter, /\b(?:fetch|XMLHttpRequest|sendBeacon)\s*\(/, 'export must not send telemetry over the network');
 
 assert.ok(html.includes('id="CASCADELAB018"') && html.includes('data-cascade-lab-experiment="0.18.0"') && html.includes('hypothesis-lab.js?v=0.18.0'), 'Hypothesis Lab must load as the current experiment layer');
+assert.ok(html.includes('id="CASCADELAB020"') && html.includes('data-cascade-lab-studio="0.20.0"') && html.includes('experiment-studio.js?v=0.20.0'), 'Experiment Studio 0.20 must load after the 0.19 Engineering OS');
 assert.ok(hypothesis.includes("const SCHEMA = 'osgard.cascade-lab.next-experiment.v1'") && hypothesis.includes('function proposalForPair(pair)') && hypothesis.includes('function reconcilePlan('), 'Hypothesis Lab must plan and observe controlled experiments');
 assert.ok(!hypothesis.includes('fetch(') && !hypothesis.includes('XMLHttpRequest') && !hypothesis.includes('sendBeacon'), 'Hypothesis Lab must not upload local history');
 new Function(hypothesis);
