@@ -69,6 +69,7 @@ function normalizeSweep(raw) {
     level: { id: levelId, title: clean(raw.level?.title || 'Протокол #' + levelId, 140) },
     deviceCount: Number.isInteger(raw.deviceCount) ? bounded(raw.deviceCount, 0, 12) : 0,
     fixedStepHz: 120,
+    testedAxes: [...new Set(trials.map(trial => trial.axis))],
     baseline,
     trials
   };
@@ -296,7 +297,7 @@ function renderResult(raw){
   latest=checked.sweep;const sum=checked.summary;
   results.replaceChildren();
   const hero=make('div','cl-robust-hero');
-  const titleCard=make('article','cl-robust-card hero');titleCard.append(make('small','','ВЫВОД СЕРИИ'),make('strong','',sum.title),make('p','',sum.guidance));hero.append(titleCard);
+  const titleCard=make('article','cl-robust-card hero');titleCard.append(make('small','','ВЫВОД СЕРИИ'),make('strong','',sum.title),make('p','',sum.guidance),make('p','','Проверенные группы: '+(latest.testedAxes||[]).map(id=>AXES.find(axis=>axis.id===id)?.title||id).join(', ')));hero.append(titleCard);
   const baseline=make('article','cl-robust-card');baseline.append(make('small','','БАЗОВЫЙ ЗАПУСК'),make('strong','',sum.baselineWon?'УСПЕХ':'ОТКАЗ'),make('p','',latest.baseline.reason||'Без сообщения об отказе'));hero.append(baseline);
   const rate=make('article','cl-robust-card');rate.append(make('small','','ДОСТАВКИ В СЕРИИ'),make('strong','',pct(sum.successRate)),make('p','',sum.wins+' из '+sum.total+' испытаний'));hero.append(rate);
   const median=make('article','cl-robust-card');median.append(make('small','','МЕДИАНА УСПЕШНОГО ВРЕМЕНИ'),make('strong','',seconds(sum.medianSuccessTime)),make('p','',sum.mostSensitiveAxis+' — группа с меньшей долей успеха'));hero.append(median);
