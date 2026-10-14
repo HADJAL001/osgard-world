@@ -219,28 +219,38 @@ try{
 window.OSGARDGamesLazy=Object.freeze({loadPlayerRuntime,loadRecommendations});
 })();
 </script>
-<script id="signal-run-referral-bridge">
+<script id="games-deep-link-bridge">
 (()=>{'use strict';
 const incoming=new URL(location.href);
-if(incoming.searchParams.get('play')!=='signal-run')return;
-const link=document.querySelector('a[data-play="signal-run"]');
+const gameId=incoming.searchParams.get('play')||'';
+const validGameIds=new Set(['null-shift','time','swarm','inherit','remix','civic-cascade','patina','signal-run','cascade-lab','afterimage-run','aether-grid']);
+if(!validGameIds.has(gameId))return;
+const link=document.querySelector('a[data-play="'+gameId+'"]');
 if(!link)return;
 const target=new URL(link.href,location.origin);
-for(const key of ['challenge','ref','utm_source','utm_medium','utm_campaign','mode','day']){
+const carryKeys=['challenge','ref','og_ref','og_game','utm_source','utm_medium','utm_campaign','utm_content','mode','day','seed','og_day'];
+for(const key of carryKeys){
  const value=incoming.searchParams.get(key);
- if(value!==null&&value.length<=128)target.searchParams.set(key,value);
+ if(value===null||value.length>128)continue;
+ if(key==='ref'&&!/^[a-f0-9]{12}$/.test(value))continue;
+ if(key==='og_ref'&&!/^og_[a-f0-9]{8}$/.test(value))continue;
+ if(key==='og_game'&&value!==gameId)continue;
+ target.searchParams.set(key,value);
 }
 const code=incoming.searchParams.get('ref')||'';
 const consent=(()=>{try{return localStorage.getItem('osgard.games.analytics-consent.v1')==='yes'}catch{return false}})();
-if(consent&&/^[a-f0-9]{12}$/.test(code)&&incoming.searchParams.get('utm_source')==='signal-run'&&incoming.searchParams.get('utm_medium')==='share'&&incoming.searchParams.get('utm_campaign')==='challenge'){
+// Preserve legacy SIGNAL RUN challenge attribution. Other games use the same
+// actual session lifecycle but do not fabricate a referral open from a launch click.
+if(gameId==='signal-run'&&consent&&/^[a-f0-9]{12}$/.test(code)&&incoming.searchParams.get('utm_source')==='signal-run'&&incoming.searchParams.get('utm_medium')==='share'&&incoming.searchParams.get('utm_campaign')==='challenge'){
  const eventId='evt_'+(window.crypto?.randomUUID?.()||Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,15)).replace(/[^a-zA-Z0-9_-]/g,'');
  fetch('/games/commerce-config.json',{cache:'no-store'}).then(r=>r.ok?r.json():{}).catch(()=>({})).then(config=>{
-  const base=String(config.apiBaseUrl||'/commerce-api').replace(/\/+$/,'');
+  if(!consent||localStorage.getItem('osgard.games.analytics-consent.v1')!=='yes')return;
+  const base=String(config.apiBaseUrl||'/commerce-api').replace(/\\/+$/,'');
   return fetch(base+'/v1/events',{method:'POST',keepalive:true,headers:{'content-type':'application/json'},body:JSON.stringify({consent:true,events:[{eventId,name:'referral_link_opened',sessionId:'invite_'+code,gameId:'signal-run',source:'referral:'+code+':signal-run',path:'/games/',durationSeconds:0}]})});
  }).catch(()=>{});
 }
 link.href=target.href;
-const launch=()=>requestAnimationFrame(()=>link.click());
+const launch=()=>window.requestAnimationFrame(()=>link.click());
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',launch,{once:true});else launch();
 })();
 </script><script id="daily-circuit-lazy-loader">
