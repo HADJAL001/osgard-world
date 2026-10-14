@@ -12,8 +12,38 @@
   const shareButton = document.getElementById('share-catalog');
   const menuButton = document.getElementById('menu-toggle');
   const mobileNav = document.getElementById('mobile-nav');
+  const analyticsButton = document.getElementById('analytics-toggle');
+  const analyticsState = document.getElementById('analytics-state');
   const FAVOURITES_KEY = 'osgard.games.favorites.v1';
   const RECENT_KEY = 'osgard.games.recent.v1';
+  const CONSENT_KEY = 'osgard.games.analytics-consent.v1';
+  const ANALYTICS = window.OSGARD_CONSENTED_ANALYTICS;
+  const analyticsSessionId = 'session_' + (globalThis.crypto?.randomUUID?.() || (Date.now().toString(36) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)));
+  let searchEventRecorded = false;
+
+  function analyticsEnabled() {
+    try { return localStorage.getItem(CONSENT_KEY) === 'yes'; } catch { return false; }
+  }
+  function recordEvent(name, source, gameId = 'unknown') {
+    if (!analyticsEnabled() || typeof ANALYTICS?.enqueue !== 'function') return false;
+    const eventId = 'event_' + (globalThis.crypto?.randomUUID?.() || (Date.now().toString(36) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)));
+    void ANALYTICS.enqueue({
+      eventId, sessionId: analyticsSessionId, name, gameId, source,
+      path: location.pathname, durationSeconds: 0
+    });
+    return true;
+  }
+  function syncAnalyticsPreference() {
+    const enabled = analyticsEnabled();
+    if (analyticsButton) {
+      analyticsButton.setAttribute('aria-pressed', String(enabled));
+      analyticsButton.textContent = enabled ? 'Disable optional analytics' : 'Enable optional analytics';
+    }
+    if (analyticsState) analyticsState.textContent = enabled
+      ? 'Optional analytics are on. You can turn them off here.'
+      : 'Optional analytics are off.';
+    return enabled;
+  }
   const allowed = new Set(cards.map(card => card.dataset.game));
   let activeFilter = 'all';
   let favourites = readIds(FAVOURITES_KEY);
@@ -114,22 +144,33 @@
   for (const button of filters) {
     button.addEventListener('click', () => {
       activeFilter = button.dataset.filter || 'all';
+      recordEvent('catalog_filter_changed', 'games_en_filter_' + activeFilter);
       updateCatalog();
     });
   }
-  search?.addEventListener('input', updateCatalog);
+  search?.addEventListener('input', () => {
+    updateCatalog();
+    if (!searchEventRecorded && String(search.value || '').trim()) {
+      searchEventRecorded = recordEvent('catalog_search_used', 'games_en_search');
+    }
+  });
   for (const button of document.querySelectorAll('[data-favorite]')) {
     button.addEventListener('click', () => {
       const id = button.dataset.favorite;
       if (!id || !allowed.has(id)) return;
       favourites = favourites.includes(id) ? favourites.filter(value => value !== id) : [...favourites, id].slice(-11);
       persist(FAVOURITES_KEY, favourites);
+      recordEvent('game_favorite_toggled', 'games_en_favourite_' + id, id);
       updateFavorites();
       updateCatalog();
     });
   }
   for (const anchor of document.querySelectorAll('[data-launch-game]')) {
-    anchor.addEventListener('click', () => recordRecent(anchor.dataset.launchGame));
+    anchor.addEventListener('click', () => {
+      const gameId = anchor.dataset.launchGame;
+      recordRecent(gameId);
+      recordEvent('game_launched', 'games_en_launch', gameId);
+    });
   }
   document.addEventListener('keydown', event => {
     if (event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey) return;
@@ -144,6 +185,20 @@
     updateCatalog();
     search?.focus();
   });
+  for (const link of document.querySelectorAll('.project-link')) {
+    link.addEventListener('click', () => {
+      let slug = 'project';
+      try { slug = new URL(link.href).hostname.replace(/^www\\./, '').replace(/[^a-z0-9.-]/g, '').slice(0, 55); } catch { /* keep generic label */ }
+      recordEvent('cross_promo_clicked', 'games_en_project_' + slug);
+    });
+  }
+  analyticsButton?.addEventListener('click', () => {
+    const enabled = analyticsEnabled();
+    try { localStorage.setItem(CONSENT_KEY, enabled ? 'no' : 'yes'); } catch { /* analytics remains disabled when storage is unavailable */ }
+    const nowEnabled = syncAnalyticsPreference();
+    if (nowEnabled) recordEvent('catalog_viewed', 'games_en_opt_in');
+  });
+  shareButton?.addEventListener('click', () => recordEvent('share_created', 'games_en_share'));
   menuButton?.addEventListener('click', () => {
     const expanded = menuButton.getAttribute('aria-expanded') === 'true';
     menuButton.setAttribute('aria-expanded', String(!expanded));
@@ -166,4 +221,6 @@
   updateFavorites();
   updateCatalog();
   renderRecent();
+  const consentOnEntry = syncAnalyticsPreference();
+  if (consentOnEntry) recordEvent('catalog_viewed', 'games_en_view');
 })();
