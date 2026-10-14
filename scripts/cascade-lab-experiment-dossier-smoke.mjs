@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 
 const html = readFileSync(new URL('../public/games/cascade-lab/index.html', import.meta.url), 'utf8');
 
-assert.match(html, /osgard-game-version" content="0\.17\.0-experiment-delta"/, 'release metadata must identify 0.16.0');
+assert.match(html, /osgard-game-version" content="0\.17\.0-experiment-delta"/, 'release metadata must identify 0.17.0');
 assert.match(html, /<title>CASCADE LAB — Premium Physics Lab 0\.17\.0<\/title>/, 'browser title must match release');
 assert.ok(html.includes('id="CASCADELAB017"') && html.includes('data-cascade-lab-delta="0.17.0"') && html.includes('src="./delta-lens.js"'), 'Delta Lens must load as the current experiment layer');
 assert.match(html, /id="exportDossierButton"[^>]*>↓ JSON<\/button>/, 'JSON dossier control must be visible');
