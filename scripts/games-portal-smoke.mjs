@@ -17,6 +17,16 @@ execFileSync(process.execPath,[resolve('scripts/generate-games-share-cards.mjs')
 const shareCardGenerator=readFileSync(resolve('scripts/generate-games-share-cards.mjs'),'utf8')
 assert.ok(shareCardGenerator.includes("id: 'afterimage-run'")&&shareCardGenerator.includes("order: '10 / 11'")&&shareCardGenerator.includes("id: 'aether-grid'")&&shareCardGenerator.includes("order: '11 / 11'")&&shareCardGenerator.includes('11 WORLDS / ONE HUB'),'Share-card/invitation generator must include all eleven game worlds')
 const html=readFileSync(resolve(root,'index.html'),'utf8')
+
+assert.ok(html.includes('<dialog id="osgard-select-intermission"') &&
+  html.includes('id="osgard-select-intermission-content"') &&
+  html.includes('id="osgard-select-intermission-catalog"'),
+  'The Games portal must ship the full-screen post-session project chooser');
+assert.ok(html.includes('id="osgard-select-intermission-resume"') &&
+  html.includes('aria-labelledby="osgard-select-intermission-title"') &&
+  html.includes('aria-describedby="osgard-select-intermission-description"'),
+  'The between-games dialog must remain accessible and have a safe return action');
+
 const catalogCards=[...html.matchAll(/<article\b[^>]*\bdata-game="([^"]+)"[^>]*\bdata-genres="([^"]+)"[^>]*>/g)].map(match=>({id:match[1],genres:match[2].trim().split(/\s+/).filter(Boolean)}))
 const deployWorkflow=readFileSync(resolve('.github/workflows/deploy-frontend.yml'),'utf8')
 const routeMatrix=readFileSync(resolve('scripts/production-route-matrix.mjs'),'utf8')
