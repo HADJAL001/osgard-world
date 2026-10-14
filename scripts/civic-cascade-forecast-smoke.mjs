@@ -186,6 +186,27 @@ const currentValidation = validateDoctrineDossierStructure(verifierDossier, '3.4
 assert.equal(currentValidation.valid, true, 'a correctly structured current dossier must pass validation: '+currentValidation.errors.join('; '))
 assert.equal(currentValidation.modelCompatible, true)
 assert.equal(assessDoctrineDossierIntegrity(verifierDossier,verifierDigest).verified,true)
+
+const firstReplay = replayDossier(verifierDossier, '3.4.0')
+assert.equal(firstReplay.available, true)
+assert.equal(firstReplay.verified, true, 'a matching current-model dossier must reproduce exactly: '+firstReplay.reason)
+assert.equal(firstReplay.comparedFields, 12)
+const recomputedTamper = JSON.parse(JSON.stringify(verifierDossier))
+recomputedTamper.candidates[0].scores.stressAdjusted += 1
+const recomputedTamperPayload = (({exportMetadata,...payload})=>payload)(recomputedTamper)
+recomputedTamper.exportMetadata.integrity.digest = createHash('sha256').update(canonicalDossierStringify(recomputedTamperPayload), 'utf8').digest('hex')
+assert.equal(assessDoctrineDossierIntegrity(recomputedTamper,recomputedTamper.exportMetadata.integrity.digest).verified, true,
+  'a changed payload can be rehashed; integrity alone is not a reproducibility check')
+const tamperValidation = validateDoctrineDossierStructure(recomputedTamper, '3.4.0')
+assert.equal(tamperValidation.valid, true, 'changed score remains in range and must reach deterministic replay check')
+const tamperReplay = replayDossier(recomputedTamper, '3.4.0')
+assert.equal(tamperReplay.verified, false, 'recomputed hash must not make altered decision evidence reproducible')
+check(tamperReplay.mismatches.includes('candidates'), 'replay should identify the changed candidate evidence')
+const historicalReplay = replayDossier(historicalDossier, '3.4.0')
+assert.equal(historicalReplay.available, false, 'historical dossiers must stay read-only')
+dossierVerifierCases.deterministicReplay = 'PASS'
+dossierVerifierCases.recomputedHashStillFailsReplay = 'PASS'
+dossierVerifierCases.historicalReplayReadOnly = 'PASS'
 const reorderedPayload = Object.fromEntries(Object.entries(verifierPayload).reverse())
 const reorderedDossier = {...reorderedPayload,exportMetadata:verifierDossier.exportMetadata}
 const reorderedDigest=createHash('sha256').update(canonicalDossierStringify(reorderedPayload),'utf8').digest('hex')
@@ -401,7 +422,7 @@ check(gridAt89.grid < floodThreshold.grid - floodThreshold.gridRate * 90,
 
 console.log(JSON.stringify({
   status: 'passed',
-  suite: 'CIVIC CASCADE dossier verifier, canonical SHA-256 integrity, stress envelope and Pareto decision portfolio',
+  suite: 'CIVIC CASCADE reproducible decision dossier, robust search, deterministic stress profiles and infrastructure integrity',
   release: manifest.version,
   scenarios: 3,
   horizons: [30, 60, 90],
@@ -445,6 +466,9 @@ console.log(JSON.stringify({
     dossierSchemaPrivacyAndActionAllowlist: 'PASS',
     dossierHistoricalModelReadOnly: 'PASS',
     dossierComplexityLimit: 'PASS',
-    dossierImportDoesNotExecuteOrders: 'PASS'
+    dossierImportDoesNotExecuteOrders: 'PASS',
+    deterministicDossierReplay: 'PASS',
+    replayTamperDetectionAfterRehash: 'PASS',
+    historicalDossierReadOnly: 'PASS'
   }
 }, null, 2))
