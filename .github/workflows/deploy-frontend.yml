@@ -38,6 +38,7 @@ on:
       - "scripts/frontend-archive-preflight.mjs"
       - "scripts/frontend-archive-preflight-smoke.mjs"
       - "scripts/production-route-matrix.mjs"
+      - "scripts/production-route-matrix-contract-smoke.mjs"
       - "scripts/activate-frontend-remote.sh"
       - "scripts/skillcred-page-smoke.mjs"
       - "scripts/time-prototype-smoke.mjs"
@@ -83,7 +84,11 @@ jobs:
       - run: npm ci
       - name: Verify proof-carrying release manifest fixture
         run: npm run qa:release-manifest
+      - name: Validate SWARM-specific route-matrix asset contract
+        run: node scripts/production-route-matrix-contract-smoke.mjs
       - run: npm run check
+      - name: Test production route failure reporting
+        run: npm run qa:route-matrix-report
       - name: Verify the opt-in OpenAI Game Coach
         run: npm run qa:game-coach
       - run: npm run qa:null-shift
@@ -251,6 +256,14 @@ jobs:
           OSGARD_EXPECTED_BUILD: ${{ github.sha }}
           SKILLCRED_EXPECT_CURRENT_DESIGN: "1"
         run: npm run qa:production-routes
+      - name: Preserve production route diagnostics even when verification fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: osgard-route-matrix-diagnostics-${{ github.sha }}
+          path: production-route-matrix.json
+          if-no-files-found: warn
+          retention-days: 14
       - name: Preserve verified production release evidence
         if: success()
         uses: actions/upload-artifact@v4
