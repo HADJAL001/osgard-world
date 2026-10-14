@@ -9,7 +9,7 @@ assert.match(html, /<title>CASCADE LAB — Premium Physics Lab 0\.25\.0<\/title>
 assert.ok(html.includes('id="CASCADELAB017"') && html.includes('data-cascade-lab-delta="0.17.0"') && html.includes('src="./delta-lens.js"'), 'Delta Lens must load as the current experiment layer');
 assert.match(html, /id="exportDossierButton"[^>]*>↓ JSON<\/button>/, 'JSON dossier control must be visible');
 assert.match(html, /\$\('exportDossierButton'\)\.addEventListener\('click', downloadExperimentDossier\)/, 'JSON control must be wired');
-assert.ok(html.includes("application: { name: 'CASCADE LAB', version: '0.25.0' }"), 'local growth report must carry the current 0.25.0 app version');
+assert.ok(html.includes("application: { name: 'CASCADE LAB', version: '0.26.0' }"), 'local growth report must carry the current 0.26.0 app version');
 
 const functionMatch = html.match(/function downloadExperimentDossier\(\) \{([\s\S]*?)\n\}\n\nfunction draw\(/);
 assert.ok(functionMatch, 'experiment dossier exporter must be defined before the renderer');
