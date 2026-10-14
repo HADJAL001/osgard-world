@@ -141,6 +141,21 @@ export function validateReferralClaimPayload(body) {
   return { ok: true, ownerToken };
 }
 
+export function validateReferralClaimAckPayload(body) {
+  const input = body && typeof body === "object" && !Array.isArray(body) ? body : {};
+  if (input.consent !== true) return { ok: false, status: 400, code: "ANALYTICS_CONSENT_REQUIRED" };
+  const ownerToken = cleanText(input.ownerToken, 64);
+  if (!REFERRAL_OWNER_TOKEN_PATTERN.test(ownerToken)) return { ok: false, status: 400, code: "REFERRAL_OWNER_TOKEN_INVALID" };
+  if (!Array.isArray(input.referralCodes) || input.referralCodes.length < 1 || input.referralCodes.length > 10) {
+    return { ok: false, status: 400, code: "REFERRAL_CODES_INVALID" };
+  }
+  const referralCodes = [...new Set(input.referralCodes.map((value) => cleanText(value, 32)))];
+  if (referralCodes.length !== input.referralCodes.length || referralCodes.some((code) => !REFERRAL_CODE_PATTERN.test(code))) {
+    return { ok: false, status: 400, code: "REFERRAL_CODES_INVALID" };
+  }
+  return { ok: true, ownerToken, referralCodes };
+}
+
 export function validateEventBatch(body) {
   const input = body && typeof body === "object" && !Array.isArray(body) ? body : {};
   if (input.consent !== true) return { ok: false, status: 400, code: "ANALYTICS_CONSENT_REQUIRED" };
