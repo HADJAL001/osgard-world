@@ -1,3 +1,4 @@
+import './miniapp.css'
 import { useEffect, useMemo, useState } from 'react'
 import { Bot, BriefcaseBusiness, Coins, Compass, ShieldCheck, Sparkles } from 'lucide-react'
 import { LivingGlobe } from './LivingGlobe'
