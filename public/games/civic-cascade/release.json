@@ -3,8 +3,8 @@
   "gameId": "civic-cascade",
   "title": "CIVIC CASCADE",
   "edition": "Web Edition",
-  "version": "2.8.0",
-  "releaseId": "civic-cascade-web-2.8.0",
+  "version": "2.9.0",
+  "releaseId": "civic-cascade-web-2.9.0",
   "canonicalUrl": "https://osgard.world/games/civic-cascade/",
   "detailUrl": "https://osgard.world/game/civic-cascade",
   "entrypoint": "/games/civic-cascade/",
@@ -204,7 +204,22 @@
       "localOnly": true,
       "sendsTelemetry": false,
       "callsOpenAIAPI": false,
-      "regressionSmokeTest": "scripts/civic-cascade-forecast-smoke.mjs"
+      "regressionSmokeTest": "scripts/civic-cascade-forecast-smoke.mjs",
+      "robustnessProfiles": [
+        "water-surge",
+        "grid-overload",
+        "weak-node-shock"
+      ],
+      "robustnessCandidateLimit": 8,
+      "reranksCandidatesByStressAdjustedScore": true,
+      "comparesAgainstNoInterventionUnderSameStress": true,
+      "stressHorizonsGameSeconds": [
+        30,
+        60,
+        90
+      ],
+      "reportsRiskAndWeakestNodeDeltas": true,
+      "stressChangesOnlyClonedStates": true
     }
   },
   "cinematicExport": {
@@ -245,6 +260,6 @@
   "deployment": {
     "target": "https://osgard.world",
     "mechanism": "repository push triggers the site's production deployment workflow",
-    "liveStatus": "verify release 2.8.0 with production route checks after deployment"
+    "liveStatus": "verify release 2.9.0 with production route checks after deployment"
   }
 }
