@@ -496,7 +496,7 @@ assert.ok(civicInline&&civicInline.length>5000,'CIVIC CASCADE self-contained gam
 new Function(civicInline)
 const civicRelease=JSON.parse(readFileSync(resolve(root,'civic-cascade/release.json'),'utf8'))
 const civicReleaseMarker='name="osgard-game-version" content="'+civicRelease.version+'-command-deck"'
-assert.ok(/^2\.3\.0$/.test(civicRelease.version)&&civicRelease.releaseId==='civic-cascade-web-'+civicRelease.version&&civic.includes(civicReleaseMarker), 'CIVIC CASCADE HTML/release.json version contract is inconsistent')
+assert.ok(civicRelease.version==='2.3.0'&&civicRelease.releaseId==='civic-cascade-web-2.3.0'&&civic.includes(civicReleaseMarker), 'CIVIC CASCADE HTML/release.json version contract is inconsistent: '+JSON.stringify({version:civicRelease.version,releaseId:civicRelease.releaseId,expectedMarker:civicReleaseMarker,markerPresent:civic.includes(civicReleaseMarker)}))
 assert.ok(civic.includes('id="cc-result-challenge"') && civic.includes('id="cc-challenge-banner"'), 'CIVIC CASCADE mission challenge UI missing')
 assert.ok(civicInline.includes('function parseMissionChallenge') && civicInline.includes('function createMissionChallengeUrl') && civicInline.includes('civic_cascade_friend_challenge'), 'CIVIC CASCADE challenge routing and share attribution missing')
 assert.ok(civic.includes('id="cc-incident"') && civic.includes('id="cc-incident-options"') && civic.includes('SIMULATION PAUSED'), 'Crisis Director decision UI is missing')
