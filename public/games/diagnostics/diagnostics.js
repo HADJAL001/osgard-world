@@ -212,6 +212,7 @@
   async function runOne(id) {
     const item = checks.find((check) => check.id === id);
     if (!item || busy) return;
+    busy = true;
     const started = performance.now();
     results.set(id, { status: 'running', detail: 'Выполняем проверку…', durationMs: null });
     render();
@@ -221,12 +222,14 @@
     } catch (error) {
       results.set(id, { status: 'fail', detail: safeError(error), id: item.id, title: item.title, group: item.group, route: item.route || null, durationMs: Math.max(0, Math.round(performance.now() - started)), checkedAt: now() });
     }
+    busy = false;
     render();
     liveStatus.textContent = item.title + ': ' + (statusNames[resultFor(item).status] || resultFor(item).status) + '.';
   }
 
   async function runMany(list) {
     if (busy || !list.length) return;
+    if (list.length === checks.length) results.clear();
     busy = true;
     liveStatus.textContent = 'Выполняется ' + list.length + ' проверок. Результаты остаются локально.';
     render();
