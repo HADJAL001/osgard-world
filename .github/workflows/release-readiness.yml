@@ -41,6 +41,9 @@ jobs:
       - name: Build and archive preflight
         run: npm run build && npm run preflight:frontend
       - name: Create and verify production build attestation
+        env:
+          OSGARD_GIT_SHA: ${{ github.event.workflow_run.head_sha || github.event.pull_request.head.sha || github.sha }}
+          OSGARD_GIT_REF: ${{ github.event.workflow_run.head_branch || github.event.pull_request.head.ref || github.ref_name }}
         run: npm run release:attest && npm run release:verify
       - name: Verify Imperium of Time gameplay and diagnostics
         run: npm run qa:time-ui
