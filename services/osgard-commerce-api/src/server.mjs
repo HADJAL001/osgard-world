@@ -277,12 +277,12 @@ app.get("/v1/campaigns/active", async (req, res) => {
       " FROM commerce_campaigns WHERE placement = $1 AND status IN ('active','scheduled') " +
       "AND starts_at <= NOW() AND ends_at > NOW() AND sponsor_disclosure <> '' " +
       "ORDER BY updated_at DESC, created_at DESC LIMIT $2",
-      [placement, placement === "after_session" ? 1 : 3],
+      [placement, placement === "after_session" ? 5 : 3],
     );
     const items = result.rows.map(publicCampaignView).filter(Boolean);
     res.set("Cache-Control", "public, max-age=30, stale-while-revalidate=30");
-    return res.json({ items, limits: { maxActiveCatalogItems: 3, maxActiveAfterSessionItems: 1, frequencyCapScope: "browser-device",
-      note: "Каталог допускает до трёх кампаний, экран между сессиями — одну. Частотный лимит действует в доступном локальном хранилище браузера, а не между устройствами." } });
+    return res.json({ items, limits: { maxActiveCatalogItems: 3, maxActiveAfterSessionItems: 5, frequencyCapScope: "browser-device",
+      note: "Каталог допускает до трёх кампаний, экран между сессиями — до пяти предложений на выбор. Частотный лимит действует в доступном локальном хранилище браузера, а не между устройствами." } });
   } catch (error) {
     console.error("Public campaign list failed:", error?.message || "unknown error");
     return res.status(503).json({ error: "CAMPAIGNS_UNAVAILABLE" });
@@ -326,7 +326,7 @@ async function saveCampaign(req, res, campaignId = "") {
     client = await pool.connect();
     await client.query("BEGIN");
     await client.query("SELECT pg_advisory_xact_lock(20261014)");
-    const slotLimit = data.placement === "catalog_feature" ? 3 : data.placement === "after_session" ? 1 : 0;
+    const slotLimit = data.placement === "catalog_feature" ? 3 : data.placement === "after_session" ? 5 : 0;
     if (["active", "scheduled"].includes(data.status) && slotLimit > 0) {
       const capacity = await client.query(
         "SELECT COUNT(*)::int AS count FROM commerce_campaigns " +

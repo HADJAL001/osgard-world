@@ -172,24 +172,27 @@ function campaignFrom(value: unknown): Campaign | null {
   }
 }
 
-async function loadCampaign(): Promise<Campaign | null> {
+async function loadCampaigns(): Promise<Campaign[]> {
   const exposures = readExposures()
-  if (exposures === null) return null
+  if (exposures === null) return []
   const base = await resolveApiBase()
-  if (!base) return null
+  if (!base) return []
   const response = await fetch(base + '/v1/campaigns/active?placement=after_session', {
     cache: 'no-store', credentials: 'omit', signal: AbortSignal.timeout(6000),
   })
-  if (!response.ok) return null
+  if (!response.ok) return []
   const body = await response.json().catch(() => ({})) as { items?: unknown }
-  if (!Array.isArray(body.items)) return null
-  for (const raw of body.items.slice(0, 1)) {
+  if (!Array.isArray(body.items)) return []
+  const valid: Campaign[] = []
+  const seen = new Set<string>()
+  for (const raw of body.items.slice(0, 20)) {
     const item = campaignFrom(raw)
-    if (!item) continue
-    if (hasConsent() && (exposures?.[item.id] || []).length >= item.frequencyCap) return null
-    return item
+    if (!item || seen.has(item.id)) continue
+    seen.add(item.id)
+    if (hasConsent() && (exposures?.[item.id] || []).length >= item.frequencyCap) continue
+    valid.push(item)
   }
-  return null
+  return valid
 }
 
 function isActuallyVisible(element: HTMLElement) {
@@ -202,23 +205,32 @@ function isActuallyVisible(element: HTMLElement) {
 }
 
 export function GameIntermissionSponsor({ gameId, locale }: Props) {
-  const [campaign, setCampaign] = useState<Campaign | null>(null)
+  const [campaigns, setCampaigns] = useState<Campaign[]>([])
+  const [selectedId, setSelectedId] = useState('')
   const [ready, setReady] = useState(false)
   const cardRef = useRef<HTMLElement | null>(null)
   const impressionSent = useRef(false)
   const ru = locale === 'ru'
+  const campaign = campaigns.find(item => item.id === selectedId) ?? campaigns[0] ?? null
 
   useEffect(() => {
     let cancelled = false
-    void loadCampaign().then(item => {
+    setReady(false)
+    impressionSent.current = false
+    void loadCampaigns().then(items => {
       if (cancelled) return
-      setCampaign(item)
+      setCampaigns(items)
+      setSelectedId(current => items.some(item => item.id === current) ? current : items[0]?.id ?? '')
       setReady(true)
     }).catch(() => {
       if (!cancelled) setReady(true)
     })
     return () => { cancelled = true }
   }, [gameId])
+
+  useEffect(() => {
+    impressionSent.current = false
+  }, [selectedId])
 
   useEffect(() => {
     const card = cardRef.current
@@ -235,7 +247,7 @@ export function GameIntermissionSponsor({ gameId, locale }: Props) {
             const exposures = readExposures()
             if (exposures === null) return
             const current = exposures[campaign.id] || []
-            if (current.length >= campaign.frequencyCap) { setCampaign(null); return }
+            if (current.length >= campaign.frequencyCap) { setCampaigns(items => items.filter(item => item.id !== campaign.id)); setSelectedId(id => id === campaign.id ? '' : id); return }
             current.push(Date.now())
             exposures[campaign.id] = current.slice(-20)
             try { localStorage.setItem(EXPOSURE_KEY, JSON.stringify(exposures)) } catch { return }
@@ -258,6 +270,12 @@ export function GameIntermissionSponsor({ gameId, locale }: Props) {
 
   return <section className="gh-intermission-sponsor" aria-labelledby="gh-intermission-title">
     <div className="gh-intermission-sponsor__eyebrow">{ru ? 'ПОСЛЕ СЕССИИ' : 'AFTER SESSION'} <span>·</span> OSGARD SELECT</div>
+    {campaigns.length > 1 && <label className="gh-intermission-sponsor__chooser">
+      <span>{ru ? 'Выберите предложение' : 'Choose an offer'}</span>
+      <select value={campaign?.id ?? ''} onChange={event => setSelectedId(event.currentTarget.value)} aria-label={ru ? 'Выберите рекламное предложение' : 'Choose a sponsored offer'}>
+        {campaigns.map(item => <option key={item.id} value={item.id}>{item.sponsorName} — {item.title}</option>)}
+      </select>
+    </label>}
     <article className="gh-intermission-sponsor__card" ref={node => { cardRef.current = node }}>
       <div className="gh-intermission-sponsor__copy">
         <span className="gh-intermission-sponsor__disclosure">{campaign.sponsorDisclosure}</span>
