@@ -171,8 +171,9 @@ export function migrateOwnedPromoConfig(body) {
   }
 
   const normalizeLegacyIds = (value, fallback) => {
-    if (!Array.isArray(value)) return [...fallback];
-    return [...new Set(value.filter((id) => typeof id === "string" && OWNED_PROMO_SERVICE_ID_SET.has(id)))];
+    if (!Array.isArray(value) || value.length === 0) return [...fallback];
+    const valid = [...new Set(value.filter((id) => typeof id === "string" && OWNED_PROMO_SERVICE_ID_SET.has(id)))];
+    return valid.length ? valid : [...fallback];
   };
   const enabledServices = normalizeLegacyIds(input.enabledServices, OWNED_PROMO_SERVICE_IDS);
   const defaultSelectedServices = normalizeLegacyIds(input.defaultSelectedServices, enabledServices)
