@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="osgard-game-version" content="1.1.0-game-11-premium-session">
+<meta name="osgard-game-version" content="1.2.0-challenge-protocol-forge">
 <meta name="theme-color" content="#080b0e">
 <meta name="color-scheme" content="dark">
 <meta name="description" content="AETHER GRID — ежедневная браузерная головоломка OSGARD. Соедини источник с ядром, уложись в меньшее число ходов и брось вызов другу.">
@@ -57,6 +57,24 @@ h1,h2,h3,p{margin-top:0}h1{max-width:760px;margin-bottom:18px;font:400 clamp(54p
 @media(max-width:480px){.personal-records{grid-template-columns:repeat(3,minmax(0,1fr))}.personal-record{padding:8px 6px}.personal-record b{font-size:16px}.advanced-controls .btn{flex:1 1 42%}}
 body.high-contrast{--muted:#d7e4e5;--soft:#b7c7ca;--line:#ffffff4d;--cyan:#9ffffb;--gold:#ffe59c}
 body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{stroke-width:7}
+
+/* AETHER GRID 1.2 — challenge protocol forge */
+.protocol-forge{width:min(1180px,calc(100% - 40px));margin:22px auto 0;padding:clamp(18px,2.4vw,28px);display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,.78fr);align-items:center;gap:24px;border:1px solid #77e9e638;background:radial-gradient(ellipse at 0% 0%,#77e9e612,transparent 55%),linear-gradient(145deg,#111a1f,#0a1014);box-shadow:0 18px 60px #0003}
+.protocol-forge .protocol-eyebrow{margin:0 0 10px;color:var(--gold);font:9px var(--mono);letter-spacing:.2em;text-transform:uppercase}
+.protocol-forge h2{margin:0 0 11px;font:400 clamp(28px,4vw,43px)/1.02 var(--serif);letter-spacing:-.04em}
+.protocol-forge h2 em{color:var(--cyan);font-style:normal}
+.protocol-forge .protocol-intro{max-width:640px;margin:0;color:var(--muted);font-size:12px;line-height:1.8}
+.protocol-forge-controls{display:grid;gap:9px;min-width:0}
+.protocol-forge-controls>label{color:var(--gold);font:9px var(--mono);letter-spacing:.16em}
+.protocol-forge-controls select{width:100%;min-height:46px;padding:10px 12px;border:1px solid #77e9e64a;border-radius:8px;background:#0a1115;color:var(--ink);font:12px var(--sans)}
+.protocol-active{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#859a9e;font:9px var(--mono);letter-spacing:.11em}
+.protocol-active strong{color:var(--cyan);font:11px var(--mono);letter-spacing:.08em}
+.protocol-forge .protocol-description{min-height:36px;margin:0;color:#aebfc0;font-size:11px;line-height:1.65}
+.protocol-forge-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.protocol-forge-actions .btn{min-height:42px;justify-content:center}
+.protocol-forge .protocol-note{min-height:1.2em;margin:0;color:#799599;font-size:10px;line-height:1.5}
+@media(max-width:760px){.protocol-forge{grid-template-columns:1fr;gap:18px;padding:18px;width:calc(100% - 28px)}.protocol-forge h2{font-size:32px}.protocol-forge-actions{grid-template-columns:1fr}.protocol-forge-actions .btn{width:100%}}
+@media(prefers-reduced-motion:reduce){.protocol-forge,.protocol-forge *{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
 </style>
 </head>
 <body data-aether-grid-ready="true">
@@ -69,6 +87,30 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
   <section class="hero" id="daily">
     <div><p class="eyebrow">FIELD 11 / DAILY PUZZLE</p><h1>AETHER<br><em>GRID.</em></h1><p class="lead">Собери маршрут сигнала через сеть узлов. Одна головоломка на день — один и тот же вызов для всех. Реши её за меньшее число ходов и отправь результат другу.</p></div>
     <aside class="day-card"><small>UTC DAILY SEED / SHARED BOARD</small><strong id="day-label">Загрузка дня…</strong><span>Ежедневная сетка едина для всех игроков.</span><span class="day-code" id="challenge-code">AG / —</span></aside>
+  </section>
+
+  <section class="protocol-forge" aria-labelledby="protocol-title">
+    <div>
+      <p class="protocol-eyebrow">OSGARD PLAY / CHALLENGE FORGE · 01.2</p>
+      <h2 id="protocol-title">Одна сетка.<br><em>Четыре протокола.</em></h2>
+      <p class="protocol-intro">Ежедневная головоломка остаётся одинаковой по UTC. Меняй правила испытания, передавай другу точную ссылку на выбранный протокол и сравнивайте результат напрямую. Рекорды хранятся отдельно на каждом устройстве.</p>
+    </div>
+    <div class="protocol-forge-controls">
+      <label for="protocol-select">ВЫБЕРИ ПРАВИЛА ИСПЫТАНИЯ</label>
+      <select id="protocol-select" aria-describedby="protocol-description">
+        <option value="standard">01 / STANDARD — все инструменты</option>
+        <option value="no-hints">02 / NO HINTS — без подсказок</option>
+        <option value="no-undo">03 / NO UNDO — без отмены ходов</option>
+        <option value="iron-circuit">04 / IRON CIRCUIT — без подсказок и отмены</option>
+      </select>
+      <div class="protocol-active"><span>АКТИВЕН СЕЙЧАС</span><strong id="protocol-current">STANDARD</strong></div>
+      <p class="protocol-description" id="protocol-description">Все инструменты доступны. У каждого хода есть обратный путь.</p>
+      <div class="protocol-forge-actions">
+        <button class="btn gold" id="protocol-apply" type="button">Включить протокол ↗</button>
+        <button class="btn" id="protocol-share" type="button">Передать выбранный вызов ↗</button>
+      </div>
+      <p class="protocol-note" id="protocol-note" role="status" aria-live="polite">Правила локальные и не создают общего рейтинга или денежного приза.</p>
+    </div>
   </section>
 
   <main class="game-layout">
@@ -118,13 +160,19 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
   'use strict';
   const $ = (id) => document.getElementById(id);
   const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
+  const PROTOCOLS = Object.freeze({
+    standard: Object.freeze({label:'STANDARD',short:'STANDARD',description:'Все инструменты доступны. У каждого хода есть обратный путь.',noHints:false,noUndo:false}),
+    'no-hints': Object.freeze({label:'NO HINTS',short:'NO HINTS',description:'Подсказки отключены. Найди решение только по связям и сигналу.',noHints:true,noUndo:false}),
+    'no-undo': Object.freeze({label:'NO UNDO',short:'NO UNDO',description:'Отмена и повтор ходов отключены. Продумывай поворот до нажатия.',noHints:false,noUndo:true}),
+    'iron-circuit': Object.freeze({label:'IRON CIRCUIT',short:'IRON CIRCUIT',description:'Жёсткий протокол: нет подсказок и нет отмены. Результат сохраняется отдельно.',noHints:true,noUndo:true})
+  });
   const DIRECTIONS = ['n', 'e', 's', 'w'];
   const VECTORS = { n: [-1,0], e: [0,1], s: [1,0], w: [0,-1] };
   const OPPOSITE = { n:'s', e:'w', s:'n', w:'e' };
   const DELTA = { n:0, e:1, s:2, w:3 };
   const FNV_OFFSET = 2166136261;
   function notify(state, extra = {}) { try { if (window.parent !== window) window.parent.postMessage({ type: 'osgard:game-lifecycle', state, game: 'aether-grid', at: Date.now(), ...extra }, location.origin); } catch {} }
-  let seedState = 0, day = '', moves = 0, startedAt = 0, timerHandle = 0, hintsUsed = 0, won = false, toastHandle = 0;
+  let seedState = 0, day = '', moves = 0, startedAt = 0, timerHandle = 0, hintsUsed = 0, won = false, toastHandle = 0, protocolId = 'standard';
   let elapsedBeforeStart = 0, paused = false, runHasStarted = false, visibilityPaused = false, soundEnabled = false, hapticsEnabled = false;
   let undoStack = [], redoStack = [];
   let solutionPath = [], correct = [], original = [], turns = [], bestKey = '';
@@ -133,6 +181,31 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
   const soundKey = 'osgard.aether-grid.sound.v1';
   const contrastKey = 'osgard.aether-grid.contrast.v1';
   const hapticsKey = 'osgard.aether-grid.haptics.v1';
+  function activeProtocol(){return PROTOCOLS[protocolId]||PROTOCOLS.standard;}
+  function runStorageKey(){return runKeyPrefix+day+(protocolId==='standard'?'':'.'+protocolId);}
+  function updateSelectedProtocolCopy(){
+    const selected=$('protocol-select')?.value,info=PROTOCOLS[selected]||activeProtocol();
+    $('protocol-description').textContent=info.description;
+    $('protocol-apply').textContent=selected===protocolId?'Протокол уже активен':'Включить '+info.label+' ↗';
+  }
+  function updateProtocolUI(){
+    const info=activeProtocol();
+    $('protocol-select').value=protocolId;
+    $('protocol-current').textContent=info.label;
+    $('challenge-code').textContent='AG-'+day.replaceAll('-','')+' / '+info.short;
+    $('hint-button').disabled=info.noHints||won||paused;
+    updateSelectedProtocolCopy();
+    updateHistoryControls();
+  }
+  function applySelectedProtocol(){
+    const selected=$('protocol-select').value;
+    if(!Object.prototype.hasOwnProperty.call(PROTOCOLS,selected)){ $('protocol-note').textContent='Этот протокол не поддерживается.';return; }
+    if(selected===protocolId){$('protocol-note').textContent='Этот протокол уже активен. Текущая попытка сохранена.';return;}
+    const url=new URL(location.href);url.searchParams.set('day',day);
+    if(selected==='standard')url.searchParams.delete('protocol');else url.searchParams.set('protocol',selected);
+    $('protocol-note').textContent='Открываем '+PROTOCOLS[selected].label+'. Прогресс других протоколов останется сохранён.';
+    location.assign(url.href);
+  }
   function runSeconds() { return Math.max(0,elapsedBeforeStart+(startedAt&&!paused?Math.floor((Date.now()-startedAt)/1000):0)); }
   function safeLocalGet(key,fallback='') { try { return localStorage.getItem(key) ?? fallback; } catch { return fallback; } }
   function readStats() {
@@ -168,11 +241,11 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
   function saveRun() {
     if(!day||won||!Array.isArray(turns)||turns.length!==25)return;
     const payload={version:1,day,turns:turns.slice(),moves,hintsUsed,elapsedSeconds:runSeconds(),savedAt:Date.now()};
-    try{localStorage.setItem(runKeyPrefix+day,JSON.stringify(payload));}catch{}
+    try{localStorage.setItem(runStorageKey(),JSON.stringify(payload));}catch{}
   }
   function restoreRun() {
     try {
-      const raw=JSON.parse(localStorage.getItem(runKeyPrefix+day)||'null');
+      const raw=JSON.parse(localStorage.getItem(runStorageKey())||'null');
       if(!raw||raw.version!==1||raw.day!==day||!Array.isArray(raw.turns)||raw.turns.length!==25||
         !raw.turns.every(value=>Number.isInteger(value)&&value>=0&&value<=3)||
         !Number.isSafeInteger(raw.moves)||raw.moves<0||raw.moves>100000||
@@ -187,24 +260,24 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
     } catch { return false; }
   }
   function snapshotRun(){return {turns:turns.slice(),moves,hintsUsed};}
-  function pushHistory(){undoStack.push(snapshotRun());if(undoStack.length>100)undoStack.shift();redoStack=[];updateHistoryControls();}
+  function pushHistory(){if(activeProtocol().noUndo){undoStack=[];redoStack=[];updateHistoryControls();return;}undoStack.push(snapshotRun());if(undoStack.length>100)undoStack.shift();redoStack=[];updateHistoryControls();}
   function applySnapshot(snapshot){
     // History can restore board state, but it must never rewind elapsed time.
     const elapsed=runSeconds(),hadStarted=runHasStarted;
     turns=snapshot.turns.slice();moves=snapshot.moves;hintsUsed=snapshot.hintsUsed;elapsedBeforeStart=elapsed;
     startedAt=0;paused=false;runHasStarted=hadStarted||moves>0;won=false;
     if(runHasStarted){startedAt=Date.now();if(!timerHandle)timerHandle=window.setInterval(updateTimer,250);}
-    $('result').classList.remove('is-visible');$('hint-button').disabled=false;
+    $('result').classList.remove('is-visible');$('hint-button').disabled=activeProtocol().noHints;
     $('pause-button').disabled=false;$('pause-button').textContent='Ⅱ Пауза';$('pause-button').setAttribute('aria-pressed','false');
     updateStats();updateConnectivity();updateHistoryControls();saveRun();
   }
   function updateHistoryControls(){
     const undo=$('undo-button'),redo=$('redo-button');
-    if(undo)undo.disabled=paused||won||undoStack.length===0;
-    if(redo)redo.disabled=paused||won||redoStack.length===0;
+    if(undo)undo.disabled=activeProtocol().noUndo||paused||won||undoStack.length===0;
+    if(redo)redo.disabled=activeProtocol().noUndo||paused||won||redoStack.length===0;
   }
-  function undoMove(){if(paused||won||!undoStack.length)return;redoStack.push(snapshotRun());const previous=undoStack.pop();applySnapshot(previous);toast('Последний ход отменён.');}
-  function redoMove(){if(paused||won||!redoStack.length)return;undoStack.push(snapshotRun());const next=redoStack.pop();applySnapshot(next);toast('Ход повторён.');}
+  function undoMove(){if(activeProtocol().noUndo||paused||won||!undoStack.length)return;redoStack.push(snapshotRun());const previous=undoStack.pop();applySnapshot(previous);toast('Последний ход отменён.');}
+  function redoMove(){if(activeProtocol().noUndo||paused||won||!redoStack.length)return;undoStack.push(snapshotRun());const next=redoStack.pop();applySnapshot(next);toast('Ход повторён.');}
   function setPaused(value){
     if(won||paused===value)return;
     if(value){elapsedBeforeStart=runSeconds();startedAt=0;window.clearInterval(timerHandle);timerHandle=0;paused=true;$('pause-button').textContent='▶ Продолжить';$('pause-button').setAttribute('aria-pressed','true');$('hint-note').textContent='Игра на паузе. Прогресс сохранён; нажми «Продолжить», чтобы вернуться.';saveRun();toast('Пауза включена.');}
@@ -314,7 +387,7 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
     window.clearInterval(timerHandle);timerHandle=0;
     $('pause-button').disabled=false;$('pause-button').textContent='Ⅱ Пауза';$('pause-button').setAttribute('aria-pressed','false');
     $('result').classList.remove('is-visible');
-    $('hint-button').disabled=false;
+    $('hint-button').disabled=activeProtocol().noHints;
     renderBoard();updateStats();loadBest();
     $('hint-note').textContent='Нажимай на узлы, чтобы поворачивать соединения по часовой стрелке.';
   }
@@ -413,7 +486,7 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
     $('moves').textContent=String(moves).padStart(2,'0');updateTimer();updateHistoryControls();
   }
   function loadBest() {
-    bestKey='osgard.aether-grid.best.v1.'+day;
+    bestKey='osgard.aether-grid.best.v1.'+day+(protocolId==='standard'?'':'.'+protocolId);
     try{
       const best=JSON.parse(localStorage.getItem(bestKey)||'null');
       $('best-score').textContent=best&&Number.isInteger(best.moves)?best.moves+' ход.':'—';
@@ -431,13 +504,13 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
       }
     }catch{}
     loadBest();writeCompletionStats(seconds);
-    try{localStorage.removeItem(runKeyPrefix+day)}catch{}
+    try{localStorage.removeItem(runStorageKey())}catch{}
     $('result').classList.add('is-visible');$('hint-button').disabled=true;$('pause-button').disabled=true;
     $('pause-button').textContent='✓ Завершено';$('pause-button').setAttribute('aria-pressed','false');
     $('result-title').textContent=personalBest?'Новый личный рекорд.':'Маршрут собран.';
     const streak=consecutiveDayStreak(readStats().completedDays);
     const badge=hintsUsed===0?' · PERFECT ROUTE':seconds<=30?' · QUICK SIGNAL':'';
-    $('result-copy').textContent='Вызов '+day+': '+moves+' ходов за '+formatTime(seconds)+(hintsUsed?' · подсказок: '+hintsUsed:'')+'. Серия: '+streak+' дн.'+badge+'. '+(personalBest?'Рекорд сохранён на этом устройстве.':'Сохрани результат и проверь, кто справится лучше.');
+    $('result-copy').textContent='Вызов '+day+' · '+activeProtocol().label+': '+moves+' ходов за '+formatTime(seconds)+(hintsUsed?' · подсказок: '+hintsUsed:'')+'. Серия: '+streak+' дн.'+badge+'. '+(personalBest?'Рекорд сохранён на этом устройстве.':'Сохрани результат и проверь, кто справится лучше.');
     $('hint-note').textContent='Сигнал достиг ядра. Теперь твоя очередь передать вызов.';
     playTone('win');buzz([25,45,25]);updateHistoryControls();
     toast(personalBest?'Новый личный рекорд!':'Сигнал успешно соединён.');
@@ -457,24 +530,30 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
       return code;
     }catch{return 'og_'+Math.floor(Math.random()*0xffffffff).toString(16).padStart(8,'0');}
   }
-  function inviteUrl(){
+  function inviteUrl(protocolToShare=protocolId){
+    const selected=Object.prototype.hasOwnProperty.call(PROTOCOLS,protocolToShare)?protocolToShare:'standard';
     const url=new URL('/games/invite/aether-grid/',location.origin);
     url.searchParams.set('og_ref',inviteCode());url.searchParams.set('og_game','aether-grid');
     url.searchParams.set('utm_source','osgard_play');url.searchParams.set('utm_medium','referral');
     url.searchParams.set('utm_campaign','play_with_friends');url.searchParams.set('utm_content','aether-grid');
-    url.searchParams.set('og_day',day);return url.href;
+    url.searchParams.set('og_day',day);
+    if(selected!=='standard')url.searchParams.set('og_protocol',selected);
+    return url.href;
   }
-  async function shareResult() {
+  async function shareResult(protocolToShare=protocolId) {
+    const selected=Object.prototype.hasOwnProperty.call(PROTOCOLS,protocolToShare)?protocolToShare:'standard';
+    const info=PROTOCOLS[selected],sameProtocol=selected===protocolId;
     const seconds=runSeconds(),streak=consecutiveDayStreak(readStats().completedDays);
-    const text='AETHER GRID / '+day+' — '+(won?'собрал сигнал за '+moves+' ходов и '+formatTime(seconds):'мой вызов на сегодня')+(hintsUsed?' · подсказок '+hintsUsed:'')+' · серия '+streak+' дн. Сможешь лучше?';
-    const url=inviteUrl();
+    const score=sameProtocol&&won?'собрал сигнал за '+moves+' ходов и '+formatTime(seconds):'прими ежедневный вызов';
+    const text='AETHER GRID / '+day+' / '+info.label+' — '+score+(sameProtocol&&hintsUsed?' · подсказок '+hintsUsed:'')+(sameProtocol?' · серия '+streak+' дн.':'')+'. '+info.description+' Сможешь лучше?';
+    const url=inviteUrl(selected);
     try{
       let method='clipboard';
       if(navigator.share){method='web-share';await navigator.share({title:'AETHER GRID — ежедневный вызов',text,url});}
       else if(navigator.clipboard&&navigator.clipboard.writeText)await navigator.clipboard.writeText(text+' '+url);
       else throw new Error('Share API unavailable');
-      notify('share_created',{shareMethod:method});
-      toast('Приглашение готово. Отправь его другу.');$('hint-note').textContent='Ссылка скопирована или передана в меню отправки.';
+      notify('share_created',{shareMethod:method,protocol:selected});
+      toast('Приглашение готово. Отправь его другу.');$('hint-note').textContent='Вызов '+info.label+' скопирован или передан в меню отправки.';
     }catch(error){
       if(error instanceof Error&&error.name==='AbortError'){toast('Отправка отменена.');return;}
       toast('Не удалось открыть отправку. Скопируй ссылку из адресной строки.');
@@ -486,12 +565,12 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
     window.clearTimeout(toastHandle);toastHandle=window.setTimeout(()=>element.classList.remove('on'),3000);
   }
   function resetPuzzle(){
-    if(!won&&moves>0&&typeof window.confirm==='function'&&!window.confirm('Сбросить текущую попытку AETHER GRID? Сохранённый прогресс этого дня будет удалён.'))return;
-    try{localStorage.removeItem(runKeyPrefix+day)}catch{}
+    if(!won&&moves>0&&typeof window.confirm==='function'&&!window.confirm('Сбросить текущую попытку AETHER GRID? Сохранённый прогресс этого протокола за день будет удалён.'))return;
+    try{localStorage.removeItem(runStorageKey())}catch{}
     buildPuzzle();toast('Исходная сетка дня восстановлена.');
   }
   function useHint(){
-    if(won||paused||!solutionPath.length)return;
+    if(activeProtocol().noHints||won||paused||!solutionPath.length)return;
     if(!beginRun())return;
     const current=solutionPath.find(index=>!sameConnections(currentConnections(index),correct[index]));
     if(current===undefined){toast('Путь уже собран.');return;}
@@ -505,18 +584,22 @@ body.high-contrast .tile{border-color:#ffffff48}body.high-contrast .tile .wire{s
     if(isSolved())finishPuzzle();
   }
   function init(){
-    const requested=new URLSearchParams(location.search).get('day');
+    const params=new URLSearchParams(location.search),requested=params.get('day'),requestedProtocol=params.get('protocol')||'standard';
     day=validDay(requested)?requested:utcDay();
+    protocolId=Object.prototype.hasOwnProperty.call(PROTOCOLS,requestedProtocol)?requestedProtocol:'standard';
     $('day-label').textContent=day;
-    $('challenge-code').textContent='AG-'+day.replaceAll('-','')+' / DAILY';
+    updateProtocolUI();
     configurePersonalControls();
     renderPersonalStats();
     buildPuzzle();
     restoreRun();
     $('reset-button').addEventListener('click',resetPuzzle);
     $('hint-button').addEventListener('click',useHint);
-    $('share-button').addEventListener('click',shareResult);
-    $('share-result').addEventListener('click',shareResult);
+    $('share-button').addEventListener('click',()=>shareResult(protocolId));
+    $('share-result').addEventListener('click',()=>shareResult(protocolId));
+    $('protocol-select').addEventListener('change',updateSelectedProtocolCopy);
+    $('protocol-apply').addEventListener('click',applySelectedProtocol);
+    $('protocol-share').addEventListener('click',()=>shareResult($('protocol-select').value));
     document.addEventListener('keydown',event=>{
       const target=event.target;
       if(target&&(target.isContentEditable||['INPUT','TEXTAREA','SELECT'].includes(target.tagName)))return;
