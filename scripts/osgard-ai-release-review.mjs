@@ -14,7 +14,7 @@ const SAFE_REPORT_NAMES = new Set([
   'osgard-contract-audit.json',
   'release-attestation.json',
 ]);
-const SECRET_RE = /(sk-[A-Za-z0-9_-]{12,}|Bearer\s+[A-Za-z0-9._-]{12,}|-----BEGIN [A-Z ]*PRIVATE KEY-----|OPENAI_API_KEY\s*[=:]\s*\S+)/gi;
+const SECRET_RE = /(sk-[A-Za-z0-9_-]{12,}|Bearer\s+[A-Za-z0-9._-]{12,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|xox[baprs]-[A-Za-z0-9-]{12,}|AKIA[A-Z0-9]{16}|AIza[0-9A-Za-z_-]{20,}|-----BEGIN [A-Z ]*PRIVATE KEY-----|(?:OPENAI_API_KEY|TOKEN|PASSWORD|SECRET)\s*[=:]\s*\S+)/gi;
 
 const REVIEW_SCHEMA = {
   type: 'object',
