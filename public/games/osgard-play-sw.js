@@ -13,11 +13,8 @@ const PRECACHE_URLS = [
   '/games/app.webmanifest',
   '/games/osgard-play-icon.svg',
   '/games/offline.html',
-  '/games/app.webmanifest',
   '/games/pwa-install.css',
   '/games/luxury.css',
-  '/games/sponsored-campaigns.css',
-  '/games/favicon.svg',
   '/games/sponsored-campaigns.css',
   '/games/favicon.svg',
   '/games/pwa-install.js',
@@ -25,14 +22,14 @@ const PRECACHE_URLS = [
 ];
 const PUBLIC_STATIC_ALLOWLIST = new Set([
   '/games/app.webmanifest',
-  '/games/app.webmanifest',
   '/games/osgard-play-icon.svg',
   '/games/offline.html',
   '/games/pwa-install.css',
-  '/games/pwa-install.js',
-  '/games/catalog-state.js',
   '/games/luxury.css',
   '/games/luxury.js',
+  '/games/sponsored-campaigns.css',
+  '/games/pwa-install.js',
+  '/games/catalog-state.js',
   '/games/favicon.svg'
 ]);
 
