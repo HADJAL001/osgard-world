@@ -400,14 +400,20 @@ function canPersistReferralWallet(){
  const probe='osgard.games.wallet-probe.'+makeEventToken();
  try{const current=localStorage.getItem(walletKey);localStorage.setItem(probe,'1');localStorage.removeItem(probe);if(current!==null)localStorage.setItem(walletKey,current);return true}catch{try{localStorage.removeItem(probe)}catch{}return false}
 }
-function addQualifiedReferralShards(amount){
- const safeAmount=Number.isSafeInteger(amount)&&amount>0?Math.min(amount,5000):0;
- if(!safeAmount)return{ok:false,balance:getWallet().balance};
- const current=getWallet(),balance=Math.min(1000000000,current.balance+safeAmount);
+function addQualifiedReferralShards(claims){
+ if(!Array.isArray(claims)||claims.length>10)return{ok:false,balance:getWallet().balance,count:0,amount:0};
+ const current=getWallet(),known=new Set(current.claims),accepted=[];
+ for(const item of claims){
+  const code=String(item?.referralCode||''),amount=Number(item?.amount);
+  if(!/^og_[a-f0-9]{8}$/.test(code)||amount!==50)return{ok:false,balance:current.balance,count:0,amount:0};
+  if(!known.has(code)){known.add(code);accepted.push(code)}
+ }
+ const amount=accepted.length*50,balance=Math.min(1000000000,current.balance+amount);
+ const qualifiedClaims=[...current.claims,...accepted].slice(-5000);
  try{
-  localStorage.setItem(walletKey,JSON.stringify({balance,lastRewardDay:current.day,lastSource:'qualified-referral',updatedAt:new Date().toISOString()}));
-  return{ok:true,balance};
- }catch{return{ok:false,balance:current.balance}}
+  localStorage.setItem(walletKey,JSON.stringify({balance,lastRewardDay:current.day,lastSource:accepted.length?'qualified-referral':'qualified-referral-retry',qualifiedClaims,updatedAt:new Date().toISOString()}));
+  return{ok:true,balance,count:accepted.length,amount,claimCodes:claims.map(item=>item.referralCode)};
+ }catch{return{ok:false,balance:current.balance,count:0,amount:0}}
 }
 async function referralApiAvailability(){
  if(!hasConsent())return{ready:false,reason:'consent'};
@@ -442,11 +448,11 @@ async function claimQualifiedReferralShards(){
  let ownerToken='';
  try{ownerToken=localStorage.getItem(referralOwnerKey)||''}catch{}
  if(!/^[a-f0-9]{32}$/.test(ownerToken))return{ok:false,reason:'no-invites'};
- const result=await postReferralRequest('/v1/referrals/claim',{consent:true,ownerToken});
+ const result=await postReferralRequest('/v1/referrals/prepare-claim',{consent:true,ownerToken});
  if(!result.ok)return{ok:false,reason:result.reason||result.data?.error||'unavailable'};
- const count=Number(result.data?.claimedInvites||0),amount=Number(result.data?.shardsAwarded||0);
- if(!Number.isSafeInteger(count)||count<0||!Number.isSafeInteger(amount)||amount<0||amount>5000||amount!==count*50)return{ok:false,reason:'invalid-response'};
- return{ok:true,count,amount};
+ const claims=result.data?.claims;
+ if(!Array.isArray(claims)||claims.length>10||claims.some(item=>!item||!/^og_[a-f0-9]{8}$/.test(String(item.referralCode||''))||Number(item.amount)!==50))return{ok:false,reason:'invalid-response'};
+ return{ok:true,count:claims.length,amount:claims.length*50,claims,ownerToken};
 }
 function readServicePreferences(){
  const fallback={frequency:'each',selected:availableServiceIds.slice()};
@@ -519,8 +525,8 @@ function inviteFor(id){
  const u=new URL('/games/invite/'+encodeURIComponent(id)+'/',location.origin);u.searchParams.set('og_ref','og_'+Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join(''));u.searchParams.set('og_game',id);
  u.searchParams.set('utm_source','osgard_play');u.searchParams.set('utm_medium','referral');u.searchParams.set('utm_campaign','play_with_friends');u.searchParams.set('utm_content',id);return u.href;
 }
-function getWallet(){try{const w=JSON.parse(localStorage.getItem(walletKey)||'{}');return{balance:Number.isSafeInteger(w.balance)&&w.balance>=0?Math.min(w.balance,1e9):0,day:typeof w.lastRewardDay==='string'?w.lastRewardDay:''}}catch{return{balance:0,day:''}}}
-function award(source){const current=getWallet(),day=new Date().toISOString().slice(0,10);if(current.day===day)return{ok:false,already:true,balance:current.balance};const next={balance:Math.min(1e9,current.balance+dailyReward),lastRewardDay:day,lastSource:String(source||'share').slice(0,60),updatedAt:new Date().toISOString()};try{localStorage.setItem(walletKey,JSON.stringify(next));return{ok:true,balance:next.balance}}catch{return{ok:false,balance:current.balance}}}
+function getWallet(){try{const w=JSON.parse(localStorage.getItem(walletKey)||'{}'),claims=Array.isArray(w.qualifiedClaims)?[...new Set(w.qualifiedClaims.filter(code=>/^og_[a-f0-9]{8}$/.test(String(code))))].slice(-5000):[];return{balance:Number.isSafeInteger(w.balance)&&w.balance>=0?Math.min(w.balance,1e9):0,day:typeof w.lastRewardDay==='string'?w.lastRewardDay:'',claims}}catch{return{balance:0,day:'',claims:[]}}}
+function award(source){const current=getWallet(),day=new Date().toISOString().slice(0,10);if(current.day===day)return{ok:false,already:true,balance:current.balance};const next={balance:Math.min(1e9,current.balance+dailyReward),lastRewardDay:day,lastSource:String(source||'share').slice(0,60),qualifiedClaims:current.claims,updatedAt:new Date().toISOString()};try{localStorage.setItem(walletKey,JSON.stringify(next));return{ok:true,balance:next.balance}}catch{return{ok:false,balance:current.balance}}}
 function servicesShelf(gameId,showPromos,completedCount){
  const preferences=readServicePreferences();
  const section=make('section','og-postgame-services'),head=make('div','og-postgame-service-head'),intro=make('div');
@@ -792,11 +798,17 @@ function rewardShelf(gameId){
     return;
    }
    if(result.count===0){qualifiedStatus.textContent='Пока нет подтверждённых завершений по твоим приглашениям. Награда появится после того, как друг откроет ссылку и завершит сессию не короче 30 секунд.';return}
-   const saved=addQualifiedReferralShards(result.amount);
-   if(!saved.ok){qualifiedStatus.textContent='Сервер подтвердил '+result.count+' приглашение(я), но браузер не сохранил локальные SHARDS. Очистка/блокировка хранилища может лишить локальной награды.';return}
+   const saved=addQualifiedReferralShards(result.claims);
+   if(!saved.ok){qualifiedStatus.textContent='Подходящие награды найдены, но браузер не сохранил их receipt-ID. Сервер не пометил их полученными — проверь настройки хранилища и попробуй снова.';return}
+   const acknowledgement=await postReferralRequest('/v1/referrals/ack',{consent:true,ownerToken:result.ownerToken,referralCodes:result.claims.map(item=>item.referralCode)});
    balance.textContent='OSGARD SHARDS · '+saved.balance;
-   qualifiedStatus.textContent='Сервер подтвердил '+result.count+' завершённое приглашение(я). Начислено +'+result.amount+' SHARDS. Это косметические очки без денежной стоимости.';
-   void sendSelectEvent('referral_reward_claimed',gameId,'osgard-referral-qualified:'+result.count+':'+gameId);
+   if(!acknowledgement.ok){
+    qualifiedStatus.textContent=saved.count>0?'Сохранено на устройстве: +'+saved.amount+' SHARDS. Серверное подтверждение временно недоступно; повторная проверка не начислит эти receipt-ID второй раз.':'Эти награды уже сохранены на устройстве. Серверное подтверждение не прошло — нажми проверку снова позже.';
+    if(saved.count>0)void sendSelectEvent('referral_reward_claimed',gameId,'osgard-referral-qualified:'+saved.count+':'+gameId);
+    return;
+   }
+   qualifiedStatus.textContent=saved.count>0?'Сервер подтвердил '+saved.count+' новое(ых) приглашение(я). Начислено +'+saved.amount+' SHARDS. Это косметические очки без денежной стоимости.':'Награды уже были сохранены на этом устройстве; серверное подтверждение синхронизировано без повторного начисления.';
+   if(saved.count>0)void sendSelectEvent('referral_reward_claimed',gameId,'osgard-referral-qualified:'+saved.count+':'+gameId);
   }catch{qualifiedStatus.textContent='Не удалось проверить приглашения. Попробуй позже.'}
   finally{void refreshQualifiedClaimButton(qualifiedClaim,qualifiedStatus);balance.textContent='OSGARD SHARDS · '+getWallet().balance}
  });
