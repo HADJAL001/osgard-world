@@ -138,8 +138,8 @@ export async function createAttestation(rootPath, outputPath) {
     generatedAt: new Date().toISOString(),
     source: {
       repository: 'HADJAL001/osgard-world',
-      commit: String(process.env.GITHUB_SHA || process.env.OSGARD_GIT_SHA || 'local').slice(0, 100),
-      ref: String(process.env.GITHUB_REF || process.env.OSGARD_GIT_REF || 'local').slice(0, 200),
+      commit: String(process.env.OSGARD_GIT_SHA || process.env.GITHUB_SHA || 'local').slice(0, 100),
+      ref: String(process.env.OSGARD_GIT_REF || process.env.GITHUB_REF || 'local').slice(0, 200),
       workflowRunId: String(process.env.GITHUB_RUN_ID || '').slice(0, 80) || null,
       package: pkg,
       node: process.version,
