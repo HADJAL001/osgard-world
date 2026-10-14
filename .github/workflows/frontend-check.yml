@@ -19,6 +19,19 @@ on:
       - "scripts/external-project-healthcheck.mjs"
       - "scripts/external-project-healthcheck-smoke.mjs"
       - "scripts/project-intake-smoke.mjs"
+      - "scripts/osgard-contract-audit.mjs"
+      - "scripts/catalog-state-scale-smoke.mjs"
+      - "scripts/osgard-performance-budget.mjs"
+      - "scripts/osgard-performance-budget.test.mjs"
+      - "scripts/osgard-release-attestation.mjs"
+      - "scripts/osgard-release-attestation.test.mjs"
+      - "scripts/generate-games-share-cards.mjs"
+      - "docs/34_OSGARD_CONTRACT_INTEGRITY_ENGINE_2026-10-14.md"
+      - "docs/35_OSGARD_RELEASE_QUALITY_ATTESTATION_2026-10-14.md"
+      - "docs/36_OSGARD_SEVEN_LAYER_ENGINEERING_UPGRADE_2026-10-15.md"
+      - "docs/OSGARD_CORE_CONTRACT.md"
+      - "scripts/production-route-matrix.mjs"
+      - "public/sitemap.xml"
       - ".github/workflows/games-lighthouse.yml"
       - "public/games/**"
       - "public/entertainment/**"
@@ -74,6 +87,12 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
+      - name: Check cross-surface OSGARD product contracts
+        run: npm run qa:contracts
+      - name: Test static asset performance budgets
+        run: npm run qa:performance-budget-tests
+      - name: Test build-attestation tamper resistance
+        run: npm run qa:release-attestation
       - name: Test OpenAI reviewer offline (no API call)
         run: npm run qa:ai-release-review
       - name: Verify Godot diagnostics fault contract
