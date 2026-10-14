@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const matrix = readFileSync(resolve("scripts/production-route-matrix.mjs"), "utf8");
+const nginx = readFileSync(resolve("nginx.conf"), "utf8");
 const commandDeck = readFileSync(resolve("public/games/command-center/index.html"), "utf8");
 const html = readFileSync(resolve("public/games/swarm/index.html"), "utf8");
 const css = readFileSync(resolve("public/games/swarm/styles.css"), "utf8");
@@ -47,6 +48,14 @@ assert.ok(commandDeck.includes('<title>OSGARD PLAY — Command Deck</title>') &&
   commandDeck.includes('id="run-checks"') && commandDeck.includes('id="download-report"') &&
   commandDeck.includes('noindex,nofollow,noarchive'),
   "Command Deck needs stable production test markers and noindex.");
+const mjsLocation = nginx.indexOf("location ~* \\\\.mjs$");
+const genericStaticLocation = nginx.indexOf("location ~* \\\\.(?:css|js|png|jpg|jpeg|gif|svg|woff2?)$");
+assert.ok(mjsLocation >= 0 && genericStaticLocation > mjsLocation,
+  "Nginx must handle .mjs before the generic static-asset matcher.");
+assert.ok(nginx.slice(mjsLocation, genericStaticLocation).includes("default_type application/javascript;") &&
+  !nginx.slice(genericStaticLocation).split("\\n")[0].includes("mjs"),
+  "Nginx must serve .mjs as JavaScript rather than a generic binary or text response.");
+
 assert.ok(matrix.includes("'/games/monetization/export.mjs'") &&
   matrix.includes("route === '/games/monetization/export.mjs'") &&
   matrix.includes("export-csv") &&
