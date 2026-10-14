@@ -4499,7 +4499,7 @@ func _operator_chronicle_unlocks_for_report(report: Dictionary, previous_success
 	var warden: Dictionary = report.get("warden", {})
 	var salvage: Dictionary = report.get("salvage", {})
 	var anomalies_value: Variant = report.get("anomalies", [])
-	var anomaly_count := anomalies_value.size() if anomalies_value is Array else 0
+	var anomaly_count: int = anomalies_value.size() if anomalies_value is Array else 0
 	var accuracy: float = float(combat.get("accuracyPercent", 0.0))
 	var damage_taken: float = float(combat.get("damageTaken", 0.0))
 	var shots_fired: int = int(combat.get("shotsFired", 0))
