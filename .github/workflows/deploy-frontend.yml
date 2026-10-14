@@ -47,6 +47,8 @@ on:
       - "scripts/games-expedition-smoke.mjs"
       - "scripts/civic-cascade-crisis-smoke.mjs"
       - "scripts/cascade-lab-evidence-integrity-smoke.mjs"
+      - "scripts/cascade-lab-counterfactual-smoke.mjs"
+      - "docs/33_CASCADE_LAB_0.26.0_COUNTERFACTUAL_LAB.md"
       - "scripts/osgard-play-pwa-smoke.mjs"
       - "docs/27_OSGARD_PLAY_30_RELEASE_IMPROVEMENTS_2026-10-14.md"
       - ".github/workflows/osgard-play-qa.yml"
@@ -119,6 +121,8 @@ jobs:
         run: npm run qa:cascade-lab-experiment-studio
       - name: Verify CASCADE LAB trajectory plots, event timeline and privacy boundaries
         run: npm run qa:cascade-lab-trajectory-xray
+      - name: Verify CASCADE LAB Counterfactual Lab, reproducibility and archive integrity
+        run: npm run qa:cascade-lab-counterfactual
       - name: Test game session clock and iframe lifecycle trust boundaries
         run: npm run qa:game-detail-runtime
       - name: Verify REMIX growth funnel, attribution and sponsor safety
