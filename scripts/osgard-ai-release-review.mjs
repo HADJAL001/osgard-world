@@ -294,7 +294,7 @@ const SYSTEM_INSTRUCTIONS = [
 ].join(' ');
 
 export async function requestOpenAIReview(payload, options = {}) {
-  const apiKey = options.apiKey || process.env.OPENAI_API_KEY;
+  const apiKey = options.apiKey !== undefined ? options.apiKey : process.env.OPENAI_API_KEY;
   const model = options.model || DEFAULT_MODEL;
   if (!apiKey) throw new Error('OPENAI_API_KEY is missing. No request was sent.');
   if (typeof model !== 'string' || !/^[A-Za-z0-9._:-]{2,100}$/.test(model)) throw new Error('OPENAI_MODEL is invalid.');
