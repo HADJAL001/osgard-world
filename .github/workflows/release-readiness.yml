@@ -54,6 +54,10 @@ jobs:
         run: npm run qa:partners-page
       - name: Build and archive preflight
         run: npm run build && npm run preflight:frontend
+      - name: Enforce production asset budgets
+        run: npm run qa:performance-budget
+      - name: Bind build to quality reports
+        run: npm run release:attest && npm run release:verify
       - name: Verify Imperium of Time gameplay and diagnostics
         run: npm run qa:time-ui
       - name: Verify production routes after deploy or manual request
