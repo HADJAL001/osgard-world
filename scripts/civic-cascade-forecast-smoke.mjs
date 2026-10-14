@@ -203,9 +203,14 @@ const historicalValidation=validateDoctrineDossierStructure(historicalDossier,'3
 assert.equal(historicalValidation.valid,true,'historically valid dossiers remain readable: '+historicalValidation.errors.join('; '))
 assert.equal(historicalValidation.modelCompatible,false,'historical model versions must be flagged read-only')
 check(historicalValidation.warnings.length>0,'historical import must disclose model/hash compatibility warnings')
-const futureValidation=validateDoctrineDossierStructure(verifierDossier,'3.4.0')
-assert.equal(futureValidation.valid,true,'other model versions remain readable in audit mode')
-assert.equal(futureValidation.modelCompatible,false)
+const futureDossier=JSON.parse(JSON.stringify(verifierDossier))
+futureDossier.engine.modelVersion='3.5.0'
+const futurePayload=(({exportMetadata,...payload})=>payload)(futureDossier)
+futureDossier.exportMetadata.integrity.digest=createHash('sha-256').update(canonicalDossierStringify(futurePayload),'utf8').digest('hex')
+const futureValidation=validateDoctrineDossierStructure(futureDossier,'3.4.0')
+assert.equal(futureValidation.valid,true,'newer model versions remain readable in audit mode')
+assert.equal(futureValidation.modelCompatible,false,'a genuinely newer model must be flagged as read-only')
+check(futureValidation.warnings.length>0,'newer model import must disclose compatibility warnings')
 const badDepth=JSON.parse(JSON.stringify(verifierDossier));let deep=badDepth;for(let i=0;i<35;i++){deep.child={};deep=deep.child}
 check(!validateDoctrineDossierStructure(badDepth,'3.4.0').valid,'pathologically deep JSON structures must be rejected')
 const unavailableHashDossier=JSON.parse(JSON.stringify(verifierDossier));unavailableHashDossier.exportMetadata.integrity.status='unavailable';unavailableHashDossier.exportMetadata.integrity.digest=null
