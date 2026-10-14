@@ -8,7 +8,7 @@
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://osgard.world/games/civic-cascade/">
 <title>CIVIC CASCADE — кризисная стратегия | OSGARD PLAY</title>
-<meta name="osgard-game-version" content="2.8.0-autonomous-doctrine-search">
+<meta name="osgard-game-version" content="2.9.0-robust-doctrine-search">
 <style>
 :root{color-scheme:dark;--bg:#080d10;--panel:#10191d;--panel2:#142126;--line:#ffffff1c;--ink:#edf3ee;--muted:#91a29e;--mint:#b8f4cf;--cyan:#68d8d2;--gold:#e1c58a;--warn:#f2b27c;--bad:#ff827b;--mono:ui-monospace,Consolas,monospace;--serif:Georgia,serif}
 *{box-sizing:border-box}html{background:var(--bg);scroll-behavior:smooth}body{margin:0;color:var(--ink);background:radial-gradient(ellipse at 76% -18%,#234d453d,transparent 48%),var(--bg);font:14px/1.55 Inter,Geist,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}button,select{font:inherit}button,a,select{touch-action:manipulation}a{color:inherit;text-decoration:none}button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(--mint);outline-offset:3px}.wrap{max-width:1440px;padding:0 clamp(14px,2.8vw,42px);margin:auto}
@@ -283,7 +283,7 @@
    <div><strong id="cc-doctrine-title">АВТОНОМНЫЙ КОМПИЛЯТОР ПЛАНА</strong><small>ПОИСК ПО КОМБИНАЦИЯМ · ОБЪЯСНИМЫЙ РЕЗУЛЬТАТ</small></div>
    <span id="cc-doctrine-status" role="status" aria-live="polite">ПОСТАВЬ СИМУЛЯЦИЮ НА ПАУЗУ</span>
   </div>
-  <p class="doctrine-intro">Штаб перебирает допустимые последовательности до четырёх приказов и сравнивает прогноз на T+30, T+60 и T+90. Он учитывает ресурсы, бригады, состояние узлов и каскадные отказы. Найденный вариант не исполняется сам — сначала проверь его и загрузи в очередь.</p>
+  <p class="doctrine-intro">Штаб перебирает допустимые последовательности до четырёх приказов, а затем проверяет лучшие варианты в трёх контролируемых стресс-сценариях: усиление подтопления, перегрузка сети и повреждение слабейшего узла. Сравнение проводится с базовым сценарием без новых приказов при том же стресс-факторе. Найденный план не исполняется сам.</p>
   <div class="doctrine-tools">
    <label for="cc-doctrine-mode">ЦЕЛЬ ОПЕРАЦИИ</label>
    <select id="cc-doctrine-mode" aria-label="Цель поиска штабного плана">
@@ -299,7 +299,7 @@
    <button class="ctrl primary" id="cc-doctrine-apply" type="button" disabled>Загрузить выбранный план в очередь</button>
    <button class="ctrl" id="cc-doctrine-reset" type="button" disabled>Сбросить расчёт</button>
   </div>
-  <p class="doctrine-footnote">Планировщик детерминированный и локальный: он не отправляет игровые данные на сервер и не вызывает OpenAI API. Это проверяемый поиск по правилам симуляции, а не обещание всеведения. Будущие случайные инциденты и решения игрока не предсказываются.</p>
+  <p class="doctrine-footnote">Планировщик детерминированный и локальный: лучшие варианты проверяются в трёх контролируемых стресс-сценариях против базового решения под тем же стрессом. Он не отправляет игровые данные на сервер и не вызывает OpenAI API. Будущие случайные инциденты и решения игрока не предсказываются.</p>
  </section>
  <ol class="command-list" id="cc-plan-list" aria-live="polite"><li class="command-empty">Очередь пуста. Поставь игру на паузу и добавь первый приказ.</li></ol>
  <div class="command-footer"><button class="ctrl" id="cc-plan-clear" type="button" disabled>Очистить очередь</button><button class="ctrl primary" id="cc-plan-execute" type="button" disabled>▶ Исполнить план · 0 приказов</button></div>
@@ -892,8 +892,67 @@ function doctrineObjectiveScore(forecast,cost,crewCount,mode){
     :{average:.22,terminal:.48,weakest:.13,critical:3,cost:.10,crew:.8};
  return averageRisk*weights.average+terminal.risk*weights.terminal+(100-terminal.weakestIntegrity)*weights.weakest+terminal.criticalNodes.length*weights.critical+cost*weights.cost+crewCount*weights.crew;
 }
+
+function cloneDoctrineState(source){
+ return {...source,nodeIntegrity:{...(source.nodeIntegrity||{})},nodeOutages:{...(source.nodeOutages||{})},nodeIncidentFlags:{...(source.nodeIncidentFlags||{})},pendingNodeIncidents:[...(source.pendingNodeIncidents||[])]};
+}
+function doctrineStressProfiles(sourceState,nodeDefinitions){
+ const weakest=nodeDefinitions.slice().sort((a,b)=>{
+  const ah=Number.isFinite(sourceState.nodeIntegrity?.[a.id])?sourceState.nodeIntegrity[a.id]:100;
+  const bh=Number.isFinite(sourceState.nodeIntegrity?.[b.id])?sourceState.nodeIntegrity[b.id]:100;
+  return ah-bh||a.id.localeCompare(b.id);
+ })[0]||nodeDefinitions[0];
+ return [
+  {id:'water-surge',label:'УСИЛЕНИЕ ПОДТОПЛЕНИЯ',apply(s){
+   s.water=clamp(s.water+8);
+   s.waterRate=Math.min(1,Math.max(-.02,s.waterRate+.08));
+   s.accessRate=Math.min(1,Math.max(0,s.accessRate+.02));
+  }},
+  {id:'grid-overload',label:'ПЕРЕГРУЗКА ЭНЕРГОСЕТИ',apply(s){
+   s.grid=clamp(s.grid-8);
+   s.gridRate=Math.min(1,Math.max(0,s.gridRate+.07));
+   s.waterRate=Math.min(1,Math.max(-.02,s.waterRate+.015));
+  }},
+  {id:'weak-node-shock',label:'ПОВРЕЖДЕНИЕ СЛАБЕЙШЕГО УЗЛА',targetNode:weak?.id||null,apply(s){
+   if(weak&&s.nodeIntegrity&&Number.isFinite(s.nodeIntegrity[weak.id]))s.nodeIntegrity[weak.id]=clamp(s.nodeIntegrity[weak.id]-14);
+   s.supplies=clamp(s.supplies-10);
+   s.gridRate=Math.min(1,Math.max(0,s.gridRate+.025));
+  }}
+ ];
+}
+function assessDoctrineRobustness(sourceState,orders,nominalScore,simulateOrders,simulatePath,nodeDefinitions,mode){
+ const horizons=[30,60,90],baselineDirect=simulateOrders([]),planDirect=simulateOrders(orders.map(order=>({...order})));
+ if(!baselineDirect?.valid||!planDirect?.valid)return {profiles:[],profileCount:0,stableProfiles:0,averageRiskDelta:100,worstRiskDelta:100,worstIntegrityDelta:-100,adjustedScore:nominalScore+1000};
+ const profiles=doctrineStressProfiles(sourceState,nodeDefinitions).map(profile=>{
+  const baselineState=cloneDoctrineState(baselineDirect.state),candidateState=cloneDoctrineState(planDirect.state);
+  profile.apply(baselineState);profile.apply(candidateState);
+  const baselineForecast=simulatePath(baselineState,horizons),candidateForecast=simulatePath(candidateState,horizons);
+  const baseEnd=baselineForecast[baselineForecast.length-1],candidateEnd=candidateForecast[candidateForecast.length-1];
+  return {
+   id:profile.id,label:profile.label,targetNode:profile.targetNode||null,
+   baselineRisk90:baseEnd.risk,candidateRisk90:candidateEnd.risk,
+   riskDelta90:candidateEnd.risk-baseEnd.risk,
+   baselineWeakestIntegrity:baseEnd.weakestIntegrity,candidateWeakestIntegrity:candidateEnd.weakestIntegrity,
+   weakestIntegrityDelta:candidateEnd.weakestIntegrity-baseEnd.weakestIntegrity,
+   criticalNodeDelta:candidateEnd.criticalNodes.length-baseEnd.criticalNodes.length
+  };
+ });
+ const averageRiskDelta=profiles.reduce((sum,p)=>sum+p.riskDelta90,0)/Math.max(1,profiles.length);
+ const worstRiskDelta=Math.max(...profiles.map(p=>p.riskDelta90));
+ const worstIntegrityDelta=Math.min(...profiles.map(p=>p.weakestIntegrityDelta));
+ const stableProfiles=profiles.filter(p=>p.riskDelta90<=2&&p.weakestIntegrityDelta>=-8&&p.criticalNodeDelta<=1).length;
+ const severeRegressions=profiles.filter(p=>p.riskDelta90>5||p.criticalNodeDelta>1).length;
+ const adjustedScore=nominalScore+averageRiskDelta*.25+Math.max(0,worstRiskDelta-2)*.45+Math.max(0,-worstIntegrityDelta-8)*.3+severeRegressions*.75;
+ return {
+  profiles,profileCount:profiles.length,stableProfiles,
+  averageRiskDelta:Math.round(averageRiskDelta*10)/10,
+  worstRiskDelta,worstIntegrityDelta,
+  severeRegressions,adjustedScore:Math.round(adjustedScore*100)/100,mode
+ };
+}
+
 function searchDoctrinePlans(sourceState,mode,selectedNodeId,simulateOrders,simulatePath,nodeDefinitions,actionMetadata){
- const horizons=[30,60,90],maxDepth=4,beamWidth=6;
+ const horizons=[30,60,90],maxDepth=4,beamWidth=6,robustnessCandidateLimit=8;
  const weakNodes=nodeDefinitions.slice().sort((a,b)=>{
   const ah=Number.isFinite(sourceState.nodeIntegrity?.[a.id])?sourceState.nodeIntegrity[a.id]:100;
   const bh=Number.isFinite(sourceState.nodeIntegrity?.[b.id])?sourceState.nodeIntegrity[b.id]:100;
@@ -915,7 +974,7 @@ function searchDoctrinePlans(sourceState,mode,selectedNodeId,simulateOrders,simu
   return {signature:signatureOf(orders),orders:orders.map(order=>({...order})),cost,crewsUsed,score:doctrineObjectiveScore(forecast,cost,crewsUsed,mode),forecast};
  };
  const baseline=evaluate([]);
- if(!baseline)return {baseline:null,alternatives:[],evaluatedCount:0,mode};
+ if(!baseline)return {baseline:null,alternatives:[],evaluatedCount:0,robustnessEvaluatedCount:0,mode};
  const explored=new Map();
  let frontier=[baseline];
  for(let depth=1;depth<=maxDepth;depth++){
@@ -936,14 +995,18 @@ function searchDoctrinePlans(sourceState,mode,selectedNodeId,simulateOrders,simu
  }
  const baselineRisk=baseline.forecast[baseline.forecast.length-1].risk;
  const riskTolerance=mode==='protect'?8:mode==='conserve'?1:2;
- const alternatives=[];
+ const eligible=[];
  for(const candidate of Array.from(explored.values()).sort(compare)){
   if(candidate.score>=baseline.score-.2)continue;
   if(candidate.forecast[candidate.forecast.length-1].risk>baselineRisk+riskTolerance)continue;
-  alternatives.push(candidate);
-  if(alternatives.length===3)break;
+  eligible.push(candidate);
+  if(eligible.length>=robustnessCandidateLimit)break;
  }
- return {baseline,alternatives,evaluatedCount:explored.size,mode};
+ const robustCandidates=eligible.map(candidate=>{
+  const robustness=assessDoctrineRobustness(sourceState,candidate.orders,candidate.score,simulateOrders,simulatePath,nodeDefinitions,mode);
+  return {...candidate,robustness,robustScore:robustness.adjustedScore};
+ }).sort((a,b)=>a.robustScore-b.robustScore||a.score-b.score||a.cost-b.cost||a.signature.localeCompare(b.signature));
+ return {baseline,alternatives:robustCandidates.slice(0,3),evaluatedCount:explored.size,robustnessEvaluatedCount:robustCandidates.length,mode};
 }
 
 let doctrineResult=null,doctrineSelectedIndex=0,doctrineStaleMessage='';
@@ -971,7 +1034,7 @@ function renderDoctrineResults(message){
   const card=document.createElement('article');card.className='doctrine-option';card.dataset.selected=String(index===doctrineSelectedIndex);
   const head=document.createElement('div');head.className='doctrine-option-head';
   const title=document.createElement('strong');title.textContent=(index===0?'ЛУЧШИЙ НАЙДЕННЫЙ ВАРИАНТ':'АЛЬТЕРНАТИВА '+String(index+1).padStart(2,'0'));
-  const score=document.createElement('span');score.textContent='ОЦЕНКА '+candidate.score.toFixed(2);head.append(title,score);
+  const robustness=candidate.robustness;const score=document.createElement('span');score.textContent='ОЦЕНКА '+candidate.robustScore.toFixed(2)+' · УСТОЙЧИВОСТЬ '+robustness.stableProfiles+'/'+robustness.profileCount;head.append(title,score);
   const actions=document.createElement('p');actions.className='doctrine-option-actions';
   actions.textContent=candidate.orders.map((order,i)=>{
    const meta=PLAN_ACTIONS[order.action],target=order.action==='repair'?' · '+((nodes.find(node=>node.id===order.nodeId)||nodes[0]).name):'';
@@ -981,9 +1044,10 @@ function renderDoctrineResults(message){
   const weak=(nodes.find(node=>node.id===terminal.weakestNode)||{name:terminal.weakestNode}).name;
   const metrics=document.createElement('p');metrics.className='doctrine-option-metrics';
   metrics.textContent='РИСК T+90: '+baseRisk+' → '+terminal.risk+' ('+(riskDelta>0?'+':'')+riskDelta+') · СЛАБЫЙ УЗЕЛ: '+weak+' '+terminal.weakestIntegrity+'% · РЕСУРСЫ: '+candidate.cost+' · БРИГАДЫ: '+candidate.crewsUsed+' · КРИТИЧЕСКИЕ УЗЛЫ: '+terminal.criticalNodes.length;
+  const stress=document.createElement('p');stress.className='doctrine-option-metrics';stress.textContent='СТРЕСС-ПРОФИЛИ: '+robustness.profiles.map(profile=>profile.label+' — Δриска '+(profile.riskDelta90>0?'+':'')+profile.riskDelta90+'; слабый узел '+(profile.weakestIntegrityDelta>0?'+':'')+profile.weakestIntegrityDelta).join(' · ');
   const choose=document.createElement('button');choose.type='button';choose.className='ctrl';choose.textContent=index===doctrineSelectedIndex?'✓ Вариант выбран':'Выбрать этот вариант';choose.disabled=index===doctrineSelectedIndex;
   choose.addEventListener('click',()=>{doctrineSelectedIndex=index;renderDoctrineResults();refreshDoctrineAvailability()});
-  card.append(head,actions,metrics,choose);root.append(card);
+  card.append(head,actions,metrics,stress,choose);root.append(card);
  });
 }
 function refreshDoctrineAvailability(){
@@ -998,7 +1062,7 @@ function refreshDoctrineAvailability(){
  if(apply)apply.disabled=!canWork||!doctrineResult||!doctrineResult.alternatives[doctrineSelectedIndex];
  if(reset)reset.disabled=!doctrineResult&&!doctrineStaleMessage;
  if(status){
-  if(doctrineResult)status.textContent='ГОТОВО · '+doctrineResult.evaluatedCount+' ВАРИАНТОВ · '+doctrineResult.durationMs+' МС';
+  if(doctrineResult)status.textContent='ГОТОВО · '+doctrineResult.evaluatedCount+' ВАРИАНТОВ · СТРЕСС-ПРОВЕРЕНО '+doctrineResult.robustnessEvaluatedCount+' · '+doctrineResult.durationMs+' МС';
   else if(doctrineStaleMessage)status.textContent='НУЖЕН ПЕРЕСЧЁТ';
   else status.textContent=canWork?'ГОТОВ К РАСЧЁТУ · ПАУЗА':'ПОСТАВЬ СИМУЛЯЦИЮ НА ПАУЗУ';
  }
