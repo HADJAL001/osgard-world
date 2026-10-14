@@ -6,7 +6,7 @@ const manifest = JSON.parse(await readFile(new URL('../public/games/civic-cascad
 const check = (value, message) => assert.ok(value, message)
 
 assert.equal(manifest.gameId, 'civic-cascade')
-assert.equal(manifest.version, '3.2.0', 'release manifest must match this regression suite')
+assert.equal(manifest.version, '3.3.0', 'release manifest must match this regression suite')
 assert.equal(manifest.buildContract?.cascadeForecast?.enabled, true)
 assert.deepEqual(manifest.buildContract?.cascadeForecast?.horizonsGameSeconds, [30, 60, 90])
 assert.equal(manifest.buildContract?.cascadeForecast?.randomIncidentsForecasted, false)
@@ -61,7 +61,7 @@ for (const id of [
   'cc-cascade-plan-90', 'cc-cascade-note', 'cc-node-inspector', 'cc-node-health',
   'cc-node-health-bar', 'cc-node-status', 'cc-node-chain', 'cc-node-effect', 'cc-adaptive-crisis',
   'cc-causal-debrief', 'cc-causal-summary', 'cc-causal-count', 'cc-causal-risk-change', 'cc-causal-weakest', 'cc-causal-best', 'cc-causal-ledger',
-  'cc-doctrine-lab', 'cc-doctrine-mode', 'cc-doctrine-run', 'cc-doctrine-status', 'cc-doctrine-results', 'cc-doctrine-apply', 'cc-doctrine-reset', 'cc-doctrine-export'
+  'cc-doctrine-lab', 'cc-doctrine-mode', 'cc-doctrine-run', 'cc-doctrine-status', 'cc-doctrine-results', 'cc-doctrine-apply', 'cc-doctrine-reset', 'cc-doctrine-export', 'cc-doctrine-reserve'
 ]) check(ids.includes(id), 'missing forecast UI element: ' + id)
 
 const mainScript = html.match(/<script>([\s\S]*?)<\/script>/i)?.[1]
@@ -97,12 +97,12 @@ const causalSource = extractBetween('function operationSnapshot(s)', 'function o
 const causal = new Function('clamp', 'nodes', 'ensureNodeIntegrity', 'clock', 'elapsed', causalSource + '\nreturn { operationSnapshot, cleanOperationSnapshot, operationDelta, recordOperationEvent };')(clamp, nodes, ensureNodeIntegrity, seconds => 'T+' + seconds, 7)
 const { operationSnapshot, cleanOperationSnapshot, recordOperationEvent } = causal
 const projectedRisk = new Function('clamp', riskSource + '\nreturn projectedRisk;')(clamp)
-const directSource = extractBetween('function simulatePlannedOrders(orders)', 'function planCrewDemand')
+const directSource = extractBetween('function simulatePlannedOrders(orders,sourceState=state)', 'function planCrewDemand')
 const simulateDirect = state => new Function(
   'state', 'PLAN_ACTIONS', 'clamp', 'nodes', 'projectedRisk', 'ensureNodeIntegrity', 'applyNodeActionIntegrity',
   directSource + '\nreturn simulatePlannedOrders;'
 )(state, actions, clamp, nodes, projectedRisk, ensureNodeIntegrity, applyNodeActionIntegrity)
-const pathSource = extractBetween('function simulateCascadingPath(source,horizons)', 'function renderCascadeForecast')
+const pathSource = extractBetween('function simulateCascadingPath(source,horizons,startElapsed=elapsed)', 'function renderCascadeForecast')
 const simulatePath = startElapsed => new Function(
   'elapsed', 'clamp', 'projectedRisk', 'nodes', 'ensureNodeIntegrity', 'advanceNodeIntegrity',
   pathSource + '\nreturn simulateCascadingPath;'
@@ -111,10 +111,10 @@ const simulatePath = startElapsed => new Function(
 const doctrineSource = extractBetween('function doctrineObjectiveScore', 'let doctrineResult=null')
 const dossierSource = extractBetween('function buildDoctrineDossierPayload', 'async function exportDoctrineDossier')
 const buildDoctrineDossierPayload = new Function(dossierSource + '\nreturn buildDoctrineDossierPayload;')()
-const planner = new Function('nodes', 'PLAN_ACTIONS', 'clamp',
-  doctrineSource + '\nreturn {searchDoctrinePlans, doctrineDominates, doctrineParetoPortfolio, doctrineStressProfiles};'
-)(nodes, actions, clamp)
-const {searchDoctrinePlans, doctrineDominates, doctrineParetoPortfolio, doctrineStressProfiles} = planner
+const planner = new Function('nodes', 'PLAN_ACTIONS', 'clamp', 'scenarioData', 'seedNodeIntegrity', 'ensureNodeIntegrity',
+  doctrineSource + '\nreturn {searchDoctrinePlans, doctrineDominates, doctrineParetoPortfolio, doctrineStressProfiles, doctrineReserveRules, buildDoctrineScenarioState, assessDoctrineScenarioTransfer, explainDoctrineCommandContributions};'
+)(nodes, actions, clamp, scenarios, seedNodeIntegrity, ensureNodeIntegrity)
+const {searchDoctrinePlans, doctrineDominates, doctrineParetoPortfolio, doctrineStressProfiles, doctrineReserveRules, buildDoctrineScenarioState, assessDoctrineScenarioTransfer, explainDoctrineCommandContributions} = planner
 const makeState = scenario => {
   const state = {
     ...scenarios[scenario], scenario, crews: 4, maxCrews: 4,
@@ -148,6 +148,10 @@ for (const scenario of ['flood', 'blackout', 'blockade']) {
 }
 
 const doctrineResults = {}
+assert.deepEqual(doctrineReserveRules('none'),{id:'none',label:'Без резерва',supplies:0,crews:0})
+assert.deepEqual(doctrineReserveRules('balanced'),{id:'balanced',label:'Сбалансированный резерв',supplies:10,crews:1})
+assert.deepEqual(doctrineReserveRules('emergency'),{id:'emergency',label:'Кризисный резерв',supplies:20,crews:2})
+assert.deepEqual(doctrineReserveRules('unknown'),doctrineReserveRules('balanced'),'unknown reserve mode must safely fall back to balanced reserve')
 
 const stressFixture=makeState('flood')
 const envelope=doctrineStressProfiles(stressFixture,nodes)
@@ -182,14 +186,14 @@ for (const scenario of ['flood', 'blackout', 'blockade']) {
   const before = JSON.stringify({water:base.water,grid:base.grid,access:base.access,supplies:base.supplies,crews:base.crews,nodeIntegrity:base.nodeIntegrity})
   const runOrders = simulateDirect(base)
   const runPath = simulatePath(0)
-  const result = searchDoctrinePlans(base, 'balanced', 'hub', runOrders, runPath, nodes, actions)
+  const result = searchDoctrinePlans(base, 'balanced', 'hub', runOrders, runPath, nodes, actions, 'balanced')
   check(result.evaluatedCount > 0 && result.evaluatedCount <= 1000, scenario + ' doctrine search must stay bounded')
-  const dossier=buildDoctrineDossierPayload(base,result,'3.2.0-three-level-stress-envelope',scenarios,nodes,0)
+  const dossier=buildDoctrineDossierPayload(base,result,'3.3.0-seven-layer-decision-assurance',scenarios,nodes,0)
   assert.equal(dossier.schema,'osgard.civic-cascade.decision-dossier/v1')
   assert.equal(dossier.scenario.id,scenario)
   assert.equal(dossier.candidates.length,result.alternatives.length)
   assert.equal(dossier.baseline.forecast.length,3)
-  assert.equal(dossier.engine.modelVersion,'3.2.0')
+  assert.equal(dossier.engine.modelVersion,'3.3.0')
   assert.equal(dossier.assumptions.personalDataIncluded,false)
   assert.equal(dossier.assumptions.telemetrySent,false)
   assert.equal(dossier.assumptions.openAIAPIUsed,false)
@@ -203,6 +207,18 @@ check(result.alternatives.every(candidate => typeof candidate.portfolioRole === 
   const prefixes = result.alternatives.map(candidate => candidate.orders.slice(0,2).map(order => order.action + ':' + (order.nodeId || '-')).join('|'))
   assert.equal(new Set(prefixes).size, Math.min(result.alternatives.length, result.openingPrefixCount), scenario + ' portfolio should maximize the available distinct opening command prefixes')
   check(result.portfolioSize === result.alternatives.length, scenario + ' portfolio count must match returned options')
+  check(result.reserveMode === 'balanced' && result.reserveRequirements.supplies === 10 && result.reserveRequirements.crews === 1, scenario + ' search must record the enforced resource reserve')
+  check(result.searchDiagnostics.sequenceChecks > 0 && result.searchDiagnostics.validDirectPlans > 0, scenario + ' search accounting must report generated and valid checks')
+  check(result.searchDiagnostics.stressEvaluated === result.robustnessEvaluatedCount, scenario + ' stress counter must reconcile to the stress-ranked candidate count')
+  check(result.searchDiagnostics.scenarioTransferChecks === result.robustnessEvaluatedCount * 3, scenario + ' transfer counter must count each evaluated candidate across all three scenarios')
+  check(result.alternatives.every(candidate => candidate.scenarioTransfer.totalScenarios === 3 && candidate.scenarioTransfer.scenarios.length === 3), scenario + ' cross-scenario transfer must include all scenario presets')
+  check(result.alternatives.every(candidate => candidate.commandContributions.length === candidate.orders.length), scenario + ' each order must have an omission-based contribution record')
+  check(result.alternatives.every(candidate => candidate.remainingSupplies >= 10 && candidate.remainingCrews >= 1), scenario + ' chosen plans must preserve the selected reserve')
+  const transferBase=makeState(scenario)
+  const transferSnapshot=JSON.stringify({water:transferBase.water,grid:transferBase.grid,access:transferBase.access,supplies:transferBase.supplies,crews:transferBase.crews,nodeIntegrity:transferBase.nodeIntegrity})
+  const transfer=assessDoctrineScenarioTransfer(transferBase,result.alternatives[0]?.orders||[],simulateDirect(transferBase),simulatePath(0),scenarios,nodes,seedNodeIntegrity,ensureNodeIntegrity,'balanced')
+  check(transfer.totalScenarios === 3 && transfer.scenarios.map(item => item.scenario).sort().join(',') === ['blackout','blockade','flood'].sort().join(','), scenario + ' explicit portability audit must cover all three scenario IDs')
+  assert.equal(JSON.stringify({water:transferBase.water,grid:transferBase.grid,access:transferBase.access,supplies:transferBase.supplies,crews:transferBase.crews,nodeIntegrity:transferBase.nodeIntegrity}),transferSnapshot,scenario+' transfer audit must not mutate the source state')
   check(result.openingPrefixCount >= 1 && result.openingPrefixCount <= result.robustnessEvaluatedCount, scenario + ' available prefix diversity must be bounded')
   check(result.paretoFrontSize >= 0 && result.paretoFrontSize <= result.robustnessEvaluatedCount, scenario + ' Pareto front size must be bounded')
   for (const candidate of result.alternatives) {
@@ -242,6 +258,12 @@ assert.deepEqual(firstRepeat.alternatives.map(plan => ({signature:plan.signature
 const protectBase = makeState('blackout')
 const protectedPlan = searchDoctrinePlans(protectBase, 'protect', 'hub', simulateDirect(protectBase), simulatePath(0), nodes, actions)
 check(protectedPlan.mode === 'protect', 'infrastructure-protection objective must be selectable')
+const emergencyBase=makeState('flood')
+const emergencyPlan=searchDoctrinePlans(emergencyBase,'conserve','hub',simulateDirect(emergencyBase),simulatePath(0),nodes,actions,'emergency')
+check(emergencyPlan.reserveRequirements.supplies===20&&emergencyPlan.reserveRequirements.crews===2,'emergency reserve values must be attached to planner result')
+check(emergencyPlan.alternatives.every(candidate=>candidate.remainingSupplies>=20&&candidate.remainingCrews>=2),'critical reserve must not return a plan below twenty supplies or two crews')
+check(emergencyPlan.searchDiagnostics.reserveRejected>=0,'emergency reserve rejection count must be explicit and finite')
+check(explainDoctrineCommandContributions(emergencyBase,emergencyPlan.alternatives[0]||{orders:[],forecast:[]},simulateDirect(emergencyBase),simulatePath(0)).length === (emergencyPlan.alternatives[0]?.orders.length||0),'command attribution count must match the plan length')
 
 const causalState = makeState('flood')
 const causalBefore = operationSnapshot(causalState)
@@ -319,8 +341,9 @@ check(gridAt89.grid < floodThreshold.grid - floodThreshold.gridRate * 90,
 
 console.log(JSON.stringify({
   status: 'passed',
-  suite: 'CIVIC CASCADE three-level stress envelope, Pareto decision portfolio and reproducible evidence dossier',
+  suite: 'CIVIC CASCADE seven-layer decision assurance: reserves, scenario transfer, command attribution, stress matrix, search accounting and dossier evidence',
   release: manifest.version,
+  enhancements: ['reserve-aware planning','cross-scenario transfer','leave-one-command-out attribution','nine-profile stress matrix','search diagnostics','expanded decision dossier','preflight reserve revalidation'],
   scenarios: 3,
   horizons: [30, 60, 90],
   boundedMetricAssertions: 36,
@@ -354,6 +377,11 @@ console.log(JSON.stringify({
     doctrineParetoDominance: 'PASS',
     doctrinePortfolioDiversity: 'PASS',
     doctrineTradeoffDossier: 'PASS',
+    reserveAwareConstraints: 'PASS',
+    crossScenarioTransfer: 'PASS',
+    commandMarginalAttribution: 'PASS',
+    searchDiagnostics: 'PASS',
+    dossierTransferEvidence: 'PASS',
     reproducibleDossierPayload: 'PASS',
     dossierPrivacyContract: 'PASS',
     dossierSnapshotForecastCompleteness: 'PASS'
