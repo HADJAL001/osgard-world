@@ -8,13 +8,22 @@
     queue: 'osgard.games.player-console.queue.v1',
     settings: 'osgard.games.player-console.settings.v1',
     favorites: 'osgard.games.favorites.v1',
-    recent: 'osgard.games.recent.v1'
+    recent: 'osgard.games.recent.v1',
+    missions: 'osgard.games.player-console.missions.v1'
   });
   const MAX_QUEUE = 5;
   const MAX_LOG = 1000;
   const MAX_ACTIVITY_DAYS = 4000;
   const MAX_TOTAL_LAUNCHES = 10000000;
   const MAX_IMPORT_BYTES = 100 * 1024;
+  const MAX_MISSION_CLAIMS = 4000;
+  const MAX_MISSION_XP = 10000000;
+  const DAILY_MISSIONS = Object.freeze([
+    { id: 'open-one', title: 'Первая экспедиция', detail: 'Открой любую игру сегодня.', target: 1, reward: 10, kind: 'launches' },
+    { id: 'visit-two', title: 'Два соседних мира', detail: 'Открой две разные игры за UTC-день.', target: 2, reward: 20, kind: 'unique-games' },
+    { id: 'complete-one', title: 'Протокол закрыт', detail: 'Заверши хотя бы один игровой раунд.', target: 1, reward: 25, kind: 'completions' },
+    { id: 'queue-three', title: 'План маршрута', detail: 'Подготовь очередь из трёх игр.', target: 3, reward: 15, kind: 'queue' }
+  ]);
   const VALID_SCALE = new Set(['0.9', '1', '1.1', '1.2']);
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -85,7 +94,10 @@
         if (valid.has(id) && Number.isInteger(value) && value >= 0) completions[id] = Math.min(100000, value);
       }
     }
-    return { schema: 1, launches, totalLaunches, gameIdsEver, activityDays, secondsByGame, completions };
+    const completionLog = Array.isArray(raw.completionLog) ? raw.completionLog.filter(row =>
+      row && typeof row === 'object' && valid.has(row.game) && typeof row.at === 'string' && Number.isFinite(Date.parse(row.at))
+    ).map(row => ({ game: row.game, at: new Date(row.at).toISOString() })).slice(-MAX_LOG) : [];
+    return { schema: 1, launches, totalLaunches, gameIdsEver, activityDays, secondsByGame, completions, completionLog };
   }
   function loadQueue() { return cleanIds(safeRead(KEY.queue, []), MAX_QUEUE); }
   function loadSettings() {
@@ -97,9 +109,23 @@
     };
   }
 
+  function validateMissionState(raw) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return { schema: 1, totalXp: 0, claims: [] };
+    const validIds = new Set(DAILY_MISSIONS.map(item => item.id));
+    const claims = Array.isArray(raw.claims) ? raw.claims.filter(row =>
+      row && typeof row === 'object' && validIds.has(row.id) && isValidDateKey(row.day) &&
+      typeof row.at === 'string' && Number.isFinite(Date.parse(row.at))
+    ).map(row => ({ id: row.id, day: row.day, at: new Date(row.at).toISOString() })).slice(-MAX_MISSION_CLAIMS) : [];
+    const unique = [...new Map(claims.map(row => [row.day + ':' + row.id, row])).values()].slice(-MAX_MISSION_CLAIMS);
+    const totalXp = Number.isSafeInteger(raw.totalXp) && raw.totalXp >= 0 ? Math.min(MAX_MISSION_XP, raw.totalXp) : 0;
+    return { schema: 1, totalXp, claims: unique };
+  }
+  function loadMissionState() { return validateMissionState(safeRead(KEY.missions, {})); }
+
   let stats = loadStats();
   let queue = loadQueue();
   let settings = loadSettings();
+  let missionState = loadMissionState();
   let activeGame = '';
   let activeWallAt = 0;
   let activeStartedMonotonic = 0;
@@ -128,6 +154,7 @@
     '<nav class="og-pc-tabs" role="tablist" aria-label="Разделы пульта игрока">',
     '<button type="button" role="tab" id="og-pc-tab-overview" aria-controls="og-pc-panel-overview" aria-selected="true" data-pc-tab="overview">Обзор</button>',
     '<button type="button" role="tab" id="og-pc-tab-queue" aria-controls="og-pc-panel-queue" aria-selected="false" data-pc-tab="queue" tabindex="-1">Очередь</button>',
+    '<button type="button" role="tab" id="og-pc-tab-missions" aria-controls="og-pc-panel-missions" aria-selected="false" data-pc-tab="missions" tabindex="-1">Экспедиции</button>',
     '<button type="button" role="tab" id="og-pc-tab-diagnostics" aria-controls="og-pc-panel-diagnostics" aria-selected="false" data-pc-tab="diagnostics" tabindex="-1">Диагностика</button>',
     '<button type="button" role="tab" id="og-pc-tab-data" aria-controls="og-pc-panel-data" aria-selected="false" data-pc-tab="data" tabindex="-1">Данные и доступность</button>',
     '</nav>',
@@ -143,6 +170,12 @@
     '<div class="og-pc-block-head"><div><h3>Очередь до пяти игр</h3><p>Собери последовательность и запускай игру за игрой. Порядок хранится локально.</p></div><button type="button" class="og-pc-action" data-pc-clear-queue>Очистить очередь</button></div>',
     '<ol class="og-pc-queue" data-pc-queue></ol><p class="og-pc-empty" data-pc-queue-empty>Очередь пока пуста. Используй кнопку «В очередь» на карточке игры.</p>',
     '<div class="og-pc-actions"><button type="button" class="og-pc-action og-pc-primary" data-pc-play-next>Запустить первую в очереди ↗</button><button type="button" class="og-pc-action" data-pc-tab-open="overview">Вернуться к обзору</button></div>',
+    '</section>',
+    '<section class="og-pc-panel" id="og-pc-panel-missions" role="tabpanel" aria-labelledby="og-pc-tab-missions" data-pc-panel="missions" hidden>',
+    '<div class="og-pc-mission-hero"><div><p class="og-pc-eyebrow">LOCAL-FIRST / DAILY EXPEDITIONS</p><h3>Четыре задачи. Один личный маршрут.</h3><p>Задания обновляются по UTC-дате. XP хранится только в этом браузере и не имеет денежной стоимости.</p></div><div class="og-pc-xp"><small>МОЙ XP</small><strong data-pc-xp-total>0</strong><span data-pc-streak>Серия: 0 дней</span></div></div>',
+    '<p class="og-pc-mission-date" data-pc-mission-date></p>',
+    '<div class="og-pc-missions-list" data-pc-missions-list></div>',
+    '<div class="og-pc-block"><h3>Правила прогресса</h3><p class="og-pc-muted">Запуски и завершения берутся из локальной истории этой консоли. Награды нельзя обменять на деньги; это не глобальный рейтинг, а локальные достижения устройства.</p></div>',
     '</section>',
     '<section class="og-pc-panel" id="og-pc-panel-diagnostics" role="tabpanel" aria-labelledby="og-pc-tab-diagnostics" data-pc-panel="diagnostics" hidden>',
     '<div class="og-pc-block-head"><div><h3>Проверка каталога</h3><p>Проверяется HTTP-доступность адреса игры на текущем домене. Это не гарантирует, что игровой движок и все ресурсы загрузятся.</p></div><button type="button" class="og-pc-action og-pc-primary" data-pc-scan>Проверить адреса</button></div>',
@@ -170,8 +203,64 @@
     stats.launches = stats.launches.slice(-MAX_LOG);
     stats.totalLaunches = Math.min(MAX_TOTAL_LAUNCHES, Math.max(Number.isSafeInteger(stats.totalLaunches) ? stats.totalLaunches : 0, stats.launches.length));
     stats.gameIdsEver = [...new Set([...cleanIds(stats.gameIdsEver, getGames().length), ...stats.launches.map(row => row.game)])].slice(0, getGames().length);
+    stats.completionLog = (Array.isArray(stats.completionLog) ? stats.completionLog : []).filter(row => row && gameMap().has(row.game) && Number.isFinite(Date.parse(row.at))).map(row => ({ game: row.game, at: new Date(row.at).toISOString() })).slice(-MAX_LOG);
     stats.activityDays = [...new Set([...(Array.isArray(stats.activityDays) ? stats.activityDays.filter(isValidDateKey).slice(-MAX_ACTIVITY_DAYS) : []), ...stats.launches.map(row => dateKey(Date.parse(row.at)))])].sort().slice(-MAX_ACTIVITY_DAYS);
     if (!safeWrite(KEY.stats, stats)) setStatus('Хранилище браузера недоступно: изменения остаются только до закрытия страницы.', 'warning');
+  }
+  function persistMissionState() {
+    missionState = validateMissionState(missionState);
+    if (!safeWrite(KEY.missions, missionState)) setStatus('XP и награды пока доступны только до закрытия страницы.', 'warning');
+  }
+  function getMissionProgress(mission, today = dateKey()) {
+    const todayLaunches = stats.launches.filter(row => dateKey(Date.parse(row.at)) === today);
+    const uniqueToday = new Set(todayLaunches.map(row => row.game));
+    const todayCompletions = (stats.completionLog || []).filter(row => dateKey(Date.parse(row.at)) === today).length;
+    if (mission.kind === 'launches') return Math.min(mission.target, todayLaunches.length);
+    if (mission.kind === 'unique-games') return Math.min(mission.target, uniqueToday.size);
+    if (mission.kind === 'completions') return Math.min(mission.target, todayCompletions);
+    if (mission.kind === 'queue') return Math.min(mission.target, queue.length);
+    return 0;
+  }
+  function renderMissions() {
+    const host = $('[data-pc-missions-list]', dialog);
+    if (!host) return;
+    const today = dateKey();
+    const total = $('[data-pc-xp-total]', dialog);
+    if (total) total.textContent = String(missionState.totalXp);
+    const streak = $('[data-pc-streak]', dialog);
+    if (streak) streak.textContent = 'Серия: ' + dateStreak() + ' дн.';
+    const dateLabel = $('[data-pc-mission-date]', dialog);
+    if (dateLabel) dateLabel.textContent = 'Цикл UTC: ' + today + ' · до 4 наград в день';
+    host.replaceChildren();
+    for (const mission of DAILY_MISSIONS) {
+      const progress = getMissionProgress(mission, today);
+      const claimed = missionState.claims.some(row => row.day === today && row.id === mission.id);
+      const complete = progress >= mission.target;
+      const card = document.createElement('article'); card.className = 'og-pc-mission' + (complete ? ' is-complete' : '');
+      const top = document.createElement('div'); top.className = 'og-pc-mission-top';
+      const copy = document.createElement('div'); const title = document.createElement('h4'); title.textContent = mission.title;
+      const detail = document.createElement('p'); detail.textContent = mission.detail; copy.append(title, detail);
+      const reward = document.createElement('span'); reward.className = 'og-pc-mission-reward'; reward.textContent = '+' + mission.reward + ' XP'; top.append(copy, reward);
+      const meter = document.createElement('div'); meter.className = 'og-pc-mission-meter'; meter.setAttribute('role','progressbar'); meter.setAttribute('aria-label',mission.title); meter.setAttribute('aria-valuemin','0'); meter.setAttribute('aria-valuemax',String(mission.target)); meter.setAttribute('aria-valuenow',String(progress));
+      const fill = document.createElement('span'); fill.style.width = (progress / mission.target * 100) + '%'; meter.append(fill);
+      const foot = document.createElement('div'); foot.className = 'og-pc-mission-foot';
+      const state = document.createElement('small'); state.textContent = claimed ? 'Награда получена сегодня' : complete ? 'Готово к получению' : progress + ' / ' + mission.target; foot.append(state);
+      const button = document.createElement('button'); button.type='button'; button.className='og-pc-action' + (complete && !claimed ? ' og-pc-primary' : ''); button.dataset.pcClaimMission=mission.id;
+      button.disabled = !complete || claimed; button.textContent = claimed ? 'Получено ✓' : complete ? 'Забрать +' + mission.reward + ' XP' : 'Продолжить';
+      foot.append(button); card.append(top,meter,foot); host.append(card);
+    }
+  }
+  function claimMission(id) {
+    const mission = DAILY_MISSIONS.find(item => item.id === id);
+    const today = dateKey();
+    if (!mission || getMissionProgress(mission,today) < mission.target || missionState.claims.some(row => row.day === today && row.id === id)) {
+      setStatus('Задание ещё не готово или награда за него уже получена.', 'warning'); renderMissions(); return;
+    }
+    missionState.totalXp = Math.min(MAX_MISSION_XP, missionState.totalXp + mission.reward);
+    missionState.claims.push({ id, day: today, at: new Date().toISOString() });
+    missionState.claims = missionState.claims.slice(-MAX_MISSION_CLAIMS);
+    persistMissionState(); renderMissions();
+    setStatus('+' + mission.reward + ' XP · награда сохранена локально. Денежной стоимости нет.', 'success');
   }
   function persistQueue() {
     queue = cleanIds(queue, MAX_QUEUE);
@@ -287,6 +376,7 @@
     $('[data-pc-challenge-copy]', dialog).textContent = genres >= 3 ? 'Маршрут недели выполнен: три жанра уже открыты.' : 'Осталось попробовать жанров: ' + (3 - genres) + '. Прогресс основан на запусках этой консоли.';
     localBadgeList(unique, genres);
     renderNextGame();
+    renderMissions();
   }
   function renderQueue() {
     const list = $('[data-pc-queue]', dialog);
@@ -323,6 +413,7 @@
     empty.hidden = queue.length > 0;
     $('[data-pc-play-next]', dialog).disabled = queue.length === 0;
     $('[data-pc-clear-queue]', dialog).disabled = queue.length === 0;
+    renderMissions();
   }
   function addToQueue(id) {
     const game = gameMap().get(id);
@@ -483,7 +574,7 @@
       format: 'osgard-player-console', schema: 1, exportedAt: new Date().toISOString(),
       favorites: cleanIds(safeRead(KEY.favorites, [])),
       recent: cleanIds(safeRead(KEY.recent, []), 5), queue: [...queue],
-      stats, settings
+      stats, settings, missions: missionState
     };
     downloadJson('osgard-player-data-' + dateKey() + '.json', payload);
     $('[data-pc-data-status]', dialog).textContent = 'Экспорт подготовлен на этом устройстве. Проверь файл перед передачей: он содержит личную историю игр.';
@@ -509,7 +600,8 @@
     if (raw.completions && typeof raw.completions === 'object' && !Array.isArray(raw.completions)) {
       for (const [id, value] of Object.entries(raw.completions)) if (games.has(id) && Number.isInteger(value) && value >= 0 && value <= 100000) completions[id] = value;
     }
-    return { schema: 1, launches, totalLaunches, gameIdsEver, activityDays, secondsByGame, completions };
+    const completionLog = Array.isArray(raw.completionLog) ? raw.completionLog.filter(row => row && games.has(row.game) && typeof row.at === 'string' && Number.isFinite(Date.parse(row.at))).map(row => ({ game: row.game, at: new Date(row.at).toISOString() })).slice(-MAX_LOG) : [];
+    return { schema: 1, launches, totalLaunches, gameIdsEver, activityDays, secondsByGame, completions, completionLog };
   }
   async function importData(file) {
     const output = $('[data-pc-data-status]', dialog);
@@ -528,11 +620,12 @@
         highContrast: importedSettingsRaw.highContrast === true,
         scale: VALID_SCALE.has(String(importedSettingsRaw.scale)) ? String(importedSettingsRaw.scale) : '1'
       };
-      stats = importedStats; queue = importedQueue; settings = importedSettings;
+      const importedMissions = validateMissionState(parsed.missions);
+      stats = importedStats; queue = importedQueue; settings = importedSettings; missionState = importedMissions;
       safeWrite(KEY.favorites, importedFavorites);
       safeWrite(KEY.recent, importedRecent);
-      persistStats(); persistQueue(); persistSettings();
-      renderOverview();
+      persistStats(); persistQueue(); persistSettings(); persistMissionState();
+      renderOverview(); renderMissions();
       output.textContent = 'Импорт завершён. Приняты только известные идентификаторы игр и проверенные числовые поля.';
       setStatus('Локальные игровые данные восстановлены.');
     } catch (error) {
@@ -541,11 +634,12 @@
   }
   function clearLocalData() {
     if (!window.confirm('Удалить локальные избранное, историю, очередь и статистику пульта? Согласие на аналитику останется без изменений.')) return;
-    for (const key of [KEY.stats, KEY.queue, KEY.favorites, KEY.recent]) {
+    for (const key of [KEY.stats, KEY.queue, KEY.favorites, KEY.recent, KEY.missions]) {
       try { localStorage.removeItem(key); } catch {}
     }
-    stats = { schema: 1, launches: [], totalLaunches: 0, gameIdsEver: [], activityDays: [], secondsByGame: {}, completions: {} };
+    stats = { schema: 1, launches: [], totalLaunches: 0, gameIdsEver: [], activityDays: [], secondsByGame: {}, completions: {}, completionLog: [] };
     queue = [];
+    missionState = { schema: 1, totalXp: 0, claims: [] };
     persistSettings();
     renderOverview();
     renderQueue();
@@ -606,6 +700,10 @@
       if (next) next.click(); else setStatus('Нет доступных игровых маршрутов.');
     });
     $('[data-pc-play-next]', dialog).addEventListener('click', playQueueHead);
+    $('[data-pc-missions-list]', dialog).addEventListener('click', event => {
+      const button = event.target instanceof Element ? event.target.closest('[data-pc-claim-mission]') : null;
+      if (button && !button.disabled) claimMission(button.dataset.pcClaimMission);
+    });
     $('[data-pc-clear-queue]', dialog).addEventListener('click', () => { queue = []; persistQueue(); setStatus('Очередь очищена.'); });
     $('[data-pc-scan]', dialog).addEventListener('click', () => { void scanRoutes().catch(() => setStatus('Не удалось завершить проверку маршрутов.', 'warning')); });
     $('[data-pc-refresh-diag]', dialog).addEventListener('click', () => { void refreshDiagnostics(); });
@@ -641,8 +739,9 @@
       const id = escapeId(event.detail?.game);
       if (!gameMap().has(id)) return;
       stats.completions[id] = Math.min(100000, (stats.completions[id] || 0) + 1);
+      stats.completionLog = [...(stats.completionLog || []), { game: id, at: new Date().toISOString() }].slice(-MAX_LOG);
       persistStats();
-      renderOverview();
+      renderOverview(); renderMissions();
     });
     window.addEventListener('online', updateConnectionState);
     window.addEventListener('offline', updateConnectionState);
@@ -735,7 +834,7 @@
   });
   window.OSGARDPlayerConsole = Object.freeze({
     open: openConsole,
-    version: '1.0.0',
+    version: '1.1.0',
     getLocalSnapshot: () => ({ launches: stats.totalLaunches, uniqueGames: stats.gameIdsEver.length, queuedGames: queue.length }),
     scanRoutes,
     exportData
