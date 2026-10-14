@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#080d10">
-<meta name="description" content="CIVIC CASCADE 2.7 — кризисная стратегия OSGARD с причинным разбором действий, последствиями для инфраструктуры и прозрачным отчётом после операции.">
+<meta name="description" content="CIVIC CASCADE 2.8 — кризисная стратегия OSGARD с локальным поиском штабных планов, прогнозом каскадов и объяснимой оценкой инфраструктурных рисков.">
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://osgard.world/games/civic-cascade/">
 <title>CIVIC CASCADE — кризисная стратегия | OSGARD PLAY</title>
-<meta name="osgard-game-version" content="2.7.0-causal-operation-debrief">
+<meta name="osgard-game-version" content="2.8.0-autonomous-doctrine-search">
 <style>
 :root{color-scheme:dark;--bg:#080d10;--panel:#10191d;--panel2:#142126;--line:#ffffff1c;--ink:#edf3ee;--muted:#91a29e;--mint:#b8f4cf;--cyan:#68d8d2;--gold:#e1c58a;--warn:#f2b27c;--bad:#ff827b;--mono:ui-monospace,Consolas,monospace;--serif:Georgia,serif}
 *{box-sizing:border-box}html{background:var(--bg);scroll-behavior:smooth}body{margin:0;color:var(--ink);background:radial-gradient(ellipse at 76% -18%,#234d453d,transparent 48%),var(--bg);font:14px/1.55 Inter,Geist,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}button,select{font:inherit}button,a,select{touch-action:manipulation}a{color:inherit;text-decoration:none}button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(--mint);outline-offset:3px}.wrap{max-width:1440px;padding:0 clamp(14px,2.8vw,42px);margin:auto}
@@ -108,6 +108,35 @@
 .command-list{display:grid;gap:6px;margin:0;padding:0;list-style:none}.command-empty{padding:13px 10px;border:1px dashed #ffffff20;border-radius:7px;color:#82928d;font-size:9px;line-height:1.6;text-align:center}.command-order{display:grid;grid-template-columns:27px minmax(0,1fr) auto;align-items:center;gap:9px;padding:9px;border:1px solid #ffffff15;border-radius:8px;background:#061013}.command-order[data-state=active]{border-color:#68d8d2a3;background:#0c2022;box-shadow:0 0 18px #68d8d20a}.command-order[data-state=done]{opacity:.58}.command-order-number{display:grid;place-items:center;width:25px;height:25px;border:1px solid #68d8d255;border-radius:50%;color:var(--cyan);font:9px var(--mono)}.command-order-copy{min-width:0}.command-order-copy strong{display:block;color:var(--ink);font-size:10px;font-weight:650}.command-order-copy small{display:block;margin-top:3px;color:var(--muted);font-size:8px;line-height:1.5}.command-order-tools{display:flex;gap:3px}.command-order-tools button{width:27px;height:27px;border:1px solid #ffffff17;border-radius:5px;background:#0c171a;color:#b7c8c1;font-size:11px;cursor:pointer}.command-order-tools button:hover:not(:disabled){border-color:#68d8d2;color:var(--cyan)}.command-order-tools button:disabled,.command-builder button:disabled,.command-footer button:disabled{opacity:.35;cursor:not-allowed}
 .command-footer{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:8px;margin-top:10px}.command-footer .ctrl{width:100%;min-height:43px;white-space:normal;line-height:1.3}.command-footer .primary{border-color:var(--cyan);background:#68d8d2;color:#071113;font-weight:750}.command-footer .primary:hover:not(:disabled){background:#a0f4ed}.command-note{margin:9px 0 0;color:#81938e;font-size:8px;line-height:1.65}
 @media(max-width:560px){.command-deck{padding:12px}.command-head{display:grid;grid-template-columns:1fr;gap:8px}#cc-plan-status{max-width:none;text-align:left}.command-builder{grid-template-columns:minmax(0,1fr)}.command-builder .ctrl{width:100%}.command-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.command-footer{grid-template-columns:1fr}.command-order{grid-template-columns:25px minmax(0,1fr)}.command-order-tools{grid-column:2;justify-content:flex-end}.command-order-copy strong{font-size:10px}}@media(prefers-reduced-motion:reduce){.command-deck,.command-order{scroll-behavior:auto;transition:none!important}}
+
+
+/* CIVIC CASCADE 2.8 — explainable, local, bounded operational search. */
+.doctrine-lab{margin:12px 0;padding:13px;border:1px solid #68d8d244;border-radius:10px;background:radial-gradient(ellipse at 100% 0%,#68d8d20d,transparent 48%),linear-gradient(145deg,#101b1d,#0a1215)}
+.doctrine-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.doctrine-head strong{display:block;color:var(--cyan);font:8px var(--mono);letter-spacing:.1em}
+.doctrine-head small{display:block;margin-top:5px;color:var(--muted);font:7px/1.5 var(--mono);letter-spacing:.06em}
+#cc-doctrine-status{max-width:48%;color:var(--mint);font:7px/1.5 var(--mono);text-align:right}
+.doctrine-intro{margin:10px 0;color:#a7b7b0;font-size:10px;line-height:1.65}
+.doctrine-tools{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center}
+.doctrine-tools label{color:var(--muted);font:7px var(--mono);letter-spacing:.06em}
+.doctrine-tools select{min-width:0;min-height:42px;padding:0 10px;border:1px solid #ffffff25;border-radius:7px;background:#071013;color:var(--ink);font-size:10px}
+.doctrine-tools .ctrl{min-height:42px;white-space:nowrap}
+.doctrine-results{display:grid;gap:8px;margin-top:10px}
+.doctrine-empty{margin:0;padding:12px;border:1px dashed #ffffff20;border-radius:7px;color:var(--muted);font-size:10px;line-height:1.65}
+.doctrine-option{min-width:0;padding:11px;border:1px solid #ffffff1a;border-radius:8px;background:#071013}
+.doctrine-option[data-selected=true]{border-color:#68d8d2a6;box-shadow:inset 2px 0 #68d8d2}
+.doctrine-option-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.doctrine-option-head strong{color:var(--ink);font:8px var(--mono);letter-spacing:.08em}
+.doctrine-option-head span{color:var(--cyan);font:8px var(--mono)}
+.doctrine-option-actions{margin:8px 0;color:#e2ece5;font-size:10px;line-height:1.65;overflow-wrap:anywhere}
+.doctrine-option-metrics{margin:0;color:var(--muted);font:8px/1.7 var(--mono);overflow-wrap:anywhere}
+.doctrine-option button{width:100%;min-height:36px;margin-top:8px;white-space:normal}
+.doctrine-footer{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:8px;margin-top:9px}
+.doctrine-footer .ctrl{min-height:41px;width:100%;white-space:normal;line-height:1.35}
+.doctrine-footer .primary{border-color:var(--cyan);background:#68d8d2;color:#071113;font-weight:750}
+.doctrine-footer button:disabled,.doctrine-tools button:disabled{opacity:.35;cursor:not-allowed}
+.doctrine-footnote{margin:9px 0 0;color:#81938e;font-size:8px;line-height:1.65}
+@media(max-width:560px){.doctrine-lab{padding:11px}.doctrine-head{display:grid;grid-template-columns:1fr;gap:7px}#cc-doctrine-status{max-width:none;text-align:left}.doctrine-tools{grid-template-columns:minmax(0,1fr)}.doctrine-tools label{margin-top:2px}.doctrine-tools select,.doctrine-tools .ctrl{width:100%}.doctrine-footer{grid-template-columns:1fr}.doctrine-option-head{align-items:flex-start;flex-direction:column;gap:4px}}
 
 /* CIVIC CASCADE 2.1 — tactical incidents. The simulation pauses until the operator chooses. */
 .incident-card{margin:0 0 12px;padding:13px;border:1px solid #e1c58a73;background:radial-gradient(ellipse at 100% 0%,#e1c58a12,transparent 54%),linear-gradient(145deg,#201d17,#101719);box-shadow:inset 2px 0 #e1c58a55,0 12px 35px #0003}
@@ -232,7 +261,7 @@
 <button class="action-btn" id="cc-action-repair" data-action="repair"><span class="action-icon">⌁</span><span class="action-copy"><b>Отправить ремонтные бригады</b><small>Устраняет сбой выбранного узла</small></span><span class="cost">−12 ед.</span></button>
 </div></div>
 <section class="command-deck" id="cc-command-deck" aria-labelledby="cc-command-title">
- <div class="command-head"><div><small>COMMAND DECK / SEQUENTIAL OPERATIONS · 2.4.1</small><h3 id="cc-command-title">План приказов</h3></div><span id="cc-plan-status" role="status" aria-live="polite">Постановка плана доступна на паузе</span></div>
+ <div class="command-head"><div><small>CIVIC CASCADE 2.8 / ADAPTIVE OPERATIONS</small><h3 id="cc-command-title">План приказов</h3></div><span id="cc-plan-status" role="status" aria-live="polite">Постановка плана доступна на паузе</span></div>
  <p class="command-intro">Поставь симуляцию на паузу, собери до четырёх приказов, сравни прямой прогноз воды, энергосети, доступа и бюджета, а затем исполни последовательность. Каждый приказ меняет состояние игры. Если возникнет кризисный инцидент, исполнение остановится, а оставшиеся приказы сохранятся в очереди.</p>
  <div class="command-builder"><select id="cc-plan-action" aria-label="Приказ для добавления в очередь"><option value="pump">01 · Насосные группы — вода −12 · 18 ед.</option><option value="grid">02 · Стабилизация сети — мощность +15 · 20 ед. · бригада</option><option value="route">03 · Эвакуационный путь — доступ +17 · 15 ед.</option><option value="repair">04 · Ремонт выбранного узла — эффект по типу · 12 ед. · бригада</option></select><button class="ctrl" id="cc-plan-add" type="button">＋ Добавить приказ</button></div>
  <div class="command-summary" aria-label="Прогноз прямых эффектов плана">
@@ -247,6 +276,30 @@
    <article class="cascade-window" id="cc-cascade-90"><h4>T+90 СЕК <small>ДАЛЬНИЙ ГОРИЗОНТ</small></h4><div class="cascade-track" data-path="wait"><div class="cascade-track-label">БЕЗ НОВЫХ ПРИКАЗОВ</div><p id="cc-cascade-wait-90">—</p></div><div class="cascade-track" data-path="plan"><div class="cascade-track-label">С ТЕКУЩИМ ПЛАНОМ</div><p id="cc-cascade-plan-90">—</p></div></article>
   </div>
   <p class="cascade-forecast-note" id="cc-cascade-note">Детерминированный прогноз учитывает целостность узлов, слабые входящие связи и каскады отказов. Случайные кризисные события, будущие решения и меняющиеся внешние условия не предсказываются.</p>
+ </section>
+ 
+ <section class="doctrine-lab" id="cc-doctrine-lab" aria-labelledby="cc-doctrine-title">
+  <div class="doctrine-head">
+   <div><strong id="cc-doctrine-title">АВТОНОМНЫЙ КОМПИЛЯТОР ПЛАНА</strong><small>ПОИСК ПО КОМБИНАЦИЯМ · ОБЪЯСНИМЫЙ РЕЗУЛЬТАТ</small></div>
+   <span id="cc-doctrine-status" role="status" aria-live="polite">ПОСТАВЬ СИМУЛЯЦИЮ НА ПАУЗУ</span>
+  </div>
+  <p class="doctrine-intro">Штаб перебирает допустимые последовательности до четырёх приказов и сравнивает прогноз на T+30, T+60 и T+90. Он учитывает ресурсы, бригады, состояние узлов и каскадные отказы. Найденный вариант не исполняется сам — сначала проверь его и загрузи в очередь.</p>
+  <div class="doctrine-tools">
+   <label for="cc-doctrine-mode">ЦЕЛЬ ОПЕРАЦИИ</label>
+   <select id="cc-doctrine-mode" aria-label="Цель поиска штабного плана">
+    <option value="balanced">Сбалансировать город</option>
+    <option value="risk">Сильнее снизить общий риск</option>
+    <option value="protect">Защитить слабую инфраструктуру</option>
+    <option value="conserve">Бережно расходовать ресурсы</option>
+   </select>
+   <button class="ctrl primary" id="cc-doctrine-run" type="button">⌕ Найти план</button>
+  </div>
+  <div class="doctrine-results" id="cc-doctrine-results" aria-live="polite"><p class="doctrine-empty">Поставь игру на паузу и запусти поиск. Расчёт выполняется на устройстве; состояние игры не изменяется.</p></div>
+  <div class="doctrine-footer">
+   <button class="ctrl primary" id="cc-doctrine-apply" type="button" disabled>Загрузить выбранный план в очередь</button>
+   <button class="ctrl" id="cc-doctrine-reset" type="button" disabled>Сбросить расчёт</button>
+  </div>
+  <p class="doctrine-footnote">Планировщик детерминированный и локальный: он не отправляет игровые данные на сервер и не вызывает OpenAI API. Это проверяемый поиск по правилам симуляции, а не обещание всеведения. Будущие случайные инциденты и решения игрока не предсказываются.</p>
  </section>
  <ol class="command-list" id="cc-plan-list" aria-live="polite"><li class="command-empty">Очередь пуста. Поставь игру на паузу и добавь первый приказ.</li></ol>
  <div class="command-footer"><button class="ctrl" id="cc-plan-clear" type="button" disabled>Очистить очередь</button><button class="ctrl primary" id="cc-plan-execute" type="button" disabled>▶ Исполнить план · 0 приказов</button></div>
@@ -826,6 +879,157 @@ function renderPlan(){
  $('cc-plan-execute').disabled=finished||!paused||!!activeIncident||planRunning||!planOrders.length;
  $('cc-plan-execute').textContent=planRunning?'■ ИСПОЛНЯЕТСЯ '+Math.min(planIndex+1,runningPlan.length)+' / '+runningPlan.length:'▶ Исполнить план · '+planOrders.length+' приказ'+(planOrders.length===1?'':'а');
 }
+
+function doctrineObjectiveScore(forecast,cost,crewCount,mode){
+ const terminal=forecast[forecast.length-1];
+ const averageRisk=forecast.reduce((sum,sample)=>sum+sample.risk,0)/Math.max(1,forecast.length);
+ const weights=mode==='risk'
+  ?{average:.23,terminal:.60,weakest:.06,critical:1.8,cost:.08,crew:.6}
+  :mode==='protect'
+   ?{average:.17,terminal:.30,weakest:.28,critical:5,cost:.08,crew:.6}
+   :mode==='conserve'
+    ?{average:.22,terminal:.43,weakest:.10,critical:2.5,cost:.17,crew:1.0}
+    :{average:.22,terminal:.48,weakest:.13,critical:3,cost:.10,crew:.8};
+ return averageRisk*weights.average+terminal.risk*weights.terminal+(100-terminal.weakestIntegrity)*weights.weakest+terminal.criticalNodes.length*weights.critical+cost*weights.cost+crewCount*weights.crew;
+}
+function searchDoctrinePlans(sourceState,mode,selectedNodeId,simulateOrders,simulatePath,nodeDefinitions,actionMetadata){
+ const horizons=[30,60,90],maxDepth=4,beamWidth=6;
+ const weakNodes=nodeDefinitions.slice().sort((a,b)=>{
+  const ah=Number.isFinite(sourceState.nodeIntegrity?.[a.id])?sourceState.nodeIntegrity[a.id]:100;
+  const bh=Number.isFinite(sourceState.nodeIntegrity?.[b.id])?sourceState.nodeIntegrity[b.id]:100;
+  return ah-bh||a.id.localeCompare(b.id);
+ }).slice(0,3);
+ const selected=nodeDefinitions.find(node=>node.id===selectedNodeId);
+ if(selected&&!weakNodes.some(node=>node.id===selected.id))weakNodes.push(selected);
+ const options=[{action:'pump',nodeId:null},{action:'grid',nodeId:null},{action:'route',nodeId:null},...weakNodes.map(node=>({action:'repair',nodeId:node.id}))];
+ const signatureOf=orders=>orders.map(order=>order.action+':'+(order.nodeId||'-')).join('|');
+ const compare=(a,b)=>a.score-b.score||a.cost-b.cost||a.orders.length-b.orders.length||a.signature.localeCompare(b.signature);
+ const evaluate=orders=>{
+  const direct=simulateOrders(orders.map(order=>({...order})));
+  if(!direct||!direct.valid)return null;
+  const forecast=simulatePath({...direct.state},horizons);
+  if(!Array.isArray(forecast)||forecast.length!==horizons.length)return null;
+  if(forecast.some(sample=>!Number.isFinite(sample.risk)||!Number.isFinite(sample.weakestIntegrity)||sample.weakestIntegrity<0||sample.weakestIntegrity>100))return null;
+  const cost=Number.isFinite(direct.cost)?direct.cost:orders.reduce((sum,order)=>sum+(actionMetadata[order.action]?.cost||0),0);
+  const crewsUsed=orders.reduce((sum,order)=>sum+(actionMetadata[order.action]?.crew||0),0);
+  return {signature:signatureOf(orders),orders:orders.map(order=>({...order})),cost,crewsUsed,score:doctrineObjectiveScore(forecast,cost,crewsUsed,mode),forecast};
+ };
+ const baseline=evaluate([]);
+ if(!baseline)return {baseline:null,alternatives:[],evaluatedCount:0,mode};
+ const explored=new Map();
+ let frontier=[baseline];
+ for(let depth=1;depth<=maxDepth;depth++){
+  const expanded=new Map();
+  for(const parent of frontier){
+   for(const option of options){
+    if(option.action==='repair'&&parent.orders.some(order=>order.action==='repair'&&order.nodeId===option.nodeId))continue;
+    const orders=parent.orders.concat([{action:option.action,nodeId:option.nodeId||null}]);
+    const signature=signatureOf(orders);
+    if(expanded.has(signature))continue;
+    const candidate=evaluate(orders);
+    if(candidate){expanded.set(signature,candidate);explored.set(signature,candidate)}
+   }
+  }
+  const ranked=Array.from(expanded.values()).sort(compare);
+  frontier=ranked.slice(0,beamWidth);
+  if(!frontier.length)break;
+ }
+ const baselineRisk=baseline.forecast[baseline.forecast.length-1].risk;
+ const riskTolerance=mode==='protect'?8:mode==='conserve'?1:2;
+ const alternatives=[];
+ for(const candidate of Array.from(explored.values()).sort(compare)){
+  if(candidate.score>=baseline.score-.2)continue;
+  if(candidate.forecast[candidate.forecast.length-1].risk>baselineRisk+riskTolerance)continue;
+  alternatives.push(candidate);
+  if(alternatives.length===3)break;
+ }
+ return {baseline,alternatives,evaluatedCount:explored.size,mode};
+}
+
+let doctrineResult=null,doctrineSelectedIndex=0,doctrineStaleMessage='';
+function doctrineFingerprint(){
+ const names=['water','grid','access','supplies','crews','riskOffset','waterRate','gridRate','accessRate','actionCount','scenario'];
+ const metrics=names.map(key=>[key,state[key]]);
+ const integrity=nodes.map(node=>[node.id,state.nodeIntegrity?.[node.id]??100,state.nodeOutages?.[node.id]??false]);
+ return JSON.stringify({metrics,elapsed:Math.round(elapsed*10)/10,integrity,incidents:state.pendingNodeIncidents||[]});
+}
+function renderDoctrineResults(message){
+ const root=$('cc-doctrine-results');if(!root)return;root.replaceChildren();
+ if(!doctrineResult){
+  const empty=document.createElement('p');empty.className='doctrine-empty';
+  empty.textContent=message||doctrineStaleMessage||'Поставь игру на паузу и запусти поиск. Расчёт выполняется на устройстве; состояние игры не изменяется.';
+  root.append(empty);return;
+ }
+ const result=doctrineResult,baseline=result.baseline;
+ if(!result.alternatives.length){
+  const empty=document.createElement('p');empty.className='doctrine-empty';
+  const baselineRisk=baseline?baseline.forecast[baseline.forecast.length-1].risk:'—';
+  empty.textContent='Проверено допустимых последовательностей: '+result.evaluatedCount+'. При цели «'+result.mode+'» ни один вариант не улучшил оценку достаточно убедительно при текущих ограничениях. Базовый риск на T+90: '+baselineRisk+'. Планировщик не выдаёт заведомо слабый вариант за рекомендацию.';
+  root.append(empty);return;
+ }
+ result.alternatives.forEach((candidate,index)=>{
+  const card=document.createElement('article');card.className='doctrine-option';card.dataset.selected=String(index===doctrineSelectedIndex);
+  const head=document.createElement('div');head.className='doctrine-option-head';
+  const title=document.createElement('strong');title.textContent=(index===0?'ЛУЧШИЙ НАЙДЕННЫЙ ВАРИАНТ':'АЛЬТЕРНАТИВА '+String(index+1).padStart(2,'0'));
+  const score=document.createElement('span');score.textContent='ОЦЕНКА '+candidate.score.toFixed(2);head.append(title,score);
+  const actions=document.createElement('p');actions.className='doctrine-option-actions';
+  actions.textContent=candidate.orders.map((order,i)=>{
+   const meta=PLAN_ACTIONS[order.action],target=order.action==='repair'?' · '+((nodes.find(node=>node.id===order.nodeId)||nodes[0]).name):'';
+   return (i+1)+'. '+meta.label+target;
+  }).join(' → ');
+  const terminal=candidate.forecast[candidate.forecast.length-1],baseRisk=baseline.forecast[baseline.forecast.length-1].risk,riskDelta=terminal.risk-baseRisk;
+  const weak=(nodes.find(node=>node.id===terminal.weakestNode)||{name:terminal.weakestNode}).name;
+  const metrics=document.createElement('p');metrics.className='doctrine-option-metrics';
+  metrics.textContent='РИСК T+90: '+baseRisk+' → '+terminal.risk+' ('+(riskDelta>0?'+':'')+riskDelta+') · СЛАБЫЙ УЗЕЛ: '+weak+' '+terminal.weakestIntegrity+'% · РЕСУРСЫ: '+candidate.cost+' · БРИГАДЫ: '+candidate.crewsUsed+' · КРИТИЧЕСКИЕ УЗЛЫ: '+terminal.criticalNodes.length;
+  const choose=document.createElement('button');choose.type='button';choose.className='ctrl';choose.textContent=index===doctrineSelectedIndex?'✓ Вариант выбран':'Выбрать этот вариант';choose.disabled=index===doctrineSelectedIndex;
+  choose.addEventListener('click',()=>{doctrineSelectedIndex=index;renderDoctrineResults();refreshDoctrineAvailability()});
+  card.append(head,actions,metrics,choose);root.append(card);
+ });
+}
+function refreshDoctrineAvailability(){
+ const canWork=paused&&!finished&&!activeIncident&&!planRunning;
+ const run=$('cc-doctrine-run'),mode=$('cc-doctrine-mode'),apply=$('cc-doctrine-apply'),reset=$('cc-doctrine-reset'),status=$('cc-doctrine-status');
+ if(doctrineResult&&doctrineResult.fingerprint!==doctrineFingerprint()){
+  doctrineResult=null;doctrineSelectedIndex=0;doctrineStaleMessage='Состояние города изменилось после расчёта. Запусти новый поиск, чтобы не использовать устаревший план.';
+  renderDoctrineResults(doctrineStaleMessage);
+ }
+ if(run)run.disabled=!canWork;
+ if(mode)mode.disabled=!canWork;
+ if(apply)apply.disabled=!canWork||!doctrineResult||!doctrineResult.alternatives[doctrineSelectedIndex];
+ if(reset)reset.disabled=!doctrineResult&&!doctrineStaleMessage;
+ if(status){
+  if(doctrineResult)status.textContent='ГОТОВО · '+doctrineResult.evaluatedCount+' ВАРИАНТОВ · '+doctrineResult.durationMs+' МС';
+  else if(doctrineStaleMessage)status.textContent='НУЖЕН ПЕРЕСЧЁТ';
+  else status.textContent=canWork?'ГОТОВ К РАСЧЁТУ · ПАУЗА':'ПОСТАВЬ СИМУЛЯЦИЮ НА ПАУЗУ';
+ }
+}
+function runDoctrinePlanner(){
+ if(finished||planRunning||activeIncident||!paused){toast('Поставь симуляцию на паузу перед поиском плана.');return}
+ const mode=$('cc-doctrine-mode').value,started=performance.now();
+ const result=searchDoctrinePlans(state,mode,selectedNode().id,simulatePlannedOrders,simulateCascadingPath,nodes,PLAN_ACTIONS);
+ result.durationMs=Math.round(performance.now()-started);result.fingerprint=doctrineFingerprint();
+ doctrineResult=result;doctrineSelectedIndex=0;doctrineStaleMessage='';
+ renderDoctrineResults();refreshDoctrineAvailability();
+ if(!result.alternatives.length)toast('По выбранной цели убедительный допустимый план не найден.');else toast('Найден вариант штабного плана. Проверь прогноз перед применением.');
+}
+function resetDoctrinePlanner(){
+ doctrineResult=null;doctrineSelectedIndex=0;doctrineStaleMessage='';
+ renderDoctrineResults();refreshDoctrineAvailability();
+}
+function applyDoctrinePlan(){
+ if(finished||planRunning||activeIncident||!paused){toast('Для загрузки штабного плана поставь симуляцию на паузу.');return}
+ if(!doctrineResult||doctrineResult.fingerprint!==doctrineFingerprint()){resetDoctrinePlanner();toast('Расчёт устарел. Запусти поиск повторно.');return}
+ const candidate=doctrineResult.alternatives[doctrineSelectedIndex];
+ if(!candidate){toast('Нет рекомендованного варианта для загрузки.');return}
+ if(planOrders.length&&!window.confirm('Заменить текущую очередь из '+planOrders.length+' приказов на выбранный сгенерированный план? Текущая симуляция не изменится.'))return;
+ const validation=simulatePlannedOrders(candidate.orders);
+ if(!validation.valid){toast('План больше не проходит проверку бюджета или бригад. Запусти расчёт заново.');resetDoctrinePlanner();return}
+ planOrders=candidate.orders.map(order=>({id:nextPlanOrderId++,action:order.action,nodeId:order.nodeId||null}));
+ planNotice='Загружен план автономного поиска. Он не исполняется автоматически — проверь очередь и нажми «Исполнить план».';
+ renderPlan();toast('План загружен в очередь для проверки. Автоматического исполнения нет.');
+}
+function setDoctrineObjective(){resetDoctrinePlanner();refreshDoctrineAvailability()}
+
 function addPlannedOrder(){
  if(finished||planRunning||activeIncident)return;if(!paused){toast('Поставь симуляцию на паузу перед составлением плана.');return}
  if(planOrders.length>=4){toast('В очереди максимум четыре приказа.');return}
@@ -1002,6 +1206,7 @@ function sendLifecycle(status){if(window.parent===window)return;try{window.paren
 $('cc-map').addEventListener('pointerdown',pick);
 buttons.forEach(id=>$('cc-action-'+id).addEventListener('click',()=>act(id)));
 $('cc-plan-add').addEventListener('click',addPlannedOrder);$('cc-plan-clear').addEventListener('click',clearPlannedOrders);$('cc-plan-execute').addEventListener('click',executePlannedOrders);
+$('cc-doctrine-run').addEventListener('click',runDoctrinePlanner);$('cc-doctrine-apply').addEventListener('click',applyDoctrinePlan);$('cc-doctrine-reset').addEventListener('click',resetDoctrinePlanner);$('cc-doctrine-mode').addEventListener('change',setDoctrineObjective);
 $('cc-pause').addEventListener('click',()=>{if(finished||planRunning)return;if(paused&&planOrders.length){toast('Сначала исполни очередь или очисти план перед снятием паузы.');return}paused=!paused;$('cc-pause').textContent=paused?'▶ Продолжить':'Ⅱ Пауза';ui.status.textContent=paused?'ПАУЗА':'СИСТЕМА АКТИВНА';renderUI();renderPlan();addLog(paused?'<b>Оператор:</b> симуляция приостановлена.':'<b>Оператор:</b> симуляция возобновлена.')});
 $('cc-speed').addEventListener('click',()=>{speedIndex=(speedIndex+1)%speeds.length;$('cc-speed').textContent='СКОРОСТЬ '+speeds[speedIndex]+'×';toast('Скорость симуляции: '+speeds[speedIndex]+'×')});
 $('cc-reset').addEventListener('click',()=>fresh($('cc-scenario').value));
