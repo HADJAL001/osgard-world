@@ -1285,6 +1285,8 @@ func _run_smoke() -> void:
 	game.player.global_position = Vector3(0.0, 0.82, 10.2)
 	game.player.velocity = Vector3.ZERO
 	game.dash_timer = 0.0
+	# This fixture measures a standard 2-point precision hit, not a queued countershot.
+	game.counter_window_remaining = 0.0
 	game.gamepad_move = Vector2.ZERO
 	game.gamepad_aim = Vector2.ZERO
 	game.player_aim = Vector3.FORWARD
