@@ -51,7 +51,7 @@ Three directions considered:
 
 ### Implemented in source
 - First-party cross-promotion with source/game/campaign tags, contextual placement and user preferences.
-- OSGARD SELECT intermissions are configured to appear after each completed game for fresh users; players can select services, change the frequency or pause promotion. Legacy configuration migrates to the current enabled/every-session/share-reward defaults, while explicit schema-v2 operator choices and individual player preferences are preserved.
+- OSGARD SELECT intermissions are configured to appear after each completed game for fresh users; players can select services, change the frequency or pause promotion. Schema-v1 and schema-v2 configurations migrate to enabled/every-session/share-reward defaults; explicit schema-v3 operator choices and individual player preferences are preserved.
 - Partner inquiry and sponsor-campaign management source paths, with sponsorship disclosure requirements.
 - A browser-local three-scenario financial model and export, plus regression tests.
 - Commerce API source contracts for server-defined products, payment-provider state, webhook signatures/idempotency and consented events.
