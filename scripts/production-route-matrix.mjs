@@ -18,7 +18,9 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
     // its headers; the explicit index.html route and required binary assets below still
     // receive content-aware GET checks.
     const routeUrl = new URL(route, base)
-    if (expectedBuild && ['/games/catalog-runtime.js', '/games/favicon.svg'].includes(route)) routeUrl.searchParams.set('_osgard_route_check', expectedBuild.slice(0, 12))
+    // Force a current-revision read of the static Godot export shell as well as the cached JS assets.
+    // Some edge caches keep index.html independently of the deployment's freshly published .wasm/.pck files.
+    if (expectedBuild && ['/games/catalog-runtime.js', '/games/favicon.svg', '/games/null-shift-godot/index.html'].includes(route)) routeUrl.searchParams.set('_osgard_route_check', expectedBuild.slice(0, 12))
     const response = await fetch(routeUrl, { method: isGodotDirectory ? 'HEAD' : 'GET', headers: { 'user-agent': userAgent, 'cache-control': 'no-cache', pragma: 'no-cache' }, cache: 'no-store', signal: AbortSignal.timeout(timeoutMs) })
     const responseBody = route.startsWith('/games/share-cards/') ? new Uint8Array(await response.arrayBuffer()) : isGodotDirectory ? '' : await response.text()
     const text = typeof responseBody === 'string' ? responseBody : ''
