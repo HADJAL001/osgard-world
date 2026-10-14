@@ -87,6 +87,6 @@ for (const [id, route, marker] of [
   assert.ok(productionMatrix.includes("'" + route + "'"), 'Production route matrix must check the player tool: ' + route);
 }
 assert.ok(page.includes("credentials: 'omit'") && page.includes("method: 'GET'"), 'Operations probes must remain read-only and credential-free');
-assert.ok(reliabilityTool.includes('window.OSGARDPlayerReliability') && !/\\bfetch\\s*\\(|sendBeacon\\s*\\(/.test(reliabilityTool), 'Diagnostics must remain local and not transmit reports');
+assert.ok(reliabilityTool.includes('window.OSGARDPlayerReliability') && !reliabilityTool.includes('fetch(') && !reliabilityTool.includes('sendBeacon(') && !reliabilityTool.includes('XMLHttpRequest'), 'Diagnostics must remain local and not transmit reports');
 assert.ok(preferencesTool.includes('window.OSGARDPreferencesBackup') && preferencesTool.includes('window.confirm'), 'Collection restore must validate schema and require confirmation');
 console.log('PASS OSGARD Games operations console: ' + targets.length + ' route contracts, 11 game/runtime entrypoints, same-origin GET-only checks, privacy boundary and JSON export.');
