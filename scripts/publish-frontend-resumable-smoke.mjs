@@ -21,7 +21,7 @@ const checks = [
   ['activation is opt-in', publisher.includes('if (!$Activate)') && publisher.includes('Production was not changed.')],
   ['activation uses the shared rollback helper', publisher.includes('activate-frontend-dist-remote.sh') && !publisher.includes('rm -rf /usr/share/nginx/html/*')],
   ['activation validates archive digest and paths', activator.includes('sha256sum "$archive"') && activator.includes('Unsafe archive path') && activator.includes('index.html')],
-  ['activation rejects link entries', activator.includes('Symbolic and hard links are not allowed')],
+  ['activation allows only regular files and directories', activator.includes('Only regular files and directories are allowed')],
   ['activation contains rollback on failed Nginx validation', activator.includes('rollback()') && activator.includes('trap rollback EXIT') && activator.includes('nginx -t')],
   ['activation runs post-deploy route probes', activator.includes('curl --retry') && activator.includes('$origin/games/')],
   ['publisher check is available through npm', pkg.scripts['qa:windows-publisher'] === 'node scripts/publish-frontend-resumable-smoke.mjs'],
