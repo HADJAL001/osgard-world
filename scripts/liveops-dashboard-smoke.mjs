@@ -7,7 +7,7 @@ const core = readFileSync('public/games/admin/analytics-core.js', 'utf8');
 const inline = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
 assert.equal(inline.length, 1, 'LiveOps page should have a single application script');
 assert.doesNotThrow(() => new Function(inline[0]), 'dashboard application script must parse');
-assert.ok(html.includes('<script src="/games/admin/analytics-core.js"></script>'), 'first-party analytics core must load before the dashboard');
+assert.ok(html.includes('<script src="/games/admin/analytics-core.js?v=20261015-1"></script>'), 'first-party analytics core must load before the dashboard');
 for (const id of [
   'operator-token', 'from-date', 'to-date', 'refresh', 'compare-period', 'auto-refresh',
   'data-freshness', 'freshness-label', 'metrics', 'cohorts-data', 'snapshots-data',
