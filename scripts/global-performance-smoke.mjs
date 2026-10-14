@@ -18,6 +18,7 @@ for(const name of ['MiniApp','Sections','TimePrototype','OnlineGamePrototype','L
 assert.ok(app.includes("const LazyLivingGlobe = lazy(() => import('./LivingGlobe')"));
 assert.ok(app.includes('new IntersectionObserver')&&app.includes("rootMargin: '100px'"));
 assert.ok(!app.includes("import { LivingGlobe } from './LivingGlobe'"));
+assert.ok(app.includes("className=\\\"play-catalog-link\\\" href={ru ? '/games/' : '/games/en/'}") && app.includes("'/games/en/?utm_source=osgard_world&utm_medium=entertainment&utm_campaign=between_worlds'"), 'Homepage Games entry should preserve the selected language and campaign attribution');
 assert.ok(css.includes('.globe-mount{')&&css.includes('.route-loading{')&&css.includes('prefers-reduced-motion:reduce'));
 const routeStyles=[['src/MiniApp.tsx','miniapp.css'],['src/Sections.tsx','founders.css'],['src/Sections.tsx','surfaces.css'],['src/CreatePrototype.tsx','create.css'],['src/MobilityPrototype.tsx','mobility.css'],['src/TimePrototype.tsx','time.css'],['src/OnlineGamePrototype.tsx','online.css'],['src/LegacyCreatorPrototypes.tsx','legacy.css'],['src/WeekSurface.tsx','week.css'],['src/Recommendations.tsx','recommendations.css'],['src/ArchiveSurface.tsx','archive.css'],['src/ProfileSurface.tsx','profile.css'],['src/CommunitySurface.tsx','community.css'],['src/StreamSurface.tsx','stream.css']];
 for(const [source,name] of routeStyles){
