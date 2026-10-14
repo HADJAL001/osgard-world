@@ -34,7 +34,8 @@ const catalogUrl=new URL(core.catalogUrl(route,'https://osgard.world'));assert.e
 assert.ok(page.includes('<title>OSGARD PLAY — Конструктор экспедиций</title>')&&page.includes('id="game-options"')&&page.includes('id="share-panel"')&&page.includes('id="open-catalog"'));
 assert.ok(page.includes('Telegram')&&page.includes('WhatsApp')&&page.includes('VK')&&page.includes('Facebook'));
 assert.ok(css.includes('prefers-reduced-motion:reduce')&&css.includes('@media(max-width:760px)'));
-assert.ok(hub.includes('href="/games/expedition/"')&&hub.includes('/games/expedition/catalog-runtime.js?v=__OSGARD_BUILD_VERSION__'));
+assert.ok(hub.includes('href="/games/expedition/"')&&hub.includes("function loadExpeditionForInvite()")&&hub.includes("if(!params.has('og_expedition'))return")&&hub.includes("loadScript('expedition/core.js')")&&hub.includes("loadScript('expedition/catalog-runtime.js')"))
+assert.ok(!hub.includes('<script src="/games/expedition/core.js?v=__OSGARD_BUILD_VERSION__" defer>')&&!hub.includes('<script src="/games/expedition/catalog-runtime.js?v=__OSGARD_BUILD_VERSION__" defer>'),'expedition-only JS must not block normal Games visits');
 assert.ok(entertainment.includes('href="/games/expedition/"')&&entertainment.includes('Собрать экспедицию'));assert.ok(sitemap.includes('https://osgard.world/games/expedition/'));
 for(const path of ['/games/expedition/','/games/expedition/core.js','/games/expedition/app.js','/games/expedition/expedition.css','/games/expedition/catalog-runtime.js'])assert.ok(serviceWorker.includes("'"+path+"'"),'PWA cache must include '+path);
 assert.ok(catalogState.includes("for (const key of ['q', 'genre', 'favorites', 'games']) url.searchParams.delete(key)")&&catalogState.includes('const url = new URL(location.href)'),'Search/filter synchronization must preserve expedition query parameters');
