@@ -36,6 +36,15 @@ on:
       - "vite.config.ts"
       - "scripts/sync-swarm-assets.mjs"
       - "scripts/frontend-archive-preflight.mjs"
+      - "scripts/osgard-contract-audit.mjs"
+      - "scripts/catalog-state-scale-smoke.mjs"
+      - "scripts/verify-release-manifest.mjs"
+      - "scripts/frontend-archive-preflight-smoke.mjs"
+      - "scripts/generate-games-share-cards.mjs"
+      - "docs/34_OSGARD_CONTRACT_INTEGRITY_ENGINE_2026-10-14.md"
+      - "docs/35_OSGARD_RELEASE_QUALITY_ATTESTATION_2026-10-14.md"
+      - "docs/36_OSGARD_QUALITY_PLATFORM_PLAN_2026_2029.md"
+      - "docs/OSGARD_CORE_CONTRACT.md"
       - "scripts/frontend-archive-preflight-smoke.mjs"
       - "scripts/production-route-matrix.mjs"
       - "scripts/activate-frontend-remote.sh"
@@ -79,6 +88,8 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
+      - name: Verify cross-surface OSGARD contracts
+        run: npm run qa:contracts
       - name: Verify proof-carrying release manifest fixture
         run: npm run qa:release-manifest
       - run: npm run check
@@ -179,7 +190,7 @@ jobs:
           mv /tmp/skillcred-app.min.js dist/skillcred/app.js
           ./node_modules/.bin/esbuild dist/skillcred/styles.css --minify --outfile=/tmp/skillcred-styles.min.css
           mv /tmp/skillcred-styles.min.css dist/skillcred/styles.css
-      - run: npm run preflight:frontend
+      - run: npm run preflight:frontend && npm run release:verify
       - run: npm run qa:skillcred
       - name: Verify Imperium of Time visuals and real diagnostics
         run: npm run qa:time-ui
@@ -211,6 +222,7 @@ jobs:
           # Re-hash the exact publishable HTML tree after build stamping and compression.
           # The manifest itself stays outside the tree to avoid self-referential hashing.
           OSGARD_FRONTEND_MANIFEST=release-manifest.json node scripts/frontend-archive-preflight.mjs osgard-release/html
+          OSGARD_FRONTEND_MANIFEST=release-manifest.json node scripts/verify-release-manifest.mjs osgard-release/html
           cp nginx.conf osgard-release/nginx.conf
           tar -czf osgard-world-release.tgz -C osgard-release .
       - name: Configure SSH
@@ -254,6 +266,7 @@ jobs:
           name: osgard-production-release-${{ github.sha }}
           path: |
             release-manifest.json
+            osgard-contract-audit.json
             production-route-matrix.json
             local.sha256
             osgard-world-release.tgz

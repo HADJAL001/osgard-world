@@ -19,6 +19,21 @@ on:
       - "scripts/external-project-healthcheck.mjs"
       - "scripts/external-project-healthcheck-smoke.mjs"
       - "scripts/project-intake-smoke.mjs"
+      - "scripts/osgard-contract-audit.mjs"
+      - "scripts/catalog-state-scale-smoke.mjs"
+      - "scripts/verify-release-manifest.mjs"
+      - "scripts/frontend-archive-preflight.mjs"
+      - "scripts/frontend-archive-preflight-smoke.mjs"
+      - "scripts/generate-games-share-cards.mjs"
+      - "scripts/production-route-matrix.mjs"
+      - "public/sitemap.xml"
+      - "docs/OSGARD_CORE_CONTRACT.md"
+      - "docs/34_OSGARD_CONTRACT_INTEGRITY_ENGINE_2026-10-14.md"
+      - "docs/35_OSGARD_RELEASE_QUALITY_ATTESTATION_2026-10-14.md"
+      - "docs/36_OSGARD_QUALITY_PLATFORM_PLAN_2026_2029.md"
+      - ".github/workflows/release-readiness.yml"
+      - ".github/workflows/deploy-frontend.yml"
+      - ".github/workflows/osgard-ai-release-review.yml"
       - ".github/workflows/games-lighthouse.yml"
       - "public/games/**"
       - "public/entertainment/**"
@@ -74,6 +89,10 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
+      - name: Verify cross-surface OSGARD contracts
+        run: npm run qa:contracts
+      - name: Verify proof-carrying release manifest fixture
+        run: npm run qa:release-manifest
       - name: Test OpenAI reviewer offline (no API call)
         run: npm run qa:ai-release-review
       - name: Verify Godot diagnostics fault contract
@@ -127,7 +146,7 @@ jobs:
       - name: Verify project intake, attribution and safe API fallback
         run: npm run qa:project-intake
       - name: Validate static archive and HTML
-        run: npm run preflight:frontend
+        run: npm run preflight:frontend && npm run release:verify
       - name: Install pinned Capacitor packages for the iOS bundle smoke test
         run: npm install --no-save --package-lock=false @capacitor/core@8.5.3 @capacitor/cli@8.5.3 @capacitor/ios@8.5.3 @capacitor/share@8.0.1
       - name: Bundle native share support and prepare the iOS web payload

@@ -24,6 +24,8 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
+      - name: Verify cross-surface OSGARD contracts
+        run: npm run qa:contracts
       - name: Verify proof-carrying release manifest fixture
         run: npm run qa:release-manifest
       - name: Test OpenAI reviewer offline (no API call)
@@ -43,7 +45,7 @@ jobs:
       - name: Verify partner inventory and enquiry form
         run: npm run qa:partners-page
       - name: Build and archive preflight
-        run: npm run build && npm run preflight:frontend
+        run: npm run build && npm run preflight:frontend && npm run release:verify
       - name: Verify Imperium of Time gameplay and diagnostics
         run: npm run qa:time-ui
       - name: Verify production routes after deploy or manual request
@@ -63,4 +65,5 @@ jobs:
           name: osgard-release-readiness
           path: |
             release-manifest.json
+            osgard-contract-audit.json
             production-route-matrix.json

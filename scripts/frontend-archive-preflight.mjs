@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
 import { stat, readdir, readFile, writeFile } from 'node:fs/promises'
-import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
+import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const scriptRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -20,6 +20,48 @@ if (
   throw new Error('Release manifest must be written outside the artifact directory so it cannot escape its own inventory.')
 }
 
+const contractReportPath = resolve(process.env.OSGARD_CONTRACT_AUDIT || join(scriptRoot, 'osgard-contract-audit.json'))
+const secretExact = new Set([
+  '.env', '.env.local', '.env.production', '.npmrc', '.pypirc',
+  'id_rsa', 'id_ed25519', 'credentials.json', 'service-account.json',
+])
+const secretExtensions = new Set(['.pem', '.p12', '.pfx', '.key', '.keystore'])
+function isSecretPath(path) {
+  const name = basename(path).toLowerCase()
+  if (secretExact.has(name) || name.startsWith('id_rsa') || name.startsWith('id_ed25519')) return true
+  if (/^\.env\.(?!example$|sample$)[a-z0-9._-]+$/i.test(name)) return true
+  return secretExtensions.has(extname(name))
+}
+async function readContractGate(path) {
+  const raw = await readFile(path)
+  const report = JSON.parse(raw.toString('utf8'))
+  const summary = report?.summary
+  const fingerprint = String(report?.contract?.sha256 || '')
+  if (report?.schema !== 'osgard.contract-integrity.v1' ||
+      report.status !== 'ready' ||
+      !Array.isArray(report.checks) ||
+      !summary ||
+      !Number.isSafeInteger(summary.checks) || summary.checks < 1 ||
+      !Number.isSafeInteger(summary.passed) || summary.passed < 0 ||
+      !Number.isSafeInteger(summary.failed) || summary.failed !== 0 ||
+      !Number.isSafeInteger(summary.warnings) || summary.warnings < 0 ||
+      summary.checks !== report.checks.length ||
+      summary.passed + summary.warnings !== summary.checks ||
+      report.checks.some(item => !item || !['passed', 'warning'].includes(item.status)) ||
+      !/^[a-f0-9]{64}$/.test(fingerprint)) {
+    throw new Error('Contract audit report is blocked, missing or malformed: ' + path)
+  }
+  return {
+    schema: report.schema,
+    reportSha256: createHash('sha256').update(raw).digest('hex'),
+    contractFingerprint: fingerprint,
+    checkCount: summary.checks,
+    passed: summary.passed,
+    warnings: summary.warnings,
+  }
+}
+const qualityGate = await readContractGate(contractReportPath)
+
 async function walk(directory) {
   for (const entry of await readdir(directory, { withFileTypes: true })) {
     const path = join(directory, entry.name)
@@ -27,7 +69,11 @@ async function walk(directory) {
       throw new Error('Symbolic links are not permitted in a production archive: ' + relative(root, path))
     }
     if (entry.isDirectory()) await walk(path)
-    else if (entry.isFile()) files.push(path)
+    else if (entry.isFile()) {
+      const rel = relative(root, path).split(sep).join('/')
+      if (isSecretPath(rel)) throw new Error('Secret-like file is not permitted in a production archive: ' + rel)
+      files.push(path)
+    }
     else throw new Error('Unsupported filesystem entry in production archive: ' + relative(root, path))
   }
 }
@@ -106,6 +152,7 @@ const report = {
   sha256: treeSha256,
   // This list is intentionally outside the hashed artifact to avoid self-reference.
   inventory,
+  qualityGate,
 }
 await writeFile(output, JSON.stringify(report, null, 2) + '\n', { mode: 0o600 })
 console.log(JSON.stringify({
@@ -116,5 +163,6 @@ console.log(JSON.stringify({
   files: report.files,
   bytes: report.bytes,
   sha256: report.sha256,
+  qualityGate: report.qualityGate,
   manifestPath: relative(scriptRoot, output).split(sep).join('/'),
 }, null, 2))
