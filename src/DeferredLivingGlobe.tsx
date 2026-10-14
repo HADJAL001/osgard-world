@@ -59,15 +59,15 @@ function GlobePlaceholder() {
  * Keep the expensive Three.js graph out of the first paint.
  * Users requesting reduced motion retain the lightweight static globe.
  */
-export function DeferredLivingGlobe() {
+export function DeferredLivingGlobe({ enabled = true }: { enabled?: boolean }) {
   const [shouldLoad, setShouldLoad] = useState(false)
 
   useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    if (!enabled || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
     const delay = window.matchMedia('(max-width: 760px)').matches ? 1400 : 850
     const timer = window.setTimeout(() => setShouldLoad(true), delay)
     return () => window.clearTimeout(timer)
-  }, [])
+  }, [enabled])
 
   if (!shouldLoad) return <GlobePlaceholder />
   return (
