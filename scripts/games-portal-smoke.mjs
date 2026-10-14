@@ -454,7 +454,7 @@ assert.ok(lazyRuntime.includes("script.async=true")&&lazyRuntime.includes("encod
    return !event.defaultPrevented;
   }
  };
- const fakeWindow={};
+ const fakeWindow={addEventListener(){},removeEventListener(){}};
  const fakeLocation={origin:'https://osgard.world',search:'',pathname:'/games/'};
  const lazyApi=new Function('document','window','location','Element','MouseEvent','URLSearchParams','encodeURIComponent','Promise','setTimeout',lazyRuntime+';return window.OSGARDGamesLazy;')(fakeDocument,fakeWindow,fakeLocation,FakeElement,FakeMouseEvent,URLSearchParams,encodeURIComponent,Promise,setTimeout);
  const gameLink=new FakeElement('a');gameLink.dataset.play='swarm';gameLink.href='https://osgard.world/games/swarm/';
