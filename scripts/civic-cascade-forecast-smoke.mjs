@@ -7,7 +7,7 @@ const manifest = JSON.parse(await readFile(new URL('../public/games/civic-cascad
 const check = (value, message) => assert.ok(value, message)
 
 assert.equal(manifest.gameId, 'civic-cascade')
-assert.equal(manifest.version, '3.3.0', 'release manifest must match this regression suite')
+assert.equal(manifest.version, '3.4.0', 'release manifest must match this regression suite')
 assert.equal(manifest.buildContract?.cascadeForecast?.enabled, true)
 assert.deepEqual(manifest.buildContract?.cascadeForecast?.horizonsGameSeconds, [30, 60, 90])
 assert.equal(manifest.buildContract?.cascadeForecast?.randomIncidentsForecasted, false)
@@ -34,7 +34,13 @@ assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.robustnessProfil
 assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.comparesThreeSeverityLevelsPerFamily, true)
 assert.deepEqual(manifest.buildContract?.autonomousDoctrinePlanner?.severityScaleFactors, [0.5,1,1.5])
 assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.stressRankingUsesAllSeverityLevels, true)
-assert.equal(manifest.buildContract?.decisionDossier?.modelVersion, '3.3.0')
+assert.equal(manifest.buildContract?.decisionDossier?.modelVersion, '3.4.0')
+assert.equal(manifest.buildContract?.decisionAssurance?.enabled, true)
+assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.reserveAwareScoring, true)
+assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.minimumSupplyReserve, 15)
+assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.minimumCrewReserve, 1)
+assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.leaveOneCommandOutAttribution, true)
+assert.deepEqual(manifest.buildContract?.autonomousDoctrinePlanner?.fullStressRiskTrajectories, [0,30,60,90])
 assert.equal(manifest.buildContract?.decisionDossier?.stressProfileCount, 9)
 assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.robustnessCandidateLimit, 8)
 assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.reranksCandidatesByStressAdjustedScore, true)
@@ -123,9 +129,9 @@ const doctrineSource = extractBetween('function doctrineObjectiveScore', 'let do
 const dossierSource = extractBetween('function buildDoctrineDossierPayload', 'async function exportDoctrineDossier')
 const buildDoctrineDossierPayload = new Function(dossierSource + '\nreturn buildDoctrineDossierPayload;')()
 const planner = new Function('nodes', 'PLAN_ACTIONS', 'clamp',
-  doctrineSource + '\nreturn {searchDoctrinePlans, doctrineDominates, doctrineParetoPortfolio, doctrineStressProfiles, canonicalDossierStringify, validateDoctrineDossierStructure, assessDoctrineDossierIntegrity};'
+  doctrineSource + '\nreturn {searchDoctrinePlans, doctrineDominates, doctrineParetoPortfolio, doctrineStressProfiles, canonicalDossierStringify, validateDoctrineDossierStructure, assessDoctrineDossierIntegrity, validateDoctrineForecast, doctrineRiskExposure, analyzeDoctrineCommandContributions, assessDoctrineSafety};'
 )(nodes, actions, clamp)
-const {searchDoctrinePlans, doctrineDominates, doctrineParetoPortfolio, doctrineStressProfiles, canonicalDossierStringify, validateDoctrineDossierStructure, assessDoctrineDossierIntegrity} = planner
+const {searchDoctrinePlans, doctrineDominates, doctrineParetoPortfolio, doctrineStressProfiles, canonicalDossierStringify, validateDoctrineDossierStructure, assessDoctrineDossierIntegrity, validateDoctrineForecast, doctrineRiskExposure, analyzeDoctrineCommandContributions, assessDoctrineSafety} = planner
 const makeState = scenario => {
   const state = {
     ...scenarios[scenario], scenario, crews: 4, maxCrews: 4,
@@ -162,13 +168,13 @@ const doctrineResults = {}
 const dossierVerifierCases = {}
 const verifierBase = makeState('flood')
 const verifierSearch = searchDoctrinePlans(verifierBase, 'balanced', 'hub', simulateDirect(verifierBase), simulatePath(0), nodes, actions)
-const verifierPayload = buildDoctrineDossierPayload(verifierBase, verifierSearch, '3.3.0-auditable-dossier-verifier', scenarios, nodes, 0)
+const verifierPayload = buildDoctrineDossierPayload(verifierBase, verifierSearch, '3.4.0-auditable-dossier-verifier', scenarios, nodes, 0)
 const canonicalA = canonicalDossierStringify({z:1,a:{y:2,x:3}})
 const canonicalB = canonicalDossierStringify({a:{x:3,y:2},z:1})
 assert.equal(canonicalA, canonicalB, 'canonical JSON must ignore object key insertion order')
 const verifierDigest = createHash('sha256').update(canonicalDossierStringify(verifierPayload), 'utf8').digest('hex')
 const verifierDossier = {...verifierPayload, exportMetadata:{exportedAtUtc:'2026-10-14T00:00:00.000Z',integrity:{algorithm:'SHA-256',scope:'canonical recursively key-sorted JSON payload without exportMetadata',status:'computed',digest:verifierDigest}}}
-const currentValidation = validateDoctrineDossierStructure(verifierDossier, '3.3.0')
+const currentValidation = validateDoctrineDossierStructure(verifierDossier, '3.4.0')
 assert.equal(currentValidation.valid, true, 'a correctly structured current dossier must pass validation: '+currentValidation.errors.join('; '))
 assert.equal(currentValidation.modelCompatible, true)
 assert.equal(assessDoctrineDossierIntegrity(verifierDossier,verifierDigest).verified,true)
@@ -183,18 +189,18 @@ const alteredPayload=(({exportMetadata,...payload})=>payload)(alteredDossier)
 const alteredDigest=createHash('sha256').update(canonicalDossierStringify(alteredPayload),'utf8').digest('hex')
 assert.equal(assessDoctrineDossierIntegrity(verifierDossier,alteredDigest).verified,false,'an altered payload must not pass the embedded SHA-256 check')
 const badSchema=JSON.parse(JSON.stringify(verifierDossier));badSchema.schema='untrusted.schema/v9'
-check(!validateDoctrineDossierStructure(badSchema,'3.3.0').valid,'unsupported dossier schema must be rejected')
+check(!validateDoctrineDossierStructure(badSchema,'3.4.0').valid,'unsupported dossier schema must be rejected')
 const badPrivacy=JSON.parse(JSON.stringify(verifierDossier));badPrivacy.assumptions.personalDataIncluded=true
-check(!validateDoctrineDossierStructure(badPrivacy,'3.3.0').valid,'a dossier that claims personal data is included must be rejected')
+check(!validateDoctrineDossierStructure(badPrivacy,'3.4.0').valid,'a dossier that claims personal data is included must be rejected')
 const badOrder=JSON.parse(JSON.stringify(verifierDossier));badOrder.candidates[0].orders[0].action='javascript:alert(1)'
-check(!validateDoctrineDossierStructure(badOrder,'3.3.0').valid,'unknown or executable-looking actions must be rejected')
+check(!validateDoctrineDossierStructure(badOrder,'3.4.0').valid,'unknown or executable-looking actions must be rejected')
 const badStress=JSON.parse(JSON.stringify(verifierDossier));badStress.candidates[0].robustness.profiles.pop()
-check(!validateDoctrineDossierStructure(badStress,'3.3.0').valid,'incomplete stress evidence must be rejected')
+check(!validateDoctrineDossierStructure(badStress,'3.4.0').valid,'incomplete stress evidence must be rejected')
 const historicalDossier=JSON.parse(JSON.stringify(verifierDossier))
 historicalDossier.engine.modelVersion='3.2.0'
 historicalDossier.exportMetadata.integrity.scope='UTF-8 JSON payload without exportMetadata'
 historicalDossier.exportMetadata.integrity.digest=createHash('sha256').update(JSON.stringify((({exportMetadata,...payload})=>payload)(historicalDossier)),'utf8').digest('hex')
-const historicalValidation=validateDoctrineDossierStructure(historicalDossier,'3.3.0')
+const historicalValidation=validateDoctrineDossierStructure(historicalDossier,'3.4.0')
 assert.equal(historicalValidation.valid,true,'historically valid dossiers remain readable: '+historicalValidation.errors.join('; '))
 assert.equal(historicalValidation.modelCompatible,false,'historical model versions must be flagged read-only')
 check(historicalValidation.warnings.length>0,'historical import must disclose model/hash compatibility warnings')
@@ -202,9 +208,9 @@ const futureValidation=validateDoctrineDossierStructure(verifierDossier,'3.4.0')
 assert.equal(futureValidation.valid,true,'other model versions remain readable in audit mode')
 assert.equal(futureValidation.modelCompatible,false)
 const badDepth=JSON.parse(JSON.stringify(verifierDossier));let deep=badDepth;for(let i=0;i<35;i++){deep.child={};deep=deep.child}
-check(!validateDoctrineDossierStructure(badDepth,'3.3.0').valid,'pathologically deep JSON structures must be rejected')
+check(!validateDoctrineDossierStructure(badDepth,'3.4.0').valid,'pathologically deep JSON structures must be rejected')
 const unavailableHashDossier=JSON.parse(JSON.stringify(verifierDossier));unavailableHashDossier.exportMetadata.integrity.status='unavailable';unavailableHashDossier.exportMetadata.integrity.digest=null
-const unavailableValidation=validateDoctrineDossierStructure(unavailableHashDossier,'3.3.0')
+const unavailableValidation=validateDoctrineDossierStructure(unavailableHashDossier,'3.4.0')
 assert.equal(unavailableValidation.valid,true,'Web Crypto-less exports may be structurally inspected with a warning')
 assert.equal(assessDoctrineDossierIntegrity(unavailableHashDossier,null).verified,false,'unavailable hash must never be presented as verified')
 dossierVerifierCases.current='PASS'
@@ -252,21 +258,32 @@ for (const scenario of ['flood', 'blackout', 'blockade']) {
   const runPath = simulatePath(0)
   const result = searchDoctrinePlans(base, 'balanced', 'hub', runOrders, runPath, nodes, actions)
   check(result.evaluatedCount > 0 && result.evaluatedCount <= 1000, scenario + ' doctrine search must stay bounded')
-  const dossier=buildDoctrineDossierPayload(base,result,'3.3.0-auditable-dossier-verifier',scenarios,nodes,0)
+  const dossier=buildDoctrineDossierPayload(base,result,'3.4.0-auditable-dossier-verifier',scenarios,nodes,0)
   assert.equal(dossier.schema,'osgard.civic-cascade.decision-dossier/v1')
   assert.equal(dossier.scenario.id,scenario)
   assert.equal(dossier.candidates.length,result.alternatives.length)
   assert.equal(dossier.baseline.forecast.length,3)
-  assert.equal(dossier.engine.modelVersion,'3.3.0')
+  assert.equal(dossier.engine.modelVersion,'3.4.0')
+  assert.equal(dossier.decisionAssurance.schema,'osgard.civic-cascade.decision-assurance/v1')
+  check(/^[a-f0-9]{8}$/.test(dossier.decisionAssurance.stateFingerprint),'dossier must include the bounded reproducibility fingerprint')
+  assert.equal(dossier.candidates[0].commandAttribution.length,dossier.candidates[0].orders.length)
+  assert.equal(dossier.candidates[0].robustness.profiles[0].trajectory.length,4)
+  check(['green','amber','red'].includes(dossier.candidates[0].safety.level),'dossier candidate must expose a bounded safety verdict')
   assert.equal(dossier.assumptions.personalDataIncluded,false)
   assert.equal(dossier.assumptions.telemetrySent,false)
   assert.equal(dossier.assumptions.openAIAPIUsed,false)
   assert.equal(dossier.candidates[0].robustness.profiles.length,9)
   check(!/email|phone|userId|accessToken|password/i.test(JSON.stringify(dossier)),'dossier export must not include personal data or secrets')
-  assert.deepEqual(dossier,buildDoctrineDossierPayload(base,result,'3.3.0-auditable-dossier-verifier',scenarios,nodes,0),
+  assert.deepEqual(dossier,buildDoctrineDossierPayload(base,result,'3.4.0-auditable-dossier-verifier',scenarios,nodes,0),
     scenario+' dossier payload must be byte-for-byte reproducible before export metadata')
   check(Array.isArray(result.alternatives) && result.alternatives.length <= 3, scenario + ' planner must return at most three candidates')
 check(result.robustnessEvaluatedCount >= 0 && result.robustnessEvaluatedCount <= 8, scenario + ' stress ranking must stay within eight candidates')
+  check(result.alternatives.every(candidate=>candidate.commandAttribution.length===candidate.orders.length),scenario+' every command must have a leave-one-out entry')
+  check(result.alternatives.every(candidate=>Number.isFinite(candidate.riskExposure)&&candidate.riskExposure>=0&&candidate.riskExposure<=100),scenario+' candidate exposure must be bounded')
+  check(result.alternatives.every(candidate=>Number.isFinite(candidate.reserves.reservePenalty)&&candidate.reserves.suppliesAfter>=0&&candidate.reserves.crewsAfter>=0),scenario+' resource reserve audit must be bounded')
+  check(result.alternatives.every(candidate=>['green','amber','red'].includes(candidate.safety.level)),scenario+' candidate must receive a safety verdict')
+  check(result.alternatives.every(candidate=>candidate.robustness.profiles.every(profile=>profile.trajectory.length===4&&profile.trajectory.map(point=>point.seconds).join(',')==='0,30,60,90')),scenario+' all stress profiles must retain full risk trajectories')
+  check(result.alternatives.every(candidate=>Number.isFinite(candidate.robustness.worstRiskExposureDelta)&&candidate.robustness.sensitivityByFamily.length===3),scenario+' stress sensitivity summary must be complete')
 check(result.alternatives.every(candidate => typeof candidate.portfolioRole === 'string' && typeof candidate.paretoMember === 'boolean'), scenario + ' portfolio candidates must declare their selection role and dominance status')
   const prefixes = result.alternatives.map(candidate => candidate.orders.slice(0,2).map(order => order.action + ':' + (order.nodeId || '-')).join('|'))
   assert.equal(new Set(prefixes).size, Math.min(result.alternatives.length, result.openingPrefixCount), scenario + ' portfolio should maximize the available distinct opening command prefixes')
@@ -377,6 +394,21 @@ advanceNodeIntegrity(weakNetwork, 10)
 assert.equal(weakNetwork.pendingNodeIncidents.filter(id => id === 'substation').length, 1, 'a critical node must not enqueue duplicate incidents')
 check(weakNetwork.grid < scenarios.blackout.grid, 'node outage must damage associated city-wide service metric')
 
+
+const exposureLow=doctrineRiskExposure(20,[{seconds:30,risk:20},{seconds:60,risk:25},{seconds:90,risk:30}])
+const exposureHigh=doctrineRiskExposure(20,[{seconds:30,risk:30},{seconds:60,risk:45},{seconds:90,risk:60}])
+check(Number.isFinite(exposureLow)&&exposureLow<exposureHigh&&exposureHigh<=100,'normalized risk exposure must integrate the full trajectory and stay bounded')
+const validFixtureForecast=simulatePath(0)(makeState('flood'),[30,60,90])
+check(validateDoctrineForecast(validFixtureForecast,[30,60,90],nodes).valid,'forecast quality gate must accept a consistent node-by-node forecast')
+const badForecast=JSON.parse(JSON.stringify(validFixtureForecast));badForecast[1].seconds=45
+check(!validateDoctrineForecast(badForecast,[30,60,90],nodes).valid,'forecast quality gate must reject reordered or missing horizons')
+const badNodeForecast=JSON.parse(JSON.stringify(validFixtureForecast));badNodeForecast[2].nodeIntegrity.hub=150
+check(!validateDoctrineForecast(badNodeForecast,[30,60,90],nodes).valid,'forecast quality gate must reject unbounded node integrity')
+const syntheticSafety=level=>assessDoctrineSafety({robustness:{profileCount:9,stableProfiles:level==='green'?9:level==='amber'?6:2,worstRiskDelta:level==='green'?1:level==='amber'?4:12,worstIntegrityDelta:level==='green'?0:level==='amber'?-10:-25,severeRegressions:level==='green'?0:level==='amber'?2:7},reserves:{suppliesAfter:level==='red'?3:30,crewsAfter:level==='red'?0:2}})
+assert.equal(syntheticSafety('green').level,'green','strong stress stability plus preserved reserves should produce green verdict')
+assert.equal(syntheticSafety('amber').level,'amber','mixed but bounded trade-offs should produce amber verdict')
+assert.equal(syntheticSafety('red').level,'red','severe stress and reserve failure must produce red verdict')
+
 const thresholdSource = makeState('blackout')
 const thresholdForecast = simulatePath(64)(thresholdSource, [30])[0]
 check(thresholdForecast.access <= 59, 'the post-65s low-grid cascade should affect access in the deterministic forecast')
@@ -387,7 +419,7 @@ check(gridAt89.grid < floodThreshold.grid - floodThreshold.gridRate * 90,
 
 console.log(JSON.stringify({
   status: 'passed',
-  suite: 'CIVIC CASCADE dossier verifier, canonical SHA-256 integrity, stress envelope and Pareto decision portfolio',
+  suite: 'CIVIC CASCADE 3.4 decision assurance, trajectory analytics, command attribution, reserve guardrails and auditable dossier',
   release: manifest.version,
   scenarios: 3,
   horizons: [30, 60, 90],
@@ -431,6 +463,13 @@ console.log(JSON.stringify({
     dossierSchemaPrivacyAndActionAllowlist: 'PASS',
     dossierHistoricalModelReadOnly: 'PASS',
     dossierComplexityLimit: 'PASS',
-    dossierImportDoesNotExecuteOrders: 'PASS'
+    dossierImportDoesNotExecuteOrders: 'PASS',
+    forecastQualityGate: 'PASS',
+    fullTrajectoryRiskExposure: 'PASS',
+    commandLeaveOneOutAttribution: 'PASS',
+    reserveAwareScoring: 'PASS',
+    operationalSafetyVerdict: 'PASS',
+    sensitivityAcrossSeverityBands: 'PASS',
+    decisionAssuranceFingerprint: 'PASS'
   }
 }, null, 2))
