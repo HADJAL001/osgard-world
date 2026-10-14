@@ -435,8 +435,9 @@ export function calculateRiskSimulation(input = {}, options = {}) {
     Number.isFinite(requestedPct) ? requestedPct : 20));
   const requestedSeed = Number(options.seed ?? 20261015);
   const seed = (Math.trunc(Number.isFinite(requestedSeed) ? requestedSeed : 20261015) >>> 0) || 0x6d2b79f5;
+  const scenarioId = SCENARIOS.some((item) => item.id === options.scenarioId) ? options.scenarioId : 'base';
   const random = createSeededRandom(seed);
-  const baselineProjection = calculateMonthlyProjection(values, 'base', 12);
+  const baselineProjection = calculateMonthlyProjection(values, scenarioId, 12);
   const draws = [];
 
   for (let index = 0; index < iterations; index += 1) {
@@ -445,9 +446,9 @@ export function calculateRiskSimulation(input = {}, options = {}) {
       const multiplier = 1 + ((random() * 2) - 1) * (uncertaintyPct / 100);
       shocked[key] = values[key] * multiplier;
     }
-    const projected = calculateMonthlyProjection(normalizeInputs(shocked), 'base', 12);
+    const projected = calculateMonthlyProjection(normalizeInputs(shocked), scenarioId, 12);
     const finalMonth = projected.rows[projected.rows.length - 1];
-    const endState = calculateScenario({ ...normalizeInputs(shocked), monthlyVisitors: finalMonth.startingVisitors }, 'base');
+    const endState = calculateScenario({ ...normalizeInputs(shocked), monthlyVisitors: finalMonth.startingVisitors }, scenarioId);
     draws.push({
       iteration: index + 1,
       yearGrossRevenueUsd: roundMoney(projected.cumulativeRevenueUsd),
@@ -488,6 +489,7 @@ export function calculateRiskSimulation(input = {}, options = {}) {
     schema: 'osgard.financial-stress.v1',
     modelVersion: 8,
     method: 'independent-uniform-assumption-shocks',
+    scenarioId,
     seed,
     iterations,
     uncertaintyPct,
