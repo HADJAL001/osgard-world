@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 
 const html = readFileSync('public/games/civic-cascade/index.html', 'utf8');
 const release = JSON.parse(readFileSync('public/games/civic-cascade/release.json', 'utf8'));
-assert.match(release.version, /^\\d+\\.\\d+\\.\\d+$/, 'release.json must declare a semantic version');
+assert.match(release.version, /^\d+\.\d+\.\d+$/, 'release.json must declare a semantic version');
 assert.equal(release.releaseId, 'civic-cascade-web-' + release.version, 'release ID must match release.json version');
 assert.equal(release.buildContract.missionChallenges.enabled, true, 'Mission challenge contract missing');
 assert.equal(release.buildContract.missionChallenges.globalLeaderboard, false, 'Release must not claim a global leaderboard');
