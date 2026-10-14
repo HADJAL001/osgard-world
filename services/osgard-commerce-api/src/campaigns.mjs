@@ -85,7 +85,7 @@ export function validateCampaignPayload(input, { nowMs = Date.now() } = {}) {
   }
   // Only the catalog slot is integrated. Other placements remain non-public until a
   // specific game's lifecycle has been wired and tested.
-  if (status === "active" && placement !== "catalog_feature") {
+  if (["active", "scheduled"].includes(status) && !["catalog_feature", "after_session"].includes(placement)) {
     return { ok: false, status: 409, code: "CAMPAIGN_PLACEMENT_NOT_INTEGRATED" };
   }
 
