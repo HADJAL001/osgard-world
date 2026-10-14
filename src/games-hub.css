@@ -394,3 +394,5 @@
 .gh-game-stage:focus-visible{outline:2px solid var(--gh-mint);outline-offset:3px}
 @media(max-width:520px){.gh-error-actions{width:100%;display:grid;grid-template-columns:1fr}.gh-error-actions>*{width:100%}.gh-game-loading small{font-size:9px}}
 @media(prefers-reduced-motion:reduce){.gh-loading-meter span{animation:none;width:70%}.gh-loader{animation:none}}
+
+.gh-session-duration{font-variant-numeric:tabular-nums;color:var(--gh-mint);letter-spacing:.06em}
