@@ -289,9 +289,49 @@ assert.equal(claimImpressionDenied('spotlight:time:myosa:a'),true,'First visible
 assert.equal(claimImpressionDenied('spotlight:time:myosa:a'),false,'The in-memory fallback must deduplicate impression events if browser storage is blocked')
 assert.ok(source.includes("lastSource:accepted.length?'qualified-referral':'qualified-referral-retry'"), 'Retrying a previously saved receipt should not be mistaken for a newly created award')
 
+
+const intermissionCss = read('public/games/game-session-recommendations.css')
+assert.ok(source.includes("const promoSnoozeKey='osgard.games.postgame-snooze-until.v1'") && source.includes("const promoSnoozeMs=24*60*60*1000"), 'A separate one-day promo pause must not overwrite the shared frequency preference')
+assert.ok(source.includes("function snoozeServicePromosForDay(now=Date.now())") && source.includes("readPromoSnoozeUntil(now)>now"), 'Promo pause needs a bounded 24-hour expiry and must gate scheduled service prompts')
+assert.ok(source.includes("snoozeButton.addEventListener('click'") && source.includes("if(hasConsent())void sendSelectEvent('owned_promo_snoozed'"), 'Pause action must work even without analytics consent and only measure after consent')
+assert.ok(source.includes("suite.append(servicesShelf(id,shouldShowServicePromos(preferences,completedCount),completedCount),rewardShelf(id))"), 'Snoozing service promotions must not remove invite rewards')
+assert.ok(source.includes("window.addEventListener('storage'") && source.includes("document.addEventListener('osgard:service-preferences-updated'"), 'Intermission must refresh preferences changed from another tab or the Entertainment page')
+assert.ok(source.includes("function normalizeServiceSearchQuery(value)") && source.includes("function matchesServiceFilter(category,selectedCategory,searchableText,query)"), 'Service search must be normalized and separated from category filtering')
+assert.ok(source.includes("serviceSearch.addEventListener('input'") && source.includes("clearServiceSearch.addEventListener('click'"), 'The expanded service directory needs live search and a clear-search action')
+assert.ok(source.includes("serviceSearchStatus.setAttribute('aria-live','polite')") && source.includes("if(!collapsed){applyFilter(activeServiceCategory);serviceSearch.focus()}"), 'Search results must be announced and the search field receives focus when opened')
+assert.ok(source.includes("searchLabel.hidden=collapsed;serviceSearchStatus.hidden=collapsed;clearServiceSearch.hidden=collapsed"), 'Search controls must collapse with the service directory rather than occupy hidden space')
+assert.ok(intermissionCss.includes('.og-postgame-service-search-wrap') && intermissionCss.includes('.og-postgame-search-clear:focus-visible') && intermissionCss.includes('@media(max-width:600px)') && intermissionCss.includes('prefers-reduced-motion:reduce'), 'Search and pause controls require mobile layout, visible focus and reduced-motion support')
+assert.ok(core.includes('"owned_promo_snoozed"') && commerceApi.includes('"ownedPromoSnoozes"'), 'The allowed event and privacy-bounded aggregate must be wired end-to-end')
+assert.ok(commerceAdmin.includes('id="owned-promo-snoozes"') && commerceAdmin.includes("$('#owned-promo-snoozes').textContent = fmt(funnel.ownedPromoSnoozes)"), 'The protected dashboard must distinguish user-controlled promo pauses')
+const snoozeWriteMatch = source.match(/function snoozeServicePromosForDay\(now=Date\.now\(\)\)\{[\s\S]*?\n\}/)
+const snoozeReadMatch = source.match(/function readPromoSnoozeUntil\(now=Date\.now\(\)\)\{[\s\S]*?\n\}/)
+assert.ok(snoozeWriteMatch && snoozeReadMatch, 'Promo pause helpers must stay independently testable')
+const snoozeStorageData = new Map()
+const snoozeStorage = {getItem(key){return snoozeStorageData.has(key)?snoozeStorageData.get(key):null},setItem(key,value){snoozeStorageData.set(key,String(value))},removeItem(key){snoozeStorageData.delete(key)}}
+const snoozeContext = {localStorage:snoozeStorage,promoSnoozeKey:'osgard.games.postgame-snooze-until.v1',promoSnoozeMs:86400000,memoryPromoSnoozeUntil:0}
+const snoozeWrite = vm.runInNewContext('('+snoozeWriteMatch[0]+')',snoozeContext)
+const snoozeRead = vm.runInNewContext('('+snoozeReadMatch[0]+')',snoozeContext)
+const snoozeResult = snoozeWrite(1000)
+assert.equal(snoozeResult.until,86401000,'One-day pause should expire exactly 24 hours after the user action')
+assert.equal(snoozeRead(1000),86401000,'A valid future pause must survive a reload through persistent storage')
+assert.equal(snoozeRead(86401000),0,'The pause must expire exactly at its deadline')
+assert.equal(snoozeStorageData.has('osgard.games.postgame-snooze-until.v1'),false,'Expired pause markers should be removed')
+snoozeStorage.setItem('osgard.games.postgame-snooze-until.v1',String(1000+2*86400000))
+assert.equal(snoozeRead(1000),0,'Malformed pauses longer than the bounded interval must be ignored')
+const searchNormalizerMatch = source.match(/function normalizeServiceSearchQuery\(value\)\{[^\n]*\}/)
+const searchMatcherMatch = source.match(/function matchesServiceFilter\(category,selectedCategory,searchableText,query\)\{[\s\S]*?\n\}/)
+assert.ok(searchNormalizerMatch && searchMatcherMatch, 'Normalized search helpers are required')
+const normalizeServiceSearchQuery = vm.runInNewContext('('+searchNormalizerMatch[0]+')')
+const matchesServiceFilter = vm.runInNewContext('('+searchMatcherMatch[0]+')')
+assert.equal(normalizeServiceSearchQuery('  ВИДЕО  '),'видео','Search should normalize whitespace and case')
+assert.equal(matchesServiceFilter('studio','all','Создание сайтов и приложений','САЙТОВ'),true,'Search should match Russian service descriptions')
+assert.equal(matchesServiceFilter('studio','business','Создание сайтов','сайтов'),false,'Search results must still obey the active category')
+assert.equal(matchesServiceFilter('business','all','O2 System cash office','vpn'),false,'Search must hide non-matching services')
+assert.equal(matchesServiceFilter('luxury','all','Gold Glamour luxury services','gold'),true,'Search should cover service names and descriptions')
+
 console.log(JSON.stringify({
   status: 'passed',
   serviceDestinations: services.length,
   gameContexts: 9,
-  checks: 52, notes: 'Source-level guardrails; social publication is self-confirmed, not verified by social-network APIs.'
+  checks: 73, notes: 'Source-level guardrails; social publication is self-confirmed, not verified by social-network APIs.'
 }));
