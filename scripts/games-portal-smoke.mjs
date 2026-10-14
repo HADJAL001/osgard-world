@@ -400,8 +400,9 @@ const optionalRuntime=optionalRuntimeMatch[1]
 new Function(optionalRuntime)
 assert.ok(!html.includes('<script src="/games/sponsored-campaigns.js'), 'Sponsor renderer must not block the first-load script queue')
 assert.ok(!html.includes('<script src="/games/experiment-core.js')&&!html.includes('<script src="/games/experiment-runtime.js'), 'Consent-gated experiment runtime must not be eagerly downloaded')
-for(const marker of ["loadScript('sponsored-campaigns.js')","loadScript('experiment-core.js')","loadScript('experiment-runtime.js')","if(!consentGranted())return Promise.resolve(false)","rootMargin:'0px'","encodeURIComponent(version)"]) assert.ok(optionalRuntime.includes(marker),'Optional runtime contract missing: '+marker)
-assert.ok(optionalRuntime.includes("document.querySelector('#analytics-toggle')")&&optionalRuntime.includes("loadSponsorRenderer"), 'Optional runtime must activate after consent or catalogue intent')
+for(const marker of ["loadScript('sponsored-campaigns.js')","rootMargin:'0px'","encodeURIComponent(version)","window.OSGARDOptionalGamesRuntime=Object.freeze({loadSponsorRenderer})"]) assert.ok(optionalRuntime.includes(marker),'Optional sponsor loader contract missing: '+marker)
+assert.ok(html.includes("function hasAnalyticsConsent()")&&html.includes("if(!hasAnalyticsConsent())return Promise.resolve(false)")&&html.includes("loadScript('consented-analytics.js')")&&html.includes("loadScript('experiment-core.js')")&&html.includes("loadScript('experiment-runtime.js')"), 'Analytics queue and A/B runtime must remain behind the existing explicit-consent loader')
+assert.ok(html.includes("event.key==='osgard.games.analytics-consent.v1'&&hasAnalyticsConsent()"), 'Cross-tab consent grant must activate the measurement loader')
 const lazyRuntimeMatch=html.match(/<script id="games-lazy-runtime">([\s\S]*?)<\/script>/)
 assert.ok(lazyRuntimeMatch,'The Games hub must provide the on-demand runtime loader')
 const lazyRuntime=lazyRuntimeMatch[1]
