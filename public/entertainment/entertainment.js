@@ -498,7 +498,7 @@
     try {
       const target = new URL(link.href, location.origin);
       if (target.origin !== location.origin) return '';
-      const normalizePath = value => value.replace(/\\/+$/, '') || '/';
+      const normalizePath = value => value.endsWith('/') && value.length > 1 ? value.slice(0, -1) : value;
       for (const [id, game] of allowedGames) {
         const candidate = new URL(game.href, location.origin);
         if (candidate.origin === location.origin && normalizePath(candidate.pathname) === normalizePath(target.pathname)) return id;
