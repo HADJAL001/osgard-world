@@ -5,6 +5,11 @@ import { buildPlan, evaluateExternalReport, summarizeReport } from './osgard-one
 const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
 const plan = buildPlan();
 assert.ok(plan.length >= 20, 'The one-pass runner must cover the full repository release surface.');
+const aiPreview = plan.find(step => step.id === 'ai-review-preview');
+assert.ok(aiPreview, 'The plan must produce the offline AI review packet after deterministic release evidence exists.');
+assert.ok(!aiPreview.args.includes('--send-to-openai'), 'CI must never opt into a paid OpenAI request automatically.');
+assert.ok(aiPreview.args.includes('--output') && aiPreview.args.includes('osgard-ai-release-review.json'), 'The AI review packet must have an explicit, known output path.');
+
 for (const step of plan) {
   if (step.command.endsWith('npm') || step.command.endsWith('npm.cmd')) {
     assert.equal(step.args[0], 'run');
