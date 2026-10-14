@@ -397,7 +397,7 @@ export function GameDetailPage({ slug }: { slug: string }) {
     }, consentRef.current)
     sessionStartedAtRef.current = null
     detailSessionIdRef.current = null
-    setSessionStatus(reason === 'game_completed' ? 'completed' : 'ready')
+    setSessionStatus(reason === 'game_completed' ? 'completed' : reason === 'game_error' ? 'error' : 'ready')
   }
 
   const clearFrameTimers = () => {
@@ -509,7 +509,10 @@ export function GameDetailPage({ slug }: { slug: string }) {
       }
     }
     window.addEventListener('message', onMessage)
-    return () => window.removeEventListener('message', onMessage)
+    return () => {
+      window.removeEventListener('message', onMessage)
+      finishDetailSession('player_left')
+    }
   }, [playing, game?.id])
 
   useEffect(() => {
