@@ -59,8 +59,10 @@ assert.ok(sw.includes("request.mode === 'navigate'") && sw.includes('/games/offl
 assert.ok(sw.includes("cache.put('/games/'") && sw.includes('ignoreSearch: true'));
 assert.ok(sw.includes('CACHE_PREFIX') && sw.includes('caches.delete(name)'));
 assert.ok(!sw.includes("caches.match(request) || fetch(request)"), 'Do not use a stale generic cache-first strategy for the entire site.');
-assert.ok(stateScript.includes("params.get('q')") && stateScript.includes("params.get('genre')") && stateScript.includes("params.get('favorites')"));
+assert.ok(stateScript.includes("params.get('q')") && stateScript.includes("params.get('genre')") && stateScript.includes("params.get('favorites')") && stateScript.includes("params.get('games')"));
 assert.ok(stateScript.includes("url.searchParams.delete(key)") && stateScript.includes('history.replaceState'));
+assert.ok(stateScript.includes("url.searchParams.set('games', selected.join(','))"));
+assert.ok(stateScript.includes("osgard.games.favorites.v1"), 'Shared favorites must be the sender actual game IDs, not the receiver-local favorites flag.');
 assert.ok(stateScript.includes("name: 'share_created'") && stateScript.includes('catalog-filter-share'));
 assert.ok(stateScript.includes("new URL('/games/', location.origin)"), 'Shared catalogue links must not leak incoming referral or campaign parameters.');
 assert.ok(stateScript.includes('window.OSGARDCatalogState = Object.freeze'));
@@ -90,5 +92,10 @@ runInNewContext(stateScript, context);
 assert.deepEqual(
   JSON.parse(JSON.stringify(context.window.OSGARDCatalogState.normalizedState({ query: '  flood  ', genre: 'tactical', favorites: 1 }))),
   { query: 'flood', genre: 'tactical', favorites: true }
+);
+assert.deepEqual(
+  JSON.parse(JSON.stringify(context.window.OSGARDCatalogState.cleanGameIds('swarm,bad,swarm,aether-grid', ['swarm', 'aether-grid']))),
+  ['swarm', 'aether-grid'],
+  'Shared collections must contain unique IDs from the allow-list.'
 );
 console.log('PASS OSGARD PLAY PWA: manifest, install flow, offline cache boundary, shareable catalog state, consented metrics, and release CI');
