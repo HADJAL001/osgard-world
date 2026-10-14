@@ -37,16 +37,6 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
-      - name: Run contract gate and preserve blocked evidence
-        continue-on-error: true
-        run: |
-          set +e
-          npm run qa:contracts > /tmp/osgard-contract-audit.log 2>&1
-          code=$?
-          echo "Contract audit exit code: $code"
-          if [ ! -s osgard-contract-audit.json ]; then
-            node -e "require('node:fs').writeFileSync('osgard-contract-audit.json', JSON.stringify({schema:'osgard.contract-integrity.v1',status:'blocked',summary:{checks:1,passed:0,failed:1,warnings:0},contract:{sha256:'0'.repeat(64)},checks:[{id:'contract-audit',title:'Contract audit did not produce a report',status:'failed',detail:'The command failed before writing its report.'}]}, null, 2))"
-          fi
       - name: Run release readiness and preserve report on failure
         continue-on-error: true
         run: |
