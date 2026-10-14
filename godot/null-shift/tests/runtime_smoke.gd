@@ -1478,6 +1478,15 @@ func _run_smoke() -> void:
 	if not _expect(game.diagnostics_label.text.contains("DASH EVADES") and game.diagnostics_label.text.contains("DASH CD"), "diagnostics must expose successful dash evades and cooldown timing"):
 		return
 
+
+	var saved_objective_label_for_diagnostics: Label = game.objective_label
+	game.objective_label = null
+	game._update_hud()
+	game.objective_label = saved_objective_label_for_diagnostics
+	if not _expect(game.diagnostics_label.text.contains("DRAW / TRI / NODES"), "diagnostics must refresh when objective HUD is unavailable"):
+		return
+	game._update_hud()
+
 	print("RUNTIME_STAGE: cipher hack")
 	game.player.global_position = game.terminal.global_position + Vector3(0.0, 0.0, 1.0)
 	game._interact()
