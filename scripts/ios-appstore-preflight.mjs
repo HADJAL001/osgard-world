@@ -111,7 +111,10 @@ assert.ok(guide.includes('TestFlight') && guide.includes('capacitor://localhost'
 assert.ok(supportPage.includes('mailto:osman.osmanov0099@gmail.com') && supportPage.includes('href="/privacy/"'), 'App Store Support URL must provide a real contact and privacy-policy link.');
 assert.ok(gamesCatalog.includes('href="/support/osgard-play/"'), 'The public Games catalogue must link to its support page.');
 assert.ok(gamesCatalog.includes('/games/device-fit.css?v=__OSGARD_BUILD_VERSION__') && gamesCatalog.includes('/games/device-fit.js?v=__OSGARD_BUILD_VERSION__'), 'Smart Launch assets must be versioned in the public catalogue.');
-assert.ok(gamesCatalog.includes('/games/experiment-core.js?v=__OSGARD_BUILD_VERSION__') && gamesCatalog.includes('/games/experiment-runtime.js?v=__OSGARD_BUILD_VERSION__'), 'Product experiment assets must be versioned in the public catalogue.');
+const gamesLazyStart = gamesCatalog.indexOf('<script id="games-lazy-runtime">');
+const gamesLazyEnd = gamesCatalog.indexOf('</script>', gamesLazyStart);
+const gamesLazyRuntime = gamesLazyStart >= 0 && gamesLazyEnd > gamesLazyStart ? gamesCatalog.slice(gamesLazyStart, gamesLazyEnd) : '';
+assert.ok(gamesLazyRuntime.includes("loadScript('experiment-core.js')") && gamesLazyRuntime.includes("loadScript('experiment-runtime.js')") && gamesLazyRuntime.includes("script.src=versioned('/games/'+path)"), 'Product experiment assets must remain versioned and consent-gated in the public catalogue.');
 assert.ok(sitemap.includes('https://osgard.world/support/osgard-play/'), 'The support URL must be present in sitemap.xml.');
 assert.ok(read('docs/IOS_APP_STORE_LISTING_RU.md').includes('https://osgard.world/support/osgard-play/'), 'App Store listing draft must point to the published app-support page.');
 assert.ok(privacy.includes('<key>NSPrivacyTracking</key>') && privacy.includes('<false/>'), 'Privacy manifest must declare tracking state.');
