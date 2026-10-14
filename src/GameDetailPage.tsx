@@ -498,11 +498,28 @@ export function GameDetailPage({ slug }: { slug: string }) {
     const launchedAt = Date.now()
     const clock = createSessionClock()
     let sessionStarted = false, terminal = false, ready = false, startMethod = ''
+    let sessionTelemetryAllowed = false
     let timeoutId: number | null = null
+    let slowTimeoutId: number | null = null
+    let sessionTickId: number | null = null
     let boundDocument: Document | null = null
     let interactionHandler: EventListener | null = null
     const pauseReasons = new Set<string>()
-    const clearTimeoutSafely = () => { if (timeoutId !== null) window.clearTimeout(timeoutId); timeoutId = null }
+    const updateElapsed = () => setSessionElapsedSeconds(Math.floor(clock.elapsedMs(performance.now()) / 1000))
+    const clearSessionTick = () => { if (sessionTickId !== null) window.clearInterval(sessionTickId); sessionTickId = null }
+    const startSessionTick = () => {
+      clearSessionTick()
+      sessionTickId = window.setInterval(updateElapsed, 1000)
+      updateElapsed()
+    }
+    const clearTimeoutSafely = () => {
+      if (timeoutId !== null) window.clearTimeout(timeoutId)
+      if (slowTimeoutId !== null) window.clearTimeout(slowTimeoutId)
+      if (frameValidationTimerRef.current !== null) window.clearTimeout(frameValidationTimerRef.current)
+      timeoutId = null
+      slowTimeoutId = null
+      frameValidationTimerRef.current = null
+    }
     const clearInteraction = () => {
       if (boundDocument && interactionHandler) {
         boundDocument.removeEventListener('pointerdown', interactionHandler, true)
@@ -514,25 +531,45 @@ export function GameDetailPage({ slug }: { slug: string }) {
       if (terminal || sessionStarted || !clock.start(performance.now())) return
       sessionStarted = true
       startMethod = method
+      sessionTelemetryAllowed = consentRef.current === 'granted'
       clearInteraction()
-      if (pauseReasons.size) clock.pause(performance.now())
-      track('game_session_started', { game: game.id, surface: 'game-detail', startMethod: method }, consentRef.current)
+      setSessionElapsedSeconds(0)
+      if (pauseReasons.size) {
+        clock.pause(performance.now())
+        setSessionStatus('paused')
+      } else {
+        setSessionStatus('active')
+        startSessionTick()
+      }
+      if (sessionTelemetryAllowed) track('game_session_started', { game: game.id, surface: 'game-detail', startMethod: method }, consentRef.current)
     }
     const finishSession = (reason: string) => {
       if (terminal) return
       terminal = true
       clearTimeoutSafely()
+      clearSessionTick()
       clearInteraction()
       const summary = clock.finish(performance.now())
-      if (!summary) return
-      track('game_session_completed', { game: game.id, surface: 'game-detail', durationSeconds: Math.floor(summary.durationMs / 1000), endReason: reason, startMethod }, consentRef.current)
+      sessionTelemetryAllowed = sessionTelemetryAllowed && consentRef.current === 'granted'
+      if (!summary) { sessionTelemetryAllowed = false; return }
+      const durationSeconds = Math.floor(summary.durationMs / 1000)
+      setSessionElapsedSeconds(durationSeconds)
+      setSessionStatus(reason === 'game_completed' ? 'completed' : reason === 'game_error' ? 'error' : 'ready')
+      if (sessionTelemetryAllowed) track('game_session_completed', { game: game.id, surface: 'game-detail', durationSeconds, endReason: reason, startMethod }, consentRef.current)
+      sessionTelemetryAllowed = false
     }
     const setPauseReason = (reason: string, active: boolean) => {
       const pausedBefore = pauseReasons.size > 0
       if (active) pauseReasons.add(reason); else pauseReasons.delete(reason)
       const pausedAfter = pauseReasons.size > 0
-      if (!pausedBefore && pausedAfter) clock.pause(performance.now())
-      else if (pausedBefore && !pausedAfter) clock.resume(performance.now())
+      if (!pausedBefore && pausedAfter) {
+        clock.pause(performance.now())
+        clearSessionTick()
+        if (sessionStarted) { setSessionStatus('paused'); updateElapsed() }
+      } else if (pausedBefore && !pausedAfter) {
+        clock.resume(performance.now())
+        if (sessionStarted) { setSessionStatus('active'); startSessionTick() }
+      }
     }
     const bindFirstInteraction = () => {
       ready = true
@@ -557,14 +594,14 @@ export function GameDetailPage({ slug }: { slug: string }) {
         data: event.data, gameId: game.id, launchedAt, now: Date.now(),
       })) return
       const message = event.data as { state: string; flowType?: string }
-      if (message.state === 'ready') { bindFirstInteraction(); setLoadingGame(false); return }
+      if (message.state === 'ready') { bindFirstInteraction(); setLoadingGame(false); if (!sessionStarted) setSessionStatus('ready'); return }
       if (message.state === 'started') {
-        ready = true; clearTimeoutSafely(); clearInteraction(); setLoadingGame(false)
+        ready = true; clearTimeoutSafely(); clearInteraction(); setLoadingGame(false); setSlowLoad(false); setFrameErrorKind(null)
         startSession('game-lifecycle'); return
       }
       if (message.state === 'paused') { setPauseReason('game-paused', true); return }
       if (message.state === 'resumed') { setPauseReason('game-paused', false); return }
-      if (message.state === 'completed') { finishSession('game_completed'); return }
+      if (message.state === 'completed') { setSessionStatus('completed'); finishSession('game_completed'); return }
       if (message.state === 'share_created') {
         const allowedFlows = ['daily-challenge', 'score-duel', 'solution-link', 'result-card', 'friend-invite']
         const flowType = typeof message.flowType === 'string' && allowedFlows.includes(message.flowType) ? message.flowType : undefined
@@ -572,6 +609,7 @@ export function GameDetailPage({ slug }: { slug: string }) {
         return
       }
       if (message.state === 'error') {
+        setFrameErrorKind('game-error'); setSessionStatus('error'); setSlowLoad(false)
         finishSession('game_error'); setLoadingGame(false); setFrameError(true)
         setNotice(ru ? 'Игровой клиент сообщил об ошибке. Повтори запуск или открой его отдельно.' : 'The game client reported an error. Retry or open it separately.')
       }
@@ -581,15 +619,20 @@ export function GameDetailPage({ slug }: { slug: string }) {
     window.addEventListener('message', onMessage)
     document.addEventListener('visibilitychange', onVisibilityChange)
     window.addEventListener('pagehide', onPageHide)
-    if (!ready) timeoutId = window.setTimeout(() => {
-      if (ready || terminal) return
-      setLoadingGame(false); setFrameError(true)
-      setNotice(ru ? 'Не удалось подтвердить готовность игры за 18 секунд. Повтори запуск или открой её отдельно.' : 'Game readiness was not confirmed within 18 seconds. Retry or open it separately.')
-      finishSession('launch_timeout')
-    }, 18_000)
+    if (!ready) {
+      slowTimeoutId = window.setTimeout(() => {
+        if (!ready && !terminal) setSlowLoad(true)
+      }, 4500)
+      timeoutId = window.setTimeout(() => {
+        if (ready || terminal) return
+        setLoadingGame(false); setFrameErrorKind('timeout'); setSessionStatus('error'); setFrameError(true); setSlowLoad(false)
+        setNotice(ru ? 'Не удалось подтвердить готовность игры за 18 секунд. Повтори запуск или открой её отдельно.' : 'Game readiness was not confirmed within 18 seconds. Retry or open it separately.')
+        finishSession('launch_timeout')
+      }, 18_000)
+    }
     if (frameValidatedRef.current) bindFirstInteraction()
     return () => {
-      clearTimeoutSafely(); clearInteraction()
+      clearTimeoutSafely(); clearSessionTick(); clearInteraction()
       window.removeEventListener('message', onMessage)
       document.removeEventListener('visibilitychange', onVisibilityChange)
       window.removeEventListener('pagehide', onPageHide)
