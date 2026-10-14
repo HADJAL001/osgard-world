@@ -36,6 +36,15 @@ dialog{width:min(1220px,calc(100vw - 28px));max-width:none;max-height:min(94svh,
  .pwa-install-dismiss{width:44px;min-width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center}
  .contact-links a,.contact-links button,footer>nav a,.luxury-entertainment footer>nav a{display:inline-flex;align-items:center;padding:8px}
 }
+/* Keep mobile card actions separate from adjacent artwork hit areas. */
+@media(max-width:760px){
+ .card .art{position:relative;z-index:0}
+ .card .copy{position:relative;z-index:1}
+ .card .game-actions{position:relative;z-index:2;display:grid;grid-template-columns:minmax(0,1fr);align-items:stretch;gap:10px;margin-top:auto;padding-top:18px}
+ .card .game-actions>a{position:relative;z-index:3;width:100%;min-height:48px;display:flex;align-items:center;justify-content:center;padding:12px 14px;line-height:1.35}
+ .card .game-actions .play-link{border-color:rgba(211,255,105,.28);background:rgba(211,255,105,.09)}
+ .card .game-actions .detail-link,.card .game-actions .secondary-link{border-color:rgba(255,255,255,.18);background:rgba(255,255,255,.045)}
+}
 </style>
 <link rel="stylesheet" href="/games/accessibility-center.css?v=__OSGARD_BUILD_VERSION__"></head><body class="luxury-entertainment"><a class="skip" href="#catalog">Перейти к каталогу игр</a>
 <header><a class="brand" href="/"><svg viewBox="0 0 36 36" aria-hidden="true"><path d="M18 2 32 10v16L18 34 4 26V10Z M18 9 25 13v10l-7 4-7-4V13Z" fill="none" stroke="currentColor"/></svg><strong>OSGARD <span>WORLD</span></strong> <em>PLAY</em></a><nav class="nav"><a href="#catalog">Игры</a><a href="/games/expedition/">Экспедиции ↗</a><a href="#ecosystem">Экосистема</a><a href="/games/ecosystem/">Все проекты ↗</a><a href="#partners">Для брендов</a><a href="/games/monetization/">Экономика</a><a href="/games/growth-studio/">Growth Studio ↗</a><a href="/games/premium/">Поддержать OSGARD</a><a href="#contact">Разработка</a><a class="locale-link" href="/games/en/" lang="en" hreflang="en" aria-label="English-language game catalogue">EN ↗</a></nav><div class="head-right"><a href="#contact">Связаться <b>↗</b></a><button id="menu-toggle" class="menu" aria-controls="mobile-nav" aria-expanded="false" aria-label="Открыть меню"><span></span><span></span></button></div><nav class="mobile-nav" id="mobile-nav" hidden><a href="#catalog">Игры</a><a href="/games/expedition/">Экспедиции ↗</a><a href="#ecosystem">Экосистема</a><a href="/games/ecosystem/">Все проекты ↗</a><a href="#partners">Для брендов</a><a href="/games/monetization/">Экономика</a><a href="/games/growth-studio/">Growth Studio ↗</a><a href="/games/premium/">Поддержать OSGARD</a><a href="#contact">Разработка</a><a class="locale-link" href="/games/en/" lang="en" hreflang="en" aria-label="English-language game catalogue">EN ↗</a></nav></header>
