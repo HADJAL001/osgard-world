@@ -48,7 +48,7 @@ export function validateApiBase(configuredBase, origin) {
       parsed.username || parsed.password || parsed.search || parsed.hash) {
     throw new StoreClientError('CONFIG_UNSAFE', 'Адрес платёжного сервиса отклонён из соображений безопасности.');
   }
-  const path = parsed.pathname.replace(/\\/+$/, '') || '/';
+  const path = parsed.pathname.replace(/\/+$/, '') || '/';
   const sameOrigin = parsed.origin === site.origin;
   if (sameOrigin) {
     if (path !== '/' && path !== '/commerce-api') {
