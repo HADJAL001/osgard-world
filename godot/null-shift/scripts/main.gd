@@ -2255,9 +2255,9 @@ func _update_guards(delta: float) -> void:
 					_damage_player(float(guard["damage"]), body)
 				guard["attack_lanes"] = []
 				if role == "WARDEN" and int(guard.get("boss_phase", 1)) >= 2:
-				guard["cooldown"] = randf_range(1.2, 1.75)
-			else:
-				guard["cooldown"] = randf_range(1.45, 2.15) if role == "RANGER" else randf_range(2.0, 3.0)
+					guard["cooldown"] = randf_range(1.2, 1.75)
+				else:
+					guard["cooldown"] = randf_range(1.45, 2.15) if role == "RANGER" else randf_range(2.0, 3.0)
 			guards[index] = guard
 			continue
 		var cooldown := maxf(0.0, float(guard["cooldown"]) - ai_delta)
