@@ -269,20 +269,20 @@ function campaignColumns() {
 
 app.get("/v1/campaigns/active", async (req, res) => {
   const placement = String(req.query.placement || "catalog_feature").trim();
-  if (placement !== "catalog_feature") return res.status(400).json({ error: "CAMPAIGN_PLACEMENT_NOT_INTEGRATED" });
+  if (!["catalog_feature", "after_session"].includes(placement)) return res.status(400).json({ error: "CAMPAIGN_PLACEMENT_NOT_INTEGRATED" });
   if (!pool || !dbReady) return res.status(503).json({ error: "CAMPAIGNS_NOT_READY" });
   try {
     const result = await pool.query(
       "SELECT " + campaignColumns().replace("status,", "CASE WHEN status = 'scheduled' AND starts_at <= NOW() AND ends_at > NOW() THEN 'active' ELSE status END AS status,") +
       " FROM commerce_campaigns WHERE placement = $1 AND status IN ('active','scheduled') " +
       "AND starts_at <= NOW() AND ends_at > NOW() AND sponsor_disclosure <> '' " +
-      "ORDER BY updated_at DESC, created_at DESC LIMIT 3",
-      [placement],
+      "ORDER BY updated_at DESC, created_at DESC LIMIT $2",
+      [placement, placement === "after_session" ? 1 : 3],
     );
     const items = result.rows.map(publicCampaignView).filter(Boolean);
     res.set("Cache-Control", "public, max-age=30, stale-while-revalidate=30");
-    return res.json({ items, limits: { maxActiveCatalogItems: 3, frequencyCapScope: "browser-device",
-      note: "Частотный лимит действует в доступном локальном хранилище браузера, а не между устройствами." } });
+    return res.json({ items, limits: { maxActiveCatalogItems: 3, maxActiveAfterSessionItems: 1, frequencyCapScope: "browser-device",
+      note: "Каталог допускает до трёх кампаний, экран между сессиями — одну. Частотный лимит действует в доступном локальном хранилище браузера, а не между устройствами." } });
   } catch (error) {
     console.error("Public campaign list failed:", error?.message || "unknown error");
     return res.status(503).json({ error: "CAMPAIGNS_UNAVAILABLE" });
@@ -326,16 +326,18 @@ async function saveCampaign(req, res, campaignId = "") {
     client = await pool.connect();
     await client.query("BEGIN");
     await client.query("SELECT pg_advisory_xact_lock(20261014)");
-    if (["active", "scheduled"].includes(data.status) && data.placement === "catalog_feature") {
+    const slotLimit = data.placement === "catalog_feature" ? 3 : data.placement === "after_session" ? 1 : 0;
+    if (["active", "scheduled"].includes(data.status) && slotLimit > 0) {
       const capacity = await client.query(
         "SELECT COUNT(*)::int AS count FROM commerce_campaigns " +
-        "WHERE status IN ('active','scheduled') AND placement = 'catalog_feature' " +
+        "WHERE status IN ('active','scheduled') AND placement = $4 " +
         "AND starts_at < $2 AND ends_at > $1 AND campaign_id <> $3",
-        [data.startsAt, data.endsAt, id],
+        [data.startsAt, data.endsAt, id, data.placement],
       );
-      if (Number(capacity.rows[0]?.count || 0) >= 3) {
+      if (Number(capacity.rows[0]?.count || 0) >= slotLimit) {
         await client.query("ROLLBACK");
-        return res.status(409).json({ error: "CAMPAIGN_SLOT_FULL", message: "В выбранном временном окне уже заняты три слота. Измените расписание или приостановите кампанию." });
+        const slotLabel = data.placement === "after_session" ? "экран между игровыми сессиями" : "слота каталога";
+        return res.status(409).json({ error: "CAMPAIGN_SLOT_FULL", message: "В выбранном временном окне уже занято предельное число мест (" + slotLabel + "). Измените расписание или приостановите кампанию." });
       }
     }
     let result;
@@ -362,7 +364,7 @@ async function saveCampaign(req, res, campaignId = "") {
     await client.query("COMMIT");
     return res.status(campaignId ? 200 : 201).json({
       item: campaignFromRow(result.rows[0]),
-      note: "Публичный показ возможен только для активной кампании в интегрированном слоте каталога.",
+      note: "Публичный показ возможен только для активной кампании в интегрированном слоте каталога или после игровой сессии.",
     });
   } catch (error) {
     await client?.query("ROLLBACK").catch(() => {});
