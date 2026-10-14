@@ -614,7 +614,7 @@ export function GameDetailPage({ slug }: { slug: string }) {
         data: event.data, gameId: game.id, launchedAt, now: Date.now(),
       })) return
       const message = event.data as { state: string; flowType?: string }
-      if (message.state === 'ready') { bindFirstInteraction(); setLoadingGame(false); if (!sessionStarted) setSessionStatus('ready'); return }
+      if (message.state === 'ready') { bindFirstInteraction(); setLoadingGame(false); setSlowLoad(false); setFrameErrorKind(null); if (!sessionStarted) setSessionStatus('ready'); return }
       if (message.state === 'started') {
         ready = true; clearTimeoutSafely(); clearInteraction(); setLoadingGame(false); setSlowLoad(false); setFrameErrorKind(null)
         startSession('game-lifecycle'); return
@@ -805,7 +805,7 @@ export function GameDetailPage({ slug }: { slug: string }) {
               }
             }
             validateFrame()
-          }} onError={() => { frameValidatedRef.current = false; frameValidationTimerRef.current = null; setLoadingGame(false); setFrameErrorKind('load-event'); setSessionStatus('error'); setSlowLoad(false); setFrameError(true); setNotice(ru ? 'Браузер не смог загрузить игровой клиент.' : 'The browser could not load the game client.') }} allow="fullscreen; gamepad; clipboard-write" allowFullScreen loading="eager" referrerPolicy="strict-origin-when-cross-origin" aria-describedby="gh-play-note" />}
+          }} onError={() => { frameValidatedRef.current = false; if (frameValidationTimerRef.current !== null) window.clearTimeout(frameValidationTimerRef.current); frameValidationTimerRef.current = null; setLoadingGame(false); setFrameErrorKind('load-event'); setSessionStatus('error'); setSlowLoad(false); setFrameError(true); setNotice(ru ? 'Браузер не смог загрузить игровой клиент.' : 'The browser could not load the game client.') }} allow="fullscreen; gamepad; clipboard-write" allowFullScreen loading="eager" referrerPolicy="strict-origin-when-cross-origin" aria-describedby="gh-play-note" />}
         </div>
         <p id="gh-play-note" className="gh-play-note">{ru ? 'Игра выполняется в отдельном встроенном окне. Если управление или сетевой режим работают некорректно, откройте её в отдельной вкладке.' : 'The game runs in an embedded frame. If controls or network play do not work correctly, open it in a separate tab.'}</p>
       </section>}
