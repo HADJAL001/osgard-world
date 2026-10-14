@@ -8,6 +8,8 @@ on:
       - "scripts/skillcred-page-smoke.mjs"
       - "scripts/time-prototype-smoke.mjs"
       - "scripts/games-portal-smoke.mjs"
+      - "scripts/games-detail-smoke.mjs"
+      - "scripts/game-detail-runtime-smoke.mjs"
       - "scripts/entertainment-hub-smoke.mjs"
       - "scripts/osgard-select-growth-smoke.mjs"
       - "scripts/consented-analytics-queue-smoke.mjs"
@@ -91,6 +93,8 @@ jobs:
         run: npm run qa:null-shift-godot
       - name: Verify game detail pages and SEO
         run: npm run qa:games-detail
+      - name: Test game session clock and iframe lifecycle trust boundaries
+        run: npm run qa:game-detail-runtime
       - name: Verify monetization scenario formulas
         run: npm run qa:games-model
       - name: Test consent-gated commerce and referral event validation
