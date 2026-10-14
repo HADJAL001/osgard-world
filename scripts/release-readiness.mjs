@@ -14,6 +14,7 @@ const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm'
 await check('typecheck', npm, ['run', 'check'])
 await check('games-portal-smoke', npm, ['run', 'qa:games-portal'])
 await check('games-diagnostics-smoke', npm, ['run', 'qa:games-diagnostics'])
+await check('device-fit-smoke', npm, ['run', 'qa:device-fit'])
 await check('osgard-select-growth-smoke', npm, ['run', 'qa:osgard-select'])
 await check('null-shift-godot-smoke', npm, ['run', 'qa:null-shift-godot'])
 await check('games-detail-smoke', npm, ['run', 'qa:games-detail'])
