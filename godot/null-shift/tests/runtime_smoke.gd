@@ -23,6 +23,43 @@ func _run_smoke() -> void:
 	print("RUNTIME_STAGE: scene ready")
 	if not _expect(game.get_script() != null, "main scene script must load without GDScript parse errors"):
 		return
+
+	print("RUNTIME_STAGE: tactical perception, squad radio and acoustic events")
+	if not _expect(game._is_within_vision_cone(Vector3.ZERO, Vector3.FORWARD, Vector3(0.0, 0.0, -8.0), 20.0, 150.0), "vision cone must detect a target in the forward arc"):
+		return
+	if not _expect(not game._is_within_vision_cone(Vector3.ZERO, Vector3.FORWARD, Vector3(12.0, 0.0, 0.0), 20.0, 120.0), "vision cone must reject a target outside the configured field of view"):
+		return
+	if not _expect(not game._is_within_vision_cone(Vector3.ZERO, Vector3.FORWARD, Vector3(0.0, 0.0, -24.0), 20.0, 150.0), "vision cone must reject targets beyond sight range"):
+		return
+	if not _expect(game._noise_is_audible(Vector3(0.0, 0.0, 15.0), Vector3.ZERO, 16.0) and not game._noise_is_audible(Vector3(0.0, 0.0, 20.0), Vector3.ZERO, 16.0), "sound radius must include near listeners and exclude listeners outside its range"):
+		return
+	var saved_noise_position: Vector3 = game.combat_noise_position
+	var saved_noise_radius: float = game.combat_noise_radius
+	var saved_noise_timer: float = game.combat_noise_timer
+	var saved_noise_serial: int = game.combat_noise_serial
+	var saved_noise_source: String = game.combat_noise_source
+	var saved_squad_position: Vector3 = game.squad_alert_position
+	var saved_squad_timer: float = game.squad_alert_timer
+	var saved_squad_serial: int = game.squad_alert_serial
+	var sense_guard: Dictionary = {"role": "RANGER", "ai_state": "PATROL", "last_known_position": Vector3.ZERO, "search_timer": 0.0, "heard_noise_serial": game.combat_noise_serial, "heard_squad_serial": game.squad_alert_serial, "displayed_ai_state": "PATROL"}
+	var sense_body: CharacterBody3D = game.guards[0]["node"] as CharacterBody3D
+	game._emit_combat_noise(sense_body.global_position + Vector3(1.0, 0.0, 1.0), 18.0, "runtime-test")
+	sense_guard = game._update_guard_perception(sense_guard, sense_body, false, 0.016)
+	if not _expect(str(sense_guard["ai_state"]) == "INVESTIGATE" and sense_guard["last_known_position"].distance_to(game.combat_noise_position) < 0.01, "new audible event must put an unaware guard into investigation at the noise source"):
+		return
+	sense_guard = game._update_guard_perception(sense_guard, sense_body, true, 0.016)
+	if not _expect(str(sense_guard["ai_state"]) == "ENGAGED" and sense_guard["last_known_position"].distance_to(game.player.global_position) < 0.01 and sense_guard["search_timer"] > 0.0, "visual contact must acquire the player and start a bounded search-memory timer"):
+		return
+	if not _expect(game.squad_alert_serial > saved_squad_serial and game.squad_alert_position.distance_to(game.player.global_position) < 0.01, "new visual contact must publish a squad-level radio position"):
+		return
+	game.combat_noise_position = saved_noise_position
+	game.combat_noise_radius = saved_noise_radius
+	game.combat_noise_timer = saved_noise_timer
+	game.combat_noise_serial = saved_noise_serial
+	game.combat_noise_source = saved_noise_source
+	game.squad_alert_position = saved_squad_position
+	game.squad_alert_timer = saved_squad_timer
+	game.squad_alert_serial = saved_squad_serial
 	print("RUNTIME_STAGE: generated PBR surface texture set")
 	var floor_surface: StandardMaterial3D = game.materials.get("floor") as StandardMaterial3D
 	var wall_surface: StandardMaterial3D = game.materials.get("wall") as StandardMaterial3D

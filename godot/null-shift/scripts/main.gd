@@ -18,6 +18,10 @@ const PULSE_LANE_DISRUPTION_RANGE := 1.75
 const COMBAT_COMBO_WINDOW := 4.25
 const OVERDRIVE_MAX_CHARGE := 100.0
 const OVERDRIVE_DURATION := 5.0
+const GUARD_SIGHT_RADIUS := 20.5
+const GUARD_SIGHT_FOV_DEGREES := 150.0
+const GUARD_SEARCH_SECONDS := 4.6
+const GUARD_INVESTIGATION_SECONDS := 4.2
 const OVERDRIVE_ARC_RADIUS := 7.5
 const OVERDRIVE_ARC_DAMAGE_SCALE := 0.55
 
@@ -130,6 +134,14 @@ var core_secured := false
 var medkit_used := false
 var alarm_active := false
 var warden_spawned := false
+var combat_noise_position := Vector3.ZERO
+var combat_noise_radius := 0.0
+var combat_noise_timer := 0.0
+var combat_noise_serial := 0
+var combat_noise_source := ""
+var squad_alert_position := Vector3.ZERO
+var squad_alert_timer := 0.0
+var squad_alert_serial := 0
 var mission_finished := false
 var paused_game := false
 var mouse_firing := false
@@ -306,6 +318,14 @@ func _reset_runtime_collections() -> void:
 	daily_shift_instability_bonus = 0.0
 	daily_radar_jammed = false
 	daily_supply_blackout = false
+	combat_noise_position = Vector3.ZERO
+	combat_noise_radius = 0.0
+	combat_noise_timer = 0.0
+	combat_noise_serial = 0
+	combat_noise_source = ""
+	squad_alert_position = Vector3.ZERO
+	squad_alert_timer = 0.0
+	squad_alert_serial = 0
 	critical_hits = 0
 	shots_fired = 0
 	shots_hit = 0
@@ -431,6 +451,8 @@ func _physics_process(delta: float) -> void:
 	dash_cooldown = maxf(0.0, dash_cooldown - dt)
 	pulse_cooldown = maxf(0.0, pulse_cooldown - dt)
 	damage_cooldown = maxf(0.0, damage_cooldown - dt)
+	combat_noise_timer = maxf(0.0, combat_noise_timer - dt)
+	squad_alert_timer = maxf(0.0, squad_alert_timer - dt)
 	null_shift_timer = maxf(0.0, null_shift_timer - dt)
 	if null_shift_timer == 0.0 and instability > 0.0:
 		instability = maxf(0.0, instability - dt * 3.0)
@@ -1711,7 +1733,15 @@ func _spawn_guard(at: Vector3, is_warden: bool) -> void:
 		"dash_windup": 0.0,
 		"dash_timer": 0.0,
 		"dash_cooldown": randf_range(1.4, 2.4),
-		"phase": randf_range(0.0, TAU)
+		"phase": randf_range(0.0, TAU),
+		"patrol_origin": at,
+		"last_known_position": at,
+		"ai_state": "PATROL",
+		"search_timer": 0.0,
+		"heard_noise_serial": combat_noise_serial,
+		"heard_squad_serial": squad_alert_serial,
+		"role_tag": tag,
+		"displayed_ai_state": "PATROL"
 	})
 	_apply_daily_mutators_to_guard(guards.size() - 1)
 
@@ -1902,6 +1932,117 @@ func _has_clear_path_to_aim_target(target: Node3D) -> bool:
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
 	return hit.is_empty() or hit.get("collider") == target
 
+
+func _is_within_vision_cone(observer_position: Vector3, facing_direction: Vector3, target_position: Vector3, max_distance: float, fov_degrees: float) -> bool:
+	var offset := target_position - observer_position
+	offset.y = 0.0
+	var facing := facing_direction
+	facing.y = 0.0
+	var distance := offset.length()
+	if distance <= 0.001 or distance > maxf(0.0, max_distance) or facing.length_squared() <= 0.001:
+		return false
+	var half_fov := deg_to_rad(clampf(fov_degrees, 0.0, 360.0) * 0.5)
+	return facing.normalized().dot(offset.normalized()) >= cos(half_fov)
+
+func _noise_is_audible(listener_position: Vector3, source_position: Vector3, radius: float) -> bool:
+	return listener_position.distance_to(source_position) <= maxf(0.0, radius)
+
+func _emit_combat_noise(origin: Vector3, radius: float, source_kind: String) -> void:
+	combat_noise_position = origin
+	combat_noise_radius = maxf(0.0, radius)
+	combat_noise_timer = maxf(combat_noise_timer, 0.92)
+	combat_noise_serial += 1
+	combat_noise_source = source_kind
+
+func _broadcast_squad_contact(at: Vector3) -> void:
+	# One radio update per newly observed position; don't increment the serial for every frame.
+	if squad_alert_timer <= 0.0 or squad_alert_position.distance_to(at) >= 4.0:
+		squad_alert_position = at
+		squad_alert_serial += 1
+	squad_alert_timer = maxf(squad_alert_timer, 6.0)
+
+func _guard_can_see_player(body: CharacterBody3D) -> bool:
+	if not is_instance_valid(player) or not is_instance_valid(body):
+		return false
+	var eye_position := body.global_position + Vector3.UP * 0.86
+	var player_position := player.global_position + Vector3.UP * 0.68
+	var facing_direction := -body.global_transform.basis.z
+	if not _is_within_vision_cone(eye_position, facing_direction, player_position, GUARD_SIGHT_RADIUS, GUARD_SIGHT_FOV_DEGREES):
+		return false
+	return _has_clear_path_to_player(eye_position, body)
+
+func _update_guard_perception(guard: Dictionary, body: CharacterBody3D, sees_player: bool, delta: float) -> Dictionary:
+	var state := str(guard.get("ai_state", "PATROL"))
+	var last_known: Vector3 = guard.get("last_known_position", body.global_position)
+	var search_timer := maxf(0.0, float(guard.get("search_timer", 0.0)) - delta)
+
+	if sees_player:
+		if state != "ENGAGED":
+			_broadcast_squad_contact(player.global_position)
+		state = "ENGAGED"
+		last_known = player.global_position
+		search_timer = GUARD_SEARCH_SECONDS
+		guard["heard_noise_serial"] = combat_noise_serial
+		guard["heard_squad_serial"] = squad_alert_serial
+	elif squad_alert_timer > 0.0 and int(guard.get("heard_squad_serial", 0)) != squad_alert_serial and _noise_is_audible(body.global_position, squad_alert_position, 34.0):
+		state = "INVESTIGATE"
+		last_known = squad_alert_position
+		search_timer = maxf(search_timer, GUARD_INVESTIGATION_SECONDS)
+		guard["heard_squad_serial"] = squad_alert_serial
+	elif combat_noise_timer > 0.0 and int(guard.get("heard_noise_serial", 0)) != combat_noise_serial and _noise_is_audible(body.global_position, combat_noise_position, combat_noise_radius):
+		state = "INVESTIGATE"
+		last_known = combat_noise_position
+		search_timer = maxf(search_timer, GUARD_INVESTIGATION_SECONDS)
+		guard["heard_noise_serial"] = combat_noise_serial
+	elif state == "ENGAGED":
+		if search_timer <= 0.0:
+			state = "INVESTIGATE"
+			search_timer = GUARD_INVESTIGATION_SECONDS
+	elif state == "INVESTIGATE":
+		if body.global_position.distance_to(last_known) <= 1.75:
+			state = "SEARCHING"
+			search_timer = 2.25
+		elif search_timer <= 0.0:
+			state = "PATROL"
+	elif state == "SEARCHING":
+		if search_timer <= 0.0:
+			state = "PATROL"
+	else:
+		state = "PATROL"
+
+	guard["ai_state"] = state
+	guard["last_known_position"] = last_known
+	guard["search_timer"] = search_timer
+	var role_tag := guard.get("role_tag") as Label3D
+	if is_instance_valid(role_tag) and str(guard.get("displayed_ai_state", "")) != state:
+		var role_name := str(guard.get("role", "RANGER"))
+		match state:
+			"ENGAGED":
+				role_tag.text = role_name + " · CONTACT"
+				role_tag.modulate = Color(1.0, 0.36, 0.35)
+			"INVESTIGATE":
+				role_tag.text = role_name + " · INVESTIGATE"
+				role_tag.modulate = Color(1.0, 0.75, 0.39)
+			"SEARCHING":
+				role_tag.text = role_name + " · SWEEP"
+				role_tag.modulate = Color(0.75, 0.66, 1.0)
+			_:
+				role_tag.text = role_name
+				role_tag.modulate = Color(1.0, 0.30, 0.35) if role_name in ["WARDEN", "RANGER"] else (Color(0.72, 0.46, 1.0) if role_name == "STALKER" else Color(1.0, 0.68, 0.3))
+		guard["displayed_ai_state"] = state
+	return guard
+
+func _guard_ai_target(guard: Dictionary, body: CharacterBody3D) -> Vector3:
+	var state := str(guard.get("ai_state", "PATROL"))
+	if state in ["ENGAGED", "INVESTIGATE"]:
+		var last_known: Vector3 = guard.get("last_known_position", body.global_position)
+		return last_known
+	if state == "SEARCHING":
+		return body.global_position
+	var patrol_origin: Vector3 = guard.get("patrol_origin", body.global_position)
+	var patrol_phase := scene_clock * 0.42 + float(guard.get("phase", 0.0))
+	return patrol_origin + Vector3(cos(patrol_phase) * 1.8, 0.0, sin(patrol_phase) * 1.25)
+
 func _update_guards(delta: float) -> void:
 	for index in range(guards.size() - 1, -1, -1):
 		var guard: Dictionary = guards[index]
@@ -1929,8 +2070,17 @@ func _update_guards(delta: float) -> void:
 		var to_player := player.global_position - body.global_position
 		to_player.y = 0.0
 		var distance := to_player.length()
-		if distance > 0.01:
-			body.look_at(Vector3(player.global_position.x, body.global_position.y, player.global_position.z), Vector3.UP)
+		var sees_player := _guard_can_see_player(body)
+		guard = _update_guard_perception(guard, body, sees_player, ai_delta)
+		var ai_state := str(guard.get("ai_state", "PATROL"))
+		var ai_target_position := _guard_ai_target(guard, body)
+		var to_ai_target := ai_target_position - body.global_position
+		to_ai_target.y = 0.0
+		var ai_target_distance := to_ai_target.length()
+		if ai_state == "SEARCHING":
+			body.rotation.y += ai_delta * 1.45
+		elif ai_target_distance > 0.01:
+			body.look_at(Vector3(ai_target_position.x, body.global_position.y, ai_target_position.z), Vector3.UP)
 		var role: String = str(guard.get("role", "RANGER"))
 		if role == "STALKER":
 			var dash_windup := maxf(0.0, float(guard.get("dash_windup", 0.0)) - ai_delta)
@@ -1949,11 +2099,11 @@ func _update_guards(delta: float) -> void:
 				guard["dash_timer"] = dash_timer
 				body.velocity = to_player.normalized() * _effective_guard_speed(guard) * 3.4
 				body.move_and_slide()
-				if body.global_position.distance_to(player.global_position) < 2.15 and damage_cooldown <= 0.0:
+				if body.global_position.distance_to(player.global_position) < 2.15 and damage_cooldown <= 0.0 and _has_clear_path_to_player(body.global_position + Vector3.UP * 0.8, body):
 					_damage_player(14.0)
 				guards[index] = guard
 				continue
-			if dash_cooldown <= 0.0 and distance > 4.5 and distance < 12.8:
+			if sees_player and dash_cooldown <= 0.0 and distance > 4.5 and distance < 12.8:
 				guard["dash_windup"] = 0.42
 				guard["dash_cooldown"] = 3.7
 				_spawn_beam(body.global_position + Vector3.UP * 0.9, player.global_position + Vector3.UP * 0.6, materials["violet"], 0.46)
@@ -1984,7 +2134,7 @@ func _update_guards(delta: float) -> void:
 			continue
 		var cooldown := maxf(0.0, float(guard["cooldown"]) - ai_delta)
 		guard["cooldown"] = cooldown
-		if distance < 13.5 and cooldown <= 0.0:
+		if sees_player and distance < 13.5 and cooldown <= 0.0:
 			guard["windup"] = 0.92 if role == "WARDEN" else (0.82 if role == "HEAVY" else 0.62)
 			var aim_from := body.global_position + Vector3.UP * 1.0
 			var aim_to := player.global_position + Vector3.UP * 0.8
@@ -2007,8 +2157,11 @@ func _update_guards(delta: float) -> void:
 			guard["attack_lanes"] = attack_lanes
 			_play_sfx(230.0 if role != "WARDEN" else 115.0, 0.18, 0.08)
 			body.velocity = Vector3.ZERO
-		elif distance > 2.7 and distance < 22.0:
-			body.velocity = to_player.normalized() * _effective_guard_speed(guard)
+		elif ai_state in ["ENGAGED", "INVESTIGATE"] and ai_target_distance > 2.7 and ai_target_distance < 22.0:
+			body.velocity = to_ai_target.normalized() * _effective_guard_speed(guard)
+			body.move_and_slide()
+		elif ai_state == "PATROL" and ai_target_distance > 0.75:
+			body.velocity = to_ai_target.normalized() * _effective_guard_speed(guard) * 0.48
 			body.move_and_slide()
 		else:
 			body.velocity = Vector3.ZERO
@@ -2061,6 +2214,7 @@ func _fire_weapon() -> void:
 		return
 	fire_cooldown = maxf(0.09, 0.17 - float(weapon_level) * 0.022)
 	_trigger_muzzle_flash()
+	_emit_combat_noise(player.global_position, 24.0 if null_shift_timer <= 0.0 else 15.0, "weapon")
 	var from := player.global_position + Vector3.UP * 0.48 + player_aim * 0.8
 	var to := from + player_aim * 37.0
 	var query := PhysicsRayQueryParameters3D.create(from, to)
@@ -2200,6 +2354,7 @@ func _destroy_device(index: int) -> void:
 	device["destroyed"] = true
 	var body: Node3D = device["node"]
 	var kind: String = device["kind"]
+	_emit_combat_noise(body.global_position, 30.0, "device")
 	var flash_tint: Color = Color(1.0, 0.62, 0.23) if kind == "CELL" else (Color(0.65, 0.36, 1.0) if kind == "ANCHOR" else Color(0.12, 0.95, 0.82))
 	_spawn_impact_light(body.global_position + Vector3.UP * 0.7, flash_tint, 2.8, 5.2, 0.2)
 	_spawn_ring_burst(body.global_position + Vector3.UP * 0.15, materials["amber"] if kind == "CELL" else (materials["violet"] if kind == "ANCHOR" else materials["cyan"]))
@@ -2235,6 +2390,7 @@ func _deploy_pulse() -> void:
 		objective_text = "ИМПУЛЬС ПЕРЕЗАРЯЖАЕТСЯ · %.1f С" % pulse_cooldown
 		return
 	pulse_cooldown = maxf(2.0, 5.0 - float(pulse_level) * 0.7)
+	_emit_combat_noise(player.global_position, 26.0, "pulse")
 	var count := 0
 	var suppressed_count := 0
 	for lane_index in range(phase_lanes.size()):
@@ -2264,6 +2420,7 @@ func _shift_layer() -> void:
 	if null_shift_timer > 0.0 or paused_game or mission_finished:
 		return
 	null_shift_timer = 3.8
+	_emit_combat_noise(player.global_position, 18.0, "phase")
 	instability = minf(100.0, instability + 24.0 + daily_shift_instability_bonus)
 	phase_flash_timer = maxf(phase_flash_timer, 0.34)
 	_screen_impulse(0.105, 0.2)
@@ -4097,7 +4254,15 @@ func _update_hud() -> void:
 	if is_instance_valid(mobile_dash_button):
 		mobile_dash_button.text = "РЫВОК" if dash_cooldown <= 0.02 else "РЫВОК %.1f" % dash_cooldown
 		mobile_dash_button.disabled = dash_cooldown > 0.02 or paused_game or mission_finished or terminal_active or briefing_visible
-	telemetry_label.text = "HOSTILES %02d  ·  DEVICES %02d  ·  CONTRACT %02d" % [guards.size(), _living_device_count(), current_contract + 1]
+	var engaged_guards := 0
+	var investigating_guards := 0
+	for guard in guards:
+		match str(guard.get("ai_state", "PATROL")):
+			"ENGAGED":
+				engaged_guards += 1
+			"INVESTIGATE", "SEARCHING":
+				investigating_guards += 1
+	telemetry_label.text = "HOSTILES %02d  ·  DEVICES %02d  ·  CONTRACT %02d · AI C%02d I%02d" % [guards.size(), _living_device_count(), current_contract + 1, engaged_guards, investigating_guards]
 	if daily_challenge_active and not daily_mutators.is_empty():
 		telemetry_label.text += "  ·  DAILY / 2 MODS"
 	if is_instance_valid(combat_status_label):

@@ -350,3 +350,12 @@ The runtime smoke now checks combo thresholds, critical damage, the charge gate,
 - The secondary hit uses 55% of regular Overdrive damage, rounded to at least one hit point. The arc respects physics line-of-sight and stops at solid geometry. It reuses the existing bounded beam, particle, ring and impact-light pools; it does not create a new per-hit node pool.
 - The chain is deliberately one hop only and never records a second fired shot, so accuracy and shot counts remain true to player input. The diagnostics HUD exposes the total successful arc count.
 - Added headless Godot runtime tests for the visible-target arc, reduced secondary damage, accuracy accounting, wall occlusion and inactive-Overdrive case, plus static source-contract guards.
+
+
+## Godot release 0.13 — squad perception, sound propagation and last-known-position AI
+
+- Replaced omniscient hostile tracking with a real perception loop: a 150° field of view, range-limited detection, and a physics-ray check against solid cover. Attack telegraphs now start only after confirmed visual contact.
+- Hostiles remember the player's last seen position, search that location after losing sight, and return to short patrol routes when the trail goes cold. A guard no longer chases the live player coordinate through a wall.
+- Gunfire, pulse, phase shift and destroyed devices emit radius-limited noise events. Guards in range investigate the noise source; firing during NULL SHIFT has a smaller sound radius than ordinary gunfire.
+- A squad radio alert shares fresh contact positions with nearby hostiles, while individual guards keep separate heard-event cursors so old sounds are not replayed every frame. Overhead role tags and tactical telemetry show CONTACT, INVESTIGATE and SWEEP states.
+- Added deterministic smoke coverage for field-of-view geometry, sound radius, noise sequence delivery and the transition from patrol to investigation/contact. Existing roles, precision damage, Overdrive, daily anomalies, gamepad/touch controls, local progression and objective sequence remain in the same game runtime.
