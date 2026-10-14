@@ -868,6 +868,11 @@ function openPremiumIntermission(gameId,sessionId){
  const key=intermissionKey(gameId,sessionId);
  if(shownIntermissionSessions.has(key))return true;
  shownIntermissionSessions.add(key);
+ // The full-screen intermission replaces the smaller in-player promo shelf for this session.
+ // Tear down observers/timers before removing its DOM so the same session is not rendered twice.
+ document.dispatchEvent(new CustomEvent('osgard:dispose-postgame'));
+ if(root){root.replaceChildren();root.hidden=true}
+ if(outsideRoot){outsideRoot.replaceChildren();outsideRoot.hidden=true}
  if(shownIntermissionSessions.size>100)shownIntermissionSessions.delete(shownIntermissionSessions.values().next().value);
  const completedCount=recordCompletedRound(gameId,key);
  const preferences=readServicePreferences();
