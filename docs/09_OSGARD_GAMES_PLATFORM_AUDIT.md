@@ -252,3 +252,8 @@ The events are best-effort telemetry; the games that do not yet emit a started l
 ## 10. Consent boundary for individual-game sessions
 
 Detail-page session telemetry has a session-scoped consent guard. The game can run when analytics is denied or undecided, but telemetry remains off. A start signal records whether consent was granted at that moment; the matching completion is only recorded when that session had analytics enabled and consent is still granted at completion. Giving consent halfway through a running session therefore cannot produce a completion record without a corresponding start record. Eight lifecycle tests plus two consent-boundary assertions protect the event source, game ID, explicit start/completion, close reasons and telemetry gate.
+
+
+## 11. Pause-aware session clock — 14 October 2026
+
+The detail player shows elapsed time only after a trusted game iframe sends `state: started`. It also handles `paused` and `resumed`: the interval stops while paused, resumes from the previously accumulated elapsed duration, and excludes pauses from the `durationSeconds` sent for a completed/closed session. The toolbar makes the state visible and accessible (`ready`, `active`, `paused`, `completed`, or `error`). Five additional smoke assertions protect idempotent pause/resume handling, interval cleanup, duration math and the accessible status label.
