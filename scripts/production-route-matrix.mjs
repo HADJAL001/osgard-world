@@ -88,7 +88,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         : route === '/games/favicon.svg'
           ? text.includes('<svg') && text.includes('viewBox="0 0 64 64"')
         : route === '/sitemap.xml'
-          ? text.includes('<urlset') && text.includes('https://osgard.world/games/ecosystem/')
+          ? text.includes('<urlset') && text.includes('https://osgard.world/games/ecosystem/') && text.includes('https://osgard.world/games/platform-map/')
         : route === '/privacy/'
           ? text.includes('<title>Конфиденциальность OSGARD PLAY</title>') && text.includes('osgard.games.analytics-consent.v1')
         : route === '/terms/'
