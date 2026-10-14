@@ -40,7 +40,7 @@ assert.ok(civicAdvisor.includes('additionalProperties: false') && civicAdvisor.i
 assert.ok(civicServer.includes('app.get("/v1/civic-cascade-advisor/status"') && civicServer.includes('app.post("/v1/civic-cascade-advisor"') && civicServer.includes('limit: 3'), "CIVIC Advisor status and rate-limited endpoints must exist.");
 assert.ok(civicGame.includes('id="cc-ai-advisor-consent"') && civicGame.includes("fetch('/v1/civic-cascade-advisor'"), "CIVIC Advisor must use explicit consent and same-origin transport.");
 assert.ok(!civicGame.includes("fetch('https://api.openai.com") && !civicGame.includes("OPENAI_API_KEY") && !civicGame.includes("Bearer "), "No provider secret or direct provider call may ship in browser code.");
-assert.ok(civicRelease.buildContract?.aiStrategyAdvisor?.explicitPerRequestConsent === true && civicRelease.buildContract?.aiStrategyAdvisor?.apiKeyClientSide === false, "Release contract must describe the Advisor security boundary.");
+assert.ok(civicRelease.buildContract?.aiStrategyAdvisor?.requiresExplicitPerRequestConsent === true && civicRelease.buildContract?.aiStrategyAdvisor?.apiKeyClientSide === false, "Release contract must describe the Advisor security boundary.");
 
 
 console.log("OSGARD Game Coach smoke: PASS — server-only key, consent, minimal payload, disabled-by-default mode, rate limit, post-session placement, responsive UI and release gates.");
