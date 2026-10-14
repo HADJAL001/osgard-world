@@ -1,6 +1,5 @@
 ﻿import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { ArrowDown, ArrowUpRight, Bot, ChevronRight, CircleHelp, Globe2, Menu, ShieldCheck, Sparkles, X } from 'lucide-react'
-const LazyLivingGlobe = lazy(() => import('./LivingGlobe').then(module => ({ default: module.LivingGlobe })))
 import { ModuleMark } from './ModuleMark'
 import { OsgardLogo } from './OsgardLogo'
 import { Preloader } from './Preloader'
@@ -8,6 +7,8 @@ import { Development } from './Development'
 import { PlaySelectLoop } from './PlaySelectLoop'
 import { recordOsgardEvent } from './core/eventQueue'
 import { AnalyticsConsentControl } from './AnalyticsConsentControl'
+
+const LazyLivingGlobe = lazy(() => import('./LivingGlobe').then(module => ({ default: module.LivingGlobe })))
 
 type Locale = 'ru' | 'en'
 const botUrl = 'https://t.me/OSGARD_world_bot'
