@@ -117,7 +117,7 @@
   function normalizeLogicalValue(key, value) {
     if (key === 'osgard.games.favorites.v1') {
       if (!Array.isArray(value)) return null;
-      return [...new Set(value.filter(id => typeof id === 'string' && GAME_IDS.has(id))].slice(0, 11)];
+      return [...new Set(value.filter(id => typeof id === 'string' && GAME_IDS.has(id)))].slice(0, 11);
     }
     if (key === 'inherit-world-v1') return normalizeWorld(value);
     if (key === 'inherit-author') return cleanText(value, 32);
