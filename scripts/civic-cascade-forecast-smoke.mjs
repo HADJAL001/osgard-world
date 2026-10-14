@@ -59,7 +59,7 @@ for (const id of [
 const mainScript = html.match(/<script>([\s\S]*?)<\/script>/i)?.[1]
 check(mainScript, 'inline game script must exist')
 new Function(mainScript)
-check(html.includes('window.crypto?.subtle.digest'), 'decision dossier export must compute SHA-256 over the canonical payload')
+check(html.includes('window.crypto.subtle.digest'), 'decision dossier export must compute SHA-256 over the canonical payload')
 check(html.includes('function exportDoctrineDossier()'), 'decision dossier export handler must be present')
 
 function extractBetween(startMarker, endMarker) {
