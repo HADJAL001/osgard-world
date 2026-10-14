@@ -30,7 +30,7 @@ assert.ok(catalog.includes('/games/accessibility-center.js?v=__OSGARD_BUILD_VERS
 assert.ok(catalog.includes('/games/catalog-funnel-events.js?v=__OSGARD_BUILD_VERSION__'));
 assert.ok(catalog.includes('id="player-dialog"') && catalog.includes('id="player-frame"'));
 console.log('PASS 2 — consented funnel and accessibility modules are wired into the current catalogue.');
-for (const token of ['osgard.games.accessibility.v1','prefers-reduced-motion','osgard-a11y-contrast','osgard-a11y-large-type','osgard-a11y-large-targets','aria-live="polite"',"event.key.toLowerCase() !== 'a'","window.addEventListener('storage'"]) assert.ok(a11yJs.includes(token), 'Missing accessibility behaviour: ' + token);
+for (const token of ['osgard.games.accessibility.v1','osgard-a11y-contrast','osgard-a11y-large-type','osgard-a11y-large-targets','aria-live="polite"',"event.key.toLowerCase() !== 'a'","window.addEventListener('storage'"]) assert.ok(a11yJs.includes(token), 'Missing accessibility behaviour: ' + token);
 for (const token of ['min-height:44px','prefers-reduced-motion:reduce','outline:3px solid','grid-template-columns:minmax(0,1fr)']) assert.ok(a11yCss.includes(token), 'Missing accessibility styling: ' + token);
 console.log('PASS 3 — persisted accessibility, keyboard/focus, announcements, reduced motion and mobile targets.');
 assert.ok(funnel.includes('if (!ALLOWED.has(name) || !consentGranted()) return false'));
