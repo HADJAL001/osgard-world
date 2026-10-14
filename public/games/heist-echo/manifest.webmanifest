@@ -1,0 +1,20 @@
+{
+  "name": "HEIST//ECHO — Operations Frontier",
+  "short_name": "HEIST//ECHO",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#080d13",
+  "theme_color": "#080d13",
+  "description": "Тактическая симуляция HEIST//ECHO. Офлайн-доступ после первой успешной загрузки.",
+  "lang": "ru",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

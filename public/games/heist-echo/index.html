@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ru" data-heist-echo-launcher="4.0.0">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080d13">
+<meta name="description" content="HEIST//ECHO — тактическая симуляция. Создавай миссии, проверяй маршруты и разбирай операции.">
+<meta property="og:title" content="HEIST//ECHO — Operations Frontier">
+<meta property="og:description" content="Тактическая симуляция. Создай план, проверь его и выполни операцию.">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<title>HEIST//ECHO 4.0.0 — Operations Frontier</title>
+<style>
+:root{color-scheme:dark;--bg:#080d13;--panel:#111b25;--line:rgba(168,197,221,.15);--text:#edf4fa;--muted:#8295a8;--cyan:#66e6e0;--amber:#e4ae61}*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}body{min-height:100vh;overflow-x:hidden;background:radial-gradient(ellipse at 80% -10%,rgba(39,104,117,.17),transparent 44%),linear-gradient(180deg,#0a1118,#080d13 68%)}button{font:inherit;cursor:pointer}button:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}.shell{max-width:940px;min-height:100vh;margin:auto;padding:clamp(20px,5vw,58px);display:flex;flex-direction:column;justify-content:center}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;border-bottom:1px solid var(--line);padding-bottom:20px}.brand{display:flex;align-items:center;gap:12px;font-weight:750;letter-spacing:.14em}.mark{width:30px;height:30px;border:1px solid var(--cyan);display:grid;place-items:center;transform:rotate(45deg);color:var(--cyan)}.mark span{transform:rotate(-45deg)}.release{color:var(--muted);font:11px ui-monospace,monospace;letter-spacing:.12em}.eyebrow{color:var(--cyan);font:11px ui-monospace,monospace;letter-spacing:.2em;margin:42px 0 12px}h1{font-size:clamp(38px,8vw,78px);line-height:.96;letter-spacing:-.055em;margin:0;max-width:740px}h1 em{font-style:normal;color:var(--cyan)}.lead{font-size:clamp(15px,2vw,18px);line-height:1.7;color:#a8b7c6;max-width:670px;margin:24px 0 30px}.features{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 28px}.feature{border:1px solid var(--line);background:rgba(17,27,37,.65);padding:14px;min-height:84px}.feature strong{display:block;font-size:15px;color:var(--text)}.feature span{display:block;color:var(--muted);font-size:12px;margin-top:5px}.actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center}.launch{background:var(--cyan);color:#071214;border:0;padding:15px 24px;font-weight:800;letter-spacing:.07em;min-height:50px}.launch:disabled{opacity:.65;cursor:wait}.status{min-height:24px;color:var(--muted);font-size:12px;margin-top:16px}.note{color:#607487;font-size:11px;margin-top:auto;padding-top:36px}.progress{height:2px;background:#192631;overflow:hidden;max-width:440px;margin-top:6px}.progress i{display:block;height:100%;width:0;background:var(--cyan);transition:width .2s}.error{color:#ff9299!important}.retry{color:var(--cyan);background:transparent;border:1px solid var(--line);padding:10px 14px}#game{position:fixed;inset:0;width:100%;height:100%;border:0;background:var(--bg);z-index:10}#game[hidden],.shell[hidden]{display:none!important}@media(max-width:650px){.features{grid-template-columns:repeat(2,minmax(0,1fr))}.shell{padding:22px}.eyebrow{margin-top:32px}.top{align-items:flex-start}.release{max-width:94px;text-align:right}}@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main class="shell" id="launch-shell">
+<header class="top"><div class="brand"><span class="mark"><span>✦</span></span><span>HEIST//ECHO</span></div><div class="release">OPERATIONS FRONTIER<br>RELEASE 4.0.0</div></header>
+<p class="eyebrow">TACTICAL OPERATIONS / LOCAL SIMULATION</p>
+<h1>ПЛАНИРУЙ.<br><em>ПРОВЕРЯЙ.</em><br>ВЫПОЛНЯЙ.</h1>
+<p class="lead">Создавай тактические карты, испытывай план на разных фазах патруля и изучай каждую операцию через Black Box. Твои миссии и прогресс остаются в браузере.</p>
+<section class="features" aria-label="Возможности"><div class="feature"><strong>04 карты</strong><span>Разные планировки</span></div><div class="feature"><strong>2 охранника</strong><span>Реактивная тактика</span></div><div class="feature"><strong>ORACLE</strong><span>Проверка маршрута</span></div><div class="feature"><strong>BLACK BOX</strong><span>Разбор операции</span></div></section>
+<div class="actions"><button class="launch" id="launch" type="button">ЗАПУСТИТЬ ОПЕРАЦИЮ ↗</button><button class="retry" id="retry" type="button" hidden>ПОВТОРИТЬ ЗАГРУЗКУ</button></div>
+<div id="status" class="status" aria-live="polite">Первый запуск загрузит игровой модуль с OSGARD WORLD. После успешного запуска части пакета будут кэшироваться для повторного офлайн-доступа.</div><div class="progress" aria-hidden="true"><i id="bar"></i></div>
+<footer class="note">HEIST//ECHO 4.0.0 · OFFLINE-AWARE · NO THIRD-PARTY DEPENDENCIES</footer>
+</main>
+<iframe id="game" title="HEIST//ECHO — игровая операция" allow="fullscreen; clipboard-write; gamepad" hidden></iframe>
+<script>
+(()=>{'use strict';
+const files=["payload-01.txt","payload-02.txt","payload-03.txt","payload-04.txt","payload-05.txt"];
+const $=id=>document.getElementById(id), launch=$('launch'), retry=$('retry'), status=$('status'), bar=$('bar'), shell=$('launch-shell'), frame=$('game');
+let busy=false;
+async function prepareWorker(){
+ if(!('serviceWorker'in navigator)||location.protocol!=='https:')return;
+ try{await navigator.serviceWorker.register('./sw.js',{scope:'./'});await navigator.serviceWorker.ready;
+  if(!navigator.serviceWorker.controller) await new Promise(resolve=>{let done=false;const finish=()=>{if(done)return;done=true;navigator.serviceWorker.removeEventListener('controllerchange',finish);resolve()};navigator.serviceWorker.addEventListener('controllerchange',finish,{once:true});setTimeout(finish,1200)});
+ }catch(_){}
+}
+async function loadGame(){
+ if(busy)return;busy=true;launch.disabled=true;retry.hidden=true;status.classList.remove('error');status.textContent='Проверка пакета и подготовка тактического ядра…';bar.style.width='4%';
+ try{
+  await prepareWorker();
+  let done=0;const payloadParts=await Promise.all(files.map(async file=>{const r=await fetch('./'+file,{cache:'default'});if(!r.ok)throw new Error('Не удалось загрузить '+file+' (HTTP '+r.status+').');const value=await r.text();done++;bar.style.width=(4+Math.round(done/files.length*82))+'%';status.textContent='Загрузка игрового ядра: '+done+'/'+files.length;return value}));
+  const html=payloadParts.join('');
+  if(!html.startsWith('<!doctype html>')||!html.includes('data-heist-echo-release="4.0.0"')||!html.trimEnd().endsWith('</html>'))throw new Error('Контроль целостности игрового ядра не пройден.');
+  bar.style.width='92%';status.textContent='Пакет проверен. Запуск симуляции…';frame.srcdoc=html;
+  frame.addEventListener('load',()=>{bar.style.width='100%';document.title='HEIST//ECHO 4.0.0 — Operations Frontier';shell.hidden=true;frame.hidden=false},{once:true});
+ }catch(err){status.classList.add('error');status.textContent=(err&&err.message)||'Не удалось загрузить игру. Проверь соединение и повтори попытку.';bar.style.width='0%';retry.hidden=false;launch.disabled=false;busy=false}
+}
+launch.addEventListener('click',loadGame);retry.addEventListener('click',loadGame);
+})();
+</script>
+</body>
+</html>
