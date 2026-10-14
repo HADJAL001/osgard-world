@@ -328,9 +328,9 @@ app.get("/v1/owned-promo/config", async (_req, res) => {
         const checked = migrateOwnedPromoConfig(row.config);
         if (checked.ok) {
           config = checked.config;
-          source = row.config?.schemaVersion === 2 ? "database" : "database_migrated";
+          source = row.config?.schemaVersion === 3 ? "database" : "database_migrated";
           updatedAt = row.updated_at;
-          if (row.config?.schemaVersion !== 2) {
+          if (row.config?.schemaVersion !== 3) {
             try {
               const migrated = await pool.query(
                 "UPDATE commerce_owned_promo_config SET config = $1::jsonb, updated_at = NOW() WHERE config_id = 1 AND config = $2::jsonb RETURNING updated_at",
@@ -365,8 +365,8 @@ app.get("/v1/admin/owned-promo/config", requireAdmin, async (_req, res) => {
     const checked = migrateOwnedPromoConfig(row.config);
     if (!checked.ok) return res.status(503).json({ error: "OWNED_PROMO_CONFIG_INVALID" });
     let updatedAt = row.updated_at;
-    let source = row.config?.schemaVersion === 2 ? "database" : "database_migrated";
-    if (row.config?.schemaVersion !== 2) {
+    let source = row.config?.schemaVersion === 3 ? "database" : "database_migrated";
+    if (row.config?.schemaVersion !== 3) {
       try {
         const migrated = await pool.query(
           "UPDATE commerce_owned_promo_config SET config = $1::jsonb, updated_at = NOW() WHERE config_id = 1 AND config = $2::jsonb RETURNING updated_at",

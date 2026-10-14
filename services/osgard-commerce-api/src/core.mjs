@@ -95,8 +95,8 @@ export const DEFAULT_OWNED_PROMO_CONFIG = Object.freeze({
 
 export function validateOwnedPromoConfig(body) {
   const input = body && typeof body === "object" && !Array.isArray(body) ? body : {};
-  const schemaVersion = input.schemaVersion === undefined ? 2 : input.schemaVersion;
-  if (schemaVersion !== 2) return { ok: false, status: 400, code: "OWNED_PROMO_SCHEMA_VERSION_INVALID" };
+  const schemaVersion = input.schemaVersion === undefined ? 3 : input.schemaVersion;
+  if (schemaVersion !== 3) return { ok: false, status: 400, code: "OWNED_PROMO_SCHEMA_VERSION_INVALID" };
   const enabled = input.enabled === undefined ? DEFAULT_OWNED_PROMO_CONFIG.enabled : input.enabled;
   const showShareRewards = input.showShareRewards === undefined
     ? DEFAULT_OWNED_PROMO_CONFIG.showShareRewards : input.showShareRewards;
@@ -146,7 +146,7 @@ export function validateOwnedPromoConfig(body) {
   return {
     ok: true,
     config: {
-      schemaVersion: 2,
+      schemaVersion: 3,
       enabled,
       defaultFrequency,
       enabledServices: enabledServices.ids,
@@ -165,14 +165,15 @@ export function validateOwnedPromoConfig(body) {
  */
 export function migrateOwnedPromoConfig(body) {
   const input = body && typeof body === "object" && !Array.isArray(body) ? body : {};
-  if (input.schemaVersion === 2) return validateOwnedPromoConfig(input);
-  if (input.schemaVersion !== undefined && input.schemaVersion !== 1) {
+  if (input.schemaVersion === 3) return validateOwnedPromoConfig(input);
+  if (input.schemaVersion !== undefined && input.schemaVersion !== 1 && input.schemaVersion !== 2) {
     return { ok: false, status: 400, code: "OWNED_PROMO_SCHEMA_VERSION_INVALID" };
   }
 
   const normalizeLegacyIds = (value, fallback) => {
-    if (!Array.isArray(value)) return [...fallback];
-    return [...new Set(value.filter((id) => typeof id === "string" && OWNED_PROMO_SERVICE_ID_SET.has(id)))];
+    if (!Array.isArray(value) || value.length === 0) return [...fallback];
+    const valid = [...new Set(value.filter((id) => typeof id === "string" && OWNED_PROMO_SERVICE_ID_SET.has(id)))];
+    return valid.length ? valid : [...fallback];
   };
   const enabledServices = normalizeLegacyIds(input.enabledServices, OWNED_PROMO_SERVICE_IDS);
   const defaultSelectedServices = normalizeLegacyIds(input.defaultSelectedServices, enabledServices)
@@ -182,19 +183,20 @@ export function migrateOwnedPromoConfig(body) {
     (OWNED_PROMO_SERVICE_ID_SET.has(oldSpotlight) && enabledServices.includes(oldSpotlight))
     ? oldSpotlight : "auto";
 
+  // Schema v1 and v2 were created before the current requested intermission
+  // defaults. Upgrade both to enabled / every game / share rewards once; only
+  // explicit schema-v3 operator choices remain untouched.
+  // Service allow-lists and a valid spotlight are preserved.
   return validateOwnedPromoConfig({
-    schemaVersion: 2,
-    enabled: typeof input.enabled === "boolean" ? input.enabled : DEFAULT_OWNED_PROMO_CONFIG.enabled,
-    defaultFrequency: OWNED_PROMO_FREQUENCIES.has(input.defaultFrequency)
-      ? input.defaultFrequency : DEFAULT_OWNED_PROMO_CONFIG.defaultFrequency,
+    schemaVersion: 3,
+    enabled: true,
+    defaultFrequency: "each",
     enabledServices,
     defaultSelectedServices,
     spotlightService,
-    showShareRewards: typeof input.showShareRewards === "boolean"
-      ? input.showShareRewards : DEFAULT_OWNED_PROMO_CONFIG.showShareRewards,
+    showShareRewards: true,
   });
 }
-
 export function cleanText(value, max = 500) {
   return String(value ?? "")
     .replace(/[\u0000-\u001f\u007f]/g, " ")

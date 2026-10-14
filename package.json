@@ -73,7 +73,8 @@
     "qa:owned-promo-config": "node scripts/owned-promo-config-smoke.mjs",
     "qa:games-accessibility-funnel": "node scripts/games-accessibility-funnel-smoke.mjs && node scripts/consented-analytics-queue-smoke.mjs && node --test services/osgard-commerce-api/test/core.test.mjs",
     "qa:civic-release-contract": "node scripts/civic-cascade-release-contract-smoke.mjs",
-    "qa:ecosystem-release": "node scripts/osgard-ecosystem-release-preflight.mjs && node scripts/osgard-ecosystem-release-preflight-smoke.mjs"
+    "qa:ecosystem-release": "node scripts/osgard-ecosystem-release-preflight.mjs && node scripts/osgard-ecosystem-release-preflight-smoke.mjs",
+    "qa:one-pass": "node --test scripts/osgard-one-pass-release.test.mjs && node scripts/osgard-one-pass-release-smoke.mjs"
   },
   "dependencies": {
     "@types/three": "^0.186.0",

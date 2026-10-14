@@ -206,17 +206,23 @@ const serviceProgressKey='osgard.games.postgame-service-progress.v1';
 const availableServiceIds=services.filter(item=>item[7]!==false).map(item=>item[0]);
 const frequencyValues=['each','every3','off'];
 const preferredServiceKey='osgard.games.preferred-service.v1';
-const defaultManagedPromoConfig={schemaVersion:2,enabled:true,defaultFrequency:'each',enabledServices:availableServiceIds.slice(),defaultSelectedServices:availableServiceIds.slice(),spotlightService:'auto',showShareRewards:true};
+const defaultManagedPromoConfig={schemaVersion:3,enabled:true,defaultFrequency:'each',enabledServices:availableServiceIds.slice(),defaultSelectedServices:availableServiceIds.slice(),spotlightService:'auto',showShareRewards:true};
 let managedPromoConfig={...defaultManagedPromoConfig,enabledServices:availableServiceIds.slice(),defaultSelectedServices:availableServiceIds.slice()};
 function normalizeManagedPromoConfig(raw){
  if(!raw||typeof raw!=='object'||Array.isArray(raw))return null;
- if(raw.schemaVersion!==undefined&&raw.schemaVersion!==1&&raw.schemaVersion!==2)return null;
- const enabledServices=Array.isArray(raw.enabledServices)?[...new Set(raw.enabledServices.filter(id=>availableServiceIds.includes(id)))]:availableServiceIds.slice();
- const selectedSource=Array.isArray(raw.defaultSelectedServices)?raw.defaultSelectedServices:availableServiceIds;
- const defaultSelectedServices=[...new Set(selectedSource.filter(id=>availableServiceIds.includes(id)&&enabledServices.includes(id)))];
- const defaultFrequency=frequencyValues.includes(raw.defaultFrequency)?raw.defaultFrequency:'each';
+ if(raw.schemaVersion!==undefined&&raw.schemaVersion!==1&&raw.schemaVersion!==2&&raw.schemaVersion!==3)return null;
+ const legacy=raw.schemaVersion!==3;
+ const normalizeIds=(value,fallback)=>{
+  if(!Array.isArray(value))return fallback.slice();
+  const valid=[...new Set(value.filter(id=>availableServiceIds.includes(id)))];
+  return legacy&&!valid.length?fallback.slice():valid;
+ };
+ const enabledServices=normalizeIds(raw.enabledServices,availableServiceIds);
+ const selectedSource=normalizeIds(raw.defaultSelectedServices,availableServiceIds);
+ const defaultSelectedServices=[...new Set(selectedSource.filter(id=>enabledServices.includes(id)))];
+ const defaultFrequency=legacy?'each':(frequencyValues.includes(raw.defaultFrequency)?raw.defaultFrequency:'each');
  const spotlightService=raw.spotlightService==='auto'||(availableServiceIds.includes(raw.spotlightService)&&enabledServices.includes(raw.spotlightService))?raw.spotlightService:'auto';
- return {schemaVersion:2,enabled:typeof raw.enabled==='boolean'?raw.enabled:true,defaultFrequency,enabledServices,defaultSelectedServices,spotlightService,showShareRewards:typeof raw.showShareRewards==='boolean'?raw.showShareRewards:true};
+ return {schemaVersion:3,enabled:legacy?true:(typeof raw.enabled==='boolean'?raw.enabled:true),defaultFrequency,enabledServices,defaultSelectedServices,spotlightService,showShareRewards:legacy?true:(typeof raw.showShareRewards==='boolean'?raw.showShareRewards:true)};
 }
 async function refreshManagedPromoConfig(){
  try{
