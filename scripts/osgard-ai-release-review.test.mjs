@@ -43,6 +43,14 @@ test('release-readiness summaries omit raw command output and redact secret-shap
   const encoded = JSON.stringify(projected);
   assert.equal(encoded.includes('sk-this-must-never-be-sent'), false);
   assert.equal(encoded.includes('OPENAI_API_KEY='), false);
+  assert.equal(JSON.stringify(projectReport('release-readiness.json', {
+    status: 'blocked',
+    checks: [{ name: 'provider-token', status: 'failed', output: 'github_pat_abcdefghijklmnopqrstuvwxyz1234567890' }],
+  })).includes('github_pat_abcdefghijklmnopqrstuvwxyz1234567890'), false);
+  assert.equal(JSON.stringify(projectReport('release-readiness.json', {
+    status: 'blocked',
+    checks: [{ name: 'password', status: 'failed', output: 'PASSWORD=do-not-send-this' }],
+  })).includes('do-not-send-this'), false);
   assert.equal(encoded.includes('output'), false);
 });
 
