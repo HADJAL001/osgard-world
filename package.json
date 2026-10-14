@@ -30,7 +30,7 @@
     "qa:cascade-lab-hypothesis": "node scripts/cascade-lab-hypothesis-smoke.mjs",
     "qa:game-detail-runtime": "node scripts/game-detail-runtime-smoke.mjs",
     "qa:civic-cascade-forecast": "node scripts/civic-cascade-forecast-smoke.mjs",
-    "qa:games-operations": "node scripts/games-operations-smoke.mjs",
+    "qa:games-operations": "node scripts/games-operations-smoke.mjs && node scripts/games-launch-console-smoke.mjs",
     "qa:campaign-manager": "node scripts/campaign-manager-smoke.mjs",
     "qa:intermission-sponsor": "node scripts/game-intermission-sponsor-smoke.mjs",
     "qa:game-recommendations": "node scripts/game-recommendations-smoke.mjs",
@@ -70,7 +70,8 @@
     "qa:ai-release-review": "node --test scripts/osgard-ai-release-review.test.mjs",
     "qa:null-shift-diagnostics-contract": "node scripts/null-shift-diagnostics-contract-smoke.mjs",
     "qa:release-manifest": "node scripts/frontend-archive-preflight-smoke.mjs",
-    "qa:owned-promo-config": "node scripts/owned-promo-config-smoke.mjs"
+    "qa:owned-promo-config": "node scripts/owned-promo-config-smoke.mjs",
+    "qa:games-launch-console": "node scripts/games-launch-console-smoke.mjs"
   },
   "dependencies": {
     "@types/three": "^0.186.0",
