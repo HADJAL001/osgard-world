@@ -108,11 +108,12 @@ function researchPayload(currentRun, priorRuns = [], goal = 'reliability', local
   const current = normalizeRunForResearch(currentRun);
   if (!current) return { ok:false, reason:'Запусти или выбери обычный протокол кампании/дня, чтобы получить корректную сводку.' };
   const history = [];
+  const currentAt = typeof currentRun?.at === 'string' ? currentRun.at : '';
+  const currentId = typeof currentRun?.id === 'string' ? currentRun.id : '';
   for (const raw of safeArray(priorRuns).slice(0,18)) {
+    if ((currentId && raw?.id === currentId) || (currentAt && raw?.at === currentAt)) continue;
     const item = normalizeRunForResearch(raw);
     if (!item || item.levelId !== current.levelId || item.mode !== current.mode || (current.mode === 'daily' && item.dailyDate !== current.dailyDate)) continue;
-    if (item.timeSeconds === current.timeSeconds && item.status === current.status && item.deviceCount === current.deviceCount &&
-        JSON.stringify(item.devices) === JSON.stringify(current.devices) && history.length === 0) continue;
     history.push(item);
     if (history.length >= 4) break;
   }
