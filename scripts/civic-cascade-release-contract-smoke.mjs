@@ -7,7 +7,7 @@ const release = JSON.parse(readFileSync(resolve(root, "public/games/civic-cascad
 const matrix = readFileSync(resolve(root, "scripts/production-route-matrix.mjs"), "utf8");
 
 assert.equal(release.gameId, "civic-cascade");
-assert.equal(release.version, "3.3.0");
+assert.equal(release.version, "3.4.0");
 assert.equal(release.buildContract?.decisionDossier?.modelVersion, release.version,
   "Decision dossier model version must track the published CIVIC CASCADE release");
 assert.equal(release.buildContract?.decisionDossier?.hashScope,
@@ -19,6 +19,12 @@ assert.ok(matrix.includes("release.buildContract?.decisionDossier?.modelVersion 
   "The production route matrix must validate the current decision-dossier model version");
 assert.ok(matrix.includes("release.buildContract?.decisionDossier?.hashScope === '" + release.buildContract.decisionDossier.hashScope + "'"),
   "The production route matrix must validate the current canonical hash scope");
+assert.equal(release.buildContract?.openAICivicCascadeAdvisor?.enabled, true)
+assert.equal(release.buildContract?.openAICivicCascadeAdvisor?.defaultFeatureFlag, false)
+assert.equal(release.buildContract?.openAICivicCascadeAdvisor?.requiresPerRequestConsent, true)
+assert.equal(release.buildContract?.openAICivicCascadeAdvisor?.canMutateGameState, false)
+assert.ok(matrix.includes("openAICivicCascadeAdvisor?.enabled === true"),
+  "The production route matrix must validate the OpenAI advisor contract")
 assert.ok(!matrix.includes("canonical JSON payload before export metadata"),
   "A stale, incompatible hash-scope requirement must not block a valid release");
 assert.ok(!matrix.includes("decisionDossier?.modelVersion === '3.2.0'"),
