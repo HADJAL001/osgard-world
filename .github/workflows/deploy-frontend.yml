@@ -1,8 +1,10 @@
 name: OSGARD frontend deploy
 
 # All deploys touch the same live container and rollback paths. Serialize normal and recovery commits.
+# A fresh lock namespace prevents a stale diagnostic job in the retired queue from blocking release.
+# Keep cancellation disabled so a live activation/rollback is never interrupted by another push.
 concurrency:
-  group: osgard-frontend-deploy
+  group: osgard-frontend-deploy-v2
   cancel-in-progress: false
 
 on:
