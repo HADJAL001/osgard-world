@@ -75,4 +75,18 @@ assert.ok(page.includes('HTTP-ответ совпадает с базовым к
 assert.ok(page.includes("if (state !== 'fail') state = 'warn'"), 'Build-marker warnings must never downgrade failed route checks');
 assert.ok(page.includes('const startedAt = new Date().toISOString()') && page.includes('startedAt, finishedAt:new Date().toISOString()'), 'Export report must capture distinct start and finish timestamps');
 
+const reliabilityTool = readFileSync('public/games/player-reliability.js', 'utf8');
+const preferencesTool = readFileSync('public/games/player-preferences-backup.js', 'utf8');
+for (const [id, route, marker] of [
+  ['player-reliability', '/games/player-reliability.js', 'osgard.play-support-report'],
+  ['player-preferences-backup', '/games/player-preferences-backup.js', 'osgard.player-preferences'],
+  ['player-tools-css', '/games/player-tools.css', '.player-reliability-hint'],
+]) {
+  assert.equal(byId[id]?.path, route, 'Player tool must be monitored by the operations console: ' + id);
+  assert.ok(byId[id].marker === marker, 'Player tool health check must have a stable body marker: ' + id);
+  assert.ok(productionMatrix.includes("'" + route + "'") || productionMatrix.includes('...playerToolsRoutes'), 'Production route matrix must cover the player tool: ' + route);
+}
+assert.ok(page.includes("credentials: 'omit'") && page.includes("method: 'GET'"), 'Operations probes must remain read-only and credential-free');
+assert.ok(reliabilityTool.includes('window.OSGARDPlayerReliability') && !reliabilityTool.includes('fetch(') && !reliabilityTool.includes('sendBeacon(') && !reliabilityTool.includes('XMLHttpRequest'), 'Diagnostics must remain local and not transmit reports');
+assert.ok(preferencesTool.includes('window.OSGARDPreferencesBackup') && preferencesTool.includes('window.confirm'), 'Collection restore must validate schema and require confirmation');
 console.log('PASS OSGARD Games operations console: ' + targets.length + ' route contracts, 11 game/runtime entrypoints, same-origin GET-only checks, privacy boundary and JSON export.');
