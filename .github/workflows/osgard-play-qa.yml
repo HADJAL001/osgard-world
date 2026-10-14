@@ -73,6 +73,8 @@ jobs:
         run: npm run qa:campaign-manager
       - name: Test the post-session sponsor slot and consent bridge
         run: npm run qa:intermission-sponsor
+      - name: Test OSGARD SELECT schema migration and owned-service choices
+        run: npm run qa:owned-promo-config
       - name: Test Commerce API allow-lists and consent gates
         run: node --test services/osgard-commerce-api/test/core.test.mjs
       - name: Test campaign placement, schedule and public projection
