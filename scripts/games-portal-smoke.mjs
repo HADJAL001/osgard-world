@@ -532,10 +532,11 @@ const civicInline=(civic.match(/<script>([\s\S]*?)<\/script>/)||[])[1]
 assert.ok(civicInline&&civicInline.length>5000,'CIVIC CASCADE self-contained game script missing')
 new Function(civicInline)
 const civicRelease = JSON.parse(readFileSync(resolve('public/games/civic-cascade/release.json'), 'utf8'));
-const civicReleaseMarker = `name="osgard-game-version" content="${civicRelease.version}-command-deck"`;
-assert.ok(/^2\.3\.0$/.test(civicRelease.version) &&
+const civicHtmlVersion = civic.match(/<meta name="osgard-game-version" content="([^"]+)">/)?.[1] || '';
+assert.ok(/^\d+\.\d+\.\d+$/.test(civicRelease.version) &&
   civicRelease.releaseId === 'civic-cascade-web-' + civicRelease.version &&
-  civic.includes(civicReleaseMarker),
+  civicHtmlVersion.startsWith(civicRelease.version + '-') &&
+  /^\d+\.\d+\.\d+-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(civicHtmlVersion),
   'CIVIC CASCADE HTML marker, releaseId and release.json version must agree');
 assert.ok(civic.includes('id="cc-result-challenge"') && civic.includes('id="cc-challenge-banner"'), 'CIVIC CASCADE mission challenge UI missing')
 assert.ok(civicInline.includes('function parseMissionChallenge') && civicInline.includes('function createMissionChallengeUrl') && civicInline.includes('civic_cascade_friend_challenge'), 'CIVIC CASCADE challenge routing and share attribution missing')
