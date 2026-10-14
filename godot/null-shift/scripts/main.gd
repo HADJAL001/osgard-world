@@ -22,6 +22,8 @@ const GUARD_SIGHT_RADIUS := 20.5
 const GUARD_SIGHT_FOV_DEGREES := 150.0
 const GUARD_SEARCH_SECONDS := 4.6
 const GUARD_INVESTIGATION_SECONDS := 4.2
+const GUARD_FLANK_GOLDEN_ANGLE := 2.399963229728653
+const GUARD_NAVIGATION_RAY := 1.55
 const OVERDRIVE_ARC_RADIUS := 7.5
 const OVERDRIVE_ARC_DAMAGE_SCALE := 0.55
 
@@ -1735,6 +1737,9 @@ func _spawn_guard(at: Vector3, is_warden: bool) -> void:
 		"dash_cooldown": randf_range(1.4, 2.4),
 		"phase": randf_range(0.0, TAU),
 		"patrol_origin": at,
+		"tactical_slot": guards.size(),
+		"tactical_angle": fposmod(float(guards.size()) * GUARD_FLANK_GOLDEN_ANGLE, TAU),
+		"navigation_bias": 1 if guards.size() % 2 == 0 else -1,
 		"last_known_position": at,
 		"ai_state": "PATROL",
 		"search_timer": 0.0,
@@ -2032,9 +2037,66 @@ func _update_guard_perception(guard: Dictionary, body: CharacterBody3D, sees_pla
 		guard["displayed_ai_state"] = state
 	return guard
 
+func _guard_flank_target(guard: Dictionary, target_position: Vector3) -> Vector3:
+	var role := str(guard.get("role", "RANGER"))
+	var radius := 6.2
+	match role:
+		"STALKER":
+			radius = 3.8
+		"HEAVY":
+			radius = 5.4
+		"WARDEN":
+			radius = 7.0
+	var angle := float(guard.get("tactical_angle", float(guard.get("tactical_slot", 0)) * GUARD_FLANK_GOLDEN_ANGLE))
+	var target := target_position + Vector3(cos(angle) * radius, 0.0, sin(angle) * radius)
+	target.x = clampf(target.x, -21.0, 21.0)
+	target.z = clampf(target.z, -12.0, 12.0)
+	target.y = target_position.y
+	return target
+
+func _guard_direction_is_blocked(body: CharacterBody3D, direction: Vector3, distance: float = GUARD_NAVIGATION_RAY) -> bool:
+	if not is_instance_valid(body) or direction.length_squared() < 0.001:
+		return true
+	var origin := body.global_position + Vector3.UP * 0.58
+	var endpoint := origin + direction.normalized() * maxf(0.1, distance)
+	var query := PhysicsRayQueryParameters3D.create(origin, endpoint)
+	query.collision_mask = 1
+	query.exclude = [body.get_rid()]
+	return not get_world_3d().direct_space_state.intersect_ray(query).is_empty()
+
+func _guard_navigation_direction(body: CharacterBody3D, target_position: Vector3, guard: Dictionary) -> Vector3:
+	var desired := target_position - body.global_position
+	desired.y = 0.0
+	if desired.length_squared() < 0.02:
+		return Vector3.ZERO
+	desired = desired.normalized()
+	if not _guard_direction_is_blocked(body, desired):
+		return desired
+	var side_axis := Vector3(-desired.z, 0.0, desired.x).normalized()
+	var bias := 1.0 if int(guard.get("navigation_bias", 1)) >= 0 else -1.0
+	var candidates: Array[Vector3] = [
+		desired.rotated(Vector3.UP, 0.72), desired.rotated(Vector3.UP, -0.72),
+		desired.rotated(Vector3.UP, 1.18), desired.rotated(Vector3.UP, -1.18),
+		desired.rotated(Vector3.UP, 1.62), desired.rotated(Vector3.UP, -1.62),
+		desired.rotated(Vector3.UP, 2.18), desired.rotated(Vector3.UP, -2.18)
+	]
+	var best_direction := Vector3.ZERO
+	var best_score := -INF
+	for candidate in candidates:
+		if _guard_direction_is_blocked(body, candidate):
+			continue
+		var score := candidate.dot(desired) + candidate.dot(side_axis) * bias * 0.085
+		if score > best_score:
+			best_score = score
+			best_direction = candidate
+	return best_direction
+
 func _guard_ai_target(guard: Dictionary, body: CharacterBody3D) -> Vector3:
 	var state := str(guard.get("ai_state", "PATROL"))
-	if state in ["ENGAGED", "INVESTIGATE"]:
+	if state == "ENGAGED":
+		var last_known: Vector3 = guard.get("last_known_position", body.global_position)
+		return _guard_flank_target(guard, last_known)
+	if state == "INVESTIGATE":
 		var last_known: Vector3 = guard.get("last_known_position", body.global_position)
 		return last_known
 	if state == "SEARCHING":
@@ -2079,6 +2141,8 @@ func _update_guards(delta: float) -> void:
 		var ai_target_distance := to_ai_target.length()
 		if ai_state == "SEARCHING":
 			body.rotation.y += ai_delta * 1.45
+		elif sees_player:
+			body.look_at(Vector3(player.global_position.x, body.global_position.y, player.global_position.z), Vector3.UP)
 		elif ai_target_distance > 0.01:
 			body.look_at(Vector3(ai_target_position.x, body.global_position.y, ai_target_position.z), Vector3.UP)
 		var role: String = str(guard.get("role", "RANGER"))
@@ -2157,11 +2221,13 @@ func _update_guards(delta: float) -> void:
 			guard["attack_lanes"] = attack_lanes
 			_play_sfx(230.0 if role != "WARDEN" else 115.0, 0.18, 0.08)
 			body.velocity = Vector3.ZERO
-		elif ai_state in ["ENGAGED", "INVESTIGATE"] and ai_target_distance > 2.7 and ai_target_distance < 22.0:
-			body.velocity = to_ai_target.normalized() * _effective_guard_speed(guard)
+		elif ai_state in ["ENGAGED", "INVESTIGATE"] and ai_target_distance > 0.85 and ai_target_distance < 22.0:
+			var navigation_direction := _guard_navigation_direction(body, ai_target_position, guard)
+			body.velocity = navigation_direction * _effective_guard_speed(guard)
 			body.move_and_slide()
 		elif ai_state == "PATROL" and ai_target_distance > 0.75:
-			body.velocity = to_ai_target.normalized() * _effective_guard_speed(guard) * 0.48
+			var patrol_direction := _guard_navigation_direction(body, ai_target_position, guard)
+			body.velocity = patrol_direction * _effective_guard_speed(guard) * 0.48
 			body.move_and_slide()
 		else:
 			body.velocity = Vector3.ZERO

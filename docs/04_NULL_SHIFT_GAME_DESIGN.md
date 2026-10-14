@@ -359,3 +359,12 @@ The runtime smoke now checks combo thresholds, critical damage, the charge gate,
 - Gunfire, pulse, phase shift and destroyed devices emit radius-limited noise events. Guards in range investigate the noise source; firing during NULL SHIFT has a smaller sound radius than ordinary gunfire.
 - A squad radio alert shares fresh contact positions with nearby hostiles, while individual guards keep separate heard-event cursors so old sounds are not replayed every frame. Overhead role tags and tactical telemetry show CONTACT, INVESTIGATE and SWEEP states.
 - Added deterministic smoke coverage for field-of-view geometry, sound radius, noise sequence delivery and the transition from patrol to investigation/contact. Existing roles, precision damage, Overdrive, daily anomalies, gamepad/touch controls, local progression and objective sequence remain in the same game runtime.
+
+
+## Godot release 0.14 — squad flanking and cover-aware movement
+
+- Engaged hostiles no longer share one identical chase point. Each guard receives a stable golden-angle slot around the player's last visible position, distributing the squad into distinct approach lanes rather than a single line.
+- Engagement distance now reflects role identity: STALKER presses at 3.8 m, HEAVY holds 5.4 m, RANGER works at 6.2 m, and WARDEN pressures from 7.0 m. The values describe tactical waypoint radius, not a hard attack-range lock.
+- A short physics-ray fan checks the actual solid geometry in front of a moving hostile and selects a clear left/right detour with a small alternating squad bias. The steering function is used by patrol and engaged/investigating movement; it does not teleport actors or bypass collision.
+- Guards continue to face a visible player while moving laterally toward a flank position, preserving readable aiming and telegraphs. Waypoints are clamped to the playable deck.
+- Extended the Godot headless runtime smoke with deterministic flank geometry, role-specific spacing, deck-edge bounds, a real temporary wall collider and a verified clear detour. Existing visual cone, sound propagation, radio awareness, Overdrive chain arcs, daily anomalies, player input and career saves stay on the same Godot path.

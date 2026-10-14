@@ -25,6 +25,55 @@ func _run_smoke() -> void:
 		return
 
 	print("RUNTIME_STAGE: tactical perception, squad radio and acoustic events")
+	print("RUNTIME_STAGE: flank director and cover-aware navigation")
+	var flank_origin := Vector3(0.0, 0.82, 0.0)
+	var ranger_slot_a: Dictionary = {"role": "RANGER", "tactical_slot": 0, "tactical_angle": 0.0}
+	var ranger_slot_b: Dictionary = {"role": "RANGER", "tactical_slot": 1, "tactical_angle": PI * 0.5}
+	var ranger_target_a: Vector3 = game._guard_flank_target(ranger_slot_a, flank_origin)
+	var ranger_target_b: Vector3 = game._guard_flank_target(ranger_slot_b, flank_origin)
+	if not _expect(is_equal_approx(ranger_target_a.distance_to(flank_origin), 6.2) and ranger_target_a.is_equal_approx(game._guard_flank_target(ranger_slot_a, flank_origin)), "Ranger flank waypoint must be stable and keep its 6.2 metre tactical radius"):
+		return
+	if not _expect(ranger_target_a.distance_to(ranger_target_b) > 8.0, "distinct flank slots must distribute a squad around different attack vectors"):
+		return
+	if not _expect(is_equal_approx(game._guard_flank_target({"role": "STALKER", "tactical_angle": 0.0}, flank_origin).distance_to(flank_origin), 3.8) and is_equal_approx(game._guard_flank_target({"role": "HEAVY", "tactical_angle": 0.0}, flank_origin).distance_to(flank_origin), 5.4) and is_equal_approx(game._guard_flank_target({"role": "WARDEN", "tactical_angle": 0.0}, flank_origin).distance_to(flank_origin), 7.0), "Stalker, Heavy and Warden must hold distinct role-specific engagement distances"):
+		return
+	var edge_flank: Vector3 = game._guard_flank_target(ranger_slot_a, Vector3(20.5, 0.82, 11.6))
+	if not _expect(edge_flank.x <= 21.0 and edge_flank.x >= -21.0 and edge_flank.z <= 12.0 and edge_flank.z >= -12.0, "flank waypoints must remain within the playable deck boundary"):
+		return
+	var navigation_probe := CharacterBody3D.new()
+	navigation_probe.name = "TacticalNavigationProbe"
+	navigation_probe.position = Vector3(-17.0, 0.82, 0.0)
+	navigation_probe.collision_layer = 2
+	navigation_probe.collision_mask = 1
+	var navigation_shape := CollisionShape3D.new()
+	var navigation_capsule := CapsuleShape3D.new()
+	navigation_capsule.radius = 0.32
+	navigation_capsule.height = 1.5
+	navigation_shape.shape = navigation_capsule
+	navigation_probe.add_child(navigation_shape)
+	game.add_child(navigation_probe)
+	var navigation_wall := StaticBody3D.new()
+	navigation_wall.name = "TacticalNavigationOccluder"
+	navigation_wall.position = Vector3(-17.0, 0.8, -1.55)
+	navigation_wall.collision_layer = 1
+	navigation_wall.collision_mask = 0
+	var navigation_wall_shape := CollisionShape3D.new()
+	var navigation_box := BoxShape3D.new()
+	navigation_box.size = Vector3(2.0, 1.8, 0.32)
+	navigation_wall_shape.shape = navigation_box
+	navigation_wall.add_child(navigation_wall_shape)
+	game.add_child(navigation_wall)
+	await physics_frame
+	await physics_frame
+	if not _expect(game._guard_direction_is_blocked(navigation_probe, Vector3.FORWARD, 1.8), "cover ray must detect a real solid obstruction directly ahead"):
+		return
+	var detour: Vector3 = game._guard_navigation_direction(navigation_probe, Vector3(-17.0, 0.82, -8.0), {"navigation_bias": 1})
+	if not _expect(not detour.is_zero_approx() and detour.dot(Vector3.FORWARD) > 0.25 and not game._guard_direction_is_blocked(navigation_probe, detour, 1.5), "blocked movement must produce a clear, forward-progressing detour around solid cover"):
+		return
+	navigation_probe.queue_free()
+	navigation_wall.queue_free()
+	await process_frame
+
 	if not _expect(game._is_within_vision_cone(Vector3.ZERO, Vector3.FORWARD, Vector3(0.0, 0.0, -8.0), 20.0, 150.0), "vision cone must detect a target in the forward arc"):
 		return
 	if not _expect(not game._is_within_vision_cone(Vector3.ZERO, Vector3.FORWARD, Vector3(12.0, 0.0, 0.0), 20.0, 120.0), "vision cone must reject a target outside the configured field of view"):
