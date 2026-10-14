@@ -1,4 +1,5 @@
 import { ArrowDown, ArrowUpRight, Check, Layers3, Rocket, ShieldCheck, Timer } from 'lucide-react'
+import { ProjectIntake } from './ProjectIntake'
 
 type Locale = 'ru' | 'en'
 type Props = { locale: Locale, botUrl: string }
@@ -33,11 +34,13 @@ export function Development({ locale, botUrl }: Props) {
         <p className="eyebrow">OSGARD / DEVELOPMENT / 2026</p>
         <h2>{ru ? 'Любой цифровой продукт. За 3-7 дней.' : 'Any digital product. In 3-7 days.'}</h2>
         <p>{ru ? 'Сайты, Telegram-боты, Mini Apps, мобильные приложения и платформы. Современный стек разработки и прозрачный путь от задачи до запуска.' : 'Sites, Telegram bots, Mini Apps, mobile applications and platforms. A modern development stack and a clear route from brief to launch.'}</p>
-        <div className="development-actions"><a className="cta" href={botUrl} target="_blank" rel="noreferrer">{order}<ArrowUpRight /></a><button className="development-quiet" onClick={() => document.getElementById('development-portfolio')?.scrollIntoView({ behavior: 'smooth' })}>{ru ? 'Смотреть портфолио' : 'View portfolio'}<ArrowDown /></button></div>
+        <div className="development-actions"><a className="cta" href="#project-intake">{order}<ArrowUpRight /></a><button className="development-quiet" onClick={() => document.getElementById('development-portfolio')?.scrollIntoView({ behavior: 'smooth' })}>{ru ? 'Смотреть портфолио' : 'View portfolio'}<ArrowDown /></button></div>
         <small>{ru ? 'Срок и состав работ фиксируются до старта.' : 'Scope and delivery dates are confirmed before work begins.'}</small>
       </div>
       <div className="development-object" aria-hidden="true"><span>DEV</span><i/><b>01</b><em>BUILD / SHIP / SUPPORT</em></div>
     </div>
+
+    <ProjectIntake locale={locale} botUrl={botUrl} />
 
     <div className="development-portfolio" id="development-portfolio"><div className="development-heading"><p className="eyebrow">SELECTED WORK</p><h3>{ru ? 'Направления экосистемы OSGARD.' : 'OSGARD ecosystem projects.'}</h3></div><div className="portfolio-rail">{projects.map(([name, url, category, description, result], index) => <a href={`https://${url}`} target="_blank" rel="noreferrer" className="portfolio-card" key={url}><div className={`portfolio-preview preview-${index % 5}`}><span>{name.split(' ').map(word => word[0]).join('').slice(0, 3)}</span><i>{String(index + 1).padStart(2, '0')}</i></div><small>{category}</small><b>{name}</b><p>{ru ? description : `${category} product built for a focused workflow.`}</p><strong className="project-result">{result}</strong><em>{ru ? 'Открыть' : 'Open'} <ArrowUpRight /></em></a>)}</div></div>
 
