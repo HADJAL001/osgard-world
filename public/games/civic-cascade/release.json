@@ -3,8 +3,8 @@
   "gameId": "civic-cascade",
   "title": "CIVIC CASCADE",
   "edition": "Web Edition",
-  "version": "2.6.0",
-  "releaseId": "civic-cascade-web-2.6.0",
+  "version": "2.7.0",
+  "releaseId": "civic-cascade-web-2.7.0",
   "canonicalUrl": "https://osgard.world/games/civic-cascade/",
   "detailUrl": "https://osgard.world/game/civic-cascade",
   "entrypoint": "/games/civic-cascade/",
@@ -35,7 +35,14 @@
       "cc-node-status",
       "cc-node-chain",
       "cc-node-effect",
-      "cc-adaptive-crisis"
+      "cc-adaptive-crisis",
+      "cc-causal-debrief",
+      "cc-causal-summary",
+      "cc-causal-count",
+      "cc-causal-risk-change",
+      "cc-causal-weakest",
+      "cc-causal-best",
+      "cc-causal-ledger"
     ],
     "checkpointSchema": "civic-cascade-checkpoint-v1",
     "approximateRiskForecast": true,
@@ -143,6 +150,24 @@
       "oldActionCountIncidentsPreserved": true,
       "forecastsExposeCriticalNodeCount": true,
       "regressionSmokeTest": "scripts/civic-cascade-forecast-smoke.mjs"
+    },
+    "operationDebrief": {
+      "enabled": true,
+      "source": "local-operation-ledger",
+      "maxEvents": 20,
+      "rowsInSummary": 8,
+      "tracks": [
+        "tactical-actions",
+        "crisis-decisions"
+      ],
+      "storesBeforeAndAfterSnapshots": true,
+      "comparesFirstAndLastSnapshot": true,
+      "tracksNodeIntegrity": true,
+      "reportsImmediateObservedImpact": true,
+      "counterfactualClaims": false,
+      "storesInLocalCheckpoint": true,
+      "validatesLocalLedgerOnRestore": true,
+      "regressionSmokeTest": "scripts/civic-cascade-forecast-smoke.mjs"
     }
   },
   "cinematicExport": {
@@ -183,6 +208,6 @@
   "deployment": {
     "target": "https://osgard.world",
     "mechanism": "repository push triggers the site's production deployment workflow",
-    "liveStatus": "verify release 2.6.0 with production route checks after deployment"
+    "liveStatus": "verify release 2.7.0 with production route checks after deployment"
   }
 }
