@@ -4713,7 +4713,37 @@ func _update_objective_compass(delta: float = 0.016) -> void:
 	objective_compass_arrow.add_theme_color_override("font_color", objective_color)
 	objective_compass_text.add_theme_color_override("font_color", objective_color)
 
+func _update_live_diagnostics() -> void:
+	if not diagnostics_enabled or not is_instance_valid(diagnostics_label):
+		return
+	var samples := frame_samples.duplicate()
+	samples.sort()
+	var p95 := 0.0
+	if not samples.is_empty():
+		p95 = samples[clampi(int(ceil(float(samples.size() - 1) * 0.95)), 0, samples.size() - 1)]
+	fps_p95_ms = p95
+	var draw_calls := int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
+	var primitives := int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME))
+	var scene_nodes := int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
+	var process_cpu_ms: float = float(Performance.get_monitor(Performance.TIME_PROCESS)) * 1000.0
+	var physics_cpu_ms: float = float(Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS)) * 1000.0
+	var budget_misses := 0.0
+	for miss in frame_budget_misses:
+		budget_misses += miss
+	var budget_miss_percent: float = budget_misses / maxf(1.0, float(frame_budget_misses.size())) * 100.0
+	var active_impact_lights: int = _active_impact_light_count()
+	var operator_rim_active: int = int(is_instance_valid(operator_rim_light) and operator_rim_light.visible)
+	var profile: String = "PERFORMANCE" if performance_quality else ("BALANCED" if not cinematic_quality else ("AUTO-OPTIMIZED II" if adaptive_quality_level >= 2 else ("AUTO-OPTIMIZED I" if adaptive_quality_level == 1 else "CINEMATIC")))
+	diagnostics_label.text = "LIVE DIAGNOSTICS\nFPS        %02d\nFRAME P95  %.1f ms\nFRAME NOW  %.1f ms\n60 FPS MISSES %.0f%%\nPROCESS CPU %.2f ms\nPHYSICS CPU %.2f ms\nDRAW / TRI / NODES %d / %d / %d\nFX ACTIVE  %02d\nFX POOLS   %02d BEAM / %02d RING / %02d SPARK\nFX DROPPED %d\nDASH TRAILS %04d\nGUARDS     %d\nDEVICES    %d\nLANE SUPPRESS %03d\nDASH EVADES %d\nDASH CD    %.1f s\nHIT LIGHTS %d / %d POOL\nOPERATOR RIM %d / 1\nOVERDRIVE ARCS %d\nDEVICE FX  EMP %02d / NOVA %02d / LANE %02d\nEXFIL REINF %02d / BREACH %02d\nCOUNTERPLAY %s / SWITCHES %02d\nPROFILE    %s" % [
+		Engine.get_frames_per_second(), fps_p95_ms, current_frame_ms, budget_miss_percent, process_cpu_ms, physics_cpu_ms, draw_calls, primitives, scene_nodes,
+		effects.size(), beam_pool.size(), ring_pool.size(), spark_pool.size(), effect_pool_exhaustions,
+		dash_trails_emitted, guards.size(), _living_device_count(), phase_lane_disruptions, dash_evasions, dash_cooldown, active_impact_lights, impact_light_pool.size(), operator_rim_active, overdrive_arc_chains, device_emp_overloads, device_cell_novas, device_lane_collapses, extraction_reinforcements_spawned, extraction_overload_count, adaptive_doctrine, tactical_doctrine_changes, profile
+	]
+
+
 func _update_hud() -> void:
+	if diagnostics_enabled:
+		_update_live_diagnostics()
 	if not is_instance_valid(objective_label):
 		return
 	health_label.text = "ВИТАЛЬНОСТЬ  %d / %d" % [int(ceil(player_health)), int(player_max_health)]
@@ -4783,30 +4813,6 @@ func _update_hud() -> void:
 		mobile_overdrive_button.text = "OVR LIVE" if overdrive_timer > 0.0 else ("OVR %d%%" % int(roundf(overdrive_charge)))
 		mobile_overdrive_button.disabled = overdrive_charge < OVERDRIVE_MAX_CHARGE or overdrive_timer > 0.0 or paused_game or mission_finished or briefing_visible
 	_update_input_hint()
-	if diagnostics_enabled:
-		var samples := frame_samples.duplicate()
-		samples.sort()
-		var p95 := 0.0
-		if not samples.is_empty():
-			p95 = samples[clampi(int(ceil(float(samples.size() - 1) * 0.95)), 0, samples.size() - 1)]
-		fps_p95_ms = p95
-		var draw_calls := int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
-		var primitives := int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME))
-		var scene_nodes := int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
-		var process_cpu_ms: float = float(Performance.get_monitor(Performance.TIME_PROCESS)) * 1000.0
-		var physics_cpu_ms: float = float(Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS)) * 1000.0
-		var budget_misses := 0.0
-		for miss in frame_budget_misses:
-			budget_misses += miss
-		var budget_miss_percent: float = budget_misses / maxf(1.0, float(frame_budget_misses.size())) * 100.0
-		var active_impact_lights: int = _active_impact_light_count()
-		var operator_rim_active: int = int(is_instance_valid(operator_rim_light) and operator_rim_light.visible)
-		var profile: String = "PERFORMANCE" if performance_quality else ("BALANCED" if not cinematic_quality else ("AUTO-OPTIMIZED II" if adaptive_quality_level >= 2 else ("AUTO-OPTIMIZED I" if adaptive_quality_level == 1 else "CINEMATIC")))
-		diagnostics_label.text = "LIVE DIAGNOSTICS\nFPS        %02d\nFRAME P95  %.1f ms\nFRAME NOW  %.1f ms\n60 FPS MISSES %.0f%%\nPROCESS CPU %.2f ms\nPHYSICS CPU %.2f ms\nDRAW / TRI / NODES %d / %d / %d\nFX ACTIVE  %02d\nFX POOLS   %02d BEAM / %02d RING / %02d SPARK\nFX DROPPED %d\nDASH TRAILS %04d\nGUARDS     %d\nDEVICES    %d\nLANE SUPPRESS %03d\nDASH EVADES %d\nDASH CD    %.1f s\nHIT LIGHTS %d / %d POOL\nOPERATOR RIM %d / 1\nOVERDRIVE ARCS %d\nDEVICE FX  EMP %02d / NOVA %02d / LANE %02d\nEXFIL REINF %02d / BREACH %02d\nCOUNTERPLAY %s / SWITCHES %02d\nPROFILE    %s" % [
-			Engine.get_frames_per_second(), fps_p95_ms, current_frame_ms, budget_miss_percent, process_cpu_ms, physics_cpu_ms, draw_calls, primitives, scene_nodes,
-			effects.size(), beam_pool.size(), ring_pool.size(), spark_pool.size(), effect_pool_exhaustions,
-			dash_trails_emitted, guards.size(), _living_device_count(), phase_lane_disruptions, dash_evasions, dash_cooldown, active_impact_lights, impact_light_pool.size(), operator_rim_active, overdrive_arc_chains, device_emp_overloads, device_cell_novas, device_lane_collapses, extraction_reinforcements_spawned, extraction_overload_count, adaptive_doctrine, tactical_doctrine_changes, profile
-		]
 
 func _update_input_hint() -> void:
 	if not is_instance_valid(bottom_hint):
