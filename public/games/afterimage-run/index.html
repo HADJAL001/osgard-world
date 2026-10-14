@@ -77,6 +77,16 @@ const visualRandom=()=>((visualRng=(Math.imul(visualRng,1664525)+1013904223)>>>0
 function safeRead(k,alt){try{return JSON.parse(localStorage.getItem(k)||'null')||alt}catch{return alt}}function safeWrite(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch{return false}}let shardCosmeticUnlocked=Object.values(safeRead(REWARD,{})).some(record=>record&&record.kind==='cosmetic');
 const SETTINGS_KEY='osgard.afterimage.settings.v1';const savedSettings=safeRead(SETTINGS_KEY,{});const settings={sound:savedSettings.sound===true,haptics:savedSettings.haptics===true,focusMode:savedSettings.focusMode===true,highContrast:savedSettings.highContrast===true,ecoMode:savedSettings.ecoMode===true};let audioContext=null;function saveSettings(){return safeWrite(SETTINGS_KEY,settings)}function soundEffect(kind){if(!settings.sound)return;try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;audioContext=audioContext||new AC();if(audioContext.state==='suspended')audioContext.resume().catch(()=>{});const p={jump:[520,.055],dash:[260,.10],shard:[880,.11],collision:[105,.18],milestone:[660,.12],start:[420,.08]},[hz,duration]=p[kind]||p.shard;const osc=audioContext.createOscillator(),gain=audioContext.createGain(),now=audioContext.currentTime;osc.type=kind==='shard'?'triangle':'sine';osc.frequency.setValueAtTime(hz,now);if(kind==='shard')osc.frequency.exponentialRampToValueAtTime(hz*1.35,now+duration);gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(.055,now+.012);gain.gain.exponentialRampToValueAtTime(.0001,now+duration);osc.connect(gain);gain.connect(audioContext.destination);osc.start(now);osc.stop(now+duration+.015)}catch{}}function haptic(pattern){if(!settings.haptics||typeof navigator.vibrate!=='function')return;try{navigator.vibrate(pattern)}catch{}}function updateSettingsUi(){for(const [id,key,label] of [['sound-toggle','sound','♫ Звук'],['haptic-toggle','haptics','⌁ Вибрация'],['focus-mode','focusMode','◉ Режим фокуса'],['contrast-toggle','highContrast','◐ Высокий контраст'],['eco-mode','ecoMode','▧ Эко-графика']]){const b=$(id);b.setAttribute('aria-pressed',String(settings[key]));b.textContent=label+': '+(settings[key]?'вкл.':'выкл.')}document.body.classList.toggle('high-contrast',settings.highContrast)}
 
+let db=safeRead(STORE,{}),daily=db[day]||{best:0,ghost:[]},game={running:false,paused:false,ended:false,distance:0,score:0,shards:0,combo:1,maxCombo:1,comboTimer:0,world:0,speed:410,elapsed:0,spawnAt:350,nextMilestone:1000,nextSplitDistance:SPLIT_DISTANCE,obstacles:[],items:[],particles:[],ghost:[],splits:[],dash:0,dashCount:0,jumpBuffer:0,cooldown:0,invincible:0,shake:0,lastSample:0},player={x:205,y:FLOOR-54,vy:0,w:34,h:54,ground:true};
+const stars=Array.from({length:150},()=>({x:visualRandom()*W,y:visualRandom()*440,r:.5+visualRandom()*1.4,p:visualRandom()*7,d:.12+visualRandom()*.7}));
+
+const careerDefaults={runsStarted:0,runsCompleted:0,rankedRuns:0,totalDistance:0,totalShards:0,totalDashes:0,bestScore:0,currentStreak:0,longestStreak:0,lastPlayedDay:'',rankedDistance:0,rankedShards:0,rankedDashes:0,bestDistance:0,maxRunShards:0,bestCombo:1,challengeWins:0,totalShares:0,recentRuns:[],achievements:[]};
+const career=Object.assign({},careerDefaults,safeRead(CAREER_KEY,{}));
+for(const key of Object.keys(careerDefaults)){if(typeof careerDefaults[key]==='number'){const value=Number(career[key]);career[key]=Number.isFinite(value)?Math.max(0,Math.min(1000000000000,value)):careerDefaults[key]}}
+career.recentRuns=Array.isArray(career.recentRuns)?career.recentRuns.filter(r=>r&&typeof r==='object').slice(0,10):[];
+career.achievements=Array.isArray(career.achievements)?career.achievements.filter(x=>typeof x==='string').slice(0,40):[];
+function saveCareer(){return safeWrite(CAREER_KEY,career)}
+function dayDistance(from,to){if(!from)return 0;return Math.round((Date.parse(to+'T00:00:00.000Z')-Date.parse(from+'T00:00:00.000Z'))/86400000)}
 function normalizeSplitRecords(value){
  if(!Array.isArray(value))return[];
  const records=new Map();
@@ -101,16 +111,6 @@ function formatSplitClock(value){
  const minute=Math.floor(whole/60),second=String(whole%60).padStart(2,'0')+'.'+String(hundredths).padStart(2,'0');
  return minute?String(minute)+':'+second:second+'s';
 }
-let db=safeRead(STORE,{}),daily=db[day]||{best:0,ghost:[]},game={running:false,paused:false,ended:false,distance:0,score:0,shards:0,combo:1,maxCombo:1,comboTimer:0,world:0,speed:410,elapsed:0,spawnAt:350,nextMilestone:1000,nextSplitDistance:SPLIT_DISTANCE,obstacles:[],items:[],particles:[],ghost:[],splits:[],dash:0,dashCount:0,jumpBuffer:0,cooldown:0,invincible:0,shake:0,lastSample:0},player={x:205,y:FLOOR-54,vy:0,w:34,h:54,ground:true};
-const stars=Array.from({length:150},()=>({x:visualRandom()*W,y:visualRandom()*440,r:.5+visualRandom()*1.4,p:visualRandom()*7,d:.12+visualRandom()*.7}));
-
-const careerDefaults={runsStarted:0,runsCompleted:0,rankedRuns:0,totalDistance:0,totalShards:0,totalDashes:0,bestScore:0,currentStreak:0,longestStreak:0,lastPlayedDay:'',rankedDistance:0,rankedShards:0,rankedDashes:0,bestDistance:0,maxRunShards:0,bestCombo:1,challengeWins:0,totalShares:0,recentRuns:[],achievements:[]};
-const career=Object.assign({},careerDefaults,safeRead(CAREER_KEY,{}));
-for(const key of Object.keys(careerDefaults)){if(typeof careerDefaults[key]==='number'){const value=Number(career[key]);career[key]=Number.isFinite(value)?Math.max(0,Math.min(1000000000000,value)):careerDefaults[key]}}
-career.recentRuns=Array.isArray(career.recentRuns)?career.recentRuns.filter(r=>r&&typeof r==='object').slice(0,10):[];
-career.achievements=Array.isArray(career.achievements)?career.achievements.filter(x=>typeof x==='string').slice(0,40):[];
-function saveCareer(){return safeWrite(CAREER_KEY,career)}
-function dayDistance(from,to){if(!from)return 0;return Math.round((Date.parse(to+'T00:00:00.000Z')-Date.parse(from+'T00:00:00.000Z'))/86400000)}
 function renderSplitPanel(){
  const title=$('split-current-title'),note=$('split-current-note'),deltaNode=$('split-delta'),history=$('split-history');
  if(!title||!note||!deltaNode||!history)return;
