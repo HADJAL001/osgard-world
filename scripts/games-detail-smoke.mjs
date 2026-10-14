@@ -8,6 +8,9 @@ const app = read('src/main.tsx')
 const sectionsSource = read('src/Sections.tsx')
 const entertainmentCatalog = read('src/EntertainmentCatalog.tsx')
 const hub = read('public/games/index.html')
+const entertainmentPage = read('public/entertainment/index.html')
+const entertainmentRuntime = read('public/entertainment/entertainment.js')
+const inviteRuntime = read('public/games/invite/invite-landing.js')
 const godotProject = read('godot/null-shift/project.godot')
 const deployWorkflow = read('.github/workflows/deploy-frontend.yml')
 const godotSmoke = read('scripts/null-shift-godot-smoke.mjs')
@@ -172,3 +175,35 @@ for (const feature of ["osgard.cascade-lab.experiment-ledger.v1", 'MAX_RECORDS =
 assert.doesNotMatch(ledgerScripts[0][1], /\.innerHTML\s*=/, 'Personal-ledger dynamic content must not be rendered via innerHTML')
 assert.ok(ledgerScripts[0][1].includes('schema: SCHEMA, schemaVersion: 1') && ledgerScripts[0][1].includes('parsed.schema !== SCHEMA') && ledgerScripts[0][1].includes('MAX_IMPORT_BYTES = 200 * 1024'), 'Personal ledger import/export schema and bounds missing')
 assert.ok(ledgerScripts[0][1].includes('localStorage.setItem(KEY') && !ledgerScripts[0][1].includes('/api/'), 'Experiment ledger must remain local-first and must not send its history to an API')
+
+
+const entertainmentBridgeTag = '<script id="games-deep-link-bridge">'
+const entertainmentBridgeStart = hub.indexOf(entertainmentBridgeTag)
+const entertainmentBridgeEnd = hub.indexOf('</script>', entertainmentBridgeStart)
+assert.ok(entertainmentBridgeStart >= 0 && entertainmentBridgeEnd > entertainmentBridgeStart, 'Shared-player deep-link bridge must exist in the Games hub')
+const entertainmentBridge = hub.slice(entertainmentBridgeStart + entertainmentBridgeTag.length, entertainmentBridgeEnd)
+new Function(entertainmentBridge)
+for (const id of ['null-shift','time','swarm','inherit','remix','civic-cascade','patina','signal-run','cascade-lab','afterimage-run','aether-grid']) {
+  assert.ok(entertainmentBridge.includes("'" + id + "'"), 'Deep-link bridge allow-list is missing ' + id)
+  assert.ok(hub.includes('data-play="' + id + '"'), 'Shared-player launch target is missing ' + id)
+}
+assert.ok(entertainmentRuntime.includes("target.searchParams.set('play', id)") &&
+  entertainmentRuntime.includes("target.searchParams.set('utm_source', 'osgard_entertainment')") &&
+  entertainmentRuntime.includes("target.searchParams.set('utm_campaign', 'between_games')"),
+  'Entertainment primary game launches must route through OSGARD PLAY with source attribution')
+assert.ok(entertainmentRuntime.includes('event.preventDefault()') &&
+  entertainmentRuntime.includes('event.metaKey') && entertainmentRuntime.includes('event.ctrlKey'),
+  'Modified clicks must retain the original direct game URL instead of forcing the intermission route')
+assert.ok(entertainmentRuntime.includes("window.location.assign(target.href)") &&
+  entertainmentRuntime.includes('recordRecent(id)'),
+  'Entertainment launch must retain local recent-game history and navigate to the unified player')
+assert.ok(inviteRuntime.includes("new URL('/games/', location.origin)") &&
+  inviteRuntime.includes("target.searchParams.set('play', game)") &&
+  inviteRuntime.includes("target.searchParams.set('og_ref', code)"),
+  'Canonical invitation landing must open the shared game player and preserve its referral code')
+assert.ok(inviteRuntime.includes('const validAetherDay = /^' + String.fromCharCode(92) + 'd{4}-' + String.fromCharCode(92) + 'd{2}-' + String.fromCharCode(92) + 'd{2}$/'),
+  'AETHER GRID invite date must be validated as a calendar date before it is forwarded')
+assert.ok(entertainmentPage.includes('/entertainment/entertainment.js?v=20261014.4'),
+  'Entertainment HTML must pin the changed launch runtime to a new cache version')
+execFileSync(process.execPath, ['--check', 'public/entertainment/entertainment.js'], { stdio: 'pipe' })
+execFileSync(process.execPath, ['--check', 'public/games/invite/invite-landing.js'], { stdio: 'pipe' })

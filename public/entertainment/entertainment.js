@@ -245,7 +245,31 @@
     });
   });
   document.querySelectorAll('[data-share]').forEach(button => button.addEventListener('click', () => openShareDialog(button.dataset.share)));
-  document.querySelectorAll('[data-launch]').forEach(link => link.addEventListener('click', () => recordRecent(link.dataset.launch)));
+  document.querySelectorAll('[data-launch]').forEach(link => link.addEventListener('click', event => {
+    const id = link.dataset.launch;
+    recordRecent(id);
+    // Plain clicks enter the shared OSGARD PLAY runtime, so ending a real
+    // session reaches the intermission, selected services and existing rewards.
+    // Modified clicks keep the original href for direct play in a new tab.
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || !allowedGames.has(id)) return;
+    event.preventDefault();
+    const target = new URL('/games/', location.origin);
+    target.searchParams.set('play', id);
+    target.searchParams.set('utm_source', 'osgard_entertainment');
+    target.searchParams.set('utm_medium', 'game_launch');
+    target.searchParams.set('utm_campaign', 'between_games');
+    target.searchParams.set('utm_content', id);
+    const sourceUrl = new URL(link.href, location.origin);
+    for (const key of ['challenge', 'ref', 'og_ref', 'og_game', 'mode', 'day', 'seed', 'og_day']) {
+      const value = sourceUrl.searchParams.get(key);
+      if (value === null || value.length > 128) continue;
+      if (key === 'ref' && !/^[a-f0-9]{12}$/.test(value)) continue;
+      if (key === 'og_ref' && !/^og_[a-f0-9]{8}$/.test(value)) continue;
+      if (key === 'og_game' && value !== id) continue;
+      target.searchParams.set(key, value);
+    }
+    window.location.assign(target.href);
+  }));
   document.querySelectorAll('[data-service]').forEach(link => link.addEventListener('click', () => {
     const service = link.dataset.service;
     track('cross_promo_clicked', 'unknown', 'entertainment-cross-promo:' + service);
