@@ -56,6 +56,9 @@ on:
       - "scripts/cascade-lab-engineering-suite-smoke.mjs"
       - "scripts/cascade-lab-experiment-studio-smoke.mjs"
       - "scripts/cascade-lab-trajectory-xray-smoke.mjs"
+      - "scripts/cascade-lab-simulation-twin-smoke.mjs"
+      - "public/games/cascade-lab/physics-twin.js"
+      - "public/games/cascade-lab/service-worker.js"
       - "scripts/cascade-lab-mission-director-smoke.mjs"
       - "docs/32_CASCADE_LAB_0.22.0_TRAJECTORY_XRAY.md"
       - "scripts/game-detail-runtime-smoke.mjs"
@@ -110,6 +113,8 @@ jobs:
         run: npm run qa:cascade-lab-experiment-studio
       - name: Verify CASCADE LAB trajectory plots, event timeline and privacy boundaries
         run: npm run qa:cascade-lab-trajectory-xray
+      - name: Validate fixed-step Simulation Twin, reproducibility and isolated parameter sweeps
+        run: npm run qa:cascade-lab-simulation-twin
       - name: Test game session clock and iframe lifecycle trust boundaries
         run: npm run qa:game-detail-runtime
       - name: Verify REMIX growth funnel, attribution and sponsor safety
