@@ -302,6 +302,15 @@ const selectConsentKey='osgard.games.analytics-consent.v1';
 const selectSessionKey='osgard.games.growth-session.v1';
 const selectAllowedEvents=new Set(['cross_promo_clicked','owned_promo_impression','owned_promo_intermission_skipped','owned_promo_preferences_saved','social_share_intent','social_reward_claimed','referral_reward_claimed','share_created','invite_link_prepared']);
 function hasConsent(){try{return localStorage.getItem(selectConsentKey)==='yes'}catch{return false}}
+const promoImpressionKeyPrefix='osgard.games.promo-impression.v1:';
+function claimPromoImpression(key){
+ const storageKey=promoImpressionKeyPrefix+String(key||'').replace(/[^a-zA-Z0-9:_-]/g,'').slice(0,120);
+ try{if(sessionStorage.getItem(storageKey)==='1')return false;sessionStorage.setItem(storageKey,'1');return true}catch{return true}
+}
+function getSessionSpotlightVariant(){
+ const key='osgard.games.select-spotlight-variant.v1';
+ try{const existing=sessionStorage.getItem(key);if(existing==='a'||existing==='b')return existing;const chosen=Math.random()<0.5?'a':'b';sessionStorage.setItem(key,chosen);return chosen}catch{return Math.random()<0.5?'a':'b'}
+}
 const pendingSelectTelemetry=new Set();
 function cancelPendingSelectTelemetry(){for(const controller of pendingSelectTelemetry){try{controller.abort()}catch{}}pendingSelectTelemetry.clear()}
 function checkSelectConsentAfterToggle(){setTimeout(()=>{if(!hasConsent())cancelPendingSelectTelemetry()},0)}
@@ -575,7 +584,7 @@ function servicesShelf(gameId,showPromos,completedCount){
  const roundForSpotlight=preferences.frequency==='every3'?completedCount:(readServiceProgress().byGame[gameId]||1);
  let spotlightServiceId=chooseSpotlightService(spotlightOptions,preferred,roundForSpotlight,preferences.frequency)||spotlightId||'';
  // Assign once per page session; re-rendering the spotlight must not change the experiment cohort.
- const sessionSpotlightVariant=Math.random()<0.5?'a':'b';
+ const sessionSpotlightVariant=getSessionSpotlightVariant();
  let spotlightVariant=sessionSpotlightVariant;
  const spotlight=make('article','og-postgame-spotlight');
  spotlight.setAttribute('aria-label','Персональная рекомендация OSGARD');
@@ -607,6 +616,7 @@ function servicesShelf(gameId,showPromos,completedCount){
     spotlightImpressionTimer=setTimeout(()=>{
      spotlightImpressionTimer=0;
      if(!canCountSpotlightImpression(spotlightIsVisible,hasConsent(),spotlight.isConnected,spotlight.hidden,document.visibilityState!=='visible',spotlight.dataset.service,serviceId))return;
+     if(!claimPromoImpression('spotlight:'+seenKey))return;
      spotlightSeen.add(seenKey);
      void sendSelectEvent('owned_promo_impression',gameId,'osgard-select:spotlight:'+serviceId+':'+variant);
      if(spotlightObserver){spotlightObserver.disconnect();spotlightObserver=null}
@@ -750,8 +760,11 @@ function servicesShelf(gameId,showPromos,completedCount){
      card.__osgardImpressionTimer=setTimeout(()=>{
       delete card.__osgardImpressionTimer;
       if(!hasConsent()||!card.isConnected||card.hidden||!card.getClientRects().length)return;
-      observed.add(card);
-      sendSelectEvent('owned_promo_impression',gameId,'osgard-select:impression:'+card.dataset.service);
+      const serviceId=String(card.dataset.service||'');
+      if(claimPromoImpression('card:'+gameId+':'+serviceId)){
+       observed.add(card);
+       void sendSelectEvent('owned_promo_impression',gameId,'osgard-select:impression:'+serviceId);
+      }
       observer.unobserve(card);
      },1000);
     }else if(card.__osgardImpressionTimer){
