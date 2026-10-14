@@ -92,7 +92,7 @@ import {
     for (const event of pending) {
       if (!event || typeof event !== 'object' || event.sessionStarted !== true) continue;
       const queuedAt = Number.isFinite(event.queuedAt) ? event.queuedAt : Date.now();
-      const result = recordSession(next, event, queuedAt);
+      const result = recordSession(next, event, Date.now());
       next = result.progress;
       if (result.added) added += 1;
     }
