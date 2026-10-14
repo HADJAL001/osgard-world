@@ -56,6 +56,7 @@ assert.ok(!core.derivePassport.toString().includes('fetch('), 'Core model should
 assert.ok(routes.includes('/games/player-passport.js') && routes.includes('/games/player-passport-core.js') && routes.includes('/games/player-passport.css'), 'Production route matrix must probe Passport assets')
 assert.ok(packageJson.scripts['qa:player-passport'] === 'node scripts/player-passport-smoke.mjs', 'Passport smoke test must have a package command')
 assert.ok(workflow.includes('run: npm run qa:player-passport'), 'Direct production deploy must run Passport QA before deploy')
+assert.ok(workflow.includes('gzip -9 -c osgard-release/html/games/player-passport.js > osgard-release/html/games/player-passport.js.gz') && workflow.includes('gzip -cd osgard-release/html/games/player-passport.js.gz | grep -Fq'), 'Precompressed Passport module must be regenerated and verified after stamping the release SHA')
 execFileSync(process.execPath, ['--check', 'public/games/player-passport-core.js'], { stdio: 'pipe' })
 execFileSync(process.execPath, ['--check', 'public/games/player-passport.js'], { stdio: 'pipe' })
 execFileSync(process.execPath, ['--check', 'public/games/luxury.js'], { stdio: 'pipe' })
