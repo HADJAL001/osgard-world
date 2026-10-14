@@ -11,6 +11,7 @@ const MINIFY_ASSETS = [
   'consented-analytics.js',
   'commerce-client.js',
   'luxury.js',
+  'catalog-runtime.js',
   'daily-circuit.js',
   'device-fit.js',
   'experiment-core.js',
