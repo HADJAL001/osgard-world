@@ -20,11 +20,10 @@ assert.ok(html.includes('type="checkbox" checked> Сравнить с таким
 assert.ok(html.includes('type="checkbox"> Автообновление раз в 60 секунд'), 'Auto-refresh must be opt-in');
 for (const contract of [
   "credentials:'same-origin'", "redirect:'error'", "new AbortController()",
-  "Promise.allSettled", "15 segundos", "Последний успешный снимок сохранён на экране",
+  "Promise.allSettled", "15 секунд", "Последний успешный снимок сохранён на экране",
   "document.visibilityState==='visible'", "setInterval", "selectedPreset",
   "X-Moderation-Token", "Никакие",
 ]) {
-  if (contract === "Никакие") continue; // The admin dashboard intentionally describes operational data, not payment status.
   assert.ok(inline[0].includes(contract), 'Missing resilience/privacy contract: ' + contract);
 }
 assert.ok(!/localStorage|sessionStorage|document\.cookie|sendBeacon\(/i.test(inline[0]), 'Operator token and reports must not be persisted or auto-transmitted');
