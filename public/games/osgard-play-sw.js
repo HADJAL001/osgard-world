@@ -18,7 +18,13 @@ const PRECACHE_URLS = [
   '/games/sponsored-campaigns.css',
   '/games/favicon.svg',
   '/games/pwa-install.js',
-  '/games/catalog-state.js'
+  '/games/catalog-state.js',
+  '/games/expedition/',
+  '/games/expedition/index.html',
+  '/games/expedition/core.js',
+  '/games/expedition/app.js',
+  '/games/expedition/catalog-runtime.js',
+  '/games/expedition/expedition.css'
 ];
 const PUBLIC_STATIC_ALLOWLIST = new Set([
   '/games/app.webmanifest',
@@ -30,6 +36,10 @@ const PUBLIC_STATIC_ALLOWLIST = new Set([
   '/games/sponsored-campaigns.css',
   '/games/pwa-install.js',
   '/games/catalog-state.js',
+  '/games/expedition/core.js',
+  '/games/expedition/app.js',
+  '/games/expedition/catalog-runtime.js',
+  '/games/expedition/expedition.css',
   '/games/favicon.svg'
 ]);
 
@@ -94,6 +104,10 @@ self.addEventListener('fetch', event => {
         if (url.pathname === '/games/' || url.pathname === '/games/index.html') {
           const cachedCatalog = await cache.match(url.pathname === '/games/' ? '/games/' : '/games/index.html');
           if (cachedCatalog) return cachedCatalog;
+        }
+        if (url.pathname === '/games/expedition/' || url.pathname === '/games/expedition/index.html') {
+          const cachedExpedition = await cache.match(url.pathname === '/games/expedition/' ? '/games/expedition/' : '/games/expedition/index.html');
+          if (cachedExpedition) return cachedExpedition;
         }
         const cached = await cache.match('/games/offline.html');
         return cached || new Response('OSGARD PLAY is offline. Reconnect and try again.', {

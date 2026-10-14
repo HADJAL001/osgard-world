@@ -171,6 +171,15 @@ test("consented analytics accept stable event IDs and new page-view events, whil
   assert.equal(legacy.ok, true, "Older clients without eventId stay backward-compatible");
   assert.equal(legacy.events[0].eventId, "");
 
+  for (const name of ["expedition_route_created", "expedition_link_opened", "expedition_share_intent", "expedition_stage_completed"]) {
+    const accepted = validateEventBatch({ consent: true, events: [{
+      name, sessionId: "session_expedition_12345678", gameId: "signal-run",
+      source: "expedition:1234abcd:stage-2", path: "/games/", durationSeconds: 0,
+      eventId: "evt_expedition_123456",
+    }] });
+    assert.equal(accepted.ok, true, "Expedition analytics event should be allow-listed: " + name);
+  }
+
   const ecosystem = validateEventBatch({ consent: true, events: [{ ...baseEvent, name: "ecosystem_directory_viewed", path: "/games/ecosystem/", eventId: "evt_ecosystem_1234567" }] });
   assert.equal(ecosystem.ok, true, "The ecosystem directory page view is accepted after consent");
   assert.equal(ecosystem.events[0].path, "/games/ecosystem/");
