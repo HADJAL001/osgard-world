@@ -7,6 +7,7 @@ await import(new URL('../public/games/cascade-lab/engineering-suite.js', import.
 const api = globalThis.__CASCADELAB019_TEST__;
 
 assert.ok(api && api.version === '0.19.0', 'pure Engineering OS test API must be available');
+assert.equal(api.improvements.length, 30, 'the release manifest must enumerate exactly 30 distinct improvements');
 assert.match(html, /osgard-game-version" content="0\.19\.0-engineering-suite"/, 'game metadata must identify v0.19.0');
 assert.match(html, /<title>CASCADE LAB — Premium Physics Lab 0\.19\.0<\/title>/, 'document title must identify v0.19.0');
 assert.ok(html.includes('id="CASCADELAB018"') && html.includes('hypothesis-lab.js?v=0.18.0'), 'the v0.18 Hypothesis Lab must remain integrated');
@@ -97,4 +98,4 @@ assert.equal(api.validateArchive({ schema: api.schema, schemaVersion: 1, runs: A
 assert.equal(api.validateArchive({ schema: api.schema, schemaVersion: 1, runs: [{...cleanA,note:'x'.repeat(201000)}] }).ok, false, 'oversized data must be rejected');
 
 assert.equal(api.csvEscape('a,"b"'), '"a,""b"""');
-console.log('CASCADE LAB Engineering OS smoke: PASS — 30 upgrade contracts, six diagnostic branches, same-level deltas, bounded JSON import/export and local-only data.');
+console.log('CASCADE LAB Engineering OS smoke: PASS — 30 enumerated improvements, six diagnostic branches, same-level deltas, bounded JSON import/export and local-only data.');
