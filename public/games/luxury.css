@@ -148,8 +148,7 @@
 /* AETHER GRID / daily signal-routing puzzle */
 .art-aether-grid{background:radial-gradient(ellipse at 55% 45%,#77e9e626,transparent 61%),linear-gradient(155deg,#101e20,#071012)}
 
-/* The mobile catalogue has eleven SVG-rich cards. Skip the off-screen grid as a subtree,
-   while reserving an approximate intrinsic height to avoid a blank jump on scroll. */
+/* Keep the mobile grid's geometry measurable; individual off-screen cards and the Daily Circuit slot still use content-visibility. */
 @media(max-width:760px){
  /* Keep the grid's geometry real while each off-screen card remains lazy; otherwise a skipped parent can make long card actions overlap the following artwork. */
  .luxury-entertainment .catalog .grid{content-visibility:visible;contain-intrinsic-size:none}
