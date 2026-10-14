@@ -13,7 +13,13 @@ const PRECACHE_URLS = [
   '/games/app.webmanifest',
   '/games/osgard-play-icon.svg',
   '/games/offline.html',
+  '/games/app.webmanifest',
   '/games/pwa-install.css',
+  '/games/luxury.css',
+  '/games/sponsored-campaigns.css',
+  '/games/favicon.svg',
+  '/games/sponsored-campaigns.css',
+  '/games/favicon.svg',
   '/games/pwa-install.js',
   '/games/catalog-state.js'
 ];
