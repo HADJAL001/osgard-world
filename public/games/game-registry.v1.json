@@ -32,20 +32,21 @@
       "title": "Империя времени",
       "genre": "Стратегия",
       "description": "Браузерный прототип управления городом, ресурсами и фракциями.",
-      "route": "/games/time/",
-      "entrypointMode": "static-browser",
-      "runtimeFamily": "browser-prototype",
-      "runtimeLabel": "Браузерный прототип",
+      "route": "/games/time",
+      "entrypointMode": "react-spa-route",
+      "runtimeFamily": "react-spa",
+      "runtimeLabel": "React SPA",
       "webgl": "not-required",
       "network": "local",
-      "networkLabel": "Основной прототип в браузере",
+      "networkLabel": "Основная игра работает в портале",
       "progressScope": "not-documented",
-      "progressLabel": "Переносимый прогресс не заявлен",
+      "progressLabel": "Режим сохранения реализован в игре; детали синхронизации не подтверждены",
       "recommendedDevice": "browser",
       "touchValidation": "not-device-verified",
       "controlNote": "Это развиваемый прототип. Управление на сенсорном экране требует отдельной проверки.",
       "evidence": [
-        "public/games/time/index.html"
+        "src/GameDetailPage.tsx",
+        "src/App.tsx"
       ]
     },
     {
