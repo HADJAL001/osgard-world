@@ -149,7 +149,6 @@ export function validateOwnedPromoConfig(body) {
     },
   };
 }
-}
 
 /**
  * Upgrades pre-v2 persisted settings to the current owner-approved defaults.
