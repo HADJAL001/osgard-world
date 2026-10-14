@@ -14,6 +14,9 @@ import {
   resolveCheckoutPaymentState,
   verifyStripeSignature,
   safeEqual,
+  validateServiceAttributionConversion,
+  parseServiceAttributionTokenMap,
+  isServiceAttributionTokenValid,
 } from "../src/core.mjs";
 
 test("catalog is a fixed server-side allow-list", () => {
@@ -293,4 +296,84 @@ test("checkout status cannot resurrect a refunded, expired, or cancelled order",
   assert.deepEqual(resolveCheckoutPaymentState("unpaid", "pending"), {
     paid: false, orderStatus: "pending", updateOrderToPaid: false,
   });
+});
+
+
+test("server-side service conversion bridge validates consent, opaque IDs, allowed events and paid amounts", () => {
+  const purchase = {
+    consent: true,
+    serviceId: "MARCOSA",
+    eventId: "stripe_evt_20261014_000001",
+    conversionType: "purchase_paid",
+    gameId: "signal-run",
+    source: "OSGARD_GAMES",
+    campaign: "after_game",
+    referralCode: "og_a1b2c3d4",
+    amountMinor: 2599,
+    currency: "sek",
+    email: "must-not-be-returned@example.com",
+  };
+  const result = validateServiceAttributionConversion(purchase);
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.conversion, {
+    serviceId: "marcosa",
+    eventId: "stripe_evt_20261014_000001",
+    conversionType: "purchase_paid",
+    gameId: "signal-run",
+    source: "osgard_games",
+    campaign: "after_game",
+    referralCode: "og_a1b2c3d4",
+    amountMinor: 2599,
+    currency: "SEK",
+  });
+  assert.equal("email" in result.conversion, false, "Personal contact data must not be stored in conversion payloads");
+
+  const signup = validateServiceAttributionConversion({
+    consent: true, serviceId: "projects", eventId: "signup_evt_20261014_0001",
+    conversionType: "account_created", source: "direct",
+  });
+  assert.equal(signup.ok, true);
+  assert.equal(signup.conversion.gameId, "unknown");
+  assert.equal(signup.conversion.amountMinor, null);
+  assert.equal(signup.conversion.currency, null);
+
+  const refund = validateServiceAttributionConversion({
+    consent: true, serviceId: "marcosa", eventId: "stripe_refund_20261014_001",
+    conversionType: "purchase_refunded", amountMinor: 2599, currency: "SEK",
+  });
+  assert.equal(refund.ok, true);
+  assert.equal(refund.conversion.conversionType, "purchase_refunded");
+
+  assert.equal(validateServiceAttributionConversion({ ...purchase, consent: false }).code, "ATTRIBUTION_CONSENT_REQUIRED");
+  assert.equal(validateServiceAttributionConversion({ ...purchase, serviceId: "../marcosa" }).code, "ATTRIBUTION_SERVICE_ID_INVALID");
+  assert.equal(validateServiceAttributionConversion({ ...purchase, eventId: "x" }).code, "ATTRIBUTION_EVENT_ID_INVALID");
+  assert.equal(validateServiceAttributionConversion({ ...purchase, conversionType: "made_up" }).code, "ATTRIBUTION_CONVERSION_TYPE_INVALID");
+  assert.equal(validateServiceAttributionConversion({ ...purchase, gameId: "not-a-game" }).code, "ATTRIBUTION_GAME_ID_INVALID");
+  assert.equal(validateServiceAttributionConversion({ ...purchase, amountMinor: -100 }).code, "ATTRIBUTION_AMOUNT_INVALID");
+  assert.equal(validateServiceAttributionConversion({ ...purchase, currency: "US" }).code, "ATTRIBUTION_CURRENCY_INVALID");
+  assert.equal(validateServiceAttributionConversion({ ...purchase, conversionType: "account_created", amountMinor: 100 }).code, "ATTRIBUTION_AMOUNT_NOT_ALLOWED");
+  assert.equal(validateServiceAttributionConversion({ ...purchase, referralCode: "../../bad" }).code, "ATTRIBUTION_REFERRAL_CODE_INVALID");
+});
+
+test("service conversion API tokens are parsed securely and validated per service", () => {
+  const projectsToken = "projects_test_attribution_token_2026_001";
+  const marcosaToken = "marcosa_test_attribution_token_2026_001";
+  const tokens = parseServiceAttributionTokenMap(JSON.stringify({
+    projects: projectsToken,
+    marcosa: marcosaToken,
+    short: "tiny",
+    "../escape": "invalid-service-token-that-is-long-enough-123",
+    invalidChars: "not an acceptable token because of spaces",
+  }));
+  assert.equal(tokens.projects, projectsToken);
+  assert.equal(tokens.marcosa, marcosaToken);
+  assert.equal(tokens.short, undefined);
+  assert.equal(tokens["../escape"], undefined);
+  assert.equal(tokens.invalidChars, undefined);
+  assert.equal(parseServiceAttributionTokenMap("{").projects, undefined);
+  assert.equal(parseServiceAttributionTokenMap(["not", "a", "map"]).length, undefined);
+  assert.equal(isServiceAttributionTokenValid("projects", projectsToken, tokens), true);
+  assert.equal(isServiceAttributionTokenValid("projects", marcosaToken, tokens), false);
+  assert.equal(isServiceAttributionTokenValid("unknown", projectsToken, tokens), false);
+  assert.equal(isServiceAttributionTokenValid("projects", "wrong-token", tokens), false);
 });
