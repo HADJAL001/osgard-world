@@ -154,3 +154,25 @@
  .luxury-entertainment .catalog .grid{content-visibility:auto;contain-intrinsic-size:auto 5700px}
  .luxury-entertainment .daily-circuit-slot{content-visibility:auto;contain-intrinsic-size:auto 460px}
 }
+
+
+/* OSGARD mobile conversion polish — robust tap targets for the full game catalogue.
+   Keep the desktop composition unchanged; raise the target size rather than the visual font size. */
+@media(max-width:760px){
+  .header .menu{width:44px;height:44px;min-width:44px;min-height:44px}
+  .mobile-nav a{min-height:44px;display:flex;align-items:center}
+  .filters .search{min-height:44px}
+  .filters .chips{gap:10px 12px}
+  .filters .chip,.filters .fav-filter{min-height:44px;padding:10px 13px}
+  .card .favorite{width:44px;height:44px;min-width:44px;min-height:44px}
+  .card .game-actions{gap:10px 18px}
+  .card .play-link,.card .secondary-link,.card .detail-link{display:inline-flex;align-items:center;min-height:44px;padding-block:8px}
+  .catalog-share-button{min-height:44px;padding:10px 14px}
+  .consent-controls .consent{min-height:44px;padding:0 14px}
+  .player-tools button,.player-tools a{min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+  .player-head .player-close,.player-head button{min-width:44px;min-height:44px}
+  .search input{font-size:16px}
+}
+@media(prefers-reduced-motion:reduce){
+  .filters .chip,.card .favorite,.card .play-link,.card .secondary-link,.card .detail-link{transition:none!important;scroll-behavior:auto!important}
+}

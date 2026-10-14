@@ -290,3 +290,27 @@ dialog#player-dialog[data-postgame-intermission="1"] .post-run-recommendations{m
 .og-postgame-portfolio-link:focus-visible{outline:2px solid #fff0c7;outline-offset:3px}
 @media(max-width:680px){.og-postgame-portfolio-actions{grid-template-columns:1fr;gap:12px;padding:14px}.og-postgame-portfolio-links{grid-template-columns:1fr;min-width:0}.og-postgame-portfolio-link{width:100%}}
 @media(prefers-reduced-motion:reduce){.og-postgame-portfolio-link{transition:none}}
+
+
+/* OSGARD SELECT mobile controls — clear touch targets for chooser, reward and social actions. */
+@media(max-width:760px){
+  .og-postgame-service-head-actions{gap:9px}
+  .og-postgame-toggle{min-height:44px;padding:10px 13px}
+  .og-postgame-service-filter{min-height:44px;padding:10px 13px}
+  .og-postgame-service-options{gap:9px}
+  .og-postgame-service-option{min-height:44px;padding:10px 12px}
+  .og-postgame-service-search-input,.og-postgame-service-search-wrap input{min-height:44px;font-size:16px}
+  .og-postgame-service-search-clear,.og-postgame-service-search-wrap button{min-width:44px;min-height:44px}
+  .og-postgame-quick-pick{min-height:44px;padding:10px 13px}
+  .og-postgame-service-card{min-height:108px}
+  .og-postgame-service-card a,.og-postgame-service-card button{min-height:44px}
+  .og-postgame-share-primary,.og-postgame-claim,.og-postgame-qualified-claim,.og-postgame-network{min-height:44px;padding:10px 13px}
+  .og-postgame-service-share button,.og-postgame-service-share a{min-height:44px;padding:10px 13px}
+  .og-postgame-share-actions,.og-postgame-networks{gap:10px}
+  .og-postgame-signal-cta,.og-postgame-qualified-claim{width:100%;justify-content:center}
+  .og-postgame-service-grid,.og-postgame-service-quick-picks{gap:10px}
+  .og-postgame-service-search-clear:focus-visible,.og-postgame-service-share button:focus-visible,.og-postgame-service-share a:focus-visible{outline:2px solid #e2c783;outline-offset:3px}
+}
+@media(prefers-reduced-motion:reduce){
+  .og-postgame-service-filter,.og-postgame-quick-pick,.og-postgame-service-card,.og-postgame-network,.og-postgame-share-primary,.og-postgame-claim{transition:none!important;scroll-behavior:auto!important}
+}
