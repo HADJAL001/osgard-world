@@ -13,6 +13,7 @@ const commerceApi=read('services/osgard-commerce-api/src/server.mjs'),routeMatri
 assert.doesNotThrow(()=>new Function(coreSource),'Core route module must parse');
 assert.doesNotThrow(()=>new Function(appSource),'Builder module must parse');
 assert.doesNotThrow(()=>new Function(runtimeSource),'Catalog progress module must parse');
+assert.ok(routeMatrix.includes("content.includes(\"document.addEventListener('osgard:game-completed'\")") && routeMatrix.includes("content.includes(\"section.className='og-expedition-band'\")"), 'Production route matrix must validate the runtime’s actual generated section class, not a CSS selector absent from JavaScript');
 const context={window:{},URL,URLSearchParams};runInNewContext(coreSource,context);
 const core=context.window.OSGARDExpeditionCore;assert.ok(core,'Expedition core global must be exported');
 const route=core.parseRoute(['null-shift','signal-run','aether-grid'],'night');
