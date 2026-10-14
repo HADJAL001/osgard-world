@@ -296,6 +296,8 @@ exportButton.addEventListener('click', () => {
   }
 });
 document.addEventListener('cascade-lab:run-finished', refreshDeviceOptions);
+document.addEventListener('pointerup', event => { if (!panel.contains(event.target)) refreshDeviceOptions(); });
+document.addEventListener('click', event => { if (!panel.contains(event.target)) refreshDeviceOptions(); });
 window.addEventListener('focus', refreshDeviceOptions);
 refreshDeviceOptions();
 clearPlot();
