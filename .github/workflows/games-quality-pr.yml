@@ -9,6 +9,7 @@ on:
       - "public/privacy/**"
       - "public/terms/**"
       - "scripts/games-*.mjs"
+      - "scripts/game-detail-growth-cta-smoke.mjs"
       - "scripts/device-fit-smoke.mjs"
       - "scripts/production-route-matrix.mjs"
       - "package.json"
@@ -53,6 +54,8 @@ jobs:
         run: npm run qa:game-recommendations
       - name: Game detail and route contract regression
         run: npm run qa:games-detail
+      - name: Contextual game-to-business conversion and attribution contract
+        run: npm run qa:game-business-bridge
       - name: Player Console 30-upgrade contract smoke
         run: npm run qa:player-console
       - name: Sponsor campaign manager safety and route smoke
