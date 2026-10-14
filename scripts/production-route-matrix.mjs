@@ -104,7 +104,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         : route === '/games/signal-run/'
           ? text.includes('<title>SIGNAL RUN — OSGARD WORLD</title>') && text.includes('id="arena"') && text.includes('game.js')
                 : route === '/games/afterimage-run/'
-          ? text.includes('<title>AFTERIMAGE//RUN — OSGARD PLAY</title>') && text.includes('<meta name="osgard-game-version" content="1.5.0">') && text.includes('id="runnerCanvas"') && text.includes('id="run-start"') && text.includes('id="daily-seed"') && text.includes('id="share-telegram"') && text.includes('id="claim-share-reward"') && text.includes('id="focus-mode"') && text.includes('osgard:game-lifecycle')
+          ? text.includes('<title>AFTERIMAGE//RUN — OSGARD PLAY</title>') && text.includes('<meta name="osgard-game-version" content="1.6.0">') && text.includes('id="runnerCanvas"') && text.includes('id="run-start"') && text.includes('id="daily-seed"') && text.includes('id="share-telegram"') && text.includes('id="claim-share-reward"') && text.includes('id="focus-mode"') && text.includes('osgard:game-lifecycle')
         : route === '/games/cascade-lab/'
           ? text.includes('<title>CASCADE LAB — Premium Physics Lab 0.15.0</title>') &&
             text.includes('name="osgard-game-version" content="0.15.0-experiment-ledger"') &&
@@ -136,8 +136,8 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
               text.includes('id="game-search"') &&
               text.includes('id="favorites-filter"') &&
               text.includes('id="share-dialog"') &&
-              text.includes('href="/entertainment/entertainment.css?v=20261014.1"') &&
-              text.includes('src="/entertainment/entertainment.js?v=20261014.1"') &&
+              text.includes('href="/entertainment/entertainment.css?v=20261014.3"') &&
+              text.includes('src="/entertainment/entertainment.js?v=20261014.3"') &&
               ['null-shift','time','swarm','inherit','remix','civic-cascade','patina','signal-run','cascade-lab','afterimage-run','aether-grid'].every(id => text.includes('data-game="'+id+'"')) &&
               text.includes('"numberOfItems":11')
             : route === '/entertainment/entertainment.css'
