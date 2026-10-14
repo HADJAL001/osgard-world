@@ -98,7 +98,7 @@ function parseArgs(argv) {
   if (!['create', 'verify'].includes(command)) {
     throw new Error('Usage: node scripts/osgard-release-attestation.mjs <create|verify> [--root dist] [--output release-attestation.json | --input release-attestation.json]');
   }
-  const options = { command, root: resolve('dist'), output: resolve('release-attestation.json'), input: resolve('release-attestation.json') };
+  const options = { command, root: resolve('dist'), output: resolve('release-attestation.json'), input: resolve('release-attestation.json'), contractReport: null };
   while (args.length) {
     const flag = args.shift();
     const value = args.shift();
@@ -106,6 +106,7 @@ function parseArgs(argv) {
     if (flag === '--root') options.root = resolve(value);
     else if (flag === '--output') options.output = resolve(value);
     else if (flag === '--input') options.input = resolve(value);
+    else if (flag === '--contract-report') options.contractReport = resolve(value);
     else throw new Error('Unknown argument: ' + flag);
   }
   if (options.command === 'create') {
@@ -124,7 +125,36 @@ async function packageMetadata() {
     return { name: 'osgard-world', version: 'unknown' };
   }
 }
-export async function createAttestation(rootPath, outputPath) {
+async function readContractGate(reportPath) {
+  const raw = await readFile(resolve(reportPath));
+  const report = JSON.parse(raw.toString('utf8'));
+  const counts = report?.summary;
+  const fingerprint = String(report?.contract?.sha256 || '');
+  if (report?.schema !== 'osgard.contract-integrity.v1' ||
+      report.status !== 'ready' ||
+      !Array.isArray(report.checks) ||
+      !counts ||
+      !Number.isSafeInteger(counts.checks) || counts.checks < 1 ||
+      !Number.isSafeInteger(counts.passed) || counts.passed < 0 ||
+      !Number.isSafeInteger(counts.failed) || counts.failed !== 0 ||
+      !Number.isSafeInteger(counts.warnings) || counts.warnings < 0 ||
+      counts.checks !== report.checks.length ||
+      counts.passed + counts.warnings !== counts.checks ||
+      report.checks.some(item => !item || !['passed', 'warning'].includes(item.status)) ||
+      !SHA_RE.test(fingerprint)) {
+    throw new Error('OSGARD contract quality gate is missing, blocked, or malformed: ' + resolve(reportPath));
+  }
+  return {
+    schema: report.schema,
+    reportSha256: sha256(raw),
+    contractFingerprint: fingerprint,
+    checkCount: counts.checks,
+    passed: counts.passed,
+    warnings: counts.warnings,
+    generatedAt: String(report.generatedAt || '').slice(0, 40),
+  };
+}
+export async function createAttestation(rootPath, outputPath, contractReportPath = null) {
   const root = resolve(rootPath);
   const output = resolve(outputPath);
   const outputRelative = relative(root, output);
@@ -133,6 +163,8 @@ export async function createAttestation(rootPath, outputPath) {
   }
   const data = await inventory(root);
   const pkg = await packageMetadata();
+  const gatePath = contractReportPath || process.env.OSGARD_CONTRACT_AUDIT || null;
+  const qualityGate = gatePath ? await readContractGate(gatePath) : null;
   const document = {
     schema: SCHEMA,
     generatedAt: new Date().toISOString(),
@@ -153,12 +185,13 @@ export async function createAttestation(rootPath, outputPath) {
       warnings: data.warnings,
     },
     files: data.files,
+    ...(qualityGate ? { qualityGate } : {}),
   };
   await mkdir(dirname(output), { recursive: true });
   await writeFile(output, JSON.stringify(document, null, 2) + '\n', { mode: 0o600 });
   return document;
 }
-export async function verifyAttestation(rootPath, inputPath) {
+export async function verifyAttestation(rootPath, inputPath, contractReportPath = null) {
   const root = resolve(rootPath);
   const input = resolve(inputPath);
   const document = JSON.parse(await readFile(input, 'utf8'));
@@ -174,6 +207,24 @@ export async function verifyAttestation(rootPath, inputPath) {
     if (!Number.isSafeInteger(item.bytes) || item.bytes < 0 || !SHA_RE.test(String(item.sha256 || ''))) {
       throw new Error('Invalid file record in attestation: ' + item.path);
     }
+  }
+  let qualityGateVerified = false;
+  if (document.qualityGate !== undefined) {
+    const gatePath = contractReportPath || process.env.OSGARD_CONTRACT_AUDIT || resolve('osgard-contract-audit.json');
+    let currentGate;
+    try { currentGate = await readContractGate(gatePath); }
+    catch (error) { throw new Error('Release quality-gate verification failed: ' + String(error.message || error)); }
+    if (!document.qualityGate ||
+        !SHA_RE.test(String(document.qualityGate.reportSha256 || '')) ||
+        !SHA_RE.test(String(document.qualityGate.contractFingerprint || '')) ||
+        document.qualityGate.reportSha256 !== currentGate.reportSha256 ||
+        document.qualityGate.contractFingerprint !== currentGate.contractFingerprint ||
+        document.qualityGate.checkCount !== currentGate.checkCount ||
+        document.qualityGate.passed !== currentGate.passed ||
+        document.qualityGate.warnings !== currentGate.warnings) {
+      throw new Error('Release quality-gate report mismatch: the contract audit changed after attestation.');
+    }
+    qualityGateVerified = true;
   }
   const current = await inventory(root);
   const expectedByPath = new Map(document.files.map(file => [file.path, file]));
@@ -199,6 +250,8 @@ export async function verifyAttestation(rootPath, inputPath) {
     missing,
     extra,
     changed: changed.sort(),
+    qualityGateVerified,
+    contractFingerprint: qualityGateVerified ? document.qualityGate.contractFingerprint : null,
   };
   if (!ok) {
     throw new Error('Release integrity mismatch: ' + JSON.stringify(result));
@@ -208,18 +261,20 @@ export async function verifyAttestation(rootPath, inputPath) {
 async function main() {
   const options = parseArgs(process.argv.slice(2));
   if (options.command === 'create') {
-    const report = await createAttestation(options.root, options.output);
+    const report = await createAttestation(options.root, options.output, options.contractReport);
     console.log(JSON.stringify({
       status: 'attested',
       rootSha256: report.artifact.rootSha256,
       files: report.artifact.fileCount,
       totalBytes: report.artifact.totalBytes,
       warnings: report.artifact.warnings.length,
+      qualityGateBound: Boolean(report.qualityGate),
+      contractFingerprint: report.qualityGate?.contractFingerprint || null,
       output: options.output,
     }, null, 2));
     return;
   }
-  const result = await verifyAttestation(options.root, options.input);
+  const result = await verifyAttestation(options.root, options.input, options.contractReport);
   console.log(JSON.stringify(result, null, 2));
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
