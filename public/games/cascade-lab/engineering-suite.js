@@ -6,6 +6,16 @@ const SCHEMA = 'osgard.cascade-lab.engineering-suite.v1';
 const STORAGE_KEY = SCHEMA;
 const MAX_RUNS = 50;
 const MAX_IMPORT_BYTES = 200 * 1024;
+const IMPROVEMENTS = Object.freeze([
+  'run-event-contract', 'failure-classification', 'gate-diagnosis', 'checkpoint-diagnosis',
+  'fragile-impact-diagnosis', 'off-track-diagnosis', 'timeout-diagnosis', 'success-optimization',
+  'engine-evidence', 'recent-event-tail', 'confidence-labels', 'hypothesis-versus-fact',
+  'one-variable-next-test', 'time-metric', 'device-count-metric', 'peak-speed-metric',
+  'last-impact-metric', 'same-level-comparison', 'outcome-delta', 'time-delta',
+  'device-delta', 'activation-distance-deltas', 'control-run-check', 'single-variable-check',
+  'outcome-recorded-check', 'editable-hypothesis', 'editable-test-plan', 'session-notes',
+  'search-and-outcome-filter', 'bounded-local-archive-json-csv-import'
+]);
 const TOOLS = Object.freeze({
   spring: 'Пружина', fan: 'Вентилятор', belt: 'Конвейер',
   magnet: 'Магнит', switch: 'Контакт', bumper: 'Отбойник'
@@ -178,7 +188,7 @@ function csvEscape(value) {
   const s = value == null ? '' : String(value);
   return '"' + s.replace(/"/g, '""') + '"';
 }
-const pureApi = Object.freeze({ version: VERSION, schema: SCHEMA, cleanRun, validateArchive, compareRuns, diagnoseRun, csvEscape, maxRuns: MAX_RUNS, maxImportBytes: MAX_IMPORT_BYTES });
+const pureApi = Object.freeze({ version: VERSION, schema: SCHEMA, improvements: IMPROVEMENTS, cleanRun, validateArchive, compareRuns, diagnoseRun, csvEscape, maxRuns: MAX_RUNS, maxImportBytes: MAX_IMPORT_BYTES });
 if (typeof window === 'undefined' || !window.document) {
   globalThis.__CASCADELAB019_TEST__ = pureApi;
   return;
@@ -534,7 +544,7 @@ const lastSaved = runs[0];
 if (lastSaved) renderReport(lastSaved); else resetReport();
 renderRecords();
 Object.defineProperty(window, 'CASCADELAB019', {
-  value: Object.freeze({ version: VERSION, schema: SCHEMA, diagnoseRun, compareRuns,
+  value: Object.freeze({ version: VERSION, schema: SCHEMA, improvements: IMPROVEMENTS, diagnoseRun, compareRuns,
     getRuns: () => runs.map(cleanRun), exportArchive, renderRecords }),
   configurable: false, enumerable: false, writable: false
 });
