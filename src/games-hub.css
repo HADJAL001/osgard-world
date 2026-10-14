@@ -380,3 +380,10 @@
 .gh-related-card:focus-visible .gh-related-reason{color:var(--gh-mint)}
 @media(max-width:520px){.gh-related-reason{font-size:8px}}
 @media(prefers-reduced-motion:reduce){.gh-related-card{transition:none}}
+
+/* Embedded player recovery: visible focus, accessible retry and reduced motion. */
+.gh-game-error-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:15px}
+.gh-game-error-actions button{font:inherit;cursor:pointer}
+.gh-game-stage:focus-visible{outline:2px solid var(--gh-mint);outline-offset:3px}
+@media(max-width:520px){.gh-game-error-actions{display:grid;grid-template-columns:minmax(0,1fr)}.gh-game-error-actions>*{justify-content:center}}
+@media(prefers-reduced-motion:reduce){.gh-game-loading .gh-loader{animation:none}}
