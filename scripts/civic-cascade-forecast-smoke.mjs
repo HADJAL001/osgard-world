@@ -6,7 +6,7 @@ const manifest = JSON.parse(await readFile(new URL('../public/games/civic-cascad
 const check = (value, message) => assert.ok(value, message)
 
 assert.equal(manifest.gameId, 'civic-cascade')
-assert.equal(manifest.version, '2.6.0', 'release manifest must match this regression suite')
+assert.equal(manifest.version, '2.7.0', 'release manifest must match this regression suite')
 assert.equal(manifest.buildContract?.cascadeForecast?.enabled, true)
 assert.deepEqual(manifest.buildContract?.cascadeForecast?.horizonsGameSeconds, [30, 60, 90])
 assert.equal(manifest.buildContract?.cascadeForecast?.randomIncidentsForecasted, false)
@@ -16,6 +16,9 @@ assert.equal(manifest.buildContract?.infrastructureNetwork?.directedDependencies
 assert.equal(manifest.buildContract?.infrastructureNetwork?.checkpointSchema, 2)
 assert.equal(manifest.buildContract?.adaptiveCrisisDirector?.enabled, true)
 assert.equal(manifest.buildContract?.adaptiveCrisisDirector?.criticalThreshold, 45)
+assert.equal(manifest.buildContract?.operationDebrief?.enabled, true)
+assert.equal(manifest.buildContract?.operationDebrief?.maxEvents, 20)
+assert.equal(manifest.buildContract?.operationDebrief?.counterfactualClaims, false)
 assert.deepEqual(manifest.buildContract?.adaptiveCrisisDirector?.nodes, ['substation','pump','bridge','hospital','shelter'])
 
 const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1])
@@ -24,7 +27,8 @@ for (const id of [
   'cc-cascade-forecast', 'cc-cascade-30', 'cc-cascade-60', 'cc-cascade-90',
   'cc-cascade-wait-30', 'cc-cascade-plan-30', 'cc-cascade-wait-90',
   'cc-cascade-plan-90', 'cc-cascade-note', 'cc-node-inspector', 'cc-node-health',
-  'cc-node-health-bar', 'cc-node-status', 'cc-node-chain', 'cc-node-effect', 'cc-adaptive-crisis'
+  'cc-node-health-bar', 'cc-node-status', 'cc-node-chain', 'cc-node-effect', 'cc-adaptive-crisis',
+  'cc-causal-debrief', 'cc-causal-summary', 'cc-causal-count', 'cc-causal-risk-change', 'cc-causal-weakest', 'cc-causal-best', 'cc-causal-ledger'
 ]) check(ids.includes(id), 'missing forecast UI element: ' + id)
 
 const mainScript = html.match(/<script>([\s\S]*?)<\/script>/i)?.[1]
@@ -54,6 +58,9 @@ const infrastructure = new Function('clamp', 'nodes', 'NODE_DEPENDENCIES',
   infrastructureSource + '\nreturn { seedNodeIntegrity, ensureNodeIntegrity, applyNodeActionIntegrity, advanceNodeIntegrity };'
 )(clamp, nodes, dependencies)
 const { seedNodeIntegrity, ensureNodeIntegrity, applyNodeActionIntegrity, advanceNodeIntegrity } = infrastructure
+const causalSource = extractBetween('function operationSnapshot(s)', 'function objectiveState()')
+const causal = new Function('clamp', 'nodes', 'ensureNodeIntegrity', 'clock', 'elapsed', causalSource + '\nreturn { operationSnapshot, cleanOperationSnapshot, operationDelta, recordOperationEvent };')(clamp, nodes, ensureNodeIntegrity, seconds => 'T+' + seconds, 7)
+const { operationSnapshot, cleanOperationSnapshot, recordOperationEvent } = causal
 const projectedRisk = new Function('clamp', riskSource + '\nreturn projectedRisk;')(clamp)
 const directSource = extractBetween('function simulatePlannedOrders(orders)', 'function planCrewDemand')
 const simulateDirect = state => new Function(
@@ -75,6 +82,8 @@ const makeState = scenario => {
   state.nodeOutages = Object.fromEntries(nodes.map(node => [node.id, false]))
   state.nodeIncidentFlags = Object.fromEntries(nodes.map(node => [node.id, false]))
   state.pendingNodeIncidents = []
+  state.operationLedger = []
+  state.operationBaseline = operationSnapshot(state)
   return state
 }
 
@@ -94,6 +103,21 @@ for (const scenario of ['flood', 'blackout', 'blockade']) {
     }
   }
 }
+
+const causalState = makeState('flood')
+const causalBefore = operationSnapshot(causalState)
+causalState.water = clamp(causalState.water - 7)
+causalState.grid = clamp(causalState.grid + 4)
+causalState.supplies = clamp(causalState.supplies - 5)
+const causalEvent = recordOperationEvent(causalState, 'action', 'Проверка вмешательства', 'pump', causalBefore)
+assert.equal(causalEvent.delta.water, -7)
+assert.equal(causalEvent.delta.grid, 4)
+assert.equal(causalEvent.delta.supplies, -5)
+assert.equal(causalState.operationLedger.length, 1)
+for (let i = 0; i < 25; i++) recordOperationEvent(causalState, 'action', 'Событие ' + i, 'hub', operationSnapshot(causalState))
+assert.equal(causalState.operationLedger.length, 20, 'causal ledger must keep no more than 20 entries')
+const invalidSnapshot = cleanOperationSnapshot({ water: 999 }, causalState)
+assert.equal(invalidSnapshot.water, causalState.water, 'invalid ledger snapshot must be replaced with a safe snapshot')
 
 const flood = makeState('flood')
 const noPlan = simulateDirect(flood)([])
@@ -156,7 +180,7 @@ check(gridAt89.grid < floodThreshold.grid - floodThreshold.gridRate * 90,
 
 console.log(JSON.stringify({
   status: 'passed',
-  suite: 'CIVIC CASCADE infrastructure integrity and deterministic cascade forecast',
+  suite: 'CIVIC CASCADE causal operation debrief, infrastructure integrity and deterministic cascade forecast',
   release: manifest.version,
   scenarios: 3,
   horizons: [30, 60, 90],
@@ -172,6 +196,9 @@ console.log(JSON.stringify({
     dependencyPropagation: 'PASS',
     nodeOutageEffects: 'PASS',
     adaptiveIncidentQueue: 'PASS',
-    oneIncidentPerNode: 'PASS'
+    oneIncidentPerNode: 'PASS',
+    causalImmediateDeltas: 'PASS',
+    causalLedgerBound: 'PASS',
+    causalSnapshotValidation: 'PASS'
   }
 }, null, 2))
