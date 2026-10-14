@@ -39,6 +39,8 @@ test('Daily Expeditions expose four locally measured, non-monetary missions', ()
   assert.match(js, /Цикл UTC:/);
   assert.match(js, /не имеет денежной стоимости/);
   assert.match(js, /Денежной стоимости нет/);
+  assert.match(js, /локальные миссии\/XP/);
+  assert.match(js, /ежедневные задания и XP/);
   assert.match(js, /validateMissionState\(parsed\.missions\)/);
 });
 test('Daily Expeditions reward claims are capped, date-scoped, deduplicated and local', () => {
@@ -59,6 +61,7 @@ test('Daily completion objectives use dated completion events and remain backwar
   assert.match(js, /document\.addEventListener\('osgard:game-completed', recordGameCompletion\)/);
   assert.match(js, /document\.addEventListener\('osgard:game-level-completed', recordGameCompletion\)/);
   assert.match(js, /row\.game === id && row\.sessionId === sessionId/);
+  assert.match(js, /typeof row\.sessionId === 'string' && \^\[a-zA-Z0-9_-/);
   assert.match(js, /validateMissionState\(parsed\.missions\)/);
   assert.match(js, /missions: missionState/);
   assert.match(js, /validateMissionState\(parsed\.missions\)/);
