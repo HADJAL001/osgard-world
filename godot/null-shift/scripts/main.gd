@@ -5472,6 +5472,7 @@ func _layout_compact_controls(viewport_size: Vector2) -> void:
 		spacer.custom_minimum_size = Vector2(move_size, move_button_height)
 	var action_button_width: float = floor((action_width - 32.0) * 0.5)
 	var action_button_height: float = 29.0 if width < 400.0 else 31.0
+	var utility_button_width: float = floor((action_width - 32.0) / 3.0)
 	for button in mobile_action_buttons:
 		button.custom_minimum_size = Vector2(action_button_width, action_button_height)
 	for button in [mobile_palette_button, mobile_hud_scale_button, mobile_haptics_button]:
@@ -5483,7 +5484,6 @@ func _layout_compact_controls(viewport_size: Vector2) -> void:
 		mobile_vent_button.custom_minimum_size = Vector2(action_button_width, action_button_height)
 	if is_instance_valid(mobile_echo_button):
 		mobile_echo_button.custom_minimum_size = Vector2(action_button_width, action_button_height)
-	var utility_button_width: float = floor((action_width - 32.0) / 3.0)
 	mobile_quality_button.custom_minimum_size = Vector2(utility_button_width, 27.0)
 	mobile_diagnostics_button.custom_minimum_size = Vector2(utility_button_width, 27.0)
 	mobile_motion_button.custom_minimum_size = Vector2(utility_button_width, 27.0)
