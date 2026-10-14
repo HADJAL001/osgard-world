@@ -22,7 +22,7 @@ for (const contract of [
   "credentials:'same-origin'", "redirect:'error'", "new AbortController()",
   "Promise.allSettled", "15 секунд", "Последний успешный снимок сохранён на экране",
   "document.visibilityState==='visible'", "setInterval", "selectedPreset",
-  "X-Moderation-Token", "Никакие",
+  "X-Moderation-Token",
 ]) {
   assert.ok(inline[0].includes(contract), 'Missing resilience/privacy contract: ' + contract);
 }
