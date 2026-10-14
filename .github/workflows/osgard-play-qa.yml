@@ -1,0 +1,57 @@
+name: OSGARD PLAY pull request QA
+
+on:
+  push:
+    branches:
+      - feat/osgard-play-pwa-release-hardening-*
+    paths:
+      - "public/games/**"
+      - "services/osgard-commerce-api/src/core.mjs"
+      - "services/osgard-commerce-api/test/core.test.mjs"
+      - "scripts/osgard-play-pwa-smoke.mjs"
+      - "scripts/games-portal-smoke.mjs"
+      - "package.json"
+      - ".github/workflows/osgard-play-qa.yml"
+  pull_request:
+    branches: [master]
+    paths:
+      - "public/games/**"
+      - "services/osgard-commerce-api/src/core.mjs"
+      - "services/osgard-commerce-api/test/core.test.mjs"
+      - "scripts/osgard-play-pwa-smoke.mjs"
+      - "scripts/games-portal-smoke.mjs"
+      - "package.json"
+      - ".github/workflows/osgard-play-qa.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: osgard-play-qa-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  games-quality:
+    name: OSGARD PLAY release gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: TypeScript check
+        run: npm run check
+      - name: Test install, shareable catalog state, and offline security boundaries
+        run: npm run qa:pwa
+      - name: Regress the complete gaming portal
+        run: npm run qa:games-portal
+      - name: Regress sponsor campaign privacy and server contracts
+        run: npm run qa:campaign-manager
+      - name: Test Commerce API allow-lists and consent gates
+        run: node --test services/osgard-commerce-api/test/core.test.mjs
