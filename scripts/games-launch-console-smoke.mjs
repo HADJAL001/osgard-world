@@ -8,7 +8,7 @@ const packageJson = JSON.parse(readFileSync('package.json', 'utf8'))
 
 assert.ok(html.includes('<meta name="robots" content="noindex,nofollow,noarchive">'), 'Command deck must not be indexed')
 assert.ok(html.includes('OSGARD PLAY — Command Deck') && html.toLowerCase().includes('read-only'), 'The command deck must be identified as a read-only tool')
-assert.ok(html.includes('credentials: \\'omit\\'') && html.includes("cache: 'no-store'") && html.includes("method: 'GET'"), 'Public checks must use no-credentials, no-cache GET requests')
+assert.ok(html.includes("credentials: 'omit'") && html.includes("cache: 'no-store'") && html.includes("method: 'GET'"), 'Public checks must use no-credentials, no-cache GET requests')
 assert.ok(html.includes('AbortSignal.timeout(6500)'), 'Every route probe must have a bounded timeout')
 assert.ok(html.includes("const latestReport = null") || html.includes('let latestReport = null'), 'Report state must stay in memory until explicitly downloaded')
 assert.ok(html.includes("new Blob([JSON.stringify(latestReport, null, 2)"), 'JSON report must be generated locally')
