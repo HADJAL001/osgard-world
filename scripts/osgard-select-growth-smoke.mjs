@@ -385,9 +385,43 @@ assert.equal(matchesServiceFilter('studio','business','Создание сайт
 assert.equal(matchesServiceFilter('business','all','O2 System cash office','vpn'),false,'Search must hide non-matching services')
 assert.equal(matchesServiceFilter('luxury','all','Gold Glamour luxury services','gold'),true,'Search should cover service names and descriptions')
 
+assert.ok(source.includes('CONTINUE BEYOND THE ROUND / OSGARD WORLD') &&
+  source.includes('Исследовать экосистему ↗') &&
+  source.includes('Создать свой цифровой продукт ↗'),
+  'The between-game panel must offer both the full OSGARD ecosystem and a custom-product route');
+assert.ok(source.includes("new URL('/games/ecosystem/',location.origin)") &&
+  source.includes("directoryUrl.searchParams.set('utm_medium','post_game')") &&
+  source.includes("directoryUrl.searchParams.set('utm_campaign','between_worlds')"),
+  'The ecosystem CTA must point to the real project directory with source/game attribution');
+assert.ok(source.includes("new URL('https://osgardbewworld.com/')") &&
+  source.includes("creationUrl.searchParams.set('utm_campaign','custom_product_intake')") &&
+  source.includes("creationUrl.searchParams.set('utm_content',gameId)"),
+  'The custom product CTA must use the owner-supplied official destination and preserve the current game source');
+assert.ok(source.includes("'osgard-select:ecosystem:'+gameId") &&
+  source.includes("'osgard-select:development:'+gameId") &&
+  source.includes("if(hasConsent())void sendSelectEvent('cross_promo_clicked'"),
+  'The commercial CTAs must use consent-gated first-party click measurement');
+assert.ok(css.includes('.og-postgame-portfolio-actions') &&
+  css.includes('.og-postgame-portfolio-link:focus-visible') &&
+  css.includes('@media(max-width:680px)') &&
+  css.includes('prefers-reduced-motion:reduce'),
+  'The intermission commercial panel must be keyboard-accessible, responsive and respect reduced motion');
+assert.ok(commerceApi.includes('ownedPromoDirectoryClicks') &&
+  commerceApi.includes('osgard-select:ecosystem:') &&
+  commerceApi.includes('ownedPromoDevelopmentClicks') &&
+  commerceApi.includes('osgard-select:development:'),
+  'The protected analytics API must aggregate these two separate click funnels with strict source patterns');
+assert.ok(commerceAdmin.includes('id="owned-promo-directory-clicks"') &&
+  commerceAdmin.includes('id="owned-promo-development-clicks"') &&
+  commerceAdmin.includes("$('#owned-promo-directory-clicks').textContent = fmt(funnel.ownedPromoDirectoryClicks)") &&
+  commerceAdmin.includes("$('#owned-promo-development-clicks').textContent = fmt(funnel.ownedPromoDevelopmentClicks)"),
+  'The commerce admin dashboard must render both CTA metrics from the API');
+assert.ok(!source.includes('portfolioActions,foot,decision') || source.includes('if(showPromos&&activeSelected.length)'),
+  'The commercial CTA must remain within the opted-in/selected promo surface, not bypass the user off setting');
+
 console.log(JSON.stringify({
   status: 'passed',
   serviceDestinations: services.length,
   gameContexts: 9,
-  checks: 76, notes: 'Source-level guardrails; social publication is self-confirmed, not verified by social-network APIs.'
+  checks: 84, notes: 'Source-level guardrails; social publication is self-confirmed, not verified by social-network APIs.'
 }));

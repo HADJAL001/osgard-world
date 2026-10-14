@@ -275,3 +275,18 @@ dialog#player-dialog[data-postgame-intermission="1"] .post-run-recommendations{m
 .og-game-coach-tip p,.og-game-coach-challenge p{margin:6px 0 0;color:#d0d5cc;font-size:12px;line-height:1.75}
 @media(max-width:600px){.og-game-coach-header{display:grid;grid-template-columns:1fr}.og-game-coach-badge{justify-self:start}.og-game-coach-actions,.og-game-coach-button{width:100%}.og-postgame-ai-coach{padding:14px}.og-game-coach-result{padding:13px}}
 @media(prefers-reduced-motion:reduce){.og-game-coach-button{transition:none}}
+
+/* OSGARD SELECT commercial bridge: optional paths after the service catalogue, outside gameplay. */
+.og-postgame-portfolio-actions{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:18px;margin:14px 0 8px;padding:18px;border:1px solid rgba(218,192,133,.24);border-radius:10px;background:radial-gradient(ellipse at 0 0,rgba(218,192,133,.09),transparent 58%),linear-gradient(145deg,#11130f,#090b09)}
+.og-postgame-portfolio-copy{min-width:0}
+.og-postgame-portfolio-eyebrow{margin:0 0 7px;color:#d8c28f;font:8px/1.5 ui-monospace,Consolas,monospace;letter-spacing:.16em}
+.og-postgame-portfolio-title{margin:0;color:#f0ead9;font:400 clamp(18px,2.4vw,26px)/1.18 Georgia,serif;letter-spacing:-.025em}
+.og-postgame-portfolio-description{max-width:530px;margin:8px 0 0;color:#a6a99b;font-size:11px;line-height:1.75}
+.og-postgame-portfolio-links{display:grid;gap:7px;min-width:210px}
+.og-postgame-portfolio-link{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:10px 13px;border:1px solid rgba(218,192,133,.34);border-radius:5px;background:#ffffff04;color:#e5dec9;text-align:center;text-decoration:none;font-size:10px;font-weight:650;line-height:1.45;transition:background .18s ease,border-color .18s ease,transform .18s ease}
+.og-postgame-portfolio-link.is-primary{border-color:#d8c28f;background:linear-gradient(120deg,#dfc994,#ad9460);color:#17160f}
+.og-postgame-portfolio-link:hover{border-color:#ead8ad;background-color:#d8c28f14}
+.og-postgame-portfolio-link.is-primary:hover{background:linear-gradient(120deg,#f0dfb8,#c0a976)}
+.og-postgame-portfolio-link:focus-visible{outline:2px solid #fff0c7;outline-offset:3px}
+@media(max-width:680px){.og-postgame-portfolio-actions{grid-template-columns:1fr;gap:12px;padding:14px}.og-postgame-portfolio-links{grid-template-columns:1fr;min-width:0}.og-postgame-portfolio-link{width:100%}}
+@media(prefers-reduced-motion:reduce){.og-postgame-portfolio-link{transition:none}}
