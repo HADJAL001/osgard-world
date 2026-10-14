@@ -925,11 +925,21 @@ func _run_smoke() -> void:
 	game.overdrive_timer = 0.0
 	heavy_state["stun"] = 0.0
 	heavy_state["windup"] = 0.0
-	# The test needs an expired cooldown, not a frame-duration assumption; the AI
-	# intentionally ticks slower while overdrive is active in normal gameplay.
+	# Let Godot synchronize the moved CharacterBody3D with the physics server
+	# before perception casts its real line-of-sight ray. Keep the attack on
+	# cooldown for this synchronization frame so the game loop cannot consume it.
+	heavy_state["cooldown"] = 12.0
+	heavy_state["attack_lanes"] = []
+	game.guards[1] = heavy_state
+	await physics_frame
+	heavy_state = game.guards[1]
+	heavy_state["stun"] = 0.0
+	heavy_state["windup"] = 0.0
 	heavy_state["cooldown"] = 0.0
 	heavy_state["attack_lanes"] = []
 	game.guards[1] = heavy_state
+	if not _expect(game._guard_can_see_player(heavy_body), "Heavy smoke setup must have a clear forward-cone line of sight before testing its telegraph"):
+		return
 	game._update_guards(0.016)
 	heavy_state = game.guards[1]
 	var heavy_lanes: Array = heavy_state.get("attack_lanes", [])
