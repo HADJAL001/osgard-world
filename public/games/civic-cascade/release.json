@@ -3,8 +3,8 @@
   "gameId": "civic-cascade",
   "title": "CIVIC CASCADE",
   "edition": "Web Edition",
-  "version": "2.1.0",
-  "releaseId": "civic-cascade-web-2.1.0",
+  "version": "2.2.0",
+  "releaseId": "civic-cascade-web-2.2.0",
   "canonicalUrl": "https://osgard.world/games/civic-cascade/",
   "detailUrl": "https://osgard.world/game/civic-cascade",
   "entrypoint": "/games/civic-cascade/",
@@ -36,6 +36,21 @@
       "zeroCostFallback": true,
       "simulationPausesUntilDecision": true,
       "legacyCheckpointActionCountDefault": 0
+    },
+    "missionChallenges": {
+      "enabled": true,
+      "entryParameters": [
+        "cc_challenge",
+        "cc_scenario",
+        "cc_target",
+        "cc_ref"
+      ],
+      "targetScoreBounded": true,
+      "scenarioBoundToChallenge": true,
+      "userActionRequiredToShare": true,
+      "localScoringOnly": true,
+      "globalLeaderboard": false,
+      "attribution": "UTM parameters indicate a link campaign; they do not prove a share, unique person or referral conversion."
     }
   },
   "cinematicExport": {
@@ -76,6 +91,6 @@
   "deployment": {
     "target": "https://osgard.world",
     "mechanism": "repository push triggers the site's production deployment workflow",
-    "liveStatus": "deployment must be confirmed by production route checks for release 2.1.0"
+    "liveStatus": "verify release 2.2.0 with production route checks after merge and deployment"
   }
 }
