@@ -8,7 +8,7 @@
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://osgard.world/games/civic-cascade/">
 <title>CIVIC CASCADE — кризисная стратегия | OSGARD PLAY</title>
-<meta name="osgard-game-version" content="3.3.0-auditable-dossier-verifier">
+<meta name="osgard-game-version" content="3.4.0-decision-assurance-engine">
 <style>
 :root{color-scheme:dark;--bg:#080d10;--panel:#10191d;--panel2:#142126;--line:#ffffff1c;--ink:#edf3ee;--muted:#91a29e;--mint:#b8f4cf;--cyan:#68d8d2;--gold:#e1c58a;--warn:#f2b27c;--bad:#ff827b;--mono:ui-monospace,Consolas,monospace;--serif:Georgia,serif}
 *{box-sizing:border-box}html{background:var(--bg);scroll-behavior:smooth}body{margin:0;color:var(--ink);background:radial-gradient(ellipse at 76% -18%,#234d453d,transparent 48%),var(--bg);font:14px/1.55 Inter,Geist,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}button,select{font:inherit}button,a,select{touch-action:manipulation}a{color:inherit;text-decoration:none}button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(--mint);outline-offset:3px}.wrap{max-width:1440px;padding:0 clamp(14px,2.8vw,42px);margin:auto}
@@ -130,6 +130,14 @@
 .doctrine-option-head span{color:var(--cyan);font:8px var(--mono)}
 .doctrine-option-actions{margin:8px 0;color:#e2ece5;font-size:10px;line-height:1.65;overflow-wrap:anywhere}
 .doctrine-option-metrics{margin:0;color:var(--muted);font:8px/1.7 var(--mono);overflow-wrap:anywhere}
+
+/* CIVIC CASCADE 3.4 — decision-assurance layer */
+.doctrine-option-head [data-safety="green"]{color:#8fe0bd}
+.doctrine-option-head [data-safety="amber"]{color:#e5c57b}
+.doctrine-option-head [data-safety="red"]{color:#ee9787}
+.doctrine-option-attribution{margin:0;padding:8px;border:1px solid #ffffff15;border-radius:6px;color:#c8d8d1;background:#071013;font-size:8px;line-height:1.7;overflow-wrap:anywhere}
+#cc-doctrine-assurance-note{padding-left:8px;border-left:2px solid var(--gold);color:#b6c5b9}
+
 .doctrine-option-rationale{margin:0;padding:8px;border-left:2px solid var(--cyan);background:#68d8d20a;color:#bce8dd;font-size:9px;line-height:1.65;overflow-wrap:anywhere}
 .doctrine-option button{width:100%;min-height:36px;margin-top:8px;white-space:normal}
 .doctrine-footer{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:8px;margin-top:9px}
@@ -332,7 +340,8 @@
   <p id="cc-doctrine-verify-help">Лимит файла — 1 МиБ. Проверка не импортирует очередь и не исполняет команды из файла. SHA-256 выявляет изменение после экспорта, но сам по себе не подтверждает личность автора.</p>
   <div class="doctrine-verification-result" id="cc-doctrine-verification-result" role="status" aria-live="polite">Досье ещё не выбрано. Никакие файлы не отправляются на сервер.</div>
  </div>
-  <p class="doctrine-footnote">Планировщик детерминированный и локальный: до восьми лучших вариантов проверяются в девяти контролируемых стресс-экспериментах (три семейства по три уровня) против базового решения под тем же стрессом. Он не отправляет игровые данные на сервер и не вызывает OpenAI API. Будущие случайные инциденты и решения игрока не предсказываются.</p>
+  <p class="doctrine-footnote" id="cc-doctrine-assurance-note">Решение не считается надёжным только по одному баллу: модель проверяет траектории риска, вклад каждого приказа, остаток ресурсов и отдельный статус операционной безопасности. Атрибуция действий показывает разницу leave-one-out и не является доказательством независимого причинного эффекта.</p>
+ <p class="doctrine-footnote">Планировщик детерминированный и локальный: до восьми лучших вариантов проверяются в девяти контролируемых стресс-экспериментах (три семейства по три уровня) против базового решения под тем же стрессом. Он не отправляет игровые данные на сервер и не вызывает OpenAI API. Будущие случайные инциденты и решения игрока не предсказываются.</p>
  </section>
  <ol class="command-list" id="cc-plan-list" aria-live="polite"><li class="command-empty">Очередь пуста. Поставь игру на паузу и добавь первый приказ.</li></ol>
  <div class="command-footer"><button class="ctrl" id="cc-plan-clear" type="button" disabled>Очистить очередь</button><button class="ctrl primary" id="cc-plan-execute" type="button" disabled>▶ Исполнить план · 0 приказов</button></div>
@@ -913,17 +922,18 @@ function renderPlan(){
  $('cc-plan-execute').textContent=planRunning?'■ ИСПОЛНЯЕТСЯ '+Math.min(planIndex+1,runningPlan.length)+' / '+runningPlan.length:'▶ Исполнить план · '+planOrders.length+' приказ'+(planOrders.length===1?'':'а');
 }
 
-function doctrineObjectiveScore(forecast,cost,crewCount,mode){
+function doctrineObjectiveScore(forecast,cost,crewCount,mode,riskExposure=NaN,reservePenalty=0){
  const terminal=forecast[forecast.length-1];
  const averageRisk=forecast.reduce((sum,sample)=>sum+sample.risk,0)/Math.max(1,forecast.length);
+ const exposureComponent=Number.isFinite(riskExposure)?riskExposure*.08:averageRisk*.08;
  const weights=mode==='risk'
-  ?{average:.23,terminal:.60,weakest:.06,critical:1.8,cost:.08,crew:.6}
+  ?{average:.20,terminal:.60,weakest:.06,critical:1.8,cost:.08,crew:.6}
   :mode==='protect'
-   ?{average:.17,terminal:.30,weakest:.28,critical:5,cost:.08,crew:.6}
+   ?{average:.14,terminal:.30,weakest:.28,critical:5,cost:.08,crew:.6}
    :mode==='conserve'
-    ?{average:.22,terminal:.43,weakest:.10,critical:2.5,cost:.17,crew:1.0}
-    :{average:.22,terminal:.48,weakest:.13,critical:3,cost:.10,crew:.8};
- return averageRisk*weights.average+terminal.risk*weights.terminal+(100-terminal.weakestIntegrity)*weights.weakest+terminal.criticalNodes.length*weights.critical+cost*weights.cost+crewCount*weights.crew;
+    ?{average:.19,terminal:.43,weakest:.10,critical:2.5,cost:.17,crew:1.0}
+    :{average:.19,terminal:.48,weakest:.13,critical:3,cost:.10,crew:.8};
+ return averageRisk*weights.average+exposureComponent+terminal.risk*weights.terminal+(100-terminal.weakestIntegrity)*weights.weakest+terminal.criticalNodes.length*weights.critical+cost*weights.cost+crewCount*weights.crew+Math.max(0,reservePenalty);
 }
 
 function cloneDoctrineState(source){
@@ -986,35 +996,63 @@ function doctrineStressProfiles(sourceState,nodeDefinitions){
 }
 function assessDoctrineRobustness(sourceState,orders,nominalScore,simulateOrders,simulatePath,nodeDefinitions,mode){
  const horizons=[30,60,90],baselineDirect=simulateOrders([]),planDirect=simulateOrders(orders.map(order=>({...order})));
- if(!baselineDirect?.valid||!planDirect?.valid)return {profiles:[],profileCount:0,stableProfiles:0,averageRiskDelta:100,worstRiskDelta:100,worstIntegrityDelta:-100,adjustedScore:nominalScore+1000};
+ if(!baselineDirect?.valid||!planDirect?.valid)return {profiles:[],profileCount:0,stableProfiles:0,averageRiskDelta:100,worstRiskDelta:100,worstIntegrityDelta:-100,averageRiskExposureDelta:100,worstRiskExposureDelta:100,severeRegressions:9,adjustedScore:nominalScore+1000,sensitivityByFamily:[]};
+ const validBase=simulatePath({...baselineDirect.state},horizons),validPlan=simulatePath({...planDirect.state},horizons);
+ if(!validateDoctrineForecast(validBase,horizons,nodeDefinitions).valid||!validateDoctrineForecast(validPlan,horizons,nodeDefinitions).valid)return {profiles:[],profileCount:0,stableProfiles:0,averageRiskDelta:100,worstRiskDelta:100,worstIntegrityDelta:-100,averageRiskExposureDelta:100,worstRiskExposureDelta:100,severeRegressions:9,adjustedScore:nominalScore+1000,sensitivityByFamily:[]};
  const profiles=doctrineStressProfiles(sourceState,nodeDefinitions).map(profile=>{
   const baselineState=cloneDoctrineState(baselineDirect.state),candidateState=cloneDoctrineState(planDirect.state);
   profile.apply(baselineState);profile.apply(candidateState);
   const baselineForecast=simulatePath(baselineState,horizons),candidateForecast=simulatePath(candidateState,horizons);
+  const baseValid=validateDoctrineForecast(baselineForecast,horizons,nodeDefinitions),candidateValid=validateDoctrineForecast(candidateForecast,horizons,nodeDefinitions);
+  if(!baseValid.valid||!candidateValid.valid)throw new Error('Stress simulation returned an invalid forecast for '+profile.id);
   const baseEnd=baselineForecast[baselineForecast.length-1],candidateEnd=candidateForecast[candidateForecast.length-1];
+  const baselineRiskAtT0=doctrineRiskForState(baselineState),candidateRiskAtT0=doctrineRiskForState(candidateState);
+  const baselineWeakestAtT0=Math.min(...Object.values(baselineState.nodeIntegrity||{})),candidateWeakestAtT0=Math.min(...Object.values(candidateState.nodeIntegrity||{}));
+  const baselineRiskTrajectory=[baselineRiskAtT0,...baselineForecast.map(sample=>sample.risk)];
+  const candidateRiskTrajectory=[candidateRiskAtT0,...candidateForecast.map(sample=>sample.risk)];
+  const baselineRiskExposure=doctrineRiskExposure(baselineRiskAtT0,baselineForecast);
+  const candidateRiskExposure=doctrineRiskExposure(candidateRiskAtT0,candidateForecast);
+  const trajectory=[
+   {seconds:0,baselineRisk:baselineRiskAtT0,candidateRisk:candidateRiskAtT0,riskDelta:candidateRiskAtT0-baselineRiskAtT0},
+   ...horizons.map((seconds,index)=>({seconds,baselineRisk:baselineForecast[index].risk,candidateRisk:candidateForecast[index].risk,riskDelta:candidateForecast[index].risk-baselineForecast[index].risk}))
+  ];
   return {
    id:profile.id,family:profile.family,familyLabel:profile.familyLabel,severity:profile.severity,severityLabel:profile.severityLabel,severityRank:profile.severityRank,magnitude:profile.magnitude,perturbation:{...profile.perturbation},label:profile.label,targetNode:profile.targetNode||null,
    baselineRisk90:baseEnd.risk,candidateRisk90:candidateEnd.risk,
    riskDelta90:candidateEnd.risk-baseEnd.risk,
    baselineWeakestIntegrity:baseEnd.weakestIntegrity,candidateWeakestIntegrity:candidateEnd.weakestIntegrity,
    weakestIntegrityDelta:candidateEnd.weakestIntegrity-baseEnd.weakestIntegrity,
-   criticalNodeDelta:candidateEnd.criticalNodes.length-baseEnd.criticalNodes.length
+   criticalNodeDelta:candidateEnd.criticalNodes.length-baseEnd.criticalNodes.length,
+   baselineRiskTrajectory,candidateRiskTrajectory,trajectory,
+   baselineRiskExposure,candidateRiskExposure,riskExposureDelta:candidateRiskExposure-baselineRiskExposure,
+   peakRiskBaseline:Math.max(...baselineRiskTrajectory),peakRiskCandidate:Math.max(...candidateRiskTrajectory),
+   peakRiskDelta:Math.max(...candidateRiskTrajectory)-Math.max(...baselineRiskTrajectory),
+   baselineWeakestTrajectory:[baselineWeakestAtT0,...baselineForecast.map(sample=>sample.weakestIntegrity)],
+   candidateWeakestTrajectory:[candidateWeakestAtT0,...candidateForecast.map(sample=>sample.weakestIntegrity)]
   };
  });
  const averageRiskDelta=profiles.reduce((sum,p)=>sum+p.riskDelta90,0)/Math.max(1,profiles.length);
  const worstRiskDelta=Math.max(...profiles.map(p=>p.riskDelta90));
  const worstIntegrityDelta=Math.min(...profiles.map(p=>p.weakestIntegrityDelta));
- const stableProfiles=profiles.filter(p=>p.riskDelta90<=2&&p.weakestIntegrityDelta>=-8&&p.criticalNodeDelta<=1).length;
- const severeRegressions=profiles.filter(p=>p.riskDelta90>5||p.criticalNodeDelta>1).length;
- const adjustedScore=nominalScore+averageRiskDelta*.25+Math.max(0,worstRiskDelta-2)*.45+Math.max(0,-worstIntegrityDelta-8)*.3+severeRegressions*.75;
+ const averageRiskExposureDelta=profiles.reduce((sum,p)=>sum+p.riskExposureDelta,0)/Math.max(1,profiles.length);
+ const worstRiskExposureDelta=Math.max(...profiles.map(p=>p.riskExposureDelta));
+ const stableProfiles=profiles.filter(p=>p.riskDelta90<=2&&p.weakestIntegrityDelta>=-8&&p.criticalNodeDelta<=1&&p.riskExposureDelta<=3).length;
+ const severeRegressions=profiles.filter(p=>p.riskDelta90>5||p.criticalNodeDelta>1||p.riskExposureDelta>5).length;
+ const sensitivityByFamily=['water-surge','grid-overload','weak-node-shock'].map(family=>{
+  const group=profiles.filter(profile=>profile.family===family).sort((a,b)=>a.severityRank-b.severityRank);
+  const mild=group[0],severe=group[group.length-1];
+  return {family,profileCount:group.length,riskDeltaRange:severe.riskDelta90-mild.riskDelta90,riskExposureRange:severe.riskExposureDelta-mild.riskExposureDelta,mildRiskDelta:mild.riskDelta90,severeRiskDelta:severe.riskDelta90};
+ });
+ const worstExposurePenalty=Math.max(0,worstRiskExposureDelta-2)*.22;
+ const adjustedScore=nominalScore+averageRiskDelta*.20+Math.max(0,worstRiskDelta-2)*.40+Math.max(0,-worstIntegrityDelta-8)*.30+severeRegressions*.75+averageRiskExposureDelta*.08+worstExposurePenalty;
  return {
   profiles,profileCount:profiles.length,stableProfiles,
   averageRiskDelta:Math.round(averageRiskDelta*10)/10,
   worstRiskDelta,worstIntegrityDelta,
+  averageRiskExposureDelta:Math.round(averageRiskExposureDelta*10)/10,worstRiskExposureDelta, sensitivityByFamily,
   severeRegressions,adjustedScore:Math.round(adjustedScore*100)/100,mode
  };
 }
-
 
 function doctrineDominates(a,b){
  const ar=a.robustness||{},br=b.robustness||{};
@@ -1080,6 +1118,90 @@ function explainDoctrineTradeoff(candidate,baseline,visibleCandidates){
  return parts.join(' · ');
 }
 
+
+const DOCTRINE_MIN_SUPPLY_RESERVE=15;
+const DOCTRINE_MIN_CREW_RESERVE=1;
+function doctrineRiskForState(s){return Math.round(clamp(s.water*.38+(100-s.grid)*.34+(100-s.access)*.28+s.riskOffset))}
+function validateDoctrineForecast(samples,horizons,nodeDefinitions){
+ const errors=[],fail=message=>errors.push(message);
+ if(!Array.isArray(samples)||samples.length!==horizons.length){return {valid:false,errors:['Прогноз должен содержать заданное число горизонтов.']}}
+ for(let index=0;index<horizons.length;index++){
+  const sample=samples[index],expected=horizons[index];
+  if(!sample||typeof sample!=='object'||sample.seconds!==expected){fail('Нарушен порядок прогнозных горизонтов.');continue}
+  for(const metric of ['water','grid','access','risk'])if(!Number.isFinite(sample[metric])||sample[metric]<0||sample[metric]>100)fail('Метрика '+metric+' вне диапазона 0–100.');
+  if(!Number.isFinite(sample.weakestIntegrity)||sample.weakestIntegrity<0||sample.weakestIntegrity>100)fail('Целостность слабейшего узла вне диапазона.');
+  const known=new Set(nodeDefinitions.map(node=>node.id));
+  if(typeof sample.weakestNode!=='string'||!known.has(sample.weakestNode))fail('Прогноз ссылается на неизвестный слабейший узел.');
+  if(!sample.nodeIntegrity||typeof sample.nodeIntegrity!=='object')fail('Отсутствует снимок целостности узлов на горизонте '+expected+'.');
+  else{
+   const health=nodeDefinitions.map(node=>sample.nodeIntegrity[node.id]);
+   if(health.some(value=>!Number.isFinite(value)||value<0||value>100))fail('Целостность узлов содержит значение вне диапазона.');
+   else{
+    const weakest=Math.min(...health),reported=sample.nodeIntegrity[sample.weakestNode];
+    if(reported>weakest+1.01||Math.abs(Math.round(reported)-sample.weakestIntegrity)>1)fail('Сводка слабейшего узла не совпадает с картой целостности.');
+   }
+  }
+  if(!Array.isArray(sample.criticalNodes)||sample.criticalNodes.some(id=>!known.has(id))||sample.criticalNodes.length>nodeDefinitions.length)fail('Некорректный список критических узлов.');
+  else if(sample.nodeIntegrity&&sample.criticalNodes.some(id=>sample.nodeIntegrity[id]>45.01))fail('Критический узел не пересёк порог 45%.');
+ }
+ return {valid:errors.length===0,errors};
+}
+function doctrineRiskExposure(initialRisk,forecast){
+ if(!Number.isFinite(initialRisk)||initialRisk<0||initialRisk>100||!Array.isArray(forecast)||forecast.length!==3)return NaN;
+ const points=[{seconds:0,risk:initialRisk},...forecast];
+ if(points.some((point,index)=>!Number.isFinite(point.seconds)||!Number.isFinite(point.risk)||point.risk<0||point.risk>100||(index>0&&point.seconds<=points[index-1].seconds)))return NaN;
+ let area=0;
+ for(let index=1;index<points.length;index++)area+=(points[index-1].risk+points[index].risk)*.5*(points[index].seconds-points[index-1].seconds);
+ return area/points[points.length-1].seconds;
+}
+function analyzeDoctrineCommandContributions(candidate,simulateOrders,simulatePath,nodeDefinitions,actionMetadata){
+ const horizons=[30,60,90],fullForecast=candidate.forecast||[];
+ if(!Array.isArray(candidate.orders)||fullForecast.length!==3)return [];
+ return candidate.orders.map((order,index)=>{
+  const omitted=candidate.orders.filter((_,position)=>position!==index).map(item=>({...item}));
+  const without=simulateOrders(omitted);
+  if(!without||!without.valid)return {position:index+1,action:order.action,nodeId:order.nodeId||null,available:false,riskReductionByHorizon:[],weakestIntegrityImprovementAt90:null};
+  const forecast=simulatePath({...without.state},horizons),quality=validateDoctrineForecast(forecast,horizons,nodeDefinitions);
+  if(!quality.valid)return {position:index+1,action:order.action,nodeId:order.nodeId||null,available:false,riskReductionByHorizon:[],weakestIntegrityImprovementAt90:null};
+  const riskReductionByHorizon=forecast.map((sample,horizonIndex)=>({
+   seconds:sample.seconds,riskWithoutCommand:sample.risk,riskWithCommand:fullForecast[horizonIndex].risk,
+   riskReduction:sample.risk-fullForecast[horizonIndex].risk
+  }));
+  return {
+   position:index+1,action:order.action,nodeId:order.nodeId||null,available:true,
+   method:'leave-one-command-out nominal forecast; interactions are non-additive',
+   resourceCost:actionMetadata[order.action]?.cost||0,crewDemand:actionMetadata[order.action]?.crew||0,
+   riskReductionByHorizon,
+   weakestIntegrityImprovementAt90:fullForecast[2].weakestIntegrity-sampleWeakestAtEnd(forecast)
+  };
+ });
+}
+function sampleWeakestAtEnd(forecast){return forecast[forecast.length-1]?.weakestIntegrity??null}
+function assessDoctrineSafety(candidate){
+ const robustness=candidate.robustness||{},reserves=candidate.reserves||{};
+ const profileCount=Number.isFinite(robustness.profileCount)?robustness.profileCount:0;
+ const stable=Number.isFinite(robustness.stableProfiles)?robustness.stableProfiles:0;
+ const worstRisk=Number.isFinite(robustness.worstRiskDelta)?robustness.worstRiskDelta:Infinity;
+ const worstIntegrity=Number.isFinite(robustness.worstIntegrityDelta)?robustness.worstIntegrityDelta:-Infinity;
+ const severe=Number.isFinite(robustness.severeRegressions)?robustness.severeRegressions:Infinity;
+ const supplies=Number.isFinite(reserves.suppliesAfter)?reserves.suppliesAfter:-Infinity;
+ const crews=Number.isFinite(reserves.crewsAfter)?reserves.crewsAfter:-Infinity;
+ let level,label,reasons=[];
+ if(profileCount===9&&stable>=7&&worstRisk<=2&&worstIntegrity>=-8&&severe===0&&supplies>=DOCTRINE_MIN_SUPPLY_RESERVE&&crews>=DOCTRINE_MIN_CREW_RESERVE){
+  level='green';label='УСТОЙЧИВЫЙ ПЛАН';reasons.push('9 стресс-профилей проверены; резервы сохранены.');
+ }else if(profileCount===9&&stable>=5&&worstRisk<=6&&worstIntegrity>=-15&&severe<=3){
+  level='amber';label='ПЛАН С ОГОВОРКАМИ';reasons.push('Есть компромисс по стрессу или ресурсному резерву.');
+ }else{
+  level='red';label='ПОВЫШЕННЫЙ ОПЕРАЦИОННЫЙ РИСК';reasons.push('План не проходит строгие пороги устойчивости.');
+ }
+ if(supplies<DOCTRINE_MIN_SUPPLY_RESERVE)reasons.push('Остаток снабжения ниже резерва '+DOCTRINE_MIN_SUPPLY_RESERVE+'.');
+ if(crews<DOCTRINE_MIN_CREW_RESERVE)reasons.push('После приказов не остаётся резервной бригады.');
+ if(worstRisk>2)reasons.push('Худший стресс увеличивает риск на '+worstRisk+' п.');
+ if(worstIntegrity< -8)reasons.push('Худшее изменение слабейшего узла: '+worstIntegrity+' п.');
+ if(severe>0)reasons.push('Число сильных регрессий: '+severe+'.');
+ return {level,label,reasons};
+}
+
 function searchDoctrinePlans(sourceState,mode,selectedNodeId,simulateOrders,simulatePath,nodeDefinitions,actionMetadata){
  const horizons=[30,60,90],maxDepth=4,beamWidth=6,robustnessCandidateLimit=8;
  const weakNodes=nodeDefinitions.slice().sort((a,b)=>{
@@ -1096,11 +1218,20 @@ function searchDoctrinePlans(sourceState,mode,selectedNodeId,simulateOrders,simu
   const direct=simulateOrders(orders.map(order=>({...order})));
   if(!direct||!direct.valid)return null;
   const forecast=simulatePath({...direct.state},horizons);
-  if(!Array.isArray(forecast)||forecast.length!==horizons.length)return null;
-  if(forecast.some(sample=>!Number.isFinite(sample.risk)||!Number.isFinite(sample.weakestIntegrity)||sample.weakestIntegrity<0||sample.weakestIntegrity>100))return null;
+  if(!validateDoctrineForecast(forecast,horizons,nodeDefinitions).valid)return null;
   const cost=Number.isFinite(direct.cost)?direct.cost:orders.reduce((sum,order)=>sum+(actionMetadata[order.action]?.cost||0),0);
   const crewsUsed=orders.reduce((sum,order)=>sum+(actionMetadata[order.action]?.crew||0),0);
-  return {signature:signatureOf(orders),orders:orders.map(order=>({...order})),cost,crewsUsed,score:doctrineObjectiveScore(forecast,cost,crewsUsed,mode),forecast};
+  const reserves={
+   suppliesAfter:Number.isFinite(direct.state.supplies)?direct.state.supplies:0,
+   crewsAfter:Number.isFinite(direct.state.crews)?direct.state.crews:0,
+   minimumSupplies:DOCTRINE_MIN_SUPPLY_RESERVE,minimumCrews:DOCTRINE_MIN_CREW_RESERVE
+  };
+  reserves.supplyReserveShortfall=Math.max(0,reserves.minimumSupplies-reserves.suppliesAfter);
+  reserves.crewReserveShortfall=Math.max(0,reserves.minimumCrews-reserves.crewsAfter);
+  reserves.reservePenalty=reserves.supplyReserveShortfall*.9+reserves.crewReserveShortfall*3.5;
+  const riskExposure=doctrineRiskExposure(direct.risk,forecast);
+  if(!Number.isFinite(riskExposure))return null;
+  return {signature:signatureOf(orders),orders:orders.map(order=>({...order})),cost,crewsUsed,reserves,riskExposure,score:doctrineObjectiveScore(forecast,cost,crewsUsed,mode,riskExposure,reserves.reservePenalty),forecast};
  };
  const baseline=evaluate([]);
  if(!baseline)return {baseline:null,alternatives:[],evaluatedCount:0,robustnessEvaluatedCount:0,mode};
@@ -1135,7 +1266,11 @@ function searchDoctrinePlans(sourceState,mode,selectedNodeId,simulateOrders,simu
   const robustness=assessDoctrineRobustness(sourceState,candidate.orders,candidate.score,simulateOrders,simulatePath,nodeDefinitions,mode);
   return {...candidate,robustness,robustScore:robustness.adjustedScore};
  }).sort((a,b)=>a.robustScore-b.robustScore||a.score-b.score||a.cost-b.cost||a.signature.localeCompare(b.signature));
- const portfolio=doctrineParetoPortfolio(robustCandidates,3);
+ const portfolio=doctrineParetoPortfolio(robustCandidates,3).map(candidate=>{
+  const commandAttribution=analyzeDoctrineCommandContributions(candidate,simulateOrders,simulatePath,nodeDefinitions,actionMetadata);
+  const safety=assessDoctrineSafety({...candidate,commandAttribution});
+  return {...candidate,commandAttribution,safety};
+ });
  const openingPrefixCount=new Set(robustCandidates.map(candidate=>candidate.orders.slice(0,2).map(order=>order.action+':'+(order.nodeId||'-')).join('|'))).size;
  return {baseline,alternatives:portfolio,evaluatedCount:explored.size,robustnessEvaluatedCount:robustCandidates.length,portfolioSize:portfolio.length,openingPrefixCount,paretoFrontSize:robustCandidates.filter(candidate=>!robustCandidates.some(other=>other.signature!==candidate.signature&&doctrineDominates(other,candidate))).length,mode};
 }
@@ -1214,6 +1349,21 @@ function validateDoctrineDossierStructure(dossier,currentModelVersion){
    if(!finite(candidate.resourceCost,0,10000)||!finite(candidate.crewsUsed,0,4))fail(label+': ресурсная оценка вне допустимого диапазона.');
    if(!isObject(candidate.scores)||!finite(candidate.scores.nominal,0,100000)||!finite(candidate.scores.stressAdjusted,0,100000))fail(label+': оценки плана недопустимы.');
    checkForecast(candidate.forecast,label);
+
+   if(engine?.modelVersion==='3.4.0'){
+    const reserves=candidate.reserves,safety=candidate.safety,attribution=candidate.commandAttribution;
+    if(!isObject(reserves)||!finite(reserves.suppliesAfter,0,100)||!finite(reserves.crewsAfter,0,4)||reserves.minimumSupplies!==15||reserves.minimumCrews!==1||!finite(reserves.reservePenalty,0,1000))fail(label+': отсутствуют достоверные остатки ресурсов и политика резерва.');
+    if(!isObject(safety)||!['green','amber','red'].includes(safety.level)||typeof safety.label!=='string'||!Array.isArray(safety.reasons)||safety.reasons.length>12)fail(label+': отсутствует статус операционной безопасности.');
+    if(!Array.isArray(attribution)||attribution.length!==candidate.orders?.length)fail(label+': вклад команд должен соответствовать длине плана.');
+    else for(let actionIndex=0;actionIndex<attribution.length;actionIndex++){
+     const item=attribution[actionIndex];
+     if(!isObject(item)||item.position!==actionIndex+1||item.action!==candidate.orders[actionIndex]?.action||typeof item.available!=='boolean')fail(label+': несовпадает позиция атрибуции приказа.');
+     if(item.available&&(!Array.isArray(item.riskReductionByHorizon)||item.riskReductionByHorizon.length!==3||item.riskReductionByHorizon.some((row,index)=>!isObject(row)||row.seconds!==[30,60,90][index]||!finite(row.riskWithoutCommand,0,100)||!finite(row.riskWithCommand,0,100)||!finite(row.riskReduction,-100,100))))fail(label+': неполные результаты leave-one-command-out.');
+    }
+    const exposure= candidate.robustness;
+    if(!isObject(exposure)||!finite(exposure.averageRiskExposureDelta,-100,100)||!finite(exposure.worstRiskExposureDelta,-100,100)||!Array.isArray(exposure.sensitivityByFamily)||exposure.sensitivityByFamily.length!==3)fail(label+': отсутствует анализ чувствительности по семействам стресса.');
+   }
+
    const robustness=candidate.robustness;
    if(!isObject(robustness)||robustness.profileCount!==9||!Array.isArray(robustness.profiles)||robustness.profiles.length!==9)fail(label+': необходимы все девять стресс-профилей.');
    else{
@@ -1227,6 +1377,17 @@ function validateDoctrineDossierStructure(dossier,currentModelVersion){
      if(!finite(profile.baselineRisk90,0,100)||!finite(profile.candidateRisk90,0,100)||!finite(profile.riskDelta90,-100,100))fail(label+': недопустимые значения риска под стрессом.');
      if(!finite(profile.baselineWeakestIntegrity,0,100)||!finite(profile.candidateWeakestIntegrity,0,100)||!finite(profile.weakestIntegrityDelta,-100,100))fail(label+': недопустимая целостность узлов под стрессом.');
      if(!Number.isInteger(profile.criticalNodeDelta)||profile.criticalNodeDelta< -6||profile.criticalNodeDelta>6)fail(label+': некорректная разница критических узлов.');
+
+     if(engine?.modelVersion==='3.4.0'){
+      const trajectory=profile.trajectory;
+      if(!Array.isArray(trajectory)||trajectory.length!==4||JSON.stringify(trajectory.map(point=>point?.seconds))!==JSON.stringify([0,30,60,90]))fail(label+': траектория риска должна содержать t0/30/60/90.');
+      else for(const point of trajectory)if(!isObject(point)||!finite(point.baselineRisk,0,100)||!finite(point.candidateRisk,0,100)||!finite(point.riskDelta,-100,100)||Math.abs((point.candidateRisk-point.baselineRisk)-point.riskDelta)>.11)fail(label+': траектория содержит несогласованные значения риска.');
+      if(!finite(profile.riskExposureDelta,-100,100)||!finite(profile.baselineRiskExposure,0,100)||!finite(profile.candidateRiskExposure,0,100))fail(label+': недопустимое интегральное воздействие риска.');
+      if(!finite(profile.peakRiskDelta,-100,100)||!finite(profile.peakRiskBaseline,0,100)||!finite(profile.peakRiskCandidate,0,100))fail(label+': недопустимый пик риска.');
+      if(!Array.isArray(profile.baselineRiskTrajectory)||profile.baselineRiskTrajectory.length!==4||!Array.isArray(profile.candidateRiskTrajectory)||profile.candidateRiskTrajectory.length!==4)fail(label+': отсутствует полная траектория риска.');
+      if(!Array.isArray(profile.baselineWeakestTrajectory)||profile.baselineWeakestTrajectory.length!==4||!Array.isArray(profile.candidateWeakestTrajectory)||profile.candidateWeakestTrajectory.length!==4)fail(label+': отсутствует траектория слабейшего узла.');
+     }
+
     }
     if(profileIds.size!==9)fail(label+': набор стресс-профилей неполный.');
    }
@@ -1235,6 +1396,23 @@ function validateDoctrineDossierStructure(dossier,currentModelVersion){
  if(isObject(search)&&(search.returnedCandidates!==candidates?.length||!Number.isInteger(search.evaluatedCandidateCount)||search.evaluatedCandidateCount<0||search.evaluatedCandidateCount>1000||!Number.isInteger(search.stressEvaluatedCandidateCount)||search.stressEvaluatedCandidateCount<0||search.stressEvaluatedCandidateCount>8))fail('Счётчики поиска противоречат лимитам движка.');
  if(!isObject(assumptions)||assumptions.forecastIsApproximate!==true||assumptions.futureRandomIncidentsIncluded!==false||assumptions.stressProfilesAreSyntheticPerturbations!==true||assumptions.comparesAgainstNoInterventionUnderSameStress!==true||assumptions.openAIAPIUsed!==false||assumptions.telemetrySent!==false||assumptions.personalDataIncluded!==false||assumptions.modelOutputsDescribeImplementedRulesOnly!==true)fail('Обязательные ограничения модели или приватности отсутствуют.');
  if(dossier.selectedCandidate!==null&&(!isObject(dossier.selectedCandidate)||!Number.isInteger(dossier.selectedCandidate.rank)||dossier.selectedCandidate.rank<1||dossier.selectedCandidate.rank>Math.max(1,candidates?.length||0)))fail('Выбранный кандидат не входит в портфель.');
+
+ if(isObject(engine)&&engine.modelVersion==='3.4.0'){
+  const assurance=dossier.decisionAssurance;
+  if(!isObject(assurance)||assurance.schema!=='osgard.civic-cascade.decision-assurance/v1'||assurance.modelVersion!=='3.4.0')fail('Отсутствует контракт decision assurance модели 3.4.0.');
+  if(!isObject(assurance)||!hexDigest((assurance.stateFingerprint||'').padStart(64,'0').slice(-64))||typeof assurance.fingerprintAlgorithm!=='string')fail('Неверный fingerprint исходного состояния.');
+  if(!isObject(assurance)||JSON.stringify(assurance.forecastHorizonsGameSeconds)!==JSON.stringify([30,60,90])||assurance.expectedStressProfileCount!==9||assurance.profilesIncludeFullTrajectory!==true)fail('Контракт траекторного прогноза неполон.');
+  if(!isObject(assurance)||assurance.minimumSupplyReserve!==15||assurance.minimumCrewReserve!==1||assurance.safetyGateVersion!=='decision-guardrails-v1')fail('Контракт резервов или safety gate не совпадает.');
+  if(!isObject(assurance)||assurance.actionAttributionCoverage!==candidates?.every(candidate=>candidate?.commandAttribution?.length===candidate?.orders?.length))fail('Сводка покрытия атрибуции команд противоречит кандидатам.');
+  if(!isObject(assurance)||!isObject(assurance.safetySummary)||['green','amber','red'].some(level=>!Number.isInteger(assurance.safetySummary[level])||assurance.safetySummary[level]<0)||['green','amber','red'].reduce((sum,level)=>sum+assurance.safetySummary[level],0)!==candidates?.length)fail('Сводка safety verdict не совпадает с портфелем.');
+  if(!isObject(assurance)||assurance.fingerprintAlgorithm!=='FNV-1a-32-over-source-state-json'||typeof assurance.warning!=='string')fail('Отсутствует явное ограничение fingerprint.');
+  if(isObject(assurance)&&isObject(source)&&isObject(scenario)){
+   const fingerprintInput=canonicalDossierStringify({scenarioId:scenario.id,sourceState:source});let fingerprint=0x811c9dc5;
+   for(let index=0;index<fingerprintInput.length;index++){fingerprint^=fingerprintInput.charCodeAt(index);fingerprint=Math.imul(fingerprint,0x01000193)>>>0}
+   if(fingerprint.toString(16).padStart(8,'0')!==assurance.stateFingerprint)fail('Fingerprint не соответствует сохранённому снимку исходного состояния.');
+  }
+ }
+
  const integrity=dossier.exportMetadata?.integrity,newScope='canonical recursively key-sorted JSON payload without exportMetadata',legacyScope='UTF-8 JSON payload without exportMetadata';
  if(!isObject(dossier.exportMetadata)||!isObject(integrity)||integrity.algorithm!=='SHA-256'||![newScope,legacyScope].includes(integrity.scope)||!['computed','unavailable'].includes(integrity.status)||(integrity.status==='computed'&&!hexDigest(integrity.digest))||(integrity.status==='unavailable'&&integrity.digest!==null))fail('Метаданные целостности отсутствуют или имеют неподдерживаемый формат.');
  if(integrity?.scope===legacyScope)warnings.push('Исторический SHA-256 сохраняет порядок JSON-ключей; изменение порядка ключей меняет старый хеш.');
@@ -1269,7 +1447,9 @@ function buildDoctrineDossierPayload(sourceState,result,gameVersion,scenarioDefi
   risk:Number.isFinite(sample.risk)?sample.risk:null,
   weakestNode:sample.weakestNode??null,
   weakestIntegrity:Number.isFinite(sample.weakestIntegrity)?sample.weakestIntegrity:null,
-  criticalNodes:Array.isArray(sample.criticalNodes)?sample.criticalNodes.slice():[]
+  criticalNodes:Array.isArray(sample.criticalNodes)?sample.criticalNodes.slice():[],
+  nodeIntegrity:sample.nodeIntegrity&&typeof sample.nodeIntegrity==='object'?{...sample.nodeIntegrity}:{},
+  nodeOutages:sample.nodeOutages&&typeof sample.nodeOutages==='object'?{...sample.nodeOutages}:{}
  }));
  const encodeCandidate=(candidate,rank)=>({
   rank,signature:candidate.signature,portfolioRole:candidate.portfolioRole||null,paretoMember:Boolean(candidate.paretoMember),
@@ -1278,27 +1458,48 @@ function buildDoctrineDossierPayload(sourceState,result,gameVersion,scenarioDefi
   crewsUsed:Number.isFinite(candidate.crewsUsed)?candidate.crewsUsed:null,
   scores:{nominal:Number.isFinite(candidate.score)?candidate.score:null,stressAdjusted:Number.isFinite(candidate.robustScore)?candidate.robustScore:null},
   forecast:encodeForecast(candidate.forecast),
+  reserves:{...(candidate.reserves||{})},
+  safety:candidate.safety?{level:candidate.safety.level,label:candidate.safety.label,reasons:[...(candidate.safety.reasons||[])]}:null,
+  commandAttribution:(candidate.commandAttribution||[]).map(item=>({position:item.position,action:item.action,nodeId:item.nodeId||null,available:Boolean(item.available),method:item.method||'unavailable',resourceCost:item.resourceCost??null,crewDemand:item.crewDemand??null,riskReductionByHorizon:(item.riskReductionByHorizon||[]).map(row=>({seconds:row.seconds,riskWithoutCommand:row.riskWithoutCommand,riskWithCommand:row.riskWithCommand,riskReduction:row.riskReduction})),weakestIntegrityImprovementAt90:item.weakestIntegrityImprovementAt90??null})),
   robustness:{
    profileCount:candidate.robustness?.profileCount??0,stableProfiles:candidate.robustness?.stableProfiles??0,
    averageRiskDelta:Number.isFinite(candidate.robustness?.averageRiskDelta)?candidate.robustness.averageRiskDelta:null,
    worstRiskDelta:Number.isFinite(candidate.robustness?.worstRiskDelta)?candidate.robustness.worstRiskDelta:null,
    worstIntegrityDelta:Number.isFinite(candidate.robustness?.worstIntegrityDelta)?candidate.robustness.worstIntegrityDelta:null,
    severeRegressions:candidate.robustness?.severeRegressions??0,
+   averageRiskExposureDelta:candidate.robustness?.averageRiskExposureDelta??null,worstRiskExposureDelta:candidate.robustness?.worstRiskExposureDelta??null,
+   sensitivityByFamily:(candidate.robustness?.sensitivityByFamily||[]).map(item=>({...item})),
    profiles:(candidate.robustness?.profiles||[]).map(profile=>({
     id:profile.id,family:profile.family,familyLabel:profile.familyLabel,severity:profile.severity,severityLabel:profile.severityLabel,severityRank:profile.severityRank,magnitude:profile.magnitude,perturbation:{...profile.perturbation},targetNode:profile.targetNode||null,
     baselineRisk90:profile.baselineRisk90,candidateRisk90:profile.candidateRisk90,riskDelta90:profile.riskDelta90,
     baselineWeakestIntegrity:profile.baselineWeakestIntegrity,candidateWeakestIntegrity:profile.candidateWeakestIntegrity,
-    weakestIntegrityDelta:profile.weakestIntegrityDelta,criticalNodeDelta:profile.criticalNodeDelta
+    weakestIntegrityDelta:profile.weakestIntegrityDelta,criticalNodeDelta:profile.criticalNodeDelta,
+    baselineRiskTrajectory:[...(profile.baselineRiskTrajectory||[])],candidateRiskTrajectory:[...(profile.candidateRiskTrajectory||[])],
+    trajectory:(profile.trajectory||[]).map(point=>({...point})),baselineRiskExposure:profile.baselineRiskExposure??null,candidateRiskExposure:profile.candidateRiskExposure??null,riskExposureDelta:profile.riskExposureDelta??null,
+    peakRiskBaseline:profile.peakRiskBaseline??null,peakRiskCandidate:profile.peakRiskCandidate??null,peakRiskDelta:profile.peakRiskDelta??null,
+    baselineWeakestTrajectory:[...(profile.baselineWeakestTrajectory||[])],candidateWeakestTrajectory:[...(profile.candidateWeakestTrajectory||[])]
    }))
   }
  });
  const scenarioId=String(sourceState.scenario||'unknown'),chosen=result.alternatives?.[selectedIndex]||null;
+
+ const sourceSnapshot={
+  elapsedSeconds:Number.isFinite(sourceState.elapsed)?sourceState.elapsed:null,metrics,nodeIntegrity,nodeOutages,nodeIncidentFlags,
+  pendingNodeIncidents:Array.isArray(sourceState.pendingNodeIncidents)?sourceState.pendingNodeIncidents.slice():[]
+ };
+ const fingerprintInput=canonicalDossierStringify({scenarioId,sourceState:sourceSnapshot});
+ let fingerprint=0x811c9dc5;
+ for(let index=0;index<fingerprintInput.length;index++){fingerprint^=fingerprintInput.charCodeAt(index);fingerprint=Math.imul(fingerprint,0x01000193)>>>0}
+ const stateFingerprint=fingerprint.toString(16).padStart(8,'0');
+ const encodedCandidates=(result.alternatives||[]).map((candidate,index)=>encodeCandidate(candidate,index+1));
+ const safetySummary={green:0,amber:0,red:0};
+ for(const candidate of encodedCandidates){const level=candidate.safety?.level;if(level==='green')safetySummary.green++;else if(level==='amber')safetySummary.amber++;else safetySummary.red++}
  return {
   schema:'osgard.civic-cascade.decision-dossier/v1',game:'CIVIC CASCADE',gameVersion:String(gameVersion||'unknown'),
   engine:{
-   id:'civic-cascade-deterministic-decision-engine',modelVersion:'3.3.0',
+   id:'civic-cascade-deterministic-decision-engine',modelVersion:'3.4.0',
    searchAlgorithm:'deterministic-bounded-beam-search',portfolioAlgorithm:'bounded-pareto-frontier',
-   objective:String(result.mode||'balanced'),limits:{maxCommands:4,beamWidth:6,stressCandidateLimit:8,stressProfileCount:9,stressSeverityLevels:3,portfolioLimit:3},
+   objective:String(result.mode||'balanced'),limits:{maxCommands:4,beamWidth:6,stressCandidateLimit:8,stressProfileCount:9,stressSeverityLevels:3,portfolioLimit:3,minimumSupplyReserve:15,minimumCrewReserve:1},
    forecastHorizonsGameSeconds:[30,60,90],stressFamilies:['water-surge','grid-overload','weak-node-shock'],stressSeverityLevels:['mild','moderate','severe'],stressProfiles:['water-surge-mild','water-surge-moderate','water-surge-severe','grid-overload-mild','grid-overload-moderate','grid-overload-severe','weak-node-shock-mild','weak-node-shock-moderate','weak-node-shock-severe']
   },
   scenario:{id:scenarioId,label:scenarioDefinitions?.[scenarioId]?.name||scenarioId},
@@ -1313,7 +1514,16 @@ function buildDoctrineDossierPayload(sourceState,result,gameVersion,scenarioDefi
   },
   baseline:{forecast:encodeForecast(result.baseline?.forecast)},
   selectedCandidate:chosen?{rank:selectedIndex+1,signature:chosen.signature}:null,
-  candidates:(result.alternatives||[]).map((candidate,index)=>encodeCandidate(candidate,index+1)),
+  candidates:encodedCandidates,
+  decisionAssurance:{
+   schema:'osgard.civic-cascade.decision-assurance/v1',modelVersion:'3.4.0',stateFingerprint,fingerprintAlgorithm:'FNV-1a-32-over-source-state-json',
+   forecastHorizonsGameSeconds:[30,60,90],expectedStressProfileCount:9,profilesIncludeFullTrajectory:true,
+   riskExposureMetric:'normalized trapezoidal mean risk over the 0–90 second horizon',
+   commandAttributionMethod:'leave-one-command-out nominal forecast; interactions are non-additive',
+   minimumSupplyReserve:15,minimumCrewReserve:1,safetyGateVersion:'decision-guardrails-v1',safetySummary,
+   actionAttributionCoverage:encodedCandidates.every(candidate=>candidate.commandAttribution.length===candidate.orders.length),
+   warning:'State fingerprint is a non-cryptographic reproducibility hint; SHA-256 is integrity-only and is not an author signature.'
+  },
   assumptions:{
    forecastIsApproximate:true,futureRandomIncidentsIncluded:false,stressProfilesAreSyntheticPerturbations:true,
    comparesAgainstNoInterventionUnderSameStress:true,openAIAPIUsed:false,telemetrySent:false,personalDataIncluded:false,
@@ -1443,7 +1653,7 @@ function renderDoctrineResults(message){
   const card=document.createElement('article');card.className='doctrine-option';card.dataset.selected=String(index===doctrineSelectedIndex);
   const head=document.createElement('div');head.className='doctrine-option-head';
   const title=document.createElement('strong');title.textContent=candidate.portfolioRole|| (index===0?'ЛУЧШИЙ НАЙДЕННЫЙ ВАРИАНТ':'АЛЬТЕРНАТИВА '+String(index+1).padStart(2,'0'));
-  const robustness=candidate.robustness;const score=document.createElement('span');score.textContent='ОЦЕНКА '+candidate.robustScore.toFixed(2)+' · УСТОЙЧИВОСТЬ '+robustness.stableProfiles+'/'+robustness.profileCount;head.append(title,score);
+  const robustness=candidate.robustness;const score=document.createElement('span');score.textContent='ОЦЕНКА '+candidate.robustScore.toFixed(2)+' · УСТОЙЧИВОСТЬ '+robustness.stableProfiles+'/'+robustness.profileCount+' · '+(candidate.safety?.label||'СТАТУС НЕ ОПРЕДЕЛЁН');score.dataset.safety=candidate.safety?.level||'red';head.append(title,score);
   const actions=document.createElement('p');actions.className='doctrine-option-actions';
   actions.textContent=candidate.orders.map((order,i)=>{
    const meta=PLAN_ACTIONS[order.action],target=order.action==='repair'?' · '+((nodes.find(node=>node.id===order.nodeId)||nodes[0]).name):'';
@@ -1452,7 +1662,7 @@ function renderDoctrineResults(message){
   const terminal=candidate.forecast[candidate.forecast.length-1],baseRisk=baseline.forecast[baseline.forecast.length-1].risk,riskDelta=terminal.risk-baseRisk;
   const weak=(nodes.find(node=>node.id===terminal.weakestNode)||{name:terminal.weakestNode}).name;
   const metrics=document.createElement('p');metrics.className='doctrine-option-metrics';
-  metrics.textContent='РИСК T+90: '+baseRisk+' → '+terminal.risk+' ('+(riskDelta>0?'+':'')+riskDelta+') · СЛАБЫЙ УЗЕЛ: '+weak+' '+terminal.weakestIntegrity+'% · РЕСУРСЫ: '+candidate.cost+' · БРИГАДЫ: '+candidate.crewsUsed+' · КРИТИЧЕСКИЕ УЗЛЫ: '+terminal.criticalNodes.length;
+  metrics.textContent='РИСК T+90: '+baseRisk+' → '+terminal.risk+' ('+(riskDelta>0?'+':'')+riskDelta+') · СРЕДНИЙ РИСК 0–90: '+candidate.riskExposure.toFixed(1)+' против '+baseline.riskExposure.toFixed(1)+' · СЛАБЫЙ УЗЕЛ: '+weak+' '+terminal.weakestIntegrity+'% · ЗАТРАТЫ: '+candidate.cost+' · ОСТАТОК СНАБЖЕНИЯ: '+candidate.reserves.suppliesAfter+' (резерв '+candidate.reserves.minimumSupplies+') · БРИГАДЫ: '+candidate.reserves.crewsAfter+' (резерв '+candidate.reserves.minimumCrews+') · КРИТИЧЕСКИЕ УЗЛЫ: '+terminal.criticalNodes.length;
   const stress=document.createElement('p');stress.className='doctrine-option-metrics';
   const stressFamilies=[{id:'water-surge',label:'ПОДТОПЛЕНИЕ'},{id:'grid-overload',label:'ЭНЕРГОСЕТЬ'},{id:'weak-node-shock',label:'СЛАБЫЙ УЗЕЛ'}];
   const stressSummary=stressFamilies.map(family=>{
@@ -1461,10 +1671,12 @@ function renderDoctrineResults(message){
    return family.label+' '+(worst?.severityLabel||'—')+' · Δриска '+(worst&&worst.riskDelta90>0?'+':'')+(worst?.riskDelta90??'—');
   }).join(' / ');
   stress.textContent='СТРЕСС-КОНВЕРТ 9/9 · ХУДШИЙ УРОВЕНЬ: '+stressSummary;
-  const rationale=document.createElement('p');rationale.className='doctrine-option-rationale';rationale.textContent=explainDoctrineTradeoff(candidate,baseline,result.alternatives);
+  const rationale=document.createElement('p');rationale.className='doctrine-option-rationale';rationale.textContent=explainDoctrineTradeoff(candidate,baseline,result.alternatives)+' · '+(candidate.safety?.reasons||[]).join(' ');
+  const contribution=document.createElement('p');contribution.className='doctrine-option-attribution';
+  contribution.textContent='ВКЛАД ПРИКАЗОВ (LEAVE-ONE-OUT, НЕ СУММИРУЕМЫЙ ЭФФЕКТ): '+(candidate.commandAttribution||[]).map(item=>{const delta=item.riskReductionByHorizon?.find(row=>row.seconds===90)?.riskReduction;const meta=PLAN_ACTIONS[item.action];const target=item.action==='repair'?' · '+((nodes.find(node=>node.id===item.nodeId)||{name:item.nodeId}).name):'';return item.position+'. '+(meta?.label||item.action)+target+' — '+(Number.isFinite(delta)?(delta>0?'снижает риск на ':delta<0?'повышает риск на ':'не меняет риск в одиночном исключении: ')+(delta===0?'':Math.abs(delta)+' п.'):'нет оценки');}).join(' / ');
   const choose=document.createElement('button');choose.type='button';choose.className='ctrl';choose.textContent=index===doctrineSelectedIndex?'✓ Вариант выбран':'Выбрать этот вариант';choose.disabled=index===doctrineSelectedIndex;
   choose.addEventListener('click',()=>{doctrineSelectedIndex=index;renderDoctrineResults();refreshDoctrineAvailability()});
-  card.append(head,actions,metrics,stress,rationale,choose);root.append(card);
+  card.append(head,actions,metrics,stress,rationale,contribution,choose);root.append(card);
  });
 }
 function refreshDoctrineAvailability(){
@@ -1503,6 +1715,8 @@ function applyDoctrinePlan(){
  if(!doctrineResult||doctrineResult.fingerprint!==doctrineFingerprint()){resetDoctrinePlanner();toast('Расчёт устарел. Запусти поиск повторно.');return}
  const candidate=doctrineResult.alternatives[doctrineSelectedIndex];
  if(!candidate){toast('Нет рекомендованного варианта для загрузки.');return}
+ if(candidate.safety?.level==='red'&&!window.confirm('ВНИМАНИЕ: штабной план получил статус «ПОВЫШЕННЫЙ ОПЕРАЦИОННЫЙ РИСК». Причины: '+(candidate.safety.reasons||[]).join(' ')+' Загружать его в очередь всё равно? Он не будет исполнен автоматически.'))return;
+ if(candidate.safety?.level==='amber'&&!window.confirm('План имеет оговорки по резервам или устойчивости. Перед исполнением проверь стресс-результаты. Загрузить в очередь?'))return;
  if(planOrders.length&&!window.confirm('Заменить текущую очередь из '+planOrders.length+' приказов на выбранный сгенерированный план? Текущая симуляция не изменится.'))return;
  const validation=simulatePlannedOrders(candidate.orders);
  if(!validation.valid){toast('План больше не проходит проверку бюджета или бригад. Запусти расчёт заново.');resetDoctrinePlanner();return}
