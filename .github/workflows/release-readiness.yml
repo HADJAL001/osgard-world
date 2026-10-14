@@ -24,6 +24,8 @@ jobs:
       - run: npm ci
       - name: Test OpenAI reviewer offline (no API call)
         run: npm run qa:ai-release-review
+      - name: Verify Godot diagnostics fault contract
+        run: npm run qa:null-shift-diagnostics-contract
       - name: Typecheck
         run: npm run check
       - name: Validate NULL SHIFT standalone game
