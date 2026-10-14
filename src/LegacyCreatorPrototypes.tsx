@@ -1,3 +1,4 @@
+import './legacy.css'
 import { ArrowRight, BookOpen, GitBranch, Heart, Plus, ShieldCheck } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { recordOsgardEvent } from './core/eventQueue'
