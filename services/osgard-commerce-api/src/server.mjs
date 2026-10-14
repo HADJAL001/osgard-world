@@ -814,6 +814,8 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
           COUNT(*) FILTER (WHERE event_name = 'partners_page_viewed')::int AS "partnersPageViews",
           COUNT(*) FILTER (WHERE event_name = 'social_share_intent')::int AS "socialShareIntents",
           COUNT(*) FILTER (WHERE event_name = 'social_reward_claimed')::int AS "socialRewardClaims",
+          COUNT(*) FILTER (WHERE event_name = 'owned_promo_snoozed' AND source ~ '^osgard-select:snooze-24h:[0-9]{1,10}$')::int AS "ownedPromoSnoozes",
+          COUNT(*) FILTER (WHERE event_name = 'owned_promo_snooze_cleared' AND source ~ '^osgard-select:snooze-resume:[0-9]{1,10}$')::int AS "ownedPromoSnoozeClears",
           (SELECT COUNT(*) FROM invite_shares)::int AS "inviteShares",
           (SELECT COUNT(*) FROM invite_shares s JOIN invite_opens o USING (invite_code))::int AS "referralOpens",
           (SELECT COUNT(*) FROM invite_shares s JOIN invite_starts r USING (invite_code))::int AS "referredStarts",
