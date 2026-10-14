@@ -66,7 +66,13 @@ assert.ok(entertainmentStyles.includes('.play-select-service.is-limited-verifica
 const recommendationMapMatch = source.match(/const recommendationByGame=(\{[\s\S]*?\});/);
 assert.ok(recommendationMapMatch, 'Missing game-specific recommendation map');
 const recommendationMap = vm.runInNewContext('(' + recommendationMapMatch[1] + ')');
-for (const id of ['null-shift','time','swarm','inherit','remix','civic-cascade','patina','signal-run','cascade-lab','afterimage-run']) {
+const recommendationKeys = [...recommendationMapMatch[1].matchAll(/^\s*['"]?([a-z0-9-]+)['"]?\s*:/gm)].map(match => match[1]);
+assert.equal(new Set(recommendationKeys).size, recommendationKeys.length,
+  'Each game must define service priorities exactly once; duplicate object keys silently shadow earlier choices.');
+const expectedGameIds = ['null-shift','time','swarm','inherit','remix','civic-cascade','patina','signal-run','cascade-lab','afterimage-run','aether-grid'];
+assert.deepEqual([...recommendationKeys].sort(), [...expectedGameIds].sort(),
+  'The promotion map must match every current game ID exactly, with no missing or stale entries.');
+for (const id of expectedGameIds) {
   assert.ok(Object.prototype.hasOwnProperty.call(recommendationMap, id), 'Missing game-specific growth context: ' + id);
   assert.ok(Array.isArray(recommendationMap[id]) && recommendationMap[id].length > 0,
     'Game-specific growth context must contain prioritized services: ' + id);
