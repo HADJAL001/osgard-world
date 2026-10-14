@@ -6,6 +6,7 @@ const read = (path) => readFileSync(path, 'utf8');
 const source = read('public/games/game-session-recommendations.js');
 const css = read('public/games/game-session-recommendations.css');
 const core = read('services/osgard-commerce-api/src/core.mjs');
+const consentQueue = read('public/games/consented-analytics.js');
 const commerceApi = read('services/osgard-commerce-api/src/server.mjs');
 const commerceAdmin = read('public/games/commerce-admin/index.html');
 const signalRun = read('public/games/signal-run/game.js');
@@ -301,8 +302,9 @@ assert.ok(source.includes("serviceSearch.addEventListener('input'") && source.in
 assert.ok(source.includes("serviceSearchStatus.setAttribute('aria-live','polite')") && source.includes("if(!collapsed){applyFilter(activeServiceCategory);serviceSearch.focus()}"), 'Search results must be announced and the search field receives focus when opened')
 assert.ok(source.includes("searchLabel.hidden=collapsed;serviceSearchStatus.hidden=collapsed;clearServiceSearch.hidden=collapsed"), 'Search controls must collapse with the service directory rather than occupy hidden space')
 assert.ok(intermissionCss.includes('.og-postgame-service-search-wrap') && intermissionCss.includes('.og-postgame-search-clear:focus-visible') && intermissionCss.includes('@media(max-width:600px)') && intermissionCss.includes('prefers-reduced-motion:reduce'), 'Search and pause controls require mobile layout, visible focus and reduced-motion support')
-assert.ok(core.includes('"owned_promo_snoozed"') && commerceApi.includes('"ownedPromoSnoozes"'), 'The allowed event and privacy-bounded aggregate must be wired end-to-end')
-assert.ok(commerceAdmin.includes('id="owned-promo-snoozes"') && commerceAdmin.includes("$('#owned-promo-snoozes').textContent = fmt(funnel.ownedPromoSnoozes)"), 'The protected dashboard must distinguish user-controlled promo pauses')
+assert.ok(core.includes('"owned_promo_snoozed"') && core.includes('"owned_promo_snooze_cleared"') && commerceApi.includes('"ownedPromoSnoozes"') && commerceApi.includes('"ownedPromoSnoozeClears"'), 'Pause and resume events plus their privacy-bounded aggregates must be wired end-to-end')
+assert.ok(consentQueue.includes("'owned_promo_snoozed'") && consentQueue.includes("'owned_promo_snooze_cleared'"), 'The consented analytics queue must allow both pause events after explicit consent')
+assert.ok(commerceAdmin.includes('id="owned-promo-snoozes"') && commerceAdmin.includes("$('#owned-promo-snoozes').textContent = fmt(funnel.ownedPromoSnoozes)") && commerceAdmin.includes('id="owned-promo-snooze-clears"') && commerceAdmin.includes("$('#owned-promo-snooze-clears').textContent = fmt(funnel.ownedPromoSnoozeClears)"), 'The protected dashboard must distinguish pause and resume actions')
 const snoozeWriteMatch = source.match(/function snoozeServicePromosForDay\(now=Date\.now\(\)\)\{[\s\S]*?\n\}/)
 const snoozeReadMatch = source.match(/function readPromoSnoozeUntil\(now=Date\.now\(\)\)\{[\s\S]*?\n\}/)
 assert.ok(snoozeWriteMatch && snoozeReadMatch, 'Promo pause helpers must stay independently testable')
