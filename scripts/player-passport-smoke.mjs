@@ -86,6 +86,13 @@ const withOld = {schemaVersion:1,sessions:[{gameId:'time',sessionId:'old',at:'20
 assert.equal(core.normalizePassport(withOld,fixedNow).sessions.length,0, 'Sessions beyond retention must be pruned')
 const future = {schemaVersion:1,sessions:[{gameId:'time',sessionId:'future',at:new Date(fixedNow+86400000*40).toISOString(),durationSeconds:10}],invites:[],updatedAt:new Date(fixedNow).toISOString()}
 assert.equal(core.normalizePassport(future,fixedNow).sessions.length,0, 'Future-dated sessions must be rejected')
+const queueTime = fixedNow - 2 * 86400000
+const existingRecent = {schemaVersion:1,sessions:[{gameId:'time',sessionId:'newer',at:new Date(fixedNow-86400000).toISOString(),durationSeconds:5}],invites:[],updatedAt:new Date(fixedNow).toISOString()}
+const replayedQueue = core.recordSession(existingRecent,{game:'swarm',sessionStarted:true,sessionId:'queued-old-but-valid',queuedAt:queueTime,durationSeconds:15},fixedNow)
+assert.equal(replayedQueue.added,true,'A delayed but retained queue item should be backfilled without changing its event timestamp')
+assert.equal(replayedQueue.progress.sessions[0].sessionId,'queued-old-but-valid','Backfilled sessions must be reinserted in chronological order')
+assert.equal(replayedQueue.progress.sessions[1].sessionId,'newer','A newer existing session must not be pruned by an old queue item')
+assert.equal(core.recordSession(core.emptyPassport(),{game:'swarm',sessionStarted:true,sessionId:'expired-queue',queuedAt:fixedNow-181*86400000},fixedNow).added,false,'Queue entries beyond retention must not become fresh sessions')
 const paddedSessions = Array.from({length:core.PASSPORT_MAX_SESSIONS+20},(_,i)=>({gameId:'time',sessionId:'session_'+i,at:new Date(fixedNow-i*1000).toISOString(),durationSeconds:1,reason:'ended'}))
 assert.equal(core.normalizePassport({schemaVersion:1,sessions:paddedSessions,invites:[],updatedAt:new Date(fixedNow).toISOString()},fixedNow).sessions.length,core.PASSPORT_MAX_SESSIONS,'Passport session storage must remain bounded')
 assert.equal(core.utcDayKey(fixedNow),'2026-10-14','Daily goals must use UTC calendar dates')
