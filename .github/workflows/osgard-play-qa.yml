@@ -8,6 +8,13 @@ on:
       - "public/games/**"
       - "services/osgard-commerce-api/src/core.mjs"
       - "services/osgard-commerce-api/test/core.test.mjs"
+      - "services/osgard-commerce-api/src/campaigns.mjs"
+      - "services/osgard-commerce-api/src/server.mjs"
+      - "services/osgard-commerce-api/test/campaigns.test.mjs"
+      - "src/GameDetailPage.tsx"
+      - "src/GameIntermissionSponsor.tsx"
+      - "src/game-intermission-sponsor.css"
+      - "scripts/game-intermission-sponsor-smoke.mjs"
       - "scripts/osgard-play-pwa-smoke.mjs"
       - "scripts/games-portal-smoke.mjs"
       - "scripts/cascade-lab-engineering-suite-smoke.mjs"
@@ -61,5 +68,9 @@ jobs:
         run: npm run qa:cascade-lab-trajectory-xray
       - name: Regress sponsor campaign privacy and server contracts
         run: npm run qa:campaign-manager
+      - name: Test the post-session sponsor slot and consent bridge
+        run: npm run qa:intermission-sponsor
       - name: Test Commerce API allow-lists and consent gates
         run: node --test services/osgard-commerce-api/test/core.test.mjs
+      - name: Test campaign placement, schedule and public projection
+        run: node --test services/osgard-commerce-api/test/campaigns.test.mjs
