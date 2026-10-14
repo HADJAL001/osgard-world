@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, symlink, rm, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { randomBytes } from 'node:crypto';
 import { auditPerformanceBudget } from './osgard-performance-budget.mjs';
 
 async function fixture(){
@@ -36,6 +37,19 @@ test('performance gate blocks a JavaScript chunk over the raw-byte ceiling',asyn
     const result=await auditPerformanceBudget(f.root,f.report);
     assert.equal(result.status,'blocked');
     assert.ok(result.checks.some(check=>check.id==='perf:js-file-raw'&&check.status==='failed'));
+  }finally{await rm(f.base,{recursive:true,force:true});}
+});
+test('gzip ceiling checks the most expensive compressed chunk, not only the largest raw file',async()=>{
+  const f=await fixture();
+  try{
+    await writeFile(join(f.root,'assets','raw-large.js'),'x'.repeat(260*1024));
+    await writeFile(join(f.root,'assets','gzip-large.js'),randomBytes(190*1024));
+    const result=await auditPerformanceBudget(f.root,f.report);
+    assert.equal(result.status,'blocked');
+    assert.ok(result.checks.some(check=>check.id==='perf:js-file-raw'&&check.status==='passed'));
+    const gzipCheck=result.checks.find(check=>check.id==='perf:js-file-gzip');
+    assert.equal(gzipCheck.status,'failed');
+    assert.match(gzipCheck.detail,/gzip-large\.js/);
   }finally{await rm(f.base,{recursive:true,force:true});}
 });
 test('performance gate rejects symlinked assets',async()=>{
