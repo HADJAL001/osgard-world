@@ -114,10 +114,10 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
             text.includes("const RELEASE_VERSION='1.7.0'") && text.includes("schema:'osgard.afterimage.run-report.v3'") &&
             text.includes('osgard:game-lifecycle')
         : route === '/games/cascade-lab/'
-          ? text.includes('<title>CASCADE LAB — Premium Physics Lab 0.16.0</title>') &&
-            text.includes('name="osgard-game-version" content="0.16.0-experiment-dossier"') &&
+          ? text.includes('<title>CASCADE LAB — Premium Physics Lab 0.17.0</title>') &&
+            text.includes('name="osgard-game-version" content="0.17.0-experiment-delta"') &&
             text.includes('data-cascade-lab-upgrades="0.14.0"') && text.includes('CASCADELAB014') &&
-            text.includes('data-cascade-lab-ledger="0.15.0"') && text.includes('CASCADELAB015') &&
+            text.includes('data-cascade-lab-ledger="0.15.0"') && text.includes('CASCADELAB015') && text.includes('id="CASCADELAB017"') && text.includes('data-cascade-lab-delta="0.17.0"') &&
             text.includes('osgard.cascade-lab.experiment-ledger.v1') &&
             text.includes('data-cascade-lab-ready="true"') &&
             text.includes('id="runButton"') && text.includes('id="exportTelemetryButton"') &&

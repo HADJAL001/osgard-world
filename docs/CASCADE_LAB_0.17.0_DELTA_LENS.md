@@ -1,0 +1,3 @@
+# CASCADE LAB 0.17.0 — Delta Lens
+
+Adds a local A/B comparison to the experiment ledger: the two latest attempts on the same protocol are compared by outcome, time, grade and device count. Missing measurements remain unavailable. The UI states that observed differences do not prove causality and recommends changing one variable at a time. JSON export is user initiated; no comparison is uploaded. The 0.14 engineering layer, 0.15 ledger and 0.16 experiment dossier remain intact. A release counts as published only after the OSGARD frontend workflow passes its tests, build, archive activation and desktop/mobile route checks.
