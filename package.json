@@ -42,6 +42,7 @@
     "predev": "node scripts/generate-games-share-cards.mjs",
     "prebuild": "node scripts/generate-games-share-cards.mjs",
     "qa:consented-analytics-queue": "node scripts/consented-analytics-queue-smoke.mjs",
+    "qa:product-experiments": "node scripts/product-experiment-engine-smoke.mjs",
     "qa:games-assets": "node scripts/games-static-assets-smoke.mjs",
     "qa:ios-appstore": "node scripts/ios-appstore-preflight.mjs",
     "qa:privacy-consent": "node scripts/privacy-consent-center-smoke.mjs",
