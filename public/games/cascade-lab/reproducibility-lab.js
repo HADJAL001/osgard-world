@@ -157,7 +157,7 @@ function normalizeRun(raw) {
   const telemetryRaw=raw.telemetry&&typeof raw.telemetry==='object'?raw.telemetry:{};
   const run={
     schema:SCHEMA,id,at:new Date(stamp).toISOString(),engineVersion,levelId,
-    levelTitle:clean(raw.levelTitle||('Протокол #'+levelId),140),status,mode,dailyDate,
+    levelTitle:clean(raw.levelTitle||('Протокол #'+levelId),140),status:raw.status,mode,dailyDate,
     scenarioSignature:'',
     devices,simulationProfile,trajectory,
     timeSeconds:round(clamp(finite(raw.timeSeconds)?raw.timeSeconds:trajectory.at(-1).t,0,120),4),
