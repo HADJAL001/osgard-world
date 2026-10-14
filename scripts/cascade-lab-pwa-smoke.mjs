@@ -30,7 +30,7 @@ data.set('osgard-cascade-lab-shell-v0.25.0',new Map());data.set('osgard-cascade-
 const selfMock={registration:{scope:S},clients:{claim:async()=>{}},skipWaiting:async()=>{},addEventListener(n,h){events[n]=h;}};
 runInNewContext(worker,{self:selfMock,caches,URL,fetch:async()=>{throw Error('offline')},Response:{error:()=>response('offline',0)}});
 let pending;events.install({waitUntil(p){pending=p;}});await pending;
-const cache261=await caches.open('osgard-cascade-lab-shell-v0.26.1');assert.ok(await cache261.match(S));
+const cache262=await caches.open('osgard-cascade-lab-shell-v0.26.2');assert.ok(await cache262.match(S));
 let act;events.activate({waitUntil(p){act=p;}});await act;assert.ok(!(await caches.keys()).includes('osgard-cascade-lab-shell-v0.25.0'));assert.ok(!(await caches.keys()).includes('osgard-cascade-lab-shell-v0.26.0'));assert.ok((await caches.keys()).includes('unrelated-cache'));
 let nav;events.fetch({request:{method:'GET',mode:'navigate',url:S+'?source=pwa'},respondWith(p){nav=p;}});assert.equal((await nav).status,200);
 let post=false;events.fetch({request:{method:'POST',mode:'same-origin',url:S+'events'},respondWith(){post=true;}});assert.equal(post,false);
