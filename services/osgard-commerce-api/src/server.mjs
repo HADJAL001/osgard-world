@@ -10,6 +10,7 @@ import {
   validateEventBatch, validateReferralRegistrationPayload, validateReferralClaimPayload,
   validateReferralClaimAckPayload, paymentsModeAllowed, resolveCheckoutPaymentState, safeEqual,
 } from "./core.mjs";
+import { normalizeLeadId, validateLeadWorkflowUpdate } from "./lead-workflow.mjs";
 import {
   campaignFromRow, normalizeCampaignId, publicCampaignView, validateCampaignPayload,
 } from "./campaigns.mjs";
@@ -43,7 +44,7 @@ app.use(cors({
     if (!origin || allowedOrigins.has(origin)) return callback(null, true);
     return callback(null, false);
   },
-  methods: ["GET", "POST", "OPTIONS"],
+  methods: ["GET", "POST", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "Stripe-Signature"],
   maxAge: 600,
 }));
@@ -68,7 +69,12 @@ async function ensureSchema() {
     "ALTER TABLE commerce_leads ADD COLUMN IF NOT EXISTS attribution_game_id TEXT NOT NULL DEFAULT 'unknown';\n" +
     "ALTER TABLE commerce_leads ADD COLUMN IF NOT EXISTS attribution_source TEXT NOT NULL DEFAULT 'direct';\n" +
     "ALTER TABLE commerce_leads ADD COLUMN IF NOT EXISTS attribution_campaign TEXT NOT NULL DEFAULT '';\n" +
+    "ALTER TABLE commerce_leads ADD COLUMN IF NOT EXISTS internal_note TEXT NOT NULL DEFAULT '';\n" +
+    "ALTER TABLE commerce_leads ADD COLUMN IF NOT EXISTS next_action_at TIMESTAMPTZ;\n" +
     "CREATE INDEX IF NOT EXISTS commerce_leads_created_idx ON commerce_leads(created_at DESC);\n" +
+    "CREATE INDEX IF NOT EXISTS commerce_leads_next_action_idx ON commerce_leads(next_action_at) WHERE next_action_at IS NOT NULL;\n" +
+    "CREATE TABLE IF NOT EXISTS commerce_lead_activities (activity_id TEXT PRIMARY KEY, lead_id TEXT NOT NULL REFERENCES commerce_leads(lead_id) ON DELETE CASCADE, previous_status TEXT NOT NULL, new_status TEXT NOT NULL, internal_note TEXT NOT NULL DEFAULT '', note_changed BOOLEAN NOT NULL DEFAULT FALSE, next_action_at TIMESTAMPTZ, follow_up_changed BOOLEAN NOT NULL DEFAULT FALSE, changed_by TEXT NOT NULL DEFAULT 'admin_api', changed_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
+    "CREATE INDEX IF NOT EXISTS commerce_lead_activities_lead_time_idx ON commerce_lead_activities(lead_id, changed_at DESC);\n" +
     "CREATE TABLE IF NOT EXISTS commerce_events (event_id TEXT PRIMARY KEY, event_name TEXT NOT NULL, session_id TEXT NOT NULL, game_id TEXT NOT NULL, source TEXT NOT NULL, path TEXT NOT NULL, duration_seconds INTEGER NOT NULL DEFAULT 0, received_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
     "CREATE INDEX IF NOT EXISTS commerce_events_name_received_idx ON commerce_events(event_name, received_at DESC);\n" +
     "CREATE INDEX IF NOT EXISTS commerce_events_game_received_idx ON commerce_events(game_id, received_at DESC);\n" +
@@ -756,7 +762,7 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
     const [orderStats, currencyStats, leadStats, leadAttributionStats, eventStats, topEvents, analyticsByGame, ownedPromoByService, ownedPromoVariantStats, productExperimentStats, analyticsFunnel, socialShareByNetwork, paidRevenueByAttribution, referralRewardStats] = await Promise.all([
       pool.query("SELECT status, COUNT(*)::int AS count FROM commerce_orders GROUP BY status"),
       pool.query("SELECT currency, SUM(amount_total)::bigint AS total_minor, COUNT(*)::int AS count FROM commerce_orders WHERE status='paid' AND currency IS NOT NULL GROUP BY currency"),
-      pool.query("SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE status='new')::int AS new FROM commerce_leads"),
+      pool.query("SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE status='new')::int AS new, COUNT(*) FILTER (WHERE status='contacted')::int AS contacted, COUNT(*) FILTER (WHERE status='qualified')::int AS qualified, COUNT(*) FILTER (WHERE status='converted')::int AS converted, COUNT(*) FILTER (WHERE status='lost')::int AS lost, COUNT(*) FILTER (WHERE next_action_at IS NOT NULL AND next_action_at <= NOW() AND status NOT IN ('converted','lost'))::int AS \"overdueFollowUps\" FROM commerce_leads"),
       pool.query("SELECT attribution_game_id AS \"gameId\", attribution_source AS source, NULLIF(attribution_campaign, '') AS campaign, COUNT(*)::int AS leads, COUNT(*) FILTER (WHERE status='new')::int AS new FROM commerce_leads WHERE created_at >= NOW() - INTERVAL '90 days' GROUP BY attribution_game_id, attribution_source, attribution_campaign ORDER BY leads DESC, source ASC LIMIT 50"),
       pool.query("SELECT COUNT(*)::int AS total_30d FROM commerce_events WHERE received_at >= NOW() - INTERVAL '30 days'"),
       pool.query("SELECT event_name, COUNT(*)::int AS count FROM commerce_events WHERE received_at >= NOW() - INTERVAL '30 days' GROUP BY event_name ORDER BY count DESC LIMIT 12"),
@@ -929,11 +935,93 @@ app.get("/v1/admin/leads", requireAdmin, async (req, res) => {
   if (!requireDatabase(res)) return;
   const limit = Math.max(1, Math.min(100, Number.parseInt(String(req.query.limit || "50"), 10) || 50));
   try {
-    const result = await pool.query("SELECT lead_id, project_type, budget, contact, description, status, attribution_game_id, attribution_source, attribution_campaign, created_at FROM commerce_leads ORDER BY created_at DESC LIMIT $1", [limit]);
+    const result = await pool.query(
+      "SELECT lead_id, project_type, budget, contact, description, status, attribution_game_id, attribution_source, attribution_campaign, created_at, internal_note, next_action_at " +
+      "FROM commerce_leads " +
+      "ORDER BY CASE WHEN next_action_at IS NOT NULL AND next_action_at <= NOW() AND status NOT IN ('converted','lost') THEN 0 WHEN next_action_at IS NOT NULL AND status NOT IN ('converted','lost') THEN 1 ELSE 2 END, next_action_at ASC NULLS LAST, created_at DESC LIMIT $1",
+      [limit],
+    );
     return res.json({ items: result.rows });
   } catch (error) {
     console.error("Admin leads failed:", error?.message || "unknown error");
     return res.status(503).json({ error: "ADMIN_LEADS_UNAVAILABLE" });
+  }
+});
+
+app.patch("/v1/admin/leads/:id", requireAdmin, async (req, res) => {
+  const leadId = normalizeLeadId(req.params.id);
+  if (!leadId) return res.status(400).json({ error: "LEAD_ID_INVALID" });
+  if (!requireDatabase(res)) return;
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const found = await client.query(
+      "SELECT lead_id, status, internal_note, next_action_at FROM commerce_leads WHERE lead_id=$1 FOR UPDATE",
+      [leadId],
+    );
+    if (!found.rowCount) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "LEAD_NOT_FOUND" });
+    }
+    const current = found.rows[0];
+    const validation = validateLeadWorkflowUpdate(req.body, current.status);
+    if (!validation.ok) {
+      await client.query("ROLLBACK");
+      return res.status(validation.status).json({ error: validation.code });
+    }
+
+    const input = validation.value;
+    const currentNote = String(current.internal_note || "");
+    const currentFollowUp = current.next_action_at ? new Date(current.next_action_at).toISOString() : null;
+    const nextStatus = input.status;
+    const nextNote = input.noteProvided ? input.internalNote : currentNote;
+    const nextFollowUp = input.nextActionAtProvided ? input.nextActionAt : currentFollowUp;
+    const noteChanged = nextNote !== currentNote;
+    const followUpChanged = nextFollowUp !== currentFollowUp;
+    const statusChanged = nextStatus !== current.status;
+    const changed = noteChanged || followUpChanged || statusChanged;
+
+    if (!changed) {
+      await client.query("COMMIT");
+      return res.json({ changed: false, item: { lead_id: leadId, status: current.status, internal_note: currentNote, next_action_at: currentFollowUp } });
+    }
+
+    const updated = await client.query(
+      "UPDATE commerce_leads SET status=$2, internal_note=$3, next_action_at=$4 WHERE lead_id=$1 RETURNING lead_id, status, internal_note, next_action_at",
+      [leadId, nextStatus, nextNote, nextFollowUp],
+    );
+    await client.query(
+      "INSERT INTO commerce_lead_activities(activity_id,lead_id,previous_status,new_status,internal_note,note_changed,next_action_at,follow_up_changed,changed_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8,'admin_api')",
+      [crypto.randomUUID(), leadId, current.status, nextStatus, noteChanged ? nextNote : "", noteChanged, nextFollowUp, followUpChanged],
+    );
+    await client.query("COMMIT");
+    return res.json({ changed: true, item: updated.rows[0] });
+  } catch (error) {
+    try { await client.query("ROLLBACK"); } catch {}
+    console.error("Admin lead workflow update failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "LEAD_UPDATE_UNAVAILABLE" });
+  } finally {
+    client.release();
+  }
+});
+
+app.get("/v1/admin/leads/:id/activities", requireAdmin, async (req, res) => {
+  const leadId = normalizeLeadId(req.params.id);
+  if (!leadId) return res.status(400).json({ error: "LEAD_ID_INVALID" });
+  if (!requireDatabase(res)) return;
+  const limit = Math.max(1, Math.min(30, Number.parseInt(String(req.query.limit || "15"), 10) || 15));
+  try {
+    const lead = await pool.query("SELECT lead_id FROM commerce_leads WHERE lead_id=$1", [leadId]);
+    if (!lead.rowCount) return res.status(404).json({ error: "LEAD_NOT_FOUND" });
+    const result = await pool.query(
+      "SELECT activity_id, previous_status, new_status, internal_note, note_changed, next_action_at, follow_up_changed, changed_by, changed_at " +
+      "FROM commerce_lead_activities WHERE lead_id=$1 ORDER BY changed_at DESC LIMIT $2",
+      [leadId, limit],
+    );
+    return res.json({ items: result.rows });
+  } catch (error) {
+    console.error("Admin lead activity read failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "LEAD_ACTIVITY_UNAVAILABLE" });
   }
 });
 app.get("/v1/admin/orders", requireAdmin, async (req, res) => {
