@@ -232,7 +232,9 @@
       "prefersDistinctCommandPrefixes": true,
       "explainsCandidateTradeoffs": true,
       "reportsDominanceStatus": true,
-      "comparesOnlyDeterministicModelOutputs": true
+      "comparesOnlyDeterministicModelOutputs": true,
+      "maximizesDistinctOpeningPrefixes": true,
+      "portfolioDiversity": "maximum-available-distinct-first-two-command-prefixes"
     },
     "decisionDossier": {
       "enabled": true,
