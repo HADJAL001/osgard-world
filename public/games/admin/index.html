@@ -35,6 +35,7 @@
 <label class="field"><span>ПО</span><input class="input" id="to-date" type="datetime-local" required></label>
 <button class="btn" id="refresh" type="button">Обновить ↻</button>
 <button class="btn secondary" id="export" type="button">Экспорт JSONL ↓</button>
+<button class="btn secondary" id="export-csv" type="button">Экспорт агрегатов CSV ↓</button>
 </div>
 <p class="message" id="refresh-status" role="status"></p>
 <div class="metrics" id="metrics" aria-live="polite"><article class="metric"><span>Статус</span><strong>Ожидание</strong></article></div>
@@ -53,6 +54,7 @@
 'use strict';
 const $=selector=>document.querySelector(selector);
 let operatorToken='';
+let lastAggregateReport=null;
 const state=$('#connection-state');
 const setMessage=(node,message,kind='')=>{node.textContent=message;node.dataset.kind=kind};
 const escapeText=value=>String(value??'');
@@ -107,6 +109,7 @@ async function refresh(){
    readApi('/api/v1/analytics/cohorts'),
    readApi('/api/v1/analytics/snapshots')
   ]);
+  lastAggregateReport={generatedAt:new Date().toISOString(),range:{from,to},summary,cohorts,snapshots};
   paintMetrics(summary);setJson('#summary-data',summary);setJson('#cohorts-data',cohorts);setJson('#snapshots-data',snapshots);
   state.textContent='API STATUS / ПОДКЛЮЧЁН';setMessage($('#refresh-status'),'Обновлено '+new Date().toLocaleString('ru-RU'),'success');
  }catch(error){setMessage($('#refresh-status'),error instanceof Error?error.message:'Ошибка API','error');state.textContent='API STATUS / ОШИБКА'}
@@ -139,6 +142,36 @@ $('#export').addEventListener('click',async()=>{
   const lines=text.split(/\r?\n/).filter(Boolean);for(const line of lines)JSON.parse(line);
   const blob=new Blob([text],{type:'application/x-ndjson;charset=utf-8'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='osgard-games-aggregate-events.jsonl';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);setMessage($('#refresh-status'),'Агрегатный JSONL экспортирован. Строк: '+lines.length,'success');
  }catch(error){setMessage($('#refresh-status'),error instanceof Error?error.message:'Ошибка экспорта','error')}
+ finally{button.disabled=false}
+});
+$('#export-csv').addEventListener('click',()=>{
+ const button=$('#export-csv');
+ if(!operatorToken||!lastAggregateReport){setMessage($('#refresh-status'),'Сначала подключитесь и обновите защищённые агрегаты.','error');return}
+ button.disabled=true;
+ try{
+  const rows=[['section','metric','value']];
+  const blocked=/(email|token|secret|password|customer|order.?id|session.?id|payment.?intent|checkout.?url|authorization|raw.?event|player.?id|user.?id)/i;
+  function visit(value,path,section,depth){
+   if(rows.length>10000||depth>8||!path.split('.').every(part=>!blocked.test(part)))return;
+   if(Array.isArray(value)){value.slice(0,2000).forEach((item,index)=>visit(item,path+'['+(index+1)+']',section,depth+1));return}
+   if(value&&typeof value==='object'){for(const [key,item] of Object.entries(value))visit(item,path?path+'.'+key:key,section,depth+1);return}
+   if(value===null||value===undefined)return;
+   if(!['string','number','boolean'].includes(typeof value))return;
+   const text=String(value).slice(0,1000);
+   rows.push([section,path,text]);
+  }
+  for(const key of ['range','summary','cohorts','snapshots'])visit(lastAggregateReport[key],key,'consented-aggregate',0);
+  const escape=value=>{
+   let text=String(value??'');
+   if(/^\s*[=+\-@]/.test(text))text="'"+text;
+   return '"'+text.replace(/"/g,'""')+'"';
+  };
+  const csv='\uFEFF'+rows.map(row=>row.map(escape).join(',')).join('\r\n')+'\r\n';
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),link=document.createElement('a');
+  link.href=url;link.download='osgard-games-aggregate-report-'+new Date().toISOString().slice(0,10)+'.csv';link.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  setMessage($('#refresh-status'),'CSV экспортирован: '+(rows.length-1)+' агрегированных строк. Персональные поля исключены.','success');
+ }catch(error){setMessage($('#refresh-status'),error instanceof Error?error.message:'CSV экспорт не выполнен','error')}
  finally{button.disabled=false}
 });
 const now=new Date(),monthAgo=new Date(now.getTime()-30*24*60*60*1000);$('#from-date').value=dateInputValue(monthAgo);$('#to-date').value=dateInputValue(now);
