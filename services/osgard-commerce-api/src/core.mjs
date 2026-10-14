@@ -39,6 +39,8 @@ export const ALLOWED_EVENTS = new Set([
   "owned_promo_impression",
   "owned_promo_intermission_skipped",
   "owned_promo_preferences_saved",
+  "owned_promo_snoozed",
+  "owned_promo_snooze_cleared",
   "social_share_intent",
   "social_reward_claimed",
   "referral_reward_claimed",
