@@ -848,10 +848,29 @@ func _run_smoke() -> void:
 		return
 
 	# Exercise the Stalker's full telegraph -> dash-start -> movement transition.
+	# New perception AI only telegraphs after an actual forward-cone/LOS contact.
+	var stalker_saved_player_position: Vector3 = game.player.global_position
+	var stalker_saved_squad_position: Vector3 = game.squad_alert_position
+	var stalker_saved_squad_timer: float = game.squad_alert_timer
+	var stalker_saved_squad_serial: int = game.squad_alert_serial
+	var stalker_saved_states: Array[Dictionary] = []
+	var stalker_saved_positions: Array[Vector3] = []
+	var stalker_saved_rotations: Array[Vector3] = []
+	var stalker_saved_tags: Array[Dictionary] = []
+	for guard_entry in game.guards:
+		stalker_saved_states.append((guard_entry as Dictionary).duplicate(true))
+		var saved_body: CharacterBody3D = guard_entry["node"] as CharacterBody3D
+		stalker_saved_positions.append(saved_body.global_position)
+		stalker_saved_rotations.append(saved_body.global_rotation)
+		var saved_tag: Label3D = guard_entry.get("role_tag") as Label3D
+		stalker_saved_tags.append({"text": saved_tag.text, "modulate": saved_tag.modulate} if is_instance_valid(saved_tag) else {})
+	game.player.global_position = Vector3(-2.0, 0.82, 6.0)
 	var stalker_state: Dictionary = game.guards[0]
 	var stalker_body: CharacterBody3D = stalker_state["node"]
 	var stalker_origin: Vector3 = stalker_body.global_position
 	stalker_body.global_position = game.player.global_position + Vector3(0.0, 0.0, -8.0)
+	stalker_body.look_at(game.player.global_position, Vector3.UP)
+	await physics_frame
 	stalker_state["stun"] = 0.0
 	stalker_state["windup"] = 0.0
 	stalker_state["dash_windup"] = 0.0
@@ -874,7 +893,21 @@ func _run_smoke() -> void:
 	game._update_guards(0.04)
 	if not _expect(stalker_body.global_position.distance_to(stalker_dash_origin) > 0.01, "Stalker dash must move the 3D body"):
 		return
-	stalker_body.global_position = stalker_origin
+	game.player.global_position = stalker_saved_player_position
+	for restore_index in range(stalker_saved_states.size()):
+		var restore_state: Dictionary = stalker_saved_states[restore_index]
+		var restore_body: CharacterBody3D = restore_state["node"] as CharacterBody3D
+		restore_body.global_position = stalker_saved_positions[restore_index]
+		restore_body.global_rotation = stalker_saved_rotations[restore_index]
+		restore_body.velocity = Vector3.ZERO
+		var restore_tag: Label3D = restore_state.get("role_tag") as Label3D
+		if is_instance_valid(restore_tag) and not stalker_saved_tags[restore_index].is_empty():
+			restore_tag.text = str(stalker_saved_tags[restore_index]["text"])
+			restore_tag.modulate = stalker_saved_tags[restore_index]["modulate"]
+		game.guards[restore_index] = restore_state
+	game.squad_alert_position = stalker_saved_squad_position
+	game.squad_alert_timer = stalker_saved_squad_timer
+	game.squad_alert_serial = stalker_saved_squad_serial
 	stalker_state = game.guards[0]
 	stalker_state["dash_timer"] = 0.0
 	stalker_state["dash_windup"] = 0.0
