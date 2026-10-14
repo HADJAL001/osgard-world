@@ -17,7 +17,9 @@ on:
       - "services/osgard-commerce-api/package.json"
       - "services/osgard-commerce-api/test/game-coach.test.mjs"
       - "scripts/game-coach-smoke.mjs"
-      - "services/osgard-commerce-api/src/server.mjs"
+      - "services/osgard-commerce-api/**"
+      - "scripts/deploy-commerce-api-remote.sh"
+      - "scripts/commerce-api-deploy-smoke.mjs"
       - "services/osgard-commerce-api/test/campaigns.test.mjs"
       - "scripts/game-intermission-sponsor-smoke.mjs"
       - "public/entertainment/**"
@@ -191,6 +193,15 @@ jobs:
         run: npm run qa:time-ui
       - name: Check deployment shell syntax
         run: bash -n scripts/activate-frontend-remote.sh
+      - name: Validate Commerce API bootstrap and build private image
+        run: |
+          set -euo pipefail
+          bash -n scripts/deploy-commerce-api-remote.sh
+          node scripts/commerce-api-deploy-smoke.mjs
+          docker build --pull --platform linux/amd64 -t "osgard-commerce-api:${GITHUB_SHA}" -f services/osgard-commerce-api/Dockerfile services/osgard-commerce-api
+          docker save "osgard-commerce-api:${GITHUB_SHA}" | gzip -1 > osgard-commerce-api-image.tar.gz
+          test -s osgard-commerce-api-image.tar.gz
+          sha256sum osgard-commerce-api-image.tar.gz | tee osgard-commerce-api-image.sha256
       - name: Package HTML assets and matching Nginx config
         run: |
           mkdir -p osgard-release/html
@@ -239,6 +250,24 @@ jobs:
           scp -i ~/.ssh/osgard_deploy osgard-world-release.tgz "$USER@$HOST:$REMOTE_STAGE/"
           scp -i ~/.ssh/osgard_deploy local.sha256 "$USER@$HOST:$REMOTE_STAGE/"
           ssh -i ~/.ssh/osgard_deploy "$USER@$HOST" "cd '$REMOTE_STAGE' && sha256sum -c local.sha256"
+      - name: Stage Commerce API image for private deployment
+        env:
+          HOST: ${{ secrets.OSGARD_DEPLOY_HOST }}
+          USER: ${{ secrets.OSGARD_DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          REMOTE_STAGE="/tmp/osgard-gh-release-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          scp -i ~/.ssh/osgard_deploy osgard-commerce-api-image.tar.gz osgard-commerce-api-image.sha256 "$USER@$HOST:$REMOTE_STAGE/"
+          ssh -i ~/.ssh/osgard_deploy "$USER@$HOST" "cd '$REMOTE_STAGE' && sha256sum -c osgard-commerce-api-image.sha256"
+      - name: Deploy Commerce API on the private network
+        env:
+          HOST: ${{ secrets.OSGARD_DEPLOY_HOST }}
+          USER: ${{ secrets.OSGARD_DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          REMOTE_STAGE="/tmp/osgard-gh-release-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          scp -i ~/.ssh/osgard_deploy scripts/deploy-commerce-api-remote.sh "$USER@$HOST:/tmp/deploy-commerce-api-remote.sh"
+          ssh -i ~/.ssh/osgard_deploy "$USER@$HOST" "bash /tmp/deploy-commerce-api-remote.sh '$REMOTE_STAGE/osgard-commerce-api-image.tar.gz' '${GITHUB_SHA}'; status=\$?; rm -f /tmp/deploy-commerce-api-remote.sh '$REMOTE_STAGE/osgard-commerce-api-image.tar.gz' '$REMOTE_STAGE/osgard-commerce-api-image.sha256'; exit \$status"
       - name: Activate verified archive with config rollback
         env:
           HOST: ${{ secrets.OSGARD_DEPLOY_HOST }}
