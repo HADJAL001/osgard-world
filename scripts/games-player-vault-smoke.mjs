@@ -123,7 +123,7 @@ await test('rejects duplicate records, invalid favorites and oversized files', a
   const invalid = structuredClone(created.backup);
   invalid.entries[0].value = 'not-an-array';
   await assert.rejects(async () => core.validateBackup(await withDigest(invalid), webcrypto, encoder), /не прошли проверку/);
-  await assert.rejects(() => core.validateBackup('x'.repeat(core.MAX_BACKUP_BYTES + 1), webcrypto, encoder), /лимит 1 MiB/);
+  await assert.rejects(() => core.validateBackup('x'.repeat(core.MAX_BACKUP_BYTES + 1), webcrypto, encoder), /лимита 1 MiB/);
 });
 
 await test('storage serialization only maps approved records back to local keys', async () => {
