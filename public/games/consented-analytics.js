@@ -10,6 +10,7 @@
   const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
   const ALLOWED_EVENTS = new Set([
     'premium_page_view', 'catalog_viewed', 'partners_page_viewed', 'ecosystem_directory_viewed',
+    'expedition_route_created', 'expedition_link_opened', 'expedition_share_intent', 'expedition_stage_completed',
     'share_created', 'referral_link_opened', 'game_session_started',
     'checkout_started', 'checkout_paid', 'cross_promo_clicked',
     'owned_promo_impression', 'owned_promo_intermission_skipped',
