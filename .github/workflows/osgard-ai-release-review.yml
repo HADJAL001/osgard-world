@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: osgard-ai-release-review-${ github.ref }
+  group: osgard-ai-release-review-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
