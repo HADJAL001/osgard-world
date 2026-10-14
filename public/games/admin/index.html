@@ -158,7 +158,8 @@ async function refresh({silent=false}={}){
    readApi('/api/v1/analytics/snapshots',{signal:controller.signal}),
    comparisonEnabled?readApi(urlFor(previousRange),{signal:controller.signal}):Promise.resolve(null)
   ]);
-  if(epoch!==requestEpoch||controller.signal.aborted)return;
+  if(epoch!==requestEpoch)return;
+  if(controller.signal.aborted){if(controller.signal.reason?.name==='TimeoutError')throw controller.signal.reason;return;}
   if(summaryResult.status!=='fulfilled')throw summaryResult.reason;
   const summary=summaryResult.value;
   const previous=previousResult.status==='fulfilled'?previousResult.value:null;
