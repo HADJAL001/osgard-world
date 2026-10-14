@@ -27,6 +27,7 @@
     "qa:games-detail": "node scripts/games-detail-smoke.mjs && npm run qa:cascade-lab-hypothesis && npm run qa:cascade-lab-engineering && npm run qa:cascade-lab-experiment-studio && npm run qa:cascade-lab-trajectory-xray && npm run qa:cascade-lab-mission-director && npm run qa:cascade-lab-evidence-integrity && npm run qa:cascade-lab-pwa",
     "qa:cascade-lab-hypothesis": "node scripts/cascade-lab-hypothesis-smoke.mjs",
     "qa:game-detail-runtime": "node scripts/game-detail-runtime-smoke.mjs",
+    "qa:civic-cascade-forecast": "node scripts/civic-cascade-forecast-smoke.mjs",
     "qa:games-operations": "node scripts/games-operations-smoke.mjs",
     "qa:campaign-manager": "node scripts/campaign-manager-smoke.mjs",
     "qa:game-recommendations": "node scripts/game-recommendations-smoke.mjs",
