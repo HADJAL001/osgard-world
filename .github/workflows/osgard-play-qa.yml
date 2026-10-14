@@ -12,6 +12,7 @@ on:
       - "scripts/games-portal-smoke.mjs"
       - "scripts/cascade-lab-engineering-suite-smoke.mjs"
       - "scripts/cascade-lab-trajectory-xray-smoke.mjs"
+      - "scripts/cascade-lab-counterfactual-foundry-smoke.mjs"
       - "package.json"
       - ".github/workflows/osgard-play-qa.yml"
   pull_request:
@@ -24,6 +25,7 @@ on:
       - "scripts/games-portal-smoke.mjs"
       - "scripts/cascade-lab-engineering-suite-smoke.mjs"
       - "scripts/cascade-lab-trajectory-xray-smoke.mjs"
+      - "scripts/cascade-lab-counterfactual-foundry-smoke.mjs"
       - "package.json"
       - ".github/workflows/osgard-play-qa.yml"
 
@@ -59,6 +61,8 @@ jobs:
         run: npm run qa:cascade-lab-engineering
       - name: Test CASCADE LAB Trajectory X-Ray traces, comparison and archive safety
         run: npm run qa:cascade-lab-trajectory-xray
+      - name: Verify deterministic Counterfactual Foundry and controlled sweeps
+        run: npm run qa:cascade-lab-counterfactual
       - name: Regress sponsor campaign privacy and server contracts
         run: npm run qa:campaign-manager
       - name: Test Commerce API allow-lists and consent gates
