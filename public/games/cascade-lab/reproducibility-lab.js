@@ -144,7 +144,15 @@ function normalizeRun(raw) {
   if (!id||!Number.isFinite(stamp)||!Number.isInteger(levelId)||levelId<1||levelId>5) return null;
   if (!['won','lost'].includes(raw.status)) return null;
   if (!MODES.has(raw.mode)) return null;
-  if (!raw.simulationProfile || typeof raw.simulationProfile !== 'object' || !raw.simulationProfile.world || !raw.simulationProfile.level) return null;
+  const sourceProfile=raw.simulationProfile;
+  const sourceWorld=sourceProfile&&sourceProfile.world,sourceLevel=sourceProfile&&sourceProfile.level;
+  if(!sourceWorld||!sourceLevel||sourceLevel.id!==levelId||
+      !['width','height','gravity','radius','fixedStep'].every(key=>finite(sourceWorld[key]))||
+      !sourceLevel.start||!finite(sourceLevel.start.x)||!finite(sourceLevel.start.y)||
+      !sourceLevel.goal||!['x','y','w','h'].every(key=>finite(sourceLevel.goal[key]))||
+      !['platforms','scenery','gates','checkpoints'].every(key=>Array.isArray(sourceLevel[key]))||
+      (sourceLevel.switchZone!==null&&sourceLevel.switchZone!==undefined&&
+       !['x','y','w','h'].every(key=>finite(sourceLevel.switchZone[key])))) return null;
   const mode=raw.mode;
   const dailyDate=typeof raw.dailyDate==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(raw.dailyDate)?raw.dailyDate:null;
   const engineVersion=clean(raw.engineVersion||'',32);
@@ -380,8 +388,11 @@ function onRunFinished(raw){
 repeatBtn.addEventListener('click',()=>{
  const run=runs.find(r=>r.id===latestId);
  if(!run)return;
+ if(run.engineVersion!=='0.27.0'){
+  setNote('Этот запуск записан другой версией движка. Импортированную запись можно сравнить, но контролируемый повтор разрешён только для текущей версии.',true);return;
+ }
  window.dispatchEvent(new CustomEvent('cascade-lab:repeat-identical-run-request',{detail:{
-  runId:run.id,levelId:run.levelId,mode:run.mode,dailyDate:run.dailyDate,
+  runId:run.id,levelId:run.levelId,mode:run.mode,dailyDate:run.dailyDate,engineVersion:run.engineVersion,
   blueprint:run.devices.map(d=>({...d}))
  }}));
  setNote('Запрошен контрольный повтор. Не изменяй схему; следующая запись будет сопоставлена с этой конфигурацией.');
