@@ -36,6 +36,15 @@ on:
       - "vite.config.ts"
       - "scripts/sync-swarm-assets.mjs"
       - "scripts/frontend-archive-preflight.mjs"
+      - "scripts/osgard-contract-audit.mjs"
+      - "scripts/catalog-state-scale-smoke.mjs"
+      - "scripts/verify-release-manifest.mjs"
+      - "scripts/frontend-archive-preflight-smoke.mjs"
+      - "scripts/generate-games-share-cards.mjs"
+      - "docs/34_OSGARD_CONTRACT_INTEGRITY_ENGINE_2026-10-14.md"
+      - "docs/35_OSGARD_RELEASE_QUALITY_ATTESTATION_2026-10-14.md"
+      - "docs/36_OSGARD_QUALITY_PLATFORM_PLAN_2026_2029.md"
+      - "docs/OSGARD_CORE_CONTRACT.md"
       - "scripts/production-route-matrix.mjs"
       - "scripts/activate-frontend-remote.sh"
       - "scripts/skillcred-page-smoke.mjs"
@@ -78,6 +87,8 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
+      - name: Verify cross-surface OSGARD contracts
+        run: npm run qa:contracts
       - name: Verify proof-carrying release manifest fixture
         run: npm run qa:release-manifest
       - run: npm run check
@@ -178,7 +189,7 @@ jobs:
           mv /tmp/skillcred-app.min.js dist/skillcred/app.js
           ./node_modules/.bin/esbuild dist/skillcred/styles.css --minify --outfile=/tmp/skillcred-styles.min.css
           mv /tmp/skillcred-styles.min.css dist/skillcred/styles.css
-      - run: npm run preflight:frontend
+      - run: npm run preflight:frontend && npm run release:verify
       - run: npm run qa:skillcred
       - name: Verify Imperium of Time visuals and real diagnostics
         run: npm run qa:time-ui
