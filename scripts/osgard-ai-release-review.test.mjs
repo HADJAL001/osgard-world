@@ -6,6 +6,7 @@ import {
   validateAssessment,
   applyDeterministicOverrides,
   requestOpenAIReview,
+  writePrivateJson,
 } from './osgard-ai-release-review.mjs';
 
 function assessment(overrides = {}) {
@@ -146,6 +147,11 @@ test('OpenAI request uses Responses API, store=false and strict structured outpu
   assert.equal(parsed.humanReviewRequired, true);
 });
 
+test('review output cannot escape repository root or target protected manifests', async () => {
+  await assert.rejects(writePrivateJson('../package.json', { overwritten: true }), /root-level JSON filename/i);
+  await assert.rejects(writePrivateJson('.github/workflows/pwn.json', { overwritten: true }), /root-level JSON filename/i);
+  await assert.rejects(writePrivateJson('package.json', { overwritten: true }), /safe root-level report path/i);
+});
 test('OpenAI request refuses to run without a key before calling fetch', async () => {
   let called = false;
   await assert.rejects(
