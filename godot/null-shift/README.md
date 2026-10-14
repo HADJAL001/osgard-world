@@ -247,3 +247,10 @@ While Overdrive is active, a weapon hit on a guard can conduct a single violet a
 - The event director freezes while the raid is paused, is reset on a fresh instance, clears after a successful/failed mission, and reports reinforcements and breaches in both the live HUD telemetry and diagnostics.
 - Godot headless smoke tests now exercise the actual core interaction, two physical reinforcements, countdown delta, accelerated hazard multiplier, timeout, Warden spawn, warning display and clean HUD teardown after successful extraction.
 - Godot remains the primary engine project and CI installs the pinned Godot 4.7.2 stable engine/template. This is a gameplay/UX milestone, not a claim of native 8K rendering; device-specific frame performance still needs physical-device testing.
+
+
+## Release 2.9 — cinematic impact wave
+
+- Gameplay impact impulses now trigger a screen-space energy ring in the existing vignette shader. The ring expands from the centre, fades on a live timer, and shifts toward violet during NULL SHIFT or red at critical health. It never pauses, delays, or changes combat simulation.
+- The effect reuses one fullscreen ColorRect/ShaderMaterial; no per-impact nodes, textures, or allocations are created. Intensity and duration are reduced when Reduced Motion is enabled.
+- Headless Godot runtime smoke validates initial shader strength, half-life radius, fade progression, and Reduced Motion attenuation. This is a lightweight procedural post effect, not a full post-processing stack or a claim of native 8K rendering.
