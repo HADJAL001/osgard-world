@@ -87,7 +87,12 @@ self.addEventListener('fetch', event => {
         }
         return response;
       } catch {
-        const cached = await caches.match('/games/offline.html');
+        const cache = await caches.open(CACHE_NAME);
+        if (url.pathname === '/games/' || url.pathname === '/games/index.html') {
+          const cachedCatalog = await cache.match(url.pathname === '/games/' ? '/games/' : '/games/index.html');
+          if (cachedCatalog) return cachedCatalog;
+        }
+        const cached = await cache.match('/games/offline.html');
         return cached || new Response('OSGARD PLAY is offline. Reconnect and try again.', {
           status: 503,
           headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' }
