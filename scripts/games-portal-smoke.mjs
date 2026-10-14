@@ -406,6 +406,12 @@ assert.ok(civic.includes("game:'civic-cascade'")&&civic.includes("type:'osgard:g
 const civicInline=(civic.match(/<script>([\s\S]*?)<\/script>/)||[])[1]
 assert.ok(civicInline&&civicInline.length>5000,'CIVIC CASCADE self-contained game script missing')
 new Function(civicInline)
+assert.ok(civic.includes('name="osgard-game-version" content="2.1.0-crisis-director"'), 'CIVIC CASCADE 2.1 release marker missing')
+assert.ok(civic.includes('id="cc-incident"') && civic.includes('id="cc-incident-options"') && civic.includes('SIMULATION PAUSED'), 'Crisis Director decision UI is missing')
+for (const id of ['medical-backup','bridge-pressure','comms-failure']) assert.ok(civicInline.includes("id:'"+id+"'"), 'CIVIC CASCADE incident missing: '+id)
+assert.ok(civicInline.includes("state.actionCount=(state.actionCount||0)+1") && civicInline.includes("if(crisisIncidents[state.actionCount])openIncident(crisisIncidents[state.actionCount])"), 'Incidents must be scheduled from tactical actions')
+assert.ok(civicInline.includes('if(finished||activeIncident)return') && civicInline.includes("activeIncident=null;ui.incident.hidden=true"), 'Mission completion must wait for the incident decision')
+assert.ok(civicInline.includes('actionCount:[0,999]') && civicInline.includes("key==='actionCount'&&v===undefined") && civicInline.includes("key==='actionCount'&&s[key]===undefined?0:s[key]"), 'Legacy local checkpoints must migrate')
 assert.ok(lifecycle.includes("'signal-run':{title:'SIGNAL RUN',url:'/games/signal-run/'}"), 'Player lifecycle registry must include SIGNAL RUN')
 assert.ok(luxury.includes("const validIds = new Set(['null-shift', 'time', 'swarm', 'inherit', 'remix', 'civic-cascade', 'patina', 'signal-run', 'cascade-lab', 'afterimage-run', 'aether-grid'])"), 'Recent history and Resume registry must include all eleven current games')
 assert.ok(luxury.includes("const catalogCount = Array.from(grid.querySelectorAll('.card[data-game]'))")&&luxury.includes("allCountBadge.textContent = String(catalogCount)")&&luxury.includes("catalogRange.textContent = '01—' + String(catalogCount).padStart(2, '0')"),'Visible catalogue count/range must be derived from the actual validated cards')

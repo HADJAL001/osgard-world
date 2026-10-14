@@ -3,8 +3,8 @@
   "gameId": "civic-cascade",
   "title": "CIVIC CASCADE",
   "edition": "Web Edition",
-  "version": "2.0.0",
-  "releaseId": "civic-cascade-web-2.0.0",
+  "version": "2.1.0",
+  "releaseId": "civic-cascade-web-2.1.0",
   "canonicalUrl": "https://osgard.world/games/civic-cascade/",
   "detailUrl": "https://osgard.world/game/civic-cascade",
   "entrypoint": "/games/civic-cascade/",
@@ -19,7 +19,24 @@
     "checkpointSchema": "civic-cascade-checkpoint-v1",
     "approximateRiskForecast": true,
     "localOperationSaveRestore": true,
-    "diagnosticPanel": true
+    "diagnosticPanel": true,
+    "crisisDirector": {
+      "enabled": true,
+      "triggerActions": [
+        2,
+        4,
+        6
+      ],
+      "incidents": [
+        "medical-backup",
+        "bridge-pressure",
+        "comms-failure"
+      ],
+      "choicesPerIncident": 3,
+      "zeroCostFallback": true,
+      "simulationPausesUntilDecision": true,
+      "legacyCheckpointActionCountDefault": 0
+    }
   },
   "cinematicExport": {
     "format": "WebM",
@@ -59,6 +76,6 @@
   "deployment": {
     "target": "https://osgard.world",
     "mechanism": "repository push triggers the site's production deployment workflow",
-    "liveStatus": "deployment must be confirmed by production route checks for release 2.0.0"
+    "liveStatus": "deployment must be confirmed by production route checks for release 2.1.0"
   }
 }
