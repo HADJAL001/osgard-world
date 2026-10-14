@@ -3,8 +3,8 @@
   "gameId": "civic-cascade",
   "title": "CIVIC CASCADE",
   "edition": "Web Edition",
-  "version": "2.5.0",
-  "releaseId": "civic-cascade-web-2.5.0",
+  "version": "2.6.0",
+  "releaseId": "civic-cascade-web-2.6.0",
   "canonicalUrl": "https://osgard.world/games/civic-cascade/",
   "detailUrl": "https://osgard.world/game/civic-cascade",
   "entrypoint": "/games/civic-cascade/",
@@ -34,7 +34,8 @@
       "cc-node-health-bar",
       "cc-node-status",
       "cc-node-chain",
-      "cc-node-effect"
+      "cc-node-effect",
+      "cc-adaptive-crisis"
     ],
     "checkpointSchema": "civic-cascade-checkpoint-v1",
     "approximateRiskForecast": true,
@@ -123,6 +124,25 @@
       "forecastUsesSameIntegrityModel": true,
       "checkpointSchema": 2,
       "regressionSmokeTest": "scripts/civic-cascade-forecast-smoke.mjs"
+    },
+    "adaptiveCrisisDirector": {
+      "enabled": true,
+      "triggerMode": "node-integrity-threshold",
+      "criticalThreshold": 45,
+      "nodes": [
+        "substation",
+        "pump",
+        "bridge",
+        "hospital",
+        "shelter"
+      ],
+      "choicesPerIncident": 3,
+      "pausesSimulationUntilDecision": true,
+      "queuesSimultaneousCriticalNodes": true,
+      "oneIncidentPerNodePerOperation": true,
+      "oldActionCountIncidentsPreserved": true,
+      "forecastsExposeCriticalNodeCount": true,
+      "regressionSmokeTest": "scripts/civic-cascade-forecast-smoke.mjs"
     }
   },
   "cinematicExport": {
@@ -163,6 +183,6 @@
   "deployment": {
     "target": "https://osgard.world",
     "mechanism": "repository push triggers the site's production deployment workflow",
-    "liveStatus": "verify release 2.5.0 with production route checks after deployment"
+    "liveStatus": "verify release 2.6.0 with production route checks after deployment"
   }
 }
