@@ -835,9 +835,9 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
           SELECT
             event_name,
             CASE
-              WHEN source ~ '^osgard-social-share:(telegram|whatsapp|vk|x|facebook):[a-z0-9-]{1,40}$'
+              WHEN source ~ '^osgard-social-share:(telegram|whatsapp|vk|x|facebook|native-share):[a-z0-9-]{1,40}$'
                 THEN split_part(source, ':', 2)
-              WHEN source ~ '^osgard-social-reward:(telegram|whatsapp|vk|x|facebook):[a-z0-9-]{1,40}$'
+              WHEN source ~ '^osgard-social-reward:(telegram|whatsapp|vk|x|facebook|native-share):[a-z0-9-]{1,40}$'
                 THEN split_part(source, ':', 2)
               ELSE NULL
             END AS network
