@@ -90,3 +90,16 @@ test("sponsor inventory is not described as an integrated ad network", () => {
   assert.equal(find(report, "ad-network").status, "not_integrated");
   assert.match(find(report, "sponsor-inventory").detail, /не означает.*сеть рекламы подключена/);
 });
+
+
+test("server-side attribution readiness shows configuration without exposing tokens", () => {
+  const missing = buildCommercialReadiness(readyTestInput({ serviceAttributionServiceCount: 0 }));
+  assert.equal(find(missing, "service-attribution").status, "not_integrated");
+  assert.match(find(missing, "service-attribution").detail, /OSGARD_ATTRIBUTION_TOKENS_JSON/);
+  const configured = buildCommercialReadiness(readyTestInput({ serviceAttributionServiceCount: 2 }));
+  assert.equal(find(configured, "service-attribution").status, "ready");
+  assert.match(find(configured, "service-attribution").detail, /2 сервиса/);
+  const databaseDown = buildCommercialReadiness(readyTestInput({ serviceAttributionServiceCount: 2, databaseReady: false }));
+  assert.equal(find(databaseDown, "service-attribution").status, "blocked");
+  assert.doesNotMatch(JSON.stringify(configured), /projects_test_attribution_token|marcosa_test_attribution_token/);
+});
