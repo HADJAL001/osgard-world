@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 import {
   projectReport,
   buildReviewPacket,
@@ -120,6 +122,54 @@ test('deterministic blocked checks override optimistic AI recommendations', () =
   assert.equal(result.blockers[0].id, 'OSGARD-DETERMINISTIC-QA-BLOCK');
 });
 
+test('contract audit and artifact attestation are summarized for optional OpenAI review', () => {
+  const contract = projectReport('osgard-contract-audit.json', {
+    schema: 'osgard.contract-integrity.v1',
+    status: 'ready',
+    summary: { checks: 32, passed: 32, failed: 0, warnings: 0 },
+    contract: { worldCount: 7, gameCount: 11, eventCount: 20, diagnosticCheckCount: 30, productionRouteCount: 112, sha256: 'a'.repeat(64) },
+    checks: [
+      { id: 'catalog:manifest', status: 'passed', title: 'Catalogue matches the canonical game manifest' },
+      { id: 'privacy:consent', status: 'failed', title: 'Privacy check', detail: 'OPENAI_API_KEY=sk-this-secret-must-never-leak' },
+    ],
+  });
+  const attestation = projectReport('release-attestation.json', {
+    schema: 'osgard.release-attestation.v1',
+    status: 'verified',
+    artifact: { fileCount: 640, totalBytes: 12000000, rootSha256: 'b'.repeat(64), warnings: [], largestFiles: [] },
+    qualityGate: {
+      schema: 'osgard.contract-integrity.v1',
+      reportSha256: 'c'.repeat(64),
+      contractFingerprint: 'a'.repeat(64),
+      checkCount: 32,
+      passed: 32,
+      warnings: 0,
+    },
+  });
+  const packet = buildReviewPacket([contract, attestation]);
+  const encoded = JSON.stringify(packet.payload);
+  assert.equal(packet.payload.reports.length, 2);
+  assert.equal(packet.payload.reports[0].contract.gameCount, 11);
+  assert.equal(packet.payload.reports[0].checks.failed, 1);
+  assert.equal(packet.payload.reports[1].qualityGate.contractFingerprint, 'a'.repeat(64));
+  assert.equal(packet.payload.policy.sourceCodeIncluded, false);
+  assert.equal(packet.payload.policy.playerDataIncluded, false);
+  assert.equal(encoded.includes('sk-this-secret-must-never-leak'), false);
+  assert.equal(encoded.includes('OPENAI_API_KEY='), false);
+});
+test('manual OpenAI workflow is opt-in and includes contract plus build-attestation evidence', async () => {
+  const workflow = await readFile(resolve('.github/workflows/osgard-ai-release-review.yml'), 'utf8');
+  assert.match(workflow, /workflow_dispatch:/);
+  assert.match(workflow, /type:\s*boolean\s*\n\s*default:\s*false/);
+  assert.match(workflow, /if:\s*\$\{\{ inputs\.use_openai \}\}/);
+  assert.ok(!/^\s{2}(?:pull_request|push):/m.test(workflow), 'OpenAI review must not run automatically on source pushes or PRs');
+  assert.ok(workflow.includes('npm run qa:contracts'), 'review workflow must produce contract evidence');
+  assert.ok(workflow.includes('npm run release:attest') && workflow.includes('npm run release:verify'), 'review workflow must verify the exact build attestation');
+  assert.ok(workflow.includes('--report release-readiness.json --report osgard-contract-audit.json --report release-attestation.json --send-to-openai'),
+    'review request must contain only the three minimized machine reports');
+  assert.ok(workflow.includes('The full qa:contracts command did not pass'), 'contract-command failures must be encoded as blocked evidence');
+  assert.ok(workflow.includes("status:'blocked'"), 'build/attestation failures must be encoded as blocked evidence');
+});
 test('OpenAI request uses Responses API, store=false and strict structured output', async () => {
   let captured;
   const expected = assessment();
