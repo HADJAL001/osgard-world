@@ -244,8 +244,8 @@ app.get("/v1/campaigns/active", async (req, res) => {
   if (!pool || !dbReady) return res.status(503).json({ error: "CAMPAIGNS_NOT_READY" });
   try {
     const result = await pool.query(
-      "SELECT " + campaignColumns() +
-      " FROM commerce_campaigns WHERE placement = $1 AND status = 'active' " +
+      "SELECT " + campaignColumns().replace("status,", "CASE WHEN status = 'scheduled' AND starts_at <= NOW() AND ends_at > NOW() THEN 'active' ELSE status END AS status,") +
+      " FROM commerce_campaigns WHERE placement = $1 AND status IN ('active','scheduled') " +
       "AND starts_at <= NOW() AND ends_at > NOW() AND sponsor_disclosure <> '' " +
       "ORDER BY updated_at DESC, created_at DESC LIMIT 3",
       [placement],
@@ -266,7 +266,7 @@ app.get("/v1/admin/campaigns", requireAdmin, async (_req, res) => {
   try {
     const result = await pool.query(
       "SELECT c.campaign_id, c.sponsor_name, c.title, c.description, c.target_url, " +
-      "c.placement, c.sponsor_disclosure, c.status, c.starts_at, c.ends_at, " +
+      "c.placement, c.sponsor_disclosure, CASE WHEN c.status = 'scheduled' AND c.starts_at <= NOW() AND c.ends_at > NOW() THEN 'active' ELSE c.status END AS status, c.starts_at, c.ends_at, " +
       "c.frequency_cap, c.created_at, c.updated_at, " +
       "COALESCE(stats.impressions_30d, 0)::int AS impressions_30d, COALESCE(stats.clicks_30d, 0)::int AS clicks_30d " +
       "FROM commerce_campaigns c LEFT JOIN (" +
@@ -297,15 +297,16 @@ async function saveCampaign(req, res, campaignId = "") {
     client = await pool.connect();
     await client.query("BEGIN");
     await client.query("SELECT pg_advisory_xact_lock(20261014)");
-    if (data.status === "active") {
+    if (["active", "scheduled"].includes(data.status) && data.placement === "catalog_feature") {
       const capacity = await client.query(
-        "SELECT COUNT(*)::int AS count FROM commerce_campaigns WHERE status = 'active' " +
-        "AND placement = 'catalog_feature' AND starts_at <= NOW() AND ends_at > NOW() AND campaign_id <> $1",
-        [id],
+        "SELECT COUNT(*)::int AS count FROM commerce_campaigns " +
+        "WHERE status IN ('active','scheduled') AND placement = 'catalog_feature' " +
+        "AND starts_at < $2 AND ends_at > $1 AND campaign_id <> $3",
+        [data.startsAt, data.endsAt, id],
       );
       if (Number(capacity.rows[0]?.count || 0) >= 3) {
         await client.query("ROLLBACK");
-        return res.status(409).json({ error: "CAMPAIGN_SLOT_FULL", message: "Сейчас уже опубликованы три кампании. Сначала приостановите одну из них." });
+        return res.status(409).json({ error: "CAMPAIGN_SLOT_FULL", message: "В выбранном временном окне уже заняты три слота. Измените расписание или приостановите кампанию." });
       }
     }
     let result;
