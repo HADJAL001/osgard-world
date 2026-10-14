@@ -86,7 +86,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
           ? expectedBuildMatches && text.includes('id="games-grid"') && text.includes('data-game="null-shift"') && text.includes('data-game="time"') && text.includes('data-game="swarm"') && text.includes('data-game="inherit"') && text.includes('data-game="remix"') && text.includes('data-game="civic-cascade"') && text.includes('data-game="patina"') && text.includes('data-game="signal-run"') && text.includes('data-game="cascade-lab"') && text.includes('data-game="afterimage-run"') && text.includes('data-game="aether-grid"') && text.includes('"numberOfItems":11') && text.includes('id="player-dialog"') && text.includes('id="player-share"') && text.includes('player-lifecycle.js') && text.includes('id="project-form"') && text.includes('id="analytics-toggle"') && text.includes('osgardvanguard.studio')
         : route === '/games/aether-grid/'
           ? text.includes('<title>AETHER GRID — OSGARD WORLD GAMING</title>') &&
-            text.includes('content="1.0.0-game-11"') &&
+            text.includes('content="1.1.0-game-11-premium-session"') &&
             text.includes('data-aether-grid-ready="true"') &&
             text.includes('id="board"') && text.includes('id="challenge-code"') &&
             text.includes("notify('ready')") && text.includes("notify('completed'") &&
@@ -100,8 +100,9 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
                 : route === '/games/afterimage-run/'
           ? text.includes('<title>AFTERIMAGE//RUN — OSGARD PLAY</title>') && text.includes('id="runnerCanvas"') && text.includes('id="run-start"') && text.includes('id="daily-seed"') && text.includes('id="share-telegram"') && text.includes('osgard:game-lifecycle')
         : route === '/games/cascade-lab/'
-          ? text.includes('<title>CASCADE LAB — Premium Physics Lab 0.13.0</title>') &&
-            text.includes('name="osgard-game-version" content="0.13.0-osgard-cross-promo"') &&
+          ? text.includes('<title>CASCADE LAB — Premium Physics Lab 0.14.0</title>') &&
+            text.includes('name="osgard-game-version" content="0.14.0-engineering-console"') &&
+            text.includes('data-cascade-lab-upgrades="0.14.0"') && text.includes('CASCADELAB014') &&
             text.includes('data-cascade-lab-ready="true"') &&
             text.includes('id="runButton"') && text.includes('id="exportTelemetryButton"') &&
             text.includes('id="exportGrowthButton"') && text.includes('id="serviceAdDialog"') &&
