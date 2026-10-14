@@ -10,7 +10,7 @@ new Function(inline);
 for(const contract of [
   'dashboard-logic.js','data-range-preset="day"','data-range-preset="week"',
   'data-range-preset="month"','data-range-preset="quarter"',
-  'id="period-comparison"','id="comparison-meta"',
+  'id="period-comparison"','id="comparison-meta"','.comparison-bars','appendBar(\'Ранее\'','appendBar(\'Сейчас\'',
   'role="group" aria-label="Быстрый выбор аналитического периода"',
   'AbortController','controller.signal.aborted','sequence!==refreshSequence',
   'tokenAtStart!==operatorToken','epoch!==operationEpoch',
