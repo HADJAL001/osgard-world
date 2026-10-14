@@ -125,7 +125,7 @@ const buildDoctrineDossierPayload = new Function(dossierSource + '\nreturn build
 const planner = new Function('nodes', 'PLAN_ACTIONS', 'clamp',
   doctrineSource + '\nreturn {searchDoctrinePlans, doctrineDominates, doctrineParetoPortfolio, doctrineStressProfiles, canonicalDossierStringify, validateDoctrineDossierStructure, assessDoctrineDossierIntegrity};'
 )(nodes, actions, clamp)
-const {searchDoctrinePlans, doctrineDominates, doctrineParetoPortfolio, doctrineStressProfiles} = planner
+const {searchDoctrinePlans, doctrineDominates, doctrineParetoPortfolio, doctrineStressProfiles, canonicalDossierStringify, validateDoctrineDossierStructure, assessDoctrineDossierIntegrity} = planner
 const makeState = scenario => {
   const state = {
     ...scenarios[scenario], scenario, crews: 4, maxCrews: 4,
