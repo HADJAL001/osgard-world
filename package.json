@@ -30,7 +30,7 @@
     "qa:games-operations": "node scripts/games-operations-smoke.mjs",
     "qa:campaign-manager": "node scripts/campaign-manager-smoke.mjs",
     "qa:game-recommendations": "node scripts/game-recommendations-smoke.mjs",
-    "qa:games-model": "node scripts/games-monetization-smoke.mjs",
+    "qa:games-model": "node scripts/games-monetization-smoke.mjs && npm run qa:command-deck",
     "qa:null-shift-godot": "node scripts/null-shift-godot-smoke.mjs",
     "qa:partners-page": "node scripts/partners-page-smoke.mjs",
     "qa:ecosystem": "node scripts/ecosystem-integrity-smoke.mjs",
@@ -60,7 +60,8 @@
     "qa:games-expedition": "node scripts/games-expedition-smoke.mjs",
     "qa:cascade-lab-trajectory-xray": "node scripts/cascade-lab-trajectory-xray-smoke.mjs",
     "qa:cascade-lab-mission-director": "node scripts/cascade-lab-mission-director-smoke.mjs",
-    "qa:cascade-lab-evidence-integrity": "node scripts/cascade-lab-evidence-integrity-smoke.mjs"
+    "qa:cascade-lab-evidence-integrity": "node scripts/cascade-lab-evidence-integrity-smoke.mjs",
+    "qa:command-deck": "node scripts/command-deck-smoke.mjs"
   },
   "dependencies": {
     "@types/three": "^0.186.0",
