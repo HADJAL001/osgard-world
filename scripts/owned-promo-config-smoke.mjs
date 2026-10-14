@@ -23,6 +23,11 @@ const player = read('player');
 assert.ok(core.includes('export const OWNED_PROMO_SERVICE_IDS'), 'Server-controlled promo service allow-list missing');
 assert.ok(core.includes('export const DEFAULT_OWNED_PROMO_CONFIG'), 'Safe startup defaults missing');
 assert.ok(core.includes('export function validateOwnedPromoConfig'), 'Strict promotion-setting validation missing');
+assert.ok(core.includes('export function migrateOwnedPromoConfig'), 'Versioned owned-promo migration missing');
+assert.ok(core.includes('OWNED_PROMO_SCHEMA_VERSION_INVALID'), 'Unknown config schema versions must fail closed');
+assert.ok(api.includes('migrateOwnedPromoConfig(row.config)'), 'Legacy PostgreSQL settings must be migrated on read');
+assert.ok(core.includes('schemaVersion: 2'), 'Current owned-promo schema must be explicitly versioned');
+
 for (const code of [
   'OWNED_PROMO_FREQUENCY_INVALID',
   'OWNED_PROMO_SERVICE_NOT_ALLOWED',
@@ -66,6 +71,8 @@ assert.ok(ownedPromoPlayer.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN',
 
 
 assert.ok(player.includes("fetch('/commerce-api/v1/owned-promo/config'"), 'Game intermission must consume the server-published configuration');
+assert.ok(player.includes('const legacy=raw.schemaVersion!==2') && player.includes("if(legacy&&!enabledServices.includes('gardvpn'))enabledServices.push('gardvpn')"), 'Old public config responses must migrate GARD VPN into the player chooser');
+assert.ok(player.includes("defaultFrequency=legacy?'each'") && player.includes("showShareRewards:legacy?true"), 'Legacy config migration must apply every-session promos and the configured share reward shelf');
 assert.ok(player.includes('managedPromoConfig.enabledServices.includes(id)'), 'Global allow-list must filter intermission options');
 assert.ok(player.includes('if(!managedPromoConfig.enabled)return false'), 'Global promo off switch must suppress self-promotion');
 assert.ok(player.includes('managedPromoConfig.defaultSelectedServices.slice()'), 'Fresh player preferences must use managed defaults');
