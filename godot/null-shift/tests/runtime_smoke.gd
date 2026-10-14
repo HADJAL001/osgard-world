@@ -23,6 +23,43 @@ func _run_smoke() -> void:
 	print("RUNTIME_STAGE: scene ready")
 	if not _expect(game.get_script() != null, "main scene script must load without GDScript parse errors"):
 		return
+
+	print("RUNTIME_STAGE: tactical perception, squad radio and acoustic events")
+	if not _expect(game._is_within_vision_cone(Vector3.ZERO, Vector3.FORWARD, Vector3(0.0, 0.0, -8.0), 20.0, 150.0), "vision cone must detect a target in the forward arc"):
+		return
+	if not _expect(not game._is_within_vision_cone(Vector3.ZERO, Vector3.FORWARD, Vector3(12.0, 0.0, 0.0), 20.0, 120.0), "vision cone must reject a target outside the configured field of view"):
+		return
+	if not _expect(not game._is_within_vision_cone(Vector3.ZERO, Vector3.FORWARD, Vector3(0.0, 0.0, -24.0), 20.0, 150.0), "vision cone must reject targets beyond sight range"):
+		return
+	if not _expect(game._noise_is_audible(Vector3(0.0, 0.0, 15.0), Vector3.ZERO, 16.0) and not game._noise_is_audible(Vector3(0.0, 0.0, 20.0), Vector3.ZERO, 16.0), "sound radius must include near listeners and exclude listeners outside its range"):
+		return
+	var saved_noise_position: Vector3 = game.combat_noise_position
+	var saved_noise_radius: float = game.combat_noise_radius
+	var saved_noise_timer: float = game.combat_noise_timer
+	var saved_noise_serial: int = game.combat_noise_serial
+	var saved_noise_source: String = game.combat_noise_source
+	var saved_squad_position: Vector3 = game.squad_alert_position
+	var saved_squad_timer: float = game.squad_alert_timer
+	var saved_squad_serial: int = game.squad_alert_serial
+	var sense_guard: Dictionary = {"role": "RANGER", "ai_state": "PATROL", "last_known_position": Vector3.ZERO, "search_timer": 0.0, "heard_noise_serial": game.combat_noise_serial, "heard_squad_serial": game.squad_alert_serial, "displayed_ai_state": "PATROL"}
+	var sense_body: CharacterBody3D = game.guards[0]["node"] as CharacterBody3D
+	game._emit_combat_noise(sense_body.global_position + Vector3(1.0, 0.0, 1.0), 18.0, "runtime-test")
+	sense_guard = game._update_guard_perception(sense_guard, sense_body, false, 0.016)
+	if not _expect(str(sense_guard["ai_state"]) == "INVESTIGATE" and sense_guard["last_known_position"].distance_to(game.combat_noise_position) < 0.01, "new audible event must put an unaware guard into investigation at the noise source"):
+		return
+	sense_guard = game._update_guard_perception(sense_guard, sense_body, true, 0.016)
+	if not _expect(str(sense_guard["ai_state"]) == "ENGAGED" and sense_guard["last_known_position"].distance_to(game.player.global_position) < 0.01 and sense_guard["search_timer"] > 0.0, "visual contact must acquire the player and start a bounded search-memory timer"):
+		return
+	if not _expect(game.squad_alert_serial > saved_squad_serial and game.squad_alert_position.distance_to(game.player.global_position) < 0.01, "new visual contact must publish a squad-level radio position"):
+		return
+	game.combat_noise_position = saved_noise_position
+	game.combat_noise_radius = saved_noise_radius
+	game.combat_noise_timer = saved_noise_timer
+	game.combat_noise_serial = saved_noise_serial
+	game.combat_noise_source = saved_noise_source
+	game.squad_alert_position = saved_squad_position
+	game.squad_alert_timer = saved_squad_timer
+	game.squad_alert_serial = saved_squad_serial
 	print("RUNTIME_STAGE: generated PBR surface texture set")
 	var floor_surface: StandardMaterial3D = game.materials.get("floor") as StandardMaterial3D
 	var wall_surface: StandardMaterial3D = game.materials.get("wall") as StandardMaterial3D
@@ -811,10 +848,29 @@ func _run_smoke() -> void:
 		return
 
 	# Exercise the Stalker's full telegraph -> dash-start -> movement transition.
+	# New perception AI only telegraphs after an actual forward-cone/LOS contact.
+	var stalker_saved_player_position: Vector3 = game.player.global_position
+	var stalker_saved_squad_position: Vector3 = game.squad_alert_position
+	var stalker_saved_squad_timer: float = game.squad_alert_timer
+	var stalker_saved_squad_serial: int = game.squad_alert_serial
+	var stalker_saved_states: Array[Dictionary] = []
+	var stalker_saved_positions: Array[Vector3] = []
+	var stalker_saved_rotations: Array[Vector3] = []
+	var stalker_saved_tags: Array[Dictionary] = []
+	for guard_entry in game.guards:
+		stalker_saved_states.append((guard_entry as Dictionary).duplicate(true))
+		var saved_body: CharacterBody3D = guard_entry["node"] as CharacterBody3D
+		stalker_saved_positions.append(saved_body.global_position)
+		stalker_saved_rotations.append(saved_body.global_rotation)
+		var saved_tag: Label3D = guard_entry.get("role_tag") as Label3D
+		stalker_saved_tags.append({"text": saved_tag.text, "modulate": saved_tag.modulate} if is_instance_valid(saved_tag) else {})
+	game.player.global_position = Vector3(-2.0, 0.82, 6.0)
 	var stalker_state: Dictionary = game.guards[0]
 	var stalker_body: CharacterBody3D = stalker_state["node"]
 	var stalker_origin: Vector3 = stalker_body.global_position
 	stalker_body.global_position = game.player.global_position + Vector3(0.0, 0.0, -8.0)
+	stalker_body.look_at(game.player.global_position, Vector3.UP)
+	await physics_frame
 	stalker_state["stun"] = 0.0
 	stalker_state["windup"] = 0.0
 	stalker_state["dash_windup"] = 0.0
@@ -837,7 +893,21 @@ func _run_smoke() -> void:
 	game._update_guards(0.04)
 	if not _expect(stalker_body.global_position.distance_to(stalker_dash_origin) > 0.01, "Stalker dash must move the 3D body"):
 		return
-	stalker_body.global_position = stalker_origin
+	game.player.global_position = stalker_saved_player_position
+	for restore_index in range(stalker_saved_states.size()):
+		var restore_state: Dictionary = stalker_saved_states[restore_index]
+		var restore_body: CharacterBody3D = restore_state["node"] as CharacterBody3D
+		restore_body.global_position = stalker_saved_positions[restore_index]
+		restore_body.global_rotation = stalker_saved_rotations[restore_index]
+		restore_body.velocity = Vector3.ZERO
+		var restore_tag: Label3D = restore_state.get("role_tag") as Label3D
+		if is_instance_valid(restore_tag) and not stalker_saved_tags[restore_index].is_empty():
+			restore_tag.text = str(stalker_saved_tags[restore_index]["text"])
+			restore_tag.modulate = stalker_saved_tags[restore_index]["modulate"]
+		game.guards[restore_index] = restore_state
+	game.squad_alert_position = stalker_saved_squad_position
+	game.squad_alert_timer = stalker_saved_squad_timer
+	game.squad_alert_serial = stalker_saved_squad_serial
 	stalker_state = game.guards[0]
 	stalker_state["dash_timer"] = 0.0
 	stalker_state["dash_windup"] = 0.0
@@ -910,25 +980,62 @@ func _run_smoke() -> void:
 	var fire_saved_shots: int = game.shots_fired
 	var fire_saved_hits: int = game.shots_hit
 	var fire_saved_critical_hits: int = game.critical_hits
+	var fire_saved_mouse: bool = game.mouse_firing
+	var fire_saved_touch: bool = game.touch_firing
+	var fire_saved_gamepad: bool = game.gamepad_fire_held
+	var fire_saved_paused: bool = game.paused_game
+	var fire_saved_mission_finished: bool = game.mission_finished
+	var fire_saved_terminal: bool = game.terminal_active
+	# Disable any held input before waiting for a physics tick; otherwise the fixture itself can fire.
+	game.mouse_firing = false
+	game.touch_firing = false
+	game.gamepad_fire_held = false
+	game.paused_game = false
+	game.mission_finished = false
+	game.terminal_active = false
 	var moved_guard_positions: Array[Vector3] = []
 	for index in range(game.guards.size()):
 		var existing_body: CharacterBody3D = game.guards[index]["node"] as CharacterBody3D
 		moved_guard_positions.append(existing_body.global_position)
 		existing_body.global_position = Vector3(18.0 + float(index) * 1.5, 0.82, 15.0)
 	await physics_frame
-	game.player.global_position = fire_saved_position
-	var ray_guard_position: Vector3 = fire_saved_position + Vector3(0.0, 0.0, -5.0)
+	# Use a deterministic open corridor in the arena centre, away from cover and the gate.
+	game.player.global_position = Vector3(0.0, 0.82, 10.2)
+	game.player_aim = Vector3.FORWARD
+	game.aim_target_node = null
+	var fire_test_position: Vector3 = game.player.global_position
+	var ray_guard_position: Vector3 = fire_test_position + Vector3(0.0, 0.0, -5.0)
 	game._spawn_guard(ray_guard_position, false)
 	var ray_guard_index: int = game.guards.size() - 1
 	var ray_guard: CharacterBody3D = game.guards[ray_guard_index]["node"] as CharacterBody3D
 	var ray_guard_hp: int = int(game.guards[ray_guard_index]["hp"])
-	game.player_aim = Vector3.FORWARD
 	game.aim_target_node = ray_guard
 	game.fire_cooldown = 0.0
 	await physics_frame
 	await physics_frame
+	var ray_from: Vector3 = game.player.global_position + Vector3.UP * 0.48 + game.player_aim * 0.8
+	var ray_to: Vector3 = ray_from + game.player_aim * 37.0
+	var probe := PhysicsRayQueryParameters3D.create(ray_from, ray_to)
+	probe.exclude = [game.player.get_rid()]
+	probe.collision_mask = 0xFFFFFFFF
+	var probe_hit: Dictionary = game.get_world_3d().direct_space_state.intersect_ray(probe)
+	if not _expect(not probe_hit.is_empty() and probe_hit.get("collider") == ray_guard, "deterministic weapon-ray fixture must have a clear line to the compact hostile capsule"):
+		return
+	# The physics ticks above register the fixture. Re-open the cooldown gate after those ticks
+	# so an incidental gameplay tick cannot make a direct weapon-pipeline smoke nondeterministic.
+	game.mouse_firing = false
+	game.touch_firing = false
+	game.gamepad_fire_held = false
+	game.paused_game = false
+	game.mission_finished = false
+	game.terminal_active = false
+	game.fire_cooldown = 0.0
+	if not _expect(is_instance_valid(ray_guard) and game.aim_target_node == ray_guard and is_zero_approx(game.fire_cooldown), "weapon-ray target and fire gate must be valid immediately before the direct shot"):
+		return
 	game._fire_weapon()
-	if not _expect(game.shots_fired == fire_saved_shots + 1 and game.shots_hit == fire_saved_hits + 1, "weapon ray must connect with a compact hostile capsule at its body height"):
+	if not _expect(game.shots_fired == fire_saved_shots + 1, "direct weapon-fire call must increment fired-shot telemetry; actual=%d expected=%d cooldown=%.3f" % [game.shots_fired, fire_saved_shots + 1, game.fire_cooldown]):
+		return
+	if not _expect(game.shots_hit == fire_saved_hits + 1, "weapon ray must register a confirmed hit on the compact hostile capsule; actual=%d expected=%d" % [game.shots_hit, fire_saved_hits + 1]):
 		return
 	if not _expect(int(game.guards[ray_guard_index]["hp"]) == ray_guard_hp - 2 and game.critical_hits == fire_saved_critical_hits + 1, "an accurately locked upper-zone ray hit must register two damage and one critical event"):
 		return
@@ -944,6 +1051,12 @@ func _run_smoke() -> void:
 	game.shots_fired = fire_saved_shots
 	game.shots_hit = fire_saved_hits
 	game.critical_hits = fire_saved_critical_hits
+	game.mouse_firing = fire_saved_mouse
+	game.touch_firing = fire_saved_touch
+	game.gamepad_fire_held = fire_saved_gamepad
+	game.paused_game = fire_saved_paused
+	game.mission_finished = fire_saved_mission_finished
+	game.terminal_active = fire_saved_terminal
 	await physics_frame
 
 	print("RUNTIME_STAGE: combat director math, grade and overdrive")
