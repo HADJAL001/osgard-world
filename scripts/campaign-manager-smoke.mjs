@@ -71,6 +71,7 @@ assert.ok(adminPage.includes('name="robots" content="noindex,nofollow,noarchive"
 assert.ok(adminPage.includes("Максимум 3 активных карточки"));
 assert.ok(adminCss.includes("@media(max-width:760px)") && adminCss.includes("focus-visible"));
 assert.ok(adminScript.includes("Authorization: 'Bearer '") && adminScript.includes("credentials: 'omit'"));
+assert.ok(adminScript.includes("parsed.origin === location.origin") && adminScript.includes("parsed.pathname === '/commerce-api'") && adminScript.includes("Never send it to an arbitrary"), "Privileged admin token must be restricted to the same-origin API or local development endpoint.");
 assert.ok(!adminScript.includes("localStorage.setItem(") && !adminScript.includes("sessionStorage.setItem("), "Admin token must not be persisted client-side");
 assert.ok(adminScript.includes("/v1/admin/campaigns") && adminScript.includes("status: 'paused'"));
 assert.ok(privacy.includes("osgard.games.sponsor-exposures.v1") && privacy.includes("только после явного согласия"));
