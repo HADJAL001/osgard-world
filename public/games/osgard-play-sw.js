@@ -19,6 +19,7 @@ const PRECACHE_URLS = [
 ];
 const PUBLIC_STATIC_ALLOWLIST = new Set([
   '/games/app.webmanifest',
+  '/games/app.webmanifest',
   '/games/osgard-play-icon.svg',
   '/games/offline.html',
   '/games/pwa-install.css',
