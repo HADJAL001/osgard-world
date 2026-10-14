@@ -87,7 +87,7 @@ async function writePassingPerformanceReport(path) {
     ],
     transferEstimate: { textAssets: 3, gzipBytes: 250 },
     sha256: 'b'.repeat(64),
-  }, null, 2) + '\\n');
+  }, null, 2) + '\n');
 }
 test('release attestation binds both product contract and performance budget reports', async () => {
   const f = await fixture();
