@@ -42,3 +42,12 @@ npm run qa:external-project-healthcheck
 ## Publication-linked verification — 14 October 2026
 
 This audit has been attached to the OSGARD publication review so that changing this file runs the existing pull-request homepage check. Use the resulting timestamped GitHub Actions artifact for the actual HTTP statuses and redirect destinations. A report from this one CI region is a reachability snapshot only; it does not confirm login, API health, product function, ownership, legal compliance, or suitability for paid promotion. Keep paid promotion blocked pending manual review even if every homepage returns 2xx/3xx.
+
+## Owner-requested network re-check — 15 October 2026
+
+PR #480 updates this audit document so the existing GitHub Actions homepage-check workflow runs against all ten owner-listed HTTPS destinations. Use the timestamped workflow artifact for measured HTTP status, final redirect URL/host, content type, timing and page-title result. Do not infer a successful service or paid-promotion approval solely from a homepage response.
+
+The browser fetch in the implementation session could not retrieve the exact public URLs (the tool returned inaccessible/Cache miss). Those responses are an inspection limitation, not evidence of downtime. The network-enabled workflow is the appropriate next measurement. If its run is also blocked by transient DNS/TLS/network errors, record the result as inconclusive and repeat from an independent network.
+
+The automatic promotion gate remains fail-closed: even a same-host HTTPS response means manual review is required. No paid campaigns, advertising SDKs or payment processing are activated by this re-check.
+
