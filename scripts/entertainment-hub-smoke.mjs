@@ -11,17 +11,17 @@ const sitemap = readFileSync(resolve('public/sitemap.xml'), 'utf8');
 const routes = readFileSync(resolve('scripts/production-route-matrix.mjs'), 'utf8');
 
 const ids = [...page.matchAll(/<article class="world-card [^"]*" data-game="([^"]+)"/g)].map(m => m[1]);
-const expectedIds = ['null-shift','time','swarm','inherit','remix','civic-cascade','patina','signal-run','cascade-lab','afterimage-run','aether-grid'];
+const expectedIds = ['null-shift','time','swarm','inherit','remix','civic-cascade','patina','signal-run','cascade-lab','afterimage-run','aether-grid','heist-echo'];
 const checks = [
   ['01 · Replace the old redirect with a real entertainment page', !page.includes('http-equiv="refresh"') && !page.includes('window.location.replace')],
   ['02 · Provide a unique page title', page.includes('<title>OSGARD ENTERTAINMENT — Играй. Исследуй. Передавай вызов.</title>')],
   ['03 · Canonical URL points to /entertainment/', page.includes('href="https://osgard.world/entertainment/"')],
   ['04 · SEO description is present', page.includes('name="description" content="OSGARD ENTERTAINMENT')],
   ['05 · Open Graph and Twitter previews are configured', page.includes('property="og:image"') && page.includes('name="twitter:card" content="summary_large_image"')],
-  ['06 · Structured data declares the real eleven-entry collection', page.includes('"@type":"CollectionPage"') && page.includes('"numberOfItems":11')],
-  ['07 · Exactly eleven catalogue cards are present', ids.length === 11],
+  ['06 · Structured data declares the real twelve-entry collection', page.includes('"@type":"CollectionPage"') && page.includes('"numberOfItems":12')],
+  ['07 · Exactly twelve catalogue cards are present', ids.length === 12],
   ['08 · Game card IDs are unique', new Set(ids).size === ids.length],
-  ['09 · The cards map to the current eleven-game inventory', expectedIds.every(id => ids.includes(id))],
+  ['09 · The cards map to the current twelve-game inventory', expectedIds.every(id => ids.includes(id)) && ids.includes('heist-echo')],
   ['10 · Every world card has a real launch link', page.includes('data-launch="null-shift"') && expectedIds.every(id => page.includes('data-launch="'+id+'"'))],
   ['11 · Search supports title, tags and description', page.includes('id="game-search"') && js.includes('card.textContent')],
   ['12 · Genre filter buttons have pressed state for accessibility', page.includes('data-genre="tactics"') && js.includes("setAttribute('aria-pressed', String(active))")],
