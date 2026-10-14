@@ -387,3 +387,22 @@
 .gh-game-stage:focus-visible{outline:2px solid var(--gh-mint);outline-offset:3px}
 @media(max-width:520px){.gh-game-error-actions{display:grid;grid-template-columns:minmax(0,1fr)}.gh-game-error-actions>*{justify-content:center}}
 @media(prefers-reduced-motion:reduce){.gh-game-loading .gh-loader{animation:none}}
+
+
+/* Game-to-business bridge: a quiet, attributed conversion path below the play experience. */
+.gh-commercial-bridge{position:relative;isolation:isolate;display:grid;grid-template-columns:minmax(0,1.2fr) minmax(260px,.8fr);gap:clamp(22px,4vw,54px);align-items:center;margin-top:26px;padding:clamp(24px,4vw,42px);overflow:hidden;border:1px solid rgba(211,255,105,.22);border-radius:18px;background:radial-gradient(ellipse at 12% 0%,rgba(211,255,105,.10),transparent 48%),linear-gradient(135deg,rgba(255,255,255,.045),rgba(255,255,255,.01)),#0b1110;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+.gh-commercial-bridge::after{position:absolute;z-index:-1;right:-65px;bottom:-120px;width:280px;height:280px;border:1px solid rgba(211,255,105,.10);border-radius:50%;box-shadow:0 0 0 34px rgba(211,255,105,.025),0 0 0 70px rgba(211,255,105,.018);content:"";pointer-events:none}
+.gh-commercial-bridge__copy{max-width:680px;min-width:0}
+.gh-commercial-bridge__copy h2{margin:12px 0 13px;color:var(--gh-text,#f3f1e8);font:400 clamp(27px,3.5vw,42px)/1.06 var(--gh-serif,Georgia,serif);letter-spacing:-.035em}
+.gh-commercial-bridge__copy h2 em{color:var(--gh-mint,#d3ff69);font-style:normal}
+.gh-commercial-bridge__copy>p:last-child{max-width:640px;margin:0;color:var(--gh-muted,#a0a69b);font-size:13px;line-height:1.8}
+.gh-commercial-bridge__actions{display:grid;gap:10px;min-width:0}
+.gh-commercial-bridge__action{display:flex;min-height:62px;justify-content:space-between;align-items:center;gap:18px;padding:12px 16px;text-align:left;text-decoration:none;transition:transform .18s ease,border-color .18s ease,background .18s ease}
+.gh-commercial-bridge__action>span{display:grid;gap:4px;min-width:0;font-weight:650}
+.gh-commercial-bridge__action small{color:inherit;opacity:.72;font-size:10px;font-weight:400;line-height:1.45}
+.gh-commercial-bridge__action svg{flex:0 0 auto}
+.gh-commercial-bridge__action:hover{transform:translateY(-1px)}
+.gh-commercial-bridge__action:focus-visible{outline:2px solid var(--gh-mint,#d3ff69);outline-offset:3px}
+.gh-commercial-bridge__note{grid-column:1/-1;max-width:900px;margin:-3px 0 0;color:var(--gh-muted,#a0a69b);font-size:10px;line-height:1.65}
+@media(max-width:760px){.gh-commercial-bridge{grid-template-columns:minmax(0,1fr);gap:22px;margin-top:20px;padding:22px 18px;border-radius:14px}.gh-commercial-bridge__actions{grid-template-columns:minmax(0,1fr)}.gh-commercial-bridge__action{min-height:66px;padding:13px 14px}.gh-commercial-bridge__note{grid-column:auto;margin-top:-8px}}
+@media(prefers-reduced-motion:reduce){.gh-commercial-bridge__action{transition:none}.gh-commercial-bridge__action:hover{transform:none}}
