@@ -58,6 +58,8 @@ export const ALLOWED_EVENTS = new Set([
   "pwa_install_accepted",
   "pwa_install_dismissed",
   "pwa_standalone_opened",
+  "product_experiment_exposed",
+  "product_experiment_converted",
 ]);
 
 const GAME_IDS = new Set([
@@ -191,6 +193,12 @@ export function validateEventBatch(body) {
     if (!GAME_IDS.has(gameId)) return { ok: false, status: 400, code: "GAME_ID_INVALID" };
     if ((name === "sponsored_campaign_impression" || name === "sponsored_campaign_clicked") && !/^sponsor-campaign:[a-zA-Z0-9_-]{8,64}$/.test(source)) {
       return { ok: false, status: 400, code: "CAMPAIGN_EVENT_SOURCE_INVALID" };
+    }
+    if (name === "product_experiment_exposed" || name === "product_experiment_converted") {
+      const match = source.match(/^osgard-experiment:(catalog-hero-cta-v1):([ab]):(exposed|converted)$/);
+      if (!match) return { ok: false, status: 400, code: "PRODUCT_EXPERIMENT_SOURCE_INVALID" };
+      const expectedName = match[3] === "exposed" ? "product_experiment_exposed" : "product_experiment_converted";
+      if (name !== expectedName) return { ok: false, status: 400, code: "PRODUCT_EXPERIMENT_EVENT_PHASE_INVALID" };
     }
     if (!Number.isInteger(durationSeconds) || durationSeconds < 0 || durationSeconds > 86400) {
       return { ok: false, status: 400, code: "DURATION_INVALID" };

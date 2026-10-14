@@ -7,6 +7,7 @@ on:
       - "src/**"
       - "public/games/**"
       - "scripts/games-portal-smoke.mjs"
+      - "scripts/product-experiment-engine-smoke.mjs"
       - "scripts/games-detail-smoke.mjs"
       - "scripts/games-monetization-smoke.mjs"
       - "scripts/remix-growth-smoke.mjs"
@@ -54,5 +55,7 @@ jobs:
         run: npm run qa:partners-page
       - name: OSGARD first-party ecosystem directory
         run: npm run qa:ecosystem-directory
+      - name: Product experiment assignment, consent and sample-size gates
+        run: npm run qa:product-experiments
       - name: Production frontend build
         run: npm run build

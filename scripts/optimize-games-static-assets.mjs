@@ -13,6 +13,8 @@ const MINIFY_ASSETS = [
   'luxury.js',
   'daily-circuit.js',
   'device-fit.js',
+  'experiment-core.js',
+  'experiment-runtime.js',
 ]
 
 function walk(directory) {

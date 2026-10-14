@@ -238,6 +238,19 @@ test("consented analytics accept stable event IDs and new page-view events, whil
   assert.equal(promoResumed.events[0].source, "osgard-select:snooze-resume:13");
 });
 
+test("product experiment events require consent, an allow-listed experiment, and a matching event phase", () => {
+  const base = { sessionId: "session_product_exp_1234", gameId: "unknown", path: "/games/", durationSeconds: 0 };
+  const exposure = { ...base, name: "product_experiment_exposed", source: "osgard-experiment:catalog-hero-cta-v1:a:exposed", eventId: "evt_product_exposed_1234" };
+  const conversion = { ...base, name: "product_experiment_converted", source: "osgard-experiment:catalog-hero-cta-v1:b:converted", eventId: "evt_product_converted_1234" };
+  assert.equal(validateEventBatch({ consent: true, events: [exposure] }).ok, true);
+  assert.equal(validateEventBatch({ consent: true, events: [conversion] }).ok, true);
+  assert.equal(validateEventBatch({ consent: false, events: [exposure] }).code, "ANALYTICS_CONSENT_REQUIRED");
+  assert.equal(validateEventBatch({ consent: true, events: [{ ...exposure, source: "osgard-experiment:invented:a:exposed" }] }).code, "PRODUCT_EXPERIMENT_SOURCE_INVALID");
+  assert.equal(validateEventBatch({ consent: true, events: [{ ...exposure, name: "product_experiment_converted" }] }).code, "PRODUCT_EXPERIMENT_EVENT_PHASE_INVALID");
+  assert.equal(validateEventBatch({ consent: true, events: [{ ...conversion, source: "osgard-experiment:catalog-hero-cta-v1:c:converted" }] }).code, "PRODUCT_EXPERIMENT_SOURCE_INVALID");
+});
+
+
 test("live Stripe keys stay disabled unless explicitly enabled", () => {
   assert.equal(paymentsModeAllowed("sk_test_example", false), true);
   assert.equal(paymentsModeAllowed("sk_live_example", false), false);
