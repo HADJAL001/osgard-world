@@ -91,10 +91,10 @@ dialog{width:min(1220px,calc(100vw - 28px));max-width:none;max-height:min(94svh,
         <button class="og-passport-action" type="button" data-passport-export>Экспорт паспорта JSON ↓</button>
         <button class="og-passport-action" type="button" data-passport-reset>Сбросить только паспорт</button>
       </div>
-      <p class="og-passport-privacy" id="passport-storage-note">Паспорт хранится только в этом браузере. XP и знаки отличия — локальный прогресс, не деньги и не серверные достижения.</p>
+      <p class="og-passport-status" id="passport-status" role="status" aria-live="polite"></p><p class="og-passport-privacy" id="passport-storage-note">Паспорт хранится только в этом браузере. XP и знаки отличия — локальный прогресс, не деньги и не серверные достижения.</p>
     </div>
     <div class="og-passport-loading" id="passport-loading">
-      <p id="passport-status" data-passport-status role="status" aria-live="polite">Паспорт загружается только при приближении к этому разделу.</p>
+      <p id="passport-load-status" data-passport-load-status role="status" aria-live="polite">Паспорт загружается только при приближении к этому разделу.</p>
       <button class="og-passport-action" type="button" data-passport-load>Открыть игровой паспорт ↗</button>
     </div>
   </div>
