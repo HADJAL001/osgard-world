@@ -313,10 +313,10 @@ app.get("/v1/admin/game-feedback", requireAdmin, async (req, res) => {
   res.set("Cache-Control", "no-store, private");
   try {
     const result = await pool.query(
-      "SELECT feedback_id AS \\"feedbackId\\", submission_id AS \\"submissionId\\", game_id AS \\"gameId\\", category, severity, " +
-      "title, description, steps_to_reproduce AS \\"stepsToReproduce\\", expected_result AS \\"expectedResult\\", actual_result AS \\"actualResult\\", " +
-      "reply_to AS \\"replyTo\\", device_class AS \\"deviceClass\\", browser_family AS \\"browserFamily\\", viewport_width AS \\"viewportWidth\\", " +
-      "viewport_height AS \\"viewportHeight\\", status, created_at AS \\"createdAt\\", updated_at AS \\"updatedAt\\", resolved_at AS \\"resolvedAt\\" " +
+      "SELECT feedback_id AS \"feedbackId\", submission_id AS \"submissionId\", game_id AS \"gameId\", category, severity, " +
+      "title, description, steps_to_reproduce AS \"stepsToReproduce\", expected_result AS \"expectedResult\", actual_result AS \"actualResult\", " +
+      "reply_to AS \"replyTo\", device_class AS \"deviceClass\", browser_family AS \"browserFamily\", viewport_width AS \"viewportWidth\", " +
+      "viewport_height AS \"viewportHeight\", status, created_at AS \"createdAt\", updated_at AS \"updatedAt\", resolved_at AS \"resolvedAt\" " +
       "FROM commerce_game_feedback " + where +
       " ORDER BY CASE severity WHEN 'blocker' THEN 0 WHEN 'major' THEN 1 ELSE 2 END, " +
       "CASE status WHEN 'new' THEN 0 WHEN 'triaged' THEN 1 WHEN 'in_progress' THEN 2 ELSE 3 END, created_at DESC LIMIT $" + values.length,
@@ -337,7 +337,7 @@ app.post("/v1/admin/game-feedback/:id/status", requireAdmin, async (req, res) =>
   if (!FEEDBACK_STATUSES.includes(status)) return res.status(400).json({ error: "GAME_FEEDBACK_STATUS_INVALID" });
   try {
     const result = await pool.query(
-      "UPDATE commerce_game_feedback SET status=$2, updated_at=NOW(), resolved_at=CASE WHEN $2 IN ('resolved','wontfix') THEN COALESCE(resolved_at,NOW()) ELSE NULL END WHERE feedback_id=$1 RETURNING feedback_id AS \\"feedbackId\\", status, updated_at AS \\"updatedAt\\"",
+      "UPDATE commerce_game_feedback SET status=$2, updated_at=NOW(), resolved_at=CASE WHEN $2 IN ('resolved','wontfix') THEN COALESCE(resolved_at,NOW()) ELSE NULL END WHERE feedback_id=$1 RETURNING feedback_id AS \"feedbackId\", status, updated_at AS \"updatedAt\"",
       [id, status],
     );
     if (!result.rows[0]) return res.status(404).json({ error: "GAME_FEEDBACK_NOT_FOUND" });
