@@ -121,21 +121,29 @@ export function campaignFromRow(row) {
 export function publicCampaignView(row) {
   const campaign = campaignFromRow(row);
   const targetUrl = safeHttpsUrl(campaign.targetUrl);
+  const sponsorName = text(campaign.sponsorName, 100);
+  const title = text(campaign.title, 100);
+  const description = text(campaign.description, 500);
   if (
     !normalizeCampaignId(campaign.id) ||
     !targetUrl ||
     !PLACEMENTS.has(campaign.placement) ||
     !DISCLOSURES.has(campaign.sponsorDisclosure) ||
-    campaign.sponsorName.length < 2 ||
-    campaign.title.length < 3 ||
-    campaign.description.length < 10 ||
-    campaign.status !== "active"
+    sponsorName.length < 2 ||
+    title.length < 3 ||
+    description.length < 10 ||
+    campaign.status !== "active" ||
+    !campaign.startsAt ||
+    !campaign.endsAt
   ) return null;
+  const startMs = Date.parse(campaign.startsAt);
+  const endMs = Date.parse(campaign.endsAt);
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) return null;
   return {
     id: campaign.id,
-    sponsorName: text(campaign.sponsorName, 100),
-    title: text(campaign.title, 100),
-    description: text(campaign.description, 500),
+    sponsorName,
+    title,
+    description,
     targetUrl,
     placement: campaign.placement,
     sponsorDisclosure: campaign.sponsorDisclosure,
