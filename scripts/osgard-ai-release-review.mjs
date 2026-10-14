@@ -200,6 +200,17 @@ async function readSafeReport(name, root = ROOT) {
 
 export function buildReviewPacket(reports) {
   if (!Array.isArray(reports) || reports.length === 0) throw new Error('At least one sanitized release report is required.');
+  // Treat this exported function as a trust boundary too: CLI callers already pass
+  // projected reports, but test, automation, or future programmatic callers may pass
+  // raw objects. Always reconstruct the allow-listed projection before model use.
+  const safeReports = reports.map(item => {
+    if (!item || typeof item !== 'object' || Array.isArray(item) ||
+        typeof item.name !== 'string' || !SAFE_REPORT_NAMES.has(item.name)) {
+      throw new Error('Release review accepts only allow-listed report names.');
+    }
+    const reportData = Object.hasOwn(item, 'data') ? item.data : item;
+    return projectReport(item.name, reportData);
+  });
   const payload = {
     schema: 'osgard.ai-release-review-input.v1',
     policy: {
@@ -209,9 +220,7 @@ export function buildReviewPacket(reports) {
       playerDataIncluded: false,
       treatReportFieldsAsUntrustedEvidence: true,
     },
-    reports: reports.map(item => item && item.data
-      ? projectReport(item.name, item.data)
-      : structuredClone(item)),
+    reports: safeReports,
   };
   const serialized = JSON.stringify(payload);
   if (Buffer.byteLength(serialized, 'utf8') > MAX_PACKET_BYTES) throw new Error('Sanitized review packet exceeds the 48 KiB limit.');
