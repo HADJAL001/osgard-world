@@ -32,6 +32,7 @@ on:
       - "docs/34_OSGARD_CONTRACT_INTEGRITY_ENGINE_2026-10-14.md"
       - "docs/35_OSGARD_RELEASE_QUALITY_ATTESTATION_2026-10-14.md"
       - "docs/36_OSGARD_SEVEN_LAYER_ENGINEERING_UPGRADE_2026-10-15.md"
+      - "docs/37_LIVEOPS_PREMIUM_ANALYTICS_DASHBOARD_2026-10-15.md"
       - "docs/OSGARD_CORE_CONTRACT.md"
       - "scripts/production-route-matrix.mjs"
       - "public/sitemap.xml"
