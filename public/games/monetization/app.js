@@ -17,6 +17,7 @@ const projectionExportButton = document.getElementById('export-projection-csv');
 const stressRunButton = document.getElementById('run-stress-test');
 const stressExportButton = document.getElementById('export-stress-csv');
 const stressIterations = document.getElementById('stress-iterations');
+const stressScenario = document.getElementById('stress-scenario');
 const stressUncertainty = document.getElementById('stress-uncertainty');
 let latestRiskSimulation = null;
 let riskInputsFingerprint = '';
@@ -235,7 +236,7 @@ function renderStressSimulation(result) {
   document.getElementById('stress-histogram-min').textContent = money(min.fromUsd);
   document.getElementById('stress-histogram-max').textContent = money(max.toUsd);
   document.getElementById('stress-status').textContent =
-    count(result.iterations) + ' прогонов · ±' + percent(result.uncertaintyPct) +
+    count(result.iterations) + ' прогонов · сценарий «' + (SCENARIOS.find((item) => item.id === result.scenarioId)?.label || 'Базовый') + '» · ±' + percent(result.uncertaintyPct) +
     ' · seed ' + result.seed + ' · доля сценарных вариаций, достигших цели: ' + percent(summary.annualTargetHitSharePct) +
     '. Это распределение заданных допущений, не вероятность реального бизнеса.';
   stressExportButton.disabled = false;
@@ -363,6 +364,7 @@ stressRunButton.addEventListener('click', () => {
   latestRiskSimulation = calculateRiskSimulation(inputs, {
     iterations: Number(stressIterations.value),
     uncertaintyPct: Number(stressUncertainty.value),
+    scenarioId: stressScenario.value,
     seed: 20261015,
   });
   riskInputsFingerprint = JSON.stringify(inputs);
