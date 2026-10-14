@@ -8,6 +8,7 @@ import { optimizeGamesStaticAssets } from './optimize-games-static-assets.mjs'
 const root = mkdtempSync(join(tmpdir(), 'osgard-games-assets-'))
 try {
   mkdirSync(join(root, 'nested'), { recursive: true })
+  mkdirSync(join(root, 'en'), { recursive: true })
   const longCss = Array.from({ length: 100 }, (_, i) =>
     '.sample-' + i + ' { color: #65eaff; margin: ' + (i % 12) + 'px; padding: ' + (i % 9) + 'px; border: 1px solid #302f50; }'
   ).join('\n')
@@ -15,11 +16,13 @@ try {
   for (const path of ['luxury.css', 'daily-circuit.css', 'device-fit.css']) writeFileSync(join(root, path), longCss)
   for (const path of ['consented-analytics.js', 'commerce-client.js', 'luxury.js', 'daily-circuit.js', 'device-fit.js', 'experiment-core.js', 'experiment-runtime.js']) writeFileSync(join(root, path), longJs)
   writeFileSync(join(root, 'nested', 'lazy.mjs'), longJs + '\nexport { pickTone }\n')
+  writeFileSync(join(root, 'en', 'styles.css'), longCss)
+  writeFileSync(join(root, 'en', 'app.js'), longJs)
 
   const result = await optimizeGamesStaticAssets(root)
-  assert.equal(result.minified.length, 10, 'All critical Games CSS/JS assets must be minified')
+  assert.equal(result.minified.length, 12, 'Critical and optional English catalog CSS/JS assets must be minified when present')
   assert.ok(result.minifiedBytesAfter < result.minifiedBytesBefore, 'Minification must reduce the critical asset byte count')
-  assert.ok(result.compressed.length >= 7, 'Critical and lazy CSS/JS should have precompressed siblings')
+  assert.ok(result.compressed.length >= 9, 'Critical, lazy and English catalog CSS/JS should have precompressed siblings')
 
   for (const item of result.compressed) {
     const sourcePath = join(root, item.path)
