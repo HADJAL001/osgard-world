@@ -1,0 +1,59 @@
+name: OSGARD AI release review (manual, opt-in)
+
+on:
+  workflow_dispatch:
+    inputs:
+      use_openai:
+        description: "Explicitly send sanitized release summaries to the OpenAI API (may incur API charges)"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: osgard-ai-release-review-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  review:
+    if: ${{ inputs.use_openai }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPENAI_MODEL: ${{ vars.OPENAI_MODEL || 'gpt-6-sol' }}
+      OSGARD_BASE_URL: https://osgard.world
+    steps:
+      - name: Check out the exact requested revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Run release readiness and preserve report on failure
+        continue-on-error: true
+        run: |
+          set +e
+          npm run qa:release > /tmp/osgard-release-readiness.log 2>&1
+          code=$?
+          echo "Release readiness exit code: $code"
+          if [ ! -s release-readiness.json ]; then
+            node -e "require('node:fs').writeFileSync('release-readiness.json', JSON.stringify({status:'blocked',checks:[{name:'release-readiness-report',status:'failed'}]}, null, 2))"
+          fi
+      - name: Prepare AI advisory review
+        run: node scripts/osgard-ai-release-review.mjs --report release-readiness.json --send-to-openai
+      - name: Upload AI review and machine evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: osgard-ai-release-review
+          if-no-files-found: warn
+          path: |
+            osgard-ai-release-review.json

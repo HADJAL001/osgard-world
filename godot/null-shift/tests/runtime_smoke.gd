@@ -1466,12 +1466,17 @@ func _run_smoke() -> void:
 
 	print("RUNTIME_STAGE: live diagnostics")
 	game._toggle_diagnostics()
+	var objective_label_before_diagnostics: Label = game.objective_label
+	# Live diagnostics must remain available during a scene transition where the primary
+	# objective HUD is already gone; instrumentation cannot depend on optional presentation UI.
+	game.objective_label = null
 	game._update_hud()
+	game.objective_label = objective_label_before_diagnostics
 	if not _expect(game.diagnostics_label.visible, "diagnostics panel must open"):
 		return
 	if not _expect(game.frame_samples.size() > 0 and game.current_frame_ms >= 0.0, "frame times must be measured live"):
 		return
-	if not _expect(game.diagnostics_label.text.contains("DRAW / TRI / NODES"), "diagnostics must expose renderer counters"):
+	if not _expect(game.diagnostics_label.text.contains("DRAW / TRI / NODES"), "diagnostics must expose renderer counters even without the objective HUD"):
 		return
 	if not _expect(game.diagnostics_label.text.contains("FX ACTIVE") and game.diagnostics_label.text.contains("FX DROPPED"), "diagnostics must report active effects and pool overflow"):
 		return

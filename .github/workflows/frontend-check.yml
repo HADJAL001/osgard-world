@@ -34,6 +34,12 @@ on:
       - "services/osgard-commerce-api/**"
       - "godot/null-shift/**"
       - "scripts/null-shift-godot-smoke.mjs"
+      - "scripts/null-shift-diagnostics-contract-smoke.mjs"
+      - "scripts/osgard-ai-release-review.mjs"
+      - "scripts/osgard-ai-release-review.test.mjs"
+      - "docs/OSGARD_AI_RELEASE_REVIEW.md"
+      - "docs/OSGARD_ENGINEERING_BLUEPRINT_2026_2029.md"
+      - ".github/workflows/osgard-ai-release-review.yml"
       - "docs/02_IMPERIUM_OF_TIME_GAME_DESIGN.md"
       - "public/skillcred/**"
       - "public/privacy/**"
@@ -68,6 +74,10 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
+      - name: Test OpenAI reviewer offline (no API call)
+        run: npm run qa:ai-release-review
+      - name: Verify Godot diagnostics fault contract
+        run: npm run qa:null-shift-diagnostics-contract
       - name: Validate production activation shell before build and tests
         run: bash -n scripts/activate-frontend-remote.sh
       - name: Type-check the frontend
