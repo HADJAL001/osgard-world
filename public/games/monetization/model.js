@@ -473,11 +473,11 @@ export function calculateRiskSimulation(input = {}, options = {}) {
   const histogramBins = 16;
   const minNet = net[0];
   const maxNet = net[net.length - 1];
-  const binWidth = maxNet > minNet ? (maxNet - minNet) / histogramBins : 1;
+  const binWidth = maxNet > minNet ? (maxNet - minNet) / histogramBins : 0;
   const histogram = Array.from({ length: histogramBins }, (_, index) => ({
     index,
     fromUsd: roundMoney(minNet + binWidth * index),
-    toUsd: roundMoney(index === histogramBins - 1 ? maxNet : minNet + binWidth * (index + 1)),
+    toUsd: roundMoney(maxNet === minNet ? maxNet : (index === histogramBins - 1 ? maxNet : minNet + binWidth * (index + 1))),
     count: 0,
   }));
   for (const value of net) {
