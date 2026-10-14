@@ -333,5 +333,5 @@ console.log(JSON.stringify({
   status: 'passed',
   serviceDestinations: services.length,
   gameContexts: 9,
-  checks: 73, notes: 'Source-level guardrails; social publication is self-confirmed, not verified by social-network APIs.'
+  checks: 76, notes: 'Source-level guardrails; social publication is self-confirmed, not verified by social-network APIs.'
 }));
