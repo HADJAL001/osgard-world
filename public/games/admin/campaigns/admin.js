@@ -34,11 +34,14 @@
     if (!raw) return '';
     try {
       const parsed = new URL(raw, location.origin);
-      const localApi = ['localhost', '127.0.0.1'].includes(parsed.hostname);
-      const allowedPath = parsed.pathname === '/' || (parsed.pathname === '/commerce-api' && parsed.origin === location.origin);
-      if ((parsed.protocol !== 'https:' && !(localApi && parsed.protocol === 'http:')) ||
-          parsed.username || parsed.password || !allowedPath || parsed.search || parsed.hash) return '';
-      return parsed.origin + (parsed.pathname === '/' ? '' : parsed.pathname);
+      const localApi = ['localhost', '127.0.0.1'].includes(parsed.hostname) &&
+        parsed.protocol === 'http:' && parsed.pathname === '/';
+      const sameOriginApi = parsed.origin === location.origin &&
+        parsed.protocol === 'https:' && parsed.pathname === '/commerce-api';
+      // This page carries a privileged Bearer token. Never send it to an arbitrary
+      // host read from a public JSON file, even when that host uses HTTPS.
+      if ((!sameOriginApi && !localApi) || parsed.username || parsed.password || parsed.search || parsed.hash) return '';
+      return parsed.origin + parsed.pathname;
     } catch { return ''; }
   }
   async function getBase() {
