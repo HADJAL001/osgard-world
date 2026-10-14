@@ -8,7 +8,29 @@ function readLocalProgress(day){let streak=null,best=0;try{streak=JSON.parse(roo
 function challengeCode(day){if(!isValidDate(day))throw new RangeError('A valid UTC calendar date is required.');const compact=day.replace(/-/g,''),month=Number(day.slice(5,7)),date=Number(day.slice(8,10));return 'NS-'+compact+'-C'+(((month+date)%3)+1)}
 function routeFor(id,day,origin){if(!isValidDate(day))throw new RangeError('A valid UTC calendar date is required.');if(!['signal-run','null-shift','aether-grid'].includes(id))throw new RangeError('Unsupported daily route.');const base=origin||'https://osgard.world';let u;if(id==='signal-run'){u=new URL('/games/signal-run/',base);u.searchParams.set('mode','daily');u.searchParams.set('day',day);u.searchParams.set('utm_source','signal-run');u.searchParams.set('utm_medium','share');u.searchParams.set('utm_campaign','challenge');u.searchParams.set('utm_content','daily_circuit')}else if(id==='null-shift'){u=new URL('/games/null-shift-godot/',base);u.searchParams.set('challenge',challengeCode(day));u.searchParams.set('utm_source','osgard_play');u.searchParams.set('utm_medium','referral');u.searchParams.set('utm_campaign','play_with_friends');u.searchParams.set('utm_content','daily_circuit')}else{u=new URL('/games/aether-grid/',base);u.searchParams.set('day',day);u.searchParams.set('utm_source','osgard_daily');u.searchParams.set('utm_medium','daily_circuit');u.searchParams.set('utm_campaign','daily_puzzle');u.searchParams.set('utm_content','aether_grid')}return Object.freeze({id,date:day,challengeCode:id==='null-shift'?challengeCode(day):id==='aether-grid'?'AG-'+day.replace(/-/g,'')+'-DAILY':'',href:u.pathname+u.search})}
 function shareUrl(id,day,token,origin){if(typeof token!=='string'||!/^[a-f0-9]{12}$/.test(token))throw new RangeError('A 12-character opaque invite code is required.');if(!isValidDate(day))throw new RangeError('A valid UTC calendar date is required.');if(!['signal-run','null-shift','aether-grid'].includes(id))throw new RangeError('Unsupported daily route.');const base=origin||'https://osgard.world';let u=null;try{const candidate=root.OSGARDInvite?.createLink?.(id);if(candidate){const parsed=new URL(candidate,base);if(parsed.origin===new URL(base).origin&&parsed.pathname==='/games/invite/'+id+'/'&&parsed.searchParams.get('og_game')===id&&/^og_[a-f0-9]{8}$/.test(parsed.searchParams.get('og_ref')||'')&&parsed.searchParams.get('utm_source')==='osgard_play'&&parsed.searchParams.get('utm_medium')==='referral'&&parsed.searchParams.get('utm_campaign')==='play_with_friends'&&parsed.searchParams.get('utm_content')===id)u=parsed}}catch{}if(!u){u=new URL('/games/invite/'+id+'/',base);u.searchParams.set('og_ref','og_'+token.slice(0,8));u.searchParams.set('og_game',id);u.searchParams.set('utm_source','osgard_play');u.searchParams.set('utm_medium','referral');u.searchParams.set('utm_campaign','play_with_friends');u.searchParams.set('utm_content',id)}u.searchParams.set('og_day',day);if(id==='signal-run')u.searchParams.set('og_daily_mode','daily');if(id==='null-shift')u.searchParams.set('og_challenge',challengeCode(day));return u.href}
-root.OSGARDDailyCircuitCore=Object.freeze({isValidDate,challengeCode,routeFor,shareUrl,previousUtcDate,progressSummary});
+function circuitShareUrl(day,token,origin){
+ if(!isValidDate(day))throw new RangeError('A valid UTC calendar date is required.');
+ if(typeof token!=='string'||!/^[a-f0-9]{12}$/.test(token))throw new RangeError('A 12-character opaque invite code is required.');
+ const base=origin||'https://osgard.world';
+ let referralCode='';
+ try{
+  const candidate=root.OSGARDInvite?.createLink?.();
+  const parsed=candidate?new URL(candidate,base):null;
+  if(parsed&&parsed.origin===new URL(base).origin&&parsed.pathname==='/games/invite/'&&
+    /^og_[a-f0-9]{8}$/.test(parsed.searchParams.get('og_ref')||'')&&
+    parsed.searchParams.get('utm_source')==='osgard_play'&&parsed.searchParams.get('utm_medium')==='referral'&&
+    parsed.searchParams.get('utm_campaign')==='play_with_friends'&&parsed.searchParams.get('utm_content')==='catalog'){
+    referralCode=parsed.searchParams.get('og_ref');
+  }
+ }catch{}
+ const u=new URL('/games/',base);
+ u.searchParams.set('og_ref',referralCode||'og_'+token.slice(0,8));
+ u.searchParams.set('utm_source','osgard_play');u.searchParams.set('utm_medium','referral');
+ u.searchParams.set('utm_campaign','play_with_friends');u.searchParams.set('utm_content','catalog');
+ u.searchParams.set('og_daily_circuit',day);
+ return u.href;
+}
+root.OSGARDDailyCircuitCore=Object.freeze({isValidDate,challengeCode,routeFor,shareUrl,circuitShareUrl,previousUtcDate,progressSummary});
 const doc=root.document;if(!doc)return;
 const node=(tag,cls,text)=>{const n=doc.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n};
 function inviteToken(){const bytes=new Uint8Array(6);try{root.crypto.getRandomValues(bytes)}catch{for(let i=0;i<bytes.length;i++)bytes[i]=Math.floor(Math.random()*256)}return Array.from(bytes,v=>v.toString(16).padStart(2,'0')).join('')}
