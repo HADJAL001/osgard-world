@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import {
-  ArrowLeft, ArrowRight, ArrowUpRight, Check, ExternalLink,
+  ArrowLeft, ArrowRight, ArrowUpRight, Check, Copy, ExternalLink,
   Gamepad2, Heart, Maximize2, MessageCircle, Monitor, Play, Share2,
   Smartphone, X,
 } from 'lucide-react'
@@ -674,6 +674,53 @@ export function GameDetailPage({ slug }: { slug: string }) {
     setPlaying(true)
   }
 
+  const copyLaunchDiagnostics = async () => {
+    if (!game) return
+    // Deliberately omit query strings, referrers, user text, user-agent and session identifiers.
+    const gameRoute = new URL(game.href, window.location.origin).pathname
+    const viewportClass = window.innerWidth < 520 ? 'narrow-mobile' : window.innerWidth < 900 ? 'tablet-or-small-laptop' : 'desktop'
+    const report = [
+      'OSGARD PLAY / GAME LAUNCH DIAGNOSTICS',
+      'gameId=' + game.id,
+      'gameRoute=' + gameRoute,
+      'detailRoute=' + window.location.pathname,
+      'errorKind=' + (frameErrorKind || 'unknown'),
+      'locale=' + locale,
+      'viewportClass=' + viewportClass,
+      'fullscreenSupported=' + String(typeof document.documentElement.requestFullscreen === 'function'),
+      'capturedAt=' + new Date().toISOString(),
+    ].join('\\n')
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(report)
+        setNotice(ru ? 'Техническая диагностика скопирована. В ней нет текста из ваших сообщений.' : 'Diagnostic details copied. No user-entered text is included.')
+        return
+      }
+    } catch {
+      // Clipboard APIs may be blocked by browser permissions; try the local document fallback below.
+    }
+    let field: HTMLTextAreaElement | null = null
+    try {
+      field = document.createElement('textarea')
+      field.value = report
+      field.setAttribute('readonly', '')
+      field.setAttribute('aria-hidden', 'true')
+      field.style.position = 'fixed'
+      field.style.left = '-10000px'
+      field.style.top = '0'
+      document.body.append(field)
+      field.select()
+      const copied = document.execCommand('copy')
+      setNotice(copied
+        ? (ru ? 'Техническая диагностика скопирована.' : 'Diagnostic details copied.')
+        : (ru ? 'Не удалось скопировать. Повторите или откройте игру отдельно.' : 'Copy failed. Retry or open the game separately.'))
+    } catch {
+      setNotice(ru ? 'Не удалось скопировать диагностику. Откройте игру отдельно.' : 'Could not copy diagnostics. Open the game separately.')
+    } finally {
+      field?.remove()
+    }
+  }
+
   const shareGame = async () => {
     if (!game) return
     const url = window.location.origin + '/game/' + game.id
@@ -740,7 +787,7 @@ export function GameDetailPage({ slug }: { slug: string }) {
         <div className="gh-play-toolbar"><div><span className={'gh-play-live gh-play-live--' + sessionStatus} /><strong>{gameTitle(game, locale)}</strong><small aria-live="polite">{sessionStatus === 'active' ? (ru ? 'Сессия активна' : 'Session active') : sessionStatus === 'paused' ? (ru ? 'Пауза' : 'Paused') : sessionStatus === 'completed' ? (ru ? 'Раунд завершён' : 'Round completed') : sessionStatus === 'error' ? (ru ? 'Проблема запуска' : 'Launch issue') : loadingGame ? (ru ? 'Загрузка клиента' : 'Loading client') : (ru ? 'Клиент готов · начни игру внутри окна' : 'Client ready · start inside the game')}</small>{(sessionStatus === 'active' || sessionStatus === 'paused' || (sessionStatus === 'completed' && sessionElapsedSeconds > 0)) && <small className="gh-session-duration" aria-live="off" aria-label={ru ? 'Длительность игровой сессии' : 'Game session duration'}>{formatSessionDuration(sessionElapsedSeconds)}</small>}</div><div><a href={game.href} target="_blank" rel="noopener noreferrer">{ru ? 'Открыть в отдельной вкладке' : 'Open in new tab'}<ExternalLink size={14} /></a><button type="button" onClick={toggleFullscreen} aria-pressed={isFullscreen} aria-label={isFullscreen ? (ru ? 'Выйти из полноэкранного режима' : 'Exit fullscreen') : (ru ? 'На весь экран' : 'Fullscreen')}><Maximize2 size={15} />{isFullscreen ? (ru ? 'Выйти из полного экрана' : 'Exit fullscreen') : (ru ? 'На весь экран' : 'Fullscreen')}</button><button type="button" onClick={closePlayer}><X size={15} />{ru ? 'Закрыть игру' : 'Close game'}</button></div></div>
         <div className="gh-game-stage" ref={stageRef} tabIndex={-1} aria-label={ru ? 'Игровая сцена' : 'Game stage'} aria-busy={loadingGame && !frameError}>
           {loadingGame && !frameError && <div className="gh-game-loading" role="status" aria-live="polite" aria-atomic="true"><span className="gh-loader" aria-hidden="true" /><p>{slowLoad ? (ru ? 'Загрузка занимает больше обычного. Проверяем готовность…' : 'This is taking longer than usual. Checking readiness…') : (ru ? 'Подключаем игровой мир…' : 'Loading game world…')}</p><div className="gh-loading-meter" role="progressbar" aria-label={ru ? 'Загрузка игры' : 'Game loading'}><span /></div><small>{ru ? 'Если готовность не подтвердится за 18 секунд, появятся варианты восстановления.' : 'Recovery options appear if readiness is not confirmed within 18 seconds.'}</small></div>}
-          {frameError ? <div className="gh-game-error" role="alert" aria-live="assertive"><p>{gameFrameErrorLabel(frameErrorKind, locale)}</p><p>{ru ? 'Можно повторить запуск или открыть игру отдельно. Прогресс не считается потерянным.' : 'Retry or open the game separately. Progress is not assumed to be lost.'}</p><div className="gh-game-error-actions"><button className="gh-secondary" type="button" onClick={() => { frameValidatedRef.current = false; setFrameErrorKind(null); setSlowLoad(false); setSessionStatus('ready'); setSessionElapsedSeconds(0); setFrameError(false); setLoadingGame(true); setFrameAttempt(value => value + 1) }}>{ru ? 'Повторить запуск' : 'Retry launch'}</button><button className="gh-secondary" type="button" onClick={() => void shareGame()}><Share2 size={14} />{ru ? 'Поделиться ссылкой' : 'Share link'}</button><a className="gh-primary" href={game.href} target="_blank" rel="noopener noreferrer">{ru ? 'Открыть игру отдельно' : 'Open game separately'}<ExternalLink size={15} /></a></div></div> : <iframe key={frameAttempt} tabIndex={0} title={gameTitle(game, locale)} src={game.href} onLoad={() => {
+          {frameError ? <div className="gh-game-error" role="alert" aria-live="assertive"><p>{gameFrameErrorLabel(frameErrorKind, locale)}</p><p>{ru ? 'Можно повторить запуск или открыть игру отдельно. Прогресс не считается потерянным.' : 'Retry or open the game separately. Progress is not assumed to be lost.'}</p><div className="gh-game-error-actions"><button className="gh-secondary" type="button" onClick={() => { frameValidatedRef.current = false; setFrameErrorKind(null); setSlowLoad(false); setSessionStatus('ready'); setSessionElapsedSeconds(0); setFrameError(false); setLoadingGame(true); setFrameAttempt(value => value + 1) }}>{ru ? 'Повторить запуск' : 'Retry launch'}</button><button className="gh-secondary" type="button" onClick={() => void shareGame()}><Share2 size={14} />{ru ? 'Поделиться ссылкой' : 'Share link'}</button><button className="gh-secondary" type="button" onClick={() => void copyLaunchDiagnostics()}><Copy size={14} />{ru ? 'Скопировать диагностику' : 'Copy diagnostics'}</button><a className="gh-primary" href={game.href} target="_blank" rel="noopener noreferrer">{ru ? 'Открыть игру отдельно' : 'Open game separately'}<ExternalLink size={15} /></a></div></div> : <iframe key={frameAttempt} tabIndex={0} title={gameTitle(game, locale)} src={game.href} onLoad={() => {
             const attempt = iframeRenderAttempt
             let attempts = 0
             const validateFrame = () => {
