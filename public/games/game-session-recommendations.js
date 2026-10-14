@@ -710,6 +710,7 @@ function servicesShelf(gameId,showPromos,completedCount){
   });
   const copyServiceLink=make('button','og-postgame-service-share-copy','Скопировать ссылку');copyServiceLink.type='button';
   copyServiceLink.addEventListener('click',async()=>{
+   pendingServiceShare='';serviceShareClaim.hidden=true;serviceShareClaim.disabled=false;
    try{
     await navigator.clipboard.writeText(serviceShareUrl.href);
     serviceShareStatus.textContent='Ссылка скопирована. Копирование само по себе не считается репостом и не даёт SHARDS.';
@@ -719,6 +720,7 @@ function servicesShelf(gameId,showPromos,completedCount){
   });
   networkPanel.append(copyServiceLink);
   nativeShare.addEventListener('click',async()=>{
+   pendingServiceShare='';serviceShareClaim.hidden=true;serviceShareClaim.disabled=false;
    if(typeof navigator.share!=='function'){
     networkPanel.hidden=false;networkToggle.setAttribute('aria-expanded','true');
     serviceShareStatus.textContent='Выбери соцсеть ниже. После публикации можно отдельно подтвердить бонус.';
