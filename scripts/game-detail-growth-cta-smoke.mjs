@@ -19,7 +19,7 @@ for (const value of [
   'utm_content: gameId', 'game_id: gameId', '#project-intake', '#brief',
   'gh-commercial-bridge', 'Discuss game development', 'Обсудить создание игры', 'Обсудить спонсорство',
 ]) assert.ok(detail.includes(value), 'Game-detail conversion bridge is missing: ' + value)
-assert.equal((detail.match(/void trackGameConversionClick\(game\.id,/g) || []).length, 2, 'Both first-party CTAs should use the consented conversion endpoint')
+assert.equal(detail.split('trackGameConversionClick(game.id,').length - 1, 2, 'Both first-party CTAs should use the consented conversion endpoint')
 assert.ok(manifest.includes("| 'cross_promo_clicked'"), 'Cross-promo event must use the existing first-party event schema')
 assert.ok(eventQueue.includes('if (!hasAnalyticsConsent())'), 'The event queue must default-deny analytics without consent')
 assert.ok(eventQueue.includes('clearAnalyticsRecords()'), 'Consent revocation must continue to clear queued records')
