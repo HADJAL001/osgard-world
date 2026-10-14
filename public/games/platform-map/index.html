@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080a0b">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="OSGARD PLAY Signal Atlas — интерактивная карта 11 игровых проектов: движки, маршруты запуска, сетевые зависимости и ограничения совместимости.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="OSGARD WORLD GAMING">
+<meta property="og:title" content="Signal Atlas — игровая карта OSGARD PLAY">
+<meta property="og:description" content="Пойми устройство игрового мира до запуска: браузер, Godot, Unity WebGL, локальное сохранение и сетевые зависимости.">
+<meta property="og:url" content="https://osgard.world/games/platform-map/">
+<link rel="canonical" href="https://osgard.world/games/platform-map/">
+<link rel="icon" href="/games/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/games/platform-map/platform-map.css?v=__OSGARD_BUILD_VERSION__">
+<title>Signal Atlas — OSGARD PLAY</title>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"CollectionPage","name":"OSGARD PLAY Signal Atlas","url":"https://osgard.world/games/platform-map/","isPartOf":{"@type":"WebSite","name":"OSGARD WORLD GAMING","url":"https://osgard.world/games/"}}</script>
+</head>
+<body>
+<a class="skip" href="#main">Перейти к карте игровых миров</a>
+<header class="topbar">
+  <a class="brand" href="/games/" aria-label="OSGARD PLAY — каталог игр"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 44 44"><path d="M22 2 40 12v20L22 42 4 32V12Z M22 10 33 16v12L22 34 11 28V16Z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M15 22h14M22 15v14" stroke="currentColor" stroke-width="1.5"/></svg></span><span>OSGARD <b>PLAY</b><small>SIGNAL ATLAS / 01</small></span></a>
+  <nav aria-label="Основная навигация"><a href="/games/">Каталог игр</a><a href="/games/ecosystem/">Экосистема</a><a href="/games/operations/">Диагностика</a></nav>
+  <a class="top-cta" href="#map">Исследовать <span aria-hidden="true">↘</span></a>
+</header>
+<main id="main">
+<section class="hero">
+  <div class="hero-copy">
+    <p class="eyebrow"><span></span> OSGARD WORLD GAMING · SYSTEMS MAP</p>
+    <h1>Не просто выбери игру.<br><em>Пойми её мир.</em></h1>
+    <p class="lede">Одна карта для всей игровой экосистемы: на чём работает проект, как он запускается, что зависит от сети и где хранятся результаты. Без фальшивых рейтингов и обещаний совместимости.</p>
+    <div class="hero-actions"><a class="btn primary" href="#map">Открыть карту ↘</a><a class="btn secondary" href="/games/">Вернуться в каталог ↗</a></div>
+    <div class="hero-foot"><span class="pulse"></span> 11 зарегистрированных игровых миров <i>·</i> источник — репозиторий проекта</div>
+  </div>
+  <div class="atlas-art" aria-hidden="true">
+    <div class="orbit orbit-a"></div><div class="orbit orbit-b"></div><div class="orbit orbit-c"></div>
+    <div class="core"><svg viewBox="0 0 160 160"><defs><linearGradient id="atlas-metal"><stop stop-color="#f0e2b8"/><stop offset=".5" stop-color="#d3ff69"/><stop offset="1" stop-color="#74cfc3"/></linearGradient></defs><path d="M80 5 145 43v74L80 155 15 117V43Z M80 28 125 54v52l-45 26-45-26V54Z" fill="none" stroke="url(#atlas-metal)" stroke-width="2"/><path d="M80 45v70M45 80h70M55 55l50 50M105 55l-50 50" stroke="url(#atlas-metal)" stroke-width="1.5" opacity=".8"/><circle cx="80" cy="80" r="10" fill="#d3ff69"/></svg></div>
+    <span class="node node-one">GODOT / WEB</span><span class="node node-two">UNITY / WEBGL</span><span class="node node-three">BROWSER / JS</span><span class="node node-four">LOCAL-FIRST</span>
+    <div class="art-caption"><b>11 / 11</b><span>ENTRYPOINTS<br>DOCUMENTED</span></div>
+  </div>
+</section>
+<section class="method-strip" aria-label="Принципы карты">
+  <div><b>01</b><span>Реестр маршрутов</span><small>Откуда открывается игра</small></div>
+  <div><b>02</b><span>Технологический профиль</span><small>Браузер, Godot или Unity</small></div>
+  <div><b>03</b><span>Честные ограничения</span><small>Сеть, сохранения, мобильный ввод</small></div>
+</section>
+<section class="map-section" id="map" aria-labelledby="map-title">
+  <div class="section-heading"><div><p class="eyebrow">01 / GAME CAPABILITY REGISTRY</p><h2 id="map-title">Карта игровых миров</h2><p>Фильтруй проекты по тому, как они устроены. Совместимость описана по исходникам и ещё не означает сертификацию на каждом телефоне.</p></div><div class="registry-stamp"><span class="stamp-dot"></span><span>РЕЕСТР <b id="registry-version">ЗАГРУЗКА</b><small id="registry-date">Источник будет проверен при открытии</small></span></div></div>
+  <div class="filters">
+    <label class="search-field"><span class="sr-only">Поиск игры</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg><input id="game-search" type="search" maxlength="100" placeholder="Найти игру или технологию…" autocomplete="off"></label>
+    <label><span>Тип клиента</span><select id="runtime-filter"><option value="all">Все движки</option><option value="browser">Браузерный</option><option value="godot-web">Godot / Web</option><option value="unity-webgl">Unity / WebGL</option></select></label>
+    <label><span>Сеть</span><select id="network-filter"><option value="all">Все режимы</option><option value="local">Локальный</option><option value="api-for-online">Нужен игровой API</option><option value="not-verified">Не подтверждено</option></select></label>
+    <label><span>Сохранение</span><select id="save-filter"><option value="all">Все варианты</option><option value="device-local">На устройстве</option><option value="mode-dependent">Зависит от режима</option><option value="not-documented">Не описано</option></select></label>
+    <button id="reset-filters" class="reset" type="button">Сбросить</button>
+  </div>
+  <div class="result-bar"><p id="results-status" role="status" aria-live="polite">Загружаем реестр игровых возможностей…</p><span id="result-count">—</span></div>
+  <div id="game-grid" class="game-grid" aria-busy="true"><div class="loading-card"><span></span><b>Синхронизация реестра</b><small>Проверяем локальные записи игр…</small></div><div class="loading-card"><span></span><b>Читаем профили</b><small>Движки, сеть и сохранения</small></div><div class="loading-card"><span></span><b>Готовим маршруты</b><small>Ссылки ведут в текущий каталог</small></div></div>
+  <div id="empty-state" class="empty" hidden><b>Сигнал не найден</b><p>Измени поисковый запрос или ослабь фильтры.</p><button class="btn secondary" id="empty-reset" type="button">Показать все игры</button></div>
+  <p class="registry-note"><b>Как читать карту.</b> «Не проверено на устройстве» означает именно отсутствие подтверждения физическим тестом. «Локальное сохранение» не означает облачную синхронизацию. Статусы API нужно проверять в рамках соответствующего запуска — сама страница здесь не симулирует доступность сервера.</p>
+</section>
+<section class="commercial" id="build-with-us">
+  <div class="commercial-mark" aria-hidden="true"><svg viewBox="0 0 100 100"><path d="M50 4 91 27v46L50 96 9 73V27Z M50 24 73 37v26L50 76 27 63V37Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M35 50h30M50 35v30" stroke="currentColor" stroke-width="2"/></svg></div>
+  <div><p class="eyebrow">OSGARD / DIGITAL PRODUCT STUDIO</p><h2>Есть идея игры, сайта или приложения?</h2><p>OSGARD поможет превратить её в цифровой продукт. Обсудим задачу, прототип и следующий технический шаг.</p><div class="commercial-actions"><a class="btn primary" id="contact-whatsapp" href="https://wa.me/79640027222?text=Здравствуйте%2C%20хочу%20обсудить%20разработку%20цифрового%20продукта." target="_blank" rel="noopener noreferrer">Обсудить в WhatsApp ↗</a><a class="btn secondary" href="/development/">Запросить разработку ↗</a></div></div>
+</section>
+<section class="share-strip"><div><p class="eyebrow">OSGARD PLAY / SHARE THE ROUTE</p><h2>Передай карту дальше.</h2><p>Поделись картой возможностей, а не выдуманной оценкой игры.</p></div><button id="share-map" class="btn secondary" type="button">Поделиться картой ↗</button><p id="share-status" role="status" aria-live="polite"></p></section>
+</main>
+<footer class="footer"><a class="brand" href="/games/"><span class="brand-mark" aria-hidden="true">O</span><span>OSGARD <b>PLAY</b><small>INDEPENDENT WORLDS / 2026</small></span></a><nav aria-label="Ссылки в подвале"><a href="/games/">Каталог</a><a href="/games/ecosystem/">Экосистема</a><a href="/games/monetization/">Экономика игр</a><a href="/privacy/">Конфиденциальность</a><a href="/terms/">Условия</a></nav><div class="footer-contact"><a href="mailto:osman.osmanov0099@gmail.com">osman.osmanov0099@gmail.com</a><small>OSGARD WORLD GAMING · Техническая карта проекта</small></div></footer>
+<script src="/games/consented-analytics.js?v=__OSGARD_BUILD_VERSION__" defer></script>
+<script src="/games/platform-map/platform-map.js?v=__OSGARD_BUILD_VERSION__" defer></script>
+</body></html>
