@@ -18,6 +18,7 @@ import {
 } from "./campaigns.mjs";
 import { buildCommercialReadiness, buildServiceReadiness } from "./readiness.mjs";
 import { generateGameCoachAdvice, isGameCoachConfigured } from "./game-coach.mjs";
+import { generateCivicCascadeAdvice, isCivicCascadeAdvisorConfigured } from "./civic-cascade-advisor.mjs";
 import { DEFAULT_GAME_CATALOG, validateGameCatalogPayload } from "./game-catalog.mjs";
 
 const { Pool } = pg;
@@ -373,6 +374,25 @@ app.post("/v1/game-coach", rateLimit({ windowMs: 60 * 60 * 1000, limit: 5, stand
     return res.status(result.status).json({ error: result.code, message });
   }
   res.set("Cache-Control", "no-store, private");
+  return res.json({ advice: result.advice });
+});
+
+
+app.get("/v1/civic-cascade-advisor/status", (_req, res) => {
+  res.set("Cache-Control", "no-store, private");
+  return res.json({ enabled: isCivicCascadeAdvisorConfigured().enabled });
+});
+app.post("/v1/civic-cascade-advisor", rateLimit({ windowMs: 60 * 60 * 1000, limit: 3, standardHeaders: "draft-8", legacyHeaders: false }), async (req, res) => {
+  const result = await generateCivicCascadeAdvice(req.body);
+  res.set("Cache-Control", "no-store, private");
+  if (!result.ok) {
+    const message = result.code === "CIVIC_ADVISOR_CONSENT_REQUIRED" ? "Подтверди отдельное согласие на одну AI-консультацию."
+      : result.code === "OPENAI_CIVIC_ADVISOR_NOT_CONFIGURED" ? "Стратегический советник пока не включён на сервере."
+      : result.code === "OPENAI_CIVIC_ADVISOR_BUSY" ? "Советник временно перегружен или достиг лимита. Попробуй позже."
+      : result.status >= 500 ? "Стратегический советник временно недоступен. Локальный штаб продолжает работать."
+      : "Сводка стратегии не прошла проверку. Повтори поиск локально.";
+    return res.status(result.status).json({ error: result.code, message });
+  }
   return res.json({ advice: result.advice });
 });
 
