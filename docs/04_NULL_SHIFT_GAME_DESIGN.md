@@ -521,3 +521,16 @@ This is a gameplay milestone, not a claim of native 8K rendering or measured per
 7. Headless runtime assertions cover threshold behaviour, attack cancellation, precision scaling, movement slowdown, anti-chain lockout, Warden resistance and report content. Source-contract checks ensure the new mechanic remains in the production build.
 
 All pressure metrics remain in the current session and the player's locally exported report. No remote telemetry or new assets/dependencies are introduced.
+
+
+## Godot release 0.21 — Tactical Mastery / seven major improvements
+
+1. **Pressure-broken weakpoints:** a suppression break opens the hostile core for 2.5 seconds. A precision follow-up consumes the opening and deals 42% more damage against ordinary hostiles (24% against the Warden). The core changes material and the health plate names the short window.
+2. **Perfect-evade countershot:** a real dash evade opens a 2.4-second response window. The next confirmed hostile hit gets 1.30× damage and +7 Overdrive charge; misses and devices cannot consume it.
+3. **Recoverable field salvage:** eliminations leave a floating procedural shard. Collection grants credits, Overdrive charge and weapon cooling; precision and elite eliminations drop better shards. There are at most eight live shards and each expires after 12 seconds.
+4. **Incoming-fire forecast:** the combat HUD selects the lowest-ETA active hostile fire or dash telegraph and names role, attack type and time remaining. It reads actual AI wind-up state.
+5. **Combo mastery tiers:** kill chains progress through BUILD, SURGE, CASCADE, APEX and MYTHIC. Crossing a tier grants a bounded charge and credit bonus once per crossing.
+6. **Daily tactical side objective:** each shared daily code selects one measurable goal—precision hits, evades, attack interruptions or Echo lures. Clearing it pays +250 credits once per UTC date and the claim is saved locally.
+7. **Persistent ARC-9 mastery:** lifetime critical hits unlock ranks at 12, 30, 60 and 100 precision hits. Each rank reduces weapon heat per shot by 3.5%; rank appears in the thermal HUD and after-action JSON.
+
+Regression coverage exercises weakpoint exposure, countershot timing, salvage collection/cooling, threat ordering, combo tiers, date-scoped bonus idempotency, and career-based weapon cooling. All events and report fields remain local and bounded; no new service, network telemetry or third-party dependency is introduced.

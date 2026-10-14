@@ -59,6 +59,13 @@ const GUARD_SUPPRESSION_DECAY := 18.0
 const GUARD_SUPPRESSION_LOCKOUT := 1.35
 const GUARD_SUPPRESSION_STUN := 0.72
 const GUARD_SUPPRESSION_SPEED_FLOOR := 0.76
+const COUNTER_WINDOW_SECONDS := 2.4
+const COUNTERSHOT_DAMAGE_MULTIPLIER := 1.30
+const WEAKPOINT_EXPOSURE_SECONDS := 2.5
+const MAX_SALVAGE_DROPS := 8
+const SALVAGE_LIFETIME_SECONDS := 12.0
+const SALVAGE_COLLECT_RADIUS := 1.55
+const DAILY_TACTICAL_BONUS_CREDITS := 250
 
 var player: CharacterBody3D
 var camera: Camera3D
@@ -153,6 +160,17 @@ var dash_cooldown := 0.0
 var dash_direction := Vector3.FORWARD
 var dash_evasions := 0
 var dash_evasion_registered := false
+var counter_window_remaining := 0.0
+var counter_windows_earned := 0
+var countershot_hits := 0
+var weakpoint_exposures := 0
+var weakpoint_hits := 0
+var salvage_drops: Array[Dictionary] = []
+var salvage_pickups_spawned := 0
+var salvage_pickups_collected := 0
+var salvage_pickups_expired := 0
+var salvage_pickups_evicted := 0
+var combo_mastery_awards := 0
 var dash_trail_clock := 0.0
 var dash_trail_last_position := Vector3.ZERO
 var dash_trails_emitted := 0
@@ -355,6 +373,7 @@ var owns_violet_style := false
 var daily_challenge_active := false
 var daily_challenge_code := ""
 var daily_claimed_date := ""
+var daily_tactical_claimed_date := ""
 var daily_streak := 0
 var daily_longest_streak := 0
 var daily_last_completed_date := ""
@@ -441,6 +460,22 @@ func _reset_runtime_collections() -> void:
 	raid_event_ledger = raid_event_ledger.duplicate(true)
 	raid_event_ledger.clear()
 	daily_run_seed = 0
+	counter_window_remaining = 0.0
+	counter_windows_earned = 0
+	countershot_hits = 0
+	weakpoint_exposures = 0
+	weakpoint_hits = 0
+	salvage_drops = salvage_drops.duplicate()
+	for old_drop in salvage_drops:
+		var old_node := old_drop.get("node") as Node3D
+		if is_instance_valid(old_node):
+			old_node.queue_free()
+	salvage_drops.clear()
+	salvage_pickups_spawned = 0
+	salvage_pickups_collected = 0
+	salvage_pickups_expired = 0
+	salvage_pickups_evicted = 0
+	combo_mastery_awards = 0
 	mission_success = false
 	mission_finished = false
 	elapsed = 0.0
@@ -599,6 +634,7 @@ func _process(delta: float) -> void:
 		_update_extraction_director(dt)
 		_update_phase_lanes(dt)
 		_update_phase_echo(dt)
+		_update_salvage_drops(dt)
 	scene_clock += dt
 	damage_flash_timer = maxf(0.0, damage_flash_timer - dt)
 	camera_shake_timer = maxf(0.0, camera_shake_timer - dt)
@@ -648,6 +684,7 @@ func _physics_process(delta: float) -> void:
 	dash_cooldown = maxf(0.0, dash_cooldown - dt)
 	pulse_cooldown = maxf(0.0, pulse_cooldown - dt)
 	damage_cooldown = maxf(0.0, damage_cooldown - dt)
+	counter_window_remaining = maxf(0.0, counter_window_remaining - dt)
 	_update_weapon_systems(dt)
 	combat_noise_timer = maxf(0.0, combat_noise_timer - dt)
 	squad_alert_timer = maxf(0.0, squad_alert_timer - dt)
@@ -2024,6 +2061,7 @@ func _spawn_guard(at: Vector3, is_warden: bool) -> void:
 		"dash_windup": 0.0,
 		"dash_timer": 0.0,
 		"dash_cooldown": randf_range(1.4, 2.4),
+		"weakpoint_exposed_timer": 0.0,
 		"phase": randf_range(0.0, TAU),
 		"patrol_origin": at,
 		"tactical_slot": guards.size(),
@@ -2432,6 +2470,10 @@ func _update_guards(delta: float) -> void:
 			continue
 		var health_timer: float = maxf(0.0, float(guard.get("health_timer", 0.0)) - delta)
 		guard["health_timer"] = health_timer
+		var weakpoint_before: float = float(guard.get("weakpoint_exposed_timer", 0.0))
+		guard["weakpoint_exposed_timer"] = maxf(0.0, weakpoint_before - delta)
+		if weakpoint_before > 0.0 and float(guard["weakpoint_exposed_timer"]) <= 0.0:
+			_set_guard_weakpoint_visual(body, guard, false)
 		guard["suppression"] = maxf(0.0, float(guard.get("suppression", 0.0)) - GUARD_SUPPRESSION_DECAY * delta)
 		guard["suppression_timer"] = maxf(0.0, float(guard.get("suppression_timer", 0.0)) - delta)
 		guard["suppression_lockout"] = maxf(0.0, float(guard.get("suppression_lockout", 0.0)) - delta)
@@ -2441,11 +2483,12 @@ func _update_guards(delta: float) -> void:
 		if is_instance_valid(health_readout):
 			var suppression_value: float = float(guard.get("suppression", 0.0))
 			var phase_marker: String = " · PII" if bool(guard.get("warden", false)) and int(guard.get("boss_phase", 1)) >= 2 else ""
-			health_readout.visible = bool(guard["warden"]) or health_timer > 0.0 or suppression_value > 6.0
+			var weakpoint_marker: String = " · CORE OPEN" if float(guard.get("weakpoint_exposed_timer", 0.0)) > 0.0 else ""
+			health_readout.visible = bool(guard["warden"]) or health_timer > 0.0 or suppression_value > 6.0 or not weakpoint_marker.is_empty()
 			if suppression_value > 6.0:
-				health_readout.text = "HP %d/%d · PRESSURE %d%%" % [maxi(0, int(guard["hp"])), int(guard.get("max_hp", 1)), int(roundf(suppression_value))]
+				health_readout.text = "HP %d/%d · PRESSURE %d%%%s" % [maxi(0, int(guard["hp"])), int(guard.get("max_hp", 1)), int(roundf(suppression_value)), weakpoint_marker]
 			else:
-				health_readout.text = "HP %d/%d%s" % [maxi(0, int(guard["hp"])), int(guard.get("max_hp", 1)), phase_marker]
+				health_readout.text = "HP %d/%d%s%s" % [maxi(0, int(guard["hp"])), int(guard.get("max_hp", 1)), phase_marker, weakpoint_marker]
 		var ai_delta: float = delta * (0.64 if overdrive_timer > 0.0 else 1.0)
 		var stun := maxf(0.0, float(guard["stun"]) - ai_delta)
 		guard["stun"] = stun
@@ -2616,7 +2659,8 @@ func _trigger_muzzle_flash() -> void:
 
 
 func _weapon_heat_per_shot() -> float:
-	return maxf(5.5, WEAPON_HEAT_PER_SHOT - float(weapon_level) * 0.9)
+	var mastery_cooling: float = 1.0 - float(_weapon_mastery_rank()) * 0.035
+	return maxf(5.5, (WEAPON_HEAT_PER_SHOT - float(weapon_level) * 0.9) * mastery_cooling)
 
 func _apply_weapon_heat(amount: float) -> void:
 	if weapon_overheated:
@@ -2780,6 +2824,8 @@ func _fire_weapon() -> void:
 	var beam_end := to
 	var critical_hit := false
 	var is_combat_hit := false
+	var countershot_used := false
+	var shot_damage_scale := 1.0
 	if not hit.is_empty():
 		beam_end = hit["position"]
 		var collider: Object = hit["collider"]
@@ -2788,9 +2834,20 @@ func _fire_weapon() -> void:
 			if is_combat_hit and _is_hostile_target(collider as Node) and collider is Node3D:
 				var hit_position: Vector3 = hit["position"]
 				critical_hit = aim_target_node == (collider as Node3D) and hit_position.y >= (collider as Node3D).global_position.y + 0.42
+				if counter_window_remaining > 0.0:
+					shot_damage_scale = _countershot_damage_scale(1.0, counter_window_remaining)
+					countershot_used = true
 				if overdrive_timer > 0.0:
 					_try_overdrive_chain(collider as Node, beam_end)
-			_damage_target(collider as Node, critical_hit)
+			_damage_target(collider as Node, critical_hit, shot_damage_scale)
+	if countershot_used:
+		counter_window_remaining = 0.0
+		countershot_hits += 1
+		overdrive_charge = minf(OVERDRIVE_MAX_CHARGE, overdrive_charge + 7.0)
+		_record_raid_event("countershot", "Perfect evade follow-up", 7.0, beam_end)
+		_spawn_ring_burst(beam_end + Vector3.UP * 0.08, materials["violet"])
+		_play_sfx(610.0, 0.09, 0.08)
+		objective_text = "COUNTERSHOT · +7 OVERDRIVE · УСПЕШНЫЙ ОТВЕТ"
 	_record_weapon_shot(is_combat_hit)
 	_record_raid_event("weapon_shot", "CRITICAL" if critical_hit else ("HIT" if is_combat_hit else "MISS"), 1.0 if critical_hit or is_combat_hit else 0.0, beam_end)
 	_spawn_beam(from, beam_end, materials["cyan"], 0.09)
@@ -2921,7 +2978,15 @@ func _damage_target(target: Node, critical_hit: bool = false, damage_scale: floa
 		var guard: Dictionary = guards[index]
 		if guard["node"] == target:
 			var base_damage_points: int = _combat_damage_per_hit(critical_hit, overdrive_timer > 0.0)
-			var damage_points: int = maxi(1, roundi(float(base_damage_points) * clampf(damage_scale, 0.0, 1.0)))
+			var exposed_precision_hit: bool = critical_hit and float(guard.get("weakpoint_exposed_timer", 0.0)) > 0.0
+			var effective_damage_scale: float = clampf(damage_scale, 0.0, 1.8)
+			if exposed_precision_hit:
+				effective_damage_scale = clampf(effective_damage_scale * _weakpoint_damage_multiplier(guard, true), 0.0, 2.0)
+				weakpoint_hits += 1
+				guard["weakpoint_exposed_timer"] = 0.0
+				_set_guard_weakpoint_visual(target as Node3D, guard, false)
+				_record_raid_event("weakpoint_hit", str(guard.get("role", "HOSTILE")), effective_damage_scale, target.global_position)
+			var damage_points: int = maxi(1, roundi(float(base_damage_points) * effective_damage_scale))
 			guard["hp"] = int(guard["hp"]) - damage_points
 			if bool(guard.get("warden", false)):
 				_try_stagger_warden(index, critical_hit)
@@ -2948,7 +3013,8 @@ func _damage_target(target: Node, critical_hit: bool = false, damage_scale: floa
 			var health_readout := target.get_node_or_null("HealthReadout") as Label3D
 			if is_instance_valid(health_readout):
 				var phase_marker: String = " · PII" if bool(guard.get("warden", false)) and int(guard.get("boss_phase", 1)) >= 2 else ""
-				health_readout.text = "HP %d / %d%s" % [maxi(0, int(guard["hp"])), max_hp, phase_marker]
+				var weakpoint_marker: String = " · CORE OPEN" if float(guard.get("weakpoint_exposed_timer", 0.0)) > 0.0 else ""
+				health_readout.text = "HP %d / %d%s%s" % [maxi(0, int(guard["hp"])), max_hp, phase_marker, weakpoint_marker]
 				health_readout.visible = true
 			_spawn_hit_sparks(target.global_position + Vector3.UP * 0.7, materials["white"] if critical_hit else materials["amber"])
 			if critical_hit:
@@ -3423,6 +3489,9 @@ func _damage_player(amount: float, attacker: Node3D = null) -> void:
 	if dash_timer > 0.0 and not dash_evasion_registered:
 		dash_evasion_registered = true
 		dash_evasions += 1
+		counter_window_remaining = COUNTER_WINDOW_SECONDS
+		counter_windows_earned += 1
+		_record_raid_event("counter_window", "Perfect dash evade", COUNTER_WINDOW_SECONDS, player.global_position)
 		_play_sfx(820.0, 0.065, 0.045)
 		if is_instance_valid(dash_status_label):
 			dash_status_label.text = "УКЛОНЕНИЕ · АТАКА ПРОПУЩЕНА"
@@ -3468,8 +3537,9 @@ func _finish_mission(success: bool) -> void:
 	_refresh_extraction_event_layout()
 	if success:
 		var daily_bonus := _claim_daily_challenge_reward()
+		var daily_tactical_bonus: int = _claim_daily_side_objective_reward_for_date(_today_date_code()) if daily_challenge_active else 0
 		var grade_bonus := _mission_grade_bonus(mission_grade)
-		var payout := run_credits + int(contract_bonus[current_contract]) + daily_bonus + grade_bonus
+		var payout := run_credits + int(contract_bonus[current_contract]) + daily_bonus + daily_tactical_bonus + grade_bonus
 		career_credits += payout
 		career.set_value("career", "completed_runs", int(career.get_value("career", "completed_runs", 0)) + 1)
 		career.set_value("career", "best_eliminations", maxi(eliminations, int(career.get_value("career", "best_eliminations", 0))))
@@ -3483,7 +3553,8 @@ func _finish_mission(success: bool) -> void:
 		if is_instance_valid(result_reward_label):
 			var daily_suffix := " · DAILY +%d" % daily_bonus if daily_bonus > 0 else ""
 			var streak_suffix := " · СЕРИЯ %d ДН." % daily_streak if daily_bonus > 0 else ""
-			result_reward_label.text = "РАНГ %s · SCORE %d · ACC %.0f%% · КРИТЫ %d · COMBO %d · НАГРАДА %d%s%s · ПОБЕД %d" % [mission_grade, mission_score, mission_accuracy, critical_hits, combat_combo_best, payout, daily_suffix, streak_suffix, int(career.get_value("career", "completed_runs", 0))]
+			var tactical_suffix := " · BONUS OP +%d" % daily_tactical_bonus if daily_tactical_bonus > 0 else ""
+			result_reward_label.text = "РАНГ %s · SCORE %d · ACC %.0f%% · КРИТЫ %d · COMBO %d · НАГРАДА %d%s%s%s · ПОБЕД %d" % [mission_grade, mission_score, mission_accuracy, critical_hits, combat_combo_best, payout, daily_suffix, streak_suffix, tactical_suffix, int(career.get_value("career", "completed_runs", 0))]
 		if is_instance_valid(result_share_label):
 			result_share_label.text = "КОД ВЫЗОВА: %s · ПОДЕЛИСЬ И ПРИГЛАСИ ДРУГА" % _today_challenge_code()
 		objective_text = "МИССИЯ ВЫПОЛНЕНА · КАРЬЕРНЫЙ БАЛАНС %d" % career_credits
@@ -3548,7 +3619,238 @@ func _break_combat_combo() -> void:
 	combat_combo = 0
 	combat_combo_timer = 0.0
 
+
+func _weakpoint_damage_multiplier(guard: Dictionary, precision_hit: bool) -> float:
+	if not precision_hit or float(guard.get("weakpoint_exposed_timer", 0.0)) <= 0.0:
+		return 1.0
+	return 1.24 if bool(guard.get("warden", false)) else 1.42
+
+func _set_guard_weakpoint_visual(body: Node3D, guard: Dictionary, exposed: bool) -> void:
+	if not is_instance_valid(body):
+		return
+	var core := body.get_node_or_null("GuardChestCore") as MeshInstance3D
+	if not is_instance_valid(core):
+		return
+	if exposed:
+		core.material_override = materials.get("white", materials.get("cyan"))
+		return
+	var accent: Material = materials.get("cyan")
+	if bool(guard.get("warden", false)):
+		accent = materials.get("gold", materials.get("amber"))
+	else:
+		match str(guard.get("role", "RANGER")):
+			"STALKER":
+				accent = materials.get("violet", materials.get("cyan"))
+			"HEAVY":
+				accent = materials.get("amber", materials.get("cyan"))
+	core.material_override = accent
+
+func _countershot_damage_scale(base_scale: float, window_remaining: float) -> float:
+	if window_remaining <= 0.0:
+		return base_scale
+	return maxf(0.0, base_scale) * COUNTERSHOT_DAMAGE_MULTIPLIER
+
+func _select_earliest_telegraph(telegraphs: Array[Dictionary]) -> Dictionary:
+	var selected: Dictionary = {}
+	for telegraph in telegraphs:
+		var eta: float = maxf(0.0, float(telegraph.get("eta", 999.0)))
+		if selected.is_empty() or eta < float(selected.get("eta", 999.0)):
+			selected = telegraph.duplicate(true)
+	return selected
+
+func _nearest_incoming_threat() -> Dictionary:
+	var telegraphs: Array[Dictionary] = []
+	for guard in guards:
+		var body := guard.get("node") as Node3D
+		if not is_instance_valid(body):
+			continue
+		var fire_eta: float = maxf(0.0, float(guard.get("windup", 0.0)))
+		var dash_eta: float = maxf(0.0, float(guard.get("dash_windup", 0.0)))
+		if fire_eta <= 0.0 and dash_eta <= 0.0:
+			continue
+		var is_dash: bool = dash_eta > 0.0 and (fire_eta <= 0.0 or dash_eta <= fire_eta)
+		telegraphs.append({
+			"eta": dash_eta if is_dash else fire_eta,
+			"kind": "DASH" if is_dash else "FIRE",
+			"role": str(guard.get("role", "HOSTILE")),
+			"distance": body.global_position.distance_to(player.global_position)
+		})
+	return _select_earliest_telegraph(telegraphs)
+
+func _threat_forecast_text() -> String:
+	var prefix := "COUNTER %.1fS · " % counter_window_remaining if counter_window_remaining > 0.0 else ""
+	var threat := _nearest_incoming_threat()
+	if threat.is_empty():
+		return prefix + "THREAT CLEAR"
+	return prefix + "%s %s IN %.1fS" % [str(threat.get("role", "HOSTILE")), str(threat.get("kind", "FIRE")), float(threat.get("eta", 0.0))]
+
+func _combo_mastery_tier(chain_count: int) -> int:
+	if chain_count >= 15:
+		return 4
+	if chain_count >= 10:
+		return 3
+	if chain_count >= 6:
+		return 2
+	if chain_count >= 3:
+		return 1
+	return 0
+
+func _combo_mastery_label(tier: int) -> String:
+	match tier:
+		4:
+			return "MYTHIC"
+		3:
+			return "APEX"
+		2:
+			return "CASCADE"
+		1:
+			return "SURGE"
+		_:
+			return "BUILD"
+
+func _combo_mastery_charge_bonus(tier: int) -> float:
+	match tier:
+		1:
+			return 8.0
+		2:
+			return 12.0
+		3:
+			return 18.0
+		4:
+			return 24.0
+		_:
+			return 0.0
+
+func _weapon_mastery_rank_for_critical_hits(total_critical_hits: int) -> int:
+	var total: int = maxi(0, total_critical_hits)
+	if total >= 100:
+		return 4
+	if total >= 60:
+		return 3
+	if total >= 30:
+		return 2
+	if total >= 12:
+		return 1
+	return 0
+
+func _weapon_mastery_rank() -> int:
+	return _weapon_mastery_rank_for_critical_hits(int(career.get_value("career", "total_critical_hits", 0)))
+
+func _daily_side_objective_definition(code: String) -> Dictionary:
+	var seed_value: int = _daily_seed_for_code(code)
+	if seed_value <= 0:
+		return {}
+	var options: Array[Dictionary] = [
+		{"id": "precision", "title": "PRECISION LINE", "instruction": "LAND 3 PRECISION HITS", "goal": 3},
+		{"id": "evasion", "title": "CLEAN EVASION", "instruction": "EVADE 2 ATTACKS", "goal": 2},
+		{"id": "pressure", "title": "BREAK THE LINE", "instruction": "INTERRUPT 2 ATTACKS", "goal": 2},
+		{"id": "echo", "title": "GHOST PROTOCOL", "instruction": "LURE 1 HOSTILE WITH ECHO", "goal": 1}
+	]
+	return options[seed_value % options.size()].duplicate(true)
+
+func _daily_side_objective_state(code: String = "") -> Dictionary:
+	var objective_code: String = daily_challenge_code if code.is_empty() else code
+	var definition := _daily_side_objective_definition(objective_code)
+	if definition.is_empty():
+		return {}
+	var progress := 0
+	match str(definition["id"]):
+		"precision":
+			progress = critical_hits
+		"evasion":
+			progress = dash_evasions
+		"pressure":
+			progress = suppression_attack_interrupts
+		"echo":
+			progress = phase_echo_lures
+	var goal: int = int(definition["goal"])
+	return {
+		"id": str(definition["id"]),
+		"title": str(definition["title"]),
+		"instruction": str(definition["instruction"]),
+		"progress": maxi(0, progress),
+		"goal": goal,
+		"completed": progress >= goal,
+		"reward": DAILY_TACTICAL_BONUS_CREDITS
+	}
+
+func _spawn_salvage_drop(at: Vector3, precision_finisher: bool, elite: bool = false) -> void:
+	while salvage_drops.size() >= MAX_SALVAGE_DROPS:
+		var oldest: Dictionary = salvage_drops.pop_front()
+		var oldest_node := oldest.get("node") as Node3D
+		if is_instance_valid(oldest_node):
+			oldest_node.queue_free()
+		salvage_pickups_evicted += 1
+	var pickup := Node3D.new()
+	pickup.name = "SalvageShard"
+	pickup.position = Vector3(clampf(at.x, -21.5, 21.5), 0.86, clampf(at.z, -12.4, 12.4))
+	var crystal := MeshInstance3D.new()
+	crystal.name = "ShardCore"
+	var crystal_mesh := BoxMesh.new()
+	crystal_mesh.size = Vector3(0.18, 0.34, 0.18)
+	crystal.mesh = crystal_mesh
+	crystal.rotation_degrees = Vector3(0.0, 45.0, 45.0)
+	crystal.material_override = materials["gold"] if elite else materials["cyan"]
+	pickup.add_child(crystal)
+	var glint := MeshInstance3D.new()
+	glint.name = "ShardGlint"
+	var glint_mesh := BoxMesh.new()
+	glint_mesh.size = Vector3(0.07, 0.2, 0.07)
+	glint.mesh = glint_mesh
+	glint.rotation_degrees = Vector3(0.0, -45.0, -45.0)
+	glint.material_override = materials["white"]
+	pickup.add_child(glint)
+	add_child(pickup)
+	salvage_drops.append({
+		"node": pickup,
+		"base_y": pickup.position.y,
+		"life": SALVAGE_LIFETIME_SECONDS,
+		"phase": randf_range(0.0, TAU),
+		"credits": 40 if elite else (30 if precision_finisher else 20),
+		"charge": 24.0 if precision_finisher or elite else 16.0,
+		"cooling": 14.0 if precision_finisher or elite else 8.0
+	})
+	salvage_pickups_spawned += 1
+	_record_raid_event("salvage_drop", "ELITE" if elite else ("PRECISION" if precision_finisher else "STANDARD"), 1.0, at)
+
+func _update_salvage_drops(delta: float) -> void:
+	if paused_game or mission_finished or briefing_visible or not is_instance_valid(player):
+		return
+	for index in range(salvage_drops.size() - 1, -1, -1):
+		var drop: Dictionary = salvage_drops[index]
+		var pickup := drop.get("node") as Node3D
+		if not is_instance_valid(pickup):
+			salvage_drops.remove_at(index)
+			continue
+		drop["life"] = maxf(0.0, float(drop.get("life", 0.0)) - delta)
+		if float(drop["life"]) <= 0.0:
+			pickup.queue_free()
+			salvage_drops.remove_at(index)
+			salvage_pickups_expired += 1
+			_record_raid_event("salvage_expired", "SHARD LOST", 0.0, pickup.global_position)
+			continue
+		drop["phase"] = float(drop.get("phase", 0.0)) + delta
+		pickup.rotation.y += delta * 1.7
+		pickup.position.y = float(drop.get("base_y", 0.86)) + 0.12 * sin(float(drop["phase"]) * 2.1)
+		if pickup.global_position.distance_to(player.global_position) <= SALVAGE_COLLECT_RADIUS:
+			var credits: int = int(drop.get("credits", 20))
+			var charge: float = float(drop.get("charge", 16.0))
+			var cooling: float = float(drop.get("cooling", 8.0))
+			run_credits += credits
+			overdrive_charge = minf(OVERDRIVE_MAX_CHARGE, overdrive_charge + charge)
+			weapon_heat = maxf(0.0, weapon_heat - cooling)
+			salvage_pickups_collected += 1
+			objective_text = "SALVAGE RECOVERED · +%d CR · +%.0f OVERDRIVE · −%.0f HEAT" % [credits, charge, cooling]
+			_record_raid_event("salvage_pickup", "RECOVERED", float(credits), pickup.global_position)
+			pickup.queue_free()
+			salvage_drops.remove_at(index)
+			_play_sfx(740.0, 0.13, 0.075)
+			_update_hud()
+			continue
+		salvage_drops[index] = drop
+
 func _register_hostile_elimination(guard: Dictionary, body: Node3D, precision_finisher: bool) -> void:
+	var previous_tier: int = _combo_mastery_tier(combat_combo)
 	eliminations += 1
 	combat_combo += 1
 	combat_combo_timer = COMBAT_COMBO_WINDOW
@@ -3571,11 +3873,22 @@ func _register_hostile_elimination(guard: Dictionary, body: Node3D, precision_fi
 	combat_score_total += points
 	var charge_gain := 28.0 + (10.0 if precision_finisher else 0.0) + (15.0 if bool(guard.get("warden", false)) else 0.0)
 	overdrive_charge = minf(OVERDRIVE_MAX_CHARGE, overdrive_charge + charge_gain)
+	_spawn_salvage_drop(body.global_position, precision_finisher, bool(guard.get("warden", false)))
+	var mastery_tier: int = _combo_mastery_tier(combat_combo)
+	if mastery_tier > previous_tier and mastery_tier > 0:
+		var mastery_charge: float = _combo_mastery_charge_bonus(mastery_tier)
+		var mastery_credits: int = mastery_tier * 15
+		overdrive_charge = minf(OVERDRIVE_MAX_CHARGE, overdrive_charge + mastery_charge)
+		run_credits += mastery_credits
+		combo_mastery_awards += 1
+		_record_raid_event("combo_mastery", _combo_mastery_label(mastery_tier), mastery_charge, body.global_position)
+		_spawn_ring_burst(body.global_position + Vector3.UP * 0.18, materials["violet"])
+		_play_sfx(420.0 + float(mastery_tier) * 90.0, 0.13, 0.1)
 	_record_raid_event("elimination", role + (" / PRECISION" if precision_finisher else ""), float(points), body.global_position)
-	objective_text = "ЛИКВИДАЦИЯ · +%d CR · COMBO %d · ×%.2f" % [credits, combat_combo, multiplier]
+	objective_text = "ЛИКВИДАЦИЯ · +%d CR · %s %d · ×%.2f" % [credits, _combo_mastery_label(mastery_tier), combat_combo, multiplier]
 	_play_sfx(170.0 + minf(520.0, float(combat_combo) * 42.0), 0.2, 0.12)
 	if overdrive_charge >= OVERDRIVE_MAX_CHARGE and overdrive_timer <= 0.0:
-		objective_text += " · OVERDRIVE ГОТОВ"
+		objective_text += " · OVERDRIVE READY"
 	_update_hud()
 
 func _update_combat_director(delta: float) -> void:
@@ -3640,6 +3953,13 @@ func _apply_guard_suppression(guard: Dictionary, amount: float, critical_hit: bo
 		guard["suppression"] = 26.0 if not is_warden else 40.0
 		guard["suppression_lockout"] = GUARD_SUPPRESSION_LOCKOUT * (1.7 if is_warden else 1.0)
 		suppression_breaks += 1
+		var weakpoint_was_open: bool = float(guard.get("weakpoint_exposed_timer", 0.0)) > 0.0
+		guard["weakpoint_exposed_timer"] = maxf(float(guard.get("weakpoint_exposed_timer", 0.0)), WEAKPOINT_EXPOSURE_SECONDS)
+		if not weakpoint_was_open:
+			weakpoint_exposures += 1
+			_set_guard_weakpoint_visual(body, guard, true)
+			if is_instance_valid(body):
+				_record_raid_event("weakpoint_exposed", str(guard.get("role", "HOSTILE")), WEAKPOINT_EXPOSURE_SECONDS, body.global_position)
 		if was_telegraphing:
 			suppression_attack_interrupts += 1
 		if is_instance_valid(body):
@@ -3760,7 +4080,7 @@ func _build_after_action_report() -> Dictionary:
 	return {
 		"schema": AFTER_ACTION_REPORT_SCHEMA,
 		"game": "NULL//SHIFT",
-		"gameVersion": "0.20.0-kinetic-pressure",
+		"gameVersion": "0.21.0-tactical-mastery",
 		"outcome": outcome,
 		"challengeCode": daily_challenge_code if daily_challenge_active else "",
 		"runSeed": daily_run_seed,
@@ -3822,6 +4142,29 @@ func _build_after_action_report() -> Dictionary:
 			"doctrineChanges": tactical_doctrine_changes,
 			"actions": tactical_action_counts.duplicate(true)
 		},
+		"mastery": {
+			"arc9Rank": _weapon_mastery_rank(),
+			"lifetimeCriticalHits": int(career.get_value("career", "total_critical_hits", 0))
+		},
+		"weakpoints": {
+			"exposures": weakpoint_exposures,
+			"precisionHits": weakpoint_hits
+		},
+		"countershot": {
+			"windowsEarned": counter_windows_earned,
+			"confirmedHits": countershot_hits
+		},
+		"salvage": {
+			"spawned": salvage_pickups_spawned,
+			"collected": salvage_pickups_collected,
+			"expired": salvage_pickups_expired,
+			"evictedAtCapacity": salvage_pickups_evicted
+		},
+		"comboMastery": {
+			"awards": combo_mastery_awards,
+			"bestTier": _combo_mastery_label(_combo_mastery_tier(combat_combo_best))
+		},
+		"dailyObjective": _daily_side_objective_state() if daily_challenge_active else {},
 		"anomalies": daily_mutator_ids.duplicate(),
 		"insights": _after_action_insights(),
 		"events": raid_event_ledger.duplicate(true)
@@ -4103,6 +4446,20 @@ func _start_daily_challenge() -> void:
 
 func _claim_daily_challenge_reward() -> int:
 	return _claim_daily_challenge_reward_for_date(_today_date_code())
+
+func _claim_daily_side_objective_reward_for_date(date_code: String) -> int:
+	if not daily_challenge_active or daily_challenge_code != _challenge_code_for_date(date_code):
+		return 0
+	if daily_tactical_claimed_date == date_code:
+		return 0
+	var objective := _daily_side_objective_state()
+	if objective.is_empty() or not bool(objective.get("completed", false)):
+		return 0
+	daily_tactical_claimed_date = date_code
+	career.set_value("daily", "tactical_claimed_date", daily_tactical_claimed_date)
+	_record_raid_event("daily_side_objective", str(objective.get("title", "COMPLETE")), float(DAILY_TACTICAL_BONUS_CREDITS), player.global_position if is_instance_valid(player) else Vector3.ZERO)
+	_save_career()
+	return DAILY_TACTICAL_BONUS_CREDITS
 
 func _claim_daily_challenge_reward_for_date(date_code: String) -> int:
 	if not daily_challenge_active or daily_challenge_code != _challenge_code_for_date(date_code):
@@ -4550,6 +4907,7 @@ func _load_career() -> void:
 	daily_challenge_active = bool(career.get_value("daily", "active", false))
 	daily_challenge_code = str(career.get_value("daily", "code", ""))
 	daily_claimed_date = str(career.get_value("daily", "claimed_date", ""))
+	daily_tactical_claimed_date = str(career.get_value("daily", "tactical_claimed_date", ""))
 	daily_streak = maxi(0, int(career.get_value("daily", "streak", 0)))
 	daily_longest_streak = maxi(daily_streak, int(career.get_value("daily", "longest_streak", 0)))
 	daily_last_completed_date = str(career.get_value("daily", "last_completed_date", ""))
@@ -4571,6 +4929,7 @@ func _save_career() -> void:
 	career.set_value("daily", "active", daily_challenge_active)
 	career.set_value("daily", "code", daily_challenge_code)
 	career.set_value("daily", "claimed_date", daily_claimed_date)
+	career.set_value("daily", "tactical_claimed_date", daily_tactical_claimed_date)
 	career.set_value("daily", "streak", daily_streak)
 	career.set_value("daily", "longest_streak", daily_longest_streak)
 	career.set_value("daily", "last_completed_date", daily_last_completed_date)
@@ -5451,7 +5810,7 @@ func _update_mobile_layout() -> void:
 		objective_panel.offset_left = 10.0
 		objective_panel.offset_right = -10.0
 		objective_panel.offset_top = 148.0
-		objective_panel.offset_bottom = 266.0 + (26.0 if daily_challenge_active and not daily_mutators.is_empty() else 0.0) + (26.0 if extraction_pressure_active or extraction_overload_triggered else 0.0)
+		objective_panel.offset_bottom = 266.0 + (26.0 if daily_challenge_active and not daily_mutators.is_empty() else 0.0) + (22.0 if daily_challenge_active else 0.0) + (26.0 if extraction_pressure_active or extraction_overload_triggered else 0.0)
 		objective_title.visible = false
 		telemetry_label.visible = false
 		objective_actions.visible = false
@@ -5460,7 +5819,7 @@ func _update_mobile_layout() -> void:
 		if is_instance_valid(thermal_bar):
 			thermal_bar.visible = false
 		objective_label.add_theme_font_size_override("font_size", 11)
-		objective_label.custom_minimum_size = Vector2(maxf(240.0, width - 52.0), 50.0 if daily_challenge_active and not daily_mutators.is_empty() else 34.0)
+		objective_label.custom_minimum_size = Vector2(maxf(240.0, width - 52.0), 70.0 if daily_challenge_active else (50.0 if daily_challenge_active and not daily_mutators.is_empty() else 34.0))
 		mid_panel.visible = false
 		bottom_hint.visible = false
 		_layout_compact_controls(viewport_size)
@@ -5481,9 +5840,9 @@ func _update_mobile_layout() -> void:
 		objective_panel.offset_left = -334.0
 		objective_panel.offset_top = 18.0
 		objective_panel.offset_right = -18.0
-		objective_panel.offset_bottom = 274.0 + (26.0 if daily_challenge_active and not daily_mutators.is_empty() else 0.0) + (26.0 if extraction_pressure_active or extraction_overload_triggered else 0.0)
+		objective_panel.offset_bottom = 274.0 + (26.0 if daily_challenge_active and not daily_mutators.is_empty() else 0.0) + (22.0 if daily_challenge_active else 0.0) + (26.0 if extraction_pressure_active or extraction_overload_triggered else 0.0)
 		if is_instance_valid(tactical_radar_panel):
-			var panel_extra: float = (26.0 if daily_challenge_active and not daily_mutators.is_empty() else 0.0) + (26.0 if extraction_pressure_active or extraction_overload_triggered else 0.0)
+			var panel_extra: float = (26.0 if daily_challenge_active and not daily_mutators.is_empty() else 0.0) + (22.0 if daily_challenge_active else 0.0) + (26.0 if extraction_pressure_active or extraction_overload_triggered else 0.0)
 			tactical_radar_panel.offset_top = 288.0 + panel_extra
 			tactical_radar_panel.offset_bottom = 482.0 + panel_extra
 		if is_instance_valid(thermal_status_label):
@@ -5494,7 +5853,7 @@ func _update_mobile_layout() -> void:
 		telemetry_label.visible = true
 		objective_actions.visible = true
 		objective_label.add_theme_font_size_override("font_size", 12)
-		objective_label.custom_minimum_size = Vector2(285.0, 88.0 if daily_challenge_active and not daily_mutators.is_empty() else 64.0)
+		objective_label.custom_minimum_size = Vector2(285.0, 110.0 if daily_challenge_active else (88.0 if daily_challenge_active and not daily_mutators.is_empty() else 64.0))
 		mid_panel.visible = true
 		bottom_hint.visible = true
 		mobile_move_panel.offset_left = 16.0
@@ -5687,6 +6046,10 @@ func _update_hud() -> void:
 	objective_label.text = objective_text
 	if daily_challenge_active and not daily_mutators.is_empty():
 		objective_label.text += "\nDAILY ANOMALIES · " + _daily_mutators_hud_text()
+	if daily_challenge_active:
+		var side_objective := _daily_side_objective_state()
+		if not side_objective.is_empty():
+			objective_label.text += "\nBONUS OP · %s · %d/%d" % [str(side_objective["instruction"]), int(side_objective["progress"]), int(side_objective["goal"])]
 	var extraction_event_visible: bool = not mission_finished and (extraction_pressure_active or extraction_overload_triggered)
 	if is_instance_valid(extraction_event_label):
 		extraction_event_label.visible = extraction_event_visible
@@ -5748,17 +6111,17 @@ func _update_hud() -> void:
 		telemetry_label.text += "  ·  REACT EMP %02d / NOVA %02d / LANE %02d" % [device_emp_overloads, device_cell_novas, device_lane_collapses]
 	if is_instance_valid(combat_status_label):
 		var overdrive_readout := "LIVE %.1f S" % overdrive_timer if overdrive_timer > 0.0 else "CHARGE %03d%%" % int(roundf(overdrive_charge))
-		combat_status_label.text = "COMBO %02d · ×%.2f · ACC %.0f%% · %s · AI %s" % [combat_combo, _combat_combo_multiplier(combat_combo), _combat_accuracy_percentage(), overdrive_readout, adaptive_doctrine]
+		combat_status_label.text = "COMBO %02d · %s · ×%.2f · ACC %.0f%% · %s · %s" % [combat_combo, _combo_mastery_label(_combo_mastery_tier(combat_combo)), _combat_combo_multiplier(combat_combo), _combat_accuracy_percentage(), overdrive_readout, _threat_forecast_text()]
 		combat_status_label.add_theme_color_override("font_color", Color(0.92, 0.72, 1.0) if overdrive_timer > 0.0 else (Color(1.0, 0.77, 0.39) if combat_combo >= 4 else Color(0.38, 1.0, 0.86)))
 	if is_instance_valid(thermal_status_label):
 		if weapon_overheated:
-			thermal_status_label.text = "THERMAL LOCKOUT · %.0f%% · V TO EMERGENCY VENT" % weapon_heat
+			thermal_status_label.text = "THERMAL LOCKOUT · %.0f%% · V VENT · ARC MK-%d" % [weapon_heat, _weapon_mastery_rank()]
 			thermal_status_label.add_theme_color_override("font_color", Color(1.0, 0.28, 0.3))
 		elif weapon_heat >= 75.0:
-			thermal_status_label.text = "THERMAL HIGH · %.0f%% · V TO VENT" % weapon_heat
+			thermal_status_label.text = "THERMAL HIGH · %.0f%% · V VENT · ARC MK-%d" % [weapon_heat, _weapon_mastery_rank()]
 			thermal_status_label.add_theme_color_override("font_color", Color(1.0, 0.62, 0.26))
 		else:
-			thermal_status_label.text = "WEAPON THERMAL · %.0f%% · SCAN %s" % [weapon_heat, "READY" if scan_cooldown <= 0.0 else "%.1fS" % scan_cooldown]
+			thermal_status_label.text = "WEAPON THERMAL · %.0f%% · SCAN %s · ARC MK-%d" % [weapon_heat, "READY" if scan_cooldown <= 0.0 else "%.1fS" % scan_cooldown, _weapon_mastery_rank()]
 			thermal_status_label.add_theme_color_override("font_color", Color(0.38, 1.0, 0.86))
 	if is_instance_valid(thermal_bar):
 		thermal_bar.value = clampf(weapon_heat, 0.0, WEAPON_HEAT_LIMIT)

@@ -1742,6 +1742,7 @@ func _run_smoke() -> void:
 	var saved_daily_active: bool = game.daily_challenge_active
 	var saved_daily_code: String = game.daily_challenge_code
 	var saved_daily_claim: String = game.daily_claimed_date
+	var saved_daily_tactical_claim: String = game.daily_tactical_claimed_date
 	var saved_daily_streak: int = game.daily_streak
 	var saved_daily_longest: int = game.daily_longest_streak
 	var saved_daily_last_date: String = game.daily_last_completed_date
@@ -1987,14 +1988,111 @@ func _run_smoke() -> void:
 	var boss_pressure_result: Dictionary = game._apply_guard_suppression(warden_pressure_state, game.GUARD_SUPPRESSION_THRESHOLD, false)
 	if not _expect(float(boss_pressure_result.get("stun", 0.0)) < game.GUARD_SUPPRESSION_STUN, "Warden must resist suppression stuns instead of behaving like a regular guard"):
 		return
+
+	print("RUNTIME_STAGE: tactical mastery / seven refinements")
+	if not _expect(float(pressure_state.get("weakpoint_exposed_timer", 0.0)) > 0.0, "pressure break must expose a weakpoint for a finite precision follow-up window"):
+		return
+	if not _expect(game._weakpoint_damage_multiplier({"warden": false, "weakpoint_exposed_timer": 2.0}, true) > 1.0 and is_equal_approx(game._weakpoint_damage_multiplier({"warden": false, "weakpoint_exposed_timer": 0.0}, true), 1.0), "weakpoint multiplier must require an exposed core"):
+		return
+	if not _expect(is_equal_approx(game._countershot_damage_scale(1.0, 2.4), game.COUNTERSHOT_DAMAGE_MULTIPLIER) and is_equal_approx(game._countershot_damage_scale(1.0, 0.0), 1.0), "countershot multiplier must require an active perfect-evade window"):
+		return
+	var threat_pick: Dictionary = game._select_earliest_telegraph([{"eta": 1.6, "role": "HEAVY"}, {"eta": 0.42, "role": "STALKER"}, {"eta": 0.9, "role": "RANGER"}])
+	if not _expect(str(threat_pick.get("role", "")) == "STALKER" and is_equal_approx(float(threat_pick.get("eta", 0.0)), 0.42), "threat forecast must select the earliest live telegraph"):
+		return
+	if not _expect(game._combo_mastery_tier(2) == 0 and game._combo_mastery_tier(3) == 1 and game._combo_mastery_tier(6) == 2 and game._combo_mastery_tier(10) == 3 and game._combo_mastery_tier(15) == 4, "combo mastery tiers must have deterministic thresholds"):
+		return
+	if not _expect(game._combo_mastery_charge_bonus(1) == 8.0 and game._combo_mastery_charge_bonus(4) == 24.0 and game._combo_mastery_charge_bonus(99) == 0.0, "combo mastery awards must remain bounded"):
+		return
+	if not _expect(game._weapon_mastery_rank_for_critical_hits(0) == 0 and game._weapon_mastery_rank_for_critical_hits(12) == 1 and game._weapon_mastery_rank_for_critical_hits(30) == 2 and game._weapon_mastery_rank_for_critical_hits(60) == 3 and game._weapon_mastery_rank_for_critical_hits(100) == 4, "ARC-9 mastery ranks must use stable career thresholds"):
+		return
+	var original_lifetime_crits: int = int(game.career.get_value("career", "total_critical_hits", 0))
+	game.career.set_value("career", "total_critical_hits", 0)
+	var novice_heat: float = game._weapon_heat_per_shot()
+	game.career.set_value("career", "total_critical_hits", 100)
+	var veteran_heat: float = game._weapon_heat_per_shot()
+	game.career.set_value("career", "total_critical_hits", original_lifetime_crits)
+	if not _expect(veteran_heat < novice_heat, "ARC-9 mastery must improve the real thermal budget"):
+		return
+	var saved_side_claim: String = game.daily_tactical_claimed_date
+	var saved_side_daily_active: bool = game.daily_challenge_active
+	var saved_side_code: String = game.daily_challenge_code
+	var saved_crit: int = game.critical_hits
+	var saved_evades: int = game.dash_evasions
+	var saved_interruptions: int = game.suppression_attack_interrupts
+	var saved_lures: int = game.phase_echo_lures
+	var side_date := "20261014"
+	game.daily_challenge_active = true
+	game.daily_challenge_code = game._challenge_code_for_date(side_date)
+	game.daily_tactical_claimed_date = ""
+	var side_goal: Dictionary = game._daily_side_objective_state()
+	if not _expect(not side_goal.is_empty() and int(side_goal.get("goal", 0)) > 0, "shared daily code must choose a deterministic bonus objective"):
+		return
+	match str(side_goal.get("id", "")):
+		"precision":
+			game.critical_hits = int(side_goal["goal"])
+		"evasion":
+			game.dash_evasions = int(side_goal["goal"])
+		"pressure":
+			game.suppression_attack_interrupts = int(side_goal["goal"])
+		"echo":
+			game.phase_echo_lures = int(side_goal["goal"])
+	if not _expect(bool(game._daily_side_objective_state().get("completed", false)), "daily bonus progress must use the selected real gameplay counter"):
+		return
+	if not _expect(game._claim_daily_side_objective_reward_for_date(side_date) == game.DAILY_TACTICAL_BONUS_CREDITS and game._claim_daily_side_objective_reward_for_date(side_date) == 0, "daily tactical bonus must be claimed once per date"):
+		return
+	game.daily_tactical_claimed_date = saved_side_claim
+	game.career.set_value("daily", "tactical_claimed_date", saved_side_claim)
+	game.daily_challenge_active = saved_side_daily_active
+	game.daily_challenge_code = saved_side_code
+	game.critical_hits = saved_crit
+	game.dash_evasions = saved_evades
+	game.suppression_attack_interrupts = saved_interruptions
+	game.phase_echo_lures = saved_lures
+	var old_salvage_spawned: int = game.salvage_pickups_spawned
+	var old_salvage_collected: int = game.salvage_pickups_collected
+	var old_run_credits: int = game.run_credits
+	var old_overdrive_charge: float = game.overdrive_charge
+	var old_weapon_heat: float = game.weapon_heat
+	var old_counter_window: float = game.counter_window_remaining
+	var old_counter_earned: int = game.counter_windows_earned
+	var old_counter_hits: int = game.countershot_hits
+	game.mission_finished = false
+	game.paused_game = false
+	game.briefing_visible = false
+	game._spawn_salvage_drop(game.player.global_position, true, false)
+	game._update_salvage_drops(0.016)
+	if not _expect(game.salvage_pickups_spawned == old_salvage_spawned + 1 and game.salvage_pickups_collected == old_salvage_collected + 1 and game.run_credits > old_run_credits and game.weapon_heat <= old_weapon_heat, "salvage shard must be collected once and restore credits plus weapon cooling"):
+		return
+	game.dash_timer = 0.2
+	game.dash_evasion_registered = false
+	game.counter_window_remaining = 0.0
+	game._damage_player(10.0)
+	if not _expect(game.counter_windows_earned == old_counter_earned + 1 and game.counter_window_remaining > 0.0, "a verified dash evade must arm a live counter window"):
+		return
+	game.dash_timer = 0.0
+	game.dash_evasion_registered = false
+	game.run_credits = old_run_credits
+	game.overdrive_charge = old_overdrive_charge
+	game.weapon_heat = old_weapon_heat
+	game.salvage_pickups_spawned = old_salvage_spawned
+	game.salvage_pickups_collected = old_salvage_collected
+	game.counter_window_remaining = old_counter_window
+	game.counter_windows_earned = old_counter_earned
+	game.countershot_hits = old_counter_hits
 	var new_report: Dictionary = game._build_after_action_report()
-	if not _expect(str(new_report.get("gameVersion", "")) == "0.20.0-kinetic-pressure" and new_report.get("suppression", {}).has("pressureHits") and new_report.get("suppression", {}).has("attackInterrupts"), "after-action export must include versioned kinetic-pressure metrics"):
+	if not _expect(str(new_report.get("gameVersion", "")) == "0.21.0-tactical-mastery" and new_report.get("suppression", {}).has("pressureHits") and new_report.get("suppression", {}).has("attackInterrupts"), "after-action export must include versioned kinetic-pressure metrics"):
 		return
 	if not _expect(new_report.get("thermal", {}).has("overheatEvents") and new_report.get("thermal", {}).has("ventHostilesInterrupted"), "after-action export must include versioned thermal metrics"):
 		return
 	if not _expect(new_report.get("recon", {}).has("scanActivations") and new_report.get("recon", {}).has("devicesRevealed"), "after-action export must include local tactical scan metrics"):
 		return
-	if not _expect(str(new_report.get("gameVersion", "")) == "0.20.0-kinetic-pressure" and new_report.get("phaseEcho", {}).get("deployments", -1) >= 0 and new_report.get("phaseEcho", {}).has("confirmedLures"), "after-action report must expose versioned Echo use and confirmed AI diversion counts"):
+	if not _expect(new_report.get("weakpoints", {}).has("exposures") and new_report.get("countershot", {}).has("confirmedHits"), "after-action report must include weakpoint and countershot metrics"):
+		return
+	if not _expect(new_report.get("salvage", {}).has("collected") and new_report.get("comboMastery", {}).has("bestTier") and new_report.get("mastery", {}).has("arc9Rank"), "after-action report must include salvage, combo tier and persistent mastery metrics"):
+		return
+	if not _expect(new_report.get("dailyObjective", {}).has("goal"), "daily report must export the measurable tactical bonus objective"):
+		return
+	if not _expect(str(new_report.get("gameVersion", "")) == "0.21.0-tactical-mastery" and new_report.get("phaseEcho", {}).get("deployments", -1) >= 0 and new_report.get("phaseEcho", {}).has("confirmedLures"), "after-action report must expose versioned Echo use and confirmed AI diversion counts"):
 		return
 	game.player.global_position = previous_player_position
 	game.mission_finished = previous_mission_finished
@@ -2009,6 +2107,8 @@ func _run_smoke() -> void:
 	game.daily_challenge_active = saved_daily_active
 	game.daily_challenge_code = saved_daily_code
 	game.daily_claimed_date = saved_daily_claim
+	game.daily_tactical_claimed_date = saved_daily_tactical_claim
+	game.career.set_value("daily", "tactical_claimed_date", saved_daily_tactical_claim)
 	game.daily_streak = saved_daily_streak
 	game.daily_longest_streak = saved_daily_longest
 	game.daily_last_completed_date = saved_daily_last_date
