@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 import {
   projectReport,
   buildReviewPacket,
@@ -155,6 +157,19 @@ test('deterministic blocked checks override optimistic AI recommendations', () =
   assert.equal(result.blockers[0].id, 'OSGARD-DETERMINISTIC-QA-BLOCK');
 });
 
+test('manual OpenAI workflow is opt-in and includes contract plus build-attestation evidence', async () => {
+  const workflow = await readFile(resolve('.github/workflows/osgard-ai-release-review.yml'), 'utf8');
+  assert.match(workflow, /workflow_dispatch:/);
+  assert.match(workflow, /type:\s*boolean\s*\n\s*default:\s*false/);
+  assert.match(workflow, /if:\s*\$\{\{ inputs\.use_openai \}\}/);
+  assert.ok(!/^\s{2}(?:pull_request|push):/m.test(workflow), 'OpenAI review must not run automatically on source pushes or PRs');
+  assert.ok(workflow.includes('npm run qa:contracts'), 'review workflow must produce contract evidence');
+  assert.ok(workflow.includes('npm run release:attest') && workflow.includes('npm run release:verify'), 'review workflow must verify the exact build attestation');
+  assert.ok(workflow.includes('--report release-readiness.json --report osgard-contract-audit.json --report release-attestation.json --send-to-openai'),
+    'review request must contain only the three minimized machine reports');
+  assert.ok(workflow.includes('The full qa:contracts command did not pass'), 'contract-command failures must be encoded as blocked evidence');
+  assert.ok(workflow.includes("status:'blocked'"), 'build/attestation failures must be encoded as blocked evidence');
+});
 test('OpenAI request uses Responses API, store=false and strict structured output', async () => {
   let captured;
   const expected = assessment();
