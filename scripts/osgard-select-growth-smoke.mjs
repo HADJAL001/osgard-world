@@ -322,7 +322,7 @@ const searchNormalizerMatch = source.match(/function normalizeServiceSearchQuery
 const searchMatcherMatch = source.match(/function matchesServiceFilter\(category,selectedCategory,searchableText,query\)\{[\s\S]*?\n\}/)
 assert.ok(searchNormalizerMatch && searchMatcherMatch, 'Normalized search helpers are required')
 const normalizeServiceSearchQuery = vm.runInNewContext('('+searchNormalizerMatch[0]+')')
-const matchesServiceFilter = vm.runInNewContext('('+searchMatcherMatch[0]+')')
+const matchesServiceFilter = vm.runInNewContext('('+searchMatcherMatch[0]+')',{normalizeServiceSearchQuery})
 assert.equal(normalizeServiceSearchQuery('  ВИДЕО  '),'видео','Search should normalize whitespace and case')
 assert.equal(matchesServiceFilter('studio','all','Создание сайтов и приложений','САЙТОВ'),true,'Search should match Russian service descriptions')
 assert.equal(matchesServiceFilter('studio','business','Создание сайтов','сайтов'),false,'Search results must still obey the active category')
