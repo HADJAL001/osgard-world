@@ -164,7 +164,7 @@ try {
   $null = Invoke-CheckedNative 'ssh' ($sshOptions + @("rm -rf '$remoteStage'"))
   Write-Output "Release activated after local/remote checksum, archive, Nginx and route checks. SHA-256: $localHash"
 } catch {
-  if ($remoteStageReady -and !$archiveVerified) {
+  if ($remoteStageReady) {
     try { $null = Invoke-CheckedNative 'ssh' ($sshOptions + @("rm -rf '$remoteStage'")) } catch {}
   }
   throw
