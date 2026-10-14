@@ -288,3 +288,12 @@ The Godot build tracks a persistent UTC daily-clear streak, longest streak and l
 - The live bottom hint updates to describe the current control mode. Existing collision, weapon timing, dash cooldown/evade window, mission progression and local save data remain shared with keyboard/touch controls.
 - Headless Godot runtime smoke synthesizes controller events to test analog dead-zone behavior, full stick output, movement-vector integration, pause/resume, and D-pad terminal hacking without requiring a physical controller in CI. The static source contract also requires axis polling, trigger fire, hot-plug handling and adaptive HUD hints.
 - The repository CI already installs the official Godot 4.7.2 engine and Web export templates; no separate local installation is needed for reproducible exports.
+
+
+## Godot release 0.12 — deterministic daily anomaly director
+
+- Every valid daily challenge code now selects two distinct gameplay modifiers using a stable UTF-8 FNV-1a seed and a fixed modifier catalogue. Friends entering the same shared challenge get the same modifier pair; no account, server call, or new dependency is required.
+- Six modifiers can rotate into the daily run: faster/more aggressive hunters, extra armour on hostiles, 22% faster live electrical lanes, a disabled medkit, a harsher NULL shift with elevated starting instability, and a jammed tactical radar.
+- The modifiers change the simulation itself (guard speed, cooldown/damage/HP, timed lane cycle, supply interaction, phase-instability cost and radar visibility), not just labels or particle effects. The HUD and loadout show the active anomalies before and during the run.
+- Expanded the Godot headless runtime smoke to verify that modifier selection is deterministic and distinct, malformed links cannot grant modifiers, and the selected mutators alter the real game state. The deploy pipeline regenerates and publishes the Godot Web export directly on OSgard World.
+- This adds repeatable challenge variation without changing the existing challenge URL format, regular contracts, local career economy, or daily reward idempotency.

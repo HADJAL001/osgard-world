@@ -1063,6 +1063,39 @@ func _run_smoke() -> void:
 		return
 	if not _expect(game._previous_date_code("20240301") == "20240229" and game._previous_date_code("20260301") == "20260228", "streak date math must handle leap day and month rollover"):
 		return
+	game.daily_challenge_active = false
+	game.daily_mutators.clear()
+	game.daily_mutator_ids.clear()
+	game.daily_phase_rate = 1.0
+	game.daily_shift_instability_bonus = 0.0
+	game.daily_radar_jammed = false
+	game.daily_supply_blackout = false
+	game._spawn_guard(Vector3(20.0, 0.82, 17.0), false)
+	var anomaly_guard_index: int = game.guards.size() - 1
+	var deterministic_code: String = game._challenge_code_for_date("20261014")
+	var daily_mutators_first: Array[String] = game._daily_mutator_ids_for_code(deterministic_code)
+	var daily_mutators_repeat: Array[String] = game._daily_mutator_ids_for_code(deterministic_code)
+	if not _expect(daily_mutators_first.size() == 2 and daily_mutators_first == daily_mutators_repeat and daily_mutators_first[0] != daily_mutators_first[1], "daily mutators must be deterministic, distinct and identical for every player sharing the challenge code"):
+		return
+	if not _expect(game._daily_mutator_ids_for_code("not-a-challenge").is_empty(), "invalid challenge links must not grant daily mutators"):
+		return
+	var baseline_guard_speed: float = float(game.guards[anomaly_guard_index]["speed"])
+	var baseline_guard_hp: int = int(game.guards[anomaly_guard_index]["max_hp"])
+	game.daily_challenge_active = true
+	game.daily_challenge_code = deterministic_code
+	game._configure_daily_mutators()
+	if not _expect(game.daily_mutators.size() == 2 and game.daily_mutator_ids == daily_mutators_first, "daily anomaly director must install exactly the shared two-mutator loadout"):
+		return
+	if not _expect(is_equal_approx(game.daily_phase_rate, 1.22) == daily_mutators_first.has("grid"), "GRID OVERDRIVE must alter the real timed hazard simulation"):
+		return
+	if not _expect(game.daily_supply_blackout == daily_mutators_first.has("supply") and game.daily_radar_jammed == daily_mutators_first.has("radar"), "SUPPLY BLACKOUT and RADAR GHOST must toggle their actual mission systems"):
+		return
+	if not _expect((float(game.guards[anomaly_guard_index]["speed"]) > baseline_guard_speed) == daily_mutators_first.has("hunter"), "HUNTER PROTOCOL must change live guard movement and attack cadence"):
+		return
+	if not _expect((int(game.guards[anomaly_guard_index]["max_hp"]) == baseline_guard_hp + 1) == daily_mutators_first.has("armor"), "ARMORED HOSTILES must alter real guard health and health readouts"):
+		return
+	if not _expect((game.daily_shift_instability_bonus == 8.0) == daily_mutators_first.has("fracture"), "PHASE FRACTURE must change the cost of every later phase shift"):
+		return
 	game.daily_challenge_active = true
 	game.daily_streak = 0
 	game.daily_longest_streak = 0

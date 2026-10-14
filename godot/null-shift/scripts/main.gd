@@ -232,6 +232,13 @@ var result_share_label: Label
 var amber_style_button: Button
 var violet_style_button: Button
 var daily_challenge_button: Button
+# DAILY ANOMALY DIRECTOR / 0.12: shared challenge codes resolve to the same two modifiers.
+var daily_mutators: Array[Dictionary] = []
+var daily_mutator_ids: Array[String] = []
+var daily_phase_rate := 1.0
+var daily_shift_instability_bonus := 0.0
+var daily_radar_jammed := false
+var daily_supply_blackout := false
 
 func _ready() -> void:
 	_reset_runtime_collections()
@@ -253,6 +260,7 @@ func _ready() -> void:
 	_create_player()
 	_create_initial_guards()
 	_create_ui()
+	_configure_daily_mutators()
 	_refresh_loadout()
 	_apply_quality_mode()
 	_update_hud()
@@ -266,6 +274,14 @@ func _reset_runtime_collections() -> void:
 	# Duplicate each collection before clearing it so repeated scene instances cannot cross-contaminate.
 	materials = materials.duplicate()
 	materials.clear()
+	daily_mutators = daily_mutators.duplicate()
+	daily_mutators.clear()
+	daily_mutator_ids = daily_mutator_ids.duplicate()
+	daily_mutator_ids.clear()
+	daily_phase_rate = 1.0
+	daily_shift_instability_bonus = 0.0
+	daily_radar_jammed = false
+	daily_supply_blackout = false
 	objective_beacon_beam_materials = objective_beacon_beam_materials.duplicate()
 	objective_beacon_beam_materials.clear()
 	objective_beacon_target = null
@@ -928,7 +944,7 @@ func _update_phase_lanes(delta: float) -> void:
 	var disrupted_count: int = 0
 	for index in range(phase_lanes.size()):
 		var lane: Dictionary = phase_lanes[index]
-		var cycle: float = fposmod(phase_clock + float(lane["offset"]), 8.4)
+		var cycle: float = fposmod(phase_clock * daily_phase_rate + float(lane["offset"]), 8.4)
 		var next_state: String = "safe"
 		if cycle >= 4.95 and cycle < 6.3:
 			next_state = "warning"
@@ -1652,6 +1668,7 @@ func _spawn_guard(at: Vector3, is_warden: bool) -> void:
 		"dash_cooldown": randf_range(1.4, 2.4),
 		"phase": randf_range(0.0, TAU)
 	})
+	_apply_daily_mutators_to_guard(guards.size() - 1)
 
 func _read_move_input() -> Vector2:
 	var move := Vector2(
@@ -2139,7 +2156,7 @@ func _shift_layer() -> void:
 	if null_shift_timer > 0.0 or paused_game or mission_finished:
 		return
 	null_shift_timer = 3.8
-	instability = minf(100.0, instability + 24.0)
+	instability = minf(100.0, instability + 24.0 + daily_shift_instability_bonus)
 	phase_flash_timer = maxf(phase_flash_timer, 0.34)
 	_screen_impulse(0.105, 0.2)
 	_spawn_ring_burst(player.global_position + Vector3.UP * 0.1, materials["violet"])
@@ -2156,7 +2173,7 @@ func _shift_layer() -> void:
 func _interact() -> void:
 	if paused_game or mission_finished:
 		return
-	if not medkit_used and _near(player, medkit, 2.7):
+	if not daily_supply_blackout and not medkit_used and _near(player, medkit, 2.7):
 		medkit_used = true
 		medkit.visible = false
 		player_health = minf(player_max_health, player_health + 40.0)
@@ -2320,6 +2337,114 @@ func _finish_mission(success: bool) -> void:
 	if OS.has_feature("web"):
 		JavaScriptBridge.eval("if(window.OSGARDGameLifecycle){window.OSGARDGameLifecycle({type:'osgard:game-lifecycle',game:'null-shift',state:'completed',at:Date.now()});}else if(window.parent!==window){window.parent.postMessage({type:'osgard:game-lifecycle',game:'null-shift',state:'completed',at:Date.now()},window.location.origin);}")
 	_update_hud()
+
+
+func _daily_mutator_catalog() -> Array[Dictionary]:
+	return [
+		{"id": "hunter", "name": "HUNTER PROTOCOL", "short": "HUNTER", "detail": "ОХОТА · СТРАЖА ДВИЖЕТСЯ НА 18% БЫСТРЕЕ"},
+		{"id": "armor", "name": "ARMORED HOSTILES", "short": "ARMORED", "detail": "БРОНЯ · КАЖДЫЙ ПРОТИВНИК ПОЛУЧАЕТ +1 HP"},
+		{"id": "grid", "name": "GRID OVERDRIVE", "short": "GRID +22%", "detail": "ЭНЕРГОСЕТЬ · КОНТУРЫ ЦИКЛИРУЮТ НА 22% БЫСТРЕЕ"},
+		{"id": "supply", "name": "SUPPLY BLACKOUT", "short": "NO MEDKIT", "detail": "БЛЭКАУТ · АПТЕЧКА ОТКЛЮЧЕНА НА ВЕСЬ РЕЙД"},
+		{"id": "fracture", "name": "PHASE FRACTURE", "short": "FRACTURE", "detail": "РАЗЛОМ · СТАРТУЙ С 18% НЕСТАБИЛЬНОСТИ; SHIFT ЖЁСТЧЕ"},
+		{"id": "radar", "name": "RADAR GHOST", "short": "RADAR OFF", "detail": "ПОМЕХИ · ТАКТИЧЕСКИЙ РАДАР ЗАГЛУШЁН"}
+	]
+
+func _daily_mutator_ids_for_code(code: String) -> Array[String]:
+	var ids: Array[String] = []
+	if _contract_index_from_challenge_code(code) < 0:
+		return ids
+	# FNV-1a over UTF-8; don't use String.hash(), whose value isn't a cross-runtime contract.
+	var seed_value: int = 2166136261
+	for byte_value in code.to_utf8_buffer():
+		seed_value = int((seed_value ^ int(byte_value)) * 16777619) & 0x7fffffff
+	var rng := RandomNumberGenerator.new()
+	rng.seed = maxi(seed_value, 1)
+	var pool: Array[Dictionary] = []
+	for mutator in _daily_mutator_catalog():
+		pool.append(mutator.duplicate(true))
+	while ids.size() < 2 and not pool.is_empty():
+		var selected: Dictionary = pool.pop_at(rng.randi_range(0, pool.size() - 1))
+		ids.append(str(selected["id"]))
+	return ids
+
+func _daily_mutators_hud_text() -> String:
+	var names: Array[String] = []
+	for mutator in daily_mutators:
+		names.append(str(mutator["short"]))
+	var result := ""
+	for item in names:
+		if not result.is_empty():
+			result += " / "
+		result += item
+	return result
+
+func _daily_mutators_detail_text() -> String:
+	var details: Array[String] = []
+	for mutator in daily_mutators:
+		details.append(str(mutator["detail"]))
+	var result := ""
+	for detail in details:
+		if not result.is_empty():
+			result += " · "
+		result += detail
+	return result
+
+func _configure_daily_mutators() -> void:
+	daily_mutators.clear()
+	daily_mutator_ids.clear()
+	daily_phase_rate = 1.0
+	daily_shift_instability_bonus = 0.0
+	daily_radar_jammed = false
+	daily_supply_blackout = false
+	if not daily_challenge_active:
+		return
+	daily_mutator_ids = _daily_mutator_ids_for_code(daily_challenge_code)
+	if daily_mutator_ids.is_empty():
+		return
+	for mutator in _daily_mutator_catalog():
+		var mutator_id := str(mutator["id"])
+		if not daily_mutator_ids.has(mutator_id):
+			continue
+		daily_mutators.append(mutator)
+		match mutator_id:
+			"grid":
+				daily_phase_rate = 1.22
+			"supply":
+				daily_supply_blackout = true
+				medkit_used = true
+				if is_instance_valid(medkit):
+					medkit.visible = false
+			"fracture":
+				daily_shift_instability_bonus = 8.0
+				instability = maxf(instability, 18.0)
+			"radar":
+				daily_radar_jammed = true
+				if is_instance_valid(tactical_radar_panel):
+					tactical_radar_panel.visible = false
+	for index in range(guards.size()):
+		_apply_daily_mutators_to_guard(index)
+	objective_text = "DAILY OP · %s · ANOMALIES %s" % [daily_challenge_code, _daily_mutators_hud_text()]
+
+func _apply_daily_mutators_to_guard(index: int) -> void:
+	if daily_mutator_ids.is_empty() or index < 0 or index >= guards.size():
+		return
+	var guard: Dictionary = guards[index]
+	if bool(guard.get("daily_mutators_applied", false)):
+		return
+	if daily_mutator_ids.has("hunter"):
+		guard["speed"] = float(guard["speed"]) * 1.18
+		guard["cooldown"] = float(guard["cooldown"]) * 0.86
+		guard["damage"] = float(guard["damage"]) * 1.06
+	if daily_mutator_ids.has("armor"):
+		guard["hp"] = int(guard["hp"]) + 1
+		guard["max_hp"] = int(guard["max_hp"]) + 1
+		var body := guard.get("node") as CharacterBody3D
+		if is_instance_valid(body):
+			var health_readout := body.get_node_or_null("HealthReadout") as Label3D
+			if is_instance_valid(health_readout):
+				health_readout.text = "HP %d / %d" % [int(guard["hp"]), int(guard["max_hp"])]
+	guard["daily_mutators_applied"] = true
+	guards[index] = guard
 
 func _today_date_code() -> String:
 	return Time.get_date_string_from_system(true).replace("-", "")
@@ -3472,7 +3597,7 @@ func _update_mobile_layout() -> void:
 	var compact: bool = width < 880.0 or touch_device
 	mobile_controls_visible = compact
 	if is_instance_valid(tactical_radar_panel):
-		tactical_radar_panel.visible = not compact
+		tactical_radar_panel.visible = not compact and not daily_radar_jammed
 	touch_assisted_aim = touch_device
 	if is_instance_valid(briefing_panel):
 		var panel_width: float = maxf(280.0, minf(620.0, viewport_size.x - 24.0))
@@ -3501,12 +3626,12 @@ func _update_mobile_layout() -> void:
 		objective_panel.offset_left = 10.0
 		objective_panel.offset_right = -10.0
 		objective_panel.offset_top = 148.0
-		objective_panel.offset_bottom = 218.0
+		objective_panel.offset_bottom = 242.0 if daily_challenge_active and not daily_mutators.is_empty() else 218.0
 		objective_title.visible = false
 		telemetry_label.visible = false
 		objective_actions.visible = false
 		objective_label.add_theme_font_size_override("font_size", 11)
-		objective_label.custom_minimum_size = Vector2(maxf(240.0, width - 52.0), 34.0)
+		objective_label.custom_minimum_size = Vector2(maxf(240.0, width - 52.0), 50.0 if daily_challenge_active and not daily_mutators.is_empty() else 34.0)
 		mid_panel.visible = false
 		bottom_hint.visible = false
 		_layout_compact_controls(viewport_size)
@@ -3526,12 +3651,15 @@ func _update_mobile_layout() -> void:
 		objective_panel.offset_left = -334.0
 		objective_panel.offset_top = 18.0
 		objective_panel.offset_right = -18.0
-		objective_panel.offset_bottom = 196.0
+		objective_panel.offset_bottom = 224.0 if daily_challenge_active and not daily_mutators.is_empty() else 196.0
+		if is_instance_valid(tactical_radar_panel):
+			tactical_radar_panel.offset_top = 238.0 if daily_challenge_active and not daily_mutators.is_empty() else 210.0
+			tactical_radar_panel.offset_bottom = 432.0 if daily_challenge_active and not daily_mutators.is_empty() else 404.0
 		objective_title.visible = true
 		telemetry_label.visible = true
 		objective_actions.visible = true
 		objective_label.add_theme_font_size_override("font_size", 12)
-		objective_label.custom_minimum_size = Vector2(285.0, 64.0)
+		objective_label.custom_minimum_size = Vector2(285.0, 88.0 if daily_challenge_active and not daily_mutators.is_empty() else 64.0)
 		mid_panel.visible = true
 		bottom_hint.visible = true
 		mobile_move_panel.offset_left = 16.0
@@ -3611,6 +3739,8 @@ func _refresh_loadout() -> void:
 			var until_weekly := 7 - (daily_streak % 7)
 			next_bonus = "БОНУС 7 ДНЕЙ +300 CR ЧЕРЕЗ %d" % until_weekly
 		daily_streak_label.text = "СЕРИЯ %d · РЕКОРД %d · %s" % [daily_streak, daily_longest_streak, next_bonus]
+		if daily_challenge_active and not daily_mutators.is_empty():
+			daily_streak_label.text += "\nTODAY'S ANOMALIES · " + _daily_mutators_detail_text()
 	for child in loadout_panel.get_children():
 		if child is MarginContainer:
 			for inner in child.get_children():
@@ -3673,6 +3803,8 @@ func _update_hud() -> void:
 	threat_label.text = "УГРОЗА: %s" % ("КРИТИЧЕСКАЯ" if alarm_active else ("ВЫСОКАЯ" if not guards.is_empty() else "НИЗКАЯ"))
 	threat_label.add_theme_color_override("font_color", Color(1.0, 0.25, 0.34) if alarm_active else Color(0.95, 0.72, 0.39) if not guards.is_empty() else Color(0.35, 1.0, 0.81))
 	objective_label.text = objective_text
+	if daily_challenge_active and not daily_mutators.is_empty():
+		objective_label.text += "\nDAILY ANOMALIES · " + _daily_mutators_hud_text()
 	if is_instance_valid(dash_status_label):
 		if dash_timer > 0.0:
 			dash_status_label.text = "РЫВОК АКТИВЕН · %.1f С" % dash_timer
@@ -3687,6 +3819,8 @@ func _update_hud() -> void:
 		mobile_dash_button.text = "РЫВОК" if dash_cooldown <= 0.02 else "РЫВОК %.1f" % dash_cooldown
 		mobile_dash_button.disabled = dash_cooldown > 0.02 or paused_game or mission_finished or terminal_active or briefing_visible
 	telemetry_label.text = "HOSTILES %02d  ·  DEVICES %02d  ·  CONTRACT %02d" % [guards.size(), _living_device_count(), current_contract + 1]
+	if daily_challenge_active and not daily_mutators.is_empty():
+		telemetry_label.text += "  ·  DAILY / 2 MODS"
 	_update_input_hint()
 	if diagnostics_enabled:
 		var samples := frame_samples.duplicate()
