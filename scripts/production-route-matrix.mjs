@@ -102,7 +102,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         : route === '/games/experiments/'
           ? text.includes('<title>OSGARD PLAY — Лаборатория доказательств роста</title>') && text.includes('id="import-text"') && text.includes('id="a-exposures"') && text.includes('id="export-report"') && text.includes('/games/experiments/app.js')
         : route === '/games/experiments/app.js'
-          ? (response.headers.get('content-type') || '').toLowerCase().includes('javascript') && text.includes('parseExperimentImport') && text.includes('OSGARD_EXPERIMENT_EVIDENCE')
+          ? (response.headers.get('content-type') || '').toLowerCase().includes('javascript') && text.includes('parseExperimentImport') && text.includes('function render(report)')
         : route === '/games/experiments/evidence-engine.js'
           ? (response.headers.get('content-type') || '').toLowerCase().includes('javascript') && text.includes('export function analyzeExperiment') && text.includes('newcombeDifferenceInterval')
         : route === '/games/growth-studio/'
