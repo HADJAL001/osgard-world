@@ -58,10 +58,10 @@ try {
     encoding: 'utf8',
     env: { ...env, OSGARD_FRONTEND_MANIFEST: join(artifact, 'self-referential.json') },
     stdio: 'pipe',
-  }), /Release manifest must be written outside the artifact directory/i)
+  }), error => /Release manifest must be written outside the artifact directory/i.test(String(error.stderr || '') + String(error.message)))
 
   writeFileSync(join(artifact, 'games', 'demo', 'index.html'), '<html>вЂ broken</html>\n')
-  assert.throws(() => execFileSync(process.execPath, [tool, artifact], { encoding: 'utf8', env }), /HTML mojibake marker/i)
+  assert.throws(() => execFileSync(process.execPath, [tool, artifact], { encoding: 'utf8', env }), error => /HTML mojibake marker/i.test(String(error.stderr || '') + String(error.message)))
   console.log('PASS release manifest: source SHA, sorted per-file hashes, aggregate artifact digest, compatibility fields and fail-closed validation')
 } finally {
   rmSync(temporary, { recursive: true, force: true })
