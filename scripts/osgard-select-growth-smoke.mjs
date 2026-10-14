@@ -267,7 +267,7 @@ const variantMatch=source.match(/function getSessionSpotlightVariant\(\)\{[\s\S]
 assert.ok(variantMatch, 'Session-stable spotlight cohort helper missing')
 const sessionValues=new Map()
 const sessionStorageMock={getItem(key){return sessionValues.has(key)?sessionValues.get(key):null},setItem(key,value){sessionValues.set(key,String(value))}}
-const getVariant=vm.runInNewContext('('+variantMatch[0]+')',{sessionStorage:sessionStorageMock,Math})
+const getVariant=vm.runInNewContext('('+variantMatch[0]+')',{sessionStorage:sessionStorageMock,Math,memorySpotlightVariant:''})
 const variantFirst=getVariant(),variantSecond=getVariant()
 assert.ok(variantFirst==='a'||variantFirst==='b')
 assert.equal(variantSecond,variantFirst,'Re-rendering a spotlight must not move a player to a different A/B variant in the same tab')
@@ -279,7 +279,7 @@ const impressionMatch=source.match(/function claimPromoImpression\(key\)\{[\s\S]
 assert.ok(impressionMatch, 'Impression dedupe helper missing')
 const impressionValues=new Map()
 const impressionStorage={getItem(key){return impressionValues.has(key)?impressionValues.get(key):null},setItem(key,value){impressionValues.set(key,String(value))}}
-const claimImpression=vm.runInNewContext('('+impressionMatch[0]+')',{sessionStorage:impressionStorage,promoImpressionKeyPrefix:'osgard.games.promo-impression.v1:'})
+const claimImpression=vm.runInNewContext('('+impressionMatch[0]+')',{sessionStorage:impressionStorage,promoImpressionKeyPrefix:'osgard.games.promo-impression.v1:',fallbackPromoImpressions:new Set()})
 assert.equal(claimImpression('spotlight:swarm:marcosa:a'),true,'First valid exposure may be counted')
 assert.equal(claimImpression('spotlight:swarm:marcosa:a'),false,'A repeated exposure for the same session/service/variant must be deduplicated')
 assert.equal(claimImpression('card:swarm:marcosa'),true,'A separately visible directory card may be measured once')
