@@ -34,6 +34,7 @@ on:
       - "scripts/time-prototype-smoke.mjs"
       - "scripts/null-shift-premium-smoke.mjs"
       - "scripts/games-portal-smoke.mjs"
+      - "scripts/entertainment-hub-smoke.mjs"
       - "scripts/player-console-smoke.mjs"
       - "scripts/consented-analytics-queue-smoke.mjs"
       - "scripts/remix-growth-smoke.mjs"
@@ -60,6 +61,8 @@ jobs:
       - run: npm run qa:null-shift
       - name: Smoke-test the OSGARD Games hub
         run: npm run qa:games-portal
+      - name: Verify premium Entertainment discovery, share and SEO
+        run: npm run qa:entertainment
       - name: Smoke-test read-only Games operations diagnostics
         run: npm run qa:games-operations
       - name: Smoke-test Player Lab daily missions, local rewards and backup migration
