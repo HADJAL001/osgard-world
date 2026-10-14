@@ -4,12 +4,12 @@ import { readFileSync } from 'node:fs';
 const html = readFileSync(new URL('../public/games/cascade-lab/index.html', import.meta.url), 'utf8');
 const hypothesis = readFileSync(new URL('../public/games/cascade-lab/hypothesis-lab.js', import.meta.url), 'utf8');
 
-assert.match(html, /osgard-game-version" content="0\.18\.0-hypothesis-lab"/, 'release metadata must identify 0.16.0');
-assert.match(html, /<title>CASCADE LAB — Premium Physics Lab 0\.18\.0<\/title>/, 'browser title must match release');
+assert.match(html, /osgard-game-version" content="0\.19.0-experiment-studio"/, 'release metadata must identify 0.19.0');
+assert.match(html, /<title>CASCADE LAB — Premium Physics Lab 0\.19\.0<\/title>/, 'browser title must match release');
 assert.ok(html.includes('id="CASCADELAB017"') && html.includes('data-cascade-lab-delta="0.17.0"') && html.includes('src="./delta-lens.js"'), 'Delta Lens must load as the current experiment layer');
 assert.match(html, /id="exportDossierButton"[^>]*>↓ JSON<\/button>/, 'JSON dossier control must be visible');
 assert.match(html, /\$\('exportDossierButton'\)\.addEventListener\('click', downloadExperimentDossier\)/, 'JSON control must be wired');
-assert.match(html, /application: \{ name: 'CASCADE LAB', version: '0\.18\.0' \}/, 'local growth report must carry the current app version');
+assert.match(html, /application: \{ name: 'CASCADE LAB', version: '0\.19\.0' \}/, 'local growth report must carry the current app version');
 
 const functionMatch = html.match(/function downloadExperimentDossier\(\) \{([\s\S]*?)\n\}\n\nfunction draw\(/);
 assert.ok(functionMatch, 'experiment dossier exporter must be defined before the renderer');
