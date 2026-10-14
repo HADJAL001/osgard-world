@@ -123,6 +123,8 @@
       target.searchParams.set('utm_campaign', item.id);
       const card = document.createElement('a');
       card.className = 'og-live-sponsored__card';
+      card.dataset.campaignId = item.id;
+      card.__campaign = item;
       card.href = target.href;
       card.target = '_blank';
       card.rel = 'sponsored noopener noreferrer';
@@ -135,32 +137,12 @@
       cta.append(safeText('span', '', 'Изучить предложение'), safeText('span', '', '↗'));
       card.append(disclosure, sponsor, title, description, cta);
       card.addEventListener('click', () => recordEvent('sponsored_campaign_clicked', item.id));
-      card.addEventListener('keydown', event => {
-        if (event.key === 'Enter') recordEvent('sponsored_campaign_clicked', item.id);
-      });
       grid.append(card);
       if (observer) observer.observe(card);
     }
     if (!grid.childElementCount) return;
     root.replaceChildren(label, grid, safeText('p', 'og-live-sponsored__note', 'Спонсорский блок отделён от игрового управления. Показ ограничивается настройкой на этом устройстве; межустройственный лимит не гарантируется.'));
     root.hidden = false;
-    if (!observer && 'IntersectionObserver' in window) attachObserver(grid);
-  }
-  function attachObserver(scope) {
-    observer = new IntersectionObserver(entries => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting || entry.intersectionRatio < 0.5) continue;
-        const card = entry.target;
-        observer.unobserve(card);
-        const itemId = card.getAttribute('data-campaign-id');
-        const item = card.__campaign;
-        if (!itemId || !item) continue;
-        window.setTimeout(() => {
-          if (card.isConnected && !document.hidden && card.getBoundingClientRect().width > 0) registerVisible(card, item);
-        }, 1000);
-      }
-    }, { threshold: [0.5] });
-    scope.querySelectorAll('.og-live-sponsored__card').forEach(card => observer.observe(card));
   }
   async function apiBase() {
     const response = await fetch('/games/commerce-config.json', {
@@ -180,9 +162,8 @@
     } catch { return ''; }
   }
   async function init() {
-    if (!storage) return; // Cannot honour the local frequency cap: fail closed.
-    if (!('IntersectionObserver' in window)) observer = null;
-    else attachObserver = null;
+    // Without storage or visibility measurement the campaign slot stays hidden.
+    if (!storage || !('IntersectionObserver' in window)) return;
     try {
       const base = await apiBase();
       if (!base) return; // API is unconfigured in the release baseline; keep the slot hidden.
