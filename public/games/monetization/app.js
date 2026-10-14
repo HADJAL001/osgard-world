@@ -7,6 +7,15 @@ const statusNode = document.getElementById('model-status');
 const exportButton = document.getElementById('export-json');
 const exportCsvButton = document.getElementById('export-csv');
 const resetButton = document.getElementById('reset-model');
+const snapshotName = document.getElementById('snapshot-name');
+const snapshotSelect = document.getElementById('snapshot-select');
+const snapshotStatus = document.getElementById('snapshot-status');
+const snapshotSave = document.getElementById('save-snapshot');
+const snapshotLoad = document.getElementById('load-snapshot');
+const snapshotDelete = document.getElementById('delete-snapshot');
+const projectionExportButton = document.getElementById('export-projection-csv');
+const SNAPSHOT_KEY = 'osgard.monetization.snapshots.v1';
+const MAX_SNAPSHOTS = 8;
 const usd = new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 const number = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 });
 const decimal = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 });
@@ -21,6 +30,12 @@ function readInputs() {
 function money(value) { return usd.format(Number.isFinite(value) ? value : 0); }
 function count(value) { return number.format(Number.isFinite(value) ? value : 0); }
 function percent(value) { return decimal.format(Number.isFinite(value) ? value : 0) + '%'; }
+function node(tag, className, text) {
+  const element = document.createElement(tag);
+  if (className) element.className = className;
+  if (text !== undefined) element.textContent = text;
+  return element;
+}
 function safeSnapshotName(value) {
   return String(value || '').replace(/[\u0000-\u001f\u007f]/g, '').replace(/\s+/g, ' ').trim().slice(0, 40);
 }
