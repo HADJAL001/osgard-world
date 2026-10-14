@@ -1404,7 +1404,7 @@ function validateDoctrineDossierStructure(dossier,currentModelVersion){
   if(!isObject(assurance)||!isObject(assurance.safetySummary)||['green','amber','red'].some(level=>!Number.isInteger(assurance.safetySummary[level])||assurance.safetySummary[level]<0)||['green','amber','red'].reduce((sum,level)=>sum+assurance.safetySummary[level],0)!==candidates?.length)fail('Сводка safety verdict не совпадает с портфелем.');
   if(!isObject(assurance)||assurance.fingerprintAlgorithm!=='FNV-1a-32-over-source-state-json'||typeof assurance.warning!=='string')fail('Отсутствует явное ограничение fingerprint.');
   if(isObject(assurance)&&isObject(source)&&isObject(scenario)){
-   const fingerprintInput=JSON.stringify({scenarioId:scenario.id,sourceState:source});let fingerprint=0x811c9dc5;
+   const fingerprintInput=canonicalDossierStringify({scenarioId:scenario.id,sourceState:source});let fingerprint=0x811c9dc5;
    for(let index=0;index<fingerprintInput.length;index++){fingerprint^=fingerprintInput.charCodeAt(index);fingerprint=Math.imul(fingerprint,0x01000193)>>>0}
    if(fingerprint.toString(16).padStart(8,'0')!==assurance.stateFingerprint)fail('Fingerprint не соответствует сохранённому снимку исходного состояния.');
   }
@@ -1484,7 +1484,7 @@ function buildDoctrineDossierPayload(sourceState,result,gameVersion,scenarioDefi
   elapsedSeconds:Number.isFinite(sourceState.elapsed)?sourceState.elapsed:null,metrics,nodeIntegrity,nodeOutages,nodeIncidentFlags,
   pendingNodeIncidents:Array.isArray(sourceState.pendingNodeIncidents)?sourceState.pendingNodeIncidents.slice():[]
  };
- const fingerprintInput=JSON.stringify({scenarioId,sourceState:sourceSnapshot});
+ const fingerprintInput=canonicalDossierStringify({scenarioId,sourceState:sourceSnapshot});
  let fingerprint=0x811c9dc5;
  for(let index=0;index<fingerprintInput.length;index++){fingerprint^=fingerprintInput.charCodeAt(index);fingerprint=Math.imul(fingerprint,0x01000193)>>>0}
  const stateFingerprint=fingerprint.toString(16).padStart(8,'0');
