@@ -16,7 +16,7 @@ const games = [
   ['07', 'patina', 'PA', 'PATINA ATELIER', 'РЕСТАВРАЦИОННАЯ ЛАБОРАТОРИЯ', 'Исследуй керамику, различай загрязнения и сохраняй историю предмета.', '/games/patina/'],
   ['08', 'signal', 'SR', 'SIGNAL RUN', 'АРКАДА / РЕАКЦИЯ', 'Меняй полосу, собирай сигналы и уклоняйся от помех.', '/games/signal-run/'],
   ['09', 'cascade-lab', 'CL', 'CASCADE LAB', 'ФИЗИЧЕСКАЯ ГОЛОВОЛОМКА', 'Собирай цепные реакции, запускай механизмы и исследуй движение ядра.', '/games/cascade-lab/'],
-  ['10', 'afterimage-run', 'AR', 'AFTERIMAGE//RUN', 'DAILY SCI-FI SPEEDRUN · v1.7.0 — PHASE SPLITS', 'Общий seed, личный призрак, улучшенный сенсорный ввод и вызов другу.', '/games/afterimage-run/'],
+  ['10', 'afterimage-run', 'AR', 'AFTERIMAGE//RUN', 'DAILY SCI-FI SPEEDRUN · v1.7.0 — PHASE SPLITS', 'Единый seed, призрак и контрольные точки с дельтой времени к личному рекорду.', '/games/afterimage-run/'],
   ['11', 'aether-grid', 'AG', 'AETHER GRID', 'DAILY LOGIC PUZZLE', 'Соедини источник с ядром в сетке из 25 узлов и брось вызов другу.', '/games/aether-grid/'],
 ].map(([id, key, mark, title, type, copy, href]) => ({ id, key, mark, title: decode(title), type: decode(type), copy: decode(copy), href }))
 
