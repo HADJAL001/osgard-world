@@ -15,6 +15,11 @@ on:
       - "scripts/osgard-select-growth-smoke.mjs"
       - "scripts/consented-analytics-queue-smoke.mjs"
       - "scripts/activate-frontend-remote.sh"
+      - "scripts/publish-frontend-resumable.ps1"
+      - "scripts/activate-frontend-dist-remote.sh"
+      - "scripts/publish-frontend-resumable-smoke.mjs"
+      - "docs/WINDOWS_RELEASE_PUBLISHING.md"
+      - ".github/workflows/windows-publisher-check.yml"
       - "scripts/games-lighthouse-report.mjs"
       - "scripts/external-project-healthcheck.mjs"
       - "scripts/external-project-healthcheck-smoke.mjs"
@@ -68,6 +73,8 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
+      - name: Verify Windows resumable publisher safety contracts
+        run: npm run qa:windows-publisher
       - name: Validate production activation shell before build and tests
         run: bash -n scripts/activate-frontend-remote.sh
       - name: Type-check the frontend

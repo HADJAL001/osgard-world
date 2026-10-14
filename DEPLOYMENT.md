@@ -58,3 +58,10 @@ Do not direct production traffic to the server until the reverse proxy has a val
 ## INHERIT shared-world setting
 
 The public INHERIT client no longer targets `127.0.0.1` in a visitor's browser. Shared-world synchronization is disabled by default. To enable it, set `<meta name="osgard-inherit-api-base" content="...">` to a deployed API compatible with the existing world read and generation-write payloads, then test that contract. Until then, the game remains usable with device-local saves. Do not configure a guessed endpoint.
+
+
+## Windows release publishing (recommended manual path)
+
+Use the repository-owned PowerShell publisher rather than assembling SCP arguments by hand. First run `npm run qa:windows-publisher` and `./scripts/publish-frontend-resumable.ps1 -PreflightOnly` in PowerShell. The preflight builds and validates the archive locally without SSH. Then `./scripts/publish-frontend-resumable.ps1` stages the chunks and verifies the remote SHA-256 and byte count without changing production. Only after inspecting the staging result should you pass `-Activate`; activation uses a separate helper with archive validation, Nginx checks, route probes and automatic rollback.
+
+See [docs/WINDOWS_RELEASE_PUBLISHING.md](docs/WINDOWS_RELEASE_PUBLISHING.md) for exact commands and troubleshooting. In particular, `-o ConnectTimeout=15` is an ssh/scp option, not a standalone PowerShell command, and the remote checksum must not be read until upload has succeeded.
