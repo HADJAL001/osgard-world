@@ -3,8 +3,8 @@
   "gameId": "civic-cascade",
   "title": "CIVIC CASCADE",
   "edition": "Web Edition",
-  "version": "2.9.0",
-  "releaseId": "civic-cascade-web-2.9.0",
+  "version": "3.0.0",
+  "releaseId": "civic-cascade-web-3.0.0",
   "canonicalUrl": "https://osgard.world/games/civic-cascade/",
   "detailUrl": "https://osgard.world/game/civic-cascade",
   "entrypoint": "/games/civic-cascade/",
@@ -219,7 +219,29 @@
         90
       ],
       "reportsRiskAndWeakestNodeDeltas": true,
-      "stressChangesOnlyClonedStates": true
+      "stressChangesOnlyClonedStates": true,
+      "decisionPortfolio": "bounded-pareto-frontier",
+      "portfolioAxes": [
+        "stress-adjusted-score",
+        "resource-cost",
+        "worst-stress-risk-delta",
+        "worst-stress-weakest-integrity-delta",
+        "stable-stress-profile-count"
+      ],
+      "portfolioLimit": 3,
+      "prefersDistinctCommandPrefixes": true,
+      "explainsCandidateTradeoffs": true,
+      "reportsDominanceStatus": true,
+      "comparesOnlyDeterministicModelOutputs": true
+    },
+    "decisionDossier": {
+      "enabled": true,
+      "source": "deterministic-local-planner",
+      "showsNominalRiskDelta": true,
+      "showsStressWeakness": true,
+      "comparesResourceCost": true,
+      "labelsParetoMembership": true,
+      "tracksNoPersonalData": true
     }
   },
   "cinematicExport": {
@@ -260,6 +282,6 @@
   "deployment": {
     "target": "https://osgard.world",
     "mechanism": "repository push triggers the site's production deployment workflow",
-    "liveStatus": "verify release 2.9.0 with production route checks after deployment"
+    "liveStatus": "verify release 3.0.0 with production route checks after deployment"
   }
 }
