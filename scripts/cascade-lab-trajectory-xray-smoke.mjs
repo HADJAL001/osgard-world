@@ -15,7 +15,7 @@ assert.ok(html.includes('name="osgard-game-version" content="0.25.0-evidence-int
 assert.ok(html.includes('<title>CASCADE LAB — Premium Physics Lab 0.25.0</title>'), 'document title must identify the v0.25 application shell');
 assert.ok(html.includes('id="CASCADELAB021"') && html.includes('case-passport.js?v=0.21.0'), 'Case Passport 0.21 must remain integrated');
 assert.ok(html.includes('id="CASCADELAB022"') && html.includes('trajectory-xray.js?v=0.22.0') && html.includes('data-cascade-lab-xray="0.22.0"'), 'X-Ray loader must be versioned and cache-busted');
-assert.ok(html.includes('id="CASCADELAB024"') && html.includes('mission-director.js?v=0.24.0'), 'Adaptive Mission Director must load after Trajectory X-Ray');
+assert.ok(html.includes('id="CASCADELAB024"') && html.includes('mission-director.js?v=0.24.1'), 'Adaptive Mission Director must load after Trajectory X-Ray');
 assert.ok(html.includes('trajectory: Array.from({ length: Math.min(420, lastReplay.length) }') && html.includes('checkpoints: Array.isArray(p.checkpoints)'), 'physics event must contain a bounded trace from the real replay frames');
 assert.ok(!source.includes('fetch(') && !source.includes('XMLHttpRequest') && !source.includes('sendBeacon('), 'Trajectory X-Ray must not upload runs');
 assert.ok(!source.includes('.innerHTML'), 'Trajectory X-Ray must create text-safe DOM nodes');
