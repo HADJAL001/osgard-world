@@ -366,8 +366,9 @@ export async function runOnePass({ plan = buildPlan(), reportDir = REPORT_DIR, t
 
     try {
       const ext = JSON.parse(await readFile(externalPath, 'utf8'));
-      const assess = evaluateExternalReport(ext);
-      if (assess.status !== 'REVIEW') {
+      evaluateExternalReport(ext);
+      if (ext && Number.isSafeInteger(ext.projectCount) && Number.isSafeInteger(ext.reachableCount) &&
+          ext.projectCount >= 1 && ext.reachableCount >= 0 && ext.reachableCount <= ext.projectCount) {
         externalProjects = {
           checkedAt: ext.checkedAt || null,
           projectCount: ext.projectCount,
