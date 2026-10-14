@@ -6,10 +6,14 @@
  * admin, operator, checkout-success or cross-origin requests.
  */
 const CACHE_PREFIX = 'osgard-play-shell-';
-const CACHE_NAME = 'osgard-play-shell-v1.0.2';
+const CACHE_NAME = 'osgard-play-shell-v1.0.3';
 const PRECACHE_URLS = [
   '/games/',
   '/games/index.html',
+  '/games/vault/',
+  '/games/vault/index.html',
+  '/games/vault/vault-core.js',
+  '/games/vault/vault-app.js',
   '/games/app.webmanifest',
   '/games/osgard-play-icon.svg',
   '/games/offline.html',
@@ -19,6 +23,8 @@ const PRECACHE_URLS = [
   '/games/favicon.svg',
   '/games/pwa-install.js',
   '/games/catalog-state.js',
+  '/games/vault/vault-core.js',
+  '/games/vault/vault-app.js',
   '/games/expedition/',
   '/games/expedition/index.html',
   '/games/expedition/core.js',
@@ -116,6 +122,10 @@ self.addEventListener('fetch', event => {
         if (url.pathname === '/games/expedition/' || url.pathname === '/games/expedition/index.html') {
           const cachedExpedition = await cache.match(url.pathname === '/games/expedition/' ? '/games/expedition/' : '/games/expedition/index.html');
           if (cachedExpedition) return cachedExpedition;
+        }
+        if (url.pathname === '/games/vault/' || url.pathname === '/games/vault/index.html') {
+          const cachedVault = await cache.match(url.pathname === '/games/vault/' ? '/games/vault/' : '/games/vault/index.html');
+          if (cachedVault) return cachedVault;
         }
         const cached = await cache.match('/games/offline.html');
         return cached || new Response('OSGARD PLAY is offline. Reconnect and try again.', {
