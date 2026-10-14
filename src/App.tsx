@@ -7,6 +7,7 @@ import { Preloader } from './Preloader'
 import { Development } from './Development'
 import { PlaySelectLoop } from './PlaySelectLoop'
 import { recordOsgardEvent } from './core/eventQueue'
+import { AnalyticsConsentControl } from './AnalyticsConsentControl'
 
 type Locale = 'ru' | 'en'
 const botUrl = 'https://t.me/OSGARD_world_bot'
@@ -130,6 +131,7 @@ export default function App() {
   <section className="faq"><p className="eyebrow">OSGARD / FAQ</p><h2>{locale === 'ru' ? 'Важное перед входом.' : 'Important before entry.'}</h2><details><summary>{locale === 'ru' ? 'Что такое TimeCoin?' : 'What is TimeCoin?'}</summary><p>{locale === 'ru' ? 'TimeCoin — внутренняя бонусная единица для доступа, статуса и специальных условий. Это не платёжный или инвестиционный инструмент.' : 'An internal bonus unit for status, access and special conditions. It is not a payment or investment instrument.'}</p></details><details><summary>{locale === 'ru' ? 'Какие продукты уже доступны?' : 'Which products are available?'}</summary><p>{locale === 'ru' ? 'На портале представлены семь самостоятельных продуктов. Открывайте нужный мир и изучайте его условия на отдельной странице.' : 'The portal presents seven independent products. Open the relevant world and review its terms on its page.'}</p></details><details><summary>{locale === 'ru' ? 'С чего начать?' : 'Where should I begin?'}</summary><p>{locale === 'ru' ? 'Начните с Telegram-бота OSGARD или с одного продукта, который решает вашу ближайшую задачу.' : 'Start with the OSGARD Telegram bot or with the product that solves your immediate need.'}</p></details><details><summary>{locale === 'ru' ? 'Как защищаются мои данные?' : 'How is my data protected?'}</summary><p>{locale === 'ru' ? 'Каждый продукт публикует собственные условия и политику данных. Вы сами выбираете, какие сервисы подключать.' : 'Each product publishes its own terms and data policy. You choose which services to connect.'}</p></details></section>
   <section className="manifest">{t.manifest.map(line => <p key={line}>{line}</p>)}</section>
   <section className="final"><p className="eyebrow">OSGARD / WORLD</p><h2>{t.final}</h2><a className="cta large" href={botUrl} target="_blank" rel="noreferrer">{t.enter}<ArrowUpRight /></a></section>
+  <AnalyticsConsentControl locale={locale} />
   <footer><div className="brand brand-logo"><OsgardLogo variant="footer" /></div><div className="footer-modules" aria-label="OSGARD modules">{worlds.map((world, index) => <a href={world.url} target="_blank" rel="noreferrer" aria-label={world.name} key={world.name}><ModuleMark index={index} className="footer-mark" /></a>)}</div><p>{t.footer}</p><div className="footer-links"><a href={botUrl} target="_blank" rel="noreferrer">Telegram</a><a href="mailto:osman.osmanov0099@gmail.com">Email</a><a href="https://wa.me/79640027222" target="_blank" rel="noopener noreferrer">WhatsApp</a><button onClick={() => setLegal(true)}>{t.legal}</button></div></footer></main></>
 }
 

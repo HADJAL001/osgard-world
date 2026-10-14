@@ -1,3 +1,5 @@
+// @ts-expect-error JavaScript helper has a colocated runtime module.
+import { hasAnalyticsConsent } from './analyticsConsent.mjs'
 export type PlayerProfile = { avatarFrame?: string; displayName?: string; version?: number }
 export type PlayerNotification = { id: string; message: string; createdAt: number }
 export type PlayerSession = { id: string; gameId: string; status: 'active' | 'completed'; payload: Record<string, unknown>; startedAt: number; completedAt?: number | null }
@@ -63,9 +65,15 @@ export async function listPlayerReplays(gameId?: string): Promise<Array<{ id: st
 }
 
 export async function syncPlayerEvent(event: { name: string; payload?: Record<string, unknown> }): Promise<boolean> {
-  const requestHeaders = headers(); if (!requestHeaders) return false
+  if (!hasAnalyticsConsent()) return false
+  const requestHeaders = headers()
+  if (!requestHeaders || !hasAnalyticsConsent()) return false
   const eventId = typeof (event as { id?: unknown }).id === 'string' ? String((event as { id?: unknown }).id) : `${event.name}:${JSON.stringify(event.payload ?? {})}`
   const dedupeKey = `osgard.event.synced.${eventId}`
   if (sessionStorage.getItem(dedupeKey) === '1') return true
-  const response = await fetch('/api/v1/player/events', { method: 'POST', headers: requestHeaders, body: JSON.stringify({ event }) }); if (response.ok) sessionStorage.setItem(dedupeKey, '1'); return response.ok
+  // Check immediately before sending; requests already in flight cannot be recalled.
+  if (!hasAnalyticsConsent()) return false
+  const response = await fetch('/api/v1/player/events', { method: 'POST', headers: requestHeaders, body: JSON.stringify({ event }) })
+  if (response.ok && hasAnalyticsConsent()) sessionStorage.setItem(dedupeKey, '1')
+  return response.ok
 }

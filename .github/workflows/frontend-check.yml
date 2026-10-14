@@ -36,6 +36,7 @@ on:
       - "public/skillcred/**"
       - "public/privacy/**"
       - "scripts/privacy-consent-center-smoke.mjs"
+      - "scripts/core-analytics-consent-smoke.mjs"
       - "package.json"
       - "package-lock.json"
       - "vite.config.ts"
@@ -83,6 +84,8 @@ jobs:
         run: npm run qa:entertainment
       - name: Verify OSGARD SELECT luxury spotlight and share-reward guardrails
         run: npm run qa:osgard-select
+      - name: Verify portal-wide analytics consent and revoke semantics
+        run: npm run qa:core-analytics-consent
       - name: Test consented analytics offline retry and withdrawal
         run: npm run qa:consented-analytics-queue
       - name: Verify privacy page consent controls and queue withdrawal
