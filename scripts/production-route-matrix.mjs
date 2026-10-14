@@ -2,6 +2,7 @@ import { isValidPartnerInventoryText } from './partner-inventory-contract.mjs'
 import { writeFile } from 'node:fs/promises'
 import { summarizeRouteFailures } from './route-matrix-report.mjs'
 const base = process.env.OSGARD_BASE_URL || 'https://osgard.world'
+const playerToolsRoutes = process.env.OSGARD_INCLUDE_PLAYER_TOOLS_ROUTES === '1' ? ['/games/player-reliability.js','/games/player-preferences-backup.js','/games/player-tools.css'] : [];
 const expectCurrentDesign = process.env.SKILLCRED_EXPECT_CURRENT_DESIGN === '1'
 const expectedBuild = String(process.env.OSGARD_EXPECTED_BUILD || '').trim()
 const ROUTE_TIMEOUT_MS = 10000
