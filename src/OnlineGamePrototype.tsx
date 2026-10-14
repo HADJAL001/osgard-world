@@ -1,3 +1,4 @@
+import './online.css'
 import { AlertTriangle, ArrowRight, Radio, Shield } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { createSwarmState, readyPlayer, swarmAction, extractSwarm } from './core/swarmState'
