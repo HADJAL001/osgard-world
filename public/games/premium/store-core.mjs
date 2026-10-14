@@ -25,7 +25,7 @@ export class StoreClientError extends Error {
 
 const safeText = (value, maxLength, fallback = '') => {
   if (typeof value !== 'string') return fallback;
-  const cleaned = value.replace(/[\\u0000-\\u001f\\u007f]/g, ' ').replace(/\\s+/g, ' ').trim();
+  const cleaned = value.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim();
   return cleaned ? cleaned.slice(0, maxLength) : fallback;
 };
 
