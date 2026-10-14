@@ -5,9 +5,10 @@ import { runInNewContext } from 'node:vm';
 const html = readFileSync(new URL('../public/games/cascade-lab/index.html', import.meta.url), 'utf8');
 const source = readFileSync(new URL('../public/games/cascade-lab/hypothesis-lab.js', import.meta.url), 'utf8');
 
-assert.match(html, /osgard-game-version" content="0\.19\.0-engineering-suite"/, 'the game release metadata must identify the v0.19 application release');
-assert.match(html, /<title>CASCADE LAB — Premium Physics Lab 0\.19\.0<\/title>/, 'the browser title must match the v0.19 application release');
+assert.match(html, /osgard-game-version" content="0\.20\.0-experiment-studio"/, 'the game release metadata must identify the v0.19 application release');
+assert.match(html, /<title>CASCADE LAB — Premium Physics Lab 0\.20\.0<\/title>/, 'the browser title must match the v0.19 application release');
 assert.ok(html.includes('id="CASCADELAB018"') && html.includes('data-cascade-lab-experiment="0.18.0"') && html.includes('hypothesis-lab.js?v=0.18.0'), 'the hypothesis layer must be versioned and cache-busted');
+assert.ok(html.includes('id="CASCADELAB020"') && html.includes('data-cascade-lab-studio="0.20.0"') && html.includes('experiment-studio.js?v=0.20.0'), 'the Experiment Studio must load as the latest user-facing layer');
 for (const marker of [
   "osgard.cascade-lab.next-experiment.v1",
   "function proposalForPair(pair)",
