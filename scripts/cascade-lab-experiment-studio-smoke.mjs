@@ -35,6 +35,7 @@ function makeNode(tag) {
     id: '', value: '', textContent: '', className: '', hidden: false, isConnected: false,
     parentNode: null, files: [],
     get isConnectedTree() { return this.isConnected || Boolean(this.parentNode && this.parentNode.isConnectedTree); },
+    get lastChild() { return this.children[this.children.length - 1] || null; },
     setAttribute(name, value) { this.attrs[name] = String(value); if (name === 'id') this.id = String(value); },
     append(...items) { for (const item of items) { if (!item) continue; item.parentNode = this; item.isConnected = this.isConnectedTree; this.children.push(item); } },
     replaceChildren(...items) { for (const item of this.children) item.parentNode = null; this.children = []; this.append(...items); },
