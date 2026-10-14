@@ -1171,7 +1171,7 @@ function renderOsgardSelect(gameId,sessionId){
  const completedCount=recordCompletedRound(id,sessionId),preferences=readServicePreferences();
  lastIntermissionGame=id;lastIntermissionCount=completedCount;
  const previousSuite=root.querySelector('.og-postgame-suite');if(previousSuite){disposePostgameTree(previousSuite);previousSuite.remove()}
- const suite=make('section','og-postgame-suite');const panels=[servicesShelf(id,shouldShowServicePromos(preferences,completedCount),completedCount)];if(managedPromoConfig.showShareRewards)panels.push(rewardShelf(id));suite.append(...panels);
+ const suite=make('section','og-postgame-suite');const panels=[servicesShelf(id,shouldShowServicePromos(preferences,completedCount),completedCount)];if(managedPromoConfig.showShareRewards)panels.push(rewardShelf(id));suite.append(...panels);root.append(suite);
 }
 document.addEventListener('osgard:game-completed',event=>renderOsgardSelect(event.detail&&event.detail.game,event.detail&&event.detail.sessionId));
 document.addEventListener('osgard:game-session-ended',event=>{if(event.detail&&event.detail.sessionStarted===true)renderOsgardSelect(event.detail.game,event.detail.sessionId)});
