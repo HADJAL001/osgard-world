@@ -109,7 +109,7 @@ assert.ok(source.includes("defaultFrequency:'each'") &&
   source.includes("['each','После каждой завершённой игры']") &&
   source.includes("['every3','Раз в три завершённых раунда']") &&
   source.includes("['off','Не показывать подборку']") &&
-  source.includes("frequency:frequencyValues.includes(value.frequency)?value.frequency:'each'"),
+  source.includes("frequency:frequencyValues.includes(value.frequency)?value.frequency:managedPromoConfig.defaultFrequency"),
   'Post-game promos must default to every completed round and remain user-controllable');
 assert.ok(source.includes('grid.hidden=true;filters.hidden=true') &&
   source.includes("collapseToggle.textContent=showPromos?'Выбрать из '+availableServiceIds.length+' сервисов'"),
