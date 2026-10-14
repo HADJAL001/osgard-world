@@ -448,7 +448,7 @@ async function runVerification(){
   try{
     for(let i=0;i<DEFAULT_PASSES;i++){
       if(cancelRequested)break;
-      const replay=engine.run({levelId:observed.levelId,devices:observed.devices});
+      const replay=engine.run({levelId:observed.levelId,devices:observed.setup});
       if(!replay||!replay.ok)throw new Error(replay&&replay.reason||'Движок не вернул валидный результат.');
       passes.push(compactOutcome(replay));
       const pct=Math.round((passes.length/DEFAULT_PASSES)*100);
@@ -498,7 +498,7 @@ function importCertificate(file){
       if(!checked.ok)throw new Error(checked.reason);
       history=[parsed,...history.filter(item=>item.payload.scenario.scenarioFingerprint!==parsed.payload.scenario.scenarioFingerprint)].slice(0,MAX_HISTORY);
       persistHistory();renderHistory();loadCertificate(parsed);
-      if(observed&&scenarioFingerprint(observed.levelId,observed.devices)===parsed.payload.scenario.scenarioFingerprint){
+      if(observed&&scenarioFingerprint(observed.levelId,observed.setup)===parsed.payload.scenario.scenarioFingerprint){
         const match=compareReplays(compactOutcome(observed),parsed.payload.passes[0]);
         if(match.ok)setStatus('Импортированный паспорт относится к тому же чертежу. Текущий запуск '+(match.equivalent?'совпадает':'отличается')+' от его первого прогона.','pass');
       }else setStatus('Паспорт проверен и сохранён. Наблюдаемый запуск отсутствует или относится к другому чертежу.','warn');
