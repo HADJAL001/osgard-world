@@ -184,7 +184,7 @@
     '<div class="og-pc-actions"><button type="button" class="og-pc-action" data-pc-export-support>Скачать диагностический отчёт JSON</button></div>',
     '</section>',
     '<section class="og-pc-panel" id="og-pc-panel-data" role="tabpanel" aria-labelledby="og-pc-tab-data" data-pc-panel="data" hidden>',
-    '<div class="og-pc-block"><h3>Перенос личной полки</h3><p>Экспорт включает только идентификаторы игр, историю и настройки. Он не включает email, телефон, invite-коды, токены входа или серверную аналитику.</p><div class="og-pc-actions"><button type="button" class="og-pc-action og-pc-primary" data-pc-export>Экспортировать мои данные</button><button type="button" class="og-pc-action" data-pc-import>Импортировать JSON</button><input type="file" accept="application/json,.json" data-pc-file hidden></div><p class="og-pc-muted" data-pc-data-status></p></div>',
+    '<div class="og-pc-block"><h3>Перенос личной полки</h3><p>Экспорт включает идентификаторы игр, историю, настройки и локальные миссии/XP. Он не включает email, телефон, invite-коды, токены входа или серверную аналитику.</p><div class="og-pc-actions"><button type="button" class="og-pc-action og-pc-primary" data-pc-export>Экспортировать мои данные</button><button type="button" class="og-pc-action" data-pc-import>Импортировать JSON</button><input type="file" accept="application/json,.json" data-pc-file hidden></div><p class="og-pc-muted" data-pc-data-status></p></div>',
     '<div class="og-pc-block"><h3>Доступность интерфейса</h3><label class="og-pc-switch"><input type="checkbox" data-pc-motion><span><b>Уменьшить анимацию</b><small>Не меняет механику игр. Учитывается системная настройка при первом запуске.</small></span></label><label class="og-pc-switch"><input type="checkbox" data-pc-contrast><span><b>Повышенный контраст</b><small>Усиливает границы, текст и фокусные состояния.</small></span></label><label class="og-pc-scale">Размер текста пульта<select data-pc-scale><option value="0.9">90%</option><option value="1">100%</option><option value="1.1">110%</option><option value="1.2">120%</option></select></label></div>',
     '<div class="og-pc-block"><h3>Удаление локальной полки</h3><p>Удаляются история, очередь, избранное и профиль этой консоли. Согласие на аналитику и другие настройки сайта не меняются.</p><button type="button" class="og-pc-action og-pc-danger" data-pc-clear-data>Удалить локальные игровые данные</button></div>',
     '<p class="og-pc-legal">Пульт не подключает рекламные сети и не отправляет локальные показатели наружу. Проверки маршрутов обращаются только к адресу OSGARD текущего сайта.</p>',
@@ -646,7 +646,7 @@
     }
   }
   function clearLocalData() {
-    if (!window.confirm('Удалить локальные избранное, историю, очередь и статистику пульта? Согласие на аналитику останется без изменений.')) return;
+    if (!window.confirm('Удалить локальные избранное, историю, очередь, статистику, ежедневные задания и XP? Согласие на аналитику останется без изменений.')) return;
     for (const key of [KEY.stats, KEY.queue, KEY.favorites, KEY.recent, KEY.missions]) {
       try { localStorage.removeItem(key); } catch {}
     }
