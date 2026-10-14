@@ -110,6 +110,7 @@ for (const command of [
 assert.ok(guide.includes('TestFlight') && guide.includes('capacitor://localhost') && guide.includes('App Review Guidelines'), 'Release guide is missing signing, CORS, or Apple-review notes.');
 assert.ok(supportPage.includes('mailto:osman.osmanov0099@gmail.com') && supportPage.includes('href="/privacy/"'), 'App Store Support URL must provide a real contact and privacy-policy link.');
 assert.ok(gamesCatalog.includes('href="/support/osgard-play/"'), 'The public Games catalogue must link to its support page.');
+assert.ok(gamesCatalog.includes('/games/device-fit.css?v=__OSGARD_BUILD_VERSION__') && gamesCatalog.includes('/games/device-fit.js?v=__OSGARD_BUILD_VERSION__'), 'Smart Launch assets must be versioned in the public catalogue.');
 assert.ok(sitemap.includes('https://osgard.world/support/osgard-play/'), 'The support URL must be present in sitemap.xml.');
 assert.ok(read('docs/IOS_APP_STORE_LISTING_RU.md').includes('https://osgard.world/support/osgard-play/'), 'App Store listing draft must point to the published app-support page.');
 assert.ok(privacy.includes('<key>NSPrivacyTracking</key>') && privacy.includes('<false/>'), 'Privacy manifest must declare tracking state.');
@@ -140,6 +141,7 @@ if (builtWeb) {
   for (const path of [
     'dist/index.html', 'dist/games/index.html', 'dist/support/osgard-play/index.html',
     'dist/games/osgard-native-share.js', 'dist/games/commerce-config.json',
+    'dist/games/device-fit.css', 'dist/games/device-fit.js',
     ...Object.values(bundledGamePages),
   ]) mustExist(path);
   const catalog = read('dist/games/index.html');
