@@ -17,12 +17,12 @@ assert.equal(api.maxFrames, 420);
 assert.equal(api.maxRuns, 12);
 assert.equal(api.maxImportBytes, 900 * 1024);
 
-assert.match(html, /osgard-game-version" content="0\\.26\\.0-reproducibility-kernel"/, 'page metadata must identify v0.26');
-assert.match(html, /<title>CASCADE LAB — Premium Physics Lab 0\\.26\\.0<\\/title>/, 'page title must identify v0.26');
+assert.match(html, /osgard-game-version" content="0\.26\.0-reproducibility-kernel"/, 'page metadata must identify v0.26');
+assert.match(html, /<title>CASCADE LAB — Premium Physics Lab 0\.26\.0<\/title>/, 'page title must identify v0.26');
 assert.ok(html.includes('id="CASCADELAB026"') && html.includes('reproducibility-kernel.js?v=0.26.0') && html.includes('data-cascade-lab-reproducibility="0.26.0"'), 'Reproducibility Kernel must load with cache-busting');
 assert.ok(html.includes("schema: 'osgard.cascade-lab.physics-contract.v1'") && html.includes('fixedStepSeconds: WORLD.fixedStep') && html.includes('engineRevision: CASCADE_PHYSICS_ENGINE_REVISION'), 'completed run event must carry a versioned physical contract');
 assert.ok(html.includes('const CASCADE_PHYSICS_ENGINE_REVISION = \'cascade-physics-v1\''), 'the physics revision must be explicit');
-assert.doesNotMatch(source, /\\b(?:fetch|XMLHttpRequest|sendBeacon)\\s*\\(/, 'Reproducibility Kernel must not upload runs');
+assert.doesNotMatch(source, /\b(?:fetch|XMLHttpRequest|sendBeacon)\s*\(/, 'Reproducibility Kernel must not upload runs');
 assert.ok(!source.includes('.innerHTML'), 'imported archive fields must never be inserted as HTML');
 assert.ok(source.includes('cryptographic:false') && source.includes('not a cryptographic signature'), 'the checksum must not be misrepresented as cryptographic proof');
 for (const marker of [
