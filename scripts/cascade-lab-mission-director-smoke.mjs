@@ -5,12 +5,15 @@ const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const html=read('public/games/cascade-lab/index.html'),source=read('public/games/cascade-lab/mission-director.js');
 assert.match(html,/osgard-game-version" content="0\.25\.0-evidence-integrity"/);
 assert.match(html,/<title>CASCADE LAB — Premium Physics Lab 0\.25\.0<\/title>/);
-assert.ok(html.includes('id="CASCADELAB024"')&&html.includes('data-cascade-lab-director="0.24.0"')&&html.includes('mission-director.js?v=0.24.0'));
+assert.ok(html.includes('id="CASCADELAB024"')&&html.includes('data-cascade-lab-director="0.24.0"')&&html.includes('mission-director.js?v=0.24.1'));
 assert.ok(html.includes("notifyOsgardLifecycle('ready', { version: '0.25.0' })"));
 assert.doesNotMatch(source,/\b(?:fetch|XMLHttpRequest|sendBeacon)\s*\(/,'must remain local-only');
 assert.doesNotMatch(source,/\.innerHTML/,'must render with safe DOM nodes');
+assert.ok(source.includes("function notifyPortalShare") && source.includes("state:'share_created'") && source.includes("flowType:'friend-invite'"), 'Mission Director must report only a confirmed clipboard copy to the existing portal lifecycle')
+assert.ok(source.includes("navigator.clipboard.writeText(result.url).then(()=>{notifyPortalShare(result.url,'clipboard')"), 'Share telemetry must be sent after clipboard copy succeeds, not when a social link is merely opened')
+
 new Function(source);
-const context={};runInNewContext(source,context);const api=context.__CASCADELAB024_TEST__;
+const context={URL};runInNewContext(source,context);const api=context.__CASCADELAB024_TEST__;
 assert.ok(api&&api.version==='0.24.0');
 assert.equal(api.buildRecommendations([],3).length,3);
 assert.ok(api.buildRecommendations([],3).every(x=>x.kind==='first-clear'));
@@ -41,8 +44,15 @@ assert.equal(api.validateState({schema:'bad',schemaVersion:1}).ok,false);
 // Shareable adaptive contracts carry only the task definition, never the source player's run archive.
 const share=api.createInvitation(c,{now:stamp,invitationId:'invite-smoke-0001'});
 assert.equal(share.ok,true);
-assert.ok(share.url.startsWith('https://osgard.world/games/cascade-lab/?clmd='));
+assert.ok(share.url.startsWith('https://osgard.world/games/invite/cascade-lab/?clmd='));
 assert.ok(share.url.length<api.maxInviteUrlLength);
+const shareTarget=new URL(share.url);
+assert.equal(shareTarget.pathname,'/games/invite/cascade-lab/');
+assert.equal(shareTarget.searchParams.get('clmd'),JSON.stringify(share.invitation));
+assert.equal(share.invitation.schema,'osgard.cascade-lab.mission-invite.v1');
+assert.equal(share.invitation.version,'0.24.0');
+assert.ok(!Object.hasOwn(share.invitation,'attempts')&&!Object.hasOwn(share.invitation,'xpAwarded'),'shared task must not carry private history or XP');
+
 const incoming=api.parseInvitation(share.url.slice(share.url.indexOf('?')),{now:stamp});
 assert.equal(incoming.ok,true);
 assert.equal(incoming.invitation.kind,c.kind);

@@ -211,7 +211,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
             text.includes('id="CASCADELAB020"') && text.includes('data-cascade-lab-studio="0.20.0"') && text.includes('experiment-studio.js?v=0.20.0') && text.includes('id="CASCADELAB021"') && text.includes('data-cascade-lab-passport="0.21.0"') && text.includes('case-passport.js?v=0.21.0') && text.includes('restoreProject,undo') &&
             text.includes("new CustomEvent('cascade-lab:run-finished'") &&
             text.includes('id="CASCADELAB022"') && text.includes('data-cascade-lab-xray="0.22.0"') &&
-            text.includes('trajectory-xray.js?v=0.22.0') && text.includes('id="CASCADELAB024"') && text.includes('data-cascade-lab-director="0.24.0"') && text.includes('mission-director.js?v=0.24.0') && text.includes('id="CASCADELAB025"') && text.includes('data-cascade-lab-evidence="0.25.0"') && text.includes('evidence-integrity.js?v=0.25.0') && text.includes('trajectory: Array.from({ length: Math.min(420, lastReplay.length) }')
+            text.includes('trajectory-xray.js?v=0.22.0') && text.includes('id="CASCADELAB024"') && text.includes('data-cascade-lab-director="0.24.0"') && text.includes('mission-director.js?v=0.24.1') && text.includes('id="CASCADELAB025"') && text.includes('data-cascade-lab-evidence="0.25.0"') && text.includes('evidence-integrity.js?v=0.25.0') && text.includes('trajectory: Array.from({ length: Math.min(420, lastReplay.length) }')
         : route.startsWith('/games/null-shift-godot')
           ? isGodotDirectory
             ? (response.headers.get('content-type') || '').toLowerCase().includes('text/html') &&
@@ -311,7 +311,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
              : path === '/games/game-session-recommendations.css'
                ? content.includes('.post-run-recommendations') && content.includes('prefers-reduced-motion:reduce')
              : path === '/games/invite/invite-landing.js'
-               ? content.includes("const validGameIds = new Set(") && content.includes("name: 'referral_link_opened'") && content.includes("localStorage.getItem('osgard.games.analytics-consent.v1') === 'yes'") && content.includes("sessionStorage.setItem(marker, 'pending')") && content.includes("target.searchParams.set('utm_campaign', campaign)")
+               ? content.includes("const validGameIds = new Set(") && content.includes("name: 'referral_link_opened'") && content.includes("localStorage.getItem('osgard.games.analytics-consent.v1') === 'yes'") && content.includes("sessionStorage.setItem(marker, 'pending')") && content.includes("target.searchParams.set('utm_campaign', campaign)") && content.includes("rawAdaptiveContract.length <= 7000") && content.includes("candidate.schema === 'osgard.cascade-lab.mission-invite.v1'") && content.includes("candidate.version === '0.24.0'") && content.includes("target.searchParams.set('clmd', adaptiveContract)")
              : path === '/games/daily-circuit.js'
                ? content.includes('OSGARDDailyCircuitCore') && content.includes('navigator.share') && content.includes('daily_circuit')
              : path === '/games/daily-circuit.css'
@@ -339,7 +339,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
             : path === '/games/cascade-lab/trajectory-xray.js'
               ? content.includes("const VERSION = '0.22.0'") && content.includes("const SCHEMA = 'osgard.cascade-lab.trajectory-xray.v1'") && content.includes('function trajectoryDeviation(') && !content.includes('fetch(') && !content.includes('sendBeacon(')
             : path === '/games/cascade-lab/mission-director.js'
-              ? content.includes("const VERSION='0.24.0'") && content.includes("const SCHEMA='osgard.cascade-lab.mission-director.v1'") && content.includes('function buildRecommendations') && content.includes('function observeContract') && !content.includes('fetch(') && !content.includes('sendBeacon(') && !content.includes('.innerHTML')
+              ? content.includes("const VERSION='0.24.0'") && content.includes("const SCHEMA='osgard.cascade-lab.mission-director.v1'") && content.includes('function buildRecommendations') && content.includes('function observeContract') && !content.includes('fetch(') && !content.includes('sendBeacon(') && !content.includes('.innerHTML') && content.includes("https://osgard.world/games/invite/cascade-lab/") && content.includes("host.OSGARDInvite.createLink('cascade-lab')") && !content.includes("https://osgard.world/games/cascade-lab/?clmd=") && content.includes("function notifyPortalShare") && content.includes("notifyPortalShare(result.url,'clipboard')")
             : path === '/games/cascade-lab/evidence-integrity.js'
               ? /VERSION\s*=\s*['"]0\.25\.0['"]/.test(content) &&
                 /SCHEMA\s*=\s*['"]osgard\.cascade-lab\.evidence-integrity\.v1['"]/.test(content) &&

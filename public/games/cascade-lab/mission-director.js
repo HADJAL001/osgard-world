@@ -73,7 +73,31 @@ function createInvitation(rawContract,options={}){
  const invitationId=clean(options.invitationId||('clmd-'+issuedMs.toString(36)+'-'+c.levelId+'-'+(++sequence).toString(36)),100);
  const raw={schema:INVITE_SCHEMA,version:VERSION,invitationId,kind:c.kind,levelId:c.levelId,levelTitle:c.levelTitle,title:c.title,goalText:c.goalText,instruction:c.instruction,reason:c.reason,baseline:c.baseline,issuedAt,expiresAt:new Date(issuedMs+INVITE_TTL_MS).toISOString()};
  const checked=normalizeInvitation(raw,{now:issuedAt});if(!checked.ok)return checked;
- const url='https://osgard.world/games/cascade-lab/?clmd='+encodeURIComponent(JSON.stringify(checked.invitation));
+ const previewUrl=new URL('https://osgard.world/games/invite/cascade-lab/');
+// In the OSGARD catalogue, reuse the canonical invite code and attribution tags.
+// Standalone/offline runs still receive a branded preview link, but no claimed referral attribution.
+try {
+ const host=window.parent;
+ if(host&&host!==window&&host.OSGARDInvite&&typeof host.OSGARDInvite.createLink==='function'){
+  const canonical=new URL(host.OSGARDInvite.createLink('cascade-lab'));
+  const code=canonical.searchParams.get('og_ref')||'';
+  const validCanonical=canonical.origin==='https://osgard.world'&&
+   canonical.pathname==='/games/invite/cascade-lab/'&&
+   /^og_[a-f0-9]{8}$/.test(code)&&
+   canonical.searchParams.get('og_game')==='cascade-lab'&&
+   canonical.searchParams.get('utm_source')==='osgard_play'&&
+   canonical.searchParams.get('utm_medium')==='referral'&&
+   canonical.searchParams.get('utm_campaign')==='play_with_friends'&&
+   canonical.searchParams.get('utm_content')==='cascade-lab';
+  if(validCanonical){
+   for(const key of ['og_ref','og_game','utm_source','utm_medium','utm_campaign','utm_content']){
+    previewUrl.searchParams.set(key,canonical.searchParams.get(key));
+   }
+  }
+ }
+} catch { /* Fail safely: standalone sharing does not require the host bridge. */ }
+previewUrl.searchParams.set('clmd',JSON.stringify(checked.invitation));
+const url=previewUrl.href;
  if(url.length>MAX_INVITE_URL_LENGTH)return{ok:false,reason:'Приглашение получилось слишком длинным. Создай контракт с более коротким описанием.'};
  return{ok:true,invitation:checked.invitation,url};
 }
@@ -150,7 +174,17 @@ function saveState(){try{localStorage.setItem(STORE_KEY,JSON.stringify(state));r
 function setStatus(msg,kind='info'){$('#cl-director-status').textContent=msg;$('#cl-director-status').dataset.kind=kind;}
 function kindLabel(kind){return({'first-clear':'ПЕРВОЕ ПРОХОЖДЕНИЕ',recovery:'ВОССТАНОВЛЕНИЕ',leaner:'ЭФФЕКТИВНОСТЬ',faster:'СКОРОСТЬ',consistency:'СТАБИЛЬНОСТЬ'})[kind]||'ИССЛЕДОВАНИЕ';}
 function shareLinks(c){const invitation=createInvitation(c),u=invitation.ok?invitation.url:'https://osgard.world/games/cascade-lab/',txt='CASCADE LAB / '+c.title+'. Цель: '+c.goalText+'. Ссылка открывает тот же контракт локально на устройстве друга: '+u,e=encodeURIComponent(txt),eu=encodeURIComponent(u);return[['Telegram','https://t.me/share/url?url='+eu+'&text='+e],['WhatsApp','https://wa.me/?text='+e],['VK','https://vk.com/share.php?url='+eu+'&title='+encodeURIComponent(c.title)],['X','https://twitter.com/intent/tweet?url='+eu+'&text='+encodeURIComponent(c.title+' — '+c.goalText)],['LinkedIn','https://www.linkedin.com/sharing/share-offsite/?url='+eu]];}
-function copyInvitation(c){const result=createInvitation(c);if(!result.ok){setStatus(result.reason,'error');return;}if(navigator.clipboard&&typeof navigator.clipboard.writeText==='function'){navigator.clipboard.writeText(result.url).then(()=>setStatus('Ссылка на тот же контракт скопирована. Она действует 30 дней и не переносит твои личные результаты.','info')).catch(()=>{if(window.prompt)window.prompt('Скопируй приглашение в контракт:',result.url);setStatus('Если ссылка не скопировалась автоматически, скопируй её из окна.','info');});}else if(window.prompt){window.prompt('Скопируй приглашение в контракт:',result.url);setStatus('Ссылка подготовлена. Передача не означает подтверждённое прохождение.','info');}else setStatus('Не удалось открыть копирование. Используй одну из кнопок соцсетей.','error');}
+function notifyPortalShare(url,method){
+ try{
+  if(!window.parent||window.parent===window)return;
+  const target=new URL(url);
+  const code=target.searchParams.get('og_ref')||'';
+  const message={type:'osgard:game-lifecycle',game:'cascade-lab',state:'share_created',at:Date.now(),flowType:'friend-invite',shareMethod:method};
+  if(/^og_[a-f0-9]{8}$/.test(code))message.referralCode=code;
+  window.parent.postMessage(message,window.location.origin);
+ }catch{/* Sharing must work when the game is standalone or embedded elsewhere. */}
+}
+function copyInvitation(c){const result=createInvitation(c);if(!result.ok){setStatus(result.reason,'error');return;}if(navigator.clipboard&&typeof navigator.clipboard.writeText==='function'){navigator.clipboard.writeText(result.url).then(()=>{notifyPortalShare(result.url,'clipboard');setStatus('Ссылка на тот же контракт скопирована. Она действует 30 дней и не переносит твои личные результаты.','info');}).catch(()=>{if(window.prompt)window.prompt('Скопируй приглашение в контракт:',result.url);setStatus('Если ссылка не скопировалась автоматически, скопируй её из окна.','info');});}else if(window.prompt){window.prompt('Скопируй приглашение в контракт:',result.url);setStatus('Ссылка подготовлена. Передача не означает подтверждённое прохождение.','info');}else setStatus('Не удалось открыть копирование. Используй одну из кнопок соцсетей.','error');}
 function addShares(root,c){const row=el('div','cl-director-share');row.append(el('span','','Передать именно это испытание (срок 30 дней):'));row.append(btn('Скопировать ссылку','copy-invite','cl-director-button'));for(const [name,href] of shareLinks(c)){const a=el('a','',name+' ↗');a.href=href;a.target='_blank';a.rel='noopener noreferrer';row.append(a);}root.append(row);}
 function openProtocol(id){const currentLevel=Number(document.querySelector('#chamberLabel')?.textContent||0),target=document.querySelector('[data-level="'+id+'"]');if(!target){setStatus('Не найден элемент протокола. Открой список уровней вручную.','error');return;}if(currentLevel!==id)target.click();window.setTimeout(()=>{const node=document.querySelector('.stage-layout')||document.querySelector('#levelList')||document.querySelector('#canvas');if(node&&node.scrollIntoView)node.scrollIntoView({behavior:window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});},120);setStatus('Открываем протокол '+String(id).padStart(2,'0')+'. Витрину OSGARD можно пропустить и вернуться к испытанию.','info');}
 function addHistory(c){state.history=[c,...state.history.filter(x=>x.id!==c.id)].slice(0,MAX_HISTORY);}

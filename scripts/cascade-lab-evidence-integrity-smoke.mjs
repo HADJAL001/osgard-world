@@ -13,7 +13,7 @@ assert.equal(api.maxAudits, 80);
 assert.equal(api.maxImportBytes, 200 * 1024);
 assert.match(html, /osgard-game-version" content="0\.25\.0-evidence-integrity"/, 'game metadata must identify 0.25.0');
 assert.match(html, /<title>CASCADE LAB — Premium Physics Lab 0\.25\.0<\/title>/, 'browser title must identify 0.25.0');
-assert.ok(html.includes('id="CASCADELAB024"') && html.includes('mission-director.js?v=0.24.0'), 'Mission Director 0.24 must remain integrated');
+assert.ok(html.includes('id="CASCADELAB024"') && html.includes('mission-director.js?v=0.24.1'), 'Mission Director 0.24 must remain integrated');
 assert.ok(html.includes('id="CASCADELAB025"') && html.includes('evidence-integrity.js?v=0.25.0') && html.includes('data-cascade-lab-evidence="0.25.0"'), 'Evidence Integrity must be versioned and cache-busted');
 assert.ok(html.includes('new CustomEvent(\'cascade-lab:run-finished\''), 'completed simulations must continue to emit a local run summary');
 assert.doesNotMatch(source, /\b(?:fetch|XMLHttpRequest|sendBeacon)\s*\(/, 'the new lab must not send run data over the network');

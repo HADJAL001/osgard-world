@@ -48,8 +48,11 @@ assert.ok(appStyles.includes('.premium-game-card--afterimage-run'), 'The React E
 assert.ok(routeEntries.every(x=>x.url.startsWith('/games/')),'Every launch entry must use a same-origin game route')
 const inviteLandingScript=readFileSync(resolve(root,'invite/invite-landing.js'),'utf8')
 assert.ok(inviteLandingScript.includes("localStorage.getItem('osgard.games.analytics-consent.v1') === 'yes'") && inviteLandingScript.includes("name: 'referral_link_opened'") && inviteLandingScript.includes("source: 'referral-link:' + code"),'Invite preview must preserve consent-gated referral attribution')
+assert.ok(inviteLandingScript.includes("rawAdaptiveContract.length <= 7000") && inviteLandingScript.includes("candidate.schema === 'osgard.cascade-lab.mission-invite.v1'") && inviteLandingScript.includes("candidate.version === '0.24.0'") && inviteLandingScript.includes("target.searchParams.set('clmd', adaptiveContract)"), 'Invite landing must pass only bounded, schema-checked CASCADE LAB contracts')
+assert.ok(html.includes("'og_day','clmd'") && html.includes("key==='clmd'&&gameId==='cascade-lab'?7000:128") && html.includes("invite.schema!=='osgard.cascade-lab.mission-invite.v1'"), 'Game catalogue must preserve clmd only for CASCADE LAB and enforce schema/size bounds')
 const productionMatrix = readFileSync(resolve('scripts/production-route-matrix.mjs'),'utf8')
 assert.ok(productionMatrix.includes("path === '/games/invite/invite-landing.js'") && productionMatrix.includes("target.searchParams.set('utm_campaign', campaign)"), 'Production route matrix must validate the invitation script with its own content contract, not unrelated SkillCred markers')
+assert.ok(productionMatrix.includes("target.searchParams.set('clmd', adaptiveContract)") && productionMatrix.includes("candidate.schema === 'osgard.cascade-lab.mission-invite.v1'"), 'Production route matrix must protect the adaptive mission-invite handoff')
 for(const game of routeEntries){
  const invitePage=readFileSync(resolve(root,'invite',game.id,'index.html'),'utf8')
  const card=readFileSync(resolve(root,'share-cards',game.id+'.png'))

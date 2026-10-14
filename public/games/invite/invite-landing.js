@@ -17,6 +17,19 @@
     medium === 'referral' &&
     campaign === 'play_with_friends' &&
     content === (requestedGame || 'catalog');
+  // Contract links carry only a bounded task definition, never personal history or XP.
+  // Mission Director performs the full validation again after the game starts.
+  const rawAdaptiveContract = params.get('clmd') || '';
+  let adaptiveContract = '';
+  if (game === 'cascade-lab' && rawAdaptiveContract.length > 0 && rawAdaptiveContract.length <= 7000) {
+    try {
+      const candidate = JSON.parse(rawAdaptiveContract);
+      if (candidate && typeof candidate === 'object' && !Array.isArray(candidate) &&
+          candidate.schema === 'osgard.cascade-lab.mission-invite.v1' && candidate.version === '0.24.0') {
+        adaptiveContract = rawAdaptiveContract;
+      }
+    } catch { /* Invalid contract links remain ordinary game invitations. */ }
+  }
   const scoreValue = Number(params.get('challenge') || 0);
   const requestedDay = params.get('day') || '';
   const validDay = /^\d{4}-\d{2}-\d{2}$/.test(requestedDay) &&
@@ -59,6 +72,7 @@
       if (params.get('og_challenge') === expectedChallenge) target.searchParams.set('challenge', expectedChallenge);
     }
     if (game && validGameIds.has(game)) target.searchParams.set('og_game', game);
+    if (adaptiveContract) target.searchParams.set('clmd', adaptiveContract);
     if (valid) {
       target.searchParams.set('og_ref', code);
       if (requestedGame) target.searchParams.set('og_game', requestedGame);
