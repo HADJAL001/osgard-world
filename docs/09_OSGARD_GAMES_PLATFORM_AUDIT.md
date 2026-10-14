@@ -247,3 +247,8 @@ The individual game page now treats the embedded iframe's gameplay lifecycle sep
 - Eight new detail smoke assertions cover message-source validation, game matching, start signal, de-duplication, duration/end reason, close/exit and consent gates.
 
 The events are best-effort telemetry; the games that do not yet emit a started lifecycle message will not be counted as started from their HTML load. This is intentional to avoid fabricating sessions. Production deployment and post-deploy route/device validation remain separate release steps.
+
+
+## 10. Consent boundary for individual-game sessions
+
+Detail-page session telemetry has a session-scoped consent guard. The game can run when analytics is denied or undecided, but telemetry remains off. A start signal records whether consent was granted at that moment; the matching completion is only recorded when that session had analytics enabled and consent is still granted at completion. Giving consent halfway through a running session therefore cannot produce a completion record without a corresponding start record. Eight lifecycle tests plus two consent-boundary assertions protect the event source, game ID, explicit start/completion, close reasons and telemetry gate.
