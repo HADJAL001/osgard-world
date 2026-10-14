@@ -226,3 +226,8 @@ The current Games hub includes a first-party “between worlds” promotion surf
 - **Test coverage:** `npm run qa:games-portal`, `npm run qa:osgard-select` and `npm run qa:consented-analytics-queue` enforce the service destinations, shared preference keys, default cadence, self-confirmation, local daily cap, analytics allow-list and no-copy-reward rule.
 
 The important commercial boundary remains: owned-service cross-promotion is implemented; an external ad network, independently verified social post, and server-authoritative/cross-device SHARDS wallet are not claimed as live features.
+
+
+## 10. Пакет из 30 улучшений — игровые страницы и учёт сессий
+
+Список реализации: [GAME_DETAIL_30_IMPROVEMENTS.md](./GAME_DETAIL_30_IMPROVEMENTS.md). Добавлены общая проверка сообщений от iframe, таймер без учёта пауз и фоновой вкладки, восстановление после ошибок, доступное управление фокусом и fullscreen, сохранение языка и синхронизация локальных настроек. Для runtime-контракта создан smoke-набор на 37 сценариев, включённый в frontend CI, deploy smoke и release-readiness. Это изменения исходников/CI в отдельной ветке; факт production-публикации будет подтверждён только результатом deploy workflow.
