@@ -313,8 +313,13 @@ function readRuns(){
 function setNote(message,error=false){note.textContent=message;note.dataset.error=error?'true':'false';}
 function persist(){
  runs=runs.slice().sort((a,b)=>Date.parse(b.at)-Date.parse(a.at)).slice(0,MAX_RUNS);
- try{window.localStorage.setItem(STORAGE_KEY,JSON.stringify({schema:ARCHIVE_SCHEMA,schemaVersion:1,exportedAt:new Date().toISOString(),runs}));}
- catch{setNote('Браузер не разрешил локальное сохранение. Экспортируй пакет до закрытия вкладки.',true);}
+ try{
+  window.localStorage.setItem(STORAGE_KEY,JSON.stringify({schema:ARCHIVE_SCHEMA,schemaVersion:1,exportedAt:new Date().toISOString(),runs}));
+  return true;
+ }catch{
+  setNote('Браузер не разрешил локальное сохранение. Экспортируй пакет до закрытия вкладки.',true);
+  return false;
+ }
 }
 function download(filename,payload){
  const url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'}));
@@ -370,7 +375,7 @@ function onRunFinished(raw){
  if(!run){setNote('Запуск завершён, но не содержит достаточного профиля и траектории для сравнения. Проверь версию движка.',true);return;}
  if(raw.scenarioSignature&&raw.scenarioSignature!==run.scenarioSignature){setNote('Профиль запуска не прошёл проверку отпечатка.',true);return;}
  runs=runs.filter(r=>r.id!==run.id);runs.unshift(run);latestId=run.id;
- persist();render();setNote('Запуск сохранён локально. Отпечаток рассчитан по версии движка, профилю уровня, режиму и схеме устройств.');
+ const saved=persist();render();setNote(saved?'Запуск сохранён локально. Отпечаток рассчитан по версии движка, профилю уровня, режиму и схеме устройств.':'Запуск измерен, но постоянное локальное сохранение заблокировано. Экспортируй пакет до закрытия вкладки.',!saved);
 }
 repeatBtn.addEventListener('click',()=>{
  const run=runs.find(r=>r.id===latestId);
@@ -400,7 +405,7 @@ fileInput.addEventListener('change',()=>{
    const ids=new Set(runs.map(r=>r.id));
    for(const run of checked.archive.runs){if(!ids.has(run.id)){runs.push(run);ids.add(run.id);}}
    runs.sort((a,b)=>Date.parse(b.at)-Date.parse(a.at));runs=runs.slice(0,MAX_RUNS);latestId=runs[0]?.id||null;
-   persist();render();setNote('Архив проверен и объединён. Сценарные отпечатки пересчитаны; дубликаты идентификаторов пропущены.');
+   const saved=persist();render();setNote(saved?'Архив проверен и объединён. Сценарные отпечатки пересчитаны; дубликаты идентификаторов пропущены.':'Архив проверен и доступен в текущей вкладке, но постоянное сохранение заблокировано. Экспортируй копию.',!saved);
   }catch(error){setNote(clean(error&&error.message||'Архив отклонён.',240),true);}
  };
  reader.readAsText(file);
