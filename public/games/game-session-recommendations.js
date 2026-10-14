@@ -952,7 +952,8 @@ function gameCoachShelf(detail,gameId){
  });
  run.addEventListener('click',async()=>{
   if(!checkbox.checked){status.textContent='Сначала подтверди разовое согласие. Сводка не отправлена.';return}
-  setBusy(true);status.textContent='Проверяем, включён ли AI Coach…';result.hidden=true;result.replaceChildren();
+  // Consent is consumed for this single button action, even when the server is disabled or unavailable.
+  setBusy(true);checkbox.checked=false;status.textContent='Проверяем, включён ли AI Coach…';result.hidden=true;result.replaceChildren();
   try{
    const api=await resolveReferralApiBase();
    if(!api.ok){status.textContent=api.reason==='not-configured'?'AI Coach временно недоступен. Сервер не настроен; данные игры не отправлены.':'Не удалось проверить AI Coach. Данные игры не отправлены; попробуй позже.';return}
