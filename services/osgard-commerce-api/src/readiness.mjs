@@ -24,7 +24,7 @@ function productStatus(product, stripeMode, runtimeReady) {
   };
   const reason = String(product.reason || "price_not_configured");
   let level = "blocked";
-  if (product.enabled === true) level = stripeMode === "test" ? "test_only" : stripeMode === "live" ? "armed" : "blocked";
+  if (product.enabled === true && runtimeReady === true) level = stripeMode === "test" ? "test_only" : stripeMode === "live" ? "armed" : "blocked";
   else if (reason === "price_unavailable") level = "review_required";
   return {
     id: "price-" + String(product.key || "unknown"),
