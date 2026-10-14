@@ -20,3 +20,21 @@ A HTTP 403 or a network error from one CI region does not prove that a service i
 The intended product roles shown in the report are owner-provided descriptions, not independently verified capabilities. The audit makes one GET request to each homepage. It does not sign in, submit forms, probe protected APIs, test payments, verify security, or crawl private data. It does not add analytics to visitors' browsers or send secrets.
 
 Homepage checks run daily, manually, and on pull requests that change this audit. External service failures are reported but do not block website deployment. Use `--strict` only in an environment where third-party homepage uptime is deliberately intended to be a release gate.
+
+## Promotion preflight added — 14 October 2026
+
+The scheduled homepage audit now also emits a conservative paid-promotion gate for each destination.
+
+- `manual_review_required` means the final URL responded over HTTPS on the expected hostname (the only hostname alias allowed automatically is `www`), but the owner must still review page purpose, identity, terms, privacy, browser warnings and the primary action.
+- `blocked_redirect_host_mismatch` means the final hostname differs from the owner-listed hostname. Treat it as a stop signal until the redirect chain and domain control are explained.
+- `blocked_https_downgrade`, `blocked_http_status`, `blocked_no_response` and `blocked_invalid_final_url` indicate that the automated preflight cannot support paid promotion.
+- The report schema is now version 2 and includes gate counts plus a reason on every project result. A successful homepage HTTP response is deliberately never called “approved”; `paidPromotionEligibleCount` remains zero in this automated report.
+
+This is an audit/reporting safeguard. It does not itself pause a campaign in an ad network; no live ad network is currently represented as connected. An operator must review the report before activating paid promotion. The owner-listed organic directory links remain available. In particular, keep the prior caution for SENJORIO and GOLD GLAMOUR until domain control, content, terms and the main user flow have been manually reviewed.
+
+The contract test covers same-host HTTPS responses, the www alias, an unexpected cross-host redirect, an HTTPS downgrade, HTTP failure, network error, timeout, report counts and the “never auto-approve” rule. Run it with:
+
+```sh
+node scripts/external-project-healthcheck-smoke.mjs
+npm run qa:external-project-healthcheck
+```
