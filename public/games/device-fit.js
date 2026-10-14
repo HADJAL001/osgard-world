@@ -6,7 +6,7 @@
     remix: Object.freeze({ level: 'heavy', webgl2: true, label: 'Unity WebGL', note: 'WebGL-плеер с повышенной графической нагрузкой' }),
   });
   const FALLBACK_ORDER = Object.freeze(['aether-grid', 'signal-run', 'afterimage-run', 'civic-cascade']);
-  const CARD_BATCH_LIMIT = 3;
+  const CARD_BATCH_LIMIT = 2;
   const $ = (selector, root = document) => root.querySelector(selector);
 
   // Keep catalogue setup responsive on lower-end phones. requestIdleCallback is
