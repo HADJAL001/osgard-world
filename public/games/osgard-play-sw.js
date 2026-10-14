@@ -43,6 +43,8 @@ const PUBLIC_STATIC_ALLOWLIST = new Set([
   '/games/sponsored-campaigns.css',
   '/games/pwa-install.js',
   '/games/catalog-state.js',
+  '/games/vault/vault-core.js',
+  '/games/vault/vault-app.js',
   '/games/expedition/core.js',
   '/games/expedition/app.js',
   '/games/expedition/catalog-runtime.js',
