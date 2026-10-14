@@ -101,7 +101,7 @@ assert.ok(civicGame.includes('function setupCinematicCapture()') && civicGame.in
 assert.ok(civicGame.includes('width:1920,height:1080,maxSeconds:30') && civicGame.includes('width:3840,height:2160,maxSeconds:15') && civicGame.includes('width:7680,height:4320,maxSeconds:10'), 'CIVIC CASCADE must bound its Full HD, 4K and 8K recording profiles');
 assert.ok(civicGame.includes('rather than re-rendered in native 8K') && civicGame.includes('Запись создаётся локально в браузере') && civicGame.includes('Видео без звука'), 'CIVIC CASCADE 8K export must disclose upscaling, local-only storage and no-audio limitations');
 assert.ok(civicGame.includes("types=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm']") && civicGame.includes('download.href=lastObjectUrl') && civicGame.includes("lastPaintAt<1000/30"), 'CIVIC CASCADE recording must select a supported codec, offer the generated clip, and cap export rendering at 30 fps');
-const civicInlineScripts = [...civicGame.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script>/gi)].filter(match => !/\\btype=["']application\\/ld\\+json["']/i.test(match[1]));
+const civicInlineScripts = [...civicGame.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)].filter(match => !/\btype=["']application\/ld\+json["']/i.test(match[1]));
 assert.equal(civicInlineScripts.length, 1, 'CIVIC CASCADE must keep one game runtime script');
 new Function(civicInlineScripts[0][2]);
 
