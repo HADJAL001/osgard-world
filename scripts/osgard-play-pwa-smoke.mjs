@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { Script } from 'node:vm';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { runInNewContext } from 'node:vm';
@@ -20,7 +21,7 @@ const workflow = read('.github/workflows/osgard-play-qa.yml');
 
 for (const path of [
   root + '/app.webmanifest', root + '/osgard-play-icon.svg', root + '/offline.html',
-  root + '/pwa-install.css', root + '/pwa-install.js', root + '/osgard-play-sw.js',
+  root + '/pwa-install.css', root + '/pwa-install.js', root + '/device-fit.css', root + '/device-fit.js', root + '/osgard-play-sw.js',
   root + '/catalog-state.js'
 ]) assert.ok(existsSync(resolve(path)), 'Missing PWA asset: ' + path);
 
@@ -42,6 +43,9 @@ assert.ok(page.includes('id="pwa-install-panel"') && page.includes('id="pwa-inst
 assert.ok(page.includes('id="catalog-share-state"') && page.includes('id="catalog-share-status"'));
 assert.ok(page.includes('/games/pwa-install.css?v=__OSGARD_BUILD_VERSION__'));
 assert.ok(page.includes('/games/pwa-install.js?v=__OSGARD_BUILD_VERSION__'));
+assert.ok(page.includes('/games/device-fit.css?v=__OSGARD_BUILD_VERSION__'));
+assert.ok(page.includes('/games/device-fit.js?v=__OSGARD_BUILD_VERSION__'));
+assert.doesNotThrow(() => new Script(sw), 'The PWA service worker must be valid JavaScript before release.');
 assert.ok(page.includes('/games/catalog-state.js?v=__OSGARD_BUILD_VERSION__'));
 assert.ok(css.includes('@media(max-width:620px)') && css.includes('prefers-reduced-motion:reduce'));
 assert.ok(install.includes("addEventListener('beforeinstallprompt'") && install.includes("addEventListener('appinstalled'"));
@@ -65,7 +69,7 @@ assert.equal(precachePaths.length, new Set(precachePaths).size, 'PWA precache mu
 const staticAllowlistStart = sw.indexOf('const PUBLIC_STATIC_ALLOWLIST = new Set([');
 const staticAllowlistEnd = sw.indexOf(']);', staticAllowlistStart);
 const staticAllowlist = sw.slice(staticAllowlistStart, staticAllowlistEnd);
-for (const path of ['/games/luxury.css', '/games/sponsored-campaigns.css', '/games/favicon.svg','/games/expedition/core.js','/games/expedition/app.js','/games/expedition/catalog-runtime.js','/games/expedition/expedition.css']) {
+for (const path of ['/games/luxury.css', '/games/device-fit.css', '/games/device-fit.js', '/games/sponsored-campaigns.css', '/games/favicon.svg','/games/expedition/core.js','/games/expedition/app.js','/games/expedition/catalog-runtime.js','/games/expedition/expedition.css']) {
   assert.ok(precachePaths.includes(path), 'Core public shell asset must be precached: ' + path);
   assert.ok(staticAllowlist.includes("'" + path + "'"), 'Core public shell asset must be allowed for cached fallback: ' + path);
 }
