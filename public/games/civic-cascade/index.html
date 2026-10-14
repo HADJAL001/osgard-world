@@ -4,10 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#080d10">
-<meta name="description" content="CIVIC CASCADE — браузерная кризисная стратегия OSGARD. Управляйте водой, энергосетью и эвакуацией, сохраняйте контрольные точки и сравнивайте прогноз кризиса.">
+<meta name="description" content="CIVIC CASCADE 2.0 — кризисная стратегия OSGARD. Управляйте водой, энергосетью и эвакуацией, принимайте тактические решения при развивающихся авариях, сохраняйте операции и сравнивайте прогноз.">
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://osgard.world/games/civic-cascade/">
-<title>CIVIC CASCADE — кризисная стратегия | OSGARD PLAY</title>
+<title>CIVIC CASCADE 2.0 — кризисная стратегия | OSGARD PLAY</title>
+<meta name="osgard-game-version" content="2.0.0-crisis-director">
 <style>
 :root{color-scheme:dark;--bg:#080d10;--panel:#10191d;--panel2:#142126;--line:#ffffff1c;--ink:#edf3ee;--muted:#91a29e;--mint:#b8f4cf;--cyan:#68d8d2;--gold:#e1c58a;--warn:#f2b27c;--bad:#ff827b;--mono:ui-monospace,Consolas,monospace;--serif:Georgia,serif}
 *{box-sizing:border-box}html{background:var(--bg);scroll-behavior:smooth}body{margin:0;color:var(--ink);background:radial-gradient(ellipse at 76% -18%,#234d453d,transparent 48%),var(--bg);font:14px/1.55 Inter,Geist,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}button,select{font:inherit}button,a,select{touch-action:manipulation}a{color:inherit;text-decoration:none}button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(--mint);outline-offset:3px}.wrap{max-width:1440px;padding:0 clamp(14px,2.8vw,42px);margin:auto}
@@ -49,7 +50,28 @@
 @media(max-width:560px){.checkpoint-panel{padding:12px}.checkpoint-tools{grid-template-columns:1fr}.forecast-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.forecast-tile strong{font-size:19px}.forecast-head{align-items:flex-start;flex-direction:column;gap:4px}.forecast-head span{text-align:left}#cc-checkpoint-status{max-width:48%}}
 @media(prefers-reduced-motion:reduce){.checkpoint-panel,.forecast-tile{scroll-behavior:auto;transition:none!important}}
 
-/* CIVIC CASCADE 1.9.0 — cinematic field-record export */
+
+/* CIVIC CASCADE 2.0 — interruptive tactical incidents; the simulation pauses until the operator chooses. */
+.incident-card{margin:0 0 12px;padding:13px;border:1px solid #e1c58a73;background:radial-gradient(ellipse at 100% 0%,#e1c58a12,transparent 54%),linear-gradient(145deg,#201d17,#101719);box-shadow:inset 2px 0 #e1c58a55,0 12px 35px #0003}
+.incident-card[hidden]{display:none}
+.incident-top{display:flex;align-items:center;justify-content:space-between;gap:9px;margin-bottom:7px}
+.incident-kicker{color:var(--gold);font:8px var(--mono);letter-spacing:.13em;text-transform:uppercase}
+.incident-freeze{padding:4px 6px;border:1px solid #e1c58a45;color:#e1c58a;font:7px var(--mono);letter-spacing:.07em;white-space:nowrap}
+.incident-card h4{margin:0;color:#f2eee3;font:400 22px/1.08 var(--serif);letter-spacing:-.02em}
+.incident-copy{margin:7px 0 11px;color:#b9c2b8;font-size:10px;line-height:1.6}
+.incident-options{display:grid;gap:6px}
+.incident-choice{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;align-items:center;width:100%;min-height:52px;padding:9px 10px;border:1px solid #ffffff1c;background:#0b1215;color:var(--ink);text-align:left;cursor:pointer;transition:border-color .18s,background .18s}
+.incident-choice:hover:not(:disabled){border-color:#e1c58a9a;background:#211f19}
+.incident-choice:disabled{opacity:.4;cursor:not-allowed}
+.incident-choice strong{display:block;font-size:10px;font-weight:650}
+.incident-choice small{display:block;margin-top:3px;color:var(--muted);font-size:8px;line-height:1.45}
+.incident-cost{color:var(--gold);font:8px var(--mono);white-space:nowrap}
+.incident-status{margin:8px 0 0;color:#d8c69c;font-size:8px;line-height:1.5}
+.incident-status:empty{display:none}
+@media(max-width:560px){.incident-card{padding:11px}.incident-card h4{font-size:20px}.incident-choice{min-height:48px;padding:8px}.incident-copy{font-size:10px}}
+@media(prefers-reduced-motion:reduce){.incident-card,.incident-choice{transition:none!important;animation:none!important}}
+
+/* CIVIC CASCADE 2.0.0 — crisis decision director and cinematic field-record export */
 .cc-film-panel{position:relative;margin:0 0 16px;padding:clamp(16px,2.1vw,26px);border:1px solid #b8f4cf2b;background:radial-gradient(ellipse at 90% 0%,#68d8d210,transparent 42%),linear-gradient(145deg,#ffffff06,transparent 58%),#0b1518;overflow:hidden}
 .cc-film-panel:before{content:"";position:absolute;top:0;left:0;width:108px;height:2px;background:linear-gradient(90deg,#b8f4cf,transparent)}
 .cc-film-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:8px}
@@ -99,14 +121,21 @@
 <div class="panel" style="margin-top:12px"><div class="panel-head"><strong>02 / ЖУРНАЛ ОПЕРАЦИИ</strong><small id="cc-log-count">0 СОБЫТИЙ</small></div><div class="log" id="cc-log" aria-live="polite"><div class="log-entry"><time>00:00</time><span><b>Центр управления:</b> получена тревога. Выбери действия в пределах выделенного бюджета.</span></div></div></div>
 </section>
 <aside class="side">
-<section class="panel"><div class="panel-head"><strong>03 / УПРАВЛЕНИЕ</strong><small>TACTICAL RESPONSE</small></div><div class="scenario-row"><label for="cc-scenario">СЦЕНАРИЙ</label><select id="cc-scenario"><option value="flood">Ливень и подтопление</option><option value="blackout">Каскадный сбой сети</option><option value="blockade">Перекрытие дорог</option></select></div><div class="mission"><h2 id="cc-mission-title">Удержать город</h2><p id="cc-mission-copy">Снизи уровень воды, стабилизируй энергосеть и восстанови доступность служб.</p><div class="mission-stats"><div><small>ОСТАЛОСЬ</small><b id="cc-time-left">03:00</b></div><div><small>БРИГАДЫ</small><b id="cc-crews">4 / 4</b></div><div><small>ПОРЯДОК</small><b id="cc-risk-mini">61 / 100</b></div></div></div><div class="objectives"><div class="section-line"><h3>ЦЕЛИ МИССИИ</h3><span id="cc-objective-count">0 / 3</span></div><div class="objective" id="cc-objective-water"><span class="check">✓</span><span>Удержать воду ниже 45%</span><small>ВОДА</small></div><div class="objective" id="cc-objective-grid"><span class="check">✓</span><span>Поднять сеть выше 68%</span><small>ЭНЕРГИЯ</small></div><div class="objective" id="cc-objective-access"><span class="check">✓</span><span>Открыть пути выше 60%</span><small>ДОСТУП</small></div></div><div class="actions"><div class="section-line"><h3>ТАКТИЧЕСКИЕ ДЕЙСТВИЯ</h3><span>НАЖАТИЯ РАСХОДУЮТ РЕСУРСЫ</span></div><div class="action-list">
+<section class="panel"><div class="panel-head"><strong>03 / УПРАВЛЕНИЕ</strong><small>TACTICAL RESPONSE</small></div><div class="scenario-row"><label for="cc-scenario">СЦЕНАРИЙ</label><select id="cc-scenario"><option value="flood">Ливень и подтопление</option><option value="blackout">Каскадный сбой сети</option><option value="blockade">Перекрытие дорог</option></select></div><div class="mission"><h2 id="cc-mission-title">Удержать город</h2><p id="cc-mission-copy">Снизи уровень воды, стабилизируй энергосеть и восстанови доступность служб.</p><div class="mission-stats"><div><small>ОСТАЛОСЬ</small><b id="cc-time-left">03:00</b></div><div><small>БРИГАДЫ</small><b id="cc-crews">4 / 4</b></div><div><small>ПОРЯДОК</small><b id="cc-risk-mini">61 / 100</b></div></div></div><div class="objectives"><div class="section-line"><h3>ЦЕЛИ МИССИИ</h3><span id="cc-objective-count">0 / 3</span></div><div class="objective" id="cc-objective-water"><span class="check">✓</span><span>Удержать воду ниже 45%</span><small>ВОДА</small></div><div class="objective" id="cc-objective-grid"><span class="check">✓</span><span>Поднять сеть выше 68%</span><small>ЭНЕРГИЯ</small></div><div class="objective" id="cc-objective-access"><span class="check">✓</span><span>Открыть пути выше 60%</span><small>ДОСТУП</small></div></div><div class="actions"><div class="section-line"><h3>ТАКТИЧЕСКИЕ ДЕЙСТВИЯ</h3><span>НАЖАТИЯ РАСХОДУЮТ РЕСУРСЫ</span></div><section class="incident-card" id="cc-incident" hidden aria-labelledby="cc-incident-title" aria-live="polite">
+<div class="incident-top"><span class="incident-kicker" id="cc-incident-kicker">INCIDENT / 01</span><span class="incident-freeze">SIMULATION PAUSED</span></div>
+<h4 id="cc-incident-title">Поступило срочное событие</h4>
+<p class="incident-copy" id="cc-incident-copy">Выбери ответ. Каждое решение расходует ресурсы или переносит ущерб на другую систему.</p>
+<div class="incident-options" id="cc-incident-options"></div>
+<p class="incident-status" id="cc-incident-status" role="status" aria-live="polite"></p>
+</section>
+<div class="action-list">
 <button class="action-btn" id="cc-action-pump" data-action="pump"><span class="action-icon">≈</span><span class="action-copy"><b>Развернуть насосы</b><small>Снижает воду и риск затопления</small></span><span class="cost">−18 ед.</span></button>
 <button class="action-btn" id="cc-action-grid" data-action="grid"><span class="action-icon">ϟ</span><span class="action-copy"><b>Стабилизировать сеть</b><small>Восстанавливает мощность узлов</small></span><span class="cost">−20 ед.</span></button>
 <button class="action-btn" id="cc-action-route" data-action="route"><span class="action-icon">↗</span><span class="action-copy"><b>Открыть эвакуационный путь</b><small>Повышает доступность служб</small></span><span class="cost">−15 ед.</span></button>
 <button class="action-btn" id="cc-action-repair" data-action="repair"><span class="action-icon">⌁</span><span class="action-copy"><b>Отправить ремонтные бригады</b><small>Устраняет сбой выбранного узла</small></span><span class="cost">−12 ед.</span></button>
 </div></div><div class="controls"><button class="ctrl" id="cc-pause" type="button">Ⅱ Пауза</button><button class="ctrl" id="cc-speed" type="button">СКОРОСТЬ 1×</button><button class="ctrl" id="cc-reset" type="button">↻ Новая операция</button></div><div class="risk"><div><div class="risk-label">ИНДЕКС КРИЗИСА</div><strong id="cc-risk">61<small> / 100</small></strong></div><div class="risk-copy"><b id="cc-risk-label">РАЗВИВАЕТСЯ</b><span id="cc-risk-copy">Нагрузка на сети растёт. Выбери первичный узел.</span></div></div>
 <div class="checkpoint-panel" aria-label="Сохранение операции и краткосрочный прогноз">
-  <div class="checkpoint-head"><div><small>LOCAL OPERATION LAB / V1.9.0</small><strong>Контрольная точка</strong></div><span id="cc-checkpoint-status" role="status" aria-live="polite">Проверка сохранения…</span></div>
+  <div class="checkpoint-head"><div><small>LOCAL OPERATION LAB / V2.0.0</small><strong>Контрольная точка</strong></div><span id="cc-checkpoint-status" role="status" aria-live="polite">Проверка сохранения…</span></div>
   <p class="checkpoint-intro">Сохрани ход операции на этом устройстве и продолжи позже. Контрольная точка не отправляется на сервер.</p>
   <div class="checkpoint-tools"><button class="ctrl" id="cc-save" type="button">Сохранить операцию</button><button class="ctrl" id="cc-load" type="button" disabled>Восстановить сохранение</button></div>
   <div class="forecast-head"><b>ПРОГНОЗ НА 30 ИГРОВЫХ СЕКУНД</b><span>ОЦЕНКА ПО ТЕКУЩИМ ТРЕНДАМ</span></div>
@@ -123,7 +152,7 @@
 
 <section class="cc-film-panel" id="cc-film-panel" aria-labelledby="cc-film-title">
   <div class="cc-film-head">
-    <div><span class="cc-film-kicker">OSGARD PLAY / CINEMATIC FIELD RECORD · 1.9.0</span><h2 class="cc-film-title" id="cc-film-title">Запись <em>операции</em></h2></div>
+    <div><span class="cc-film-kicker">OSGARD PLAY / CINEMATIC FIELD RECORD · 2.0.0</span><h2 class="cc-film-title" id="cc-film-title">Запись <em>операции</em></h2></div>
     <div class="cc-film-status" id="cc-film-status" data-state="ready" role="status" aria-live="polite">ГОТОВО К ЗАПИСИ</div>
   </div>
   <p class="cc-film-copy">Запиши живую карту города с оперативными показателями в отдельный WebM-клип. Запись берёт текущий игровой холст и накладывает на него показатели воды, энергосети, доступа служб, запасов и риска.</p>
@@ -144,7 +173,7 @@
 
 <p class="notice">Это браузерная игровая редакция OSGARD PLAY. Показатели и последствия моделируются внутри игры и не являются реальными городскими данными. Состояние операции не отправляется на сервер.</p>
 </main>
-<footer class="footer"><span>© OSGARD WORLD / PLAY · CIVIC CASCADE WEB EDITION 1.9.0</span><span>КРИЗИСНАЯ СТРАТЕГИЯ · DESKTOP + TOUCH</span><span><a href="/games/">ВЕРНУТЬСЯ В КАТАЛОГ ↗</a></span></footer>
+<footer class="footer"><span>© OSGARD WORLD / PLAY · CIVIC CASCADE WEB EDITION 2.0.0</span><span>КРИЗИСНАЯ СТРАТЕГИЯ · DESKTOP + TOUCH</span><span><a href="/games/">ВЕРНУТЬСЯ В КАТАЛОГ ↗</a></span></footer>
 </div><div class="toast" id="cc-toast" role="status" aria-live="polite"></div>
 <script>
 (function(){
