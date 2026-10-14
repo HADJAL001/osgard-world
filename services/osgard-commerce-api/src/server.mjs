@@ -223,6 +223,7 @@ app.get("/v1/admin/readiness", requireAdmin, async (_req, res) => {
   try {
     // The existing catalog loader verifies configured Stripe prices without returning IDs or credentials.
     const products = await loadPublicProducts();
+    const attributionTokens = parseServiceAttributionTokenMap(process.env.OSGARD_ATTRIBUTION_TOKENS_JSON || "");
     const stripeMode = stripeSecret.startsWith("sk_test_") ? "test" : stripeSecret.startsWith("sk_live_") ? "live" : "missing";
     return res.json(buildCommercialReadiness({
       databaseConfigured: Boolean(pool),
@@ -236,6 +237,7 @@ app.get("/v1/admin/readiness", requireAdmin, async (_req, res) => {
       paymentsRuntimeReady: paymentsAllowed(),
       premiumEntitlementsImplemented: PREMIUM_ENTITLEMENTS_IMPLEMENTED,
       adNetworkIntegrated: false,
+      serviceAttributionServiceCount: Object.keys(attributionTokens).length,
       products,
     }));
   } catch (error) {
