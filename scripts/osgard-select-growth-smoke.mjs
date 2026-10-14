@@ -233,6 +233,10 @@ assert.ok(source.includes('osgard:shards-wallet-updated') &&
   css.includes('prefers-reduced-motion:reduce') &&
   css.includes('.og-postgame-service-share button:focus-visible'),
   'Service-share controls must remain responsive, reduced-motion aware, keyboard accessible and sync wallet updates');
+assert.ok(source.includes("window.addEventListener('osgard:shards-wallet-updated',syncShardsWalletUI)") &&
+  source.includes("window.addEventListener('storage',event=>{if(!event.key||event.key===walletKey)syncShardsWalletUI()})") &&
+  source.includes("document.querySelectorAll('.og-postgame-wallet')"),
+  'Wallet changes in SIGNAL RUN or the post-session panel must update the intermission balance and prevent another same-day local reward claim');
 assert.ok(lifecycle.includes("activeSessionId='session_'+id+'_'+sequence+'_'+launchAt") && lifecycle.includes('sessionId:activeSessionId') && lifecycle.includes('detail:{game:activeGame,sessionId:activeSessionId,...dailyChallengeContext(activeGame,activeUrl)}'),
   'The same stable ID must be sent with gameplay completion and post-session return events');
 assert.ok(source.includes("byGame[gameId]=Math.min((byGame[gameId]||0)+1,1000000000)") &&
