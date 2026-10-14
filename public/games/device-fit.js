@@ -8,19 +8,13 @@
   const FALLBACK_ORDER = Object.freeze(['aether-grid', 'signal-run', 'afterimage-run', 'civic-cascade']);
   const $ = (selector, root = document) => root.querySelector(selector);
 
-  function canCreateContext(kind) {
-    try {
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext(kind, { alpha: false, antialias: false, depth: false, stencil: false });
-      if (!context) return false;
-      const lose = context.getExtension && context.getExtension('WEBGL_lose_context');
-      if (lose) lose.loseContext();
-      canvas.width = 1;
-      canvas.height = 1;
-      return true;
-    } catch {
-      return false;
-    }
+  // Do not create and destroy real GPU contexts while rendering the catalog.
+  // Some mobile drivers block the main thread for hundreds of milliseconds on the
+  // first context request. This is an API-availability hint, not a launch guarantee.
+  function hasContextApi(kind) {
+    if (kind === 'webgl2') return typeof window.WebGL2RenderingContext === 'function';
+    if (kind === 'webgl') return typeof window.WebGLRenderingContext === 'function';
+    return false;
   }
 
   function readCapabilities() {
@@ -37,8 +31,8 @@
       saveData = connection?.saveData === true;
       effectiveType = String(connection?.effectiveType || '');
     } catch {}
-    const webgl2 = canCreateContext('webgl2');
-    const webgl1 = canCreateContext('webgl');
+    const webgl2 = hasContextApi('webgl2');
+    const webgl1 = hasContextApi('webgl');
     const offline = navigator.onLine === false;
     const slowNetwork = ['slow-2g', '2g'].includes(effectiveType);
     const constrained = !webgl2 || saveData || slowNetwork || (memoryGb !== null && memoryGb <= 4);
@@ -87,7 +81,7 @@
       node.dataset.state = state;
     };
 
-    setSignal('osgard-fit-webgl', capabilities.webgl2 ? 'Доступен' : (capabilities.webgl1 ? 'Есть WebGL 1' : 'Не обнаружен'), capabilities.webgl2 ? 'good' : 'warn');
+    setSignal('osgard-fit-webgl', capabilities.webgl2 ? 'API найден' : (capabilities.webgl1 ? 'Есть WebGL 1 API' : 'API не обнаружен'), capabilities.webgl2 ? 'good' : 'warn');
     setSignal('osgard-fit-input', capabilities.touch ? 'Есть сенсорный ввод' : 'Клавиатура / указатель', 'neutral');
     setSignal('osgard-fit-network', capabilities.offline ? 'Браузер offline' : (capabilities.saveData ? 'Экономия данных' : (capabilities.slowNetwork ? 'Медленная сеть' : 'Ограничений не найдено')), capabilities.offline ? 'warn' : 'neutral');
     setSignal('osgard-fit-motion', capabilities.reducedMotion ? 'Меньше движения' : 'Обычный режим', 'neutral');

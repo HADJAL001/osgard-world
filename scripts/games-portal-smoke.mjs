@@ -65,6 +65,7 @@ assert.ok(catalogInviteCard.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10
 
 const lifecycle=readFileSync(resolve(root,'player-lifecycle.js'),'utf8')
 const consentedAnalytics=readFileSync(resolve(root,'consented-analytics.js'),'utf8')
+const sponsoredCampaigns=readFileSync(resolve(root,'sponsored-campaigns.js'),'utf8')
 const commerceClient=readFileSync(resolve(root,'commerce-client.js'),'utf8')
 const commerceConfig=JSON.parse(readFileSync(resolve(root,'commerce-config.json'),'utf8'))
 const recommendationScript=readFileSync(resolve(root,'game-session-recommendations.js'),'utf8')
@@ -380,6 +381,8 @@ assert.ok(commerceClient.includes("parsed.pathname === '/commerce-api'")&&consen
 assert.ok(commerceClient.includes("'/commerce-api/healthz'")&&commerceClient.includes("health.databaseReady === true")&&commerceClient.includes("if (!base) throw new Error('COMMERCE_API_NOT_CONFIGURED')"),'Lead submission must discover only a healthy same-origin Commerce API and preserve manual fallback when it is unavailable')
 assert.ok(commerceClient.includes('const loadConfig = () => {')&&commerceClient.includes('const config = await loadConfig();')&&commerceClient.includes("fetch('/games/commerce-config.json'")&&!commerceClient.includes('const configPromise = fetch('),'The public commerce configuration must be fetched only when the API client is actually used');
 assert.ok(consentedAnalytics.includes("'/commerce-api/healthz'")&&consentedAnalytics.includes("health.databaseReady === true")&&consentedAnalytics.includes('if (!base || !consentGranted()'),'Shared analytics queue must require positive API health and explicit consent before delivery');
+assert.ok(sponsoredCampaigns.includes('function consentGranted()')&&sponsoredCampaigns.includes("localStorage.getItem(CONSENT_KEY) === 'yes'"),'Sponsored campaign frequency caps must define a fail-closed explicit-consent check');
+new Function(sponsoredCampaigns);
 assert.ok(lifecycle.includes("fetch('/commerce-api/healthz'")&&lifecycle.includes("health.databaseReady!==true")&&lifecycle.includes("return fetch(base+'/v1/events'"),'Gameplay lifecycle events must discover only the database-ready first-party API and fail closed otherwise');
 new Function(consentedAnalytics);
 for(const marker of ['window.OSGARD_CONSENTED_ANALYTICS','MAX_PENDING = 100','MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000','if (!consentGranted())','clearQueue()','result?.accepted']) assert.ok(consentedAnalytics.includes(marker), 'Consent queue contract missing: '+marker);
@@ -592,6 +595,7 @@ for(const [marker,label] of [
   ["resume.setAttribute('aria-label', 'Продолжить последнюю игру'","resume action label must contain the visible text"],
   ["share.setAttribute('aria-label', 'Поделиться платформой OSGARD PLAY'","share action label must contain the visible text"],
 ]) assert.ok(luxury.includes(marker),label)
+assert.ok(html.includes('@media(min-width:761px){.civic-update-card{contain-intrinsic-size:auto 760px}}'),'Long Civic Cascade desktop card must reserve a safe intrinsic size to prevent its action links overlapping the next card')
 assert.ok(html.includes('.game-actions a{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 14px;border:1px solid rgba(255,255,255,.12);border-radius:3px;background:rgba(255,255,255,.06);text-decoration:none;line-height:1.35;transition:border-color .2s,background .2s,color .2s}')&&html.includes('.game-actions .play-link{border-color:rgba(211,255,105,.28);background:rgba(211,255,105,.09)}')&&html.includes('.game-actions .detail-link{border-color:rgba(255,255,255,.18);background:rgba(255,255,255,.055)}')&&html.includes('.luxury-entertainment footer>nav a{display:inline-flex;align-items:center;min-height:36px;padding:8px 2px}'),'Catalog action links must expose a visible 48px tappable surface; footer targets remain compliant')
 assert.ok(html.includes('content-visibility:auto;contain-intrinsic-size:auto 500px')&&html.includes('content-visibility:auto;contain-intrinsic-size:auto 88px'),'Off-screen Games cards and ecosystem tiles must defer content rendering while reserving layout space')
 const packageScripts=JSON.parse(readFileSync(resolve('package.json'),'utf8')).scripts
@@ -994,6 +998,7 @@ for (const feature of ['sortCards','launchRandom','updateResumeButton','navigato
   assert.ok(luxuryJs.includes(feature), 'Premium catalogue action missing: '+feature)
 }
 assert.ok(luxuryJs.includes("osgard.games.recent.v1"), 'Premium resume control must reuse existing recent-game history')
+assert.ok(luxuryJs.includes("announce('Поиск очищен.')\n    }\n  });\n\n  // Player Lab is lazy-loaded"), 'Keyboard listener must terminate before the following lazy IIFE to prevent runtime call-chaining errors')
 assert.ok(luxuryCss.includes('.luxury-entertainment') && luxuryCss.includes('@media(max-width:760px)'), 'Premium theme or mobile layout missing')
 assert.ok(luxuryCss.includes('@media(prefers-reduced-motion:reduce)'), 'Premium theme must respect reduced-motion preference')
 assert.ok(luxuryCss.includes(':focus-visible') || html.includes(':focus-visible'), 'Keyboard-visible focus state must remain available')

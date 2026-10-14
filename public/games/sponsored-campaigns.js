@@ -12,6 +12,11 @@
   let storage = null;
   let storageChecked = false;
 
+  function consentGranted() {
+    try { return localStorage.getItem(CONSENT_KEY) === 'yes'; }
+    catch { return false; }
+  }
+
   function randomId() {
     try { if (crypto && typeof crypto.randomUUID === 'function') return crypto.randomUUID().replace(/-/g, ''); }
     catch { /* fallback below */ }
