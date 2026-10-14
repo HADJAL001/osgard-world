@@ -4,12 +4,12 @@ Date: 14 October 2026
 
 ## Purpose
 
-OSGARD now has two distinct release checks:
+OSGARD now has three linked release checks:
 
 1. The Contract Integrity Engine checks whether the product registry is consistent across the catalogue, JSON-LD, launchers, diagnostics, referrals, recommendation graphs, production route matrix, generated share cards, and sitemap.
-2. The release attestation inventories the exact production build, hashes every file, rejects secrets/symlinks/special entries, and detects additions, omissions or modifications.
+2. The app-shell performance gate measures raw/gzip/Brotli sizes, enforces JS/CSS/HTML transfer budgets and produces a report with a content-based asset inventory hash.\n3. The release attestation inventories the exact production build, hashes every file, rejects secrets/symlinks/special entries, and detects additions, omissions or modifications.
 
-The release attestation now binds the successful contract report to the built artifact. Its qualityGate object records the normalized contract fingerprint, SHA-256 of the exact JSON report, check count and pass/warning totals. Verification requires that report to remain byte-for-byte identical and ready.
+The release attestation binds both passing reports to the built artifact. Its qualityGate and performanceGate objects record stable fingerprints, SHA-256 of each exact JSON report, check counts, pass/warning totals, and critical gzip transfer size. Verification requires both reports to remain byte-for-byte identical and ready.
 
 ## Recommended release sequence
 
@@ -22,7 +22,7 @@ Run from the repository root:
     npm run release:attest
     npm run release:verify
 
-release:attest requires osgard-contract-audit.json and refuses to create a release attestation from a blocked, malformed, or missing report. release:verify compares the attested build file inventory and the exact contract report. If someone changes the report after attestation, verification fails even if the static build files are unchanged.
+release:attest requires osgard-contract-audit.json and osgard-performance-budget.json, and refuses to create a release attestation from a blocked, malformed, or missing report. release:verify compares the attested build file inventory and both exact reports. If either report changes after attestation, verification fails even if the static build files are unchanged.
 
 The release-readiness GitHub Actions workflow runs the contract audit before building, then creates and verifies the attestation and uploads the release evidence artifacts.
 
@@ -30,7 +30,7 @@ The release-readiness GitHub Actions workflow runs the contract audit before bui
 
 - Post-build additions, removals and changes inside the artifact directory.
 - Secret-like files or symlinks included in the frontend artifact.
-- A release being paired later with a different contract-audit report.
+- A release being paired later with a different contract-audit report.\n- Replacing or mutating the measured performance budget after the artifact was attested.
 - Missing or blocked product-contract checks in the release attestation path.
 - Accidental drift across independently maintained game catalogue and routing surfaces.
 
