@@ -354,7 +354,7 @@ exportCsvButton.addEventListener('click', () => {
     assumptions: scenario,
     results: calculateScenario(inputs, scenario.id),
   }));
-  const csv = buildFinancialCsv({ inputs, scenarios, generatedAt, requiredMonthlyStartingVisitors });
+  const csv = buildFinancialCsv({ inputs, scenarios, generatedAt, requiredMonthlyStartingVisitors, decisionIntelligence: latestIntelligence });
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const href = URL.createObjectURL(blob);
   const link = document.createElement('a');
