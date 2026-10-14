@@ -1992,7 +1992,7 @@ async function exportResultCard() {
 function exportGrowthReport() {
   const report = {
     schema: 'cascade-lab-local-growth-report/v1',
-    application: { name: 'CASCADE LAB', version: '0.20.0' },
+    application: { name: 'CASCADE LAB', version: '0.21.0' },
     exportedAt: new Date().toISOString(),
     scope: 'local-browser-profile-only',
     counters: { ...economyProfile.stats },
@@ -2215,7 +2215,7 @@ function downloadExperimentDossier() {
   const speed = Math.hypot(finite(physics.vx), finite(physics.vy));
   const dossier = {
     schema: 'osgard.cascade-lab-experiment-dossier/v1',
-    application: { name: 'CASCADE LAB', version: '0.20.0', build: 'experiment-dossier+delta-lens+hypothesis-lab+engineering-suite+experiment-studio' },
+    application: { name: 'CASCADE LAB', version: '0.21.0', build: 'experiment-dossier+delta-lens+hypothesis-lab+engineering-suite+experiment-studio+case-passport' },
     exportedAt: new Date().toISOString(),
     privacy: {
       delivery: 'local-download-only',
