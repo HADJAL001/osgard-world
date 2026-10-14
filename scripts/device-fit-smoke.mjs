@@ -43,7 +43,7 @@ assert.ok(release.includes("check('device-fit-smoke'"), 'release readiness must 
 assert.ok(pwaSmoke.includes('new Script(sw)'), 'PWA smoke should validate service worker parser contract');
 
 assert.doesNotThrow(() => new Script(client), 'Smart Launch JavaScript must parse');
-assert.ok(client.includes('const CARD_BATCH_LIMIT = 3'), 'catalog card work must use a small bounded batch');
+assert.ok(client.includes('const CARD_BATCH_LIMIT = 2'), 'catalog card work must use a small bounded batch');
 assert.ok(client.includes('window.requestIdleCallback(callback, { timeout: 250 })'), 'catalog batching must yield to idle time with a bounded timeout');
 assert.ok(client.includes('function annotateCard(card)') && client.includes('function processCardBatch()'), 'card annotation must be isolated from the initial setup task');
 assert.ok(client.includes('if (cardIndex < cards.length) scheduleIdle(processCardBatch)'), 'remaining cards must be scheduled as separate tasks');
@@ -159,11 +159,11 @@ while (runtime.idleQueue.length && batches < 10) {
   const before = runtime.doc.chipsAdded;
   callback({ didTimeout: false, timeRemaining: () => 20 });
   const added = runtime.doc.chipsAdded - before;
-  assert.ok(added <= 3, 'each idle task must annotate no more than three cards');
+  assert.ok(added <= 2, 'each idle task must annotate no more than two cards');
   batches += 1;
 }
 assert.equal(runtime.doc.chipsAdded, 11, 'all eleven catalogue cards must eventually receive the compatibility chip');
 assert.equal(runtime.idleQueue.length, 0, 'all catalog work must finish');
-assert.ok(batches >= 4, 'eleven cards must be split over multiple tasks');
+assert.ok(batches >= 6, 'eleven cards must be split over at least six short tasks');
 
 console.log('PASS OSGARD Smart Launch: 11 catalog entries, local-only capability checks, reversible filtering, PWA syntax, mobile and reduced-motion contracts.');
