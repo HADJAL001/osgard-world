@@ -101,6 +101,41 @@ test('projected evidence is preserved in the review packet', () => {
   assert.equal(JSON.stringify(packet.payload).includes('private raw output'), false);
 });
 
+test('contract audit and artifact attestation are summarized for optional OpenAI review', () => {
+  const contract = projectReport('osgard-contract-audit.json', {
+    schema: 'osgard.contract-integrity.v1',
+    status: 'ready',
+    summary: { checks: 32, passed: 32, failed: 0, warnings: 0 },
+    contract: { worldCount: 7, gameCount: 11, eventCount: 20, diagnosticCheckCount: 30, productionRouteCount: 112, sha256: 'a'.repeat(64) },
+    checks: [
+      { id: 'catalog:manifest', status: 'passed', title: 'Catalogue matches the canonical game manifest' },
+      { id: 'privacy:consent', status: 'failed', title: 'Privacy check', detail: 'OPENAI_API_KEY=sk-this-secret-must-never-leak' },
+    ],
+  });
+  const attestation = projectReport('release-attestation.json', {
+    schema: 'osgard.release-attestation.v1',
+    status: 'verified',
+    artifact: { fileCount: 640, totalBytes: 12000000, rootSha256: 'b'.repeat(64), warnings: [], largestFiles: [] },
+    qualityGate: {
+      schema: 'osgard.contract-integrity.v1',
+      reportSha256: 'c'.repeat(64),
+      contractFingerprint: 'a'.repeat(64),
+      checkCount: 32,
+      passed: 32,
+      warnings: 0,
+    },
+  });
+  const packet = buildReviewPacket([contract, attestation]);
+  const encoded = JSON.stringify(packet.payload);
+  assert.equal(packet.payload.reports.length, 2);
+  assert.equal(packet.payload.reports[0].contract.gameCount, 11);
+  assert.equal(packet.payload.reports[0].checks.failed, 1);
+  assert.equal(packet.payload.reports[1].qualityGate.contractFingerprint, 'a'.repeat(64));
+  assert.equal(packet.payload.policy.sourceCodeIncluded, false);
+  assert.equal(packet.payload.policy.playerDataIncluded, false);
+  assert.equal(encoded.includes('sk-this-secret-must-never-leak'), false);
+  assert.equal(encoded.includes('OPENAI_API_KEY='), false);
+});
 test('assessment validator rejects malformed model outputs and sanitizes secrets', () => {
   assert.throws(() => validateAssessment({ recommendation: 'ship' }), /schema/i);
   const valid = validateAssessment(assessment({ summary: 'Key sk-Abcdefghijklmnopqrst must be redacted.' }));
