@@ -12,6 +12,7 @@ on:
       - "scripts/games-portal-smoke.mjs"
       - "scripts/cascade-lab-engineering-suite-smoke.mjs"
       - "scripts/cascade-lab-trajectory-xray-smoke.mjs"
+      - "scripts/cascade-lab-robustness-lab-smoke.mjs"
       - "package.json"
       - ".github/workflows/osgard-play-qa.yml"
   pull_request:
@@ -59,6 +60,8 @@ jobs:
         run: npm run qa:cascade-lab-engineering
       - name: Test CASCADE LAB Trajectory X-Ray traces, comparison and archive safety
         run: npm run qa:cascade-lab-trajectory-xray
+      - name: Test CASCADE LAB controlled robustness sweeps on fixed-step physics
+        run: npm run qa:cascade-lab-robustness
       - name: Regress sponsor campaign privacy and server contracts
         run: npm run qa:campaign-manager
       - name: Test Commerce API allow-lists and consent gates
