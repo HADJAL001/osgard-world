@@ -19,6 +19,7 @@
 <section class="panel"><h2>Игровая аналитика · 30 дней</h2><p id="analytics-retention" class="retention">Данные появятся после явного согласия игрока и записи событий в настроенный API.</p><div class="metrics"><div class="metric"><b id="analytics-catalog-views">—</b><span>Просмотры каталога</span></div><div class="metric"><b id="analytics-starts">—</b><span>Старты игры</span></div><div class="metric"><b id="analytics-completions">—</b><span>Завершения сессий</span></div><div class="metric"><b id="analytics-outbound-clicks">—</b><span>Переходы к проектам</span></div><div class="metric"><b id="analytics-lead-events">—</b><span>События заявок</span></div><div class="metric"><b id="analytics-premium-views">—</b><span>Просмотры Premium</span></div></div><p class="retention">Экспедиции · согласованные события за последние 30 дней · ссылки и этапы, не уникальные игроки и не доказательство фактической публикации.</p><div class="metrics" aria-label="Экспедиционный цикл"><div class="metric"><b id="analytics-expedition-created">—</b><span>Собранные маршруты</span></div><div class="metric"><b id="analytics-expedition-opened">—</b><span>Открытия маршрутов</span></div><div class="metric"><b id="analytics-expedition-shares">—</b><span>Намерения передать ссылку</span></div><div class="metric"><b id="analytics-expedition-stages">—</b><span>Завершённые этапы</span></div></div><p class="retention">Серверная награда за приглашения · 30 дней · квалифицированное завершение учитывается после открытия ссылки, начала игры и сессии не короче 30 секунд. Это не уникальные люди и не денежная выручка.</p><div class="metrics" aria-label="Серверные награды за приглашения"><div class="metric"><b id="analytics-qualified-referrals">—</b><span>Награды за приглашённые сессии</span></div><div class="metric"><b id="analytics-qualified-shards">—</b><span>Начислено косметических SHARDS</span></div></div><p class="retention">Вирусная петля · последние 30 дней · считаются уникальные коды, переданные в форму соцсети или системное меню, а не уникальные люди. Факт публикации не подтверждается автоматически.</p><div class="metrics" aria-label="Воронка приглашений"><div class="metric"><b id="analytics-invites">—</b><span>Ссылки, подготовленные для публикации</span></div><div class="metric"><b id="analytics-referral-opens">—</b><span>Ссылки с открытием</span></div><div class="metric"><b id="analytics-referred-starts">—</b><span>Ссылки со стартом игры</span></div><div class="metric"><b id="analytics-referred-completions">—</b><span>Ссылки с завершением игры</span></div><div class="metric"><b id="analytics-invite-open-rate">—</b><span>Открытие / созданные ссылки</span></div><div class="metric"><b id="analytics-invite-start-rate">—</b><span>Старт / открытые ссылки</span></div><div class="metric"><b id="analytics-invite-completion-rate">—</b><span>Завершение / старт</span></div></div><p class="muted">Учитываются только события после согласия; часть этапов может не совпадать, если согласие дано позже. Это измеряемая воронка ссылок, а не уникальная аудитория, подтверждённые рекламные показы или продажи.</p><div class="table-wrap"><table class="analytics-table" id="game-analytics-table"><thead><tr><th scope="col">Игра</th><th scope="col">События</th><th scope="col">Старты</th><th scope="col">Завершения</th><th scope="col">Средняя длительность завершённой сессии</th><th scope="col">Переходы</th><th scope="col">Сессии</th></tr></thead><tbody id="game-analytics-body"><tr><td colspan="7">Не загружено.</td></tr></tbody></table></div></section>
 <section class="panel"><h2>Эксперименты продукта · 30 дней</h2><p class="retention">Сравниваются сеансы с подтверждённой видимостью главной кнопки и кликами после явного согласия на аналитику. Это не уникальные люди. Минимум для оценки — 200 сеансов на вариант; интервал статистический и не заменяет повторную проверку.</p><div class="table-wrap"><table class="analytics-table" id="product-experiment-table"><thead><tr><th scope="col">Эксперимент</th><th scope="col">Сеансы A</th><th scope="col">Цели A</th><th scope="col">CR A</th><th scope="col">Сеансы B</th><th scope="col">Цели B</th><th scope="col">CR B</th><th scope="col">B − A</th><th scope="col">95% интервал / сигнал</th></tr></thead><tbody id="product-experiment-body"><tr><td colspan="9">Не загружено.</td></tr></tbody></table></div><p class="muted">Цель теста — клик по основной кнопке каталога. Победитель не выбирается автоматически, цены, награды и доступ к играм эксперимент не меняет.</p></section>
 <section class="panel"><h2>Оплаченные заказы по источнику · 30 дней</h2><p class="retention" id="paid-attribution-note">Данные появятся после настройки Commerce API, PostgreSQL и платёжного провайдера. Метки источника передаются ссылкой и не подтверждают личность покупателя.</p><div class="table-wrap"><table class="analytics-table" id="paid-attribution-table"><thead><tr><th scope="col">Игра</th><th scope="col">Источник</th><th scope="col">Кампания</th><th scope="col">Тип</th><th scope="col">Заказы</th><th scope="col">Валюта</th><th scope="col">Валовая сумма</th></tr></thead><tbody id="paid-attribution-body"><tr><td colspan="7">Не загружено.</td></tr></tbody></table></div><p class="retention">Суммы разделены по валюте и показаны до комиссий и расходов. Для подписок это сумма исходного Checkout, а не MRR и не все повторные списания. Возвраты не считаются оплаченными заказами.</p></section>
+<section class="panel"><h2>Подтверждённые конверсии сервисов экосистемы · 30 дней</h2><p class="retention">События поступают с серверов собственных сервисов после подтверждённого действия. Платёжные суммы сообщаются целевым сервисом после проверки оплаты, разделены по валютам и не являются независимой проверкой провайдера или бухгалтерским отчётом. Повтор одного eventId не должен увеличивать числа.</p><div class="table-wrap"><table class="analytics-table" id="service-conversion-table"><thead><tr><th scope="col">Сервис</th><th scope="col">Игра-источник</th><th scope="col">Источник / кампания</th><th scope="col">Конверсии</th><th scope="col">Оплаченные события</th><th scope="col">Выплаты сервиса · gross</th><th scope="col">Возвраты</th><th scope="col">Движение · net</th><th scope="col">Валюта</th></tr></thead><tbody id="service-conversion-body"><tr><td colspan="9">Не загружено.</td></tr></tbody></table></div><p id="service-conversion-note" class="retention">Мост включится после настройки OSGARD_ATTRIBUTION_TOKENS_JSON в Commerce API и установки server-to-server вызова на целевых проектах.</p></section>
 <section class="panel"><h2>Источники заявок · 90 дней</h2><p class="retention">Группировка по UTM-меткам и игровой точке входа из формы разработки. Метки классифицируют ссылку, но не доказывают причинный эффект.</p><div class="table-wrap"><table><thead><tr><th scope="col">Источник</th><th scope="col">Кампания</th><th scope="col">Игра</th><th scope="col">Всего заявок</th><th scope="col">Новые</th></tr></thead><tbody id="lead-attribution-body"><tr><td colspan="5">Не загружено.</td></tr></tbody></table></div></section>
 <section class="panel"><h2>Последние заявки</h2><div id="leads" class="list"><p class="muted">Не загружено.</p></div></section>
 <section class="panel"><h2>Последние заказы</h2><div id="orders" class="list"><p class="muted">Не загружено.</p></div></section>
@@ -206,6 +207,50 @@ function renderPaidAttribution(rows) {
     body.append(row);
   }
 }
+function renderServiceConversions(rows) {
+  const body = $('#service-conversion-body');
+  body.replaceChildren();
+  if (!Array.isArray(rows) || rows.length === 0) {
+    const row = document.createElement('tr');
+    const cell = text('td', '', 'Пока нет серверных конверсий от интегрированных сервисов. Это не означает нулевые реальные продажи; сервисные интеграции ещё должны начать отправлять события.');
+    cell.colSpan = 9;
+    row.append(cell);
+    body.append(row);
+    return;
+  }
+  const serviceLabels = {
+    projects: 'OSGARD BEW WORLD',
+    'o2-system': 'O2 SYSTEM',
+    senjorio: 'SENJORIO',
+    superday: 'SUPERDAY',
+    marcosa: 'MARCOSA',
+    myosa: 'MYOSA',
+    'gold-glamour': 'GOLD GLAMOUR',
+    gardvpn: 'GARD VPN',
+    'osgard-business': 'OSGARD OS',
+    vanguard: 'OSGARD VANGUARD STUDIO',
+    'partner-studio': 'OSGARD PARTNER STUDIO'
+  };
+  for (const item of rows) {
+    const row = document.createElement('tr');
+    const currency = String(item.currency || '').toUpperCase();
+    const money = value => currency ? formatMinorCurrency(value, currency) : '—';
+    const sourceCampaign = [item.source || 'direct', item.campaign || ''].filter(Boolean).join(' / ');
+    const values = [
+      serviceLabels[item.serviceId] || item.serviceId || '—',
+      item.gameId || 'unknown',
+      sourceCampaign,
+      fmt(item.conversions),
+      fmt(item.paidEvents),
+      money(item.grossPaidMinor),
+      money(item.refundMinor),
+      money(item.netPaidMinor),
+      currency || '—'
+    ];
+    for (const value of values) row.append(text('td', '', value));
+    body.append(row);
+  }
+}
 function renderLeadAttribution(rows) {
   const body = $('#lead-attribution-body');
   body.replaceChildren();
@@ -369,11 +414,13 @@ async function load() {
     renderGameAnalytics(overview.analyticsByGame || []);
     renderProductExperiments(overview.productExperimentStats || []);
     renderPaidAttribution(overview.paidRevenueByAttribution || []);
+    renderServiceConversions(overview.serviceAttributionConversions || []);
+    $('#service-conversion-note').textContent = String(overview.serviceAttributionNote || 'Конверсии ещё не получены. Настройте безопасную серверную интеграцию каждого целевого сервиса.');
     renderLeadAttribution(overview.leadsByAttribution || []);
     renderOwnedPromo(overview.ownedPromoByService || []);
     renderPromoVariants(overview.ownedPromoVariantStats || []);
     renderSocialChannels(overview.socialShareByNetwork || []);
-    $('#money').textContent = JSON.stringify({ordersByStatus:overview.ordersByStatus,grossPaidByCurrency:overview.grossPaidByCurrency,paidRevenueByAttribution:overview.paidRevenueByAttribution,topEventsLast30Days:overview.topEventsLast30Days,note:overview.note},null,2);
+    $('#money').textContent = JSON.stringify({ordersByStatus:overview.ordersByStatus,grossPaidByCurrency:overview.grossPaidByCurrency,paidRevenueByAttribution:overview.paidRevenueByAttribution,serviceAttributionConversions:overview.serviceAttributionConversions,topEventsLast30Days:overview.topEventsLast30Days,note:overview.note},null,2);
     list('#leads',leads.items || [],['project_type','contact','budget','description','status','attribution_game_id','attribution_source','attribution_campaign','created_at']);
     list('#orders',orders.items || [],['order_id','product_key','email','status','currency','amount_total','attribution_game_id','attribution_source','attribution_campaign','created_at']);
     $('#status').textContent = 'Данные получены. Выручка показана до комиссий и операционных расходов.';
