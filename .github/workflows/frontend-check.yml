@@ -7,6 +7,7 @@ on:
       - "src/**"
       - "scripts/skillcred-page-smoke.mjs"
       - "scripts/time-prototype-smoke.mjs"
+      - "scripts/core-analytics-consent-smoke.mjs"
       - "scripts/games-portal-smoke.mjs"
       - "scripts/osgard-select-growth-smoke.mjs"
       - "scripts/consented-analytics-queue-smoke.mjs"
@@ -67,6 +68,8 @@ jobs:
         run: npm run check
       - name: Verify iOS App Store and Codemagic source configuration
         run: npm run qa:ios-appstore
+      - name: Verify portal-wide analytics consent and revoke semantics
+        run: npm run qa:core-analytics-consent
       - name: Build the production site
         run: npm run build
       - name: Verify live SkillCred page wiring
