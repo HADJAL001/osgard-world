@@ -1,9 +1,11 @@
 import { DEFAULT_INPUTS, SCENARIOS, calculateScenario, calculateRequiredMonthlyVisitors, normalizeInputs } from './model.js';
+import { buildFinancialCsv } from './export.mjs';
 
 const form = document.getElementById('assumptions-form');
 const resultsNode = document.getElementById('scenario-results');
 const statusNode = document.getElementById('model-status');
 const exportButton = document.getElementById('export-json');
+const exportCsvButton = document.getElementById('export-csv');
 const resetButton = document.getElementById('reset-model');
 const usd = new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 const number = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 });
@@ -108,7 +110,7 @@ exportButton.addEventListener('click', () => {
   const inputs = readInputs();
   const payload = {
     kind: 'osgard-games-business-model',
-    modelVersion: 5,
+    modelVersion: 6,
     note: 'Illustrative scenario only. Subscriptions are calculated as first-year monthly cohorts with churn, separate from one-time purchases; month-12 MRR is shown separately. Checkout, Premium sales and ads are not activated by this model.',
     currency: 'USD',
     generatedAt: new Date().toISOString(),
@@ -126,5 +128,27 @@ exportButton.addEventListener('click', () => {
   link.remove();
   window.setTimeout(() => URL.revokeObjectURL(href), 1000);
   statusNode.textContent = 'JSON расчёта создан и сохранён на устройстве.';
+});
+
+exportCsvButton.addEventListener('click', () => {
+  const inputs = readInputs();
+  const generatedAt = new Date().toISOString();
+  const requiredMonthlyStartingVisitors = calculateRequiredMonthlyVisitors(inputs, inputs.annualRevenueTargetUsd);
+  const scenarios = SCENARIOS.map((scenario) => ({
+    label: scenario.label,
+    assumptions: scenario,
+    results: calculateScenario(inputs, scenario.id),
+  }));
+  const csv = buildFinancialCsv({ inputs, scenarios, generatedAt, requiredMonthlyStartingVisitors });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const href = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = href;
+  link.download = 'osgard-games-model.csv';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(href), 1000);
+  statusNode.textContent = 'CSV сохранён локально. Это модельные оценки, не фактическая выручка; данные не отправляются на сервер.';
 });
 render();

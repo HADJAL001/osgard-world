@@ -18,7 +18,7 @@ const app = readFileSync(appPath, 'utf8');
 const hub = readFileSync(hubPath, 'utf8');
 assert.ok(page.includes('data-estimate="not-live-data"'), 'Financial planner must label the numbers as modelled assumptions');
 assert.ok(page.includes('id="assumptions-form"') && page.includes('id="scenario-results"'), 'Financial planner is missing its input/output interface');
-assert.ok(page.includes('id="export-json"') && page.includes('id="reset-model"'), 'Financial planner reset/JSON export controls missing');
+assert.ok(page.includes('id="export-json"') && page.includes('id="export-csv"') && page.includes('id="reset-model"'), 'Financial planner reset/JSON/CSV export controls missing');
 assert.ok(page.includes('prefers-reduced-motion:reduce'), 'Reduced-motion support missing');
 assert.ok(['shareRatePct','invitesPerSharer','inviteConversionPct'].every((id) => page.includes('id="' + id + '"') && page.includes('name="' + id + '"')), 'Viral-loop assumption inputs missing');
 assert.ok(['base-viral-visitors','base-k-factor','active-k-factor-status','base-annual-revenue','million-gap','annual-target-heading','monthly-target-value','required-base-visitors','growth-target-status'].every((id) => page.includes('id="' + id + '"')), 'Annual target, required traffic and referral outputs missing');
@@ -26,10 +26,10 @@ assert.ok(['target-mix-total','target-mix-ads','target-mix-paid','target-mix-sub
 assert.ok(['target-mix-total','target-mix-ads','target-mix-paid','target-mix-subscriptions','target-mix-services','target-mix-sponsors','target-mix-leads-contracts','target-mix-lead-overflow','target-mix-capacity'].every((id) => app.includes("getElementById('" + id + "')")), 'Target-scale source mix must be wired to computed target scenario');
 assert.ok(page.includes('name="annualRevenueTargetUsd"'), 'Editable annual gross revenue target input missing');
 assert.ok(['newVisitorSharePct','maxLeadsPerMonth','maxProjectsPerMonth','subscriptionConversionRatePct','subscriptionMonthlyPriceUsd','subscriptionMonthlyChurnPct'].every((id) => page.includes('id="' + id + '"') && page.includes('name="' + id + '"')), 'New-visitor share, subscription assumptions, enquiry processing and project capacity inputs are required');
-assert.ok(app.includes('targetScenario.capacityUtilizationPct') && app.includes('targetScenario.unprocessedLeads') && app.includes('modelVersion: 5') && app.includes('target-mix-subscriptions') && app.includes('subscriptionMrrMonth12Usd'), 'Capacity-aware outputs, cohort subscriptions and model export version must be wired');
+assert.ok(app.includes('targetScenario.capacityUtilizationPct') && app.includes('targetScenario.unprocessedLeads') && app.includes('modelVersion: 6') && app.includes('target-mix-subscriptions') && app.includes('subscriptionMrrMonth12Usd'), 'Capacity-aware outputs, cohort subscriptions and model export version must be wired');
 assert.ok(app.includes('calculateRequiredMonthlyVisitors') && app.includes('growthTarget:'), 'Required-traffic calculation must be visible and included in the local export');
 assert.ok(!/https?:\/\/(?:fonts\.googleapis\.com|fonts\.gstatic\.com|cdn\.jsdelivr\.net|unpkg\.com)/i.test(page), 'Financial planner unexpectedly depends on a remote asset CDN');
-assert.ok(app.includes('URL.createObjectURL') && app.includes('osgard-games-model.json'), 'Local JSON export not implemented');
+assert.ok(app.includes('URL.createObjectURL') && app.includes('osgard-games-model.json') && app.includes('osgard-games-model.csv') && app.includes("import { buildFinancialCsv } from './export.mjs'"), 'Local JSON/CSV export not implemented');
 assert.ok(app.includes('Пересчёт выполнен локально') && app.includes('не отправляются на сервер'), 'Local-only privacy status missing');
 assert.ok(hub.includes('href="/games/null-shift-godot/"') && hub.includes('href="/games/null-shift/"'), 'The catalogue must show the Godot build and the distinct browser WebGL alternative');
 
