@@ -8,7 +8,7 @@
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://osgard.world/games/civic-cascade/">
 <title>CIVIC CASCADE — кризисная стратегия | OSGARD PLAY</title>
-<meta name="osgard-game-version" content="3.3.0-auditable-dossier-verifier">
+<meta name="osgard-game-version" content="3.4.0-replayable-decision-dossier">
 <style>
 :root{color-scheme:dark;--bg:#080d10;--panel:#10191d;--panel2:#142126;--line:#ffffff1c;--ink:#edf3ee;--muted:#91a29e;--mint:#b8f4cf;--cyan:#68d8d2;--gold:#e1c58a;--warn:#f2b27c;--bad:#ff827b;--mono:ui-monospace,Consolas,monospace;--serif:Georgia,serif}
 *{box-sizing:border-box}html{background:var(--bg);scroll-behavior:smooth}body{margin:0;color:var(--ink);background:radial-gradient(ellipse at 76% -18%,#234d453d,transparent 48%),var(--bg);font:14px/1.55 Inter,Geist,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}button,select{font:inherit}button,a,select{touch-action:manipulation}a{color:inherit;text-decoration:none}button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(--mint);outline-offset:3px}.wrap{max-width:1440px;padding:0 clamp(14px,2.8vw,42px);margin:auto}
@@ -821,8 +821,9 @@ function act(action){
 }
 
 function projectedRisk(s){return Math.round(clamp(s.water*.38+(100-s.grid)*.34+(100-s.access)*.28+s.riskOffset))}
-function simulatePlannedOrders(orders){
- const s={...state,nodeIntegrity:{...(state.nodeIntegrity||{})},nodeOutages:{...(state.nodeOutages||{})},nodeIncidentFlags:{...(state.nodeIncidentFlags||{})},pendingNodeIncidents:[...(state.pendingNodeIncidents||[])]};ensureNodeIntegrity(s);let cost=0,valid=true;
+function simulatePlannedOrders(orders,sourceStateOverride){
+ const sourceState=sourceStateOverride||state;
+ const s={...sourceState,nodeIntegrity:{...(sourceState.nodeIntegrity||{})},nodeOutages:{...(sourceState.nodeOutages||{})},nodeIncidentFlags:{...(sourceState.nodeIncidentFlags||{})},pendingNodeIncidents:[...(sourceState.pendingNodeIncidents||[])]};ensureNodeIntegrity(s);let cost=0,valid=true;
  for(const order of orders){
   const meta=PLAN_ACTIONS[order.action];if(!meta){valid=false;break}
   cost+=meta.cost;if(s.supplies<meta.cost||s.crews<meta.crew){valid=false;break}s.supplies-=meta.cost;
@@ -843,12 +844,12 @@ function simulatePlannedOrders(orders){
  return {state:s,cost,valid,risk:projectedRisk(s)};
 }
 function planCrewDemand(orders){return orders.reduce((sum,order)=>sum+(PLAN_ACTIONS[order.action]?.crew||0),0)}
-function simulateCascadingPath(source,horizons){
+function simulateCascadingPath(source,horizons,startElapsed=elapsed){
  const s={...source,nodeIntegrity:{...(source.nodeIntegrity||{})},nodeOutages:{...(source.nodeOutages||{})},nodeIncidentFlags:{...(source.nodeIncidentFlags||{})},pendingNodeIncidents:[...(source.pendingNodeIncidents||[])]},samples=[];ensureNodeIntegrity(s);let progressed=0;
  const weather=s.scenario==='flood'?1:s.scenario==='blackout'?.8:.9;
  for(const horizon of horizons){
   while(progressed<horizon-1e-9){
-   const dt=Math.min(.25,horizon-progressed),futureElapsed=elapsed+progressed+dt;
+   const dt=Math.min(.25,horizon-progressed),futureElapsed=startElapsed+progressed+dt;
    s.water=clamp(s.water+s.waterRate*dt*weather);
    s.grid=clamp(s.grid-s.gridRate*dt*(s.supplies<18?1.35:1));
    s.access=clamp(s.access-s.accessRate*dt*(s.water>72?1.15:1));
@@ -1103,7 +1104,7 @@ function searchDoctrinePlans(sourceState,mode,selectedNodeId,simulateOrders,simu
   return {signature:signatureOf(orders),orders:orders.map(order=>({...order})),cost,crewsUsed,score:doctrineObjectiveScore(forecast,cost,crewsUsed,mode),forecast};
  };
  const baseline=evaluate([]);
- if(!baseline)return {baseline:null,alternatives:[],evaluatedCount:0,robustnessEvaluatedCount:0,mode};
+ if(!baseline)return {baseline:null,alternatives:[],evaluatedCount:0,robustnessEvaluatedCount:0,selectedNodeId:nodeDefinitions.some(node=>node.id===selectedNodeId)?selectedNodeId:(nodeDefinitions[0]?.id||null),mode};
  const explored=new Map();
  let frontier=[baseline];
  for(let depth=1;depth<=maxDepth;depth++){
@@ -1137,7 +1138,7 @@ function searchDoctrinePlans(sourceState,mode,selectedNodeId,simulateOrders,simu
  }).sort((a,b)=>a.robustScore-b.robustScore||a.score-b.score||a.cost-b.cost||a.signature.localeCompare(b.signature));
  const portfolio=doctrineParetoPortfolio(robustCandidates,3);
  const openingPrefixCount=new Set(robustCandidates.map(candidate=>candidate.orders.slice(0,2).map(order=>order.action+':'+(order.nodeId||'-')).join('|'))).size;
- return {baseline,alternatives:portfolio,evaluatedCount:explored.size,robustnessEvaluatedCount:robustCandidates.length,portfolioSize:portfolio.length,openingPrefixCount,paretoFrontSize:robustCandidates.filter(candidate=>!robustCandidates.some(other=>other.signature!==candidate.signature&&doctrineDominates(other,candidate))).length,mode};
+ return {baseline,alternatives:portfolio,evaluatedCount:explored.size,robustnessEvaluatedCount:robustCandidates.length,portfolioSize:portfolio.length,openingPrefixCount,paretoFrontSize:robustCandidates.filter(candidate=>!robustCandidates.some(other=>other.signature!==candidate.signature&&doctrineDominates(other,candidate))).length,selectedNodeId:nodeDefinitions.some(node=>node.id===selectedNodeId)?selectedNodeId:(nodeDefinitions[0]?.id||null),mode};
 }
 
 
@@ -1251,7 +1252,7 @@ function assessDoctrineDossierIntegrity(dossier,computedDigest){
  return {available:true,verified:integrity.digest===computedDigest,reason:integrity.digest===computedDigest?'Хеш совпадает с содержимым досье. Это проверка целостности, не цифровая подпись автора.':'Хеш не совпадает: содержимое изменено после экспорта или файл повреждён.'};
 }
 
-function buildDoctrineDossierPayload(sourceState,result,gameVersion,scenarioDefinitions,nodeDefinitions,selectedIndex){
+function buildDoctrineDossierPayload(sourceState,result,gameVersion,scenarioDefinitions,nodeDefinitions,selectedIndex,elapsedSnapshot){
  const metricKeys=['water','grid','access','supplies','crews','riskOffset','waterRate','gridRate','accessRate','actionCount'];
  const metrics={};
  for(const key of metricKeys)metrics[key]=Number.isFinite(sourceState[key])?sourceState[key]:null;
@@ -1293,21 +1294,24 @@ function buildDoctrineDossierPayload(sourceState,result,gameVersion,scenarioDefi
   }
  });
  const scenarioId=String(sourceState.scenario||'unknown'),chosen=result.alternatives?.[selectedIndex]||null;
+ const observedElapsed=Number.isFinite(elapsedSnapshot)?elapsedSnapshot:(Number.isFinite(sourceState.elapsed)?sourceState.elapsed:0);
  return {
   schema:'osgard.civic-cascade.decision-dossier/v1',game:'CIVIC CASCADE',gameVersion:String(gameVersion||'unknown'),
   engine:{
-   id:'civic-cascade-deterministic-decision-engine',modelVersion:'3.3.0',
+   id:'civic-cascade-deterministic-decision-engine',modelVersion:'3.4.0',replayContract:'deterministic-evidence-rebuild/v1',
    searchAlgorithm:'deterministic-bounded-beam-search',portfolioAlgorithm:'bounded-pareto-frontier',
    objective:String(result.mode||'balanced'),limits:{maxCommands:4,beamWidth:6,stressCandidateLimit:8,stressProfileCount:9,stressSeverityLevels:3,portfolioLimit:3},
    forecastHorizonsGameSeconds:[30,60,90],stressFamilies:['water-surge','grid-overload','weak-node-shock'],stressSeverityLevels:['mild','moderate','severe'],stressProfiles:['water-surge-mild','water-surge-moderate','water-surge-severe','grid-overload-mild','grid-overload-moderate','grid-overload-severe','weak-node-shock-mild','weak-node-shock-moderate','weak-node-shock-severe']
   },
   scenario:{id:scenarioId,label:scenarioDefinitions?.[scenarioId]?.name||scenarioId},
   sourceState:{
-   elapsedSeconds:Number.isFinite(sourceState.elapsed)?sourceState.elapsed:null,metrics,nodeIntegrity,nodeOutages,nodeIncidentFlags,
+   elapsedSeconds:observedElapsed,metrics,nodeIntegrity,nodeOutages,nodeIncidentFlags,
+   operationalCounters:{pumps:Number.isFinite(sourceState.pumps)?sourceState.pumps:0,repairs:Number.isFinite(sourceState.repairs)?sourceState.repairs:0,stabilized:Number.isFinite(sourceState.stabilized)?sourceState.stabilized:0,openedRoutes:Number.isFinite(sourceState.openedRoutes)?sourceState.openedRoutes:0,maxCrews:Number.isFinite(sourceState.maxCrews)?sourceState.maxCrews:4},
    pendingNodeIncidents:Array.isArray(sourceState.pendingNodeIncidents)?sourceState.pendingNodeIncidents.slice():[]
   },
   search:{
    evaluatedCandidateCount:result.evaluatedCount??0,stressEvaluatedCandidateCount:result.robustnessEvaluatedCount??0,
+   selectedNodeId:result.selectedNodeId||nodeDefinitions[0]?.id||null,
    paretoFrontSize:result.paretoFrontSize??0,portfolioSize:result.portfolioSize??result.alternatives?.length??0,
    distinctOpeningPrefixesAvailable:result.openingPrefixCount??0,returnedCandidates:result.alternatives?.length??0
   },
@@ -1316,7 +1320,7 @@ function buildDoctrineDossierPayload(sourceState,result,gameVersion,scenarioDefi
   candidates:(result.alternatives||[]).map((candidate,index)=>encodeCandidate(candidate,index+1)),
   assumptions:{
    forecastIsApproximate:true,futureRandomIncidentsIncluded:false,stressProfilesAreSyntheticPerturbations:true,
-   comparesAgainstNoInterventionUnderSameStress:true,openAIAPIUsed:false,telemetrySent:false,personalDataIncluded:false,
+   comparesAgainstNoInterventionUnderSameStress:true,deterministicReplayAvailable:true,openAIAPIUsed:false,telemetrySent:false,personalDataIncluded:false,
    modelOutputsDescribeImplementedRulesOnly:true
   },
   limitations:[
