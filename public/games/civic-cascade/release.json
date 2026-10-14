@@ -3,8 +3,8 @@
   "gameId": "civic-cascade",
   "title": "CIVIC CASCADE",
   "edition": "Web Edition",
-  "version": "2.7.0",
-  "releaseId": "civic-cascade-web-2.7.0",
+  "version": "2.8.0",
+  "releaseId": "civic-cascade-web-2.8.0",
   "canonicalUrl": "https://osgard.world/games/civic-cascade/",
   "detailUrl": "https://osgard.world/game/civic-cascade",
   "entrypoint": "/games/civic-cascade/",
@@ -42,7 +42,14 @@
       "cc-causal-risk-change",
       "cc-causal-weakest",
       "cc-causal-best",
-      "cc-causal-ledger"
+      "cc-causal-ledger",
+      "cc-doctrine-lab",
+      "cc-doctrine-mode",
+      "cc-doctrine-run",
+      "cc-doctrine-status",
+      "cc-doctrine-results",
+      "cc-doctrine-apply",
+      "cc-doctrine-reset"
     ],
     "checkpointSchema": "civic-cascade-checkpoint-v1",
     "approximateRiskForecast": true,
@@ -168,6 +175,36 @@
       "storesInLocalCheckpoint": true,
       "validatesLocalLedgerOnRestore": true,
       "regressionSmokeTest": "scripts/civic-cascade-forecast-smoke.mjs"
+    },
+    "autonomousDoctrinePlanner": {
+      "enabled": true,
+      "algorithm": "deterministic bounded beam search",
+      "objectives": [
+        "balanced",
+        "risk",
+        "protect",
+        "conserve"
+      ],
+      "maxCommands": 4,
+      "beamWidth": 6,
+      "candidateRepairsTarget": "three weakest infrastructure nodes plus selected node",
+      "forecastHorizonsGameSeconds": [
+        30,
+        60,
+        90
+      ],
+      "scoresRiskAndInfrastructureIntegrity": true,
+      "validatesResourceAndCrewConstraints": true,
+      "usesClonedSimulationState": true,
+      "comparesAgainstNoInterventionBaseline": true,
+      "offersUpToThreeRankedCandidates": true,
+      "neverExecutesAutomatically": true,
+      "requiresPauseToComputeAndApply": true,
+      "invalidatesResultWhenLiveStateChanges": true,
+      "localOnly": true,
+      "sendsTelemetry": false,
+      "callsOpenAIAPI": false,
+      "regressionSmokeTest": "scripts/civic-cascade-forecast-smoke.mjs"
     }
   },
   "cinematicExport": {
@@ -208,6 +245,6 @@
   "deployment": {
     "target": "https://osgard.world",
     "mechanism": "repository push triggers the site's production deployment workflow",
-    "liveStatus": "verify release 2.7.0 with production route checks after deployment"
+    "liveStatus": "verify release 2.8.0 with production route checks after deployment"
   }
 }
