@@ -43,7 +43,6 @@ jobs:
           set +e
           npm run qa:release > /tmp/osgard-release-readiness.log 2>&1
           code=$?
-          tail -n 100 /tmp/osgard-release-readiness.log
           echo "Release readiness exit code: $code"
           if [ ! -s release-readiness.json ]; then
             node -e "require('node:fs').writeFileSync('release-readiness.json', JSON.stringify({status:'blocked',checks:[{name:'release-readiness-report',status:'failed'}]}, null, 2))"
@@ -58,5 +57,3 @@ jobs:
           if-no-files-found: warn
           path: |
             osgard-ai-release-review.json
-            release-readiness.json
-            production-route-matrix.json
