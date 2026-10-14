@@ -51,6 +51,11 @@ assert.ok(first && second, 'well-formed completed runs must normalize');
 assert.equal(api.blueprintSignature(first), api.blueprintSignature(second), 'identical layouts must map to the same cohort');
 const shuffled = api.normalizeRun(makeRun(3, { devices: makeRun(3).devices.slice().reverse() }));
 assert.equal(api.blueprintSignature(first), api.blueprintSignature(shuffled), 'device order must not alter the blueprint signature');
+const fullRotation = api.normalizeRun(makeRun(9, { devices: [
+  { type: 'spring', x: 210, y: 390, angle: -0.7 + Math.PI * 2 },
+  { type: 'bumper', x: 590, y: 440, angle: 0.2 }
+]}));
+assert.equal(api.blueprintSignature(first), api.blueprintSignature(fullRotation), 'rotations differing by a full turn must belong to the same physical setup');
 const changedAngle = api.normalizeRun(makeRun(4, { devices: [
   { type: 'spring', x: 210, y: 390, angle: -0.6 },
   { type: 'bumper', x: 590, y: 440, angle: 0.2 }
