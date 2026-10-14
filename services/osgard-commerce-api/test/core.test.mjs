@@ -6,6 +6,7 @@ import {
   OWNED_PROMO_SERVICE_IDS,
   DEFAULT_OWNED_PROMO_CONFIG,
   validateOwnedPromoConfig,
+  migrateOwnedPromoConfig,
   catalogConfiguration,
   validateCheckoutPayload,
   validateLeadPayload,
@@ -25,6 +26,7 @@ import {
 test("owned-service promotion settings validate the public service allow-list and safe defaults", () => {
   const defaults = validateOwnedPromoConfig({});
   assert.equal(defaults.ok, true);
+  assert.equal(defaults.config.schemaVersion, 2);
   assert.equal(defaults.config.enabled, true);
   assert.equal(defaults.config.defaultFrequency, "each");
   assert.deepEqual(defaults.config.enabledServices, [...OWNED_PROMO_SERVICE_IDS]);
@@ -42,6 +44,7 @@ test("owned-service promotion settings validate the public service allow-list an
     showShareRewards: false,
   });
   assert.equal(managed.ok, true);
+  assert.equal(managed.config.schemaVersion, 2);
   assert.equal(managed.config.defaultFrequency, "every3");
   assert.deepEqual(managed.config.enabledServices, ["marcosa", "projects", "vanguard"]);
   assert.deepEqual(managed.config.defaultSelectedServices, ["projects", "marcosa"]);
@@ -56,6 +59,41 @@ test("owned-service promotion settings validate the public service allow-list an
   assert.equal(validateOwnedPromoConfig({ enabledServices: ["projects"], defaultSelectedServices: ["projects"], spotlightService: "marcosa" }).code, "OWNED_PROMO_SPOTLIGHT_NOT_ENABLED");
   assert.equal(validateOwnedPromoConfig({ spotlightService: "../unexpected" }).code, "OWNED_PROMO_SPOTLIGHT_INVALID");
   assert.equal(validateOwnedPromoConfig({ showShareRewards: 1 }).code, "OWNED_PROMO_REWARDS_INVALID");
+  assert.equal(validateOwnedPromoConfig({ schemaVersion: 1 }).code, "OWNED_PROMO_SCHEMA_VERSION_INVALID");
+});
+
+test("owned-promo schema migration preserves explicit owner choices and excludes inactive services", () => {
+  const legacy = migrateOwnedPromoConfig({
+    enabled: false,
+    defaultFrequency: "every3",
+    enabledServices: ["projects", "marcosa", "gardvpn", "projects", "https://bad.example"],
+    defaultSelectedServices: ["projects", "gardvpn", "projects"],
+    spotlightService: "marcosa",
+    showShareRewards: false,
+  });
+  assert.equal(legacy.ok, true);
+  assert.equal(legacy.config.schemaVersion, 2);
+  assert.equal(legacy.config.enabled, false, "An existing global off switch must stay off");
+  assert.equal(legacy.config.defaultFrequency, "every3", "An existing frequency choice must be preserved");
+  assert.deepEqual(legacy.config.enabledServices, ["projects", "marcosa"]);
+  assert.deepEqual(legacy.config.defaultSelectedServices, ["projects"]);
+  assert.equal(legacy.config.spotlightService, "marcosa");
+  assert.equal(legacy.config.showShareRewards, false, "An existing reward off switch must stay off");
+  assert.equal(legacy.config.enabledServices.includes("gardvpn"), false, "Unverified VPN must remain excluded during migration");
+
+  const intentionallyEmpty = migrateOwnedPromoConfig({
+    enabled: true, defaultFrequency: "off",
+    enabledServices: [], defaultSelectedServices: [],
+  });
+  assert.equal(intentionallyEmpty.ok, true);
+  assert.deepEqual(intentionallyEmpty.config.enabledServices, []);
+  assert.deepEqual(intentionallyEmpty.config.defaultSelectedServices, []);
+  assert.equal(intentionallyEmpty.config.defaultFrequency, "off");
+
+  assert.equal(migrateOwnedPromoConfig({ schemaVersion: 99 }).code, "OWNED_PROMO_SCHEMA_VERSION_INVALID");
+  const current = migrateOwnedPromoConfig({ schemaVersion: 2, enabledServices: ["projects"], defaultSelectedServices: ["projects"] });
+  assert.equal(current.ok, true);
+  assert.deepEqual(current.config.enabledServices, ["projects"]);
 });
 
 test("catalog is a fixed server-side allow-list", () => {
