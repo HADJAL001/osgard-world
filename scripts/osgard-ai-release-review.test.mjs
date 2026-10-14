@@ -175,6 +175,15 @@ test('contract audit and artifact attestation are minimized and secret-redacted 
       passed: 32,
       warnings: 0,
     },
+    performanceGate: {
+      schema: 'osgard.performance-budget.v1',
+      reportSha256: 'f'.repeat(64),
+      budgetFingerprint: 'e'.repeat(64),
+      checkCount: 11,
+      passed: 10,
+      warnings: 1,
+      criticalGzipBytes: 345678,
+    },
   });
   const packet = buildReviewPacket([contract, attestation]);
   const encoded = JSON.stringify(packet.payload);
@@ -182,12 +191,14 @@ test('contract audit and artifact attestation are minimized and secret-redacted 
   assert.equal(packet.payload.reports[0].contract.gameCount, 11);
   assert.equal(packet.payload.reports[0].checks.failed, 1);
   assert.equal(packet.payload.reports[1].qualityGate.contractFingerprint, 'a'.repeat(64));
+  assert.equal(packet.payload.reports[1].performanceGate.criticalGzipBytes, 345678);
+  assert.equal(packet.payload.reports[1].performanceGate.budgetFingerprint, 'e'.repeat(64));
   assert.equal(packet.payload.policy.sourceCodeIncluded, false);
   assert.equal(packet.payload.policy.playerDataIncluded, false);
   assert.equal(encoded.includes('sk-this-secret-must-never-leak'), false);
   assert.equal(encoded.includes('OPENAI_API_KEY='), false);
 });
-test('manual OpenAI workflow stays opt-in and includes contract plus artifact evidence', async () => {
+test('manual OpenAI workflow stays opt-in and includes contract, performance and artifact evidence', async () => {
   const workflow = await readFile(resolve('.github/workflows/osgard-ai-release-review.yml'), 'utf8');
   assert.match(workflow, /workflow_dispatch:/);
   assert.match(workflow, /type:\s*boolean\s*\n\s*default:\s*false/);
@@ -195,8 +206,9 @@ test('manual OpenAI workflow stays opt-in and includes contract plus artifact ev
   assert.ok(!/^\s{2}(?:pull_request|push):/m.test(workflow), 'OpenAI review must not run automatically on pushes or PRs');
   assert.ok(workflow.includes('npm run qa:contracts'), 'review workflow must generate contract evidence');
   assert.ok(workflow.includes('npm run release:attest') && workflow.includes('npm run release:verify'), 'review workflow must verify artifact attestation');
-  assert.ok(workflow.includes('--report release-readiness.json --report osgard-contract-audit.json --report release-attestation.json --send-to-openai'),
-    'review request must use the three minimized machine reports');
+  assert.ok(workflow.includes('npm run qa:performance-budget'), 'review workflow must measure the actual production bundle');
+  assert.ok(workflow.includes('--report release-readiness.json --report osgard-contract-audit.json --report osgard-performance-budget.json --report release-attestation.json --send-to-openai'),
+    'review request must use the four minimized machine reports');
   assert.ok(workflow.includes('The full qa:contracts command did not pass'), 'contract failure must become blocked evidence');
   assert.ok(workflow.includes("status:'blocked'"), 'attestation failure must become blocked evidence');
 });
