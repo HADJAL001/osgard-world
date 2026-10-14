@@ -58,7 +58,7 @@ await test('exports only the explicit allow-list and never reads credentials or 
   });
   const result = await core.createBackup(storage, webcrypto, encoder, new Date('2026-10-14T05:00:00.000Z'));
   const ids = result.backup.entries.map(item => item.id);
-  assert.deepEqual(ids, [...ids].sort());
+  assert.equal(JSON.stringify(ids), JSON.stringify([...ids].sort()));
   assert.equal(result.backup.format, 'osgard-player-vault');
   assert.equal(result.backup.schemaVersion, 1);
   assert.ok(ids.includes('catalog-favorites'));
@@ -71,7 +71,7 @@ await test('exports only the explicit allow-list and never reads credentials or 
     assert.ok(!JSON.stringify(result.backup).includes(forbidden), 'backup must not expose forbidden key: ' + forbidden);
   }
   const favorites = result.backup.entries.find(item => item.id === 'catalog-favorites');
-  assert.deepEqual(favorites.value, ['time', 'swarm']);
+  assert.equal(JSON.stringify(favorites.value), JSON.stringify(['time', 'swarm']));
   const world = result.backup.entries.find(item => item.id === 'inherit-world').value;
   assert.equal(world.objects.length, 1, 'invalid tool and out-of-bounds objects are dropped');
   assert.equal(world.objects[0].x, 15.23);
