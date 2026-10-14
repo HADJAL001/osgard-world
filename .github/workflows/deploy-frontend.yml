@@ -51,6 +51,7 @@ on:
       - "scripts/cascade-lab-robustness-lab-smoke.mjs"
       - "public/games/cascade-lab/robustness-lab.js"
       - "docs/32_CASCADE_LAB_0.22.0_TRAJECTORY_XRAY.md"
+      - "docs/33_CASCADE_LAB_0.26.0_ROBUSTNESS_LAB.md"
       - "scripts/game-detail-runtime-smoke.mjs"
       - "scripts/games-monetization-smoke.mjs"
       - "scripts/ecosystem-integrity-smoke.mjs"
