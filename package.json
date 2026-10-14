@@ -59,7 +59,9 @@
     "qa:games-expedition": "node scripts/games-expedition-smoke.mjs",
     "qa:cascade-lab-trajectory-xray": "node scripts/cascade-lab-trajectory-xray-smoke.mjs",
     "qa:cascade-lab-mission-director": "node scripts/cascade-lab-mission-director-smoke.mjs",
-    "qa:cascade-lab-evidence-integrity": "node scripts/cascade-lab-evidence-integrity-smoke.mjs"
+    "qa:cascade-lab-evidence-integrity": "node scripts/cascade-lab-evidence-integrity-smoke.mjs",
+    "qa:runtime-content": "node scripts/runtime-content-probe.mjs",
+    "qa:runtime-content-smoke": "node scripts/runtime-content-probe-smoke.mjs"
   },
   "dependencies": {
     "@types/three": "^0.186.0",
