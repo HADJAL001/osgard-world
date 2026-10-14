@@ -42,6 +42,7 @@ on:
       - "scripts/consented-analytics-queue-smoke.mjs"
       - "scripts/remix-growth-smoke.mjs"
       - "scripts/games-detail-smoke.mjs"
+      - "scripts/cascade-lab-experiment-dossier-smoke.mjs"
       - "scripts/game-detail-runtime-smoke.mjs"
       - "scripts/games-monetization-smoke.mjs"
       - "scripts/ecosystem-integrity-smoke.mjs"
@@ -83,6 +84,8 @@ jobs:
         run: npm run qa:consented-analytics-queue
       - name: Smoke-test individual game pages and SEO routes
         run: npm run qa:games-detail
+      - name: Validate CASCADE LAB experiment dossier export
+        run: npm run qa:cascade-lab-dossier
       - name: Test game session clock and iframe lifecycle trust boundaries
         run: npm run qa:game-detail-runtime
       - name: Verify REMIX growth funnel, attribution and sponsor safety
