@@ -465,6 +465,10 @@ export function GameDetailPage({ slug }: { slug: string }) {
       remember(game.id)
       setLoadingGame(true)
       setFrameError(false)
+      setFrameErrorKind(null)
+      setSlowLoad(false)
+      setSessionStatus('ready')
+      setSessionElapsedSeconds(0)
     }
   }, [playing, game?.id])
 
@@ -474,6 +478,22 @@ export function GameDetailPage({ slug }: { slug: string }) {
     syncFullscreen()
     return () => document.removeEventListener('fullscreenchange', syncFullscreen)
   }, [])
+
+  useEffect(() => {
+    if (!playing) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.defaultPrevented || event.repeat) return
+      const target = event.target as HTMLElement | null
+      if (target && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) return
+      event.preventDefault()
+      if (document.fullscreenElement === stageRef.current && typeof document.exitFullscreen === 'function') {
+        void document.exitFullscreen().catch(() => undefined)
+      }
+      setPlaying(false)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [playing])
 
   useEffect(() => {
     const onStorage = (event: StorageEvent) => {
@@ -646,6 +666,10 @@ export function GameDetailPage({ slug }: { slug: string }) {
     remember(game.id)
     frameValidatedRef.current = false
     setLoadingGame(true)
+    setFrameErrorKind(null)
+    setSlowLoad(false)
+    setSessionStatus('ready')
+    setSessionElapsedSeconds(0)
     setFrameError(false)
     setPlaying(true)
   }
@@ -672,6 +696,13 @@ export function GameDetailPage({ slug }: { slug: string }) {
     }
   }
 
+  const closePlayer = () => {
+    if (document.fullscreenElement === stageRef.current && typeof document.exitFullscreen === 'function') {
+      void document.exitFullscreen().catch(() => undefined)
+    }
+    setPlaying(false)
+  }
+
   const toggleFullscreen = () => {
     const stage = stageRef.current
     if (!stage) return
@@ -687,6 +718,7 @@ export function GameDetailPage({ slug }: { slug: string }) {
   if (!game) return <main className="gh-page gh-not-found"><a href="/games/"><ArrowLeft size={16} />{ru ? 'Вернуться в каталог' : 'Back to games'}</a><p className="gh-eyebrow">404 / WORLD NOT FOUND</p><h1>{ru ? 'Этого мира нет в каталоге.' : 'This world is not in the catalog.'}</h1><p>{ru ? 'Проверьте ссылку или выберите одну из доступных игр.' : 'Check the URL or choose one of the available games.'}</p><a className="gh-primary" href="/games">{ru ? 'Открыть игры' : 'Open games'}<ArrowRight size={16} /></a></main>
 
   const relatedGames = getRelatedGames(game, GAMES, { favorites, recent }, 3)
+  const iframeRenderAttempt = frameAttempt
 
   return <main className={'gh-page gh-detail-page gh-detail--' + game.theme}>
     <header className="gh-header">
@@ -705,12 +737,15 @@ export function GameDetailPage({ slug }: { slug: string }) {
         </section>
         <section className="gh-detail-info-grid"><article><p className="gh-eyebrow">01 / INPUT</p><h2>{ru ? 'Управление' : 'Controls'}</h2><p>{ru ? game.controlsRu : game.controlsEn}</p></article><article><p className="gh-eyebrow">02 / PLATFORM</p><h2>{ru ? 'Совместимость' : 'Compatibility'}</h2><p>{ru ? game.supportRu : game.supportEn}</p><small>{ru ? 'Фактическую производительность проверяйте на целевом устройстве и браузере.' : 'Verify actual performance on the target device and browser.'}</small></article><article><p className="gh-eyebrow">03 / FEATURES</p><h2>{ru ? 'Что внутри' : 'What is inside'}</h2><ul>{(ru ? game.featuresRu : game.featuresEn).map(feature => <li key={feature}><Check size={14} />{feature}</li>)}</ul></article></section>
       </> : <section className="gh-play-screen">
-        <div className="gh-play-toolbar"><div><span className="gh-play-live" /><strong>{gameTitle(game, locale)}</strong><small>{ru ? 'Игровая сессия' : 'Game session'}</small></div><div><a href={game.href} target="_blank" rel="noopener noreferrer">{ru ? 'Открыть в отдельной вкладке' : 'Open in new tab'}<ExternalLink size={14} /></a><button type="button" onClick={toggleFullscreen} aria-pressed={isFullscreen} aria-label={isFullscreen ? (ru ? 'Выйти из полноэкранного режима' : 'Exit fullscreen') : (ru ? 'На весь экран' : 'Fullscreen')}><Maximize2 size={15} />{isFullscreen ? (ru ? 'Выйти из полного экрана' : 'Exit fullscreen') : (ru ? 'На весь экран' : 'Fullscreen')}</button><button type="button" onClick={() => setPlaying(false)}><X size={15} />{ru ? 'Закрыть игру' : 'Close game'}</button></div></div>
-        <div className="gh-game-stage" ref={stageRef} tabIndex={-1} aria-label={ru ? 'Игровая сцена' : 'Game stage'}>
-          {loadingGame && !frameError && <div className="gh-game-loading" role="status" aria-live="polite"><span className="gh-loader" aria-hidden="true" /><p>{ru ? 'Подключаем игровой мир…' : 'Loading game world…'}</p></div>}
-          {frameError ? <div className="gh-game-error" role="alert"><p>{ru ? 'Не удалось загрузить встроенную игру.' : 'The embedded game could not be loaded.'}</p><div className="gh-game-error-actions"><button className="gh-secondary" type="button" onClick={() => { frameValidatedRef.current = false; setFrameError(false); setLoadingGame(true); setFrameAttempt(value => value + 1) }}>{ru ? 'Повторить запуск' : 'Retry launch'}</button><a className="gh-primary" href={game.href} target="_blank" rel="noopener noreferrer">{ru ? 'Открыть игру отдельно' : 'Open game separately'}<ExternalLink size={15} /></a></div></div> : <iframe key={frameAttempt} tabIndex={0} title={gameTitle(game, locale)} src={game.href} onLoad={() => {
+        <div className="gh-play-toolbar"><div><span className={'gh-play-live gh-play-live--' + sessionStatus} /><strong>{gameTitle(game, locale)}</strong><small aria-live="polite">{sessionStatus === 'active' ? (ru ? 'Сессия активна' : 'Session active') : sessionStatus === 'paused' ? (ru ? 'Пауза' : 'Paused') : sessionStatus === 'completed' ? (ru ? 'Раунд завершён' : 'Round completed') : sessionStatus === 'error' ? (ru ? 'Проблема запуска' : 'Launch issue') : loadingGame ? (ru ? 'Загрузка клиента' : 'Loading client') : (ru ? 'Клиент готов · начни игру внутри окна' : 'Client ready · start inside the game')}</small>{(sessionStatus === 'active' || sessionStatus === 'paused' || (sessionStatus === 'completed' && sessionElapsedSeconds > 0)) && <small className="gh-session-duration" aria-live="off" aria-label={ru ? 'Длительность игровой сессии' : 'Game session duration'}>{formatSessionDuration(sessionElapsedSeconds)}</small>}</div><div><a href={game.href} target="_blank" rel="noopener noreferrer">{ru ? 'Открыть в отдельной вкладке' : 'Open in new tab'}<ExternalLink size={14} /></a><button type="button" onClick={toggleFullscreen} aria-pressed={isFullscreen} aria-label={isFullscreen ? (ru ? 'Выйти из полноэкранного режима' : 'Exit fullscreen') : (ru ? 'На весь экран' : 'Fullscreen')}><Maximize2 size={15} />{isFullscreen ? (ru ? 'Выйти из полного экрана' : 'Exit fullscreen') : (ru ? 'На весь экран' : 'Fullscreen')}</button><button type="button" onClick={closePlayer}><X size={15} />{ru ? 'Закрыть игру' : 'Close game'}</button></div></div>
+        <div className="gh-game-stage" ref={stageRef} tabIndex={-1} aria-label={ru ? 'Игровая сцена' : 'Game stage'} aria-busy={loadingGame && !frameError}>
+          {loadingGame && !frameError && <div className="gh-game-loading" role="status" aria-live="polite" aria-atomic="true"><span className="gh-loader" aria-hidden="true" /><p>{slowLoad ? (ru ? 'Загрузка занимает больше обычного. Проверяем готовность…' : 'This is taking longer than usual. Checking readiness…') : (ru ? 'Подключаем игровой мир…' : 'Loading game world…')}</p><div className="gh-loading-meter" role="progressbar" aria-label={ru ? 'Загрузка игры' : 'Game loading'}><span /></div><small>{ru ? 'Если готовность не подтвердится за 18 секунд, появятся варианты восстановления.' : 'Recovery options appear if readiness is not confirmed within 18 seconds.'}</small></div>}
+          {frameError ? <div className="gh-game-error" role="alert" aria-live="assertive"><p>{gameFrameErrorLabel(frameErrorKind, locale)}</p><p>{ru ? 'Можно повторить запуск или открыть игру отдельно. Прогресс не считается потерянным.' : 'Retry or open the game separately. Progress is not assumed to be lost.'}</p><div className="gh-game-error-actions"><button className="gh-secondary" type="button" onClick={() => { frameValidatedRef.current = false; setFrameErrorKind(null); setSlowLoad(false); setSessionStatus('ready'); setSessionElapsedSeconds(0); setFrameError(false); setLoadingGame(true); setFrameAttempt(value => value + 1) }}>{ru ? 'Повторить запуск' : 'Retry launch'}</button><button className="gh-secondary" type="button" onClick={() => void shareGame()}><Share2 size={14} />{ru ? 'Поделиться ссылкой' : 'Share link'}</button><a className="gh-primary" href={game.href} target="_blank" rel="noopener noreferrer">{ru ? 'Открыть игру отдельно' : 'Open game separately'}<ExternalLink size={15} /></a></div></div> : <iframe key={frameAttempt} tabIndex={0} title={gameTitle(game, locale)} src={game.href} onLoad={() => {
+            const attempt = iframeRenderAttempt
             let attempts = 0
             const validateFrame = () => {
+              if (frameAttemptRef.current !== attempt || !playingRef.current || frameErrorRef.current) return
+              frameValidationTimerRef.current = null
               try {
                 const frame = stageRef.current?.querySelector('iframe')
                 const frameDocument = frame?.contentDocument
@@ -740,8 +775,12 @@ export function GameDetailPage({ slug }: { slug: string }) {
                             ? Boolean(frameDocument?.querySelector('#board') && frameDocument?.querySelector('#challenge-code'))
                             : (titleChecks[game.id]?.test(frameTitle) ?? false)
                 if (validTitle) {
+                  frameValidationTimerRef.current = null
                   frameValidatedRef.current = true
                   setLoadingGame(false)
+                  setFrameErrorKind(null)
+                  setSlowLoad(false)
+                  setSessionStatus('ready')
                   frameReadyCallback.current?.()
                   return
                 }
@@ -749,18 +788,24 @@ export function GameDetailPage({ slug }: { slug: string }) {
                 // instead of interpreting the initial HTML shell as a failed launch.
                 if (attempts < 20) {
                   attempts += 1
-                  window.setTimeout(validateFrame, 250)
+                  frameValidationTimerRef.current = window.setTimeout(validateFrame, 250)
                   return
                 }
                 setLoadingGame(false)
+                setFrameErrorKind('invalid-content')
+                setSessionStatus('error')
+                setSlowLoad(false)
                 setFrameError(true)
               } catch {
                 setLoadingGame(false)
+                setFrameErrorKind('invalid-content')
+                setSessionStatus('error')
+                setSlowLoad(false)
                 setFrameError(true)
               }
             }
             validateFrame()
-          }} onError={() => { frameValidatedRef.current = false; setLoadingGame(false); setFrameError(true); setNotice(ru ? 'Браузер не смог загрузить игровой клиент.' : 'The browser could not load the game client.') }} allow="fullscreen; gamepad; clipboard-write" allowFullScreen loading="eager" referrerPolicy="strict-origin-when-cross-origin" aria-describedby="gh-play-note" />}
+          }} onError={() => { frameValidatedRef.current = false; frameValidationTimerRef.current = null; setLoadingGame(false); setFrameErrorKind('load-event'); setSessionStatus('error'); setSlowLoad(false); setFrameError(true); setNotice(ru ? 'Браузер не смог загрузить игровой клиент.' : 'The browser could not load the game client.') }} allow="fullscreen; gamepad; clipboard-write" allowFullScreen loading="eager" referrerPolicy="strict-origin-when-cross-origin" aria-describedby="gh-play-note" />}
         </div>
         <p id="gh-play-note" className="gh-play-note">{ru ? 'Игра выполняется в отдельном встроенном окне. Если управление или сетевой режим работают некорректно, откройте её в отдельной вкладке.' : 'The game runs in an embedded frame. If controls or network play do not work correctly, open it in a separate tab.'}</p>
       </section>}
