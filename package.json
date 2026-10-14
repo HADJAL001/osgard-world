@@ -23,6 +23,7 @@
     "qa:time-ui": "node scripts/time-prototype-smoke.mjs",
     "qa:null-shift": "node scripts/null-shift-premium-smoke.mjs",
     "qa:games-portal": "node scripts/games-portal-smoke.mjs",
+    "qa:entertainment": "node scripts/entertainment-hub-smoke.mjs",
     "qa:games-detail": "node scripts/games-detail-smoke.mjs",
     "qa:games-operations": "node scripts/games-operations-smoke.mjs",
     "qa:game-recommendations": "node scripts/game-recommendations-smoke.mjs",
