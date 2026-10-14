@@ -6,6 +6,7 @@ const base = new URL('../public/games/', import.meta.url);
 const js = await readFile(new URL('player-console.js', base), 'utf8');
 const css = await readFile(new URL('player-console.css', base), 'utf8');
 const loader = await readFile(new URL('luxury.js', base), 'utf8');
+const productionMatrix = await readFile(new URL('./production-route-matrix.mjs', import.meta.url), 'utf8');
 
 test('Player Console is lazy-loaded by the existing catalogue enhancement', () => {
   assert.match(loader, /player-console\.js/);
@@ -80,6 +81,12 @@ test('the interface has responsive touch and reduced-motion contracts', () => {
   assert.match(css, /og-pc-reduced-motion/);
   assert.match(css, /og-pc-high-contrast/);
   assert.match(css, /--og-pc-scale/);
+});
+test('production route matrix checks the published Player Lab assets', () => {
+  assert.ok(productionMatrix.includes("'/games/player-console.js'"), 'JS asset is included in the production route matrix');
+  assert.ok(productionMatrix.includes("'/games/player-console.css'"), 'CSS asset is included in the production route matrix');
+  assert.ok(productionMatrix.includes("text.includes('window.OSGARDPlayerConsole')"), 'Production smoke must identify the Player Lab JavaScript bundle');
+  assert.ok(productionMatrix.includes("text.includes('.og-pc-high-contrast')"), 'Production smoke must identify the Player Lab stylesheet');
 });
 test('all UI content is constructed without interpolating untrusted HTML', () => {
   assert.match(js, /\.textContent\s*=\s*[^;\n]*game\.title/, 'Game titles must be inserted through a textContent sink');
