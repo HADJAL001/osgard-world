@@ -29,7 +29,7 @@
   const dateKey = (value = Date.now()) => new Date(value).toISOString().slice(0, 10);
   const monotonicNow = () => typeof performance !== 'undefined' && typeof performance.now === 'function' ? performance.now() : Date.now();
   function isValidDateKey(value) {
-    if (typeof value !== 'string' || !/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;
+    if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
     const date = new Date(value + 'T00:00:00.000Z');
     return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
   }
