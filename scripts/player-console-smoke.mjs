@@ -51,6 +51,17 @@ test('lifetime Player Lab aggregates survive the bounded recent-launch log', () 
   assert.match(js, /const days = stats\.activityDays\.length/);
   assert.match(js, /return \{ schema: 1, launches, totalLaunches, gameIdsEver, activityDays, secondsByGame, completions \}/, 'Exports/imports must preserve the validated aggregates');
 });
+test('activity-day validator accepts real calendar dates and rejects impossible ones', () => {
+  const helper = js.match(/function isValidDateKey\\(value\\) \\{[\\s\\S]*?\\n  \\}/)?.[0];
+  assert.ok(helper, 'Player Lab must define a strict activity-day validator');
+  const validate = new Function(helper + '; return isValidDateKey;')();
+  assert.equal(validate('2026-10-14'), true);
+  assert.equal(validate('2024-02-29'), true);
+  assert.equal(validate('2026-02-29'), false);
+  assert.equal(validate('2026-02-30'), false);
+  assert.equal(validate('2026-1-2'), false);
+  assert.equal(validate('not-a-date'), false);
+});
 test('Player Lab measures visible game time with a monotonic clock', () => {
   assert.match(js, /const monotonicNow = \(\) =>[\s\S]*performance\.now\(\)/);
   assert.match(js, /activeStartedMonotonic = monotonicNow\(\)/);
