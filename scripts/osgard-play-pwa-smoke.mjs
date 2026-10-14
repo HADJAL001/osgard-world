@@ -65,10 +65,12 @@ assert.equal(precachePaths.length, new Set(precachePaths).size, 'PWA precache mu
 const staticAllowlistStart = sw.indexOf('const PUBLIC_STATIC_ALLOWLIST = new Set([');
 const staticAllowlistEnd = sw.indexOf(']);', staticAllowlistStart);
 const staticAllowlist = sw.slice(staticAllowlistStart, staticAllowlistEnd);
-for (const path of ['/games/luxury.css', '/games/sponsored-campaigns.css', '/games/favicon.svg']) {
+for (const path of ['/games/luxury.css', '/games/sponsored-campaigns.css', '/games/favicon.svg','/games/expedition/core.js','/games/expedition/app.js','/games/expedition/catalog-runtime.js','/games/expedition/expedition.css']) {
   assert.ok(precachePaths.includes(path), 'Core public shell asset must be precached: ' + path);
   assert.ok(staticAllowlist.includes("'" + path + "'"), 'Core public shell asset must be allowed for cached fallback: ' + path);
 }
+assert.ok(precachePaths.includes('/games/expedition/') && precachePaths.includes('/games/expedition/index.html'), 'The expedition builder shell must remain available offline');
+assert.ok(sw.includes("url.pathname === '/games/expedition/'") && sw.includes("cache.match('/games/expedition/')"), 'Offline navigation should return the cached expedition builder when available');
 assert.ok(sw.includes("cache.put('/games/'") && sw.includes('ignoreSearch: true'));
 assert.ok(sw.includes('CACHE_PREFIX') && sw.includes('caches.delete(name)'));
 assert.ok(!sw.includes("caches.match(request) || fetch(request)"), 'Do not use a stale generic cache-first strategy for the entire site.');

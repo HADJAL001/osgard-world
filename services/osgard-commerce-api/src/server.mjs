@@ -819,7 +819,11 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
           (SELECT COUNT(*) FROM invite_shares)::int AS "inviteShares",
           (SELECT COUNT(*) FROM invite_shares s JOIN invite_opens o USING (invite_code))::int AS "referralOpens",
           (SELECT COUNT(*) FROM invite_shares s JOIN invite_starts r USING (invite_code))::int AS "referredStarts",
-          (SELECT COUNT(*) FROM invite_shares s JOIN invite_completions c USING (invite_code))::int AS "referredCompletions"
+          (SELECT COUNT(*) FROM invite_shares s JOIN invite_completions c USING (invite_code))::int AS "referredCompletions",
+          COUNT(*) FILTER (WHERE event_name = 'expedition_route_created')::int AS "expeditionRoutesCreated",
+          COUNT(*) FILTER (WHERE event_name = 'expedition_link_opened')::int AS "expeditionLinkOpens",
+          COUNT(*) FILTER (WHERE event_name = 'expedition_share_intent')::int AS "expeditionShareIntents",
+          COUNT(*) FILTER (WHERE event_name = 'expedition_stage_completed')::int AS "expeditionStageCompletions"
         FROM recent_events
       `),
       pool.query(`
