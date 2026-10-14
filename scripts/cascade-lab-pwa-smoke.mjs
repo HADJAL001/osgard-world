@@ -10,6 +10,7 @@ assert.equal(manifest.name,'CASCADE LAB — Premium Physics Lab');assert.equal(m
 const b=worker.match(/const PRECACHE=\[([\s\S]*?)\];/);assert.ok(b);const paths=[...b[1].matchAll(/'([^']+)'/g)].map(m=>m[1]);
 for(const p of ['./','./index.html','./manifest.webmanifest','./lab-icon.svg'])assert.ok(paths.includes(p));
 for(const [,src] of html.matchAll(/<script\b[^>]*\bsrc="([^"]+)"/g)){assert.ok(paths.includes(src),'Module must be in offline cache: '+src);assert.ok(existsSync(resolve(root,src.replace(/^\.\//,'').split('?')[0])));}
+assert.ok(paths.includes('./counterfactual-foundry.js?v=0.26.0')&&existsSync(resolve(root,'counterfactual-foundry.js')),'Counterfactual Foundry must be installed into the offline app shell');
 assert.ok(worker.includes("r.method!=='GET'")&&worker.includes("r.mode==='navigate'")&&worker.includes('Response.error()'));
 const S='https://osgard.world/games/cascade-lab/',events=Object.create(null),data=new Map();
 const response=(body,status=200)=>({body,status,ok:status>=200&&status<300,clone(){return this}});
