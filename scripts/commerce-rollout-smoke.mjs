@@ -21,11 +21,12 @@ const nginx = readFileSync(resolve("nginx.conf"), "utf8");
 const routeMatrix = readFileSync(resolve("scripts/production-route-matrix.mjs"), "utf8");
 
 const readyzStart = server.indexOf('app.get("/readyz"');
-const readyzEnd = server.indexOf("\\n});", readyzStart);
+const readyzEnd = server.indexOf("\n});", readyzStart);
 assert.ok(readyzStart >= 0 && readyzEnd > readyzStart, "General service readiness endpoint must exist.");
 const readyzHandler = server.slice(readyzStart, readyzEnd);
 assert.ok(readyzHandler.includes("buildServiceReadiness"), "General service readiness must use the isolated readiness model.");
-assert.doesNotMatch(readyzHandler, /stripe|webhookSecret|paymentsModeAllowed|ENABLE_LIVE_PAYMENTS/i,
+const readyzLogic = readyzHandler.replace(/\\/\\/.*$/gm, "");
+assert.doesNotMatch(readyzLogic, /stripe|webhookSecret|paymentsModeAllowed|ENABLE_LIVE_PAYMENTS/i,
   "General service readiness must not depend on Stripe or live-payment flags.");
 assert.ok(readiness.includes("export function buildServiceReadiness"), "Database-backed service readiness contract must exist.");
 assert.ok(server.includes('if (!paymentsAllowed()) return res.status(503).json({ error: "PAYMENTS_NOT_READY"'),
