@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#080a0b">
-  <meta name="description" content="Интерактивная модель монетизации игр OSGARD. Три сценария расчёта на изменяемых допущениях — не фактическая статистика и не обещание дохода.">
+  <meta name="description" content="OSGARD Revenue Intelligence: сценарии, риск-диапазоны P10/P50/P90, безубыточность, чувствительность и локальное сравнение финансовых допущений. Не фактическая выручка.">
   <meta property="og:title" content="OSGARD PLAY — модель экономики игр">
   <meta property="og:description" content="Расчётный инструмент для оценки рекламной выручки, покупок, заявок на разработку и операционных расходов.">
   <link rel="canonical" href="https://osgard.world/games/monetization/">
   <link rel="icon" href="/games/favicon.svg" type="image/svg+xml">
-  <title>Экономика OSGARD PLAY — сценарная модель</title>
+  <title>OSGARD Revenue Intelligence — сценарии и безубыточность</title>
   <style>
     :root{color-scheme:dark;--bg:#080a0b;--panel:#101415;--panel2:#0c1010;--ink:#f2f0e8;--muted:#a0a69b;--line:#ffffff20;--acid:#d3ff69;--metal:#d2c9b4;--danger:#ff9b91;--mono:ui-monospace,Consolas,monospace;--serif:Georgia,serif;--sans:Inter,Geist,system-ui,-apple-system,"Segoe UI",sans-serif}
     *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:90px}body{margin:0;background:radial-gradient(ellipse at 78% 0%,#9cc16812,transparent 31%),var(--bg);color:var(--ink);font:14px/1.6 var(--sans);-webkit-font-smoothing:antialiased}a{color:inherit;text-decoration:none}button,input{font:inherit}button,a,input{outline-offset:3px}button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--acid)}.shell{width:min(1280px,100%);margin:auto;padding-inline:clamp(18px,4vw,58px)}
@@ -123,6 +123,7 @@
               <button class="btn" id="load-snapshot" type="button">Загрузить</button>
               <button class="btn" id="compare-snapshot" type="button">Сравнить с текущим</button>
               <button class="btn" id="delete-snapshot" type="button">Удалить</button>
+              <button class="btn" id="import-model-json" type="button">Импорт JSON</button><input id="import-model-file" type="file" accept=".json,application/json" hidden>
             </div>
             <p id="snapshot-status" class="snapshot-status" role="status" aria-live="polite">Сценарии остаются на этом устройстве.</p>
             <div id="snapshot-comparison" class="snapshot-comparison" aria-live="polite"></div>
@@ -194,7 +195,7 @@
       </div>
       <ul class="model-notes"><li>Осторожный сценарий снижает трафик, запуск игр, сессии, заполнение, eCPM, покупки и закрытие заказов; расходы повышаются.</li><li>Оптимистичный сценарий моделирует масштабирование, но не является целью или гарантией. Измеренные значения должны заменить начальные множители.</li><li>Premium использует отдельную конверсию, цену и месячный отток. Выручка первого года рассчитывается по подписочным когортам; MRR к 12-му месяцу показан отдельно. Весь расчёт остаётся условным до включения защищённого checkout.</li><li>Рекламные показы должны оставаться добровольными и не мешать управлению игрой. Вознаграждение за рекламу не включено, пока нет подтверждения просмотра и серверной защиты повторной выдачи.</li><li>На странице не собираются персональные данные, заявки или аналитические события. JSON-экспорт содержит только допущения и вычисленные значения.</li></ul>
     </section>
-    <footer><span>OSGARD PLAY / GROWTH LAB · ВЕРСИЯ МОДЕЛИ 2</span><nav><a href="/games/">Каталог игр</a><a href="/privacy/">Конфиденциальность</a><a href="/terms/">Условия</a><a href="/development">Разработка продуктов</a></nav></footer>
+    <footer><span>OSGARD PLAY / REVENUE INTELLIGENCE · MODEL 7</span><nav><a href="/games/">Каталог игр</a><a href="/privacy/">Конфиденциальность</a><a href="/terms/">Условия</a><a href="/development">Разработка продуктов</a></nav></footer>
   </main>
   <script type="module" src="/games/monetization/app.js"></script>
 </body>
