@@ -33,7 +33,7 @@ assert.equal(ids.length,11,'Registry must list all eleven current games');
 assert.equal(new Set(ids).size,11,'Every game must have a unique ID');
 for(const id of ['null-shift','time','swarm','inherit','remix','civic-cascade','patina','signal-run','cascade-lab','afterimage-run','aether-grid'])assert.ok(ids.includes(id),'Missing game '+id);
 for(const route of ['/games/command-deck/','/games/command-deck/command-deck.css','/games/command-deck/command-deck.js'])assert.ok(routeMatrix.includes("'"+route+"'"),'Production matrix missing route '+route);
-assert.ok(sitemap.includes('https://osgard.world/games/command-deck/'),'Sitemap missing Command Deck');
+assert.ok(!sitemap.includes('https://osgard.world/games/command-deck/'),'Noindex operator tool must stay out of the public sitemap');
 assert.ok(hub.includes('href="/games/command-deck/"'),'Games hub navigation missing Command Deck');
 assert.equal(packageJson.scripts['qa:command-deck'],'node scripts/command-deck-smoke.mjs','QA script is not registered');
 assert.ok(packageJson.scripts['qa:games-model'].includes('qa:command-deck'),'Model QA must run Command Deck tests');
