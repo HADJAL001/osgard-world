@@ -1,3 +1,4 @@
+import './recommendations.css'
 import { ArrowUpRight, Compass } from 'lucide-react'
 import { useMemo } from 'react'
 import { nextRecommendation } from './core/recommendations'
