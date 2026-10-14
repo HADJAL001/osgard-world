@@ -574,7 +574,7 @@ export function GameDetailPage({ slug }: { slug: string }) {
       if (!summary) { sessionTelemetryAllowed = false; return }
       const durationSeconds = Math.floor(summary.durationMs / 1000)
       setSessionElapsedSeconds(durationSeconds)
-      setSessionStatus(reason === 'game_completed' ? 'completed' : reason === 'game_error' ? 'error' : 'ready')
+      setSessionStatus(reason === 'game_completed' ? 'completed' : ['game_error', 'launch_timeout'].includes(reason) ? 'error' : 'ready')
       if (sessionTelemetryAllowed) track('game_session_completed', { game: game.id, surface: 'game-detail', durationSeconds, endReason: reason, startMethod }, consentRef.current)
       sessionTelemetryAllowed = false
     }
