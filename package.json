@@ -69,7 +69,8 @@
     "qa:game-coach": "node --test services/osgard-commerce-api/test/game-coach.test.mjs && node --check services/osgard-commerce-api/src/game-coach.mjs && node --check services/osgard-commerce-api/src/server.mjs && node --check public/games/game-session-recommendations.js && node scripts/game-coach-smoke.mjs",
     "qa:ai-release-review": "node --test scripts/osgard-ai-release-review.test.mjs",
     "qa:null-shift-diagnostics-contract": "node scripts/null-shift-diagnostics-contract-smoke.mjs",
-    "qa:release-manifest": "node scripts/frontend-archive-preflight-smoke.mjs"
+    "qa:release-manifest": "node scripts/frontend-archive-preflight-smoke.mjs",
+    "qa:owned-promo-config": "node scripts/owned-promo-config-smoke.mjs"
   },
   "dependencies": {
     "@types/three": "^0.186.0",
