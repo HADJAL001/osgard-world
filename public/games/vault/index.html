@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#080a09">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="no-referrer">
+<meta name="description" content="OSGARD PLAYER VAULT — локальная резервная копия поддерживаемого игрового прогресса. Без передачи данных на сервер.">
+<link rel="icon" href="/games/favicon.svg" type="image/svg+xml">
+<title>PLAYER VAULT — OSGARD PLAY</title>
+<style>
+:root{color-scheme:dark;--bg:#080a09;--panel:#101512;--panel2:#151c17;--ink:#f2f1e9;--muted:#a1a99d;--line:#ffffff20;--acid:#d3ff69;--metal:#d2c9b4;--blue:#9de7df;--warn:#ffd18b;--bad:#ff958e;--good:#b8ed91;--mono:ui-monospace,Consolas,monospace;--serif:Georgia,"Times New Roman",serif;--sans:Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse at 80% -8%,#d3ff6914,transparent 37%),radial-gradient(ellipse at 0% 55%,#79b4ff0a,transparent 42%),var(--bg);color:var(--ink);font:14px/1.7 var(--sans);-webkit-font-smoothing:antialiased}a{color:var(--acid);text-underline-offset:4px}button,input{font:inherit}button,a,input{outline-offset:4px}button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--acid)}button{cursor:pointer}.wrap{width:min(1120px,calc(100% - 32px));margin:auto}.skip{position:absolute;left:14px;top:8px;z-index:100;padding:9px 12px;background:var(--acid);color:#11150d;transform:translateY(-180%)}.skip:focus{transform:none}.top{height:72px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:18px}.brand{display:inline-flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none;font:650 12px var(--mono);letter-spacing:.13em}.brand svg{width:34px;height:34px;color:var(--acid)}.brand small{display:block;color:var(--muted);font-size:9px;letter-spacing:.17em;margin-top:4px}.nav{display:flex;gap:18px;align-items:center}.nav a{font-size:11px;color:var(--muted);text-decoration:none}.nav a:hover{color:var(--acid)}.menu{display:none;width:42px;height:42px;border:1px solid var(--line);border-radius:7px;background:#ffffff05;color:var(--ink)}.mobile-nav{border-bottom:1px solid var(--line);padding:8px 4px 14px}.mobile-nav[hidden]{display:none}.mobile-nav a{display:block;text-decoration:none;padding:10px 3px;border-bottom:1px solid #ffffff12;color:var(--muted)}
+.eyebrow{color:var(--acid);font:10px var(--mono);letter-spacing:.17em;text-transform:uppercase}.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,.55fr);gap:36px;align-items:end;padding:clamp(50px,8vw,90px) 0 42px;border-bottom:1px solid var(--line)}.hero h1{font:400 clamp(46px,7.5vw,90px)/.91 var(--serif);letter-spacing:-.065em;margin:17px 0 23px}.hero h1 em{color:var(--metal);font-style:normal}.lede{max-width:680px;color:#bbc0b5;font-size:15px;line-height:1.85;margin:0}.hero-note{border:1px solid #d3ff6940;background:linear-gradient(145deg,#d3ff6910,transparent 68%),var(--panel);padding:21px;border-radius:8px}.hero-note b{color:var(--acid);font:10px var(--mono);letter-spacing:.12em}.hero-note p{color:var(--muted);font-size:12px;line-height:1.8;margin:9px 0 0}.hero-note .local-label{display:inline-flex;align-items:center;gap:8px;margin-top:16px;color:var(--blue);font:10px var(--mono)}.local-label i{width:6px;height:6px;border-radius:50%;background:var(--blue);box-shadow:0 0 14px #9de7df70}
+.section{padding:34px 0;border-bottom:1px solid var(--line)}.section-head{display:flex;justify-content:space-between;align-items:end;gap:18px;margin-bottom:18px}.section h2{font:400 clamp(27px,4vw,40px)/1.1 var(--serif);letter-spacing:-.045em;margin:0}.section-head p{color:var(--muted);font-size:12px;margin:8px 0 0;max-width:690px}.kicker{color:var(--acid);font:10px var(--mono);letter-spacing:.15em;margin:0 0 8px}.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:17px 0}.metric{min-height:95px;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:15px}.metric span{display:block;font:10px var(--mono);color:var(--muted);letter-spacing:.08em}.metric strong{font:400 30px/1.3 var(--serif);display:block;margin-top:5px}.metric small{font-size:10px;color:var(--muted)}.state{border:1px solid var(--line);border-radius:100px;padding:6px 11px;font:10px var(--mono);color:var(--muted);white-space:nowrap}.state[data-kind=good]{border-color:#b8ed9145;color:var(--good)}.state[data-kind=bad]{border-color:#ff958e50;color:var(--bad)}.vault-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.vault-row{display:flex;align-items:center;gap:12px;border:1px solid var(--line);background:#ffffff03;border-radius:8px;padding:13px;min-width:0}.vault-mark{display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;border:1px solid #d3ff6944;border-radius:8px;color:var(--acid);font:12px var(--mono)}.vault-row-copy{flex:1;min-width:0}.vault-row-copy strong{display:block;font-size:12px;font-weight:600}.vault-row-copy small{display:block;color:var(--muted);font-size:10px;overflow-wrap:anywhere}.vault-row-state{font:9px var(--mono);color:var(--blue);letter-spacing:.08em}.empty{grid-column:1/-1;border:1px dashed var(--line);padding:20px;text-align:center;color:var(--muted);font-size:12px;margin:0}
+.actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:17px}.btn{min-height:44px;border:1px solid var(--line);border-radius:7px;background:#ffffff05;color:var(--ink);padding:11px 16px;font-size:11px;font-weight:650;display:inline-flex;align-items:center;justify-content:center;gap:9px}.btn.primary{background:var(--acid);border-color:var(--acid);color:#11150d}.btn:hover:not(:disabled){transform:translateY(-1px);border-color:#d3ff6990}.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}.status{min-height:22px;font-size:11px;color:var(--muted);margin:12px 0 0;overflow-wrap:anywhere}.status[data-kind=good]{color:var(--good)}.status[data-kind=error]{color:var(--bad)}.status[data-kind=warn]{color:var(--warn)}.restore-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.panel{border:1px solid var(--line);background:linear-gradient(145deg,#ffffff05,transparent 50%),var(--panel);border-radius:9px;padding:21px;min-width:0}.panel h3{font:400 24px var(--serif);margin:0}.panel .intro{font-size:11px;color:var(--muted);margin:7px 0 16px}.file-input{display:block;width:100%;padding:12px;background:#080b09;border:1px solid #ffffff27;border-radius:7px;color:var(--muted);font-size:11px}.meta{font:10px var(--mono);color:var(--blue);margin:12px 0}.confirm{display:flex;align-items:flex-start;gap:10px;color:#ccd0c4;font-size:11px;margin-top:14px}.confirm input{width:18px;height:18px;accent-color:var(--acid);flex:0 0 auto;margin-top:0}.notice-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.notice{padding:16px;border:1px solid var(--line);background:#ffffff03;border-radius:8px}.notice strong{display:block;font-size:12px}.notice p{font-size:11px;color:var(--muted);margin:7px 0 0;line-height:1.75}.notice.warning{border-color:#ffd18b4d}.notice.warning strong{color:var(--warn)}.foot{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;color:var(--muted);font-size:10px;padding:25px 0 36px}.foot nav{display:flex;gap:16px;flex-wrap:wrap}.foot a{color:var(--muted)}.foot a:hover{color:var(--acid)}
+@media(max-width:760px){.wrap{width:calc(100% - 26px)}.nav{display:none}.menu{display:block}.hero{grid-template-columns:1fr;gap:20px;padding-top:48px}.hero h1{font-size:clamp(47px,13vw,72px)}.section{padding:27px 0}.section-head{align-items:start;flex-direction:column}.metrics{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.metric{padding:11px;min-height:84px}.metric strong{font-size:26px}.metric span{font-size:9px}.vault-list,.restore-grid{grid-template-columns:1fr}.notice-grid{grid-template-columns:1fr}.panel{padding:16px}.actions .btn{flex:1}.top{height:64px}}
+@media(max-width:390px){.metrics{grid-template-columns:1fr}.metric{min-height:68px;display:flex;justify-content:space-between;align-items:center;gap:12px}.metric strong{margin:0}.vault-row-state{display:none}.actions{display:grid;grid-template-columns:1fr}.actions .btn{width:100%}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Перейти к содержимому</a>
+<div class="wrap">
+<header class="top">
+<a class="brand" href="/games/" aria-label="OSGARD PLAY — каталог игр">
+<svg viewBox="0 0 36 36" aria-hidden="true"><path d="M18 2 32 10v16L18 34 4 26V10Z M18 9 25 13v10l-7 4-7-4V13Z" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>
+<span>OSGARD <small>WORLD / PLAYER VAULT</small></span>
+</a>
+<nav class="nav" aria-label="Главная навигация"><a href="/games/">Каталог игр ↗</a><a href="/games/player-console.js">Player Console ↗</a><a href="/games/diagnostics/">Диагностика ↗</a></nav>
+<button class="menu" id="menu-toggle" aria-controls="mobile-nav" aria-expanded="false" aria-label="Открыть меню">☰</button>
+</header>
+<nav class="mobile-nav" id="mobile-nav" aria-label="Мобильная навигация" hidden><a href="/games/">Каталог игр ↗</a><a href="/games/player-console.js">Player Console ↗</a><a href="/games/diagnostics/">Диагностика ↗</a></nav>
+<main id="main">
+<section class="hero">
+<div>
+<p class="eyebrow">OSGARD PLAY / PLAYER OWNERSHIP</p>
+<h1>Твои миры.<br><em>Твои данные.</em></h1>
+<p class="lede">Сохраняй поддерживаемый локальный прогресс в переносимый файл и восстанавливай его на другом устройстве. Без аккаунта, скрытой отправки на сервер и передачи ключей доступа.</p>
+</div>
+<aside class="hero-note">
+<b>LOCAL FIRST / СНАЧАЛА У ТЕБЯ</b>
+<p>Этот инструмент читает только явно разрешённые игровые записи на текущем домене. Он не сканирует другие сайты, не подключается к API и не меняет данные до подтверждённого восстановления.</p>
+<span class="local-label"><i></i> Только локальная обработка</span>
+</aside>
+</section>
+
+<section class="section" aria-labelledby="inventory-title">
+<div class="section-head">
+<div><p class="kicker">01 / INVENTORY</p><h2 id="inventory-title">Локальные сохранения</h2><p>Показываем только поддерживаемые записи. Неизвестные ключи, настройки согласия, токены, платёжные данные и временные сессии не включаются в резервную копию.</p></div>
+<span class="state" id="storage-state" role="status">Проверяем хранилище…</span>
+</div>
+<div class="metrics">
+<div class="metric"><span>SUPPORTED ITEMS</span><strong id="supported-count">—</strong><small>поддерживаемых записей</small></div>
+<div class="metric"><span>SKIPPED</span><strong id="skipped-count">—</strong><small>повреждённых значений</small></div>
+<div class="metric"><span>TRANSFER MODE</span><strong>LOCAL</strong><small>без серверного запроса</small></div>
+</div>
+<div class="vault-list" id="current-items"></div>
+<div class="actions"><button class="btn primary" id="download-backup" type="button">Скачать резервную копию ↓</button><button class="btn" id="backup-current-first" type="button">Сначала сохранить текущее состояние ↗</button><button class="btn" id="inventory-refresh" type="button">Обновить список ↻</button><button class="btn" id="print-summary" type="button">Скачать отчёт о составе</button></div>
+<p class="status" id="inventory-status" role="status" aria-live="polite">Резервная копия — обычный JSON-файл, не зашифрованный архив.</p>
+</section>
+
+<section class="section" aria-labelledby="restore-title">
+<div class="section-head"><div><p class="kicker">02 / VERIFIED RESTORE</p><h2 id="restore-title">Проверить и восстановить</h2><p>Файл сначала проверяется и показывается списком. До нажатия кнопки восстановления локальные данные не изменяются.</p></div></div>
+<div class="restore-grid">
+<section class="panel" aria-labelledby="file-title">
+<h3 id="file-title">01. Выбери файл</h3>
+<p class="intro">Поддерживается файл OSGARD PLAYER VAULT v1 размером до 1 MiB. Контрольная сумма SHA-256 проверяет случайное повреждение, но не подтверждает автора файла.</p>
+<input class="file-input" id="backup-file" type="file" accept=".json,application/json" aria-label="Выбрать JSON резервной копии">
+<p class="meta" id="backup-metadata">Файл ещё не проверен</p>
+<div class="vault-list" id="preview-items"><p class="empty">Выберите JSON-файл, чтобы проверить его перед восстановлением.</p></div>
+<div class="actions"><button class="btn" id="clear-file" type="button">Сбросить выбор</button></div>
+</section>
+<section class="panel" aria-labelledby="apply-title">
+<h3 id="apply-title">02. Подтверди перенос</h3>
+<p class="intro">Если на устройстве уже есть поддерживаемые данные, сначала обязательно скачай резервную копию именно текущего состояния. Это помогает вернуть прежний прогресс при ошибке или выборе не того файла.</p>
+<div class="notice warning"><strong>Не заменяем неизвестные данные</strong><p>Восстанавливаются только записи из проверенного файла. Остальные ключи не удаляются. Вход, согласия, аналитика, приглашения и платежи не переносятся.</p></div>
+<label class="confirm"><input id="restore-confirm" type="checkbox"><span>Я проверил список, понимаю, что одноимённые поддерживаемые записи будут заменены значениями из файла, и хочу продолжить.</span></label>
+<div class="actions"><button class="btn primary" id="restore-button" type="button" disabled>Восстановить выбранные данные ↻</button></div>
+<p class="status" id="restore-status" role="status" aria-live="polite">Сначала выберите файл.</p>
+</section>
+</div>
+</section>
+
+<section class="section" aria-labelledby="scope-title">
+<div class="section-head"><div><p class="kicker">03 / HONEST SCOPE</p><h2 id="scope-title">Что входит в Vault</h2><p>Поддержка определяется реальными адаптерами, а не количеством игр в каталоге. Остальные игровые миры могут использовать собственное хранилище, сервер или IndexedDB и этим инструментом пока не резервируются.</p></div></div>
+<div class="notice-grid">
+<article class="notice"><strong>Каталог OSGARD PLAY</strong><p>Избранные игры, если они сохранены в этом браузере.</p></article>
+<article class="notice"><strong>INHERIT</strong><p>Локальное состояние мира, отметки пути, имя автора и последнее отмеченное поколение. Перед импортом поля мира проходят строгую проверку.</p></article>
+<article class="notice"><strong>SIGNAL RUN</strong><p>Дневная серия и сохранённые результаты, у которых дата и число проходят валидацию.</p></article>
+</div>
+</section>
+
+<section class="section" aria-labelledby="safe-title">
+<div class="section-head"><div><p class="kicker">04 / PRIVACY & SAFETY</p><h2 id="safe-title">Твои данные остаются у тебя</h2></div></div>
+<div class="notice-grid">
+<article class="notice"><strong>Никакой загрузки</strong><p>Файл создаётся и читается внутри вкладки. Нет запросов к API, аналитике или рекламным системам.</p></article>
+<article class="notice"><strong>Секреты исключены</strong><p>Токены, настройки согласия, очереди аналитики, коды приглашений, параметры API и sessionStorage находятся вне разрешённого списка.</p></article>
+<article class="notice warning"><strong>JSON не зашифрован</strong><p>В файле могут быть твой локальный мир и имя автора. Не публикуй его открыто; после переноса удали ненужные копии.</p></article>
+</div>
+</section>
+</main>
+<footer class="foot"><span>OSGARD PLAY / PLAYER VAULT · Локальный инструмент · v1.0.0</span><nav aria-label="Ссылки"><a href="/games/">Все игры ↗</a><a href="/privacy/">Конфиденциальность</a><a href="/terms/">Условия</a><a href="/support/osgard-play/">Поддержка</a></nav></footer>
+</div>
+<script src="/games/vault/vault-core.js" defer></script>
+<script src="/games/vault/vault-app.js" defer></script>
+</body>
+</html>
