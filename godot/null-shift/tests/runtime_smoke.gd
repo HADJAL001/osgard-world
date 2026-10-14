@@ -947,28 +947,47 @@ func _run_smoke() -> void:
 	var fire_saved_shots: int = game.shots_fired
 	var fire_saved_hits: int = game.shots_hit
 	var fire_saved_critical_hits: int = game.critical_hits
+	var fire_saved_mouse: bool = game.mouse_firing
+	var fire_saved_touch: bool = game.touch_firing
+	var fire_saved_gamepad: bool = game.gamepad_fire_held
+	var fire_saved_paused: bool = game.paused_game
+	var fire_saved_mission_finished: bool = game.mission_finished
+	var fire_saved_terminal: bool = game.terminal_active
+	# Disable any held input before waiting for a physics tick; otherwise the fixture itself can fire.
+	game.mouse_firing = false
+	game.touch_firing = false
+	game.gamepad_fire_held = false
+	game.paused_game = false
+	game.mission_finished = false
+	game.terminal_active = false
 	var moved_guard_positions: Array[Vector3] = []
 	for index in range(game.guards.size()):
 		var existing_body: CharacterBody3D = game.guards[index]["node"] as CharacterBody3D
 		moved_guard_positions.append(existing_body.global_position)
 		existing_body.global_position = Vector3(18.0 + float(index) * 1.5, 0.82, 15.0)
 	await physics_frame
-	game.player.global_position = fire_saved_position
-	var ray_guard_position: Vector3 = fire_saved_position + Vector3(0.0, 0.0, -5.0)
+	# Use a deterministic open corridor in the arena centre, away from cover and the gate.
+	game.player.global_position = Vector3(0.0, 0.82, 10.2)
+	game.player_aim = Vector3.FORWARD
+	game.aim_target_node = null
+	var fire_test_position: Vector3 = game.player.global_position
+	var ray_guard_position: Vector3 = fire_test_position + Vector3(0.0, 0.0, -5.0)
 	game._spawn_guard(ray_guard_position, false)
 	var ray_guard_index: int = game.guards.size() - 1
 	var ray_guard: CharacterBody3D = game.guards[ray_guard_index]["node"] as CharacterBody3D
 	var ray_guard_hp: int = int(game.guards[ray_guard_index]["hp"])
-	game.player_aim = Vector3.FORWARD
 	game.aim_target_node = ray_guard
 	game.fire_cooldown = 0.0
 	await physics_frame
 	await physics_frame
-	# The live player-aim updater intentionally follows the current camera/mouse each physics frame.
-	# Re-establish deterministic test aim after the awaited frames so this checks raycast damage,
-	# rather than whichever cursor position the headless runner happened to use.
-	game.player_aim = Vector3.FORWARD
-	game.aim_target_node = ray_guard
+	var ray_from: Vector3 = game.player.global_position + Vector3.UP * 0.48 + game.player_aim * 0.8
+	var ray_to: Vector3 = ray_from + game.player_aim * 37.0
+	var probe := PhysicsRayQueryParameters3D.create(ray_from, ray_to)
+	probe.exclude = [game.player.get_rid()]
+	probe.collision_mask = 0xFFFFFFFF
+	var probe_hit: Dictionary = game.get_world_3d().direct_space_state.intersect_ray(probe)
+	if not _expect(not probe_hit.is_empty() and probe_hit.get("collider") == ray_guard, "deterministic weapon-ray fixture must have a clear line to the compact hostile capsule"):
+		return
 	game._fire_weapon()
 	if not _expect(game.shots_fired == fire_saved_shots + 1 and game.shots_hit == fire_saved_hits + 1, "weapon ray must connect with a compact hostile capsule at its body height"):
 		return
@@ -986,6 +1005,12 @@ func _run_smoke() -> void:
 	game.shots_fired = fire_saved_shots
 	game.shots_hit = fire_saved_hits
 	game.critical_hits = fire_saved_critical_hits
+	game.mouse_firing = fire_saved_mouse
+	game.touch_firing = fire_saved_touch
+	game.gamepad_fire_held = fire_saved_gamepad
+	game.paused_game = fire_saved_paused
+	game.mission_finished = fire_saved_mission_finished
+	game.terminal_active = fire_saved_terminal
 	await physics_frame
 
 	print("RUNTIME_STAGE: combat director math, grade and overdrive")
