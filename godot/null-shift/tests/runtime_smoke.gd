@@ -45,10 +45,10 @@ func _run_smoke() -> void:
 	if not _expect(is_equal_approx(game._phase_noise_radius(), 26.0), "ECHO TRACK must increase the actual phase-shift audible radius"):
 		return
 	game.adaptive_doctrine = "BALANCED"
-	var predicted_walk := game._predict_intercept_position(Vector3(0.0, 0.82, 0.0), Vector3(7.0, 0.0, 0.0), 0.0)
+	var predicted_walk: Vector3 = game._predict_intercept_position(Vector3(0.0, 0.82, 0.0), Vector3(7.0, 0.0, 0.0), 0.0)
 	if not _expect(predicted_walk.x > 0.0 and predicted_walk.x < 2.0 and is_equal_approx(predicted_walk.y, 0.82), "interceptor must lead planar movement with bounded, deterministic prediction"):
 		return
-	var predicted_edge := game._predict_intercept_position(Vector3(20.8, 0.82, 11.8), Vector3(20.0, 0.0, 20.0), 0.24)
+	var predicted_edge: Vector3 = game._predict_intercept_position(Vector3(20.8, 0.82, 11.8), Vector3(20.0, 0.0, 20.0), 0.24)
 	if not _expect(predicted_edge.x <= 21.0 and predicted_edge.z <= 12.0 and is_equal_approx(predicted_edge.y, 0.82), "intercept prediction must remain inside arena bounds and preserve ground height"):
 		return
 	var old_tactic_counts: Dictionary = game.tactical_action_counts.duplicate(true)
