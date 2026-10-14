@@ -63,6 +63,7 @@ assert.ok(detail.includes('attempts < 20') && detail.includes('window.setTimeout
 assert.ok(detail.includes('15000') && detail.includes('frameWatchdogRef') && detail.includes("setLoadErrorKind('timeout')"), 'Embedded games must fail visibly instead of leaving an infinite loading veil')
 assert.ok(detail.includes('4500') && detail.includes('setSlowLoad(true)'), 'Slow-start diagnostics must appear before the hard timeout')
 assert.ok(detail.includes('frameAttemptRef.current !== attempt') && detail.includes('frameResolvedAttemptRef.current === attempt'), 'Late iframe callbacks must be ignored after retries or close')
+assert.ok(detail.includes('const iframeRenderAttempt = frameAttemptRef.current') && detail.includes('const attempt = iframeRenderAttempt'), 'Each iframe onLoad callback must capture the attempt that created it, not read a later attempt ID at callback time')
 assert.ok(detail.includes('frameValidationTimerRef') && detail.includes('clearFrameTimers()'), 'Validation/watchdog timers must be cleared when startup resolves or the route changes')
 assert.ok(detail.includes("setRetryKey(value => value + 1)") && detail.includes("key={game.id + ':' + retryKey}"), 'Retry must mount a fresh iframe instead of reusing a failed document')
 assert.ok(detail.includes("loadErrorKind === 'timeout'") && detail.includes("loadErrorKind === 'invalid-content'") && detail.includes("loadErrorKind === 'load-event'"), 'Error screen must identify timeout, invalid game markup and browser load errors separately')
