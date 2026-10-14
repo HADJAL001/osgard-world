@@ -8,7 +8,7 @@
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://osgard.world/games/civic-cascade/">
 <title>CIVIC CASCADE — кризисная стратегия | OSGARD PLAY</title>
-<meta name="osgard-game-version" content="2.3.0-command-deck">
+<meta name="osgard-game-version" content="2.3.1-command-deck">
 <style>
 :root{color-scheme:dark;--bg:#080d10;--panel:#10191d;--panel2:#142126;--line:#ffffff1c;--ink:#edf3ee;--muted:#91a29e;--mint:#b8f4cf;--cyan:#68d8d2;--gold:#e1c58a;--warn:#f2b27c;--bad:#ff827b;--mono:ui-monospace,Consolas,monospace;--serif:Georgia,serif}
 *{box-sizing:border-box}html{background:var(--bg);scroll-behavior:smooth}body{margin:0;color:var(--ink);background:radial-gradient(ellipse at 76% -18%,#234d453d,transparent 48%),var(--bg);font:14px/1.55 Inter,Geist,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}button,select{font:inherit}button,a,select{touch-action:manipulation}a{color:inherit;text-decoration:none}button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(--mint);outline-offset:3px}.wrap{max-width:1440px;padding:0 clamp(14px,2.8vw,42px);margin:auto}
@@ -89,7 +89,7 @@
 @media(max-width:560px){.incident-card{padding:11px}.incident-card h4{font-size:20px}.incident-choice{min-height:48px;padding:8px}.incident-copy{font-size:10px}}
 @media(prefers-reduced-motion:reduce){.incident-card,.incident-choice{transition:none!important;animation:none!important}}
 
-/* CIVIC CASCADE 2.3.0 — cinematic field-record export */
+/* CIVIC CASCADE 2.3.1 — cinematic field-record export */
 .cc-film-panel{position:relative;margin:0 0 16px;padding:clamp(16px,2.1vw,26px);border:1px solid #b8f4cf2b;background:radial-gradient(ellipse at 90% 0%,#68d8d210,transparent 42%),linear-gradient(145deg,#ffffff06,transparent 58%),#0b1518;overflow:hidden}
 .cc-film-panel:before{content:"";position:absolute;top:0;left:0;width:108px;height:2px;background:linear-gradient(90deg,#b8f4cf,transparent)}
 .cc-film-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:8px}
@@ -164,7 +164,7 @@
 <button class="action-btn" id="cc-action-repair" data-action="repair"><span class="action-icon">⌁</span><span class="action-copy"><b>Отправить ремонтные бригады</b><small>Устраняет сбой выбранного узла</small></span><span class="cost">−12 ед.</span></button>
 </div></div>
 <section class="command-deck" id="cc-command-deck" aria-labelledby="cc-command-title">
- <div class="command-head"><div><small>COMMAND DECK / SEQUENTIAL OPERATIONS · 2.3.0</small><h3 id="cc-command-title">План приказов</h3></div><span id="cc-plan-status" role="status" aria-live="polite">Постановка плана доступна на паузе</span></div>
+ <div class="command-head"><div><small>COMMAND DECK / SEQUENTIAL OPERATIONS · 2.3.1</small><h3 id="cc-command-title">План приказов</h3></div><span id="cc-plan-status" role="status" aria-live="polite">Постановка плана доступна на паузе</span></div>
  <p class="command-intro">Поставь симуляцию на паузу, собери до четырёх приказов, сравни прямой прогноз воды, энергосети, доступа и бюджета, а затем исполни последовательность. Каждый приказ меняет состояние игры. Если возникнет кризисный инцидент, исполнение остановится, а оставшиеся приказы сохранятся в очереди.</p>
  <div class="command-builder"><select id="cc-plan-action" aria-label="Приказ для добавления в очередь"><option value="pump">01 · Насосные группы — вода −12 · 18 ед.</option><option value="grid">02 · Стабилизация сети — мощность +15 · 20 ед. · бригада</option><option value="route">03 · Эвакуационный путь — доступ +17 · 15 ед.</option><option value="repair">04 · Ремонт выбранного узла — эффект по типу · 12 ед. · бригада</option></select><button class="ctrl" id="cc-plan-add" type="button">＋ Добавить приказ</button></div>
  <div class="command-summary" aria-label="Прогноз прямых эффектов плана">
@@ -176,7 +176,7 @@
 </section>
 <div class="controls"><button class="ctrl" id="cc-pause" type="button">Ⅱ Пауза</button><button class="ctrl" id="cc-speed" type="button">СКОРОСТЬ 1×</button><button class="ctrl" id="cc-reset" type="button">↻ Новая операция</button></div><div class="risk"><div><div class="risk-label">ИНДЕКС КРИЗИСА</div><strong id="cc-risk">61<small> / 100</small></strong></div><div class="risk-copy"><b id="cc-risk-label">РАЗВИВАЕТСЯ</b><span id="cc-risk-copy">Нагрузка на сети растёт. Выбери первичный узел.</span></div></div>
 <div class="checkpoint-panel" aria-label="Сохранение операции и краткосрочный прогноз">
-  <div class="checkpoint-head"><div><small>LOCAL OPERATION LAB / V2.3.0</small><strong>Контрольная точка</strong></div><span id="cc-checkpoint-status" role="status" aria-live="polite">Проверка сохранения…</span></div>
+  <div class="checkpoint-head"><div><small>LOCAL OPERATION LAB / V2.3.1</small><strong>Контрольная точка</strong></div><span id="cc-checkpoint-status" role="status" aria-live="polite">Проверка сохранения…</span></div>
   <p class="checkpoint-intro">Сохрани ход операции на этом устройстве и продолжи позже. Контрольная точка не отправляется на сервер.</p>
   <div class="checkpoint-tools"><button class="ctrl" id="cc-save" type="button">Сохранить операцию</button><button class="ctrl" id="cc-load" type="button" disabled>Восстановить сохранение</button></div>
   <div class="forecast-head"><b>ПРОГНОЗ НА 30 ИГРОВЫХ СЕКУНД</b><span>ОЦЕНКА ПО ТЕКУЩИМ ТРЕНДАМ</span></div>
@@ -193,7 +193,7 @@
 
 <section class="cc-film-panel" id="cc-film-panel" aria-labelledby="cc-film-title">
   <div class="cc-film-head">
-    <div><span class="cc-film-kicker">OSGARD PLAY / CINEMATIC FIELD RECORD · 2.3.0</span><h2 class="cc-film-title" id="cc-film-title">Запись <em>операции</em></h2></div>
+    <div><span class="cc-film-kicker">OSGARD PLAY / CINEMATIC FIELD RECORD · 2.3.1</span><h2 class="cc-film-title" id="cc-film-title">Запись <em>операции</em></h2></div>
     <div class="cc-film-status" id="cc-film-status" data-state="ready" role="status" aria-live="polite">ГОТОВО К ЗАПИСИ</div>
   </div>
   <p class="cc-film-copy">Запиши живую карту города с оперативными показателями в отдельный WebM-клип. Запись берёт текущий игровой холст и накладывает на него показатели воды, энергосети, доступа служб, запасов и риска.</p>
@@ -217,7 +217,7 @@
 
 <p class="notice">Это браузерная игровая редакция OSGARD PLAY. Показатели и последствия моделируются внутри игры и не являются реальными городскими данными. Состояние операции не отправляется на сервер.</p>
 </main>
-<footer class="footer"><span>© OSGARD WORLD / PLAY · CIVIC CASCADE WEB EDITION 2.3.0</span><span>КРИЗИСНАЯ СТРАТЕГИЯ · DESKTOP + TOUCH</span><span><a href="/games/">ВЕРНУТЬСЯ В КАТАЛОГ ↗</a></span></footer>
+<footer class="footer"><span>© OSGARD WORLD / PLAY · CIVIC CASCADE WEB EDITION 2.3.1</span><span>КРИЗИСНАЯ СТРАТЕГИЯ · DESKTOP + TOUCH</span><span><a href="/games/">ВЕРНУТЬСЯ В КАТАЛОГ ↗</a></span></footer>
 </div><div class="toast" id="cc-toast" role="status" aria-live="polite"></div>
 <script>
 (function(){
@@ -355,9 +355,10 @@ function restoreCheckpoint(){
  ui.log.replaceChildren();
  logRows.forEach(x=>{const row=document.createElement('div');row.className='log-entry';const time=document.createElement('time');time.textContent=x.time;const span=document.createElement('span');span.textContent=x.text;row.append(time,span);ui.log.append(row)});
  ui.logCount.textContent=logRows.length+' СОБЫТИЙ';
+ planOrders=[];planNotice='Контрольная точка восстановлена. Черновик плана очищен, так как не входит в сохранение.';
  addLog('<b>Контрольная точка:</b> операция восстановлена.');
  ui.selected.textContent='ВЫБРАНО: '+selectedNode().name.toUpperCase();
- renderUI();draw(performance.now());lastTick=performance.now();updateCheckpointStatus();toast('Операция восстановлена.');
+ renderUI();renderPlan();draw(performance.now());lastTick=performance.now();updateCheckpointStatus();toast('Операция восстановлена.');
 }
 function updateForecast(){
  if(!state||!state.scenario)return;
@@ -477,8 +478,8 @@ function simulatePlannedOrders(orders){
    if(node.type==='water'){s.water=clamp(s.water-8);s.waterRate-=.04}else if(node.type==='grid'){s.grid=clamp(s.grid+10);s.gridRate-=.04}else{s.access=clamp(s.access+9);s.accessRate-=.04}
    s.repairs=(s.repairs||0)+1;s.crews=Math.max(0,s.crews-1);
   }
-  const loss=Math.max(0,(s.water-55)*.5)+Math.max(0,(55-s.grid)*.36)+Math.max(0,(50-s.access)*.3);
-  s.riskOffset=clamp((s.scenario==='blackout'?6:s.scenario==='blockade'?4:0)+loss,0,50);s.actionCount=(s.actionCount||0)+1;
+  // While the command plan runs, the simulation is paused between orders. Keep the current riskOffset exactly as live gameplay does; do not apply a future drift tick to the direct-effects preview.
+  s.actionCount=(s.actionCount||0)+1;
  }
  return {state:s,cost,valid,risk:projectedRisk(s)};
 }
