@@ -549,8 +549,8 @@ export function GameDetailPage({ slug }: { slug: string }) {
           {frameError ? <div className="gh-game-error" role="alert" aria-live="assertive"><p>{loadErrorKind === 'timeout' ? (ru ? 'Игровой клиент не ответил за 15 секунд.' : 'The game client did not respond within 15 seconds.') : loadErrorKind === 'invalid-content' ? (ru ? 'По этому адресу не найден ожидаемый интерфейс игры.' : 'The expected game interface was not found at this address.') : (ru ? 'Браузер сообщил об ошибке загрузки игры.' : 'The browser reported an error loading the game.')}</p><p>{ru ? 'Можно повторить запуск или открыть клиент отдельно — прогресс не объявляется потерянным.' : 'Retry the launch or open the client separately — progress is not assumed to be lost.'}</p><div className="gh-error-actions"><button className="gh-primary" type="button" onClick={retryGame}><Play size={15} />{ru ? 'Повторить запуск' : 'Retry launch'}</button><button className="gh-secondary" type="button" onClick={() => void shareGame()}><Share2 size={14} />{ru ? 'Поделиться ссылкой' : 'Share link'}</button><a className="gh-secondary" href={game.href} target="_blank" rel="noopener noreferrer">{ru ? 'Открыть отдельно' : 'Open separately'}<ExternalLink size={14} /></a></div></div> : <iframe key={game.id + ':' + retryKey} title={gameTitle(game, locale)} src={game.href} onLoad={() => {
             const attempt = frameAttemptRef.current
             let attempts = 0
-            let attempts = 0
             const validateFrame = () => {
+              if (frameAttemptRef.current !== attempt || frameResolvedAttemptRef.current === attempt) return
               try {
                 const frame = stageRef.current?.querySelector('iframe')
                 const frameDocument = frame?.contentDocument
