@@ -8,7 +8,9 @@ import pg from "pg";
 import {
   catalogConfiguration, validateCheckoutPayload, validateLeadPayload,
   validateEventBatch, validateReferralRegistrationPayload, validateReferralClaimPayload,
-  validateReferralClaimAckPayload, paymentsModeAllowed, resolveCheckoutPaymentState, safeEqual,
+  validateReferralClaimAckPayload, validateServiceAttributionConversion,
+  parseServiceAttributionTokenMap, isServiceAttributionTokenValid,
+  paymentsModeAllowed, resolveCheckoutPaymentState, safeEqual,
 } from "./core.mjs";
 import {
   campaignFromRow, normalizeCampaignId, publicCampaignView, validateCampaignPayload,
@@ -51,6 +53,7 @@ app.use("/v1/checkout", rateLimit({ windowMs: 15 * 60 * 1000, limit: 20, standar
 app.use("/v1/leads", rateLimit({ windowMs: 60 * 60 * 1000, limit: 8, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/events", rateLimit({ windowMs: 5 * 60 * 1000, limit: 60, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/referrals", rateLimit({ windowMs: 15 * 60 * 1000, limit: 30, standardHeaders: "draft-8", legacyHeaders: false }));
+app.use("/v1/attribution", rateLimit({ windowMs: 15 * 60 * 1000, limit: 120, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/admin", rateLimit({ windowMs: 5 * 60 * 1000, limit: 120, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/campaigns", rateLimit({ windowMs: 15 * 60 * 1000, limit: 120, standardHeaders: "draft-8", legacyHeaders: false }));
 
@@ -76,7 +79,10 @@ async function ensureSchema() {
     "CREATE INDEX IF NOT EXISTS commerce_referral_owner_claim_idx ON commerce_referral_invites(owner_hash, reward_claimed_at, created_at DESC);\n" +
     "CREATE UNIQUE INDEX IF NOT EXISTS commerce_referral_qualified_session_idx ON commerce_referral_invites(qualified_session_id) WHERE qualified_session_id IS NOT NULL;\n" +
     "CREATE TABLE IF NOT EXISTS commerce_campaigns (campaign_id TEXT PRIMARY KEY, sponsor_name TEXT NOT NULL, title TEXT NOT NULL, description TEXT NOT NULL, target_url TEXT NOT NULL, placement TEXT NOT NULL CHECK (placement IN ('catalog_feature','after_session','game_event')), sponsor_disclosure TEXT NOT NULL CHECK (sponsor_disclosure IN ('Реклама','Партнёрский материал','Спонсорский материал')), status TEXT NOT NULL CHECK (status IN ('draft','scheduled','active','paused')), starts_at TIMESTAMPTZ, ends_at TIMESTAMPTZ, frequency_cap SMALLINT NOT NULL DEFAULT 3 CHECK (frequency_cap BETWEEN 1 AND 20), created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
-    "CREATE INDEX IF NOT EXISTS commerce_campaigns_public_idx ON commerce_campaigns(status, placement, starts_at, ends_at, updated_at DESC)");
+    "CREATE INDEX IF NOT EXISTS commerce_campaigns_public_idx ON commerce_campaigns(status, placement, starts_at, ends_at, updated_at DESC);\n" +
+    "CREATE TABLE IF NOT EXISTS commerce_attribution_conversions (service_id TEXT NOT NULL, event_id TEXT NOT NULL, conversion_type TEXT NOT NULL CHECK (conversion_type IN ('account_created','lead_qualified','trial_started','booking_confirmed','purchase_paid','purchase_refunded','subscription_started','subscription_renewed','subscription_refunded','subscription_cancelled')), game_id TEXT NOT NULL DEFAULT 'unknown', source TEXT NOT NULL DEFAULT 'direct', campaign TEXT NOT NULL DEFAULT '', referral_code TEXT, currency TEXT, amount_minor BIGINT CHECK (amount_minor IS NULL OR amount_minor > 0), received_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), PRIMARY KEY (service_id, event_id));\n" +
+    "CREATE INDEX IF NOT EXISTS commerce_attribution_received_idx ON commerce_attribution_conversions(received_at DESC, service_id);\n" +
+    "CREATE INDEX IF NOT EXISTS commerce_attribution_source_idx ON commerce_attribution_conversions(service_id, source, campaign, received_at DESC)");
   dbReady = true;
   return true;
 }
@@ -91,7 +97,10 @@ async function purgeExpiredAnalytics() {
     "DELETE FROM commerce_referral_invites WHERE created_at < NOW() - ($1 * INTERVAL '1 day')",
     [analyticsRetentionDays],
   );
-  return Number(result.rowCount || 0) + Number(referrals.rowCount || 0);
+  const serviceConversions = await pool.query(
+    "DELETE FROM commerce_attribution_conversions WHERE received_at < NOW() - INTERVAL '365 days'",
+  );
+  return Number(result.rowCount || 0) + Number(referrals.rowCount || 0) + Number(serviceConversions.rowCount || 0);
 }
 
 function paymentsAllowed() {
@@ -502,6 +511,42 @@ app.post("/v1/events", async (req, res) => {
   }
 });
 
+app.post("/v1/attribution/conversions", async (req, res) => {
+  const checked = validateServiceAttributionConversion(req.body);
+  if (!checked.ok) return res.status(checked.status).json({ error: checked.code });
+
+  // Unique per-service tokens are server-only. Never put these tokens in a browser,
+  // public website config, UTM URL, or repository. A missing mapping fails closed.
+  const tokenMap = parseServiceAttributionTokenMap(process.env.OSGARD_ATTRIBUTION_TOKENS_JSON || "");
+  if (!tokenMap[checked.conversion.serviceId]) {
+    return res.status(503).json({ error: "ATTRIBUTION_SERVICE_NOT_CONFIGURED" });
+  }
+  const authorization = String(req.get("authorization") || "");
+  const suppliedToken = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
+  if (!isServiceAttributionTokenValid(checked.conversion.serviceId, suppliedToken, tokenMap)) {
+    return res.status(401).json({ error: "ATTRIBUTION_UNAUTHORIZED" });
+  }
+  if (!requireDatabase(res)) return;
+
+  const event = checked.conversion;
+  try {
+    const result = await pool.query(
+      "INSERT INTO commerce_attribution_conversions(service_id,event_id,conversion_type,game_id,source,campaign,referral_code,currency,amount_minor) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT (service_id,event_id) DO NOTHING RETURNING event_id",
+      [event.serviceId, event.eventId, event.conversionType, event.gameId, event.source, event.campaign, event.referralCode, event.currency, event.amountMinor],
+    );
+    const inserted = Number(result.rowCount || 0) === 1;
+    return res.status(inserted ? 202 : 200).json({
+      accepted: true,
+      inserted,
+      duplicate: !inserted,
+      note: "Conversion is an idempotent server-reported event, not an independent payment verification. Send paid events only after the destination service confirms settlement.",
+    });
+  } catch (error) {
+    console.error("Service attribution insert failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "ATTRIBUTION_STORAGE_UNAVAILABLE" });
+  }
+});
+
 app.post("/v1/referrals/register", async (req, res) => {
   const input = validateReferralRegistrationPayload(req.body);
   if (!input.ok) return res.status(input.status).json({ error: input.code });
@@ -753,7 +798,7 @@ app.post("/v1/referrals/claim", async (req, res) => {
 app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
   if (!requireDatabase(res)) return;
   try {
-    const [orderStats, currencyStats, leadStats, leadAttributionStats, eventStats, topEvents, analyticsByGame, ownedPromoByService, ownedPromoVariantStats, productExperimentStats, analyticsFunnel, socialShareByNetwork, paidRevenueByAttribution, referralRewardStats] = await Promise.all([
+    const [orderStats, currencyStats, leadStats, leadAttributionStats, eventStats, topEvents, analyticsByGame, ownedPromoByService, ownedPromoVariantStats, productExperimentStats, analyticsFunnel, socialShareByNetwork, paidRevenueByAttribution, referralRewardStats, serviceConversionStats] = await Promise.all([
       pool.query("SELECT status, COUNT(*)::int AS count FROM commerce_orders GROUP BY status"),
       pool.query("SELECT currency, SUM(amount_total)::bigint AS total_minor, COUNT(*)::int AS count FROM commerce_orders WHERE status='paid' AND currency IS NOT NULL GROUP BY currency"),
       pool.query("SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE status='new')::int AS new FROM commerce_leads"),
@@ -902,6 +947,29 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
       `),
       pool.query("SELECT attribution_game_id AS \"gameId\", attribution_source AS source, NULLIF(attribution_campaign, '') AS campaign, mode, currency, COUNT(*)::int AS orders, COALESCE(SUM(amount_total),0)::text AS \"totalMinor\" FROM commerce_orders WHERE status='paid' AND amount_total IS NOT NULL AND currency IS NOT NULL AND created_at >= NOW() - INTERVAL '30 days' GROUP BY attribution_game_id, attribution_source, attribution_campaign, mode, currency ORDER BY COUNT(*) DESC, attribution_game_id ASC LIMIT 50"),
       pool.query(`SELECT COUNT(*)::int AS "qualifiedReferrals", COALESCE(SUM(reward_amount),0)::int AS "shardsAwarded" FROM commerce_referral_invites WHERE reward_claimed_at >= NOW() - INTERVAL '30 days'`),
+      pool.query(`
+        SELECT
+          service_id AS "serviceId",
+          game_id AS "gameId",
+          source,
+          NULLIF(campaign, '') AS campaign,
+          currency,
+          COUNT(*)::int AS conversions,
+          COUNT(*) FILTER (WHERE conversion_type IN ('purchase_paid','subscription_started','subscription_renewed'))::int AS "paidEvents",
+          COUNT(*) FILTER (WHERE conversion_type IN ('purchase_refunded','subscription_refunded'))::int AS refunds,
+          COALESCE(SUM(amount_minor) FILTER (WHERE conversion_type IN ('purchase_paid','subscription_started','subscription_renewed')),0)::text AS "grossPaidMinor",
+          COALESCE(SUM(amount_minor) FILTER (WHERE conversion_type IN ('purchase_refunded','subscription_refunded')),0)::text AS "refundMinor",
+          COALESCE(SUM(CASE
+            WHEN conversion_type IN ('purchase_refunded','subscription_refunded') THEN -amount_minor
+            WHEN conversion_type IN ('purchase_paid','subscription_started','subscription_renewed') THEN amount_minor
+            ELSE 0
+          END),0)::text AS "netPaidMinor"
+        FROM commerce_attribution_conversions
+        WHERE received_at >= NOW() - INTERVAL '30 days'
+        GROUP BY service_id, game_id, source, campaign, currency
+        ORDER BY conversions DESC, service_id ASC
+        LIMIT 100
+      `),
     ]);
     return res.json({
       ordersByStatus: orderStats.rows,
@@ -917,8 +985,11 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
       socialShareByNetwork: socialShareByNetwork.rows,
       paidRevenueByAttribution: paidRevenueByAttribution.rows,
       verifiedReferralRewards: referralRewardStats.rows[0] || { qualifiedReferrals: 0, shardsAwarded: 0 },
+      serviceAttributionConversions: serviceConversionStats.rows,
+      serviceAttributionReportingWindowDays: 30,
+      serviceAttributionNote: "Конверсии поступают только от настроенных серверов собственных сервисов и дедуплицируются по serviceId + eventId. Суммы — отчёт интегратора, а не независимое подтверждение платёжного провайдера; они разделены по валютам, показаны до комиссий и не являются бухгалтерским отчётом.",
       analyticsRetentionDays,
-      note: "Аналитика включает только согласованные события. Это не все посещения сайта и не рекламные показы. Суммы сгруппированы по валютам и не являются бухгалтерским отчётом.",
+      note: "Аналитика включает согласованные события, а серверные конверсии — согласованные отчёты целевых сервисов. Это не все посещения сайта и не показы сторонней рекламной сети. Суммы сгруппированы по валютам и не являются бухгалтерским отчётом.",
     });
   } catch (error) {
     console.error("Admin overview failed:", error?.message || "unknown error");
