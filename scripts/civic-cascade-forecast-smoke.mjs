@@ -6,7 +6,7 @@ const manifest = JSON.parse(await readFile(new URL('../public/games/civic-cascad
 const check = (value, message) => assert.ok(value, message)
 
 assert.equal(manifest.gameId, 'civic-cascade')
-assert.equal(manifest.version, '2.8.0', 'release manifest must match this regression suite')
+assert.equal(manifest.version, '2.9.0', 'release manifest must match this regression suite')
 assert.equal(manifest.buildContract?.cascadeForecast?.enabled, true)
 assert.deepEqual(manifest.buildContract?.cascadeForecast?.horizonsGameSeconds, [30, 60, 90])
 assert.equal(manifest.buildContract?.cascadeForecast?.randomIncidentsForecasted, false)
@@ -26,6 +26,11 @@ assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.beamWidth, 6)
 assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.localOnly, true)
 assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.callsOpenAIAPI, false)
 assert.deepEqual(manifest.buildContract?.autonomousDoctrinePlanner?.forecastHorizonsGameSeconds, [30, 60, 90])
+assert.deepEqual(manifest.buildContract?.autonomousDoctrinePlanner?.robustnessProfiles, ['water-surge','grid-overload','weak-node-shock'])
+assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.robustnessCandidateLimit, 8)
+assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.reranksCandidatesByStressAdjustedScore, true)
+assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.comparesAgainstNoInterventionUnderSameStress, true)
+assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.stressChangesOnlyClonedStates, true)
 assert.deepEqual(manifest.buildContract?.adaptiveCrisisDirector?.nodes, ['substation','pump','bridge','hospital','shelter'])
 
 const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1])
@@ -82,9 +87,9 @@ const simulatePath = startElapsed => new Function(
 )(startElapsed, clamp, projectedRisk, nodes, ensureNodeIntegrity, advanceNodeIntegrity)
 
 const doctrineSource = extractBetween('function doctrineObjectiveScore', 'let doctrineResult=null')
-const searchDoctrinePlans = new Function('nodes', 'PLAN_ACTIONS',
+const searchDoctrinePlans = new Function('nodes', 'PLAN_ACTIONS', 'clamp',
   doctrineSource + '\nreturn searchDoctrinePlans;'
-)(nodes, actions)
+)(nodes, actions, clamp)
 const makeState = scenario => {
   const state = {
     ...scenarios[scenario], scenario, crews: 4, maxCrews: 4,
@@ -126,6 +131,14 @@ for (const scenario of ['flood', 'blackout', 'blockade']) {
   const result = searchDoctrinePlans(base, 'balanced', 'hub', runOrders, runPath, nodes, actions)
   check(result.evaluatedCount > 0 && result.evaluatedCount <= 1000, scenario + ' doctrine search must stay bounded')
   check(Array.isArray(result.alternatives) && result.alternatives.length <= 3, scenario + ' planner must return at most three candidates')
+check(result.robustnessEvaluatedCount >= 0 && result.robustnessEvaluatedCount <= 8, scenario + ' stress ranking must stay within eight candidates')
+  for (const candidate of result.alternatives) {
+    check(candidate.robustness.profileCount === 3, scenario + ' candidate must be checked against all three stress profiles')
+    check(candidate.robustness.profiles.length === 3, scenario + ' candidate must include all stress results')
+    check(candidate.robustness.stableProfiles >= 0 && candidate.robustness.stableProfiles <= 3, scenario + ' robust profile count must be bounded')
+    check(Number.isFinite(candidate.robustScore), scenario + ' adjusted score must be finite')
+    check(candidate.robustness.profiles.every(profile => Number.isFinite(profile.riskDelta90) && Number.isFinite(profile.weakestIntegrityDelta)), scenario + ' stress results must be finite')
+  }
   for (const candidate of result.alternatives) {
     check(candidate.orders.length >= 1 && candidate.orders.length <= 4, scenario + ' candidate length must respect queue limit')
     const feasibility = runOrders(candidate.orders)
@@ -138,7 +151,7 @@ for (const scenario of ['flood', 'blackout', 'blockade']) {
   }
   assert.equal(JSON.stringify({water:base.water,grid:base.grid,access:base.access,supplies:base.supplies,crews:base.crews,nodeIntegrity:base.nodeIntegrity}), before,
     scenario + ' planner must not mutate the live source state')
-  doctrineResults[scenario] = {evaluated:result.evaluatedCount,recommendations:result.alternatives.length,firstRisk:result.alternatives[0]?.forecast[2].risk ?? null}
+  doctrineResults[scenario] = {evaluated:result.evaluatedCount,stressEvaluated:result.robustnessEvaluatedCount,recommendations:result.alternatives.length,firstRisk:result.alternatives[0]?.forecast[2].risk ?? null,stableProfiles:result.alternatives[0]?.robustness.stableProfiles ?? null}
 }
 const repeatBase = makeState('flood')
 const repeatSearch = () => searchDoctrinePlans(repeatBase, 'balanced', 'hub', simulateDirect(repeatBase), simulatePath(0), nodes, actions)
@@ -225,7 +238,7 @@ check(gridAt89.grid < floodThreshold.grid - floodThreshold.gridRate * 90,
 
 console.log(JSON.stringify({
   status: 'passed',
-  suite: 'CIVIC CASCADE autonomous doctrine search, causal debrief, infrastructure integrity and deterministic cascade forecast',
+  suite: 'CIVIC CASCADE robust doctrine search, deterministic stress profiles, causal debrief and infrastructure integrity',
   release: manifest.version,
   scenarios: 3,
   horizons: [30, 60, 90],
@@ -247,9 +260,13 @@ console.log(JSON.stringify({
     causalLedgerBound: 'PASS',
     causalSnapshotValidation: 'PASS',
     autonomousDoctrineSearch: 'PASS',
+    autonomousDoctrineStressSearch: 'PASS',
     doctrineBoundedSearch: 'PASS',
     doctrineResourceAndCrewValidation: 'PASS',
     doctrineNoLiveMutation: 'PASS',
-    doctrineDeterminism: 'PASS'
+    doctrineDeterminism: 'PASS',
+    doctrineStressProfiles: 'PASS',
+    doctrineRobustReranking: 'PASS',
+    doctrineStressNoLiveMutation: 'PASS'
   }
 }, null, 2))
