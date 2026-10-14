@@ -133,11 +133,15 @@ assert.ok(consentQueue.includes("credentials: 'omit'") && consentQueue.includes(
 assert.ok(recommendations.includes("async function resolveReferralApiBase()") && recommendations.includes("health.databaseReady===true") && recommendations.includes("'/commerce-api/healthz'"), "Qualified referral rewards must probe the same-origin API before use.");
 assert.ok(operations.includes("health.service === 'osgard-commerce-api'") && operations.includes("health.databaseReady === true"), "Read-only operations console must distinguish a ready API from an empty static config.");
 assert.ok(admin.includes("'/commerce-api/healthz'") && admin.includes("health.databaseReady === true") && admin.includes("credentials: 'omit'"), "Admin must discover only a database-ready first-party API and never send cookies with the operator token.");
-for (const [label, page] of [["Games", html], ["Partners", partners], ["Premium", store]]) {
+for (const [label, page] of [["Partners", partners], ["Premium", store]]) {
   const queueTag = page.indexOf('src="/games/consented-analytics.js?v=__OSGARD_BUILD_VERSION__"');
   const clientTag = page.indexOf('src="/games/commerce-client.js"');
   assert.ok(queueTag >= 0 && clientTag > queueTag, label + " must load consent queue before sending analytics.");
 }
+assert.ok(!html.includes('<script src="/games/consented-analytics.js?v=__OSGARD_BUILD_VERSION__" defer></script>') &&
+  html.includes("loadScript('consented-analytics.js')") &&
+  html.includes("if(!hasAnalyticsConsent())return Promise.resolve(false)"),
+  "Games must defer consent queue loading until explicit opt-in while preserving versioned queue-first ordering.");
 for (const value of ["window.OSGARD_CONSENTED_ANALYTICS", "MAX_PENDING = 100", "MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000", "result?.accepted", "clearQueue()"]) {
   assert.ok(consentQueue.includes(value), "Consent-aware retry queue is missing: " + value);
 for (const eventName of ["owned_promo_intermission_skipped", "owned_promo_preferences_saved", "social_share_intent", "social_reward_claimed", "owned_promo_impression"]) assert.ok(consentQueue.includes("'"+eventName+"'"), "Consent queue does not allow OSGARD SELECT event: " + eventName);
