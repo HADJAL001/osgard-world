@@ -1,6 +1,6 @@
 <!doctype html><html lang="ru"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#080911"><meta name="osgard-game-version" content="1.5.0"><meta name="description" content="AFTERIMAGE//RUN — ежедневный sci-fi speedrun OSGARD PLAY. Общий seed, личный призрак, вызов другу.">
+<meta name="theme-color" content="#080911"><meta name="osgard-game-version" content="1.6.0"><meta name="description" content="AFTERIMAGE//RUN — ежедневный sci-fi speedrun OSGARD PLAY. Общий seed, личный призрак, вызов другу.">
 <meta property="og:title" content="AFTERIMAGE//RUN — OSGARD PLAY"><meta property="og:description" content="Один seed. Один призрак. Сможет ли друг повторить твой маршрут?">
 <meta property="og:type" content="website"><meta property="og:site_name" content="OSGARD PLAY"><meta property="og:url" content="https://osgard.world/games/afterimage-run/"><meta property="og:image" content="https://osgard.world/games/share-cards/afterimage-run.png"><meta property="og:image:secure_url" content="https://osgard.world/games/share-cards/afterimage-run.png"><meta property="og:image:type" content="image/png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="AFTERIMAGE//RUN — OSGARD PLAY sci-fi daily speedrun"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="AFTERIMAGE//RUN — OSGARD PLAY"><meta name="twitter:description" content="Один seed. Один призрак. Сможет ли друг повторить твой маршрут?"><meta name="twitter:image" content="https://osgard.world/games/share-cards/afterimage-run.png">
 <title>AFTERIMAGE//RUN — OSGARD PLAY</title>
@@ -51,7 +51,7 @@ const stars=Array.from({length:150},()=>({x:visualRandom()*W,y:visualRandom()*44
 
 const careerDefaults={runsStarted:0,runsCompleted:0,rankedRuns:0,totalDistance:0,totalShards:0,totalDashes:0,bestScore:0,currentStreak:0,longestStreak:0,lastPlayedDay:'',rankedDistance:0,rankedShards:0,rankedDashes:0,bestDistance:0,maxRunShards:0,bestCombo:1,challengeWins:0,totalShares:0,recentRuns:[],achievements:[]};
 const career=Object.assign({},careerDefaults,safeRead(CAREER_KEY,{}));
-for(const key of Object.keys(careerDefaults)){if(typeof careerDefaults[key]==='number'&&!Number.isFinite(career[key]))career[key]=careerDefaults[key]}
+for(const key of Object.keys(careerDefaults)){if(typeof careerDefaults[key]==='number'){const value=Number(career[key]);career[key]=Number.isFinite(value)?Math.max(0,Math.min(1000000000000,value)):careerDefaults[key]}}
 career.recentRuns=Array.isArray(career.recentRuns)?career.recentRuns.filter(r=>r&&typeof r==='object').slice(0,10):[];
 career.achievements=Array.isArray(career.achievements)?career.achievements.filter(x=>typeof x==='string').slice(0,40):[];
 function saveCareer(){return safeWrite(CAREER_KEY,career)}
