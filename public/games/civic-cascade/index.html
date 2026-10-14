@@ -162,6 +162,9 @@
 
 @media(max-width:560px){.doctrine-lab{padding:11px}.doctrine-head{display:grid;grid-template-columns:1fr;gap:7px}#cc-doctrine-status{max-width:none;text-align:left}.doctrine-tools{grid-template-columns:minmax(0,1fr)}.doctrine-tools label{margin-top:2px}.doctrine-tools select,.doctrine-tools .ctrl{width:100%}.doctrine-footer{grid-template-columns:1fr}.doctrine-option-head{align-items:flex-start;flex-direction:column;gap:4px}}
 
+
+.doctrine-option-portability{margin:0;color:#a3ddd6;font:8px/1.7 var(--mono);overflow-wrap:anywhere}
+
 /* CIVIC CASCADE 2.1 — tactical incidents. The simulation pauses until the operator chooses. */
 .incident-card{margin:0 0 12px;padding:13px;border:1px solid #e1c58a73;background:radial-gradient(ellipse at 100% 0%,#e1c58a12,transparent 54%),linear-gradient(145deg,#201d17,#101719);box-shadow:inset 2px 0 #e1c58a55,0 12px 35px #0003}
 .incident-card[hidden]{display:none}
@@ -335,6 +338,7 @@
    </select>
    <button class="ctrl primary" id="cc-doctrine-run" type="button">⌕ Найти план</button>
   </div>
+  <p id="cc-doctrine-transferability-contract" class="doctrine-footnote">ПЕРЕНОСИМОСТЬ: каждый финальный план проверяется на flood, blackout и blockade против базовой траектории своего сценария; расчёт изолирован от текущего города.</p>
   <div class="doctrine-results" id="cc-doctrine-results" aria-live="polite"><p class="doctrine-empty">Поставь игру на паузу и запусти поиск. Расчёт выполняется на устройстве; состояние игры не изменяется.</p></div>
   <div class="doctrine-footer">
    <button class="ctrl primary" id="cc-doctrine-apply" type="button" disabled>Загрузить выбранный план в очередь</button>
@@ -848,8 +852,8 @@ function act(action){
 }
 
 function projectedRisk(s){return Math.round(clamp(s.water*.38+(100-s.grid)*.34+(100-s.access)*.28+s.riskOffset))}
-function simulatePlannedOrders(orders){
- const s={...state,nodeIntegrity:{...(state.nodeIntegrity||{})},nodeOutages:{...(state.nodeOutages||{})},nodeIncidentFlags:{...(state.nodeIncidentFlags||{})},pendingNodeIncidents:[...(state.pendingNodeIncidents||[])]};ensureNodeIntegrity(s);let cost=0,valid=true;
+function simulatePlannedOrders(orders,sourceState=state){
+ const s={...sourceState,nodeIntegrity:{...(sourceState.nodeIntegrity||{})},nodeOutages:{...(sourceState.nodeOutages||{})},nodeIncidentFlags:{...(sourceState.nodeIncidentFlags||{})},pendingNodeIncidents:[...(sourceState.pendingNodeIncidents||[])]};ensureNodeIntegrity(s);let cost=0,valid=true;
  for(const order of orders){
   const meta=PLAN_ACTIONS[order.action];if(!meta){valid=false;break}
   cost+=meta.cost;if(s.supplies<meta.cost||s.crews<meta.crew){valid=false;break}s.supplies-=meta.cost;
@@ -870,12 +874,12 @@ function simulatePlannedOrders(orders){
  return {state:s,cost,valid,risk:projectedRisk(s)};
 }
 function planCrewDemand(orders){return orders.reduce((sum,order)=>sum+(PLAN_ACTIONS[order.action]?.crew||0),0)}
-function simulateCascadingPath(source,horizons){
+function simulateCascadingPath(source,horizons,baseElapsed=elapsed){
  const s={...source,nodeIntegrity:{...(source.nodeIntegrity||{})},nodeOutages:{...(source.nodeOutages||{})},nodeIncidentFlags:{...(source.nodeIncidentFlags||{})},pendingNodeIncidents:[...(source.pendingNodeIncidents||[])]},samples=[];ensureNodeIntegrity(s);let progressed=0;
  const weather=s.scenario==='flood'?1:s.scenario==='blackout'?.8:.9;
  for(const horizon of horizons){
   while(progressed<horizon-1e-9){
-   const dt=Math.min(.25,horizon-progressed),futureElapsed=elapsed+progressed+dt;
+   const dt=Math.min(.25,horizon-progressed),futureElapsed=baseElapsed+progressed+dt;
    s.water=clamp(s.water+s.waterRate*dt*weather);
    s.grid=clamp(s.grid-s.gridRate*dt*(s.supplies<18?1.35:1));
    s.access=clamp(s.access-s.accessRate*dt*(s.water>72?1.15:1));
@@ -1107,6 +1111,44 @@ function explainDoctrineTradeoff(candidate,baseline,visibleCandidates){
  return parts.join(' · ');
 }
 
+
+function createDoctrineScenarioState(scenarioId){
+ const base=scenarioData[scenarioId];if(!base)return null;
+ const source={scenario:scenarioId,water:base.water,grid:base.grid,access:base.access,supplies:base.supplies,crews:4,maxCrews:4,
+  waterRate:base.waterRate,gridRate:base.gridRate,accessRate:base.accessRate,riskOffset:base.riskOffset,
+  openedRoutes:scenarioId==='blockade'?1:2,repairs:0,pumps:0,stabilized:0,actionCount:0,elapsed:0,score:0};
+ source.nodeIntegrity=seedNodeIntegrity(source);
+ source.nodeOutages=Object.fromEntries(nodes.map(node=>[node.id,false]));
+ source.nodeIncidentFlags=Object.fromEntries(nodes.map(node=>[node.id,false]));
+ source.pendingNodeIncidents=[];
+ return source;
+}
+function assessDoctrineTransferability(orders,simulateOrders,simulatePath){
+ const scenarioIds=['flood','blackout','blockade'],horizons=[30,60,90],scenarios=[];
+ for(const scenarioId of scenarioIds){
+  const start=createDoctrineScenarioState(scenarioId);
+  if(!start){scenarios.push({scenario:scenarioId,feasible:false,transferable:false,baselineRiskT90:null,candidateRiskT90:null,riskDeltaT90:100,weakestIntegrityDelta:-100,criticalNodeDelta:6,reason:'Исходный сценарий недоступен'});continue}
+  const baseline=simulateOrders([],start),candidate=simulateOrders(orders.map(order=>({...order})),start);
+  if(!baseline?.valid||!candidate?.valid){
+   scenarios.push({scenario:scenarioId,feasible:false,transferable:false,baselineRiskT90:null,candidateRiskT90:null,riskDeltaT90:100,weakestIntegrityDelta:-100,criticalNodeDelta:6,reason:'План недопустим по бюджету или бригадам в этом сценарии'});continue;
+  }
+  const baselineForecast=simulatePath({...baseline.state},horizons,0),candidateForecast=simulatePath({...candidate.state},horizons,0);
+  const before=baselineForecast[baselineForecast.length-1],after=candidateForecast[candidateForecast.length-1];
+  const riskDeltaT90=after.risk-before.risk,weakestIntegrityDelta=after.weakestIntegrity-before.weakestIntegrity,criticalNodeDelta=after.criticalNodes.length-before.criticalNodes.length;
+  const transferable=riskDeltaT90<=2&&weakestIntegrityDelta>=-8&&criticalNodeDelta<=1;
+  scenarios.push({scenario:scenarioId,feasible:true,transferable,baselineRiskT90:before.risk,candidateRiskT90:after.risk,riskDeltaT90,
+   baselineWeakestIntegrityT90:before.weakestIntegrity,candidateWeakestIntegrityT90:after.weakestIntegrity,weakestIntegrityDelta,
+   baselineCriticalNodesT90:before.criticalNodes.length,candidateCriticalNodesT90:after.criticalNodes.length,criticalNodeDelta,
+   reason:transferable?'Не превышены допустимые пороги переноса':'Есть измеряемая регрессия за порогом переноса'});
+ }
+ const feasible=scenarios.filter(row=>row.feasible),transferableCount=scenarios.filter(row=>row.transferable).length;
+ const deltas=feasible.map(row=>row.riskDeltaT90),integrity=feasible.map(row=>row.weakestIntegrityDelta);
+ const averageRiskDeltaT90=feasible.length?Math.round(deltas.reduce((sum,value)=>sum+value,0)/feasible.length*10)/10:100;
+ const worstRiskDeltaT90=feasible.length?Math.max(...deltas):100,weakestIntegrityDeltaT90=feasible.length?Math.min(...integrity):-100;
+ const penalty=(scenarios.length-transferableCount)*1.5+Math.max(0,worstRiskDeltaT90-2)*.35+Math.max(0,-weakestIntegrityDeltaT90-8)*.2;
+ return {scenarioCount:scenarioIds.length,transferableScenarioCount:transferableCount,averageRiskDeltaT90,worstRiskDeltaT90,weakestIntegrityDeltaT90,penalty:Math.round(penalty*100)/100,scenarios};
+}
+
 function searchDoctrinePlans(sourceState,mode,selectedNodeId,simulateOrders,simulatePath,nodeDefinitions,actionMetadata){
  const horizons=[30,60,90],maxDepth=4,beamWidth=6,robustnessCandidateLimit=8;
  const weakNodes=nodeDefinitions.slice().sort((a,b)=>{
@@ -1162,7 +1204,11 @@ function searchDoctrinePlans(sourceState,mode,selectedNodeId,simulateOrders,simu
   const robustness=assessDoctrineRobustness(sourceState,candidate.orders,candidate.score,simulateOrders,simulatePath,nodeDefinitions,mode);
   return {...candidate,robustness,robustScore:robustness.adjustedScore};
  }).sort((a,b)=>a.robustScore-b.robustScore||a.score-b.score||a.cost-b.cost||a.signature.localeCompare(b.signature));
- const portfolio=doctrineParetoPortfolio(robustCandidates,3);
+ const basePortfolio=doctrineParetoPortfolio(robustCandidates,3);
+ const portfolio=basePortfolio.map(candidate=>{
+  const transferability=assessDoctrineTransferability(candidate.orders,simulateOrders,simulatePath);
+  return {...candidate,transferability,transferAdjustedScore:Math.round((candidate.robustScore+transferability.penalty)*100)/100};
+ }).sort((a,b)=>a.transferAdjustedScore-b.transferAdjustedScore||a.robustScore-b.robustScore||a.cost-b.cost||a.signature.localeCompare(b.signature));
  const openingPrefixCount=new Set(robustCandidates.map(candidate=>candidate.orders.slice(0,2).map(order=>order.action+':'+(order.nodeId||'-')).join('|'))).size;
  return {baseline,alternatives:portfolio,evaluatedCount:explored.size,robustnessEvaluatedCount:robustCandidates.length,portfolioSize:portfolio.length,openingPrefixCount,paretoFrontSize:robustCandidates.filter(candidate=>!robustCandidates.some(other=>other.signature!==candidate.signature&&doctrineDominates(other,candidate))).length,mode};
 }
@@ -1305,6 +1351,12 @@ function buildDoctrineDossierPayload(sourceState,result,gameVersion,scenarioDefi
   crewsUsed:Number.isFinite(candidate.crewsUsed)?candidate.crewsUsed:null,
   scores:{nominal:Number.isFinite(candidate.score)?candidate.score:null,stressAdjusted:Number.isFinite(candidate.robustScore)?candidate.robustScore:null},
   forecast:encodeForecast(candidate.forecast),
+  transferability:candidate.transferability?{
+   scenarioCount:candidate.transferability.scenarioCount,transferableScenarioCount:candidate.transferability.transferableScenarioCount,
+   averageRiskDeltaT90:candidate.transferability.averageRiskDeltaT90,worstRiskDeltaT90:candidate.transferability.worstRiskDeltaT90,
+   weakestIntegrityDeltaT90:candidate.transferability.weakestIntegrityDeltaT90,scorePenalty:candidate.transferability.penalty,
+   scenarios:candidate.transferability.scenarios.map(row=>({...row}))
+  }:null,
   robustness:{
    profileCount:candidate.robustness?.profileCount??0,stableProfiles:candidate.robustness?.stableProfiles??0,
    averageRiskDelta:Number.isFinite(candidate.robustness?.averageRiskDelta)?candidate.robustness.averageRiskDelta:null,
@@ -1325,7 +1377,8 @@ function buildDoctrineDossierPayload(sourceState,result,gameVersion,scenarioDefi
   engine:{
    id:'civic-cascade-deterministic-decision-engine',modelVersion:'3.4.0',
    searchAlgorithm:'deterministic-bounded-beam-search',portfolioAlgorithm:'bounded-pareto-frontier',
-   objective:String(result.mode||'balanced'),limits:{maxCommands:4,beamWidth:6,stressCandidateLimit:8,stressProfileCount:9,stressSeverityLevels:3,portfolioLimit:3},
+   objective:String(result.mode||'balanced'),limits:{maxCommands:4,beamWidth:6,stressCandidateLimit:8,stressProfileCount:9,stressSeverityLevels:3,portfolioLimit:3,scenarioTransferabilityCount:3},
+   scenarioTransferability:{enabled:true,scenarios:['flood','blackout','blockade'],comparesAgainstNoInterventionInSameScenario:true,usesClonedStates:true,changesLiveState:false,thresholds:{maxRiskRegression:2,minWeakestIntegrityDelta:-8,maxCriticalNodeRegression:1}},
    forecastHorizonsGameSeconds:[30,60,90],stressFamilies:['water-surge','grid-overload','weak-node-shock'],stressSeverityLevels:['mild','moderate','severe'],stressProfiles:['water-surge-mild','water-surge-moderate','water-surge-severe','grid-overload-mild','grid-overload-moderate','grid-overload-severe','weak-node-shock-mild','weak-node-shock-moderate','weak-node-shock-severe']
   },
   scenario:{id:scenarioId,label:scenarioDefinitions?.[scenarioId]?.name||scenarioId},
@@ -1342,13 +1395,14 @@ function buildDoctrineDossierPayload(sourceState,result,gameVersion,scenarioDefi
   selectedCandidate:chosen?{rank:selectedIndex+1,signature:chosen.signature}:null,
   candidates:(result.alternatives||[]).map((candidate,index)=>encodeCandidate(candidate,index+1)),
   assumptions:{
-   forecastIsApproximate:true,futureRandomIncidentsIncluded:false,stressProfilesAreSyntheticPerturbations:true,
+   forecastIsApproximate:true,futureRandomIncidentsIncluded:false,stressProfilesAreSyntheticPerturbations:true,scenarioTransferabilityIsWithinGameModel:true,
    comparesAgainstNoInterventionUnderSameStress:true,openAIAPIUsed:false,telemetrySent:false,personalDataIncluded:false,
    modelOutputsDescribeImplementedRulesOnly:true
   },
   limitations:[
    'Forecasts represent the implemented deterministic game model, not a real-world city model.',
    'Stress profiles are controlled synthetic perturbations, not weather forecasts or observed external events.',
+   'Cross-scenario transferability compares the plan against a no-intervention baseline in each of the three implemented game scenarios; it is not an external-world guarantee.',
    'The exported dossier records computed evidence; it does not prove a counterfactual real-world outcome.'
   ]
  };
@@ -1536,7 +1590,7 @@ function renderDoctrineResults(message){
   const card=document.createElement('article');card.className='doctrine-option';card.dataset.selected=String(index===doctrineSelectedIndex);
   const head=document.createElement('div');head.className='doctrine-option-head';
   const title=document.createElement('strong');title.textContent=candidate.portfolioRole|| (index===0?'ЛУЧШИЙ НАЙДЕННЫЙ ВАРИАНТ':'АЛЬТЕРНАТИВА '+String(index+1).padStart(2,'0'));
-  const robustness=candidate.robustness;const score=document.createElement('span');score.textContent='ОЦЕНКА '+candidate.robustScore.toFixed(2)+' · УСТОЙЧИВОСТЬ '+robustness.stableProfiles+'/'+robustness.profileCount;head.append(title,score);
+  const robustness=candidate.robustness;const score=document.createElement('span');score.textContent='ОЦЕНКА '+(candidate.transferAdjustedScore??candidate.robustScore).toFixed(2)+' · СТРЕСС '+robustness.stableProfiles+'/'+robustness.profileCount;head.append(title,score);
   const actions=document.createElement('p');actions.className='doctrine-option-actions';
   actions.textContent=candidate.orders.map((order,i)=>{
    const meta=PLAN_ACTIONS[order.action],target=order.action==='repair'?' · '+((nodes.find(node=>node.id===order.nodeId)||nodes[0]).name):'';
@@ -1554,10 +1608,13 @@ function renderDoctrineResults(message){
    return family.label+' '+(worst?.severityLabel||'—')+' · Δриска '+(worst&&worst.riskDelta90>0?'+':'')+(worst?.riskDelta90??'—');
   }).join(' / ');
   stress.textContent='СТРЕСС-КОНВЕРТ 9/9 · ХУДШИЙ УРОВЕНЬ: '+stressSummary;
-  const rationale=document.createElement('p');rationale.className='doctrine-option-rationale';rationale.textContent=explainDoctrineTradeoff(candidate,baseline,result.alternatives);
+  const portability=document.createElement('p');portability.className='doctrine-option-portability';
+  const portabilityRows=(candidate.transferability?.scenarios||[]).map(row=>row.scenario.toUpperCase()+': '+(row.riskDeltaT90>0?'+':'')+row.riskDeltaT90+' риск · '+(row.transferable?'ПЕРЕНОСИТСЯ':'РЕГРЕССИЯ')).join(' / ');
+  portability.textContent='ПЕРЕНОСИМОСТЬ '+(candidate.transferability?.transferableScenarioCount??0)+'/'+(candidate.transferability?.scenarioCount??3)+' СЦЕНАРИЯ · '+portabilityRows;
+  const rationale=document.createElement('p');rationale.className='doctrine-option-rationale';rationale.textContent=explainDoctrineTradeoff(candidate,baseline,result.alternatives)+' · ПЕРЕНОСИМОСТЬ: '+(candidate.transferability?.transferableScenarioCount??0)+'/3';
   const choose=document.createElement('button');choose.type='button';choose.className='ctrl';choose.textContent=index===doctrineSelectedIndex?'✓ Вариант выбран':'Выбрать этот вариант';choose.disabled=index===doctrineSelectedIndex;
   choose.addEventListener('click',()=>{doctrineSelectedIndex=index;renderDoctrineResults();refreshDoctrineAvailability()});
-  card.append(head,actions,metrics,stress,rationale,choose);root.append(card);
+  card.append(head,actions,metrics,stress,portability,rationale,choose);root.append(card);
  });
 }
 function refreshDoctrineAvailability(){
