@@ -188,7 +188,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
               text.includes('id="favorites-filter"') &&
               text.includes('id="share-dialog"') &&
               text.includes('href="/entertainment/entertainment.css?v=20261014.3"') &&
-              /src="\\/entertainment\\/entertainment\\.js\\?v=[^"]+"/.test(text) &&
+              /src="\/entertainment\/entertainment\.js\?v=[^"]+"/.test(text) &&
               ['null-shift','time','swarm','inherit','remix','civic-cascade','patina','signal-run','cascade-lab','afterimage-run','aether-grid'].every(id => text.includes('data-game="'+id+'"')) &&
               text.includes('"numberOfItems":11')
             : route === '/entertainment/entertainment.css'
