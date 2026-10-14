@@ -394,6 +394,14 @@ new Function(sponsoredCampaigns);
 assert.ok(lifecycle.includes("fetch('/commerce-api/healthz'")&&lifecycle.includes("health.databaseReady!==true")&&lifecycle.includes("return fetch(base+'/v1/events'"),'Gameplay lifecycle events must discover only the database-ready first-party API and fail closed otherwise');
 new Function(consentedAnalytics);
 for(const marker of ['window.OSGARD_CONSENTED_ANALYTICS','MAX_PENDING = 100','MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000','if (!consentGranted())','clearQueue()','result?.accepted']) assert.ok(consentedAnalytics.includes(marker), 'Consent queue contract missing: '+marker);
+const optionalRuntimeMatch=html.match(/<script id="games-optional-runtime">([\s\S]*?)<\/script>/)
+assert.ok(optionalRuntimeMatch,'The Games hub must provide an optional-runtime loader')
+const optionalRuntime=optionalRuntimeMatch[1]
+new Function(optionalRuntime)
+assert.ok(!html.includes('<script src="/games/sponsored-campaigns.js'), 'Sponsor renderer must not block the first-load script queue')
+assert.ok(!html.includes('<script src="/games/experiment-core.js')&&!html.includes('<script src="/games/experiment-runtime.js'), 'Consent-gated experiment runtime must not be eagerly downloaded')
+for(const marker of ["loadScript('sponsored-campaigns.js')","loadScript('experiment-core.js')","loadScript('experiment-runtime.js')","if(!consentGranted())return Promise.resolve(false)","rootMargin:'0px'","encodeURIComponent(version)"]) assert.ok(optionalRuntime.includes(marker),'Optional runtime contract missing: '+marker)
+assert.ok(optionalRuntime.includes("document.querySelector('#analytics-toggle')")&&optionalRuntime.includes("loadSponsorRenderer"), 'Optional runtime must activate after consent or catalogue intent')
 const lazyRuntimeMatch=html.match(/<script id="games-lazy-runtime">([\s\S]*?)<\/script>/)
 assert.ok(lazyRuntimeMatch,'The Games hub must provide the on-demand runtime loader')
 const lazyRuntime=lazyRuntimeMatch[1]
