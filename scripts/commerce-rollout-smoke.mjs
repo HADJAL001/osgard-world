@@ -4,13 +4,14 @@ import { resolve } from "node:path";
 
 const root = resolve("services/osgard-commerce-api");
 const requiredFiles = [
-  "src/server.mjs", "src/core.mjs", "test/core.test.mjs",
+  "src/server.mjs", "src/core.mjs", "src/campaigns.mjs", "test/core.test.mjs", "test/campaigns.test.mjs",
   "package.json", "Dockerfile", "README.md", ".env.example",
 ];
 for (const relative of requiredFiles) assert.ok(existsSync(resolve(root, relative)), "Missing commerce file: " + relative);
 
 const server = readFileSync(resolve(root, "src/server.mjs"), "utf8");
 const core = readFileSync(resolve(root, "src/core.mjs"), "utf8");
+const campaigns = readFileSync(resolve(root, "src/campaigns.mjs"), "utf8");
 const store = readFileSync(resolve("public/games/premium/index.html"), "utf8");
 const app = readFileSync(resolve("public/games/premium/app.js"), "utf8");
 const admin = readFileSync(resolve("public/games/commerce-admin/index.html"), "utf8");
@@ -42,6 +43,10 @@ for (const value of ["type=\"password\"", "ADMIN_API_TOKEN", "/v1/admin/leads", 
 }
 assert.equal(config.apiBaseUrl, "", "No production API hostname should be assumed without deployment confirmation.");
 assert.equal(server.split('app.get("/v1/admin/overview"').length - 1, 1, "Commerce API must have exactly one admin overview handler.");
+assert.ok(server.includes('app.get("/v1/campaigns/active"') && server.includes('app.get("/v1/admin/campaigns"'), "Sponsor campaign public and admin routes must exist.");
+assert.ok(server.includes('app.post("/v1/admin/campaigns"') && server.includes('app.post("/v1/admin/campaigns/:id"'), "Sponsor campaign create/update routes must exist.");
+assert.ok(server.includes("CREATE TABLE IF NOT EXISTS commerce_campaigns") && server.includes("pg_advisory_xact_lock(20261014)"), "Campaign migration and serialized publish cap must exist.");
+assert.ok(campaigns.includes("CAMPAIGN_URL_MUST_BE_SAFE_HTTPS") && campaigns.includes("CAMPAIGN_DISCLOSURE_REQUIRED") && campaigns.includes("CAMPAIGN_PLACEMENT_NOT_INTEGRATED"), "Campaign input allow-lists and publishing guardrails missing.");
 
 const overviewStart = server.indexOf("const [orderStats, currencyStats, leadStats, eventStats, topEvents, analyticsByGame, ownedPromoByService, ownedPromoVariantStats, analyticsFunnel, socialShareByNetwork, paidRevenueByAttribution, referralRewardStats]");
 const overviewEnd = server.indexOf("\n    ]);", overviewStart);

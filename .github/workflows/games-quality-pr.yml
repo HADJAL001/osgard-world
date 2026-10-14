@@ -48,5 +48,7 @@ jobs:
         run: npm run qa:games-detail
       - name: Player Console 30-upgrade contract smoke
         run: npm run qa:player-console
+      - name: Sponsor campaign manager safety and route smoke
+        run: npm run qa:campaign-manager
       - name: Economy model regression
         run: npm run qa:games-model

@@ -14,7 +14,8 @@
     'checkout_started', 'checkout_paid', 'cross_promo_clicked',
     'owned_promo_impression', 'owned_promo_intermission_skipped',
     'owned_promo_preferences_saved', 'social_share_intent', 'social_reward_claimed', 'referral_reward_claimed', 'invite_link_prepared',
-    'game_launched', 'game_session_completed', 'lead_submitted', 'partner_inquiry'
+    'game_launched', 'game_session_completed', 'lead_submitted', 'partner_inquiry',
+    'sponsored_campaign_impression', 'sponsored_campaign_clicked'
   ]);
   const GAME_IDS = new Set([
     'null-shift', 'time', 'swarm', 'inherit', 'remix', 'civic-cascade',

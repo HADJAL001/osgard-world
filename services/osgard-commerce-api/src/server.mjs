@@ -10,6 +10,9 @@ import {
   validateEventBatch, validateReferralRegistrationPayload, validateReferralClaimPayload,
   paymentsModeAllowed, resolveCheckoutPaymentState, safeEqual,
 } from "./core.mjs";
+import {
+  campaignFromRow, normalizeCampaignId, publicCampaignView, validateCampaignPayload,
+} from "./campaigns.mjs";
 
 const { Pool } = pg;
 const app = express();
@@ -48,6 +51,7 @@ app.use("/v1/leads", rateLimit({ windowMs: 60 * 60 * 1000, limit: 8, standardHea
 app.use("/v1/events", rateLimit({ windowMs: 5 * 60 * 1000, limit: 60, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/referrals", rateLimit({ windowMs: 15 * 60 * 1000, limit: 30, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/admin", rateLimit({ windowMs: 5 * 60 * 1000, limit: 120, standardHeaders: "draft-8", legacyHeaders: false }));
+app.use("/v1/campaigns", rateLimit({ windowMs: 15 * 60 * 1000, limit: 120, standardHeaders: "draft-8", legacyHeaders: false }));
 
 async function ensureSchema() {
   if (!pool) return false;
@@ -66,7 +70,9 @@ async function ensureSchema() {
     "CREATE INDEX IF NOT EXISTS commerce_events_game_received_idx ON commerce_events(game_id, received_at DESC);\n" +
     "CREATE TABLE IF NOT EXISTS commerce_referral_invites (referral_code TEXT PRIMARY KEY, owner_hash TEXT NOT NULL, game_id TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), qualified_session_id TEXT, qualified_at TIMESTAMPTZ, reward_claimed_at TIMESTAMPTZ, reward_amount INTEGER NOT NULL DEFAULT 50 CHECK (reward_amount >= 0));\n" +
     "CREATE INDEX IF NOT EXISTS commerce_referral_owner_claim_idx ON commerce_referral_invites(owner_hash, reward_claimed_at, created_at DESC);\n" +
-    "CREATE UNIQUE INDEX IF NOT EXISTS commerce_referral_qualified_session_idx ON commerce_referral_invites(qualified_session_id) WHERE qualified_session_id IS NOT NULL");
+    "CREATE UNIQUE INDEX IF NOT EXISTS commerce_referral_qualified_session_idx ON commerce_referral_invites(qualified_session_id) WHERE qualified_session_id IS NOT NULL;\n" +
+    "CREATE TABLE IF NOT EXISTS commerce_campaigns (campaign_id TEXT PRIMARY KEY, sponsor_name TEXT NOT NULL, title TEXT NOT NULL, description TEXT NOT NULL, target_url TEXT NOT NULL, placement TEXT NOT NULL CHECK (placement IN ('catalog_feature','after_session','game_event')), sponsor_disclosure TEXT NOT NULL CHECK (sponsor_disclosure IN ('Реклама','Партнёрский материал','Спонсорский материал')), status TEXT NOT NULL CHECK (status IN ('draft','scheduled','active','paused')), starts_at TIMESTAMPTZ, ends_at TIMESTAMPTZ, frequency_cap SMALLINT NOT NULL DEFAULT 3 CHECK (frequency_cap BETWEEN 1 AND 20), created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
+    "CREATE INDEX IF NOT EXISTS commerce_campaigns_public_idx ON commerce_campaigns(status, placement, starts_at, ends_at, updated_at DESC)");
   dbReady = true;
   return true;
 }
@@ -227,6 +233,123 @@ app.post("/v1/stripe/webhook", express.raw({ type: "application/json", limit: "1
 });
 
 app.use(express.json({ limit: "25kb", strict: true }));
+
+function campaignColumns() {
+  return "campaign_id, sponsor_name, title, description, target_url, placement, status, starts_at, ends_at, frequency_cap, created_at, updated_at";
+}
+
+app.get("/v1/campaigns/active", async (req, res) => {
+  const placement = String(req.query.placement || "catalog_feature").trim();
+  if (placement !== "catalog_feature") return res.status(400).json({ error: "CAMPAIGN_PLACEMENT_NOT_INTEGRATED" });
+  if (!pool || !dbReady) return res.status(503).json({ error: "CAMPAIGNS_NOT_READY" });
+  try {
+    const result = await pool.query(
+      "SELECT " + campaignColumns().replace("status,", "CASE WHEN status = 'scheduled' AND starts_at <= NOW() AND ends_at > NOW() THEN 'active' ELSE status END AS status,") +
+      " FROM commerce_campaigns WHERE placement = $1 AND status IN ('active','scheduled') " +
+      "AND starts_at <= NOW() AND ends_at > NOW() AND sponsor_disclosure <> '' " +
+      "ORDER BY updated_at DESC, created_at DESC LIMIT 3",
+      [placement],
+    );
+    const items = result.rows.map(publicCampaignView).filter(Boolean);
+    res.set("Cache-Control", "public, max-age=30, stale-while-revalidate=30");
+    return res.json({ items, limits: { maxActiveCatalogItems: 3, frequencyCapScope: "browser-device",
+      note: "Частотный лимит действует в доступном локальном хранилище браузера, а не между устройствами." } });
+  } catch (error) {
+    console.error("Public campaign list failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "CAMPAIGNS_UNAVAILABLE" });
+  }
+});
+
+app.get("/v1/admin/campaigns", requireAdmin, async (_req, res) => {
+  if (!pool || !dbReady) return res.status(503).json({ error: "CAMPAIGNS_NOT_READY" });
+  res.set("Cache-Control", "no-store, private");
+  try {
+    const result = await pool.query(
+      "SELECT c.campaign_id, c.sponsor_name, c.title, c.description, c.target_url, " +
+      "c.placement, c.sponsor_disclosure, CASE WHEN c.status = 'scheduled' AND c.starts_at <= NOW() AND c.ends_at > NOW() THEN 'active' ELSE c.status END AS status, c.starts_at, c.ends_at, " +
+      "c.frequency_cap, c.created_at, c.updated_at, " +
+      "COALESCE(stats.impressions_30d, 0)::int AS impressions_30d, COALESCE(stats.clicks_30d, 0)::int AS clicks_30d " +
+      "FROM commerce_campaigns c LEFT JOIN (" +
+      "SELECT substring(source FROM '^sponsor-campaign:([a-zA-Z0-9_-]{8,64})$') AS campaign_id, " +
+      "COUNT(*) FILTER (WHERE event_name = 'sponsored_campaign_impression')::int AS impressions_30d, " +
+      "COUNT(*) FILTER (WHERE event_name = 'sponsored_campaign_clicked')::int AS clicks_30d " +
+      "FROM commerce_events WHERE received_at >= NOW() - INTERVAL '30 days' " +
+      "AND event_name IN ('sponsored_campaign_impression', 'sponsored_campaign_clicked') " +
+      "AND source ~ '^sponsor-campaign:([a-zA-Z0-9_-]{8,64})$' " +
+      "GROUP BY substring(source FROM '^sponsor-campaign:([a-zA-Z0-9_-]{8,64})$')" +
+      ") stats ON stats.campaign_id = c.campaign_id ORDER BY c.updated_at DESC, c.created_at DESC LIMIT 200",
+    );
+    return res.json({ items: result.rows.map(campaignFromRow), reportingWindowDays: 30 });
+  } catch (error) {
+    console.error("Admin campaign list failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "CAMPAIGN_LIST_UNAVAILABLE" });
+  }
+});
+
+async function saveCampaign(req, res, campaignId = "") {
+  const checked = validateCampaignPayload(req.body);
+  if (!checked.ok) return res.status(checked.status).json({ error: checked.code });
+  if (!pool || !dbReady) return res.status(503).json({ error: "CAMPAIGNS_NOT_READY" });
+  const id = campaignId || "cmp_" + crypto.randomUUID().replace(/-/g, "").slice(0, 24);
+  const data = checked.data;
+  let client;
+  try {
+    client = await pool.connect();
+    await client.query("BEGIN");
+    await client.query("SELECT pg_advisory_xact_lock(20261014)");
+    if (["active", "scheduled"].includes(data.status) && data.placement === "catalog_feature") {
+      const capacity = await client.query(
+        "SELECT COUNT(*)::int AS count FROM commerce_campaigns " +
+        "WHERE status IN ('active','scheduled') AND placement = 'catalog_feature' " +
+        "AND starts_at < $2 AND ends_at > $1 AND campaign_id <> $3",
+        [data.startsAt, data.endsAt, id],
+      );
+      if (Number(capacity.rows[0]?.count || 0) >= 3) {
+        await client.query("ROLLBACK");
+        return res.status(409).json({ error: "CAMPAIGN_SLOT_FULL", message: "В выбранном временном окне уже заняты три слота. Измените расписание или приостановите кампанию." });
+      }
+    }
+    let result;
+    if (campaignId) {
+      result = await client.query(
+        "UPDATE commerce_campaigns SET sponsor_name=$2, title=$3, description=$4, target_url=$5, " +
+        "placement=$6, sponsor_disclosure=$7, status=$8, starts_at=$9, ends_at=$10, frequency_cap=$11, updated_at=NOW() " +
+        "WHERE campaign_id=$1 RETURNING *",
+        [id, data.sponsorName, data.title, data.description, data.targetUrl, data.placement,
+          data.sponsorDisclosure, data.status, data.startsAt, data.endsAt, data.frequencyCap],
+      );
+      if (!result.rowCount) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({ error: "CAMPAIGN_NOT_FOUND" });
+      }
+    } else {
+      result = await client.query(
+        "INSERT INTO commerce_campaigns (campaign_id, sponsor_name, title, description, target_url, placement, " +
+        "sponsor_disclosure, status, starts_at, ends_at, frequency_cap) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *",
+        [id, data.sponsorName, data.title, data.description, data.targetUrl, data.placement,
+          data.sponsorDisclosure, data.status, data.startsAt, data.endsAt, data.frequencyCap],
+      );
+    }
+    await client.query("COMMIT");
+    return res.status(campaignId ? 200 : 201).json({
+      item: campaignFromRow(result.rows[0]),
+      note: "Публичный показ возможен только для активной кампании в интегрированном слоте каталога.",
+    });
+  } catch (error) {
+    await client?.query("ROLLBACK").catch(() => {});
+    console.error("Campaign save failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "CAMPAIGN_SAVE_UNAVAILABLE" });
+  } finally {
+    client?.release();
+  }
+}
+
+app.post("/v1/admin/campaigns", requireAdmin, (req, res) => saveCampaign(req, res));
+app.post("/v1/admin/campaigns/:id", requireAdmin, (req, res) => {
+  const id = normalizeCampaignId(req.params.id);
+  if (!id) return res.status(400).json({ error: "CAMPAIGN_ID_INVALID" });
+  return saveCampaign(req, res, id);
+});
 
 app.post("/v1/checkout/session", async (req, res) => {
   const input = validateCheckoutPayload(req.body);

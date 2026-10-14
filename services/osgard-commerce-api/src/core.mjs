@@ -46,6 +46,8 @@ export const ALLOWED_EVENTS = new Set([
   "game_session_completed",
   "lead_submitted",
   "partner_inquiry",
+  "sponsored_campaign_impression",
+  "sponsored_campaign_clicked",
 ]);
 
 const GAME_IDS = new Set([
@@ -162,6 +164,9 @@ export function validateEventBatch(body) {
     if (!ALLOWED_EVENTS.has(name)) return { ok: false, status: 400, code: "EVENT_NAME_NOT_ALLOWED" };
     if (!/^[a-zA-Z0-9_-]{12,96}$/.test(sessionId)) return { ok: false, status: 400, code: "SESSION_ID_INVALID" };
     if (!GAME_IDS.has(gameId)) return { ok: false, status: 400, code: "GAME_ID_INVALID" };
+    if ((name === "sponsored_campaign_impression" || name === "sponsored_campaign_clicked") && !/^sponsor-campaign:[a-zA-Z0-9_-]{8,64}$/.test(source)) {
+      return { ok: false, status: 400, code: "CAMPAIGN_EVENT_SOURCE_INVALID" };
+    }
     if (!Number.isInteger(durationSeconds) || durationSeconds < 0 || durationSeconds > 86400) {
       return { ok: false, status: 400, code: "DURATION_INVALID" };
     }
