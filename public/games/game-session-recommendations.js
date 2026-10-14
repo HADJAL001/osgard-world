@@ -25,12 +25,15 @@ const make=(tag,cls,value)=>{const n=document.createElement(tag);if(cls)n.classN
 function clear(){if(typeof document.dispatchEvent==='function')document.dispatchEvent(new CustomEvent('osgard:dispose-postgame'));host.replaceChildren();host.hidden=true;dialog.classList.remove('has-recommendations')}
 function render(id){
  if(!games[id]||!Array.isArray(next[id]))return;
- host.replaceChildren();
- host.append(make('p','post-run-heading','Сессия завершена · следующий маршрут'));
- host.append(make('p','post-run-copy','Продолжай игровую историю OSGARD — выбери следующий мир.'));
+ const existingSuite=host.querySelector('.og-postgame-suite');
+ const heading=make('p','post-run-heading','Сессия завершена · следующий маршрут');
+ const copy=make('p','post-run-copy','Продолжай игровую историю OSGARD — выбери следующий мир.');
  const list=make('div','post-run-grid');
  next[id].forEach(nextId=>{const game=games[nextId];if(!game)return;const link=make('a','post-run-link');link.href=game.href;link.dataset.play=nextId;link.append(make('strong','',game.title),make('span','',game.subtitle),make('em','','Открыть ↗'));list.append(link)});
- host.append(list);host.hidden=false;dialog.classList.add('has-recommendations');
+ const nodes=[heading,copy,list];
+ // Keep the service chooser and share-reward panel mounted when the same completed session emits both lifecycle events.
+ if(existingSuite)nodes.push(existingSuite);
+ host.replaceChildren(...nodes);host.hidden=false;dialog.classList.add('has-recommendations');
 }
 document.addEventListener('osgard:game-launching',clear);
 document.addEventListener('osgard:game-completed',event=>render(event.detail&&event.detail.game));
