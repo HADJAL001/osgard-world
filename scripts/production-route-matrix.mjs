@@ -4,7 +4,7 @@ const expectCurrentDesign = process.env.SKILLCRED_EXPECT_CURRENT_DESIGN === '1'
 const expectedBuild = String(process.env.OSGARD_EXPECTED_BUILD || '').trim()
 const ROUTE_TIMEOUT_MS = 10000
 const GODOT_ROUTE_TIMEOUT_MS = 20000
-const routes = ['/','/skillcred/','/skillcred-api/health','/skillcred-api/ready','/skillcred-api/issuer','/entertainment','/entertainment/','/games/','/games/index.html','/sitemap.xml','/games/civic-cascade/','/games/patina/','/games/cascade-lab/','/games/afterimage-run/','/games/aether-grid/','/games/partners/','/games/ecosystem/','/games/growth-studio/','/games/monetization/','/games/premium/','/games/premium/success/','/games/commerce-admin/','/games/commerce-config.json','/games/commerce-client.js','/games/admin/','/games/operations/','/games/player-console.js','/games/player-console.css','/games/admin/partners/','/games/invite/','/games/invite/null-shift/','/games/invite/time/','/games/invite/swarm/','/games/invite/inherit/','/games/invite/remix/','/games/invite/civic-cascade/','/games/invite/patina/','/games/invite/signal-run/','/games/invite/cascade-lab/','/games/invite/afterimage-run/','/games/invite/aether-grid/','/games/invite/invite-landing.js','/games/share-cards/catalog.png','/games/share-cards/null-shift.png','/games/share-cards/afterimage-run.png','/games/share-cards/aether-grid.png','/games/favicon.svg','/privacy/','/terms/','/support/osgard-play/','/community','/stream','/archive','/profile','/api/v1/player/profile','/api/v1/analytics/summary?from=0&to=1','/r/1842','/games/time','/game/time','/game/swarm','/game/null-shift','/game/inherit','/game/remix','/game/signal-run','/game/civic-cascade','/game/patina','/game/cascade-lab','/game/afterimage-run','/game/aether-grid','/games/signal-run/','/games/null-shift/','/games/null-shift/index.html','/games/null-shift-godot/','/games/null-shift-godot/index.html','/play/swarm','/play/null-shift','/play/inherit','/play/remix','/media','/business','/create','/mobility']
+const routes = ['/','/skillcred/','/skillcred-api/health','/skillcred-api/ready','/skillcred-api/issuer','/entertainment','/entertainment/','/entertainment/entertainment.css','/entertainment/entertainment.js','/games/','/games/index.html','/sitemap.xml','/games/civic-cascade/','/games/patina/','/games/cascade-lab/','/games/afterimage-run/','/games/aether-grid/','/games/partners/','/games/ecosystem/','/games/growth-studio/','/games/monetization/','/games/premium/','/games/premium/success/','/games/commerce-admin/','/games/commerce-config.json','/games/commerce-client.js','/games/admin/','/games/operations/','/games/player-console.js','/games/player-console.css','/games/admin/partners/','/games/invite/','/games/invite/null-shift/','/games/invite/time/','/games/invite/swarm/','/games/invite/inherit/','/games/invite/remix/','/games/invite/civic-cascade/','/games/invite/patina/','/games/invite/signal-run/','/games/invite/cascade-lab/','/games/invite/afterimage-run/','/games/invite/aether-grid/','/games/invite/invite-landing.js','/games/share-cards/catalog.png','/games/share-cards/null-shift.png','/games/share-cards/afterimage-run.png','/games/share-cards/aether-grid.png','/games/favicon.svg','/privacy/','/terms/','/support/osgard-play/','/community','/stream','/archive','/profile','/api/v1/player/profile','/api/v1/analytics/summary?from=0&to=1','/r/1842','/games/time','/game/time','/game/swarm','/game/null-shift','/game/inherit','/game/remix','/game/signal-run','/game/civic-cascade','/game/patina','/game/cascade-lab','/game/afterimage-run','/game/aether-grid','/games/signal-run/','/games/null-shift/','/games/null-shift/index.html','/games/null-shift-godot/','/games/null-shift-godot/index.html','/play/swarm','/play/null-shift','/play/inherit','/play/remix','/media','/business','/create','/mobility']
 const agents = { desktop: 'OSGARD-Route-Matrix/1.1 Desktop', mobile: 'OSGARD-Route-Matrix/1.1 Mobile' }
 const results = []
 for (const [device, userAgent] of Object.entries(agents)) for (const route of routes) {
@@ -126,17 +126,20 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
           : route.startsWith('/games/null-shift')
             ? text.includes('id="game"') && text.includes('id="mobile-ui"') && text.includes('id="diag-panel"') && text.includes('id="sound-toggle"') && text.includes('id="touch-sound"') && text.includes('./styles.css') && text.includes('./game.js') && text.includes('./engine-3d.js') && text.includes('id="engine-toggle"') && text.includes('id="touch-engine"') && text.includes('id="godot-preview"')
           : route === '/entertainment' || route === '/entertainment/'
-            ? response.redirected &&
-              new URL(response.url).pathname === '/games/' &&
-              text.includes('<title>OSGARD WORLD GAMING — Игровая платформа</title>') &&
-              text.includes('id="games-grid"') &&
-              text.includes('data-game="null-shift"') &&
-              text.includes('data-game="remix"') &&
-              text.includes('data-game="civic-cascade"') &&
-              text.includes('data-game="patina"') &&
-              text.includes('data-game="signal-run"') &&
-              text.includes('data-game="cascade-lab"') && text.includes('data-game="afterimage-run"') && text.includes('data-game="aether-grid"') &&
+            ? new URL(response.url).pathname === '/entertainment/' &&
+              text.includes('<title>OSGARD ENTERTAINMENT — Играй. Исследуй. Передавай вызов.</title>') &&
+              text.includes('id="world-catalog"') &&
+              text.includes('id="game-search"') &&
+              text.includes('id="favorites-filter"') &&
+              text.includes('id="share-dialog"') &&
+              text.includes('href="/entertainment/entertainment.css?v=20261014.1"') &&
+              text.includes('src="/entertainment/entertainment.js?v=20261014.1"') &&
+              ['null-shift','time','swarm','inherit','remix','civic-cascade','patina','signal-run','cascade-lab','afterimage-run','aether-grid'].every(id => text.includes('data-game="'+id+'"')) &&
               text.includes('"numberOfItems":11')
+            : route === '/entertainment/entertainment.css'
+              ? text.includes('.world-grid') && text.includes('prefers-reduced-motion:reduce') && (response.headers.get('content-type') || '').toLowerCase().includes('text/css')
+            : route === '/entertainment/entertainment.js'
+              ? text.includes('makeInviteLink') && text.includes('OSGARD_CONSENTED_ANALYTICS') && (response.headers.get('content-type') || '').toLowerCase().includes('javascript')
             : route === '/support/osgard-play/'
               ? text.includes('<title>Поддержка OSGARD PLAY — OSGARD WORLD</title>') &&
                 text.includes('mailto:osman.osmanov0099@gmail.com') &&
