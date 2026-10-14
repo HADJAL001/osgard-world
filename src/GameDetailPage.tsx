@@ -6,6 +6,8 @@ import {
 } from 'lucide-react'
 import { OsgardLogo } from './OsgardLogo'
 import { recordOsgardEvent } from './core/eventQueue'
+// @ts-expect-error Runtime-only consent helper; default-deny behavior is covered by Node smoke tests.
+import { updateAnalyticsConsent } from './core/analyticsConsent.mjs'
 import { getRelatedGames, type RecommendationReason } from './core/gameRecommendations.mjs'
 // @ts-expect-error Runtime-only JavaScript helper, covered by a Node smoke suite.
 import { createSessionClock, isTrustedGameLifecycleMessage } from './core/gameSessionLifecycle.mjs'
@@ -286,14 +288,10 @@ function readStringList(key: string): string[] {
 function readConsent(): Consent {
   try {
     const value = localStorage.getItem(ANALYTICS_CONSENT_KEY)
-    if (value === 'yes' || value === 'granted') {
-      if (value !== 'yes') localStorage.setItem(ANALYTICS_CONSENT_KEY, 'yes')
-      return 'yes'
-    }
-    if (value === 'no' || value === 'denied') {
-      if (value !== 'no') localStorage.setItem(ANALYTICS_CONSENT_KEY, 'no')
-      return 'no'
-    }
+    if (value === 'yes') return 'yes'
+    if (value === 'no') return 'no'
+    if (value === 'granted') return updateAnalyticsConsent(true).ok ? 'yes' : null
+    if (value === 'denied') return updateAnalyticsConsent(false).ok ? 'no' : null
     return null
   } catch {
     return null
@@ -307,7 +305,11 @@ function storeStringList(key: string, items: string[]) {
 }
 
 function storeConsent(value: Exclude<Consent, null>) {
-  try { localStorage.setItem(ANALYTICS_CONSENT_KEY, value) } catch { /* consent remains in memory */ }
+  try {
+    const result = updateAnalyticsConsent(value === 'yes')
+    if (value === 'no') window.OSGARD_CONSENTED_ANALYTICS?.clear()
+    return result.ok
+  } catch { return false }
 }
 
 function track(name: OsgardEventName, payload: Record<string, unknown>, consent: Consent) {
@@ -360,8 +362,9 @@ function useLocalCatalogState() {
     track('portal_opened', { surface: 'games-catalog', action: 'favorite_toggled', game: id, active: next.includes(id) }, consent)
   }
   const chooseConsent = (value: Exclude<Consent, null>) => {
-    storeConsent(value)
-    setConsent(value)
+    const stored = storeConsent(value)
+    setConsent(stored ? value : null)
+    if (!stored) setNotice(ru ? 'Не удалось сохранить выбор. Необязательная аналитика останется выключенной.' : 'Your choice could not be saved. Optional analytics will remain disabled.')
   }
   useEffect(() => {
     const onStorage = (event: StorageEvent) => {
