@@ -75,7 +75,7 @@ export async function auditInitialBundle(rootPath = 'dist', budgets = {}) {
     initialChunks.push({ path: publicPath.slice(1), bytes: metadata.size });
   }
   initialChunks.sort((a, b) => a.path.localeCompare(b.path, 'en'));
-  const allChunks = await walkJavaScript(root);
+  // Only Vite's first-party app chunks belong to this budget. Standalone games under dist/games have independent delivery/performance checks.\n  const allChunks = (await walkJavaScript(join(root, 'assets'))).map(chunk => ({ ...chunk, path: 'assets/' + chunk.path }));
   const initialJsBytes = initialChunks.reduce((total, chunk) => total + chunk.bytes, 0);
   const largestInitialChunkBytes = Math.max(...initialChunks.map(chunk => chunk.bytes));
   const largestChunk = allChunks.slice().sort((a, b) => b.bytes - a.bytes || a.path.localeCompare(b.path, 'en'))[0] ?? null;
