@@ -105,7 +105,7 @@ assert.ok(consentQueue.includes("'/commerce-api/healthz'") && consentQueue.inclu
 assert.ok(consentQueue.includes("credentials: 'omit'") && consentQueue.includes("if (!base || !consentGranted()"), "Analytics API discovery must omit cookies and remain consent-gated.");
 assert.ok(recommendations.includes("async function resolveReferralApiBase()") && recommendations.includes("health.databaseReady===true") && recommendations.includes("'/commerce-api/healthz'"), "Qualified referral rewards must probe the same-origin API before use.");
 assert.ok(operations.includes("health.service === 'osgard-commerce-api'") && operations.includes("health.databaseReady === true"), "Read-only operations console must distinguish a ready API from an empty static config.");
-assert.ok(admin.includes("if (!raw) return ''") && admin.includes("if (!apiBase) throw new Error('Commerce API не настроен."), "Admin must require an explicitly configured Commerce API URL before using its bearer token.");
+assert.ok(admin.includes("'/commerce-api/healthz'") && admin.includes("health.databaseReady === true") && admin.includes("credentials: 'omit'"), "Admin must discover only a database-ready first-party API and never send cookies with the operator token.");
 for (const [label, page] of [["Games", html], ["Partners", partners], ["Premium", store]]) {
   const queueTag = page.indexOf('src="/games/consented-analytics.js?v=__OSGARD_BUILD_VERSION__"');
   const clientTag = page.indexOf('src="/games/commerce-client.js"');
