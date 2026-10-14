@@ -872,9 +872,12 @@ function rewardShelf(gameId){
   primary.disabled=true;
   status.textContent='Готовим приглашение…';
   try{
-   await registerReferralInvite(gameId,inviteCode);
    if(typeof navigator.share==='function'){
+    // Open the native share sheet synchronously in the user gesture. Awaiting a
+    // network request first can consume transient user activation on mobile browsers.
+    const inviteRegistration=registerReferralInvite(gameId,inviteCode);
     await navigator.share({title:'OSGARD PLAY · '+titles[gameId],text:message,url});
+    await inviteRegistration;
     pending='native-share';
     claim.hidden=false;
     claim.textContent='Я действительно опубликовал — получить +50 SHARDS';
@@ -883,6 +886,7 @@ function rewardShelf(gameId){
     void sendSelectEvent('social_share_intent',gameId,'osgard-social-share:native-share:'+gameId);
     
    } else if(navigator.clipboard?.writeText){
+    await registerReferralInvite(gameId,inviteCode);
     await navigator.clipboard.writeText(message+' '+url);
     pending='';
     claim.hidden=true;
