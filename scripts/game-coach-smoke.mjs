@@ -38,7 +38,7 @@ assert.ok(civicAdvisor.includes('OPENAI_CIVIC_ADVISOR_ENABLED') && civicAdvisor.
 assert.ok(civicAdvisor.includes('store: false') && civicAdvisor.includes('https://api.openai.com/v1/responses'), "CIVIC Advisor must use Responses API with response storage disabled.");
 assert.ok(civicAdvisor.includes('additionalProperties: false') && civicAdvisor.includes('stressProfilesAreSynthetic'), "CIVIC Advisor must constrain output and mark synthetic stress evidence.");
 assert.ok(civicServer.includes('app.get("/v1/civic-cascade-advisor/status"') && civicServer.includes('app.post("/v1/civic-cascade-advisor"') && civicServer.includes('limit: 3'), "CIVIC Advisor status and rate-limited endpoints must exist.");
-assert.ok(civicGame.includes('id="cc-ai-advisor-consent"') && civicGame.includes("fetch('/v1/civic-cascade-advisor'"), "CIVIC Advisor must use explicit consent and same-origin transport.");
+assert.ok(civicGame.includes('id="cc-ai-advisor-consent"') && civicGame.includes("fetch('/commerce-api/v1/civic-cascade-advisor'"), "CIVIC Advisor must use explicit consent and same-origin transport.");
 assert.ok(!civicGame.includes("fetch('https://api.openai.com") && !civicGame.includes("OPENAI_API_KEY") && !civicGame.includes("Bearer "), "No provider secret or direct provider call may ship in browser code.");
 assert.ok(civicRelease.buildContract?.aiStrategyAdvisor?.requiresExplicitPerRequestConsent === true && civicRelease.buildContract?.aiStrategyAdvisor?.apiKeyClientSide === false, "Release contract must describe the Advisor security boundary.");
 
