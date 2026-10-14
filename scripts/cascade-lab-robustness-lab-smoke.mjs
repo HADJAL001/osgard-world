@@ -10,6 +10,7 @@ const api = globalThis.__CASCADELAB026_TEST__;
 assert.ok(api && api.version === '0.26.0', 'Robustness Lab pure API must be available');
 assert.equal(api.schema, 'osgard.cascade-lab.robustness-suite.v1');
 assert.equal(api.archiveSchema, 'osgard.cascade-lab.robustness-archive.v1');
+assert.equal(api.reportSchema, 'osgard.cascade-lab.robustness-report.v1');
 assert.equal(api.maxTrials, 48);
 assert.equal(api.maxReports, 12);
 assert.equal(api.axes.length, 3);
@@ -18,7 +19,7 @@ assert.match(html, /<title>CASCADE LAB — Premium Physics Lab 0\.26\.0<\/title>
 assert.ok(html.includes('id="CASCADELAB025"') && html.includes('evidence-integrity.js?v=0.25.0'), 'Evidence Integrity must remain integrated');
 assert.ok(html.includes('id="CASCADELAB026"') && html.includes('robustness-lab.js?v=0.26.0') && html.includes('data-cascade-lab-robustness="0.26.0"'), 'Robustness Lab must be versioned and cache-busted');
 assert.ok(html.includes("const CASCADELAB026_CORE = Object.freeze({") && html.includes("window, 'CASCADELAB026_CORE'"), 'game shell must expose a bounded local stress-run API');
-assert.ok(html.includes('new PhysicsWorld(levelSnapshot, blueprint)') && html.includes('world.step(WORLD.fixedStep)') && html.includes('const axes = [\'angle\', \'layout\', \'launch\']'), 'stress sweeps must use the actual fixed-step physics model and isolated factor groups');
+assert.ok(html.includes('new PhysicsWorld(levelSnapshot, blueprint)') && html.includes('world.step(WORLD.fixedStep)') && html.includes('const axes = []') && html.includes('directionalDeviceTypes.has(device.type)'), 'stress sweeps must use the actual fixed-step model and only applicable factor groups');
 assert.ok(html.includes('await new Promise(resolve => setTimeout(resolve, 0))'), 'stress sweeps must yield between trials instead of monopolising the UI');
 assert.doesNotMatch(source, /\b(?:fetch|XMLHttpRequest|sendBeacon)\s*\(/, 'Robustness Lab must not send data over the network');
 assert.ok(!source.includes('.innerHTML'), 'Robustness Lab must render via safe DOM APIs');
@@ -137,6 +138,14 @@ for (const trial of firstSweep.trials) {
 }
 const repeatSweep = await core.runSweep({ trialCount: 12, seed: 260125, severity: 'standard' });
 assert.deepEqual(firstSweep.trials.map(trial => trial.variation), repeatSweep.trials.map(trial => trial.variation), 'same seed and parameters must reproduce perturbations');
+
+const originalDevice = liveDevices[0];
+liveDevices.splice(0);
+const launchOnlySweep = await core.runSweep({ trialCount: 12, seed: 260125, severity: 'standard' });
+assert.deepEqual([...new Set(launchOnlySweep.trials.map(trial => trial.axis))], ['launch'], 'without devices, angle/layout factors must not produce false robust results');
+assert.deepEqual(launchOnlySweep.testedAxes, ['launch']);
+liveDevices.push(originalDevice);
+assert.equal(JSON.stringify(liveDevices), beforeDevices, 'the original blueprint snapshot must remain intact after non-applicable-factor tests');
 
 const inlineScripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]).filter(text => text.trim());
 assert.ok(inlineScripts.length >= 1, 'main game engine must remain present');
