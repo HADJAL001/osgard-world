@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="osgard-game-version" content="0.25.0-evidence-integrity">
   <meta name="theme-color" content="#050a11">
+  <meta name="osgard-game-pwa" content="0.26.0-offline-field-device">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CASCADE LAB">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./lab-icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./lab-icon.svg">
   <meta name="description" content="CASCADE LAB — физические головоломки, диагностика отказов, исследовательские контракты и передаваемые испытания без регистрации.">
   <title>CASCADE LAB — Premium Physics Lab 0.25.0</title>
   <style>
@@ -122,6 +129,11 @@ body.diagnostics-overlay-on .telemetry-pulse { background: #68d7ff; box-shadow: 
 @media(max-width:540px){.service-ad-dialog{width:calc(100vw - 12px);max-height:94vh;border-radius:12px}.service-ad-shell{padding:13px}.service-ad-header{gap:9px;padding-bottom:13px}.service-ad-monogram{width:35px;height:35px;flex-basis:35px;border-radius:10px;font-size:21px}.service-ad-wordmark strong{font-size:8px;letter-spacing:.1em}.service-ad-wordmark strong i{display:none}.service-ad-wordmark small{font-size:6px;letter-spacing:.07em}.service-ad-close{width:31px;height:31px}.service-ad-intro{padding:21px 0 17px}.service-ad-intro h2{font-size:31px}.service-ad-intro p{font-size:11px}.service-ad-choices-wrap{padding:9px}.service-ad-choices{gap:5px}.service-ad-choice{grid-template-columns:20px minmax(0,1fr);gap:6px;padding:8px 6px}.service-ad-choice-arrow{display:none}.service-ad-choice-number{width:19px;height:19px;font-size:6px}.service-ad-choice-copy strong{font-size:7px}.service-ad-choice-copy small{font-size:6px}.service-ad-feature-top{padding:12px;font-size:6px}.service-ad-feature-body{padding:16px;min-height:390px}.service-ad-feature h3{font-size:29px}.service-ad-feature-body>p{font-size:11px}.service-ad-socials button{flex:1 1 30%;min-height:31px}.service-ad-footer>span{font-size:6px}.service-ad-continue{width:100%;justify-content:space-between}}
 @media(prefers-reduced-motion:reduce){.service-ad-choice,.service-ad-visit,.service-ad-socials button,.service-ad-confirm-share{transition:none}}
 
+
+.install-lab-button{color:var(--gold);border-color:rgba(233,186,106,.44);background:linear-gradient(145deg,#1b2a35e8,#0a121cf5)}
+.install-lab-button[data-install-ready="true"]{border-color:#e9ba6abf;color:#ffe1a0;box-shadow:0 0 17px #e9ba6a20}
+.install-lab-button[data-installed="true"]{color:#72efc1;border-color:#72efc17a}
+@media(max-width:560px){.topbar-right{gap:7px;min-width:0}.install-lab-button{flex:0 0 34px}}
 </style>
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2036%2036%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22m%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20stop-color%3D%22%23ffe5ac%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23d99742%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%2236%22%20height%3D%2236%22%20rx%3D%2210%22%20fill%3D%22%23091522%22%2F%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22url(%23m)%22%20stroke-width%3D%221.5%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M8%2010.5%2018%204l10%206.5v15L18%2032%208%2025.5z%22%2F%3E%3Cpath%20d%3D%22m8%2010.5%2010%206%2010-6M18%2016.5V32M8%2025.5l10-6%2010%206%22%2F%3E%3Ccircle%20cx%3D%2218%22%20cy%3D%2216.5%22%20r%3D%222.3%22%20fill%3D%22%23ffe5ac%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 </head>
@@ -133,7 +145,7 @@ body.diagnostics-overlay-on .telemetry-pulse { background: #68d7ff; box-shadow: 
       <span class="brand-copy"><strong>CASCADE<span>LAB</span></strong><small>ENGINEERING / PUZZLE STUDIO</small></span>
     </a>
     <div class="topbar-center"><span class="status-dot"></span><span>ФИЗИЧЕСКАЯ СИМУЛЯЦИЯ</span><span class="topbar-divider"></span><span class="version">STANDALONE 0.25.0</span></div>
-    <div class="topbar-right"><span class="save-state"><span class="save-icon">↳</span><span id="saveLabel">Прогресс локально</span></span><button class="icon-button" id="soundButton" aria-label="Выключить звук" title="Звук">♫</button><button class="icon-button" id="helpButton" aria-label="Как играть" title="Как играть">?</button></div>
+    <div class="topbar-right"><span class="save-state"><span class="save-icon">↳</span><span id="saveLabel">Прогресс локально</span></span><button class="icon-button install-lab-button" id="installLabButton" type="button" aria-label="Установить CASCADE LAB на устройство" title="Установить на устройство">⇩</button><button class="icon-button" id="soundButton" aria-label="Выключить звук" title="Звук">♫</button><button class="icon-button" id="helpButton" aria-label="Как играть" title="Как играть">?</button></div>
   </header>
 
   <main id="top">
@@ -3201,5 +3213,27 @@ try{Object.defineProperty(window,'CASCADELAB014',{value:Object.freeze({version:V
 <script id="CASCADELAB022" src="./trajectory-xray.js?v=0.22.0" data-cascade-lab-xray="0.22.0" defer></script>
 <script id="CASCADELAB024" src="./mission-director.js?v=0.24.0" data-cascade-lab-director="0.24.0" defer></script>
 <script id="CASCADELAB025" src="./evidence-integrity.js?v=0.25.0" data-cascade-lab-evidence="0.25.0" defer></script>
+<script data-osgard-pwa-bootstrap>
+(function(){
+'use strict';
+const button=document.getElementById('installLabButton');let installPrompt=null,toastTimer=0;
+function message(text){const toast=document.getElementById('toast');if(!toast)return;toast.textContent=text;toast.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.remove('show'),4200);}
+function standalone(){try{return Boolean((window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true)}catch{return false}}
+if(button){
+ if(standalone()){button.dataset.installed='true';button.title='CASCADE LAB установлена';button.setAttribute('aria-label','CASCADE LAB установлена на устройство');}
+ window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();installPrompt=event;button.dataset.installReady='true';button.title='Установить CASCADE LAB';button.setAttribute('aria-label','Установить CASCADE LAB на устройство');});
+ button.addEventListener('click',async()=>{
+  if(standalone()){message('CASCADE LAB уже открыта как приложение. Прогресс хранится локально на этом устройстве.');return;}
+  if(installPrompt){const prompt=installPrompt;installPrompt=null;try{await prompt.prompt();const result=await prompt.userChoice;if(result&&result.outcome==='accepted')message('Установка начата. После первого онлайн-запуска лаборатория сможет открываться без сети.');else message('Установка отменена. Игру можно продолжать в браузере.');}catch{message('Открой меню браузера и выбери «Установить приложение» или «Добавить на главный экран».');}return;}
+  if(/iphone|ipad|ipod/i.test(navigator.userAgent||''))message('iPhone/iPad: открой CASCADE LAB в Safari → «Поделиться» → «На экран Домой». Первый запуск сделай с интернетом.');
+  else message('Открой меню браузера → «Установить CASCADE LAB» или «Добавить на главный экран». Первый онлайн-запуск нужен для подготовки офлайн-кэша.');
+ });
+ window.addEventListener('appinstalled',()=>{button.dataset.installed='true';button.title='CASCADE LAB установлена';button.setAttribute('aria-label','CASCADE LAB установлена на устройство');message('CASCADE LAB установлена. Локальные сохранения остаются на этом устройстве.');});
+}
+if('serviceWorker' in navigator && location.protocol!=='file:')navigator.serviceWorker.register('./service-worker.js?v=0.26.0',{scope:'./',updateViaCache:'none'}).catch(()=>{/* Optional PWA capability; browser game remains available. */});
+window.addEventListener('offline',()=>message('Нет сети. Установленная лаборатория сможет открываться из локального кэша; внешние сервисы потребуют интернет.'));
+window.addEventListener('online',()=>message('Связь восстановлена. История и сохранения остаются локальными на этом устройстве.'));
+})();
+</script>
 </body>
 </html>
