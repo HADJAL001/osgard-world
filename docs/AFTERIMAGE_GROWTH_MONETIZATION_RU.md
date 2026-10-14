@@ -1,7 +1,7 @@
 # AFTERIMAGE//RUN — growth & monetization plan
 
 ## Product pitch
-A compact sci-fi precision runner in OSGARD PLAY: the same UTC daily seed for everyone, a personal best/ghost, a challenge URL carrying the seed and score, share-result image, and a cosmetic SIGNAL SHARD that can be earned once per UTC day by starting a share flow or copying a challenge link. The game explicitly tells the player that the actual public post is not verified.
+A compact sci-fi precision runner in OSGARD PLAY: the same UTC daily seed for everyone, a personal best/ghost, a challenge URL carrying the seed and score, share-result image, timed checkpoints with deltas against personal-best splits, and a cosmetic SIGNAL SHARD claimed after a separate player confirmation. Copying a link alone does not earn the shard. The game explicitly tells the player that the actual public post is not verified.
 
 ## Viral loop to measure
 1. A player starts from the OSGARD games catalog or Entertainment.
@@ -10,7 +10,15 @@ A compact sci-fi precision runner in OSGARD PLAY: the same UTC daily seed for ev
 4. The recipient lands on the same date/seed, plays their run and can share their result.
 5. A non-transferable, cosmetic shard provides a small in-game acknowledgement. It does not alter speed, score, or paid rights.
 
-The share incentive is intentionally a reward for starting the share flow, not a claim that a post was published. Client-only localStorage is easy to reset and is not anti-fraud. Before offering tradable/paid value or a referral payout, implement server-side invite attribution, idempotent referral records, account/abuse controls, and require a qualified referred player's first completed session. The local shard is cosmetic-only.
+The local share reward uses a two-step flow: open the native/social share composer, then separately confirm a publication claim. This is not proof that a public post exists. A share-open, copy, or player-confirmed claim must not be reported as a verified post. Client-only localStorage is easy to reset and is not anti-fraud. Before offering tradable/paid value or a referral payout, implement server-side invite attribution, idempotent referral records, account/abuse controls, and require a qualified referred player's first completed session. The local shard is cosmetic-only.
+
+## v1.7 · Checkpoint time trials
+- Every 1,000 metres, record elapsed time at the exact distance boundary on the same UTC-daily seeded course.
+- Show checkpoint number, cumulative time and the signed delta versus the best saved time at that checkpoint.
+- Ranked runs may improve each checkpoint independently of overall score; Practice cannot overwrite them.
+- Store at most 60 validated checkpoint records locally and reject invalid distance/time values.
+- Include observed checkpoint splits and the personal-best split table in the downloadable JSON report.
+- These are local personal records, not a public leaderboard, server-verified speedrun or global rank.
 
 ## Owned-service intermission
 On closing an embedded game session, show one optional luxury cross-promotion panel containing the ten OSGARD-owned products. The player chooses a specific card then explicitly opens that destination, or dismisses the intermission. Each link carries:
