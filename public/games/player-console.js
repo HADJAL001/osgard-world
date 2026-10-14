@@ -96,7 +96,7 @@
     }
     const completionLog = Array.isArray(raw.completionLog) ? raw.completionLog.filter(row =>
       row && typeof row === 'object' && valid.has(row.game) && typeof row.at === 'string' && Number.isFinite(Date.parse(row.at))
-    ).map(row => ({ game: row.game, at: new Date(row.at).toISOString() })).slice(-MAX_LOG) : [];
+    ).map(row => ({ game: row.game, at: new Date(row.at).toISOString(), ...(typeof row.sessionId === 'string' && /^[a-zA-Z0-9_-]{1,120}$/.test(row.sessionId) ? { sessionId: row.sessionId } : {}) })).slice(-MAX_LOG) : [];
     return { schema: 1, launches, totalLaunches, gameIdsEver, activityDays, secondsByGame, completions, completionLog };
   }
   function loadQueue() { return cleanIds(safeRead(KEY.queue, []), MAX_QUEUE); }
@@ -249,6 +249,19 @@
       button.disabled = !complete || claimed; button.textContent = claimed ? 'Получено ✓' : complete ? 'Забрать +' + mission.reward + ' XP' : 'Продолжить';
       foot.append(button); card.append(top,meter,foot); host.append(card);
     }
+  }
+  function recordGameCompletion(event) {
+    const id = escapeId(event.detail?.game);
+    if (!gameMap().has(id)) return;
+    const rawSessionId = typeof event.detail?.sessionId === 'string' ? event.detail.sessionId : '';
+    const sessionId = /^[a-zA-Z0-9_-]{1,120}$/.test(rawSessionId) ? rawSessionId : '';
+    if (sessionId && (stats.completionLog || []).some(row => row.game === id && row.sessionId === sessionId)) {
+      renderOverview();
+      return;
+    }
+    stats.completions[id] = Math.min(100000, (stats.completions[id] || 0) + 1);
+    stats.completionLog = [...(stats.completionLog || []), { game: id, at: new Date().toISOString(), ...(sessionId ? { sessionId } : {}) }].slice(-MAX_LOG);
+    persistStats(); renderOverview();
   }
   function claimMission(id) {
     const mission = DAILY_MISSIONS.find(item => item.id === id);
@@ -600,7 +613,7 @@
     if (raw.completions && typeof raw.completions === 'object' && !Array.isArray(raw.completions)) {
       for (const [id, value] of Object.entries(raw.completions)) if (games.has(id) && Number.isInteger(value) && value >= 0 && value <= 100000) completions[id] = value;
     }
-    const completionLog = Array.isArray(raw.completionLog) ? raw.completionLog.filter(row => row && games.has(row.game) && typeof row.at === 'string' && Number.isFinite(Date.parse(row.at))).map(row => ({ game: row.game, at: new Date(row.at).toISOString() })).slice(-MAX_LOG) : [];
+    const completionLog = Array.isArray(raw.completionLog) ? raw.completionLog.filter(row => row && games.has(row.game) && typeof row.at === 'string' && Number.isFinite(Date.parse(row.at))).map(row => ({ game: row.game, at: new Date(row.at).toISOString(), ...(typeof row.sessionId === 'string' && /^[a-zA-Z0-9_-]{1,120}$/.test(row.sessionId) ? { sessionId: row.sessionId } : {}) })).slice(-MAX_LOG) : [];
     return { schema: 1, launches, totalLaunches, gameIdsEver, activityDays, secondsByGame, completions, completionLog };
   }
   async function importData(file) {
@@ -735,14 +748,10 @@
       const actions = $('.game-actions', card);
       if (actions) actions.append(button);
     });
-    document.addEventListener('osgard:game-completed', event => {
-      const id = escapeId(event.detail?.game);
-      if (!gameMap().has(id)) return;
-      stats.completions[id] = Math.min(100000, (stats.completions[id] || 0) + 1);
-      stats.completionLog = [...(stats.completionLog || []), { game: id, at: new Date().toISOString() }].slice(-MAX_LOG);
-      persistStats();
-      renderOverview(); renderMissions();
-    });
+    document.addEventListener('osgard:game-completed', recordGameCompletion);
+    // CASCADE LAB can complete a level while its session continues. Treat this as a
+    // valid round result; session IDs deduplicate the terminal event from the same run.
+    document.addEventListener('osgard:game-level-completed', recordGameCompletion);
     window.addEventListener('online', updateConnectionState);
     window.addEventListener('offline', updateConnectionState);
     document.addEventListener('visibilitychange', () => {
