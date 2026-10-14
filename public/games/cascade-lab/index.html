@@ -2436,6 +2436,101 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
+
+function runIsolatedReplay(input) {
+  const REPLAY_MODEL = 'cascade-lab-fixed-step-v1';
+  if (!input || typeof input !== 'object' || !Number.isInteger(input.levelId)) return { ok: false, reason: 'Не указан корректный номер протокола.' };
+  const targetLevel = LEVELS.find(item => item.id === input.levelId);
+  if (!targetLevel) return { ok: false, reason: 'Неизвестный протокол. Доступны только пять встроенных уровней.' };
+  if (!Array.isArray(input.devices) || input.devices.length > Math.min(12, targetLevel.capacity)) return { ok: false, reason: 'Чертёж не прошёл ограничение количества деталей.' };
+  const replayDevices = [];
+  for (const device of input.devices) {
+    if (!device || typeof device !== 'object' || !targetLevel.tools.includes(device.type) ||
+        !Number.isFinite(device.x) || device.x < -100 || device.x > 1100 ||
+        !Number.isFinite(device.y) || device.y < -100 || device.y > 700 ||
+        !Number.isFinite(device.angle) || Math.abs(device.angle) > Math.PI * 64) {
+      return { ok: false, reason: 'Чертёж содержит неподдерживаемую деталь или числовое значение.' };
+    }
+    replayDevices.push({ type: device.type, x: device.x, y: device.y, angle: device.angle });
+  }
+  const priorUidSequence = uidSequence;
+  try {
+    const worldDevices = replayDevices.map(d => makeDevice(d.type, d.x, d.y, d.angle));
+    const sim = new PhysicsWorld(targetLevel, worldDevices);
+    sim.start();
+    const maxSteps = 3600;
+    let steps = 0;
+    while (sim.status === 'running' && steps < maxSteps) {
+      sim.step(WORLD.fixedStep);
+      steps++;
+    }
+    if (sim.status === 'running') return { ok: false, reason: 'Ограничение защитных шагов достигнуто до завершения симуляции.' };
+    const round = (value, digits = 3) => Number.isFinite(value) ? Number(value.toFixed(digits)) : null;
+    const frame = p => ({
+      t: round(p.t, 3), x: round(p.x, 2), y: round(p.y, 2),
+      vx: round(p.vx, 2), vy: round(p.vy, 2),
+      gateOpen: p.gateOpen === true,
+      checkpoints: Array.isArray(p.checkpoints) ? p.checkpoints.map(String).sort().slice(0, 20) : []
+    });
+    const frames = sim.history.map(frame);
+    const last = frames[frames.length - 1];
+    if (!last || Math.abs(last.t - sim.time) > WORLD.fixedStep / 2) {
+      frames.push(frame({ t: sim.time, x: sim.x, y: sim.y, vx: sim.vx, vy: sim.vy, gateOpen: sim.gateOpen, checkpoints: [...sim.checkpointsReached] }));
+    }
+    const checkpointsReached = [...sim.checkpointsReached].map(String).sort();
+    const telemetry = {
+      distance: round(sim.telemetry.distance, 4),
+      peakSpeed: round(sim.telemetry.peakSpeed, 4),
+      maxHeight: round(sim.telemetry.maxHeight, 4),
+      impacts: sim.telemetry.impacts, contacts: sim.telemetry.contacts,
+      activations: sim.telemetry.activations,
+      lastImpactSpeed: round(sim.telemetry.lastImpactSpeed, 4),
+      events: sim.telemetry.events.slice(-16).map(e => ({
+        type: String(e.type), label: String(e.label), t: round(e.t, 3),
+        x: round(e.x, 2), y: round(e.y, 2), speed: round(e.speed, 2)
+      }))
+    };
+    const setup = replayDevices.map(d => ({ type: d.type, x: round(d.x, 4), y: round(d.y, 4), angle: round(d.angle, 6) }));
+    const canonical = value => {
+      if (value === null || typeof value !== 'object') return JSON.stringify(value);
+      if (Array.isArray(value)) return '[' + value.map(canonical).join(',') + ']';
+      return '{' + Object.keys(value).sort().map(key => JSON.stringify(key) + ':' + canonical(value[key])).join(',') + '}';
+    };
+    let hash = 0x811c9dc5;
+    for (const char of canonical({ model: REPLAY_MODEL, levelId: targetLevel.id, setup })) {
+      hash ^= char.charCodeAt(0);
+      hash = Math.imul(hash, 0x01000193) >>> 0;
+    }
+    return {
+      ok: true, schema: 'osgard.cascade-lab.replay-pass.v1',
+      engineContract: REPLAY_MODEL, appVersion: '0.26.0',
+      levelId: targetLevel.id, levelTitle: targetLevel.title,
+      setup, scenarioFingerprint: 'CL26-' + hash.toString(16).padStart(8, '0').toUpperCase(),
+      fixedStepSeconds: WORLD.fixedStep, gravityPxS2: WORLD.gravity, cargoRadiusPx: WORLD.radius,
+      steps, status: sim.status, reason: String(sim.reason || ''),
+      timeSeconds: round(sim.time, 6),
+      position: { x: round(sim.x, 4), y: round(sim.y, 4) },
+      velocity: { x: round(sim.vx, 4), y: round(sim.vy, 4) },
+      gateOpen: sim.gateOpen, checkpointsReached,
+      deviceCount: replayDevices.length,
+      telemetry, trajectory: frames.slice(0, 420)
+    };
+  } finally {
+    uidSequence = priorUidSequence;
+  }
+}
+Object.defineProperty(window, 'CASCADELAB026_ENGINE', {
+  value: Object.freeze({
+    version: '0.26.0', model: 'cascade-lab-fixed-step-v1', fixedStep: WORLD.fixedStep,
+    run: runIsolatedReplay,
+    currentScenario: () => ({
+      levelId: level.id, levelTitle: level.title, mode: analyticsMode(),
+      devices: devices.map(d => ({ type: d.type, x: d.x, y: d.y, angle: d.angle }))
+    })
+  }),
+  configurable: false, enumerable: false, writable: false
+});
+
 loadSaved();
 const launchIntent = readLaunchIntent(location.href);
 if (launchIntent.duel) {
