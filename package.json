@@ -24,7 +24,7 @@
     "qa:null-shift": "node scripts/null-shift-premium-smoke.mjs",
     "qa:games-portal": "node scripts/games-portal-smoke.mjs && npm run qa:civic-cascade && npm run qa:games-expedition",
     "qa:entertainment": "node scripts/entertainment-hub-smoke.mjs",
-    "qa:games-detail": "node scripts/games-detail-smoke.mjs && npm run qa:cascade-lab-hypothesis && npm run qa:cascade-lab-engineering && npm run qa:cascade-lab-experiment-studio && npm run qa:cascade-lab-trajectory-xray && npm run qa:cascade-lab-mission-director && npm run qa:cascade-lab-evidence-integrity && npm run qa:cascade-lab-pwa",
+    "qa:games-detail": "node scripts/games-detail-smoke.mjs && npm run qa:cascade-lab-hypothesis && npm run qa:cascade-lab-engineering && npm run qa:cascade-lab-experiment-studio && npm run qa:cascade-lab-trajectory-xray && npm run qa:cascade-lab-mission-director && npm run qa:cascade-lab-evidence-integrity && npm run qa:cascade-lab-reliability-atlas && npm run qa:cascade-lab-pwa",
     "qa:cascade-lab-hypothesis": "node scripts/cascade-lab-hypothesis-smoke.mjs",
     "qa:game-detail-runtime": "node scripts/game-detail-runtime-smoke.mjs",
     "qa:civic-cascade-forecast": "node scripts/civic-cascade-forecast-smoke.mjs",
@@ -61,7 +61,8 @@
     "qa:games-expedition": "node scripts/games-expedition-smoke.mjs",
     "qa:cascade-lab-trajectory-xray": "node scripts/cascade-lab-trajectory-xray-smoke.mjs",
     "qa:cascade-lab-mission-director": "node scripts/cascade-lab-mission-director-smoke.mjs",
-    "qa:cascade-lab-evidence-integrity": "node scripts/cascade-lab-evidence-integrity-smoke.mjs"
+    "qa:cascade-lab-evidence-integrity": "node scripts/cascade-lab-evidence-integrity-smoke.mjs",
+    "qa:cascade-lab-reliability-atlas": "node scripts/cascade-lab-reliability-atlas-smoke.mjs"
   },
   "dependencies": {
     "@types/three": "^0.186.0",
