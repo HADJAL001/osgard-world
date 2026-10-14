@@ -8,6 +8,7 @@ on:
       - "scripts/skillcred-page-smoke.mjs"
       - "scripts/time-prototype-smoke.mjs"
       - "scripts/games-portal-smoke.mjs"
+      - "scripts/patina-atelier-smoke.mjs"
       - "scripts/osgard-select-growth-smoke.mjs"
       - "scripts/consented-analytics-queue-smoke.mjs"
       - "scripts/activate-frontend-remote.sh"
@@ -87,6 +88,8 @@ jobs:
         run: npm run qa:null-shift-godot
       - name: Verify game detail pages and SEO
         run: npm run qa:games-detail
+      - name: Verify PATINA Atelier local case console
+        run: npm run qa:patina-atelier
       - name: Verify monetization scenario formulas
         run: npm run qa:games-model
       - name: Test consent-gated commerce and referral event validation

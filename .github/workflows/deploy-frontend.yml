@@ -69,6 +69,8 @@ jobs:
         run: npm run qa:consented-analytics-queue
       - name: Smoke-test individual game pages and SEO routes
         run: npm run qa:games-detail
+      - name: Smoke-test PATINA Atelier 2.0
+        run: npm run qa:patina-atelier
       - name: Verify REMIX growth funnel, attribution and sponsor safety
         run: npm run qa:remix-growth
       - name: Verify ecosystem links, claims, contacts and privacy boundaries
