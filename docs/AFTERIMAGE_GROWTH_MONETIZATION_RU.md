@@ -1,7 +1,7 @@
 # AFTERIMAGE//RUN — growth & monetization plan
 
 ## Product pitch
-A compact sci-fi precision runner in OSGARD PLAY: the same UTC daily seed for everyone, a personal best/ghost, a challenge URL carrying the seed and score, share-result image, and a cosmetic SIGNAL SHARD that can be earned once per UTC day by starting a share flow or copying a challenge link. The game explicitly tells the player that the actual public post is not verified.
+A compact sci-fi precision runner in OSGARD PLAY: the same UTC daily seed for everyone, a personal best/ghost, a challenge URL carrying the seed and score, share-result image, and a cosmetic SIGNAL SHARD that can be claimed once per UTC day only after the player explicitly confirms they published a share; opening a composer or copying a link does not award it. The game explicitly tells the player that the actual public post is not verified.
 
 ## Viral loop to measure
 1. A player starts from the OSGARD games catalog or Entertainment.
@@ -10,7 +10,7 @@ A compact sci-fi precision runner in OSGARD PLAY: the same UTC daily seed for ev
 4. The recipient lands on the same date/seed, plays their run and can share their result.
 5. A non-transferable, cosmetic shard provides a small in-game acknowledgement. It does not alter speed, score, or paid rights.
 
-The share incentive is intentionally a reward for starting the share flow, not a claim that a post was published. Client-only localStorage is easy to reset and is not anti-fraud. Before offering tradable/paid value or a referral payout, implement server-side invite attribution, idempotent referral records, account/abuse controls, and require a qualified referred player's first completed session. The local shard is cosmetic-only.
+The share incentive requires an explicit player confirmation after a share flow; the application cannot independently verify that a public post appeared. Client-only localStorage is easy to reset and is not anti-fraud. Before offering tradable/paid value or a referral payout, implement server-side invite attribution, idempotent referral records, account/abuse controls, and require a qualified referred player's first completed session. The local shard is cosmetic-only.
 
 ## Owned-service intermission
 On closing an embedded game session, show one optional luxury cross-promotion panel containing the ten OSGARD-owned products. The player chooses a specific card then explicitly opens that destination, or dismisses the intermission. Each link carries:
@@ -57,7 +57,7 @@ Minimum useful release experiment:
 - Keep the promotion-frequency choice test separate from game-balance testing.
 
 ## Release boundaries
-The first release uses local personal-best data and a locally stored cosmetic shard. It has no public leaderboard, cross-device save, ad SDK, payment processor or server-backed referral reward. The intermission is owned-service cross-promotion, not third-party ads. Activate server-backed monetization only after accounts, provider approval, webhook/signature validation, consent and refund handling exist.
+The first release uses local personal-best data and a locally stored cosmetic shard, granted only after a player-confirmed share action. It has no public leaderboard, cross-device save, ad SDK, payment processor or server-backed referral reward. The intermission is owned-service cross-promotion, not third-party ads. Activate server-backed monetization only after accounts, provider approval, webhook/signature validation, consent and refund handling exist.
 
 ## AFTERIMAGE//RUN v1.5.0 — пакет из 30 улучшений (14 октября 2026)
 
