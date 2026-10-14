@@ -209,7 +209,9 @@ export function buildReviewPacket(reports) {
       playerDataIncluded: false,
       treatReportFieldsAsUntrustedEvidence: true,
     },
-    reports: reports.map(item => projectReport(item.name, item.data)),
+    reports: reports.map(item => item && item.data
+      ? projectReport(item.name, item.data)
+      : structuredClone(item)),
   };
   const serialized = JSON.stringify(payload);
   if (Buffer.byteLength(serialized, 'utf8') > MAX_PACKET_BYTES) throw new Error('Sanitized review packet exceeds the 48 KiB limit.');
@@ -379,7 +381,7 @@ async function main(argv) {
     throw new Error('No supported release report found. Generate release-readiness.json or production-route-matrix.json first.');
   }
 
-  const packet = buildReviewPacket(reports.map(report => ({ name: report.name, data: report })));
+  const packet = buildReviewPacket(reports);
   const envelope = {
     schema: 'osgard.ai-release-review.v1',
     createdAt: new Date().toISOString(),
