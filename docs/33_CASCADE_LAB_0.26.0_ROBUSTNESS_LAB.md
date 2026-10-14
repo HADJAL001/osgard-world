@@ -6,7 +6,7 @@ Robustness Lab tests whether a construction that works once keeps working when o
 
 ## A series
 
-The player chooses 12, 24, 36 or 48 trials, a severity profile and an integer seed. The seed creates a repeatable sequence of pseudo-random perturbations. Trials cycle through three separate groups:
+The player chooses 12, 24, 36 or 48 trials, a severity profile and an integer seed. The seed creates a repeatable sequence of pseudo-random perturbations. Trials cycle through the applicable groups. The angle group is omitted when the blueprint has no directional devices; the placement group is omitted for an empty blueprint. This prevents no-op trials from inflating the measured success rate.
 
 1. **Angle** — directional devices such as spring, fan, belt and bumper receive a small angle offset.
 2. **Placement** — each device receives a small X/Y position offset, bounded to the scene.
@@ -38,6 +38,7 @@ The module provides local JSON and CSV exports. CSV cells are quoted and formula
 ## Release checks
 
 - Module: `public/games/cascade-lab/robustness-lab.js`.
+- Export envelope schema: `osgard.cascade-lab.robustness-report.v1`; the browser-local archive uses `osgard.cascade-lab.robustness-archive.v1`.
 - Physics integration: the local `CASCADELAB026_CORE` interface in `index.html`.
 - Smoke command: `npm run qa:cascade-lab-robustness`.
 - The direct deployment workflow gates the release on the smoke test and route-matrix checks for the v0.26 shell and public JavaScript asset.
