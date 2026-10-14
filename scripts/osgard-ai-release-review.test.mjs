@@ -103,6 +103,36 @@ test('projected evidence is preserved in the review packet', () => {
   assert.equal(JSON.stringify(packet.payload).includes('private raw output'), false);
 });
 
+test('performance-budget evidence is minimized for OpenAI review without source contents', () => {
+  const performance = projectReport('osgard-performance-budget.json', {
+    schema: 'osgard.performance-budget.v1',
+    status: 'ready',
+    summary: { checks: 11, passed: 9, failed: 0, warnings: 2 },
+    budget: { sha256: 'd'.repeat(64) },
+    metrics: {
+      criticalGzipBytes: 345678,
+      inventorySha256: 'e'.repeat(64),
+      html: { rawBytes: 4300, gzipBytes: 1500, brotliBytes: 1200 },
+      js: { count: 3, rawBytes: 1100000, gzipBytes: 297000, brotliBytes: 270000,
+        largestFile: { path: 'assets/main.js', rawBytes: 530000, gzipBytes: 132000, brotliBytes: 120000 } },
+      css: { count: 1, rawBytes: 312000, gzipBytes: 61000, brotliBytes: 52000,
+        largestFile: { path: 'assets/main.css', rawBytes: 312000, gzipBytes: 61000, brotliBytes: 52000 } },
+      sourceMapFiles: [],
+    },
+    checks: [
+      { id: 'perf:js-total-gzip', status: 'passed', title: 'Combined JS is within budget', detail: '297000 bytes' },
+      { id: 'perf:large-chunk-advisory', status: 'warning', title: 'Consider code splitting', detail: 'assets/main.js' },
+    ],
+  });
+  assert.equal(performance.performance.criticalGzipBytes, 345678);
+  assert.equal(performance.performance.js.gzipBytes, 297000);
+  assert.equal(performance.performance.css.largestFile.path, 'assets/main.css');
+  const packet = buildReviewPacket([performance]);
+  const encoded = JSON.stringify(packet.payload);
+  assert.equal(encoded.includes('sourceMapFiles'), false);
+  assert.equal(encoded.includes('source contents'), false);
+  assert.equal(packet.payload.policy.sourceCodeIncluded, false);
+});
 test('assessment validator rejects malformed model outputs and sanitizes secrets', () => {
   assert.throws(() => validateAssessment({ recommendation: 'ship' }), /schema/i);
   const valid = validateAssessment(assessment({ summary: 'Key sk-Abcdefghijklmnopqrst must be redacted.' }));
