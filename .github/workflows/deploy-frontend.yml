@@ -45,6 +45,8 @@ on:
       - "scripts/games-portal-smoke.mjs"
       - "scripts/civic-cascade-crisis-smoke.mjs"
       - "scripts/cascade-lab-evidence-integrity-smoke.mjs"
+      - "scripts/cascade-lab-reliability-atlas-smoke.mjs"
+      - "docs/34_CASCADE_LAB_0.27.0_RELIABILITY_ATLAS.md"
       - "scripts/osgard-play-pwa-smoke.mjs"
       - "docs/27_OSGARD_PLAY_30_RELEASE_IMPROVEMENTS_2026-10-14.md"
       - ".github/workflows/osgard-play-qa.yml"
@@ -113,6 +115,8 @@ jobs:
         run: npm run qa:cascade-lab-experiment-studio
       - name: Verify CASCADE LAB trajectory plots, event timeline and privacy boundaries
         run: npm run qa:cascade-lab-trajectory-xray
+      - name: Verify Reliability Atlas cohorts, Wilson intervals and local archive
+        run: npm run qa:cascade-lab-reliability-atlas
       - name: Test game session clock and iframe lifecycle trust boundaries
         run: npm run qa:game-detail-runtime
       - name: Verify REMIX growth funnel, attribution and sponsor safety
