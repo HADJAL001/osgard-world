@@ -2476,6 +2476,33 @@ window.addEventListener('cascade-lab:repeat-identical-run-request', event => {
     showToast('Контрольный повтор недоступен: уровень или режим уже изменился.');
     return;
   }
+  const profileRound = (value, digits) => Number(Number(value).toFixed(digits));
+  const profileRect = value => ({
+    x: profileRound(value && value.x || 0, 2), y: profileRound(value && value.y || 0, 2),
+    w: profileRound(value && value.w || 0, 2), h: profileRound(value && value.h || 0, 2)
+  });
+  const currentProfile = {
+    world: { width: profileRound(WORLD.width, 2), height: profileRound(WORLD.height, 2),
+      gravity: profileRound(WORLD.gravity, 4), radius: profileRound(WORLD.radius, 4),
+      fixedStep: profileRound(WORLD.fixedStep, 8) },
+    level: {
+      id: level.id,
+      start: { x: profileRound(level.start.x, 2), y: profileRound(level.start.y, 2) },
+      goal: profileRect(level.goal),
+      platforms: (level.platforms || []).slice(0, 40).map(profileRect),
+      scenery: (level.scenery || []).slice(0, 40).map(profileRect),
+      gates: (level.gates || []).slice(0, 20).map(profileRect),
+      switchZone: level.switchZone ? profileRect(level.switchZone) : null,
+      checkpoints: (level.checkpoints || []).slice(0, 20).map(item => ({
+        id: String(item.id || '').slice(0, 80),
+        x: profileRound(item.x, 2), y: profileRound(item.y, 2), radius: profileRound(item.radius || 0, 2)
+      })).sort((a, b) => a.id.localeCompare(b.id))
+    }
+  };
+  if (JSON.stringify(request.simulationProfile) !== JSON.stringify(currentProfile)) {
+    showToast('Профиль физики или геометрия уровня изменились. Такой повтор нельзя считать воспроизводимым.');
+    return;
+  }
   const cleanBlueprint = values => (Array.isArray(values) ? values : []).map(d => {
     let angle = Number(d.angle) % (Math.PI * 2);
     if (angle > Math.PI) angle -= Math.PI * 2;
