@@ -12,9 +12,15 @@ const games = [
   { id: 'patina', category: 'creative' },
   { id: 'cascade-lab', category: 'creative' },
   { id: 'afterimage-run', category: 'creative' },
+  { id: 'aether-grid', category: 'creative' },
 ];
 
 const find = id => games.find(game => game.id === id);
+const aether = getRelatedGames(find('aether-grid'), games);
+assert.deepEqual(aether.map(item => item.game.id), ['signal-run', 'cascade-lab', 'patina']);
+assert.ok(!aether.some(item => item.game.id === 'aether-grid'), 'AETHER GRID must not recommend itself');
+assert.equal(new Set(aether.map(item => item.game.id)).size, aether.length, 'AETHER GRID recommendations must be unique');
+
 const base = getRelatedGames(find('civic-cascade'), games);
 assert.deepEqual(base.map(item => item.game.id), ['time', 'null-shift', 'inherit']);
 assert.equal(new Set(base.map(item => item.game.id)).size, base.length, 'recommendations must not duplicate games');
