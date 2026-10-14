@@ -1,6 +1,8 @@
 (() => {
 'use strict';
-const VERSION='0.23.0',SCHEMA='osgard.cascade-lab.mission-director.v1',STORE_KEY=SCHEMA,MAX_HISTORY=24,MAX_ATTEMPTS=6;
+const VERSION='0.23.0';
+const SCHEMA='osgard.cascade-lab.mission-director.v1';
+const STORE_KEY=SCHEMA,MAX_HISTORY=24,MAX_ATTEMPTS=6;
 const LEVELS=[{id:1,name:'Первый каскад'},{id:2,name:'Второй этаж'},{id:3,name:'Магнитная аномалия'},{id:4,name:'Красный шлюз'},{id:5,name:'Хрупкий груз'}];
 const KINDS=new Set(['first-clear','recovery','leaner','faster','consistency']),STATUSES=new Set(['active','complete','expired']);
 let sequence=0;
@@ -81,7 +83,9 @@ const grid=el('div','cl-director-grid');grid.id='cl-director-grid';recs.append(r
 const history=el('div','cl-director-history');history.id='cl-director-history';history.hidden=true;history.append(el('h4','','ЛЕТОПИСЬ КОНТРАКТОВ'));const historyRows=el('div','');historyRows.id='cl-director-history-rows';history.append(historyRows);
 const status=el('p','cl-director-status','Данные читаются локально.');status.id='cl-director-status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');
 panel.append(top,current,recs,history,status,el('p','cl-director-foot','Контракты, Research XP и история хранятся только в этом браузере. Это не деньги, не глобальный рейтинг и не серверная аналитика. Диагноз — подсказка по игровой модели, а не доказательство физической причинности.'));
-const passportPanel=host.querySelector('.cl-passport'),archivePanel=host.querySelector('.cl-eng-archive');host.insertBefore(panel,passportPanel||archivePanel||null);
+const passportPanel=host.querySelector('.cl-passport'),archivePanel=host.querySelector('.cl-eng-archive');
+const insertionPoint=passportPanel?.parentNode===host?passportPanel:archivePanel?.parentNode===host?archivePanel:null;
+host.insertBefore(panel,insertionPoint);
 const $=s=>panel.querySelector(s);
 function rankFor(xp){return xp>=2000?'MASTER':xp>=1000?'ARCHITECT':xp>=500?'ANALYST':xp>=200?'TESTER':'EXPLORER';}
 let state=readState();
