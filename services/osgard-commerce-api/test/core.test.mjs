@@ -9,6 +9,7 @@ import {
   validateEventBatch,
   validateReferralRegistrationPayload,
   validateReferralClaimPayload,
+  validateReferralClaimAckPayload,
   paymentsModeAllowed,
   resolveCheckoutPaymentState,
   verifyStripeSignature,
@@ -85,6 +86,21 @@ test("referral reward claims require explicit consent and a high-entropy owner t
   assert.deepEqual(validateReferralClaimPayload(base), {
     ok: true, ownerToken: "abcdef0123456789abcdef0123456789",
   });
+});
+
+test("referral reward acknowledgement validates consent, owner token, codes and batch size", () => {
+  const base = { consent: true, ownerToken: "0123456789abcdef0123456789abcdef", referralCodes: ["og_0123abcd", "og_abcd0123"] };
+  assert.equal(validateReferralClaimAckPayload({ ...base, consent: false }).code, "ANALYTICS_CONSENT_REQUIRED");
+  assert.equal(validateReferralClaimAckPayload({ ...base, ownerToken: "guessable" }).code, "REFERRAL_OWNER_TOKEN_INVALID");
+  assert.deepEqual(validateReferralClaimAckPayload(base), {
+    ok: true,
+    ownerToken: base.ownerToken,
+    referralCodes: base.referralCodes,
+  });
+  assert.equal(validateReferralClaimAckPayload({ ...base, referralCodes: ["../../bad"] }).code, "REFERRAL_CODES_INVALID");
+  assert.equal(validateReferralClaimAckPayload({ ...base, referralCodes: [base.referralCodes[0], base.referralCodes[0]] }).code, "REFERRAL_CODES_INVALID");
+  assert.equal(validateReferralClaimAckPayload({ ...base, referralCodes: [] }).code, "REFERRAL_CODES_INVALID");
+  assert.equal(validateReferralClaimAckPayload({ ...base, referralCodes: Array(11).fill("og_0123abcd") }).code, "REFERRAL_CODES_INVALID");
 });
 
 test("analytics is disabled unless consent is explicit and event names are allow-listed", () => {
