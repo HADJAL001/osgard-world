@@ -20,7 +20,7 @@ Set OPENAI_API_KEY in your local process environment and, if necessary, OPENAI_M
 
 The default model is gpt-6-sol; availability and pricing can differ by API project and can change, so override OPENAI_MODEL when required. API calls may incur charges.
 
-The manual workflow is in GitHub Actions under “OSGARD AI release review (manual, opt-in)”. Its boolean input defaults to false. The workflow uses only the Actions secret OPENAI_API_KEY; do not place a key in source code, the frontend, workflow YAML, or the report.
+The manual workflow is in GitHub Actions under “OSGARD AI release review (manual, opt-in)”. Its boolean input defaults to false. When explicitly enabled, the workflow regenerates the cross-surface contract audit, builds and verifies the exact release attestation, and passes three minimized reports—release readiness, contract integrity, and artifact attestation—to the model. If any preparation step fails or a report is blocked, the reviewer receives a blocked evidence report and deterministic overrides force the recommendation to hold. The workflow uses only the Actions secret OPENAI_API_KEY; do not place a key in source code, the frontend, workflow YAML, or the report.
 
 ## Data boundary
 
