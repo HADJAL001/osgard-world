@@ -276,7 +276,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
       } else {
         const content = await asset.text()
         const normalized = content.toLowerCase()
-      const compact = normalized.replace(/\\s+/g, '')
+      const compact = normalized.replace(/\s+/g, '')
         nonEmpty = path === '/games/diagnostics/diagnostics.js'
           ? content.includes('window.OSGARDDiagnostics') && content.includes("schema: 'osgard.play.diagnostics.v1'") && !content.includes('sendBeacon(')
           : isCampaignAdmin
