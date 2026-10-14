@@ -26,6 +26,16 @@ async function source(path) {
   return sources.get(path);
 }
 function check(id, title, passed, detail = '', severity = 'error') {
+  // Accept the legacy (id, passed, title, detail) call shape too, so a positional
+  // mistake cannot turn a failed predicate into a truthy description string.
+  if (typeof title === 'boolean') {
+    const predicate = title;
+    title = typeof passed === 'string' ? passed : id;
+    passed = predicate;
+  }
+  if (typeof title !== 'string' || typeof passed !== 'boolean') {
+    throw new TypeError('Invalid contract check arguments for ' + id);
+  }
   report.checks.push({ id, title, status: passed ? 'passed' : severity === 'warning' ? 'warning' : 'failed', ...(detail ? { detail } : {}) });
 }
 function between(text, startMarker, endMarker) {
