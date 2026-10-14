@@ -1,0 +1,51 @@
+name: OSGARD one-pass ecosystem release
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - 'scripts/osgard-one-pass-release.mjs'
+      - 'scripts/osgard-one-pass-release-smoke.mjs'
+      - 'docs/OSGARD_WORLD_GAMING_ONE_PASS_2026-10-14.md'
+      - '.github/workflows/osgard-one-pass-release.yml'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'services/osgard-commerce-api/**'
+      - 'public/games/**'
+      - 'src/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: osgard-one-pass-release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  one-pass-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Validate the one-pass command plan and safe activation defaults
+        run: node scripts/osgard-one-pass-release-smoke.mjs
+      - name: Run the full OSGARD ecosystem release pass
+        run: node scripts/osgard-one-pass-release.mjs
+      - name: Upload release and external-project evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: osgard-one-pass-release-evidence
+          if-no-files-found: warn
+          path: |
+            artifacts/osgard-one-pass-release.json
+            artifacts/external-project-health.json
+            release-readiness.json
+            production-route-matrix.json
