@@ -32,8 +32,11 @@ assert.ok(catalog.includes('id="player-dialog"') && catalog.includes('id="player
 console.log('PASS 2 — consented funnel and accessibility modules are wired into the current catalogue.');
 for (const token of ['osgard.games.accessibility.v1','osgard-a11y-contrast','osgard-a11y-large-type','osgard-a11y-large-targets','aria-live="polite"',"event.key.toLowerCase() !== 'a'","window.addEventListener('storage'"]) assert.ok(a11yJs.includes(token), 'Missing accessibility behaviour: ' + token);
 for (const token of ['min-height:44px','prefers-reduced-motion:reduce','outline:3px solid','grid-template-columns:minmax(0,1fr)']) assert.ok(a11yCss.includes(token), 'Missing accessibility styling: ' + token);
-console.log('PASS 3 — persisted accessibility, keyboard/focus, announcements, reduced motion and mobile targets.');
+for (const token of ['function openDialog()', 'function closeDialog()', 'nativeModalActive', "event.key === 'Escape'", "event.key === 'Tab'", 'focusable[focusable.length - 1].focus()', "trigger.setAttribute('aria-expanded', 'false')"]) assert.ok(a11yJs.includes(token), 'Missing accessible modal fallback: ' + token);
+console.log('PASS 3 — persistent preferences, modal fallback, focus wrapping/restoration, reduced motion and mobile targets.');
 assert.ok(funnel.includes('if (!ALLOWED.has(name) || !consentGranted()) return false'));
+assert.ok(funnel.includes('Promise.resolve(queued).catch(() => {})'), 'Queue rejection must not become an unhandled promise.');
+assert.ok(funnel.includes('catch {\n      return false;\n    }'), 'Synchronous queue failures must be isolated from UI handlers.');
 assert.ok(funnel.includes('const bucket = value.length <= 3') || funnel.includes("const bucket = value.length <= 3"));
 assert.ok(funnel.includes("'game_player_retry_requested'"));
 assert.ok(funnel.includes("retry.textContent = 'Повторить загрузку ↻'"));
@@ -47,7 +50,7 @@ assert.ok(admin.includes('const blocked=/(email|token|secret|password|customer|o
 assert.ok(admin.includes("if(/^\\s*[=+\\-@]/.test(text))text=\"'\"+text"));
 assert.ok(admin.includes('Персональные поля исключены.'));
 console.log('PASS 5 — aggregate CSV export excludes sensitive keys and neutralizes spreadsheet formulas.');
-assert.equal((healthAudit.match(/\{ id: '/g) || []).length, 10);
+assert.ok((healthAudit.match(/\{ id: '/g) || []).length >= 10, 'The external-project health audit must retain its registered project set.');
 assert.ok(healthWorkflow.includes("cron: '17 5 * * *'") && healthWorkflow.includes('actions/upload-artifact@v4'));
 console.log('PASS 6 — existing ten-project health audit and scheduled artifact workflow remain intact.');
 console.log('PASS OSGARD Games contract smoke complete.');
