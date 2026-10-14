@@ -56,6 +56,8 @@ assert.ok(luxuryCss.includes('.card .game-actions{column-gap:32px;row-gap:28px}'
 assert.ok(luxuryCss.includes('.luxury-entertainment .art-patina .game-art-image') &&
           luxuryCss.includes('.luxury-entertainment .art-cascade-lab .game-art-image'),
   'Distinct card-art filters must continue working for external SVG images');
+assert.ok(routeMatrix.includes('if (expectedBuild) routes.splice(routes.indexOf(\'/games/share-cards/catalog.png\'), 0, ...CARD_ART_ROUTES)'),
+  'New art endpoints should enter the production route matrix only when an expected deployed release is supplied');
 assert.ok(routeMatrix.includes("route.startsWith('/games/card-art/')") &&
           routeMatrix.includes("image/svg+xml") &&
           routeMatrix.includes("text.includes('viewBox=')"),
