@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
-import { resolve, sep } from 'node:path';
+import { resolve } from 'node:path';
 
 const root = process.cwd();
 const gamesRoot = resolve(root, 'public/games');
@@ -12,6 +12,7 @@ const runtime = read('public/games/platform-map/platform-map.js');
 const styles = read('public/games/platform-map/platform-map.css');
 const serviceWorker = read('public/games/osgard-play-sw.js');
 const packageJson = JSON.parse(read('package.json'));
+const sitemap = read('public/sitemap.xml');
 
 assert.equal(registry.schemaVersion, 1, 'Capability registry schema must be v1.');
 assert.equal(registry.games.length, 11, 'Registry and release catalogue currently contract to 11 games.');
@@ -57,6 +58,7 @@ for (const navId of ['Карта платформы']) {
   assert.ok(catalog.includes(navId), 'Existing Games navigation must link to the new map.');
 }
 assert.ok(catalog.includes('/games/platform-map/'), 'Games catalog must link to the capability map.');
+assert.ok(sitemap.includes('https://osgard.world/games/platform-map/'), 'Capability map must be discoverable in the sitemap.');
 assert.equal((catalog.match(/href="\/games\/platform-map\//g) || []).length >= 2, true, 'Desktop/mobile navigation must both expose the map.');
 assert.ok(serviceWorker.includes("CACHE_NAME = 'osgard-play-shell-v1.0.3'"), 'Service-worker shell cache version must be bumped.');
 for (const path of ['/games/platform-map/','/games/platform-map/index.html','/games/platform-map/platform-map.css','/games/platform-map/platform-map.js','/games/game-registry.v1.json']) {
