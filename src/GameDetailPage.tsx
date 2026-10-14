@@ -375,6 +375,14 @@ export function GameDetailPage({ slug }: { slug: string }) {
   const game = GAMES.find(item => item.id === slug)
   const [locale, setLocale] = useState<Locale>(readLocale)
   const ru = locale === 'ru'
+  const { favorites, recent, consent, remember, toggleFavorite, chooseConsent } = useLocalCatalogState()
+  const [playing, setPlaying] = useState(() => new URLSearchParams(window.location.search).get('launch') === '1')
+  const [loadingGame, setLoadingGame] = useState(true)
+  const [frameError, setFrameError] = useState(false)
+  const [notice, setNotice] = useState('')
+  const [consentPanelOpen, setConsentPanelOpen] = useState(() => readConsent() === null)
+  const stageRef = useRef<HTMLDivElement>(null)
+  const detailTracked = useRef<string | null>(null)
   const consentRef = useRef<Consent>(consent)
   consentRef.current = consent
   const frameReadyCallback = useRef<(() => void) | null>(null)
@@ -387,14 +395,6 @@ export function GameDetailPage({ slug }: { slug: string }) {
     setLocale(value)
     try { localStorage.setItem(DETAIL_LOCALE_KEY, value) } catch { /* keep in memory */ }
   }
-  const { favorites, recent, consent, remember, toggleFavorite, chooseConsent } = useLocalCatalogState()
-  const [playing, setPlaying] = useState(() => new URLSearchParams(window.location.search).get('launch') === '1')
-  const [loadingGame, setLoadingGame] = useState(true)
-  const [frameError, setFrameError] = useState(false)
-  const [notice, setNotice] = useState('')
-  const [consentPanelOpen, setConsentPanelOpen] = useState(() => readConsent() === null)
-  const stageRef = useRef<HTMLDivElement>(null)
-  const detailTracked = useRef<string | null>(null)
 
   useEffect(() => {
     if (!game) {
