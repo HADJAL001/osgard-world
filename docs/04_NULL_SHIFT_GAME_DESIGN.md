@@ -386,3 +386,13 @@ The runtime smoke now checks combo thresholds, critical damage, the charge gate,
 - **Phase Anchor:** rupture adds 18 instability and opens a brief one-second shift window, while the closest physical energy conduit is visibly disabled for 6.5 seconds. The conduit resumes through its normal phase state machine when the disruption expires.
 - Impact rings still share the bounded ring pool; each ring can now choose a target expansion scale while older visual effects keep their previous default sizing. Tactical telemetry and F3 diagnostics expose EMP, Nova and lane-collapse counts.
 - Expanded headless Godot runtime coverage to check radius boundaries, cancelled enemy telegraphs, resource recovery, nearest-lane suppression and the real 3D state. Regular combat, Warden phase logic, daily mutators, gamepad/touch input, local-only career and reward idempotency remain compatible.
+
+
+## Godot release 0.16 — Adaptive Counterplay Director
+
+- The runtime learns an explainable tactical signature from three successful player actions: dash, pulse and phase shift. Weights decay over time; a doctrine changes only when one style has enough evidence and a clear share of recent actions. A lock interval prevents rapid switching.
+- INTERCEPT: Stalker telegraphs gain extra wind-up and targets are predicted from planar velocity, clamped to the arena; a fast player can still evade the committed intercept.
+- SPLIT: engaged enemies use wider, role-coded flank positions. Ranged and heavy units spread outside one normal pulse radius wherever arena geometry permits rather than stacking into one easy stun.
+- ECHO TRACK: phase shifts become easier for security to hear, extending the existing acoustic investigation system; it does not reveal the player through walls.
+- BALANCED remains the default for weak or mixed evidence. The active doctrine and switch count are visible in the HUD/diagnostics. Signals stay in memory for the run; no remote telemetry, account profiling or external API dependency is added.
+- Headless runtime tests cover selection thresholds, all three doctrines, a real widened flank, acoustic radius changes, bounded movement prediction and doctrine transitions.

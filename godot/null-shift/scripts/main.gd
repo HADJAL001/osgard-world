@@ -301,6 +301,14 @@ var daily_phase_rate := 1.0
 var daily_shift_instability_bonus := 0.0
 var daily_radar_jammed := false
 var daily_supply_blackout := false
+# COUNTERPLAY DIRECTOR / 0.16: local-only, decaying behavioural signals; no telemetry upload.
+const TACTICAL_DOCTRINE_REFRESH_SECONDS := 1.0
+const TACTICAL_DOCTRINE_LOCK_SECONDS := 5.5
+var tactical_action_counts: Dictionary = {"dash": 0.0, "pulse": 0.0, "phase": 0.0}
+var tactical_doctrine_clock := 0.0
+var tactical_doctrine_lock_timer := 0.0
+var adaptive_doctrine := "BALANCED"
+var tactical_doctrine_changes := 0
 
 func _ready() -> void:
 	_reset_runtime_collections()
@@ -344,6 +352,15 @@ func _reset_runtime_collections() -> void:
 	daily_shift_instability_bonus = 0.0
 	daily_radar_jammed = false
 	daily_supply_blackout = false
+	tactical_action_counts = tactical_action_counts.duplicate()
+	tactical_action_counts.clear()
+	tactical_action_counts["dash"] = 0.0
+	tactical_action_counts["pulse"] = 0.0
+	tactical_action_counts["phase"] = 0.0
+	tactical_doctrine_clock = 0.0
+	tactical_doctrine_lock_timer = 0.0
+	adaptive_doctrine = "BALANCED"
+	tactical_doctrine_changes = 0
 	combat_noise_position = Vector3.ZERO
 	combat_noise_radius = 0.0
 	combat_noise_timer = 0.0
@@ -1868,6 +1885,7 @@ func _try_dash() -> void:
 	if dash_direction.length_squared() < 0.001:
 		dash_direction = Vector3.FORWARD
 	dash_timer = DASH_DURATION
+	_record_tactical_action("dash")
 	dash_cooldown = DASH_COOLDOWN
 	dash_trail_clock = 0.0
 	dash_trail_last_position = player.global_position
@@ -2120,6 +2138,16 @@ func _guard_flank_target(guard: Dictionary, target_position: Vector3) -> Vector3
 			radius = 5.4
 		"WARDEN":
 			radius = 7.0
+	if adaptive_doctrine == "SPLIT":
+		match role:
+			"STALKER":
+				radius = 10.4
+			"HEAVY":
+				radius = 12.8
+			"WARDEN":
+				radius = 14.4
+			_:
+				radius = 13.4
 	var angle := float(guard.get("tactical_angle", float(guard.get("tactical_slot", 0)) * GUARD_FLANK_GOLDEN_ANGLE))
 	var target := target_position + Vector3(cos(angle) * radius, 0.0, sin(angle) * radius)
 	target.x = clampf(target.x, -21.0, 21.0)
@@ -2237,16 +2265,24 @@ func _update_guards(delta: float) -> void:
 				continue
 			if float(guard.get("dash_timer", 0.0)) > 0.0:
 				guard["dash_timer"] = dash_timer
-				body.velocity = to_player.normalized() * _effective_guard_speed(guard) * 3.4
+				if adaptive_doctrine == "INTERCEPT":
+					var intercept_target: Vector3 = guard.get("dash_target_position", player.global_position)
+					var intercept_direction := intercept_target - body.global_position
+					intercept_direction.y = 0.0
+					body.velocity = intercept_direction.normalized() * _effective_guard_speed(guard) * 3.4 if intercept_direction.length() > 0.9 else Vector3.ZERO
+				else:
+					body.velocity = to_player.normalized() * _effective_guard_speed(guard) * 3.4
 				body.move_and_slide()
 				if body.global_position.distance_to(player.global_position) < 2.15 and damage_cooldown <= 0.0 and _has_clear_path_to_player(body.global_position + Vector3.UP * 0.8, body):
 					_damage_player(14.0)
 				guards[index] = guard
 				continue
 			if sees_player and dash_cooldown <= 0.0 and distance > 4.5 and distance < 12.8:
-				guard["dash_windup"] = 0.42
+				guard["dash_windup"] = 0.50 if adaptive_doctrine == "INTERCEPT" else 0.42
+				guard["dash_target_position"] = _predict_intercept_position(player.global_position, player.velocity, dash_timer) if adaptive_doctrine == "INTERCEPT" else player.global_position
+				var stalker_telegraph_target: Vector3 = guard["dash_target_position"]
 				guard["dash_cooldown"] = 3.7
-				_spawn_beam(body.global_position + Vector3.UP * 0.9, player.global_position + Vector3.UP * 0.6, materials["violet"], 0.46)
+				_spawn_beam(body.global_position + Vector3.UP * 0.9, stalker_telegraph_target + Vector3.UP * 0.6, materials["violet"], 0.46)
 				body.velocity = Vector3.ZERO
 				guards[index] = guard
 				continue
@@ -2690,6 +2726,7 @@ func _deploy_pulse() -> void:
 		objective_text = "ИМПУЛЬС ПЕРЕЗАРЯЖАЕТСЯ · %.1f С" % pulse_cooldown
 		return
 	pulse_cooldown = maxf(2.0, 5.0 - float(pulse_level) * 0.7)
+	_record_tactical_action("pulse")
 	_emit_combat_noise(player.global_position, 26.0, "pulse")
 	var count := 0
 	var suppressed_count := 0
@@ -2720,7 +2757,8 @@ func _shift_layer() -> void:
 	if null_shift_timer > 0.0 or paused_game or mission_finished:
 		return
 	null_shift_timer = 3.8
-	_emit_combat_noise(player.global_position, 18.0, "phase")
+	_record_tactical_action("phase")
+	_emit_combat_noise(player.global_position, _phase_noise_radius(), "phase")
 	instability = minf(100.0, instability + 24.0 + daily_shift_instability_bonus)
 	phase_flash_timer = maxf(phase_flash_timer, 0.34)
 	_screen_impulse(0.105, 0.2)
@@ -3009,6 +3047,7 @@ func _register_hostile_elimination(guard: Dictionary, body: Node3D, precision_fi
 	_update_hud()
 
 func _update_combat_director(delta: float) -> void:
+	_update_tactical_doctrine(delta)
 	if combat_combo_timer > 0.0:
 		combat_combo_timer = maxf(0.0, combat_combo_timer - delta)
 		if combat_combo_timer <= 0.0 and combat_combo > 0:
@@ -3176,6 +3215,77 @@ func _apply_daily_mutators_to_guard(index: int) -> void:
 				health_readout.text = "HP %d / %d" % [int(guard["hp"]), int(guard["max_hp"])]
 	guard["daily_mutators_applied"] = true
 	guards[index] = guard
+
+
+func _record_tactical_action(action: String) -> void:
+	if not tactical_action_counts.has(action):
+		return
+	tactical_action_counts[action] = minf(24.0, float(tactical_action_counts.get(action, 0.0)) + 1.0)
+
+func _select_tactical_doctrine(counts: Dictionary) -> String:
+	var actions := ["dash", "pulse", "phase"]
+	var total := 0.0
+	var best_action := ""
+	var best_value := -1.0
+	for action in actions:
+		var value := maxf(0.0, float(counts.get(action, 0.0)))
+		total += value
+		if value > best_value:
+			best_value = value
+			best_action = action
+	if total < 2.5 or best_value / maxf(total, 0.001) < 0.48:
+		return "BALANCED"
+	match best_action:
+		"dash":
+			return "INTERCEPT"
+		"pulse":
+			return "SPLIT"
+		"phase":
+			return "ECHO_TRACK"
+	return "BALANCED"
+
+func _update_tactical_doctrine(delta: float) -> void:
+	var dt := maxf(0.0, delta)
+	tactical_doctrine_lock_timer = maxf(0.0, tactical_doctrine_lock_timer - dt)
+	tactical_doctrine_clock -= dt
+	for action in ["dash", "pulse", "phase"]:
+		var decayed := float(tactical_action_counts.get(action, 0.0)) * pow(0.91, dt)
+		tactical_action_counts[action] = 0.0 if decayed < 0.025 else decayed
+	if tactical_doctrine_clock > 0.0:
+		return
+	tactical_doctrine_clock = TACTICAL_DOCTRINE_REFRESH_SECONDS
+	if tactical_doctrine_lock_timer > 0.0:
+		return
+	var next_doctrine := _select_tactical_doctrine(tactical_action_counts)
+	if next_doctrine == adaptive_doctrine:
+		return
+	adaptive_doctrine = next_doctrine
+	tactical_doctrine_changes += 1
+	tactical_doctrine_lock_timer = TACTICAL_DOCTRINE_LOCK_SECONDS
+	match adaptive_doctrine:
+		"INTERCEPT":
+			objective_text = "AI COUNTERPLAY · INTERCEPT · СТРАЖ ПРЕДСКАЗЫВАЕТ РЫВОК"
+		"SPLIT":
+			objective_text = "AI COUNTERPLAY · SPLIT · ОХРАНА РАСПРЕДЕЛЯЕТСЯ ПО АРЕНЕ"
+		"ECHO_TRACK":
+			objective_text = "AI COUNTERPLAY · ECHO TRACK · СЛЕД СДВИГА СЛЫШЕН ДАЛЬШЕ"
+		_:
+			objective_text = "AI COUNTERPLAY · BALANCED · БАЗОВАЯ ТАКТИКА"
+	_update_hud()
+
+func _predict_intercept_position(position: Vector3, velocity: Vector3, dash_remaining: float) -> Vector3:
+	var planar_velocity := Vector3(velocity.x, 0.0, velocity.z)
+	var lead_seconds := clampf(planar_velocity.length() * 0.025, 0.0, 0.22)
+	if dash_remaining > 0.0:
+		lead_seconds = minf(maxf(0.0, dash_remaining), 0.24)
+	var predicted := position + planar_velocity * lead_seconds
+	predicted.x = clampf(predicted.x, -21.0, 21.0)
+	predicted.z = clampf(predicted.z, -12.0, 12.0)
+	predicted.y = position.y
+	return predicted
+
+func _phase_noise_radius() -> float:
+	return 26.0 if adaptive_doctrine == "ECHO_TRACK" else 18.0
 
 func _today_date_code() -> String:
 	return Time.get_date_string_from_system(true).replace("-", "")
@@ -4640,7 +4750,7 @@ func _update_hud() -> void:
 		telemetry_label.text += "  ·  REACT EMP %02d / NOVA %02d / LANE %02d" % [device_emp_overloads, device_cell_novas, device_lane_collapses]
 	if is_instance_valid(combat_status_label):
 		var overdrive_readout := "LIVE %.1f S" % overdrive_timer if overdrive_timer > 0.0 else "CHARGE %03d%%" % int(roundf(overdrive_charge))
-		combat_status_label.text = "COMBO %02d · ×%.2f · ACC %.0f%% · %s" % [combat_combo, _combat_combo_multiplier(combat_combo), _combat_accuracy_percentage(), overdrive_readout]
+		combat_status_label.text = "COMBO %02d · ×%.2f · ACC %.0f%% · %s · AI %s" % [combat_combo, _combat_combo_multiplier(combat_combo), _combat_accuracy_percentage(), overdrive_readout, adaptive_doctrine]
 		combat_status_label.add_theme_color_override("font_color", Color(0.92, 0.72, 1.0) if overdrive_timer > 0.0 else (Color(1.0, 0.77, 0.39) if combat_combo >= 4 else Color(0.38, 1.0, 0.86)))
 	if is_instance_valid(overdrive_bar):
 		overdrive_bar.value = clampf(overdrive_charge, 0.0, OVERDRIVE_MAX_CHARGE)
@@ -4660,10 +4770,10 @@ func _update_hud() -> void:
 		var active_impact_lights: int = _active_impact_light_count()
 		var operator_rim_active: int = int(is_instance_valid(operator_rim_light) and operator_rim_light.visible)
 		var profile: String = "PERFORMANCE" if performance_quality else ("BALANCED" if not cinematic_quality else ("AUTO-OPTIMIZED" if adaptive_quality_degraded else "CINEMATIC"))
-		diagnostics_label.text = "LIVE DIAGNOSTICS\nFPS        %02d\nFRAME P95  %.1f ms\nFRAME NOW  %.1f ms\nDRAW CALLS %d\nFX ACTIVE  %02d\nFX POOLS   %02d BEAM / %02d RING / %02d SPARK\nFX DROPPED %d\nDASH TRAILS %04d\nGUARDS     %d\nDEVICES    %d\nLANE SUPPRESS %03d\nDASH EVADES %d\nDASH CD    %.1f s\nHIT LIGHTS %d / %d POOL\nOPERATOR RIM %d / 1\nOVERDRIVE ARCS %d\nDEVICE FX  EMP %02d / NOVA %02d / LANE %02d\nEXFIL REINF %02d / BREACH %02d\nPROFILE    %s" % [
+		diagnostics_label.text = "LIVE DIAGNOSTICS\nFPS        %02d\nFRAME P95  %.1f ms\nFRAME NOW  %.1f ms\nDRAW CALLS %d\nFX ACTIVE  %02d\nFX POOLS   %02d BEAM / %02d RING / %02d SPARK\nFX DROPPED %d\nDASH TRAILS %04d\nGUARDS     %d\nDEVICES    %d\nLANE SUPPRESS %03d\nDASH EVADES %d\nDASH CD    %.1f s\nHIT LIGHTS %d / %d POOL\nOPERATOR RIM %d / 1\nOVERDRIVE ARCS %d\nDEVICE FX  EMP %02d / NOVA %02d / LANE %02d\nEXFIL REINF %02d / BREACH %02d\nCOUNTERPLAY %s / SWITCHES %02d\nPROFILE    %s" % [
 			Engine.get_frames_per_second(), fps_p95_ms, current_frame_ms, draw_calls,
 			effects.size(), beam_pool.size(), ring_pool.size(), spark_pool.size(), effect_pool_exhaustions,
-			dash_trails_emitted, guards.size(), _living_device_count(), phase_lane_disruptions, dash_evasions, dash_cooldown, active_impact_lights, impact_light_pool.size(), operator_rim_active, overdrive_arc_chains, device_emp_overloads, device_cell_novas, device_lane_collapses, extraction_reinforcements_spawned, extraction_overload_count, profile
+			dash_trails_emitted, guards.size(), _living_device_count(), phase_lane_disruptions, dash_evasions, dash_cooldown, active_impact_lights, impact_light_pool.size(), operator_rim_active, overdrive_arc_chains, device_emp_overloads, device_cell_novas, device_lane_collapses, extraction_reinforcements_spawned, extraction_overload_count, adaptive_doctrine, tactical_doctrine_changes, profile
 		]
 
 func _update_input_hint() -> void:
