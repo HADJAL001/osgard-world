@@ -4,12 +4,12 @@ import { readFileSync } from 'node:fs';
 const html = readFileSync(new URL('../public/games/cascade-lab/index.html', import.meta.url), 'utf8');
 const hypothesis = readFileSync(new URL('../public/games/cascade-lab/hypothesis-lab.js', import.meta.url), 'utf8');
 
-assert.match(html, /osgard-game-version" content="0\.20\.0-experiment-studio"/, 'release metadata must identify 0.19.0');
-assert.match(html, /<title>CASCADE LAB — Premium Physics Lab 0\.20.0<\/title>/, 'browser title must match release');
+assert.ok(html.includes('name="osgard-game-version" content="0.21.0-case-passport"'), 'release metadata must identify the current CASCADE LAB 0.21.0 shell');
+assert.ok(html.includes('<title>CASCADE LAB — Premium Physics Lab 0.21.0</title>'), 'browser title must match the current 0.21.0 shell');
 assert.ok(html.includes('id="CASCADELAB017"') && html.includes('data-cascade-lab-delta="0.17.0"') && html.includes('src="./delta-lens.js"'), 'Delta Lens must load as the current experiment layer');
 assert.match(html, /id="exportDossierButton"[^>]*>↓ JSON<\/button>/, 'JSON dossier control must be visible');
 assert.match(html, /\$\('exportDossierButton'\)\.addEventListener\('click', downloadExperimentDossier\)/, 'JSON control must be wired');
-assert.match(html, /application: \{ name: 'CASCADE LAB', version: '0\.20.0' \}/, 'local growth report must carry the current app version');
+assert.ok(html.includes("application: { name: 'CASCADE LAB', version: '0.21.0' }"), 'local growth report must carry the current 0.21.0 app version');
 
 const functionMatch = html.match(/function downloadExperimentDossier\(\) \{([\s\S]*?)\n\}\n\nfunction draw\(/);
 assert.ok(functionMatch, 'experiment dossier exporter must be defined before the renderer');
@@ -32,4 +32,4 @@ assert.ok(html.includes('id="CASCADELAB020"') && html.includes('data-cascade-lab
 assert.ok(hypothesis.includes("const SCHEMA = 'osgard.cascade-lab.next-experiment.v1'") && hypothesis.includes('function proposalForPair(pair)') && hypothesis.includes('function reconcilePlan('), 'Hypothesis Lab must plan and observe controlled experiments');
 assert.ok(!hypothesis.includes('fetch(') && !hypothesis.includes('XMLHttpRequest') && !hypothesis.includes('sendBeacon'), 'Hypothesis Lab must not upload local history');
 new Function(hypothesis);
-console.log('CASCADE LAB dossier smoke: PASS — v0.18.0 metadata, local report and Hypothesis Lab wiring.');
+console.log('CASCADE LAB dossier smoke: PASS — current 0.21.0 shell, local report and historical Hypothesis Lab wiring.');
