@@ -62,7 +62,7 @@ Never commit Stripe secrets, database URLs, or the admin token. Never embed them
 
 ## Static-site configuration
 
-Edit public/games/commerce-config.json only after the API is running and reachable. Set apiBaseUrl either to the API's HTTPS origin without a trailing slash (for example https://commerce-api.example.com), or to the explicit same-origin prefix https://osgard.world/commerce-api when the Nginx proxy and private container are verified. This setting is public and must never contain secrets. If it is empty or invalid, event delivery and admin requests fail closed; lead forms offer the disclosed manual WhatsApp fallback. Do not interpret local queued events as server analytics.
+Set `apiBaseUrl` to the API's HTTPS origin without a trailing slash (for example `https://commerce-api.example.com`) or to the explicit same-origin prefix `https://osgard.world/commerce-api` after the proxy and private container are verified. This public value must never contain secrets. If `apiBaseUrl` is blank, current browser clients probe only the documented same-origin `/commerce-api/healthz` endpoint with cookies omitted; they use `/commerce-api` only when the response identifies `service: "osgard-commerce-api"` and `databaseReady: true`. An absent, unhealthy or non-matching service remains fail-closed; lead forms offer the disclosed manual WhatsApp fallback. A local queued analytics event is not evidence that the server received it. API/database readiness does not enable Stripe checkout, paid premium or third-party advertising.
 
 ## Qualified game invitations and cosmetic rewards
 
