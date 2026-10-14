@@ -20,6 +20,16 @@ const OVERDRIVE_MAX_CHARGE := 100.0
 const OVERDRIVE_DURATION := 5.0
 const GUARD_SIGHT_RADIUS := 20.5
 const GUARD_SIGHT_FOV_DEGREES := 150.0
+const PHANTOM_MOVE_SPEED_MULTIPLIER := 0.62
+const PHANTOM_SIGHT_RADIUS := 12.5
+const PHANTOM_SIGHT_FOV_DEGREES := 105.0
+const PHANTOM_FOOTSTEP_INTERVAL := 0.46
+const PHANTOM_FOOTSTEP_RADIUS := 2.7
+const STANDARD_FOOTSTEP_RADIUS := 8.6
+const PHANTOM_TAKEDOWN_RANGE := 1.72
+const PHANTOM_BODY_DISCOVERY_RANGE := 4.8
+const PHANTOM_BODY_LIFETIME_SECONDS := 10.0
+const PHANTOM_TAKEDOWN_BASE_BONUS := 125
 const GUARD_SEARCH_SECONDS := 4.6
 const GUARD_INVESTIGATION_SECONDS := 4.2
 const GUARD_FLANK_GOLDEN_ANGLE := 2.399963229728653
@@ -102,6 +112,7 @@ var overdrive_bar: ProgressBar
 var mobile_scan_button: Button
 var mobile_vent_button: Button
 var mobile_echo_button: Button
+var mobile_stealth_button: Button
 var mobile_overdrive_button: Button
 var phase_echo_status_label: Label
 var diagnostics_label: Label
@@ -120,6 +131,7 @@ var surface_normal_texture: Texture2D
 var surface_roughness_texture: Texture2D
 var surface_texture_size := 128
 var guards: Array[Dictionary] = []
+var downed_bodies: Array[Dictionary] = []
 var devices: Array[Dictionary] = []
 var phase_lanes: Array[Dictionary] = []
 var phase_lane_labels: Array[Label] = []
@@ -402,6 +414,17 @@ var amber_style_button: Button
 var violet_style_button: Button
 var daily_challenge_button: Button
 # DAILY ANOMALY DIRECTOR / 0.12: shared challenge codes resolve to the same two modifiers.
+# PHANTOM PROTOCOL / 0.23 — local-only stealth state.
+var stealth_mode_active := false
+var stealth_footstep_clock := 0.0
+var stealth_stance_seconds := 0.0
+var stealth_quiet_steps := 0
+var stealth_detections := 0
+var stealth_takedowns := 0
+var stealth_chain := 0
+var stealth_chain_best := 0
+var stealth_body_discoveries := 0
+var stealth_bonus_credits := 0
 var daily_mutators: Array[Dictionary] = []
 var daily_mutator_ids: Array[String] = []
 var daily_phase_rate := 1.0
@@ -470,6 +493,22 @@ func _reset_runtime_collections() -> void:
 	materials.clear()
 	raid_event_ledger = raid_event_ledger.duplicate(true)
 	raid_event_ledger.clear()
+	downed_bodies = downed_bodies.duplicate()
+	for old_evidence in downed_bodies:
+		var old_evidence_node := old_evidence.get("node") as Node3D
+		if is_instance_valid(old_evidence_node):
+			old_evidence_node.queue_free()
+	downed_bodies.clear()
+	stealth_mode_active = false
+	stealth_footstep_clock = 0.0
+	stealth_stance_seconds = 0.0
+	stealth_quiet_steps = 0
+	stealth_detections = 0
+	stealth_takedowns = 0
+	stealth_chain = 0
+	stealth_chain_best = 0
+	stealth_body_discoveries = 0
+	stealth_bonus_credits = 0
 	daily_run_seed = 0
 	counter_window_remaining = 0.0
 	counter_windows_earned = 0
@@ -646,6 +685,9 @@ func _process(delta: float) -> void:
 		_update_phase_lanes(dt)
 		_update_phase_echo(dt)
 		_update_salvage_drops(dt)
+		_update_downed_bodies(dt)
+		if stealth_mode_active:
+			stealth_stance_seconds += dt
 	scene_clock += dt
 	damage_flash_timer = maxf(0.0, damage_flash_timer - dt)
 	camera_shake_timer = maxf(0.0, camera_shake_timer - dt)
@@ -703,6 +745,7 @@ func _physics_process(delta: float) -> void:
 	if null_shift_timer == 0.0 and instability > 0.0:
 		instability = maxf(0.0, instability - dt * 3.0)
 	_move_player(dt)
+	_update_footstep_signature(dt)
 	_update_dash_trail(dt)
 	_update_guards(dt)
 	_check_phase_lane_damage()
@@ -791,6 +834,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_toggle_haptics()
 		KEY_ESCAPE:
 			_set_pause(not paused_game)
+		KEY_B:
+			_toggle_stealth_mode()
 		KEY_C:
 			_cycle_contract()
 		KEY_J:
@@ -930,6 +975,8 @@ func _handle_gamepad_button(event: InputEventJoypadButton) -> void:
 			_toggle_diagnostics()
 		JOY_BUTTON_RIGHT_STICK:
 			_activate_overdrive()
+		JOY_BUTTON_LEFT_STICK:
+			_toggle_stealth_mode()
 		JOY_BUTTON_DPAD_UP:
 			_activate_tactical_scan()
 		JOY_BUTTON_DPAD_RIGHT:
@@ -2126,7 +2173,8 @@ func _move_player(_delta: float) -> void:
 		player.velocity = dash_direction * PLAYER_SPEED * DASH_SPEED_MULTIPLIER
 	else:
 		var move := _read_move_input()
-		player.velocity = Vector3(move.x * PLAYER_SPEED, 0.0, move.y * PLAYER_SPEED)
+		var move_speed: float = PLAYER_SPEED * (PHANTOM_MOVE_SPEED_MULTIPLIER if stealth_mode_active else 1.0)
+		player.velocity = Vector3(move.x * move_speed, 0.0, move.y * move_speed)
 	player.move_and_slide()
 	_update_player_aim()
 
@@ -2313,6 +2361,8 @@ func _emit_combat_noise(origin: Vector3, radius: float, source_kind: String) -> 
 	combat_noise_timer = maxf(combat_noise_timer, 0.92)
 	combat_noise_serial += 1
 	combat_noise_source = source_kind
+	if radius >= 7.0 and source_kind not in ["footstep", "stealth-footstep", "silent-takedown"]:
+		stealth_chain = 0
 
 func _broadcast_squad_contact(at: Vector3, source_kind: String = "visual-contact", force_refresh: bool = false) -> void:
 	# One radio update per genuinely new contact. Echo decoys deliberately force a fresh signal serial.
