@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#080d10">
-<meta name="description" content="CIVIC CASCADE 2.1 — тактическая кризисная стратегия OSGARD. Управляйте водой, энергосетью и эвакуацией, принимайте решения при развивающихся авариях, сохраняйте операции и сравнивайте прогноз.">
+<meta name="description" content="CIVIC CASCADE 2.2 — тактическая кризисная стратегия OSGARD. Стабилизируйте город, принимайте решения при авариях и бросайте друзьям челлендж на лучший результат.">
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://osgard.world/games/civic-cascade/">
 <title>CIVIC CASCADE — кризисная стратегия | OSGARD PLAY</title>
-<meta name="osgard-game-version" content="2.1.0-crisis-director">
+<meta name="osgard-game-version" content="2.2.0-mission-challenges">
 <style>
 :root{color-scheme:dark;--bg:#080d10;--panel:#10191d;--panel2:#142126;--line:#ffffff1c;--ink:#edf3ee;--muted:#91a29e;--mint:#b8f4cf;--cyan:#68d8d2;--gold:#e1c58a;--warn:#f2b27c;--bad:#ff827b;--mono:ui-monospace,Consolas,monospace;--serif:Georgia,serif}
 *{box-sizing:border-box}html{background:var(--bg);scroll-behavior:smooth}body{margin:0;color:var(--ink);background:radial-gradient(ellipse at 76% -18%,#234d453d,transparent 48%),var(--bg);font:14px/1.55 Inter,Geist,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}button,select{font:inherit}button,a,select{touch-action:manipulation}a{color:inherit;text-decoration:none}button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(--mint);outline-offset:3px}.wrap{max-width:1440px;padding:0 clamp(14px,2.8vw,42px);margin:auto}
@@ -26,6 +26,15 @@
 @media(max-width:410px){.toplinks{gap:7px}.toplinks a:nth-child(2){display:none}.hero{display:block}.hero-side{display:flex;align-items:center;gap:9px;margin-top:15px;padding:8px 0 0;border-left:0;border-top:1px solid var(--line)}.hero-side b{margin:0}.hero-side small{max-width:90px}.hero-side span{margin-left:auto}.map-caption{font-size:7px}.mission-stats small{font-size:6px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 
+.cc-challenge-banner{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;margin:-3px 0 14px;padding:13px 16px;border:1px solid #68d8d255;background:radial-gradient(ellipse at 100% 0%,#68d8d219,transparent 58%),linear-gradient(145deg,#102023,#0b1417)}
+.cc-challenge-banner[hidden]{display:none}
+.cc-challenge-banner small{display:block;color:var(--cyan);font:8px var(--mono);letter-spacing:.13em}
+.cc-challenge-banner strong{display:block;margin-top:5px;font:19px/1.2 var(--serif);font-weight:400}
+.cc-challenge-banner p{margin:5px 0 0;color:var(--muted);font-size:10px;line-height:1.5}
+.cc-share-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin-top:13px}
+.cc-share-status{min-height:1.4em;margin:9px 0 0;color:var(--mint);font-size:10px;line-height:1.6;overflow-wrap:anywhere}
+.cc-share-link{display:block;margin-top:7px;color:var(--cyan);font-size:10px;overflow-wrap:anywhere}
+@media(max-width:560px){.cc-challenge-banner{grid-template-columns:1fr}.cc-challenge-banner>.ctrl{width:100%}.cc-share-actions{display:grid;grid-template-columns:1fr}.cc-share-actions .ctrl{width:100%;min-height:42px}}
 /* Operation checkpoints: local-only persistence and readable forecast tiles. */
 .checkpoint-panel{margin-top:12px;padding:15px;border:1px solid #b8f4cf2b;border-radius:12px;background:linear-gradient(145deg,#101c1e,#0b1417);box-shadow:inset 0 1px #ffffff08}
 .checkpoint-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -112,10 +121,17 @@
 <div class="wrap" id="cc-game-root">
 <header class="topbar"><a class="brand" href="/games/" aria-label="Вернуться в каталог OSGARD PLAY"><span class="mark"><span>O</span></span><span>OSGARD WORLD<small>PLAY / CRISIS SIMULATION</small></span></a><nav class="toplinks"><a href="/games/">← ВСЕ ИГРЫ</a><a href="/games/partners/">ПАРТНЁРАМ</a><a href="/development/">РАЗРАБОТКА ↗</a></nav></header>
 <section class="hero"><div><p class="eyebrow"><span class="status-dot"></span> CIVIC SYSTEM / OPERATIONAL SIMULATION</p><h1>CIVIC <em>CASCADE</em></h1><p class="lede">Город входит в цепочку отказов. У тебя ограничены время, ресурсы и ремонтные бригады. Стабилизируй энергосеть, удержи воду и открой безопасный коридор, пока кризисы не усиливают друг друга.</p></div><div class="hero-side"><small>СЦЕНАРИЙ ОПЕРАЦИИ</small><b id="cc-clock">00:00</b><span id="cc-status" role="status" aria-live="polite">СИСТЕМА АКТИВНА</span></div></section>
+<section class="cc-challenge-banner" id="cc-challenge-banner" hidden aria-live="polite">
+  <div><small>FRIEND CHALLENGE / CIVIC CASCADE</small><strong id="cc-challenge-title">Тебе бросили вызов</strong><p id="cc-challenge-detail">Стабилизируй город и превзойди результат друга.</p></div>
+  <button class="ctrl" id="cc-challenge-dismiss" type="button">Играть без вызова</button>
+</section>
 <main>
 <div class="layout">
 <section class="main-column">
-<div class="panel"><div class="panel-head"><strong>01 / ЖИВАЯ КАРТА ГОРОДА</strong><small id="cc-map-mode">КРИЗИС · УЗЕЛ 04</small></div><div class="canvas-wrap"><canvas id="cc-map" width="1000" height="590" aria-label="Карта кризисного города. Нажмите на объект, чтобы выбрать его."></canvas><div class="map-overlay"><span class="map-tag">OSGARD RESPONSE / <b id="cc-stage">OPERATIONAL</b></span><span class="map-compass">N</span></div><div class="overlay" id="cc-result-overlay" hidden><div class="result"><p class="eyebrow" id="cc-result-label">ОПЕРАЦИЯ ЗАВЕРШЕНА</p><h2 id="cc-result-title">Город стабилизирован</h2><p id="cc-result-copy">Основные системы удержаны.</p><p>ИТОГОВЫЙ БАЛЛ <b id="cc-score">0</b></p><button class="ctrl primary" id="cc-result-restart">Начать новую операцию ↗</button></div></div></div><div class="map-caption"><span>КЛИК / КАСАНИЕ — ВЫБРАТЬ УЗЕЛ</span><span id="cc-selected">ВЫБРАНО: ЦЕНТР СЕТИ</span></div></div>
+<div class="panel"><div class="panel-head"><strong>01 / ЖИВАЯ КАРТА ГОРОДА</strong><small id="cc-map-mode">КРИЗИС · УЗЕЛ 04</small></div><div class="canvas-wrap"><canvas id="cc-map" width="1000" height="590" aria-label="Карта кризисного города. Нажмите на объект, чтобы выбрать его."></canvas><div class="map-overlay"><span class="map-tag">OSGARD RESPONSE / <b id="cc-stage">OPERATIONAL</b></span><span class="map-compass">N</span></div><div class="overlay" id="cc-result-overlay" hidden><div class="result"><p class="eyebrow" id="cc-result-label">ОПЕРАЦИЯ ЗАВЕРШЕНА</p><h2 id="cc-result-title">Город стабилизирован</h2><p id="cc-result-copy">Основные системы удержаны.</p><p>ИТОГОВЫЙ БАЛЛ <b id="cc-score">0</b></p>
+<div class="cc-share-actions"><button class="ctrl primary" id="cc-result-challenge" type="button">Бросить вызов другу ↗</button><button class="ctrl" id="cc-result-restart" type="button">Начать новую операцию ↗</button></div>
+<p class="cc-share-status" id="cc-challenge-share-status" role="status" aria-live="polite"></p>
+<a class="cc-share-link" id="cc-challenge-share-link" hidden target="_blank" rel="noopener noreferrer">Открыть ссылку челленджа ↗</a></div></div></div><div class="map-caption"><span>КЛИК / КАСАНИЕ — ВЫБРАТЬ УЗЕЛ</span><span id="cc-selected">ВЫБРАНО: ЦЕНТР СЕТИ</span></div></div>
 <div class="metrics" aria-label="Показатели города">
 <div class="metric" id="cc-metric-water"><div class="metric-top"><span>УРОВЕНЬ ВОДЫ</span><i></i></div><b id="cc-water">62%</b><small id="cc-water-note">+1.2 за минуту</small><div class="meter"><span id="cc-water-bar"></span></div></div>
 <div class="metric" id="cc-metric-grid"><div class="metric-top"><span>ЭНЕРГОСЕТЬ</span><i></i></div><b id="cc-grid">58%</b><small id="cc-grid-note">Нагрузка высокая</small><div class="meter"><span id="cc-grid-bar"></span></div></div>
@@ -156,7 +172,7 @@
 
 <section class="cc-film-panel" id="cc-film-panel" aria-labelledby="cc-film-title">
   <div class="cc-film-head">
-    <div><span class="cc-film-kicker">OSGARD PLAY / CINEMATIC FIELD RECORD · 2.1.0</span><h2 class="cc-film-title" id="cc-film-title">Запись <em>операции</em></h2></div>
+    <div><span class="cc-film-kicker">OSGARD PLAY / CINEMATIC FIELD RECORD · 2.2.0</span><h2 class="cc-film-title" id="cc-film-title">Запись <em>операции</em></h2></div>
     <div class="cc-film-status" id="cc-film-status" data-state="ready" role="status" aria-live="polite">ГОТОВО К ЗАПИСИ</div>
   </div>
   <p class="cc-film-copy">Запиши живую карту города с оперативными показателями в отдельный WebM-клип. Запись берёт текущий игровой холст и накладывает на него показатели воды, энергосети, доступа служб, запасов и риска.</p>
@@ -180,7 +196,7 @@
 
 <p class="notice">Это браузерная игровая редакция OSGARD PLAY. Показатели и последствия моделируются внутри игры и не являются реальными городскими данными. Состояние операции не отправляется на сервер.</p>
 </main>
-<footer class="footer"><span>© OSGARD WORLD / PLAY · CIVIC CASCADE WEB EDITION 2.1.0</span><span>КРИЗИСНАЯ СТРАТЕГИЯ · DESKTOP + TOUCH</span><span><a href="/games/">ВЕРНУТЬСЯ В КАТАЛОГ ↗</a></span></footer>
+<footer class="footer"><span>© OSGARD WORLD / PLAY · CIVIC CASCADE WEB EDITION 2.2.0</span><span>КРИЗИСНАЯ СТРАТЕГИЯ · DESKTOP + TOUCH</span><span><a href="/games/">ВЕРНУТЬСЯ В КАТАЛОГ ↗</a></span></footer>
 </div><div class="toast" id="cc-toast" role="status" aria-live="polite"></div>
 <script>
 (function(){
@@ -210,6 +226,56 @@ const nodes=[
 {id:'shelter',name:'Пункт эвакуации',x:.33,y:.30,type:'access',label:'SHELTER'}
 ];
 let state={},selected='hub',paused=false,speedIndex=0,elapsed=0,lastTick=performance.now(),raf=0,logRows=[],toastTimer=0,finished=false,dirty=.25,particles=[],frameCount=0,fpsTime=0,fps=60,activeIncident=null,incidentResumePaused=false;
+let activeChallenge=null,lastResult=null;
+function parseMissionChallenge(search){
+ try{
+  const params=new URLSearchParams(String(search||''));
+  if(params.get('cc_challenge')!=='1')return null;
+  const scenario=params.get('cc_scenario')||'',raw=params.get('cc_target')||'';
+  if(!Object.prototype.hasOwnProperty.call(scenarioData,scenario)||!/^(0|[1-9][0-9]{0,6})$/.test(raw))return null;
+  const target=Number(raw);if(!Number.isSafeInteger(target)||target>1000000)return null;
+  const ref=params.get('cc_ref')||'';
+  return{scenario,target,ref:/^cc_[a-f0-9]{8}$/.test(ref)?ref:''};
+ }catch(_){return null}
+}
+activeChallenge=parseMissionChallenge(location.search);
+function renderMissionChallenge(){
+ const banner=$('cc-challenge-banner');if(!banner)return;
+ if(!activeChallenge){banner.hidden=true;return}
+ banner.hidden=false;
+ $('cc-challenge-title').textContent='Цель: превзойти '+activeChallenge.target+' очков';
+ $('cc-challenge-detail').textContent='Сценарий «'+scenarioData[activeChallenge.scenario].name+'». После завершения сравним твой результат с результатом друга. Баллы рассчитываются в этой браузерной игре; общего онлайн-рейтинга пока нет.';
+}
+function createMissionChallengeUrl(result){
+ const url=new URL('/games/civic-cascade/',location.origin);
+ url.searchParams.set('cc_challenge','1');url.searchParams.set('cc_scenario',result.scenario);url.searchParams.set('cc_target',String(result.score));
+ const bytes=new Uint8Array(4);if(window.crypto&&typeof window.crypto.getRandomValues==='function')window.crypto.getRandomValues(bytes);else for(let i=0;i<bytes.length;i++)bytes[i]=Math.floor(Math.random()*256);
+ url.searchParams.set('cc_ref','cc_'+Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join(''));
+ url.searchParams.set('utm_source','osgard_games');url.searchParams.set('utm_medium','game_challenge');url.searchParams.set('utm_campaign','civic_cascade_friend_challenge');url.searchParams.set('utm_content',result.scenario);
+ return url;
+}
+async function shareMissionChallenge(){
+ const status=$('cc-challenge-share-status'),link=$('cc-challenge-share-link');
+ if(!lastResult){status.textContent='Сначала заверши операцию, чтобы создать челлендж.';return}
+ const url=createMissionChallengeUrl(lastResult),scenario=scenarioData[lastResult.scenario];
+ const text='Я набрал '+lastResult.score+' очков в CIVIC CASCADE · '+scenario.name+'. Сможешь превзойти результат?';
+ const data={title:'CIVIC CASCADE · вызов другу',text:text,url:url.href};
+ link.href=url.href;link.hidden=true;
+ try{
+  if(typeof navigator.share==='function'){
+   await navigator.share(data);
+   status.textContent='Ссылка передана в меню отправки. Публикацию подтверждает выбранное приложение — OSGARD не может проверить её автоматически.';
+  }else if(navigator.clipboard&&typeof navigator.clipboard.writeText==='function'){
+   await navigator.clipboard.writeText(url.href);
+   status.textContent='Ссылка челленджа скопирована. Отправь её другу в удобной соцсети.';
+  }else{
+   link.hidden=false;status.textContent='Автоматическое копирование недоступно. Открой ссылку и скопируй её вручную.';
+  }
+ }catch(error){
+  if(error&&error.name==='AbortError')status.textContent='Отправка отменена. Награда за публикацию не начислялась.';
+  else{link.hidden=false;status.textContent='Не удалось открыть отправку. Ссылка доступна ниже.'}
+ }
+}
 const speeds=[1,1.5,2],buttons=['pump','grid','route','repair'];
 function clamp(n,min=0,max=100){return Math.max(min,Math.min(max,n))}
 function fmt(n){return String(Math.max(0,Math.floor(n))).padStart(2,'0')}
@@ -332,6 +398,9 @@ function resolveIncident(choiceId){
 }
 
 function fresh(scenario){
+ if(activeChallenge&&scenario!==activeChallenge.scenario){
+  activeChallenge=null;const banner=$('cc-challenge-banner');if(banner)banner.hidden=true;
+ }
  const base=scenarioData[scenario]||scenarioData.flood;
  state={scenario:scenario,water:base.water,grid:base.grid,access:base.access,supplies:base.supplies,crews:4,maxCrews:4,waterRate:base.waterRate,gridRate:base.gridRate,accessRate:base.accessRate,riskOffset:base.riskOffset,openedRoutes:scenario==='blockade'?1:2,repairs:0,pumps:0,stabilized:0,actionCount:0,elapsed:0,score:0};
  elapsed=0;paused=false;speedIndex=0;finished=false;activeIncident=null;incidentResumePaused=false;ui.incident.hidden=true;ui.incidentOptions.replaceChildren();ui.incidentStatus.textContent='';selected=scenario==='blackout'?'substation':scenario==='blockade'?'bridge':'hub';logRows=[];particles=[];
@@ -396,7 +465,17 @@ function checkFinish(){
  if(elapsed>=180){finish(false,'Время операции истекло до выполнения всех условий. Проверь порядок действий и расход ресурсов.');}
 }
 function finish(won,copy,score){
- finished=true;paused=true;ui.status.textContent=won?'МИССИЯ УСПЕШНА':'ОПЕРАЦИЯ ПРОВАЛЕНА';ui.stage.textContent=won?'STABLE':'CASCADE';ui.resultOverlay.hidden=false;ui.resultLabel.textContent=won?'ОПЕРАЦИЯ УСПЕШНА':'ЦЕПОЧКА ОТКАЗОВ';ui.resultTitle.textContent=won?'Город стабилизирован':'Город не удержан';ui.resultCopy.textContent=copy;ui.score.textContent=String(score||state.score);ui.resultOverlay.querySelector('.result h2').style.color=won?'var(--mint)':'var(--bad)';addLog('<b>Итог операции:</b> '+(won?'город удержан':'зафиксирован каскад отказов')+'.');renderUI();sendLifecycle('completed');
+ finished=true;paused=true;
+ const finalScore=Number.isFinite(score)?score:state.score;
+ lastResult={won:Boolean(won),score:Math.max(0,Math.floor(finalScore)),scenario:state.scenario,elapsed:Math.max(0,Math.floor(elapsed)),risk:riskValue()};
+ ui.status.textContent=won?'МИССИЯ УСПЕШНА':'ОПЕРАЦИЯ ПРОВАЛЕНА';ui.stage.textContent=won?'STABLE':'CASCADE';ui.resultOverlay.hidden=false;
+ ui.resultLabel.textContent=won?'ОПЕРАЦИЯ УСПЕШНА':'ЦЕПОЧКА ОТКАЗОВ';ui.resultTitle.textContent=won?'Город стабилизирован':'Город не удержан';
+ let resultCopy=copy;
+ if(activeChallenge&&activeChallenge.scenario===state.scenario){
+  resultCopy+=' '+(lastResult.score>activeChallenge.target?'ЧЕЛЛЕНДЖ ПРОЙДЕН: ты превзошёл результат на '+(lastResult.score-activeChallenge.target)+' очков.':'Цель челленджа — превзойти '+activeChallenge.target+' очков. До цели: '+Math.max(0,activeChallenge.target-lastResult.score)+'.');
+ }
+ ui.resultCopy.textContent=resultCopy;ui.score.textContent=String(lastResult.score);ui.resultOverlay.querySelector('.result h2').style.color=won?'var(--mint)':'var(--bad)';
+ addLog('<b>Итог операции:</b> '+(won?'город удержан':'зафиксирован каскад отказов')+'.');renderUI();sendLifecycle('completed');
 }
 function checkDrift(dt){
  const weather=state.scenario==='flood'?1:state.scenario==='blackout'?.8:.9;
@@ -467,6 +546,12 @@ $('cc-speed').addEventListener('click',()=>{speedIndex=(speedIndex+1)%speeds.len
 $('cc-reset').addEventListener('click',()=>fresh($('cc-scenario').value));
 $('cc-scenario').addEventListener('change',e=>fresh(e.target.value));
 $('cc-result-restart').addEventListener('click',()=>fresh($('cc-scenario').value));
+$('cc-result-challenge').addEventListener('click',shareMissionChallenge);
+$('cc-challenge-dismiss').addEventListener('click',()=>{
+ activeChallenge=null;$('cc-challenge-banner').hidden=true;
+ try{const url=new URL(location.href);['cc_challenge','cc_scenario','cc_target','cc_ref'].forEach(key=>url.searchParams.delete(key));history.replaceState(history.state,'',url.pathname+url.search+url.hash)}catch(_){}
+ toast('Челлендж отключён. Играй в своём режиме.');
+});
 $('cc-save').addEventListener('click',saveCheckpoint);
 $('cc-load').addEventListener('click',restoreCheckpoint);
 window.addEventListener('resize',()=>draw(performance.now()),{passive:true});
@@ -622,7 +707,7 @@ function setupCinematicCapture(){
 
 function resizeCanvas(){const dpr=Math.min(2,window.devicePixelRatio||1);canvas.width=Math.round(1000*dpr);canvas.height=Math.round(590*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);draw(performance.now())}
 function frameStart(){lastTick=performance.now();fpsTime=lastTick;raf=requestAnimationFrame(frame)}
-setupCinematicCapture();resizeCanvas();fresh('flood');frameStart();
+renderMissionChallenge();setupCinematicCapture();resizeCanvas();fresh(activeChallenge?activeChallenge.scenario:'flood');frameStart();
 })();
 </script>
 </body>
