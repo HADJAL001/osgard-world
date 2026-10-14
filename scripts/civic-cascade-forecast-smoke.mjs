@@ -156,8 +156,8 @@ check(result.robustnessEvaluatedCount >= 0 && result.robustnessEvaluatedCount <=
 const repeatBase = makeState('flood')
 const repeatSearch = () => searchDoctrinePlans(repeatBase, 'balanced', 'hub', simulateDirect(repeatBase), simulatePath(0), nodes, actions)
 const firstRepeat = repeatSearch(), secondRepeat = repeatSearch()
-assert.deepEqual(firstRepeat.alternatives.map(plan => ({signature:plan.signature,score:plan.score})),
-  secondRepeat.alternatives.map(plan => ({signature:plan.signature,score:plan.score})), 'doctrine search must be deterministic')
+assert.deepEqual(firstRepeat.alternatives.map(plan => ({signature:plan.signature,score:plan.score,robustScore:plan.robustScore,stress:plan.robustness.profiles.map(profile => ({id:profile.id,riskDelta90:profile.riskDelta90,weakestIntegrityDelta:profile.weakestIntegrityDelta}))})),
+  secondRepeat.alternatives.map(plan => ({signature:plan.signature,score:plan.score,robustScore:plan.robustScore,stress:plan.robustness.profiles.map(profile => ({id:profile.id,riskDelta90:profile.riskDelta90,weakestIntegrityDelta:profile.weakestIntegrityDelta}))})), 'doctrine search and stress-adjusted ranking must be deterministic')
 const protectBase = makeState('blackout')
 const protectedPlan = searchDoctrinePlans(protectBase, 'protect', 'hub', simulateDirect(protectBase), simulatePath(0), nodes, actions)
 check(protectedPlan.mode === 'protect', 'infrastructure-protection objective must be selectable')
