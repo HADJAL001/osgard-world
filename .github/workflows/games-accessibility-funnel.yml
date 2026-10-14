@@ -19,7 +19,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: games-accessibility-funnel-\${{ github.ref }}
+  group: games-accessibility-funnel-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   contract:
