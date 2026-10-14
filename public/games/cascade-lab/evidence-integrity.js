@@ -245,7 +245,7 @@ function cleanAudit(raw) {
     !Array.isArray(a.changes)||a.changes.length>24||!a.comparison||!a.interpretation)return null;
   const safeChanges=a.changes.map(change=>{
     if(!change||!['position','angle','removed','added'].includes(change.kind))return null;
-    return {kind:change.kind,label:clean(change.label,100),before:change.before&&typeof change.before==='object'?change.before:null,after:change.after&&typeof change.after==='object'?change.after:null,magnitude:finite(change.magnitude)?round(change.magnitude,3):null};
+    const normalized = {kind:change.kind,label:clean(change.label,100),before:change.before&&typeof change.before==='object'?change.before:null,after:change.after&&typeof change.after==='object'?change.after:null,magnitude:finite(change.magnitude)?round(change.magnitude,3):null};
   });
   if(safeChanges.some(change=>!change))return null;
   return {
@@ -266,6 +266,25 @@ function cleanAudit(raw) {
     baselineGroup:{count:clamp(Math.round(Number(a.baselineGroup&&a.baselineGroup.count)||0),0,MAX_RUNS),successes:clamp(Math.round(Number(a.baselineGroup&&a.baselineGroup.successes)||0),0,MAX_RUNS),successRate:finite(a.baselineGroup&&a.baselineGroup.successRate)?clamp(a.baselineGroup.successRate,0,100):null,medianTimeSeconds:finite(a.baselineGroup&&a.baselineGroup.medianTimeSeconds)?clamp(a.baselineGroup.medianTimeSeconds,0,120):null,allRunMedianSeconds:finite(a.baselineGroup&&a.baselineGroup.allRunMedianSeconds)?clamp(a.baselineGroup.allRunMedianSeconds,0,120):null,timeMedianAbsoluteDeviationSeconds:finite(a.baselineGroup&&a.baselineGroup.timeMedianAbsoluteDeviationSeconds)?clamp(a.baselineGroup.timeMedianAbsoluteDeviationSeconds,0,120):null},
     candidateGroup:{count:clamp(Math.round(Number(a.candidateGroup&&a.candidateGroup.count)||0),0,MAX_RUNS),successes:clamp(Math.round(Number(a.candidateGroup&&a.candidateGroup.successes)||0),0,MAX_RUNS),successRate:finite(a.candidateGroup&&a.candidateGroup.successRate)?clamp(a.candidateGroup.successRate,0,100):null,medianTimeSeconds:finite(a.candidateGroup&&a.candidateGroup.medianTimeSeconds)?clamp(a.candidateGroup.medianTimeSeconds,0,120):null,allRunMedianSeconds:finite(a.candidateGroup&&a.candidateGroup.allRunMedianSeconds)?clamp(a.candidateGroup.allRunMedianSeconds,0,120):null,timeMedianAbsoluteDeviationSeconds:finite(a.candidateGroup&&a.candidateGroup.timeMedianAbsoluteDeviationSeconds)?clamp(a.candidateGroup.timeMedianAbsoluteDeviationSeconds,0,120):null},
     interpretation:{title:clean(a.interpretation.title,120),guidance:clean(a.interpretation.guidance,500),limitation:clean(a.interpretation.limitation,500)}
+  };
+  return {
+    schema: SCHEMA,
+    id: normalized.id,
+    createdAt: normalized.createdAt,
+    analysis: {
+      schema: SCHEMA,
+      baseline: normalized.baseline,
+      candidate: normalized.candidate,
+      compatible: normalized.compatible,
+      tier: normalized.tier,
+      changedVariables: normalized.changedVariables,
+      sameBlueprint: normalized.sameBlueprint,
+      changes: normalized.changes,
+      comparison: normalized.comparison,
+      baselineGroup: normalized.baselineGroup,
+      candidateGroup: normalized.candidateGroup,
+      interpretation: normalized.interpretation
+    }
   };
 }
 function validateArchive(raw) {
