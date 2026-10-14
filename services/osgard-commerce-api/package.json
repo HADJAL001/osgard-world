@@ -9,7 +9,7 @@
   "scripts": {
     "start": "node src/server.mjs",
     "start:local": "node --env-file=.env src/server.mjs",
-    "check": "node --check src/core.mjs && node --check src/campaigns.mjs && node --check src/readiness.mjs && node --check src/game-coach.mjs && node --check src/server.mjs",
+    "check": "node --check src/core.mjs && node --check src/game-catalog.mjs && node --check src/campaigns.mjs && node --check src/readiness.mjs && node --check src/game-coach.mjs && node --check src/server.mjs && node --check test/game-catalog.test.mjs",
     "test": "node --test"
   },
   "dependencies": {
