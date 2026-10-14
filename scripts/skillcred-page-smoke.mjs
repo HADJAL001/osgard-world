@@ -141,13 +141,13 @@ for (const file of files) {
      assert.ok(js.includes('p.setAttribute("stroke-dashoffset",String(100-progress))'), file + ': timeline state must drive SVG progress without inline CSS width')
      assert.ok(js.includes('stamp.textContent=labels[i]'), file + ': demo stamps must follow API state')
      assert.ok(js.includes('var issuePromise=request("/demo/issue","POST",{})'), file + ': demo issuance should start immediately')
-     assert.ok(js.indexOf('await wait(Math.max(0,(reduced?0:1850)-(performance.now()-started)))') < js.indexOf('await renderCredential(issued)'), file + ': update the credential only after the first-paint scene')
+     assert.ok(js.includes('var heroSceneDelay=mobileLite?0:(reduced?0:1850);await wait(Math.max(0,heroSceneDelay-(performance.now()-started)))') && js.indexOf('await wait(Math.max(0,heroSceneDelay-(performance.now()-started)))') < js.indexOf('await renderCredential(issued)'), file + ': preserve desktop cinematic pacing while skipping artificial wait on mobile/reduced motion')
      assert.ok(js.includes('function sectionMotionSetup()') && js.includes('section.classList.toggle(pair[1],entry.isIntersecting)'), file + ': off-screen trace animations must remain idle')
      assert.ok(/function sectionMotionSetup\(\)\{if\(mobileLite\|\|/.test(js), file + ': mobile must skip decorative section-trace observers')
      assert.ok(js.includes('if(mobileLite||!("IntersectionObserver" in window)||reduced){items.forEach(function(item){item.classList.add("is-visible");});return;}'), file + ': mobile copy must render immediately without per-element reveal observers')
      assert.ok(js.includes('if(mobileLite||reduced||!("IntersectionObserver" in window))return;'), file + ': mobile must skip scroll-following trust-thread observers')
      assert.ok(!js.includes('window.setTimeout(loadHeroArtifact,1800)'), file + ': automatic API startup must not use a fixed 1.8s delay')
-     assert.ok(js.includes('reduced?0:1850'), file + ': reduced-motion must skip the hero scene wait')
+     assert.ok(js.includes('var heroSceneDelay=mobileLite?0:(reduced?0:1850)') && js.includes('heroSceneDelay-(performance.now()-started)'), file + ': mobile and reduced-motion must skip the hero scene wait')
    }
   console.log('PASS ' + file + ': semantic page, local assets, same-origin API and JS syntax')
 }

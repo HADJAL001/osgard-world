@@ -88,6 +88,8 @@
  .luxury-tools .luxury-action{flex:1}
  .luxury-shortcuts{width:100%;line-height:1.7}
 }
+/* Mobile touch spacing: keep independent game actions at least 24px apart for safe targets. */
+@media(max-width:760px){.luxury-entertainment .game-actions{column-gap:28px;row-gap:14px}}
 @media(prefers-reduced-motion:reduce){.luxury-entertainment *, .luxury-entertainment *:before,.luxury-entertainment *:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
 /* PATINA Atelier card accent */
