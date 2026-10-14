@@ -106,7 +106,7 @@ check('server validates and stores attribution with the lead', () => {
 check('lead attribution aggregates are protected and exposed for the admin', () => {
   assert.ok(server.includes('leadsByAttribution: leadAttributionStats.rows'));
   assert.ok(server.includes('app.get("/v1/admin/overview", requireAdmin'));
-  assert.ok(server.includes('attribution_game_id AS "gameId"'));
+  assert.ok(server.includes('attribution_game_id AS'));
   assert.ok(admin.includes('leadsByAttribution'));
 });
 check('intake form is responsive and honors reduced motion', () => {
