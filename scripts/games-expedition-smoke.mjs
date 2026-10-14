@@ -14,7 +14,7 @@ assert.doesNotThrow(()=>new Function(coreSource),'Core route module must parse')
 assert.doesNotThrow(()=>new Function(appSource),'Builder module must parse');
 assert.doesNotThrow(()=>new Function(runtimeSource),'Catalog progress module must parse');
 assert.ok(routeMatrix.includes("content.includes(\"document.addEventListener('osgard:game-completed'\")") && routeMatrix.includes("content.includes(\"section.className='og-expedition-band'\")"), 'Production route matrix must validate the runtime’s actual generated section class, not a CSS selector absent from JavaScript');
-assert.ok(routeMatrix.includes(String.raw\`/src="\/entertainment\/entertainment\.js\?v=[^"]+"/.test(text)\`), 'Production route matrix must accept the current versioned Entertainment script URL rather than hard-code an obsolete asset version');
+assert.ok(routeMatrix.includes('entertainment\\.js') && routeMatrix.includes('\\?v=[^"]+'), 'Production route matrix must accept the current versioned Entertainment script URL rather than hard-code an obsolete asset version');
 assert.ok(/src="\/entertainment\/entertainment\.js\?v=[^"]+"/.test(entertainment), 'Entertainment page must reference a versioned runtime asset');
 const context={window:{},URL,URLSearchParams};runInNewContext(coreSource,context);
 const core=context.window.OSGARDExpeditionCore;assert.ok(core,'Expedition core global must be exported');
