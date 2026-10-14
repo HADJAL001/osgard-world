@@ -152,7 +152,7 @@ assert.ok(['snapshot-name','snapshot-select','save-snapshot','load-snapshot','de
 assert.ok(page.includes('name="monthlyTrafficGrowthPct"') && page.includes('min="-50"') && page.includes('max="100"'), 'Monthly traffic ramp assumption must be visible and bounded');
 assert.ok(app.includes("osgard.monetization.snapshots.v1") && app.includes('MAX_SNAPSHOTS = 8') && app.includes('localStorage.setItem(SNAPSHOT_KEY'), 'Named assumptions must be stored locally with a strict cap');
 assert.ok(app.includes('calculateBreakEvenMonthlyVisitors') && app.includes('calculateMonthlyProjection') && app.includes('calculateSensitivity'), 'Decision dashboard model functions must be wired into the render loop');
-assert.ok(app.includes('osgard-12-month-projection.csv') && app.includes('month12') === false, '12-month output must have its own explicit CSV export');
+assert.ok(app.includes("downloadBlob('osgard-12-month-projection.csv'") && app.includes('text/csv;charset=utf-8;'), '12-month output must have its own explicit CSV export');
 assert.equal(DEFAULT_INPUTS.monthlyTrafficGrowthPct, 5, 'Traffic ramp must have a defined starting assumption');
 assert.equal(normalizeInputs({ monthlyTrafficGrowthPct: 1000 }).monthlyTrafficGrowthPct, 100, 'Traffic growth upper bound must be enforced');
 assert.equal(normalizeInputs({ monthlyTrafficGrowthPct: -100 }).monthlyTrafficGrowthPct, -50, 'Traffic decline lower bound must be enforced');
