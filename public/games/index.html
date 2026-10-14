@@ -126,7 +126,7 @@ $('#copy-email').addEventListener('click',async()=>{try{await navigator.clipboar
 $('#project-form').addEventListener('submit',e=>{e.preventDefault();const f=e.currentTarget;if(!(f instanceof HTMLFormElement)||!f.reportValidity())return;const d=new FormData(f),txt=['Здравствуйте! Хочу обсудить проект с OSGARD.','Направление: '+d.get('projectType'),'Бюджет: '+d.get('budget'),'Канал ответа: '+d.get('replyVia'),'Мой контакт: '+String(d.get('contact')).trim(),'Описание: '+String(d.get('brief')).trim()].join('\n');$('#form-status').textContent='Открываем WhatsApp. Проверьте текст и отправьте сообщение вручную.';window.open('https://wa.me/79640027222?text='+encodeURIComponent(txt),'_blank','noopener,noreferrer')});
 consentToggle.addEventListener('click',()=>{consent=!consent;try{localStorage.setItem(K.consent,consent?'yes':'no')}catch{}consentToggle.setAttribute('aria-pressed',consent);$('b',consentToggle).textContent=consent?'Разрешена':'Разрешить';consentState.textContent=consent?'Аналитика разрешена':'Аналитика выключена'});document.addEventListener('keydown',e=>{if(e.key==='/'&&!dialog.open&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)){e.preventDefault();search.focus()}});
 consentToggle.setAttribute('aria-pressed',consent);$('b',consentToggle).textContent=consent?'Разрешена':'Разрешить';consentState.textContent=consent?'Аналитика разрешена':'Аналитика выключена';renderFav();renderRecent();renderInviteRibbon()})();
-</script><!-- The analytics queue and product experiment engine are loaded only after explicit consent. --><script src="/games/commerce-client.js" defer></script><script src="/games/sponsored-campaigns.js?v=__OSGARD_BUILD_VERSION__" defer></script><template id="luxury-lazy-asset" data-src="/games/luxury.js?v=__OSGARD_BUILD_VERSION__"></template><script id="games-lazy-runtime">
+</script><!-- The analytics queue and product experiment engine are loaded only after explicit consent. --><script src="/games/commerce-client.js" defer></script><template id="luxury-lazy-asset" data-src="/games/luxury.js?v=__OSGARD_BUILD_VERSION__"></template><script id="games-lazy-runtime">
 (()=>{'use strict';
 const version=document.querySelector('meta[name="osgard-build"]')?.content||'';
 const scriptPromises=new Map();
@@ -396,4 +396,56 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     window.addEventListener('load', () => window.setTimeout(loadDailyCircuit, 2500), { once: true });
   }
 })();
-</script><script src="/games/catalog-state.js?v=__OSGARD_BUILD_VERSION__" defer></script><script src="/games/pwa-install.js?v=__OSGARD_BUILD_VERSION__" defer></script><script src="/games/experiment-core.js?v=__OSGARD_BUILD_VERSION__" defer></script><script src="/games/experiment-runtime.js?v=__OSGARD_BUILD_VERSION__" defer></script></body></html>
+</script><script src="/games/catalog-state.js?v=__OSGARD_BUILD_VERSION__" defer></script><script src="/games/pwa-install.js?v=__OSGARD_BUILD_VERSION__" defer></script><script id="games-optional-runtime">
+(()=>{'use strict';
+const version=document.querySelector('meta[name="osgard-build"]')?.content||'';
+const promises=new Map();
+function loadScript(path){
+ if(promises.has(path))return promises.get(path);
+ const promise=new Promise((resolve,reject)=>{
+  const script=document.createElement('script');
+  script.src='/games/'+path+'?v='+encodeURIComponent(version);
+  script.async=true;script.dataset.osgardOptional=path;
+  script.onload=()=>resolve(true);
+  script.onerror=()=>{script.remove();promises.delete(path);reject(new Error('Unable to load '+path))};
+  document.head.append(script);
+ });
+ promises.set(path,promise);return promise;
+}
+function idle(callback,timeout=2000){
+ if(typeof window.requestIdleCallback==='function')window.requestIdleCallback(callback,{timeout});
+ else window.setTimeout(callback,Math.min(timeout,1200));
+}
+function consentGranted(){try{return localStorage.getItem('osgard.games.analytics-consent.v1')==='yes'}catch{return false}}
+let experimentPromise=null;
+function loadExperiments(){
+ if(!consentGranted())return Promise.resolve(false);
+ if(experimentPromise)return experimentPromise;
+ experimentPromise=loadScript('experiment-core.js').then(()=>loadScript('experiment-runtime.js')).catch(()=>false);
+ return experimentPromise;
+}
+function scheduleExperiments(){if(consentGranted())idle(()=>{void loadExperiments()},2200)}
+if(document.readyState==='complete')window.setTimeout(scheduleExperiments,180);
+else window.addEventListener('load',()=>window.setTimeout(scheduleExperiments,180),{once:true});
+document.querySelector('#analytics-toggle')?.addEventListener('click',()=>queueMicrotask(()=>{if(consentGranted())void loadExperiments()}));
+document.querySelector('#catalog-hero-cta')?.addEventListener('focus',()=>{if(consentGranted())idle(()=>{void loadExperiments()},1000)},{once:true});
+// Sponsor renderer is optional until the labelled slot approaches the viewport.
+const catalog=document.querySelector('#catalog');
+let sponsorStarted=false,sponsorObserver=null;
+function loadSponsorRenderer(){
+ if(sponsorStarted)return;
+ sponsorStarted=true;if(sponsorObserver){sponsorObserver.disconnect();sponsorObserver=null}
+ void loadScript('sponsored-campaigns.js').catch(()=>{sponsorStarted=false});
+}
+if(catalog&&typeof IntersectionObserver==='function'){
+ sponsorObserver=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting))loadSponsorRenderer()},{rootMargin:'0px',threshold:0});
+ sponsorObserver.observe(catalog);
+ catalog.addEventListener('pointerdown',loadSponsorRenderer,{once:true,passive:true});
+ catalog.addEventListener('focusin',loadSponsorRenderer,{once:true});
+}else{
+ catalog?.addEventListener('pointerdown',loadSponsorRenderer,{once:true,passive:true});
+ window.addEventListener('load',()=>window.setTimeout(()=>idle(loadSponsorRenderer,3500),1200),{once:true});
+}
+window.OSGARDOptionalGamesRuntime=Object.freeze({loadExperiments,loadSponsorRenderer});
+})();
+</script></body></html>
