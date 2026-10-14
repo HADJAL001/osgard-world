@@ -119,7 +119,7 @@ assert.ok(source.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN','Врем�
 assert.ok(source.includes("const availableServiceIds=services.filter(item=>item[7]!==false).map(item=>item[0])") &&
   source.includes("input.disabled=active===false"),
   'The promotion list must obey explicit service-availability flags while keeping the unverified VPN disclosed');
-assert.ok(source.includes("const activeSelected=services.filter(([id,,,,,,featured=false,active=true])=>active!==false&&preferences.selected.includes(id))") &&
+assert.ok(source.includes("const activeSelected=services.filter(([id,,,,,,featured=false,active=true])=>active!==false&&managedPromoConfig.enabledServices.includes(id)&&preferences.selected.includes(id))") &&
   source.includes("const visible=activeSelected;"),
   'Unavailable service IDs must be excluded from the promotable service card grid');
 assert.ok(source.includes("if(!hasConsent()||!selectAllowedEvents.has(name))return false") &&
