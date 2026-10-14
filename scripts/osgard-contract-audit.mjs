@@ -267,8 +267,18 @@ const normalizedContract = {
   worlds: worldIds.slice().sort(),
   games: manifestGames.map(game => ({ id: game.id, href: normalizeRoute(game.href) })).sort((a, b) => a.id.localeCompare(b.id)),
   events: eventNames.slice().sort(),
+  catalogue: {
+    cards: catalogIds.slice().sort(),
+    structuredDataRoutes: itemListPaths.slice().sort(),
+    inviteAllowList: inviteIds.slice().sort(),
+    shareCardGenerator: shareGeneratorIds.slice().sort(),
+  },
   diagnostics: diagnosticRouteEntries.map(entry => ({ id: entry.id, route: normalizeRoute(entry.route) })).sort((a, b) => a.id.localeCompare(b.id)),
   recommendations: curatedEntries.map(entry => ({ id: entry.id, values: entry.values.slice().sort() })).sort((a, b) => a.id.localeCompare(b.id)),
+  releaseSurface: {
+    productionRoutes: productionRoutes.slice().sort(),
+    sitemapRoutes: sitemapPaths.slice().sort(),
+  },
 };
 report.contract = {
   worldCount: worldIds.length,
