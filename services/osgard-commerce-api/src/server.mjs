@@ -261,7 +261,7 @@ app.post("/v1/lab/research-director", async (req, res) => {
   const lease = researchDirectorBudget.acquire();
   if (!lease) return res.status(429).json({ error: "AI_DAILY_BUDGET_EXHAUSTED", message: "Достигнут дневной лимит AI-разборов. Повтори завтра или используй локальный режим." });
   try {
-    const response = await requestResearchDirector(checked.value, {
+    const response = await requestResearchDirector(req.body, {
       apiKey: process.env.OPENAI_API_KEY,
       model: process.env.OPENAI_LAB_MODEL || "gpt-6-luna",
     });
