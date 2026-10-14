@@ -23,6 +23,8 @@ on:
       - "scripts/catalog-state-scale-smoke.mjs"
       - "scripts/osgard-release-attestation.mjs"
       - "scripts/osgard-release-attestation.test.mjs"
+      - "scripts/osgard-performance-budget.mjs"
+      - "scripts/osgard-performance-budget.test.mjs"
       - "scripts/generate-games-share-cards.mjs"
       - "scripts/osgard-ai-release-review.test.mjs"
       - ".github/workflows/osgard-ai-release-review.yml"
@@ -86,6 +88,8 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
+      - name: Test performance budget enforcement
+        run: npm run qa:performance-budget-test
       - name: Verify cross-surface OSGARD contracts
         run: npm run qa:contracts
       - name: Test release attestation against tampering
@@ -102,6 +106,8 @@ jobs:
         run: npm run qa:ios-appstore
       - name: Build the production site
         run: npm run build
+      - name: Enforce measured app-shell transfer budgets
+        run: npm run qa:performance-budget
       - name: Verify live SkillCred page wiring
         run: npm run qa:skillcred
       - name: Verify Imperium of Time game systems and visual diagnostics
