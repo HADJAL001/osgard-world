@@ -4,8 +4,8 @@ import { runInNewContext } from 'node:vm';
 
 const html = readFileSync(new URL('../public/games/cascade-lab/index.html', import.meta.url), 'utf8');
 const source = readFileSync(new URL('../public/games/cascade-lab/experiment-studio.js', import.meta.url), 'utf8');
-assert.match(html, /osgard-game-version" content="0\.25\.0-evidence-integrity"/, 'CASCADE LAB metadata must identify application release 0.25.0');
-assert.match(html, /<title>CASCADE LAB — Premium Physics Lab 0\.25.0<\/title>/, 'the browser title must identify application release 0.25.0');
+assert.match(html, /osgard-game-version" content="0\.26\.0-replay-verification"/, 'CASCADE LAB metadata must identify application release 0.26.0');
+assert.match(html, /<title>CASCADE LAB — Premium Physics Lab 0\.25.0<\/title>/, 'the browser title must identify application release 0.26.0');
 assert.ok(html.includes('id="CASCADELAB020"') && html.includes('data-cascade-lab-studio="0.20.0"') && html.includes('experiment-studio.js?v=0.20.0'), 'Experiment Studio must be versioned and cache-busted');
 for (const marker of [
   "osgard.cascade-lab.experiment-studio.v1",
