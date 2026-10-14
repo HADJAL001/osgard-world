@@ -19,6 +19,7 @@ on:
       - "scripts/games-portal-smoke.mjs"
       - "scripts/cascade-lab-engineering-suite-smoke.mjs"
       - "scripts/cascade-lab-trajectory-xray-smoke.mjs"
+      - "scripts/cascade-lab-reproducibility-kernel-smoke.mjs"
       - "package.json"
       - ".github/workflows/osgard-play-qa.yml"
   pull_request:
@@ -31,6 +32,7 @@ on:
       - "scripts/games-portal-smoke.mjs"
       - "scripts/cascade-lab-engineering-suite-smoke.mjs"
       - "scripts/cascade-lab-trajectory-xray-smoke.mjs"
+      - "scripts/cascade-lab-reproducibility-kernel-smoke.mjs"
       - "package.json"
       - ".github/workflows/osgard-play-qa.yml"
 
@@ -66,6 +68,8 @@ jobs:
         run: npm run qa:cascade-lab-engineering
       - name: Test CASCADE LAB Trajectory X-Ray traces, comparison and archive safety
         run: npm run qa:cascade-lab-trajectory-xray
+      - name: Test CASCADE LAB reproducibility passports and physical contracts
+        run: npm run qa:cascade-lab-reproducibility
       - name: Regress sponsor campaign privacy and server contracts
         run: npm run qa:campaign-manager
       - name: Test the post-session sponsor slot and consent bridge
