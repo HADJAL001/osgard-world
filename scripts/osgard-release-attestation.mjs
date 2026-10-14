@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { readdir, readFile, lstat, writeFile, mkdir } from 'node:fs/promises';
+import { createReadStream } from 'node:fs';
 import { dirname, relative, resolve, sep, basename, extname, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -13,6 +14,11 @@ const SHA_RE = /^[a-f0-9]{64}$/;
 
 function sha256(value) {
   return createHash('sha256').update(value).digest('hex');
+}
+async function sha256File(path) {
+  const hash = createHash('sha256');
+  for await (const chunk of createReadStream(path)) hash.update(chunk);
+  return hash.digest('hex');
 }
 function posixPath(value) {
   return value.split(sep).join('/');
@@ -57,7 +63,7 @@ async function inventory(root) {
       if (!stat.isFile()) throw new Error('Non-regular entry in production build: ' + path);
       if (isSecretPath(path)) throw new Error('Potential private configuration or key file in production build: ' + path);
       const bytes = stat.size;
-      const digest = sha256(await readFile(absolute));
+      const digest = await sha256File(absolute);
       files.push({ path, bytes, sha256: digest });
       totals.files += 1;
       totals.bytes += bytes;
