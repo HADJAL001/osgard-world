@@ -53,6 +53,12 @@ const PHASE_ECHO_DURATION := 4.8
 const PHASE_ECHO_COOLDOWN := 15.0
 const PHASE_ECHO_SIGNAL_RADIUS := 36.0
 const PHASE_ECHO_TRACKED_SIGNAL_RADIUS := 48.0
+# KINETIC PRESSURE / 0.20 — fire matters before it becomes lethal.
+const GUARD_SUPPRESSION_THRESHOLD := 54.0
+const GUARD_SUPPRESSION_DECAY := 18.0
+const GUARD_SUPPRESSION_LOCKOUT := 1.35
+const GUARD_SUPPRESSION_STUN := 0.72
+const GUARD_SUPPRESSION_SPEED_FLOOR := 0.76
 
 var player: CharacterBody3D
 var camera: Camera3D
@@ -221,6 +227,10 @@ var contract_bonus := [0, 350, 550]
 var objective_text := "ВЗЛОМАТЬ ТЕРМИНАЛ → ЗАБРАТЬ ЯДРО → ЭВАКУИРОВАТЬСЯ"
 var eliminations := 0
 var critical_hits := 0
+var suppression_hits := 0
+var suppression_breaks := 0
+var suppression_attack_interrupts := 0
+var suppression_total_pressure := 0.0
 var shots_fired := 0
 var shots_hit := 0
 var damage_taken_total := 0.0
@@ -461,6 +471,10 @@ func _reset_runtime_collections() -> void:
 	squad_alert_serial = 0
 	squad_alert_source = ""
 	critical_hits = 0
+	suppression_hits = 0
+	suppression_breaks = 0
+	suppression_attack_interrupts = 0
+	suppression_total_pressure = 0.0
 	shots_fired = 0
 	shots_hit = 0
 	damage_taken_total = 0.0
@@ -2002,6 +2016,9 @@ func _spawn_guard(at: Vector3, is_warden: bool) -> void:
 		"warden": is_warden,
 		"boss_phase": 1 if is_warden else 0,
 		"stun": 0.0,
+		"suppression": 0.0,
+		"suppression_timer": 0.0,
+		"suppression_lockout": 0.0,
 		"windup": 0.0,
 		"cooldown": randf_range(0.8, 1.8),
 		"dash_windup": 0.0,
@@ -2415,11 +2432,20 @@ func _update_guards(delta: float) -> void:
 			continue
 		var health_timer: float = maxf(0.0, float(guard.get("health_timer", 0.0)) - delta)
 		guard["health_timer"] = health_timer
+		guard["suppression"] = maxf(0.0, float(guard.get("suppression", 0.0)) - GUARD_SUPPRESSION_DECAY * delta)
+		guard["suppression_timer"] = maxf(0.0, float(guard.get("suppression_timer", 0.0)) - delta)
+		guard["suppression_lockout"] = maxf(0.0, float(guard.get("suppression_lockout", 0.0)) - delta)
 		guard["hit_flash_timer"] = maxf(0.0, float(guard.get("hit_flash_timer", 0.0)) - delta)
 		guard["hit_label_timer"] = maxf(0.0, float(guard.get("hit_label_timer", 0.0)) - delta)
 		var health_readout := body.get_node_or_null("HealthReadout") as Label3D
 		if is_instance_valid(health_readout):
-			health_readout.visible = bool(guard["warden"]) or health_timer > 0.0
+			var suppression_value: float = float(guard.get("suppression", 0.0))
+			var phase_marker: String = " · PII" if bool(guard.get("warden", false)) and int(guard.get("boss_phase", 1)) >= 2 else ""
+			health_readout.visible = bool(guard["warden"]) or health_timer > 0.0 or suppression_value > 6.0
+			if suppression_value > 6.0:
+				health_readout.text = "HP %d/%d · PRESSURE %d%%" % [maxi(0, int(guard["hp"])), int(guard.get("max_hp", 1)), int(roundf(suppression_value))]
+			else:
+				health_readout.text = "HP %d/%d%s" % [maxi(0, int(guard["hp"])), int(guard.get("max_hp", 1)), phase_marker]
 		var ai_delta: float = delta * (0.64 if overdrive_timer > 0.0 else 1.0)
 		var stun := maxf(0.0, float(guard["stun"]) - ai_delta)
 		guard["stun"] = stun
@@ -2901,6 +2927,9 @@ func _damage_target(target: Node, critical_hit: bool = false, damage_scale: floa
 				_try_stagger_warden(index, critical_hit)
 				_transition_warden_phase(index)
 			guard = guards[index]
+			var pressure_amount: float = 18.0 + float(damage_points) * 12.0 + (10.0 if critical_hit else 0.0) + (10.0 if overdrive_timer > 0.0 else 0.0)
+			guard = _apply_guard_suppression(guard, pressure_amount, critical_hit)
+			guards[index] = guard
 			if critical_hit:
 				critical_hits += 1
 				_pulse_gamepad(0.16, 0.44, 0.06)
@@ -3586,7 +3615,40 @@ func _activate_overdrive() -> void:
 	_update_hud()
 
 func _effective_guard_speed(guard: Dictionary) -> float:
-	return float(guard.get("speed", 1.0)) * (0.66 if overdrive_timer > 0.0 else 1.0)
+	var pressure: float = clampf(float(guard.get("suppression", 0.0)) / 100.0, 0.0, 1.0)
+	var resistance: float = 0.48 if bool(guard.get("warden", false)) else 1.0
+	var pressure_factor: float = lerpf(1.0, GUARD_SUPPRESSION_SPEED_FLOOR, pressure * resistance)
+	return float(guard.get("speed", 1.0)) * pressure_factor * (0.66 if overdrive_timer > 0.0 else 1.0)
+
+func _apply_guard_suppression(guard: Dictionary, amount: float, critical_hit: bool = false) -> Dictionary:
+	var is_warden: bool = bool(guard.get("warden", false))
+	var pressure_gain: float = maxf(0.0, amount) * (1.45 if critical_hit else 1.0) * (0.55 if is_warden else 1.0)
+	var pressure: float = clampf(float(guard.get("suppression", 0.0)) + pressure_gain, 0.0, 100.0)
+	guard["suppression"] = pressure
+	guard["suppression_timer"] = 2.1
+	suppression_hits += 1
+	suppression_total_pressure += pressure_gain
+	var trigger_threshold: float = GUARD_SUPPRESSION_THRESHOLD * (1.0 if not is_warden else 1.4)
+	if pressure >= trigger_threshold and float(guard.get("suppression_lockout", 0.0)) <= 0.0:
+		var was_telegraphing: bool = float(guard.get("windup", 0.0)) > 0.0 or float(guard.get("dash_windup", 0.0)) > 0.0
+		var body: Node3D = guard.get("node") as Node3D
+		var stun_duration: float = GUARD_SUPPRESSION_STUN * (0.48 if is_warden else 1.0)
+		guard["stun"] = maxf(float(guard.get("stun", 0.0)), stun_duration)
+		guard["windup"] = 0.0
+		guard["dash_windup"] = 0.0
+		guard["attack_lanes"] = []
+		guard["suppression"] = 26.0 if not is_warden else 40.0
+		guard["suppression_lockout"] = GUARD_SUPPRESSION_LOCKOUT * (1.7 if is_warden else 1.0)
+		suppression_breaks += 1
+		if was_telegraphing:
+			suppression_attack_interrupts += 1
+		if is_instance_valid(body):
+			var tint: Color = Color(1.0, 0.48, 0.24) if is_warden else Color(0.25, 0.92, 1.0)
+			_spawn_impact_light(body.global_position + Vector3.UP * 0.82, tint, 1.9, 3.4, 0.16)
+			_spawn_ring_burst(body.global_position + Vector3.UP * 0.12, materials["cyan"] if not is_warden else materials["amber"])
+			_record_raid_event("suppression_break", str(guard.get("role", "HOSTILE")), 1.0 if was_telegraphing else 0.0, body.global_position)
+		_play_sfx(310.0 if not is_warden else 190.0, 0.14, 0.085)
+	return guard
 
 func _record_raid_event(event_type: String, detail: String, value: float = 0.0, at: Vector3 = Vector3.ZERO) -> void:
 	# Fixed-capacity local black box; no account data, network calls or full replay payloads.
@@ -3666,6 +3728,8 @@ func _after_action_insights() -> Array[String]:
 		insights.append("РАЗВЕДКА: Z выявляет роли, здоровье противников и устройства сквозь укрытия")
 	if insights.size() < 3 and phase_echo_activations == 0 and not guards.is_empty():
 		insights.append("ОТВЛЕЧЕНИЕ: T создаёт ложную цель для отряда; используй её после разрыва видимости")
+	if insights.size() < 3 and eliminations > 0 and suppression_attack_interrupts == 0:
+		insights.append("KINETIC PRESSURE: повторные попадания накапливают давление; точные попадания быстрее срывают атаки")
 	if insights.size() < 3 and device_emp_overloads + device_cell_novas + device_lane_collapses == 0:
 		insights.append("АРЕНА: уничтожай полевые устройства — это меняет ход боя")
 	if insights.is_empty():
@@ -3696,7 +3760,7 @@ func _build_after_action_report() -> Dictionary:
 	return {
 		"schema": AFTER_ACTION_REPORT_SCHEMA,
 		"game": "NULL//SHIFT",
-		"gameVersion": "0.19.0-phase-echo",
+		"gameVersion": "0.20.0-kinetic-pressure",
 		"outcome": outcome,
 		"challengeCode": daily_challenge_code if daily_challenge_active else "",
 		"runSeed": daily_run_seed,
@@ -3705,6 +3769,12 @@ func _build_after_action_report() -> Dictionary:
 		"score": int(score_data["total"]),
 		"grade": mission_grade,
 		"scoreBreakdown": score_data,
+		"suppression": {
+			"pressureHits": suppression_hits,
+			"pressureBreaks": suppression_breaks,
+			"attackInterrupts": suppression_attack_interrupts,
+			"pressureApplied": snappedf(suppression_total_pressure, 0.1)
+		},
 		"combat": {
 			"eliminations": eliminations,
 			"criticalHits": critical_hits,
@@ -5666,6 +5736,8 @@ func _update_hud() -> void:
 			"INVESTIGATE", "SEARCHING":
 				investigating_guards += 1
 	telemetry_label.text = "HOSTILES %02d  ·  DEVICES %02d  ·  CONTRACT %02d · AI C%02d I%02d" % [guards.size(), _living_device_count(), current_contract + 1, engaged_guards, investigating_guards]
+	if suppression_breaks > 0:
+		telemetry_label.text += "  ·  PRESSURE CUTS %02d" % suppression_breaks
 	if warden_phase_transitions > 0 or warden_staggers > 0:
 		telemetry_label.text += "  ·  WARDEN PII %02d / STAGGER %02d" % [warden_phase_transitions, warden_staggers]
 	if daily_challenge_active and not daily_mutators.is_empty():

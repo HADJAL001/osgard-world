@@ -508,3 +508,16 @@ The Warden rejects the holographic lure. The ability has a 4.8-second signal win
 30. Added source-contract checks so CI fails if the ability disappears.
 
 This is a gameplay milestone, not a claim of native 8K rendering or measured performance on every physical device.
+
+
+## Godot release 0.20 — Kinetic Pressure / seven tactical refinements
+
+1. Every hostile has its own pressure state; landed shots contribute force even before an elimination.
+2. Precision hits apply a larger pressure impulse, while Overdrive adds pressure through the real weapon state.
+3. Reaching the pressure threshold interrupts active attack wind-ups and Stalker dash telegraphs, clears stored attack lanes, and briefly stuns the hostile.
+4. Pressure slows actual hostile navigation while it remains elevated; the meter decays continuously instead of applying a permanent debuff.
+5. A per-hostile lockout prevents one burst from farming repeated interrupts. Warden has a higher threshold, receives less pressure, and recovers with a shorter interrupt.
+6. In-world health readouts display pressure, the combat HUD counts confirmed breaks, and the local after-action JSON records pressure applied, pressure breaks and attack interruptions.
+7. Headless runtime assertions cover threshold behaviour, attack cancellation, precision scaling, movement slowdown, anti-chain lockout, Warden resistance and report content. Source-contract checks ensure the new mechanic remains in the production build.
+
+All pressure metrics remain in the current session and the player's locally exported report. No remote telemetry or new assets/dependencies are introduced.

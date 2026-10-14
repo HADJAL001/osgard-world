@@ -1960,12 +1960,41 @@ func _run_smoke() -> void:
 	game._activate_tactical_scan()
 	if not _expect(game.scan_activations == scans_before_cooldown and game.scan_cooldown > 0.0, "tactical scan cooldown must prevent immediate repeat activation"):
 		return
+	print("RUNTIME_STAGE: kinetic pressure / suppression director")
+	var normal_pressure_state: Dictionary = {"role": "RANGER", "warden": false, "suppression": 0.0, "suppression_timer": 0.0, "suppression_lockout": 0.0, "stun": 0.0, "windup": 0.58, "dash_windup": 0.0, "attack_lanes": [{"from": Vector3.ZERO, "to": Vector3.ONE}], "speed": 2.0}
+	var suppression_before: int = game.suppression_breaks
+	var interrupts_before: int = game.suppression_attack_interrupts
+	var pressure_state: Dictionary = game._apply_guard_suppression(normal_pressure_state, game.GUARD_SUPPRESSION_THRESHOLD, false)
+	if not _expect(float(pressure_state["stun"]) >= game.GUARD_SUPPRESSION_STUN and float(pressure_state["windup"]) == 0.0 and pressure_state["attack_lanes"].is_empty(), "sustained kinetic pressure must interrupt a live attack telegraph and cancel its stored attack lanes"):
+		return
+	if not _expect(game.suppression_breaks == suppression_before + 1 and game.suppression_attack_interrupts == interrupts_before + 1 and float(pressure_state["suppression_lockout"]) > 0.0, "pressure breaks must be counted and protected by a deterministic anti-chain lockout"):
+		return
+	var calm_speed: float = game._effective_guard_speed({"speed": 2.0, "suppression": 0.0, "warden": false})
+	var pressured_speed: float = game._effective_guard_speed({"speed": 2.0, "suppression": 90.0, "warden": false})
+	var warden_speed: float = game._effective_guard_speed({"speed": 2.0, "suppression": 90.0, "warden": true})
+	if not _expect(pressured_speed < calm_speed and warden_speed > pressured_speed, "suppression must slow ordinary hostile movement while the Warden keeps meaningful resistance"):
+		return
+	var critical_pressure_state: Dictionary = {"role": "RANGER", "warden": false, "suppression": 0.0, "suppression_timer": 0.0, "suppression_lockout": 0.0, "stun": 0.0, "windup": 0.0, "dash_windup": 0.0, "attack_lanes": []}
+	var pressure_total_before: float = game.suppression_total_pressure
+	game._apply_guard_suppression(critical_pressure_state, 30.0, false)
+	var normal_gain: float = float(critical_pressure_state["suppression"])
+	critical_pressure_state["suppression"] = 0.0
+	critical_pressure_state["suppression_lockout"] = 0.0
+	game._apply_guard_suppression(critical_pressure_state, 30.0, true)
+	if not _expect(float(critical_pressure_state["suppression"]) > normal_gain and game.suppression_total_pressure > pressure_total_before, "precision hits must build substantially more pressure than an ordinary hit"):
+		return
+	var warden_pressure_state: Dictionary = {"role": "WARDEN", "warden": true, "suppression": 0.0, "suppression_lockout": 0.0, "suppression_timer": 0.0, "stun": 0.0, "windup": 0.5, "dash_windup": 0.0, "attack_lanes": []}
+	var boss_pressure_result: Dictionary = game._apply_guard_suppression(warden_pressure_state, game.GUARD_SUPPRESSION_THRESHOLD, false)
+	if not _expect(float(boss_pressure_result.get("stun", 0.0)) < game.GUARD_SUPPRESSION_STUN, "Warden must resist suppression stuns instead of behaving like a regular guard"):
+		return
 	var new_report: Dictionary = game._build_after_action_report()
-	if not _expect(str(new_report.get("gameVersion", "")) == "0.19.0-phase-echo" and new_report.get("thermal", {}).has("overheatEvents") and new_report.get("thermal", {}).has("ventHostilesInterrupted"), "after-action export must include versioned thermal metrics"):
+	if not _expect(str(new_report.get("gameVersion", "")) == "0.20.0-kinetic-pressure" and new_report.get("suppression", {}).has("pressureHits") and new_report.get("suppression", {}).has("attackInterrupts"), "after-action export must include versioned kinetic-pressure metrics"):
+		return
+	if not _expect(new_report.get("thermal", {}).has("overheatEvents") and new_report.get("thermal", {}).has("ventHostilesInterrupted"), "after-action export must include versioned thermal metrics"):
 		return
 	if not _expect(new_report.get("recon", {}).has("scanActivations") and new_report.get("recon", {}).has("devicesRevealed"), "after-action export must include local tactical scan metrics"):
 		return
-	if not _expect(str(new_report.get("gameVersion", "")) == "0.19.0-phase-echo" and new_report.get("phaseEcho", {}).get("deployments", -1) >= 0 and new_report.get("phaseEcho", {}).has("confirmedLures"), "after-action report must expose versioned Echo use and confirmed AI diversion counts"):
+	if not _expect(str(new_report.get("gameVersion", "")) == "0.20.0-kinetic-pressure" and new_report.get("phaseEcho", {}).get("deployments", -1) >= 0 and new_report.get("phaseEcho", {}).has("confirmedLures"), "after-action report must expose versioned Echo use and confirmed AI diversion counts"):
 		return
 	game.player.global_position = previous_player_position
 	game.mission_finished = previous_mission_finished
