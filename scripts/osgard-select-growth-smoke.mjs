@@ -97,7 +97,9 @@ assert.equal(chooseSpotlightService(['myosa','projects','superday'],'superday',8
 assert.equal(chooseSpotlightService([],'',4,'each'),'',
   'Rotation must handle an empty user-selected service list');
 
-assert.ok(source.includes("const fallback={frequency:'each',selected:availableServiceIds.slice()}") &&
+assert.ok(source.includes("defaultFrequency:'each'") &&
+  source.includes("const fallback={frequency:managedPromoConfig.defaultFrequency,selected:managedPromoConfig.defaultSelectedServices.slice()}") &&
+  source.includes("const frequencyValues=['each','every3','off']") &&
   source.includes("['each','После каждой завершённой игры']") &&
   source.includes("['every3','Раз в три завершённых раунда']") &&
   source.includes("['off','Не показывать подборку']") &&
@@ -117,7 +119,7 @@ assert.ok(source.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN','Врем�
 assert.ok(source.includes("const availableServiceIds=services.filter(item=>item[7]!==false).map(item=>item[0])") &&
   source.includes("input.disabled=active===false"),
   'The promotion list must obey explicit service-availability flags while keeping the unverified VPN disclosed');
-assert.ok(source.includes("const activeSelected=services.filter(([id,,,,,,featured=false,active=true])=>active!==false&&preferences.selected.includes(id))") &&
+assert.ok(source.includes("const activeSelected=services.filter(([id,,,,,,featured=false,active=true])=>active!==false&&managedPromoConfig.enabledServices.includes(id)&&preferences.selected.includes(id))") &&
   source.includes("const visible=activeSelected;"),
   'Unavailable service IDs must be excluded from the promotable service card grid');
 assert.ok(source.includes("if(!hasConsent()||!selectAllowedEvents.has(name))return false") &&
@@ -341,7 +343,7 @@ const intermissionCss = read('public/games/game-session-recommendations.css')
 assert.ok(source.includes("const promoSnoozeKey='osgard.games.postgame-snooze-until.v1'") && source.includes("const promoSnoozeMs=24*60*60*1000"), 'A separate one-day promo pause must not overwrite the shared frequency preference')
 assert.ok(source.includes("function snoozeServicePromosForDay(now=Date.now())") && source.includes("readPromoSnoozeUntil(now)>now"), 'Promo pause needs a bounded 24-hour expiry and must gate scheduled service prompts')
 assert.ok(source.includes("snoozeButton.addEventListener('click'") && source.includes("if(hasConsent())void sendSelectEvent('owned_promo_snoozed'"), 'Pause action must work even without analytics consent and only measure after consent')
-assert.ok(source.includes("suite.append(servicesShelf(id,shouldShowServicePromos(preferences,completedCount),completedCount),rewardShelf(id))"), 'Snoozing service promotions must not remove invite rewards')
+assert.ok(source.includes("servicesShelf(id,shouldShowServicePromos(preferences,completedCount),completedCount)") && source.includes("if(managedPromoConfig.showShareRewards)panels.push(rewardShelf(id))"), 'Snoozing service promotions must not remove invite rewards; reward visibility has its own admin switch')
 assert.ok(source.includes("window.addEventListener('storage'") && source.includes("document.addEventListener('osgard:service-preferences-updated'"), 'Intermission must refresh preferences changed from another tab or the Entertainment page')
 assert.ok(source.includes("function normalizeServiceSearchQuery(value)") && source.includes("function matchesServiceFilter(category,selectedCategory,searchableText,query)"), 'Service search must be normalized and separated from category filtering')
 assert.ok(source.includes("serviceSearch.addEventListener('input'") && source.includes("clearServiceSearch.addEventListener('click'"), 'The expanded service directory needs live search and a clear-search action')
