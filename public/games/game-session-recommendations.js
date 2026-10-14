@@ -469,11 +469,21 @@ function readServicePreferences(){
  let stored=null;
  try{const raw=localStorage.getItem(servicePreferencesKey);if(raw)stored=JSON.parse(raw)}catch{return memoryServicePreferences?{frequency:memoryServicePreferences.frequency,selected:memoryServicePreferences.selected.slice()}:fallback}
  if(!stored||typeof stored!=='object')return memoryServicePreferences?{frequency:memoryServicePreferences.frequency,selected:memoryServicePreferences.selected.slice()}:fallback;
- return {frequency:frequencyValues.includes(stored.frequency)?stored.frequency:'each',selected:Array.isArray(stored.selected)?availableServiceIds.filter(id=>stored.selected.includes(id)):fallback.selected};
+ const frequency=frequencyValues.includes(stored.frequency)?stored.frequency:fallback.frequency;
+ const selected=Array.isArray(stored.selected)?availableServiceIds.filter(id=>stored.selected.includes(id)):fallback.selected.slice();
+ // Existing player preferences survive the schema upgrade. Newly added services are added to
+ // the chooser, while the player's explicit frequency choice ("each/every3/off") is preserved.
+ if(stored.schemaVersion!==2&&managedPromoConfig.enabledServices.includes('gardvpn')&&!selected.includes('gardvpn'))selected.push('gardvpn');
+ if(stored.schemaVersion!==2){
+  const migrated={schemaVersion:2,frequency,selected};
+  memoryServicePreferences={frequency,selected:selected.slice()};
+  try{localStorage.setItem(servicePreferencesKey,JSON.stringify(migrated))}catch{}
+ }
+ return {frequency,selected};
 }
 function writeServicePreferences(value){
- const next={frequency:frequencyValues.includes(value.frequency)?value.frequency:'each',selected:availableServiceIds.filter(id=>Array.isArray(value.selected)&&value.selected.includes(id))};
- memoryServicePreferences=next;
+ const next={schemaVersion:2,frequency:frequencyValues.includes(value.frequency)?value.frequency:'each',selected:availableServiceIds.filter(id=>Array.isArray(value.selected)&&value.selected.includes(id))};
+ memoryServicePreferences={frequency:next.frequency,selected:next.selected.slice()};
  try{localStorage.setItem(servicePreferencesKey,JSON.stringify(next));return true}catch{return false}
 }
 function readServiceProgress(){
