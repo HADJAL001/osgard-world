@@ -35,8 +35,9 @@
 <label class="field"><span>С НАЧАЛА</span><input class="input" id="from-date" type="datetime-local" required></label>
 <label class="field"><span>ПО</span><input class="input" id="to-date" type="datetime-local" required></label>
 <button class="btn" id="refresh" type="button">Обновить ↻</button>
-<button class="btn secondary" id="export" type="button">Экспорт JSONL ↓</button>
-<button class="btn secondary" id="export-csv" type="button">Экспорт агрегатов CSV ↓</button>
+<button class="btn secondary" id="export" type="button" disabled>Экспорт JSONL ↓</button>
+<button class="btn secondary" id="export-csv" type="button" disabled>Экспорт агрегатов CSV ↓</button>
+<button class="btn secondary" id="export-report-json" type="button" disabled>Отчёт сравнения JSON ↓</button>
 </div>
 <p class="message" id="refresh-status" role="status"></p>
 <div class="metrics" id="metrics" aria-live="polite"><article class="metric"><span>Статус</span><strong>Ожидание</strong></article></div>
@@ -129,7 +130,7 @@ async function refresh(seed){
  const tokenAtStart=operatorToken,epoch=operationEpoch,sequence=++refreshSequence;
  if(refreshController)refreshController.abort();
  const controller=new AbortController();refreshController=controller;
- const button=$('#refresh');button.disabled=true;$('#export').disabled=true;$('#export-csv').disabled=true;setMessage($('#refresh-status'),'Запрашиваю защищённые агрегаты и сравнимый период…');
+ const button=$('#refresh');button.disabled=true;$('#export').disabled=true;$('#export-csv').disabled=true;$('#export-report-json').disabled=true;setMessage($('#refresh-status'),'Запрашиваю защищённые агрегаты и сравнимый период…');
  try{
   const range=seed?.range||dateRange();
   const previous=logic.previousPeriod(range);
@@ -144,7 +145,7 @@ async function refresh(seed){
   if(sequence!==refreshSequence||tokenAtStart!==operatorToken||epoch!==operationEpoch||controller.signal.aborted)return;
   const comparison=logic.compareMetricRows(collectMetrics(summary),collectMetrics(previousSummary));
   lastAggregateReport={generatedAt:new Date().toISOString(),range,comparisonRange:previous,summary,previousSummary,comparison,cohorts,snapshots};
-  paintMetrics(summary);renderComparison(comparison,range,previous);$('#export').disabled=false;$('#export-csv').disabled=false;
+  paintMetrics(summary);renderComparison(comparison,range,previous);$('#export').disabled=false;$('#export-csv').disabled=false;$('#export-report-json').disabled=false;
   setJson('#summary-data',summary);setJson('#cohorts-data',cohorts);setJson('#snapshots-data',snapshots);
   state.textContent='API STATUS / ПОДКЛЮЧЁН';
   setMessage($('#refresh-status'),'Обновлено '+new Date().toLocaleString('ru-RU')+'. Сравнение использует два смежных окна одинаковой длительности.','success');
@@ -188,7 +189,7 @@ function applyPreset(preset){
 function cancelRefreshForInvalidRange(){
  refreshSequence++;
  if(refreshController){refreshController.abort();refreshController=null}
- $('#refresh').disabled=false;$('#export').disabled=true;$('#export-csv').disabled=true;
+ $('#refresh').disabled=false;$('#export').disabled=true;$('#export-csv').disabled=true;$('#export-report-json').disabled=true;
 }
 function rangeChanged(){
  document.querySelectorAll('[data-range-preset]').forEach(button=>button.setAttribute('aria-pressed','false'));
@@ -211,7 +212,7 @@ function disconnect(){
  $('#metrics').replaceChildren();$('#period-comparison').replaceChildren();
  $('#comparison-meta').textContent='Данные появятся после подключения';
  $('#period-comparison').append(Object.assign(document.createElement('p'),{className:'comparison-empty',textContent:'Ожидаем агрегаты API.'}));
- $('#refresh-status').textContent='';$('#refresh').disabled=false;$('#connect-button').disabled=false;
+ $('#refresh-status').textContent='';$('#refresh').disabled=false;$('#export').disabled=true;$('#export-csv').disabled=true;$('#export-report-json').disabled=true;$('#connect-button').disabled=false;
  document.querySelectorAll('[data-range-preset]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.rangePreset==='month')));
  state.textContent='API STATUS / ОТКЛЮЧЁН';
  setMessage($('#access-status'),'Токен очищен из памяти вкладки; активные запросы отменены.');
@@ -234,6 +235,23 @@ $('#export').addEventListener('click',async()=>{
   if(controller.signal.aborted||epoch!==operationEpoch||tokenAtStart!==operatorToken)return;
   setMessage($('#refresh-status'),error instanceof Error?error.message:'Ошибка экспорта','error');
  }finally{if(exportController===controller){exportController=null;if(epoch===operationEpoch&&tokenAtStart===operatorToken)button.disabled=false}}
+});
+$('#export-report-json').addEventListener('click',()=>{
+ if(!operatorToken||!lastAggregateReport){setMessage($('#refresh-status'),'Сначала подключитесь и обновите защищённые агрегаты.','error');return}
+ const safeReport={
+  schema:'osgard-liveops-period-comparison.v1',
+  generatedAt:lastAggregateReport.generatedAt,
+  currentPeriod:{from:new Date(lastAggregateReport.range.from).toISOString(),to:new Date(lastAggregateReport.range.to).toISOString()},
+  previousPeriod:{from:new Date(lastAggregateReport.comparisonRange.from).toISOString(),to:new Date(lastAggregateReport.comparisonRange.to).toISOString()},
+  currentMetrics:collectMetrics(lastAggregateReport.summary),
+  previousMetrics:collectMetrics(lastAggregateReport.previousSummary),
+  comparison:lastAggregateReport.comparison
+ };
+ const blob=new Blob([JSON.stringify(safeReport,null,2)+'\\n'],{type:'application/json;charset=utf-8'});
+ const url=URL.createObjectURL(blob),link=document.createElement('a');
+ link.href=url;link.download='osgard-liveops-comparison-'+new Date().toISOString().slice(0,10)+'.json';link.click();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+ setMessage($('#refresh-status'),'JSON-отчёт сравнения экспортирован. Только разрешённые агрегаты; сырые события и секреты не включены.','success');
 });
 $('#export-csv').addEventListener('click',()=>{
  const button=$('#export-csv'),epoch=operationEpoch;
