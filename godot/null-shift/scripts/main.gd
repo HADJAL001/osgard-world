@@ -2057,7 +2057,7 @@ func _fire_weapon() -> void:
 		return
 	fire_cooldown = maxf(0.09, 0.17 - float(weapon_level) * 0.022)
 	_trigger_muzzle_flash()
-	var from := player.global_position + Vector3.UP * 0.82 + player_aim * 0.8
+	var from := player.global_position + Vector3.UP * 0.48 + player_aim * 0.8
 	var to := from + player_aim * 37.0
 	var query := PhysicsRayQueryParameters3D.create(from, to)
 	query.exclude = [player.get_rid()]
@@ -2073,7 +2073,7 @@ func _fire_weapon() -> void:
 			is_combat_hit = _is_combat_target(collider as Node)
 			if is_combat_hit and _is_hostile_target(collider as Node) and collider is Node3D:
 				var hit_position: Vector3 = hit["position"]
-				critical_hit = hit_position.y >= (collider as Node3D).global_position.y + 0.48
+				critical_hit = aim_target_node == (collider as Node3D) and hit_position.y >= (collider as Node3D).global_position.y + 0.42
 			_damage_target(collider as Node, critical_hit)
 	_record_weapon_shot(is_combat_hit)
 	_spawn_beam(from, beam_end, materials["cyan"], 0.09)

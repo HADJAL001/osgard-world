@@ -902,6 +902,50 @@ func _run_smoke() -> void:
 	if not _expect(game.devices.size() == 3, "three destructible devices must spawn"):
 		return
 
+	print("RUNTIME_STAGE: actual weapon raycast against compact hostile capsule")
+	var fire_saved_position: Vector3 = game.player.global_position
+	var fire_saved_aim: Vector3 = game.player_aim
+	var fire_saved_target: Node3D = game.aim_target_node
+	var fire_saved_cooldown: float = game.fire_cooldown
+	var fire_saved_shots: int = game.shots_fired
+	var fire_saved_hits: int = game.shots_hit
+	var fire_saved_critical_hits: int = game.critical_hits
+	var moved_guard_positions: Array[Vector3] = []
+	for index in range(game.guards.size()):
+		var existing_body: CharacterBody3D = game.guards[index]["node"] as CharacterBody3D
+		moved_guard_positions.append(existing_body.global_position)
+		existing_body.global_position = Vector3(18.0 + float(index) * 1.5, 0.82, 15.0)
+	await physics_frame
+	game.player.global_position = fire_saved_position
+	var ray_guard_position: Vector3 = fire_saved_position + Vector3(0.0, 0.0, -5.0)
+	game._spawn_guard(ray_guard_position, false)
+	var ray_guard_index: int = game.guards.size() - 1
+	var ray_guard: CharacterBody3D = game.guards[ray_guard_index]["node"] as CharacterBody3D
+	var ray_guard_hp: int = int(game.guards[ray_guard_index]["hp"])
+	game.player_aim = Vector3.FORWARD
+	game.aim_target_node = ray_guard
+	game.fire_cooldown = 0.0
+	await physics_frame
+	await physics_frame
+	game._fire_weapon()
+	if not _expect(game.shots_fired == fire_saved_shots + 1 and game.shots_hit == fire_saved_hits + 1, "weapon ray must connect with a compact hostile capsule at its body height"):
+		return
+	if not _expect(int(game.guards[ray_guard_index]["hp"]) == ray_guard_hp - 2 and game.critical_hits == fire_saved_critical_hits + 1, "an accurately locked upper-zone ray hit must register two damage and one critical event"):
+		return
+	ray_guard.queue_free()
+	game.guards.remove_at(ray_guard_index)
+	for index in range(game.guards.size()):
+		var existing_body: CharacterBody3D = game.guards[index]["node"] as CharacterBody3D
+		existing_body.global_position = moved_guard_positions[index]
+	game.player.global_position = fire_saved_position
+	game.player_aim = fire_saved_aim
+	game.aim_target_node = fire_saved_target
+	game.fire_cooldown = fire_saved_cooldown
+	game.shots_fired = fire_saved_shots
+	game.shots_hit = fire_saved_hits
+	game.critical_hits = fire_saved_critical_hits
+	await physics_frame
+
 	print("RUNTIME_STAGE: combat director math, grade and overdrive")
 	if not _expect(is_equal_approx(game._combat_combo_multiplier(0), 1.0) and is_equal_approx(game._combat_combo_multiplier(2), 1.25) and is_equal_approx(game._combat_combo_multiplier(4), 1.5) and is_equal_approx(game._combat_combo_multiplier(6), 1.75) and is_equal_approx(game._combat_combo_multiplier(9), 2.0), "combo thresholds must award five deterministic payout tiers"):
 		return

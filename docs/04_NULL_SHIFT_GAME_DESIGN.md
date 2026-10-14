@@ -335,3 +335,10 @@ This release changes the combat and scoring loop in the Godot 3D runtime (not a 
 30. S/A/B/C mission grades, score-driven grade bonuses and a fuller results report.
 
 The runtime smoke now checks combo thresholds, critical damage, the charge gate, Overdrive's real enemy-speed effect, timer decay, kill awards, combo breaking, accuracy arithmetic and grade bonuses. The pause screen no longer inflates mission elapsed time. Existing daily challenge IDs, fixed mutators, career upgrades, extraction objective, desktop/touch/gamepad input modes and local-only progression remain compatible.
+
+
+## Post-release combat calibration — compact hostile hitbox alignment
+
+- Calibrated the weapon ray to the vertical centerline of the actual hostile capsule. Shorter Stalker/Ranger silhouettes can now be hit by the same horizontal ray, instead of relying on the taller Heavy/Warden hitboxes.
+- Critical damage now requires the current aimed/locked hostile plus an upper-zone ray intersection; simply damaging an enemy through the helper does not masquerade as a precision shot.
+- Added an end-to-end headless test that positions a compact hostile, fires the real weapon ray, and verifies shot count, confirmed hit, two-point precision damage and critical telemetry, then restores the simulation state.
