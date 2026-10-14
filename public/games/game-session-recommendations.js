@@ -519,7 +519,7 @@ function inviteFor(id){
  u.searchParams.set('utm_source','osgard_play');u.searchParams.set('utm_medium','referral');u.searchParams.set('utm_campaign','play_with_friends');u.searchParams.set('utm_content',id);return u.href;
 }
 function getWallet(){try{const w=JSON.parse(localStorage.getItem(walletKey)||'{}'),claims=Array.isArray(w.qualifiedClaims)?[...new Set(w.qualifiedClaims.filter(code=>/^og_[a-f0-9]{8}$/.test(String(code))))].slice(-5000):[];return{balance:Number.isSafeInteger(w.balance)&&w.balance>=0?Math.min(w.balance,1e9):0,day:typeof w.lastRewardDay==='string'?w.lastRewardDay:'',claims}}catch{return{balance:0,day:'',claims:[]}}}
-function award(source){const current=getWallet(),day=new Date().toISOString().slice(0,10);if(current.day===day)return{ok:false,already:true,balance:current.balance};const next={balance:Math.min(1e9,current.balance+dailyReward),lastRewardDay:day,lastSource:String(source||'share').slice(0,60),qualifiedClaims:current.claims,updatedAt:new Date().toISOString()};try{localStorage.setItem(walletKey,JSON.stringify(next));return{ok:true,balance:next.balance}}catch{return{ok:false,balance:current.balance}}}
+function award(source){const current=getWallet(),day=new Date().toISOString().slice(0,10);if(current.day===day)return{ok:false,already:true,balance:current.balance};const next={balance:Math.min(1e9,current.balance+dailyReward),lastRewardDay:day,lastSource:String(source||'share').slice(0,60),qualifiedClaims:current.claims,updatedAt:new Date().toISOString()};try{localStorage.setItem(walletKey,JSON.stringify(next));try{window.dispatchEvent(new CustomEvent('osgard:shards-wallet-updated',{detail:{balance:next.balance,lastRewardDay:day}}))}catch{}return{ok:true,balance:next.balance}}catch{return{ok:false,balance:current.balance}}}
 function servicesShelf(gameId,showPromos,completedCount){
  const preferences=readServicePreferences();
  const section=make('section','og-postgame-services'),head=make('div','og-postgame-service-head'),intro=make('div');
@@ -652,7 +652,92 @@ function servicesShelf(gameId,showPromos,completedCount){
    save.textContent=ok?'★ Мой выбор сохранён':'☆ Повторить сохранение';
   });
   actions.append(open,next,save);copy.append(actions);
-  spotlight.append(copy,spotlightStatus);
+
+  // Share the currently selected first-party service, not just the game itself.
+  // Completing a share sheet or opening a social composer is not proof of a public post;
+  // SHARDS require a separate player confirmation and remain local/non-cash points.
+  const serviceShare=make('div','og-postgame-service-share');
+  const serviceShareHead=make('div','og-postgame-service-share-head');
+  serviceShareHead.append(make('span','og-postgame-service-share-label','ПОДЕЛИТЬСЯ ВЫБРАННЫМ СЕРВИСОМ'));
+  const nativeShare=make('button','og-postgame-service-share-primary','Поделиться ↗');nativeShare.type='button';
+  const networkToggle=make('button','og-postgame-service-share-toggle','Другие соцсети +');networkToggle.type='button';networkToggle.setAttribute('aria-expanded','false');
+  serviceShareHead.append(nativeShare,networkToggle);
+  const networkPanel=make('div','og-postgame-service-share-networks');networkPanel.hidden=true;
+  const serviceShareStatus=make('p','og-postgame-service-share-status');serviceShareStatus.setAttribute('role','status');serviceShareStatus.setAttribute('aria-live','polite');
+  const serviceShareClaim=make('button','og-postgame-service-share-claim','Я поделился — получить +50 SHARDS');serviceShareClaim.type='button';serviceShareClaim.hidden=true;
+  const serviceShareNote=make('p','og-postgame-service-share-note','SHARDS — локальные игровые очки без денежной стоимости. После отправки можно подтвердить публикацию. Соцсети не передают OSGARD надёжное подтверждение публичного поста; копирование ссылки не даёт награду.');
+  let pendingServiceShare='';
+  const serviceShareUrl=new URL(item[5],location.origin);
+  serviceShareUrl.searchParams.set('utm_source','osgard_play');
+  serviceShareUrl.searchParams.set('utm_medium','referral');
+  serviceShareUrl.searchParams.set('utm_campaign','owned_service_share');
+  serviceShareUrl.searchParams.set('utm_content',item[0]+'_'+gameId);
+  const serviceShareMessage='Посмотри '+item[2]+' — проект экосистемы OSGARD. '+item[4];
+  const serviceEncodedUrl=encodeURIComponent(serviceShareUrl.href),serviceEncodedMessage=encodeURIComponent(serviceShareMessage);
+  const serviceNetworkLinks=[
+   ['Telegram','https://t.me/share/url?url='+serviceEncodedUrl+'&text='+serviceEncodedMessage],
+   ['WhatsApp','https://wa.me/?text='+encodeURIComponent(serviceShareMessage+' '+serviceShareUrl.href)],
+   ['VK','https://vk.com/share.php?url='+serviceEncodedUrl+'&title='+encodeURIComponent(item[2]+' — OSGARD')+'&comment='+serviceEncodedMessage],
+   ['X','https://twitter.com/intent/tweet?url='+serviceEncodedUrl+'&text='+serviceEncodedMessage],
+   ['Facebook','https://www.facebook.com/sharer/sharer.php?u='+serviceEncodedUrl]
+  ];
+  function setServiceSharePending(method){
+   pendingServiceShare=method;
+   serviceShareClaim.hidden=false;
+   serviceShareClaim.disabled=getWallet().day===new Date().toISOString().slice(0,10);
+   serviceShareClaim.textContent=serviceShareClaim.disabled?'Дневная награда уже получена':'Я поделился — получить +50 SHARDS';
+   serviceShareStatus.textContent=serviceShareClaim.disabled?'Награда за это устройство уже получена сегодня. Можно делиться дальше без бонуса.':'После публикации вернись и подтверди действие. Сам факт публичного поста автоматически не проверяется.';
+  }
+  serviceNetworkLinks.forEach(([name,href])=>{
+   const link=make('a','og-postgame-service-share-network',name+' ↗');link.href=href;link.target='_blank';link.rel='noopener noreferrer';link.setAttribute('aria-label','Поделиться выбранным сервисом через '+name);
+   link.addEventListener('click',()=>{
+    setServiceSharePending(name.toLowerCase());
+    void sendSelectEvent('social_share_intent',gameId,'osgard-service-share:'+item[0]+':'+name.toLowerCase());
+   });
+   networkPanel.append(link);
+  });
+  const copyServiceLink=make('button','og-postgame-service-share-copy','Скопировать ссылку');copyServiceLink.type='button';
+  copyServiceLink.addEventListener('click',async()=>{
+   try{
+    await navigator.clipboard.writeText(serviceShareUrl.href);
+    serviceShareStatus.textContent='Ссылка скопирована. Копирование само по себе не считается репостом и не даёт SHARDS.';
+   }catch{
+    serviceShareStatus.textContent='Браузер не разрешил копирование. Открой одну из кнопок соцсетей или скопируй ссылку из адресной строки.';
+   }
+  });
+  networkPanel.append(copyServiceLink);
+  nativeShare.addEventListener('click',async()=>{
+   if(typeof navigator.share!=='function'){
+    networkPanel.hidden=false;networkToggle.setAttribute('aria-expanded','true');
+    serviceShareStatus.textContent='Выбери соцсеть ниже. После публикации можно отдельно подтвердить бонус.';
+    return;
+   }
+   nativeShare.disabled=true;
+   void sendSelectEvent('social_share_intent',gameId,'osgard-service-share:'+item[0]+':native-share');
+   try{
+    await navigator.share({title:item[2]+' — OSGARD',text:serviceShareMessage,url:serviceShareUrl.href});
+    setServiceSharePending('native-share');
+   }catch(error){
+    if(error&&error.name==='AbortError')serviceShareStatus.textContent='Меню отправки закрыто. Награда не начислена.';
+    else serviceShareStatus.textContent='Не удалось открыть меню отправки. Выбери соцсеть ниже.';
+   }finally{nativeShare.disabled=false}
+  });
+  networkToggle.addEventListener('click',()=>{
+   networkPanel.hidden=!networkPanel.hidden;
+   networkToggle.setAttribute('aria-expanded',String(!networkPanel.hidden));
+   networkToggle.textContent=networkPanel.hidden?'Другие соцсети +':'Скрыть соцсети −';
+  });
+  serviceShareClaim.addEventListener('click',()=>{
+   if(!pendingServiceShare)return;
+   const method=pendingServiceShare,result=award('service-share-confirmation:'+item[0]+':'+method);
+   serviceShareStatus.textContent=result.ok?'+50 SHARDS начислено за подтверждённое действие. Баланс: '+result.balance+'.':result.already?'Дневная награда уже получена. Баланс: '+result.balance+'.':'Не удалось сохранить награду в этом браузере.';
+   if(result.ok)void sendSelectEvent('social_reward_claimed',gameId,'osgard-service-share-reward:'+item[0]+':'+method);
+   pendingServiceShare='';
+   serviceShareClaim.hidden=true;
+   serviceShareClaim.disabled=false;
+  });
+  serviceShare.append(serviceShareHead,networkPanel,serviceShareClaim,serviceShareStatus,serviceShareNote);
+  spotlight.append(copy,serviceShare,spotlightStatus);
  }
  renderSpotlight(spotlightServiceId);
  setTimeout(watchSpotlight,0);
