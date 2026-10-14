@@ -18,6 +18,7 @@ import {
 } from "./campaigns.mjs";
 import { buildCommercialReadiness, buildServiceReadiness } from "./readiness.mjs";
 import { generateGameCoachAdvice, isGameCoachConfigured } from "./game-coach.mjs";
+import { generateCivicCascadeAdvice, isCivicCascadeAdvisorConfigured } from "./civic-cascade-advisor.mjs";
 
 const { Pool } = pg;
 const app = express();
@@ -311,6 +312,32 @@ app.post("/v1/game-coach", rateLimit({ windowMs: 60 * 60 * 1000, limit: 5, stand
     return res.status(result.status).json({ error: result.code, message });
   }
   res.set("Cache-Control", "no-store, private");
+  return res.json({ advice: result.advice });
+});
+
+app.get("/v1/civic-cascade-advisor/status", (_req, res) => {
+  res.set("Cache-Control", "no-store, private");
+  res.set("Pragma", "no-cache");
+  return res.json({ enabled: isCivicCascadeAdvisorConfigured().enabled });
+});
+
+app.post("/v1/civic-cascade-advisor", rateLimit({ windowMs: 60 * 60 * 1000, limit: 3, standardHeaders: "draft-8", legacyHeaders: false }), async (req, res) => {
+  // One-request consent is required. The service sanitizes every field and never stores or logs the submitted snapshot.
+  const result = await generateCivicCascadeAdvice(req.body);
+  if (!result.ok) {
+    const message = result.code === "CIVIC_ADVISOR_CONSENT_REQUIRED"
+      ? "Подтверди согласие на отправку этой сводки для одного AI-разбора."
+      : result.code === "OPENAI_CIVIC_ADVISOR_NOT_CONFIGURED"
+        ? "AI-разбор CIVIC CASCADE пока выключен на сервере. Игровые данные не отправлены."
+        : result.code === "OPENAI_CIVIC_ADVISOR_BUSY"
+          ? "AI-разбор временно перегружен. Попробуй позже."
+          : result.status >= 500
+            ? "AI-разбор временно недоступен. План и состояние игры не изменены."
+            : "Сводка решения не прошла проверку. Повтори поиск плана.";
+    return res.status(result.status).json({ error: result.code, message });
+  }
+  res.set("Cache-Control", "no-store, private");
+  res.set("Pragma", "no-cache");
   return res.json({ advice: result.advice });
 });
 
