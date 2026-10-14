@@ -41,6 +41,10 @@ for (const game of registry.games) {
   const generatedGodot = game.entrypointMode === 'ci-generated-godot-web-export';
   assert.ok(existsSync(localEntry) || (fallbackRelative && existsSync(localFallback)) || generatedGodot,
     game.id + ' route must be present or explicitly declared as a CI-generated Godot entrypoint.');
+  if (game.fallbackRoute) {
+    assert.ok(game.fallbackRoute.startsWith('/games/') && !game.fallbackRoute.includes('..') && !/[?#]/.test(game.fallbackRoute), game.id + ' has an unsafe fallback route.');
+    assert.ok(existsSync(localFallback), game.id + ' fallback route must have a browser entrypoint.');
+  }
   assert.ok(!('rating' in game) && !('playerCount' in game) && !('revenue' in game), game.id + ' must not contain fictional performance/social proof.');
 }
 
