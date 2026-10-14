@@ -43,6 +43,11 @@ assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.stressChangesOnl
 assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.decisionPortfolio, 'bounded-pareto-frontier')
 assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.portfolioLimit, 3)
 assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.explainsCandidateTradeoffs, true)
+assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.scenarioTransferability?.enabled, true)
+assert.deepEqual(manifest.buildContract?.autonomousDoctrinePlanner?.scenarioTransferability?.scenarios, ['flood','blackout','blockade'])
+assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.scenarioTransferability?.comparesAgainstNoInterventionInSameScenario, true)
+assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.scenarioTransferability?.mutatesLiveState, false)
+assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.scenarioTransferability?.exportInDecisionDossier, true)
 assert.equal(manifest.buildContract?.decisionDossier?.enabled, true)
 assert.equal(manifest.buildContract?.decisionDossier?.tracksNoPersonalData, true)
 assert.equal(manifest.buildContract?.decisionDossier?.schema, 'osgard.civic-cascade.decision-dossier/v1')
@@ -113,12 +118,12 @@ const causalSource = extractBetween('function operationSnapshot(s)', 'function o
 const causal = new Function('clamp', 'nodes', 'ensureNodeIntegrity', 'clock', 'elapsed', causalSource + '\nreturn { operationSnapshot, cleanOperationSnapshot, operationDelta, recordOperationEvent };')(clamp, nodes, ensureNodeIntegrity, seconds => 'T+' + seconds, 7)
 const { operationSnapshot, cleanOperationSnapshot, recordOperationEvent } = causal
 const projectedRisk = new Function('clamp', riskSource + '\nreturn projectedRisk;')(clamp)
-const directSource = extractBetween('function simulatePlannedOrders(orders)', 'function planCrewDemand')
+const directSource = extractBetween('function simulatePlannedOrders(', 'function planCrewDemand')
 const simulateDirect = state => new Function(
   'state', 'PLAN_ACTIONS', 'clamp', 'nodes', 'projectedRisk', 'ensureNodeIntegrity', 'applyNodeActionIntegrity',
   directSource + '\nreturn simulatePlannedOrders;'
 )(state, actions, clamp, nodes, projectedRisk, ensureNodeIntegrity, applyNodeActionIntegrity)
-const pathSource = extractBetween('function simulateCascadingPath(source,horizons)', 'function renderCascadeForecast')
+const pathSource = extractBetween('function simulateCascadingPath(', 'function renderCascadeForecast')
 const simulatePath = startElapsed => new Function(
   'elapsed', 'clamp', 'projectedRisk', 'nodes', 'ensureNodeIntegrity', 'advanceNodeIntegrity',
   pathSource + '\nreturn simulateCascadingPath;'
@@ -127,10 +132,10 @@ const simulatePath = startElapsed => new Function(
 const doctrineSource = extractBetween('function doctrineObjectiveScore', 'let doctrineResult=null')
 const dossierSource = extractBetween('function buildDoctrineDossierPayload', 'async function exportDoctrineDossier')
 const buildDoctrineDossierPayload = new Function(dossierSource + '\nreturn buildDoctrineDossierPayload;')()
-const planner = new Function('nodes', 'PLAN_ACTIONS', 'clamp',
-  doctrineSource + '\nreturn {searchDoctrinePlans, doctrineDominates, doctrineParetoPortfolio, doctrineStressProfiles, canonicalDossierStringify, validateDoctrineDossierStructure, assessDoctrineDossierIntegrity};'
-)(nodes, actions, clamp)
-const {searchDoctrinePlans, doctrineDominates, doctrineParetoPortfolio, doctrineStressProfiles, canonicalDossierStringify, validateDoctrineDossierStructure, assessDoctrineDossierIntegrity} = planner
+const planner = new Function('nodes', 'PLAN_ACTIONS', 'clamp', 'seedNodeIntegrity', 'scenarioData',
+  doctrineSource + '\nreturn {searchDoctrinePlans, doctrineDominates, doctrineParetoPortfolio, doctrineStressProfiles, assessDoctrineTransferability, canonicalDossierStringify, validateDoctrineDossierStructure, assessDoctrineDossierIntegrity};'
+)(nodes, actions, clamp, seedNodeIntegrity, scenarios)
+const {searchDoctrinePlans, doctrineDominates, doctrineParetoPortfolio, doctrineStressProfiles, assessDoctrineTransferability, canonicalDossierStringify, validateDoctrineDossierStructure, assessDoctrineDossierIntegrity} = planner
 const makeState = scenario => {
   const state = {
     ...scenarios[scenario], scenario, crews: 4, maxCrews: 4,
@@ -281,6 +286,10 @@ check(result.alternatives.every(candidate => typeof candidate.portfolioRole === 
   const prefixes = result.alternatives.map(candidate => candidate.orders.slice(0,2).map(order => order.action + ':' + (order.nodeId || '-')).join('|'))
   assert.equal(new Set(prefixes).size, Math.min(result.alternatives.length, result.openingPrefixCount), scenario + ' portfolio should maximize the available distinct opening command prefixes')
   check(result.portfolioSize === result.alternatives.length, scenario + ' portfolio count must match returned options')
+  check(result.alternatives.every(candidate=>candidate.transferability?.scenarioCount===3&&candidate.transferability.scenarios.length===3), scenario + ' each final plan must be evaluated in all three scenarios')
+  check(result.alternatives.every(candidate=>candidate.transferability.scenarios.map(row=>row.scenario).join(',')==='flood,blackout,blockade'), scenario + ' transferability scenarios must use canonical order')
+  check(result.alternatives.every(candidate=>Number.isFinite(candidate.transferAdjustedScore)&&Number.isFinite(candidate.transferability.worstRiskDeltaT90)&&Number.isFinite(candidate.transferability.weakestIntegrityDeltaT90)), scenario + ' cross-scenario metrics and adjusted score must be finite')
+  check(result.alternatives.every(candidate=>candidate.transferability.transferableScenarioCount>=0&&candidate.transferability.transferableScenarioCount<=3), scenario + ' transferability count must be bounded')
   check(result.openingPrefixCount >= 1 && result.openingPrefixCount <= result.robustnessEvaluatedCount, scenario + ' available prefix diversity must be bounded')
   check(result.paretoFrontSize >= 0 && result.paretoFrontSize <= result.robustnessEvaluatedCount, scenario + ' Pareto front size must be bounded')
   for (const candidate of result.alternatives) {
@@ -320,6 +329,15 @@ assert.deepEqual(firstRepeat.alternatives.map(plan => ({signature:plan.signature
 const protectBase = makeState('blackout')
 const protectedPlan = searchDoctrinePlans(protectBase, 'protect', 'hub', simulateDirect(protectBase), simulatePath(0), nodes, actions)
 check(protectedPlan.mode === 'protect', 'infrastructure-protection objective must be selectable')
+const portabilityFixture=makeState('flood')
+const portabilityBefore=JSON.stringify({water:portabilityFixture.water,grid:portabilityFixture.grid,access:portabilityFixture.access,supplies:portabilityFixture.supplies,crews:portabilityFixture.crews,nodeIntegrity:portabilityFixture.nodeIntegrity})
+const portabilityOrder=[{action:'pump',nodeId:null}]
+const portabilityDirect=simulateDirect(portabilityFixture)
+const portability=assessDoctrineTransferability(portabilityOrder,portabilityDirect,simulatePath(0))
+assert.deepEqual(portability.scenarios.map(row=>row.scenario),['flood','blackout','blockade'])
+assert.equal(portability.scenarioCount,3)
+check(portability.scenarios.every(row=>Number.isFinite(row.riskDeltaT90)&&Number.isFinite(row.weakestIntegrityDelta)), 'transferability must compare all three scenarios with finite deltas')
+assert.equal(JSON.stringify({water:portabilityFixture.water,grid:portabilityFixture.grid,access:portabilityFixture.access,supplies:portabilityFixture.supplies,crews:portabilityFixture.crews,nodeIntegrity:portabilityFixture.nodeIntegrity}),portabilityBefore,'transferability assessment must not mutate the source state')
 
 const causalState = makeState('flood')
 const causalBefore = operationSnapshot(causalState)
