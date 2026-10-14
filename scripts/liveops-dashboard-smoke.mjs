@@ -36,5 +36,6 @@ runInNewContext(core, sandbox, { filename: 'analytics-core.js', timeout: 1000 })
 assert.equal(typeof sandbox.OSGARDLiveOpsMetrics?.compareMetrics, 'function');
 assert.equal(typeof sandbox.OSGARDLiveOpsMetrics?.buildDecisionBrief, 'function', 'decision brief core must be loaded');
 assert.ok(inline[0].includes("$('#export-brief').addEventListener('click'"), 'decision brief export control must be wired');
+assert.ok(inline[0].includes("const payload=JSON.stringify(lastDecisionBrief,null,2)+'\\n';"), 'decision brief download must be valid newline-terminated JSON');
 assert.equal(sandbox.OSGARDLiveOpsMetrics.validateRange({ from: Date.now() - 1000, to: Date.now() }).ok, true);
 console.log('PASS LiveOps dashboard: protected read-only contract, period controls, freshness, timeout/cancellation, opt-in auto-refresh and first-party analytics core.');
