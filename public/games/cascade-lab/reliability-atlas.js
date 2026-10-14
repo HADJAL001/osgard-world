@@ -14,6 +14,12 @@ const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
 const round = (value, digits = 2) => finite(value) ? Number(value.toFixed(digits)) : null;
 const clean = (value, limit = 180) => String(value == null ? '' : value).replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, limit);
 const list = value => Array.isArray(value) ? value : [];
+const wrapAngle = value => {
+  let angle = value % (Math.PI * 2);
+  if (angle > Math.PI) angle -= Math.PI * 2;
+  if (angle < -Math.PI) angle += Math.PI * 2;
+  return angle;
+};
 
 function canonicalize(value) {
   if (value === null || typeof value !== 'object') return JSON.stringify(value);
@@ -46,7 +52,7 @@ function normalizeDevices(raw) {
   return list(raw).slice(0, 12).filter(device => device && DEVICE_TYPES.has(device.type) &&
     finite(device.x) && finite(device.y) && finite(device.angle)).map(device => ({
       type: device.type, x: round(clamp(device.x, -100, 1200), 1),
-      y: round(clamp(device.y, -100, 700), 1), angle: round(clamp(device.angle, -400, 400), 3)
+      y: round(clamp(device.y, -100, 700), 1), angle: round(wrapAngle(clamp(device.angle, -400, 400)), 3)
     })).sort((a, b) => a.type.localeCompare(b.type) || a.x - b.x || a.y - b.y || a.angle - b.angle);
 }
 function blueprintPayload(run) {
