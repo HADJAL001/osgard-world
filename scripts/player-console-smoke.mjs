@@ -69,7 +69,6 @@ test('Player Lab measures visible game time with a monotonic clock', () => {
   assert.match(js, /activeStartedMonotonic = monotonicNow\(\)/);
   assert.match(js, /const now = monotonicNow\(\)/);
   assert.ok(js.includes("document.addEventListener('visibilitychange', () => {") && js.includes("if (document.hidden && activeGame && $('#player-dialog')?.open)") && js.includes('lastTick = now;'), 'Visible-session time must be committed when the tab becomes hidden');
-  assert.match(js, /if \\(document\\.hidden && activeGame && \\$\\('#player-dialog'\\)\\?\\.open\\)/, 'Visible-session time must be flushed when the player tab is hidden');
   assert.match(js, /stats\\.secondsByGame\\[activeGame\\] = \\(stats\\.secondsByGame\\[activeGame\\] \\|\\| 0\\) \\+ delta/);
   assert.match(js, /Math\\.min\\(10, \\(now - lastTick\\) \/ 1000\\)/, 'Long background suspension must not be charged as visible play time');
   assert.match(js, /new Date\(activeWallAt\)\.toISOString\(\)/, 'Launch timestamps must remain wall-clock dates');
