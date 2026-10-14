@@ -2545,7 +2545,11 @@ const CASCADELAB026_CORE = Object.freeze({
       y: Math.round(baselineWorld.y * 100) / 100,
       peakSpeed: Math.round(baselineWorld.telemetry.peakSpeed * 100) / 100
     };
-    const axes = ['angle', 'layout', 'launch'];
+    const axes = [];
+    const directionalDeviceTypes = new Set(['spring', 'fan', 'belt', 'bumper']);
+    if (blueprint.some(device => directionalDeviceTypes.has(device.type))) axes.push('angle');
+    if (blueprint.length > 0) axes.push('layout');
+    axes.push('launch');
     const trials = [];
     onProgress(0, trialCount, 'Базовый прогон готов');
     for (let index = 0; index < trialCount; index++) {
@@ -2563,6 +2567,7 @@ const CASCADELAB026_CORE = Object.freeze({
       level: { id: Number(sourceLevel.id), title: String(sourceLevel.title || '').slice(0, 140) },
       deviceCount: blueprint.length,
       fixedStepHz: 120,
+      testedAxes: [...new Set(trials.map(trial => trial.axis))],
       baseline,
       trials
     };
