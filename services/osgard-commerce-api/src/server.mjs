@@ -13,6 +13,9 @@ import {
 import {
   campaignFromRow, normalizeCampaignId, publicCampaignView, validateCampaignPayload,
 } from "./campaigns.mjs";
+import {
+  validateGameFeedbackPayload, FEEDBACK_GAME_IDS, FEEDBACK_STATUSES, normalizeFeedbackReportId,
+} from "./feedback.mjs";
 
 const { Pool } = pg;
 const app = express();
@@ -20,6 +23,11 @@ const PORT = Number(process.env.PORT || 8080);
 const requestedRetentionDays = Number(process.env.ANALYTICS_RETENTION_DAYS);
 const analyticsRetentionDays = Number.isInteger(requestedRetentionDays) && requestedRetentionDays >= 30 && requestedRetentionDays <= 365
   ? requestedRetentionDays
+  : 90;
+const requestedFeedbackRetentionDays = Number(process.env.GAME_FEEDBACK_RETENTION_DAYS);
+const feedbackRetentionDays = Number.isInteger(requestedFeedbackRetentionDays) &&
+  requestedFeedbackRetentionDays >= 30 && requestedFeedbackRetentionDays <= 365
+  ? requestedFeedbackRetentionDays
   : 90;
 const PUBLIC_BASE_URL = String(process.env.PUBLIC_BASE_URL || "https://osgard.world").replace(/\/+$/, "");
 const allowedOrigins = new Set(String(process.env.ALLOWED_ORIGINS || "https://osgard.world,https://www.osgard.world,http://localhost:4188,capacitor://localhost").split(",").map((v) => v.trim()).filter(Boolean));
@@ -52,6 +60,7 @@ app.use("/v1/events", rateLimit({ windowMs: 5 * 60 * 1000, limit: 60, standardHe
 app.use("/v1/referrals", rateLimit({ windowMs: 15 * 60 * 1000, limit: 30, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/admin", rateLimit({ windowMs: 5 * 60 * 1000, limit: 120, standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/v1/campaigns", rateLimit({ windowMs: 15 * 60 * 1000, limit: 120, standardHeaders: "draft-8", legacyHeaders: false }));
+app.use("/v1/game-feedback", rateLimit({ windowMs: 15 * 60 * 1000, limit: 5, standardHeaders: "draft-8", legacyHeaders: false }));
 
 async function ensureSchema() {
   if (!pool) return false;
@@ -72,7 +81,10 @@ async function ensureSchema() {
     "CREATE INDEX IF NOT EXISTS commerce_referral_owner_claim_idx ON commerce_referral_invites(owner_hash, reward_claimed_at, created_at DESC);\n" +
     "CREATE UNIQUE INDEX IF NOT EXISTS commerce_referral_qualified_session_idx ON commerce_referral_invites(qualified_session_id) WHERE qualified_session_id IS NOT NULL;\n" +
     "CREATE TABLE IF NOT EXISTS commerce_campaigns (campaign_id TEXT PRIMARY KEY, sponsor_name TEXT NOT NULL, title TEXT NOT NULL, description TEXT NOT NULL, target_url TEXT NOT NULL, placement TEXT NOT NULL CHECK (placement IN ('catalog_feature','after_session','game_event')), sponsor_disclosure TEXT NOT NULL CHECK (sponsor_disclosure IN ('Реклама','Партнёрский материал','Спонсорский материал')), status TEXT NOT NULL CHECK (status IN ('draft','scheduled','active','paused')), starts_at TIMESTAMPTZ, ends_at TIMESTAMPTZ, frequency_cap SMALLINT NOT NULL DEFAULT 3 CHECK (frequency_cap BETWEEN 1 AND 20), created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
-    "CREATE INDEX IF NOT EXISTS commerce_campaigns_public_idx ON commerce_campaigns(status, placement, starts_at, ends_at, updated_at DESC)");
+    "CREATE INDEX IF NOT EXISTS commerce_campaigns_public_idx ON commerce_campaigns(status, placement, starts_at, ends_at, updated_at DESC);" +
+    "CREATE TABLE IF NOT EXISTS commerce_game_feedback (feedback_id TEXT PRIMARY KEY, submission_id TEXT NOT NULL UNIQUE, game_id TEXT NOT NULL, category TEXT NOT NULL, severity TEXT NOT NULL CHECK (severity IN ('minor','major','blocker')), title TEXT NOT NULL, description TEXT NOT NULL, steps_to_reproduce TEXT NOT NULL DEFAULT '', expected_result TEXT NOT NULL DEFAULT '', actual_result TEXT NOT NULL DEFAULT '', reply_to TEXT NOT NULL DEFAULT '', device_class TEXT NOT NULL DEFAULT 'unknown', browser_family TEXT NOT NULL DEFAULT 'unknown', viewport_width SMALLINT NOT NULL DEFAULT 0 CHECK (viewport_width BETWEEN 0 AND 10000), viewport_height SMALLINT NOT NULL DEFAULT 0 CHECK (viewport_height BETWEEN 0 AND 10000), status TEXT NOT NULL DEFAULT 'new' CHECK (status IN ('new','triaged','in_progress','resolved','wontfix')), consent_at TIMESTAMPTZ NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), resolved_at TIMESTAMPTZ);" +
+    "CREATE INDEX IF NOT EXISTS commerce_game_feedback_status_created_idx ON commerce_game_feedback(status, created_at DESC);" +
+    "CREATE INDEX IF NOT EXISTS commerce_game_feedback_game_created_idx ON commerce_game_feedback(game_id, created_at DESC)");
   dbReady = true;
   return true;
 }
@@ -87,7 +99,11 @@ async function purgeExpiredAnalytics() {
     "DELETE FROM commerce_referral_invites WHERE created_at < NOW() - ($1 * INTERVAL '1 day')",
     [analyticsRetentionDays],
   );
-  return Number(result.rowCount || 0) + Number(referrals.rowCount || 0);
+  const feedback = await pool.query(
+    "DELETE FROM commerce_game_feedback WHERE created_at < NOW() - ($1 * INTERVAL '1 day')",
+    [feedbackRetentionDays],
+  );
+  return Number(result.rowCount || 0) + Number(referrals.rowCount || 0) + Number(feedback.rowCount || 0);
 }
 
 function paymentsAllowed() {
@@ -237,6 +253,100 @@ app.use(express.json({ limit: "25kb", strict: true }));
 function campaignColumns() {
   return "campaign_id, sponsor_name, title, description, target_url, placement, status, starts_at, ends_at, frequency_cap, created_at, updated_at";
 }
+
+app.post("/v1/game-feedback", async (req, res) => {
+  const checked = validateGameFeedbackPayload(req.body);
+  if (!checked.ok) return res.status(checked.status).json({ error: checked.code });
+  if (checked.bot) return res.status(202).json({ accepted: true });
+  if (!pool || !dbReady) {
+    return res.status(503).json({ error: "GAME_FEEDBACK_NOT_READY", message: "Приём заявок временно не настроен. Сохраните отчёт локально." });
+  }
+  const item = checked.data;
+  const feedbackId = "fb_" + crypto.randomUUID();
+  try {
+    const inserted = await pool.query(
+      "INSERT INTO commerce_game_feedback(feedback_id,submission_id,game_id,category,severity,title,description,steps_to_reproduce,expected_result,actual_result,reply_to,device_class,browser_family,viewport_width,viewport_height,consent_at) " +
+      "VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,NOW()) " +
+      "ON CONFLICT (submission_id) DO NOTHING RETURNING feedback_id",
+      [feedbackId, item.submissionId, item.gameId, item.category, item.severity, item.title, item.description,
+        item.stepsToReproduce, item.expectedResult, item.actualResult, item.replyTo, item.deviceClass,
+        item.browserFamily, item.viewportWidth, item.viewportHeight],
+    );
+    if (inserted.rows[0]?.feedback_id) {
+      return res.status(201).set("Cache-Control", "no-store").json({
+        accepted: true, duplicate: false, reportId: inserted.rows[0].feedback_id,
+        message: "Отчёт сохранён. Не включайте в будущие отчёты пароли или платёжные сведения.",
+      });
+    }
+    const existing = await pool.query(
+      "SELECT feedback_id FROM commerce_game_feedback WHERE submission_id=$1",
+      [item.submissionId],
+    );
+    if (!existing.rows[0]?.feedback_id) return res.status(409).json({ error: "FEEDBACK_IDEMPOTENCY_CONFLICT" });
+    return res.status(200).set("Cache-Control", "no-store").json({
+      accepted: true, duplicate: true, reportId: existing.rows[0].feedback_id,
+    });
+  } catch (error) {
+    console.error("Game feedback insert failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "GAME_FEEDBACK_STORAGE_UNAVAILABLE", message: "Заявка не сохранена. Сохраните локальный JSON и повторите позже." });
+  }
+});
+
+app.get("/v1/admin/game-feedback", requireAdmin, async (req, res) => {
+  if (!pool || !dbReady) return res.status(503).json({ error: "GAME_FEEDBACK_NOT_READY" });
+  const status = String(req.query.status || "all");
+  const gameId = String(req.query.gameId || "all");
+  const rawLimit = Number.parseInt(String(req.query.limit || "100"), 10);
+  const limit = Number.isInteger(rawLimit) ? Math.max(1, Math.min(100, rawLimit)) : 100;
+  if (status !== "all" && !FEEDBACK_STATUSES.includes(status)) {
+    return res.status(400).json({ error: "GAME_FEEDBACK_STATUS_INVALID" });
+  }
+  if (gameId !== "all" && !FEEDBACK_GAME_IDS.includes(gameId)) {
+    return res.status(400).json({ error: "GAME_FEEDBACK_GAME_INVALID" });
+  }
+  const conditions = [];
+  const values = [];
+  if (status !== "all") { values.push(status); conditions.push("status = $" + values.length); }
+  if (gameId !== "all") { values.push(gameId); conditions.push("game_id = $" + values.length); }
+  values.push(limit);
+  const where = conditions.length ? "WHERE " + conditions.join(" AND ") : "";
+  res.set("Cache-Control", "no-store, private");
+  try {
+    const result = await pool.query(
+      "SELECT feedback_id AS \\"feedbackId\\", submission_id AS \\"submissionId\\", game_id AS \\"gameId\\", category, severity, " +
+      "title, description, steps_to_reproduce AS \\"stepsToReproduce\\", expected_result AS \\"expectedResult\\", actual_result AS \\"actualResult\\", " +
+      "reply_to AS \\"replyTo\\", device_class AS \\"deviceClass\\", browser_family AS \\"browserFamily\\", viewport_width AS \\"viewportWidth\\", " +
+      "viewport_height AS \\"viewportHeight\\", status, created_at AS \\"createdAt\\", updated_at AS \\"updatedAt\\", resolved_at AS \\"resolvedAt\\" " +
+      "FROM commerce_game_feedback " + where +
+      " ORDER BY CASE severity WHEN 'blocker' THEN 0 WHEN 'major' THEN 1 ELSE 2 END, " +
+      "CASE status WHEN 'new' THEN 0 WHEN 'triaged' THEN 1 WHEN 'in_progress' THEN 2 ELSE 3 END, created_at DESC LIMIT $" + values.length,
+      values,
+    );
+    return res.json({ items: result.rows, limit, retentionDays: feedbackRetentionDays });
+  } catch (error) {
+    console.error("Game feedback list failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "GAME_FEEDBACK_LIST_UNAVAILABLE" });
+  }
+});
+
+app.post("/v1/admin/game-feedback/:id/status", requireAdmin, async (req, res) => {
+  if (!pool || !dbReady) return res.status(503).json({ error: "GAME_FEEDBACK_NOT_READY" });
+  const id = normalizeFeedbackReportId(req.params.id);
+  const status = req.body && typeof req.body.status === "string" ? req.body.status : "";
+  if (!id) return res.status(400).json({ error: "GAME_FEEDBACK_ID_INVALID" });
+  if (!FEEDBACK_STATUSES.includes(status)) return res.status(400).json({ error: "GAME_FEEDBACK_STATUS_INVALID" });
+  try {
+    const result = await pool.query(
+      "UPDATE commerce_game_feedback SET status=$2, updated_at=NOW(), resolved_at=CASE WHEN $2 IN ('resolved','wontfix') THEN COALESCE(resolved_at,NOW()) ELSE NULL END WHERE feedback_id=$1 RETURNING feedback_id AS \\"feedbackId\\", status, updated_at AS \\"updatedAt\\"",
+      [id, status],
+    );
+    if (!result.rows[0]) return res.status(404).json({ error: "GAME_FEEDBACK_NOT_FOUND" });
+    return res.set("Cache-Control", "no-store, private").json({ updated: true, ...result.rows[0] });
+  } catch (error) {
+    console.error("Game feedback update failed:", error?.message || "unknown error");
+    return res.status(503).json({ error: "GAME_FEEDBACK_UPDATE_UNAVAILABLE" });
+  }
+});
 
 app.get("/v1/campaigns/active", async (req, res) => {
   const placement = String(req.query.placement || "catalog_feature").trim();
