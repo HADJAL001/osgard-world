@@ -364,6 +364,12 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
               ? content.includes("const VERSION = '0.22.0'") && content.includes("const SCHEMA = 'osgard.cascade-lab.trajectory-xray.v1'") && content.includes('function trajectoryDeviation(') && !content.includes('fetch(') && !content.includes('sendBeacon(')
             : path === '/games/cascade-lab/mission-director.js'
               ? content.includes("const VERSION='0.24.0'") && content.includes("const SCHEMA='osgard.cascade-lab.mission-director.v1'") && content.includes('function buildRecommendations') && content.includes('function observeContract') && !content.includes('fetch(') && !content.includes('sendBeacon(') && !content.includes('.innerHTML') && content.includes("https://osgard.world/games/invite/cascade-lab/") && content.includes("host.OSGARDInvite.createLink('cascade-lab')") && !content.includes("https://osgard.world/games/cascade-lab/?clmd=") && content.includes("function notifyPortalShare") && content.includes("notifyPortalShare(result.url,'clipboard')")
+            : path === '/games/cascade-lab/counterfactual-lab.js'
+              ? content.includes("const VERSION = '0.26.0'") &&
+                content.includes("const SCHEMA = 'osgard.cascade-lab.counterfactual-lab.v1'") &&
+                content.includes('function buildAngleSweep(') && content.includes('function buildAblationSweep(') &&
+                content.includes('function validateArchive(') && !content.includes('fetch(') &&
+                !content.includes('XMLHttpRequest') && !content.includes('sendBeacon(') && !content.includes('.innerHTML')
             : path === '/games/cascade-lab/evidence-integrity.js'
               ? /VERSION\s*=\s*['"]0\.25\.0['"]/.test(content) &&
                 /SCHEMA\s*=\s*['"]osgard\.cascade-lab\.evidence-integrity\.v1['"]/.test(content) &&
