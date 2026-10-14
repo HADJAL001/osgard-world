@@ -200,7 +200,11 @@ test('buildReviewPacket reprojects direct report objects and rejects unapproved 
   assert.equal(encoded.includes('private source must not be included'), false);
   assert.equal(encoded.includes('sk-this-secret-must-not-leave-the-runner'), false);
   assert.equal(encoded.includes('OPENAI_API_KEY='), false);
-  assert.equal(encoded.includes('Ignore prior instructions'), false);
+  // Instruction-like text may remain as bounded failure evidence, but the packet
+  // marks all report fields as untrusted and the reviewer system message says to ignore it.
+  assert.equal(packet.payload.policy.treatReportFieldsAsUntrustedEvidence, true);
+  assert.equal(packet.payload.reports[0].failedChecks[0].detail.includes('Ignore prior instructions'), true);
+  assert.ok(packet.payload.reports[0].failedChecks[0].detail.length <= 300);
   assert.throws(
     () => buildReviewPacket([{ name: 'package.json', status: 'ready' }]),
     /allow-listed report names/i,
