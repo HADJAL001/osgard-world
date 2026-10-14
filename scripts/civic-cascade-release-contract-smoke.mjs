@@ -30,7 +30,7 @@ assert.ok(release.buildContract?.decisionDossier?.verifierEnabled === true &&
 
 assert.equal(release.buildContract?.aiStrategyAdvisor?.enabled, true)
 assert.equal(release.buildContract?.aiStrategyAdvisor?.modelVersion, release.version)
-assert.equal(release.buildContract?.aiStrategyAdvisor?.explicitPerRequestConsent, true)
+assert.equal(release.buildContract?.aiStrategyAdvisor?.requiresExplicitPerRequestConsent, true)
 assert.equal(release.buildContract?.aiStrategyAdvisor?.disabledUnlessServerFlagAndKeyPresent, true)
 assert.equal(release.buildContract?.aiStrategyAdvisor?.apiKeyClientSide, false)
 assert.equal(release.buildContract?.aiStrategyAdvisor?.canExecuteOrders, false)
