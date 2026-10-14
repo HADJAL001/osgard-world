@@ -53,7 +53,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         : route === '/games/cascade-lab/failure-autopsy.js'
           ? text.includes("const VERSION = '0.18.0'") && text.includes('function diagnoseRun(') &&
             text.includes('globalThis.__CASCADELAB018_TEST__') && text.includes('Наблюдаемая последовательность событий не доказывает причинность.') &&
-            !/\\b(?:fetch|XMLHttpRequest|sendBeacon)\\s*\\(/.test(text)
+            !text.includes('fetch(') && !text.includes('XMLHttpRequest') && !text.includes('sendBeacon(')
         : route === '/games/player-console.js'
           ? text.includes('window.OSGARDPlayerConsole') && text.includes('MAX_QUEUE = 5') && text.includes('MAX_IMPORT_BYTES = 100 * 1024') && text.includes('data-pc-missions-list') && text.includes('validateMissionState') && text.includes('MAX_MISSION_CLAIMS = 4000') && text.includes('completionLog') && text.includes("osgard:game-level-completed")
         : route === '/games/player-console.css'
