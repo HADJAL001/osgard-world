@@ -464,10 +464,11 @@ runButton.addEventListener('click', runSweep);
 exportJson.addEventListener('click', exportCurrentJson);
 exportCsv.addEventListener('click', exportCurrentCsv);
 window.addEventListener('cascade-lab:run-finished', event => acceptRun(event.detail || {}));
-if (window.CASCADELAB022 && typeof window.CASCADELAB022.getRuns === 'function') {
-  const previousRuns = window.CASCADELAB022.getRuns();
-  if (previousRuns.length) acceptRun(previousRuns[0]);
-}
+const savedRuns = window.CASCADELAB019 && typeof window.CASCADELAB019.getRuns === 'function'
+  ? window.CASCADELAB019.getRuns()
+  : window.CASCADELAB022 && typeof window.CASCADELAB022.getRuns === 'function'
+    ? window.CASCADELAB022.getRuns() : [];
+if (savedRuns.length) acceptRun(savedRuns[0]);
 renderHistory();
 showEmptyRows('Заверши обычный запуск, чтобы запустить контрфактическую лабораторию.');
 Object.defineProperty(window, 'CASCADELAB027', {
