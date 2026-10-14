@@ -46,6 +46,8 @@ jobs:
         run: npm run qa:games-operations
       - name: Games catalog and consented analytics regression
         run: npm run qa:games-portal
+      - name: OSGARD SELECT owned-service migration and share reward contract
+        run: npm run qa:owned-promo-config
       - name: OSGARD PLAY 30-check diagnostics contract
         run: npm run qa:games-diagnostics
       - name: Smart Launch local-only device and accessibility contract
