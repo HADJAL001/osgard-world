@@ -36,6 +36,7 @@ on:
       - "vite.config.ts"
       - "scripts/sync-swarm-assets.mjs"
       - "scripts/frontend-archive-preflight.mjs"
+      - "scripts/frontend-archive-preflight-smoke.mjs"
       - "scripts/production-route-matrix.mjs"
       - "scripts/activate-frontend-remote.sh"
       - "scripts/skillcred-page-smoke.mjs"
@@ -207,6 +208,9 @@ jobs:
           test -s osgard-release/html/skillcred/styles.css.gz
           test -s osgard-release/html/skillcred/app.js.gz
           gzip -t osgard-release/html/skillcred/styles.css.gz osgard-release/html/skillcred/app.js.gz
+          # Re-hash the exact publishable HTML tree after build stamping and compression.
+          # The manifest itself stays outside the tree to avoid self-referential hashing.
+          OSGARD_FRONTEND_MANIFEST=release-manifest.json node scripts/frontend-archive-preflight.mjs osgard-release/html
           cp nginx.conf osgard-release/nginx.conf
           tar -czf osgard-world-release.tgz -C osgard-release .
       - name: Configure SSH
@@ -243,6 +247,18 @@ jobs:
           OSGARD_EXPECTED_BUILD: ${{ github.sha }}
           SKILLCRED_EXPECT_CURRENT_DESIGN: "1"
         run: npm run qa:production-routes
+      - name: Preserve verified production release evidence
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: osgard-production-release-${{ github.sha }}
+          path: |
+            release-manifest.json
+            production-route-matrix.json
+            local.sha256
+            osgard-world-release.tgz
+          if-no-files-found: error
+          retention-days: 30
       - name: Diagnose API upstream after post-deploy route failure
         if: failure()
         continue-on-error: true
