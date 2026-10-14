@@ -124,12 +124,13 @@
   dialog.addEventListener('close', () => { clearSlowTimer(); transition('closed'); showHint(''); });
   if (typeof MutationObserver === 'function') {
     new MutationObserver(() => {
-      if (dialog.open && cleanGameId(dialog.dataset.game) !== 'unknown') begin(dialog.dataset.game);
-      else if (!dialog.open && active.state !== 'idle' && active.state !== 'closed') {
+      const dialogGame = cleanGameId(dialog.dataset.game);
+      if (dialog.open && dialogGame !== 'unknown') {
+        if (active.gameId !== dialogGame || active.state === 'idle' || active.state === 'closed') begin(dialogGame);
+      } else if (!dialog.open && active.state !== 'idle' && active.state !== 'closed') {
         clearSlowTimer(); transition('closed'); showHint('');
       }
-      observeStatus();
-    }).observe(dialog, { attributes:true, attributeFilter:['open','data-game'], subtree:true, childList:true, characterData:true });
+    }).observe(dialog, { attributes:true, attributeFilter:['open','data-game'] });
     new MutationObserver(observeStatus).observe(status, { attributes:true, attributeFilter:['data-state'], childList:true, characterData:true, subtree:true });
   }
   function detectBrowser() {
