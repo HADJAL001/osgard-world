@@ -6,6 +6,8 @@ const client = readFileSync('public/games/device-fit.js', 'utf8');
 const css = readFileSync('public/games/device-fit.css', 'utf8');
 const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
 const release = readFileSync('scripts/release-readiness.mjs', 'utf8');
+const serviceWorker = readFileSync('public/games/osgard-play-sw.js', 'utf8');
+const pwaSmoke = readFileSync('scripts/osgard-play-pwa-smoke.mjs', 'utf8');
 
 const gameIds = [
   'null-shift', 'time', 'swarm', 'inherit', 'remix', 'civic-cascade',
@@ -31,6 +33,8 @@ for (const forbidden of [
   assert.ok(!forbidden.test(client), 'smart launch must remain local-only; forbidden capability matched: ' + forbidden);
 }
 assert.ok(css.includes('@media(prefers-reduced-motion:reduce)'), 'CSS must honor the reduced-motion preference');
+assert.ok(serviceWorker.includes("'/games/device-fit.css'") && serviceWorker.includes("'/games/device-fit.js'"), 'Smart Launch assets must be included in the public PWA shell cache');
+assert.ok(pwaSmoke.includes("'/games/device-fit.css'") && pwaSmoke.includes("'/games/device-fit.js'"), 'PWA smoke must enforce offline eligibility for Smart Launch assets');
 assert.ok(/@media\(max-width:760px\)/.test(css), 'panel must include a mobile layout');
 assert.equal(pkg.scripts['qa:device-fit'], 'node scripts/device-fit-smoke.mjs', 'package QA command is missing');
 assert.ok(release.includes("check('device-fit-smoke'"), 'release readiness must run the new contract test');
