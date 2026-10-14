@@ -73,7 +73,31 @@ function createInvitation(rawContract,options={}){
  const invitationId=clean(options.invitationId||('clmd-'+issuedMs.toString(36)+'-'+c.levelId+'-'+(++sequence).toString(36)),100);
  const raw={schema:INVITE_SCHEMA,version:VERSION,invitationId,kind:c.kind,levelId:c.levelId,levelTitle:c.levelTitle,title:c.title,goalText:c.goalText,instruction:c.instruction,reason:c.reason,baseline:c.baseline,issuedAt,expiresAt:new Date(issuedMs+INVITE_TTL_MS).toISOString()};
  const checked=normalizeInvitation(raw,{now:issuedAt});if(!checked.ok)return checked;
- const url='https://osgard.world/games/cascade-lab/?clmd='+encodeURIComponent(JSON.stringify(checked.invitation));
+ const previewUrl=new URL('https://osgard.world/games/invite/cascade-lab/');
+// In the OSGARD catalogue, reuse the canonical invite code and attribution tags.
+// Standalone/offline runs still receive a branded preview link, but no claimed referral attribution.
+try {
+ const host=window.parent;
+ if(host&&host!==window&&host.OSGARDInvite&&typeof host.OSGARDInvite.createLink==='function'){
+  const canonical=new URL(host.OSGARDInvite.createLink('cascade-lab'));
+  const code=canonical.searchParams.get('og_ref')||'';
+  const validCanonical=canonical.origin==='https://osgard.world'&&
+   canonical.pathname==='/games/invite/cascade-lab/'&&
+   /^og_[a-f0-9]{8}$/.test(code)&&
+   canonical.searchParams.get('og_game')==='cascade-lab'&&
+   canonical.searchParams.get('utm_source')==='osgard_play'&&
+   canonical.searchParams.get('utm_medium')==='referral'&&
+   canonical.searchParams.get('utm_campaign')==='play_with_friends'&&
+   canonical.searchParams.get('utm_content')==='cascade-lab';
+  if(validCanonical){
+   for(const key of ['og_ref','og_game','utm_source','utm_medium','utm_campaign','utm_content']){
+    previewUrl.searchParams.set(key,canonical.searchParams.get(key));
+   }
+  }
+ }
+} catch { /* Fail safely: standalone sharing does not require the host bridge. */ }
+previewUrl.searchParams.set('clmd',JSON.stringify(checked.invitation));
+const url=previewUrl.href;
  if(url.length>MAX_INVITE_URL_LENGTH)return{ok:false,reason:'Приглашение получилось слишком длинным. Создай контракт с более коротким описанием.'};
  return{ok:true,invitation:checked.invitation,url};
 }
