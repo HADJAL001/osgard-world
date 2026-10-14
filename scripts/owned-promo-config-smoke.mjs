@@ -23,13 +23,13 @@ const player = read('player');
 assert.ok(core.includes('export const OWNED_PROMO_SERVICE_IDS'), 'Server-controlled promo service allow-list missing');
 assert.ok(core.includes('export const DEFAULT_OWNED_PROMO_CONFIG'), 'Safe startup defaults missing');
 assert.ok(core.includes('export function validateOwnedPromoConfig'), 'Strict promotion-setting validation missing');
-assert.ok(core.includes('export function migrateOwnedPromoConfig') && core.includes('schemaVersion: 2'), 'Versioned safe owned-promo migration missing');
+assert.ok(core.includes('export function migrateOwnedPromoConfig') && core.includes('schemaVersion: 3'), 'Versioned safe owned-promo migration missing');
 assert.ok(api.includes('migrateOwnedPromoConfig(row.config)'), 'Public and admin config reads must normalize legacy database settings');
-assert.ok(tests.includes('owned-promo schema migration applies current defaults to legacy settings and excludes inactive services'), 'Legacy promotion migration must enable the requested every-session experience without overriding schema-v2 choices');
+assert.ok(tests.includes('owned-promo schema migration applies current defaults to legacy settings and excludes inactive services') && tests.includes('schema-v2 auto-migrated promo settings receive current intermission defaults'), 'Legacy promotion migration must enable the requested every-session experience without overriding schema-v2 choices');
 assert.ok(api.includes('database_migration_deferred') && api.includes('AND config = $2::jsonb'), 'Migration writes must tolerate concurrent admin updates without overwriting newer settings');
-assert.ok(admin.includes('schemaVersion: 2'), 'Admin saves must persist the current configuration schema');
+assert.ok(admin.includes('schemaVersion: 3'), 'Admin saves must persist the current configuration schema');
 assert.ok(player.includes('const migrated={schemaVersion:2,frequency,selected}') && player.includes('const next={schemaVersion:2,frequency:'), 'Player preferences must migrate to schema v2 without losing frequency or selection');
-assert.ok(player.includes('if(raw.schemaVersion!==undefined&&raw.schemaVersion!==1&&raw.schemaVersion!==2)return null'), 'Player client must fail closed on unknown future config schemas');
+assert.ok(player.includes('if(raw.schemaVersion!==undefined&&raw.schemaVersion!==1&&raw.schemaVersion!==2&&raw.schemaVersion!==3)return null'), 'Player client must fail closed on unknown future config schemas');
 for (const code of [
   'OWNED_PROMO_FREQUENCY_INVALID',
   'OWNED_PROMO_SERVICE_NOT_ALLOWED',
