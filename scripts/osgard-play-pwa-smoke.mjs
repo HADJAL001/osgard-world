@@ -22,7 +22,7 @@ const workflow = read('.github/workflows/osgard-play-qa.yml');
 for (const path of [
   root + '/app.webmanifest', root + '/osgard-play-icon.svg', root + '/offline.html',
   root + '/pwa-install.css', root + '/pwa-install.js', root + '/device-fit.css', root + '/device-fit.js', root + '/experiment-core.js', root + '/experiment-runtime.js', root + '/osgard-play-sw.js',
-  root + '/catalog-state.js'
+  root + '/catalog-state.js', root + '/game-registry.v1.json', root + '/platform-map/index.html', root + '/platform-map/platform-map.css', root + '/platform-map/platform-map.js'
 ]) assert.ok(existsSync(resolve(path)), 'Missing PWA asset: ' + path);
 
 assert.equal(manifest.scope, '/games/');
@@ -47,6 +47,7 @@ assert.ok(page.includes('/games/device-fit.css?v=__OSGARD_BUILD_VERSION__'));
 assert.ok(page.includes('/games/device-fit.js?v=__OSGARD_BUILD_VERSION__'));
 assert.ok(page.includes('/games/experiment-core.js?v=__OSGARD_BUILD_VERSION__'));
 assert.ok(page.includes('/games/experiment-runtime.js?v=__OSGARD_BUILD_VERSION__'));
+assert.ok(page.includes('href="/games/platform-map/"'), 'Games catalogue must link Signal Atlas.');
 assert.doesNotThrow(() => new Script(sw), 'The PWA service worker must be valid JavaScript before release.');
 assert.ok(page.includes('/games/catalog-state.js?v=__OSGARD_BUILD_VERSION__'));
 assert.ok(css.includes('@media(max-width:620px)') && css.includes('prefers-reduced-motion:reduce'));
@@ -71,12 +72,15 @@ assert.equal(precachePaths.length, new Set(precachePaths).size, 'PWA precache mu
 const staticAllowlistStart = sw.indexOf('const PUBLIC_STATIC_ALLOWLIST = new Set([');
 const staticAllowlistEnd = sw.indexOf(']);', staticAllowlistStart);
 const staticAllowlist = sw.slice(staticAllowlistStart, staticAllowlistEnd);
-for (const path of ['/games/luxury.css', '/games/device-fit.css', '/games/device-fit.js', '/games/experiment-core.js', '/games/experiment-runtime.js', '/games/sponsored-campaigns.css', '/games/favicon.svg','/games/expedition/core.js','/games/expedition/app.js','/games/expedition/catalog-runtime.js','/games/expedition/expedition.css']) {
+for (const path of ['/games/platform-map/platform-map.css', '/games/platform-map/platform-map.js', '/games/game-registry.v1.json', '/games/luxury.css', '/games/device-fit.css', '/games/device-fit.js', '/games/experiment-core.js', '/games/experiment-runtime.js', '/games/sponsored-campaigns.css', '/games/favicon.svg','/games/expedition/core.js','/games/expedition/app.js','/games/expedition/catalog-runtime.js','/games/expedition/expedition.css']) {
   assert.ok(precachePaths.includes(path), 'Core public shell asset must be precached: ' + path);
   assert.ok(staticAllowlist.includes("'" + path + "'"), 'Core public shell asset must be allowed for cached fallback: ' + path);
 }
 assert.ok(precachePaths.includes('/games/expedition/') && precachePaths.includes('/games/expedition/index.html'), 'The expedition builder shell must remain available offline');
 assert.ok(sw.includes("url.pathname === '/games/expedition/'") && sw.includes("const cachedExpedition = await cache.match(url.pathname === '/games/expedition/' ? '/games/expedition/' : '/games/expedition/index.html')"), 'Offline navigation should return the cached expedition builder when available');
+assert.ok(precachePaths.includes('/games/platform-map/') && precachePaths.includes('/games/platform-map/index.html'), 'Signal Atlas shell must be precached.');
+assert.ok(sw.includes("url.pathname === '/games/platform-map/'") && sw.includes("const cachedMap = await cache.match(url.pathname === '/games/platform-map/' ? '/games/platform-map/' : '/games/platform-map/index.html')"), 'Offline navigation should return cached Signal Atlas when available.');
+assert.ok(sw.includes("CACHE_NAME = 'osgard-play-shell-v1.0.3'"), 'PWA shell cache version must change with new public assets.');
 assert.ok(sw.includes("cache.put('/games/'") && sw.includes('ignoreSearch: true'));
 assert.ok(sw.includes('CACHE_PREFIX') && sw.includes('caches.delete(name)'));
 assert.ok(!sw.includes("caches.match(request) || fetch(request)"), 'Do not use a stale generic cache-first strategy for the entire site.');
