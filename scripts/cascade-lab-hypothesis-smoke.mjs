@@ -6,7 +6,7 @@ const html = readFileSync(new URL('../public/games/cascade-lab/index.html', impo
 const source = readFileSync(new URL('../public/games/cascade-lab/hypothesis-lab.js', import.meta.url), 'utf8');
 
 assert.match(html, /osgard-game-version" content="0\.27\.0-counterfactual-twin"/, 'CASCADE LAB metadata must identify application release 0.27.0');
-assert.match(html, /<title>CASCADE LAB — Premium Physics Lab 0\.25.0<\/title>/, 'the browser title must identify application release 0.27.0');
+assert.match(html, /<title>CASCADE LAB — Premium Physics Lab 0\.27.0<\/title>/, 'the browser title must identify application release 0.27.0');
 assert.ok(html.includes('id="CASCADELAB018"') && html.includes('data-cascade-lab-experiment="0.18.0"') && html.includes('hypothesis-lab.js?v=0.18.0'), 'the hypothesis layer must be versioned and cache-busted');
 assert.ok(html.includes('id="CASCADELAB020"') && html.includes('data-cascade-lab-studio="0.20.0"') && html.includes('experiment-studio.js?v=0.20.0'), 'the 0.20 Experiment Studio must load as the latest experiment layer');
 for (const marker of [
