@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const html = readFileSync('public/games/civic-cascade/index.html', 'utf8');
-const inline = (html.match(/<script>([\\s\\S]*?)<\\/script>/) || [])[1];
+const inline = (html.match(/<script>([\s\S]*?)<\/script>/) || [])[1];
 assert.ok(inline && inline.length > 5000, 'CIVIC CASCADE inline runtime missing');
 new Function(inline);
 assert.ok(html.includes('name="osgard-game-version" content="2.0.0-crisis-director"'), 'CIVIC CASCADE 2.0 release marker missing');
@@ -14,7 +14,7 @@ assert.ok(inline.includes("if(key==='actionCount'&&v===undefined)v=0") && inline
 assert.ok(inline.includes('if(finished||activeIncident){toast(activeIncident?'), 'Checkpoint save must be blocked while an incident awaits a decision');
 
 const start = inline.indexOf('const crisisIncidents={');
-const end = inline.indexOf('\\nfunction renderIncident(', start);
+const end = inline.indexOf('\nfunction renderIncident(', start);
 assert.ok(start >= 0 && end > start, 'Crisis incident deck could not be isolated for effect tests');
 const deckSource = inline.slice(start, end);
 const clamp = (value, min = 0, max = 100) => Math.max(min, Math.min(max, value));
