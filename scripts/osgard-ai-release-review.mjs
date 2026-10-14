@@ -4,7 +4,7 @@ import { dirname, basename, relative, resolve, sep, isAbsolute } from 'node:path
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const DEFAULT_MODEL = process.env.OPENAI_MODEL || 'gpt-6-sol';
+const DEFAULT_MODEL = process.env.OPENAI_MODEL || 'gpt-6.1-sol';
 const MAX_REPORT_BYTES = 2 * 1024 * 1024;
 const MAX_PACKET_BYTES = 48 * 1024;
 const SAFE_REPORT_NAMES = new Set([
