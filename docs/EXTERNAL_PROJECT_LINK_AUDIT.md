@@ -51,3 +51,14 @@ The browser fetch in the implementation session could not retrieve the exact pub
 
 The automatic promotion gate remains fail-closed: even a same-host HTTPS response means manual review is required. No paid campaigns, advertising SDKs or payment processing are activated by this re-check.
 
+## Measured CI homepage snapshot — 14 October 2026 22:15 UTC
+
+Workflow: https://github.com/HADJAL001/osgard-world/actions/runs/38646379488
+
+- 9/10 owner-listed HTTPS homepages returned HTTP 200 from the GitHub Actions runner.
+- `osgardbewworld.com`: `network_error / blocked_no_response`, error text `fetch failed`; an independent retry or network is required before treating this as a reachable destination.
+- `o2system.art`, `senjorio.com`, `superday.run`, `marcosa.club`, `myosa.world`, `gold-glamour.online`, `gardvpn.is`, `osgardos.com`, and `osgardvanguard.studio`: HTTP 200 on that run.
+- Paid-promotion eligibility: **0/10**. One destination is blocked for no response; the other nine remain `manual_review_required`.
+
+This is a timestamped reachability snapshot, not a test of product functions, checkout, domain ownership, security, legal compliance or advertising approval. Re-run the workflow before a campaign and complete the existing human-review gate for each destination.
+
