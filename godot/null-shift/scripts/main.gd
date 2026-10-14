@@ -2093,6 +2093,19 @@ func _spawn_guard(at: Vector3, is_warden: bool) -> void:
 	tag.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	tag.no_depth_test = true
 	body.add_child(tag)
+	var awareness_readout := Label3D.new()
+	awareness_readout.name = "AwarenessReadout"
+	awareness_readout.text = "SIGNATURE · 00%"
+	awareness_readout.font_size = 17
+	awareness_readout.pixel_size = 0.012
+	awareness_readout.outline_size = 8
+	awareness_readout.outline_modulate = Color(0.003, 0.018, 0.024, 0.98)
+	awareness_readout.modulate = Color(0.36, 0.95, 1.0, 1.0)
+	awareness_readout.position = Vector3(0.0, 3.1 if is_warden else 2.82, 0.0)
+	awareness_readout.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	awareness_readout.no_depth_test = true
+	awareness_readout.visible = false
+	body.add_child(awareness_readout)
 	var scan_readout := Label3D.new()
 	scan_readout.name = "ScanReadout"
 	scan_readout.text = "SCAN / %s" % role
@@ -2145,6 +2158,9 @@ func _spawn_guard(at: Vector3, is_warden: bool) -> void:
 		"role_tag": tag,
 		"scan_readout": scan_readout,
 		"scan_reveal_timer": 0.0,
+		"awareness_readout": awareness_readout,
+		"awareness": 0.0,
+		"perceived_player": false,
 		"displayed_ai_state": "PATROL"
 	})
 	_apply_daily_mutators_to_guard(guards.size() - 1)
@@ -2377,13 +2393,27 @@ func _squad_alert_audible_radius() -> float:
 		return PHASE_ECHO_TRACKED_SIGNAL_RADIUS if adaptive_doctrine == "ECHO_TRACK" else PHASE_ECHO_SIGNAL_RADIUS
 	return 34.0
 
+func _guard_sight_radius(phantom_enabled: bool) -> float:
+	return PHANTOM_SIGHT_RADIUS if phantom_enabled else GUARD_SIGHT_RADIUS
+
+func _guard_sight_fov(phantom_enabled: bool) -> float:
+	return PHANTOM_SIGHT_FOV_DEGREES if phantom_enabled else GUARD_SIGHT_FOV_DEGREES
+
+func _footstep_noise_radius(phantom_enabled: bool) -> float:
+	return PHANTOM_FOOTSTEP_RADIUS if phantom_enabled else STANDARD_FOOTSTEP_RADIUS
+
+func _stealth_awareness_after_step(awareness: float, distance_to_player: float, delta: float) -> float:
+	var proximity: float = 1.0 - clampf(maxf(0.0, distance_to_player) / PHANTOM_SIGHT_RADIUS, 0.0, 1.0)
+	var detection_rate: float = 0.34 + proximity * 1.16
+	return clampf(maxf(0.0, awareness) + maxf(0.0, delta) * detection_rate, 0.0, 1.0)
+
 func _guard_can_see_player(body: CharacterBody3D) -> bool:
 	if not is_instance_valid(player) or not is_instance_valid(body):
 		return false
 	var eye_position := body.global_position + Vector3.UP * 0.86
-	var player_position := player.global_position + Vector3.UP * 0.68
+	var player_position := player.global_position + Vector3.UP * (0.36 if stealth_mode_active else 0.68)
 	var facing_direction := -body.global_transform.basis.z
-	if not _is_within_vision_cone(eye_position, facing_direction, player_position, GUARD_SIGHT_RADIUS, GUARD_SIGHT_FOV_DEGREES):
+	if not _is_within_vision_cone(eye_position, facing_direction, player_position, _guard_sight_radius(stealth_mode_active), _guard_sight_fov(stealth_mode_active)):
 		return false
 	return _has_clear_path_to_player(eye_position, body)
 
@@ -2391,9 +2421,25 @@ func _update_guard_perception(guard: Dictionary, body: CharacterBody3D, sees_pla
 	var state := str(guard.get("ai_state", "PATROL"))
 	var last_known: Vector3 = guard.get("last_known_position", body.global_position)
 	var search_timer := maxf(0.0, float(guard.get("search_timer", 0.0)) - delta)
+	var awareness: float = clampf(float(guard.get("awareness", 0.0)), 0.0, 1.0)
+	if stealth_mode_active and not bool(guard.get("warden", false)):
+		if sees_player:
+			awareness = _stealth_awareness_after_step(awareness, body.global_position.distance_to(player.global_position), delta)
+		else:
+			awareness = maxf(0.0, awareness - maxf(0.0, delta) * 1.15)
+		sees_player = sees_player and awareness >= 1.0
+	elif sees_player:
+		awareness = 1.0
+	else:
+		awareness = maxf(0.0, awareness - maxf(0.0, delta) * 0.85)
+	guard["awareness"] = awareness
+	guard["perceived_player"] = sees_player
 
 	if sees_player:
 		if state != "ENGAGED":
+			if stealth_mode_active:
+				stealth_detections += 1
+				stealth_chain = 0
 			_broadcast_squad_contact(player.global_position)
 		state = "ENGAGED"
 		last_known = player.global_position
@@ -2434,6 +2480,12 @@ func _update_guard_perception(guard: Dictionary, body: CharacterBody3D, sees_pla
 	guard["ai_state"] = state
 	guard["last_known_position"] = last_known
 	guard["search_timer"] = search_timer
+	var awareness_readout := guard.get("awareness_readout") as Label3D
+	if is_instance_valid(awareness_readout):
+		awareness_readout.visible = stealth_mode_active and awareness > 0.015 and state != "ENGAGED"
+		if awareness_readout.visible:
+			awareness_readout.text = "SIGNATURE · %02d%%" % int(roundf(awareness * 100.0))
+			awareness_readout.modulate = Color(1.0, 0.34, 0.31) if awareness >= 0.72 else (Color(1.0, 0.72, 0.34) if awareness >= 0.42 else Color(0.36, 0.95, 1.0))
 	var role_tag := guard.get("role_tag") as Label3D
 	if is_instance_valid(role_tag) and str(guard.get("displayed_ai_state", "")) != state:
 		var role_name := str(guard.get("role", "RANGER"))
@@ -2577,6 +2629,7 @@ func _update_guards(delta: float) -> void:
 		var distance := to_player.length()
 		var sees_player := _guard_can_see_player(body)
 		guard = _update_guard_perception(guard, body, sees_player, ai_delta)
+		sees_player = bool(guard.get("perceived_player", sees_player))
 		var ai_state := str(guard.get("ai_state", "PATROL"))
 		var ai_target_position := _guard_ai_target(guard, body)
 		var to_ai_target := ai_target_position - body.global_position
