@@ -394,6 +394,15 @@ new Function(sponsoredCampaigns);
 assert.ok(lifecycle.includes("fetch('/commerce-api/healthz'")&&lifecycle.includes("health.databaseReady!==true")&&lifecycle.includes("return fetch(base+'/v1/events'"),'Gameplay lifecycle events must discover only the database-ready first-party API and fail closed otherwise');
 new Function(consentedAnalytics);
 for(const marker of ['window.OSGARD_CONSENTED_ANALYTICS','MAX_PENDING = 100','MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000','if (!consentGranted())','clearQueue()','result?.accepted']) assert.ok(consentedAnalytics.includes(marker), 'Consent queue contract missing: '+marker);
+const optionalRuntimeMatch=html.match(/<script id="games-optional-runtime">([\s\S]*?)<\/script>/)
+assert.ok(optionalRuntimeMatch,'The Games hub must provide an optional-runtime loader')
+const optionalRuntime=optionalRuntimeMatch[1]
+new Function(optionalRuntime)
+assert.ok(!html.includes('<script src="/games/sponsored-campaigns.js'), 'Sponsor renderer must not block the first-load script queue')
+assert.ok(!html.includes('<script src="/games/experiment-core.js')&&!html.includes('<script src="/games/experiment-runtime.js'), 'Consent-gated experiment runtime must not be eagerly downloaded')
+for(const marker of ["loadScript('sponsored-campaigns.js')","rootMargin:'0px'","encodeURIComponent(version)","window.OSGARDOptionalGamesRuntime=Object.freeze({loadSponsorRenderer})"]) assert.ok(optionalRuntime.includes(marker),'Optional sponsor loader contract missing: '+marker)
+assert.ok(html.includes("function hasAnalyticsConsent()")&&html.includes("if(!hasAnalyticsConsent())return Promise.resolve(false)")&&html.includes("loadScript('consented-analytics.js')")&&html.includes("loadScript('experiment-core.js')")&&html.includes("loadScript('experiment-runtime.js')"), 'Analytics queue and A/B runtime must remain behind the existing explicit-consent loader')
+assert.ok(html.includes("event.key==='osgard.games.analytics-consent.v1'&&hasAnalyticsConsent()"), 'Cross-tab consent grant must activate the measurement loader')
 const lazyRuntimeMatch=html.match(/<script id="games-lazy-runtime">([\s\S]*?)<\/script>/)
 assert.ok(lazyRuntimeMatch,'The Games hub must provide the on-demand runtime loader')
 const lazyRuntime=lazyRuntimeMatch[1]
@@ -446,7 +455,7 @@ assert.ok(lazyRuntime.includes("script.async=true")&&lazyRuntime.includes("encod
    return !event.defaultPrevented;
   }
  };
- const fakeWindow={};
+ const fakeWindow={addEventListener(){},removeEventListener(){}};
  const fakeLocation={origin:'https://osgard.world',search:'',pathname:'/games/'};
  const lazyApi=new Function('document','window','location','Element','MouseEvent','URLSearchParams','encodeURIComponent','Promise','setTimeout',lazyRuntime+';return window.OSGARDGamesLazy;')(fakeDocument,fakeWindow,fakeLocation,FakeElement,FakeMouseEvent,URLSearchParams,encodeURIComponent,Promise,setTimeout);
  const gameLink=new FakeElement('a');gameLink.dataset.play='swarm';gameLink.href='https://osgard.world/games/swarm/';
