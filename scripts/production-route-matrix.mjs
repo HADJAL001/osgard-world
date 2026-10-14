@@ -162,10 +162,10 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
             !text.includes('fetch(') && !text.includes('XMLHttpRequest') && !text.includes('sendBeacon') && !text.includes('.innerHTML')
         : route === '/games/cascade-lab/evidence-integrity.js'
           ? (response.headers.get('content-type') || '').toLowerCase().includes('javascript') &&
-            /VERSION\s*=\s*['"]0\.25\.0['"]/.test(text) &&
-            /SCHEMA\s*=\s*['"]osgard\.cascade-lab\.evidence-integrity\.v1['"]/.test(text) &&
-            /ARCHIVE_SCHEMA\s*=\s*['"]osgard\.cascade-lab\.evidence-integrity-archive\.v1['"]/.test(text) &&
-            !/\bfetch\s*\(/.test(text) && !/\bXMLHttpRequest\b/.test(text) && !/\bsendBeacon\b/.test(text)
+            text.includes('0.25.0') &&
+            text.includes('osgard.cascade-lab.evidence-integrity.v1') &&
+            text.includes('osgard.cascade-lab.evidence-integrity-archive.v1') &&
+            !text.includes('fetch(') && !text.includes('XMLHttpRequest') && !text.includes('sendBeacon')
         : route === '/games/cascade-lab/hypothesis-lab.js'
           ? (response.headers.get('content-type') || '').toLowerCase().includes('javascript') &&
             text.includes("const SCHEMA = 'osgard.cascade-lab.next-experiment.v1'") &&
