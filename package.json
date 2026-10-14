@@ -81,7 +81,8 @@
     "qa:performance-budget-tests": "node --test scripts/osgard-performance-budget.test.mjs",
     "qa:release-attestation": "node --test scripts/osgard-release-attestation.test.mjs",
     "release:attest": "node scripts/osgard-release-attestation.mjs create --contract-report osgard-contract-audit.json --performance-report osgard-performance-budget.json",
-    "release:verify": "node scripts/osgard-release-attestation.mjs verify --contract-report osgard-contract-audit.json --performance-report osgard-performance-budget.json"
+    "release:verify": "node scripts/osgard-release-attestation.mjs verify --contract-report osgard-contract-audit.json --performance-report osgard-performance-budget.json",
+    "qa:premium-dashboard": "node scripts/games-monetization-smoke.mjs && node scripts/games-financial-csv-smoke.mjs"
   },
   "dependencies": {
     "@types/three": "^0.186.0",
