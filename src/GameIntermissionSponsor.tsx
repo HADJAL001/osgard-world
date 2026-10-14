@@ -247,7 +247,7 @@ export function GameIntermissionSponsor({ gameId, locale }: Props) {
             const exposures = readExposures()
             if (exposures === null) return
             const current = exposures[campaign.id] || []
-            if (current.length >= campaign.frequencyCap) { setCampaign(null); return }
+            if (current.length >= campaign.frequencyCap) { setCampaigns(items => items.filter(item => item.id !== campaign.id)); setSelectedId(id => id === campaign.id ? '' : id); return }
             current.push(Date.now())
             exposures[campaign.id] = current.slice(-20)
             try { localStorage.setItem(EXPOSURE_KEY, JSON.stringify(exposures)) } catch { return }
