@@ -107,9 +107,12 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
           ? expectedBuildMatches && text.includes('id="games-grid"') && text.includes('data-game="null-shift"') && text.includes('data-game="time"') && text.includes('data-game="swarm"') && text.includes('data-game="inherit"') && text.includes('data-game="remix"') && text.includes('data-game="civic-cascade"') && text.includes('data-game="patina"') && text.includes('data-game="signal-run"') && text.includes('data-game="cascade-lab"') && text.includes('data-game="afterimage-run"') && text.includes('data-game="aether-grid"') && text.includes('"numberOfItems":11') && text.includes('id="player-dialog"') && text.includes('id="player-share"') && text.includes('player-lifecycle.js') && text.includes('id="project-form"') && text.includes('id="analytics-toggle"') && text.includes('osgardvanguard.studio')
         : route === '/games/aether-grid/'
           ? text.includes('<title>AETHER GRID — OSGARD WORLD GAMING</title>') &&
-            text.includes('content="1.1.0-game-11-premium-session"') &&
+            text.includes('content="1.2.0-challenge-protocol-forge"') &&
             text.includes('data-aether-grid-ready="true"') &&
             text.includes('id="board"') && text.includes('id="challenge-code"') &&
+            text.includes('id="protocol-select"') && text.includes('id="protocol-apply"') && text.includes('id="protocol-share"') &&
+            ['standard','no-hints','no-undo','iron-circuit'].every(id => text.includes('value="'+id+'"')) &&
+            text.includes("function runStorageKey()") && text.includes("url.searchParams.set('og_protocol',selected)") &&
             text.includes("notify('ready')") && text.includes("notify('completed'") &&
             text.includes("notify('share_created'")
         : route === '/games/civic-cascade/release.json'
