@@ -230,7 +230,7 @@ const GAMES: GameDefinition[] = [
     genreRu: 'Физическая головоломка',
     genreEn: 'Physics puzzle',
     descriptionRu: 'Собирайте цепные реакции из шести механизмов и изучайте физику. Вызовы по адаптивным контрактам теперь открывают брендированную страницу-приглашение OSGARD PLAY и сохраняют реферальную атрибуцию при запуске из каталога. Друг получает ту же цель и протокол без вашего журнала попыток; ссылка действует 30 дней, а прогресс и Research XP остаются локальными. Глобальный рейтинг и денежная награда не заявлены.',
-    descriptionEn: 'Build chain reactions with six devices and study the physics. Adaptive-contract challenges now open a branded OSGARD PLAY invitation page and preserve referral attribution when launched from the catalogue. A friend receives the same objective and protocol without your attempt archive; links expire after 30 days, while each player's progress and Research XP remain local. No global leaderboard or cash reward is claimed.',
+    descriptionEn: 'Build chain reactions with six devices and study the physics. Adaptive-contract challenges now open a branded OSGARD PLAY invitation page and preserve referral attribution when launched from the catalogue. A friend receives the same objective and protocol without your attempt archive; links expire after 30 days, while each player’s progress and Research XP remain local. No global leaderboard or cash reward is claimed.',
     href: '/games/cascade-lab/',
     devices: ['desktop', 'mobile'],
     controlsRu: 'Выберите механизм в панели, размещайте детали касанием или мышью и запускайте испытание. Используйте паузу и пошаговый режим для изучения движения; на телефоне доступен сенсорный интерфейс.',
