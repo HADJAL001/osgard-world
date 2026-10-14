@@ -514,6 +514,109 @@ class PhysicsWorld {
 }
 
 
+
+const COUNTERFACTUAL_ENGINE_VERSION = '0.27.0';
+const COUNTERFACTUAL_SCHEMA = 'osgard.cascade-lab.counterfactual-run.v1';
+const COUNTERFACTUAL_MAX_SECONDS = 28.2;
+const COUNTERFACTUAL_MAX_STEPS = Math.ceil(COUNTERFACTUAL_MAX_SECONDS / WORLD.fixedStep);
+const COUNTERFACTUAL_TOOLS = new Set(['spring', 'fan', 'belt', 'magnet', 'switch', 'bumper']);
+function counterfactualCanonicalize(value) {
+  if (value === null || typeof value !== 'object') return JSON.stringify(value);
+  if (Array.isArray(value)) return '[' + value.map(counterfactualCanonicalize).join(',') + ']';
+  return '{' + Object.keys(value).sort().map(key => JSON.stringify(key) + ':' + counterfactualCanonicalize(value[key])).join(',') + '}';
+}
+function counterfactualHash(value) {
+  let hash = 0x811c9dc5;
+  for (const character of String(value)) { hash ^= character.charCodeAt(0); hash = Math.imul(hash, 0x01000193) >>> 0; }
+  return hash.toString(16).padStart(8, '0').toUpperCase();
+}
+function counterfactualRound(value, digits = 3) {
+  return Number.isFinite(value) ? Number(value.toFixed(digits)) : null;
+}
+function simulateCounterfactualScenario(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) throw new TypeError('Сценарий должен быть объектом.');
+  const levelId = Number(input.levelId);
+  const level = LEVELS.find(item => item.id === levelId);
+  if (!level) throw new RangeError('Неизвестный протокол. Доступны уровни 1–5.');
+  if (!Array.isArray(input.devices) || input.devices.length > level.capacity) throw new RangeError('Схема превышает лимит устройств протокола.');
+  const devices = input.devices.map((raw, index) => {
+    if (!raw || typeof raw !== 'object' || !COUNTERFACTUAL_TOOLS.has(raw.type) || !level.tools.includes(raw.type)) throw new TypeError('Недопустимый тип устройства №' + (index + 1) + '.');
+    if (![raw.x, raw.y, raw.angle].every(Number.isFinite) || raw.x < 0 || raw.x > WORLD.width || raw.y < 0 || raw.y > WORLD.height || Math.abs(raw.angle) > Math.PI * 64) {
+      throw new RangeError('Недопустимые координаты или угол устройства №' + (index + 1) + '.');
+    }
+    const device = { uid: 'cf-' + level.id + '-' + index, type: raw.type, x: raw.x, y: raw.y, angle: normalizeAngle(raw.angle), cooldown: 0, active: false };
+    if (!isDeviceAnchorValid(level, device)) throw new RangeError('Устройство №' + (index + 1) + ' не привязано к допустимой точке размещения.');
+    return device;
+  });
+  for (let index = 0; index < devices.length; index++) {
+    const placement = isPlacementValid(level, devices.slice(0, index), devices[index], level.capacity);
+    if (!placement.ok) throw new RangeError('Схема не проходит проверку размещения: ' + placement.reason + '.');
+  }
+  const world = new PhysicsWorld(level, devices);
+  world.start();
+  let steps = 0;
+  while (world.status === 'running' && steps < COUNTERFACTUAL_MAX_STEPS) {
+    world.step(WORLD.fixedStep);
+    steps++;
+  }
+  if (world.status === 'running') {
+    world.status = 'lost';
+    world.reason = 'Анализ достиг защитного лимита времени.';
+  }
+  const trajectory = world.history.slice(0, 420).map(point => ({
+    t: counterfactualRound(point.t), x: counterfactualRound(point.x, 2), y: counterfactualRound(point.y, 2),
+    vx: counterfactualRound(point.vx, 2), vy: counterfactualRound(point.vy, 2),
+    gateOpen: point.gateOpen === true,
+    checkpoints: [...(point.checkpoints || [])].slice(0, 20).map(value => String(value).slice(0, 80))
+  }));
+  const result = {
+    schema: COUNTERFACTUAL_SCHEMA,
+    engineVersion: COUNTERFACTUAL_ENGINE_VERSION,
+    stepSeconds: WORLD.fixedStep,
+    levelId: level.id,
+    levelTitle: String(level.title || '').slice(0, 120),
+    status: world.status === 'won' ? 'won' : 'lost',
+    reason: String(world.reason || '').slice(0, 240),
+    timeSeconds: counterfactualRound(world.time),
+    deviceCount: devices.length,
+    gateOpen: world.gateOpen === true,
+    checkpointsReached: [...world.checkpointsReached].sort(),
+    position: { x: counterfactualRound(world.x, 2), y: counterfactualRound(world.y, 2) },
+    velocity: { x: counterfactualRound(world.vx, 2), y: counterfactualRound(world.vy, 2) },
+    telemetry: {
+      distance: counterfactualRound(world.telemetry.distance),
+      peakSpeed: counterfactualRound(world.telemetry.peakSpeed),
+      maxHeight: counterfactualRound(world.telemetry.maxHeight),
+      impacts: world.telemetry.impacts,
+      contacts: world.telemetry.contacts,
+      activations: world.telemetry.activations,
+      lastImpactSpeed: counterfactualRound(world.telemetry.lastImpactSpeed)
+    },
+    devices: devices.map(device => ({ type: device.type, x: counterfactualRound(device.x, 2), y: counterfactualRound(device.y, 2), angle: counterfactualRound(device.angle, 5) })),
+    trajectory,
+    events: world.telemetry.events.slice(-32).map(event => ({
+      type: String(event.type || 'event').slice(0, 36),
+      label: String(event.label || event.type || 'Событие').slice(0, 140),
+      t: counterfactualRound(event.t),
+      x: counterfactualRound(event.x, 2), y: counterfactualRound(event.y, 2),
+      speed: counterfactualRound(event.speed)
+    }))
+  };
+  result.fingerprint = 'CF27-' + counterfactualHash(counterfactualCanonicalize(result));
+  return result;
+}
+Object.defineProperty(window, 'CASCADELAB027_SIMULATOR', {
+  value: Object.freeze({
+    version: COUNTERFACTUAL_ENGINE_VERSION,
+    schema: COUNTERFACTUAL_SCHEMA,
+    fixedStep: WORLD.fixedStep,
+    maxSteps: COUNTERFACTUAL_MAX_STEPS,
+    simulate: simulateCounterfactualScenario
+  }),
+  configurable: false, enumerable: false, writable: false
+});
+
+
 function findPlacementAnchor(level, x, y, type, maxHorizontalDistance = 70, maxVerticalDistance = 150) {
   const offsets = { spring: 13, fan: 38, belt: 13, magnet: 63, switch: 13, bumper: 14 };
   if (!Object.hasOwn(offsets, type) || !Number.isFinite(x) || !Number.isFinite(y)) return null;
