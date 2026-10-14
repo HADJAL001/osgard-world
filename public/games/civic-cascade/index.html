@@ -331,8 +331,8 @@ function resolveIncident(choiceId){
  if(state.supplies<choice.cost){toast('Недостаточно запасов для этого ответа. Выбери другой вариант.');return}
  if(!spend(choice.cost))return;
  choice.apply();const message=choice.log;
- activeIncident=null;ui.incident.hidden=true;ui.incidentOptions.replaceChildren();incidentResumePaused=false;paused=false;
- ui.status.textContent='СИСТЕМА АКТИВНА';ui.stage.textContent='OPERATIONAL';$('cc-pause').textContent='Ⅱ Пауза';ui.incidentStatus.textContent='';
+ activeIncident=null;ui.incident.hidden=true;ui.incidentOptions.replaceChildren();paused=incidentResumePaused;incidentResumePaused=false;
+ ui.status.textContent=paused?'ПАУЗА':'СИСТЕМА АКТИВНА';ui.stage.textContent=paused?'CHECKPOINT':'OPERATIONAL';$('cc-pause').textContent=paused?'▶ Продолжить':'Ⅱ Пауза';ui.incidentStatus.textContent='';
  addLog('<b>Решение принято:</b> '+choice.label+'. '+message);
  renderUI();draw(performance.now());updateCheckpointStatus();checkFinish();
 }
