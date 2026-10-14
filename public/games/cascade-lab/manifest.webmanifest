@@ -1,0 +1,31 @@
+{
+  "id": "./?source=pwa",
+  "name": "CASCADE LAB — Premium Physics Lab",
+  "short_name": "CASCADE LAB",
+  "description": "Интерактивная физическая лаборатория с головоломками, исследовательскими контрактами и локальными отчётами.",
+  "start_url": "./?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "any",
+  "lang": "ru",
+  "dir": "ltr",
+  "background_color": "#050a11",
+  "theme_color": "#050a11",
+  "categories": [
+    "games",
+    "education",
+    "puzzle"
+  ],
+  "icons": [
+    {
+      "src": "./lab-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
