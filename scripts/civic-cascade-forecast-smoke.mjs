@@ -19,6 +19,13 @@ assert.equal(manifest.buildContract?.adaptiveCrisisDirector?.criticalThreshold, 
 assert.equal(manifest.buildContract?.operationDebrief?.enabled, true)
 assert.equal(manifest.buildContract?.operationDebrief?.maxEvents, 20)
 assert.equal(manifest.buildContract?.operationDebrief?.counterfactualClaims, false)
+assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.enabled, true)
+assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.algorithm, 'deterministic bounded beam search')
+assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.maxCommands, 4)
+assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.beamWidth, 6)
+assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.localOnly, true)
+assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.callsOpenAIAPI, false)
+assert.deepEqual(manifest.buildContract?.autonomousDoctrinePlanner?.forecastHorizonsGameSeconds, [30, 60, 90])
 assert.deepEqual(manifest.buildContract?.adaptiveCrisisDirector?.nodes, ['substation','pump','bridge','hospital','shelter'])
 
 const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1])
@@ -28,7 +35,8 @@ for (const id of [
   'cc-cascade-wait-30', 'cc-cascade-plan-30', 'cc-cascade-wait-90',
   'cc-cascade-plan-90', 'cc-cascade-note', 'cc-node-inspector', 'cc-node-health',
   'cc-node-health-bar', 'cc-node-status', 'cc-node-chain', 'cc-node-effect', 'cc-adaptive-crisis',
-  'cc-causal-debrief', 'cc-causal-summary', 'cc-causal-count', 'cc-causal-risk-change', 'cc-causal-weakest', 'cc-causal-best', 'cc-causal-ledger'
+  'cc-causal-debrief', 'cc-causal-summary', 'cc-causal-count', 'cc-causal-risk-change', 'cc-causal-weakest', 'cc-causal-best', 'cc-causal-ledger',
+  'cc-doctrine-lab', 'cc-doctrine-mode', 'cc-doctrine-run', 'cc-doctrine-status', 'cc-doctrine-results', 'cc-doctrine-apply', 'cc-doctrine-reset'
 ]) check(ids.includes(id), 'missing forecast UI element: ' + id)
 
 const mainScript = html.match(/<script>([\s\S]*?)<\/script>/i)?.[1]
