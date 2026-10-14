@@ -18,6 +18,7 @@ const games = [
   ['09', 'cascade-lab', 'CL', 'CASCADE LAB', 'ФИЗИЧЕСКАЯ ГОЛОВОЛОМКА', 'Собирай цепные реакции, запускай механизмы и исследуй движение ядра.', '/games/cascade-lab/'],
   ['10', 'afterimage-run', 'AR', 'AFTERIMAGE//RUN', 'DAILY SCI-FI SPEEDRUN · v1.7.0 — PHASE SPLITS', 'Общий seed, личный призрак, улучшенный сенсорный ввод и вызов другу.', '/games/afterimage-run/'],
   ['11', 'aether-grid', 'AG', 'AETHER GRID', 'DAILY LOGIC PUZZLE', 'Соедини источник с ядром в сетке из 25 узлов и брось вызов другу.', '/games/aether-grid/'],
+  ['12', 'heist-echo', 'HE', 'HEIST//ECHO', 'TACTICAL SANDBOX · RELEASE 4.0.0', 'Создавай карты, проверяй маршруты патрулей и анализируй операции в Black Box.', '/games/heist-echo/'],
 ].map(([id, key, mark, title, type, copy, href]) => ({ id, key, mark, title: decode(title), type: decode(type), copy: decode(copy), href }))
 
 // Funnel Entertainment launches through the common player so every game can reuse
