@@ -4,6 +4,10 @@ import vm from "node:vm";
 
 const read = (path) => readFileSync(path, "utf8");
 const service = read("services/osgard-commerce-api/src/game-coach.mjs");
+const civicAdvisor = read("services/osgard-commerce-api/src/civic-cascade-advisor.mjs");
+const civicServer = read("services/osgard-commerce-api/src/server.mjs");
+const civicGame = read("public/games/civic-cascade/index.html");
+const civicRelease = JSON.parse(read("public/games/civic-cascade/release.json"));
 const server = read("services/osgard-commerce-api/src/server.mjs");
 const tests = read("services/osgard-commerce-api/test/game-coach.test.mjs");
 const intermission = read("public/games/game-session-recommendations.js");
@@ -29,5 +33,14 @@ assert.ok(!intermission.includes("OPENAI_API_KEY") && !intermission.includes("Be
 assert.ok(css.includes(".og-postgame-ai-coach") && css.includes("@media(max-width:600px)") && css.includes("prefers-reduced-motion:reduce"), "Coach card must be responsive and respect reduced motion.");
 assert.ok(workflow.includes("npm run qa:game-coach"), "The direct production deploy workflow must run Game Coach QA.");
 assert.ok(codemagic.includes("npm run qa:game-coach"), "The iOS/TestFlight workflow must run Game Coach QA.");
+
+assert.ok(civicAdvisor.includes('OPENAI_CIVIC_ADVISOR_ENABLED') && civicAdvisor.includes('OPENAI_API_KEY'), "CIVIC Advisor must be disabled unless a server-side flag and API key are present.");
+assert.ok(civicAdvisor.includes('store: false') && civicAdvisor.includes('https://api.openai.com/v1/responses'), "CIVIC Advisor must use Responses API with response storage disabled.");
+assert.ok(civicAdvisor.includes('additionalProperties: false') && civicAdvisor.includes('stressProfilesAreSynthetic'), "CIVIC Advisor must constrain output and mark synthetic stress evidence.");
+assert.ok(civicServer.includes('app.get("/v1/civic-cascade-advisor/status"') && civicServer.includes('app.post("/v1/civic-cascade-advisor"') && civicServer.includes('limit: 3'), "CIVIC Advisor status and rate-limited endpoints must exist.");
+assert.ok(civicGame.includes('id="cc-ai-advisor-consent"') && civicGame.includes("fetch('/v1/civic-cascade-advisor'"), "CIVIC Advisor must use explicit consent and same-origin transport.");
+assert.ok(!civicGame.includes("fetch('https://api.openai.com") && !civicGame.includes("OPENAI_API_KEY") && !civicGame.includes("Bearer "), "No provider secret or direct provider call may ship in browser code.");
+assert.ok(civicRelease.buildContract?.aiStrategyAdvisor?.explicitPerRequestConsent === true && civicRelease.buildContract?.aiStrategyAdvisor?.apiKeyClientSide === false, "Release contract must describe the Advisor security boundary.");
+
 
 console.log("OSGARD Game Coach smoke: PASS — server-only key, consent, minimal payload, disabled-by-default mode, rate limit, post-session placement, responsive UI and release gates.");
