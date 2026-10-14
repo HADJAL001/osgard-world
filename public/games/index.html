@@ -72,6 +72,28 @@ dialog{width:min(1220px,calc(100vw - 28px));max-width:none;max-height:min(94svh,
 
 <section class="section og-postgame-outside" id="osgard-aftergame-intermission" aria-live="polite" aria-label="Подборка между игровыми сессиями" hidden></section>
 
+<dialog id="osgard-select-intermission" class="og-select-intermission" aria-labelledby="osgard-select-intermission-title" aria-describedby="osgard-select-intermission-description">
+ <div class="og-select-intermission-shell">
+  <header class="og-select-intermission-header">
+   <a class="og-select-brand" href="/games/" aria-label="OSGARD PLAY — каталог"><span class="og-select-brand-mark">O</span><span><b>OSGARD</b><small>WORLD / PLAY SELECT</small></span></a>
+   <span class="og-select-header-state"><i></i> BETWEEN WORLDS / PRIVATE SELECTION</span>
+   <button id="osgard-select-intermission-close" class="og-select-intermission-close" type="button" aria-label="Закрыть подборку и вернуться к результату игры">×</button>
+  </header>
+  <main class="og-select-intermission-main">
+   <section class="og-select-intermission-intro">
+    <p class="og-postgame-eyebrow">YOUR NEXT MOVE / 01</p>
+    <h2 id="osgard-select-intermission-title">Раунд окончен.<br><em>Выбери следующий шаг.</em></h2>
+    <p id="osgard-select-intermission-description">Открой другой игровой мир, выбери проект экосистемы OSGARD или передай другу приглашение. Ни автозапуска, ни сторонней рекламы поверх игрового процесса.</p>
+   </section>
+   <div id="osgard-select-intermission-content" class="og-select-intermission-content"></div>
+  </main>
+  <footer class="og-select-intermission-footer">
+   <p id="osgard-select-intermission-status" role="status" aria-live="polite">Твои настройки и выбор сервисов сохраняются на этом устройстве.</p>
+   <div><button id="osgard-select-intermission-resume" class="og-select-button og-select-button-quiet" type="button">Вернуться к результату</button><button id="osgard-select-intermission-catalog" class="og-select-button og-select-button-primary" type="button">К каталогу игр ↗</button></div>
+  </footer>
+ </div>
+</dialog>
+
 <section class="ecosystem" id="ecosystem"><div class="section"><div class="title"><div><p class="eyebrow">02 / BEYOND THE GAME</p><h2>Игра — это <em>вход.</em></h2><p>Десять самостоятельных продуктов OSGARD. Условия и доступность проверяйте на официальном сайте каждого проекта.</p></div><small class="index-note">OSG / NETWORK<br>10 PROJECTS</small></div><div class="project-grid">
 <a href="https://osgardbewworld.com/?utm_source=osgard_games&amp;utm_medium=cross_promo&amp;utm_campaign=games_hub&amp;utm_content=build" target="_blank" rel="noopener noreferrer"><i>01</i><span><b>OSGARD BEW WORLD</b><small>Создание проектов и приложений</small></span><em>↗</em></a>
 <a href="https://o2system.art/?utm_source=osgard_games&amp;utm_medium=cross_promo&amp;utm_campaign=games_hub&amp;utm_content=o2system" target="_blank" rel="noopener noreferrer"><i>02</i><span><b>O2 SYSTEM</b><small>Учёт кассы обменников</small></span><em>↗</em></a>
