@@ -83,6 +83,9 @@ assert.ok(detail.includes("sessionStartedAtRef.current !== null") && detail.incl
 assert.ok(detail.includes("track('game_session_completed'") && detail.includes('durationSeconds') && detail.includes('endReason: reason'), 'Detail-page session completion must include duration and end reason')
 assert.ok(detail.includes("finishDetailSession('player_left')") && detail.includes("finishDetailSession('closed_by_user')"), 'Leaving/closing the detail player must close a started session without counting an unstarted load')
 assert.ok(detail.includes('}, consentRef.current)'), 'Session events must always honor the latest analytics consent')
+assert.ok(c.includes("sessionTrackingAllowedRef.current = consentRef.current === 'granted'"), 'A session started before consent must not later emit an orphan completion event')
+assert.ok(c.includes("if (sessionTrackingAllowedRef.current) {") && c.includes("sessionTrackingAllowedRef.current = false"), 'Session telemetry must be consent-gated at both start and end, then reset')
+
 assert.ok(detail.includes("sessionStatus === 'active'") && detail.includes("sessionStatus === 'completed'") && detail.includes("sessionStatus === 'error'"), 'The player toolbar must reflect ready, active, completed and error states')
 for (const route of ['/games/', '/games/monetization/', '/game/time', '/game/swarm', '/game/null-shift', '/game/inherit', '/game/remix', '/games/signal-run/', '/game/signal-run', '/games/civic-cascade/', '/games/patina/', '/game/civic-cascade', '/game/patina', '/games/cascade-lab/', '/game/cascade-lab', '/games/aether-grid/', '/game/aether-grid']) assert.ok(sitemap.includes(`https://osgard.world${route}`), `Sitemap is missing ${route}`)
 assert.ok(css.includes('@media') && css.includes('prefers-reduced-motion'), 'Responsive and reduced-motion styles must be defined')
