@@ -281,6 +281,26 @@ const GAMES: GameDefinition[] = [
     featuresEn: ['One shared UTC daily board', 'Four rule protocols with separate bests', 'Friend invitations that preserve the selected rules'],
     theme: 'aether-grid',
   },
+  {
+    id: 'heist-echo',
+    mark: 'HE',
+    titleRu: 'HEIST//ECHO',
+    titleEn: 'HEIST//ECHO',
+    category: 'tactical',
+    genreRu: 'Тактическая симуляция',
+    genreEn: 'Tactical simulation',
+    descriptionRu: 'Создавайте тактические карты, проверяйте маршруты охраны с ORACLE и разбирайте операции в Black Box.',
+    descriptionEn: 'Build tactical maps, test patrol routes with ORACLE and review every operation in Black Box.',
+    href: '/games/heist-echo/',
+    devices: ['desktop', 'mobile'],
+    controlsRu: 'Нажмите «Запустить операцию» на стартовом экране, чтобы загрузить игровой модуль. Следуйте подсказкам внутри игры.',
+    controlsEn: 'Select Launch Operation on the start screen to load the game module, then follow the in-game prompts.',
+    supportRu: 'Standalone HTML-игра с ленивой загрузкой версионированных частей пакета. После первой успешной загрузки сервис-воркер кэширует ресурсы для повторного офлайн-доступа; прогресс остаётся в браузере.',
+    supportEn: 'A standalone HTML game with lazy-loaded versioned payload chunks. After a successful first load, the service worker caches same-origin resources for repeat offline access; progress stays in the browser.',
+    featuresRu: ['Четыре тактические карты', 'ORACLE-анализ маршрутов охраны', 'Black Box для разбора операции'],
+    featuresEn: ['Four tactical maps', 'ORACLE patrol-route analysis', 'Black Box operation review'],
+    theme: 'heist-echo',
+  },
 ]
 
 
@@ -687,6 +707,7 @@ export function GameDetailPage({ slug }: { slug: string }) {
                   'civic-cascade': /civic\s*cascade/i,
                   patina: /patina\s*atelier/i,
                   'afterimage-run': /afterimage\s*\/\s*\/\s*run/i,
+                  'heist-echo': /heist\s*\/\s*\/\s*echo/i,
                 }
                 const validTitle = game.id === 'time'
                   ? Boolean(frameDocument?.querySelector('.time-game'))
@@ -700,7 +721,9 @@ export function GameDetailPage({ slug }: { slug: string }) {
                           ? Boolean(frameDocument?.body.dataset.cascadeLabReady === 'true')
                           : game.id === 'aether-grid'
                             ? Boolean(frameDocument?.querySelector('#board') && frameDocument?.querySelector('#challenge-code'))
-                            : (titleChecks[game.id]?.test(frameTitle) ?? false)
+                            : game.id === 'heist-echo'
+                              ? Boolean(frameDocument?.querySelector('#launch') && frameDocument?.querySelector('#status'))
+                              : (titleChecks[game.id]?.test(frameTitle) ?? false)
                 if (validTitle) {
                   frameValidatedRef.current = true
                   setLoadingGame(false)
