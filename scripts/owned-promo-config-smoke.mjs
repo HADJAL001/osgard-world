@@ -32,7 +32,7 @@ for (const code of [
   'OWNED_PROMO_REWARDS_INVALID',
 ]) assert.ok(core.includes(code), 'Missing validation failure: ' + code);
 assert.ok(core.includes('"partner-studio"'), 'Owned-services allow-list must include the commercial Partner Studio entry');
-assert.ok(!core.slice(core.indexOf('export const OWNED_PROMO_SERVICE_IDS'), core.indexOf(']);', core.indexOf('export const OWNED_PROMO_SERVICE_IDS'))).includes('"gardvpn"'), 'Unverified GARD VPN must not be enabled as a promo service');
+assert.ok(core.slice(core.indexOf('export const OWNED_PROMO_SERVICE_IDS'), core.indexOf(']);', core.indexOf('export const OWNED_PROMO_SERVICE_IDS'))).includes('"gardvpn"'), 'Owner-requested GARD VPN must be available in the managed promotion allow-list');
 assert.ok(tests.includes('owned-service promotion settings validate the public service allow-list'), 'Unit tests for owned-promo validation are missing');
 
 assert.ok(api.includes('CREATE TABLE IF NOT EXISTS commerce_owned_promo_config'), 'Persistent PostgreSQL settings table missing');
@@ -59,6 +59,11 @@ assert.ok(admin.includes("Authorization: 'Bearer ' + token"), 'Admin API token m
 assert.ok(admin.includes("window.addEventListener('pagehide',()=>{token='';$('#token').value='';})"), 'Admin token must be cleared from page memory on exit');
 assert.ok(admin.includes('data-promo-enabled') && admin.includes('data-promo-default'), 'Service checkbox groups missing');
 assert.ok(admin.includes('updatePromoDefaultChoices()'), 'Default selections must be limited to enabled services');
+const adminPage = readFileSync(resolve(root, 'public/games/commerce-admin/index.html'), 'utf8')
+const ownedPromoPlayer = readFileSync(resolve(root, 'public/games/game-session-recommendations.js'), 'utf8')
+assert.ok(adminPage.includes('<option value="gardvpn">GARD VPN</option>'), 'GARD VPN must be selectable as the admin spotlight')
+assert.ok(ownedPromoPlayer.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN','VPN-сервис GARD VPN. Открой официальный сайт, чтобы изучить доступные условия.','https://gardvpn.is/']"), 'GARD VPN must be selectable without claiming that VPN connectivity was independently verified')
+
 
 assert.ok(player.includes("fetch('/commerce-api/v1/owned-promo/config'"), 'Game intermission must consume the server-published configuration');
 assert.ok(player.includes('managedPromoConfig.enabledServices.includes(id)'), 'Global allow-list must filter intermission options');
