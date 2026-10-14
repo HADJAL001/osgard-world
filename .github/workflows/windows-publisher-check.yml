@@ -1,0 +1,65 @@
+name: Windows release publisher validation
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - "scripts/publish-frontend-resumable.ps1"
+      - "scripts/activate-frontend-dist-remote.sh"
+      - "scripts/publish-frontend-resumable-smoke.mjs"
+      - "docs/WINDOWS_RELEASE_PUBLISHING.md"
+      - ".github/workflows/windows-publisher-check.yml"
+  push:
+    branches: [master]
+    paths:
+      - "scripts/publish-frontend-resumable.ps1"
+      - "scripts/activate-frontend-dist-remote.sh"
+      - "scripts/publish-frontend-resumable-smoke.mjs"
+      - "docs/WINDOWS_RELEASE_PUBLISHING.md"
+      - ".github/workflows/windows-publisher-check.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-publisher-${ github.ref }
+  cancel-in-progress: true
+
+jobs:
+  preflight:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Create a minimal static build fixture
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist/assets | Out-Null
+          Set-Content -LiteralPath dist/index.html -Value '<!doctype html><html><head><title>Publisher fixture</title></head><body>OK</body></html>' -Encoding utf8
+          Set-Content -LiteralPath dist/assets/app.js -Value 'console.log("publisher fixture");' -Encoding utf8
+      - name: Parse PowerShell publisher with the native PowerShell parser
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path 'scripts/publish-frontend-resumable.ps1'), [ref]$tokens, [ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) { $errors | Format-List | Out-String | Write-Error }
+      - name: Run local-only archive preflight on Windows
+        shell: pwsh
+        run: |
+          $output = & ./scripts/publish-frontend-resumable.ps1 -PreflightOnly
+          $report = $output | ConvertFrom-Json
+          if ($report.status -ne 'ready' -or $report.bytes -le 0 -or $report.sha256 -notmatch '^[a-f0-9]{64}$') {
+            throw "Unexpected preflight report: $($output -join [Environment]::NewLine)"
+          }
+      - name: Run publisher and activation source-contract tests
+        run: node scripts/publish-frontend-resumable-smoke.mjs
+      - name: Validate remote activation helper syntax
+        shell: bash
+        run: bash -n scripts/activate-frontend-dist-remote.sh
