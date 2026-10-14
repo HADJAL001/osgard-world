@@ -1,0 +1,49 @@
+name: Commerce API readiness safety gate
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - "services/osgard-commerce-api/src/readiness.mjs"
+      - "services/osgard-commerce-api/src/server.mjs"
+      - "services/osgard-commerce-api/test/readiness.test.mjs"
+      - "scripts/commerce-rollout-smoke.mjs"
+      - "scripts/production-route-matrix.mjs"
+      - "scripts/production-route-matrix-contract-smoke.mjs"
+      - "public/games/swarm/**"
+      - "docs/29_COMMERCE_SERVICE_READINESS_DECOUPLE_PAYMENTS_2026-10-14.md"
+      - ".github/workflows/commerce-readiness-pr.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: commerce-readiness-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  readiness-contract:
+    name: Service readiness and payment safety
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Syntax-check Commerce API changes
+        run: |
+          node --check services/osgard-commerce-api/src/readiness.mjs
+          node --check services/osgard-commerce-api/src/server.mjs
+          node --check scripts/commerce-rollout-smoke.mjs
+          node --check scripts/production-route-matrix.mjs
+          node --check scripts/production-route-matrix-contract-smoke.mjs
+      - name: Verify SWARM route checks use SWARM-specific contracts
+        run: node scripts/production-route-matrix-contract-smoke.mjs
+      - name: Test database-backed service readiness contract
+        run: node --test services/osgard-commerce-api/test/readiness.test.mjs
+      - name: Verify commerce integration and fail-closed payment gates
+        run: node scripts/commerce-rollout-smoke.mjs

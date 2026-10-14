@@ -15,7 +15,7 @@ import {
 import {
   campaignFromRow, normalizeCampaignId, publicCampaignView, validateCampaignPayload,
 } from "./campaigns.mjs";
-import { buildCommercialReadiness } from "./readiness.mjs";
+import { buildCommercialReadiness, buildServiceReadiness } from "./readiness.mjs";
 import { generateGameCoachAdvice, isGameCoachConfigured } from "./game-coach.mjs";
 
 const { Pool } = pg;
@@ -218,8 +218,14 @@ app.get("/healthz", (_req, res) => res.status(200).json({
   databaseInitFailedAtBoot: dbErrorAtBoot,
 }));
 app.get("/readyz", (_req, res) => {
-  const ready = Boolean(pool && dbReady && stripe && webhookSecret && paymentsModeAllowed(stripeSecret, process.env.ENABLE_LIVE_PAYMENTS === "true"));
-  res.status(ready ? 200 : 503).json({ ready });
+  // General API readiness covers database-backed platform capabilities.
+  // Payments stay fail-closed in paymentsAllowed(), checkout handlers and the
+  // protected /v1/admin/readiness report; Stripe must not block campaign/lead APIs.
+  const readiness = buildServiceReadiness({
+    databaseConfigured: Boolean(pool),
+    databaseReady: dbReady,
+  });
+  res.status(readiness.ready ? 200 : 503).json(readiness);
 });
 app.get("/v1/admin/readiness", requireAdmin, async (_req, res) => {
   try {

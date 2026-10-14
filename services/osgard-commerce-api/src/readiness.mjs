@@ -4,6 +4,30 @@ function status(value) {
   return ALLOWED_STATUSES.has(value) ? value : "review_required";
 }
 
+
+/**
+ * Readiness for the database-backed platform API (leads, consented analytics,
+ * referrals and sponsor inventory). Payment-provider readiness is evaluated
+ * separately by buildCommercialReadiness and the checkout handlers.
+ */
+export function buildServiceReadiness({ databaseConfigured = false, databaseReady = false } = {}) {
+  const configured = databaseConfigured === true;
+  const initialized = databaseReady === true;
+  const ready = configured && initialized;
+
+  return {
+    ready,
+    status: ready ? "ready" : "not_ready",
+    checks: {
+      database: {
+        configured,
+        initialized,
+        status: ready ? "ready" : "blocked",
+      },
+    },
+  };
+}
+
 const PRICE_REASON_COPY = Object.freeze({
   available: "Цена найдена в Stripe и прошла проверку активности и типа платежа.",
   price_not_configured: "ID цены не задан в серверных переменных. Сумма не принимается из браузера.",

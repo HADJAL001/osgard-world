@@ -20,6 +20,19 @@ const config = JSON.parse(readFileSync(resolve("public/games/commerce-config.jso
 const nginx = readFileSync(resolve("nginx.conf"), "utf8");
 const routeMatrix = readFileSync(resolve("scripts/production-route-matrix.mjs"), "utf8");
 
+const readyzStart = server.indexOf('app.get("/readyz"');
+const readyzEnd = server.indexOf("\n});", readyzStart);
+assert.ok(readyzStart >= 0 && readyzEnd > readyzStart, "General service readiness endpoint must exist.");
+const readyzHandler = server.slice(readyzStart, readyzEnd);
+assert.ok(readyzHandler.includes("buildServiceReadiness"), "General service readiness must use the isolated readiness model.");
+const readyzLogic = readyzHandler.split("\n").filter((line) => !line.trim().startsWith("//")).join("\n");
+assert.doesNotMatch(readyzLogic, /stripe|webhookSecret|paymentsModeAllowed|ENABLE_LIVE_PAYMENTS/i,
+  "General service readiness must not depend on Stripe or live-payment flags.");
+assert.ok(readiness.includes("export function buildServiceReadiness"), "Database-backed service readiness contract must exist.");
+assert.ok(server.includes('if (!paymentsAllowed()) return res.status(503).json({ error: "PAYMENTS_NOT_READY"'),
+  "Checkout must remain fail-closed even when the general API is ready.");
+
+
 for (const value of [
   "stripe.checkout.sessions.create", "stripe.webhooks.constructEvent",
   "express.raw", "commerce_stripe_events", "ON CONFLICT DO NOTHING",

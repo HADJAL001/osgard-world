@@ -277,6 +277,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
       } else {
         const content = await asset.text()
         const normalized = content.toLowerCase()
+      const compact = normalized.replace(/\s+/g, '')
         nonEmpty = path === '/games/diagnostics/diagnostics.js'
           ? content.includes('window.OSGARDDiagnostics') && content.includes("schema: 'osgard.play.diagnostics.v1'") && !content.includes('sendBeacon(')
           : isCampaignAdmin
@@ -321,7 +322,11 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
               ? content.includes('function startSession(') && content.includes('game_session_completed') && content.includes('osgard:game-lifecycle') && content.includes('event.source!==frame.contentWindow')
               : path === '/games/expedition/expedition.css'
               ? content.includes('.og-expedition-band') && content.includes('prefers-reduced-motion:reduce')
-              : path.endsWith('.css')
+              : path === '/games/swarm/styles.css'
+              ? compact.includes('--acid:#d9ff57') && compact.includes('.arena') && compact.includes('.playtest-feedback') && compact.includes('prefers-reduced-motion:reduce') && compact.includes('/skillcred/fonts/intervariable.woff2') && compact.includes('/skillcred/fonts/jetbrainsmono-regular.woff2') && !compact.includes('fonts.googleapis.com')
+            : path === '/games/swarm/game.js'
+              ? compact.includes("queryselector('#game')") && compact.includes('constroles=[') && compact.includes('functionnewgame(') && compact.includes('swarm-room-session') && compact.includes('restoreroomsession()') && compact.includes('recordinviteopen')
+            : path.endsWith('.css')
               ? normalized.includes('--acid:#c8ff3d') && normalized.includes('/skillcred/fonts/intervariable.woff2') && normalized.includes('/skillcred/fonts/instrumentserif-italic.woff2') && normalized.includes('/skillcred/fonts/jetbrainsmono-regular.woff2') && (!expectCurrentDesign || (normalized.includes('--hero-size:clamp(88px,6vw,104px)') && normalized.replace(/["']/g, '').includes('.trust-spine[data-state=revoked]')))
               : path === '/games/cascade-lab/case-passport.js'
               ? content.includes("const VERSION='0.21.0'") && content.includes("SCHEMA='osgard.cascade-lab.case-passport.v1'") && content.includes('function verifyPassport(') && !content.includes('fetch(') && !content.includes('sendBeacon(')

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildCommercialReadiness } from "../src/readiness.mjs";
+import { buildCommercialReadiness, buildServiceReadiness } from "../src/readiness.mjs";
 
 function readyTestInput(overrides = {}) {
   return {
@@ -102,4 +102,40 @@ test("server-side attribution readiness shows configuration without exposing tok
   const databaseDown = buildCommercialReadiness(readyTestInput({ serviceAttributionServiceCount: 2, databaseReady: false }));
   assert.equal(find(databaseDown, "service-attribution").status, "blocked");
   assert.doesNotMatch(JSON.stringify(configured), /projects_test_attribution_token|marcosa_test_attribution_token/);
+});
+
+
+test("service readiness is independent of Stripe and payment flags", () => {
+  const report = buildServiceReadiness({
+    databaseConfigured: true,
+    databaseReady: true,
+    stripeConfigured: false,
+    webhookConfigured: false,
+    paymentsRuntimeReady: false,
+    livePaymentsOptIn: false,
+  });
+
+  assert.equal(report.ready, true);
+  assert.equal(report.status, "ready");
+  assert.deepEqual(report.checks.database, {
+    configured: true,
+    initialized: true,
+    status: "ready",
+  });
+  assert.doesNotMatch(JSON.stringify(report), /stripe|webhook|secret|token/i);
+});
+
+test("service readiness fails closed when database is missing or schema initialization failed", () => {
+  const missing = buildServiceReadiness({ databaseConfigured: false, databaseReady: false });
+  assert.equal(missing.ready, false);
+  assert.equal(missing.status, "not_ready");
+  assert.equal(missing.checks.database.status, "blocked");
+
+  const configuredButUnavailable = buildServiceReadiness({
+    databaseConfigured: true,
+    databaseReady: false,
+  });
+  assert.equal(configuredButUnavailable.ready, false);
+  assert.equal(configuredButUnavailable.checks.database.configured, true);
+  assert.equal(configuredButUnavailable.checks.database.initialized, false);
 });
