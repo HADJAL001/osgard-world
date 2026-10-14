@@ -722,7 +722,7 @@ app.post("/v1/referrals/claim", async (req, res) => {
 app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
   if (!requireDatabase(res)) return;
   try {
-    const [orderStats, currencyStats, leadStats, eventStats, topEvents, analyticsByGame, ownedPromoByService, ownedPromoVariantStats, analyticsFunnel, socialShareByNetwork, paidRevenueByAttribution, referralRewardStats] = await Promise.all([
+    const [orderStats, currencyStats, leadStats, eventStats, topEvents, analyticsByGame, ownedPromoByService, ownedPromoVariantStats, productExperimentStats, analyticsFunnel, socialShareByNetwork, paidRevenueByAttribution, referralRewardStats] = await Promise.all([
       pool.query("SELECT status, COUNT(*)::int AS count FROM commerce_orders GROUP BY status"),
       pool.query("SELECT currency, SUM(amount_total)::bigint AS total_minor, COUNT(*)::int AS count FROM commerce_orders WHERE status='paid' AND currency IS NOT NULL GROUP BY currency"),
       pool.query("SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE status='new')::int AS new FROM commerce_leads"),
@@ -769,6 +769,25 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
           AND event_name IN ('owned_promo_impression', 'cross_promo_clicked')
         GROUP BY split_part(source, ':', 4)
         ORDER BY variant ASC
+      `),
+      pool.query(`
+        WITH experiment_sessions AS (
+          SELECT split_part(source, ':', 2) AS "experimentId",
+                 split_part(source, ':', 3) AS variant,
+                 session_id,
+                 BOOL_OR(event_name = 'product_experiment_exposed') AS exposed,
+                 BOOL_OR(event_name = 'product_experiment_converted') AS converted
+          FROM commerce_events
+          WHERE received_at >= NOW() - INTERVAL '30 days'
+            AND source ~ '^osgard-experiment:catalog-hero-cta-v1:[ab]:(exposed|converted)$'
+            AND event_name IN ('product_experiment_exposed', 'product_experiment_converted')
+          GROUP BY split_part(source, ':', 2), split_part(source, ':', 3), session_id
+        )
+        SELECT "experimentId", variant,
+               COUNT(*) FILTER (WHERE exposed)::int AS exposures,
+               COUNT(*) FILTER (WHERE exposed AND converted)::int AS conversions
+        FROM experiment_sessions WHERE exposed
+        GROUP BY "experimentId", variant ORDER BY "experimentId", variant
       `),
       pool.query(`
         WITH recent_events AS (
@@ -861,6 +880,7 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
       analyticsByGame: analyticsByGame.rows,
       ownedPromoByService: ownedPromoByService.rows,
       ownedPromoVariantStats: ownedPromoVariantStats.rows,
+      productExperimentStats: productExperimentStats.rows,
       analyticsFunnel: analyticsFunnel.rows[0] || {},
       socialShareByNetwork: socialShareByNetwork.rows,
       paidRevenueByAttribution: paidRevenueByAttribution.rows,
