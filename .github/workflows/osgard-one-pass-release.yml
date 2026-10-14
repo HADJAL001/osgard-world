@@ -54,4 +54,5 @@ jobs:
             artifacts/runs/*.json
             artifacts/external-project-health.json
             release-readiness.json
+            osgard-ai-release-review.json
             production-route-matrix.json
