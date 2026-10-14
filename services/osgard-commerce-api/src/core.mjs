@@ -254,3 +254,124 @@ export function safeEqual(left, right) {
   const b = Buffer.from(String(right ?? ""), "utf8");
   return a.length > 0 && a.length === b.length && timingSafeEqual(a, b);
 }
+
+
+const SERVICE_ATTRIBUTION_CONVERSION_TYPES = new Set([
+  "account_created",
+  "lead_qualified",
+  "trial_started",
+  "booking_confirmed",
+  "purchase_paid",
+  "purchase_refunded",
+  "subscription_started",
+  "subscription_renewed",
+  "subscription_refunded",
+  "subscription_cancelled",
+]);
+const SERVICE_ATTRIBUTION_MONEY_TYPES = new Set([
+  "purchase_paid",
+  "purchase_refunded",
+  "subscription_started",
+  "subscription_renewed",
+  "subscription_refunded",
+]);
+const SERVICE_ATTRIBUTION_ID_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?$/;
+const SERVICE_ATTRIBUTION_EVENT_ID_PATTERN = /^[A-Za-z0-9_-]{16,120}$/;
+const SERVICE_ATTRIBUTION_REFERRAL_PATTERN = /^(?:og_[a-f0-9]{8}|[a-f0-9]{12})$/;
+
+/**
+ * Validates a server-to-server conversion signal from an OSGARD ecosystem service.
+ * Payloads deliberately exclude names, email addresses, phone numbers and free text.
+ * Amounts are integer minor currency units and only accepted for monetary event types.
+ */
+export function validateServiceAttributionConversion(body) {
+  const input = body && typeof body === "object" && !Array.isArray(body) ? body : {};
+  if (input.consent !== true) {
+    return { ok: false, status: 400, code: "ATTRIBUTION_CONSENT_REQUIRED" };
+  }
+
+  const serviceId = cleanText(input.serviceId, 40).toLowerCase();
+  const eventId = cleanText(input.eventId, 120);
+  const conversionType = cleanText(input.conversionType, 40).toLowerCase();
+  const gameId = cleanText(input.gameId, 40).toLowerCase() || "unknown";
+  const source = cleanText(input.source, 60).toLowerCase() || "direct";
+  const campaign = cleanText(input.campaign, 80).toLowerCase();
+  const rawReferralCode = cleanText(input.referralCode, 32);
+  const referralCode = rawReferralCode || null;
+
+  if (!SERVICE_ATTRIBUTION_ID_PATTERN.test(serviceId)) {
+    return { ok: false, status: 400, code: "ATTRIBUTION_SERVICE_ID_INVALID" };
+  }
+  if (!SERVICE_ATTRIBUTION_EVENT_ID_PATTERN.test(eventId)) {
+    return { ok: false, status: 400, code: "ATTRIBUTION_EVENT_ID_INVALID" };
+  }
+  if (!SERVICE_ATTRIBUTION_CONVERSION_TYPES.has(conversionType)) {
+    return { ok: false, status: 400, code: "ATTRIBUTION_CONVERSION_TYPE_INVALID" };
+  }
+  if (!GAME_IDS.has(gameId)) {
+    return { ok: false, status: 400, code: "ATTRIBUTION_GAME_ID_INVALID" };
+  }
+  if (!/^[a-z0-9][a-z0-9_-]{0,59}$/.test(source)) {
+    return { ok: false, status: 400, code: "ATTRIBUTION_SOURCE_INVALID" };
+  }
+  if (campaign && !/^[a-z0-9][a-z0-9_-]{0,79}$/.test(campaign)) {
+    return { ok: false, status: 400, code: "ATTRIBUTION_CAMPAIGN_INVALID" };
+  }
+  if (referralCode && !SERVICE_ATTRIBUTION_REFERRAL_PATTERN.test(referralCode)) {
+    return { ok: false, status: 400, code: "ATTRIBUTION_REFERRAL_CODE_INVALID" };
+  }
+
+  const hasAmount = input.amountMinor !== undefined && input.amountMinor !== null;
+  const rawAmount = hasAmount ? Number(input.amountMinor) : null;
+  const currency = cleanText(input.currency, 3).toUpperCase();
+  if (SERVICE_ATTRIBUTION_MONEY_TYPES.has(conversionType)) {
+    if (!Number.isSafeInteger(rawAmount) || rawAmount < 1 || rawAmount > 1000000000000) {
+      return { ok: false, status: 400, code: "ATTRIBUTION_AMOUNT_INVALID" };
+    }
+    if (!/^[A-Z]{3}$/.test(currency)) {
+      return { ok: false, status: 400, code: "ATTRIBUTION_CURRENCY_INVALID" };
+    }
+  } else if (hasAmount || currency) {
+    return { ok: false, status: 400, code: "ATTRIBUTION_AMOUNT_NOT_ALLOWED" };
+  }
+
+  return {
+    ok: true,
+    conversion: {
+      serviceId,
+      eventId,
+      conversionType,
+      gameId,
+      source,
+      campaign,
+      referralCode,
+      amountMinor: hasAmount ? rawAmount : null,
+      currency: hasAmount ? currency : null,
+    },
+  };
+}
+
+/** Parse the server-only JSON token map; invalid entries fail closed. */
+export function parseServiceAttributionTokenMap(raw) {
+  let parsed = raw;
+  if (typeof raw === "string") {
+    try { parsed = JSON.parse(raw); } catch { return Object.create(null); }
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return Object.create(null);
+
+  const tokens = Object.create(null);
+  for (const [serviceId, value] of Object.entries(parsed)) {
+    if (!SERVICE_ATTRIBUTION_ID_PATTERN.test(serviceId) ||
+        typeof value !== "string" ||
+        value.length < 32 ||
+        value.length > 512 ||
+        !/^[A-Za-z0-9._~+/-]+$/.test(value)) continue;
+    tokens[serviceId] = value;
+  }
+  return tokens;
+}
+
+export function isServiceAttributionTokenValid(serviceId, suppliedToken, tokenMap) {
+  const expected = tokenMap && typeof tokenMap === "object" ? tokenMap[serviceId] : "";
+  return typeof expected === "string" && expected.length >= 32 && safeEqual(suppliedToken, expected);
+}

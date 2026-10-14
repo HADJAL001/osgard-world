@@ -99,3 +99,79 @@ Open /games/commerce-admin/ and paste ADMIN_API_TOKEN into the in-memory field. 
 - ANALYTICS_RETENTION_DAYS defaults to 90 and accepts integers from 30 to 365. Rows older than this limit are deleted at API startup and then every six hours while the database is ready.
 - The operator dashboard reports only consented server-recorded events. It is not a complete count of anonymous page visits, ad impressions, revenue or conversions. UTM clicks only attribute outbound link clicks.
 - The environment still needs a real database and a deployed API for data to be persisted; this source change does not prove that production has been deployed or is receiving events.
+
+
+## Server-to-server conversion attribution for OSGARD-owned services
+
+`POST /v1/attribution/conversions` accepts a server-reported conversion from an OSGARD-owned service. It complements consented game-side impression/click/referral data so the commerce dashboard can distinguish a promo click from a later signup, qualified lead, booking or paid order.
+
+### Configure credentials safely
+
+1. Generate a unique random bearer token of at least 32 characters for each connected service (for example `marcosa`, `projects`, `senjorio`, `superday`, `myosa` or `gold-glamour`).
+2. Put the token only in that service's private backend environment, such as `OSGARD_ATTRIBUTION_TOKEN`. Never put it in browser code, a mobile app, public `commerce-config.json`, a URL, Git commit or logs.
+3. In the Commerce API's private environment set `OSGARD_ATTRIBUTION_TOKENS_JSON` to a JSON object mapping lowercase service IDs to the same tokens. The sample in `.env.example` is a placeholder, not a working secret. Restart/redeploy Commerce API after configuring it.
+4. Call the endpoint from the destination service's server only. Persist permissible UTM fields and, if applicable, the validated `og_ref` with the destination transaction or account flow. Keep contact information in the destination system; do not send names, email addresses, telephone numbers, free text or customer IDs to this API.
+5. Obtain consent for destination-side attribution where required by your privacy notice and applicable law. Send `consent: true` only when the destination service has recorded a valid consent state for the attribution processing.
+
+### Minimal payload
+
+```json
+{
+  "consent": true,
+  "serviceId": "marcosa",
+  "eventId": "provider-or-internal-unique-event-12345",
+  "conversionType": "purchase_paid",
+  "gameId": "signal-run",
+  "source": "osgard_games",
+  "campaign": "after_game",
+  "referralCode": "og_a1b2c3d4",
+  "amountMinor": 2599,
+  "currency": "SEK"
+}
+```
+
+- Send the token in `Authorization: Bearer …`; only the destination backend sends the request.
+- Use a stable opaque `eventId` from the destination backend or payment provider. Retries with the same `(serviceId, eventId)` are idempotent.
+- `amountMinor` and `currency` are required for `purchase_paid`, `purchase_refunded`, `subscription_started`, `subscription_renewed` and `subscription_refunded`. Amount is an integer in the currency's smallest unit; for a two-decimal currency, `2599 SEK` means 25.99 SEK. Refunds are sent as positive amounts and reported as negative movement.
+- `account_created`, `lead_qualified`, `trial_started`, `booking_confirmed` and `subscription_cancelled` do not accept money fields.
+- Attribution labels classify a link, but do not establish that promotion caused the result.
+- For payment/refund events, send only after the destination independently verifies settlement/refund with its payment provider. This bridge authenticates the reporting service and deduplicates the report; it does not independently query that provider.
+
+### Server-side example
+
+```js
+const response = await fetch(
+  "https://osgard.world/commerce-api/v1/attribution/conversions",
+  {
+    method: "POST",
+    headers: {
+      authorization: "Bearer " + process.env.OSGARD_ATTRIBUTION_TOKEN,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      consent: true,
+      serviceId: "marcosa",
+      eventId: paymentProviderEvent.id,
+      conversionType: "purchase_paid",
+      gameId: savedAttribution.gameId || "unknown",
+      source: savedAttribution.source || "direct",
+      campaign: savedAttribution.campaign || "",
+      referralCode: savedAttribution.referralCode || "",
+      amountMinor: payment.amountMinor,
+      currency: payment.currency.toUpperCase(),
+    }),
+  },
+);
+if (!response.ok) {
+  // Retry server-side with the SAME eventId; never create a new ID just to retry.
+  throw new Error("OSGARD attribution ingest failed: " + response.status);
+}
+```
+
+### Reporting and limitations
+
+- The protected `/games/commerce-admin/` panel reports conversions by service, game, source, campaign and currency for the last 30 days.
+- Stored conversion rows are removed after 365 days.
+- Totals are reported outcomes, not independent accounting data. They remain separated by currency and are not net profit; fees, taxes and chargebacks beyond reported refunds are not calculated here.
+- First-party analytics still measures consented visible promos and outbound clicks separately. A click is not a conversion; UTM labels do not prove causality.
+- This source change adds the bridge but does **not** connect the destination domains automatically, provision their secrets, deploy/restart the API, or prove that any conversions exist. Each destination backend needs its own integration and privacy review before its events appear.

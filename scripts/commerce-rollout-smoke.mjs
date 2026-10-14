@@ -52,7 +52,7 @@ assert.ok(server.includes('app.post("/v1/admin/campaigns"') && server.includes('
 assert.ok(server.includes("CREATE TABLE IF NOT EXISTS commerce_campaigns") && server.includes("pg_advisory_xact_lock(20261014)"), "Campaign migration and serialized publish cap must exist.");
 assert.ok(campaigns.includes("CAMPAIGN_URL_MUST_BE_SAFE_HTTPS") && campaigns.includes("CAMPAIGN_DISCLOSURE_REQUIRED") && campaigns.includes("CAMPAIGN_PLACEMENT_NOT_INTEGRATED"), "Campaign input allow-lists and publishing guardrails missing.");
 
-const overviewStart = server.indexOf("const [orderStats, currencyStats, leadStats, leadAttributionStats, eventStats, topEvents, analyticsByGame, ownedPromoByService, ownedPromoVariantStats, productExperimentStats, analyticsFunnel, socialShareByNetwork, paidRevenueByAttribution, referralRewardStats]");
+const overviewStart = server.indexOf("const [orderStats, currencyStats, leadStats, leadAttributionStats, eventStats, topEvents, analyticsByGame, ownedPromoByService, ownedPromoVariantStats, productExperimentStats, analyticsFunnel, socialShareByNetwork, paidRevenueByAttribution, referralRewardStats, serviceConversionStats]");
 const overviewEnd = server.indexOf("\n    ]);", overviewStart);
 assert.ok(overviewStart >= 0 && overviewEnd > overviewStart, "Admin overview Promise.all query block missing.");
 const overviewQueries = server.slice(overviewStart, overviewEnd);
@@ -71,10 +71,19 @@ const overviewQueryOrder = [
   "SELECT\n          network,",
   "mode, currency, COUNT(*)::int AS orders",
   'SELECT COUNT(*)::int AS "qualifiedReferrals"',
+  'FROM commerce_attribution_conversions',
 ];
 const overviewPositions = overviewQueryOrder.map((needle) => overviewQueries.indexOf(needle));
 assert.ok(overviewPositions.every((position) => position >= 0), "Admin overview is missing one or more expected query slots.");
 assert.ok(overviewPositions.every((position, index) => index === 0 || overviewPositions[index - 1] < position), "Admin overview query order must match its destructured response fields.");
+
+
+assert.ok(server.includes('app.post("/v1/attribution/conversions"'), "Authenticated server-to-server conversion route must exist.");
+assert.ok(server.includes("OSGARD_ATTRIBUTION_TOKENS_JSON") && server.includes("ON CONFLICT (service_id,event_id) DO NOTHING"), "Service tokens and idempotent conversion storage must exist.");
+assert.ok(server.includes('serviceAttributionConversions: serviceConversionStats.rows'), "Admin overview must return cross-service conversion aggregates.");
+assert.ok(admin.includes('id="service-conversion-table"') && admin.includes('renderServiceConversions(overview.serviceAttributionConversions || [])'), "Admin UI must surface cross-service conversion aggregates.");
+assert.ok(core.includes("validateServiceAttributionConversion") && core.includes("parseServiceAttributionTokenMap") && core.includes("isServiceAttributionTokenValid"), "Conversion payload and per-service token validation helpers missing.");
+assert.ok(readiness.includes('id: "service-attribution"'), "Readiness must disclose whether service-attribution tokens are configured.");
 
 assert.ok(!server.includes("sk_live_abc123"), "No live secret may be committed.");
 assert.ok(!admin.includes("Bearer sk_"), "No payment secret may be embedded in admin HTML.");
