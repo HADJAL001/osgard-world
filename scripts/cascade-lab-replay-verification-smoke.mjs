@@ -6,7 +6,7 @@ const root = new URL('../public/games/cascade-lab/', import.meta.url);
 const html = readFileSync(new URL('index.html', root), 'utf8');
 const source = readFileSync(new URL('replay-verification.js', root), 'utf8');
 const worker = readFileSync(new URL('service-worker.js', root), 'utf8');
-const routeMatrix = readFileSync(new URL('../../scripts/production-route-matrix.mjs', import.meta.url), 'utf8');
+const routeMatrix = readFileSync(new URL('./production-route-matrix.mjs', import.meta.url), 'utf8');
 await import(new URL('replay-verification.js', root));
 const api = globalThis.__CASCADELAB026_TEST__;
 
