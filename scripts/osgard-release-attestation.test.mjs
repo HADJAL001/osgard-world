@@ -15,9 +15,10 @@ async function fixture() {
   await writeFile(join(root, 'assets', 'app.js'), 'console.log("ok");');
   return { base, root, report };
 }
-function run(command, root, report, contractReport = null) {
+function run(command, root, report, contractReport = null, performanceReport = null) {
   const args = [script, command, '--root', root, command === 'create' ? '--output' : '--input', report];
   if (contractReport) args.push('--contract-report', contractReport);
+  if (performanceReport) args.push('--performance-report', performanceReport);
   return spawnSync(process.execPath, args, { encoding: 'utf8' });
 }
 async function writePassingContractReport(path) {
@@ -70,6 +71,45 @@ test('release attestation binds the exact passing contract report', async () => 
     const mismatch = run('verify', f.root, f.report, contractReport);
     assert.notEqual(mismatch.status, 0);
     assert.match(mismatch.stderr, /quality-gate report mismatch/i);
+  } finally { await rm(f.base, { recursive: true, force: true }); }
+});
+async function writePassingPerformanceReport(path) {
+  await writeFile(path, JSON.stringify({
+    schema: 'osgard.performance-budget.v1',
+    generatedAt: '2026-10-15T00:00:00.000Z',
+    root: 'dist',
+    status: 'ready',
+    budgets: { maxJavaScriptFileBytes: 655360 },
+    summary: { files: 3, javascriptFiles: 1, cssFiles: 1, htmlFiles: 1, totalBytes: 1000, javascriptBytes: 100, cssBytes: 100, htmlBytes: 100, checks: 2, passed: 2, failed: 0 },
+    checks: [
+      { id: 'entrypoint:index-html', title: 'root entrypoint exists', status: 'passed', actual: 200, limit: '> 0' },
+      { id: 'aggregate:distribution', title: 'distribution remains within budget', status: 'passed', actual: 1000, limit: 47185920 },
+    ],
+    transferEstimate: { textAssets: 3, gzipBytes: 250 },
+    sha256: 'b'.repeat(64),
+  }, null, 2) + '\\n');
+}
+test('release attestation binds both product contract and performance budget reports', async () => {
+  const f = await fixture();
+  const contractReport = join(f.base, 'osgard-contract-audit.json');
+  const performanceReport = join(f.base, 'osgard-performance-budget.json');
+  try {
+    await writePassingContractReport(contractReport);
+    await writePassingPerformanceReport(performanceReport);
+    const created = run('create', f.root, f.report, contractReport, performanceReport);
+    assert.equal(created.status, 0, created.stderr);
+    const attestation = JSON.parse(await readFile(f.report, 'utf8'));
+    assert.equal(attestation.qualityGate.contractFingerprint, 'a'.repeat(64));
+    assert.equal(attestation.qualityGate.performance.budgetFingerprint, 'b'.repeat(64));
+    assert.match(attestation.qualityGate.performance.reportSha256, /^[a-f0-9]{64}$/);
+    const verified = run('verify', f.root, f.report, contractReport, performanceReport);
+    assert.equal(verified.status, 0, verified.stderr);
+    assert.equal(JSON.parse(verified.stdout).performanceBudgetVerified, true);
+    await writePassingPerformanceReport(performanceReport);
+    await writeFile(performanceReport, (await readFile(performanceReport, 'utf8')).replace('distribution remains within budget', 'budget proof was changed'));
+    const mismatch = run('verify', f.root, f.report, contractReport, performanceReport);
+    assert.notEqual(mismatch.status, 0);
+    assert.match(mismatch.stderr, /performance-budget report mismatch/i);
   } finally { await rm(f.base, { recursive: true, force: true }); }
 });
 test('release attestation refuses a blocked contract report', async () => {
