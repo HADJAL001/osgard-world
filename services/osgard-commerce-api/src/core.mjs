@@ -84,6 +84,7 @@ const OWNED_PROMO_SERVICE_ID_SET = new Set(OWNED_PROMO_SERVICE_IDS);
 const OWNED_PROMO_FREQUENCIES = new Set(["each", "every3", "off"]);
 
 export const DEFAULT_OWNED_PROMO_CONFIG = Object.freeze({
+  schemaVersion: 2,
   enabled: true,
   defaultFrequency: "each",
   enabledServices: OWNED_PROMO_SERVICE_IDS,
@@ -94,6 +95,8 @@ export const DEFAULT_OWNED_PROMO_CONFIG = Object.freeze({
 
 export function validateOwnedPromoConfig(body) {
   const input = body && typeof body === "object" && !Array.isArray(body) ? body : {};
+  const schemaVersion = input.schemaVersion === undefined ? 2 : input.schemaVersion;
+  if (schemaVersion !== 2) return { ok: false, status: 400, code: "OWNED_PROMO_SCHEMA_VERSION_INVALID" };
   const enabled = input.enabled === undefined ? DEFAULT_OWNED_PROMO_CONFIG.enabled : input.enabled;
   const showShareRewards = input.showShareRewards === undefined
     ? DEFAULT_OWNED_PROMO_CONFIG.showShareRewards : input.showShareRewards;
@@ -143,6 +146,7 @@ export function validateOwnedPromoConfig(body) {
   return {
     ok: true,
     config: {
+      schemaVersion: 2,
       enabled,
       defaultFrequency,
       enabledServices: enabledServices.ids,
@@ -151,6 +155,44 @@ export function validateOwnedPromoConfig(body) {
       showShareRewards,
     },
   };
+}
+
+/**
+ * Upgrade older persisted OSGARD SELECT settings to the current schema.
+ * Legacy values are filtered through the current server allow-list; inactive
+ * or unknown service IDs never become publicly eligible during migration.
+ * Existing owner choices (including disabled/off) are preserved when valid.
+ */
+export function migrateOwnedPromoConfig(body) {
+  const input = body && typeof body === "object" && !Array.isArray(body) ? body : {};
+  if (input.schemaVersion === 2) return validateOwnedPromoConfig(input);
+  if (input.schemaVersion !== undefined && input.schemaVersion !== 1) {
+    return { ok: false, status: 400, code: "OWNED_PROMO_SCHEMA_VERSION_INVALID" };
+  }
+
+  const normalizeLegacyIds = (value, fallback) => {
+    if (!Array.isArray(value)) return [...fallback];
+    return [...new Set(value.filter((id) => typeof id === "string" && OWNED_PROMO_SERVICE_ID_SET.has(id)))];
+  };
+  const enabledServices = normalizeLegacyIds(input.enabledServices, OWNED_PROMO_SERVICE_IDS);
+  const defaultSelectedServices = normalizeLegacyIds(input.defaultSelectedServices, enabledServices)
+    .filter((id) => enabledServices.includes(id));
+  const oldSpotlight = typeof input.spotlightService === "string" ? input.spotlightService : "auto";
+  const spotlightService = oldSpotlight === "auto" ||
+    (OWNED_PROMO_SERVICE_ID_SET.has(oldSpotlight) && enabledServices.includes(oldSpotlight))
+    ? oldSpotlight : "auto";
+
+  return validateOwnedPromoConfig({
+    schemaVersion: 2,
+    enabled: typeof input.enabled === "boolean" ? input.enabled : DEFAULT_OWNED_PROMO_CONFIG.enabled,
+    defaultFrequency: OWNED_PROMO_FREQUENCIES.has(input.defaultFrequency)
+      ? input.defaultFrequency : DEFAULT_OWNED_PROMO_CONFIG.defaultFrequency,
+    enabledServices,
+    defaultSelectedServices,
+    spotlightService,
+    showShareRewards: typeof input.showShareRewards === "boolean"
+      ? input.showShareRewards : DEFAULT_OWNED_PROMO_CONFIG.showShareRewards,
+  });
 }
 
 export function cleanText(value, max = 500) {
