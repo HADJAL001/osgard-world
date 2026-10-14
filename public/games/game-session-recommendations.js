@@ -310,13 +310,17 @@ function snoozeServicePromosForDay(now=Date.now()){
  try{localStorage.setItem(promoSnoozeKey,String(until));return{ok:true,persisted:true,until}}
  catch{return{ok:true,persisted:false,until}}
 }
+function clearServicePromoSnooze(){
+ memoryPromoSnoozeUntil=0;
+ try{localStorage.removeItem(promoSnoozeKey);return true}catch{return false}
+}
 const make=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n};
 function disposePostgameTree(node){if(!node)return;const dispose=node.__osgardDispose;if(typeof dispose==='function'){node.__osgardDispose=null;try{dispose()}catch{}}Array.from(node.children||[]).forEach(disposePostgameTree)}
 function disposeCurrentPostgame(){disposePostgameTree(root);disposePostgameTree(outsideRoot)}
 document.addEventListener('osgard:dispose-postgame',disposeCurrentPostgame);
 const selectConsentKey='osgard.games.analytics-consent.v1';
 const selectSessionKey='osgard.games.growth-session.v1';
-const selectAllowedEvents=new Set(['cross_promo_clicked','owned_promo_impression','owned_promo_intermission_skipped','owned_promo_preferences_saved','owned_promo_snoozed','social_share_intent','social_reward_claimed','referral_reward_claimed','share_created','invite_link_prepared']);
+const selectAllowedEvents=new Set(['cross_promo_clicked','owned_promo_impression','owned_promo_intermission_skipped','owned_promo_preferences_saved','owned_promo_snoozed','owned_promo_snooze_cleared','social_share_intent','social_reward_claimed','referral_reward_claimed','share_created','invite_link_prepared']);
 function hasConsent(){try{return localStorage.getItem(selectConsentKey)==='yes'}catch{return false}}
 const promoImpressionKeyPrefix='osgard.games.promo-impression.v1:';
 const fallbackPromoImpressions=new Set();
@@ -590,7 +594,8 @@ function servicesShelf(gameId,showPromos,completedCount){
  intro.append(make('p','og-postgame-eyebrow','OSGARD SELECT / BETWEEN WORLDS'),make('p','og-postgame-disclosure','РЕКЛАМА · СОБСТВЕННЫЕ ПРОЕКТЫ OSGARD'),make('h3','og-postgame-title','Мир не заканчивается после раунда.'),make('p','og-postgame-copy','Выбери категорию и сервис, который хочешь посмотреть. Автозапуска нет. Это самореклама экосистемы OSGARD; переход добровольный и откроется в новой вкладке.'));
  const settingsToggle=make('button','og-postgame-toggle og-postgame-settings-toggle','Настроить показ');settingsToggle.type='button';settingsToggle.setAttribute('aria-expanded','false');settingsToggle.setAttribute('aria-controls','og-postgame-preferences');
  const collapseToggle=make('button','og-postgame-toggle og-postgame-collapse-toggle',showPromos?'Свернуть подборку':'Подборка по расписанию');collapseToggle.type='button';collapseToggle.setAttribute('aria-expanded',String(Boolean(showPromos)));
- const snoozeButton=make('button','og-postgame-toggle og-postgame-snooze',readPromoSnoozeUntil()>Date.now()?'Пауза включена':'Пауза 24 часа');snoozeButton.type='button';snoozeButton.disabled=readPromoSnoozeUntil()>Date.now();snoozeButton.setAttribute('aria-label','Приостановить подборку собственных сервисов OSGARD на 24 часа');
+ const currentSnooze=readPromoSnoozeUntil(),snoozeActive=currentSnooze>Date.now();
+ const snoozeButton=make('button','og-postgame-toggle og-postgame-snooze',snoozeActive?'Возобновить показы':'Пауза 24 часа');snoozeButton.type='button';snoozeButton.disabled=preferences.frequency==='off';snoozeButton.setAttribute('aria-label',snoozeActive?'Возобновить межигровые предложения OSGARD раньше срока':'Приостановить подборку собственных сервисов OSGARD на 24 часа');
  const headActions=make('div','og-postgame-service-head-actions');headActions.append(settingsToggle,collapseToggle,snoozeButton);head.append(intro,headActions);
 
  const settings=make('div','og-postgame-preferences');settings.id='og-postgame-preferences';settings.hidden=true;
@@ -803,7 +808,16 @@ function servicesShelf(gameId,showPromos,completedCount){
   if(!collapsed){applyFilter(activeServiceCategory);serviceSearch.focus()}
  });
  snoozeButton.addEventListener('click',()=>{
-  if(readPromoSnoozeUntil()>Date.now())return;
+  const wasPaused=readPromoSnoozeUntil()>Date.now();
+  if(wasPaused){
+   clearServicePromoSnooze();
+   if(hasConsent())void sendSelectEvent('owned_promo_snooze_cleared',gameId,'osgard-select:snooze-resume:'+completedCount);
+   const replacement=servicesShelf(gameId,shouldShowServicePromos(readServicePreferences(),completedCount),completedCount);
+   disposePostgameTree(section);section.replaceWith(replacement);
+   const stateNode=replacement.querySelector('.og-postgame-service-empty');
+   if(stateNode)stateNode.textContent='Пауза отменена. Подборка снова следует выбранному расписанию; награды за приглашение остаются доступны.';
+   return;
+  }
   const result=snoozeServicePromosForDay();
   if(hasConsent())void sendSelectEvent('owned_promo_snoozed',gameId,'osgard-select:snooze-24h:'+completedCount);
   const replacement=servicesShelf(gameId,shouldShowServicePromos(readServicePreferences(),completedCount),completedCount);
