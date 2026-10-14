@@ -326,10 +326,6 @@ document.getElementById('import-model-file').addEventListener('change', async (e
       throw new Error('Файл не является поддерживаемым экспортом финансовой модели OSGARD.');
     }
     const normalizedInputs = normalizeInputs(payload.inputs);
-    for (const [key, value] of Object.entries(normalizedInputs)) {
-      const field = form.elements.namedItem(key);
-      if (field) field.value = String(value);
-    }
     if (Array.isArray(payload.savedScenarios) && payload.savedScenarios.length > 0 &&
         window.confirm('В JSON есть сохранённые сценарии. Импортировать до 8 версий и заменить текущий локальный список?')) {
       const imported = payload.savedScenarios.slice(0, 50)
@@ -345,6 +341,10 @@ document.getElementById('import-model-file').addEventListener('change', async (e
         }));
       if (!writeSnapshots(imported)) throw new Error('Браузер не разрешил сохранить импортированные сценарии.');
       renderSavedSnapshots();
+    }
+    for (const [key, value] of Object.entries(normalizedInputs)) {
+      const field = form.elements.namedItem(key);
+      if (field) field.value = String(value);
     }
     render();
     setSnapshotStatus('Допущения импортированы локально и нормализованы. Сетевых запросов не выполнялось.');
