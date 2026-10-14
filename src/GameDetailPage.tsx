@@ -310,6 +310,21 @@ function gameTitle(game: GameDefinition, locale: Locale) {
   return locale === 'ru' ? game.titleRu : game.titleEn
 }
 
+function formatSessionDuration(totalSeconds: number) {
+  const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0')
+  const seconds = (totalSeconds % 60).toString().padStart(2, '0')
+  return minutes + ':' + seconds
+}
+
+function gameFrameErrorLabel(kind: 'timeout' | 'invalid-content' | 'load-event' | 'game-error' | null, locale: Locale) {
+  const labels = {
+    ru: { timeout: 'Игра не подтвердила готовность за 18 секунд.', 'invalid-content': 'Страница открылась, но интерфейс игры не подтвердил готовность.', 'load-event': 'Браузер не смог загрузить игровой клиент.', 'game-error': 'Игра сообщила об ошибке.', fallback: 'Не удалось запустить встроенную игру.' },
+    en: { timeout: 'The game did not confirm readiness within 18 seconds.', 'invalid-content': 'The page opened, but the game interface did not confirm readiness.', 'load-event': 'The browser could not load the game client.', 'game-error': 'The game reported an error.', fallback: 'The embedded game could not be launched.' },
+  }
+  const language = labels[locale]
+  return kind ? language[kind] : language.fallback
+}
+
 function gameDescription(game: GameDefinition, locale: Locale) {
   return locale === 'ru' ? game.descriptionRu : game.descriptionEn
 }
@@ -379,6 +394,10 @@ export function GameDetailPage({ slug }: { slug: string }) {
   const [playing, setPlaying] = useState(() => new URLSearchParams(window.location.search).get('launch') === '1')
   const [loadingGame, setLoadingGame] = useState(true)
   const [frameError, setFrameError] = useState(false)
+  const [frameErrorKind, setFrameErrorKind] = useState<'timeout' | 'invalid-content' | 'load-event' | 'game-error' | null>(null)
+  const [slowLoad, setSlowLoad] = useState(false)
+  const [sessionStatus, setSessionStatus] = useState<'ready' | 'active' | 'paused' | 'completed' | 'error'>('ready')
+  const [sessionElapsedSeconds, setSessionElapsedSeconds] = useState(0)
   const [notice, setNotice] = useState('')
   const [consentPanelOpen, setConsentPanelOpen] = useState(() => readConsent() === null)
   const stageRef = useRef<HTMLDivElement>(null)
@@ -390,6 +409,13 @@ export function GameDetailPage({ slug }: { slug: string }) {
   const launchButtonRef = useRef<HTMLButtonElement | null>(null)
   const wasPlayingRef = useRef(playing)
   const [frameAttempt, setFrameAttempt] = useState(0)
+  const frameAttemptRef = useRef(frameAttempt)
+  frameAttemptRef.current = frameAttempt
+  const frameErrorRef = useRef(frameError)
+  frameErrorRef.current = frameError
+  const playingRef = useRef(playing)
+  playingRef.current = playing
+  const frameValidationTimerRef = useRef<number | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const chooseLocale = (value: Locale) => {
     setLocale(value)
