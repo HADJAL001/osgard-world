@@ -2505,7 +2505,7 @@ try{Object.defineProperty(window,'CASCADELAB014',{value:Object.freeze({version:V
 .cl-ledger-head h2 em{color:#ffc66a;font-weight:400}.cl-ledger-intro{max-width:660px;margin:10px 0 0;color:#92abb9;font-size:11px;line-height:1.65}
 .cl-ledger-close{flex:none;display:grid;place-items:center;width:40px;height:40px;border:1px solid #9bc7d226;border-radius:12px;background:#0b1a27;color:#d9eef8;font-size:22px;cursor:pointer}
 .cl-ledger-body{padding:18px 24px 24px}.cl-ledger-local-note{display:flex;gap:9px;align-items:start;margin-bottom:15px;padding:11px 13px;border:1px solid #ffc66a25;border-radius:11px;background:#ffc66a08;color:#a9bfca;font-size:10px;line-height:1.55}
-.cl-ledger-local-note b{color:#ffc66a;font-weight:700}.cl-ledger-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:15px}
+.cl-ledger-local-note b{color:#ffc66a;font-weight:700}.cl-ledger-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-bottom:15px}
 .cl-ledger-kpi{min-width:0;padding:12px;border:1px solid #8bb7cb21;border-radius:12px;background:linear-gradient(150deg,#ffffff08,transparent 70%),#091722}
 .cl-ledger-kpi span{display:block;color:#84a4b5;font:9px/1.45 ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase}
 .cl-ledger-kpi strong{display:block;margin-top:7px;color:#f0f7fb;font:400 clamp(20px,3vw,28px)/1 Georgia,serif;overflow-wrap:anywhere}
@@ -2682,15 +2682,15 @@ try{Object.defineProperty(window,'CASCADELAB014',{value:Object.freeze({version:V
   const footer = make('footer', 'cl-ledger-foot');
   const footNote = make('span', 'cl-ledger-subtle', 'Формат архива v1 · максимум 200 записей · до 200 KiB на импорт.');
   const actions = make('div', 'cl-ledger-foot-actions');
-  const exportJson = make('button', 'cl-ledger-action', 'Экспорт JSON ↓');
-  const exportCsv = make('button', 'cl-ledger-action', 'Экспорт CSV ↓');
+  const exportJsonButton = make('button', 'cl-ledger-action', 'Экспорт JSON ↓');
+  const exportCsvButton = make('button', 'cl-ledger-action', 'Экспорт CSV ↓');
   const importButton = make('button', 'cl-ledger-action', 'Импорт архива ↑');
   const printButton = make('button', 'cl-ledger-action', 'Печать отчёта');
   const clearButton = make('button', 'cl-ledger-action is-danger', 'Очистить журнал');
   const fileInput = make('input');
   fileInput.type = 'file'; fileInput.accept = 'application/json,.json'; fileInput.hidden = true;
   fileInput.setAttribute('aria-label', 'Выбрать JSON-архив экспериментов');
-  actions.append(exportJson, exportCsv, importButton, printButton, clearButton, fileInput);
+  actions.append(exportJsonButton, exportCsvButton, importButton, printButton, clearButton, fileInput);
   footer.append(footNote, actions);
   const status = make('p', 'cl-ledger-foot-status');
   status.setAttribute('role', 'status'); status.setAttribute('aria-live', 'polite'); status.setAttribute('aria-atomic', 'true');
@@ -2701,7 +2701,8 @@ try{Object.defineProperty(window,'CASCADELAB014',{value:Object.freeze({version:V
   const headerActions = $('.topbar-right');
   const trigger = make('button', 'cl-ledger-trigger');
   trigger.type = 'button';
-  trigger.innerHTML = '<b aria-hidden="true">↗</b><span>ЖУРНАЛ</span>';
+  const triggerMark = make('b', '', '↗'); triggerMark.setAttribute('aria-hidden', 'true');
+  trigger.append(triggerMark, make('span', '', 'ЖУРНАЛ'));
   trigger.setAttribute('aria-haspopup', 'dialog');
   trigger.setAttribute('aria-controls', 'cl-ledger-dialog');
   trigger.id = 'cl-ledger-open';
@@ -2912,12 +2913,12 @@ try{Object.defineProperty(window,'CASCADELAB014',{value:Object.freeze({version:V
     renderRecords();
     renderAchievements();
   }
-  function exportJson() {
+  function downloadJsonArchive() {
     const payload = { schema: SCHEMA, schemaVersion: 1, exportedAt: new Date().toISOString(), records: records.slice(0, MAX_RECORDS) };
     const ok = safeDownload('cascade-lab-experiments.json', 'application/json;charset=utf-8', JSON.stringify(payload, null, 2));
     if (ok) setStatus('JSON-архив подготовлен. В него входят только локальные игровые результаты.', 'success');
   }
-  function exportCsv() {
+  function downloadCsvArchive() {
     const lines = [
       ['date_utc', 'level', 'outcome', 'grade', 'seconds', 'devices', 'mode', 'note'].map(escapeCSV).join(','),
       ...records.map(record => [
@@ -2998,8 +2999,8 @@ try{Object.defineProperty(window,'CASCADELAB014',{value:Object.freeze({version:V
   search.addEventListener('input', () => { query = text(search.value, 100).toLowerCase(); renderRecords(); });
   outcomeFilter.addEventListener('change', () => { filter = outcomeFilter.value; renderRecords(); });
   sortFilter.addEventListener('change', () => { sort = sortFilter.value; renderRecords(); });
-  exportJson.addEventListener('click', exportJson);
-  exportCsv.addEventListener('click', exportCsv);
+  exportJsonButton.addEventListener('click', downloadJsonArchive);
+  exportCsvButton.addEventListener('click', downloadCsvArchive);
   importButton.addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', () => void importJson(fileInput.files && fileInput.files[0]));
   clearButton.addEventListener('click', () => {
@@ -3036,8 +3037,8 @@ try{Object.defineProperty(window,'CASCADELAB014',{value:Object.freeze({version:V
         version: '0.15.0',
         getSnapshot: () => records.map(record => ({ ...record })),
         getStats: stats,
-        exportJson,
-        exportCsv
+        exportJson: downloadJsonArchive,
+        exportCsv: downloadCsvArchive
       }),
       configurable: false,
       enumerable: false,
