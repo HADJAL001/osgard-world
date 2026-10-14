@@ -569,7 +569,8 @@ const mockHead=mockNode()
 const mockDocument={head:mockHead,querySelector(selector){return selector==='#post-run-recommendations'?mockHost:selector==='#osgard-aftergame-intermission'?mockOutside:selector==='#player-dialog'?mockDialog:null},createElement(){return mockNode()},addEventListener(name,handler){(mockHandlers[name]??=[]).push(handler)},dispatch(name,event={}){const handlers=mockHandlers[name]||[];assert.ok(handlers.length,'Missing recommendation/growth lifecycle listener: '+name);handlers.forEach(handler=>handler(event))}}
 const mockStorage=()=>{const values=new Map();return{getItem(key){return values.has(key)?values.get(key):null},setItem(key,value){values.set(key,String(value))},removeItem(key){values.delete(key)}}}
 const mockLocalStorage=mockStorage(),mockSessionStorage=mockStorage()
-const serviceIdsForCadence=['marcosa','projects','o2-system','senjorio','superday','myosa','gold-glamour','osgard-business','vanguard']
+const serviceIdsForCadence=['marcosa','projects','o2-system','senjorio','superday','myosa','gold-glamour','osgard-business','vanguard','partner-studio']
+const legacyServicePreferenceIds=serviceIdsForCadence.filter(id=>id!=='partner-studio')
 const preferenceStart=recommendationScript.indexOf('function readServicePreferences(){')
 const preferenceEnd=recommendationScript.indexOf('\nfunction writeServicePreferences(',preferenceStart)
 assert.ok(preferenceStart>=0&&preferenceEnd>preferenceStart,'Service preference reader must be independently testable')
@@ -577,6 +578,7 @@ const preferenceReaderSource=recommendationScript.slice(preferenceStart,preferen
 const emptyPreferenceStorage={getItem(){return null}}
 const defaultPreferences=new Function('localStorage','memoryServicePreferences','servicePreferencesKey','availableServiceIds','frequencyValues',preferenceReaderSource+';return readServicePreferences()')(emptyPreferenceStorage,null,'osgard.games.postgame-service-preferences.v1',serviceIdsForCadence,['each','every3','off'])
 assert.equal(defaultPreferences.frequency,'each','A new player should see the owned-service chooser after every completed round')
+assert.ok(!new Function('localStorage','memoryServicePreferences','servicePreferencesKey','availableServiceIds','frequencyValues',preferenceReaderSource+';return readServicePreferences()')(emptyPreferenceStorage,null,'osgard.games.postgame-service-preferences.v1',legacyServicePreferenceIds,['each','every3','off']).selected.includes('partner-studio'),'An existing explicit preference list must not silently opt the user into a new promotional service')
 const cadenceStart=recommendationScript.indexOf('function shouldShowServicePromos(')
 const cadenceEnd=recommendationScript.indexOf('\nfunction chooseSpotlightService(',cadenceStart)
 assert.ok(cadenceStart>=0&&cadenceEnd>cadenceStart,'Service promotion cadence gate must be independently testable')
@@ -604,14 +606,14 @@ mockDocument.dispatch('osgard:game-session-ended',{detail:{game:'swarm',sessionI
 const afterSameSessionReturn=JSON.parse(mockLocalStorage.getItem('osgard.games.postgame-service-progress.v1'))
 assert.equal(afterSameSessionReturn.count,1,'Completion and closing the same game session must not increment cadence twice')
 assert.deepEqual(afterSameSessionReturn.sessions,[firstSessionId],'Intermission cadence should persist its idempotency key')
-assert.equal(mockHandlers['osgard:game-completed'].length,3,'Recommendation, invite and OSGARD SELECT modules must subscribe to completed sessions')
-assert.equal(mockHandlers['osgard:game-session-ended'].length,4,'Recommendations, invites, OSGARD SELECT and fallback intermission must subscribe to session returns')
+assert.equal(mockHandlers['osgard:game-completed'].length,2,'Recommendations and unified OSGARD SELECT must subscribe to completed sessions')
+assert.equal(mockHandlers['osgard:game-session-ended'].length,3,'Recommendations and the unified inline/outside OSGARD SELECT intermission must subscribe to session returns')
 assert.equal(mockHost.hidden,false,'Completed SWARM session should show recommendations')
 assert.equal(mockClasses.has('has-recommendations'),true,'The player layout should adapt after completion')
 const mockGrid=mockHost.children.find(node=>node.className==='post-run-grid');
 const mockSuite=mockHost.children.find(node=>node.className==='og-postgame-suite');
 assert.ok(mockSuite,'Post-run service/reward suite should appear after each valid completion');
-assert.equal(mockSuite.children[0].children.find(node=>node.className==='og-postgame-service-grid').children.length,9,'Post-run intermission should promote only nine eligible services until GARD VPN connectivity is verified');
+assert.equal(mockSuite.children[0].children.find(node=>node.className==='og-postgame-service-grid').children.length,10,'Post-run intermission should promote ten eligible services, including the opt-in Partner Studio offer, while GARD VPN remains excluded');
 const initialSpotlight=mockSuite.children[0].children.find(node=>node.className==='og-postgame-service-grid').children.find(node=>node.className.includes('is-featured'));
 assert.equal(initialSpotlight?.dataset.service,'marcosa','The first available service should lead the first post-game spotlight');
 assert.ok(!mockSuite.children[0].children.find(node=>node.className==='og-postgame-service-grid').children.some(node=>node.dataset.service==='gardvpn'),'GARD VPN must not appear in active promotional cards until its connection is verified');
@@ -619,9 +621,9 @@ const postGameServiceShelf=mockSuite.children[0];
 const postGamePreferences=postGameServiceShelf.children.find(node=>node.className==='og-postgame-preferences');
 const postGameServiceOptions=postGamePreferences?.children.find(node=>node.className==='og-postgame-service-options');
 assert.ok(postGamePreferences&&postGamePreferences.hidden,'Service preferences must be available but collapsed by default')
-assert.equal(postGameServiceOptions?.children.length,10,'Service preferences must offer all ten owned projects')
+assert.equal(postGameServiceOptions?.children.length,11,'Service preferences must show all eleven owned services, including the disabled VPN choice')
 const servicePreferenceInputs=(postGameServiceOptions?.children||[]).map(option=>option.children[0]);
-assert.equal(servicePreferenceInputs.filter(input=>input.checked&&!input.disabled).length,9,'Default preferences select only the nine eligible promotional services')
+assert.equal(servicePreferenceInputs.filter(input=>input.checked&&!input.disabled).length,10,'The saved preference list selects ten eligible services, including Partner Studio, but excludes the disabled VPN')
 const unavailableServiceChoice=servicePreferenceInputs.find(input=>input.dataset.servicePreference==='gardvpn');
 assert.ok(unavailableServiceChoice&&unavailableServiceChoice.disabled,'GARD VPN remains visible in preferences but disabled until functional VPN connectivity is verified')
 const frequencyField=postGamePreferences.children.find(node=>node.className==='og-postgame-frequency-label');
@@ -633,11 +635,11 @@ const servicesSection=mockSuite.children.find(node=>node.className==='og-postgam
 const spotlight=servicesSection.children.find(node=>node.className==='og-postgame-spotlight')
 assert.ok(spotlight&&!spotlight.hidden,'A premium OSGARD SELECT spotlight should appear between game rounds')
 assert.equal(spotlight.dataset.service,'marcosa','SWARM should highlight contextually relevant MARCOSA by default')
-assert.ok(recommendationScript.includes("'signal-run':['myosa','projects','superday']")&&recommendationScript.includes("'afterimage-run':['superday','projects','vanguard']")&&recommendationScript.includes("'aether-grid':['projects','myosa','vanguard']"),'The spotlight map must include the daily puzzle and relevant owned services')
+assert.ok(recommendationScript.includes("'signal-run':['myosa','projects','superday']")&&recommendationScript.includes("'afterimage-run':['superday','projects','vanguard','partner-studio']")&&recommendationScript.includes("'aether-grid':['projects','myosa','vanguard','partner-studio']"),'The spotlight map must include the daily puzzle and relevant owned services, including the opt-in Partner Studio offer')
 assert.ok(recommendationScript.includes("const spotlightOptions=[...relevantOrder,...selectedIds.filter(id=>!relevantOrder.includes(id))]"),'The alternate-project control must cycle relevant suggestions first, then all other services selected by the player')
 assert.ok(spotlight.children.some(node=>node.className==='og-postgame-spotlight-copy'),'Spotlight needs an editorial service description and action controls')
 const serviceFilters=servicesSection.children.find(node=>node.className==='og-postgame-service-filters')
-assert.equal(serviceFilters.children[0].textContent,'Все доступные · 9','The all-services filter must count only the nine currently eligible promotional projects')
+assert.equal(serviceFilters.children[0].textContent,'Все доступные · 10','The all-services filter must count only the ten eligible promotional services and exclude the disabled VPN')
 const serviceGrid=servicesSection.children.find(node=>node.className==='og-postgame-service-grid')
 const serviceCards=serviceGrid.children
 assert.equal(serviceGrid.hidden,true,'The full service directory should be collapsed under the spotlight by default')
@@ -689,7 +691,7 @@ mockDocument.dispatch('osgard:game-session-ended',{detail:{game:'patina',reason:
 assert.equal(mockOutside.hidden,false,'Closing a live PATINA session should show the owned-service intermission outside the player dialog')
 const outsideSuite=mockOutside.children.find(node=>node.className==='og-postgame-suite og-postgame-outside-suite')
 assert.ok(outsideSuite,'Closed-session intermission should contain a standalone service/reward suite')
-assert.equal(outsideSuite.children.find(node=>node.className==='og-postgame-services').children.find(node=>node.className==='og-postgame-service-grid').children.length,9,'Closed-session intermission should show only the nine currently eligible projects')
+assert.equal(outsideSuite.children.find(node=>node.className==='og-postgame-services').children.find(node=>node.className==='og-postgame-service-grid').children.length,10,'Closed-session intermission should show all ten eligible services, including Partner Studio, while excluding the unverified VPN')
 assert.equal(outsideSuite.children.find(node=>node.className==='og-postgame-back').href,'#catalog','Players must have a clear path back to the next game');
 const outsideCards=outsideSuite.children.find(node=>node.className==='og-postgame-services').children.find(node=>node.className==='og-postgame-service-grid').children;
 assert.equal(outsideCards.find(node=>node.className.includes('is-featured'))?.dataset.service,'gold-glamour','PATINA should highlight its contextual GOLD GLAMOUR service');
@@ -848,10 +850,10 @@ assert.ok(cascadeGame.includes("const PREFERRED_SERVICE_KEY = 'osgard.games.pref
 assert.ok(cascadeGame.includes('function getPreferredServiceCampaign(campaigns)') && cascadeGame.includes('const preferredCampaign = getPreferredServiceCampaign(visibleServiceCampaigns)') && cascadeGame.includes('const initialCampaign = preferredCampaign || visibleServiceCampaigns[nextIndex]'), 'CASCADE LAB must spotlight the preferred service when it remains eligible and otherwise fall back to rotation')
 assert.ok(cascadeGame.includes('const selectedPosition = visibleServiceCampaigns.findIndex(item => item.id === campaign.id)') && cascadeGame.includes('String(displayPosition).padStart(2, \'0\')') && cascadeGame.includes('String(visibleServiceCampaigns.length).padStart(2, \'0\')'), 'CASCADE LAB campaign counter must show the selected position within the user-filtered service collection')
 assert.ok(cascadeGame.includes("if (campaign.id !== selectedServiceCampaignId && serviceSharePending)"), 'Changing the selected service must clear an outstanding share-reward confirmation');
-assert.ok(["id: 'myosa', number: '09', brand: 'MYOSA'","id: 'o2-system', number: '10', brand: 'O2 SYSTEM'","id: 'gold-glamour', number: '11', brand: 'GOLD GLAMOUR'"].every(marker=>cascadeGame.includes(marker)), 'CASCADE LAB must include every active OSGARD SELECT service that can be selected in shared preferences')
-assert.ok(["'myosa': 'https://myosa.world/'","'o2-system': 'https://o2system.art/'","'gold-glamour': 'https://gold-glamour.online/'"].every(url=>cascadeGame.includes(url)), 'Every additional OSGARD service campaign must use its configured HTTPS destination')
-assert.ok(["myosa: 'myosa'","'o2-system': 'o2-system'","'gold-glamour': 'gold-glamour'"].every(mapping=>cascadeGame.includes(mapping)), 'MYOSA, O2 SYSTEM and GOLD GLAMOUR preference selections must map to their own campaigns');
-assert.ok(cascadeGame.includes("const SERVICE_CAMPAIGN_IDS = new Set(['marcosa', 'taxi', 'smart-map', 'business', 'creator-studio', 'project-builder', 'worlds', 'osgard-os', 'myosa', 'o2-system', 'gold-glamour'])"), 'The local campaign analytics report must accept every selectable service campaign ID');
+assert.ok(["id: 'myosa', number: '09', brand: 'MYOSA'","id: 'o2-system', number: '10', brand: 'O2 SYSTEM'","id: 'gold-glamour', number: '11', brand: 'GOLD GLAMOUR'","id: 'partner-studio', number: '12', brand: 'OSGARD PARTNER STUDIO'"].every(marker=>cascadeGame.includes(marker)), 'CASCADE LAB must include every active OSGARD SELECT service that can be selected in shared preferences')
+assert.ok(["'myosa': 'https://myosa.world/'","'o2-system': 'https://o2system.art/'","'gold-glamour': 'https://gold-glamour.online/'","'partner-studio': 'https://osgard.world/games/partners/'"].every(url=>cascadeGame.includes(url)), 'Every additional OSGARD service campaign must use its configured HTTPS destination')
+assert.ok(["myosa: 'myosa'","'o2-system': 'o2-system'","'gold-glamour': 'gold-glamour'","'partner-studio': 'partner-studio'"].every(mapping=>cascadeGame.includes(mapping)), 'MYOSA, O2 SYSTEM, GOLD GLAMOUR and Partner Studio preferences must map to their own campaigns');
+assert.ok(cascadeGame.includes("const SERVICE_CAMPAIGN_IDS = new Set(['marcosa', 'taxi', 'smart-map', 'business', 'creator-studio', 'project-builder', 'worlds', 'osgard-os', 'myosa', 'o2-system', 'gold-glamour', 'partner-studio'])"), 'The local campaign analytics report must accept every selectable service campaign ID');
 
 
 assert.ok(cascadeGame.includes("notifyCompletedShare('daily-challenge'") && cascadeGame.includes("notifyCompletedShare('score-duel'") && cascadeGame.includes("notifyCompletedShare('solution-link'") && cascadeGame.includes("notifyCompletedShare('result-card'"), 'CASCADE LAB must bridge completed share actions from public challenges, duels, solution links and result cards to the parent portal')
@@ -969,38 +971,32 @@ const referralCoreSource=readFileSync(resolve('services/osgard-commerce-api/src/
 const referralApiSource=readFileSync(resolve('services/osgard-commerce-api/src/server.mjs'),'utf8')
 const referralAdminSource=readFileSync(resolve('public/games/commerce-admin/index.html'),'utf8')
 assert.ok(recommendationScript.includes('osgard.games.referral-attribution.v1') && recommendationScript.includes('game-invite:') && recommendationScript.includes('play_with_friends'), 'Post-session invite link and referral attribution missing')
-assert.ok(recommendationScript.includes("shared.pathname==='/games/invite/'+gameId+'/" ) && recommendationScript.includes("new URL('/games/invite/'+encodeURIComponent(gameId)+'/'"),'Post-session sharing must validate and fallback to the game-specific preview route')
-assert.ok(recommendationScript.includes("params.get('og_game')") && recommendationScript.includes("params.get('og_ref')") && recommendationScript.includes("shared.searchParams.get('og_game')===gameId"), 'Post-session invites must use the canonical og_game/og_ref URL contract')
+assert.ok(recommendationScript.includes("u.pathname==='/games/invite/'+id+'/") && recommendationScript.includes("new URL('/games/invite/'+encodeURIComponent(id)+'/',location.origin)"),'Unified OSGARD SELECT must validate and fallback to the game-specific preview route')
+assert.ok(recommendationScript.includes("u.searchParams.get('og_game')===id") && recommendationScript.includes("u.searchParams.get('og_ref')||''") && recommendationScript.includes("u.searchParams.set('og_game',id)") && recommendationScript.includes("u.searchParams.set('og_ref','og_'"), 'Unified invite links must validate and emit canonical og_game/og_ref parameters')
 assert.ok(recommendationScript.includes('!invite.legacy') && recommendationScript.includes("params.get('challenge')"), 'Canonical links must use one ribbon while legacy invite links remain supported')
-assert.ok(recommendationScript.includes("sendEvent('referral_link_opened'") && recommendationScript.includes("sendEvent('share_created'"), 'Invite opens and generated links must use the consented event API')
+assert.ok(recommendationScript.includes("sendEvent('referral_link_opened'") && recommendationScript.includes("sendSelectEvent('invite_link_prepared'"), 'Invite opens and canonical share flows must use the consented event API')
 assert.ok(recommendationScript.includes("source==='osgard_play'") && recommendationScript.includes("campaign==='play_with_friends'") && recommendationScript.includes("campaign==='play_with_a_friend'"), 'Referral links must validate known UTM contracts')
 assert.ok(recommendationScript.includes("sessionStorage.setItem(marker,'pending')") && recommendationScript.includes("state==='pending'"), 'Referral-open callbacks must be deduplicated before waiting on the network')
 assert.ok(recommendationScript.includes('const pendingTelemetry=new Set()') && recommendationScript.includes('cancelPendingTelemetry()'), 'In-flight consented analytics must support cancellation on opt-out')
 assert.ok(catalogRuntime.includes("campaign==='play_with_friends'") && catalogRuntime.includes("medium==='referral'"), 'The main catalogue must validate canonical invitation labels before attributing player events')
 assert.ok(html.includes("params.get('utm_campaign')==='play_with_friends'") && html.includes("params.get('challenge')") && html.includes("params.get('utm_campaign')==='play_with_a_friend'"), 'Both canonical and legacy referral landings must load the invitation handler')
-const postSessionShareStart=recommendationScript.indexOf("inviteButton.addEventListener('click',async()=>{");
-assert.ok(postSessionShareStart>=0,'Post-session invite handler missing')
-const postSessionShareEnd=recommendationScript.indexOf('\n });',postSessionShareStart)
-assert.ok(postSessionShareEnd>postSessionShareStart,'Post-session invite handler boundary missing')
-const postSessionShareHandler=recommendationScript.slice(postSessionShareStart,postSessionShareEnd)
-const nativeShareAt=postSessionShareHandler.indexOf('await navigator.share(')
-const clipboardCopyAt=postSessionShareHandler.indexOf('await navigator.clipboard.writeText(message)')
-const countedShareAt=postSessionShareHandler.indexOf("if(shareCompleted)void sendEvent('share_created'")
-assert.ok(nativeShareAt>=0&&clipboardCopyAt>=0,'Invite must support both native share and clipboard fallback')
-assert.ok(postSessionShareHandler.indexOf('shareCompleted=true')>nativeShareAt&&postSessionShareHandler.lastIndexOf('shareCompleted=true')>clipboardCopyAt,'A share action is only successful after the share promise or clipboard copy resolves')
-assert.ok(countedShareAt>postSessionShareHandler.indexOf('finally {')&&postSessionShareHandler.includes("if(error instanceof Error&&error.name==='AbortError')"),'share_created must be emitted only after successful completion; cancelling the native share sheet must return before the event')
-assert.equal(postSessionShareHandler.split("sendEvent('share_created'").length-1,1,'A completed share action should generate at most one share event')
-assert.ok(recommendationScript.includes('osgardbewworld.com/?utm_source=osgard_games&utm_medium=cross_promo&utm_campaign=after_game'), 'Post-session game-creation lead CTA and attribution missing')
-assert.ok(recommendationScript.includes("partnerCta.href='/games/partners/?utm_source=osgard_play&utm_medium=post_game&utm_campaign=partner_studio&utm_content='+encodeURIComponent(gameId)"), 'Post-session Partner Studio CTA must carry game-level campaign attribution')
-assert.ok(recommendationScript.includes("sendEvent('cross_promo_clicked',gameId,'post-game-partner-studio')"), 'Partner Studio clicks must use the existing cross-promo analytics event')
-assert.ok(recommendationScript.includes("partnerCta.setAttribute('aria-label'"), 'Partner Studio CTA needs a descriptive accessible name')
-assert.ok(recommendationStyles.includes('.og-partner-cta') && recommendationStyles.includes('@media(max-width:760px)') && recommendationStyles.includes('prefers-reduced-motion:reduce'), 'Partner Studio CTA must be responsive and respect reduced motion')
-assert.ok(recommendationScript.includes("async function sendEvent(name,gameId,source)") && recommendationScript.includes("if(!consented())return false"), 'Partner CTA tracking must reuse the analytics-consent gate')
-assert.ok(recommendationScript.includes("sendEvent('cross_promo_clicked',gameId,'post-game-partner-studio')") && !recommendationScript.includes("sendEvent('partner_impression'"), 'Only actual CTA clicks are recorded; no synthetic sponsor impressions')
-const postGameIds=['marcosa','projects','o2-system','senjorio','superday','myosa','gold-glamour','gardvpn','osgard-business','vanguard'];
+assert.ok(!recommendationScript.includes('function addPostSessionActions(gameId){') && !recommendationScript.includes('post-game-partner-studio'), 'The legacy second post-session panel must be absent; unified OSGARD SELECT owns sharing and offers')
+const unifiedShareStart=recommendationScript.indexOf("primary.addEventListener('click',async()=>{",recommendationScript.indexOf('function rewardShelf(gameId){'))
+const unifiedShareEnd=recommendationScript.indexOf(" const note=make('p','og-postgame-reward-note'",unifiedShareStart)
+assert.ok(unifiedShareStart>=0&&unifiedShareEnd>unifiedShareStart,'Unified OSGARD SELECT share flow boundaries are required')
+const unifiedShareHandler=recommendationScript.slice(unifiedShareStart,unifiedShareEnd)
+assert.ok(unifiedShareHandler.includes('await navigator.share(')&&unifiedShareHandler.includes("pending='native-share'"),'The single intermission share flow must support native sharing')
+assert.ok(unifiedShareHandler.includes("sendSelectEvent('invite_link_prepared'")&&unifiedShareHandler.includes("sendSelectEvent('social_share_intent'"),'Canonical invites and social-share intent must go through consent-gated first-party analytics')
+assert.ok(!unifiedShareHandler.includes('award(')&&!unifiedShareHandler.includes('grantReward('),'The share sheet itself must not automatically grant SHARDS')
+assert.ok(recommendationScript.includes("['partner-studio','11','OSGARD PARTNER STUDIO','BRANDED GAMES / B2B'")&&recommendationScript.includes("'/games/partners/'"),'Partner Studio must be a selectable owned-service campaign in the unified intermission')
+assert.ok(recommendationScript.includes("const url=new URL(item[5],location.origin)")&&recommendationScript.includes("const u=new URL(href,location.origin)"),'The same campaign renderer must safely support external URLs and first-party Partner Studio route')
+assert.ok(recommendationScript.includes("sendSelectEvent('cross_promo_clicked',gameId,'osgard-select:click:'+id)")&&recommendationScript.includes("claimPromoImpression('card:'+gameId+':'+serviceId)"),'Partner Studio must use the same consent-gated click and genuinely-visible impression rules as other services')
+assert.ok(recommendationStyles.includes('.og-postgame-service-card')&&recommendationStyles.includes('@media(max-width:760px)')&&recommendationStyles.includes('prefers-reduced-motion:reduce'),'The unified service card system must remain responsive and respect reduced-motion settings')
+assert.ok(recommendationScript.includes("async function sendSelectEvent(name,gameId,source)")&&recommendationScript.includes('if(!hasConsent())return false'),'Owned-service exposure must remain behind explicit analytics consent')
+const postGameIds=['marcosa','projects','o2-system','senjorio','superday','myosa','gold-glamour','gardvpn','osgard-business','vanguard','partner-studio'];
 for(const id of postGameIds)assert.ok(recommendationScript.includes("['"+id+"'"),'Post-game service missing: '+id);
 for(const domain of ['marcosa.club','osgardbewworld.com','o2system.art','senjorio.com','superday.run','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio'])assert.ok(recommendationScript.includes(domain),'Service URL missing: '+domain);
-assert.ok(recommendationScript.includes("['projects','01','OSGARD BEW WORLD'") && recommendationScript.includes("['osgard-business','09','OSGARD OS'") && recommendationScript.includes("['vanguard','10','OSGARD VANGUARD STUDIO'"),'Post-session cards must use the official OSGARD product names');
+assert.ok(recommendationScript.includes("['projects','01','OSGARD BEW WORLD'") && recommendationScript.includes("['osgard-business','09','OSGARD OS'") && recommendationScript.includes("['vanguard','10','OSGARD VANGUARD STUDIO'") && recommendationScript.includes("['partner-studio','11','OSGARD PARTNER STUDIO'"),'Post-session cards must use the official OSGARD product names');
 assert.ok(html.includes('<b>OSGARD BEW WORLD</b>') && html.includes('<b>OSGARD OS</b>') && html.includes('<b>OSGARD VANGUARD STUDIO</b>'),'Games hub ecosystem cards must use the same official product names');
 assert.ok(!html.includes('<b>OSGARD PROJECTS</b>') && !html.includes('<b>OSGARD BUSINESS</b>') && !html.includes('<b>OSGARD VANGUARD</b>'),'Retired shorthand names must not drift back into the visible Games hub');
 assert.ok(recommendationScript.includes("['o2-system','02','O2 SYSTEM','BUSINESS OPERATIONS','Система учёта кассы обменников'") && recommendationScript.includes("['myosa','06','MYOSA','AI PLATFORM','Платформа искусственного интеллекта нового поколения'"),'Post-session cards must retain the intended product descriptions');
@@ -1011,7 +1007,7 @@ assert.ok(recommendationScript.includes("const walletKey='osgard.games.shards-wa
 assert.ok(recommendationScript.includes('Я опубликовал — получить +50 SHARDS')&&recommendationScript.includes('Соцсеть не сообщает сайту подтверждение публикации')&&recommendationScript.includes('не являются платёжным средством'),'Social reward must disclose self-confirmation and non-monetary points');
 assert.ok(recommendationStyles.includes('.og-postgame-services')&&recommendationStyles.includes('.og-postgame-service-grid')&&recommendationStyles.includes('.og-postgame-reward')&&recommendationStyles.includes('@media(max-width:760px)')&&recommendationStyles.includes('prefers-reduced-motion:reduce'),'Postgame UI must be premium, responsive and accessible');
 assert.ok(recommendationScript.includes('РЕКЛАМА · СОБСТВЕННЫЕ ПРОЕКТЫ OSGARD')&&recommendationScript.includes('osgardServiceFilter')&&recommendationScript.includes('categoryByService'),'OSGARD SELECT must disclose self-promotion and let players filter service offers by category');
-assert.ok(recommendationScript.includes("['all','Все доступные · '+availableServiceIds.length]")&&recommendationScript.includes("['studio','Разработка · 2']")&&recommendationScript.includes("['luxury','Luxury · 1']"),'OSGARD SELECT filters must expose all configured service categories');
+assert.ok(recommendationScript.includes("['all','Все доступные · '+availableServiceIds.length]")&&recommendationScript.includes("['studio','Разработка · 3']")&&recommendationScript.includes("['luxury','Luxury · 1']"),'OSGARD SELECT filters must expose all configured service categories');
 assert.ok(recommendationScript.includes("sendSelectEvent('cross_promo_clicked',gameId,'osgard-select:click:'+id)")&&recommendationScript.includes("'owned_promo_impression'"),'Every active OSGARD SELECT service card must emit service-attributed click and exposure events');
 assert.ok(recommendationScript.includes('function hasConsent()')&&recommendationScript.includes('function sendSelectEvent(name,gameId,source)'), 'OSGARD SELECT must define its own consent-gated analytics functions')
 assert.ok(recommendationScript.includes("fetch('/games/commerce-config.json'")&&recommendationScript.includes("base+'/v1/events'")&&recommendationScript.includes("localStorage.getItem(selectConsentKey)==='yes'")&&recommendationScript.includes('if(!rawBase)return false'), 'OSGARD SELECT must post only to a configured API after consent')
@@ -1081,6 +1077,7 @@ assert.ok(appSource.includes('OSGARD SELECT / BETWEEN WORLDS') && appSource.incl
 assert.ok(appSource.includes("PlaySelectLoop locale={locale}"), 'Main Entertainment gateway must mount OSGARD SELECT')
 assert.ok(playSelectSource.includes('OSGARD SELECT / OWNED PROJECTS') && playSelectSource.includes('РЕКЛАМА · СОБСТВЕННЫЕ ПРОЕКТЫ'), 'First-party services must be explicitly disclosed')
 assert.ok(['marcosa.club','osgardbewworld.com','o2system.art','senjorio.com','superday.run','myosa.world','gold-glamour.online','gardvpn.is','osgardos.com','osgardvanguard.studio'].every(domain=>playSelectSource.includes(domain)), 'Entertainment gateway must include all ten owner-provided services')
+assert.ok(playSelectSource.includes("id: 'partner-studio'")&&playSelectSource.includes("url: '/games/partners/'")&&playSelectSource.includes('new URL(service.url, window.location.origin)'), 'Entertainment gateway must include a measurable first-party Partner Studio campaign without breaking relative URL handling')
 assert.ok(['OSGARD BEW WORLD','O2 SYSTEM','SENJORIO','SUPERDAY','MARCOSA','MYOSA','GOLD GLAMOUR','GARD VPN','OSGARD OS','OSGARD VANGUARD STUDIO'].every(name=>playSelectSource.includes(name)), 'The Entertainment gateway must use the official product names')
 assert.ok(playSelectSource.includes("utm_source', 'osgard_world'")&&playSelectSource.includes("utm_medium', 'entertainment_select'")&&playSelectSource.includes("utm_campaign', 'between_worlds'")&&playSelectSource.includes("utm_content', service.id"), 'Every Entertainment project card must carry distinct campaign attribution')
 assert.ok(playSelectSource.includes("const PROMOTABLE_SERVICE_IDS = services.filter(service => service.id !== 'gardvpn').map(service => service.id)") &&

@@ -161,85 +161,7 @@ function installInviteBanner(){
   document.querySelector('#games-grid .card[data-game="'+invite.game+'"]')?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'center'});
  });
 }
-function buildShareUrl(gameId){
- try{
-  if(typeof window.OSGARDInvite?.createLink==='function'){
-   const shared=new URL(window.OSGARDInvite.createLink(gameId),location.origin);
-   if(shared.origin===location.origin&&shared.pathname==='/games/invite/'+gameId+'/'&&shared.searchParams.get('og_game')===gameId&&/^og_[a-f0-9]{8}$/.test(shared.searchParams.get('og_ref')||''))return shared.href;
-  }
- }catch{}
- // Fail-soft fallback follows the same public URL contract as the catalogue toolbar.
- const url=new URL('/games/invite/'+encodeURIComponent(gameId)+'/',location.origin);
- url.searchParams.set('og_ref','og_'+token().slice(0,8));
- url.searchParams.set('og_game',gameId);
- url.searchParams.set('utm_source','osgard_play');
- url.searchParams.set('utm_medium','referral');
- url.searchParams.set('utm_campaign','play_with_friends');
- url.searchParams.set('utm_content',gameId);
- return url.href;
-}
-function addPostSessionActions(gameId){
- const game=games[gameId];if(!game)return;
- root.querySelector('.og-growth')?.remove();ensureStyles();
- const section=make('section','og-growth');section.setAttribute('aria-label','Приглашение друга и создание собственной игры');
- const top=make('div','og-growth-top');top.append(make('span','og-growth-label','PLAY TOGETHER / PASS IT ON'));
- top.append(make('p','og-growth-copy','Понравилась игра? Передай другу ссылку на тот же игровой мир.'));
- const actions=make('div','og-growth-actions');
- const inviteButton=make('button','og-share-friend','Пригласить друга ↗');inviteButton.type='button';
- const createLink=make('a','og-create-game','Создать свою игру с OSGARD ↗');
- createLink.href='https://osgardbewworld.com/?utm_source=osgard_games&utm_medium=cross_promo&utm_campaign=after_game&utm_content='+encodeURIComponent(gameId);
- createLink.target='_blank';createLink.rel='noopener noreferrer';
- const status=make('p','og-growth-status');status.setAttribute('role','status');status.setAttribute('aria-live','polite');
- const fallback=make('a','og-create-game','Отправить в WhatsApp ↗');fallback.hidden=true;fallback.target='_blank';fallback.rel='noopener noreferrer';
- const partnerCta=make('a','og-partner-cta');
- partnerCta.href='/games/partners/?utm_source=osgard_play&utm_medium=post_game&utm_campaign=partner_studio&utm_content='+encodeURIComponent(gameId);
- partnerCta.target='_blank';partnerCta.rel='noopener noreferrer';
- partnerCta.setAttribute('aria-label','OSGARD Partner Studio: обсудить брендированный игровой челлендж после игры '+game.title);
- const partnerCopy=make('span','og-partner-copy');
- partnerCopy.append(make('span','og-partner-eyebrow','PARTNER STUDIO / ДЛЯ БРЕНДОВ'));
- partnerCopy.append(make('strong','og-partner-title','Преврати идею бренда в игру'));
- partnerCopy.append(make('span','og-partner-description','Спонсорское событие или заказная мини-игра. Только по согласованию — без рекламы поверх активного раунда.'));
- partnerCta.append(partnerCopy,make('span','og-partner-action','Обсудить проект ↗'));
- partnerCta.addEventListener('click',()=>{void sendEvent('cross_promo_clicked',gameId,'post-game-partner-studio')});
- actions.append(inviteButton,createLink,fallback);section.append(top,actions,status,partnerCta);root.append(section);
- inviteButton.addEventListener('click',async()=>{
-  inviteButton.disabled=true;status.textContent='Готовим персональную ссылку…';
-  const url=buildShareUrl(gameId),inviteCode=new URL(url,location.origin).searchParams.get('og_ref')||'',message='Пойдём сыграем в '+game.title+' в OSGARD PLAY: '+url;
-  let shareCompleted=false;
-  try{
-   if(typeof navigator.share==='function'){
-    await navigator.share({title:'OSGARD PLAY · '+game.title,text:'Пойдём сыграем вместе.',url});
-    shareCompleted=true;
-    status.textContent='Ссылка передана в системное меню отправки.';
-   } else if(navigator.clipboard?.writeText){
-    await navigator.clipboard.writeText(message);
-    shareCompleted=true;
-    status.textContent='Текст приглашения скопирован.';
-   } else {
-    fallback.href='https://wa.me/?text='+encodeURIComponent(message);
-    fallback.hidden=false;
-    status.textContent='Открой WhatsApp, проверь приглашение и отправь его другу.';
-   }
-  } catch(error){
-   if(error instanceof Error&&error.name==='AbortError'){
-    status.textContent='Отправка отменена. Действие не засчитано как успешное приглашение.';
-    return;
-   }
-   status.textContent='Не удалось открыть отправку. Можно попробовать WhatsApp или скопировать ссылку из адресной строки: '+url;
-   fallback.href='https://wa.me/?text='+encodeURIComponent(message);
-   fallback.hidden=false;
-   return;
-  } finally {
-   inviteButton.disabled=false;
-  }
-  // Count only an action the browser confirmed: the native share promise resolved
-  // or the invite text was successfully copied. A visible fallback link or a
-  // dismissed share sheet is not counted as a successful share.
-  if(shareCompleted)void sendEvent('share_created',gameId,'game-invite:'+gameId+':'+inviteCode);
- });
-}
-document.addEventListener('osgard:game-completed',event=>{const id=event.detail&&event.detail.game;addPostSessionActions(id)});
-document.addEventListener('osgard:game-session-ended',event=>{if(event.detail&&event.detail.sessionStarted===true)addPostSessionActions(event.detail.game)});
+/* Post-session share, rewards and partner offers are owned by the unified OSGARD SELECT suite below. */
 document.addEventListener('change',event=>{
  const target=event.target;
  if(target&&target.id==='analytics-toggle')handleConsentToggle();
@@ -270,7 +192,8 @@ const services=[
  ['gold-glamour','07','GOLD GLAMOUR','LUXURY SERVICES','Премиальные услуги с золотом и выездным обслуживанием','https://gold-glamour.online/'],
  ['gardvpn','08','GARD VPN','PRIVACY / VPN','Временно не продвигается: главная страница не подтверждает, что VPN-соединение действительно устанавливается.','https://gardvpn.is/',false,false],
  ['osgard-business','09','OSGARD OS','BUSINESS INTELLIGENCE','Диагностика бизнеса, развитие и рекомендации по росту','https://osgardos.com/'],
- ['vanguard','10','OSGARD VANGUARD STUDIO','VIDEO STUDIO','Создание видео и визуальных проектов','https://osgardvanguard.studio/']
+ ['vanguard','10','OSGARD VANGUARD STUDIO','VIDEO STUDIO','Создание видео и визуальных проектов','https://osgardvanguard.studio/'],
+ ['partner-studio','11','OSGARD PARTNER STUDIO','BRANDED GAMES / B2B','Заказные мини-игры и брендированные игровые события для компаний','/games/partners/']
 ];
 const walletKey='osgard.games.shards-wallet.v1',dailyReward=50;
 const servicePreferencesKey='osgard.games.postgame-service-preferences.v1';
@@ -290,7 +213,10 @@ const recommendationByGame={
  patina:['gold-glamour','vanguard','projects'],
  'signal-run':['myosa','projects','superday'],
  'cascade-lab':['projects','myosa','vanguard'],
- 'afterimage-run':['superday','projects','vanguard'],'aether-grid':['projects','myosa','vanguard']
+ 'remix':['marcosa','vanguard','projects','partner-studio'],
+ 'patina':['gold-glamour','vanguard','projects','partner-studio'],
+ 'afterimage-run':['superday','projects','vanguard','partner-studio'],
+ 'aether-grid':['projects','myosa','vanguard','partner-studio']
 };
 function readPreferredService(){try{const id=localStorage.getItem(preferredServiceKey)||'';return availableServiceIds.includes(id)?id:''}catch{return''}}
 function savePreferredService(id){if(!availableServiceIds.includes(id))return false;try{localStorage.setItem(preferredServiceKey,id);return true}catch{return false}}
@@ -623,8 +549,8 @@ function servicesShelf(gameId,showPromos,completedCount){
  const preferencesStatus=make('p','og-postgame-settings-status');preferencesStatus.setAttribute('role','status');preferencesStatus.setAttribute('aria-live','polite');
  settings.append(settingsHeading,settingsDescription,frequencyLabel,choicesHeading,choices,presetActions,saveButton,preferencesStatus);
 
- const categoryByService={projects:'studio',vanguard:'studio','o2-system':'business','osgard-business':'business',senjorio:'life',superday:'life',myosa:'tech',gardvpn:'tech',marcosa:'social','gold-glamour':'luxury'};
- const filterDefs=[['all','Все доступные · '+availableServiceIds.length],['studio','Разработка · 2'],['business','Бизнес · 2'],['life','Город и жизнь · 2'],['tech','Технологии · 2'],['social','Социальные · 1'],['luxury','Luxury · 1']];
+ const categoryByService={projects:'studio',vanguard:'studio','partner-studio':'studio','o2-system':'business','osgard-business':'business',senjorio:'life',superday:'life',myosa:'tech',gardvpn:'tech',marcosa:'social','gold-glamour':'luxury'};
+ const filterDefs=[['all','Все доступные · '+availableServiceIds.length],['studio','Разработка · 3'],['business','Бизнес · 2'],['life','Город и жизнь · 2'],['tech','Технологии · 2'],['social','Социальные · 1'],['luxury','Luxury · 1']];
  const filters=make('div','og-postgame-service-filters');filters.setAttribute('role','group');filters.setAttribute('aria-label','Выбрать категорию сервиса OSGARD');
  const filterButtons=[];
  filterDefs.forEach(([id,labelText])=>{const button=make('button','og-postgame-service-filter',labelText);button.type='button';button.dataset.osgardServiceFilter=id;button.setAttribute('aria-pressed',String(id==='all'));filters.append(button);filterButtons.push(button)});
@@ -693,7 +619,7 @@ function servicesShelf(gameId,showPromos,completedCount){
   copy.append(make('p','og-postgame-spotlight-description',item[4]));
   const actions=make('div','og-postgame-spotlight-actions');
   const open=make('a','og-postgame-spotlight-open',variant==='a'?'Открыть официальный сайт ↗':'Изучить сервис ↗');
-  const url=new URL(item[5]);url.searchParams.set('utm_source','osgard_games');url.searchParams.set('utm_medium','post_game');url.searchParams.set('utm_campaign','after_game');url.searchParams.set('utm_content',item[0]+'_'+gameId);
+  const url=new URL(item[5],location.origin);url.searchParams.set('utm_source','osgard_games');url.searchParams.set('utm_medium','post_game');url.searchParams.set('utm_campaign','after_game');url.searchParams.set('utm_content',item[0]+'_'+gameId);
   open.href=url.href;open.target='_blank';open.rel='noopener noreferrer';open.dataset.service=item[0];open.dataset.game=gameId;
   open.dataset.promoVariant=variant;
   open.addEventListener('click',()=>void sendSelectEvent('cross_promo_clicked',gameId,'osgard-select:click:'+item[0]+':'+variant));
@@ -733,7 +659,7 @@ function servicesShelf(gameId,showPromos,completedCount){
    const isSpotlight=id===spotlightServiceId;
    const card=make('a','og-postgame-service-card'+(isSpotlight?' is-featured':''));
    card.dataset.service=id;card.dataset.game=gameId;card.dataset.category=categoryByService[id]||'other';cards.push(card);
-   const u=new URL(href);u.searchParams.set('utm_source','osgard_games');u.searchParams.set('utm_medium','post_game');u.searchParams.set('utm_campaign','after_game');u.searchParams.set('utm_content',id+'_'+gameId);card.href=u.href;card.target='_blank';card.rel='noopener noreferrer';card.setAttribute('aria-label','Открыть '+title+' в новой вкладке');
+   const u=new URL(href,location.origin);u.searchParams.set('utm_source','osgard_games');u.searchParams.set('utm_medium','post_game');u.searchParams.set('utm_campaign','after_game');u.searchParams.set('utm_content',id+'_'+gameId);card.href=u.href;card.target='_blank';card.rel='noopener noreferrer';card.setAttribute('aria-label','Открыть '+title+' в новой вкладке');
    card.addEventListener('click',()=>sendSelectEvent('cross_promo_clicked',gameId,'osgard-select:click:'+id));
    if(isSpotlight)card.append(make('span','og-postgame-service-spotlight','В ФОКУСЕ ЭТОГО РАУНДА'));
    card.append(make('span','og-postgame-service-code','OSG / '+num+' · '+category),make('strong','og-postgame-service-name',title),make('span','og-postgame-service-description',description),make('span','og-postgame-service-action','Открыть проект ↗'));grid.append(card);
