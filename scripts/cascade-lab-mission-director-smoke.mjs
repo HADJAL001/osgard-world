@@ -13,7 +13,7 @@ assert.ok(source.includes("function notifyPortalShare") && source.includes("stat
 assert.ok(source.includes("navigator.clipboard.writeText(result.url).then(()=>{notifyPortalShare(result.url,'clipboard')"), 'Share telemetry must be sent after clipboard copy succeeds, not when a social link is merely opened')
 
 new Function(source);
-const context={};runInNewContext(source,context);const api=context.__CASCADELAB024_TEST__;
+const context={URL};runInNewContext(source,context);const api=context.__CASCADELAB024_TEST__;
 assert.ok(api&&api.version==='0.24.0');
 assert.equal(api.buildRecommendations([],3).length,3);
 assert.ok(api.buildRecommendations([],3).every(x=>x.kind==='first-clear'));
