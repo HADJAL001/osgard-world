@@ -204,7 +204,7 @@ const historicalValidation=validateDoctrineDossierStructure(historicalDossier,'3
 assert.equal(historicalValidation.valid,true,'historically valid dossiers remain readable: '+historicalValidation.errors.join('; '))
 assert.equal(historicalValidation.modelCompatible,false,'historical model versions must be flagged read-only')
 check(historicalValidation.warnings.length>0,'historical import must disclose model/hash compatibility warnings')
-const futureValidation=validateDoctrineDossierStructure(verifierDossier,'3.4.0')
+const futureValidation=validateDoctrineDossierStructure(verifierDossier,'3.5.0')
 assert.equal(futureValidation.valid,true,'other model versions remain readable in audit mode')
 assert.equal(futureValidation.modelCompatible,false)
 const badDepth=JSON.parse(JSON.stringify(verifierDossier));let deep=badDepth;for(let i=0;i<35;i++){deep.child={};deep=deep.child}
