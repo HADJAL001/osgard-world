@@ -30,7 +30,7 @@
     "qa:cascade-lab-hypothesis": "node scripts/cascade-lab-hypothesis-smoke.mjs",
     "qa:game-detail-runtime": "node scripts/game-detail-runtime-smoke.mjs",
     "qa:civic-cascade-forecast": "node scripts/civic-cascade-forecast-smoke.mjs",
-    "qa:games-operations": "node scripts/games-operations-smoke.mjs",
+    "qa:games-operations": "node scripts/games-operations-smoke.mjs && npm run qa:player-tools",
     "qa:campaign-manager": "node scripts/campaign-manager-smoke.mjs",
     "qa:intermission-sponsor": "node scripts/game-intermission-sponsor-smoke.mjs",
     "qa:game-recommendations": "node scripts/game-recommendations-smoke.mjs",
@@ -75,7 +75,8 @@
     "qa:civic-release-contract": "node scripts/civic-cascade-release-contract-smoke.mjs",
     "qa:ecosystem-release": "node scripts/osgard-ecosystem-release-preflight.mjs && node scripts/osgard-ecosystem-release-preflight-smoke.mjs",
     "qa:one-pass": "node --test scripts/osgard-one-pass-release.test.mjs && node scripts/osgard-one-pass-release-smoke.mjs",
-    "qa:civic-cascade-advisor": "node --test services/osgard-commerce-api/test/civic-cascade-advisor.test.mjs && node --check services/osgard-commerce-api/src/civic-cascade-advisor.mjs && node scripts/civic-cascade-advisor-smoke.mjs && node scripts/civic-cascade-release-contract-smoke.mjs && node scripts/civic-cascade-forecast-smoke.mjs && node scripts/civic-cascade-crisis-smoke.mjs"
+    "qa:civic-cascade-advisor": "node --test services/osgard-commerce-api/test/civic-cascade-advisor.test.mjs && node --check services/osgard-commerce-api/src/civic-cascade-advisor.mjs && node scripts/civic-cascade-advisor-smoke.mjs && node scripts/civic-cascade-release-contract-smoke.mjs && node scripts/civic-cascade-forecast-smoke.mjs && node scripts/civic-cascade-crisis-smoke.mjs",
+    "qa:player-tools": "node scripts/player-reliability-smoke.mjs && node scripts/player-preferences-backup-smoke.mjs"
   },
   "dependencies": {
     "@types/three": "^0.186.0",
