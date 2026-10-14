@@ -78,7 +78,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
       : route === '/games/admin/partners/'
           ? text.includes('<meta name="robots" content="noindex,nofollow,noarchive">') && text.includes('id="editor-list"') && text.includes('id="download"') && text.includes('inventory.json')
       : route === '/games/invite/invite-landing.js'
-           ? text.includes("osgard.games.referral-attribution.v1") && text.includes("name: 'referral_link_opened'")
+           ? text.includes("osgard.games.referral-attribution.v1") && text.includes("name: 'referral_link_opened'") && text.includes('rawAdaptiveContract') && text.includes("target.searchParams.set('clmd', adaptiveContract)")
                  : route === '/games/invite/afterimage-run/'
            ? text.includes('property="og:title" content="AFTERIMAGE//RUN — OSGARD PLAY"') && text.includes('property="og:image" content="https://osgard.world/games/share-cards/afterimage-run.png"') && text.includes('id="play-link"') && text.includes('noindex,follow')
          : route.startsWith('/games/invite/')
@@ -166,8 +166,8 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
             text.includes('function proposalForPair(pair)') && text.includes('function reconcilePlan(') &&
             !text.includes('fetch(') && !text.includes('XMLHttpRequest') && !text.includes('sendBeacon')
         : route === '/games/cascade-lab/'
-          ? text.includes('<title>CASCADE LAB — Premium Physics Lab 0.24.0</title>') &&
-            text.includes('name="osgard-game-version" content="0.24.0-shareable-contracts"') &&
+          ? text.includes('<title>CASCADE LAB — Premium Physics Lab 0.25.0</title>') &&
+            text.includes('name="osgard-game-version" content="0.25.0-evidence-integrity"') &&
             text.includes('data-cascade-lab-upgrades="0.14.0"') && text.includes('CASCADELAB014') &&
             text.includes('data-cascade-lab-ledger="0.15.0"') && text.includes('CASCADELAB015') && text.includes('id="CASCADELAB017"') && text.includes('data-cascade-lab-delta="0.17.0"') &&
             text.includes('id="CASCADELAB018"') && text.includes('data-cascade-lab-experiment="0.18.0"') && text.includes('hypothesis-lab.js?v=0.18.0') &&
@@ -176,14 +176,14 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
             text.includes('id="runButton"') && text.includes('id="exportTelemetryButton"') &&
             text.includes('id="exportGrowthButton"') && text.includes('id="serviceAdDialog"') &&
             text.includes('id="serviceAdChoices"') && text.includes('Я поделился — получить +10 LC') &&
-            text.includes("notifyOsgardLifecycle('ready', { version: '0.24.0' })") && text.includes("notifyOsgardLifecycle('ready'") && text.includes("notifyOsgardLifecycle('started'") &&
+            text.includes("notifyOsgardLifecycle('ready', { version: '0.25.0' })") && text.includes("notifyOsgardLifecycle('ready'") && text.includes("notifyOsgardLifecycle('started'") &&
             text.includes("notifyOsgardLifecycle('paused'") && text.includes("notifyOsgardLifecycle('resumed'") &&
             text.includes("notifyOsgardLifecycle('level_completed'") && !text.includes("notifyOsgardLifecycle('completed'") &&
             text.includes('id="CASCADELAB019"') && text.includes('data-cascade-lab-engineering="0.19.0"') &&
             text.includes('id="CASCADELAB020"') && text.includes('data-cascade-lab-studio="0.20.0"') && text.includes('experiment-studio.js?v=0.20.0') && text.includes('id="CASCADELAB021"') && text.includes('data-cascade-lab-passport="0.21.0"') && text.includes('case-passport.js?v=0.21.0') && text.includes('restoreProject,undo') &&
             text.includes("new CustomEvent('cascade-lab:run-finished'") &&
             text.includes('id="CASCADELAB022"') && text.includes('data-cascade-lab-xray="0.22.0"') &&
-            text.includes('trajectory-xray.js?v=0.22.0') && text.includes('id="CASCADELAB024"') && text.includes('data-cascade-lab-director="0.24.0"') && text.includes('mission-director.js?v=0.24.0') && text.includes('trajectory: Array.from({ length: Math.min(420, lastReplay.length) }')
+            text.includes('trajectory-xray.js?v=0.22.0') && text.includes('id="CASCADELAB024"') && text.includes('data-cascade-lab-director="0.24.0"') && text.includes('data-cascade-lab-share-preview="0.25.0"') && text.includes('mission-director.js?v=0.25.0') && text.includes('trajectory: Array.from({ length: Math.min(420, lastReplay.length) }')
         : route.startsWith('/games/null-shift-godot')
           ? isGodotDirectory
             ? (response.headers.get('content-type') || '').toLowerCase().includes('text/html') &&
@@ -300,7 +300,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
             : path === '/games/cascade-lab/trajectory-xray.js'
               ? content.includes("const VERSION = '0.22.0'") && content.includes("const SCHEMA = 'osgard.cascade-lab.trajectory-xray.v1'") && content.includes('function trajectoryDeviation(') && !content.includes('fetch(') && !content.includes('sendBeacon(')
             : path === '/games/cascade-lab/mission-director.js'
-              ? content.includes("const VERSION='0.24.0'") && content.includes("const SCHEMA='osgard.cascade-lab.mission-director.v1'") && content.includes('function buildRecommendations') && content.includes('function observeContract') && !content.includes('fetch(') && !content.includes('sendBeacon(') && !content.includes('.innerHTML')
+              ? content.includes("const VERSION='0.24.0'") && content.includes("const SCHEMA='osgard.cascade-lab.mission-director.v1'") && content.includes("new URL('https://osgard.world/games/invite/cascade-lab/')") && content.includes("previewUrl.searchParams.set('clmd',JSON.stringify(checked.invitation))") && content.includes('function buildRecommendations') && content.includes('function observeContract') && !content.includes('fetch(') && !content.includes('sendBeacon(') && !content.includes('.innerHTML')
             : content.includes('demo/issue') && content.includes('data-clock-step')
       }
       return { path, status: asset.status, contentType, ok: asset.status === 200 && typeOk && nonEmpty }
