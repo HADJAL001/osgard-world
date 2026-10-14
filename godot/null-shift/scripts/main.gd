@@ -3886,7 +3886,7 @@ func _create_ui() -> void:
 	diagnostics_label.offset_left = 18.0
 	diagnostics_label.offset_top = 218.0
 	diagnostics_label.offset_right = 335.0
-	diagnostics_label.offset_bottom = 410.0
+	diagnostics_label.offset_bottom = 510.0
 	diagnostics_label.visible = false
 	diagnostics_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
