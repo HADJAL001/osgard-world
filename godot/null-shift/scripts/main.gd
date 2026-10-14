@@ -4891,7 +4891,8 @@ func _create_mobile_controls(parent: Control) -> void:
 		var action_button := _add_button(action_grid, item["label"], func(): pass, Vector2(84.0, 38.0))
 		action_button.button_down.connect(_set_mobile_action.bind(item["key"], true))
 		action_button.button_up.connect(_set_mobile_action.bind(item["key"], false))
-		mobile_action_buttons.append(action_button)
+		if str(item["key"]) != "scan" and str(item["key"]) != "vent":
+			mobile_action_buttons.append(action_button)
 		if str(item["key"]) == "dash":
 			mobile_dash_button = action_button
 			mobile_dash_button.add_theme_font_size_override("font_size", 8)
@@ -5063,6 +5064,10 @@ func _update_mobile_layout() -> void:
 			spacer.custom_minimum_size = Vector2(52.0, 38.0)
 		for button in mobile_action_buttons:
 			button.custom_minimum_size = Vector2(84.0, 38.0)
+		if is_instance_valid(mobile_scan_button):
+			mobile_scan_button.custom_minimum_size = Vector2(84.0, 38.0)
+		if is_instance_valid(mobile_vent_button):
+			mobile_vent_button.custom_minimum_size = Vector2(84.0, 38.0)
 		mobile_modules_button.custom_minimum_size = Vector2(176.0, 31.0)
 		sound_button.custom_minimum_size = Vector2(176.0, 29.0)
 	mobile_move_panel.visible = compact
@@ -5090,6 +5095,10 @@ func _layout_compact_controls(viewport_size: Vector2) -> void:
 	var action_button_height: float = 29.0 if width < 400.0 else 31.0
 	for button in mobile_action_buttons:
 		button.custom_minimum_size = Vector2(action_button_width, action_button_height)
+	if is_instance_valid(mobile_scan_button):
+		mobile_scan_button.custom_minimum_size = Vector2(action_button_width, action_button_height)
+	if is_instance_valid(mobile_vent_button):
+		mobile_vent_button.custom_minimum_size = Vector2(action_button_width, action_button_height)
 	var utility_button_width: float = floor((action_width - 32.0) / 3.0)
 	mobile_quality_button.custom_minimum_size = Vector2(utility_button_width, 27.0)
 	mobile_diagnostics_button.custom_minimum_size = Vector2(utility_button_width, 27.0)
