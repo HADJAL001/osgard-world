@@ -923,12 +923,13 @@ function gameCoachShelf(detail,gameId){
  section.setAttribute('aria-labelledby','og-game-coach-title');
  const header=make('div','og-game-coach-header');
  const intro=make('div','og-game-coach-intro');
+ const title=make('h3','og-game-coach-title','Один полезный совет к следующему раунду.');
+ title.id='og-game-coach-title';
  intro.append(
   make('p','og-postgame-eyebrow','OSGARD AI / GAME COACH'),
-  make('h3','og-game-coach-title','Один полезный совет к следующему раунду.'),
+  title,
   make('p','og-game-coach-copy','Необязательный совет от ИИ на основе этой игровой сессии. Без имени, email, ID аккаунта, кода приглашения или свободного текста.')
  );
- intro.querySelector('h3').id='og-game-coach-title';
  const badge=make('span','og-game-coach-badge','OPENAI · ПО ЗАПРОСУ');
  header.append(intro,badge);
  const consentLabel=make('label','og-game-coach-consent');
