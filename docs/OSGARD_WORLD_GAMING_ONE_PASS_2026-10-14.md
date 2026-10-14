@@ -50,6 +50,7 @@ Three directions considered:
 
 ### Implemented in source
 - First-party cross-promotion with source/game/campaign tags, contextual placement and user preferences.
+- OSGARD SELECT intermissions are configured to appear after each completed game for fresh users; players can select services, change the frequency or pause promotion. Legacy configuration migrates to the current enabled/every-session/share-reward defaults, while explicit schema-v2 operator choices and individual player preferences are preserved.
 - Partner inquiry and sponsor-campaign management source paths, with sponsorship disclosure requirements.
 - A browser-local three-scenario financial model and export, plus regression tests.
 - Commerce API source contracts for server-defined products, payment-provider state, webhook signatures/idempotency and consented events.
@@ -61,6 +62,7 @@ Three directions considered:
 - public/games/commerce-config.json contains no secret and currently leaves apiBaseUrl blank for same-origin discovery/safe fallback.
 - Sponsor inventory is explicitly inactive and requires a sponsor label.
 - No third-party ad network has been approved or connected by this source audit. Do not count impressions, clicks or revenue before real provider-confirmed events exist.
+- Social-network posts cannot be independently verified by the standard share links. SHARDS are cosmetic/local points and rely on an explicit player confirmation; a click, copied link or share-sheet opening is not presented as proof of a public post. The separate referral reward requires the server's qualified invite/session checks.
 - An HTTP 200 response from an owned domain is not approval for paid promotion. The external audit is only a homepage reachability/metadata check; manual checks of product purpose, privacy, terms, primary actions, business identity and destination behavior remain mandatory. New/low-traffic domains should be reviewed cautiously, without treating automated reputation scores as proof of fraud.
 
 ### Required operator input before commercial activation
