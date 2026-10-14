@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#080d10">
-<meta name="description" content="CIVIC CASCADE 2.5 — кризисная стратегия OSGARD с целостностью инфраструктуры, цепочками отказов и прогнозом последствий.">
+<meta name="description" content="CIVIC CASCADE 2.6 — адаптивная кризисная стратегия OSGARD: инфраструктура деградирует, события рождаются из повреждений, решения меняют развитие аварии.">
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://osgard.world/games/civic-cascade/">
 <title>CIVIC CASCADE — кризисная стратегия | OSGARD PLAY</title>
-<meta name="osgard-game-version" content="2.5.0-infrastructure-network">
+<meta name="osgard-game-version" content="2.6.0-adaptive-crisis-director">
 <style>
 :root{color-scheme:dark;--bg:#080d10;--panel:#10191d;--panel2:#142126;--line:#ffffff1c;--ink:#edf3ee;--muted:#91a29e;--mint:#b8f4cf;--cyan:#68d8d2;--gold:#e1c58a;--warn:#f2b27c;--bad:#ff827b;--mono:ui-monospace,Consolas,monospace;--serif:Georgia,serif}
 *{box-sizing:border-box}html{background:var(--bg);scroll-behavior:smooth}body{margin:0;color:var(--ink);background:radial-gradient(ellipse at 76% -18%,#234d453d,transparent 48%),var(--bg);font:14px/1.55 Inter,Geist,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}button,select{font:inherit}button,a,select{touch-action:manipulation}a{color:inherit;text-decoration:none}button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(--mint);outline-offset:3px}.wrap{max-width:1440px;padding:0 clamp(14px,2.8vw,42px);margin:auto}
@@ -97,6 +97,7 @@
 /* CIVIC CASCADE 2.1 — tactical incidents. The simulation pauses until the operator chooses. */
 .incident-card{margin:0 0 12px;padding:13px;border:1px solid #e1c58a73;background:radial-gradient(ellipse at 100% 0%,#e1c58a12,transparent 54%),linear-gradient(145deg,#201d17,#101719);box-shadow:inset 2px 0 #e1c58a55,0 12px 35px #0003}
 .incident-card[hidden]{display:none}
+.incident-director-chip{display:inline-flex;align-items:center;border:1px solid #68d8d24a;background:#68d8d20c;padding:4px 6px;color:var(--cyan);font:9px var(--mono);letter-spacing:.08em;white-space:nowrap}
 .incident-top{display:flex;align-items:center;justify-content:space-between;gap:9px;margin-bottom:7px}
 .incident-kicker{color:var(--gold);font:8px var(--mono);letter-spacing:.13em;text-transform:uppercase}
 .incident-freeze{padding:4px 6px;border:1px solid #e1c58a45;color:#e1c58a;font:7px var(--mono);letter-spacing:.07em;white-space:nowrap}
@@ -192,7 +193,7 @@
 </section>
 <aside class="side">
 <section class="panel"><div class="panel-head"><strong>03 / УПРАВЛЕНИЕ</strong><small>TACTICAL RESPONSE</small></div><div class="scenario-row"><label for="cc-scenario">СЦЕНАРИЙ</label><select id="cc-scenario"><option value="flood">Ливень и подтопление</option><option value="blackout">Каскадный сбой сети</option><option value="blockade">Перекрытие дорог</option></select></div><div class="mission"><h2 id="cc-mission-title">Удержать город</h2><p id="cc-mission-copy">Снизи уровень воды, стабилизируй энергосеть и восстанови доступность служб.</p><div class="mission-stats"><div><small>ОСТАЛОСЬ</small><b id="cc-time-left">03:00</b></div><div><small>БРИГАДЫ</small><b id="cc-crews">4 / 4</b></div><div><small>ПОРЯДОК</small><b id="cc-risk-mini">61 / 100</b></div></div></div><div class="objectives"><div class="section-line"><h3>ЦЕЛИ МИССИИ</h3><span id="cc-objective-count">0 / 3</span></div><div class="objective" id="cc-objective-water"><span class="check">✓</span><span>Удержать воду ниже 45%</span><small>ВОДА</small></div><div class="objective" id="cc-objective-grid"><span class="check">✓</span><span>Поднять сеть выше 68%</span><small>ЭНЕРГИЯ</small></div><div class="objective" id="cc-objective-access"><span class="check">✓</span><span>Открыть пути выше 60%</span><small>ДОСТУП</small></div></div><div class="actions"><div class="section-line"><h3>ТАКТИЧЕСКИЕ ДЕЙСТВИЯ</h3><span>НАЖАТИЯ РАСХОДУЮТ РЕСУРСЫ</span></div><section class="incident-card" id="cc-incident" hidden aria-labelledby="cc-incident-title" aria-live="polite">
-<div class="incident-top"><span class="incident-kicker" id="cc-incident-kicker">INCIDENT / 01</span><span class="incident-freeze">SIMULATION PAUSED</span></div>
+<div class="incident-top"><span class="incident-director-chip" id="cc-adaptive-crisis">ADAPTIVE CRISIS DIRECTOR</span><span class="incident-kicker" id="cc-incident-kicker">INCIDENT / 01</span><span class="incident-freeze">SIMULATION PAUSED</span></div>
 <h4 id="cc-incident-title">Поступило срочное событие</h4>
 <p class="incident-copy" id="cc-incident-copy">Выбери ответ. Каждый вариант расходует ресурсы или переносит ущерб на другую систему.</p>
 <div class="incident-options" id="cc-incident-options"></div>
@@ -268,7 +269,7 @@
 
 <p class="notice">Это браузерная игровая редакция OSGARD PLAY. Показатели и последствия моделируются внутри игры и не являются реальными городскими данными. Состояние операции не отправляется на сервер.</p>
 </main>
-<footer class="footer"><span>© OSGARD WORLD / PLAY · CIVIC CASCADE WEB EDITION 2.5.0</span><span>КРИЗИСНАЯ СТРАТЕГИЯ · DESKTOP + TOUCH</span><span><a href="/games/">ВЕРНУТЬСЯ В КАТАЛОГ ↗</a></span></footer>
+<footer class="footer"><span>© OSGARD WORLD / PLAY · CIVIC CASCADE WEB EDITION 2.6.0</span><span>КРИЗИСНАЯ СТРАТЕГИЯ · DESKTOP + TOUCH</span><span><a href="/games/">ВЕРНУТЬСЯ В КАТАЛОГ ↗</a></span></footer>
 </div><div class="toast" id="cc-toast" role="status" aria-live="polite"></div>
 <script>
 (function(){
@@ -318,7 +319,10 @@ function seedNodeIntegrity(s){
 function ensureNodeIntegrity(s){
  if(!s.nodeIntegrity||!nodes.every(n=>Number.isFinite(s.nodeIntegrity[n.id])&&s.nodeIntegrity[n.id]>=0&&s.nodeIntegrity[n.id]<=100))s.nodeIntegrity=seedNodeIntegrity(s);
  if(!s.nodeOutages||typeof s.nodeOutages!=='object')s.nodeOutages={};
- nodes.forEach(n=>{if(typeof s.nodeOutages[n.id]!=='boolean')s.nodeOutages[n.id]=false});
+ if(!s.nodeIncidentFlags||typeof s.nodeIncidentFlags!=='object')s.nodeIncidentFlags={};
+ if(!Array.isArray(s.pendingNodeIncidents))s.pendingNodeIncidents=[];
+ s.pendingNodeIncidents=s.pendingNodeIncidents.filter(id=>nodes.some(n=>n.id===id));
+ nodes.forEach(n=>{if(typeof s.nodeOutages[n.id]!=='boolean')s.nodeOutages[n.id]=false;if(typeof s.nodeIncidentFlags[n.id]!=='boolean')s.nodeIncidentFlags[n.id]=false});
  return s.nodeIntegrity;
 }
 function bumpNodeIntegrity(s,nodeId,amount){
@@ -360,7 +364,15 @@ function advanceNodeIntegrity(s,dt){
    else{s.access=clamp(s.access-3);s.accessRate=Math.min(1,s.accessRate+.025)}
   }else if(health>=48&&s.nodeOutages[node.id])s.nodeOutages[node.id]=false;
  }
- return s.nodeIntegrity;
+ const newlyCritical=[];
+ for(const node of nodes){
+  if(next[node.id]<=45&&!s.nodeIncidentFlags[node.id]){
+   s.nodeIncidentFlags[node.id]=true;
+   s.pendingNodeIncidents.push(node.id);
+   newlyCritical.push(node.id);
+  }
+ }
+ return newlyCritical;
 }
 let state={},selected='hub',paused=false,speedIndex=0,elapsed=0,lastTick=performance.now(),raf=0,logRows=[],toastTimer=0,finished=false,dirty=.25,particles=[],frameCount=0,fpsTime=0,fps=60,activeIncident=null,incidentResumePaused=false;
 let activeChallenge=null,lastResult=null;
@@ -449,6 +461,8 @@ function readCheckpoint(){
    cleanState.nodeIntegrity=seedNodeIntegrity(cleanState);
    cleanState.nodeOutages=Object.fromEntries(nodes.map(n=>[n.id,false]));
   }
+  cleanState.nodeIncidentFlags=Object.fromEntries(nodes.map(n=>[n.id,typeof s.nodeIncidentFlags?.[n.id]==='boolean'?s.nodeIncidentFlags[n.id]:false]));
+  cleanState.pendingNodeIncidents=Array.isArray(s.pendingNodeIncidents)?[...new Set(s.pendingNodeIncidents.filter(id=>nodes.some(n=>n.id===id)))]:[];
   cleanState.elapsed=item.elapsed;
   return {state:cleanState,elapsed:item.elapsed,selected:item.selected,speedIndex:item.speedIndex,paused:item.paused,logs:logs,savedAt:typeof item.savedAt==='string'?item.savedAt:''};
  }catch(_){return null}
@@ -534,8 +548,42 @@ const crisisIncidents={
  {id:'manual-control',label:'Принять временный ущерб',detail:'Без затрат · сеть −6 · доступ −2',cost:0,log:'оператор перешёл на ручное управление; скорость восстановления снижена.',apply(){state.grid=clamp(state.grid-6);state.access=clamp(state.access-2);state.score+=5}}
  ]}
 };
+const infrastructureIncidents={
+ substation:{id:'node-substation-reserve',nodeId:'substation',kicker:'ADAPTIVE / POWER',title:'Подстанция теряет резерв',copy:'Целостность подстанции упала до критического уровня. Если не вмешаться, следующий отказ ударит по центру сети и зависимым службам.',choices:[
+  {id:'node-substation-relay',label:'Развернуть аварийный релейный модуль',detail:'Сеть +9 · укрепляет подстанцию и центр сети',cost:14,log:'аварийный релейный модуль стабилизировал подстанцию.',apply(){state.grid=clamp(state.grid+9);state.gridRate=Math.max(-.03,state.gridRate-.035);state.crews=Math.max(0,state.crews-1);bumpNodeIntegrity(state,'substation',30);bumpNodeIntegrity(state,'hub',10);state.score+=105}},
+  {id:'node-substation-shed',label:'Сбросить часть нагрузки',detail:'Сеть +6 · доступ −3 · без потери бригады',cost:6,log:'нагрузка снята с подстанции ценой доступности части районов.',apply(){state.grid=clamp(state.grid+6);state.access=clamp(state.access-3);state.gridRate=Math.max(-.03,state.gridRate-.02);bumpNodeIntegrity(state,'substation',20);state.score+=70}},
+  {id:'node-substation-defer',label:'Отложить переключение',detail:'Без затрат · сеть −5',cost:0,log:'переключение отложено, энергетический запас сократился.',apply(){state.grid=clamp(state.grid-5);bumpNodeIntegrity(state,'substation',-6);state.score+=5}}
+ ]},
+ pump:{id:'node-pump-failure',nodeId:'pump',kicker:'ADAPTIVE / FLOOD',title:'Насосная теряет эффективность',copy:'Целостность насосной станции падает. Подтопление начинает давить на мост и эвакуационные пути.',choices:[
+  {id:'node-pump-mobile',label:'Ввести мобильные насосы',detail:'Вода −8 · подъём воды замедляется',cost:10,log:'мобильные насосы приняли часть нагрузки.',apply(){state.water=clamp(state.water-8);state.waterRate=Math.max(-.03,state.waterRate-.06);bumpNodeIntegrity(state,'pump',27);bumpNodeIntegrity(state,'bridge',5);state.score+=95}},
+  {id:'node-pump-divert',label:'Перенаправить энергию',detail:'Вода −5 · сеть −6',cost:7,log:'мощность направлена на насосную, но запас сети уменьшен.',apply(){state.water=clamp(state.water-5);state.grid=clamp(state.grid-6);state.waterRate=Math.max(-.03,state.waterRate-.035);bumpNodeIntegrity(state,'pump',22);bumpNodeIntegrity(state,'hub',-4);state.score+=75}},
+  {id:'node-pump-defer',label:'Принять временное затопление',detail:'Без затрат · вода +5',cost:0,log:'ремонт отложен; уровень воды быстро растёт.',apply(){state.water=clamp(state.water+5);state.waterRate=Math.min(.8,state.waterRate+.04);bumpNodeIntegrity(state,'pump',-7);state.score+=5}}
+ ]},
+ bridge:{id:'node-bridge-isolation',nodeId:'bridge',kicker:'ADAPTIVE / ACCESS',title:'Восточный мост закрывается',copy:'Повреждение моста угрожает доступу медицинских и эвакуационных служб. Можно открыть обход или ограничить движение.',choices:[
+  {id:'node-bridge-bypass',label:'Открыть аварийный обход',detail:'Доступ +11 · расходует запасы',cost:12,log:'обход восстановил доступ к восточным районам.',apply(){state.access=clamp(state.access+11);state.openedRoutes++;bumpNodeIntegrity(state,'bridge',28);bumpNodeIntegrity(state,'hospital',5);state.score+=95}},
+  {id:'node-bridge-restrict',label:'Ограничить тяжёлый транспорт',detail:'Доступ −3 · снижает нагрузку на мост',cost:0,log:'движение ограничено, но мост получил время на восстановление.',apply(){state.access=clamp(state.access-3);state.accessRate=Math.max(-.03,state.accessRate-.045);state.supplies=clamp(state.supplies+3);bumpNodeIntegrity(state,'bridge',20);state.score+=35}},
+  {id:'node-bridge-defer',label:'Не менять маршруты',detail:'Без затрат · доступ −8',cost:0,log:'маршруты не изменены; доступность восточных районов снизилась.',apply(){state.access=clamp(state.access-8);bumpNodeIntegrity(state,'bridge',-6);state.score+=5}}
+ ]},
+ hospital:{id:'node-hospital-isolation',nodeId:'hospital',kicker:'ADAPTIVE / MEDICAL',title:'Медицинский квартал изолируется',copy:'Цепочка доступа к больнице ослабла. Энергосеть остаётся нестабильной, а помощь не достигает пациентов вовремя.',choices:[
+  {id:'node-hospital-backup',label:'Включить резерв больницы',detail:'Доступ +8 · сеть −4 · укрепляет медквартал',cost:12,log:'резервное питание вернуло часть медицинских возможностей.',apply(){state.access=clamp(state.access+8);state.grid=clamp(state.grid-4);state.crews=Math.max(0,state.crews-1);bumpNodeIntegrity(state,'hospital',28);bumpNodeIntegrity(state,'hub',4);state.score+=100}},
+  {id:'node-hospital-corridor',label:'Открыть медицинский коридор',detail:'Доступ +11 · укрепляет мост и больницу',cost:10,log:'медицинский коридор открыт, но энергоснабжение остаётся уязвимым.',apply(){state.access=clamp(state.access+11);state.openedRoutes++;bumpNodeIntegrity(state,'hospital',21);bumpNodeIntegrity(state,'bridge',8);state.score+=85}},
+  {id:'node-hospital-defer',label:'Отложить эвакуацию',detail:'Без затрат · доступ −7',cost:0,log:'эвакуация отложена, медицинская доступность снижена.',apply(){state.access=clamp(state.access-7);bumpNodeIntegrity(state,'hospital',-7);state.score+=5}}
+ ]},
+ shelter:{id:'node-shelter-overload',nodeId:'shelter',kicker:'ADAPTIVE / EVACUATION',title:'Пункт эвакуации переполнен',copy:'Пункт приёма достиг критической нагрузки. Следующее решение определит, останется ли путь эвакуации доступен.',choices:[
+  {id:'node-shelter-redistribute',label:'Перераспределить эвакуируемых',detail:'Доступ +7 · запасы −8',cost:8,log:'поток людей перераспределён между доступными районами.',apply(){state.access=clamp(state.access+7);state.supplies=clamp(state.supplies-8);bumpNodeIntegrity(state,'shelter',24);bumpNodeIntegrity(state,'hospital',4);state.score+=80}},
+  {id:'node-shelter-second',label:'Развернуть дополнительный пункт',detail:'Доступ +10 · расходует бригаду',cost:12,log:'второй пункт разгрузил главный эвакуационный узел.',apply(){state.access=clamp(state.access+10);state.openedRoutes++;state.crews=Math.max(0,state.crews-1);bumpNodeIntegrity(state,'shelter',30);state.score+=95}},
+  {id:'node-shelter-defer',label:'Ограничить приём',detail:'Доступ −5 · запасы +4',cost:0,log:'вход временно ограничен; запасы сохранены ценой доступности.',apply(){state.access=clamp(state.access-5);state.supplies=clamp(state.supplies+4);bumpNodeIntegrity(state,'shelter',-5);state.score+=5}}
+ ]}
+};
+function dispatchNextInfrastructureIncident(){
+ if(activeIncident||finished||!state||!Array.isArray(state.pendingNodeIncidents))return;
+ while(state.pendingNodeIncidents.length){
+  const nodeId=state.pendingNodeIncidents.shift(),incident=infrastructureIncidents[nodeId];
+  if(incident){openIncident(incident);return}
+ }
+}
 function renderIncident(incident){
- ui.incident.hidden=false;ui.incidentKicker.textContent=incident.kicker+' / ACTION '+String(state.actionCount).padStart(2,'0');
+ ui.incident.hidden=false;ui.incidentKicker.textContent=incident.kicker+(incident.nodeId?' / NODE '+incident.nodeId.toUpperCase():'')+' / ACTION '+String(state.actionCount).padStart(2,'0');
  ui.incidentTitle.textContent=incident.title;ui.incidentCopy.textContent=incident.copy;ui.incidentOptions.replaceChildren();
  incident.choices.forEach(choice=>{
   const button=document.createElement('button');button.type='button';button.className='incident-choice';button.dataset.incidentChoice=choice.id;
@@ -562,6 +610,7 @@ function resolveIncident(choiceId){
  activeIncident=null;ui.incident.hidden=true;ui.incidentOptions.replaceChildren();paused=incidentResumePaused;incidentResumePaused=false;
  ui.status.textContent=paused?'ПАУЗА':'СИСТЕМА АКТИВНА';ui.stage.textContent=paused?'CHECKPOINT':'OPERATIONAL';$('cc-pause').textContent=paused?'▶ Продолжить':'Ⅱ Пауза';ui.incidentStatus.textContent='';
  addLog('<b>Решение принято:</b> '+choice.label+'. '+message);
+ dispatchNextInfrastructureIncident();
  renderUI();renderPlan();draw(performance.now());updateCheckpointStatus();checkFinish();
 }
 
@@ -572,7 +621,7 @@ function fresh(scenario){
  const base=scenarioData[scenario]||scenarioData.flood;
  if(planTimer)clearTimeout(planTimer);planTimer=0;planRunning=false;runningPlan=[];planIndex=0;planOrders=[];planNotice='Новая операция: составь свежий штабной план.';
  state={scenario:scenario,water:base.water,grid:base.grid,access:base.access,supplies:base.supplies,crews:4,maxCrews:4,waterRate:base.waterRate,gridRate:base.gridRate,accessRate:base.accessRate,riskOffset:base.riskOffset,openedRoutes:scenario==='blockade'?1:2,repairs:0,pumps:0,stabilized:0,actionCount:0,elapsed:0,score:0};
- state.nodeIntegrity=seedNodeIntegrity(state);state.nodeOutages=Object.fromEntries(nodes.map(n=>[n.id,false]));
+ state.nodeIntegrity=seedNodeIntegrity(state);state.nodeOutages=Object.fromEntries(nodes.map(n=>[n.id,false]));state.nodeIncidentFlags=Object.fromEntries(nodes.map(n=>[n.id,false]));state.pendingNodeIncidents=[];
  elapsed=0;paused=false;speedIndex=0;finished=false;activeIncident=null;incidentResumePaused=false;ui.incident.hidden=true;ui.incidentOptions.replaceChildren();ui.incidentStatus.textContent='';selected=scenario==='blackout'?'substation':scenario==='blockade'?'bridge':'hub';logRows=[];particles=[];
  ui.resultOverlay.hidden=true;ui.status.textContent='СИСТЕМА АКТИВНА';ui.stage.textContent='OPERATIONAL';ui.missionTitle.textContent=base.mission;ui.missionCopy.textContent=base.copy;
  $('cc-pause').textContent='Ⅱ Пауза';$('cc-speed').textContent='СКОРОСТЬ 1×';$('cc-scenario').value=scenario;
@@ -612,7 +661,7 @@ function act(action){
 
 function projectedRisk(s){return Math.round(clamp(s.water*.38+(100-s.grid)*.34+(100-s.access)*.28+s.riskOffset))}
 function simulatePlannedOrders(orders){
- const s={...state,nodeIntegrity:{...(state.nodeIntegrity||{})},nodeOutages:{...(state.nodeOutages||{})}};ensureNodeIntegrity(s);let cost=0,valid=true;
+ const s={...state,nodeIntegrity:{...(state.nodeIntegrity||{})},nodeOutages:{...(state.nodeOutages||{})},nodeIncidentFlags:{...(state.nodeIncidentFlags||{})},pendingNodeIncidents:[...(state.pendingNodeIncidents||[])]};ensureNodeIntegrity(s);let cost=0,valid=true;
  for(const order of orders){
   const meta=PLAN_ACTIONS[order.action];if(!meta){valid=false;break}
   cost+=meta.cost;if(s.supplies<meta.cost||s.crews<meta.crew){valid=false;break}s.supplies-=meta.cost;
@@ -634,7 +683,7 @@ function simulatePlannedOrders(orders){
 }
 function planCrewDemand(orders){return orders.reduce((sum,order)=>sum+(PLAN_ACTIONS[order.action]?.crew||0),0)}
 function simulateCascadingPath(source,horizons){
- const s={...source,nodeIntegrity:{...(source.nodeIntegrity||{})},nodeOutages:{...(source.nodeOutages||{})}},samples=[];ensureNodeIntegrity(s);let progressed=0;
+ const s={...source,nodeIntegrity:{...(source.nodeIntegrity||{})},nodeOutages:{...(source.nodeOutages||{})},nodeIncidentFlags:{...(source.nodeIncidentFlags||{})},pendingNodeIncidents:[...(source.pendingNodeIncidents||[])]},samples=[];ensureNodeIntegrity(s);let progressed=0;
  const weather=s.scenario==='flood'?1:s.scenario==='blackout'?.8:.9;
  for(const horizon of horizons){
   while(progressed<horizon-1e-9){
@@ -650,13 +699,13 @@ function simulateCascadingPath(source,horizons){
    progressed+=dt;
   }
   const weakest=nodes.reduce((best,node)=>s.nodeIntegrity[node.id]<s.nodeIntegrity[best.id]?node:best,nodes[0]);
-  samples.push({seconds:horizon,water:Math.round(s.water),grid:Math.round(s.grid),access:Math.round(s.access),risk:projectedRisk(s),nodeIntegrity:{...s.nodeIntegrity},nodeOutages:{...s.nodeOutages},weakestNode:weakest.id,weakestIntegrity:Math.round(s.nodeIntegrity[weakest.id])});
+  samples.push({seconds:horizon,water:Math.round(s.water),grid:Math.round(s.grid),access:Math.round(s.access),risk:projectedRisk(s),nodeIntegrity:{...s.nodeIntegrity},nodeOutages:{...s.nodeOutages},criticalNodes:nodes.filter(n=>s.nodeIntegrity[n.id]<=45).map(n=>n.id),weakestNode:weakest.id,weakestIntegrity:Math.round(s.nodeIntegrity[weakest.id])});
  }
  return samples;
 }
 function renderCascadeForecast(planProjection,orders){
  const horizons=[30,60,90],baseline=simulateCascadingPath({...state},horizons),planned=planProjection.valid?simulateCascadingPath({...planProjection.state},horizons):baseline;
- const format=s=>'Вода '+s.water+'% · Сеть '+s.grid+'% · Доступ '+s.access+'% · Риск '+s.risk+' · Слабейший узел '+(nodes.find(n=>n.id===s.weakestNode)?.name||s.weakestNode)+' '+s.weakestIntegrity+'%';
+ const format=s=>'Вода '+s.water+'% · Сеть '+s.grid+'% · Доступ '+s.access+'% · Риск '+s.risk+' · Слабейший узел '+(nodes.find(n=>n.id===s.weakestNode)?.name||s.weakestNode)+' '+s.weakestIntegrity+'% · Критические узлы '+s.criticalNodes.length;
  horizons.forEach((horizon,index)=>{
   const wait=baseline[index],plan=planned[index],delta=plan.risk-wait.risk;
   $('cc-cascade-wait-'+horizon).textContent=format(wait);
@@ -794,6 +843,7 @@ function checkDrift(dt){
  if(elapsed>90&&state.water>70)state.grid=clamp(state.grid-.018*dt);
  if(Math.floor(elapsed)%30===0&&Math.floor(elapsed)>0&&Math.floor(elapsed)!==Math.floor(elapsed-dt)){addLog('<b>Сводка:</b> вода '+Math.round(state.water)+'%, сеть '+Math.round(state.grid)+'%, доступ '+Math.round(state.access)+'%.');}
  advanceNodeIntegrity(state,dt);
+ dispatchNextInfrastructureIncident();
  const loss=Math.max(0,(state.water-55)*.5)+Math.max(0,(55-state.grid)*.36)+Math.max(0,(50-state.access)*.3);
  state.riskOffset=clamp((state.scenario==='blackout'?6:state.scenario==='blockade'?4:0)+loss,0,50);
 }
