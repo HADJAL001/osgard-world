@@ -28,7 +28,8 @@ export function resolvePublicApiBase(raw, origin) {
     const localHttp = ['localhost', '127.0.0.1'].includes(base.hostname) && base.protocol === 'http:';
     if (base.protocol !== 'https:' && !localHttp) return '';
     if (base.username || base.password || base.search || base.hash) return '';
-    if (base.pathname !== '/' && base.pathname !== '/commerce-api') return '';
+    const allowedPath = base.pathname === '/' || (base.pathname === '/commerce-api' && (base.origin === origin || base.origin === 'https://osgard.world'));
+    if (!allowedPath) return '';
     if (base.origin !== origin && !base.protocol.startsWith('https:')) return '';
     return base.origin + (base.pathname === '/' ? '' : base.pathname);
   } catch {
