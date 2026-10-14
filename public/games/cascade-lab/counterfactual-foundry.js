@@ -23,7 +23,7 @@ const wrapAngle = angle => {
   const tau = Math.PI * 2;
   let value = angle % tau;
   if (value < 0) value += tau;
-  return Number(value.toFixed(6));
+  return value;
 };
 const canonicalize = value => {
   if (value === null || typeof value !== 'object') return JSON.stringify(value);
