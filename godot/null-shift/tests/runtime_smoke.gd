@@ -1998,7 +1998,8 @@ func _run_smoke() -> void:
 		return
 	if not _expect(is_equal_approx(game._countershot_damage_scale(1.0, 2.4), game.COUNTERSHOT_DAMAGE_MULTIPLIER) and is_equal_approx(game._countershot_damage_scale(1.0, 0.0), 1.0), "countershot multiplier must require an active perfect-evade window"):
 		return
-	var threat_pick: Dictionary = game._select_earliest_telegraph([{"eta": 1.6, "role": "HEAVY"}, {"eta": 0.42, "role": "STALKER"}, {"eta": 0.9, "role": "RANGER"}])
+	var threat_test_telegraphs: Array[Dictionary] = [{"eta": 1.6, "role": "HEAVY"}, {"eta": 0.42, "role": "STALKER"}, {"eta": 0.9, "role": "RANGER"}]
+	var threat_pick: Dictionary = game._select_earliest_telegraph(threat_test_telegraphs)
 	if not _expect(str(threat_pick.get("role", "")) == "STALKER" and is_equal_approx(float(threat_pick.get("eta", 0.0)), 0.42), "threat forecast must select the earliest live telegraph"):
 		return
 	if not _expect(game._combo_mastery_tier(2) == 0 and game._combo_mastery_tier(3) == 1 and game._combo_mastery_tier(6) == 2 and game._combo_mastery_tier(10) == 3 and game._combo_mastery_tier(15) == 4, "combo mastery tiers must have deterministic thresholds"):
