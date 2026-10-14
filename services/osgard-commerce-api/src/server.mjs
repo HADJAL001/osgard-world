@@ -326,7 +326,7 @@ async function saveCampaign(req, res, campaignId = "") {
     client = await pool.connect();
     await client.query("BEGIN");
     await client.query("SELECT pg_advisory_xact_lock(20261014)");
-    const slotLimit = data.placement === "catalog_feature" ? 3 : data.placement === "after_session" ? 1 : 0;
+    const slotLimit = data.placement === "catalog_feature" ? 3 : data.placement === "after_session" ? 5 : 0;
     if (["active", "scheduled"].includes(data.status) && slotLimit > 0) {
       const capacity = await client.query(
         "SELECT COUNT(*)::int AS count FROM commerce_campaigns " +
