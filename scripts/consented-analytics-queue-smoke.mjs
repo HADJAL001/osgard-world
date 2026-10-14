@@ -34,7 +34,7 @@ assert.deepEqual(
 assert.ok(extractEventNames(source, 'Browser analytics queue').includes('invite_link_prepared'),
   'Invite-link preparation must not be dropped by the shared consent queue');
 
-function createQueue(apiBaseUrl, origin = 'https://osgard.world') {
+function createQueue(apiBaseUrl, origin = 'https://osgard.world', commerceReady = true) {
   const values = new Map([['osgard.games.analytics-consent.v1', 'yes']]);
   const localStorage = {
     getItem: key => values.has(key) ? values.get(key) : null,
@@ -58,7 +58,13 @@ function createQueue(apiBaseUrl, origin = 'https://osgard.world') {
     if (String(url) === '/games/commerce-config.json') {
       return { ok: true, json: async () => ({ apiBaseUrl }) };
     }
-    const expected = apiBaseUrl ? apiBaseUrl + '/v1/events' : null;
+    if (String(url) === '/commerce-api/healthz') {
+      assert.equal(options.credentials, 'omit', 'Health probes must not send cookies or credentials');
+      return { ok: true, status: 200, json: async () => ({
+        ok: true, service: 'osgard-commerce-api', databaseReady: commerceReady,
+      }) };
+    }
+    const expected = apiBaseUrl ? apiBaseUrl + '/v1/events' : origin + '/commerce-api/v1/events';
     if (!expected || String(url) !== expected) throw new Error('Unexpected URL or unconfigured API request: ' + url);
     eventPosts += 1;
     const body = JSON.parse(options.body);
@@ -83,17 +89,29 @@ const event = {
   durationSeconds: 0,
 };
 
-// Missing API configuration must fail closed: no request to the frontend SPA proxy.
-const unconfigured = createQueue('');
+// Missing static configuration may use only the verified first-party API. A non-ready
+// database must leave events queued without ever posting to the backend.
+const unconfigured = createQueue('', 'https://osgard.world', false);
 assert.ok(unconfigured.queue && typeof unconfigured.queue.enqueue === 'function' && typeof unconfigured.queue.flush === 'function', 'Global analytics queue must be exposed');
 assert.equal(await unconfigured.queue.enqueue(event), true, 'A consented event should be stored in the bounded local retry queue');
-assert.equal(await unconfigured.queue.flush(), false, 'Delivery must remain unsuccessful when the API origin is empty');
-assert.equal(unconfigured.eventPosts, 0, 'An empty API URL must never be treated as a valid backend');
-assert.ok(!unconfigured.requestedUrls.some(url => url.includes('/v1/events')), 'An empty API URL must not fall back to a same-origin SPA route');
+assert.equal(await unconfigured.queue.flush(), false, 'A non-ready discovered API must not receive events');
+assert.ok(unconfigured.requestedUrls.includes('/commerce-api/healthz'), 'Blank config should probe only the documented same-origin health endpoint');
+assert.equal(unconfigured.eventPosts, 0, 'A health endpoint without databaseReady=true must never receive events');
+assert.ok(!unconfigured.requestedUrls.some(url => url.includes('/v1/events')), 'A non-ready API must not be used as a same-origin SPA route');
 assert.equal(JSON.parse(unconfigured.values.get('osgard.games.analytics-pending.v1') || '[]').length, 1, 'The undelivered event should remain locally queued until retry/expiry or consent withdrawal');
 unconfigured.values.set('osgard.games.analytics-consent.v1', 'no');
 unconfigured.listeners.get('storage')?.({ key: 'osgard.games.analytics-consent.v1' });
 assert.equal(unconfigured.values.has('osgard.games.analytics-pending.v1'), false, 'Consent withdrawal must remove the local retry queue');
+
+// An empty static API URL auto-discovers the first-party backend only after a positive
+// health response proving the database is ready; events then use the explicit proxy path.
+const autoDiscovered = createQueue('', 'https://osgard.world', true);
+autoDiscovered.offline = false;
+assert.equal(await autoDiscovered.queue.enqueue(event), true, 'A consented event should queue before verified same-origin delivery');
+assert.equal(await autoDiscovered.queue.flush(), true, 'A healthy first-party API should accept events even while the public URL config remains empty');
+assert.ok(autoDiscovered.requestedUrls.includes('/commerce-api/healthz'), 'Auto-discovery must call the same-origin health endpoint');
+assert.ok(autoDiscovered.requestedUrls.includes('https://osgard.world/commerce-api/v1/events'), 'Events must use the validated same-origin API prefix');
+assert.equal(autoDiscovered.postedEvents.length, 1, 'Healthy auto-discovery should deliver one acknowledged event');
 
 // Arbitrary third-party URL paths are not accepted as a trusted API base.
 const invalidPath = createQueue('https://attacker.example/collect');
