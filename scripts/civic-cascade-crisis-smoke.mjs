@@ -3,8 +3,8 @@ import { readFileSync } from 'node:fs';
 
 const html = readFileSync('public/games/civic-cascade/index.html', 'utf8');
 const release = JSON.parse(readFileSync('public/games/civic-cascade/release.json', 'utf8'));
-assert.equal(release.version, '2.2.0', 'release.json must match the game version');
-assert.equal(release.releaseId, 'civic-cascade-web-2.2.0', 'release ID must be versioned');
+assert.match(release.version, /^\\d+\\.\\d+\\.\\d+$/, 'release.json must declare a semantic game version');
+assert.ok(release.releaseId.includes(release.version), 'release ID must include the manifest version');
 assert.equal(release.buildContract.missionChallenges.enabled, true, 'Mission challenge contract missing');
 assert.equal(release.buildContract.missionChallenges.globalLeaderboard, false, 'Release must not claim a global leaderboard');
 const inline = (html.match(/<script>([\s\S]*?)<\/script>/) || [])[1];
@@ -19,7 +19,8 @@ assert.equal(parseChallenge('?cc_challenge=1&cc_scenario=unknown&cc_target=850',
 assert.equal(parseChallenge('?cc_challenge=1&cc_scenario=flood&cc_target=1000001', challengeScenarios), null, 'Challenge target must be bounded');
 assert.equal(parseChallenge('?cc_challenge=1&cc_scenario=flood&cc_target=4.5', challengeScenarios), null, 'Fractional scores must be rejected');
 assert.equal(parseChallenge('?cc_scenario=flood&cc_target=850', challengeScenarios), null, 'Ordinary visits must not become challenge sessions');
-assert.ok(html.includes('name="osgard-game-version" content="2.2.0-mission-challenges"'), 'CIVIC CASCADE 2.2 release marker missing');
+const htmlVersionMarker = html.match(/<meta name="osgard-game-version" content="([^"]+)">/)?.[1] || '';
+assert.ok(htmlVersionMarker.startsWith(release.version + '-') && htmlVersionMarker.length > release.version.length + 1, 'HTML release marker must align with release.json');
 assert.ok(html.includes('id="cc-incident"') && html.includes('id="cc-incident-options"'), 'Crisis decision UI is missing');
 assert.ok(html.includes('id="cc-result-challenge"') && html.includes('id="cc-challenge-banner"'), 'Shareable score challenge UI is missing');
 assert.ok(inline.includes('function createMissionChallengeUrl') && inline.includes('utm_campaign') && inline.includes('civic_cascade_friend_challenge'), 'Challenge URLs need explicit campaign attribution');
