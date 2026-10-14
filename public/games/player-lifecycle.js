@@ -39,7 +39,7 @@ function sendCommerceEvent(name,payload){
  const event={eventId:'evt_'+(window.crypto?.randomUUID?.()||Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,15)).replace(/[^a-zA-Z0-9_-]/g,''),name,sessionId:id,gameId:activeGame,source,path,durationSeconds:duration};
  const queue=window.OSGARD_CONSENTED_ANALYTICS;
  if(queue&&typeof queue.enqueue==='function'){void queue.enqueue(event);return}
- fetch('/games/commerce-config.json',{cache:'no-store'}).then(r=>r.ok?r.json():{}).catch(()=>({})).then(config=>{
+ fetch('/games/commerce-config.json',{cache:'no-store'}).then(r=>r.ok?r.json():{}).catch(()=>({})).then(async config=>{
   const raw=typeof config.apiBaseUrl==='string'?config.apiBaseUrl.trim():'';
   let base='';
   if(!raw){
