@@ -83,8 +83,8 @@ test('the interface has responsive touch and reduced-motion contracts', () => {
   assert.match(css, /--og-pc-scale/);
 });
 test('production route matrix checks the published Player Lab assets', () => {
-  assert.match(productionMatrix, /'\\/games\\/player-console\\.js'/);
-  assert.match(productionMatrix, /'\\/games\\/player-console\\.css'/);
+  assert.ok(productionMatrix.includes("'/games/player-console.js'"), 'JS asset is included in the production route matrix');
+  assert.ok(productionMatrix.includes("'/games/player-console.css'"), 'CSS asset is included in the production route matrix');
   assert.ok(productionMatrix.includes("text.includes('window.OSGARDPlayerConsole')"), 'Production smoke must identify the Player Lab JavaScript bundle');
   assert.ok(productionMatrix.includes("text.includes('.og-pc-high-contrast')"), 'Production smoke must identify the Player Lab stylesheet');
 });
