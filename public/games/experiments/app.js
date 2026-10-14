@@ -103,7 +103,9 @@ import { analyzeExperiment, parseExperimentImport } from './evidence-engine.js';
   $('clear-import').addEventListener('click', () => {
     $('import-text').value = '';
     $('import-file').value = '';
-    setStatus($('import-status'), 'Импорт очищен; ручные числа не изменены.', 'ok');
+    latestSource = 'manual';
+    importWarnings = [];
+    setStatus($('import-status'), 'Импорт очищен; текущие числа остались в полях и теперь считаются ручными агрегатами.', 'ok');
   });
   $('analyze').addEventListener('click', () => {
     try {
