@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { calculateScenario, calculateRequiredMonthlyVisitors, calculateBreakEvenMonthlyVisitors, calculateMonthlyProjection, calculateSensitivity, calculateDecisionDashboard, DEFAULT_INPUTS, normalizeInputs, SCENARIOS } from '../public/games/monetization/model.js';
+import { calculateScenario, calculateRequiredMonthlyVisitors, calculateBreakEvenMonthlyVisitors, calculateMonthlyProjection, calculateSensitivity, calculateRiskSimulation, calculateDecisionDashboard, DEFAULT_INPUTS, normalizeInputs, SCENARIOS } from '../public/games/monetization/model.js';
 
 const root = process.cwd();
 const pagePath = resolve(root, 'public/games/monetization/index.html');
@@ -26,7 +26,7 @@ assert.ok(['target-mix-total','target-mix-ads','target-mix-paid','target-mix-sub
 assert.ok(['target-mix-total','target-mix-ads','target-mix-paid','target-mix-subscriptions','target-mix-services','target-mix-sponsors','target-mix-leads-contracts','target-mix-lead-overflow','target-mix-capacity'].every((id) => app.includes("getElementById('" + id + "')")), 'Target-scale source mix must be wired to computed target scenario');
 assert.ok(page.includes('name="annualRevenueTargetUsd"'), 'Editable annual gross revenue target input missing');
 assert.ok(['newVisitorSharePct','maxLeadsPerMonth','maxProjectsPerMonth','subscriptionConversionRatePct','subscriptionMonthlyPriceUsd','subscriptionMonthlyChurnPct'].every((id) => page.includes('id="' + id + '"') && page.includes('name="' + id + '"')), 'New-visitor share, subscription assumptions, enquiry processing and project capacity inputs are required');
-assert.ok(app.includes('targetScenario.capacityUtilizationPct') && app.includes('targetScenario.unprocessedLeads') && app.includes('modelVersion: 7') && app.includes('target-mix-subscriptions') && app.includes('subscriptionMrrMonth12Usd'), 'Capacity-aware outputs, cohort subscriptions and model export version must be wired');
+assert.ok(app.includes('targetScenario.capacityUtilizationPct') && app.includes('targetScenario.unprocessedLeads') && app.includes('modelVersion: 8') && app.includes('target-mix-subscriptions') && app.includes('subscriptionMrrMonth12Usd'), 'Capacity-aware outputs, cohort subscriptions and model export version must be wired');
 assert.ok(app.includes('calculateRequiredMonthlyVisitors') && app.includes('growthTarget:'), 'Required-traffic calculation must be visible and included in the local export');
 assert.ok(!/https?:\/\/(?:fonts\.googleapis\.com|fonts\.gstatic\.com|cdn\.jsdelivr\.net|unpkg\.com)/i.test(page), 'Financial planner unexpectedly depends on a remote asset CDN');
 assert.ok(app.includes('URL.createObjectURL') && app.includes('osgard-games-model.json') && app.includes('osgard-games-model.csv') && app.includes("import { buildFinancialCsv } from './export.mjs'"), 'Local JSON/CSV export not implemented');
@@ -198,3 +198,42 @@ assert.equal(decisionDashboard.baseline.scenarioId, 'base', 'Dashboard should la
 assert.ok(Number.isFinite(decisionDashboard.grossMarginPct), 'Gross margin indicator should be finite when modeled revenue exists');
 
 console.log('PASS Premium decision cockpit: break-even search, 12-month traffic ramp, retained subscription cohorts, sensitivity ranking, local scenario library and model-only disclosure.');
+
+
+assert.ok(['stress-iterations','stress-uncertainty','run-stress-test','export-stress-csv','stress-net-p10','stress-net-p50','stress-net-p90','stress-target-hit','stress-gross-range','stress-positive-share','stress-downside-tail','stress-lead-backlog','stress-histogram','stress-status'].every((id) => page.includes('id="' + id + '"')), 'Premium stress lab inputs, risk KPIs and distribution chart are required');
+assert.ok(app.includes('calculateRiskSimulation') && app.includes('run-stress-test') && app.includes('osgard-financial-stress-simulation.csv'), 'Stress lab must calculate on demand and export every simulation row');
+assert.ok(app.includes('riskInputsFingerprint') && app.includes('result is absent or stale') === false && app.includes('Результат отсутствует или устарел'), 'Risk outputs must be invalidated when assumptions change');
+assert.ok(page.includes('не калиброванные реальные вероятности') && page.includes('корреляций'), 'Stress test must disclose that its independent shocks are not calibrated real-world probabilities');
+
+const zeroUncertaintyStress = calculateRiskSimulation(DEFAULT_INPUTS, { iterations: 100, uncertaintyPct: 0, seed: 17 });
+const baseProjectionForStress = calculateMonthlyProjection(DEFAULT_INPUTS, 'base', 12);
+assert.equal(zeroUncertaintyStress.iterations, 100, 'Stress simulation must enforce its minimum iteration count');
+assert.equal(zeroUncertaintyStress.method, 'independent-uniform-assumption-shocks', 'Simulation method must be explicit and reproducible');
+assert.equal(zeroUncertaintyStress.draws.length, 100, 'Simulation should return every draw for a local CSV export');
+assert.equal(zeroUncertaintyStress.histogram.reduce((sum, bin) => sum + bin.count, 0), 100, 'Histogram bins must account for every draw');
+assert.ok(Math.abs(zeroUncertaintyStress.summary.yearNetOperatingUsd.p10 - baseProjectionForStress.cumulativeNetOperatingUsd) < 0.02, 'Zero uncertainty should reproduce the deterministic 12-month net result');
+assert.ok(Math.abs(zeroUncertaintyStress.summary.yearNetOperatingUsd.p10 - zeroUncertaintyStress.summary.yearNetOperatingUsd.p90) < 0.02, 'Zero uncertainty must collapse the output distribution');
+assert.equal(zeroUncertaintyStress.summary.annualTargetHitSharePct, baseProjectionForStress.cumulativeRevenueUsd >= DEFAULT_INPUTS.annualRevenueTargetUsd ? 100 : 0, 'Target-hit share with zero uncertainty must match the deterministic model');
+assert.ok(zeroUncertaintyStress.summary.positiveYearNetSharePct >= 0 && zeroUncertaintyStress.summary.positiveYearNetSharePct <= 100, 'Positive-result share must remain bounded');
+assert.ok(zeroUncertaintyStress.summary.downsideTailDrawCount >= 1 && zeroUncertaintyStress.summary.downsideTailDrawCount <= zeroUncertaintyStress.iterations, 'Downside tail must have a valid sample count');
+
+const stressA = calculateRiskSimulation(DEFAULT_INPUTS, { iterations: 250, uncertaintyPct: 20, seed: 424242 });
+const stressB = calculateRiskSimulation(DEFAULT_INPUTS, { iterations: 250, uncertaintyPct: 20, seed: 424242 });
+const stressDifferentSeed = calculateRiskSimulation(DEFAULT_INPUTS, { iterations: 250, uncertaintyPct: 20, seed: 10101 });
+assert.deepEqual(stressA.draws, stressB.draws, 'Same inputs, seed and iteration count must produce byte-for-byte equivalent draws');
+assert.deepEqual(stressA.summary, stressB.summary, 'Same seed must produce identical summary quantiles');
+assert.notDeepEqual(stressA.draws, stressDifferentSeed.draws, 'A different seed should explore a different reproducible sample');
+assert.ok(stressA.summary.yearGrossRevenueUsd.p10 <= stressA.summary.yearGrossRevenueUsd.p50 &&
+  stressA.summary.yearGrossRevenueUsd.p50 <= stressA.summary.yearGrossRevenueUsd.p90, 'Gross revenue percentiles must be ordered');
+assert.ok(stressA.summary.yearNetOperatingUsd.p10 <= stressA.summary.yearNetOperatingUsd.p50 &&
+  stressA.summary.yearNetOperatingUsd.p50 <= stressA.summary.yearNetOperatingUsd.p90, 'Net result percentiles must be ordered');
+assert.ok(stressA.summary.annualTargetHitSharePct >= 0 && stressA.summary.annualTargetHitSharePct <= 100, 'Target-hit share must remain between 0 and 100');
+assert.ok(stressA.draws.every((draw, index) => draw.iteration === index + 1 &&
+  Number.isFinite(draw.yearGrossRevenueUsd) && Number.isFinite(draw.yearNetOperatingUsd) &&
+  Number.isFinite(draw.month12CapacityUtilizationPct)), 'Every stress draw must contain finite reconciliable model outputs');
+const boundedStress = calculateRiskSimulation(DEFAULT_INPUTS, { iterations: 20, uncertaintyPct: 500, seed: 0 });
+assert.equal(boundedStress.iterations, 100, 'Stress iteration count must clamp to its safe minimum');
+assert.equal(boundedStress.uncertaintyPct, 50, 'Stress range must clamp to the documented maximum');
+assert.equal(boundedStress.seed, 0x6d2b79f5, 'A zero seed must be replaced with the stable non-zero fallback');
+
+console.log('PASS Premium stress lab: seeded reproducibility, bounds, zero-shock reconciliation, quantiles, target coverage and export-ready draws.');
