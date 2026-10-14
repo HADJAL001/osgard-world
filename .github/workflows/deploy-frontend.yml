@@ -46,6 +46,8 @@ on:
       - "scripts/cascade-lab-engineering-suite-smoke.mjs"
       - "scripts/cascade-lab-experiment-studio-smoke.mjs"
       - "scripts/cascade-lab-trajectory-xray-smoke.mjs"
+      - "scripts/cascade-lab-differential-lab-smoke.mjs"
+      - "docs/33_CASCADE_LAB_0.23.0_DIFFERENTIAL_LAB.md"
       - "docs/32_CASCADE_LAB_0.22.0_TRAJECTORY_XRAY.md"
       - "scripts/game-detail-runtime-smoke.mjs"
       - "scripts/games-monetization-smoke.mjs"
@@ -94,6 +96,8 @@ jobs:
         run: npm run qa:cascade-lab-experiment-studio
       - name: Verify CASCADE LAB trajectory plots, event timeline and privacy boundaries
         run: npm run qa:cascade-lab-trajectory-xray
+      - name: Verify CASCADE LAB design diffs, controlled changes and repeatability
+        run: npm run qa:cascade-lab-differential
       - name: Test game session clock and iframe lifecycle trust boundaries
         run: npm run qa:game-detail-runtime
       - name: Verify REMIX growth funnel, attribution and sponsor safety
