@@ -54,7 +54,7 @@
     "qa:privacy-consent": "node scripts/privacy-consent-center-smoke.mjs",
     "qa:core-analytics-consent": "node scripts/core-analytics-consent-smoke.mjs",
     "qa:player-console": "node scripts/player-console-smoke.mjs",
-    "qa:pwa": "node scripts/osgard-play-pwa-smoke.mjs",
+    "qa:pwa": "node scripts/osgard-play-pwa-smoke.mjs && node scripts/deferred-enhancements-smoke.mjs",
     "qa:cascade-lab-dossier": "node scripts/cascade-lab-experiment-dossier-smoke.mjs",
     "qa:cascade-lab-pwa": "node scripts/cascade-lab-pwa-smoke.mjs",
     "qa:civic-cascade": "node scripts/civic-cascade-crisis-smoke.mjs",
