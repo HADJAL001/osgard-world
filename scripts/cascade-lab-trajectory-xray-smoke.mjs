@@ -11,7 +11,7 @@ assert.equal(api.schema, 'osgard.cascade-lab.trajectory-xray.v1');
 assert.equal(api.maxRuns, 18);
 assert.equal(api.maxFrames, 420);
 assert.equal(api.maxImportBytes, 600 * 1024);
-assert.ok(html.includes('name="osgard-game-version" content="0.25.0-evidence-integrity"'), 'game metadata must identify the v0.26 application shell');
+assert.ok(html.includes('name="osgard-game-version" content="0.26.0-replay-verification"'), 'game metadata must identify the v0.26 application shell');
 assert.ok(html.includes('<title>CASCADE LAB — Premium Physics Lab 0.26.0</title>'), 'document title must identify the v0.26 application shell');
 assert.ok(html.includes('id="CASCADELAB021"') && html.includes('case-passport.js?v=0.21.0'), 'Case Passport 0.21 must remain integrated');
 assert.ok(html.includes('id="CASCADELAB022"') && html.includes('trajectory-xray.js?v=0.22.0') && html.includes('data-cascade-lab-xray="0.22.0"'), 'X-Ray loader must be versioned and cache-busted');
