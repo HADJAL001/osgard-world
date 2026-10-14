@@ -1052,7 +1052,7 @@ assert.ok(appStyles.includes('.play-economy-strip') && appStyles.includes('@medi
 const promoVariantSource=readFileSync(resolve('public/games/game-session-recommendations.js'),'utf8')
 const promoVariantApi=readFileSync(resolve('services/osgard-commerce-api/src/server.mjs'),'utf8')
 const promoVariantAdmin=readFileSync(resolve('public/games/commerce-admin/index.html'),'utf8')
-assert.ok(promoVariantSource.includes("const sessionSpotlightVariant=Math.random()<0.5?'a':'b'") && promoVariantSource.includes("spotlightVariant=sessionSpotlightVariant") && !promoVariantSource.includes("spotlightVariant=Math.random()<0.5?'a':'b'"), 'OSGARD SELECT must keep one CTA variant stable for the page session')
+assert.ok(promoVariantSource.includes("const sessionSpotlightVariant=getSessionSpotlightVariant()") && promoVariantSource.includes("osgard.games.select-spotlight-variant.v1") && promoVariantSource.includes("spotlightVariant=sessionSpotlightVariant") && !promoVariantSource.includes("spotlightVariant=Math.random()<0.5?'a':'b'"), 'OSGARD SELECT must keep one CTA variant stable for the browser tab session')
 assert.ok(promoVariantSource.includes("variant==='a'?'Открыть официальный сайт ↗':'Изучить сервис ↗'"), 'A/B experiment must compare the two intended Russian CTA labels')
 assert.ok(promoVariantSource.includes("'osgard-select:spotlight:'+serviceId+':'+variant") && promoVariantSource.includes("'osgard-select:click:'+item[0]+':'+variant"), 'Experiment impressions and CTA clicks must carry the same variant label')
 assert.ok(promoVariantApi.includes('ownedPromoVariantStats') && promoVariantApi.includes("source ~ '^osgard-select:(spotlight|click):[a-z0-9-]{1,40}:[ab]$'"), 'Commerce API must aggregate only well-formed A/B experiment events')
