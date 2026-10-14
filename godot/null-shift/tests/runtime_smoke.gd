@@ -2083,7 +2083,7 @@ func _run_smoke() -> void:
 	game.counter_windows_earned = old_counter_earned
 	game.countershot_hits = old_counter_hits
 	var new_report: Dictionary = game._build_after_action_report()
-	if not _expect(str(new_report.get("gameVersion", "")) == "0.21.0-tactical-mastery" and new_report.get("suppression", {}).has("pressureHits") and new_report.get("suppression", {}).has("attackInterrupts"), "after-action export must include versioned kinetic-pressure metrics"):
+	if not _expect(str(new_report.get("gameVersion", "")) == "0.22.0-operator-chronicle" and new_report.get("suppression", {}).has("pressureHits") and new_report.get("suppression", {}).has("attackInterrupts"), "after-action export must include versioned kinetic-pressure metrics"):
 		return
 	if not _expect(new_report.get("thermal", {}).has("overheatEvents") and new_report.get("thermal", {}).has("ventHostilesInterrupted"), "after-action export must include versioned thermal metrics"):
 		return
@@ -2095,7 +2095,66 @@ func _run_smoke() -> void:
 		return
 	if not _expect(new_report.get("dailyObjective", {}).has("goal"), "daily report must export the measurable tactical bonus objective"):
 		return
-	if not _expect(str(new_report.get("gameVersion", "")) == "0.21.0-tactical-mastery" and new_report.get("phaseEcho", {}).get("deployments", -1) >= 0 and new_report.get("phaseEcho", {}).has("confirmedLures"), "after-action report must expose versioned Echo use and confirmed AI diversion counts"):
+	if not _expect(str(new_report.get("gameVersion", "")) == "0.22.0-operator-chronicle" and new_report.get("phaseEcho", {}).get("deployments", -1) >= 0 and new_report.get("phaseEcho", {}).has("confirmedLures"), "after-action report must expose versioned Echo use and confirmed AI diversion counts"):
+		return
+
+	print("RUNTIME_STAGE: operator chronicle integrity, bounded archive and medals")
+	var chronicle_sample: Dictionary = {
+		"game": "NULL//SHIFT",
+		"outcome": "SUCCESS",
+		"challengeCode": "NS-20261014-C2",
+		"runSeed": 1714,
+		"contract": {"index": 2, "name": "BLACKOUT RUN"},
+		"elapsedSeconds": 91.3,
+		"score": 4820,
+		"grade": "A",
+		"combat": {"eliminations": 8, "criticalHits": 9, "shotsFired": 10, "shotsHit": 9, "accuracyPercent": 90.0, "damageTaken": 0.0, "bestCombo": 10, "overdriveArcs": 2},
+		"devices": {"destroyed": 2},
+		"suppression": {"pressureBreaks": 3},
+		"phaseEcho": {"confirmedLures": 1},
+		"warden": {"precisionStaggers": 1},
+		"salvage": {"collected": 2},
+		"dailyObjective": {"completed": true},
+		"anomalies": ["hunter", "grid", "not-allowed", "hunter"]
+	}
+	var chronicle_record: Dictionary = game._operator_chronicle_record_from_report(chronicle_sample, 7, "2026-10-14T12:00:00")
+	if not _expect(str(chronicle_record.get("recordId", "")) == "NS-R000007" and str(chronicle_record.get("outcome", "")) == "SUCCESS", "chronicle must produce stable IDs and preserve completed mission outcome"):
+		return
+	if not _expect(chronicle_record.get("anomalies", []).size() == 2 and chronicle_record.get("anomalies", []).has("hunter") and not chronicle_record.get("anomalies", []).has("not-allowed"), "archive must whitelist, deduplicate and cap anomaly labels"):
+		return
+	var invalid_record: Dictionary = game._normalize_operator_chronicle_record({"recordId": "BAD", "outcome": "PENDING", "score": -9})
+	if not _expect(invalid_record.is_empty(), "archive validator must reject unsupported outcomes rather than storing corrupt records"):
+		return
+	var bounded_history: Array[Dictionary] = []
+	for record_number in range(1, game.MAX_OPERATOR_CHRONICLE_RECORDS + 4):
+		var bounded_record := game._operator_chronicle_record_from_report(chronicle_sample, record_number, "2026-10-14T12:00:00")
+		bounded_history = game._operator_chronicle_append(bounded_history, bounded_record)
+	if not _expect(bounded_history.size() == game.MAX_OPERATOR_CHRONICLE_RECORDS and str(bounded_history[0]["recordId"]) == "NS-R000004", "career archive must retain only the newest 24 normalized runs"):
+		return
+	var deduped_history := game._operator_chronicle_append(bounded_history, bounded_history[-1])
+	if not _expect(deduped_history.size() == bounded_history.size(), "appending the same run ID twice must not duplicate career history"):
+		return
+	var failed_sample: Dictionary = chronicle_sample.duplicate(true)
+	failed_sample["outcome"] = "FAILED"
+	failed_sample["score"] = 1100
+	failed_sample["combat"]["damageTaken"] = 18.0
+	var failed_record := game._operator_chronicle_record_from_report(failed_sample, 99, "2026-10-14T12:01:00")
+	var mixed_history: Array[Dictionary] = bounded_history.duplicate(true)
+	mixed_history = game._operator_chronicle_append(mixed_history, failed_record)
+	var chronicle_stats: Dictionary = game._operator_chronicle_summary(mixed_history)
+	if not _expect(int(chronicle_stats.get("runs", 0)) == game.MAX_OPERATOR_CHRONICLE_RECORDS and int(chronicle_stats.get("wins", 0)) == game.MAX_OPERATOR_CHRONICLE_RECORDS - 1 and int(chronicle_stats.get("losses", 0)) == 1 and float(chronicle_stats.get("winRatePercent", 0.0)) < 100.0, "career summary must reconcile wins, failures and win-rate after bounded eviction"):
+		return
+	if not _expect(int(chronicle_stats.get("bestScore", 0)) == 4820 and int(chronicle_stats.get("averageScore", 0)) > 0 and int(chronicle_stats.get("totalEliminations", 0)) >= 8, "career summary must compute best score, average score and elimination totals from validated records"):
+		return
+	var chronicle_awards: Array[String] = game._operator_chronicle_unlocks_for_report(chronicle_sample, 0)
+	for award_id in ["first-extraction", "ghost-extraction", "sharpshooter", "apex-combo", "warden-breaker", "echo-architect", "system-saboteur", "pressure-master", "salvage-reclaimer", "anomaly-survivor", "overdrive-conductor", "perfect-operator"]:
+		if not _expect(chronicle_awards.has(award_id), "achievement rule must award the expected deterministic medal: " + award_id):
+			return
+	var partial_awards: Array[String] = game._operator_chronicle_unlocks_for_report(failed_sample, 3)
+	if not _expect(not partial_awards.has("first-extraction") and not partial_awards.has("ghost-extraction") and not partial_awards.has("perfect-operator"), "failed and damaged runs cannot unlock success-only medals"):
+		return
+	game._update_operator_chronicle_panel()
+	if not _expect(is_instance_valid(game.chronicle_panel) and is_instance_valid(game.chronicle_history_label) and is_instance_valid(game.chronicle_awards_label), "career Chronicle must have a real, addressable summary/history/achievement UI"):
 		return
 	game.player.global_position = previous_player_position
 	game.mission_finished = previous_mission_finished

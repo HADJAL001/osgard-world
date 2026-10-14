@@ -534,3 +534,44 @@ All pressure metrics remain in the current session and the player's locally expo
 7. **Persistent ARC-9 mastery:** lifetime critical hits unlock ranks at 12, 30, 60 and 100 precision hits. Each rank reduces weapon heat per shot by 3.5%; rank appears in the thermal HUD and after-action JSON.
 
 Regression coverage exercises weakpoint exposure, countershot timing, salvage collection/cooling, threat ordering, combo tiers, date-scoped bonus idempotency, and career-based weapon cooling. All events and report fields remain local and bounded; no new service, network telemetry or third-party dependency is introduced.
+
+
+## Godot release 0.22 — Operator Chronicle / 30 connected improvements
+
+### Archive integrity and run identity
+1. Every finished raid, including failures, receives a unique sequential record ID.
+2. Each entry records a UTC timestamp without collecting a player name or account identifier.
+3. The archive records the contract number and contract name.
+4. Daily challenge code and stable run seed travel with the record.
+5. Each entry carries the actual outcome instead of treating a failed raid as a missing record.
+6. Scores and grade are normalized and bounded before storage.
+7. Duration is range-checked and rounded for compact, consistent display.
+8. Eliminations and critical hits are recorded independently.
+9. Shot count and measured accuracy are preserved.
+10. Damage taken and best combo are recorded for comparison.
+11. Device destruction count is preserved.
+12. Suppression-break count is preserved.
+13. Confirmed Phase Echo diversions are preserved.
+14. Warden precision staggers are preserved.
+15. Daily tactical side-objective completion is preserved.
+16. Anomaly identifiers are allowlisted, deduplicated and limited to the two active modifiers.
+
+### Local career intelligence
+17. The on-device archive retains the newest 24 validated runs.
+18. Unsupported outcomes and malformed records are rejected.
+19. Duplicate record IDs cannot produce duplicate history rows.
+20. The all-time run counter remains separate from the bounded recent archive.
+21. Wins and failures have independent lifetime totals.
+22. Win rate is calculated from real recorded outcomes.
+23. Best score and best accuracy are tracked across the career.
+24. Clean extractions are counted separately from ordinary victories.
+25. A summary calculates recent average score and total eliminations from validated entries.
+26. Twelve deterministic medals respond to real run results: first extraction, damage-free extraction, accuracy, combo, Warden, Echo, device sabotage, pressure breaks, salvage, anomaly survival, Overdrive chains and a perfect operator run.
+
+### User interface, portability and QA
+27. The responsive Operator Chronicle panel exposes career totals, bests and win rate.
+28. The scrollable run ledger shows result, grade, contract, time, accuracy, combat summary and anomaly pair.
+29. The same panel is reachable from the result screen, loadout and J; Escape returns to the previous screen without leaving a raid running.
+30. JSON archive export is explicitly local-only; the headless Godot runtime checks record normalization, 24-entry capacity, duplicate protection, statistics, all medal rules and the real UI wiring.
+
+The Chronicle uses the existing local career save and Godot runtime—no backend, third-party package or hidden analytics upload. Existing after-action JSON remains available as the detailed single-run report.

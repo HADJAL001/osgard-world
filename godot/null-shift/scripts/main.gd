@@ -66,6 +66,9 @@ const MAX_SALVAGE_DROPS := 8
 const SALVAGE_LIFETIME_SECONDS := 12.0
 const SALVAGE_COLLECT_RADIUS := 1.55
 const DAILY_TACTICAL_BONUS_CREDITS := 250
+const OPERATOR_CHRONICLE_SCHEMA := "osgard.nullshift.operator-chronicle/v1"
+const MAX_OPERATOR_CHRONICLE_RECORDS := 24
+const MAX_OPERATOR_CHRONICLE_ACHIEVEMENTS := 16
 
 var player: CharacterBody3D
 var camera: Camera3D
@@ -382,6 +385,14 @@ var daily_streak_label: Label
 var result_reward_label: Label
 var result_intel_label: Label
 var result_share_label: Label
+var chronicle_panel: PanelContainer
+var chronicle_scroll: ScrollContainer
+var chronicle_summary_label: Label
+var chronicle_awards_label: Label
+var chronicle_history_label: Label
+var chronicle_previous_paused := false
+var chronicle_return_to_result := false
+var chronicle_return_to_loadout := false
 const MAX_RAID_EVENT_COUNT := 64
 const AFTER_ACTION_REPORT_SCHEMA := "osgard.nullshift.after-action/v1"
 var raid_event_ledger: Array[Dictionary] = []
@@ -703,6 +714,16 @@ func _physics_process(delta: float) -> void:
 		_finish_mission(false)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if is_instance_valid(chronicle_panel) and chronicle_panel.visible:
+		if event is InputEventKey:
+			var chronicle_key := event as InputEventKey
+			if chronicle_key.pressed and not chronicle_key.echo:
+				if chronicle_key.keycode == KEY_ESCAPE:
+					_close_operator_chronicle()
+				elif chronicle_key.keycode == KEY_J:
+					_export_operator_chronicle()
+				get_viewport().set_input_as_handled()
+		return
 	if event is InputEventMouseMotion:
 		_set_gamepad_mode(false)
 		return
@@ -772,6 +793,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_set_pause(not paused_game)
 		KEY_C:
 			_cycle_contract()
+		KEY_J:
+			_show_operator_chronicle()
 		KEY_U:
 			_toggle_loadout()
 		KEY_1:
@@ -3569,6 +3592,9 @@ func _finish_mission(success: bool) -> void:
 		_play_sfx(70.0, 0.9, 0.18)
 	if is_instance_valid(result_intel_label):
 		result_intel_label.text = "MISSION INTEL · " + _after_action_insights_text()
+	var new_chronicle_awards := _record_operator_chronicle(_build_after_action_report())
+	if not new_chronicle_awards.is_empty() and is_instance_valid(result_intel_label):
+		result_intel_label.text += " · AWARDS: " + " / ".join(new_chronicle_awards)
 	result_panel.visible = true
 	if OS.has_feature("web"):
 		JavaScriptBridge.eval("if(window.OSGARDGameLifecycle){window.OSGARDGameLifecycle({type:'osgard:game-lifecycle',game:'null-shift',state:'completed',at:Date.now()});}else if(window.parent!==window){window.parent.postMessage({type:'osgard:game-lifecycle',game:'null-shift',state:'completed',at:Date.now()},window.location.origin);}")
@@ -4080,7 +4106,7 @@ func _build_after_action_report() -> Dictionary:
 	return {
 		"schema": AFTER_ACTION_REPORT_SCHEMA,
 		"game": "NULL//SHIFT",
-		"gameVersion": "0.21.0-tactical-mastery",
+		"gameVersion": "0.22.0-operator-chronicle",
 		"outcome": outcome,
 		"challengeCode": daily_challenge_code if daily_challenge_active else "",
 		"runSeed": daily_run_seed,
@@ -4187,6 +4213,407 @@ func _export_after_action_report() -> void:
 		DisplayServer.clipboard_set(report_text)
 		if is_instance_valid(result_intel_label):
 			result_intel_label.text = "ОТЧЁТ JSON СКОПИРОВАН В БУФЕР · ЛОКАЛЬНЫЙ ЭКСПОРТ"
+	_update_hud()
+
+
+func _create_operator_chronicle_panel() -> void:
+	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+	var panel_width: float = maxf(288.0, minf(760.0, viewport_size.x - 24.0))
+	var panel_height: float = maxf(280.0, minf(610.0, viewport_size.y - 24.0))
+	chronicle_panel = _make_panel(hud_root, Control.PRESET_CENTER, Rect2(-panel_width * 0.5, -panel_height * 0.5, panel_width, panel_height))
+	chronicle_panel.name = "OperatorChronicle"
+	chronicle_panel.z_index = 90
+	chronicle_panel.visible = false
+	var stack := _panel_stack(chronicle_panel)
+	_label(stack, "OSGARD FIELD INTELLIGENCE / CAREER RECORD", 9, Color(0.38, 1.0, 0.86))
+	_label(stack, "OPERATOR CHRONICLE", 24, Color(0.91, 0.98, 0.96))
+	chronicle_summary_label = _label(stack, "РЕЙДЫ 0 · ПОБЕДЫ 0 · ЛУЧШИЙ СЧЁТ 0", 11, Color(1.0, 0.77, 0.39))
+	chronicle_summary_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	chronicle_awards_label = _label(stack, "ACHIEVEMENTS · ЕЩЁ НЕ ОТКРЫТЫ", 10, Color(0.38, 1.0, 0.86))
+	chronicle_awards_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	chronicle_scroll = ScrollContainer.new()
+	chronicle_scroll.name = "ChronicleHistoryScroll"
+	chronicle_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	chronicle_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	chronicle_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	chronicle_scroll.custom_minimum_size = Vector2(panel_width - 52.0, maxf(90.0, panel_height - 230.0))
+	stack.add_child(chronicle_scroll)
+	chronicle_history_label = _label(chronicle_scroll, "ПОКА НЕТ ЗАВЕРШЁННЫХ РЕЙДОВ", 10, Color(0.76, 0.89, 0.86))
+	chronicle_history_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	chronicle_history_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var action_row := HBoxContainer.new()
+	action_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	action_row.add_theme_constant_override("separation", 8)
+	stack.add_child(action_row)
+	_add_button(action_row, "ЭКСПОРТ АРХИВА JSON", _export_operator_chronicle, Vector2(maxf(112.0, (panel_width - 64.0) * 0.58), 36.0))
+	_add_button(action_row, "ЗАКРЫТЬ / ESC", _close_operator_chronicle, Vector2(maxf(100.0, (panel_width - 64.0) * 0.38), 36.0))
+	_refresh_operator_chronicle_layout(viewport_size)
+
+func _refresh_operator_chronicle_layout(viewport_size: Vector2) -> void:
+	if not is_instance_valid(chronicle_panel):
+		return
+	var panel_width: float = maxf(288.0, minf(760.0, viewport_size.x - 24.0))
+	var panel_height: float = maxf(280.0, minf(610.0, viewport_size.y - 24.0))
+	chronicle_panel.offset_left = -panel_width * 0.5
+	chronicle_panel.offset_right = panel_width * 0.5
+	chronicle_panel.offset_top = -panel_height * 0.5
+	chronicle_panel.offset_bottom = panel_height * 0.5
+	if is_instance_valid(chronicle_scroll):
+		chronicle_scroll.custom_minimum_size = Vector2(panel_width - 52.0, maxf(70.0, panel_height - 230.0))
+
+func _show_operator_chronicle() -> void:
+	if not is_instance_valid(chronicle_panel):
+		return
+	chronicle_return_to_result = is_instance_valid(result_panel) and result_panel.visible
+	chronicle_return_to_loadout = is_instance_valid(loadout_panel) and loadout_panel.visible and not chronicle_return_to_result
+	chronicle_previous_paused = paused_game
+	if is_instance_valid(result_panel):
+		result_panel.visible = false
+	if is_instance_valid(loadout_panel):
+		loadout_panel.visible = false
+	if is_instance_valid(pause_panel):
+		pause_panel.visible = false
+	paused_game = true
+	_update_operator_chronicle_panel()
+	chronicle_panel.visible = true
+
+func _close_operator_chronicle() -> void:
+	if is_instance_valid(chronicle_panel):
+		chronicle_panel.visible = false
+	paused_game = chronicle_previous_paused
+	if chronicle_return_to_result and is_instance_valid(result_panel) and mission_finished:
+		result_panel.visible = true
+	elif chronicle_return_to_loadout and is_instance_valid(loadout_panel):
+		loadout_panel.visible = true
+	chronicle_return_to_result = false
+	chronicle_return_to_loadout = false
+	_update_hud()
+
+func _update_operator_chronicle_panel() -> void:
+	if not is_instance_valid(chronicle_summary_label):
+		return
+	var history := _operator_chronicle_history()
+	var total_runs: int = maxi(0, int(career.get_value("chronicle", "total_runs", 0)))
+	var wins: int = maxi(0, int(career.get_value("chronicle", "total_successes", 0)))
+	var losses: int = maxi(0, int(career.get_value("chronicle", "total_failures", 0)))
+	var win_rate: float = 0.0 if total_runs == 0 else float(wins) * 100.0 / float(total_runs)
+	chronicle_summary_label.text = "ALL-TIME %d РЕЙДОВ · ПОБЕДЫ %d · ПРОВАЛЫ %d · WIN RATE %.0f%%\nЛУЧШИЙ SCORE %d · ACC PB %.1f%% · БЕЗУЩЕРБНЫЕ ЭВАКУАЦИИ %d · В АРХИВЕ %d/%d" % [
+		total_runs, wins, losses, win_rate,
+		int(career.get_value("chronicle", "best_score", 0)),
+		float(career.get_value("chronicle", "best_accuracy", 0.0)),
+		int(career.get_value("chronicle", "clean_extractions", 0)),
+		history.size(), MAX_OPERATOR_CHRONICLE_RECORDS
+	]
+	var known_achievements := _operator_chronicle_achievement_catalog()
+	var unlocked := _operator_chronicle_unlocked_achievements()
+	var award_titles: Array[String] = []
+	for award in known_achievements:
+		if unlocked.has(str(award["id"])):
+			award_titles.append(str(award["title"]))
+	var award_text := "ДОСТИЖЕНИЯ %d/%d" % [award_titles.size(), known_achievements.size()]
+	if award_titles.is_empty():
+		award_text += " · ПРОХОДИ РЕЙДЫ, ЧТОБЫ ОТКРЫВАТЬ МЕДАЛИ"
+	else:
+		award_text += " · " + " / ".join(award_titles)
+	chronicle_awards_label.text = award_text
+	if history.is_empty():
+		chronicle_history_label.text = "ПОКА НЕТ ЗАПИСЕЙ · ЗАВЕРШИ РЕЙД, ЧТОБЫ СОХРАНИТЬ ЕГО ЗДЕСЬ"
+		return
+	var history_text := ""
+	for index in range(history.size() - 1, -1, -1):
+		var record: Dictionary = history[index]
+		var elapsed_seconds := maxi(0, int(roundf(float(record.get("elapsedSeconds", 0.0)))))
+		var clock_text := "%02d:%02d" % [int(elapsed_seconds / 60), elapsed_seconds % 60]
+		var outcome_text := "EXTRACTED" if str(record.get("outcome", "")) == "SUCCESS" else "FAILED"
+		var anomalies: Array = record.get("anomalies", [])
+		var anomalies_text := " + ".join(anomalies) if not anomalies.is_empty() else "STANDARD"
+		history_text += "%s  %s  ·  %05d  ·  GRADE %s  ·  C%d  ·  %s  ·  ACC %.0f%%\n    %s  ·  KILLS %d  ·  CRITS %d  ·  DAMAGE %.0f  ·  %s\n\n" % [
+			str(record.get("recordId", "")), outcome_text, int(record.get("score", 0)), str(record.get("grade", "C")),
+			int(record.get("contractIndex", 1)), clock_text, float(record.get("accuracyPercent", 0.0)),
+			str(record.get("recordedAtUtc", "")), int(record.get("eliminations", 0)),
+			int(record.get("criticalHits", 0)), float(record.get("damageTaken", 0.0)), anomalies_text
+		]
+	chronicle_history_label.text = history_text
+
+
+func _normalize_operator_chronicle_record(value: Variant) -> Dictionary:
+	if not value is Dictionary:
+		return {}
+	var source: Dictionary = value
+	var outcome := str(source.get("outcome", ""))
+	var record_id := str(source.get("recordId", ""))
+	if outcome not in ["SUCCESS", "FAILED"] or record_id.is_empty():
+		return {}
+	var allowed_anomalies := ["hunter", "armor", "grid", "supply", "fracture", "radar"]
+	var anomalies_value: Variant = source.get("anomalies", [])
+	var safe_anomalies: Array[String] = []
+	if anomalies_value is Array:
+		for anomaly in anomalies_value:
+			var anomaly_id := str(anomaly)
+			if allowed_anomalies.has(anomaly_id) and not safe_anomalies.has(anomaly_id) and safe_anomalies.size() < 2:
+				safe_anomalies.append(anomaly_id)
+	var grade := str(source.get("grade", "C"))
+	if grade not in ["S", "A", "B", "C", "D", "F"]:
+		grade = "C"
+	var recorded_at := str(source.get("recordedAtUtc", "")).substr(0, 40)
+	if recorded_at.is_empty():
+		recorded_at = Time.get_datetime_string_from_system(true)
+	return {
+		"recordId": record_id.substr(0, 32),
+		"recordedAtUtc": recorded_at,
+		"outcome": outcome,
+		"contractIndex": clampi(int(source.get("contractIndex", 1)), 1, 3),
+		"contractName": str(source.get("contractName", "UNKNOWN")).substr(0, 40),
+		"challengeCode": str(source.get("challengeCode", "")).substr(0, 48),
+		"runSeed": clampi(int(source.get("runSeed", 0)), 0, 2147483647),
+		"score": clampi(int(source.get("score", 0)), 0, 999999999),
+		"grade": grade,
+		"elapsedSeconds": clampf(float(source.get("elapsedSeconds", 0.0)), 0.0, 86400.0),
+		"eliminations": clampi(int(source.get("eliminations", 0)), 0, 10000),
+		"criticalHits": clampi(int(source.get("criticalHits", 0)), 0, 10000),
+		"accuracyPercent": clampf(float(source.get("accuracyPercent", 0.0)), 0.0, 100.0),
+		"damageTaken": clampf(float(source.get("damageTaken", 0.0)), 0.0, 1000000.0),
+		"bestCombo": clampi(int(source.get("bestCombo", 0)), 0, 10000),
+		"shotsFired": clampi(int(source.get("shotsFired", 0)), 0, 100000),
+		"devicesDestroyed": clampi(int(source.get("devicesDestroyed", 0)), 0, 1000),
+		"pressureBreaks": clampi(int(source.get("pressureBreaks", 0)), 0, 10000),
+		"phaseEchoLures": clampi(int(source.get("phaseEchoLures", 0)), 0, 10000),
+		"wardenStaggers": clampi(int(source.get("wardenStaggers", 0)), 0, 1000),
+		"dailyObjectiveCompleted": bool(source.get("dailyObjectiveCompleted", false)),
+		"anomalies": safe_anomalies
+	}
+
+func _operator_chronicle_record_from_report(report: Dictionary, record_number: int, recorded_at: String) -> Dictionary:
+	var combat: Dictionary = report.get("combat", {})
+	var contract: Dictionary = report.get("contract", {})
+	var devices_summary: Dictionary = report.get("devices", {})
+	var suppression: Dictionary = report.get("suppression", {})
+	var phase_echo: Dictionary = report.get("phaseEcho", {})
+	var warden: Dictionary = report.get("warden", {})
+	var daily_objective: Dictionary = report.get("dailyObjective", {})
+	var record := {
+		"recordId": "NS-R%06d" % maxi(1, record_number),
+		"recordedAtUtc": recorded_at,
+		"outcome": str(report.get("outcome", "")),
+		"contractIndex": int(contract.get("index", 1)),
+		"contractName": str(contract.get("name", "UNKNOWN")),
+		"challengeCode": str(report.get("challengeCode", "")),
+		"runSeed": int(report.get("runSeed", 0)),
+		"score": int(report.get("score", 0)),
+		"grade": str(report.get("grade", "C")),
+		"elapsedSeconds": float(report.get("elapsedSeconds", 0.0)),
+		"eliminations": int(combat.get("eliminations", 0)),
+		"criticalHits": int(combat.get("criticalHits", 0)),
+		"accuracyPercent": float(combat.get("accuracyPercent", 0.0)),
+		"damageTaken": float(combat.get("damageTaken", 0.0)),
+		"bestCombo": int(combat.get("bestCombo", 0)),
+		"shotsFired": int(combat.get("shotsFired", 0)),
+		"devicesDestroyed": int(devices_summary.get("destroyed", 0)),
+		"pressureBreaks": int(suppression.get("pressureBreaks", 0)),
+		"phaseEchoLures": int(phase_echo.get("confirmedLures", 0)),
+		"wardenStaggers": int(warden.get("precisionStaggers", 0)),
+		"dailyObjectiveCompleted": bool(daily_objective.get("completed", false)),
+		"anomalies": report.get("anomalies", [])
+	}
+	return _normalize_operator_chronicle_record(record)
+
+func _operator_chronicle_append(history: Array, new_record: Dictionary) -> Array[Dictionary]:
+	var safe_history: Array[Dictionary] = []
+	var normalized_new := _normalize_operator_chronicle_record(new_record)
+	if normalized_new.is_empty():
+		return safe_history
+	var duplicate_found := false
+	for value in history:
+		var normalized := _normalize_operator_chronicle_record(value)
+		if normalized.is_empty():
+			continue
+		if str(normalized.get("recordId", "")) == str(normalized_new.get("recordId", "")):
+			duplicate_found = true
+		safe_history.append(normalized)
+	if not duplicate_found:
+		safe_history.append(normalized_new)
+	while safe_history.size() > MAX_OPERATOR_CHRONICLE_RECORDS:
+		safe_history.pop_front()
+	return safe_history
+
+func _operator_chronicle_summary(history: Array) -> Dictionary:
+	var runs := 0
+	var wins := 0
+	var losses := 0
+	var best_score := 0
+	var total_score := 0
+	var best_accuracy := 0.0
+	var total_eliminations := 0
+	var clean_extractions := 0
+	for value in history:
+		var record := _normalize_operator_chronicle_record(value)
+		if record.is_empty():
+			continue
+		runs += 1
+		if str(record["outcome"]) == "SUCCESS":
+			wins += 1
+			if float(record["damageTaken"]) <= 0.0:
+				clean_extractions += 1
+		else:
+			losses += 1
+		var score: int = int(record["score"])
+		total_score += score
+		best_score = maxi(best_score, score)
+		best_accuracy = maxf(best_accuracy, float(record["accuracyPercent"]))
+		total_eliminations += int(record["eliminations"])
+	return {
+		"runs": runs,
+		"wins": wins,
+		"losses": losses,
+		"winRatePercent": 0.0 if runs == 0 else snappedf(float(wins) * 100.0 / float(runs), 0.1),
+		"averageScore": 0 if runs == 0 else int(roundf(float(total_score) / float(runs))),
+		"bestScore": best_score,
+		"bestAccuracyPercent": snappedf(best_accuracy, 0.1),
+		"cleanExtractions": clean_extractions,
+		"totalEliminations": total_eliminations
+	}
+
+func _operator_chronicle_achievement_catalog() -> Array[Dictionary]:
+	return [
+		{"id": "first-extraction", "title": "FIRST EXTRACTION", "detail": "Вернись живым хотя бы один раз"},
+		{"id": "ghost-extraction", "title": "GHOST", "detail": "Заверши рейд без полученного урона"},
+		{"id": "sharpshooter", "title": "SHARPSHOOTER", "detail": "Победа с точностью не ниже 90% и минимум 8 выстрелами"},
+		{"id": "apex-combo", "title": "APEX", "detail": "Собери серию из 10 устранений"},
+		{"id": "warden-breaker", "title": "WARDEN BREAKER", "detail": "Оглуши Warden точным попаданием"},
+		{"id": "echo-architect", "title": "ECHO ARCHITECT", "detail": "Отвлеки охрану фазовым эхом"},
+		{"id": "system-saboteur", "title": "SYSTEM SABOTEUR", "detail": "Уничтожь интерактивное устройство"},
+		{"id": "pressure-master", "title": "PRESSURE MASTER", "detail": "Прерви три атаки подавлением"},
+		{"id": "salvage-reclaimer", "title": "SALVAGE RECLAIMER", "detail": "Подними полевой ресурс"},
+		{"id": "anomaly-survivor", "title": "ANOMALY SURVIVOR", "detail": "Победи в рейде с двумя аномалиями"},
+		{"id": "overdrive-conductor", "title": "OVERDRIVE CONDUCTOR", "detail": "Создай минимум две дуговые цепи"},
+		{"id": "perfect-operator", "title": "PERFECT OPERATOR", "detail": "Безупречная эвакуация с точностью от 95%"}
+	]
+
+func _operator_chronicle_unlocks_for_report(report: Dictionary, previous_successes: int = 0) -> Array[String]:
+	var unlocked: Array[String] = []
+	var outcome := str(report.get("outcome", ""))
+	var combat: Dictionary = report.get("combat", {})
+	var devices_summary: Dictionary = report.get("devices", {})
+	var suppression: Dictionary = report.get("suppression", {})
+	var phase_echo: Dictionary = report.get("phaseEcho", {})
+	var warden: Dictionary = report.get("warden", {})
+	var salvage: Dictionary = report.get("salvage", {})
+	var anomalies_value: Variant = report.get("anomalies", [])
+	var anomaly_count := anomalies_value.size() if anomalies_value is Array else 0
+	var accuracy: float = float(combat.get("accuracyPercent", 0.0))
+	var damage_taken: float = float(combat.get("damageTaken", 0.0))
+	var shots_fired: int = int(combat.get("shotsFired", 0))
+	var best_combo: int = int(combat.get("bestCombo", 0))
+	var overdrive_arcs: int = int(combat.get("overdriveArcs", 0))
+	if outcome == "SUCCESS" and previous_successes == 0:
+		unlocked.append("first-extraction")
+	if outcome == "SUCCESS" and damage_taken <= 0.0:
+		unlocked.append("ghost-extraction")
+	if outcome == "SUCCESS" and accuracy >= 90.0 and shots_fired >= 8:
+		unlocked.append("sharpshooter")
+	if best_combo >= 10:
+		unlocked.append("apex-combo")
+	if int(warden.get("precisionStaggers", 0)) > 0:
+		unlocked.append("warden-breaker")
+	if int(phase_echo.get("confirmedLures", 0)) > 0:
+		unlocked.append("echo-architect")
+	if int(devices_summary.get("destroyed", 0)) > 0:
+		unlocked.append("system-saboteur")
+	if int(suppression.get("pressureBreaks", 0)) >= 3:
+		unlocked.append("pressure-master")
+	if int(salvage.get("collected", 0)) > 0:
+		unlocked.append("salvage-reclaimer")
+	if outcome == "SUCCESS" and anomaly_count >= 2:
+		unlocked.append("anomaly-survivor")
+	if overdrive_arcs >= 2:
+		unlocked.append("overdrive-conductor")
+	if outcome == "SUCCESS" and damage_taken <= 0.0 and accuracy >= 95.0:
+		unlocked.append("perfect-operator")
+	return unlocked
+
+func _operator_chronicle_history() -> Array[Dictionary]:
+	var raw_history: Variant = career.get_value("chronicle", "history", [])
+	var history: Array[Dictionary] = []
+	if raw_history is Array:
+		for item in raw_history:
+			var normalized := _normalize_operator_chronicle_record(item)
+			if not normalized.is_empty():
+				history.append(normalized)
+	while history.size() > MAX_OPERATOR_CHRONICLE_RECORDS:
+		history.pop_front()
+	return history
+
+func _operator_chronicle_unlocked_achievements() -> Array[String]:
+	var raw_unlocked: Variant = career.get_value("chronicle", "achievements", [])
+	var allowed_ids: Array[String] = []
+	for achievement in _operator_chronicle_achievement_catalog():
+		allowed_ids.append(str(achievement["id"]))
+	var unlocked: Array[String] = []
+	if raw_unlocked is Array:
+		for item in raw_unlocked:
+			var achievement_id := str(item)
+			if allowed_ids.has(achievement_id) and not unlocked.has(achievement_id) and unlocked.size() < MAX_OPERATOR_CHRONICLE_ACHIEVEMENTS:
+				unlocked.append(achievement_id)
+	return unlocked
+
+func _record_operator_chronicle(report: Dictionary) -> Array[String]:
+	var total_before: int = maxi(0, int(career.get_value("chronicle", "total_runs", 0)))
+	var successes_before: int = maxi(0, int(career.get_value("chronicle", "total_successes", 0)))
+	var record := _operator_chronicle_record_from_report(report, total_before + 1, Time.get_datetime_string_from_system(true))
+	if record.is_empty():
+		return []
+	var history := _operator_chronicle_append(_operator_chronicle_history(), record)
+	career.set_value("chronicle", "history", history)
+	career.set_value("chronicle", "total_runs", total_before + 1)
+	if str(record["outcome"]) == "SUCCESS":
+		career.set_value("chronicle", "total_successes", successes_before + 1)
+	else:
+		career.set_value("chronicle", "total_failures", maxi(0, int(career.get_value("chronicle", "total_failures", 0))) + 1)
+	career.set_value("chronicle", "best_score", maxi(int(career.get_value("chronicle", "best_score", 0)), int(record["score"])))
+	career.set_value("chronicle", "best_accuracy", maxf(float(career.get_value("chronicle", "best_accuracy", 0.0)), float(record["accuracyPercent"])))
+	if str(record["outcome"]) == "SUCCESS" and float(record["damageTaken"]) <= 0.0:
+		career.set_value("chronicle", "clean_extractions", maxi(0, int(career.get_value("chronicle", "clean_extractions", 0))) + 1)
+	var unlocked := _operator_chronicle_unlocked_achievements()
+	var new_awards: Array[String] = []
+	for achievement_id in _operator_chronicle_unlocks_for_report(report, successes_before):
+		if not unlocked.has(achievement_id) and unlocked.size() < MAX_OPERATOR_CHRONICLE_ACHIEVEMENTS:
+			unlocked.append(achievement_id)
+			new_awards.append(achievement_id)
+	career.set_value("chronicle", "achievements", unlocked)
+	_save_career()
+	return new_awards
+
+func _build_operator_chronicle_export() -> Dictionary:
+	var history := _operator_chronicle_history()
+	var summary := _operator_chronicle_summary(history)
+	summary["lifetimeRuns"] = maxi(0, int(career.get_value("chronicle", "total_runs", 0)))
+	summary["lifetimeWins"] = maxi(0, int(career.get_value("chronicle", "total_successes", 0)))
+	summary["lifetimeLosses"] = maxi(0, int(career.get_value("chronicle", "total_failures", 0)))
+	summary["lifetimeBestScore"] = maxi(0, int(career.get_value("chronicle", "best_score", 0)))
+	return {
+		"schema": OPERATOR_CHRONICLE_SCHEMA,
+		"game": "NULL//SHIFT",
+		"gameVersion": "0.22.0-operator-chronicle",
+		"generatedAtUtc": Time.get_datetime_string_from_system(true),
+		"localOnly": true,
+		"networkUpload": false,
+		"summary": summary,
+		"history": history.duplicate(true),
+		"achievements": _operator_chronicle_unlocked_achievements()
+	}
+
+func _export_operator_chronicle() -> void:
+	var archive_text := JSON.stringify(_build_operator_chronicle_export(), "\t")
+	if OS.has_feature("web"):
+		var encoded_archive := JSON.stringify(archive_text)
+		var script := "(function(){const d=" + encoded_archive + ";const b=new Blob([d],{type:'application/json;charset=utf-8'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='null-shift-operator-chronicle-'+Date.now()+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500);})();"
+		JavaScriptBridge.eval(script)
+		if is_instance_valid(chronicle_summary_label):
+			chronicle_summary_label.text += "\nАРХИВ JSON СКАЧАН ЛОКАЛЬНО · ДАННЫЕ НЕ ОТПРАВЛЯЮТСЯ"
+	else:
+		DisplayServer.clipboard_set(archive_text)
+		if is_instance_valid(chronicle_summary_label):
+			chronicle_summary_label.text += "\nАРХИВ JSON СКОПИРОВАН В БУФЕР"
 	_update_hud()
 
 func _daily_mutator_catalog() -> Array[Dictionary]:
@@ -5142,6 +5569,7 @@ func _create_ui() -> void:
 	daily_streak_label = _label(loadout_stack, "СЕРИЯ 0 ДНЕЙ · БОНУСЫ ЗА 3 И 7 ДНЕЙ", 9, Color(0.38, 1.0, 0.86))
 	daily_streak_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	daily_challenge_button = _add_button(loadout_stack, "DAILY OP / СЕГОДНЯ · +400 CR", _start_daily_challenge, Vector2(loadout_button_width, 38.0))
+	_add_button(loadout_stack, "CAREER CHRONICLE / J", _show_operator_chronicle, Vector2(loadout_button_width, 34.0))
 	_add_button(loadout_stack, "КОНТРАКТ / C", _cycle_contract, Vector2(loadout_button_width, 34.0))
 	_add_button(loadout_stack, "ЗАКРЫТЬ / U", _close_loadout, Vector2(loadout_button_width, 34.0))
 
@@ -5173,6 +5601,8 @@ func _create_ui() -> void:
 	_add_button(result_stack, "ПОДЕЛИТЬСЯ РЕЗУЛЬТАТОМ / ВЫЗВАТЬ ДРУГА", _share_run, Vector2(result_button_width, 38.0))
 	_add_button(result_stack, "НОВЫЙ РЕЙД", _restart_game, Vector2(result_button_width, 42.0))
 	_add_button(result_stack, "МОДУЛИ И КОСМЕТИКА", _show_loadout_from_result, Vector2(result_button_width, 38.0))
+	_add_button(result_stack, "OPERATOR CHRONICLE / J", _show_operator_chronicle, Vector2(result_button_width, 34.0))
+	_create_operator_chronicle_panel()
 
 	tactical_radar_panel = _make_panel(hud_root, Control.PRESET_TOP_RIGHT, Rect2(-264.0, 210.0, 246.0, 194.0))
 	var radar_stack: VBoxContainer = _panel_stack(tactical_radar_panel)
@@ -5777,6 +6207,7 @@ func _update_mobile_layout() -> void:
 	last_layout_touch = touch_device
 	_apply_hud_scale()
 	var width: float = viewport_size.x
+	_refresh_operator_chronicle_layout(viewport_size)
 	var compact: bool = width < 880.0 or touch_device
 	mobile_controls_visible = compact
 	if is_instance_valid(tactical_radar_panel):
