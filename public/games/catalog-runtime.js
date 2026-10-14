@@ -28,6 +28,7 @@
       const item = items.get(card.dataset.game);
       if (!item) continue;
       card.hidden = !item.visible;
+      card.style.display = item.visible ? '' : 'none';
       card.style.order = String(item.sortOrder);
       card.classList.toggle('featured', item.featured);
       const title = card.querySelector('.copy .game-title h3');
@@ -35,6 +36,7 @@
       const description = card.querySelector('.copy > p');
       if (description) description.textContent = item.description;
       card.dataset.title = item.title.toLocaleLowerCase();
+      card.dataset.genres = item.genres.join(' ');
       card.dataset.search = [item.title, item.description, item.genres.map((genre) => genreLabels[genre]).join(' ')].join(' ').toLocaleLowerCase();
 
       const tags = card.querySelector('.copy .tags');
