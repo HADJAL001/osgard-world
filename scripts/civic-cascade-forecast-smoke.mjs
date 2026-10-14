@@ -6,7 +6,7 @@ const manifest = JSON.parse(await readFile(new URL('../public/games/civic-cascad
 const check = (value, message) => assert.ok(value, message)
 
 assert.equal(manifest.gameId, 'civic-cascade')
-assert.equal(manifest.version, '3.0.0', 'release manifest must match this regression suite')
+assert.equal(manifest.version, '3.1.0', 'release manifest must match this regression suite')
 assert.equal(manifest.buildContract?.cascadeForecast?.enabled, true)
 assert.deepEqual(manifest.buildContract?.cascadeForecast?.horizonsGameSeconds, [30, 60, 90])
 assert.equal(manifest.buildContract?.cascadeForecast?.randomIncidentsForecasted, false)
@@ -36,6 +36,13 @@ assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.portfolioLimit, 
 assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.explainsCandidateTradeoffs, true)
 assert.equal(manifest.buildContract?.decisionDossier?.enabled, true)
 assert.equal(manifest.buildContract?.decisionDossier?.tracksNoPersonalData, true)
+assert.equal(manifest.buildContract?.decisionDossier?.schema, 'osgard.civic-cascade.decision-dossier/v1')
+assert.equal(manifest.buildContract?.decisionDossier?.exportFormat, 'application/json')
+assert.equal(manifest.buildContract?.decisionDossier?.payloadIntegrityHash, 'SHA-256')
+assert.equal(manifest.buildContract?.decisionDossier?.localOnly, true)
+assert.equal(manifest.buildContract?.decisionDossier?.userInitiatedDownloadOnly, true)
+assert.equal(manifest.buildContract?.decisionDossier?.sendsTelemetry, false)
+assert.equal(manifest.buildContract?.decisionDossier?.includesPersonalData, false)
 assert.deepEqual(manifest.buildContract?.adaptiveCrisisDirector?.nodes, ['substation','pump','bridge','hospital','shelter'])
 
 const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1])
@@ -46,7 +53,7 @@ for (const id of [
   'cc-cascade-plan-90', 'cc-cascade-note', 'cc-node-inspector', 'cc-node-health',
   'cc-node-health-bar', 'cc-node-status', 'cc-node-chain', 'cc-node-effect', 'cc-adaptive-crisis',
   'cc-causal-debrief', 'cc-causal-summary', 'cc-causal-count', 'cc-causal-risk-change', 'cc-causal-weakest', 'cc-causal-best', 'cc-causal-ledger',
-  'cc-doctrine-lab', 'cc-doctrine-mode', 'cc-doctrine-run', 'cc-doctrine-status', 'cc-doctrine-results', 'cc-doctrine-apply', 'cc-doctrine-reset'
+  'cc-doctrine-lab', 'cc-doctrine-mode', 'cc-doctrine-run', 'cc-doctrine-status', 'cc-doctrine-results', 'cc-doctrine-apply', 'cc-doctrine-reset', 'cc-doctrine-export'
 ]) check(ids.includes(id), 'missing forecast UI element: ' + id)
 
 const mainScript = html.match(/<script>([\s\S]*?)<\/script>/i)?.[1]
@@ -92,6 +99,8 @@ const simulatePath = startElapsed => new Function(
 )(startElapsed, clamp, projectedRisk, nodes, ensureNodeIntegrity, advanceNodeIntegrity)
 
 const doctrineSource = extractBetween('function doctrineObjectiveScore', 'let doctrineResult=null')
+const dossierSource = extractBetween('function buildDoctrineDossierPayload', 'async function exportDoctrineDossier')
+const buildDoctrineDossierPayload = new Function(dossierSource + '\nreturn buildDoctrineDossierPayload;')()
 const planner = new Function('nodes', 'PLAN_ACTIONS', 'clamp',
   doctrineSource + '\nreturn {searchDoctrinePlans, doctrineDominates, doctrineParetoPortfolio};'
 )(nodes, actions, clamp)
@@ -136,6 +145,19 @@ for (const scenario of ['flood', 'blackout', 'blockade']) {
   const runPath = simulatePath(0)
   const result = searchDoctrinePlans(base, 'balanced', 'hub', runOrders, runPath, nodes, actions)
   check(result.evaluatedCount > 0 && result.evaluatedCount <= 1000, scenario + ' doctrine search must stay bounded')
+  const dossier=buildDoctrineDossierPayload(base,result,'3.1.0-reproducible-decision-evidence',scenarios,nodes,0)
+  assert.equal(dossier.schema,'osgard.civic-cascade.decision-dossier/v1')
+  assert.equal(dossier.scenario.id,scenario)
+  assert.equal(dossier.candidates.length,result.alternatives.length)
+  assert.equal(dossier.baseline.forecast.length,3)
+  assert.equal(dossier.engine.modelVersion,'3.1.0')
+  assert.equal(dossier.assumptions.personalDataIncluded,false)
+  assert.equal(dossier.assumptions.telemetrySent,false)
+  assert.equal(dossier.assumptions.openAIAPIUsed,false)
+  assert.equal(dossier.candidates[0].robustness.profiles.length,3)
+  check(!/email|phone|userId|accessToken|password/i.test(JSON.stringify(dossier)),'dossier export must not include personal data or secrets')
+  assert.deepEqual(dossier,buildDoctrineDossierPayload(base,result,'3.1.0-reproducible-decision-evidence',scenarios,nodes,0),
+    scenario+' dossier payload must be byte-for-byte reproducible before export metadata')
   check(Array.isArray(result.alternatives) && result.alternatives.length <= 3, scenario + ' planner must return at most three candidates')
 check(result.robustnessEvaluatedCount >= 0 && result.robustnessEvaluatedCount <= 8, scenario + ' stress ranking must stay within eight candidates')
 check(result.alternatives.every(candidate => typeof candidate.portfolioRole === 'string' && typeof candidate.paretoMember === 'boolean'), scenario + ' portfolio candidates must declare their selection role and dominance status')
@@ -258,7 +280,7 @@ check(gridAt89.grid < floodThreshold.grid - floodThreshold.gridRate * 90,
 
 console.log(JSON.stringify({
   status: 'passed',
-  suite: 'CIVIC CASCADE Pareto strategy portfolio, trade-off dossier, robust doctrine search and infrastructure integrity',
+  suite: 'CIVIC CASCADE reproducible decision evidence export, Pareto portfolio, robust doctrine search and infrastructure integrity',
   release: manifest.version,
   scenarios: 3,
   horizons: [30, 60, 90],
@@ -290,6 +312,9 @@ console.log(JSON.stringify({
     doctrineStressNoLiveMutation: 'PASS',
     doctrineParetoDominance: 'PASS',
     doctrinePortfolioDiversity: 'PASS',
-    doctrineTradeoffDossier: 'PASS'
+    doctrineTradeoffDossier: 'PASS',
+    reproducibleDossierPayload: 'PASS',
+    dossierPrivacyContract: 'PASS',
+    dossierSnapshotForecastCompleteness: 'PASS'
   }
 }, null, 2))
