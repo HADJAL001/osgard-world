@@ -4388,7 +4388,7 @@ func _update_accessibility_buttons() -> void:
 		mobile_haptics_button.text = "RUM ON" if haptics_enabled else "RUM OFF"
 		mobile_haptics_button.tooltip_text = "F7: тактильная отдача совместимого геймпада."
 	if is_instance_valid(status_shortcuts):
-		status_shortcuts.text = "HELP H · FPS F3 · GFX F2 · MOT F4 · CLR F5 · HUD F6 · RUMBLE F7"
+		status_shortcuts.text = "ПОМОЩЬ / H · FPS / F3 · ГРАФИКА / F2 · ДВИЖ. / F4 · ЦВЕТ / F5 · HUD / F6 · ВИБРО / F7"
 
 func _toggle_reduced_motion() -> void:
 	reduced_motion = not reduced_motion
@@ -4568,7 +4568,7 @@ func _create_ui() -> void:
 		lane_chip.custom_minimum_size = Vector2(82.0, 16.0)
 		lane_chip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		phase_lane_labels.append(lane_chip)
-	status_shortcuts = _label(status_stack, "HELP H · FPS F3 · GFX F2 · MOT F4 · CLR F5 · HUD F6 · RUMBLE F7", 8, Color(0.48, 0.6, 0.62))
+	status_shortcuts = _label(status_stack, "ПОМОЩЬ / H · FPS / F3 · ГРАФИКА / F2 · ДВИЖ. / F4 · ЦВЕТ / F5 · HUD / F6 · ВИБРО / F7", 8, Color(0.48, 0.6, 0.62))
 
 	objective_panel = _make_panel(hud_root, Control.PRESET_TOP_RIGHT, Rect2(-334.0, 18.0, 316.0, 178.0))
 	var objective_stack := _panel_stack(objective_panel)
