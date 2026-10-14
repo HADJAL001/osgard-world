@@ -23,6 +23,7 @@ const lifecycleAnalytics = read('public/games/player-lifecycle.js');
 const guide = read('docs/IOS_APP_STORE_CODEMAGIC_RU.md');
 const supportPage = read('public/support/osgard-play/index.html');
 const gamesCatalog = read('public/games/index.html');
+const deferredEnhancements = read('public/games/deferred-enhancements.js');
 const gameManifest = read('src/core/manifest.ts');
 const sitemap = read('public/sitemap.xml');
 
@@ -111,7 +112,7 @@ assert.ok(guide.includes('TestFlight') && guide.includes('capacitor://localhost'
 assert.ok(supportPage.includes('mailto:osman.osmanov0099@gmail.com') && supportPage.includes('href="/privacy/"'), 'App Store Support URL must provide a real contact and privacy-policy link.');
 assert.ok(gamesCatalog.includes('href="/support/osgard-play/"'), 'The public Games catalogue must link to its support page.');
 assert.ok(gamesCatalog.includes('/games/device-fit.css?v=__OSGARD_BUILD_VERSION__') && gamesCatalog.includes('/games/device-fit.js?v=__OSGARD_BUILD_VERSION__'), 'Smart Launch assets must be versioned in the public catalogue.');
-assert.ok(gamesCatalog.includes('/games/experiment-core.js?v=__OSGARD_BUILD_VERSION__') && gamesCatalog.includes('/games/experiment-runtime.js?v=__OSGARD_BUILD_VERSION__'), 'Product experiment assets must be versioned in the public catalogue.');
+assert.ok(gamesCatalog.includes('/games/deferred-enhancements.js?v=__OSGARD_BUILD_VERSION__') && deferredEnhancements.includes("loadScript('experiment-core.js')") && deferredEnhancements.includes("loadScript('experiment-runtime.js')") && deferredEnhancements.includes('encodeURIComponent(BUILD_VERSION)'), 'Product experiment assets must remain versioned and reachable through the deferred catalog loader.');
 assert.ok(sitemap.includes('https://osgard.world/support/osgard-play/'), 'The support URL must be present in sitemap.xml.');
 assert.ok(read('docs/IOS_APP_STORE_LISTING_RU.md').includes('https://osgard.world/support/osgard-play/'), 'App Store listing draft must point to the published app-support page.');
 assert.ok(privacy.includes('<key>NSPrivacyTracking</key>') && privacy.includes('<false/>'), 'Privacy manifest must declare tracking state.');

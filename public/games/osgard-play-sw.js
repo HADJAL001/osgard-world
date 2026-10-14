@@ -6,7 +6,7 @@
  * admin, operator, checkout-success or cross-origin requests.
  */
 const CACHE_PREFIX = 'osgard-play-shell-';
-const CACHE_NAME = 'osgard-play-shell-v1.0.2';
+const CACHE_NAME = 'osgard-play-shell-v1.0.3';
 const PRECACHE_URLS = [
   '/games/',
   '/games/index.html',
@@ -18,6 +18,7 @@ const PRECACHE_URLS = [
   '/games/sponsored-campaigns.css',
   '/games/favicon.svg',
   '/games/pwa-install.js',
+  '/games/deferred-enhancements.js',
   '/games/catalog-state.js',
   '/games/expedition/',
   '/games/expedition/index.html',
@@ -39,6 +40,7 @@ const PUBLIC_STATIC_ALLOWLIST = new Set([
   '/games/luxury.js',
   '/games/sponsored-campaigns.css',
   '/games/pwa-install.js',
+  '/games/deferred-enhancements.js',
   '/games/catalog-state.js',
   '/games/expedition/core.js',
   '/games/expedition/app.js',

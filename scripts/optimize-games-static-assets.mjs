@@ -15,6 +15,7 @@ const MINIFY_ASSETS = [
   'device-fit.js',
   'experiment-core.js',
   'experiment-runtime.js',
+  'deferred-enhancements.js',
 ]
 
 function walk(directory) {

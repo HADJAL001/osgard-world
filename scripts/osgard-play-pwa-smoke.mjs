@@ -12,6 +12,7 @@ const icon = read(root + '/osgard-play-icon.svg');
 const offline = read(root + '/offline.html');
 const css = read(root + '/pwa-install.css');
 const install = read(root + '/pwa-install.js');
+const deferredEnhancements = read(root + '/deferred-enhancements.js');
 const sw = read(root + '/osgard-play-sw.js');
 const stateScript = read(root + '/catalog-state.js');
 const clientAnalytics = read(root + '/consented-analytics.js');
@@ -21,7 +22,7 @@ const workflow = read('.github/workflows/osgard-play-qa.yml');
 
 for (const path of [
   root + '/app.webmanifest', root + '/osgard-play-icon.svg', root + '/offline.html',
-  root + '/pwa-install.css', root + '/pwa-install.js', root + '/device-fit.css', root + '/device-fit.js', root + '/experiment-core.js', root + '/experiment-runtime.js', root + '/osgard-play-sw.js',
+  root + '/pwa-install.css', root + '/pwa-install.js', root + '/deferred-enhancements.js', root + '/device-fit.css', root + '/device-fit.js', root + '/experiment-core.js', root + '/experiment-runtime.js', root + '/osgard-play-sw.js',
   root + '/catalog-state.js'
 ]) assert.ok(existsSync(resolve(path)), 'Missing PWA asset: ' + path);
 
@@ -42,15 +43,23 @@ assert.ok(page.includes('rel="manifest"') && page.includes('app.webmanifest'));
 assert.ok(page.includes('id="pwa-install-panel"') && page.includes('id="pwa-install-button"'));
 assert.ok(page.includes('id="catalog-share-state"') && page.includes('id="catalog-share-status"'));
 assert.ok(page.includes('/games/pwa-install.css?v=__OSGARD_BUILD_VERSION__'));
-assert.ok(page.includes('/games/pwa-install.js?v=__OSGARD_BUILD_VERSION__'));
+assert.ok(page.includes('/games/deferred-enhancements.js?v=__OSGARD_BUILD_VERSION__'));
+assert.ok(!page.includes('<script src="/games/pwa-install.js?v=__OSGARD_BUILD_VERSION__" defer></script>'));
+assert.ok(!page.includes('<script src="/games/experiment-core.js?v=__OSGARD_BUILD_VERSION__" defer></script>'));
+assert.ok(!page.includes('<script src="/games/experiment-runtime.js?v=__OSGARD_BUILD_VERSION__" defer></script>'));
+assert.ok(deferredEnhancements.includes("loadScript('pwa-install.js')"));
+assert.ok(deferredEnhancements.includes("loadScript('experiment-core.js')"));
+assert.ok(deferredEnhancements.includes("loadScript('experiment-runtime.js')"));
+assert.ok(deferredEnhancements.includes('4200') && deferredEnhancements.includes('requestIdleCallback'));
 assert.ok(page.includes('/games/device-fit.css?v=__OSGARD_BUILD_VERSION__'));
 assert.ok(page.includes('/games/device-fit.js?v=__OSGARD_BUILD_VERSION__'));
-assert.ok(page.includes('/games/experiment-core.js?v=__OSGARD_BUILD_VERSION__'));
-assert.ok(page.includes('/games/experiment-runtime.js?v=__OSGARD_BUILD_VERSION__'));
+assert.ok(page.includes('rel="preload" as="style" href="/games/sponsored-campaigns.css?v=__OSGARD_BUILD_VERSION__"'));
+assert.ok(page.includes('<noscript><link rel="stylesheet" href="/games/sponsored-campaigns.css?v=__OSGARD_BUILD_VERSION__">'));
 assert.doesNotThrow(() => new Script(sw), 'The PWA service worker must be valid JavaScript before release.');
 assert.ok(page.includes('/games/catalog-state.js?v=__OSGARD_BUILD_VERSION__'));
 assert.ok(css.includes('@media(max-width:620px)') && css.includes('prefers-reduced-motion:reduce'));
 assert.ok(install.includes("addEventListener('beforeinstallprompt'") && install.includes("addEventListener('appinstalled'"));
+assert.ok(deferredEnhancements.includes("addEventListener('beforeinstallprompt'") && deferredEnhancements.includes('window.OSGARDInstallPrompt'), 'Early install prompt must survive deferred installer loading.');
 assert.ok(install.includes('navigator.serviceWorker.register') && install.includes("scope: '/games/'"));
 assert.ok(install.includes('osgard.games.analytics-consent.v1'), 'PWA analytics must use the existing consent key');
 assert.ok(install.includes("track('pwa_install_prompt_shown')") && install.includes("track('pwa_install_accepted')") && install.includes("track('pwa_install_dismissed')"));
@@ -71,7 +80,7 @@ assert.equal(precachePaths.length, new Set(precachePaths).size, 'PWA precache mu
 const staticAllowlistStart = sw.indexOf('const PUBLIC_STATIC_ALLOWLIST = new Set([');
 const staticAllowlistEnd = sw.indexOf(']);', staticAllowlistStart);
 const staticAllowlist = sw.slice(staticAllowlistStart, staticAllowlistEnd);
-for (const path of ['/games/luxury.css', '/games/device-fit.css', '/games/device-fit.js', '/games/experiment-core.js', '/games/experiment-runtime.js', '/games/sponsored-campaigns.css', '/games/favicon.svg','/games/expedition/core.js','/games/expedition/app.js','/games/expedition/catalog-runtime.js','/games/expedition/expedition.css']) {
+for (const path of ['/games/luxury.css', '/games/deferred-enhancements.js', '/games/device-fit.css', '/games/device-fit.js', '/games/experiment-core.js', '/games/experiment-runtime.js', '/games/sponsored-campaigns.css', '/games/favicon.svg','/games/expedition/core.js','/games/expedition/app.js','/games/expedition/catalog-runtime.js','/games/expedition/expedition.css']) {
   assert.ok(precachePaths.includes(path), 'Core public shell asset must be precached: ' + path);
   assert.ok(staticAllowlist.includes("'" + path + "'"), 'Core public shell asset must be allowed for cached fallback: ' + path);
 }
@@ -98,7 +107,7 @@ for (const name of eventNames) {
   assert.ok(clientAnalytics.includes("'" + name + "'"), 'Client analytics must allow ' + name);
   assert.ok(serverCore.includes('"' + name + '"'), 'Server analytics must allow ' + name);
 }
-assert.equal(packageJson.scripts['qa:pwa'], 'node scripts/osgard-play-pwa-smoke.mjs');
+assert.equal(packageJson.scripts['qa:pwa'], 'node scripts/osgard-play-pwa-smoke.mjs && node scripts/deferred-enhancements-smoke.mjs');
 assert.ok(workflow.includes('npm run qa:pwa') && workflow.includes('npm run qa:games-portal'));
 
 const context = {

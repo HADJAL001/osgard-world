@@ -10,7 +10,7 @@
   const CONSENT_KEY = 'osgard.games.analytics-consent.v1';
   const DISMISSED_KEY = 'osgard.play.install-dismissed.v1';
   const STANDALONE_KEY = 'osgard.play.standalone-event.v1';
-  let deferredPrompt = null;
+  let deferredPrompt = window.OSGARDInstallPrompt || null;
   let acceptedTracked = false;
   let promptShownTracked = false;
   let dismissed = false;
@@ -93,6 +93,16 @@
     hidePanel();
   }
 
+  if (deferredPrompt && !dismissed && !isStandalone()) {
+    button.textContent = 'Установить OSGARD PLAY ↗';
+    setStatus('Установка доступна в этом браузере. Сохранённый прогресс в играх по-прежнему зависит от каждой игры.');
+    if (!promptShownTracked) {
+      track('pwa_install_prompt_shown');
+      promptShownTracked = true;
+    }
+    showPanel();
+  }
+
   button.addEventListener('click', async () => {
     if (!deferredPrompt) {
       setStatus(instructions());
@@ -101,6 +111,7 @@
     }
     const promptEvent = deferredPrompt;
     deferredPrompt = null;
+    window.OSGARDInstallPrompt = null;
     button.disabled = true;
     try {
       await promptEvent.prompt();
@@ -132,6 +143,7 @@
     event.preventDefault();
     if (dismissed || isStandalone()) return;
     deferredPrompt = event;
+    window.OSGARDInstallPrompt = event;
     button.textContent = 'Установить OSGARD PLAY ↗';
     setStatus('Установка доступна в этом браузере. Сохранённый прогресс в играх по-прежнему зависит от каждой игры.');
     if (!promptShownTracked) {
@@ -145,6 +157,7 @@
     if (!acceptedTracked) track('pwa_install_accepted');
     acceptedTracked = true;
     dismissed = false;
+    window.OSGARDInstallPrompt = null;
     hidePanel();
     setStatus('OSGARD PLAY установлен.');
   });
@@ -161,4 +174,6 @@
       setStatus('Каталог работает в браузере; автономный запуск недоступен в текущем окружении.');
     });
   }
+
+  window.OSGARDPwaInstallReady = true;
 })();

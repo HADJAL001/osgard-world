@@ -7,6 +7,7 @@ const api = read('services/osgard-commerce-api/src/core.mjs');
 const server = read('services/osgard-commerce-api/src/server.mjs');
 const apiTests = read('services/osgard-commerce-api/test/core.test.mjs');
 const hub = read('public/games/index.html');
+const deferredEnhancements = read('public/games/deferred-enhancements.js');
 const admin = read('public/games/commerce-admin/index.html');
 const runtime = read('public/games/experiment-runtime.js');
 const coreSource = read('public/games/experiment-core.js');
@@ -51,8 +52,9 @@ for (const marker of ['osgard.games.analytics-consent.v1','OSGARD_CONSENTED_ANAL
   assert.ok(runtime.includes(marker), 'Missing runtime contract: ' + marker);
 }
 assert.ok(!/document\.cookie|navigator\.sendBeacon|https?:\/\//.test(runtime), 'Runtime must not bypass consent or load third-party assets');
-assert.ok(hub.includes('id="catalog-hero-cta"') && hub.includes('/games/experiment-core.js') && hub.includes('/games/experiment-runtime.js'));
-assert.ok(hub.indexOf('/games/consented-analytics.js') < hub.indexOf('/games/experiment-runtime.js'));
+assert.ok(hub.includes('id="catalog-hero-cta"') && hub.includes('/games/deferred-enhancements.js'));
+assert.ok(deferredEnhancements.includes("loadScript('experiment-core.js')") && deferredEnhancements.includes("loadScript('experiment-runtime.js')") && deferredEnhancements.includes('encodeURIComponent(BUILD_VERSION)'));
+assert.ok(hub.indexOf('/games/consented-analytics.js') < hub.indexOf('/games/deferred-enhancements.js'), 'Consent-aware analytics must be initialized before the deferred experiment scheduler.');
 assert.ok(queue.includes("'product_experiment_exposed'") && queue.includes("'product_experiment_converted'"));
 assert.ok(api.includes('"product_experiment_exposed"') && api.includes('"product_experiment_converted"'));
 assert.ok(api.includes('PRODUCT_EXPERIMENT_SOURCE_INVALID') && api.includes('PRODUCT_EXPERIMENT_EVENT_PHASE_INVALID'));
