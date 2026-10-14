@@ -9,7 +9,7 @@ const SCENARIOS = Object.freeze({
   blockade: "Блокировка доступа: игровая модель оценивает маршруты, снабжение и целостность инфраструктуры.",
 });
 const MODEL_PATTERN = /^[a-z0-9][a-z0-9._-]{1,80}$/i;
-const MODEL_VERSION = "3.3.0";
+const MODEL_VERSION = "3.4.0";
 const PROFILE_META = Object.freeze({
   "water-surge-mild": ["water-surge", "mild"],
   "water-surge-moderate": ["water-surge", "moderate"],
