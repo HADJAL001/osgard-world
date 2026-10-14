@@ -820,7 +820,7 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
         GROUP BY "experimentId", variant ORDER BY "experimentId", variant
       `),
       pool.query(`
-        WITH recent_events AS (`
+        WITH recent_events AS (
           SELECT event_name, source
           FROM commerce_events
           WHERE received_at >= NOW() - INTERVAL '30 days'
