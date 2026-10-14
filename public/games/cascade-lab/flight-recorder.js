@@ -160,7 +160,7 @@ function renderFrame(){
  if(!currentRun||!currentRun.points.length){range.max='1';range.value='0';range.disabled=true;rangeValue.textContent='Нет записи';rangeLabel.textContent='ВРЕМЯ ЗАПИСИ';Object.values(metrics).forEach(el=>el.textContent='—');renderPlot();return;}
  range.disabled=false;range.max=String(currentRun.points.length-1);currentIndex=clamp(currentIndex,0,currentRun.points.length-1);range.value=String(currentIndex);
  const point=selectedPoint(),speed=finite(point.vx)&&finite(point.vy)?Math.hypot(point.vx,point.vy):null;
- rangeValue.textContent=point.t.toFixed(2).replace('.',',')+' с / '+currentRun.timeSeconds.toFixed(2).replace('.',',')+' с;rangeLabel.textContent=currentRun.levelTitle.toLocaleUpperCase('ru');
+ rangeValue.textContent=point.t.toFixed(2).replace('.',',')+' с / '+currentRun.timeSeconds.toFixed(2).replace('.',',')+' с';rangeLabel.textContent=currentRun.levelTitle.toLocaleUpperCase('ru');
  metrics.time.textContent=point.t.toFixed(2).replace('.',',')+' с;metrics.position.textContent=Math.round(point.x)+' / '+Math.round(point.y);
  metrics.speed.textContent=speed===null?'—':Math.round(speed)+' px/s';metrics.velocity.textContent=finite(point.vx)&&finite(point.vy)?Math.round(point.vx)+' / '+Math.round(point.vy):'—';
  metrics.state.textContent=point.gateOpen?'ШЛЮЗ ОТКРЫТ':'ШЛЮЗ ЗАКРЫТ';renderPlot();
