@@ -4,6 +4,25 @@ export const SCENARIOS = Object.freeze([
   { id: 'optimistic', label: 'Оптимистичный', note: 'Рост при подтверждённом спросе', traffic: 1.8, starts: 1.15, sessions: 1.3, fill: 1.15, ecpm: 1.3, paid: 1.4, subscription: 1.4, churn: 0.8, leads: 1.35, close: 1.25, costs: 1.2, share: 1.25, inviteConversion: 1.2, sponsors: 1.25 },
 ]);
 
+export const SENSITIVITY_LEVERS = Object.freeze([
+  { key: 'monthlyVisitors', label: 'Стартовый трафик', format: 'count' },
+  { key: 'gameStartRate', label: 'Доля посетителей, запускающих игру', format: 'percent' },
+  { key: 'sessionsPerPlayer', label: 'Сессий на игрока', format: 'decimal' },
+  { key: 'adFillRate', label: 'Заполнение рекламы', format: 'percent' },
+  { key: 'ecpmUsd', label: 'eCPM рекламы', format: 'usd' },
+  { key: 'paidConversionRate', label: 'Конверсия в разовую покупку', format: 'percent' },
+  { key: 'subscriptionConversionRatePct', label: 'Конверсия в Premium', format: 'percent' },
+  { key: 'subscriptionMonthlyChurnPct', label: 'Месячный отток Premium', format: 'percent' },
+  { key: 'leadRate', label: 'Конверсия в заявку на разработку', format: 'percent' },
+  { key: 'leadCloseRate', label: 'Закрытие заявки в заказ', format: 'percent' },
+  { key: 'averageProjectValueUsd', label: 'Средний чек разработки', format: 'usd' },
+  { key: 'maxProjectsPerMonth', label: 'Лимит проектов в месяц', format: 'count' },
+  { key: 'sponsorDealsPerMonth', label: 'Оплаченные спонсорские договоры в месяц', format: 'decimal' },
+  { key: 'averageSponsorDealUsd', label: 'Средний спонсорский договор', format: 'usd' },
+  { key: 'monthlyOperatingCostUsd', label: 'Операционные расходы в месяц', format: 'usd' },
+  { key: 'paymentFeeRate', label: 'Комиссия платежей', format: 'percent' },
+]);
+
 export const DEFAULT_INPUTS = Object.freeze({
   monthlyVisitors: 10000,
   gameStartRate: 30,
@@ -239,3 +258,68 @@ export function calculateRequiredMonthlyVisitors(input = {}, annualTargetUsd) {
   }
   return high;
 }
+
+/**
+ * One-variable-at-a-time sensitivity model for the BASE scenario.
+ * Every row changes exactly one user-entered assumption by ±variationPct,
+ * while all other assumptions and scenario multipliers remain fixed.
+ * Values are illustrative; the model does not read or claim real analytics.
+ */
+export function calculateSensitivity(input = {}, variationPct = 20) {
+  const values = normalizeInputs(input);
+  const requestedVariation = Number(variationPct);
+  const variation = Number.isFinite(requestedVariation)
+    ? Math.min(50, Math.max(5, requestedVariation))
+    : 20;
+  const baseline = calculateScenario(values, 'base');
+  const baselineAnnualGrossUsd = baseline.totalRevenueUsd * 12;
+  const baselineAnnualNetOperatingUsd = baseline.netOperatingUsd * 12;
+
+  const rows = SENSITIVITY_LEVERS.map((lever) => {
+    const baseValue = values[lever.key];
+    const downInputs = normalizeInputs({
+      ...values,
+      [lever.key]: baseValue * (1 - variation / 100),
+    });
+    const upInputs = normalizeInputs({
+      ...values,
+      [lever.key]: baseValue * (1 + variation / 100),
+    });
+    const downResult = calculateScenario(downInputs, 'base');
+    const upResult = calculateScenario(upInputs, 'base');
+    const downAnnualGrossDeltaUsd = downResult.totalRevenueUsd * 12 - baselineAnnualGrossUsd;
+    const upAnnualGrossDeltaUsd = upResult.totalRevenueUsd * 12 - baselineAnnualGrossUsd;
+    const downAnnualNetOperatingDeltaUsd = downResult.netOperatingUsd * 12 - baselineAnnualNetOperatingUsd;
+    const upAnnualNetOperatingDeltaUsd = upResult.netOperatingUsd * 12 - baselineAnnualNetOperatingUsd;
+
+    return {
+      key: lever.key,
+      label: lever.label,
+      format: lever.format,
+      baselineInput: baseValue,
+      downInput: downInputs[lever.key],
+      upInput: upInputs[lever.key],
+      zeroBaseline: baseValue === 0,
+      downAnnualGrossDeltaUsd,
+      upAnnualGrossDeltaUsd,
+      downAnnualNetOperatingDeltaUsd,
+      upAnnualNetOperatingDeltaUsd,
+      maxAbsAnnualNetImpactUsd: Math.max(
+        Math.abs(downAnnualNetOperatingDeltaUsd),
+        Math.abs(upAnnualNetOperatingDeltaUsd),
+      ),
+    };
+  }).sort((a, b) => b.maxAbsAnnualNetImpactUsd - a.maxAbsAnnualNetImpactUsd);
+
+  return {
+    kind: 'osgard-games-sensitivity',
+    variationPct: variation,
+    scenarioId: 'base',
+    baselineAnnualGrossUsd,
+    baselineAnnualNetOperatingUsd,
+    rows,
+    method: 'one-variable-at-a-time',
+    note: 'Each lever changes independently. This is a sensitivity analysis of assumptions, not real observed results, a causal experiment, or a forecast.',
+  };
+}
+
