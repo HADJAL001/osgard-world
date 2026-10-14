@@ -2515,7 +2515,8 @@ func _damage_target(target: Node, critical_hit: bool = false, damage_scale: floa
 			var max_hp: int = int(guard.get("max_hp", 3))
 			var health_readout := target.get_node_or_null("HealthReadout") as Label3D
 			if is_instance_valid(health_readout):
-				health_readout.text = "HP %d / %d" % [maxi(0, int(guard["hp"])), max_hp]
+				var phase_marker: String = " · PII" if bool(guard.get("warden", false)) and int(guard.get("boss_phase", 1)) >= 2 else ""
+				health_readout.text = "HP %d / %d%s" % [maxi(0, int(guard["hp"])), max_hp, phase_marker]
 				health_readout.visible = true
 			_spawn_hit_sparks(target.global_position + Vector3.UP * 0.7, materials["white"] if critical_hit else materials["amber"])
 			if critical_hit:
