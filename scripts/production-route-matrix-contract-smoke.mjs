@@ -75,18 +75,18 @@ assert.ok(monetization.includes('id="export-csv"') &&
   "Financial model CSV export must remain available, explicit and spreadsheet-safe.");
 
 
-const expectedEnglishGameIds = ['null-shift','empire-of-time','swarm','inherit','remix','civic-cascade','patina','signal-run','cascade-lab','afterimage-run','aether-grid'];
+const expectedEnglishGameIds = ['null-shift','empire-of-time','swarm','inherit','remix','civic-cascade','patina','signal-run','cascade-lab','afterimage-run','aether-grid','heist-echo'];
 assert.ok(englishGames.includes('<html lang="en">') && englishGames.includes('<title>OSGARD PLAY — Explore Digital Worlds</title>'), "English Games entry needs a unique English document title and language.");
 assert.ok(englishGames.includes('href="https://osgard.world/games/en/"') && englishGames.includes('href="https://osgard.world/games/"') && englishGames.includes('hreflang="x-default"'), "English Games entry needs canonical and reciprocal language metadata.");
 assert.ok(englishGames.includes('Language availability:') && englishGames.includes('href="/games/ecosystem/?utm_source=osgard_games&amp;utm_medium=global_catalog'), "English Games entry must disclose incomplete game translation and offer tracked ecosystem discovery.");
-assert.ok(expectedEnglishGameIds.every(id => englishGames.includes('id="'+id+'"')), "English Games entry must have all eleven current playable/catalogue routes.");
+assert.ok(expectedEnglishGameIds.every(id => englishGames.includes('id="'+id+'"')), "English Games entry must have all twelve current playable/catalogue routes.");
 assert.ok(russianGames.includes('hreflang="en" href="https://osgard.world/games/en/"') && russianGames.includes('class="locale-link" href="/games/en/"'), "Russian catalogue must link to its English alternative from the page navigation.");
 assert.ok(sitemap.includes('<loc>https://osgard.world/games/en/</loc>'), "English Games entry must be discoverable in the XML sitemap.");
 assert.equal(catalogueFallback.schemaVersion, 1);
 assert.equal(catalogueFallback.source, "defaults");
-assert.equal(catalogueFallback.items.length, 11, "Static fallback must preserve the canonical eleven-game catalogue.");
-assert.deepEqual(catalogueFallback.items.map(item => item.sortOrder), [1,2,3,4,5,6,7,8,9,10,11]);
-assert.equal(new Set(catalogueFallback.items.map(item => item.id)).size, 11, "Fallback catalogue IDs must be unique.");
+assert.equal(catalogueFallback.items.length, 12, "Static fallback must preserve the canonical twelve-game catalogue.");
+assert.deepEqual(catalogueFallback.items.map(item => item.sortOrder), [1,2,3,4,5,6,7,8,9,10,11,12]);
+assert.equal(new Set(catalogueFallback.items.map(item => item.id)).size, 12, "Fallback catalogue IDs must be unique.");
 assert.ok(nginx.includes('location = /games/catalog-runtime.js') && nginx.includes('gzip_static off;') && nginx.includes('no-cache, must-revalidate'), "The small catalogue runtime must bypass stale precompressed sidecars and revalidate.");
 assert.ok(nginx.includes('no-store, no-cache, must-revalidate, max-age=0') && nginx.includes('if_modified_since off;'), "The Games catalogue runtime must not reuse a stale empty cached response.");
 assert.ok(matrix.includes("expectedBuild.slice(0, 12)") && matrix.includes("cache: 'no-store'"), "Production route checks must probe current-release static assets without reusing cache entries.");
