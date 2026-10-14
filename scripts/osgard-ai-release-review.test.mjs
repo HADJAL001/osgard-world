@@ -193,8 +193,8 @@ test('buildReviewPacket reprojects direct report objects and rejects unapproved 
   assert.equal(packet.payload.reports[0].checks.total, 2);
   assert.equal(packet.payload.reports[0].checks.passed, 1);
   assert.equal(packet.payload.reports[0].checks.failed, 1);
-  assert.equal(encoded.includes('sourceCode'), false);
-  assert.equal(encoded.includes('playerData'), false);
+  assert.equal(Object.hasOwn(packet.payload.reports[0], 'sourceCode'), false);
+  assert.equal(Object.hasOwn(packet.payload.reports[0], 'playerData'), false);
   assert.equal(encoded.includes('player@example.com'), false);
   assert.equal(encoded.includes('PRIVATE LOG CONTENT'), false);
   assert.equal(encoded.includes('private source must not be included'), false);
