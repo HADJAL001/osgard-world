@@ -6,7 +6,7 @@ const manifest = JSON.parse(await readFile(new URL('../public/games/civic-cascad
 const check = (value, message) => assert.ok(value, message)
 
 assert.equal(manifest.gameId, 'civic-cascade')
-assert.equal(manifest.version, '3.1.0', 'release manifest must match this regression suite')
+assert.equal(manifest.version, '3.2.0', 'release manifest must match this regression suite')
 assert.equal(manifest.buildContract?.cascadeForecast?.enabled, true)
 assert.deepEqual(manifest.buildContract?.cascadeForecast?.horizonsGameSeconds, [30, 60, 90])
 assert.equal(manifest.buildContract?.cascadeForecast?.randomIncidentsForecasted, false)
@@ -26,7 +26,15 @@ assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.beamWidth, 6)
 assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.localOnly, true)
 assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.callsOpenAIAPI, false)
 assert.deepEqual(manifest.buildContract?.autonomousDoctrinePlanner?.forecastHorizonsGameSeconds, [30, 60, 90])
-assert.deepEqual(manifest.buildContract?.autonomousDoctrinePlanner?.robustnessProfiles, ['water-surge','grid-overload','weak-node-shock'])
+assert.deepEqual(manifest.buildContract?.autonomousDoctrinePlanner?.robustnessProfiles, ['water-surge-mild','water-surge-moderate','water-surge-severe','grid-overload-mild','grid-overload-moderate','grid-overload-severe','weak-node-shock-mild','weak-node-shock-moderate','weak-node-shock-severe'])
+assert.deepEqual(manifest.buildContract?.autonomousDoctrinePlanner?.robustnessFamilies, ['water-surge','grid-overload','weak-node-shock'])
+assert.deepEqual(manifest.buildContract?.autonomousDoctrinePlanner?.stressSeverityLevels, ['mild','moderate','severe'])
+assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.robustnessProfileCount, 9)
+assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.comparesThreeSeverityLevelsPerFamily, true)
+assert.deepEqual(manifest.buildContract?.autonomousDoctrinePlanner?.severityScaleFactors, [0.5,1,1.5])
+assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.stressRankingUsesAllSeverityLevels, true)
+assert.equal(manifest.buildContract?.decisionDossier?.modelVersion, '3.2.0')
+assert.equal(manifest.buildContract?.decisionDossier?.stressProfileCount, 9)
 assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.robustnessCandidateLimit, 8)
 assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.reranksCandidatesByStressAdjustedScore, true)
 assert.equal(manifest.buildContract?.autonomousDoctrinePlanner?.comparesAgainstNoInterventionUnderSameStress, true)
@@ -106,7 +114,7 @@ const buildDoctrineDossierPayload = new Function(dossierSource + '\nreturn build
 const planner = new Function('nodes', 'PLAN_ACTIONS', 'clamp',
   doctrineSource + '\nreturn {searchDoctrinePlans, doctrineDominates, doctrineParetoPortfolio};'
 )(nodes, actions, clamp)
-const {searchDoctrinePlans, doctrineDominates, doctrineParetoPortfolio} = planner
+const {searchDoctrinePlans, doctrineDominates, doctrineParetoPortfolio, doctrineStressProfiles} = planner
 const makeState = scenario => {
   const state = {
     ...scenarios[scenario], scenario, crews: 4, maxCrews: 4,
@@ -140,6 +148,17 @@ for (const scenario of ['flood', 'blackout', 'blockade']) {
 }
 
 const doctrineResults = {}
+
+const stressFixture=makeState('flood')
+const envelope=doctrineStressProfiles(stressFixture,nodes)
+const expectedProfileIds=['water-surge-mild','water-surge-moderate','water-surge-severe','grid-overload-mild','grid-overload-moderate','grid-overload-severe','weak-node-shock-mild','weak-node-shock-moderate','weak-node-shock-severe']
+assert.deepEqual(envelope.map(profile=>profile.id),expectedProfileIds,'stress envelope must enumerate all family/severity combinations deterministically')
+for(const family of ['water-surge','grid-overload','weak-node-shock']){
+ const familyProfiles=envelope.filter(profile=>profile.family===family).sort((a,b)=>a.severityRank-b.severityRank)
+ assert.deepEqual(familyProfiles.map(profile=>profile.severity),['mild','moderate','severe'],family+' must expose monotonic severity levels')
+ assert.deepEqual(familyProfiles.map(profile=>profile.magnitude),[.5,1,1.5],family+' severity factors must be explicit and monotonic')
+}
+check(envelope.every(profile=>profile.severityRank>=1&&profile.severityRank<=3&&profile.targetNode!==undefined), 'every stress profile must have explicit severity metadata and target scope')
 for (const scenario of ['flood', 'blackout', 'blockade']) {
   const base = makeState(scenario)
   const before = JSON.stringify({water:base.water,grid:base.grid,access:base.access,supplies:base.supplies,crews:base.crews,nodeIntegrity:base.nodeIntegrity})
@@ -147,18 +166,18 @@ for (const scenario of ['flood', 'blackout', 'blockade']) {
   const runPath = simulatePath(0)
   const result = searchDoctrinePlans(base, 'balanced', 'hub', runOrders, runPath, nodes, actions)
   check(result.evaluatedCount > 0 && result.evaluatedCount <= 1000, scenario + ' doctrine search must stay bounded')
-  const dossier=buildDoctrineDossierPayload(base,result,'3.1.0-reproducible-decision-evidence',scenarios,nodes,0)
+  const dossier=buildDoctrineDossierPayload(base,result,'3.2.0-three-level-stress-envelope',scenarios,nodes,0)
   assert.equal(dossier.schema,'osgard.civic-cascade.decision-dossier/v1')
   assert.equal(dossier.scenario.id,scenario)
   assert.equal(dossier.candidates.length,result.alternatives.length)
   assert.equal(dossier.baseline.forecast.length,3)
-  assert.equal(dossier.engine.modelVersion,'3.1.0')
+  assert.equal(dossier.engine.modelVersion,'3.2.0')
   assert.equal(dossier.assumptions.personalDataIncluded,false)
   assert.equal(dossier.assumptions.telemetrySent,false)
   assert.equal(dossier.assumptions.openAIAPIUsed,false)
-  assert.equal(dossier.candidates[0].robustness.profiles.length,3)
+  assert.equal(dossier.candidates[0].robustness.profiles.length,9)
   check(!/email|phone|userId|accessToken|password/i.test(JSON.stringify(dossier)),'dossier export must not include personal data or secrets')
-  assert.deepEqual(dossier,buildDoctrineDossierPayload(base,result,'3.1.0-reproducible-decision-evidence',scenarios,nodes,0),
+  assert.deepEqual(dossier,buildDoctrineDossierPayload(base,result,'3.2.0-three-level-stress-envelope',scenarios,nodes,0),
     scenario+' dossier payload must be byte-for-byte reproducible before export metadata')
   check(Array.isArray(result.alternatives) && result.alternatives.length <= 3, scenario + ' planner must return at most three candidates')
 check(result.robustnessEvaluatedCount >= 0 && result.robustnessEvaluatedCount <= 8, scenario + ' stress ranking must stay within eight candidates')
@@ -169,11 +188,11 @@ check(result.alternatives.every(candidate => typeof candidate.portfolioRole === 
   check(result.openingPrefixCount >= 1 && result.openingPrefixCount <= result.robustnessEvaluatedCount, scenario + ' available prefix diversity must be bounded')
   check(result.paretoFrontSize >= 0 && result.paretoFrontSize <= result.robustnessEvaluatedCount, scenario + ' Pareto front size must be bounded')
   for (const candidate of result.alternatives) {
-    check(candidate.robustness.profileCount === 3, scenario + ' candidate must be checked against all three stress profiles')
-    check(candidate.robustness.profiles.length === 3, scenario + ' candidate must include all stress results')
-    check(candidate.robustness.stableProfiles >= 0 && candidate.robustness.stableProfiles <= 3, scenario + ' robust profile count must be bounded')
+    check(candidate.robustness.profileCount === 9, scenario + ' candidate must be checked against all nine stress-envelope profiles')
+    check(candidate.robustness.profiles.length === 9, scenario + ' candidate must include every stress severity result')
+    check(candidate.robustness.stableProfiles >= 0 && candidate.robustness.stableProfiles <= 9, scenario + ' robust profile count must be bounded')
     check(Number.isFinite(candidate.robustScore), scenario + ' adjusted score must be finite')
-    check(candidate.robustness.profiles.every(profile => Number.isFinite(profile.riskDelta90) && Number.isFinite(profile.weakestIntegrityDelta)), scenario + ' stress results must be finite')
+    check(candidate.robustness.profiles.every(profile => Number.isFinite(profile.riskDelta90) && Number.isFinite(profile.weakestIntegrityDelta) && Number.isFinite(profile.magnitude)), scenario + ' stress results and severity levels must be finite')
   }
   for (const candidate of result.alternatives) {
     check(candidate.orders.length >= 1 && candidate.orders.length <= 4, scenario + ' candidate length must respect queue limit')
@@ -310,6 +329,8 @@ console.log(JSON.stringify({
     doctrineNoLiveMutation: 'PASS',
     doctrineDeterminism: 'PASS',
     doctrineStressProfiles: 'PASS',
+    nineProfileStressEnvelope: 'PASS',
+    severityMonotonicity: 'PASS',
     doctrineRobustReranking: 'PASS',
     doctrineStressNoLiveMutation: 'PASS',
     doctrineParetoDominance: 'PASS',
