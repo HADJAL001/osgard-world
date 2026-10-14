@@ -1384,8 +1384,32 @@ func _run_smoke() -> void:
 	if not _expect(game.warden_spawned and game.guards.back()["warden"], "missed extraction window must spawn a real Warden intercept"):
 		return
 	var siege_warden: Node3D = game.guards.back()["node"] as Node3D
+	var siege_warden_index: int = game.guards.size() - 1
+	var warden_state: Dictionary = game.guards[siege_warden_index]
+	warden_state["hp"] = 6
+	warden_state["max_hp"] = 10
+	warden_state["windup"] = 0.8
+	warden_state["attack_lanes"] = [{"from": Vector3.ZERO, "to": Vector3.FORWARD}]
+	game.guards[siege_warden_index] = warden_state
+	var original_warden_speed: float = float(game.guards[siege_warden_index]["speed"])
+	var original_warden_damage: float = float(game.guards[siege_warden_index]["damage"])
+	var phase_count_before: int = game.warden_phase_transitions
+	var stagger_count_before: int = game.warden_staggers
+	game._damage_target(siege_warden, true)
+	var phase_two_state: Dictionary = game.guards[siege_warden_index]
+	var remaining_warden_lanes: Array = phase_two_state.get("attack_lanes", [])
+	if not _expect(int(phase_two_state["hp"]) == 4 and int(phase_two_state["boss_phase"]) == 2, "Warden must transition at 50% HP after actual precision damage"):
+		return
+	if not _expect(float(phase_two_state["speed"]) > original_warden_speed and float(phase_two_state["damage"]) > original_warden_damage and game._warden_radial_ray_count(2) == 12 and game._warden_radial_ray_count(1) == 8, "Warden phase II must upgrade live speed, damage and the radial attack from 8 to 12 lanes"):
+		return
+	if not _expect(game.warden_phase_transitions == phase_count_before + 1 and game.warden_staggers == stagger_count_before + 1 and float(phase_two_state["stun"]) >= 0.9 and is_zero_approx(float(phase_two_state["windup"])) and remaining_warden_lanes.is_empty(), "precision hit during the tell must trigger the phase transition and cancel the live Warden attack"):
+		return
+	if not _expect((siege_warden.get_node("CombatRole") as Label3D).text.contains("PHASE II") and (siege_warden.get_node("HealthReadout") as Label3D).text.contains("PII"), "Warden phase transition must update the real world-space boss and health labels"):
+		return
 	game.guards.pop_back()
 	siege_warden.queue_free()
+	game.warden_phase_transitions = phase_count_before
+	game.warden_staggers = stagger_count_before
 	game.warden_spawned = saved_warden_spawned
 	game.extraction_overload_triggered = false
 	game.extraction_window_remaining = 0.0

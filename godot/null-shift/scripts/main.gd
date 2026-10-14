@@ -185,6 +185,8 @@ var overdrive_charge := 0.0
 var overdrive_timer := 0.0
 var overdrive_activations := 0
 var overdrive_arc_chains := 0
+var warden_phase_transitions := 0
+var warden_staggers := 0
 var mission_accuracy := 100.0
 var mission_score := 0
 var combat_score_total := 0
@@ -351,6 +353,8 @@ func _reset_runtime_collections() -> void:
 	overdrive_timer = 0.0
 	overdrive_activations = 0
 	overdrive_arc_chains = 0
+	warden_phase_transitions = 0
+	warden_staggers = 0
 	mission_accuracy = 100.0
 	mission_score = 0
 	combat_score_total = 0
@@ -1782,6 +1786,7 @@ func _spawn_guard(at: Vector3, is_warden: bool) -> void:
 		"speed": 3.25 if is_warden else (3.0 if role == "STALKER" else (1.6 if role == "HEAVY" else (2.25 if current_contract == 2 else 1.9))),
 		"damage": 18 if is_warden else (16 if role == "HEAVY" else 10),
 		"warden": is_warden,
+		"boss_phase": 1 if is_warden else 0,
 		"stun": 0.0,
 		"windup": 0.0,
 		"cooldown": randf_range(0.8, 1.8),
@@ -2158,6 +2163,9 @@ func _guard_ai_target(guard: Dictionary, body: CharacterBody3D) -> Vector3:
 	var patrol_phase := scene_clock * 0.42 + float(guard.get("phase", 0.0))
 	return patrol_origin + Vector3(cos(patrol_phase) * 1.8, 0.0, sin(patrol_phase) * 1.25)
 
+func _warden_radial_ray_count(boss_phase: int) -> int:
+	return 12 if boss_phase >= 2 else 8
+
 func _update_guards(delta: float) -> void:
 	for index in range(guards.size() - 1, -1, -1):
 		var guard: Dictionary = guards[index]
@@ -2246,13 +2254,16 @@ func _update_guards(delta: float) -> void:
 				elif _player_inside_lanes(stored_lanes, 14.5, 0.62, body) and damage_cooldown <= 0.0:
 					_damage_player(float(guard["damage"]), body)
 				guard["attack_lanes"] = []
+				if role == "WARDEN" and int(guard.get("boss_phase", 1)) >= 2:
+				guard["cooldown"] = randf_range(1.2, 1.75)
+			else:
 				guard["cooldown"] = randf_range(1.45, 2.15) if role == "RANGER" else randf_range(2.0, 3.0)
 			guards[index] = guard
 			continue
 		var cooldown := maxf(0.0, float(guard["cooldown"]) - ai_delta)
 		guard["cooldown"] = cooldown
 		if sees_player and distance < 13.5 and cooldown <= 0.0:
-			guard["windup"] = 0.92 if role == "WARDEN" else (0.82 if role == "HEAVY" else 0.62)
+			guard["windup"] = (0.92 if int(guard.get("boss_phase", 1)) < 2 else 0.72) if role == "WARDEN" else (0.82 if role == "HEAVY" else 0.62)
 			var aim_from := body.global_position + Vector3.UP * 1.0
 			var aim_to := player.global_position + Vector3.UP * 0.8
 			var role_material: StandardMaterial3D = materials["amber"] if role == "HEAVY" else (materials["red"] if role == "WARDEN" else materials["telegraph"])
@@ -2264,8 +2275,9 @@ func _update_guards(delta: float) -> void:
 					attack_lanes.append({"from": aim_from, "to": lane_end})
 					_spawn_beam(aim_from, lane_end, role_material, 0.82)
 			elif role == "WARDEN":
-				for ray_index in range(8):
-					var ray_angle := TAU * float(ray_index) / 8.0
+				var radial_rays: int = _warden_radial_ray_count(int(guard.get("boss_phase", 1)))
+				for ray_index in range(radial_rays):
+					var ray_angle := TAU * float(ray_index) / float(radial_rays)
 					var ray_direction := Vector3(cos(ray_angle), 0.0, sin(ray_angle))
 					_spawn_beam(aim_from, body.global_position + Vector3.UP * 0.8 + ray_direction * 5.6, role_material, 0.92)
 			else:
@@ -2410,6 +2422,72 @@ func _try_overdrive_chain(primary_target: Node, hit_position: Vector3) -> bool:
 	_update_hud()
 	return true
 
+
+func _transition_warden_phase(index: int) -> bool:
+	if index < 0 or index >= guards.size():
+		return false
+	var guard: Dictionary = guards[index]
+	if not bool(guard.get("warden", false)) or int(guard.get("boss_phase", 1)) >= 2:
+		return false
+	var maximum_hp: int = int(guard.get("max_hp", 10))
+	if int(guard.get("hp", maximum_hp)) > int(ceil(float(maximum_hp) * 0.5)):
+		return false
+	var body := guard.get("node") as Node3D
+	if not is_instance_valid(body):
+		return false
+	guard["boss_phase"] = 2
+	guard["speed"] = float(guard.get("speed", 3.25)) * 1.22
+	guard["damage"] = float(guard.get("damage", 18.0)) * 1.18
+	guard["cooldown"] = minf(float(guard.get("cooldown", 1.0)), 0.78)
+	guard["stun"] = maxf(float(guard.get("stun", 0.0)), 0.45)
+	guard["attack_lanes"] = []
+	guards[index] = guard
+	var armor := body.get_node_or_null("Armor") as MeshInstance3D
+	if is_instance_valid(armor):
+		armor.material_override = materials["gold"]
+	var chest_core := body.get_node_or_null("GuardChestCore") as MeshInstance3D
+	if is_instance_valid(chest_core):
+		chest_core.material_override = materials["white"]
+	var role_tag := body.get_node_or_null("CombatRole") as Label3D
+	if is_instance_valid(role_tag):
+		role_tag.text = "WARDEN / PHASE II"
+		role_tag.modulate = Color(1.0, 0.72, 0.32)
+	var health_readout := body.get_node_or_null("HealthReadout") as Label3D
+	if is_instance_valid(health_readout):
+		health_readout.text = "HP %d / %d · PII" % [int(guard["hp"]), maximum_hp]
+		health_readout.modulate = Color(1.0, 0.72, 0.32)
+	warden_phase_transitions += 1
+	_emit_combat_noise(body.global_position, 42.0, "warden-phase")
+	_spawn_ring_burst(body.global_position + Vector3.UP * 0.18, materials["gold"])
+	_spawn_impact_light(body.global_position + Vector3.UP * 0.85, Color(1.0, 0.54, 0.16), 3.8, 6.2, 0.38)
+	_screen_impulse(0.16, 0.31)
+	_play_sfx(82.0, 0.72, 0.18)
+	objective_text = "WARDEN PHASE II · БРОНЯ ПЕРЕГРУЖЕНА · 12 ЛИНИЙ ОГНЯ"
+	_update_hud()
+	return true
+
+func _try_stagger_warden(index: int, precision_hit: bool) -> bool:
+	if not precision_hit or index < 0 or index >= guards.size():
+		return false
+	var guard: Dictionary = guards[index]
+	if not bool(guard.get("warden", false)) or float(guard.get("windup", 0.0)) <= 0.0:
+		return false
+	var body := guard.get("node") as Node3D
+	if not is_instance_valid(body):
+		return false
+	guard["windup"] = 0.0
+	guard["dash_windup"] = 0.0
+	guard["attack_lanes"] = []
+	guard["stun"] = maxf(float(guard.get("stun", 0.0)), 0.9)
+	guards[index] = guard
+	warden_staggers += 1
+	_spawn_ring_burst(body.global_position + Vector3.UP * 0.2, materials["white"])
+	_spawn_impact_light(body.global_position + Vector3.UP * 0.85, Color(0.55, 0.94, 1.0), 2.8, 4.7, 0.24)
+	_play_sfx(520.0, 0.19, 0.12)
+	objective_text = "WARDEN STAGGER · ТОЧНЫЙ ВЫСТРЕЛ СОРВАЛ АТАКУ"
+	_update_hud()
+	return true
+
 func _damage_target(target: Node, critical_hit: bool = false, damage_scale: float = 1.0) -> void:
 	for index in range(guards.size() - 1, -1, -1):
 		var guard: Dictionary = guards[index]
@@ -2417,6 +2495,10 @@ func _damage_target(target: Node, critical_hit: bool = false, damage_scale: floa
 			var base_damage_points: int = _combat_damage_per_hit(critical_hit, overdrive_timer > 0.0)
 			var damage_points: int = maxi(1, roundi(float(base_damage_points) * clampf(damage_scale, 0.0, 1.0)))
 			guard["hp"] = int(guard["hp"]) - damage_points
+			if bool(guard.get("warden", false)):
+				_try_stagger_warden(index, critical_hit)
+				_transition_warden_phase(index)
+			guard = guards[index]
 			if critical_hit:
 				critical_hits += 1
 			guard["health_timer"] = 1.8
@@ -4449,6 +4531,8 @@ func _update_hud() -> void:
 			"INVESTIGATE", "SEARCHING":
 				investigating_guards += 1
 	telemetry_label.text = "HOSTILES %02d  ·  DEVICES %02d  ·  CONTRACT %02d · AI C%02d I%02d" % [guards.size(), _living_device_count(), current_contract + 1, engaged_guards, investigating_guards]
+	if warden_phase_transitions > 0 or warden_staggers > 0:
+		telemetry_label.text += "  ·  WARDEN PII %02d / STAGGER %02d" % [warden_phase_transitions, warden_staggers]
 	if daily_challenge_active and not daily_mutators.is_empty():
 		telemetry_label.text += "  ·  DAILY / 2 MODS"
 	if extraction_reinforcements_spawned > 0:

@@ -368,3 +368,11 @@ The runtime smoke now checks combo thresholds, critical damage, the charge gate,
 - A short physics-ray fan checks the actual solid geometry in front of a moving hostile and selects a clear left/right detour with a small alternating squad bias. The steering function is used by patrol and engaged/investigating movement; it does not teleport actors or bypass collision.
 - Guards continue to face a visible player while moving laterally toward a flank position, preserving readable aiming and telegraphs. Waypoints are clamped to the playable deck.
 - Extended the Godot headless runtime smoke with deterministic flank geometry, role-specific spacing, deck-edge bounds, a real temporary wall collider and a verified clear detour. Existing visual cone, sound propagation, radio awareness, Overdrive chain arcs, daily anomalies, player input and career saves stay on the same Godot path.
+
+
+## Godot release 0.14 — Warden: reactive boss phase and precision stagger
+
+- The extraction lockdown Warden is now a true two-phase encounter, not just a high-HP guard. At 50% health, its armour/core/health label visibly transform to Phase II; its movement and damage scale up, the telegraph shortens, and the radial attack expands from eight to twelve firing lanes.
+- Precision hits during a live Warden attack telegraph interrupt the attack, clear its firing lanes, and apply a measurable 0.9-second stagger. Ordinary hits still deal damage but do not get this counterplay reward.
+- The phase transition is one-shot and driven by actual health state. The HUD surfaces phase-transition and stagger counts; headless Godot tests exercise the real damage path, the exact 50% threshold, live stat changes, 8-to-12 lane progression, visible boss labels and attack cancellation.
+- This is integrated into the existing extraction lockdown flow and keyboard, gamepad and touch combat controls; no separate demo scene or mocked encounter was introduced.
