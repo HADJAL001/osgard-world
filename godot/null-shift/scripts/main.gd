@@ -6854,7 +6854,14 @@ func _update_hud() -> void:
 			combat_status_label.text += " · PHANTOM / CHAIN %d" % stealth_chain
 		elif stealth_takedowns > 0:
 			combat_status_label.text += " · SILENT %d" % stealth_takedowns
-		combat_status_label.add_theme_color_override("font_color", Color(0.36, 0.95, 1.0) if stealth_mode_active else (Color(0.92, 0.72, 1.0) if overdrive_timer > 0.0 else (Color(1.0, 0.77, 0.39) if combat_combo >= 4 else Color(0.38, 1.0, 0.86)))
+		var combat_status_color := Color(0.38, 1.0, 0.86)
+		if combat_combo >= 4:
+			combat_status_color = Color(1.0, 0.77, 0.39)
+		if overdrive_timer > 0.0:
+			combat_status_color = Color(0.92, 0.72, 1.0)
+		if stealth_mode_active:
+			combat_status_color = Color(0.36, 0.95, 1.0)
+		combat_status_label.add_theme_color_override("font_color", combat_status_color)
 	if is_instance_valid(thermal_status_label):
 		if weapon_overheated:
 			thermal_status_label.text = "THERMAL LOCKOUT · %.0f%% · V VENT · ARC MK-%d" % [weapon_heat, _weapon_mastery_rank()]
