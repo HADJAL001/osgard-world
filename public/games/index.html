@@ -261,10 +261,19 @@ if(!validGameIds.has(gameId))return;
 const link=document.querySelector('a[data-play="'+gameId+'"]');
 if(!link)return;
 const target=new URL(link.href,location.origin);
-const carryKeys=['challenge','ref','og_ref','og_game','utm_source','utm_medium','utm_campaign','utm_content','mode','day','seed','og_day'];
+const carryKeys=['challenge','ref','og_ref','og_game','utm_source','utm_medium','utm_campaign','utm_content','mode','day','seed','og_day','clmd'];
 for(const key of carryKeys){
  const value=incoming.searchParams.get(key);
- if(value===null||value.length>128)continue;
+ const maxCarryLength=key==='clmd'&&gameId==='cascade-lab'?7000:128;
+ if(value===null||value.length>maxCarryLength)continue;
+ if(key==='clmd'){
+  if(gameId!=='cascade-lab')continue;
+  try{
+   const invite=JSON.parse(value);
+   if(!invite||typeof invite!=='object'||Array.isArray(invite)||
+      invite.schema!=='osgard.cascade-lab.mission-invite.v1'||invite.version!=='0.24.0')continue;
+  }catch{continue;}
+ }
  if(key==='ref'&&!/^[a-f0-9]{12}$/.test(value))continue;
  if(key==='og_ref'&&!/^og_[a-f0-9]{8}$/.test(value))continue;
  if(key==='og_game'&&value!==gameId)continue;
