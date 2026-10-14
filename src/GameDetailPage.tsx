@@ -7,6 +7,8 @@ import {
 import { OsgardLogo } from './OsgardLogo'
 import { recordOsgardEvent } from './core/eventQueue'
 import { getRelatedGames, type RecommendationReason } from './core/gameRecommendations.mjs'
+// @ts-expect-error Runtime-only module; behavior is covered by the game conversion smoke test.
+import { trackGameConversionClick } from './core/gameConversionAnalytics.mjs'
 // @ts-expect-error Runtime-only JavaScript helper, covered by a Node smoke suite.
 import { createSessionClock, isTrustedGameLifecycleMessage } from './core/gameSessionLifecycle.mjs'
 import type { OsgardEventName } from './core/manifest'
@@ -719,10 +721,10 @@ export function GameDetailPage({ slug }: { slug: string }) {
           <p>{ru ? 'От игровой механики до собственного браузерного мира, приложения или полноценной платформы. Начните с задачи — без обязательств и без скрытой оплаты.' : 'From a game mechanic to your own browser world, app or full platform. Start with a brief — no obligation and no hidden charge.'}</p>
         </div>
         <div className="gh-commercial-bridge__actions">
-          <a className="gh-primary gh-commercial-bridge__action" href={gameConversionUrl('development', game.id)} onClick={() => recordOsgardEvent('cross_promo_clicked', { gameId: game.id, surface: 'game-detail', destination: 'development-intake' })}>
+          <a className="gh-primary gh-commercial-bridge__action" href={gameConversionUrl('development', game.id)} onClick={() => { void trackGameConversionClick(game.id, 'development-intake') }}>
             <span>{ru ? 'Обсудить создание игры' : 'Discuss game development'}<small>{ru ? 'Заявка с источником этой игры' : 'Enquiry attributed to this game'}</small></span><ArrowUpRight size={18} />
           </a>
-          <a className="gh-secondary gh-commercial-bridge__action" href={gameConversionUrl('sponsorship', game.id)} onClick={() => recordOsgardEvent('cross_promo_clicked', { gameId: game.id, surface: 'game-detail', destination: 'sponsorship-inquiry' })}>
+          <a className="gh-secondary gh-commercial-bridge__action" href={gameConversionUrl('sponsorship', game.id)} onClick={() => { void trackGameConversionClick(game.id, 'sponsorship-inquiry') }}>
             <span>{ru ? 'Обсудить спонсорство' : 'Discuss sponsorship'}<small>{ru ? 'Форматы и условия подтверждаются отдельно' : 'Formats and terms are confirmed separately'}</small></span><ArrowUpRight size={18} />
           </a>
         </div>
