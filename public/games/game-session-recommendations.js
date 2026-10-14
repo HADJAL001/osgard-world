@@ -11,13 +11,14 @@ const games={
  patina:{title:'PATINA Atelier',subtitle:'Реставрационная мастерская',href:'/games/patina/'},
  'cascade-lab':{title:'CASCADE LAB',subtitle:'Физические головоломки',href:'/games/cascade-lab/'},
  'afterimage-run':{title:'AFTERIMAGE//RUN',subtitle:'Ежедневный sci-fi speedrun',href:'/games/afterimage-run/'},
- 'aether-grid':{title:'AETHER GRID',subtitle:'Ежедневная головоломка',href:'/games/aether-grid/'}
+ 'aether-grid':{title:'AETHER GRID',subtitle:'Ежедневная головоломка',href:'/games/aether-grid/'},
+ 'heist-echo':{title:'HEIST//ECHO',subtitle:'Тактическая симуляция операций',href:'/games/heist-echo/'}
 };
 const next={
  'null-shift':['civic-cascade','cascade-lab'],time:['civic-cascade','inherit'],
  swarm:['null-shift','signal-run'],inherit:['patina','time'],remix:['swarm','cascade-lab'],
  'signal-run':['swarm','null-shift'],'civic-cascade':['time','inherit'],patina:['inherit','civic-cascade'],
- 'cascade-lab':['signal-run','afterimage-run'],'afterimage-run':['signal-run','cascade-lab'],'aether-grid':['cascade-lab','signal-run']
+ 'cascade-lab':['signal-run','afterimage-run'],'afterimage-run':['signal-run','cascade-lab'],'aether-grid':['cascade-lab','signal-run'],'heist-echo':['null-shift','remix','cascade-lab']
 };
 const host=document.querySelector('#post-run-recommendations'),dialog=document.querySelector('#player-dialog');
 if(!host||!dialog)return;
@@ -55,7 +56,7 @@ const games={
  'civic-cascade':{title:'CIVIC CASCADE'},
  patina:{title:'PATINA Atelier'},
  'signal-run':{title:'SIGNAL RUN'},
- 'cascade-lab':{title:'CASCADE LAB'},'afterimage-run':{title:'AFTERIMAGE//RUN'},'aether-grid':{title:'AETHER GRID'}
+ 'cascade-lab':{title:'CASCADE LAB'},'afterimage-run':{title:'AFTERIMAGE//RUN'},'aether-grid':{title:'AETHER GRID'},'heist-echo':{title:'HEIST//ECHO'}
 };
 const CONSENT_KEY='osgard.games.analytics-consent.v1';
 const ATTR_KEY='osgard.games.referral-attribution.v1';
