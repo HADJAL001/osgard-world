@@ -17,13 +17,15 @@ PreflightOnly writes osgard-world-release.tgz, validates its paths and root inde
 
     .\scripts\publish-frontend-resumable.ps1
 
-The default behavior uploads to a unique /tmp/osgard-frontend-release-* directory and verifies both remote SHA-256 and byte count. It does not switch the live document root. Retries are bounded; failed SSH/SCP/tar commands stop the process. Old local chunks are removed before splitting the next artifact, so stale chunks cannot corrupt a shorter release.
+The default behavior uploads to a unique /tmp/osgard-frontend-release-* directory and verifies both remote SHA-256 and byte count. It does not switch the live document root. Retries are bounded; failed SSH/SCP/tar commands stop the process. Old local chunks are removed before splitting the next artifact, so stale chunks cannot corrupt a shorter release. The staging-only run leaves the verified remote artifact available for manual inspection; the script does not currently load that previous stage into a later activation run.
 
 ## 3. Activate only after reviewing staging output
 
     .\scripts\publish-frontend-resumable.ps1 -Activate
 
-Activation repeats checksum validation on the server and inside the container, rejects path traversal and archive links, extracts into a candidate directory, preserves the previous document root, validates Nginx, reloads it, and checks the home route plus /games/. A failed route check triggers rollback. A rollback copy is retained inside the container under /tmp/osgard-html-backup-<release-id>.
+Activation repeats checksum validation on the server and inside the container, rejects path traversal and non-regular archive entries, extracts into a candidate directory, preserves the previous document root, validates Nginx, reloads it, and checks the home route plus /games/. A failed route check triggers rollback. A rollback copy is retained inside the container under /tmp/osgard-html-backup-<release-id>.
+
+Important: running with -Activate is one complete build-upload-verify-activate operation. It creates a new unique staging directory and does not reuse an artifact from an earlier staging-only invocation. Inspect the local build/preflight, then use -Activate only when you intend to deploy that invocation's verified build. Compare the SHA-256 printed at the end with your release record.
 
 Activation is intentionally opt-in. Never paste private key contents into chat, a ticket, terminal transcript, or Git. The default key path is %USERPROFILE%\.ssh\osgard_contabo.
 
