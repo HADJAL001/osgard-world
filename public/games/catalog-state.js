@@ -39,7 +39,7 @@
   function readStoredFavorites() {
     try {
       const values = JSON.parse(localStorage.getItem('osgard.games.favorites.v1') || '[]');
-      return Array.isArray(values) ? Array.from(new Set(values.filter(id => typeof id === 'string' && allowedGameIds.has(id)))).slice(0, 11) : [];
+      return Array.isArray(values) ? Array.from(new Set(values.filter(id => typeof id === 'string' && allowedGameIds.has(id)))).slice(0, Math.min(100, allowedGameIds.size)) : [];
     } catch { return []; }
   }
 
