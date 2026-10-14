@@ -1,3 +1,4 @@
+import './week.css'
 import { ArrowUpRight, Crown, Flame, Trophy } from 'lucide-react'
 import { useState } from 'react'
 import { recordOsgardEvent } from './core/eventQueue'
