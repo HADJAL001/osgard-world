@@ -14,6 +14,8 @@
   let acceptedTracked = false;
   let promptShownTracked = false;
   let dismissed = false;
+  let panelRevealTimer = 0;
+  let serviceWorkerRegistrationStarted = false;
 
   function storageRead(storageName, key) {
     try {
@@ -68,9 +70,31 @@
     panel.setAttribute('aria-hidden', 'true');
   }
   function showPanel() {
-    if (!dismissed && !isStandalone()) {
+    if (!dismissed && !acceptedTracked && !isStandalone()) {
       panel.hidden = false;
       panel.removeAttribute('aria-hidden');
+    }
+  }
+
+  // The install surface is optional. Wait until the first paint and an idle
+  // window before revealing it, avoiding a late layout shift in the first view.
+  function scheduleInstallPanelReveal() {
+    if (panelRevealTimer) window.clearTimeout(panelRevealTimer);
+    const reveal = () => {
+      panelRevealTimer = 0;
+      if (dismissed || acceptedTracked || isStandalone() || !deferredPrompt) return;
+      showPanel();
+      if (!panel.hidden && !promptShownTracked) {
+        track('pwa_install_prompt_shown');
+        promptShownTracked = true;
+      }
+    };
+    if (typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(() => {
+        panelRevealTimer = window.setTimeout(reveal, 1800);
+      }, { timeout: 3000 });
+    } else {
+      panelRevealTimer = window.setTimeout(reveal, 2500);
     }
   }
   function instructions() {
@@ -130,15 +154,11 @@
 
   window.addEventListener('beforeinstallprompt', event => {
     event.preventDefault();
-    if (dismissed || isStandalone()) return;
+    if (dismissed || acceptedTracked || isStandalone()) return;
     deferredPrompt = event;
     button.textContent = 'Установить OSGARD PLAY ↗';
     setStatus('Установка доступна в этом браузере. Сохранённый прогресс в играх по-прежнему зависит от каждой игры.');
-    if (!promptShownTracked) {
-      track('pwa_install_prompt_shown');
-      promptShownTracked = true;
-    }
-    showPanel();
+    scheduleInstallPanelReveal();
   });
 
   window.addEventListener('appinstalled', () => {
@@ -149,16 +169,36 @@
     setStatus('OSGARD PLAY установлен.');
   });
 
-  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
-    navigator.serviceWorker.register('/games/osgard-play-sw.js', {
-      scope: '/games/',
-      updateViaCache: 'none'
-    }).then(registration => {
-      if (registration.waiting && navigator.serviceWorker.controller) {
-        registration.waiting.postMessage({ type: 'OSGARD_PLAY_SKIP_WAITING' });
+  function registerServiceWorkerWhenIdle() {
+    if (!('serviceWorker' in navigator) || !(location.protocol === 'https:' || location.hostname === 'localhost')) return;
+    const register = () => {
+      if (serviceWorkerRegistrationStarted) return;
+      serviceWorkerRegistrationStarted = true;
+      navigator.serviceWorker.register('/games/osgard-play-sw.js', {
+        scope: '/games/',
+        updateViaCache: 'none'
+      }).then(registration => {
+        if (registration.waiting && navigator.serviceWorker.controller) {
+          registration.waiting.postMessage({ type: 'OSGARD_PLAY_SKIP_WAITING' });
+        }
+      }).catch(() => {
+        setStatus('Каталог работает в браузере; автономный запуск недоступен в текущем окружении.');
+      });
+    };
+    const scheduleIdle = () => {
+      if (typeof window.requestIdleCallback === 'function') {
+        window.requestIdleCallback(register, { timeout: 2500 });
+      } else {
+        window.setTimeout(register, 800);
       }
-    }).catch(() => {
-      setStatus('Каталог работает в браузере; автономный запуск недоступен в текущем окружении.');
-    });
+    };
+    const afterLoad = () => {
+      // Don't compete with the catalog's initial paint and first interaction.
+      window.setTimeout(scheduleIdle, 3000);
+    };
+    if (document.readyState === 'complete') afterLoad();
+    else window.addEventListener('load', afterLoad, { once: true });
   }
+
+  registerServiceWorkerWhenIdle();
 })();
