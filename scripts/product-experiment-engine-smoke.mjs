@@ -51,8 +51,13 @@ for (const marker of ['osgard.games.analytics-consent.v1','OSGARD_CONSENTED_ANAL
   assert.ok(runtime.includes(marker), 'Missing runtime contract: ' + marker);
 }
 assert.ok(!/document\.cookie|navigator\.sendBeacon|https?:\/\//.test(runtime), 'Runtime must not bypass consent or load third-party assets');
-assert.ok(hub.includes('id="catalog-hero-cta"') && hub.includes('/games/experiment-core.js') && hub.includes('/games/experiment-runtime.js'));
-assert.ok(hub.indexOf('/games/consented-analytics.js') < hub.indexOf('/games/experiment-runtime.js'));
+assert.ok(hub.includes('id="catalog-hero-cta"'));
+const lazyLoader = hub.match(/<script id="games-lazy-runtime">([\\s\\S]*?)<\\/script>/)?.[1] || '';
+assert.ok(lazyLoader.includes("function hasAnalyticsConsent()") && lazyLoader.includes("if(!hasAnalyticsConsent())return Promise.resolve(false)"), 'Analytics and experiments must stay dormant until explicit consent.');
+assert.ok(lazyLoader.includes("loadScript('consented-analytics.js')") && lazyLoader.includes("loadScript('experiment-core.js')") && lazyLoader.includes("loadScript('experiment-runtime.js')"), 'The consent queue must load before the registry and experiment runtime.');
+assert.ok(lazyLoader.indexOf("loadScript('consented-analytics.js')") < lazyLoader.indexOf("loadScript('experiment-core.js')") && lazyLoader.indexOf("loadScript('experiment-core.js')") < lazyLoader.indexOf("loadScript('experiment-runtime.js')"), 'Experiment dependencies must load in order.');
+assert.ok(!/\\<script\\b[^>]*src=["']\\/games\\/(?:consented-analytics|experiment-core|experiment-runtime)\\.js/i.test(hub), 'Consent-gated analytics and A/B code must not be eagerly downloaded.');
+assert.ok(lazyLoader.includes("script.src=versioned('/games/'+path)") && lazyLoader.includes("script.async=true"), 'Lazy measurement scripts must be asynchronous and stamped with the current release version.');
 assert.ok(queue.includes("'product_experiment_exposed'") && queue.includes("'product_experiment_converted'"));
 assert.ok(api.includes('"product_experiment_exposed"') && api.includes('"product_experiment_converted"'));
 assert.ok(api.includes('PRODUCT_EXPERIMENT_SOURCE_INVALID') && api.includes('PRODUCT_EXPERIMENT_EVENT_PHASE_INVALID'));
