@@ -612,8 +612,14 @@ func _run_smoke() -> void:
 	var saved_frame_samples: Array[float] = game.frame_samples.duplicate()
 	var saved_budget_samples: Array[float] = game.frame_budget_misses.duplicate()
 	game.diagnostics_enabled = true
-	game.frame_samples = [10.0, 17.0, 29.0]
-	game.frame_budget_misses = [0.0, 1.0, 1.0]
+	game.frame_samples.clear()
+	game.frame_samples.append(10.0)
+	game.frame_samples.append(17.0)
+	game.frame_samples.append(29.0)
+	game.frame_budget_misses.clear()
+	game.frame_budget_misses.append(0.0)
+	game.frame_budget_misses.append(1.0)
+	game.frame_budget_misses.append(1.0)
 	game._update_hud()
 	if not _expect(game.diagnostics_label.text.contains("60 FPS MISSES") and game.diagnostics_label.text.contains("PROCESS CPU") and game.diagnostics_label.text.contains("PHYSICS CPU") and game.diagnostics_label.text.contains("DRAW / TRI / NODES"), "live diagnostics must expose frame-budget misses, process/physics timing, draw calls, primitives and scene nodes"):
 		return
