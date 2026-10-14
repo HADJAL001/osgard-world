@@ -6,6 +6,7 @@ const root = resolve(import.meta.dirname, '..')
 const publisher = await readFile(resolve(root, 'scripts/publish-frontend-resumable.ps1'), 'utf8')
 const activator = await readFile(resolve(root, 'scripts/activate-frontend-dist-remote.sh'), 'utf8')
 const deployment = await readFile(resolve(root, 'DEPLOYMENT.md'), 'utf8')
+const windowsDocs = await readFile(resolve(root, 'docs/WINDOWS_RELEASE_PUBLISHING.md'), 'utf8')
 const pkg = JSON.parse(await readFile(resolve(root, 'package.json'), 'utf8'))
 const frontendWorkflow = await readFile(resolve(root, '.github/workflows/frontend-check.yml'), 'utf8')
 const windowsWorkflow = await readFile(resolve(root, '.github/workflows/windows-publisher-check.yml'), 'utf8')
@@ -29,7 +30,7 @@ const checks = [
   ['publisher check is available through npm', pkg.scripts['qa:windows-publisher'] === 'node scripts/publish-frontend-resumable-smoke.mjs'],
   ['frontend CI covers publisher assets', frontendWorkflow.includes('scripts/publish-frontend-resumable.ps1') && frontendWorkflow.includes('scripts/activate-frontend-dist-remote.sh') && frontendWorkflow.includes('qa:windows-publisher')],
   ['native Windows CI has valid concurrency expression and PowerShell parser check', windowsWorkflow.includes('runs-on: windows-latest') && windowsWorkflow.includes('group: windows-publisher-${{ github.ref }}') && windowsWorkflow.includes('Parser]::ParseFile')],
-  ['deployment docs describe preflight and opt-in activation', deployment.includes('-PreflightOnly') && deployment.includes('-Activate') && deployment.includes('scp -i')],
+  ['deployment docs describe preflight and opt-in activation', deployment.includes('-PreflightOnly') && deployment.includes('-Activate') && windowsDocs.includes('scp -i')],
 ]
 for (const [name, passed] of checks) {
   assert.equal(passed, true, 'FAILED: ' + name)
