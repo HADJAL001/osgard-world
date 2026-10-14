@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "gameId": "civic-cascade",
+  "title": "CIVIC CASCADE",
+  "edition": "Web Edition",
+  "version": "1.9.0",
+  "releaseId": "civic-cascade-web-1.9.0",
+  "canonicalUrl": "https://osgard.world/games/civic-cascade/",
+  "detailUrl": "https://osgard.world/game/civic-cascade",
+  "entrypoint": "/games/civic-cascade/",
+  "sourceRepository": "HADJAL001/osgard-world",
+  "sourceBranch": "master",
+  "buildContract": {
+    "htmlTitle": "CIVIC CASCADE — кризисная стратегия | OSGARD PLAY",
+    "readinessMarkers": [
+      "cc-game-root",
+      "cc-status"
+    ],
+    "checkpointSchema": "civic-cascade-checkpoint-v1",
+    "approximateRiskForecast": true,
+    "localOperationSaveRestore": true,
+    "diagnosticPanel": true
+  },
+  "cinematicExport": {
+    "format": "WebM",
+    "profiles": [
+      {
+        "label": "Full HD",
+        "width": 1920,
+        "height": 1080,
+        "maxSeconds": 30
+      },
+      {
+        "label": "4K",
+        "width": 3840,
+        "height": 2160,
+        "maxSeconds": 15
+      },
+      {
+        "label": "8K",
+        "width": 7680,
+        "height": 4320,
+        "maxSeconds": 10
+      }
+    ],
+    "audio": false,
+    "sourceResolutionNote": "8K output is scaled from the live gameplay render; it is not a native 8K simulation render.",
+    "runtimeDependsOn": [
+      "browser MediaRecorder support",
+      "device memory",
+      "encoder performance"
+    ]
+  },
+  "deployment": {
+    "target": "https://osgard.world",
+    "mechanism": "repository push triggers the site's production deployment workflow",
+    "liveStatus": "must be confirmed by the post-deploy production route checks"
+  }
+}
