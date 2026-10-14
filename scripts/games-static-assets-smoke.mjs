@@ -20,7 +20,8 @@ try {
   writeFileSync(join(root, 'nested', 'lazy.mjs'), longJs + '\nexport { pickTone }\n')
 
   const result = await optimizeGamesStaticAssets(root)
-  assert.equal(result.minified.length, 10, 'All critical Games CSS/JS assets must be minified')
+  assert.equal(result.minified.length, 11, 'All critical Games CSS/JS assets, including the catalogue runtime, must be minified')
+  assert.ok(result.minified.some(item => item.path === 'catalog-runtime.js' && item.after > 1000), 'The catalogue runtime must stay non-empty after minification')
   assert.ok(result.minifiedBytesAfter < result.minifiedBytesBefore, 'Minification must reduce the critical asset byte count')
   assert.ok(result.compressed.length >= 7, 'Critical and lazy CSS/JS should have precompressed siblings')
   assert.ok(result.compressed.some(item => item.path === 'catalog-runtime.js'), 'The catalogue runtime must be shipped with a precompressed sibling')
