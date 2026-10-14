@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#080a0b">
+<meta name="description" content="Внутренний редактор каталога OSGARD PLAY.">
+<link rel="icon" href="/games/favicon.svg" type="image/svg+xml">
+<title>OSGARD PLAY — редактор каталога</title>
+<style>
+:root{color-scheme:dark;--bg:#080a0b;--panel:#111517;--ink:#f3f1e8;--muted:#a0a69b;--line:#ffffff20;--accent:#d3ff69;--metal:#d2c9b4;--bad:#ff958e;--good:#b4e98b}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 80% 0,#26342142,transparent 42%),var(--bg);color:var(--ink);font:14px/1.65 system-ui,-apple-system,Segoe UI,sans-serif}a{color:var(--accent);text-underline-offset:3px}button,input,textarea,select{font:inherit}button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:3px}.wrap{width:min(1100px,calc(100% - 32px));margin:auto}.top{min-height:70px;display:flex;align-items:center;justify-content:space-between;gap:16px;border-bottom:1px solid var(--line)}.brand{color:var(--ink);text-decoration:none;font:700 12px ui-monospace,monospace;letter-spacing:.12em}.brand span{color:var(--accent);margin-left:8px}.top nav{display:flex;flex-wrap:wrap;gap:16px;font-size:11px}.eyebrow{margin:46px 0 9px;color:var(--accent);font:10px ui-monospace,monospace;letter-spacing:.18em}h1{margin:0;font:400 clamp(38px,6vw,66px)/.98 Georgia,serif;letter-spacing:-.055em}h2{font:400 29px/1.1 Georgia,serif;margin:0 0 10px}.lede{max-width:700px;color:var(--muted);font-size:13px}.notice{margin:24px 0;padding:15px 17px;border:1px solid #d3ff6940;background:#d3ff6908;color:#c7cec0;font-size:12px}.panel{margin:18px 0;padding:20px;border:1px solid var(--line);background:#111517d9}.form-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:end}.field{display:grid;gap:6px;min-width:0}.field>span,.mini-label{font:10px ui-monospace,monospace;color:var(--muted);letter-spacing:.06em}.field input,.field textarea,.field select{width:100%;min-width:0;padding:10px 11px;border:1px solid #ffffff25;border-radius:5px;background:#090c0b;color:var(--ink)}.field textarea{min-height:90px;resize:vertical}.btn{min-height:42px;padding:0 15px;border:1px solid var(--accent);border-radius:4px;background:var(--accent);color:#10140b;font-size:11px;font-weight:750;cursor:pointer}.btn.secondary{border-color:#ffffff35;background:#ffffff06;color:var(--ink)}.btn:disabled{opacity:.45;cursor:not-allowed}.status{min-height:21px;margin:11px 0 0;color:var(--muted);font-size:11px;overflow-wrap:anywhere}.status[data-kind=error]{color:var(--bad)}.status[data-kind=success]{color:var(--good)}[hidden]{display:none!important}.toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}.editor-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:18px}.game{min-width:0;padding:17px;border:1px solid var(--line);background:#0b0e0d}.game-head{display:flex;align-items:start;justify-content:space-between;gap:12px;margin-bottom:14px}.game h3{margin:0;font-size:18px;font-weight:600;letter-spacing:-.025em}.game-code{margin-top:4px;color:var(--accent);font:9px ui-monospace,monospace;letter-spacing:.1em}.route{display:block;margin-top:7px;color:#929a8d;font:10px ui-monospace,monospace;overflow-wrap:anywhere}.fields{display:grid;grid-template-columns:1fr 1fr;gap:11px}.field.full{grid-column:1/-1}.flags{display:flex;gap:15px;flex-wrap:wrap;margin-top:13px}.check{display:flex;gap:8px;align-items:center;color:#c2c9bd;font-size:11px}.check input{accent-color:var(--accent);width:17px;height:17px}.footer{margin:44px 0 60px;padding-top:20px;border-top:1px solid var(--line);color:#858d80;font-size:10px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:15px}
+@media(max-width:680px){.wrap{width:calc(100% - 24px)}.top{align-items:flex-start;padding:16px 0;flex-direction:column}.top nav{gap:12px}.eyebrow{margin-top:35px}.panel{padding:14px}.form-row,.editor-list{grid-template-columns:1fr}.fields{grid-template-columns:1fr}.field.full{grid-column:auto}.toolbar{align-items:flex-start;flex-direction:column}.toolbar .actions{width:100%;display:flex;gap:8px;flex-wrap:wrap}.toolbar .btn{flex:1}.footer{margin-bottom:32px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top"><a class="brand" href="/games/">OSGARD <span>PLAY / CATALOG STUDIO</span></a><nav aria-label="Инструменты"><a href="/games/">Каталог</a><a href="/games/command-center/">Command Deck</a><a href="/games/commerce-admin/">Commerce Admin</a><a href="/games/partners/">Partner Studio</a></nav></header>
+<main>
+<p class="eyebrow">CONTENT OPERATIONS / V1</p>
+<h1>Редактор игрового<br>каталога.</h1>
+<p class="lede">Управляйте карточками уже зарегистрированных игр без изменения HTML. URL запуска защищены серверным allow-list и не редактируются в этой панели. Добавление нового игрового клиента по-прежнему требует кода, сборки и QA.</p>
+<div class="notice"><strong>Граница безопасности.</strong> Эта страница сама по себе не является приватной — её защищает только <code>noindex</code> от поисковой индексации. Запись и чтение каталога выполняются сервером с Bearer-токеном оператора. Токен хранится только в памяти текущей вкладки и не записывается в браузерное хранилище. До настройки API страница останется в режиме чтения/предупреждения.</div>
+<section class="panel" aria-labelledby="connection-title">
+<h2 id="connection-title">Доступ оператора</h2>
+<form id="access-form" class="form-row">
+<label class="field" for="token"><span>ADMIN API TOKEN</span><input id="token" name="token" type="password" required minlength="32" maxlength="512" autocomplete="off" spellcheck="false"></label>
+<button id="connect" class="btn" type="submit">Подключиться ↗</button>
+</form><p id="access-status" class="status" role="status" aria-live="polite">API не подключён. Введите токен, хранящийся в серверных секретах.</p>
+</section>
+<section id="editor" class="panel" aria-labelledby="editor-title" hidden>
+<div class="toolbar"><div><h2 id="editor-title">Зарегистрированные игры</h2><p class="lede">Изменения отправляются в серверный API и действуют после успешного сохранения. Поля текста выводятся как текст, а не как HTML.</p></div><div class="actions"><button id="save" class="btn" type="button" disabled>Сохранить изменения</button> <button id="disconnect" class="btn secondary" type="button">Отключить</button></div></div>
+<p id="editor-status" class="status" role="status" aria-live="polite"></p>
+<div id="game-list" class="editor-list"></div>
+</section>
+</main>
+<footer class="footer"><span>OSGARD PLAY / CATALOG CONTENT / v1</span><span><a href="/privacy/">Конфиденциальность</a> · <a href="/terms/">Условия</a> · <a href="mailto:osman.osmanov0099@gmail.com">Поддержка</a></span></footer>
+</div>
+<script src="/games/admin/catalog/catalog.js" defer></script>
+</body>
+</html>
