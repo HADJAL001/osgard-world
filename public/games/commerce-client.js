@@ -19,6 +19,20 @@
       return /^[a-zA-Z0-9_-]{1,60}$/.test(value) ? [key + '=' + value] : [];
     });
   }
+  const ATTRIBUTION_GAME_IDS = new Set(['time','swarm','null-shift','inherit','remix','civic-cascade','patina','signal-run','cascade-lab','afterimage-run','aether-grid']);
+  const safeAttributionSlug = (value, fallback) => {
+    const candidate = clean(value, 48).toLowerCase();
+    return /^[a-z0-9][a-z0-9_-]{0,47}$/.test(candidate) ? candidate : fallback;
+  };
+  function readLeadAttribution(form) {
+    const params = new URLSearchParams(location.search);
+    const gameCandidate = clean(params.get('game_id'), 48).toLowerCase();
+    return {
+      gameId: ATTRIBUTION_GAME_IDS.has(gameCandidate) ? gameCandidate : 'unknown',
+      source: safeAttributionSlug(params.get('utm_source'), form.id === 'campaign-form' ? 'partner-form' : 'development-page'),
+      campaign: safeAttributionSlug(params.get('utm_campaign'), form.id === 'campaign-form' ? 'partner-inquiry' : 'project-intake'),
+    };
+  }
   async function discoverSameOriginCommerceApi() {
     let controller = null, timer = 0;
     try {
@@ -73,12 +87,14 @@
     const contact = clean(data.get('contact'), 180);
     const budget = clean(data.get('budget'), 80);
     const attribution = readCampaignAttribution();
+    const leadAttribution = readLeadAttribution(form);
     const contextParts = [];
     const goal = clean(data.get('goal'), 120);
     const geo = clean(data.get('geo'), 80);
     if (goal) contextParts.push('Цель: ' + goal);
     if (geo) contextParts.push('География: ' + geo);
     if (attribution.length) contextParts.push('Источник кампании (UTM): ' + attribution.join(' · '));
+    if (leadAttribution.gameId !== 'unknown') contextParts.push('Игровой источник: ' + leadAttribution.gameId);
     const contextText = contextParts.join('\n');
     const briefLimit = Math.max(0, Math.min(1600, 1800 - contextText.length - (contextText ? 1 : 0)));
     const brief = clean(data.get('brief'), briefLimit);
@@ -114,6 +130,7 @@
           description,
           consent: true,
           website: clean(data.get('website'), 200),
+          attribution: leadAttribution,
         }),
       });
       const result = await response.json().catch(() => ({}));
