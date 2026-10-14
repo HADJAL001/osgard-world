@@ -374,7 +374,10 @@
       "telemetry": false,
       "responseStoredInProfile": false,
       "disabledUnlessServerFlagAndKeyPresent": true,
-      "regressionTest": "services/osgard-commerce-api/test/civic-cascade-advisor.test.mjs"
+      "regressionTest": "services/osgard-commerce-api/test/civic-cascade-advisor.test.mjs",
+      "publicProxyPrefix": "/commerce-api",
+      "publicStatusPath": "/commerce-api/v1/civic-cascade-advisor/status",
+      "publicRequestPath": "/commerce-api/v1/civic-cascade-advisor"
     }
   },
   "cinematicExport": {
