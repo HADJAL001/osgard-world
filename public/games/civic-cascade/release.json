@@ -3,8 +3,8 @@
   "gameId": "civic-cascade",
   "title": "CIVIC CASCADE",
   "edition": "Web Edition",
-  "version": "1.9.0",
-  "releaseId": "civic-cascade-web-1.9.0",
+  "version": "2.0.0",
+  "releaseId": "civic-cascade-web-2.0.0",
   "canonicalUrl": "https://osgard.world/games/civic-cascade/",
   "detailUrl": "https://osgard.world/game/civic-cascade",
   "entrypoint": "/games/civic-cascade/",
@@ -43,17 +43,22 @@
         "maxSeconds": 10
       }
     ],
-    "audio": false,
+    "audio": true,
     "sourceResolutionNote": "8K output is scaled from the live gameplay render; it is not a native 8K simulation render.",
     "runtimeDependsOn": [
       "browser MediaRecorder support",
       "device memory",
       "encoder performance"
+    ],
+    "audioMode": "procedural-ambient-and-risk-cues",
+    "microphoneUsed": false,
+    "audioDependencies": [
+      "Web Audio API"
     ]
   },
   "deployment": {
     "target": "https://osgard.world",
     "mechanism": "repository push triggers the site's production deployment workflow",
-    "liveStatus": "must be confirmed by the post-deploy production route checks"
+    "liveStatus": "deployment must be confirmed by production route checks for release 2.0.0"
   }
 }

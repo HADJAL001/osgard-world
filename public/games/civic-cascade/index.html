@@ -49,7 +49,7 @@
 @media(max-width:560px){.checkpoint-panel{padding:12px}.checkpoint-tools{grid-template-columns:1fr}.forecast-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.forecast-tile strong{font-size:19px}.forecast-head{align-items:flex-start;flex-direction:column;gap:4px}.forecast-head span{text-align:left}#cc-checkpoint-status{max-width:48%}}
 @media(prefers-reduced-motion:reduce){.checkpoint-panel,.forecast-tile{scroll-behavior:auto;transition:none!important}}
 
-/* CIVIC CASCADE 1.9.0 — cinematic field-record export */
+/* CIVIC CASCADE 2.0.0 — cinematic field-record export */
 .cc-film-panel{position:relative;margin:0 0 16px;padding:clamp(16px,2.1vw,26px);border:1px solid #b8f4cf2b;background:radial-gradient(ellipse at 90% 0%,#68d8d210,transparent 42%),linear-gradient(145deg,#ffffff06,transparent 58%),#0b1518;overflow:hidden}
 .cc-film-panel:before{content:"";position:absolute;top:0;left:0;width:108px;height:2px;background:linear-gradient(90deg,#b8f4cf,transparent)}
 .cc-film-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:8px}
@@ -61,6 +61,10 @@
 .cc-film-status[data-state="recording"]{border-color:#b8f4cf88;color:#b8f4cf;box-shadow:0 0 22px #b8f4cf12}
 .cc-film-status[data-state="error"]{border-color:#ff827b88;color:#ffb0a8}
 .cc-film-controls{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:end}
+.cc-film-profile-stack{display:grid;gap:9px;min-width:0}
+.cc-film-audio{display:flex;align-items:center;gap:10px;min-height:46px;padding:8px 11px;border:1px solid #ffffff26;background:#091114;color:#edf3ee;font-size:10px;line-height:1.45;letter-spacing:0;cursor:pointer}
+.cc-film-audio input{width:16px;height:16px;flex:0 0 auto;accent-color:#b8f4cf}
+.cc-film-audio small{display:block;margin-top:2px;color:#91a29e;font-size:8px}
 .cc-film-field{display:grid;gap:7px;color:#91a29e;font:9px ui-monospace,Consolas,monospace;letter-spacing:.11em}
 .cc-film-field select{width:100%;min-height:46px;padding:0 13px;border:1px solid #ffffff26;border-radius:0;background:#091114;color:#edf3ee;font-size:12px;letter-spacing:0}
 .cc-film-record{min-height:46px;padding:0 18px;border:1px solid #b8f4cf;background:#b8f4cf;color:#08130f;font-size:11px;font-weight:750;letter-spacing:.08em;cursor:pointer;transition:background .18s,border-color .18s,transform .18s}
@@ -106,7 +110,7 @@
 <button class="action-btn" id="cc-action-repair" data-action="repair"><span class="action-icon">⌁</span><span class="action-copy"><b>Отправить ремонтные бригады</b><small>Устраняет сбой выбранного узла</small></span><span class="cost">−12 ед.</span></button>
 </div></div><div class="controls"><button class="ctrl" id="cc-pause" type="button">Ⅱ Пауза</button><button class="ctrl" id="cc-speed" type="button">СКОРОСТЬ 1×</button><button class="ctrl" id="cc-reset" type="button">↻ Новая операция</button></div><div class="risk"><div><div class="risk-label">ИНДЕКС КРИЗИСА</div><strong id="cc-risk">61<small> / 100</small></strong></div><div class="risk-copy"><b id="cc-risk-label">РАЗВИВАЕТСЯ</b><span id="cc-risk-copy">Нагрузка на сети растёт. Выбери первичный узел.</span></div></div>
 <div class="checkpoint-panel" aria-label="Сохранение операции и краткосрочный прогноз">
-  <div class="checkpoint-head"><div><small>LOCAL OPERATION LAB / V1.9.0</small><strong>Контрольная точка</strong></div><span id="cc-checkpoint-status" role="status" aria-live="polite">Проверка сохранения…</span></div>
+  <div class="checkpoint-head"><div><small>LOCAL OPERATION LAB / V2.0.0</small><strong>Контрольная точка</strong></div><span id="cc-checkpoint-status" role="status" aria-live="polite">Проверка сохранения…</span></div>
   <p class="checkpoint-intro">Сохрани ход операции на этом устройстве и продолжи позже. Контрольная точка не отправляется на сервер.</p>
   <div class="checkpoint-tools"><button class="ctrl" id="cc-save" type="button">Сохранить операцию</button><button class="ctrl" id="cc-load" type="button" disabled>Восстановить сохранение</button></div>
   <div class="forecast-head"><b>ПРОГНОЗ НА 30 ИГРОВЫХ СЕКУНД</b><span>ОЦЕНКА ПО ТЕКУЩИМ ТРЕНДАМ</span></div>
@@ -123,28 +127,31 @@
 
 <section class="cc-film-panel" id="cc-film-panel" aria-labelledby="cc-film-title">
   <div class="cc-film-head">
-    <div><span class="cc-film-kicker">OSGARD PLAY / CINEMATIC FIELD RECORD · 1.9.0</span><h2 class="cc-film-title" id="cc-film-title">Запись <em>операции</em></h2></div>
+    <div><span class="cc-film-kicker">OSGARD PLAY / CINEMATIC FIELD RECORD · 2.0.0</span><h2 class="cc-film-title" id="cc-film-title">Запись <em>операции</em></h2></div>
     <div class="cc-film-status" id="cc-film-status" data-state="ready" role="status" aria-live="polite">ГОТОВО К ЗАПИСИ</div>
   </div>
   <p class="cc-film-copy">Запиши живую карту города с оперативными показателями в отдельный WebM-клип. Запись берёт текущий игровой холст и накладывает на него показатели воды, энергосети, доступа служб, запасов и риска.</p>
   <div class="cc-film-controls">
-    <label class="cc-film-field" for="cc-film-profile">ПРОФИЛЬ ВИДЕО
-      <select id="cc-film-profile">
-        <option value="1080">FULL HD · 1920 × 1080 · до 30 секунд</option>
-        <option value="4k">4K UHD · 3840 × 2160 · до 15 секунд</option>
-        <option value="8k">8K UHD · 7680 × 4320 · до 10 секунд</option>
-      </select>
-    </label>
+    <div class="cc-film-profile-stack">
+      <label class="cc-film-field" for="cc-film-profile">ПРОФИЛЬ ВИДЕО
+        <select id="cc-film-profile">
+          <option value="1080">FULL HD · 1920 × 1080 · до 30 секунд</option>
+          <option value="4k">4K UHD · 3840 × 2160 · до 15 секунд</option>
+          <option value="8k">8K UHD · 7680 × 4320 · до 10 секунд</option>
+        </select>
+      </label>
+      <label class="cc-film-audio" for="cc-film-audio"><input id="cc-film-audio" type="checkbox" checked><span>АТМОСФЕРНАЯ АУДИОДОРОЖКА<small>Генерируется в браузере · микрофон не используется</small></span></label>
+    </div>
     <button class="cc-film-record" id="cc-film-record" type="button">ЗАПИСАТЬ ФИЛЬМ · WEBM</button>
   </div>
   <div class="cc-film-progress-shell"><progress class="cc-film-progress" id="cc-film-progress" max="100" value="0" aria-label="Ход записи фильма"></progress><span class="cc-film-progress-label" id="cc-film-progress-label">00:00 / 00:30</span></div>
-  <p class="cc-film-note" id="cc-film-note">Запись создаётся локально в браузере и не отправляется на сервер. Видео без звука. В профиле 8K выходной кадр имеет размер 7680 × 4320, но карта увеличивается из текущего разрешения игрового холста — это пока не нативная 8K-отрисовка игровых объектов. Фактическая плавность зависит от браузера и устройства.</p>
+  <p class="cc-film-note" id="cc-film-note">Кинематографическая атмосфера создаётся процедурно прямо в браузере; микрофон не используется и аудиофайлы не загружаются. Запись остаётся на устройстве. 8K — выходной кадр с увеличением текущего рендера, а не нативная 8K-отрисовка игровых объектов. Плавность зависит от браузера и оборудования.</p>
   <a class="cc-film-download" id="cc-film-download" href="#" hidden download>↓ СКАЧАТЬ WEBM-КЛИП</a>
 </section>
 
 <p class="notice">Это браузерная игровая редакция OSGARD PLAY. Показатели и последствия моделируются внутри игры и не являются реальными городскими данными. Состояние операции не отправляется на сервер.</p>
 </main>
-<footer class="footer"><span>© OSGARD WORLD / PLAY · CIVIC CASCADE WEB EDITION 1.9.0</span><span>КРИЗИСНАЯ СТРАТЕГИЯ · DESKTOP + TOUCH</span><span><a href="/games/">ВЕРНУТЬСЯ В КАТАЛОГ ↗</a></span></footer>
+<footer class="footer"><span>© OSGARD WORLD / PLAY · CIVIC CASCADE WEB EDITION 2.0.0</span><span>КРИЗИСНАЯ СТРАТЕГИЯ · DESKTOP + TOUCH</span><span><a href="/games/">ВЕРНУТЬСЯ В КАТАЛОГ ↗</a></span></footer>
 </div><div class="toast" id="cc-toast" role="status" aria-live="polite"></div>
 <script>
 (function(){
@@ -388,17 +395,47 @@ function setupCinematicCapture(){
  if(!panel||panel.dataset.initialized==='true')return;
  panel.dataset.initialized='true';
  const profileSelect=$('cc-film-profile'),recordButton=$('cc-film-record'),statusNode=$('cc-film-status');
- const progress=$('cc-film-progress'),progressLabel=$('cc-film-progress-label'),note=$('cc-film-note'),download=$('cc-film-download');
+ const progress=$('cc-film-progress'),progressLabel=$('cc-film-progress-label'),note=$('cc-film-note'),download=$('cc-film-download'),filmAudio=$('cc-film-audio');
  const profiles={
   '1080':{label:'FULL HD',width:1920,height:1080,maxSeconds:30,bitrate:12000000},
   '4k':{label:'4K UHD',width:3840,height:2160,maxSeconds:15,bitrate:30000000},
   '8k':{label:'8K UHD',width:7680,height:4320,maxSeconds:10,bitrate:55000000}
  };
  let recorder=null,chunks=[],stream=null,exportCanvas=null,exportContext=null,drawFrameId=0,limitTimer=0,progressTimer=0,startedAt=0,lastPaintAt=0,lastObjectUrl='';
+ let audioContext=null,audioDestination=null,audioMasterGain=null,audioTensionGain=null,audioPrimaryOscillator=null,audioSources=[],lastAudioUpdateAt=0,audioAlertActive=false,lastRecordingHadAudio=false;
  const setStatus=(message,stateName)=>{statusNode.textContent=message;statusNode.dataset.state=stateName||'ready'};
  const formatSeconds=value=>{const n=Math.max(0,Math.floor(value));return String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0')};
+ function createFilmAudio(){
+  const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+  if(!AudioContextClass)throw new Error('Web Audio API unavailable');
+  audioContext=new AudioContextClass();audioDestination=audioContext.createMediaStreamDestination();
+  audioMasterGain=audioContext.createGain();audioMasterGain.gain.value=.62;audioMasterGain.connect(audioDestination);
+  const low=audioContext.createOscillator(),lowGain=audioContext.createGain();low.type='sine';low.frequency.value=39;lowGain.gain.value=.16;low.connect(lowGain);lowGain.connect(audioMasterGain);
+  const upper=audioContext.createOscillator();upper.type='triangle';upper.frequency.value=58.5;audioTensionGain=audioContext.createGain();audioTensionGain.gain.value=.016;upper.connect(audioTensionGain);audioTensionGain.connect(audioMasterGain);
+  const lfo=audioContext.createOscillator(),lfoGain=audioContext.createGain();lfo.type='sine';lfo.frequency.value=.095;lfoGain.gain.value=.012;lfo.connect(lfoGain);lfoGain.connect(lowGain.gain);
+  const rate=audioContext.sampleRate,buffer=audioContext.createBuffer(1,Math.floor(rate*2),rate),data=buffer.getChannelData(0);
+  for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*.32;
+  const noise=audioContext.createBufferSource(),filter=audioContext.createBiquadFilter(),noiseGain=audioContext.createGain();
+  noise.buffer=buffer;noise.loop=true;filter.type='lowpass';filter.frequency.value=420;filter.Q.value=.55;noiseGain.gain.value=.11;noise.connect(filter);filter.connect(noiseGain);noiseGain.connect(audioMasterGain);
+  audioSources=[low,upper,lfo,noise];audioPrimaryOscillator=low;lastAudioUpdateAt=0;audioAlertActive=false;audioSources.forEach(s=>s.start());
+  return audioDestination.stream;
+ }
+ function playCrisisCue(){
+  if(!audioContext||!audioMasterGain)return;
+  const osc=audioContext.createOscillator(),env=audioContext.createGain(),t=audioContext.currentTime;osc.type='sine';
+  osc.frequency.setValueAtTime(740,t);osc.frequency.exponentialRampToValueAtTime(480,t+.16);
+  env.gain.setValueAtTime(.0001,t);env.gain.exponentialRampToValueAtTime(.052,t+.018);env.gain.exponentialRampToValueAtTime(.0001,t+.24);osc.connect(env);env.connect(audioMasterGain);
+  audioSources.push(osc);osc.start(t);osc.stop(t+.25);
+ }
+ function updateFilmAudio(){
+  if(!audioContext)return;const risk=Math.max(0,Math.min(100,Number(riskValue())||0))/100,t=audioContext.currentTime;
+  if(audioTensionGain)audioTensionGain.gain.setTargetAtTime(.014+risk*.068,t,.75);
+  if(audioPrimaryOscillator)audioPrimaryOscillator.frequency.setTargetAtTime(38+risk*19,t,.8);
+  if(risk>=.72&&!audioAlertActive){playCrisisCue();audioAlertActive=true}else if(risk<.55)audioAlertActive=false;
+ }
  function paintVideoFrame(now){
   if(!recorder||recorder.state!=='recording'||!exportCanvas||!exportContext)return;
+  if(now-lastAudioUpdateAt>500){lastAudioUpdateAt=now;updateFilmAudio()}
   if(now-lastPaintAt<1000/30){drawFrameId=requestAnimationFrame(paintVideoFrame);return}lastPaintAt=now;
   const w=exportCanvas.width,h=exportCanvas.height,scale=w/1920,c=exportContext;
   c.fillStyle='#061014';c.fillRect(0,0,w,h);
@@ -436,8 +473,11 @@ function setupCinematicCapture(){
   if(drawFrameId)cancelAnimationFrame(drawFrameId);drawFrameId=0;
   if(limitTimer)clearTimeout(limitTimer);limitTimer=0;
   if(progressTimer)clearInterval(progressTimer);progressTimer=0;
+  audioSources.forEach(source=>{try{source.stop()}catch(_){}});audioSources=[];
   if(stream)stream.getTracks().forEach(track=>{try{track.stop()}catch(_){}});stream=null;
   if(exportCanvas){exportCanvas.width=0;exportCanvas.height=0}exportContext=null;exportCanvas=null;
+  const oldAudioContext=audioContext;audioContext=null;audioDestination=null;audioMasterGain=null;audioTensionGain=null;audioPrimaryOscillator=null;audioAlertActive=false;
+  if(oldAudioContext){try{oldAudioContext.close().catch(()=>{})}catch(_){}}
   recorder=null;chunks=[];
   recordButton.textContent='ЗАПИСАТЬ ФИЛЬМ · WEBM';recordButton.dataset.recording='false';recordButton.disabled=false;profileSelect.disabled=false;
   progress.value=0;progressLabel.textContent='00:00 / 00:00';
@@ -454,14 +494,14 @@ function setupCinematicCapture(){
   lastObjectUrl=URL.createObjectURL(blob);const profileName=profileSelect.value||'1080';
   download.href=lastObjectUrl;download.download='civic-cascade-'+profileName+'-'+new Date().toISOString().replace(/[:.]/g,'-')+'.webm';download.hidden=false;
   setStatus('КЛИП ГОТОВ · '+(blob.size/1048576).toFixed(1)+' МБ','ready');
-  note.textContent='Видео подготовлено локально. Нажми «Скачать WebM-клип», чтобы сохранить его на устройстве. Запись без звука; фактические кадры в секунду и качество зависят от браузера и оборудования.';
+  note.textContent='Видео подготовлено локально. Нажми «Скачать WebM-клип», чтобы сохранить его на устройстве. '+(lastRecordingHadAudio?'Клип содержит синтезированную аудиодорожку; микрофон не используется. ':'Клип сохранён без звука. ')+'Кадры в секунду и качество зависят от устройства.';
  }
  function stopRecording(reason){
   if(!recorder||recorder.state!=='recording')return;
   stopReason=reason||'manual';if(drawFrameId)cancelAnimationFrame(drawFrameId);drawFrameId=0;
   try{recorder.stop()}catch(_){cleanupCapture();setStatus('НЕ УДАЛОСЬ ОСТАНОВИТЬ ЗАПИСЬ','error')}
  }
- function startRecording(){
+ async function startRecording(){
   if(!canvas.captureStream||typeof window.MediaRecorder==='undefined'){setStatus('ЭТОТ БРАУЗЕР НЕ ПОДДЕРЖИВАЕТ ЗАПИСЬ','error');note.textContent='Нужен современный браузер с поддержкой Canvas captureStream и MediaRecorder. Игра продолжит работать без видеоэкспорта.';return}
   const profile=profiles[profileSelect.value]||profiles['1080'];
   if(profile.width===7680&&!window.confirm('Начать короткую 8K-запись 7680 × 4320 до 10 секунд? Один графический буфер занимает около 127 MiB, а кодек использует дополнительную память. Карта будет увеличена из текущего игрового рендера, а не перерисована в нативном 8K. Продолжить?'))return;
@@ -473,23 +513,26 @@ function setupCinematicCapture(){
    if(!exportContext)throw new Error('2D canvas is unavailable');
    exportContext.imageSmoothingEnabled=true;exportContext.imageSmoothingQuality='high';
    stream=exportCanvas.captureStream(30);
-   const types=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
+   const audioEnabled=Boolean(filmAudio&&filmAudio.checked);lastRecordingHadAudio=audioEnabled;
+   if(audioEnabled){const audioStream=createFilmAudio();if(audioContext.state==='suspended')await audioContext.resume();audioStream.getAudioTracks().forEach(track=>stream.addTrack(track))}
+   const types=audioEnabled?['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm']:['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
    const supported=types.find(type=>window.MediaRecorder.isTypeSupported&&window.MediaRecorder.isTypeSupported(type));
-   const options={videoBitsPerSecond:profile.bitrate};if(supported)options.mimeType=supported;
+   const options={videoBitsPerSecond:profile.bitrate};if(audioEnabled)options.audioBitsPerSecond=128000;if(supported)options.mimeType=supported;
    try{recorder=new MediaRecorder(stream,options)}catch(_){recorder=new MediaRecorder(stream)}
    recorder.ondataavailable=event=>{if(event.data&&event.data.size)chunks.push(event.data)};
    recorder.onerror=()=>{setStatus('ОШИБКА КОДЕКА · ПОПРОБУЙ FULL HD','error');note.textContent='Браузер остановил запись из-за ошибки захвата или кодирования. Попробуй снизить разрешение.';stopRecording('error')};
    recorder.onstop=finishRecording;
    profileSelect.disabled=true;recordButton.disabled=false;recordButton.textContent='■ ОСТАНОВИТЬ И СОХРАНИТЬ';recordButton.dataset.recording='true';
    download.hidden=true;progress.value=0;startedAt=Date.now();progressLabel.textContent='00:00 / '+formatSeconds(profile.maxSeconds);
-   setStatus('ЗАПИСЬ · '+profile.label,'recording');note.textContent='Запись идёт. Максимальная длительность: '+profile.maxSeconds+' секунд. Останови раньше, если нужный момент уже записан.';
+   setStatus('ЗАПИСЬ · '+profile.label,'recording');note.textContent='Запись идёт. Максимальная длительность: '+profile.maxSeconds+' секунд. '+(audioEnabled?'Синтезированная атмосфера включена; микрофон не используется. ':'Запись без аудио. ')+'Останови раньше, если нужный момент уже записан.';
    recorder.start(500);drawFrameId=requestAnimationFrame(paintVideoFrame);
    limitTimer=setTimeout(()=>stopRecording('limit'),profile.maxSeconds*1000);
    progressTimer=setInterval(()=>{const seconds=Math.min(profile.maxSeconds,(Date.now()-startedAt)/1000);progress.value=seconds/profile.maxSeconds*100;progressLabel.textContent=formatSeconds(seconds)+' / '+formatSeconds(profile.maxSeconds);if(recorder&&recorder.state==='recording')setStatus('ЗАПИСЬ · '+profile.label+' · '+formatSeconds(seconds),'recording')},200);
   }catch(error){cleanupCapture();setStatus('НЕ УДАЛОСЬ ЗАПУСТИТЬ ЗАПИСЬ','error');note.textContent='Запись не запущена. Попробуй другой браузер или более низкое разрешение. '+(error&&error.message?String(error.message).slice(0,120):'')}
  }
  recordButton.addEventListener('click',()=>{if(recorder&&recorder.state==='recording'){stopRecording('manual');return}startRecording()});
- profileSelect.addEventListener('change',()=>{const p=profiles[profileSelect.value]||profiles['1080'];progressLabel.textContent='00:00 / '+formatSeconds(p.maxSeconds);note.textContent=p.width===7680?'Выходной кадр 7680 × 4320. Карта масштабируется из текущего рендера; требуется много оперативной памяти.':'Запись локальная, без звука. Выход '+p.width+' × '+p.height+'; фактические FPS зависят от устройства.'});
+ function updateFilmNote(){const p=profiles[profileSelect.value]||profiles['1080'];progressLabel.textContent='00:00 / '+formatSeconds(p.maxSeconds);const audioText=filmAudio.checked?'Добавится синтезированная атмосфера и сигнал при критическом риске; микрофон не используется. ':'Аудиодорожка отключена. ';const quality=p.width===7680?'8K: увеличение текущего рендера, не нативная 8K-отрисовка. ':p.width===3840?'4K: скорость зависит от устройства. ':'Full HD 1920 × 1080. ';note.textContent=audioText+quality+'Максимальная длительность — '+p.maxSeconds+' секунд. Файл остаётся на устройстве.'}
+ profileSelect.addEventListener('change',updateFilmNote);filmAudio.addEventListener('change',updateFilmNote);updateFilmNote();
  if(typeof window.MediaRecorder==='undefined'||!canvas.captureStream){recordButton.disabled=true;setStatus('ВИДЕОЭКСПОРТ НЕ ПОДДЕРЖИВАЕТСЯ','error')}
 }
 
