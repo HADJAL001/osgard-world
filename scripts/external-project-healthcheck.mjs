@@ -60,7 +60,7 @@ function classifyHttp(status, isHtml, title) {
 
 function normalizedHost(value) {
   try {
-    const host = new URL(value).hostname.toLowerCase().replace(/\\.$/, '')
+    const host = new URL(value).hostname.toLowerCase()
     return host.startsWith('www.') ? host.slice(4) : host
   } catch {
     return ''
