@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { runInNewContext } from 'node:vm';
 
 const html = readFileSync(new URL('../public/games/cascade-lab/index.html', import.meta.url), 'utf8');
 const source = readFileSync(new URL('../public/games/cascade-lab/robustness-lab.js', import.meta.url), 'utf8');
@@ -25,11 +26,8 @@ for (const marker of [
   'function normalizeSweep(', 'function summarizeSweep(', 'function classifyFailure(',
   'function percentile(', 'function renderCanvas(', 'function exportLatestJson(',
   'function exportLatestCsv(', 'localStorage', 'MAX_TRIALS = 48', 'MAX_REPORTS = 12',
-  'Проверяет запас устойчивости', 'НЕ ГАРАНТИРУЕТ'
-]) {
-  if (marker === 'Проверяет запас устойчивости' || marker === 'НЕ ГАРАНТИРУЕТ') continue;
-  assert.ok(source.includes(marker), 'Robustness Lab contract missing: ' + marker);
-}
+  'aria-live', 'prefers-reduced-motion'
+  ]) assert.ok(source.includes(marker), 'Robustness Lab contract missing: ' + marker);
 
 function makeSuite(overrides = {}) {
   return {
@@ -73,6 +71,72 @@ assert.equal(api.classifyFailure('Слишком жёсткое приземле
 assert.equal(api.classifyFailure('Маршрут не завершён: пропущена контрольная точка'), 'Пропущена точка');
 assert.equal(api.percentile([1, 2, 3, 4], 0.5), 2.5);
 assert.equal(api.csvCell('=1+1'), '"\'=1+1"', 'CSV must prevent spreadsheet-formula injection');
+const coreStart = html.indexOf('function createCascadeRobustnessRandom(seed)');
+const coreEnd = html.indexOf("notifyOsgardLifecycle('ready', { version: '0.26.0' });", coreStart);
+assert.ok(coreStart >= 0 && coreEnd > coreStart, 'robustness core must be embedded in the main game shell');
+const coreSource = html.slice(coreStart, coreEnd);
+
+const constructions = [];
+class MockPhysicsWorld {
+  constructor(level, devices) {
+    this.level = level;
+    this.devices = devices.map(device => ({ ...device }));
+    this.status = 'ready';
+    this.time = 0;
+    this.x = level.start.x;
+    this.y = level.start.y;
+    this.vx = 0;
+    this.vy = 0;
+    this.reason = '';
+    this.gateOpen = false;
+    this.checkpointsReached = new Set();
+    this.telemetry = { peakSpeed: 0, lastImpactSpeed: 0 };
+    constructions.push(this);
+  }
+  start() { this.status = 'running'; this.vx = 92; }
+  step(dt) {
+    this.time += dt;
+    this.x += this.vx * dt;
+    this.telemetry.peakSpeed = Math.max(this.telemetry.peakSpeed, Math.hypot(this.vx, this.vy));
+    if (this.time >= 2 / 120) { this.status = 'won'; this.reason = 'Доставка выполнена'; }
+  }
+}
+const baseLevel = {
+  id: 1, title: 'Протокол проверки', start: { x: 120, y: 160 }, goal: { x: 900, y: 420 },
+  platforms: [{ x: 80, y: 200, w: 400, h: 20 }], gates: [], checkpoints: []
+};
+const liveDevices = [{ uid: 'live-spring', type: 'spring', x: 240, y: 187, angle: 0 }];
+const beforeLevel = JSON.stringify(baseLevel);
+const beforeDevices = JSON.stringify(liveDevices);
+const hostWindow = {};
+runInNewContext(coreSource, {
+  WORLD: { width: 1000, height: 560, gravity: 1060, radius: 12, fixedStep: 1 / 120 },
+  PhysicsWorld: MockPhysicsWorld,
+  level: baseLevel,
+  devices: liveDevices,
+  mode: 'build',
+  window: hostWindow,
+  setTimeout
+});
+const core = hostWindow.CASCADELAB026_CORE;
+assert.ok(core && core.version === '0.26.0', 'main game must expose the v0.26 robustness core');
+const progressEvents = [];
+const firstSweep = await core.runSweep({ trialCount: 12, seed: 260125, severity: 'standard' }, (done, total, group) => progressEvents.push([done, total, group]));
+assert.equal(firstSweep.trials.length, 12);
+assert.deepEqual([...new Set(firstSweep.trials.map(trial => trial.axis))].sort(), ['angle', 'launch', 'layout']);
+assert.equal(constructions.length, 13, 'one baseline world plus twelve isolated trial worlds must be created');
+assert.equal(JSON.stringify(baseLevel), beforeLevel, 'stress trials must not mutate the live level geometry');
+assert.equal(JSON.stringify(liveDevices), beforeDevices, 'stress trials must not mutate the player blueprint');
+assert.equal(firstSweep.baseline.status, 'won');
+assert.ok(progressEvents.length >= 13, 'the runner should report baseline and per-trial progress');
+for (const trial of firstSweep.trials) {
+  const v = trial.variation;
+  if (trial.axis === 'angle') assert.equal(v.positionMaxPx + Math.abs(v.launchPercent), 0, 'angle trials change only angles');
+  if (trial.axis === 'layout') assert.equal(v.angleMaxDeg + Math.abs(v.launchPercent), 0, 'placement trials change only position');
+  if (trial.axis === 'launch') assert.equal(v.angleMaxDeg + v.positionMaxPx, 0, 'launch trials change only the launch impulse');
+}
+const repeatSweep = await core.runSweep({ trialCount: 12, seed: 260125, severity: 'standard' });
+assert.deepEqual(firstSweep.trials.map(trial => trial.variation), repeatSweep.trials.map(trial => trial.variation), 'same seed and parameters must reproduce perturbations');
 
 const inlineScripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]).filter(text => text.trim());
 assert.ok(inlineScripts.length >= 1, 'main game engine must remain present');
