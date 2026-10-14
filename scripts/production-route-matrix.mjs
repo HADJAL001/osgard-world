@@ -292,7 +292,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
               : path.endsWith('.css')
               ? normalized.includes('--acid:#c8ff3d') && normalized.includes('/skillcred/fonts/intervariable.woff2') && normalized.includes('/skillcred/fonts/instrumentserif-italic.woff2') && normalized.includes('/skillcred/fonts/jetbrainsmono-regular.woff2') && (!expectCurrentDesign || (normalized.includes('--hero-size:clamp(88px,6vw,104px)') && normalized.replace(/["']/g, '').includes('.trust-spine[data-state=revoked]')))
               : path === '/games/cascade-lab/case-passport.js'
-              ? /\\bVERSION\\s*=\\s*['"]0\\.21\\.0['"]/.test(content) && /\\bSCHEMA\\s*=\\s*['"]osgard\\.cascade-lab\\.case-passport\\.v1['"]/.test(content) && content.includes('function verifyPassport(') && !content.includes('fetch(') && !content.includes('sendBeacon(')
+              ? /\bVERSION\s*=\s*['"]0\.21\.0['"]/.test(content) && /\bSCHEMA\s*=\s*['"]osgard\.cascade-lab\.case-passport\.v1['"]/.test(content) && content.includes('function verifyPassport(') && !content.includes('fetch(') && !content.includes('sendBeacon(')
             : path === '/games/cascade-lab/trajectory-xray.js'
               ? content.includes("const VERSION = '0.22.0'") && content.includes("const SCHEMA = 'osgard.cascade-lab.trajectory-xray.v1'") && content.includes('function trajectoryDeviation(') && !content.includes('fetch(') && !content.includes('sendBeacon(')
             : path === '/games/cascade-lab/mission-director.js'
