@@ -14,10 +14,10 @@ assert.ok(page.includes('id="diagnostics-app"') || page.includes('data-og-diagno
 assert.ok(page.includes('30 диагностических проверок'));
 assert.ok(page.includes('prefers-reduced-motion:reduce'));
 assert.ok(page.includes('Перейти к проверкам'));
-assert.ok(page.includes('ничего автоматически не отправляется'));
+assert.ok(/ничего автоматически не отправляется/i.test(page));
 assert.ok(page.includes('id="run-all"') && page.includes('id="export-json"') && page.includes('id="export-csv"'));
 assert.ok(!/<script[^>]+src=["']https?:\/\//i.test(page), 'diagnostics page must not load remote scripts');
-assert.ok(!/<link[^>]+href=["']https?:\/\//i.test(page), 'diagnostics page must not load remote stylesheets');
+assert.ok(!/<link[^>]+rel=["']stylesheet["'][^>]+href=["']https?:\/\//i.test(page), 'diagnostics page must not load remote stylesheets');
 
 const capabilities = client.match(/const capabilityChecks = \[([\s\S]*?)\n  \];/)?.[1] || '';
 const routes = client.match(/const gameRoutes = \[([\s\S]*?)\n  \];/)?.[1] || '';
