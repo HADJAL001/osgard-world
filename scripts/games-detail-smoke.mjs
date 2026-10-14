@@ -169,9 +169,11 @@ assert.ok(ledgerScripts[0][1].includes('schema: SCHEMA, schemaVersion: 1') && le
 assert.ok(ledgerScripts[0][1].includes('localStorage.setItem(KEY') && !ledgerScripts[0][1].includes('/api/'), 'Experiment ledger must remain local-first and must not send its history to an API')
 
 
-const entertainmentBridgeMatch = hub.match(/<script id="games-deep-link-bridge">([\\s\\S]*?)<\\/script>/)
-assert.ok(entertainmentBridgeMatch, 'Shared-player deep-link bridge must exist in the Games hub')
-const entertainmentBridge = entertainmentBridgeMatch[1]
+const entertainmentBridgeTag = '<script id="games-deep-link-bridge">'
+const entertainmentBridgeStart = hub.indexOf(entertainmentBridgeTag)
+const entertainmentBridgeEnd = hub.indexOf('</script>', entertainmentBridgeStart)
+assert.ok(entertainmentBridgeStart >= 0 && entertainmentBridgeEnd > entertainmentBridgeStart, 'Shared-player deep-link bridge must exist in the Games hub')
+const entertainmentBridge = hub.slice(entertainmentBridgeStart + entertainmentBridgeTag.length, entertainmentBridgeEnd)
 new Function(entertainmentBridge)
 for (const id of ['null-shift','time','swarm','inherit','remix','civic-cascade','patina','signal-run','cascade-lab','afterimage-run','aether-grid']) {
   assert.ok(entertainmentBridge.includes("'" + id + "'"), 'Deep-link bridge allow-list is missing ' + id)
@@ -191,7 +193,7 @@ assert.ok(inviteRuntime.includes("new URL('/games/', location.origin)") &&
   inviteRuntime.includes("target.searchParams.set('play', game)") &&
   inviteRuntime.includes("target.searchParams.set('og_ref', code)"),
   'Canonical invitation landing must open the shared game player and preserve its referral code')
-assert.ok(inviteRuntime.includes("const validAetherDay = /^\\\\d{4}-\\\\d{2}-\\\\d{2}$/"),
+assert.ok(inviteRuntime.includes('const validAetherDay = /^' + String.fromCharCode(92) + 'd{4}-' + String.fromCharCode(92) + 'd{2}-' + String.fromCharCode(92) + 'd{2}$/'),
   'AETHER GRID invite date must be validated as a calendar date before it is forwarded')
 assert.ok(entertainmentPage.includes('/entertainment/entertainment.js?v=20261014.4'),
   'Entertainment HTML must pin the changed launch runtime to a new cache version')
