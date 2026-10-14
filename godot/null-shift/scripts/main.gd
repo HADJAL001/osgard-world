@@ -2454,7 +2454,7 @@ func _register_hostile_elimination(guard: Dictionary, body: Node3D, precision_fi
 	combat_combo += 1
 	combat_combo_timer = COMBAT_COMBO_WINDOW
 	combat_combo_best = maxi(combat_combo_best, combat_combo)
-	var role := str(guard.get("role", "RANGER"))
+	var role: String = str(guard.get("role", "RANGER"))
 	var role_bounty := 0
 	match role:
 		"STALKER":
