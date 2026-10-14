@@ -109,7 +109,7 @@ assert.ok(cascadeGame.includes("buildOsgardCampaignUrl(item.id, 'social_share')"
 
 
 assert.ok(civicGame.includes('id="cc-save"') && civicGame.includes('id="cc-load"') && civicGame.includes('function saveCheckpoint()') && civicGame.includes('function restoreCheckpoint()'), 'CIVIC CASCADE must provide working local operation checkpoints')
-assert.ok(civicGame.includes("osgard-civic-cascade-checkpoint-v1") && civicGame.includes("localStorage.setItem(CHECKPOINT_KEY") && civicGame.includes("schemaVersion!==1"), 'CIVIC CASCADE checkpoint storage must be versioned and validated')
+assert.ok(civicGame.includes("osgard-civic-cascade-checkpoint-v1") && civicGame.includes("localStorage.setItem(CHECKPOINT_KEY") && civicGame.includes("schemaVersion:2") && civicGame.includes("![1,2].includes(item.schemaVersion)"), 'CIVIC CASCADE checkpoint storage must preserve the current schema v2 while validating legacy v1 saves')
 assert.ok(civicGame.includes('id="cc-forecast"') && civicGame.includes('function updateForecast()') && /30\s+игровых\s+секунд/i.test(civicGame), 'CIVIC CASCADE must render its approximate 30-second risk outlook')
 
 assert.ok(civicGame.includes('id="cc-film-panel"') && civicGame.includes('id="cc-film-profile"') && civicGame.includes('id="cc-film-record"') && civicGame.includes('id="cc-film-download"'), 'CIVIC CASCADE 1.9.0 must expose accessible cinematic recording controls');
