@@ -82,6 +82,8 @@ jobs:
         run: npm run qa:games-portal
       - name: Verify OSGARD PLAY 30-check diagnostics
         run: npm run qa:games-diagnostics
+      - name: Verify OSGARD PLAY Smart Launch privacy, mobile and accessibility contracts
+        run: npm run qa:device-fit
       - name: Verify contextual recommendations for all catalogue games
         run: npm run qa:game-recommendations
       - name: Verify premium Entertainment discovery, sharing and SEO
