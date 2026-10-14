@@ -9,6 +9,7 @@ assert.ok(html.includes('rel="manifest" href="./manifest.webmanifest"')&&html.in
 assert.equal(manifest.name,'CASCADE LAB — Premium Physics Lab');assert.equal(manifest.scope,'./');assert.equal(manifest.display,'standalone');assert.equal(manifest.start_url,'./?source=pwa');assert.equal(manifest.icons[0].src,'./lab-icon.svg');assert.match(icon,/<svg[^>]+viewBox="0 0 512 512"/);
 const b=worker.match(/const PRECACHE=\[([\s\S]*?)\];/);assert.ok(b);const paths=[...b[1].matchAll(/'([^']+)'/g)].map(m=>m[1]);
 for(const p of ['./','./index.html','./manifest.webmanifest','./lab-icon.svg'])assert.ok(paths.includes(p));
+assert.ok(paths.includes('./reliability-atlas.js?v=0.27.0'),'Reliability Atlas must be included in the exact offline precache');
 for(const [,src] of html.matchAll(/<script\b[^>]*\bsrc="([^"]+)"/g)){assert.ok(paths.includes(src),'Module must be in offline cache: '+src);assert.ok(existsSync(resolve(root,src.replace(/^\.\//,'').split('?')[0])));}
 assert.ok(worker.includes("r.method!=='GET'")&&worker.includes("r.mode==='navigate'")&&worker.includes('Response.error()'));
 const S='https://osgard.world/games/cascade-lab/',events=Object.create(null),data=new Map();
