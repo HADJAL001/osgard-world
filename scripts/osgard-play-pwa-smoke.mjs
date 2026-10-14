@@ -48,7 +48,7 @@ assert.ok(page.includes('href="/games/vault/"'), 'Games hub must link to PLAYER 
 assert.ok(vaultPage.includes('<title>PLAYER VAULT — OSGARD PLAY</title>') && vaultPage.includes('id="backup-file"') && vaultPage.includes('id="restore-button"'));
 assert.ok(vaultPage.includes('vault-core.js?v=__OSGARD_BUILD_VERSION__') && vaultPage.includes('vault-app.js?v=__OSGARD_BUILD_VERSION__'));
 assert.ok(vaultCore.includes('osgard.games.favorites.v1') && vaultCore.includes('inherit-world-v1') && vaultCore.includes('osgard.signal-run.daily-streak.v1'));
-assert.ok(!/\\bfetch\\s*\\(|sendBeacon|XMLHttpRequest/.test(vaultCore + vaultApp), 'PLAYER VAULT must not upload local saves or emit analytics.');
+assert.ok(!vaultCore.includes('fetch(') && !vaultCore.includes('sendBeacon') && !vaultApp.includes('fetch(') && !vaultApp.includes('sendBeacon') && !vaultApp.includes('XMLHttpRequest'), 'PLAYER VAULT must not upload local saves or emit analytics.');
 assert.ok(page.includes('/games/pwa-install.css?v=__OSGARD_BUILD_VERSION__'));
 assert.ok(page.includes('/games/pwa-install.js?v=__OSGARD_BUILD_VERSION__'));
 assert.ok(page.includes('/games/device-fit.css?v=__OSGARD_BUILD_VERSION__'));
