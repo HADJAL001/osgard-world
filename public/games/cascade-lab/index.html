@@ -2008,7 +2008,7 @@ async function exportResultCard() {
 function exportGrowthReport() {
   const report = {
     schema: 'cascade-lab-local-growth-report/v1',
-    application: { name: 'CASCADE LAB', version: '0.25.0' },
+    application: { name: 'CASCADE LAB', version: '0.26.0' },
     exportedAt: new Date().toISOString(),
     scope: 'local-browser-profile-only',
     counters: { ...economyProfile.stats },
@@ -2231,7 +2231,7 @@ function downloadExperimentDossier() {
   const speed = Math.hypot(finite(physics.vx), finite(physics.vy));
   const dossier = {
     schema: 'osgard.cascade-lab-experiment-dossier/v1',
-    application: { name: 'CASCADE LAB', version: '0.25.0', build: 'experiment-dossier+delta-lens+hypothesis-lab+engineering-suite+experiment-studio+case-passport+trajectory-xray+adaptive-mission-director+evidence-integrity' },
+    application: { name: 'CASCADE LAB', version: '0.26.0', build: 'experiment-dossier+delta-lens+hypothesis-lab+engineering-suite+experiment-studio+case-passport+trajectory-xray+adaptive-mission-director+evidence-integrity+counterfactual-lab' },
     exportedAt: new Date().toISOString(),
     privacy: {
       delivery: 'local-download-only',
@@ -2450,7 +2450,7 @@ else if (launchIntent.solution) analytics.track('solution_opened', { levelId: le
 updateInterface();
 renderAnalyticsConsent();
 analytics.startSession();
-notifyOsgardLifecycle('ready', { version: '0.25.0' });
+notifyOsgardLifecycle('ready', { version: '0.26.0' });
 let seen = false; try { seen = localStorage.getItem('cascade-lab-help-seen') === '1'; } catch {}
 if (!seen) setTimeout(openHelp, 500);
 requestAnimationFrame(frame);
