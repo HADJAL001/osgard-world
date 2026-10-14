@@ -2083,7 +2083,7 @@ func _run_smoke() -> void:
 	game.counter_windows_earned = old_counter_earned
 	game.countershot_hits = old_counter_hits
 	var new_report: Dictionary = game._build_after_action_report()
-	if not _expect(str(new_report.get("gameVersion", "")) == "0.22.0-operator-chronicle" and new_report.get("suppression", {}).has("pressureHits") and new_report.get("suppression", {}).has("attackInterrupts"), "after-action export must include versioned kinetic-pressure metrics"):
+	if not _expect(str(new_report.get("gameVersion", "")) == "0.23.0-phantom-protocol" and new_report.get("suppression", {}).has("pressureHits") and new_report.get("suppression", {}).has("attackInterrupts"), "after-action export must include versioned kinetic-pressure metrics"):
 		return
 	if not _expect(new_report.get("thermal", {}).has("overheatEvents") and new_report.get("thermal", {}).has("ventHostilesInterrupted"), "after-action export must include versioned thermal metrics"):
 		return
@@ -2095,7 +2095,7 @@ func _run_smoke() -> void:
 		return
 	if not _expect(new_report.get("dailyObjective", {}).has("goal"), "daily report must export the measurable tactical bonus objective"):
 		return
-	if not _expect(str(new_report.get("gameVersion", "")) == "0.22.0-operator-chronicle" and new_report.get("phaseEcho", {}).get("deployments", -1) >= 0 and new_report.get("phaseEcho", {}).has("confirmedLures"), "after-action report must expose versioned Echo use and confirmed AI diversion counts"):
+	if not _expect(str(new_report.get("gameVersion", "")) == "0.23.0-phantom-protocol" and new_report.get("phaseEcho", {}).get("deployments", -1) >= 0 and new_report.get("phaseEcho", {}).has("confirmedLures"), "after-action report must expose versioned Echo use and confirmed AI diversion counts"):
 		return
 
 	print("RUNTIME_STAGE: operator chronicle integrity, bounded archive and medals")
@@ -2115,7 +2115,8 @@ func _run_smoke() -> void:
 		"warden": {"precisionStaggers": 1},
 		"salvage": {"collected": 2},
 		"dailyObjective": {"completed": true},
-		"anomalies": ["hunter", "grid", "not-allowed", "hunter"]
+		"anomalies": ["hunter", "grid", "not-allowed", "hunter"],
+		"stealth": {"silentTakedowns": 3, "bonusCredits": 375}
 	}
 	var chronicle_record: Dictionary = game._operator_chronicle_record_from_report(chronicle_sample, 7, "2026-10-14T12:00:00")
 	if not _expect(str(chronicle_record.get("recordId", "")) == "NS-R000007" and str(chronicle_record.get("outcome", "")) == "SUCCESS", "chronicle must produce stable IDs and preserve completed mission outcome"):
@@ -2147,7 +2148,7 @@ func _run_smoke() -> void:
 	if not _expect(int(chronicle_stats.get("bestScore", 0)) == 4820 and int(chronicle_stats.get("averageScore", 0)) > 0 and int(chronicle_stats.get("totalEliminations", 0)) >= 8, "career summary must compute best score, average score and elimination totals from validated records"):
 		return
 	var chronicle_awards: Array[String] = game._operator_chronicle_unlocks_for_report(chronicle_sample, 0)
-	for award_id in ["first-extraction", "ghost-extraction", "sharpshooter", "apex-combo", "warden-breaker", "echo-architect", "system-saboteur", "pressure-master", "salvage-reclaimer", "anomaly-survivor", "overdrive-conductor", "perfect-operator"]:
+	for award_id in ["first-extraction", "ghost-extraction", "phantom-operator", "sharpshooter", "apex-combo", "warden-breaker", "echo-architect", "system-saboteur", "pressure-master", "salvage-reclaimer", "anomaly-survivor", "overdrive-conductor", "perfect-operator"]:
 		if not _expect(chronicle_awards.has(award_id), "achievement rule must award the expected deterministic medal: " + award_id):
 			return
 	var partial_awards: Array[String] = game._operator_chronicle_unlocks_for_report(failed_sample, 3)
@@ -2156,6 +2157,148 @@ func _run_smoke() -> void:
 	game._update_operator_chronicle_panel()
 	if not _expect(is_instance_valid(game.chronicle_panel) and is_instance_valid(game.chronicle_history_label) and is_instance_valid(game.chronicle_awards_label), "career Chronicle must have a real, addressable summary/history/achievement UI"):
 		return
+	print("RUNTIME_STAGE: Phantom Protocol / seven stealth mechanics")
+	var p_mode: bool = game.stealth_mode_active
+	var p_player: Vector3 = game.player.global_position
+	var p_aim: Vector3 = game.player_aim
+	var p_guards: Array[Dictionary] = game.guards.duplicate(true)
+	var p_bodies: Array[Dictionary] = game.downed_bodies.duplicate(true)
+	var p_salvage: Array[Dictionary] = game.salvage_drops.duplicate()
+	var p_alert_position: Vector3 = game.squad_alert_position
+	var p_alert_timer: float = game.squad_alert_timer
+	var p_alert_serial: int = game.squad_alert_serial
+	var p_alert_source: String = game.squad_alert_source
+	var p_alarm: bool = game.alarm_active
+	var p_credits: int = game.run_credits
+	var p_kills: int = game.eliminations
+	var p_combo: int = game.combat_combo
+	var p_combo_timer: float = game.combat_combo_timer
+	var p_combo_best: int = game.combat_combo_best
+	var p_score: int = game.combat_score_total
+	var p_overdrive: float = game.overdrive_charge
+	var p_mastery_awards: int = game.combo_mastery_awards
+	var p_ledger: Array[Dictionary] = game.raid_event_ledger.duplicate(true)
+	var p_stealth: Array[int] = [game.stealth_quiet_steps, game.stealth_detections, game.stealth_takedowns, game.stealth_chain, game.stealth_chain_best, game.stealth_body_discoveries, game.stealth_bonus_credits]
+	var p_salvage_stats: Array[int] = [game.salvage_pickups_spawned, game.salvage_pickups_collected, game.salvage_pickups_expired, game.salvage_pickups_evicted]
+	var p_stance_seconds: float = game.stealth_stance_seconds
+	var p_objective: String = game.objective_text
+	var p_finish: bool = game.mission_finished
+	var p_pause: bool = game.paused_game
+	var p_briefing: bool = game.briefing_visible
+	var p_terminal: bool = game.terminal_active
+	game.mission_finished = false
+	game.paused_game = false
+	game.briefing_visible = false
+	game.terminal_active = false
+	game.guards.clear()
+	game.downed_bodies.clear()
+	game.salvage_drops.clear()
+	game.stealth_mode_active = false
+	game.stealth_takedowns = 0
+	game.stealth_chain = 0
+	game.stealth_chain_best = 0
+	game.stealth_body_discoveries = 0
+	game.stealth_bonus_credits = 0
+	game.player.global_position = Vector3(10.0, 0.82, 0.2)
+	game.player_aim = Vector3.FORWARD
+	game._toggle_stealth_mode()
+	if not _expect(game.stealth_mode_active, "Phantom stance key action must toggle the real run state"):
+		return
+	if not _expect(game._guard_sight_radius(true) < game._guard_sight_radius(false) and game._guard_sight_fov(true) < game._guard_sight_fov(false), "Phantom stance must reduce patrol sight range and FOV"):
+		return
+	if not _expect(game._footstep_noise_radius(true) < game._footstep_noise_radius(false), "quiet steps must use a smaller noise radius"):
+		return
+	game.player.velocity = Vector3(1.0, 0.0, 0.0)
+	game.stealth_footstep_clock = game.PHANTOM_FOOTSTEP_INTERVAL
+	var p_noise_serial: int = game.combat_noise_serial
+	game._update_footstep_signature(0.016)
+	if not _expect(game.combat_noise_serial == p_noise_serial + 1 and game.combat_noise_source == "stealth-footstep" and game.stealth_quiet_steps > p_stealth[0], "moving in Phantom stance must emit a quiet-step event into the AI hearing system"):
+		return
+	var detect_a: float = game._stealth_awareness_after_step(0.0, game.PHANTOM_SIGHT_RADIUS * 0.5, 0.35)
+	var detect_b: float = game._stealth_awareness_after_step(detect_a, game.PHANTOM_SIGHT_RADIUS * 0.5, 0.35)
+	if not _expect(detect_a > 0.0 and detect_b > detect_a and detect_b < 1.0, "stealth detection must accumulate gradually before contact"):
+		return
+	if not _expect(game._stealth_reward_for_chain(1) == 125 and game._stealth_reward_for_chain(3) == 175 and game._stealth_reward_for_chain(20) == 225, "Ghost chain rewards must increase predictably and remain capped"):
+		return
+	game._spawn_guard(Vector3(10.0, 0.82, -1.0), false)
+	var p_guard: Dictionary = game.guards[0]
+	var p_guard_body: CharacterBody3D = p_guard["node"]
+	p_guard_body.rotation.y = 0.0
+	p_guard["ai_state"] = "PATROL"
+	p_guard["awareness"] = 0.0
+	game.guards[0] = p_guard
+	if not _expect(game._can_stealth_takedown(p_guard, game.player.global_position, true), "an unaware standard guard can be approached from behind"):
+		return
+	if not _expect(not game._can_stealth_takedown(p_guard, Vector3(10.0, 0.82, -2.25), true), "a frontal approach must fail the rear-takedown direction check"):
+		return
+	var p_warden: Dictionary = p_guard.duplicate(true)
+	p_warden["warden"] = true
+	if not _expect(not game._can_stealth_takedown(p_warden, game.player.global_position, true), "Warden must resist ordinary stealth takedowns"):
+		return
+	if not _expect(game._try_stealth_takedown() and game.stealth_takedowns == 1 and game.stealth_chain == 1 and game.downed_bodies.size() == 1 and game.guards.is_empty(), "rear takedown must create evidence and advance the Ghost chain"):
+		return
+	var p_corpse: Node3D = game.downed_bodies[0]["node"]
+	game._spawn_guard(Vector3(10.0, 0.82, 3.0), false)
+	var p_watcher: CharacterBody3D = game.guards[0]["node"]
+	p_watcher.rotation.y = 0.0
+	if not _expect(game._guard_can_discover_downed_body(p_watcher, p_corpse), "a patrol with a clear view must discover downed evidence"):
+		return
+	game._update_downed_bodies(0.016)
+	if not _expect(bool(game.downed_bodies[0]["discovered"]) and game.stealth_body_discoveries == 1 and game.alarm_active and game.squad_alert_source == "body-found", "body discovery must broadcast a radio alarm and break the chain"):
+		return
+	game._update_downed_bodies(6.0)
+	if not _expect(game.downed_bodies.is_empty(), "evidence must expire from the live scene"):
+		return
+	var p_report: Dictionary = game._build_after_action_report()
+	if not _expect(p_report.get("stealth", {}).get("silentTakedowns", -1) == 1 and p_report.get("stealth", {}).has("bodiesDiscovered"), "after-action report must export Phantom metrics"):
+		return
+	for p_guard_item in game.guards:
+		var p_guard_node := p_guard_item.get("node") as Node3D
+		if is_instance_valid(p_guard_node):
+			p_guard_node.queue_free()
+	for p_drop in game.salvage_drops:
+		var p_drop_node := p_drop.get("node") as Node3D
+		if is_instance_valid(p_drop_node):
+			p_drop_node.queue_free()
+	game.guards = p_guards
+	game.downed_bodies = p_bodies
+	game.salvage_drops = p_salvage
+	game.stealth_mode_active = p_mode
+	game.stealth_quiet_steps = p_stealth[0]
+	game.stealth_detections = p_stealth[1]
+	game.stealth_takedowns = p_stealth[2]
+	game.stealth_chain = p_stealth[3]
+	game.stealth_chain_best = p_stealth[4]
+	game.stealth_body_discoveries = p_stealth[5]
+	game.stealth_bonus_credits = p_stealth[6]
+	game.stealth_stance_seconds = p_stance_seconds
+	game.salvage_pickups_spawned = p_salvage_stats[0]
+	game.salvage_pickups_collected = p_salvage_stats[1]
+	game.salvage_pickups_expired = p_salvage_stats[2]
+	game.salvage_pickups_evicted = p_salvage_stats[3]
+	game.run_credits = p_credits
+	game.eliminations = p_kills
+	game.combat_combo = p_combo
+	game.combat_combo_timer = p_combo_timer
+	game.combat_combo_best = p_combo_best
+	game.combat_score_total = p_score
+	game.overdrive_charge = p_overdrive
+	game.combo_mastery_awards = p_mastery_awards
+	game.raid_event_ledger = p_ledger
+	game.squad_alert_position = p_alert_position
+	game.squad_alert_timer = p_alert_timer
+	game.squad_alert_serial = p_alert_serial
+	game.squad_alert_source = p_alert_source
+	game.alarm_active = p_alarm
+	game.objective_text = p_objective
+	game.player.global_position = p_player
+	game.player_aim = p_aim
+	game.mission_finished = p_finish
+	game.paused_game = p_pause
+	game.briefing_visible = p_briefing
+	game.terminal_active = p_terminal
+	game._update_hud()
+
 	game.player.global_position = previous_player_position
 	game.mission_finished = previous_mission_finished
 	game.paused_game = previous_paused
