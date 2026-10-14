@@ -259,9 +259,9 @@ check('privacy:diagnostics-local-only', diagnostics.includes("credentials: 'omit
   !['sendBeacon(', 'OSGARD_CONSENTED_ANALYTICS', '/v1/events', "fetch('https://"].some(token => diagnostics.includes(token)),
   'Browser diagnostics probe routes without credentials and do not transmit a report automatically.');
 
-check('docs:core-contract-current', /eleven|11/i.test(coreContract) && !/five game routes/i.test(coreContract),
+check('docs:core-contract-current', /twelve|12/i.test(coreContract) && !/five game routes/i.test(coreContract),
   'OSGARD Core documentation describes the current multi-game registry rather than the obsolete five-game snapshot.',
-  'The Core contract should name 11 current game identities and explain the registry is authoritative.');
+  'The Core contract should name 12 current game identities and explain the registry is authoritative.');
 
 const normalizedContract = {
   worlds: worldIds.slice().sort(),
