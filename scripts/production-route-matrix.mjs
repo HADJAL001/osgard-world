@@ -192,7 +192,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
             text.includes('id="runButton"') && text.includes('id="exportTelemetryButton"') &&
             text.includes('id="exportGrowthButton"') && text.includes('id="serviceAdDialog"') &&
             text.includes('id="serviceAdChoices"') && text.includes('Я поделился — получить +10 LC') &&
-            text.includes("notifyOsgardLifecycle('ready', { version: '0.25.0' )") && text.includes("notifyOsgardLifecycle('ready'") && text.includes("notifyOsgardLifecycle('started'") &&
+            text.includes("notifyOsgardLifecycle('ready', { version: '0.25.0' })") && text.includes("notifyOsgardLifecycle('ready'") && text.includes("notifyOsgardLifecycle('started'") &&
             text.includes("notifyOsgardLifecycle('paused'") && text.includes("notifyOsgardLifecycle('resumed'") &&
             text.includes("notifyOsgardLifecycle('level_completed'") && !text.includes("notifyOsgardLifecycle('completed'") &&
             text.includes('id="CASCADELAB019"') && text.includes('data-cascade-lab-engineering="0.19.0"') &&
