@@ -67,4 +67,7 @@ assert.ok(monetization.includes('id="export-csv"') &&
   csvExport.includes('FINANCIAL_CSV_NOTE') && csvExport.includes("firstMeaningful"),
   "Financial model CSV export must remain available, explicit and spreadsheet-safe.");
 
+assert.ok(matrix.includes("route === '/games/catalog-runtime.js'") && matrix.includes("catalogContentSource") &&
+  matrix.includes("/\\\\.textContent\\\\s*=\\\\s*item\\\\.title/") && matrix.includes("!text.includes('.innerHTML')"),
+  "Catalogue runtime route contract must be whitespace-tolerant for minified textContent writes and ban innerHTML.");
 console.log("PASS SWARM route contract: game-specific asset checks, self-hosted fonts and reduced motion.");
