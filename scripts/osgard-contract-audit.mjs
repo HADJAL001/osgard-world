@@ -51,7 +51,7 @@ function getObjectKeys(block) {
     .map(match => match[1] || match[2]);
 }
 function getArrayMap(block) {
-  return [...block.matchAll(/^\s*(?:'([^']+)'|([a-z0-9-]+))\s*:\s*\[([^\]]*)\]/gm)]
+  return [...block.matchAll(/(?:^|[,\n])\s*(?:'([^']+)'|([a-z0-9-]+))\s*:\s*\[([^\]]*)\]/gm)]
     .map(match => ({ id: match[1] || match[2], values: [...match[3].matchAll(/'([^']+)'/g)].map(value => value[1]) }));
 }
 function equalIds(name, actual, expected, explanation) {
@@ -69,7 +69,7 @@ function pathFromUrl(value) {
 const [
   manifest, catalog, catalogState, diagnostics, lifecycle, postGame, invite,
   generator, routeMatrix, sitemap, coreContract, eventQueue, analyticsConsent,
-  contextualRecommendations,
+  contextualRecommendations, diagnosticsPage,
 ] = await Promise.all([
   source('src/core/manifest.ts'),
   source('public/games/index.html'),
@@ -85,6 +85,7 @@ const [
   source('src/core/eventQueue.ts'),
   source('src/core/analyticsConsent.mjs'),
   source('src/core/gameRecommendations.mjs'),
+  source('public/games/diagnostics/index.html'),
 ]);
 
 const worldsBlock = between(manifest, 'export const OSGARD_WORLDS', '\n]');
@@ -173,7 +174,7 @@ check('diagnostics:route-entries-valid', diagnosticRouteEntries.length === diagn
   'Diagnostic route records have unique UI IDs, labels and same-origin paths.', 'routeChecks=' + diagnosticRouteEntries.length);
 check('diagnostics:capability-checks-unique', capabilityIds.length > 0 && unique(capabilityIds),
   'Device capability checks have unique stable IDs.', 'capabilityChecks=' + capabilityIds.length);
-check('diagnostics:declared-total', diagnostics.includes(String(capabilityIds.length + diagnosticRouteEntries.length) + ' диагностических проверок'),
+check('diagnostics:declared-total', diagnosticsPage.includes(String(capabilityIds.length + diagnosticRouteEntries.length) + ' диагностических проверок'),
   'The diagnostics UI total matches its actual capability and game-route checks.',
   'actual=' + (capabilityIds.length + diagnosticRouteEntries.length));
 
