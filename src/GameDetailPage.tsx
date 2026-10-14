@@ -382,19 +382,23 @@ export function GameDetailPage({ slug }: { slug: string }) {
   consentRef.current = consent
   const sessionStartedAtRef = useRef<number | null>(null)
   const detailSessionIdRef = useRef<string | null>(null)
+  const sessionTrackingAllowedRef = useRef(false)
 
   const finishDetailSession = (reason: string) => {
     const startedAt = sessionStartedAtRef.current
     const sessionId = detailSessionIdRef.current
     if (!game || startedAt === null || !sessionId) return
     const durationSeconds = Math.max(0, Math.floor((Date.now() - startedAt) / 1000))
-    track('game_session_completed', {
-      game: game.id,
-      surface: 'game-detail-iframe',
-      sessionId,
-      durationSeconds,
-      endReason: reason,
-    }, consentRef.current)
+    if (sessionTrackingAllowedRef.current) {
+      track('game_session_completed', {
+        game: game.id,
+        surface: 'game-detail-iframe',
+        sessionId,
+        durationSeconds,
+        endReason: reason,
+      }, consentRef.current)
+    }
+    sessionTrackingAllowedRef.current = false
     sessionStartedAtRef.current = null
     detailSessionIdRef.current = null
     setSessionStatus(reason === 'game_completed' ? 'completed' : reason === 'game_error' ? 'error' : 'ready')
@@ -487,13 +491,16 @@ export function GameDetailPage({ slug }: { slug: string }) {
         const sessionId = 'detail_' + game.id + '_' + startedAt + '_' + Math.random().toString(36).slice(2, 8)
         sessionStartedAtRef.current = startedAt
         detailSessionIdRef.current = sessionId
+        sessionTrackingAllowedRef.current = consentRef.current === 'granted'
         setSessionStatus('active')
-        track('game_session_started', {
-          game: game.id,
-          surface: 'game-detail-iframe',
-          sessionId,
-          startMethod: 'same-origin-game-lifecycle',
-        }, consentRef.current)
+        if (sessionTrackingAllowedRef.current) {
+          track('game_session_started', {
+            game: game.id,
+            surface: 'game-detail-iframe',
+            sessionId,
+            startMethod: 'same-origin-game-lifecycle',
+          }, consentRef.current)
+        }
         return
       }
 
