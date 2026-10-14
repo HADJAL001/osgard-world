@@ -7,7 +7,7 @@ OSGARD SELECT uses the existing post-run-recommendations flow in the Games porta
 
 The panel is explicitly labelled **«РЕКЛАМА · СОБСТВЕННЫЕ ПРОЕКТЫ OSGARD»**. It never auto-opens another service. A player can inspect an offer, filter by service category, choose which services to see, set the frequency, collapse the offer list, or pause the promotions for 24 hours. The default for new and migrated preferences is **after every completed game**; an existing explicit frequency setting is preserved during migration.
 
-The selectable owner-managed list contains the ten projects supplied by the owner:
+The owner-managed list contains the ten currently eligible services plus GARD VPN as an inactive operator-managed entry. GARD VPN remains excluded from player-facing promotion until actual VPN connection establishment is verified; the label and official URL may be reviewed in the operator interface, but it is not included in public promotional cards or player choices.
 - OSGARD BEW WORLD — project and app creation
 - O2 SYSTEM — currency-exchange cash-desk accounting
 - SENJORIO — premium taxi
