@@ -6,7 +6,7 @@ CASCADE LAB already has an experiment ledger, Hypothesis Lab, Experiment Studio,
 
 ## What it measures
 
-- A cohort key combines the level, play mode, daily challenge date where applicable, and a canonical, sorted list of devices with rounded position and angle. Reordering a list of devices does not create a new cohort; moving or rotating a device does.
+- A cohort key combines the level, play mode, daily challenge date where applicable, and a canonical, sorted list of devices with rounded position and angle. Angles are normalized modulo a full turn, so physically equivalent rotations stay together. Reordering the device list does not create a new cohort; moving or changing a device's effective angle does.
 - Every completed run stores at most 41 evenly sampled trajectory frames for the repeatability view, alongside the outcome, duration, device count, grade and a bounded event summary.
 - Delivery rate is shown as successes / attempts and a 95% Wilson interval. A small sample should produce a wide interval, rather than implying certainty.
 - Timing variation is reported as median, range and population standard deviation.
