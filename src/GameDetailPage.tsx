@@ -575,7 +575,7 @@ export function GameDetailPage({ slug }: { slug: string }) {
       const durationSeconds = Math.floor(summary.durationMs / 1000)
       setSessionElapsedSeconds(durationSeconds)
       setSessionStatus(reason === 'game_completed' ? 'completed' : ['game_error', 'launch_timeout'].includes(reason) ? 'error' : 'ready')
-      if (sessionTelemetryAllowed) track('game_session_completed', { game: game.id, surface: 'game-detail', durationSeconds, endReason: reason, startMethod }, consentRef.current)
+      if (sessionTelemetryAllowed) track('game_session_completed', { game: game.id, surface: 'game-detail', durationSeconds: durationSeconds, endReason: reason, startMethod }, consentRef.current)
       sessionTelemetryAllowed = false
     }
     const setPauseReason = (reason: string, active: boolean) => {
