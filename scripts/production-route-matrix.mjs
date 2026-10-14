@@ -308,6 +308,8 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
               ? content.includes("const VERSION = '0.22.0'") && content.includes("const SCHEMA = 'osgard.cascade-lab.trajectory-xray.v1'") && content.includes('function trajectoryDeviation(') && !content.includes('fetch(') && !content.includes('sendBeacon(')
             : path === '/games/cascade-lab/mission-director.js'
               ? content.includes("const VERSION='0.24.0'") && content.includes("const SCHEMA='osgard.cascade-lab.mission-director.v1'") && content.includes('function buildRecommendations') && content.includes('function observeContract') && !content.includes('fetch(') && !content.includes('sendBeacon(') && !content.includes('.innerHTML')
+            : path === '/games/cascade-lab/evidence-integrity.js'
+              ? content.includes("const VERSION = '0.25.0';") && content.includes("const SCHEMA = 'osgard.cascade-lab.evidence-integrity.v1';") && content.includes("const ARCHIVE_SCHEMA = 'osgard.cascade-lab.evidence-integrity-archive.v1';") && content.includes('function analyzeContrast(') && content.includes('function validateArchive(') && !content.includes('fetch(') && !content.includes('sendBeacon(') && !content.includes('.innerHTML')
             : content.includes('demo/issue') && content.includes('data-clock-step')
       }
       return { path, status: asset.status, contentType, ok: asset.status === 200 && typeOk && nonEmpty }
