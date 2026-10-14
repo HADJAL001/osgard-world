@@ -2249,7 +2249,7 @@ func _try_stealth_takedown() -> bool:
 	var body := guard.get("node") as CharacterBody3D
 	if not is_instance_valid(body):
 		return false
-	var role := str(guard.get("role", "RANGER"))
+	var role: String = str(guard.get("role", "RANGER"))
 	body.velocity = Vector3.ZERO
 	body.collision_layer = 0
 	body.collision_mask = 0
