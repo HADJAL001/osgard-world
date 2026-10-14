@@ -1,3 +1,4 @@
+import './archive.css'
 import { Archive, ArrowUpRight, Bell, Clock3 } from 'lucide-react'
 import { useMemo } from 'react'
 import { meaningfulNotifications, SEASON_EVENTS } from './core/liveops'
