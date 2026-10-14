@@ -48,6 +48,10 @@ export const ALLOWED_EVENTS = new Set([
   "partner_inquiry",
   "sponsored_campaign_impression",
   "sponsored_campaign_clicked",
+  "pwa_install_prompt_shown",
+  "pwa_install_accepted",
+  "pwa_install_dismissed",
+  "pwa_standalone_opened",
 ]);
 
 const GAME_IDS = new Set([
