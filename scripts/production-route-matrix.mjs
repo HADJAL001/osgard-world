@@ -174,7 +174,10 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         : route === '/games/cascade-lab/manifest.webmanifest'
           ? (() => { try { const value = JSON.parse(text); return (response.headers.get('content-type') || '').toLowerCase().includes('json') && value.name === 'CASCADE LAB — Premium Physics Lab' && value.scope === './' && value.display === 'standalone' } catch { return false } })()
         : route === '/games/cascade-lab/service-worker.js'
-          ? (response.headers.get('content-type') || '').toLowerCase().includes('javascript') && text.includes("const CACHE=PREFIX+'v0.26.0'") && text.includes("r.method!=='GET'") && text.includes("r.mode==='navigate'")
+          ? (response.headers.get('content-type') || '').toLowerCase().includes('javascript') &&
+            /CACHE\\s*=\\s*PREFIX\\s*\\+\\s*['\"]v0\\.26\\.0['\"]/.test(text) &&
+            /\\bmethod\\s*!==\\s*['\"]GET['\"]/.test(text) &&
+            /\\bmode\\s*===\\s*['\"]navigate['\"]/.test(text)
         : route === '/games/cascade-lab/lab-icon.svg'
           ? (response.headers.get('content-type') || '').toLowerCase().includes('image/svg+xml') && text.includes('<svg') && text.includes('CASCADE LAB')
         : route === '/games/cascade-lab/'
