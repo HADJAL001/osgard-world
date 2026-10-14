@@ -61,7 +61,7 @@ test('Daily completion objectives use dated completion events and remain backwar
   assert.match(js, /document\.addEventListener\('osgard:game-completed', recordGameCompletion\)/);
   assert.match(js, /document\.addEventListener\('osgard:game-level-completed', recordGameCompletion\)/);
   assert.match(js, /row\.game === id && row\.sessionId === sessionId/);
-  assert.match(js, /typeof row\.sessionId === 'string' && \^\[a-zA-Z0-9_-/);
+  assert.ok(js.includes("typeof row.sessionId === 'string' && /^[a-zA-Z0-9_-]{1,120}$/.test(row.sessionId) ? { sessionId: row.sessionId } : {}"), 'Completion session IDs must be validated and preserved');
   assert.match(js, /validateMissionState\(parsed\.missions\)/);
   assert.match(js, /missions: missionState/);
   assert.match(js, /validateMissionState\(parsed\.missions\)/);
