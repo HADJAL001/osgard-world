@@ -36,7 +36,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
       : route === '/games/admin/catalog/catalog.js'
         ? (response.headers.get('content-type') || '').toLowerCase().includes('javascript') && text.includes('/admin/game-catalog') && text.includes("authorization: 'Bearer ' + operatorToken") && !text.includes('localStorage') && !text.includes('sessionStorage')
       : route === '/games/catalog-runtime.js'
-        ? (response.headers.get('content-type') || '').toLowerCase().includes('javascript') && (() => { const compact = text.replace(/\\s+/g, ''); return compact.includes('catalogContentSource') && compact.includes('textContent=item.title') && !compact.includes('.innerHTML'); })()
+        ? (response.headers.get('content-type') || '').toLowerCase().includes('javascript') && (() => { const compact = text.replace(/\s+/g, ''); return compact.includes('catalogContentSource') && compact.includes('textContent=item.title') && !compact.includes('.innerHTML'); })()
       : isEnglishGamesHub
         ? text.includes('<title>OSGARD PLAY — Explore Digital Worlds</title>') && text.includes('<html lang="en">') && text.includes('href="https://osgard.world/games/en/"') && text.includes('hreflang="ru"') && text.includes('name="description"') && text.includes('Language availability:') && text.includes('id="aether-grid"')
       : route === '/games/game-catalog-fallback.json'
