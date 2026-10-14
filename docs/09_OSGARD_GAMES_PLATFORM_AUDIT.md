@@ -226,3 +226,8 @@ The current Games hub includes a first-party “between worlds” promotion surf
 - **Test coverage:** `npm run qa:games-portal`, `npm run qa:osgard-select` and `npm run qa:consented-analytics-queue` enforce the service destinations, shared preference keys, default cadence, self-confirmation, local daily cap, analytics allow-list and no-copy-reward rule.
 
 The important commercial boundary remains: owned-service cross-promotion is implemented; an external ad network, independently verified social post, and server-authoritative/cross-device SHARDS wallet are not claimed as live features.
+
+
+## PATINA Atelier 2.0 — консоль дела
+
+Добавлен отдельный self-hosted модуль, не переписывающий реставрационную механику: отмена/повтор с историей до 50 состояний; резервная копия перед каждым действием; подтверждение нового дела; импорт/экспорт JSON 2.0 с миграцией 1.9 и пределом 128 KiB; экспорт CSV/Markdown; личные локальные агрегаты с дедупликацией по startedAt; контраст, увеличение текста, уменьшение эффектов, клавиатурная справка; и production route checks трёх новых ресурсов. Все показатели явно обозначены как учебная модель, не реальные измерения.

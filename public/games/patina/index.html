@@ -8,7 +8,7 @@
 <meta property="og:title" content="PATINA Atelier — искусство не стирать историю">
 <meta property="og:description" content="Премиальная интерактивная лаборатория консервации внутри OSGARD WORLD GAMING.">
 <link rel="canonical" href="https://osgard.world/games/patina/">
-<link rel="icon" href="/games/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/games/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="./atelier-upgrades.css">
 <title>PATINA Atelier — OSGARD WORLD GAMING</title>
 <style>
 :root{color-scheme:dark;--bg:#090b08;--panel:#11140f;--panel2:#151912;--ink:#f1eee4;--muted:#a4a695;--quiet:#797e70;--line:rgba(226,199,131,.2);--gold:#e2c783;--sage:#b3c9a2;--mint:#c8dfb6;--rose:#e8a18e;--mono:ui-monospace,SFMono-Regular,Consolas,monospace;--serif:"Iowan Old Style","Palatino Linotype",Georgia,serif;--sans:Inter,Geist,system-ui,-apple-system,"Segoe UI",sans-serif}
@@ -97,5 +97,6 @@ document.addEventListener('keydown',function(e){if(e.metaKey||e.ctrlKey||e.altKe
 if(state.finished){}render();if(!state.journal.length){addEntry('Дело открыто','Начальное состояние загружено. Три участка ожидают диагностики.','CASE')}else{renderJournal();persist()}
 })();
 </script>
+<script type="module" src="./atelier-upgrades.js"></script>
 </body>
 </html>

@@ -98,7 +98,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         : route === '/games/civic-cascade/'
           ? text.includes('<title>CIVIC CASCADE — кризисная стратегия | OSGARD PLAY</title>') && text.includes('id=\"cc-game-root\"') && text.includes('id=\"cc-status\"')
         : route === '/games/patina/'
-          ? text.includes('<title>PATINA Atelier — OSGARD WORLD GAMING</title>') && text.includes('id="patina-workbench"') && text.includes('data-patina-ready="true"') && text.includes('id="diagnose"') && text.includes('id="finish-case"') && text.includes('id="export-case"')
+          ? text.includes('<title>PATINA Atelier — OSGARD WORLD GAMING</title>') && text.includes('id="patina-workbench"') && text.includes('data-patina-ready="true"') && text.includes('id="diagnose"') && text.includes('id="finish-case"') && text.includes('id="export-case"') && text.includes('atelier-upgrades.css') && text.includes('atelier-upgrades.js')
         : route === '/games/signal-run/'
           ? text.includes('<title>SIGNAL RUN — OSGARD WORLD</title>') && text.includes('id="arena"') && text.includes('game.js')
                 : route === '/games/afterimage-run/'
@@ -146,9 +146,9 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
     const isPartnerPage = route === '/games/partners/'
     const isEcosystemDirectory = route === '/games/ecosystem/'
     const isGodot = route.startsWith('/games/null-shift-godot')
-    const assetPaths = route === '/games/favicon.svg' || route === '/privacy/' || route === '/terms/' ? [] : isPartnerPage ? ['/games/partners/partners.js', '/games/partners/inventory.json'] : isEcosystemDirectory ? ['/games/ecosystem/directory.css', '/games/ecosystem/directory.js'] : isGamesHub ? ['/games/consented-analytics.js','/games/player-lifecycle.js','/games/game-session-recommendations.js','/games/game-session-recommendations.css','/games/daily-circuit.js','/games/daily-circuit.css'] : route === '/skillcred/' ? ['/skillcred/styles.css', '/skillcred/app.js', '/skillcred/fonts/InterVariable.woff2', '/skillcred/fonts/InstrumentSerif-Italic.woff2', '/skillcred/fonts/JetBrainsMono-Regular.woff2'] : route === '/games/signal-run/' ? ['/games/signal-run/game.js'] : isGodot ? ['/games/null-shift-godot/index.js', '/games/null-shift-godot/index.wasm', '/games/null-shift-godot/index.pck'] : route.startsWith('/games/null-shift') ? ['/games/null-shift/styles.css', '/games/null-shift/game.js', '/games/null-shift/engine-3d.js'] : route.startsWith('/games/invite/') && route !== '/games/invite/invite-landing.js' ? ['/games/invite/invite-landing.js', '/games/share-cards/' + (route.split('/')[3] || 'catalog') + '.png'] : []
+    const assetPaths = route === '/games/favicon.svg' || route === '/privacy/' || route === '/terms/' ? [] : isPartnerPage ? ['/games/partners/partners.js', '/games/partners/inventory.json'] : isEcosystemDirectory ? ['/games/ecosystem/directory.css', '/games/ecosystem/directory.js'] : route === '/games/patina/' ? ['/games/patina/atelier-upgrades.js','/games/patina/atelier-upgrades.css','/games/patina/atelier-upgrades-core.mjs'] : isGamesHub ? ['/games/consented-analytics.js','/games/player-lifecycle.js','/games/game-session-recommendations.js','/games/game-session-recommendations.css','/games/daily-circuit.js','/games/daily-circuit.css'] : route === '/skillcred/' ? ['/skillcred/styles.css', '/skillcred/app.js', '/skillcred/fonts/InterVariable.woff2', '/skillcred/fonts/InstrumentSerif-Italic.woff2', '/skillcred/fonts/JetBrainsMono-Regular.woff2'] : route === '/games/signal-run/' ? ['/games/signal-run/game.js'] : isGodot ? ['/games/null-shift-godot/index.js', '/games/null-shift-godot/index.wasm', '/games/null-shift-godot/index.pck'] : route.startsWith('/games/null-shift') ? ['/games/null-shift/styles.css', '/games/null-shift/game.js', '/games/null-shift/engine-3d.js'] : route.startsWith('/games/invite/') && route !== '/games/invite/invite-landing.js' ? ['/games/invite/invite-landing.js', '/games/share-cards/' + (route.split('/')[3] || 'catalog') + '.png'] : []
     const assetChecks = await Promise.all(assetPaths.map(async path => {
-      const expectedType = path.endsWith('.css') ? 'text/css' : path.endsWith('.json') ? 'json' : path.endsWith('.js') ? 'javascript' : path.endsWith('.png') ? 'png' : path.endsWith('.wasm') ? 'wasm' : path.endsWith('.pck') ? 'pack' : 'font'
+      const expectedType = path.endsWith('.css') ? 'text/css' : path.endsWith('.json') ? 'json' : (path.endsWith('.js') || path.endsWith('.mjs')) ? 'javascript' : path.endsWith('.png') ? 'png' : path.endsWith('.wasm') ? 'wasm' : path.endsWith('.pck') ? 'pack' : 'font'
       // Large immutable artifacts only need an existence/MIME/size check. HEAD avoids
       // downloading Godot WebAssembly, PCK and font files for both device profiles.
       const sizeOnlyTypes = new Set(['font','wasm','pack'])
@@ -175,6 +175,12 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
           ? (path.endsWith('.js') ? content.includes("getElementById('project-search')") && content.includes('aria-pressed') : content.includes('.project-grid{display:grid') && content.includes('prefers-reduced-motion:reduce'))
           : isPartnerPage
           ? path.endsWith('.json') ? isValidPartnerInventoryText(content) : content.includes("fetch('./inventory.json'") && content.includes('item.active === false') && content.includes("sendLink.href = 'https://wa.me/79640027222?text='")
+          : path.startsWith('/games/patina/atelier-upgrades.')
+            ? path.endsWith('.css')
+              ? content.includes('.patina-atelier-console') && content.includes('prefers-reduced-motion:reduce')
+              : path.endsWith('.mjs')
+                ? content.includes('export function validateCaseReportText') && content.includes('MAX_IMPORT_BYTES')
+                : content.includes('function captureMutation') && content.includes('MAX_HISTORY') && content.includes('patina-undo')
           : isGodot
           ? content.length > 100000
           : path.startsWith('/games/null-shift/')
