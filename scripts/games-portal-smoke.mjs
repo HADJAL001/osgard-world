@@ -248,7 +248,7 @@ const gameDocumentPages=[
   'public/games/admin/partners/index.html',
   'public/games/aether-grid/index.html',
   'public/games/afterimage-run/index.html',
-  'public/games/cascade-lab/index.html','public/games/cascade-lab/failure-autopsy.js',
+  'public/games/cascade-lab/index.html',
   'public/games/civic-cascade/index.html',
   'public/games/commerce-admin/index.html',
   'public/games/ecosystem/index.html',
@@ -294,7 +294,7 @@ assert.ok(html.includes('<meta property="og:image" content="https://osgard.world
 assert.ok(html.includes('<meta name="twitter:card" content="summary_large_image">')&&html.includes('<meta name="twitter:image" content="https://osgard.world/games/share-cards/catalog.png">')&&catalogInviteCard.length>0,'Twitter card metadata must use an existing generated catalogue image')
 assert.ok(html.includes('id="catalog-total">11</b>')&&html.includes('id="catalog-range">01—11</b>'),'Initial visible catalogue counters must match the eleven-game structured item list')
 assert.ok(html.includes('OSGARD WORLD GAMING <span>/</span> DIGITAL WORLDS')&&html.includes('быстрый возврат к недавним сессиям'),'Gaming hub hero must describe the branded portal and its actual navigation features')
-for(const path of ['public/games/index.html','public/games/favicon.svg','public/games/player-lifecycle.js','public/games/consented-analytics.js','public/games/game-session-recommendations.js','public/games/game-session-recommendations.css','public/games/admin/index.html','public/games/admin/partners/index.html','public/games/civic-cascade/index.html','public/games/patina/index.html','public/games/signal-run/index.html','public/games/signal-run/game.js','public/games/signal-run/daily.js','public/games/cascade-lab/index.html','public/privacy/index.html','public/terms/index.html']) assert.ok(existsSync(resolve(path)),'Missing file: '+path)
+for(const path of ['public/games/index.html','public/games/favicon.svg','public/games/player-lifecycle.js','public/games/consented-analytics.js','public/games/game-session-recommendations.js','public/games/game-session-recommendations.css','public/games/admin/index.html','public/games/admin/partners/index.html','public/games/civic-cascade/index.html','public/games/patina/index.html','public/games/signal-run/index.html','public/games/signal-run/game.js','public/games/signal-run/daily.js','public/games/cascade-lab/index.html','public/games/cascade-lab/failure-autopsy.js','public/privacy/index.html','public/terms/index.html']) assert.ok(existsSync(resolve(path)),'Missing file: '+path)
 for(const path of ['scripts/games-lighthouse-report.mjs','.github/workflows/games-lighthouse.yml']) assert.ok(existsSync(resolve(path)),'Missing games performance monitoring file: '+path)
 const lighthouseScript=readFileSync(resolve('scripts/games-lighthouse-report.mjs'),'utf8')
 const lighthouseWorkflow=readFileSync(resolve('.github/workflows/games-lighthouse.yml'),'utf8')
