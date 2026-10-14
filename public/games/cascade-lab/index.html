@@ -619,6 +619,7 @@ function cfSimulate(input) {
     deviceCount: blueprint.devices.length,
     devices: blueprint.devices,
     position: { x: Number(world.x.toFixed(3)), y: Number(world.y.toFixed(3)) },
+    goal: { x: level.goal.x, y: level.goal.y, w: level.goal.w },
     velocity: { x: Number(world.vx.toFixed(3)), y: Number(world.vy.toFixed(3)) },
     gateOpen: world.gateOpen === true,
     checkpointsReached: [...world.checkpointsReached],
