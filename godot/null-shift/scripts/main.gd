@@ -6407,7 +6407,7 @@ func _create_mobile_controls(parent: Control) -> void:
 		else:
 			action_button.button_down.connect(_set_mobile_action.bind(item["key"], true))
 			action_button.button_up.connect(_set_mobile_action.bind(item["key"], false))
-		if str(item["key"]) != "scan" and str(item["key"]) != "vent" and str(item["key"]) != "echo":
+		if str(item["key"]) != "scan" and str(item["key"]) != "vent" and str(item["key"]) != "echo" and str(item["key"]) != "stealth":
 			mobile_action_buttons.append(action_button)
 		if str(item["key"]) == "dash":
 			mobile_dash_button = action_button
