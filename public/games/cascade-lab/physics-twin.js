@@ -189,7 +189,7 @@ function renderLegend(variants) {
     const item = el('span');
     const swatch = el('i', 'cst-swatch');
     swatch.style.background = colors[index % colors.length];
-    const label = v.offsetDegrees === 0 ? 'БАЗОВЫЙ УГОЛ' : (v.offsetDegrees > 0 ? '+' : '') + v.offsetDegrees + '°';
+    const label = v.offsetLabel || (v.offsetDegrees === 0 ? 'БАЗОВЫЙ УГОЛ' : (v.offsetDegrees > 0 ? '+' : '') + v.offsetDegrees + '°');
     item.append(swatch, el('span', '', label)); legend.append(item);
   }
 }
@@ -198,7 +198,7 @@ function renderTable(variants) {
   const fragment = document.createDocumentFragment();
   for (const variant of variants) {
     const row = document.createElement('tr');
-    const label = variant.offsetDegrees === 0 ? 'База' : (variant.offsetDegrees > 0 ? '+' : '') + variant.offsetDegrees + '°';
+    const label = variant.offsetLabel || (variant.offsetDegrees === 0 ? 'База' : (variant.offsetDegrees > 0 ? '+' : '') + variant.offsetDegrees + '°');
     const state = el('td', variant.run.status === 'won' ? 'cst-state-won' : 'cst-state-lost', variant.run.status === 'won' ? 'ДОСТАВЛЕНО' : 'НЕ ДОСТАВЛЕНО');
     const values = [
       label, null, format(variant.run.timeSeconds), String(variant.run.deviceCount),
@@ -212,7 +212,7 @@ function renderTable(variants) {
 function renderReport(summary) {
   const vals = {
     'КОНТРОЛЬНЫЕ ЗАПУСКИ': currentControl ? '2 / 2' : '—',
-    'СОВПАЛО ПОВТОРОВ': currentControl ? (currentControl.identical ? '100%' : '0%') : '—',
+    'СОВПАЛО ПОВТОРОВ': currentControl ? (currentControl.identical ? '2 / 2' : '0 / 2') : '—',
     'УСПЕХИ В СЕРИИ': summary ? summary.successfulCases + ' / ' + summary.caseCount : '—',
     'МЕДИАНА ВРЕМЕНИ': summary ? format(summary.medianDurationSeconds) + ' с' : '—',
     'РАЗБРОС ВРЕМЕНИ': summary ? format(summary.durationSpreadSeconds, 3) + ' с' : '—'
@@ -236,7 +236,7 @@ function runRepeatability() {
     currentControl = control; currentSeries = null;
     exportButton.disabled = false;
     renderReport(null);
-    const dummy = [{ offsetDegrees: 0, run: control.baseline }, { offsetDegrees: 0, run: control.repeat }];
+    const dummy = [{ offsetDegrees: 0, offsetLabel: 'КОНТРОЛЬ A', run: control.baseline }, { offsetDegrees: 0, offsetLabel: 'КОНТРОЛЬ B', run: control.repeat }];
     drawVariants(dummy); renderLegend(dummy);
     renderTable(dummy); addMetricNote(control.identical ? 'DETERMINISM MATCH · ' + control.signatureA : 'MISMATCH · ' + control.signatureA + ' / ' + control.signatureB);
     exportButton.disabled = false;
