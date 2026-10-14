@@ -69,7 +69,7 @@ function pathFromUrl(value) {
 const [
   manifest, catalog, catalogState, diagnostics, lifecycle, postGame, invite,
   generator, routeMatrix, sitemap, coreContract, eventQueue, analyticsConsent,
-  contextualRecommendations, diagnosticsPage,
+  contextualRecommendations, diagnosticsPage, civicHtml, civicReleaseRaw,
 ] = await Promise.all([
   source('src/core/manifest.ts'),
   source('public/games/index.html'),
@@ -86,6 +86,8 @@ const [
   source('src/core/analyticsConsent.mjs'),
   source('src/core/gameRecommendations.mjs'),
   source('public/games/diagnostics/index.html'),
+  source('public/games/civic-cascade/index.html'),
+  source('public/games/civic-cascade/release.json'),
 ]);
 
 const worldsBlock = between(manifest, 'export const OSGARD_WORLDS', '\n]');
@@ -97,6 +99,18 @@ const gameRoutes = manifestGames.map(game => game.href);
 const worldIds = [...worldsBlock.matchAll(/\{\s*id:\s*'([^']+)'/g)].map(match => match[1]);
 const eventBlock = between(manifest, 'export type OsgardEventName =', '\n\nexport interface OsgardEvent');
 const eventNames = [...eventBlock.matchAll(/'([^']+)'/g)].map(match => match[1]);
+let civicRelease = null;
+try { civicRelease = JSON.parse(civicReleaseRaw); } catch {}
+const civicMarker = civicHtml.match(/<meta name="osgard-game-version" content="([^"]+)">/)?.[1] || '';
+check('civic-cascade:release-contract', Boolean(civicRelease &&
+  civicRelease.gameId === 'civic-cascade' &&
+  /^\d+\.\d+\.\d+$/.test(String(civicRelease.version || '')) &&
+  String(civicRelease.releaseId || '').includes(civicRelease.version) &&
+  civicMarker.startsWith(civicRelease.version + '-') &&
+  civicHtml.includes('id="cc-game-root"')),
+  'CIVIC CASCADE HTML version marker, game ID, release ID and playable root agree with release.json.',
+  civicRelease ? 'version=' + civicRelease.version + '; marker=' + civicMarker : 'release.json is missing or malformed.');
+
 
 const catalogCards = [...catalog.matchAll(/<article\b[^>]*\bdata-game="([^"]+)"[^>]*\bdata-genres="([^"]+)"[^>]*>/g)]
   .map(match => ({ id: match[1], genres: match[2].trim().split(/\s+/).filter(Boolean) }));
