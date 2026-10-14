@@ -3,8 +3,8 @@
   "gameId": "civic-cascade",
   "title": "CIVIC CASCADE",
   "edition": "Web Edition",
-  "version": "3.3.0",
-  "releaseId": "civic-cascade-web-3.3.0",
+  "version": "3.4.0",
+  "releaseId": "civic-cascade-web-3.4.0",
   "canonicalUrl": "https://osgard.world/games/civic-cascade/",
   "detailUrl": "https://osgard.world/game/civic-cascade",
   "entrypoint": "/games/civic-cascade/",
@@ -53,7 +53,12 @@
       "cc-doctrine-export",
       "cc-doctrine-import-file",
       "cc-doctrine-verify-import",
-      "cc-doctrine-verification-result"
+      "cc-doctrine-verification-result",
+      "cc-ai-advisor",
+      "cc-ai-advisor-consent",
+      "cc-ai-advisor-run",
+      "cc-ai-advisor-status",
+      "cc-ai-advisor-result"
     ],
     "checkpointSchema": "civic-cascade-checkpoint-v1",
     "approximateRiskForecast": true,
@@ -291,7 +296,7 @@
       "comparesResourceCost": true,
       "labelsParetoMembership": true,
       "tracksNoPersonalData": true,
-      "modelVersion": "3.3.0",
+      "modelVersion": "3.4.0",
       "stressProfileCount": 9,
       "includesStressSeverityBands": true,
       "canonicalization": "recursive object-key sort; array order preserved; JSON.stringify scalar encoding",
@@ -333,6 +338,43 @@
       "networkRequests": false,
       "reportsHashIsNotDigitalSignature": true,
       "regressionSmokeTest": "scripts/civic-cascade-forecast-smoke.mjs"
+    },
+    "aiStrategyAdvisor": {
+      "enabled": true,
+      "provider": "OpenAI Responses API",
+      "mode": "optional-read-only-strategy-critique",
+      "featureFlag": "OPENAI_CIVIC_ADVISOR_ENABLED",
+      "serverApiKeyEnvironmentVariable": "OPENAI_API_KEY",
+      "modelEnvironmentVariable": "OPENAI_CIVIC_ADVISOR_MODEL",
+      "defaultModel": "gpt-6.1-sol",
+      "modelVersion": "3.4.0",
+      "statusEndpoint": "/v1/civic-cascade-advisor/status",
+      "requestEndpoint": "/v1/civic-cascade-advisor",
+      "requiresExplicitPerRequestConsent": true,
+      "statusCheckSendsGameplayData": false,
+      "sendsOnlyAllowlistedMetrics": true,
+      "sendsFreeFormUserText": false,
+      "sendsPersonalData": false,
+      "sendsOperationEventLedger": false,
+      "sendsExportedDossier": false,
+      "oneRequestPerConsent": true,
+      "rateLimitPerClientPerHour": 3,
+      "timeoutMs": 15000,
+      "maxOutputTokens": 650,
+      "structuredOutput": "strict-json-schema",
+      "responsesApiStore": false,
+      "usesTools": false,
+      "validatesOutputServerSide": true,
+      "unknownRankRejected": true,
+      "onlyReviewsProvidedCandidates": true,
+      "canCreateCommands": false,
+      "canChangeGameState": false,
+      "canExecuteOrders": false,
+      "apiKeyClientSide": false,
+      "telemetry": false,
+      "responseStoredInProfile": false,
+      "disabledUnlessServerFlagAndKeyPresent": true,
+      "regressionTest": "services/osgard-commerce-api/test/civic-cascade-advisor.test.mjs"
     }
   },
   "cinematicExport": {
@@ -373,6 +415,6 @@
   "deployment": {
     "target": "https://osgard.world",
     "mechanism": "repository push triggers the site's production deployment workflow",
-    "liveStatus": "verify release 3.3.0 via production route matrix after deploy"
+    "liveStatus": "verify release 3.4.0 after frontend deploy; OpenAI Advisor remains disabled until Commerce API environment is configured"
   }
 }
