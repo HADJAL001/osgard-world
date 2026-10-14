@@ -199,7 +199,7 @@ for (const scenario of ['flood', 'blackout', 'blockade']) {
   assert.equal(dossier.assumptions.openAIAPIUsed,false)
   assert.equal(dossier.candidates[0].robustness.profiles.length,9)
   check(!/email|phone|userId|accessToken|password/i.test(JSON.stringify(dossier)),'dossier export must not include personal data or secrets')
-  assert.deepEqual(dossier,buildDoctrineDossierPayload(base,result,'3.2.0-three-level-stress-envelope',scenarios,nodes,0),
+  assert.deepEqual(dossier,buildDoctrineDossierPayload(base,result,'3.3.0-seven-layer-decision-assurance',scenarios,nodes,0),
     scenario+' dossier payload must be byte-for-byte reproducible before export metadata')
   check(Array.isArray(result.alternatives) && result.alternatives.length <= 3, scenario + ' planner must return at most three candidates')
 check(result.robustnessEvaluatedCount >= 0 && result.robustnessEvaluatedCount <= 8, scenario + ' stress ranking must stay within eight candidates')
