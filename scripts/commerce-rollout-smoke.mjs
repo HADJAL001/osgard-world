@@ -75,7 +75,7 @@ const overviewQueryOrder = [
 const overviewPositions = overviewQueryOrder.map((needle) => overviewQueries.indexOf(needle));
 assert.ok(overviewPositions.every((position) => position >= 0), "Admin overview is missing one or more expected query slots.");
 assert.ok(overviewPositions.every((position, index) => index === 0 || overviewPositions[index - 1] < position), "Admin overview query order must match its destructured response fields.");
-assert.ok(overviewQueries.includes("status='qualified'") && overviewQueries.includes("status='converted'") && overviewQueries.includes("status='lost'") && overviewQueries.includes('AS "overdueFollowUps"'), "Admin overview must preserve legacy lead counts and expose the validated CRM pipeline.");
+assert.ok(overviewQueries.includes("status='qualified'") && overviewQueries.includes("status='converted'") && overviewQueries.includes("status='lost'") && overviewQueries.includes("overdueFollowUps"), "Admin overview must preserve legacy lead counts and expose the validated CRM pipeline.");
 assert.ok(server.includes("commerce_lead_activities") && server.includes('app.patch("/v1/admin/leads/:id"') && server.includes('app.get("/v1/admin/leads/:id/activities"'), "Protected lead workflow routes and change history must be present.");
 
 assert.ok(!server.includes("sk_live_abc123"), "No live secret may be committed.");
