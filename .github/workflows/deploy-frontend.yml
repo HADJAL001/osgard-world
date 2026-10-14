@@ -47,6 +47,7 @@ on:
       - "scripts/games-expedition-smoke.mjs"
       - "scripts/civic-cascade-crisis-smoke.mjs"
       - "scripts/cascade-lab-evidence-integrity-smoke.mjs"
+      - "scripts/cascade-lab-reproducibility-lab-smoke.mjs"
       - "scripts/osgard-play-pwa-smoke.mjs"
       - "docs/27_OSGARD_PLAY_30_RELEASE_IMPROVEMENTS_2026-10-14.md"
       - ".github/workflows/osgard-play-qa.yml"
@@ -61,6 +62,7 @@ on:
       - "scripts/cascade-lab-trajectory-xray-smoke.mjs"
       - "scripts/cascade-lab-mission-director-smoke.mjs"
       - "docs/32_CASCADE_LAB_0.22.0_TRAJECTORY_XRAY.md"
+      - "docs/33_CASCADE_LAB_0.27.0_REPRODUCIBILITY_LAB.md"
       - "scripts/game-detail-runtime-smoke.mjs"
       - "scripts/games-monetization-smoke.mjs"
       - "scripts/game-detail-growth-cta-smoke.mjs"
@@ -119,6 +121,8 @@ jobs:
         run: npm run qa:cascade-lab-experiment-studio
       - name: Verify CASCADE LAB trajectory plots, event timeline and privacy boundaries
         run: npm run qa:cascade-lab-trajectory-xray
+      - name: Verify same-setup reproducibility, drift gate and portable capsules
+        run: npm run qa:cascade-lab-reproducibility
       - name: Test game session clock and iframe lifecycle trust boundaries
         run: npm run qa:game-detail-runtime
       - name: Verify REMIX growth funnel, attribution and sponsor safety
