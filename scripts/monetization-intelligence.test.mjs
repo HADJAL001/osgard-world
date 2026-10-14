@@ -105,7 +105,7 @@ test('premium decision dashboard exposes uncertainty, sensitivity and private lo
   assert.ok(app.includes("osgard.monetization.scenarios.v1"));
   assert.ok(app.includes('SNAPSHOT_LIMIT = 8'));
   assert.ok(app.includes('file.size > 1000000'), 'Import must have a strict size limit');
-  assert.ok(app.includes("payload.kind !== 'osgard-games-business-model'"), 'Import must validate the model export kind');
+  assert.ok(app.includes("payload?.kind !== 'osgard-games-business-model'"), 'Import must validate the model export kind');
   assert.ok(app.includes('savedScenarios: readSnapshots().map'), 'JSON backup must include local named scenarios');
   assert.ok(app.includes('modelVersion: 7'));
   assert.ok(app.includes('decisionIntelligence:'));
