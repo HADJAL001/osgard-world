@@ -136,7 +136,7 @@ async function refresh(seed){
   paintMetrics(summary);renderComparison(comparison,range,previous);
   setJson('#summary-data',summary);setJson('#cohorts-data',cohorts);setJson('#snapshots-data',snapshots);
   state.textContent='API STATUS / ПОДКЛЮЧЁН';
-  setMessage($('#refresh-status'),'Обновлено '+new Date().toLocaleString('ru-RU')+'. Сравнение использует два непересекающихся по длительности окна одинакового размера.','success');
+  setMessage($('#refresh-status'),'Обновлено '+new Date().toLocaleString('ru-RU')+'. Сравнение использует два смежных окна одинаковой длительности.','success');
  }catch(error){
   if(controller.signal.aborted||sequence!==refreshSequence||tokenAtStart!==operatorToken||epoch!==operationEpoch)return;
   setMessage($('#refresh-status'),error instanceof Error?error.message:'Ошибка API','error');state.textContent='API STATUS / ОШИБКА';
