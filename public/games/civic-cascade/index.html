@@ -913,8 +913,8 @@ function doctrineStressProfiles(sourceState,nodeDefinitions){
    s.gridRate=Math.min(1,Math.max(0,s.gridRate+.07));
    s.waterRate=Math.min(1,Math.max(-.02,s.waterRate+.015));
   }},
-  {id:'weak-node-shock',label:'ПОВРЕЖДЕНИЕ СЛАБЕЙШЕГО УЗЛА',targetNode:weak?.id||null,apply(s){
-   if(weak&&s.nodeIntegrity&&Number.isFinite(s.nodeIntegrity[weak.id]))s.nodeIntegrity[weak.id]=clamp(s.nodeIntegrity[weak.id]-14);
+  {id:'weak-node-shock',label:'ПОВРЕЖДЕНИЕ СЛАБЕЙШЕГО УЗЛА',targetNode:weakest?.id||null,apply(s){
+   if(weakest&&s.nodeIntegrity&&Number.isFinite(s.nodeIntegrity[weakest.id]))s.nodeIntegrity[weakest.id]=clamp(s.nodeIntegrity[weakest.id]-14);
    s.supplies=clamp(s.supplies-10);
    s.gridRate=Math.min(1,Math.max(0,s.gridRate+.025));
   }}
