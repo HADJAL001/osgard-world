@@ -188,6 +188,13 @@ test("consented analytics accept stable event IDs and new page-view events, whil
   }] });
   assert.equal(inviteOpened.ok, true, "Incoming invitation visits should be accepted");
   assert.equal(inviteOpened.events[0].name, "referral_link_opened");
+
+  const promoSnoozed = validateEventBatch({ consent: true, events: [{
+    ...baseEvent, name: "owned_promo_snoozed", source: "osgard-select:snooze-24h:12",
+    eventId: "evt_snooze_123456789",
+  }] });
+  assert.equal(promoSnoozed.ok, true, "An opt-in, consented promo-pause event should be accepted");
+  assert.equal(promoSnoozed.events[0].source, "osgard-select:snooze-24h:12");
 });
 
 test("live Stripe keys stay disabled unless explicitly enabled", () => {
