@@ -235,7 +235,6 @@
   favoriteFilter.addEventListener('click', () => { favoritesOnly = !favoritesOnly; render(); });
   document.querySelector('#clear-filters').addEventListener('click', resetFilters);
   document.querySelector('#empty-reset').addEventListener('click', resetFilters);
-  document.querySelector('#favorites-filter').addEventListener('click', () => { /* delegated toggle above performs render */ });
   document.querySelectorAll('[data-favorite]').forEach(button => {
     button.addEventListener('click', () => {
       const id = button.dataset.favorite;
