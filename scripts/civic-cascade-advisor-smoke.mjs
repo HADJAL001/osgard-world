@@ -8,7 +8,7 @@ const manifest=JSON.parse(read("public/games/civic-cascade/release.json"));
 const routes=read("scripts/production-route-matrix.mjs");
 const tests=read("services/osgard-commerce-api/test/civic-cascade-advisor.test.mjs");
 const env=read("services/osgard-commerce-api/.env.example");
-assert.ok(moduleSource.includes("input.consent !== true"));
+assert.ok(moduleSource.includes("input.consent!==true") || moduleSource.includes("input.consent !== true"));
 assert.ok(moduleSource.includes("store:false")||moduleSource.includes("store:false"));
 assert.ok(moduleSource.includes("https://api.openai.com/v1/responses"));
 assert.ok(moduleSource.includes("additionalProperties:false"));
