@@ -349,20 +349,37 @@ function getOrCreateReferralOwnerToken(){
   return token;
  }catch{return ''}
 }
-async function postReferralRequest(path,payload){
- if(!hasConsent())return{ok:false,reason:'consent'};
+async function resolveReferralApiBase(){
  try{
-  const configResponse=await fetch('/games/commerce-config.json',{cache:'no-store'});
+  const configResponse=await fetch('/games/commerce-config.json',{cache:'no-store',credentials:'same-origin'});
   const config=configResponse.ok?await configResponse.json().catch(()=>({})):{};
   const rawBase=typeof config.apiBaseUrl==='string'?config.apiBaseUrl.trim():'';
-  if(!rawBase)return{ok:false,reason:'not-configured'};
-  let parsedBase;
-  try{parsedBase=new URL(rawBase,location.origin)}catch{return{ok:false,reason:'invalid-config'}}
-  const localApi=['localhost','127.0.0.1'].includes(parsedBase.hostname);
-  const allowedPath=parsedBase.pathname==='/'||(parsedBase.pathname==='/commerce-api'&&(parsedBase.origin===location.origin||parsedBase.origin==='https://osgard.world'));
-  if((parsedBase.protocol!=='https:'&&!(localApi&&parsedBase.protocol==='http:'))||parsedBase.username||parsedBase.password||!allowedPath||parsedBase.search||parsedBase.hash)return{ok:false,reason:'invalid-config'};
-  const base=parsedBase.origin+(parsedBase.pathname==='/'?'':parsedBase.pathname);
-  const response=await fetch(base+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),credentials:parsedBase.origin===location.origin?'same-origin':'omit',keepalive:true});
+  let base='';
+  if(!rawBase){
+   const healthResponse=await fetch('/commerce-api/healthz',{cache:'no-store',credentials:'omit'});
+   const health=healthResponse.ok?await healthResponse.json().catch(()=>({})):{};
+   if(healthResponse.ok&&health.service==='osgard-commerce-api'&&health.databaseReady===true)base=location.origin+'/commerce-api';
+   else return{ok:false,reason:'not-configured'};
+  }else{
+   let parsedBase;
+   try{parsedBase=new URL(rawBase,location.origin)}catch{return{ok:false,reason:'invalid-config'}}
+   const localApi=['localhost','127.0.0.1'].includes(parsedBase.hostname);
+   const allowedPath=parsedBase.pathname==='/'||(parsedBase.pathname==='/commerce-api'&&(parsedBase.origin===location.origin||parsedBase.origin==='https://osgard.world'));
+   if((parsedBase.protocol!=='https:'&&!(localApi&&parsedBase.protocol==='http:'))||parsedBase.username||parsedBase.password||!allowedPath||parsedBase.search||parsedBase.hash)return{ok:false,reason:'invalid-config'};
+   base=parsedBase.origin+(parsedBase.pathname==='/'?'':parsedBase.pathname);
+   const healthResponse=await fetch(base+'/healthz',{cache:'no-store',credentials:'omit'});
+   const health=healthResponse.ok?await healthResponse.json().catch(()=>({})):{};
+   if(!healthResponse.ok||health.service!=='osgard-commerce-api'||health.databaseReady!==true)return{ok:false,reason:'database-not-ready'};
+  }
+  return{ok:true,base};
+ }catch{return{ok:false,reason:'network'}}
+}
+async function postReferralRequest(path,payload){
+ if(!hasConsent())return{ok:false,reason:'consent'};
+ const api=await resolveReferralApiBase();
+ if(!api.ok)return api;
+ try{
+  const response=await fetch(api.base+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),credentials:api.base.startsWith(location.origin)?'same-origin':'omit',keepalive:true});
   const data=await response.json().catch(()=>({}));
   return{ok:response.ok,status:response.status,data};
  }catch{return{ok:false,reason:'network'}}
@@ -395,21 +412,8 @@ function addQualifiedReferralShards(claims){
 }
 async function referralApiAvailability(){
  if(!hasConsent())return{ready:false,reason:'consent'};
- try{
-  const response=await fetch('/games/commerce-config.json',{cache:'no-store'});
-  const config=response.ok?await response.json().catch(()=>({})):{};
-  const raw=typeof config.apiBaseUrl==='string'?config.apiBaseUrl.trim():'';
-  if(!raw)return{ready:false,reason:'not-configured'};
-  let parsed;
-  try{parsed=new URL(raw,location.origin)}catch{return{ready:false,reason:'invalid-config'}}
-  const localApi=['localhost','127.0.0.1'].includes(parsed.hostname);
-  const allowedPath=parsed.pathname==='/'||(parsed.pathname==='/commerce-api'&&parsed.origin===location.origin);
-  if((parsed.protocol!=='https:'&&!(localApi&&parsed.protocol==='http:'))||parsed.username||parsed.password||!allowedPath||parsed.search||parsed.hash)return{ready:false,reason:'invalid-config'};
-  const base=parsed.origin+(parsed.pathname==='/'?'':parsed.pathname);
-  const health=await fetch(base+'/healthz',{cache:'no-store',credentials:parsed.origin===location.origin?'same-origin':'omit'});
-  const data=await health.json().catch(()=>({}));
-  return health.ok&&data.databaseReady===true?{ready:true}:{ready:false,reason:'database-not-ready'};
- }catch{return{ready:false,reason:'network'}}
+ const api=await resolveReferralApiBase();
+ return api.ok?{ready:true}:{ready:false,reason:api.reason||'network'};
 }
 async function refreshQualifiedClaimButton(button,status){
  const availability=await referralApiAvailability();
