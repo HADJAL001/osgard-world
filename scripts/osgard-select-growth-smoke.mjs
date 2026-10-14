@@ -244,6 +244,43 @@ assert.ok(!signalShareHandler.includes("life('share_created'"),
 assert.ok(signalRun.slice(claimSignal).includes("life('share_created',{shareMethod:method,dailyMode,dailyDate:dailyMode?dailyDate:null,rewardConfirmedByPlayer:true})"),
   'SIGNAL RUN completed-share analytics must follow the explicit reward confirmation');
 
+
+assert.ok(core.includes('export function validateReferralClaimAckPayload'), 'Referral receipt acknowledgement payload validator missing')
+assert.ok(commerceApi.includes('app.post("/v1/referrals/prepare-claim"') && commerceApi.includes('app.post("/v1/referrals/ack"'), 'Retryable reward prepare/ack endpoints missing')
+assert.ok(commerceApi.includes('SET qualified_session_id = COALESCE(qualified_session_id, $2)') && commerceApi.includes('SET reward_claimed_at = COALESCE(reward_claimed_at, NOW())'), 'Qualified receipt must be prepared first and acknowledged idempotently later')
+const prepareStart=commerceApi.indexOf('app.post("/v1/referrals/prepare-claim"')
+const prepareEnd=commerceApi.indexOf('app.post("/v1/referrals/ack"',prepareStart)
+const prepareRoute=commerceApi.slice(prepareStart,prepareEnd)
+assert.ok(prepareStart>=0&&prepareEnd>prepareStart&&!prepareRoute.includes('reward_claimed_at = NOW()'), 'Preparing a reward must not mark it claimed before the browser has persisted the receipt')
+assert.ok(commerceApi.slice(prepareEnd,commerceApi.indexOf('app.post("/v1/referrals/claim"',prepareEnd)).includes('referralCodes = ANY($2::text[])') || commerceApi.slice(prepareEnd,commerceApi.indexOf('app.post("/v1/referrals/claim"',prepareEnd)).includes('referral_code = ANY($2::text[])'), 'Acknowledgement must be restricted to the token owner and supplied receipt IDs')
+assert.ok(source.includes("postReferralRequest('/v1/referrals/prepare-claim'") && source.includes("postReferralRequest('/v1/referrals/ack'"), 'Client must use the retryable prepare/ack flow, not the legacy one-phase claim')
+const walletSaveOffset=source.indexOf('const saved=addQualifiedReferralShards(result.claims)')
+const walletAckOffset=source.indexOf("postReferralRequest('/v1/referrals/ack'",walletSaveOffset)
+assert.ok(walletSaveOffset>=0&&walletAckOffset>walletSaveOffset, 'Persist receipt IDs in the local wallet before acknowledging them to the server')
+assert.ok(source.includes('qualifiedClaims:[...current.claims,...accepted].slice(-5000)') && source.includes('current.claims,updatedAt'), 'Wallet must deduplicate receipt IDs and preserve them when daily social rewards are written')
+assert.ok(source.includes("if(!known.has(code)){known.add(code);accepted.push(code)}") && source.includes("const amount=accepted.length*50"), 'Retrying a pending receipt must not award the same 50 SHARDS twice')
+assert.ok(source.includes('Серверное подтверждение временно недоступно; повторная проверка не начислит эти receipt-ID второй раз'), 'The player must get an explicit retry-safe status when acknowledgement temporarily fails')
+assert.ok(source.includes("const promoImpressionKeyPrefix='osgard.games.promo-impression.v1:'") && source.includes("function claimPromoImpression(key)"), 'Session-level promo impression deduplication key missing')
+assert.ok(source.includes('getSessionSpotlightVariant()') && source.includes("osgard.games.select-spotlight-variant.v1"), 'Spotlight A/B cohort should remain stable across intermission rebuilds in one tab session')
+assert.ok(source.includes("claimPromoImpression('spotlight:'+seenKey)") && source.includes("claimPromoImpression('card:'+gameId+':'+serviceId)"), 'Spotlight and directory card impression deduplication must both be applied')
+const variantMatch=source.match(/function getSessionSpotlightVariant\(\)\{[\s\S]*?\n\}/)
+assert.ok(variantMatch, 'Session-stable spotlight cohort helper missing')
+const sessionValues=new Map()
+const sessionStorageMock={getItem(key){return sessionValues.has(key)?sessionValues.get(key):null},setItem(key,value){sessionValues.set(key,String(value))}}
+const getVariant=vm.runInNewContext('('+variantMatch[0]+')',{sessionStorage:sessionStorageMock,Math})
+const variantFirst=getVariant(),variantSecond=getVariant()
+assert.ok(variantFirst==='a'||variantFirst==='b')
+assert.equal(variantSecond,variantFirst,'Re-rendering a spotlight must not move a player to a different A/B variant in the same tab')
+const impressionMatch=source.match(/function claimPromoImpression\(key\)\{[\s\S]*?\n\}/)
+assert.ok(impressionMatch, 'Impression dedupe helper missing')
+const impressionValues=new Map()
+const impressionStorage={getItem(key){return impressionValues.has(key)?impressionValues.get(key):null},setItem(key,value){impressionValues.set(key,String(value))}}
+const claimImpression=vm.runInNewContext('('+impressionMatch[0]+')',{sessionStorage:impressionStorage,promoImpressionKeyPrefix:'osgard.games.promo-impression.v1:'})
+assert.equal(claimImpression('spotlight:swarm:marcosa:a'),true,'First valid exposure may be counted')
+assert.equal(claimImpression('spotlight:swarm:marcosa:a'),false,'A repeated exposure for the same session/service/variant must be deduplicated')
+assert.equal(claimImpression('card:swarm:marcosa'),true,'A separately visible directory card may be measured once')
+assert.ok(source.includes("source:'qualified-referral-retry'"), 'Retrying a previously saved receipt should not be mistaken for a newly created award')
+
 console.log(JSON.stringify({
   status: 'passed',
   serviceDestinations: services.length,
