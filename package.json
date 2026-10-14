@@ -34,6 +34,7 @@
     "qa:null-shift-godot": "node scripts/null-shift-godot-smoke.mjs",
     "qa:partners-page": "node scripts/partners-page-smoke.mjs",
     "qa:ecosystem": "node scripts/ecosystem-integrity-smoke.mjs",
+    "qa:project-intake": "node scripts/project-intake-smoke.mjs",
     "qa:ecosystem-directory": "node scripts/ecosystem-directory-smoke.mjs",
     "qa:remix-growth": "node scripts/remix-growth-smoke.mjs",
     "audit:external-projects": "node scripts/external-project-healthcheck.mjs",

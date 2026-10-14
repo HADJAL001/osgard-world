@@ -63,7 +63,10 @@ async function ensureSchema() {
     "CREATE INDEX IF NOT EXISTS commerce_orders_paid_attribution_idx ON commerce_orders(status, created_at DESC, attribution_game_id, attribution_source);\n" +
     "CREATE INDEX IF NOT EXISTS commerce_orders_email_idx ON commerce_orders(email);\n" +
     "CREATE TABLE IF NOT EXISTS commerce_stripe_events (event_id TEXT PRIMARY KEY, event_type TEXT NOT NULL, processed_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
-    "CREATE TABLE IF NOT EXISTS commerce_leads (lead_id TEXT PRIMARY KEY, project_type TEXT NOT NULL, budget TEXT NOT NULL DEFAULT '', contact TEXT NOT NULL, description TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'new', consent_at TIMESTAMPTZ NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
+    "CREATE TABLE IF NOT EXISTS commerce_leads (lead_id TEXT PRIMARY KEY, project_type TEXT NOT NULL, budget TEXT NOT NULL DEFAULT '', contact TEXT NOT NULL, description TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'new', consent_at TIMESTAMPTZ NOT NULL, attribution_game_id TEXT NOT NULL DEFAULT 'unknown', attribution_source TEXT NOT NULL DEFAULT 'direct', attribution_campaign TEXT NOT NULL DEFAULT '', created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
+    "ALTER TABLE commerce_leads ADD COLUMN IF NOT EXISTS attribution_game_id TEXT NOT NULL DEFAULT 'unknown';\n" +
+    "ALTER TABLE commerce_leads ADD COLUMN IF NOT EXISTS attribution_source TEXT NOT NULL DEFAULT 'direct';\n" +
+    "ALTER TABLE commerce_leads ADD COLUMN IF NOT EXISTS attribution_campaign TEXT NOT NULL DEFAULT '';\n" +
     "CREATE INDEX IF NOT EXISTS commerce_leads_created_idx ON commerce_leads(created_at DESC);\n" +
     "CREATE TABLE IF NOT EXISTS commerce_events (event_id TEXT PRIMARY KEY, event_name TEXT NOT NULL, session_id TEXT NOT NULL, game_id TEXT NOT NULL, source TEXT NOT NULL, path TEXT NOT NULL, duration_seconds INTEGER NOT NULL DEFAULT 0, received_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\n" +
     "CREATE INDEX IF NOT EXISTS commerce_events_name_received_idx ON commerce_events(event_name, received_at DESC);\n" +
@@ -433,7 +436,7 @@ app.post("/v1/leads", async (req, res) => {
   if (!requireDatabase(res)) return;
   const leadId = crypto.randomUUID();
   try {
-    await pool.query("INSERT INTO commerce_leads(lead_id,project_type,budget,contact,description,consent_at) VALUES($1,$2,$3,$4,$5,NOW())", [leadId, lead.projectType, lead.budget, lead.contact, lead.description]);
+    await pool.query("INSERT INTO commerce_leads(lead_id,project_type,budget,contact,description,consent_at,attribution_game_id,attribution_source,attribution_campaign) VALUES($1,$2,$3,$4,$5,NOW(),$6,$7,$8)", [leadId, lead.projectType, lead.budget, lead.contact, lead.description, lead.attribution.gameId, lead.attribution.source, lead.attribution.campaign]);
     return res.status(201).json({ accepted: true, leadId, message: "Заявка сохранена." });
   } catch (error) {
     console.error("Lead insert failed:", error?.message || "unknown error");
@@ -722,10 +725,11 @@ app.post("/v1/referrals/claim", async (req, res) => {
 app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
   if (!requireDatabase(res)) return;
   try {
-    const [orderStats, currencyStats, leadStats, eventStats, topEvents, analyticsByGame, ownedPromoByService, ownedPromoVariantStats, analyticsFunnel, socialShareByNetwork, paidRevenueByAttribution, referralRewardStats] = await Promise.all([
+    const [orderStats, currencyStats, leadStats, leadAttributionStats, eventStats, topEvents, analyticsByGame, ownedPromoByService, ownedPromoVariantStats, analyticsFunnel, socialShareByNetwork, paidRevenueByAttribution, referralRewardStats] = await Promise.all([
       pool.query("SELECT status, COUNT(*)::int AS count FROM commerce_orders GROUP BY status"),
       pool.query("SELECT currency, SUM(amount_total)::bigint AS total_minor, COUNT(*)::int AS count FROM commerce_orders WHERE status='paid' AND currency IS NOT NULL GROUP BY currency"),
       pool.query("SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE status='new')::int AS new FROM commerce_leads"),
+      pool.query("SELECT attribution_game_id AS \"gameId\", attribution_source AS source, NULLIF(attribution_campaign, '') AS campaign, COUNT(*)::int AS leads, COUNT(*) FILTER (WHERE status='new')::int AS new FROM commerce_leads WHERE created_at >= NOW() - INTERVAL '90 days' GROUP BY attribution_game_id, attribution_source, attribution_campaign ORDER BY leads DESC, source ASC LIMIT 50"),
       pool.query("SELECT COUNT(*)::int AS total_30d FROM commerce_events WHERE received_at >= NOW() - INTERVAL '30 days'"),
       pool.query("SELECT event_name, COUNT(*)::int AS count FROM commerce_events WHERE received_at >= NOW() - INTERVAL '30 days' GROUP BY event_name ORDER BY count DESC LIMIT 12"),
       pool.query("SELECT game_id AS \"gameId\", COUNT(*)::int AS events, COUNT(DISTINCT session_id)::int AS sessions, COUNT(*) FILTER (WHERE event_name IN ('game_session_started','game_launched'))::int AS starts, COUNT(*) FILTER (WHERE event_name='game_session_completed')::int AS completions, COALESCE(ROUND(AVG(duration_seconds) FILTER (WHERE event_name='game_session_completed' AND duration_seconds > 0))::int,0) AS \"avgCompletionSeconds\", COUNT(*) FILTER (WHERE event_name='cross_promo_clicked')::int AS \"crossPromoClicks\" FROM commerce_events WHERE received_at >= NOW() - INTERVAL '30 days' GROUP BY game_id ORDER BY starts DESC, events DESC LIMIT 20"),
@@ -856,6 +860,7 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
       ordersByStatus: orderStats.rows,
       grossPaidByCurrency: currencyStats.rows,
       leads: leadStats.rows[0] || { total: 0, new: 0 },
+      leadsByAttribution: leadAttributionStats.rows,
       analyticsEventsLast30Days: eventStats.rows[0]?.total_30d || 0,
       topEventsLast30Days: topEvents.rows,
       analyticsByGame: analyticsByGame.rows,
@@ -877,7 +882,7 @@ app.get("/v1/admin/leads", requireAdmin, async (req, res) => {
   if (!requireDatabase(res)) return;
   const limit = Math.max(1, Math.min(100, Number.parseInt(String(req.query.limit || "50"), 10) || 50));
   try {
-    const result = await pool.query("SELECT lead_id, project_type, budget, contact, description, status, created_at FROM commerce_leads ORDER BY created_at DESC LIMIT $1", [limit]);
+    const result = await pool.query("SELECT lead_id, project_type, budget, contact, description, status, attribution_game_id, attribution_source, attribution_campaign, created_at FROM commerce_leads ORDER BY created_at DESC LIMIT $1", [limit]);
     return res.json({ items: result.rows });
   } catch (error) {
     console.error("Admin leads failed:", error?.message || "unknown error");

@@ -68,6 +68,31 @@ test("lead endpoint requires contact, brief and acknowledgement; honeypot is sil
   assert.equal(validateLeadPayload({ website: "spam", consent: true }).bot, true);
 });
 
+test("lead attribution is normalized and legacy submissions remain compatible", () => {
+  const tracked = validateLeadPayload({
+    projectType: "Игра",
+    contact: "test@example.com",
+    description: "Разработка браузерной стратегии",
+    consent: true,
+    attribution: { gameId: "AFTERIMAGE-RUN", source: "OSGARD_GAMES", campaign: "PROJECT_INTAKE" },
+  });
+  assert.equal(tracked.ok, true);
+  assert.deepEqual(tracked.attribution, { gameId: "afterimage-run", source: "osgard_games", campaign: "project_intake" });
+
+  const legacy = validateLeadPayload({
+    projectType: "Игра", contact: "test@example.com",
+    description: "Старая форма без кампаний", consent: true,
+  });
+  assert.deepEqual(legacy.attribution, { gameId: "unknown", source: "direct", campaign: "" });
+
+  const hostile = validateLeadPayload({
+    projectType: "Игра", contact: "test@example.com",
+    description: "Некорректные метки не должны попадать в SQL", consent: true,
+    attribution: { gameId: "../../bad", source: "https://evil.example/?x=1", campaign: "x".repeat(200) },
+  });
+  assert.deepEqual(hostile.attribution, { gameId: "unknown", source: "direct", campaign: "" });
+});
+
 test("referral registration requires consent, a known game, an invitation code and a random owner token", () => {
   const base = { consent: true, referralCode: "og_0123abcd", gameId: "swarm", ownerToken: "0123456789abcdef0123456789abcdef" };
   assert.equal(validateReferralRegistrationPayload({ ...base, consent: false }).code, "ANALYTICS_CONSENT_REQUIRED");

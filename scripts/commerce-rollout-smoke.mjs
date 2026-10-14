@@ -48,7 +48,7 @@ assert.ok(server.includes('app.post("/v1/admin/campaigns"') && server.includes('
 assert.ok(server.includes("CREATE TABLE IF NOT EXISTS commerce_campaigns") && server.includes("pg_advisory_xact_lock(20261014)"), "Campaign migration and serialized publish cap must exist.");
 assert.ok(campaigns.includes("CAMPAIGN_URL_MUST_BE_SAFE_HTTPS") && campaigns.includes("CAMPAIGN_DISCLOSURE_REQUIRED") && campaigns.includes("CAMPAIGN_PLACEMENT_NOT_INTEGRATED"), "Campaign input allow-lists and publishing guardrails missing.");
 
-const overviewStart = server.indexOf("const [orderStats, currencyStats, leadStats, eventStats, topEvents, analyticsByGame, ownedPromoByService, ownedPromoVariantStats, analyticsFunnel, socialShareByNetwork, paidRevenueByAttribution, referralRewardStats]");
+const overviewStart = server.indexOf("const [orderStats, currencyStats, leadStats, leadAttributionStats, eventStats, topEvents, analyticsByGame, ownedPromoByService, ownedPromoVariantStats, analyticsFunnel, socialShareByNetwork, paidRevenueByAttribution, referralRewardStats]");
 const overviewEnd = server.indexOf("\n    ]);", overviewStart);
 assert.ok(overviewStart >= 0 && overviewEnd > overviewStart, "Admin overview Promise.all query block missing.");
 const overviewQueries = server.slice(overviewStart, overviewEnd);
@@ -56,6 +56,7 @@ const overviewQueryOrder = [
   "SELECT status, COUNT(*)::int AS count FROM commerce_orders GROUP BY status",
   "SELECT currency, SUM(amount_total)",
   "SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE status='new')::int AS new FROM commerce_leads",
+  "NULLIF(attribution_campaign, '') AS campaign, COUNT(*)::int AS leads",
   "SELECT COUNT(*)::int AS total_30d FROM commerce_events",
   "SELECT event_name, COUNT(*)::int AS count FROM commerce_events",
   "SELECT game_id AS",
@@ -63,7 +64,7 @@ const overviewQueryOrder = [
   "split_part(source, ':', 4) AS variant",
   "WITH recent_events AS (",
   "SELECT\n          network,",
-  "SELECT attribution_game_id AS",
+  "mode, currency, COUNT(*)::int AS orders",
   'SELECT COUNT(*)::int AS "qualifiedReferrals"',
 ];
 const overviewPositions = overviewQueryOrder.map((needle) => overviewQueries.indexOf(needle));
