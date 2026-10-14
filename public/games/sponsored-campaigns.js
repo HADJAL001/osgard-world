@@ -9,7 +9,8 @@
   const SESSION_ID = 'sess_' + randomId();
   const impressionsSent = new Set();
   let observer = null;
-  let storage = availableStorage();
+  let storage = null;
+  let storageChecked = false;
 
   function randomId() {
     try { if (crypto && typeof crypto.randomUUID === 'function') return crypto.randomUUID().replace(/-/g, ''); }
@@ -28,6 +29,14 @@
     }
     return null;
   }
+  function storageForConsent() {
+    if (!consentGranted()) return null;
+    if (!storageChecked) {
+      storage = availableStorage();
+      storageChecked = true;
+    }
+    return storage;
+  }
   function safeText(tag, className, value) {
     const node = document.createElement(tag);
     if (className) node.className = className;
@@ -44,9 +53,10 @@
     } catch { return null; }
   }
   function readExposureMap() {
-    if (!storage) return null;
+    const targetStorage = storageForConsent();
+    if (!targetStorage) return consentGranted() ? null : {};
     try {
-      const raw = JSON.parse(storage.getItem(STORAGE_KEY) || '{}');
+      const raw = JSON.parse(targetStorage.getItem(STORAGE_KEY) || '{}');
       if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
       const now = Date.now();
       const result = {};
@@ -66,10 +76,14 @@
     if (valid.length >= cap) return false;
     valid.push(Date.now());
     map[id] = valid.slice(-20);
-    try { storage.setItem(STORAGE_KEY, JSON.stringify(map)); return true; }
+    const targetStorage = storageForConsent();
+    if (!consentGranted()) return true; // No persistent exposure tracking without opt-in.
+    if (!targetStorage) return false;
+    try { targetStorage.setItem(STORAGE_KEY, JSON.stringify(map)); return true; }
     catch { return false; }
   }
   function canShow(id, cap) {
+    if (!consentGranted()) return true; // Ads may display, but no persistent cap/metrics are stored.
     const map = readExposureMap();
     if (!map) return false;
     return (map[id] || []).filter(value => Date.now() - value < MAX_AGE).length < cap;
@@ -170,8 +184,11 @@
     } catch { return ''; }
   }
   async function init() {
-    // Without storage or visibility measurement the campaign slot stays hidden.
-    if (!storage || !('IntersectionObserver' in window)) return;
+    // Without visibility measurement impressions cannot be defined. If consent is
+    // present, persistent frequency capping must also be available; without consent,
+    // cards may display but neither storage nor analytics is used.
+    if (!('IntersectionObserver' in window)) return;
+    if (consentGranted() && !storageForConsent()) return;
     try {
       const base = await apiBase();
       if (!base) return; // API is unconfigured in the release baseline; keep the slot hidden.
