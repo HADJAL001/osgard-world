@@ -202,6 +202,44 @@ assert.ok(reward.includes('Копирование само по себе не с
 assert.ok(source.includes("const walletKey='osgard.games.shards-wallet.v1',dailyReward=50") &&
   source.includes('current.day===day'),
   'Local SHARDS reward must be capped to one claim per UTC day and device wallet');
+
+const serviceShareStart = source.indexOf('const serviceShare=make(', source.indexOf('function renderSpotlight(serviceId)'));
+const serviceShareEnd = source.indexOf('spotlight.append(copy,serviceShare,spotlightStatus);', serviceShareStart);
+assert.ok(serviceShareStart >= 0 && serviceShareEnd > serviceShareStart, 'Selected-service share UI must live in the current service spotlight');
+const serviceShareCode = source.slice(serviceShareStart, serviceShareEnd + 'spotlight.append(copy,serviceShare,spotlightStatus);'.length);
+assert.ok(serviceShareCode.includes("const serviceShareUrl=new URL(item[5],location.origin)") &&
+  serviceShareCode.includes("serviceShareUrl.searchParams.set('utm_campaign','owned_service_share')") &&
+  serviceShareCode.includes("serviceShareUrl.searchParams.set('utm_content',item[0]+'_'+gameId)"),
+  'Sharing a service must use the user-selected service destination and label its attribution');
+assert.ok(['Telegram','WhatsApp','VK','X','Facebook'].every(network => serviceShareCode.includes("['"+network+"'")),
+  'Selected-service share must expose supported social publishing buttons');
+assert.ok(serviceShareCode.includes("navigator.share({title:item[2]+' — OSGARD',text:serviceShareMessage,url:serviceShareUrl.href})") &&
+  serviceShareCode.includes("setServiceSharePending('native-share')") &&
+  serviceShareCode.includes("serviceShareClaim.addEventListener('click'"),
+  'Native sharing must target the selected service and require a separate explicit reward claim');
+assert.ok(serviceShareCode.includes("award('service-share-confirmation:'+item[0]+':'+method)") &&
+  serviceShareCode.includes("sendSelectEvent('social_reward_claimed',gameId,'osgard-service-share-reward:'+item[0]+':'+method)") &&
+  !serviceShareCode.includes("sendSelectEvent('share_created'"),
+  'A self-confirmed reward must stay distinct from a verified share event');
+const serviceCopyStart = serviceShareCode.indexOf("copyServiceLink.addEventListener('click',async()=>{");
+const serviceCopyEnd = serviceShareCode.indexOf("});", serviceCopyStart);
+assert.ok(serviceCopyStart >= 0 && serviceCopyEnd > serviceCopyStart &&
+  serviceShareCode.slice(serviceCopyStart, serviceCopyEnd).includes('Копирование само по себе не считается репостом и не даёт SHARDS') &&
+  !serviceShareCode.slice(serviceCopyStart, serviceCopyEnd).includes('setServiceSharePending'),
+  'Copying a service URL must never unlock the social reward');
+assert.ok(serviceShareCode.includes("copyServiceLink.addEventListener('click',async()=>{\n   pendingServiceShare='';serviceShareClaim.hidden=true;serviceShareClaim.disabled=false;") &&
+  serviceShareCode.includes("nativeShare.addEventListener('click',async()=>{\n   pendingServiceShare='';serviceShareClaim.hidden=true;serviceShareClaim.disabled=false;"),
+  'Copying or cancelling a new native-share flow must clear any stale pending reward claim');
+assert.ok(source.includes('osgard:shards-wallet-updated') &&
+  css.includes('.og-postgame-service-share-networks') &&
+  css.includes('@media(max-width:600px)') &&
+  css.includes('prefers-reduced-motion:reduce') &&
+  css.includes('.og-postgame-service-share button:focus-visible'),
+  'Service-share controls must remain responsive, reduced-motion aware, keyboard accessible and sync wallet updates');
+assert.ok(source.includes("window.addEventListener('osgard:shards-wallet-updated',syncShardsWalletUI)") &&
+  source.includes("window.addEventListener('storage',event=>{if(!event.key||event.key===walletKey)syncShardsWalletUI()})") &&
+  source.includes("document.querySelectorAll('.og-postgame-wallet')"),
+  'Wallet changes in SIGNAL RUN or the post-session panel must update the intermission balance and prevent another same-day local reward claim');
 assert.ok(lifecycle.includes("activeSessionId='session_'+id+'_'+sequence+'_'+launchAt") && lifecycle.includes('sessionId:activeSessionId') && lifecycle.includes('detail:{game:activeGame,sessionId:activeSessionId,...dailyChallengeContext(activeGame,activeUrl)}'),
   'The same stable ID must be sent with gameplay completion and post-session return events');
 assert.ok(source.includes("byGame[gameId]=Math.min((byGame[gameId]||0)+1,1000000000)") &&

@@ -188,6 +188,24 @@ dialog#player-dialog[data-postgame-intermission="1"] .post-run-recommendations{m
 @media(max-width:360px){.og-postgame-spotlight-actions>*{width:100%;flex:1 1 100%}}
 @media(prefers-reduced-motion:reduce){.og-postgame-spotlight,.og-postgame-spotlight-actions>*{transition:none;animation:none}}
 
+/* Share the currently spotlighted first-party service through real social publish forms. */
+.og-postgame-service-share{display:grid;gap:8px;margin-top:13px;padding-top:12px;border-top:1px solid rgba(218,192,133,.18)}
+.og-postgame-service-share-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.og-postgame-service-share-label{margin-right:auto;color:#b8aa82;font:8px/1.5 ui-monospace,Consolas,monospace;letter-spacing:.13em}
+.og-postgame-service-share-primary,.og-postgame-service-share-toggle,.og-postgame-service-share-claim,.og-postgame-service-share-copy,.og-postgame-service-share-network{display:inline-flex;align-items:center;justify-content:center;min-height:35px;padding:8px 11px;border:1px solid rgba(218,192,133,.3);border-radius:6px;background:#ffffff04;color:#e8e3d6;font-size:9px;font-weight:650;text-decoration:none;cursor:pointer;transition:background .18s ease,border-color .18s ease,transform .18s ease}
+.og-postgame-service-share-primary{border-color:#d8c28f;background:linear-gradient(115deg,#c5a95e,#e8d5a1 60%,#c9ab64);color:#13130f}
+.og-postgame-service-share-primary:hover,.og-postgame-service-share-toggle:hover,.og-postgame-service-share-copy:hover,.og-postgame-service-share-network:hover{border-color:#f0dfb2;background:#d8c28f12}
+.og-postgame-service-share-claim{border-color:rgba(211,255,105,.65);background:#d3ff6910;color:#e6ffb0}
+.og-postgame-service-share-claim:disabled{opacity:.55;cursor:not-allowed}
+.og-postgame-service-share-networks{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.og-postgame-service-share-networks[hidden],.og-postgame-service-share-claim[hidden]{display:none!important}
+.og-postgame-service-share-status{margin:0;color:#d5c58e;font-size:9px;line-height:1.6;overflow-wrap:anywhere}
+.og-postgame-service-share-note{margin:0;color:#818478;font-size:8px;line-height:1.6}
+.og-postgame-service-share button:focus-visible,.og-postgame-service-share a:focus-visible{outline:2px solid #f2e4bb;outline-offset:3px}
+@media(max-width:600px){.og-postgame-service-share-head{align-items:stretch}.og-postgame-service-share-label{width:100%}.og-postgame-service-share-primary,.og-postgame-service-share-toggle{flex:1}.og-postgame-service-share-networks{grid-template-columns:repeat(2,minmax(0,1fr))}.og-postgame-service-share-networks>*{width:100%}}
+@media(max-width:360px){.og-postgame-service-share-head{display:grid;grid-template-columns:1fr}.og-postgame-service-share-label{width:auto}.og-postgame-service-share-networks{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.og-postgame-service-share button,.og-postgame-service-share a{transition:none;transform:none}}
+
 /* OSGARD SELECT — immediately visible choice of contextual owned-service cards. */
 .og-postgame-quick-picks-heading{margin:0 0 -3px;color:#bfae7c;font:8px/1.5 ui-monospace,Consolas,monospace;letter-spacing:.14em}
 .og-postgame-quick-picks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:0 0 12px}
