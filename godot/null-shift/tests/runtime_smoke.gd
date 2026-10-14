@@ -1735,6 +1735,8 @@ func _run_smoke() -> void:
 		return
 	if not _expect(float(game.raid_event_ledger[0]["t"]) <= float(game.raid_event_ledger[-1]["t"]) and game.raid_event_ledger[-1].has("position"), "black-box records must retain ordered elapsed time and quantized world positions"):
 		return
+	game.daily_challenge_active = true
+	game.daily_challenge_code = valid_daily_code
 	game.daily_run_seed = seed_a
 	game.daily_mutator_ids = daily_mutators_first.duplicate()
 	game.mission_finished = true
