@@ -8,6 +8,7 @@ const activator = await readFile(resolve(root, 'scripts/activate-frontend-dist-r
 const deployment = await readFile(resolve(root, 'DEPLOYMENT.md'), 'utf8')
 const pkg = JSON.parse(await readFile(resolve(root, 'package.json'), 'utf8'))
 const frontendWorkflow = await readFile(resolve(root, '.github/workflows/frontend-check.yml'), 'utf8')
+const windowsWorkflow = await readFile(resolve(root, '.github/workflows/windows-publisher-check.yml'), 'utf8')
 
 const checks = [
   ['publisher has a local-only preflight', publisher.includes('[switch]$PreflightOnly') && publisher.includes("mode = if ($PreflightOnly) { 'local-only'")],
@@ -25,6 +26,7 @@ const checks = [
   ['activation runs post-deploy route probes', activator.includes('curl --retry') && activator.includes('$origin/games/')],
   ['publisher check is available through npm', pkg.scripts['qa:windows-publisher'] === 'node scripts/publish-frontend-resumable-smoke.mjs'],
   ['frontend CI covers publisher assets', frontendWorkflow.includes('scripts/publish-frontend-resumable.ps1') && frontendWorkflow.includes('scripts/activate-frontend-dist-remote.sh') && frontendWorkflow.includes('qa:windows-publisher')],
+  ['native Windows CI has valid concurrency expression and PowerShell parser check', windowsWorkflow.includes('runs-on: windows-latest') && windowsWorkflow.includes('group: windows-publisher-${{ github.ref }}') && windowsWorkflow.includes('Parser]::ParseFile')],
   ['deployment docs describe preflight and opt-in activation', deployment.includes('-PreflightOnly') && deployment.includes('-Activate') && deployment.includes('scp -i')],
 ]
 for (const [name, passed] of checks) {
