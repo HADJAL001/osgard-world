@@ -120,6 +120,8 @@ jobs:
         run: npm run qa:games-model
       - name: Test consent-gated commerce and referral event validation
         run: node --test services/osgard-commerce-api/test/core.test.mjs
+      - name: Verify managed OSGARD SELECT promotion configuration and admin controls
+        run: npm run qa:owned-promo-config
       - name: Verify partner inventory and enquiry form
         run: npm run qa:partners-page
       - name: Verify ecosystem links, claims, contacts and privacy boundaries
