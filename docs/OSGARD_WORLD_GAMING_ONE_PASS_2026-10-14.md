@@ -117,3 +117,41 @@ The corresponding GitHub Actions workflow runs the same command on pull requests
 8. Save the JSON and workflow run URL as release evidence.
 
 This document does not certify legal compliance, current uptime, payment readiness or advertising approval. These require live tests and human review.
+
+
+## Reliability upgrade: bounded, auditable one-pass execution
+
+The one-pass runner now treats every QA stage as a bounded operation and persists evidence incrementally.
+
+### Seven concrete engineering improvements
+
+1. **Per-stage timeouts.** QA stages default to 15 minutes, the full release readiness stage to 35 minutes, and the external HTTP audit to 60 seconds. The global --timeout-ms override accepts only 1,000–2,700,000 ms. A hung stage becomes an explicit BLOCK or review-only REVIEW, rather than silently keeping the workflow alive.
+2. **Fresh evidence only.** The runner removes the old external-health report and release-readiness.json before the run. A stale positive report can no longer make a failed or timed-out HTTP process look successful.
+3. **Atomic checkpoints.** The latest report is atomically replaced after each stage. A unique JSON snapshot is also retained at artifacts/runs/<run-id>.json; a cancelled runner leaves the last completed checkpoint available for diagnosis.
+4. **Secret-redacted logs.** The report captures bounded tails of process output, redacts common Stripe secrets, bearer tokens, credential assignments and private-key blocks, and caps stored output. Commands are normalized so local absolute repository paths are not sprayed into evidence.
+5. **Deterministic fingerprints.** Each report includes SHA-256 fingerprints for the normalized plan and its results, along with commit/ref, Node version, platform and architecture. The fingerprint is for integrity/audit comparison, not a digital signature.
+6. **Fail-closed plan validation.** The runner rejects duplicate step IDs, unknown npm scripts, malformed arguments and timeout values outside policy before launching the plan.
+7. **Operator-ready CI summary.** When running in GitHub Actions, the runner updates the job summary with each check's status, duration, bounded details and plan/result fingerprints. It also uploads the execution plan and per-stage checkpoint evidence.
+
+### Reproduce locally
+
+From the repository root:
+
+    npm ci
+    npm run qa:one-pass
+    node scripts/osgard-one-pass-release.mjs --plan-only
+    node scripts/osgard-one-pass-release.mjs
+
+To tune stage timeouts for a constrained runner, use for example:
+
+    node scripts/osgard-one-pass-release.mjs --timeout-ms 900000
+
+The --plan-only option validates the complete npm command map and prints the plan as JSON without running checks or contacting the server. Unknown CLI flags are rejected.
+
+### How to interpret results
+
+- BLOCKED: a critical release stage failed; do not treat this run as release-ready.
+- REVIEW_REQUIRED: all critical stages completed, but one or more optional/external checks need human review.
+- SOURCE_READY_FOR_OPERATOR_REVIEW: all automated stages passed; this still does not mean production deployment, payment activation, ad-network approval, legal approval or external-project security approval has occurred.
+
+Network reachability is evidence about an HTTP response at a moment in time. It is not a security audit, uptime SLA, feature verification or approval to spend money on promotion. Payments and sponsor inventory remain disabled by default.
