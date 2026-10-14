@@ -1,22 +1,8 @@
 import React, { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './styles.css'
-import './miniapp.css'
-import './founders.css'
 import './brand.css'
 import './navigation.css'
-import './create.css'
-import './mobility.css'
-import './surfaces.css'
-import './time.css'
-import './online.css'
-import './legacy.css'
-import './week.css'
-import './recommendations.css'
-import './archive.css'
-import './profile.css'
-import './community.css'
-import './stream.css'
 // Route components are loaded on demand. The shared shell stays small; each product page
 // downloads only its own JavaScript chunk when the route is opened.
 const App = React.lazy(() => import('./App'))
