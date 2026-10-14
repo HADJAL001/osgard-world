@@ -12,9 +12,10 @@ for (const step of plan) {
   }
 }
 for (const id of [
-  'source-preflight','games-portal','game-details','accessibility-funnel','privacy-consent',
-  'owned-promo','partner-studio','campaign-manager','ecosystem-directory','project-intake',
-  'economics-model','external-homepage-http','full-release-readiness'
+  'source-preflight','core-state','core-analytics-consent','product-experiments','ai-release-review',
+  'games-portal','game-details','accessibility-funnel','privacy-consent','owned-promo',
+  'partner-studio','campaign-manager','ecosystem-directory','project-intake','games-assets',
+  'live-bundle-audit','economics-model','player-console','pwa','external-homepage-http','full-release-readiness'
 ]) assert.ok(plan.some(step => step.id === id), 'Missing end-to-end audit stage: ' + id);
 
 const allReachable = evaluateExternalReport({
