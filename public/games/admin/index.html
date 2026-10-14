@@ -129,7 +129,7 @@ async function refresh(seed){
  const tokenAtStart=operatorToken,epoch=operationEpoch,sequence=++refreshSequence;
  if(refreshController)refreshController.abort();
  const controller=new AbortController();refreshController=controller;
- const button=$('#refresh');button.disabled=true;setMessage($('#refresh-status'),'Запрашиваю защищённые агрегаты и сравнимый период…');
+ const button=$('#refresh');button.disabled=true;$('#export').disabled=true;$('#export-csv').disabled=true;setMessage($('#refresh-status'),'Запрашиваю защищённые агрегаты и сравнимый период…');
  try{
   const range=seed?.range||dateRange();
   const previous=logic.previousPeriod(range);
@@ -144,7 +144,7 @@ async function refresh(seed){
   if(sequence!==refreshSequence||tokenAtStart!==operatorToken||epoch!==operationEpoch||controller.signal.aborted)return;
   const comparison=logic.compareMetricRows(collectMetrics(summary),collectMetrics(previousSummary));
   lastAggregateReport={generatedAt:new Date().toISOString(),range,comparisonRange:previous,summary,previousSummary,comparison,cohorts,snapshots};
-  paintMetrics(summary);renderComparison(comparison,range,previous);
+  paintMetrics(summary);renderComparison(comparison,range,previous);$('#export').disabled=false;$('#export-csv').disabled=false;
   setJson('#summary-data',summary);setJson('#cohorts-data',cohorts);setJson('#snapshots-data',snapshots);
   state.textContent='API STATUS / ПОДКЛЮЧЁН';
   setMessage($('#refresh-status'),'Обновлено '+new Date().toLocaleString('ru-RU')+'. Сравнение использует два смежных окна одинаковой длительности.','success');
@@ -188,7 +188,7 @@ function applyPreset(preset){
 function cancelRefreshForInvalidRange(){
  refreshSequence++;
  if(refreshController){refreshController.abort();refreshController=null}
- $('#refresh').disabled=false;
+ $('#refresh').disabled=false;$('#export').disabled=true;$('#export-csv').disabled=true;
 }
 function rangeChanged(){
  document.querySelectorAll('[data-range-preset]').forEach(button=>button.setAttribute('aria-pressed','false'));
@@ -233,7 +233,7 @@ $('#export').addEventListener('click',async()=>{
  }catch(error){
   if(controller.signal.aborted||epoch!==operationEpoch||tokenAtStart!==operatorToken)return;
   setMessage($('#refresh-status'),error instanceof Error?error.message:'Ошибка экспорта','error');
- }finally{if(exportController===controller)exportController=null;button.disabled=false}
+ }finally{if(exportController===controller){exportController=null;if(epoch===operationEpoch&&tokenAtStart===operatorToken)button.disabled=false}}
 });
 $('#export-csv').addEventListener('click',()=>{
  const button=$('#export-csv'),epoch=operationEpoch;
