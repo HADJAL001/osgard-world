@@ -393,7 +393,7 @@ repeatBtn.addEventListener('click',()=>{
  }
  window.dispatchEvent(new CustomEvent('cascade-lab:repeat-identical-run-request',{detail:{
   runId:run.id,levelId:run.levelId,mode:run.mode,dailyDate:run.dailyDate,engineVersion:run.engineVersion,
-  blueprint:run.devices.map(d=>({...d}))
+  simulationProfile:run.simulationProfile,blueprint:run.devices.map(d=>({...d}))
  }}));
  setNote('Запрошен контрольный повтор. Не изменяй схему; следующая запись будет сопоставлена с этой конфигурацией.');
 });
