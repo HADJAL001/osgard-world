@@ -32,6 +32,7 @@ const npm = (id, label, scriptName, options = {}) => ({
 const node = (id, label, args, options = {}) => ({
   id, label, command: process.execPath, args,
   critical: options.critical !== false, kind: options.kind || 'qa',
+  timeoutMs: options.timeoutMs || (options.kind === 'external' ? 60 * 1000 : DEFAULT_STEP_TIMEOUT_MS),
 });
 
 export function buildPlan() {
@@ -67,6 +68,7 @@ export function buildPlan() {
 }
 
 export function summarizeReport(steps) {
+  if (!Array.isArray(steps)) throw new TypeError('steps must be an array');
   const pass = steps.filter((step) => step.status === 'PASS').length;
   const review = steps.filter((step) => step.status === 'REVIEW').length;
   const block = steps.filter((step) => step.status === 'BLOCK').length;
