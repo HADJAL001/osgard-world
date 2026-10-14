@@ -175,3 +175,12 @@ if (!response.ok) {
 - Totals are reported outcomes, not independent accounting data. They remain separated by currency and are not net profit; fees, taxes and chargebacks beyond reported refunds are not calculated here.
 - First-party analytics still measures consented visible promos and outbound clicks separately. A click is not a conversion; UTM labels do not prove causality.
 - This source change adds the bridge but does **not** connect the destination domains automatically, provision their secrets, deploy/restart the API, or prove that any conversions exist. Each destination backend needs its own integration and privacy review before its events appear.
+
+
+## CIVIC CASCADE OpenAI Strategy Advisor
+
+The optional read-only strategy critique uses Nginx's same-origin prefix. Public status path: /commerce-api/v1/civic-cascade-advisor/status. Public request path: /commerce-api/v1/civic-cascade-advisor. Internally, Node receives /v1/civic-cascade-advisor/status and /v1/civic-cascade-advisor after Nginx removes the /commerce-api prefix.
+
+Set OPENAI_CIVIC_ADVISOR_ENABLED=false by default, OPENAI_CIVIC_ADVISOR_MODEL=gpt-6.1-sol, and OPENAI_API_KEY only in the private server environment. Real requests require an explicit per-request checkbox and a separate button press. The API validates a bounded allow-listed game snapshot, uses strict JSON Schema and store=false, and cannot execute commands or modify the simulation. Keep the API key and complete service environment in a file outside the web root with restrictive permissions.
+
+After deployment, verify /commerce-api/healthz and GET /commerce-api/v1/civic-cascade-advisor/status. The Advisor should report enabled=false until the feature flag and server key are explicitly configured. The status request does not contain gameplay data. A disabled or unavailable response must not send the game-state snapshot to OpenAI.
