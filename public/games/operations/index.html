@@ -90,6 +90,9 @@
     { id:'privacy', label:'Конфиденциальность', path:'/privacy/', group:'Право', marker:'Конфиденциальность OSGARD PLAY', type:'html', description:'Стартовый документ; юридическую применимость необходимо проверить отдельно.' },
     { id:'terms', label:'Условия использования', path:'/terms/', group:'Право', marker:'Условия использования OSGARD PLAY', type:'html', description:'Стартовый документ; юридическую применимость необходимо проверить отдельно.' },
     { id:'commerce-config', label:'Публичная конфигурация Commerce API', path:'/games/commerce-config.json', group:'Коммерция', type:'json', description:'Читает только публичный URL API. Секреты не должны размещаться в этом файле.' },
+    { id:'player-reliability', label:'Диагностика запуска игрока', path:'/games/player-reliability.js', group:'Игровой плеер', marker:'osgard.play-support-report', type:'js', description:'Локальный отчёт по запросу пользователя; данные не отправляются автоматически.' },
+    { id:'player-preferences-backup', label:'Резервная копия коллекции', path:'/games/player-preferences-backup.js', group:'Игровой плеер', marker:'osgard.player-preferences', type:'js', description:'Локальный JSON-экспорт избранного/истории и валидация импорта.' },
+    { id:'player-tools-css', label:'Стили инструментов игрока', path:'/games/player-tools.css', group:'Игровой плеер', marker:'.player-reliability-hint', type:'css', description:'Адаптивные стили подсказки, диагностики и доступных кнопок.' },
     { id:'analytics-auth', label:'Защита аналитического API', path:'/api/v1/analytics/summary?from=0&to=1', group:'Безопасность', type:'json', expectedStatuses:[401,403], description:'Без токена защищённый endpoint обязан вернуть JSON 401/403, а не данные или SPA HTML.' }
   ];
   const $ = (selector) => document.querySelector(selector);
