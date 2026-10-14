@@ -660,14 +660,18 @@ const preferenceEnd=recommendationScript.indexOf('\nfunction writeServicePrefere
 assert.ok(preferenceStart>=0&&preferenceEnd>preferenceStart,'Service preference reader must be independently testable')
 const preferenceReaderSource=recommendationScript.slice(preferenceStart,preferenceEnd)
 const emptyPreferenceStorage={getItem(){return null}}
-const defaultPreferences=new Function('localStorage','memoryServicePreferences','servicePreferencesKey','availableServiceIds','frequencyValues',preferenceReaderSource+';return readServicePreferences()')(emptyPreferenceStorage,null,'osgard.games.postgame-service-preferences.v1',serviceIdsForCadence,['each','every3','off'])
+const defaultPromoTestConfig={enabled:true,defaultFrequency:'each',enabledServices:serviceIdsForCadence.slice(),defaultSelectedServices:serviceIdsForCadence.slice(),spotlightService:'auto',showShareRewards:true}
+const defaultPreferences=new Function('localStorage','memoryServicePreferences','servicePreferencesKey','availableServiceIds','frequencyValues','managedPromoConfig',preferenceReaderSource+';return readServicePreferences()')(emptyPreferenceStorage,null,'osgard.games.postgame-service-preferences.v1',serviceIdsForCadence,['each','every3','off'],defaultPromoTestConfig)
 assert.equal(defaultPreferences.frequency,'each','A new player should see the owned-service chooser after every completed round')
-assert.ok(!new Function('localStorage','memoryServicePreferences','servicePreferencesKey','availableServiceIds','frequencyValues',preferenceReaderSource+';return readServicePreferences()')(emptyPreferenceStorage,null,'osgard.games.postgame-service-preferences.v1',legacyServicePreferenceIds,['each','every3','off']).selected.includes('partner-studio'),'An existing explicit preference list must not silently opt the user into a new promotional service')
+const legacyPromoTestConfig={...defaultPromoTestConfig,enabledServices:legacyServicePreferenceIds.slice(),defaultSelectedServices:legacyServicePreferenceIds.slice()}
+assert.ok(!new Function('localStorage','memoryServicePreferences','servicePreferencesKey','availableServiceIds','frequencyValues','managedPromoConfig',preferenceReaderSource+';return readServicePreferences()')(emptyPreferenceStorage,null,'osgard.games.postgame-service-preferences.v1',legacyServicePreferenceIds,['each','every3','off'],legacyPromoTestConfig).selected.includes('partner-studio'),'A config with a smaller approved list must not opt new players into excluded services')
+assert.ok(recommendationScript.includes('localStorage.getItem(servicePreferencesKey)'),'Existing explicit local player preferences must remain readable')
 const cadenceStart=recommendationScript.indexOf('function shouldShowServicePromos(')
-const cadenceEnd=recommendationScript.indexOf('\nfunction chooseSpotlightService(',cadenceStart)
+const cadenceEnd=recommendationScript.indexOf('\\nfunction chooseSpotlightService(',cadenceStart)
 assert.ok(cadenceStart>=0&&cadenceEnd>cadenceStart,'Service promotion cadence gate must be independently testable')
 const cadenceSource=recommendationScript.slice(cadenceStart,cadenceEnd)
-const shouldShowPromo=new Function('preferences','completedCount','readPromoSnoozeUntil',cadenceSource+';return shouldShowServicePromos(preferences,completedCount)')
+const shouldShowPromoImpl=new Function('preferences','completedCount','readPromoSnoozeUntil','managedPromoConfig',cadenceSource+';return shouldShowServicePromos(preferences,completedCount)')
+const shouldShowPromo=(preferences,completedCount,readPromoSnoozeUntil)=>shouldShowPromoImpl(preferences,completedCount,readPromoSnoozeUntil,defaultPromoTestConfig)
 const noPromoPause=()=>0
 assert.equal(shouldShowPromo(defaultPreferences,1,noPromoPause),true,'Default cadence must show after the first completed round')
 assert.equal(shouldShowPromo(defaultPreferences,2,noPromoPause),true,'Default cadence must show after each completed round')
