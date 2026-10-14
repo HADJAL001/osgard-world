@@ -221,7 +221,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
              ? text.includes('<title>INHERIT — The Quiet Reach</title>') && text.includes('id="world"') && text.includes('id="pass"') && text.includes('Leave one trace')
            : route === '/games/remix/' || route === '/games/remix/index.html'
              ? text.includes('<title>REMIX — OSGARD WORLD GAMING</title>') && text.includes('href="/games/remix/player/index.html"') && text.includes('Invite a rival.')
-           : : route === '/entertainment' || route === '/entertainment/'
+           : route === '/entertainment' || route === '/entertainment/'
             ? new URL(response.url).pathname === '/entertainment/' &&
               text.includes('<title>OSGARD ENTERTAINMENT — Играй. Исследуй. Передавай вызов.</title>') &&
               text.includes('id="world-catalog"') &&
