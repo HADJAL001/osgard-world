@@ -6,16 +6,19 @@ import {
 } from 'lucide-react'
 import { OsgardLogo } from './OsgardLogo'
 import { recordOsgardEvent } from './core/eventQueue'
+// @ts-expect-error Runtime-only consent helper; default-deny behavior is covered by Node smoke tests.
+import { updateAnalyticsConsent } from './core/analyticsConsent.mjs'
 import { getRelatedGames, type RecommendationReason } from './core/gameRecommendations.mjs'
 // @ts-expect-error Runtime-only JavaScript helper, covered by a Node smoke suite.
 import { createSessionClock, isTrustedGameLifecycleMessage } from './core/gameSessionLifecycle.mjs'
 import type { OsgardEventName } from './core/manifest'
 import './games-hub.css'
+import { GameIntermissionSponsor } from './GameIntermissionSponsor'
 
 type Locale = 'ru' | 'en'
 type Category = 'all' | 'strategy' | 'coop' | 'tactical' | 'world' | 'creative'
 type DeviceFilter = 'all' | 'desktop' | 'mobile'
-type Consent = 'granted' | 'denied' | null
+type Consent = 'yes' | 'no' | null
 
 type GameDefinition = {
   id: string
@@ -285,7 +288,11 @@ function readStringList(key: string): string[] {
 function readConsent(): Consent {
   try {
     const value = localStorage.getItem(ANALYTICS_CONSENT_KEY)
-    return value === 'granted' || value === 'denied' ? value : null
+    if (value === 'yes') return 'yes'
+    if (value === 'no') return 'no'
+    if (value === 'granted') return updateAnalyticsConsent(true).ok ? 'yes' : null
+    if (value === 'denied') return updateAnalyticsConsent(false).ok ? 'no' : null
+    return null
   } catch {
     return null
   }
@@ -298,11 +305,15 @@ function storeStringList(key: string, items: string[]) {
 }
 
 function storeConsent(value: Exclude<Consent, null>) {
-  try { localStorage.setItem(ANALYTICS_CONSENT_KEY, value) } catch { /* consent remains in memory */ }
+  try {
+    const result = updateAnalyticsConsent(value === 'yes')
+    if (value === 'no') window.OSGARD_CONSENTED_ANALYTICS?.clear?.()
+    return result.ok
+  } catch { return false }
 }
 
 function track(name: OsgardEventName, payload: Record<string, unknown>, consent: Consent) {
-  if (consent !== 'granted') return
+  if (consent !== 'yes') return
   try { recordOsgardEvent(name, payload) } catch { /* analytics must never block gameplay */ }
 }
 
@@ -351,8 +362,9 @@ function useLocalCatalogState() {
     track('portal_opened', { surface: 'games-catalog', action: 'favorite_toggled', game: id, active: next.includes(id) }, consent)
   }
   const chooseConsent = (value: Exclude<Consent, null>) => {
-    storeConsent(value)
-    setConsent(value)
+    const stored = storeConsent(value)
+    setConsent(stored ? value : null)
+    return stored
   }
   useEffect(() => {
     const onStorage = (event: StorageEvent) => {
@@ -377,6 +389,7 @@ export function GameDetailPage({ slug }: { slug: string }) {
   const ru = locale === 'ru'
   const { favorites, recent, consent, remember, toggleFavorite, chooseConsent } = useLocalCatalogState()
   const [playing, setPlaying] = useState(() => new URLSearchParams(window.location.search).get('launch') === '1')
+  const [showAfterSession, setAfterSession] = useState(false)
   const [loadingGame, setLoadingGame] = useState(true)
   const [frameError, setFrameError] = useState(false)
   const [notice, setNotice] = useState('')
@@ -428,7 +441,7 @@ export function GameDetailPage({ slug }: { slug: string }) {
   }, [game?.id, locale])
 
   useEffect(() => {
-    if (game && consent === 'granted' && detailTracked.current !== game.id) {
+    if (game && consent === 'yes' && detailTracked.current !== game.id) {
       detailTracked.current = game.id
       track('game_opened', { game: game.id, surface: 'game-detail' }, consent)
     }
@@ -578,6 +591,7 @@ export function GameDetailPage({ slug }: { slug: string }) {
     frameValidatedRef.current = false
     setLoadingGame(true)
     setFrameError(false)
+    setAfterSession(false)
     setPlaying(true)
   }
 
@@ -636,7 +650,7 @@ export function GameDetailPage({ slug }: { slug: string }) {
         </section>
         <section className="gh-detail-info-grid"><article><p className="gh-eyebrow">01 / INPUT</p><h2>{ru ? 'Управление' : 'Controls'}</h2><p>{ru ? game.controlsRu : game.controlsEn}</p></article><article><p className="gh-eyebrow">02 / PLATFORM</p><h2>{ru ? 'Совместимость' : 'Compatibility'}</h2><p>{ru ? game.supportRu : game.supportEn}</p><small>{ru ? 'Фактическую производительность проверяйте на целевом устройстве и браузере.' : 'Verify actual performance on the target device and browser.'}</small></article><article><p className="gh-eyebrow">03 / FEATURES</p><h2>{ru ? 'Что внутри' : 'What is inside'}</h2><ul>{(ru ? game.featuresRu : game.featuresEn).map(feature => <li key={feature}><Check size={14} />{feature}</li>)}</ul></article></section>
       </> : <section className="gh-play-screen">
-        <div className="gh-play-toolbar"><div><span className="gh-play-live" /><strong>{gameTitle(game, locale)}</strong><small>{ru ? 'Игровая сессия' : 'Game session'}</small></div><div><a href={game.href} target="_blank" rel="noopener noreferrer">{ru ? 'Открыть в отдельной вкладке' : 'Open in new tab'}<ExternalLink size={14} /></a><button type="button" onClick={toggleFullscreen} aria-pressed={isFullscreen} aria-label={isFullscreen ? (ru ? 'Выйти из полноэкранного режима' : 'Exit fullscreen') : (ru ? 'На весь экран' : 'Fullscreen')}><Maximize2 size={15} />{isFullscreen ? (ru ? 'Выйти из полного экрана' : 'Exit fullscreen') : (ru ? 'На весь экран' : 'Fullscreen')}</button><button type="button" onClick={() => setPlaying(false)}><X size={15} />{ru ? 'Закрыть игру' : 'Close game'}</button></div></div>
+        <div className="gh-play-toolbar"><div><span className="gh-play-live" /><strong>{gameTitle(game, locale)}</strong><small>{ru ? 'Игровая сессия' : 'Game session'}</small></div><div><a href={game.href} target="_blank" rel="noopener noreferrer">{ru ? 'Открыть в отдельной вкладке' : 'Open in new tab'}<ExternalLink size={14} /></a><button type="button" onClick={toggleFullscreen} aria-pressed={isFullscreen} aria-label={isFullscreen ? (ru ? 'Выйти из полноэкранного режима' : 'Exit fullscreen') : (ru ? 'На весь экран' : 'Fullscreen')}><Maximize2 size={15} />{isFullscreen ? (ru ? 'Выйти из полного экрана' : 'Exit fullscreen') : (ru ? 'На весь экран' : 'Fullscreen')}</button><button type="button" onClick={() => { setPlaying(false); setAfterSession(true) }}><X size={15} />{ru ? 'Закрыть игру' : 'Close game'}</button></div></div>
         <div className="gh-game-stage" ref={stageRef} tabIndex={-1} aria-label={ru ? 'Игровая сцена' : 'Game stage'}>
           {loadingGame && !frameError && <div className="gh-game-loading" role="status" aria-live="polite"><span className="gh-loader" aria-hidden="true" /><p>{ru ? 'Подключаем игровой мир…' : 'Loading game world…'}</p></div>}
           {frameError ? <div className="gh-game-error" role="alert"><p>{ru ? 'Не удалось загрузить встроенную игру.' : 'The embedded game could not be loaded.'}</p><div className="gh-game-error-actions"><button className="gh-secondary" type="button" onClick={() => { frameValidatedRef.current = false; setFrameError(false); setLoadingGame(true); setFrameAttempt(value => value + 1) }}>{ru ? 'Повторить запуск' : 'Retry launch'}</button><a className="gh-primary" href={game.href} target="_blank" rel="noopener noreferrer">{ru ? 'Открыть игру отдельно' : 'Open game separately'}<ExternalLink size={15} /></a></div></div> : <iframe key={frameAttempt} tabIndex={0} title={gameTitle(game, locale)} src={game.href} onLoad={() => {
@@ -696,11 +710,13 @@ export function GameDetailPage({ slug }: { slug: string }) {
         <p id="gh-play-note" className="gh-play-note">{ru ? 'Игра выполняется в отдельном встроенном окне. Если управление или сетевой режим работают некорректно, откройте её в отдельной вкладке.' : 'The game runs in an embedded frame. If controls or network play do not work correctly, open it in a separate tab.'}</p>
       </section>}
 
+      {showAfterSession && !playing && <GameIntermissionSponsor gameId={game.id} locale={locale} />}
+
       <section className="gh-related"><div className="gh-section-heading"><div><p className="gh-eyebrow">NEXT / CONTINUE EXPLORING</p><h2>{ru ? 'Другие игровые миры' : 'More game worlds'}</h2></div><a className="gh-text-link" href="/games">{ru ? 'Весь каталог' : 'Full catalog'}<ArrowUpRight size={15} /></a></div><div className="gh-related-grid">{relatedGames.map(({ game: item, reason }) => <a href={'/game/' + item.id} key={item.id} className={'gh-related-card gh-related-card--' + item.theme}><span>{item.mark}</span><div><small>{ru ? item.genreRu : item.genreEn}</small><strong>{gameTitle(item, locale)}</strong><em className="gh-related-reason">{recommendationReasonLabel(reason, locale)}</em></div><ArrowUpRight size={15} /></a>)}</div></section>
     </div>
 
     <footer className="gh-footer"><a href="/" className="gh-footer-brand"><OsgardLogo variant="footer" /></a><span>© OSGARD WORLD · PLAY WITH PURPOSE</span><div><a href="/privacy">{ru ? 'Конфиденциальность' : 'Privacy'}</a><a href="/terms">{ru ? 'Условия' : 'Terms'}</a><button type="button" onClick={() => setConsentPanelOpen(true)}>{ru ? 'Настройки аналитики' : 'Analytics settings'}</button></div></footer>
-    {consentPanelOpen && <div className="gh-consent" role="dialog" aria-modal="true" aria-labelledby="gh-consent-title"><div className="gh-consent-mark"><ShieldGlyph /></div><div className="gh-consent-copy"><strong id="gh-consent-title">{ru ? 'Вы управляете игровой аналитикой' : 'You control game analytics'}</strong><p>{ru ? 'События игрового раздела отправляются только после согласия. Избранное и история используются локально.' : 'Games-section events are sent only after consent. Favorites and history are stored locally.'}</p></div><div className="gh-consent-actions"><button type="button" className="gh-consent-accept" onClick={() => { chooseConsent('granted'); setConsentPanelOpen(false) }}><Check size={15} />{ru ? 'Разрешить' : 'Allow'}</button><button type="button" className="gh-consent-deny" onClick={() => { chooseConsent('denied'); setConsentPanelOpen(false) }}>{ru ? 'Не разрешать' : 'Decline'}</button><button type="button" className="gh-consent-close" onClick={() => setConsentPanelOpen(false)} aria-label={ru ? 'Закрыть настройки' : 'Close settings'}><X size={15} /></button></div></div>}
+    {consentPanelOpen && <div className="gh-consent" role="dialog" aria-modal="true" aria-labelledby="gh-consent-title"><div className="gh-consent-mark"><ShieldGlyph /></div><div className="gh-consent-copy"><strong id="gh-consent-title">{ru ? 'Вы управляете игровой аналитикой' : 'You control game analytics'}</strong><p>{ru ? 'События игрового раздела отправляются только после согласия. Избранное и история используются локально.' : 'Games-section events are sent only after consent. Favorites and history are stored locally.'}</p></div><div className="gh-consent-actions"><button type="button" className="gh-consent-accept" onClick={() => { const saved = chooseConsent('yes'); setConsentPanelOpen(false); if (!saved) setNotice(ru ? 'Не удалось сохранить выбор. Необязательная аналитика останется выключенной.' : 'Your choice could not be saved. Optional analytics will remain disabled.') }}><Check size={15} />{ru ? 'Разрешить' : 'Allow'}</button><button type="button" className="gh-consent-deny" onClick={() => { const saved = chooseConsent('no'); setConsentPanelOpen(false); if (!saved) setNotice(ru ? 'Не удалось сохранить выбор. Необязательная аналитика останется выключенной.' : 'Your choice could not be saved. Optional analytics will remain disabled.') }}>{ru ? 'Не разрешать' : 'Decline'}</button><button type="button" className="gh-consent-close" onClick={() => setConsentPanelOpen(false)} aria-label={ru ? 'Закрыть настройки' : 'Close settings'}><X size={15} /></button></div></div>}
     {notice && <div className="gh-toast" role="status">{notice}<button type="button" onClick={() => setNotice('')} aria-label={ru ? 'Закрыть уведомление' : 'Dismiss notice'}><X size={14} /></button></div>}
   </main>
 }

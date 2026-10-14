@@ -53,11 +53,35 @@ test("active catalog campaign needs a window that includes now", () => {
   }, { nowMs: now }).code, "CAMPAIGN_ACTIVE_WINDOW_MUST_INCLUDE_NOW");
 });
 
-test("active campaigns cannot use slots without a tested public integration", () => {
-  assert.equal(validateCampaignPayload({
+test("after-session campaigns are publishable while in-game slots remain blocked", () => {
+  const active = validateCampaignPayload({
     ...base, placement: "after_session", status: "active",
     startsAt: "2026-10-14T11:00:00Z", endsAt: "2026-10-15T11:00:00Z",
-  }, { nowMs: now }).code, "CAMPAIGN_PLACEMENT_NOT_INTEGRATED");
+  }, { nowMs: now });
+  assert.equal(active.ok, true);
+  assert.equal(active.data.placement, "after_session");
+  assert.equal(publicCampaignView({
+    campaign_id: "cmp_87654321", sponsor_name: active.data.sponsorName,
+    title: active.data.title, description: active.data.description, target_url: active.data.targetUrl,
+    placement: active.data.placement, sponsor_disclosure: active.data.sponsorDisclosure,
+    status: active.data.status, starts_at: new Date(active.data.startsAt), ends_at: new Date(active.data.endsAt),
+    frequency_cap: active.data.frequencyCap,
+  }).placement, "after_session");
+
+  const scheduled = validateCampaignPayload({
+    ...base, placement: "after_session", status: "scheduled",
+    startsAt: "2026-10-15T00:00:00Z", endsAt: "2026-10-20T00:00:00Z",
+  }, { nowMs: now });
+  assert.equal(scheduled.ok, true);
+
+  for (const status of ["active", "scheduled"]) {
+    const result = validateCampaignPayload({
+      ...base, placement: "game_event", status,
+      startsAt: status === "active" ? "2026-10-14T11:00:00Z" : "2026-10-15T00:00:00Z",
+      endsAt: "2026-10-20T00:00:00Z",
+    }, { nowMs: now });
+    assert.equal(result.code, "CAMPAIGN_PLACEMENT_NOT_INTEGRATED");
+  }
 });
 
 test("non-HTTPS, credentialed, queried and fragmented links fail closed", () => {

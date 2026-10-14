@@ -5,6 +5,9 @@ import { resolve } from "node:path";
 const read = (path) => readFileSync(resolve(path), "utf8");
 const required = [
   "services/osgard-commerce-api/src/campaigns.mjs",
+  "src/GameIntermissionSponsor.tsx",
+  "src/game-intermission-sponsor.css",
+  "scripts/game-intermission-sponsor-smoke.mjs",
   "services/osgard-commerce-api/test/campaigns.test.mjs",
   "public/games/admin/campaigns/index.html",
   "public/games/admin/campaigns/admin.css",
@@ -21,6 +24,9 @@ const validator = read("services/osgard-commerce-api/src/campaigns.mjs");
 const publicPage = read("public/games/index.html");
 const publicScript = read("public/games/sponsored-campaigns.js");
 const publicCss = read("public/games/sponsored-campaigns.css");
+const intermission = read("src/GameIntermissionSponsor.tsx");
+const intermissionCss = read("src/game-intermission-sponsor.css");
+const gameDetail = read("src/GameDetailPage.tsx");
 const adminPage = read("public/games/admin/campaigns/index.html");
 const adminScript = read("public/games/admin/campaigns/admin.js");
 const adminCss = read("public/games/admin/campaigns/admin.css");
@@ -39,7 +45,8 @@ assert.equal(server.split('app.get("/v1/campaigns/active"').length - 1, 1);
 assert.equal(server.split('app.get("/v1/admin/campaigns"').length - 1, 1);
 assert.ok(server.includes("requireAdmin, async (_req, res)") && server.includes('"/v1/admin/campaigns"'), "Admin list must use the existing auth middleware");
 assert.ok(server.includes("pg_advisory_xact_lock(20261014)"), "Parallel publish operations must be serialized");
-assert.ok(server.includes("LIMIT 3") && server.includes("CAMPAIGN_SLOT_FULL"), "Public campaign inventory must be bounded");
+assert.ok(server.includes("LIMIT $2") && server.includes("placement === \"after_session\" ? 1 : 3") && server.includes("maxActiveAfterSessionItems: 1") && server.includes("CAMPAIGN_SLOT_FULL"), "Catalog (3) and after-session (1) inventories must be bounded");
+assert.ok(validator.includes("[\"catalog_feature\", \"after_session\"]") && intermission.includes("placement=after_session") && gameDetail.includes("<GameIntermissionSponsor gameId={game.id} locale={locale} />"), "After-session placement must be validated, fetched and rendered only on game details");
 assert.ok(server.includes("CASE WHEN status = 'scheduled' AND starts_at <= NOW() AND ends_at > NOW() THEN 'active'"), "Scheduled campaigns must become public when their approved time window starts.");
 assert.ok(server.includes("starts_at < $2 AND ends_at > $1") && server.includes("status IN ('active','scheduled')"), "Active and scheduled slot limits must count overlapping time windows.");
 assert.ok(server.includes("CREATE TABLE IF NOT EXISTS commerce_campaigns") && server.includes("commerce_campaigns_public_idx"), "Campaign schema/index is missing");
@@ -74,6 +81,9 @@ assert.ok(publicScript.includes("card.textContent") || publicScript.includes("te
 assert.ok(publicCss.includes("prefers-reduced-motion:reduce") && publicCss.includes("@media(max-width:540px)"));
 assert.ok(adminPage.includes('name="robots" content="noindex,nofollow,noarchive"') && adminPage.includes('id="campaign-form"'));
 assert.ok(adminPage.includes("Максимум 3 активных карточки"));
+assert.ok(adminPage.includes("Между игровыми сессиями · подключено") && adminPage.includes("экрана между игровыми сессиями"), "Campaign editor must describe the new intermission slot accurately");
+assert.ok(intermission.includes("if (!hasConsent()) return") && intermission.includes("IntersectionObserver") && intermission.includes("}, 1000)"), "Intermission metrics require consent and a visible card for one second");
+assert.ok(intermissionCss.includes("@media(max-width:620px)") && intermissionCss.includes("prefers-reduced-motion:reduce"), "Intermission card must support phones and reduced motion");
 assert.ok(adminCss.includes("@media(max-width:760px)") && adminCss.includes("focus-visible"));
 assert.ok(adminScript.includes("Authorization: 'Bearer '") && adminScript.includes("credentials: 'omit'"));
 assert.ok(adminScript.includes("parsed.origin === location.origin") && adminScript.includes("parsed.pathname === '/commerce-api'") && adminScript.includes("Never send it to an arbitrary"), "Privileged admin token must be restricted to the same-origin API or local development endpoint.");
