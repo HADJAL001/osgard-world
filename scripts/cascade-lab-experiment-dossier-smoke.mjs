@@ -25,4 +25,4 @@ for (const field of [
 assert.match(exporter, /URL\.createObjectURL/, 'dossier must download a local JSON file');
 assert.doesNotMatch(exporter, /\b(?:fetch|XMLHttpRequest|sendBeacon)\s*\(/, 'export must not send telemetry over the network');
 
-console.log('CASCADE LAB experiment dossier smoke: PASS — v0.16.0 metadata, UI wiring, measurements, event ledger and local-only export.');
+console.log('CASCADE LAB experiment dossier smoke: PASS — v0.17.0 metadata, UI wiring, measurements, event ledger and local-only export.');
