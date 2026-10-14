@@ -707,7 +707,12 @@ const firstSessionId='session_swarm_qa_1000'
 mockDocument.dispatch('osgard:game-completed',{detail:{game:'swarm',sessionId:firstSessionId}})
 const firstProgress=JSON.parse(mockLocalStorage.getItem('osgard.games.postgame-service-progress.v1'))
 assert.equal(firstProgress.count,1,'The completed game event should count one OSGARD intermission')
+const firstInlineSuite=mockHost.children.find(node=>node.className==='og-postgame-suite')
+assert.ok(firstInlineSuite,'The first completed session must render the in-player intermission')
+mockDocument.dispatch('osgard:game-session-ended',{detail:{game:'swarm',sessionId:firstSessionId,reason:'game_completed',durationSeconds:31,sessionStarted:true}})
+assert.equal(mockHost.children.find(node=>node.className==='og-postgame-suite'),firstInlineSuite,'The paired completed/session-ended events for one session must not rebuild the chooser')
 mockDocument.dispatch('osgard:game-session-ended',{detail:{game:'swarm',sessionId:firstSessionId,reason:'closed_by_user',durationSeconds:31,sessionStarted:true}})
+assert.equal(mockHost.children.find(node=>node.className==='og-postgame-suite'),firstInlineSuite,'Closing a completed session must not rebuild a chooser inside the dialog that is closing')
 const afterSameSessionReturn=JSON.parse(mockLocalStorage.getItem('osgard.games.postgame-service-progress.v1'))
 assert.equal(afterSameSessionReturn.count,1,'Completion and closing the same game session must not increment cadence twice')
 assert.deepEqual(afterSameSessionReturn.sessions,[firstSessionId],'Intermission cadence should persist its idempotency key')
@@ -796,6 +801,8 @@ mockDocument.dispatch('osgard:game-session-ended',{detail:{game:'patina',reason:
 assert.equal(mockOutside.hidden,false,'Closing a live PATINA session should show the owned-service intermission outside the player dialog')
 const outsideSuite=mockOutside.children.find(node=>node.className==='og-postgame-suite og-postgame-outside-suite')
 assert.ok(outsideSuite,'Closed-session intermission should contain a standalone service/reward suite')
+assert.equal(outsideSuite.children[0].children[1].focused,true,'The outside intermission heading should receive keyboard focus after the player dialog closes')
+assert.ok(recommendationScript.includes('intermissionHeading.tabIndex=-1')&&recommendationScript.includes('intermissionHeading.focus({preventScroll:true})'),'Keyboard users must be moved to the post-session choices after closing the player')
 assert.equal(outsideSuite.children.find(node=>node.className==='og-postgame-services').children.find(node=>node.className==='og-postgame-service-grid').children.length,10,'Closed-session intermission should show all ten eligible services, including Partner Studio, while excluding the unverified VPN')
 assert.equal(outsideSuite.children.find(node=>node.className==='og-postgame-back').href,'#catalog','Players must have a clear path back to the next game');
 const outsideCards=outsideSuite.children.find(node=>node.className==='og-postgame-services').children.find(node=>node.className==='og-postgame-service-grid').children;
