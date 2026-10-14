@@ -5,7 +5,7 @@ import { runInNewContext } from 'node:vm';
 const html = readFileSync(new URL('../public/games/cascade-lab/index.html', import.meta.url), 'utf8');
 const source = readFileSync(new URL('../public/games/cascade-lab/hypothesis-lab.js', import.meta.url), 'utf8');
 
-assert.match(html, /osgard-game-version" content="0\.18\.0-hypothesis-lab"/, 'the game release metadata must identify 0.18.0');
+assert.match(html, /osgard-game-version" content="0\.19\.0-failure-autopsy"/, 'the game release metadata must identify 0.19.0');
 assert.match(html, /<title>CASCADE LAB — Premium Physics Lab 0\.18\.0<\/title>/, 'the browser title must match the release');
 assert.ok(html.includes('id="CASCADELAB018"') && html.includes('data-cascade-lab-experiment="0.18.0"') && html.includes('hypothesis-lab.js?v=0.18.0'), 'the hypothesis layer must be versioned and cache-busted');
 for (const marker of [
