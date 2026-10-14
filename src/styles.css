@@ -373,3 +373,13 @@ header nav .nav-skillcred svg{width:14px}
 .play-select-preferences-status{min-height:1em;margin:0;color:#d8c696;font-size:9px;line-height:1.5}
 .play-select-preferences-note{margin:0}
 @media(max-width:600px){.play-select-preferences-bar{align-items:flex-start;flex-direction:column}.play-select-preferences-toggle{width:100%}.play-select-preference-grid{grid-template-columns:1fr}.play-select-preference-actions{display:grid;grid-template-columns:1fr}.play-select-preference-actions button{width:100%}}
+
+/* Global launch performance: reserve the 3D globe's space while its optional chunk waits for visibility. */
+.globe-mount{display:grid;place-items:center;width:min(58vw,650px);height:min(58vw,650px);min-width:0;min-height:0}
+.globe-mount>.globe{width:100%;height:100%}
+.globe-fallback{border-radius:50%;background:radial-gradient(circle at 52% 42%,rgba(212,175,55,.16),rgba(59,130,246,.11) 31%,transparent 68%);box-shadow:inset 0 0 52px rgba(212,175,55,.09);filter:drop-shadow(0 0 32px rgba(59,130,246,.12))}
+.route-loading{min-height:100svh;display:grid;place-content:center;justify-items:center;gap:14px;padding:24px;background:radial-gradient(ellipse at 50% 40%,rgba(212,175,55,.09),transparent 35%),#01040a;color:#e8e6e1;text-align:center}
+.route-loading-mark{display:grid;place-items:center;width:52px;height:52px;border:1px solid rgba(212,175,55,.66);border-radius:50%;color:#d4af37;font:300 24px/1 Georgia,serif;box-shadow:0 0 34px rgba(212,175,55,.12)}
+.route-loading p{margin:0;color:#a9afb9;font-size:12px;letter-spacing:.08em}
+@media(max-width:760px){.globe-mount{width:94vw;height:94vw}}
+@media(prefers-reduced-motion:reduce){.globe-fallback{animation:none!important}.route-loading-mark{box-shadow:none}}
