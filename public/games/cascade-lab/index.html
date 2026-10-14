@@ -2405,7 +2405,7 @@ else if (launchIntent.solution) analytics.track('solution_opened', { levelId: le
 updateInterface();
 renderAnalyticsConsent();
 analytics.startSession();
-notifyOsgardLifecycle('ready', { version: '0.14.0' });
+notifyOsgardLifecycle('ready', { version: '0.16.0' });
 let seen = false; try { seen = localStorage.getItem('cascade-lab-help-seen') === '1'; } catch {}
 if (!seen) setTimeout(openHelp, 500);
 requestAnimationFrame(frame);
