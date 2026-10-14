@@ -2466,6 +2466,10 @@ renderAnalyticsConsent();
 analytics.startSession();
 window.addEventListener('cascade-lab:repeat-identical-run-request', event => {
   const request = event.detail || {};
+  if (request.engineVersion !== '0.27.0') {
+    showToast('Контрольный повтор доступен только для записи той же версии физического движка.');
+    return;
+  }
   if (!['won', 'lost'].includes(mode) || Number(request.levelId) !== level.id ||
       String(request.mode || '') !== analyticsMode() ||
       (request.dailyDate || null) !== (activeDailyChallenge?.date || null)) {
