@@ -34,8 +34,12 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
-      - name: Validate the one-pass command plan and safe activation defaults
-        run: node scripts/osgard-one-pass-release-smoke.mjs
+      - name: Test one-pass timeouts, plan validation, and log redaction
+        run: npm run qa:one-pass
+      - name: Save the validated execution plan
+        run: |
+          mkdir -p artifacts
+          node scripts/osgard-one-pass-release.mjs --plan-only > artifacts/osgard-one-pass-plan.json
       - name: Run the full OSGARD ecosystem release pass
         run: node scripts/osgard-one-pass-release.mjs
       - name: Upload release and external-project evidence
@@ -46,6 +50,8 @@ jobs:
           if-no-files-found: warn
           path: |
             artifacts/osgard-one-pass-release.json
+            artifacts/osgard-one-pass-plan.json
+            artifacts/runs/*.json
             artifacts/external-project-health.json
             release-readiness.json
             production-route-matrix.json
