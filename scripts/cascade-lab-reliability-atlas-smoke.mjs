@@ -9,12 +9,12 @@ await import(new URL('../public/games/cascade-lab/reliability-atlas.js', import.
 const api = globalThis.__CASCADELAB027_TEST__;
 
 assert.ok(api && api.version === '0.27.0', 'pure Reliability Atlas API must be available');
-assert.match(html, /osgard-game-version" content="0\\.27\\.0-reliability-atlas"/, 'game version must identify v0.27.0');
-assert.match(html, /<title>CASCADE LAB — Premium Physics Lab 0\\.27\\.0<\\/title>/, 'document title must identify v0.27.0');
+assert.ok(html.includes('name="osgard-game-version" content="0.27.0-reliability-atlas"'), 'game version must identify v0.27.0');
+assert.ok(html.includes('<title>CASCADE LAB — Premium Physics Lab 0.27.0</title>'), 'document title must identify v0.27.0');
 assert.ok(html.includes('id="CASCADELAB027"') && html.includes('reliability-atlas.js?v=0.27.0'), 'Reliability Atlas loader must be versioned');
 assert.ok(html.includes('name="osgard-game-pwa" content="0.27.0-offline-reliability-atlas"'), 'PWA and game shell release markers must be aligned');
 assert.ok(worker.includes("CACHE=PREFIX+'v0.27.0'") && worker.includes("'./reliability-atlas.js?v=0.27.0'"), 'offline cache must include the new analytics module');
-assert.doesNotMatch(source, /\\b(?:fetch|XMLHttpRequest|sendBeacon)\\s*\\(/, 'Reliability Atlas must not transmit the archive');
+assert.ok(!source.includes('fetch(') && !source.includes('XMLHttpRequest') && !source.includes('sendBeacon('), 'Reliability Atlas must not transmit the archive');
 assert.ok(!source.includes('.innerHTML'), 'all untrusted strings must use text-safe DOM APIs');
 for (const feature of ['function blueprintSignature(','function wilsonInterval(','function trajectorySpread(','function summarizeGroup(','function validateArchive(','MAX_RUNS = 50','MAX_FRAMES = 41','MAX_IMPORT_BYTES = 400 * 1024','Wilson 95%','function csvCell(']) {
   assert.ok(source.includes(feature), 'Reliability Atlas feature missing: ' + feature);
