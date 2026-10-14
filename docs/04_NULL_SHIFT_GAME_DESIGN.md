@@ -466,3 +466,45 @@ The WebAssembly build keeps the same Godot GL Compatibility runtime and existing
 ## Godot release 0.18 — Thermal Sovereignty / tactical recon
 
 This release contains 30 connected gameplay improvements: ARC-9 shot heat; weapon-upgrade heat scaling; lower Overdrive heat; hard firing lockout at 100%; passive cooling; faster lockout recovery; a separate unlock threshold; V / gamepad D-pad-down emergency vent; minimum vent threshold; independent vent cooldown; safe heat reset; enemy windup interruption; Stalker dash interruption; radial pushback; bounded area damage; pooled visual burst; distinct sound; bounded local black-box events; live heat percentage; danger-stage colours; touch vent control; after-action thermal state; overheat/vent counters; mission coaching; Z / D-pad-up Tactical Scan; finite scan radius/duration/cooldown; real enemy enumeration; through-cover role/HP/distance signatures; temporary reveal of ordinarily hidden field-device labels; and local recon metrics in after-action JSON. No network telemetry or account data is added. Regression tests cover lockout, cooling, vent interrupts, reveals, cooldowns and report integrity.
+
+
+## Godot release 0.19 — Phase Echo / tactical deception
+
+Phase Echo adds a short-lived emissive hologram to the 3D arena. It is placed ahead of aim or behind current movement, broadcasts a fresh squad-radio contact and acoustic event, and gives regular hostiles a real last-known position to investigate. A guard that still sees the operator continues to prioritise the actual player; the decoy is most useful after breaking line of sight.
+
+The Warden rejects the holographic lure. The ability has a 4.8-second signal window and a 15-second cooldown; only one projection can exist at a time. The local after-action report records deployments and confirmed enemy diversions. The ring animation respects Reduced Motion. Keyboard (T), gamepad (D-pad right) and touch all call the same ability. The effect is local-only and is cleared when the raid ends.
+
+### 30 refinements in this release
+
+1. Added a new tactical choice instead of a cosmetic-only effect.
+2. Added a visible 3D emissive operator silhouette.
+3. Added an animated ground-plane signal ring.
+4. Added a compact scanline for distance recognition.
+5. Added a floating decoy label.
+6. Added a local light beacon removed with the hologram.
+7. Placed projection relative to current movement or aim.
+8. Clamped placement to arena bounds.
+9. Added a hard active-duration limit.
+10. Added a separate cooldown.
+11. Prevented duplicate decoys from stacking.
+12. Blocked activation during pause, briefing, terminal use and completed runs.
+13. Added keyboard activation on T.
+14. Added gamepad activation on D-pad right.
+15. Added a dedicated touch-screen control.
+16. Added live cooldown text to the HUD.
+17. Added live remaining-duration text.
+18. Added a fresh, serialised squad-radio contact.
+19. Added a decoy-specific acoustic event.
+20. Made unaware regular guards investigate the decoy's actual world position.
+21. Counted confirmed AI diversions.
+22. Added a counterplay rule for the Warden.
+23. Extended radio audibility when ECHO TRACK doctrine is active.
+24. Added fade and light decay as projection expires.
+25. Made ring animation respect Reduced Motion.
+26. Added bounded event-ledger records for deployment, diversion and expiry.
+27. Added deployments and confirmed diversions to after-action JSON.
+28. Added coaching when a player never tries the tool.
+29. Added runtime assertions for signal, investigation, immunity, cooldown and cleanup.
+30. Added source-contract checks so CI fails if the ability disappears.
+
+This is a gameplay milestone, not a claim of native 8K rendering or measured performance on every physical device.

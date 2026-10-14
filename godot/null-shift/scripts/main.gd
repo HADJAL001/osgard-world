@@ -49,6 +49,10 @@ const WEAPON_VENT_STAGGER_SECONDS := 0.85
 const TACTICAL_SCAN_RADIUS := 23.0
 const TACTICAL_SCAN_DURATION := 5.2
 const TACTICAL_SCAN_COOLDOWN := 10.0
+const PHASE_ECHO_DURATION := 4.8
+const PHASE_ECHO_COOLDOWN := 15.0
+const PHASE_ECHO_SIGNAL_RADIUS := 36.0
+const PHASE_ECHO_TRACKED_SIGNAL_RADIUS := 48.0
 
 var player: CharacterBody3D
 var camera: Camera3D
@@ -81,7 +85,9 @@ var thermal_bar_fill: StyleBoxFlat
 var overdrive_bar: ProgressBar
 var mobile_scan_button: Button
 var mobile_vent_button: Button
+var mobile_echo_button: Button
 var mobile_overdrive_button: Button
+var phase_echo_status_label: Label
 var diagnostics_label: Label
 var keypad_panel: PanelContainer
 var keypad_progress_label: Label
@@ -192,6 +198,7 @@ var combat_noise_source := ""
 var squad_alert_position := Vector3.ZERO
 var squad_alert_timer := 0.0
 var squad_alert_serial := 0
+var squad_alert_source := ""
 var mission_finished := false
 var paused_game := false
 var mouse_firing := false
@@ -233,6 +240,14 @@ var scan_active_timer := 0.0
 var scan_activations := 0
 var scan_hostiles_revealed_total := 0
 var scan_devices_revealed_total := 0
+var phase_echo_node: Node3D
+var phase_echo_hologram: MeshInstance3D
+var phase_echo_ring: MeshInstance3D
+var phase_echo_light: OmniLight3D
+var phase_echo_remaining := 0.0
+var phase_echo_cooldown := 0.0
+var phase_echo_activations := 0
+var phase_echo_lures := 0
 var warden_phase_transitions := 0
 var warden_staggers := 0
 var mission_accuracy := 100.0
@@ -434,6 +449,7 @@ func _reset_runtime_collections() -> void:
 	squad_alert_position = Vector3.ZERO
 	squad_alert_timer = 0.0
 	squad_alert_serial = 0
+	squad_alert_source = ""
 	critical_hits = 0
 	shots_fired = 0
 	shots_hit = 0
@@ -457,6 +473,16 @@ func _reset_runtime_collections() -> void:
 	scan_activations = 0
 	scan_hostiles_revealed_total = 0
 	scan_devices_revealed_total = 0
+	if is_instance_valid(phase_echo_node):
+		phase_echo_node.queue_free()
+	phase_echo_node = null
+	phase_echo_hologram = null
+	phase_echo_ring = null
+	phase_echo_light = null
+	phase_echo_remaining = 0.0
+	phase_echo_cooldown = 0.0
+	phase_echo_activations = 0
+	phase_echo_lures = 0
 	warden_phase_transitions = 0
 	warden_staggers = 0
 	mission_accuracy = 100.0
@@ -548,6 +574,7 @@ func _process(delta: float) -> void:
 		_update_combat_director(dt)
 		_update_extraction_director(dt)
 		_update_phase_lanes(dt)
+		_update_phase_echo(dt)
 	scene_clock += dt
 	damage_flash_timer = maxf(0.0, damage_flash_timer - dt)
 	camera_shake_timer = maxf(0.0, camera_shake_timer - dt)
@@ -662,6 +689,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_activate_weapon_vent()
 		KEY_Z:
 			_activate_tactical_scan()
+		KEY_T:
+			_deploy_phase_echo()
 		KEY_SPACE:
 			_try_dash()
 		KEY_SHIFT:
@@ -794,6 +823,8 @@ func _handle_gamepad_button(event: InputEventJoypadButton) -> void:
 			_activate_overdrive()
 		JOY_BUTTON_DPAD_UP:
 			_activate_tactical_scan()
+		JOY_BUTTON_DPAD_RIGHT:
+			_deploy_phase_echo()
 		JOY_BUTTON_DPAD_DOWN:
 			_activate_weapon_vent()
 		JOY_BUTTON_LEFT_SHOULDER:
@@ -2169,12 +2200,18 @@ func _emit_combat_noise(origin: Vector3, radius: float, source_kind: String) -> 
 	combat_noise_serial += 1
 	combat_noise_source = source_kind
 
-func _broadcast_squad_contact(at: Vector3) -> void:
-	# One radio update per newly observed position; don't increment the serial for every frame.
-	if squad_alert_timer <= 0.0 or squad_alert_position.distance_to(at) >= 4.0:
+func _broadcast_squad_contact(at: Vector3, source_kind: String = "visual-contact", force_refresh: bool = false) -> void:
+	# One radio update per genuinely new contact. Echo decoys deliberately force a fresh signal serial.
+	if force_refresh or squad_alert_timer <= 0.0 or squad_alert_position.distance_to(at) >= 4.0 or squad_alert_source != source_kind:
 		squad_alert_position = at
+		squad_alert_source = source_kind
 		squad_alert_serial += 1
 	squad_alert_timer = maxf(squad_alert_timer, 6.0)
+
+func _squad_alert_audible_radius() -> float:
+	if squad_alert_source == "phase-echo":
+		return PHASE_ECHO_TRACKED_SIGNAL_RADIUS if adaptive_doctrine == "ECHO_TRACK" else PHASE_ECHO_SIGNAL_RADIUS
+	return 34.0
 
 func _guard_can_see_player(body: CharacterBody3D) -> bool:
 	if not is_instance_valid(player) or not is_instance_valid(body):
@@ -2199,11 +2236,16 @@ func _update_guard_perception(guard: Dictionary, body: CharacterBody3D, sees_pla
 		search_timer = GUARD_SEARCH_SECONDS
 		guard["heard_noise_serial"] = combat_noise_serial
 		guard["heard_squad_serial"] = squad_alert_serial
-	elif squad_alert_timer > 0.0 and int(guard.get("heard_squad_serial", 0)) != squad_alert_serial and _noise_is_audible(body.global_position, squad_alert_position, 34.0):
-		state = "INVESTIGATE"
-		last_known = squad_alert_position
-		search_timer = maxf(search_timer, GUARD_INVESTIGATION_SECONDS)
+	elif squad_alert_timer > 0.0 and int(guard.get("heard_squad_serial", 0)) != squad_alert_serial and _noise_is_audible(body.global_position, squad_alert_position, _squad_alert_audible_radius()):
 		guard["heard_squad_serial"] = squad_alert_serial
+		# Warden's elite tracking core rejects holographic decoys. Regular hostiles investigate.
+		if squad_alert_source != "phase-echo" or not bool(guard.get("warden", false)):
+			state = "INVESTIGATE"
+			last_known = squad_alert_position
+			search_timer = maxf(search_timer, GUARD_INVESTIGATION_SECONDS)
+			if squad_alert_source == "phase-echo":
+				phase_echo_lures = mini(9999, phase_echo_lures + 1)
+				_record_raid_event("phase_echo_lure", str(guard.get("role", "HOSTILE")) + " diverted to decoy", 1.0, body.global_position)
 	elif combat_noise_timer > 0.0 and int(guard.get("heard_noise_serial", 0)) != combat_noise_serial and _noise_is_audible(body.global_position, combat_noise_position, combat_noise_radius):
 		state = "INVESTIGATE"
 		last_known = combat_noise_position
@@ -3028,6 +3070,143 @@ func _deploy_pulse() -> void:
 	_play_sfx(95.0, 0.55, 0.16)
 	_update_hud()
 
+
+func _deploy_phase_echo() -> void:
+	if paused_game or mission_finished or briefing_visible or terminal_active or not is_instance_valid(player):
+		return
+	if phase_echo_cooldown > 0.02:
+		objective_text = "PHASE ECHO RECHARGING · %.1f S" % phase_echo_cooldown
+		_update_hud()
+		return
+	if is_instance_valid(phase_echo_node):
+		objective_text = "PHASE ECHO ALREADY ACTIVE · BREAK LINE OF SIGHT"
+		_update_hud()
+		return
+	var move_input := _read_move_input()
+	var direction := Vector3(-move_input.x, 0.0, -move_input.y) if move_input.length() > 0.1 else Vector3(player_aim.x, 0.0, player_aim.z)
+	if direction.length_squared() < 0.001:
+		direction = Vector3.FORWARD
+	var echo_position := player.global_position + direction.normalized() * 4.6
+	echo_position.x = clampf(echo_position.x, -20.5, 20.5)
+	echo_position.z = clampf(echo_position.z, -11.4, 11.4)
+	echo_position.y = player.global_position.y
+	var hologram_material := StandardMaterial3D.new()
+	hologram_material.albedo_color = Color(0.31, 0.72, 1.0, 0.32)
+	hologram_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	hologram_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	hologram_material.emission_enabled = true
+	hologram_material.emission = Color(0.18, 0.55, 1.0)
+	hologram_material.emission_energy_multiplier = 1.65
+	phase_echo_node = Node3D.new()
+	phase_echo_node.name = "PhaseEchoDecoy"
+	add_child(phase_echo_node)
+	phase_echo_node.global_position = echo_position
+	var shell_mesh := CapsuleMesh.new()
+	shell_mesh.radius = 0.34
+	shell_mesh.height = 1.52
+	phase_echo_hologram = MeshInstance3D.new()
+	phase_echo_hologram.name = "EchoOperatorShell"
+	phase_echo_hologram.mesh = shell_mesh
+	phase_echo_hologram.material_override = hologram_material
+	phase_echo_hologram.position = Vector3(0.0, 0.78, 0.0)
+	phase_echo_hologram.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	phase_echo_node.add_child(phase_echo_hologram)
+	var ring_mesh := TorusMesh.new()
+	ring_mesh.inner_radius = 0.88
+	ring_mesh.outer_radius = 1.03
+	ring_mesh.rings = 28
+	ring_mesh.ring_segments = 8
+	phase_echo_ring = MeshInstance3D.new()
+	phase_echo_ring.name = "EchoSignalRing"
+	phase_echo_ring.mesh = ring_mesh
+	phase_echo_ring.material_override = hologram_material
+	phase_echo_ring.rotation.x = deg_to_rad(90.0)
+	phase_echo_ring.position = Vector3(0.0, -0.70, 0.0)
+	phase_echo_ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	phase_echo_node.add_child(phase_echo_ring)
+	var label := Label3D.new()
+	label.name = "EchoSignalLabel"
+	label.text = "PHASE ECHO  //  DECOY"
+	label.font_size = 20
+	label.pixel_size = 0.014
+	label.outline_size = 7
+	label.outline_modulate = Color(0.004, 0.012, 0.018, 0.96)
+	label.modulate = Color(0.52, 0.85, 1.0)
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.no_depth_test = true
+	label.position = Vector3(0.0, 2.0, 0.0)
+	phase_echo_node.add_child(label)
+	var scanline_mesh := BoxMesh.new()
+	scanline_mesh.size = Vector3(0.48, 0.025, 0.025)
+	var scanline := MeshInstance3D.new()
+	scanline.name = "EchoScanline"
+	scanline.mesh = scanline_mesh
+	scanline.material_override = hologram_material
+	scanline.position = Vector3(0.0, 0.88, -0.34)
+	scanline.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	phase_echo_node.add_child(scanline)
+	phase_echo_light = OmniLight3D.new()
+	phase_echo_light.name = "EchoSignalLight"
+	phase_echo_light.light_color = Color(0.2, 0.62, 1.0)
+	phase_echo_light.light_energy = 0.72
+	phase_echo_light.omni_range = 4.0
+	phase_echo_light.shadow_enabled = false
+	phase_echo_light.position = Vector3(0.0, 1.0, 0.0)
+	phase_echo_node.add_child(phase_echo_light)
+	phase_echo_remaining = PHASE_ECHO_DURATION
+	phase_echo_cooldown = PHASE_ECHO_COOLDOWN
+	phase_echo_activations = mini(9999, phase_echo_activations + 1)
+	var radius := _phase_echo_signal_radius()
+	_emit_combat_noise(echo_position, radius, "phase-echo")
+	_broadcast_squad_contact(echo_position, "phase-echo", true)
+	_record_raid_event("phase_echo", "Hologram deployed · signal redirected", radius, echo_position)
+	_spawn_ring_burst(echo_position + Vector3.UP * 0.04, materials["violet"], 7.5)
+	_spawn_impact_light(echo_position + Vector3.UP * 0.8, Color(0.22, 0.62, 1.0), 1.05, 3.7, 0.20)
+	_play_sfx(245.0, 0.24, 0.085)
+	objective_text = "PHASE ECHO DEPLOYED · BREAK VISUAL CONTACT TO DIVERT THE SQUAD"
+	_update_hud()
+
+func _phase_echo_signal_radius() -> float:
+	return PHASE_ECHO_TRACKED_SIGNAL_RADIUS if adaptive_doctrine == "ECHO_TRACK" else PHASE_ECHO_SIGNAL_RADIUS
+
+func _update_phase_echo(delta: float) -> void:
+	var dt := maxf(0.0, delta)
+	phase_echo_cooldown = maxf(0.0, phase_echo_cooldown - dt)
+	if not is_instance_valid(phase_echo_node):
+		phase_echo_node = null
+		phase_echo_hologram = null
+		phase_echo_ring = null
+		phase_echo_light = null
+		phase_echo_remaining = 0.0
+		return
+	phase_echo_remaining = maxf(0.0, phase_echo_remaining - dt)
+	if phase_echo_remaining <= 0.0:
+		_record_raid_event("phase_echo_expired", "Hologram signal collapsed", phase_echo_lures, phase_echo_node.global_position)
+		_clear_phase_echo()
+		return
+	var progress: float = clampf(1.0 - phase_echo_remaining / PHASE_ECHO_DURATION, 0.0, 1.0)
+	if is_instance_valid(phase_echo_ring):
+		if not reduced_motion:
+			phase_echo_ring.rotation.y += dt * 1.1
+			var pulse := 0.94 + sin(scene_clock * 4.4) * 0.075
+			phase_echo_ring.scale = Vector3.ONE * pulse
+		else:
+			phase_echo_ring.scale = Vector3.ONE * 0.92
+		phase_echo_ring.transparency = clampf(progress * 0.68, 0.0, 0.72)
+	if is_instance_valid(phase_echo_hologram):
+		phase_echo_hologram.transparency = clampf(0.08 + progress * 0.55, 0.0, 0.72)
+	if is_instance_valid(phase_echo_light):
+		phase_echo_light.light_energy = 0.72 * (1.0 - progress) + 0.08
+
+func _clear_phase_echo() -> void:
+	if is_instance_valid(phase_echo_node):
+		phase_echo_node.queue_free()
+	phase_echo_node = null
+	phase_echo_hologram = null
+	phase_echo_ring = null
+	phase_echo_light = null
+	phase_echo_remaining = 0.0
+
 func _shift_layer() -> void:
 	if null_shift_timer > 0.0 or paused_game or mission_finished:
 		return
@@ -3212,6 +3391,7 @@ func _finish_mission(success: bool) -> void:
 	mission_grade = _mission_grade_for_score(mission_score)
 	mission_finished = true
 	mission_success = success
+	_clear_phase_echo()
 	_record_raid_event("mission_finished", "SUCCESS" if success else "FAILED", float(mission_score), player.global_position if is_instance_valid(player) else Vector3.ZERO)
 	paused_game = false
 	extraction_pressure_active = false
@@ -3445,6 +3625,8 @@ func _after_action_insights() -> Array[String]:
 		insights.append("ТЕПЛОВОЙ КОНТУР: отпускай огонь для охлаждения или сбрасывай тепло через V")
 	if insights.size() < 3 and scan_activations == 0 and not guards.is_empty():
 		insights.append("РАЗВЕДКА: Z выявляет роли, здоровье противников и устройства сквозь укрытия")
+	if insights.size() < 3 and phase_echo_activations == 0 and not guards.is_empty():
+		insights.append("ОТВЛЕЧЕНИЕ: T создаёт ложную цель для отряда; используй её после разрыва видимости")
 	if insights.size() < 3 and device_emp_overloads + device_cell_novas + device_lane_collapses == 0:
 		insights.append("АРЕНА: уничтожай полевые устройства — это меняет ход боя")
 	if insights.is_empty():
@@ -3475,7 +3657,7 @@ func _build_after_action_report() -> Dictionary:
 	return {
 		"schema": AFTER_ACTION_REPORT_SCHEMA,
 		"game": "NULL//SHIFT",
-		"gameVersion": "0.18.0-thermal-sovereignty",
+		"gameVersion": "0.19.0-phase-echo",
 		"outcome": outcome,
 		"challengeCode": daily_challenge_code if daily_challenge_active else "",
 		"runSeed": daily_run_seed,
@@ -3508,6 +3690,11 @@ func _build_after_action_report() -> Dictionary:
 			"scanActivations": scan_activations,
 			"hostilesRevealed": scan_hostiles_revealed_total,
 			"devicesRevealed": scan_devices_revealed_total
+		},
+		"phaseEcho": {
+			"deployments": phase_echo_activations,
+			"confirmedLures": phase_echo_lures,
+			"activeAtExport": is_instance_valid(phase_echo_node) and phase_echo_remaining > 0.0
 		},
 		"devices": device_summary,
 		"extraction": {
@@ -4231,6 +4418,7 @@ func _create_ui() -> void:
 	threat_label = _label(status_stack, "УГРОЗА: ВЫСОКАЯ", 11, Color(1.0, 0.3, 0.38))
 	hazard_status_label = _label(status_stack, "ЭНЕРГОКОНТУРЫ · СТАБИЛЬНО", 9, Color(0.38, 0.9, 0.82))
 	dash_status_label = _label(status_stack, "РЫВОК ГОТОВ · SPACE", 9, Color(0.38, 0.9, 0.82))
+	phase_echo_status_label = _label(status_stack, "PHASE ECHO READY · T", 9, Color(0.38, 0.82, 1.0))
 	phase_lane_status_row = HBoxContainer.new()
 	phase_lane_status_row.name = "PhaseLaneStatus"
 	phase_lane_status_row.add_theme_constant_override("separation", 4)
@@ -4900,7 +5088,7 @@ func _create_mobile_controls(parent: Control) -> void:
 			button.button_down.connect(_set_mobile_action.bind(action, true))
 			button.button_up.connect(_set_mobile_action.bind(action, false))
 			mobile_move_buttons.append(button)
-	mobile_action_panel = _make_panel(parent, Control.PRESET_BOTTOM_RIGHT, Rect2(-222.0, -330.0, 206.0, 314.0))
+	mobile_action_panel = _make_panel(parent, Control.PRESET_BOTTOM_RIGHT, Rect2(-222.0, -366.0, 206.0, 350.0))
 	var action_stack := _panel_stack(mobile_action_panel)
 	_label(action_stack, "COMBAT / СИСТЕМЫ", 9, Color(0.38, 0.9, 0.82))
 	var action_grid := GridContainer.new()
@@ -4916,13 +5104,14 @@ func _create_mobile_controls(parent: Control) -> void:
 		{"key": "dash", "label": "РЫВОК"},
 		{"key": "overdrive", "label": "OVERDRIVE"},
 		{"key": "scan", "label": "СКАН"},
-		{"key": "vent", "label": "VENT"}
+		{"key": "vent", "label": "VENT"},
+		{"key": "echo", "label": "ЭХО"}
 	]
 	for item in combat_actions:
 		var action_button := _add_button(action_grid, item["label"], func(): pass, Vector2(84.0, 38.0))
 		action_button.button_down.connect(_set_mobile_action.bind(item["key"], true))
 		action_button.button_up.connect(_set_mobile_action.bind(item["key"], false))
-		if str(item["key"]) != "scan" and str(item["key"]) != "vent":
+		if str(item["key"]) != "scan" and str(item["key"]) != "vent" and str(item["key"]) != "echo":
 			mobile_action_buttons.append(action_button)
 		if str(item["key"]) == "dash":
 			mobile_dash_button = action_button
@@ -4936,6 +5125,9 @@ func _create_mobile_controls(parent: Control) -> void:
 		if str(item["key"]) == "vent":
 			mobile_vent_button = action_button
 			mobile_vent_button.add_theme_font_size_override("font_size", 8)
+		if str(item["key"]) == "echo":
+			mobile_echo_button = action_button
+			mobile_echo_button.add_theme_font_size_override("font_size", 8)
 	var utility_row := HBoxContainer.new()
 	utility_row.add_theme_constant_override("separation", 4)
 	action_stack.add_child(utility_row)
@@ -4976,6 +5168,8 @@ func _set_mobile_action(action: String, pressed: bool) -> void:
 					_activate_tactical_scan()
 				"vent":
 					_activate_weapon_vent()
+				"echo":
+					_deploy_phase_echo()
 
 func _refresh_extraction_event_layout() -> void:
 	if not is_instance_valid(objective_panel):
@@ -5024,6 +5218,7 @@ func _update_mobile_layout() -> void:
 		status_panel.offset_right = width - 10.0
 		status_panel.offset_bottom = 140.0
 		status_title.add_theme_font_size_override("font_size", 18)
+		phase_echo_status_label.visible = false
 		status_subtitle.visible = false
 		status_shortcuts.visible = false
 		health_label.add_theme_font_size_override("font_size", 11)
@@ -5054,8 +5249,9 @@ func _update_mobile_layout() -> void:
 		status_panel.offset_left = 18.0
 		status_panel.offset_top = 18.0
 		status_panel.offset_right = 334.0
-		status_panel.offset_bottom = 224.0
+		status_panel.offset_bottom = 242.0
 		status_title.add_theme_font_size_override("font_size", 22)
+		phase_echo_status_label.visible = true
 		status_subtitle.visible = true
 		status_shortcuts.visible = true
 		health_label.add_theme_font_size_override("font_size", 13)
@@ -5087,7 +5283,7 @@ func _update_mobile_layout() -> void:
 		mobile_move_panel.offset_bottom = -16.0
 		mobile_action_panel.offset_left = -222.0
 		mobile_action_panel.offset_right = -16.0
-		mobile_action_panel.offset_top = -330.0
+		mobile_action_panel.offset_top = -366.0
 		mobile_action_panel.offset_bottom = -16.0
 		for button in mobile_move_buttons:
 			button.custom_minimum_size = Vector2(52.0, 38.0)
@@ -5099,6 +5295,8 @@ func _update_mobile_layout() -> void:
 			mobile_scan_button.custom_minimum_size = Vector2(84.0, 38.0)
 		if is_instance_valid(mobile_vent_button):
 			mobile_vent_button.custom_minimum_size = Vector2(84.0, 38.0)
+		if is_instance_valid(mobile_echo_button):
+			mobile_echo_button.custom_minimum_size = Vector2(84.0, 38.0)
 		mobile_modules_button.custom_minimum_size = Vector2(176.0, 31.0)
 		sound_button.custom_minimum_size = Vector2(176.0, 29.0)
 	mobile_move_panel.visible = compact
@@ -5114,7 +5312,7 @@ func _layout_compact_controls(viewport_size: Vector2) -> void:
 	mobile_move_panel.offset_bottom = -8.0
 	mobile_action_panel.offset_left = -8.0 - action_width
 	mobile_action_panel.offset_right = -8.0
-	mobile_action_panel.offset_top = -286.0
+	mobile_action_panel.offset_top = -324.0
 	mobile_action_panel.offset_bottom = -8.0
 	var move_size: float = 36.0 if width < 400.0 else (44.0 if width < 520.0 else 52.0)
 	var move_button_height: float = 32.0 if width < 400.0 else 36.0
@@ -5130,6 +5328,8 @@ func _layout_compact_controls(viewport_size: Vector2) -> void:
 		mobile_scan_button.custom_minimum_size = Vector2(action_button_width, action_button_height)
 	if is_instance_valid(mobile_vent_button):
 		mobile_vent_button.custom_minimum_size = Vector2(action_button_width, action_button_height)
+	if is_instance_valid(mobile_echo_button):
+		mobile_echo_button.custom_minimum_size = Vector2(action_button_width, action_button_height)
 	var utility_button_width: float = floor((action_width - 32.0) / 3.0)
 	mobile_quality_button.custom_minimum_size = Vector2(utility_button_width, 27.0)
 	mobile_diagnostics_button.custom_minimum_size = Vector2(utility_button_width, 27.0)
@@ -5290,6 +5490,19 @@ func _update_hud() -> void:
 	if is_instance_valid(mobile_dash_button):
 		mobile_dash_button.text = "РЫВОК" if dash_cooldown <= 0.02 else "РЫВОК %.1f" % dash_cooldown
 		mobile_dash_button.disabled = dash_cooldown > 0.02 or paused_game or mission_finished or terminal_active or briefing_visible
+	if is_instance_valid(phase_echo_status_label):
+		if is_instance_valid(phase_echo_node):
+			phase_echo_status_label.text = "ECHO SIGNAL · %.1f S" % phase_echo_remaining
+			phase_echo_status_label.add_theme_color_override("font_color", Color(0.42, 0.82, 1.0))
+		elif phase_echo_cooldown > 0.02:
+			phase_echo_status_label.text = "ECHO RECOVERY · %.1f S" % phase_echo_cooldown
+			phase_echo_status_label.add_theme_color_override("font_color", Color(1.0, 0.72, 0.34))
+		else:
+			phase_echo_status_label.text = "PHASE ECHO READY · T"
+			phase_echo_status_label.add_theme_color_override("font_color", Color(0.38, 0.82, 1.0))
+	if is_instance_valid(mobile_echo_button):
+		mobile_echo_button.text = "ЭХО %.1f" % phase_echo_cooldown if phase_echo_cooldown > 0.02 else "ЭХО"
+		mobile_echo_button.disabled = phase_echo_cooldown > 0.02 or is_instance_valid(phase_echo_node) or paused_game or mission_finished or terminal_active or briefing_visible
 	var engaged_guards := 0
 	var investigating_guards := 0
 	for guard in guards:
@@ -5353,11 +5566,11 @@ func _update_input_hint() -> void:
 		return
 	var hint: String
 	if mobile_controls_visible:
-		hint = "TOUCH · MOVE / FIRE / ACTION · SCAN · VENT · DASH · PULSE · PHASE"
+		hint = "TOUCH · MOVE / FIRE / ACTION · SCAN · VENT · ECHO · DASH · PULSE · PHASE"
 	elif gamepad_mode_active:
-		hint = "GAMEPAD · LS MOVE · RS AIM · RT/RB FIRE · R-STICK OVERDRIVE · DPAD UP SCAN / DOWN VENT"
+		hint = "GAMEPAD · LS MOVE · RS AIM · RT/RB FIRE · R-STICK OVERDRIVE · DPAD RIGHT ECHO / UP SCAN / DOWN VENT"
 	else:
-		hint = "WASD / ARROWS MOVE · MOUSE FIRE · E ACTION · Q PULSE · Z SCAN · V VENT · R OVERDRIVE · SPACE DASH · SHIFT PHASE"
+		hint = "WASD / ARROWS MOVE · MOUSE FIRE · E ACTION · Q PULSE · T ECHO · Z SCAN · V VENT · R OVERDRIVE · SPACE DASH · SHIFT PHASE"
 	if bottom_hint.text != hint:
 		bottom_hint.text = hint
 

@@ -135,7 +135,13 @@ func _run_smoke() -> void:
 	var saved_squad_position: Vector3 = game.squad_alert_position
 	var saved_squad_timer: float = game.squad_alert_timer
 	var saved_squad_serial: int = game.squad_alert_serial
-	var sense_guard: Dictionary = {"role": "RANGER", "ai_state": "PATROL", "last_known_position": Vector3.ZERO, "search_timer": 0.0, "heard_noise_serial": game.combat_noise_serial, "heard_squad_serial": game.squad_alert_serial, "displayed_ai_state": "PATROL"}
+	var saved_squad_source: String = game.squad_alert_source
+	var saved_echo_cooldown: float = game.phase_echo_cooldown
+	var saved_echo_activations: int = game.phase_echo_activations
+	var saved_echo_lures: int = game.phase_echo_lures
+	var saved_player_position_for_echo: Vector3 = game.player.global_position
+	var saved_player_aim_for_echo: Vector3 = game.player_aim
+	var sense_guard: Dictionary = {"role": "RANGER", "ai_state": "PATROL", "last_known_position": Vector3.ZERO, "search_timer": 0.0, "heard_noise_serial": game.combat_noise_serial, "heard_squad_serial": game.squad_alert_serial, "displayed_ai_state": "PATROL", "warden": false}
 	var sense_body: CharacterBody3D = game.guards[0]["node"] as CharacterBody3D
 	game._emit_combat_noise(sense_body.global_position + Vector3(1.0, 0.0, 1.0), 18.0, "runtime-test")
 	sense_guard = game._update_guard_perception(sense_guard, sense_body, false, 0.016)
@@ -154,6 +160,52 @@ func _run_smoke() -> void:
 	game.squad_alert_position = saved_squad_position
 	game.squad_alert_timer = saved_squad_timer
 	game.squad_alert_serial = saved_squad_serial
+	game.squad_alert_source = saved_squad_source
+	print("RUNTIME_STAGE: Phase Echo decoy, squad diversion and elite resistance")
+	game.player.global_position = Vector3(0.0, 0.82, 0.0)
+	game.player_aim = Vector3.FORWARD
+	game.phase_echo_cooldown = 0.0
+	game.phase_echo_activations = 0
+	game.phase_echo_lures = 0
+	game._deploy_phase_echo()
+	if not _expect(is_instance_valid(game.phase_echo_node) and is_instance_valid(game.phase_echo_hologram) and is_instance_valid(game.phase_echo_ring), "Phase Echo must spawn a real emissive hologram and signal ring in the 3D scene"):
+		return
+	var decoy_position: Vector3 = game.phase_echo_node.global_position
+	if not _expect(game.phase_echo_remaining == game.PHASE_ECHO_DURATION and game.phase_echo_cooldown == game.PHASE_ECHO_COOLDOWN and game.phase_echo_activations == 1, "Phase Echo must start its bounded active duration, cooldown and activation telemetry"):
+		return
+	if not _expect(game.squad_alert_source == "phase-echo" and game.combat_noise_source == "phase-echo" and game.squad_alert_serial > saved_squad_serial, "decoy deployment must broadcast a fresh squad radio contact and acoustic source"):
+		return
+	var decoy_guard: Dictionary = {"role": "RANGER", "warden": false, "ai_state": "PATROL", "last_known_position": Vector3.ZERO, "search_timer": 0.0, "heard_noise_serial": game.combat_noise_serial, "heard_squad_serial": game.squad_alert_serial - 1, "displayed_ai_state": "PATROL"}
+	decoy_guard = game._update_guard_perception(decoy_guard, sense_body, false, 0.016)
+	if not _expect(str(decoy_guard["ai_state"]) == "INVESTIGATE" and decoy_guard["last_known_position"].distance_to(decoy_position) < 0.01 and game.phase_echo_lures == 1, "unaware non-elite guard must investigate the hologram coordinates and count a confirmed diversion"):
+		return
+	var elite_guard: Dictionary = {"role": "WARDEN", "warden": true, "ai_state": "PATROL", "last_known_position": Vector3.ZERO, "search_timer": 0.0, "heard_noise_serial": game.combat_noise_serial, "heard_squad_serial": game.squad_alert_serial - 1, "displayed_ai_state": "PATROL"}
+	elite_guard = game._update_guard_perception(elite_guard, sense_body, false, 0.016)
+	if not _expect(str(elite_guard["ai_state"]) == "PATROL" and int(elite_guard["heard_squad_serial"]) == game.squad_alert_serial, "Warden must register but reject the decoy rather than abandon elite tracking"):
+		return
+	game._deploy_phase_echo()
+	if not _expect(game.phase_echo_activations == 1 and game.phase_echo_cooldown > 0.0, "Echo cooldown must reject rapid redeployment and prevent stacking decoy actors"):
+		return
+	game._update_phase_echo(game.PHASE_ECHO_DURATION + 0.05)
+	if not _expect(not is_instance_valid(game.phase_echo_node) and game.phase_echo_remaining <= 0.0 and game.phase_echo_cooldown > 0.0, "the hologram must clean itself up after the signal window while cooldown remains"):
+		return
+	game._deploy_phase_echo()
+	if not _expect(game.phase_echo_activations == 1, "cooldown must still block Echo redeployment after the hologram fades"):
+		return
+	game.player.global_position = saved_player_position_for_echo
+	game.player_aim = saved_player_aim_for_echo
+	game.phase_echo_cooldown = saved_echo_cooldown
+	game.phase_echo_activations = saved_echo_activations
+	game.phase_echo_lures = saved_echo_lures
+	game.combat_noise_position = saved_noise_position
+	game.combat_noise_radius = saved_noise_radius
+	game.combat_noise_timer = saved_noise_timer
+	game.combat_noise_serial = saved_noise_serial
+	game.combat_noise_source = saved_noise_source
+	game.squad_alert_position = saved_squad_position
+	game.squad_alert_timer = saved_squad_timer
+	game.squad_alert_serial = saved_squad_serial
+	game.squad_alert_source = saved_squad_source
 	print("RUNTIME_STAGE: generated PBR surface texture set")
 	var floor_surface: StandardMaterial3D = game.materials.get("floor") as StandardMaterial3D
 	var wall_surface: StandardMaterial3D = game.materials.get("wall") as StandardMaterial3D
@@ -1852,6 +1904,8 @@ func _run_smoke() -> void:
 	if not _expect(str(new_report.get("gameVersion", "")) == "0.18.0-thermal-sovereignty" and new_report.get("thermal", {}).has("overheatEvents") and new_report.get("thermal", {}).has("ventHostilesInterrupted"), "after-action export must include versioned thermal metrics"):
 		return
 	if not _expect(new_report.get("recon", {}).has("scanActivations") and new_report.get("recon", {}).has("devicesRevealed"), "after-action export must include local tactical scan metrics"):
+		return
+	if not _expect(str(new_report.get("gameVersion", "")) == "0.19.0-phase-echo" and new_report.get("phaseEcho", {}).get("deployments", -1) >= 0 and new_report.get("phaseEcho", {}).has("confirmedLures"), "after-action report must expose versioned Echo use and confirmed AI diversion counts"):
 		return
 	game.player.global_position = previous_player_position
 	game.mission_finished = previous_mission_finished
