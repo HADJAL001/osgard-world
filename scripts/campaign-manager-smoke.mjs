@@ -40,6 +40,8 @@ assert.equal(server.split('app.get("/v1/admin/campaigns"').length - 1, 1);
 assert.ok(server.includes("requireAdmin, async (_req, res)") && server.includes('"/v1/admin/campaigns"'), "Admin list must use the existing auth middleware");
 assert.ok(server.includes("pg_advisory_xact_lock(20261014)"), "Parallel publish operations must be serialized");
 assert.ok(server.includes("LIMIT 3") && server.includes("CAMPAIGN_SLOT_FULL"), "Public campaign inventory must be bounded");
+assert.ok(server.includes("CASE WHEN status = 'scheduled' AND starts_at <= NOW() AND ends_at > NOW() THEN 'active'"), "Scheduled campaigns must become public when their approved time window starts.");
+assert.ok(server.includes("starts_at < $2 AND ends_at > $1") && server.includes("status IN ('active','scheduled')"), "Active and scheduled slot limits must count overlapping time windows.");
 assert.ok(server.includes("CREATE TABLE IF NOT EXISTS commerce_campaigns") && server.includes("commerce_campaigns_public_idx"), "Campaign schema/index is missing");
 assert.ok(server.includes('app.use("/v1/campaigns", rateLimit('), "Public campaign endpoint must be rate limited");
 assert.ok(server.includes('res.set("Cache-Control", "no-store, private")'), "Admin result must not be cached");
