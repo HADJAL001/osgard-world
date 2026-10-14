@@ -29,6 +29,7 @@
     "qa:game-detail-runtime": "node scripts/game-detail-runtime-smoke.mjs",
     "qa:games-operations": "node scripts/games-operations-smoke.mjs",
     "qa:campaign-manager": "node scripts/campaign-manager-smoke.mjs",
+    "qa:game-feedback": "node scripts/game-feedback-smoke.mjs",
     "qa:game-recommendations": "node scripts/game-recommendations-smoke.mjs",
     "qa:games-model": "node scripts/games-monetization-smoke.mjs",
     "qa:null-shift-godot": "node scripts/null-shift-godot-smoke.mjs",
