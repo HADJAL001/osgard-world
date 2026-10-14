@@ -187,7 +187,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
           ? (response.headers.get('content-type') || '').toLowerCase().includes('image/svg+xml') && text.includes('<svg') && text.includes('CASCADE LAB')
         : route === '/games/cascade-lab/'
           ? text.includes('<title>CASCADE LAB — Premium Physics Lab 0.27.0</title>') &&
-            text.includes('name="osgard-game-version" content="0.25.0-evidence-integrity"') &&
+            text.includes('name="osgard-game-version" content="0.27.0-reliability-atlas"') &&
             text.includes('data-cascade-lab-upgrades="0.14.0"') && text.includes('CASCADELAB014') &&
             text.includes('data-cascade-lab-ledger="0.15.0"') && text.includes('CASCADELAB015') && text.includes('id="CASCADELAB017"') && text.includes('data-cascade-lab-delta="0.17.0"') &&
             text.includes('id="CASCADELAB018"') && text.includes('data-cascade-lab-experiment="0.18.0"') && text.includes('hypothesis-lab.js?v=0.18.0') &&
