@@ -24,6 +24,10 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
+      - name: Verify Nginx fallback, English catalogue and route contracts
+        run: node scripts/production-route-matrix-contract-smoke.mjs
+      - name: Verify Games runtime minification and gzip integrity
+        run: npm run qa:games-assets
       - name: Verify proof-carrying release manifest fixture
         run: npm run qa:release-manifest
       - name: Test OpenAI reviewer offline (no API call)

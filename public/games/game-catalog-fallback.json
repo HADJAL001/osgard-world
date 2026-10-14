@@ -1,0 +1,160 @@
+{
+  "schemaVersion": 1,
+  "source": "defaults",
+  "items": [
+    {
+      "id": "null-shift",
+      "title": "NULL//SHIFT",
+      "description": "Взломай терминал, забери квантовое ядро и выйди из меняющейся арены. Основной вход — Godot-сборка; браузерный WebGL остаётся альтернативой.",
+      "genres": [
+        "tactical",
+        "social"
+      ],
+      "visible": true,
+      "featured": true,
+      "sortOrder": 1,
+      "status": "playable",
+      "href": "/games/null-shift-godot/"
+    },
+    {
+      "id": "time",
+      "title": "Империя времени",
+      "description": "Управляй казной, энергией, районами и политическими фракциями. Это развиваемый прототип, а не завершённая большая стратегия.",
+      "genres": [
+        "systems",
+        "tactical"
+      ],
+      "visible": true,
+      "featured": false,
+      "sortOrder": 2,
+      "status": "prototype",
+      "href": "/games/time"
+    },
+    {
+      "id": "swarm",
+      "title": "SWARM",
+      "description": "Координируй роли, захвати ядро и доберись до выхода. Есть браузерная тренировка; сетевой режим зависит от игрового API.",
+      "genres": [
+        "social",
+        "tactical"
+      ],
+      "visible": true,
+      "featured": false,
+      "sortOrder": 3,
+      "status": "playable",
+      "href": "/games/swarm/"
+    },
+    {
+      "id": "inherit",
+      "title": "INHERIT",
+      "description": "Оставляй следы в спокойном мире, чтобы следующие поколения находили твои решения. Изменения сохраняются локально в браузере.",
+      "genres": [
+        "systems",
+        "creative"
+      ],
+      "visible": true,
+      "featured": false,
+      "sortOrder": 4,
+      "status": "playable",
+      "href": "/games/inherit/"
+    },
+    {
+      "id": "remix",
+      "title": "REMIX",
+      "description": "Браузерный клиент и матч-консоль. Создание сетевого матча требует доступного REMIX API; при проблемах соединения игра должна показать статус.",
+      "genres": [
+        "social",
+        "creative"
+      ],
+      "visible": true,
+      "featured": false,
+      "sortOrder": 5,
+      "status": "playable",
+      "href": "/games/remix/"
+    },
+    {
+      "id": "civic-cascade",
+      "title": "CIVIC CASCADE",
+      "description": "Управляй городскими авариями: вода, энергосеть и эвакуация. Проверяй цепочки последствий и выбирай порядок действий.",
+      "genres": [
+        "systems",
+        "tactical"
+      ],
+      "visible": true,
+      "featured": false,
+      "sortOrder": 6,
+      "status": "playable",
+      "href": "/games/civic-cascade/"
+    },
+    {
+      "id": "patina",
+      "title": "PATINA ATELIER",
+      "description": "Исследуй керамику, различай загрязнения и сохраняй историю предмета в реставрационной лаборатории.",
+      "genres": [
+        "creative",
+        "systems"
+      ],
+      "visible": true,
+      "featured": false,
+      "sortOrder": 7,
+      "status": "playable",
+      "href": "/games/patina/"
+    },
+    {
+      "id": "signal-run",
+      "title": "SIGNAL RUN",
+      "description": "Короткая аркада на реакцию: меняй полосу, собирай сигналы и уклоняйся от цифровых помех.",
+      "genres": [
+        "arcade",
+        "creative"
+      ],
+      "visible": true,
+      "featured": false,
+      "sortOrder": 8,
+      "status": "playable",
+      "href": "/games/signal-run/"
+    },
+    {
+      "id": "cascade-lab",
+      "title": "CASCADE LAB",
+      "description": "Собирай цепные реакции, исследуй траекторию и физику, разбирай причины отказов и сравнивай контролируемые эксперименты.",
+      "genres": [
+        "creative",
+        "tactical"
+      ],
+      "visible": true,
+      "featured": false,
+      "sortOrder": 9,
+      "status": "playable",
+      "href": "/games/cascade-lab/"
+    },
+    {
+      "id": "afterimage-run",
+      "title": "AFTERIMAGE//RUN",
+      "description": "Ежедневный sci-fi забег с общим seed, фазовыми воротами и призраком личного рекорда. Поделись испытанием и сравни результат.",
+      "genres": [
+        "arcade",
+        "creative"
+      ],
+      "visible": true,
+      "featured": false,
+      "sortOrder": 10,
+      "status": "playable",
+      "href": "/games/afterimage-run/"
+    },
+    {
+      "id": "aether-grid",
+      "title": "AETHER GRID",
+      "description": "Ежедневная логическая головоломка: соедини источник с ядром в сетке из узлов и брось вызов другу.",
+      "genres": [
+        "creative",
+        "tactical"
+      ],
+      "visible": true,
+      "featured": false,
+      "sortOrder": 11,
+      "status": "playable",
+      "href": "/games/aether-grid/"
+    }
+  ]
+}

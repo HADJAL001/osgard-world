@@ -10,6 +10,12 @@ const css = readFileSync(resolve("public/games/swarm/styles.css"), "utf8");
 const game = readFileSync(resolve("public/games/swarm/game.js"), "utf8");
 const monetization = readFileSync(resolve("public/games/monetization/index.html"), "utf8");
 const csvExport = readFileSync(resolve("public/games/monetization/export.mjs"), "utf8");
+const englishGames = readFileSync(resolve("public/games/en/index.html"), "utf8");
+const russianGames = readFileSync(resolve("public/games/index.html"), "utf8");
+const sitemap = readFileSync(resolve("public/sitemap.xml"), "utf8");
+const catalogueFallback = JSON.parse(readFileSync(resolve("public/games/game-catalog-fallback.json"), "utf8"));
+const assetOptimizer = readFileSync(resolve("scripts/optimize-games-static-assets.mjs"), "utf8");
+
 
 assert.ok(html.includes("<title>SWARM — One Body. Eight Minds.</title>"), "SWARM page title contract is missing.");
 assert.ok(html.includes('href="./styles.css"') && html.includes('src="./game.js"'), "SWARM page must load its local CSS and game entry point.");
@@ -66,5 +72,24 @@ assert.ok(monetization.includes('id="export-csv"') &&
   csvExport.includes('export function buildFinancialCsv') &&
   csvExport.includes('FINANCIAL_CSV_NOTE') && csvExport.includes("firstMeaningful"),
   "Financial model CSV export must remain available, explicit and spreadsheet-safe.");
+
+
+const expectedEnglishGameIds = ['null-shift','empire-of-time','swarm','inherit','remix','civic-cascade','patina','signal-run','cascade-lab','afterimage-run','aether-grid'];
+assert.ok(englishGames.includes('<html lang="en">') && englishGames.includes('<title>OSGARD PLAY — Explore Digital Worlds</title>'), "English Games entry needs a unique English document title and language.");
+assert.ok(englishGames.includes('href="https://osgard.world/games/en/"') && englishGames.includes('href="https://osgard.world/games/"') && englishGames.includes('hreflang="x-default"'), "English Games entry needs canonical and reciprocal language metadata.");
+assert.ok(englishGames.includes('Language availability:') && englishGames.includes('href="/games/ecosystem/?utm_source=osgard_games&amp;utm_medium=global_catalog'), "English Games entry must disclose incomplete game translation and offer tracked ecosystem discovery.");
+assert.ok(expectedEnglishGameIds.every(id => englishGames.includes('id="'+id+'"')), "English Games entry must have all eleven current playable/catalogue routes.");
+assert.ok(russianGames.includes('hreflang="en" href="https://osgard.world/games/en/"') && russianGames.includes('class="locale-link" href="/games/en/"'), "Russian catalogue must link to its English alternative from the page navigation.");
+assert.ok(sitemap.includes('<loc>https://osgard.world/games/en/</loc>'), "English Games entry must be discoverable in the XML sitemap.");
+assert.equal(catalogueFallback.schemaVersion, 1);
+assert.equal(catalogueFallback.source, "defaults");
+assert.equal(catalogueFallback.items.length, 11, "Static fallback must preserve the canonical eleven-game catalogue.");
+assert.deepEqual(catalogueFallback.items.map(item => item.sortOrder), [1,2,3,4,5,6,7,8,9,10,11]);
+assert.equal(new Set(catalogueFallback.items.map(item => item.id)).size, 11, "Fallback catalogue IDs must be unique.");
+assert.ok(nginx.includes('location = /games/catalog-runtime.js') && nginx.includes('gzip_static off;') && nginx.includes('no-cache, must-revalidate'), "The small catalogue runtime must bypass stale precompressed sidecars and revalidate.");
+assert.ok(nginx.includes('location = /commerce-api/v1/game-catalog') && nginx.includes('error_page 502 503 504 =200 /games/game-catalog-fallback.json;'), "The public read-only catalogue must use a safe static fallback only during API outages.");
+assert.ok(nginx.includes('location = /commerce-api/v1/admin/game-catalog') && nginx.includes('error_page 502 504 =503 @osgard_commerce_unavailable;') && nginx.includes('COMMERCE_API_UNAVAILABLE'), "Operator catalogue calls must fail with a clear JSON 503, never fabricated admin success.");
+assert.ok(assetOptimizer.includes("'catalog-runtime.js'"), "The catalogue runtime must be non-empty and minified during build.");
+assert.ok(matrix.includes("'/games/en/'") && matrix.includes("'/games/game-catalog-fallback.json'") && matrix.includes("compact.includes('.textContent=')"), "The production route matrix must validate the global entry, fallback payload and minified runtime.");
 
 console.log("PASS SWARM route contract: game-specific asset checks, self-hosted fonts and reduced motion.");
