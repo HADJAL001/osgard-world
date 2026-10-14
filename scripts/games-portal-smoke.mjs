@@ -614,7 +614,7 @@ const adminScripts=adminScriptBody.trim()?[adminScriptBody]:[]
 assert.equal(adminScripts.length,1,'LiveOps should have one self-contained application module')
 new Function(adminScripts[0])
 assert.ok(!/localStorage|sessionStorage/.test(adminScripts[0]), 'Operator token must not be persisted in browser storage')
-assert.ok(adminScripts[0].includes("readApi('/api/v1/analytics/summary?") && adminScripts[0].includes("readApi('/api/v1/analytics/cohorts')"), 'LiveOps must query the server aggregates, not fixture numbers')
+assert.ok(adminScripts[0].includes("readApi(urlFor(range)") && adminScripts[0].includes("readApi('/api/v1/analytics/cohorts'"), 'LiveOps must query the server aggregates, not fixture numbers')
 assert.ok(adminScripts[0].includes("'osgard-games-aggregate-events.jsonl'") && adminScripts[0].includes('JSON.parse(line)'), 'Aggregate export must validate JSONL records before download')
 assert.ok(admin.includes('href="/games/admin/partners/"'), 'LiveOps must link to the sponsor inventory editor')
 assert.match(partnerEditor, /<meta name="robots" content="noindex,nofollow,noarchive">/, 'Sponsor editor must not be indexed')
