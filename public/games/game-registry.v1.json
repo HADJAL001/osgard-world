@@ -1,0 +1,246 @@
+{
+  "schemaVersion": 1,
+  "registryVersion": "2026.10.14.1",
+  "lastReviewed": "2026-10-14",
+  "verificationScope": "Source-level inventory of entry points and declared dependencies. This registry is not a benchmark, live-service uptime report, or physical-device certification.",
+  "games": [
+    {
+      "id": "null-shift",
+      "title": "NULL//SHIFT",
+      "genre": "Тактический рейд",
+      "description": "3D-рейд с изменяющейся ареной и извлечением ядра.",
+      "route": "/games/null-shift-godot/",
+      "fallbackRoute": "/games/null-shift/",
+      "entrypointMode": "ci-generated-godot-web-export",
+      "runtimeFamily": "godot-web",
+      "runtimeLabel": "Godot Web · WebGL",
+      "webgl": "required",
+      "network": "not-verified",
+      "networkLabel": "Сеть / совместная игра — проверить в сборке",
+      "progressScope": "not-documented",
+      "progressLabel": "Способ сохранения не подтверждён",
+      "recommendedDevice": "desktop-first",
+      "touchValidation": "not-device-verified",
+      "controlNote": "Полное управление и сетевой режим следует подтвердить внутри собранной версии; сенсорное управление отдельно не сертифицировано.",
+      "evidence": [
+        "godot/null-shift/project.godot",
+        "public/games/null-shift/index.html"
+      ]
+    },
+    {
+      "id": "time",
+      "title": "Империя времени",
+      "genre": "Стратегия",
+      "description": "Браузерный прототип управления городом, ресурсами и фракциями.",
+      "route": "/games/time",
+      "entrypointMode": "react-spa-route",
+      "runtimeFamily": "react-spa",
+      "runtimeLabel": "React SPA",
+      "webgl": "not-required",
+      "network": "local",
+      "networkLabel": "Основная игра работает в портале",
+      "progressScope": "not-documented",
+      "progressLabel": "Режим сохранения реализован в игре; детали синхронизации не подтверждены",
+      "recommendedDevice": "browser",
+      "touchValidation": "not-device-verified",
+      "controlNote": "Это развиваемый прототип. Управление на сенсорном экране требует отдельной проверки.",
+      "evidence": [
+        "src/GameDetailPage.tsx",
+        "src/App.tsx"
+      ]
+    },
+    {
+      "id": "swarm",
+      "title": "SWARM",
+      "genre": "Командная тактика",
+      "description": "Координация ролей и выход из тактической зоны; браузерная тренировка доступна отдельно.",
+      "route": "/games/swarm/",
+      "entrypointMode": "static-browser",
+      "runtimeFamily": "browser-js",
+      "runtimeLabel": "HTML / JavaScript",
+      "webgl": "not-required",
+      "network": "api-for-online",
+      "networkLabel": "Игровой API нужен для сетевого режима",
+      "progressScope": "mode-dependent",
+      "progressLabel": "Сохранение зависит от режима",
+      "recommendedDevice": "browser",
+      "touchValidation": "not-device-verified",
+      "controlNote": "Сетевая доступность не гарантируется самим наличием страницы; проверьте игровой API и управление.",
+      "evidence": [
+        "public/games/swarm/index.html",
+        "public/games/swarm/game.js"
+      ]
+    },
+    {
+      "id": "inherit",
+      "title": "INHERIT",
+      "genre": "Живой мир",
+      "description": "Спокойная игра о следах и решениях, которые остаются следующим поколениям.",
+      "route": "/games/inherit/",
+      "entrypointMode": "static-browser",
+      "runtimeFamily": "browser-js",
+      "runtimeLabel": "HTML / JavaScript",
+      "webgl": "not-required",
+      "network": "local",
+      "networkLabel": "Основной игровой цикл локальный",
+      "progressScope": "device-local",
+      "progressLabel": "Состояние хранится в браузере этого устройства",
+      "recommendedDevice": "browser",
+      "touchValidation": "not-device-verified",
+      "controlNote": "Локальное сохранение не означает автоматическую синхронизацию между устройствами. Сенсорное управление требует проверки.",
+      "evidence": [
+        "public/games/inherit/index.html"
+      ]
+    },
+    {
+      "id": "remix",
+      "title": "REMIX",
+      "genre": "Онлайн-испытания",
+      "description": "Unity WebGL-клиент для матчей, испытаний и повторов.",
+      "route": "/games/remix/",
+      "alternateRoute": "/games/remix/player/",
+      "entrypointMode": "unity-webgl",
+      "runtimeFamily": "unity-webgl",
+      "runtimeLabel": "Unity WebGL",
+      "webgl": "required",
+      "network": "api-for-online",
+      "networkLabel": "REMIX API нужен для сетевого матча",
+      "progressScope": "mode-dependent",
+      "progressLabel": "Состояние зависит от режима и сервера",
+      "recommendedDevice": "desktop-first",
+      "touchValidation": "not-device-verified",
+      "controlNote": "Тяжёлый WebGL-профиль; для стабильного первого запуска рекомендуем компьютер. Сенсорный ввод не сертифицирован.",
+      "evidence": [
+        "public/games/remix/index.html",
+        "public/games/remix/player/index.html"
+      ]
+    },
+    {
+      "id": "civic-cascade",
+      "title": "CIVIC CASCADE",
+      "genre": "Кризисная стратегия",
+      "description": "Управление каскадом городских аварий, контрольные точки и прогноз риска.",
+      "route": "/games/civic-cascade/",
+      "entrypointMode": "static-browser",
+      "runtimeFamily": "browser-simulation",
+      "runtimeLabel": "Браузерная симуляция",
+      "webgl": "not-required",
+      "network": "local",
+      "networkLabel": "Основная операция работает локально",
+      "progressScope": "device-local",
+      "progressLabel": "Операция сохраняется на устройстве",
+      "recommendedDevice": "browser",
+      "touchValidation": "not-device-verified",
+      "controlNote": "Для мобильного управления и удобства длинных стратегических сценариев нужна отдельная проверка на физическом устройстве.",
+      "evidence": [
+        "public/games/civic-cascade/index.html"
+      ]
+    },
+    {
+      "id": "patina",
+      "title": "PATINA Atelier",
+      "genre": "Интерактивная лаборатория",
+      "description": "Диагностика реставрации: отделение загрязнений от оригинального материала.",
+      "route": "/games/patina/",
+      "entrypointMode": "static-browser",
+      "runtimeFamily": "browser-lab",
+      "runtimeLabel": "Интерактивная браузерная лаборатория",
+      "webgl": "not-required",
+      "network": "local",
+      "networkLabel": "Основная лаборатория работает в браузере",
+      "progressScope": "not-documented",
+      "progressLabel": "Переносимый прогресс не заявлен",
+      "recommendedDevice": "browser",
+      "touchValidation": "not-device-verified",
+      "controlNote": "Работа с мелкими зонами требует проверки масштаба и сенсорных целей на телефоне.",
+      "evidence": [
+        "public/games/patina/index.html"
+      ]
+    },
+    {
+      "id": "signal-run",
+      "title": "SIGNAL RUN",
+      "genre": "Аркада",
+      "description": "Короткий забег на реакцию с сигналами и цифровыми помехами.",
+      "route": "/games/signal-run/",
+      "entrypointMode": "static-browser",
+      "runtimeFamily": "browser-canvas",
+      "runtimeLabel": "Canvas / JavaScript",
+      "webgl": "not-required",
+      "network": "local",
+      "networkLabel": "Одиночный забег",
+      "progressScope": "device-local",
+      "progressLabel": "Рекорд хранится в этом браузере",
+      "recommendedDevice": "browser",
+      "touchValidation": "not-device-verified",
+      "controlNote": "Рекорд локальный; физическая проверка сенсорного управления не заявлена.",
+      "evidence": [
+        "public/games/signal-run/index.html",
+        "public/games/signal-run/game.js"
+      ]
+    },
+    {
+      "id": "cascade-lab",
+      "title": "CASCADE LAB",
+      "genre": "Физическая головоломка",
+      "description": "Конструирование цепных реакций, траектории и исследование причин отказов.",
+      "route": "/games/cascade-lab/",
+      "entrypointMode": "static-browser",
+      "runtimeFamily": "browser-physics",
+      "runtimeLabel": "Браузерная 2D-модель физики",
+      "webgl": "not-required",
+      "network": "local",
+      "networkLabel": "Эксперименты выполняются локально",
+      "progressScope": "device-local",
+      "progressLabel": "Архив экспериментов в браузере",
+      "recommendedDevice": "browser",
+      "touchValidation": "not-device-verified",
+      "controlNote": "Диагностические единицы принадлежат игровой модели; это не сертифицированный лабораторный прибор.",
+      "evidence": [
+        "public/games/cascade-lab/index.html"
+      ]
+    },
+    {
+      "id": "afterimage-run",
+      "title": "AFTERIMAGE//RUN",
+      "genre": "Ежедневный speedrun",
+      "description": "Общий seed, фазовые ворота, личный призрак и ссылка-вызов другу.",
+      "route": "/games/afterimage-run/",
+      "entrypointMode": "static-browser",
+      "runtimeFamily": "browser-canvas",
+      "runtimeLabel": "Canvas / JavaScript",
+      "webgl": "not-required",
+      "network": "local",
+      "networkLabel": "Seed и призрак обрабатываются клиентом",
+      "progressScope": "device-local",
+      "progressLabel": "Лучший результат и призрак на устройстве",
+      "recommendedDevice": "browser",
+      "touchValidation": "not-device-verified",
+      "controlNote": "Публичная ссылка задаёт вызов; единый серверный рейтинг этим не подразумевается. Сенсорный ввод нужно проверить отдельно.",
+      "evidence": [
+        "public/games/afterimage-run/index.html"
+      ]
+    },
+    {
+      "id": "aether-grid",
+      "title": "AETHER GRID",
+      "genre": "Логическая головоломка",
+      "description": "Ежедневная задача: соединить источник и ядро в сетке из 25 узлов.",
+      "route": "/games/aether-grid/",
+      "entrypointMode": "static-browser",
+      "runtimeFamily": "browser-puzzle",
+      "runtimeLabel": "Браузерная логическая головоломка",
+      "webgl": "not-required",
+      "network": "local",
+      "networkLabel": "Основная задача рассчитывается локально",
+      "progressScope": "device-local",
+      "progressLabel": "Личные результаты в браузере",
+      "recommendedDevice": "browser",
+      "touchValidation": "not-device-verified",
+      "controlNote": "Сенсорные цели и прохождение на физическом телефоне должны пройти отдельную проверку.",
+      "evidence": [
+        "public/games/aether-grid/index.html"
+      ]
+    }
+  ]
+}

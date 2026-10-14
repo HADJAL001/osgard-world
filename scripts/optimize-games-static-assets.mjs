@@ -15,6 +15,8 @@ const MINIFY_ASSETS = [
   'device-fit.js',
   'experiment-core.js',
   'experiment-runtime.js',
+  'platform-map/platform-map.css',
+  'platform-map/platform-map.js',
 ]
 
 function walk(directory) {
