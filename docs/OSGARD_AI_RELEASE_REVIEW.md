@@ -20,7 +20,7 @@ Set OPENAI_API_KEY in your local process environment and, if necessary, OPENAI_M
 
 The default model is gpt-6-sol; availability and pricing can differ by API project and can change, so override OPENAI_MODEL when required. API calls may incur charges.
 
-The manual workflow is in GitHub Actions under “OSGARD AI release review (manual, opt-in)”. Its boolean input defaults to false. When explicitly enabled, it regenerates the cross-surface contract audit, builds and verifies the exact artifact attestation, and sends only three minimized reports—release readiness, contract integrity, and artifact attestation—to the model. If preparation fails, the affected report is marked blocked and deterministic overrides force the recommendation to hold. The workflow uses only the Actions secret OPENAI_API_KEY; do not place a key in source code, the frontend, workflow YAML, or the report.
+The manual workflow is in GitHub Actions under “OSGARD AI release review (manual, opt-in)”. Its boolean input defaults to false. When explicitly enabled, it regenerates the cross-surface contract audit, builds the site, measures real app-shell gzip/Brotli sizes, verifies the exact artifact attestation, and sends only four minimized reports—release readiness, contract integrity, performance budget, and artifact attestation—to the model. If preparation fails, the affected report is marked blocked and deterministic overrides force the recommendation to hold. The workflow uses only the Actions secret OPENAI_API_KEY; do not place a key in source code, the frontend, workflow YAML, or the report.
 
 ## Data boundary
 
@@ -28,7 +28,7 @@ The reviewer reads only allow-listed JSON reports in the repository root. It pro
 - check IDs, titles and statuses;
 - small aggregate counts;
 - failed route paths without hostnames or response bodies;
-- file counts, byte totals and artifact hashes.
+- file counts, byte totals and artifact hashes;\n- critical HTML/JavaScript/CSS transfer sizes and budget fingerprints.
 
 It does not send source files, command output, credentials, player records, raw API responses or entire route matrices. The API request sets store=false and defines no tools. Structured output is validated before it is written. Report text is treated as untrusted evidence, not instructions.
 
