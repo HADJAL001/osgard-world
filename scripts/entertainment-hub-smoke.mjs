@@ -66,7 +66,7 @@ const passChecks = [
   ['10 · Daily route is deterministic from UTC date and the catalogue', pass.includes('function gameForUtcDay') && pass.includes('list[stable % list.length]')],
   ['11 · Daily-route picker does not use random numbers', !/function gameForUtcDay[\\s\\S]{0,400}Math\\.random/.test(pass)],
   ['12 · Storage-blocked fallback remains functional in memory', pass.includes('passMemoryFallback') && pass.includes('local storage may be blocked')],
-  ['13 · Save results expose storage failure rather than hiding it', pass.includes('return saved ?') && pass.includes('памяти этой вкладки')],
+  ['13 · Save results expose storage failure rather than hiding it', pass.includes('status.textContent = saved ?') && pass.includes('памяти этой вкладки')],
   ['14 · Passport is inserted into the actual Entertainment page', pass.includes("document.querySelector('#world-catalog')") && pass.includes("catalog.insertAdjacentElement('beforebegin', section)")],
   ['15 · Passport section has a labelled accessible heading', pass.includes("section.setAttribute('aria-labelledby', 'play-pass-title')")],
   ['16 · Total attempts and unique worlds are separate metrics', pass.includes('function passLaunchCount()') && pass.includes('function passUniqueCount()')],
