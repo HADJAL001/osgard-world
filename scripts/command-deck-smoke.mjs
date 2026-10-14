@@ -18,7 +18,7 @@ assert.ok(page.includes('<title>OSGARD PLAY — Command Deck</title>'),'Unique p
 assert.ok(page.includes('noindex,nofollow,noarchive'),'Internal operator tool should not be indexed');
 assert.ok(page.includes('id="run-audit"')&&page.includes('id="export-audit"')&&page.includes('id="scenario-grid"'),'Audit or finance controls missing');
 assert.ok(page.includes('id="campaign-link-form"')&&page.includes('id="campaign-url"')&&page.includes('id="owned-list"'),'Cross-promotion builder missing');
-assert.ok(page.includes('/games/monetization/model.js'),'Command Deck must reuse the shared financial model');
+assert.ok(js.includes("from '/games/monetization/model.js'"),'Command Deck must reuse the shared financial model');
 assert.ok(page.includes('сценарные допущения, не статистика сайта'),'Modelled assumptions must be clear to operators');
 assert.ok(css.includes('@media(max-width:760px)')&&css.includes('@media(max-width:420px)')&&css.includes('prefers-reduced-motion:reduce'),'Responsive and reduced-motion styles missing');
 assert.ok(css.includes(':focus-visible')&&page.includes('class="skip"'),'Keyboard accessibility contract missing');
