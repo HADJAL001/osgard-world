@@ -23,7 +23,7 @@ test('invalid and reversed date ranges are rejected', () => {
 
 test('future end times and periods greater than 366 days are rejected', () => {
   assert.throws(() => logic.parseDateRange('2026-10-14T10:00', '2026-10-16T10:00', Date.parse('2026-10-15T10:00:00Z')), /будущем/i);
-  assert.throws(() => logic.parseDateRange('2025-01-01T00:00', '2026-10-01T00:00', Date.parse('2026-10-15T10:00:00Z')), /366 дней/i);
+  assert.throws(() => logic.parseDateRange('2025-01-01T00:00', '2026-10-01T00:00', Date.parse('2026-10-15T10:00:00Z')), /366 днями/i);
 });
 
 test('previous comparison window is immediately adjacent and has equal duration', () => {
