@@ -2,6 +2,11 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const html = readFileSync('public/games/civic-cascade/index.html', 'utf8');
+const release = JSON.parse(readFileSync('public/games/civic-cascade/release.json', 'utf8'));
+assert.equal(release.version, '2.2.0', 'release.json must match the game version');
+assert.equal(release.releaseId, 'civic-cascade-web-2.2.0', 'release ID must be versioned');
+assert.equal(release.buildContract.missionChallenges.enabled, true, 'Mission challenge contract missing');
+assert.equal(release.buildContract.missionChallenges.globalLeaderboard, false, 'Release must not claim a global leaderboard');
 const inline = (html.match(/<script>([\s\S]*?)<\/script>/) || [])[1];
 assert.ok(inline && inline.length > 5000, 'CIVIC CASCADE inline runtime missing');
 new Function(inline);
