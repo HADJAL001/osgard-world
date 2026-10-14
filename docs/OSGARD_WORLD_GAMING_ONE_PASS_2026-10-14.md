@@ -123,7 +123,7 @@ This document does not certify legal compliance, current uptime, payment readine
 
 ## Reliability upgrade: bounded, auditable one-pass execution
 
-The one-pass runner now treats every QA stage as a bounded operation and persists evidence incrementally.
+The one-pass runner coordinates 32 planned stages: the original ecosystem/release checks plus explicit Core state, analytics consent, product experiments, AI release-review policy, live bundle, player console and PWA checks. Every stage is bounded and evidence is persisted incrementally.
 
 ### Seven concrete engineering improvements
 
