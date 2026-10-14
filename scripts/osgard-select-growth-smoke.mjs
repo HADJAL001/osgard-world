@@ -202,7 +202,7 @@ assert.ok(reward.includes('Копирование само по себе не с
 assert.ok(source.includes("const walletKey='osgard.games.shards-wallet.v1',dailyReward=50") &&
   source.includes('current.day===day'),
   'Local SHARDS reward must be capped to one claim per UTC day and device wallet');
-assert.ok(lifecycle.includes("activeSessionId='session_'+id+'_'+sequence+'_'+launchAt") && lifecycle.includes('sessionId:activeSessionId') && lifecycle.includes('detail:{game:activeGame,sessionId:activeSessionId}'),
+assert.ok(lifecycle.includes("activeSessionId='session_'+id+'_'+sequence+'_'+launchAt") && lifecycle.includes('sessionId:activeSessionId') && lifecycle.includes('detail:{game:activeGame,sessionId:activeSessionId,...dailyChallengeContext(activeGame,activeUrl)}'),
   'The same stable ID must be sent with gameplay completion and post-session return events');
 assert.ok(source.includes("byGame[gameId]=Math.min((byGame[gameId]||0)+1,1000000000)") &&
   source.includes("const roundForSpotlight=preferences.frequency==='every3'?completedCount:(readServiceProgress().byGame[gameId]||1)"),
