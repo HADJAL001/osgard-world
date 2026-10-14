@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import { ArrowUpRight, CheckCircle2, CircleAlert, LoaderCircle, Send, ShieldCheck } from 'lucide-react'
 import { buildLeadMessage, normalizeLeadAttribution, resolvePublicApiBase } from './core/projectIntake.mjs'
 import './project-intake.css'
@@ -90,6 +90,7 @@ export function ProjectIntake({ locale, botUrl }: Props) {
   const [state, setState] = useState<IntakeState>('idle')
   const [statusText, setStatusText] = useState('')
   const [fallback, setFallback] = useState<{ whatsapp: string; email: string } | null>(null)
+  const formRef = useRef<HTMLFormElement>(null)
 
   const setField = (key: keyof Draft, value: string) => setDraft(current => ({ ...current, [key]: value }))
 
@@ -118,19 +119,21 @@ export function ProjectIntake({ locale, botUrl }: Props) {
     setStatusText('')
     setFallback(null)
     const attribution = normalizeLeadAttribution(window.location.search)
-    const payload = {
-      ...draft,
-      description: draft.description.trim(),
-      contact: draft.contact.trim(),
-      projectType: draft.projectType,
-      consent: true,
-      website,
-      attribution,
-    }
+    const projectLabel = t.projectOptions.find(([value]) => value === draft.projectType)?.[1] || draft.projectType
+    const budgetLabel = draft.budget ? (t.budgetOptions.find(([value]) => value === draft.budget)?.[1] || '') : ''
+    const normalizedDraft = { ...draft, projectType: projectLabel, budget: budgetLabel, description: draft.description.trim(), contact: draft.contact.trim() }
+    const payload = { ...normalizedDraft, consent: true, website, attribution }
 
     let apiBase = ''
     try {
-      const configResponse = await fetch('/games/commerce-config.json', { cache: 'no-store', credentials: 'same-origin' })
+      const configController = new AbortController()
+      const configTimeout = window.setTimeout(() => configController.abort(), 4000)
+      let configResponse: Response
+      try {
+        configResponse = await fetch('/games/commerce-config.json', { cache: 'no-store', credentials: 'same-origin', signal: configController.signal })
+      } finally {
+        window.clearTimeout(configTimeout)
+      }
       const config = configResponse.ok ? await configResponse.json() as { apiBaseUrl?: unknown } : {}
       apiBase = resolvePublicApiBase(config.apiBaseUrl, window.location.origin)
     } catch {
@@ -138,9 +141,9 @@ export function ProjectIntake({ locale, botUrl }: Props) {
     }
 
     if (!apiBase) {
-      prepareFallback(draft)
-      setState(website.trim() ? 'sent' : 'fallback')
-      setStatusText(website.trim() ? '' : t.fallbackText)
+      prepareFallback(normalizedDraft)
+      setState('fallback')
+      setStatusText(t.fallbackText)
       return
     }
 
@@ -171,16 +174,16 @@ export function ProjectIntake({ locale, botUrl }: Props) {
         return
       }
       if (response.status >= 500 || response.status === 429) {
-        prepareFallback(draft)
+        prepareFallback(normalizedDraft)
         setState('fallback')
         setStatusText(t.fallbackText)
         return
       }
       setState('error')
       setStatusText(t.apiRejected)
-      prepareFallback(draft)
+      prepareFallback(normalizedDraft)
     } catch {
-      prepareFallback(draft)
+      prepareFallback(normalizedDraft)
       setState('fallback')
       setStatusText(t.fallbackText)
     }
@@ -208,11 +211,11 @@ export function ProjectIntake({ locale, botUrl }: Props) {
         </div>
         <div className="osgard-intake__direct">
           <a href={botUrl} target="_blank" rel="noopener noreferrer">{ru ? 'Открыть Telegram' : 'Open Telegram'} <ArrowUpRight aria-hidden="true" /></a>
-          <a href="mailto:osman.osmanov0099@gmail.com">osman.osmanov0099@gmail.com</a>
+          <a href="mailto:osman.osmanov0099@gmail.com">osman.osmanov0099@gmail.com</a><a href="https://wa.me/79640027222" target="_blank" rel="noopener noreferrer">WhatsApp ↗</a>
         </div>
       </div>
 
-      <form className="osgard-intake__form" onSubmit={event => void submit(event)} aria-describedby="osgard-intake-note">
+      <form ref={formRef} className="osgard-intake__form" onSubmit={event => void submit(event)} aria-describedby="osgard-intake-note">
         <div className="osgard-intake__form-head">
           <span>PROJECT / 01</span>
           <small>{ru ? 'Обычно меньше двух минут' : 'Usually under two minutes'}</small>
@@ -239,7 +242,7 @@ export function ProjectIntake({ locale, botUrl }: Props) {
         </label>
         <label className="osgard-intake__honeypot" aria-hidden="true">
           <span>{t.honeypot}</span>
-          <input tabIndex={-1} autoComplete="off" value={website} onChange={event => setWebsite(event.target.value)} />
+          <input name="website" tabIndex={-1} autoComplete="off" value={website} onChange={event => setWebsite(event.target.value)} />
         </label>
         <label className="osgard-intake__consent">
           <input type="checkbox" checked={consent} onChange={event => setConsent(event.target.checked)} required />
@@ -255,14 +258,14 @@ export function ProjectIntake({ locale, botUrl }: Props) {
           <div className={'osgard-intake__status is-' + state} role="status" aria-live="polite">
             {state === 'sent' ? <CheckCircle2 aria-hidden="true" /> : state === 'error' ? <CircleAlert aria-hidden="true" /> : state === 'fallback' ? <CircleAlert aria-hidden="true" /> : <LoaderCircle aria-hidden="true" />}
             <div>
-              <strong>{state === 'sent' ? t.sentTitle : state === 'fallback' ? t.fallbackTitle : state === 'error' ? t.apiRejected : t.sending}</strong>
+              <strong>{state === 'sent' ? t.sentTitle : state === 'fallback' ? t.fallbackTitle : state === 'error' ? t.errorTitle : t.sending}</strong>
               <p>{statusText}</p>
               {state === 'sent' && <button type="button" onClick={resetForm}>{t.newLead}</button>}
               {fallback && state !== 'sent' && (
                 <div className="osgard-intake__fallback-actions">
                   <a href={fallback.whatsapp} target="_blank" rel="noopener noreferrer">{t.whatsapp} <ArrowUpRight aria-hidden="true" /></a>
                   <a href={fallback.email}>{t.email} <ArrowUpRight aria-hidden="true" /></a>
-                  <button type="button" onClick={() => void submit(new Event('submit') as unknown as FormEvent<HTMLFormElement>)}>{t.retry}</button>
+                  <button type="button" onClick={() => formRef.current?.requestSubmit()}>{t.retry}</button>
                 </div>
               )}
             </div>
