@@ -24,7 +24,7 @@
   ]);
   const GAME_IDS = new Set([
     'null-shift', 'time', 'swarm', 'inherit', 'remix', 'civic-cascade',
-    'patina', 'signal-run', 'cascade-lab', 'afterimage-run', 'aether-grid', 'unknown'
+    'patina', 'signal-run', 'cascade-lab', 'afterimage-run', 'aether-grid', 'heist-echo', 'unknown'
   ]);
   let flushPromise = null;
   let activeController = null;
