@@ -249,10 +249,18 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
                ? content.includes('OSGARDDailyCircuitCore') && content.includes('navigator.share') && content.includes('daily_circuit')
              : path === '/games/daily-circuit.css'
                ? content.includes('.daily-circuit-grid') && content.includes('prefers-reduced-motion:reduce')
+             : path === '/games/expedition/core.js'
+               ? content.includes('window.OSGARDExpeditionCore') && content.includes('function advanceProgress(')
+             : path === '/games/expedition/app.js'
+               ? content.includes('function buildRoute(') && content.includes("track('expedition_route_created'")
+             : path === '/games/expedition/catalog-runtime.js'
+               ? content.includes("document.addEventListener('osgard:game-completed'") && content.includes('.og-expedition-band')
              : path === '/games/consented-analytics.js'
               ? content.includes('window.OSGARD_CONSENTED_ANALYTICS') && content.includes('analytics-pending.v1') && content.includes('analytics-consent.v1') && content.includes('referral_link_opened') && content.includes('game_session_completed') && content.includes('/v1/events') && content.includes('accepted')
              : path === '/games/player-lifecycle.js'
               ? content.includes('function startSession(') && content.includes('game_session_completed') && content.includes('osgard:game-lifecycle') && content.includes('event.source!==frame.contentWindow')
+              : path === '/games/expedition/expedition.css'
+              ? content.includes('.og-expedition-band') && content.includes('prefers-reduced-motion:reduce')
               : path.endsWith('.css')
               ? normalized.includes('--acid:#c8ff3d') && normalized.includes('/skillcred/fonts/intervariable.woff2') && normalized.includes('/skillcred/fonts/instrumentserif-italic.woff2') && normalized.includes('/skillcred/fonts/jetbrainsmono-regular.woff2') && (!expectCurrentDesign || (normalized.includes('--hero-size:clamp(88px,6vw,104px)') && normalized.replace(/["']/g, '').includes('.trust-spine[data-state=revoked]')))
               : content.includes('demo/issue') && content.includes('data-clock-step')
