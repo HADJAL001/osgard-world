@@ -36,7 +36,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
       : route === '/games/heist-echo/icon.svg'
         ? text.includes('<svg') && text.includes('viewBox') && text.includes('</svg>')
       : route === '/games/heist-echo/sw.js'
-        ? text.includes("const CACHE='heist-echo-4.0.0-release-2'") && ['payload-01.txt','payload-02.txt','payload-03.txt','payload-04.txt','payload-05.txt'].every(file => text.includes(file))
+        ? text.includes("const CACHE='heist-echo-4.0.0-release-2'") && text.includes('cache.addAll(SHELL)') && text.includes('cache.match(event.request)') && text.includes('cache.put(event.request,response.clone())')
       : route.startsWith('/games/heist-echo/payload-')
         ? text.length > 200000 && (route.endsWith('payload-01.txt') ? text.startsWith('<!doctype html>') && text.includes('data-heist-echo-release="4.0.0"') : true)
       : route.startsWith('/api/v1/')
