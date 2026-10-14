@@ -31,7 +31,7 @@ test("test Stripe setup is reported as test-only, never as live revenue", () => 
   assert.equal(find(report, "one-time-checkout").status, "test_only");
   assert.match(find(report, "one-time-checkout").detail, /не live-выручка/);
   assert.equal(find(report, "premium-entitlements").status, "blocked");
-  assert.equal(report.overallStatus, "review_required");
+  assert.equal(report.overallStatus, "blocked");
 });
 
 test("database, webhook and prices block checkout when unavailable", () => {
