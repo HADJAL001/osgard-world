@@ -230,6 +230,7 @@ const partnerEditor=readFileSync(resolve(root,'admin/partners/index.html'),'utf8
 const partnerLanding=readFileSync(resolve(root,'partners/index.html'),'utf8')
 assert.ok(dailyCircuitScript.includes("format:'Спонсорское событие или уровень'")&&partnerLanding.includes('<option>Спонсорское событие или уровень</option>'),'Daily Circuit sponsor CTA must preselect a real supported Partner Studio format')
 const civic=readFileSync(resolve(root,'civic-cascade/index.html'),'utf8')
+const civicRelease=JSON.parse(readFileSync(resolve(root,'civic-cascade/release.json'),'utf8'))
 const cascadeGame=readFileSync(resolve(root,'cascade-lab/index.html'),'utf8')
 const cascadeDelta=readFileSync(resolve(root,'cascade-lab/delta-lens.js'),'utf8')
 const cascadeHypothesis=readFileSync(resolve(root,'cascade-lab/hypothesis-lab.js'),'utf8')
@@ -494,7 +495,8 @@ assert.ok(civic.includes("game:'civic-cascade'")&&civic.includes("type:'osgard:g
 const civicInline=(civic.match(/<script>([\s\S]*?)<\/script>/)||[])[1]
 assert.ok(civicInline&&civicInline.length>5000,'CIVIC CASCADE self-contained game script missing')
 new Function(civicInline)
-assert.ok(civic.includes('name="osgard-game-version" content="2.2.0-mission-challenges"'), 'CIVIC CASCADE 2.2 release marker missing')
+const civicVersionMarker=civic.match(/<meta name="osgard-game-version" content="([^"]+)">/)?.[1]||''
+assert.ok(civicRelease.gameId==='civic-cascade'&&/^\d+\.\d+\.\d+$/.test(civicRelease.version)&&civicRelease.releaseId.includes(civicRelease.version)&&civicVersionMarker.startsWith(civicRelease.version+'-'), 'CIVIC CASCADE HTML release marker must align with release.json')
 assert.ok(civic.includes('id="cc-result-challenge"') && civic.includes('id="cc-challenge-banner"'), 'CIVIC CASCADE mission challenge UI missing')
 assert.ok(civicInline.includes('function parseMissionChallenge') && civicInline.includes('function createMissionChallengeUrl') && civicInline.includes('civic_cascade_friend_challenge'), 'CIVIC CASCADE challenge routing and share attribution missing')
 assert.ok(civic.includes('id="cc-incident"') && civic.includes('id="cc-incident-options"') && civic.includes('SIMULATION PAUSED'), 'Crisis Director decision UI is missing')
