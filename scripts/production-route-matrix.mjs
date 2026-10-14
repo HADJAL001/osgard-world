@@ -358,7 +358,9 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
               ? compact.includes("queryselector('#game')") && compact.includes('constroles=[') && compact.includes('functionnewgame(') && compact.includes('swarm-room-session') && compact.includes('restoreroomsession()') && compact.includes('recordinviteopen')
             : path.endsWith('.css')
               ? normalized.includes('--acid:#c8ff3d') && normalized.includes('/skillcred/fonts/intervariable.woff2') && normalized.includes('/skillcred/fonts/instrumentserif-italic.woff2') && normalized.includes('/skillcred/fonts/jetbrainsmono-regular.woff2') && (!expectCurrentDesign || (normalized.includes('--hero-size:clamp(88px,6vw,104px)') && normalized.replace(/["']/g, '').includes('.trust-spine[data-state=revoked]')))
-              : path === '/games/cascade-lab/case-passport.js'
+              : path === '/games/cascade-lab/reproducibility-lab.js'
+              ? content.includes("const VERSION = '0.27.0'") && content.includes("const SCHEMA = 'osgard.cascade-lab.reproducibility-lab.v1'") && content.includes('function analyzeCohort(') && content.includes('function validateArchive(') && !content.includes('fetch(') && !content.includes('sendBeacon(') && !content.includes('.innerHTML')
+            : path === '/games/cascade-lab/case-passport.js'
               ? content.includes("const VERSION='0.21.0'") && content.includes("SCHEMA='osgard.cascade-lab.case-passport.v1'") && content.includes('function verifyPassport(') && !content.includes('fetch(') && !content.includes('sendBeacon(')
             : path === '/games/cascade-lab/trajectory-xray.js'
               ? content.includes("const VERSION = '0.22.0'") && content.includes("const SCHEMA = 'osgard.cascade-lab.trajectory-xray.v1'") && content.includes('function trajectoryDeviation(') && !content.includes('fetch(') && !content.includes('sendBeacon(')
