@@ -2836,7 +2836,8 @@ try{Object.defineProperty(window,'CASCADELAB014',{value:Object.freeze({version:V
     return rows;
   }
   function shareText(record) {
-    const url = new URL('/games/cascade-lab/', location.origin);
+    const shareOrigin = location.protocol === 'file:' || !location.origin || location.origin === 'null' ? 'https://osgard.world' : location.origin;
+    const url = new URL('/games/cascade-lab/', shareOrigin);
     url.searchParams.set('utm_source', 'cascade_lab');
     url.searchParams.set('utm_medium', 'share');
     url.searchParams.set('utm_campaign', 'experiment_ledger');
