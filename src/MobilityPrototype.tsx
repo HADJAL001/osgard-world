@@ -1,3 +1,4 @@
+import './mobility.css'
 import { ArrowRight, Car, Clock3, MapPin, Users } from 'lucide-react'
 import { useState } from 'react'
 import { recordOsgardEvent } from './core/eventQueue'

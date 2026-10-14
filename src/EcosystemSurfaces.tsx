@@ -1,3 +1,4 @@
+import './surfaces.css'
 import { ArrowRight, Camera, Globe2, Play, Users } from 'lucide-react'
 import { useState } from 'react'
 import { recordOsgardEvent } from './core/eventQueue'

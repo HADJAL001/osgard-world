@@ -1,3 +1,4 @@
+import './create.css'
 import { ArrowRight, Check, Code2, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 import { recordOsgardEvent } from './core/eventQueue'

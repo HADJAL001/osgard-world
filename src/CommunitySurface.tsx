@@ -1,3 +1,4 @@
+import './community.css'
 import { Globe2, Send, Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
 

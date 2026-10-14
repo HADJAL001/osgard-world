@@ -1,3 +1,4 @@
+import './stream.css'
 import { Eye, Film, Radio, Users } from 'lucide-react'
 import { useState } from 'react'
 import { recordOsgardEvent } from './core/eventQueue'

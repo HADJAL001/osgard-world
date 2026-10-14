@@ -74,6 +74,8 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
+      - name: Verify route splitting and bundle budget test fixtures
+        run: npm run qa:performance-tests
       - name: Test OpenAI reviewer offline (no API call)
         run: npm run qa:ai-release-review
       - name: Verify Godot diagnostics fault contract
@@ -86,6 +88,8 @@ jobs:
         run: npm run qa:ios-appstore
       - name: Build the production site
         run: npm run build
+      - name: Enforce initial JavaScript and chunk size budgets
+        run: npm run qa:performance-budget
       - name: Verify live SkillCred page wiring
         run: npm run qa:skillcred
       - name: Verify Imperium of Time game systems and visual diagnostics
