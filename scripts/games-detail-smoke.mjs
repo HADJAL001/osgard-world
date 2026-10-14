@@ -31,6 +31,7 @@ assert.ok(!app.includes('const seo: Record') && app.includes('const cleanSeo: Re
 const civicGame = read('public/games/civic-cascade/index.html')
 const cascadeGame = read('public/games/cascade-lab/index.html')
 const cascadeDelta = read('public/games/cascade-lab/delta-lens.js')
+const cascadeAutopsy = read('public/games/cascade-lab/failure-autopsy.js')
 const afterimageGame = read('public/games/afterimage-run/index.html')
 const aetherGame = read('public/games/aether-grid/index.html')
 
@@ -84,7 +85,7 @@ assert.ok(routeMatrix.includes("const isGodotDirectory = route === '/games/null-
 assert.ok(routeMatrix.includes("route.startsWith('/games/null-shift-godot/index.html')") || routeMatrix.includes("route.startsWith('/games/null-shift-godot')") && routeMatrix.includes("text.includes('data-nullshift-shell=\"premium-v1\"')"), 'Godot content contract and asset checks must remain on the explicit index/asset probes')
 console.log('PASS OSGARD GAME DETAIL: eleven routes, details, SEO sitemap, safe legacy fallback, Nginx redirects, asynchronous SPA readiness and honest lifecycle events.')
 assert.ok(cascadeGame.includes('id="runButton"') && cascadeGame.includes('id="exportTelemetryButton"') && cascadeGame.includes('id="exportGrowthButton"') && cascadeGame.includes('id="serviceAdDialog"'), 'CASCADE LAB gameplay, diagnostics and promotion controls missing')
-assert.ok(cascadeGame.includes('data-cascade-lab-ready="true"') && cascadeGame.includes('content="0.17.0-experiment-delta"') && cascadeGame.includes('data-cascade-lab-upgrades="0.14.0"'), 'CASCADE LAB 0.16.0 dossier version, prior engineering layer and parent iframe-ready contract missing')
+assert.ok(cascadeGame.includes('data-cascade-lab-ready="true"') && cascadeGame.includes('content="0.18.0-failure-autopsy"') && cascadeGame.includes('data-cascade-lab-upgrades="0.14.0"'), 'CASCADE LAB 0.18.0 release, prior engineering layer and parent iframe-ready contract missing')
 assert.ok(cascadeGame.includes("notifyOsgardLifecycle('ready'") && cascadeGame.includes("notifyOsgardLifecycle('started'") && cascadeGame.includes("notifyOsgardLifecycle('paused'") && cascadeGame.includes("notifyOsgardLifecycle('resumed'"), 'CASCADE LAB must send the parent portal lifecycle handshake')
 assert.ok(cascadeGame.includes('function showServiceInterstitial') && cascadeGame.includes('id="serviceAdChoices"') && cascadeGame.includes('id="serviceAdVisitButton"') && cascadeGame.includes('Я поделился — получить +10 LC'), 'CASCADE LAB must expose the selectable OSGARD service intermission and share reward')
 assert.ok(cascadeGame.includes("'marcosa': 'https://marcosa.club/'") && cascadeGame.includes("'taxi': 'https://senjorio.com/'") && cascadeGame.includes("'smart-map': 'https://superday.run/'"), 'CASCADE LAB must open the official social, taxi and smart-map services directly')
@@ -143,8 +144,9 @@ assert.equal(upgradeScripts.length, 1, 'CASCADE LAB must install exactly one 0.1
 new Function(upgradeScripts[0][1])
 for (const feature of ['HISTORY_LIMIT=50','function undo()','function redo()','function duplicateSelected()','function deleteSelected()','function nudge(','function exportProject()','function validateProject(','128*1024','function importProject()','function fullscreen()','function cycleFrequency()','autoPause','navigator.share','document.visibilityState']) assert.ok(upgradeScripts[0][1].includes(feature), 'CASCADE LAB 0.14.0 feature missing: '+feature)
 assert.ok(upgradeScripts[0][1].includes("Object.defineProperty(window,'CASCADELAB014'") && upgradeScripts[0][1].includes('schemaVersion:1'), 'CASCADE LAB upgrade surface and JSON schema must be versioned')
-assert.ok(cascadeGame.includes('<title>CASCADE LAB — Premium Physics Lab 0.17.0</title>') && cascadeGame.includes('name="osgard-game-version" content="0.17.0-experiment-delta"') && (cascadeGame.match(/<meta name="osgard-game-version"/g) || []).length === 1, 'CASCADE LAB 0.17.0 must expose one canonical release identity')
+assert.ok(cascadeGame.includes('<title>CASCADE LAB — Premium Physics Lab 0.18.0</title>') && cascadeGame.includes('name="osgard-game-version" content="0.18.0-failure-autopsy"') && (cascadeGame.match(/<meta name="osgard-game-version"/g) || []).length === 1, 'CASCADE LAB 0.18.0 must expose one canonical release identity')
 assert.ok(cascadeGame.includes('id="CASCADELAB017"') && cascadeGame.includes('data-cascade-lab-delta="0.17.0"'), 'CASCADE LAB Delta Lens loader marker missing')
+assert.ok(cascadeGame.includes('id="CASCADELAB018"') && cascadeGame.includes('data-cascade-lab-autopsy="0.18.0"') && cascadeAutopsy.includes('function diagnoseRun(') && cascadeAutopsy.includes('globalThis.__CASCADELAB018_TEST__') && !cascadeAutopsy.includes('fetch(') && !cascadeAutopsy.includes('XMLHttpRequest') && !cascadeAutopsy.includes('sendBeacon('), 'CASCADE LAB Failure Autopsy must use local diagnosis with no network telemetry')
 assert.ok(cascadeDelta.includes('function latestSameLevelPair()') && cascadeDelta.includes('function buildComparisonPayload(pair)') && cascadeDelta.includes('cascade-lab-ab-comparison.json') && cascadeDelta.includes('меняй одну переменную за раз'), 'Delta Lens compare/export/interpretation contract missing')
 new Function(cascadeDelta)
 const ledgerScripts = [...cascadeGame.matchAll(/<script\b[^>]*data-cascade-lab-ledger="0\.15\.0"[^>]*>([\s\S]*?)<\/script>/g)]
