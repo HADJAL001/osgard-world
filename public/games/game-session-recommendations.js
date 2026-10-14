@@ -303,13 +303,36 @@ const selectSessionKey='osgard.games.growth-session.v1';
 const selectAllowedEvents=new Set(['cross_promo_clicked','owned_promo_impression','owned_promo_intermission_skipped','owned_promo_preferences_saved','social_share_intent','social_reward_claimed','referral_reward_claimed','share_created','invite_link_prepared']);
 function hasConsent(){try{return localStorage.getItem(selectConsentKey)==='yes'}catch{return false}}
 const promoImpressionKeyPrefix='osgard.games.promo-impression.v1:';
+const fallbackPromoImpressions=new Set();
+let memorySpotlightVariant='';
 function claimPromoImpression(key){
- const storageKey=promoImpressionKeyPrefix+String(key||'').replace(/[^a-zA-Z0-9:_-]/g,'').slice(0,120);
- try{if(sessionStorage.getItem(storageKey)==='1')return false;sessionStorage.setItem(storageKey,'1');return true}catch{return true}
+ const normalized=String(key||'').replace(/[^a-zA-Z0-9:_-]/g,'').slice(0,120);
+ if(!normalized)return false;
+ const storageKey=promoImpressionKeyPrefix+normalized;
+ try{
+  if(sessionStorage.getItem(storageKey)==='1')return false;
+  sessionStorage.setItem(storageKey,'1');
+  fallbackPromoImpressions.add(normalized);
+  return true;
+ }catch{
+  if(fallbackPromoImpressions.has(normalized))return false;
+  fallbackPromoImpressions.add(normalized);
+  return true;
+ }
 }
 function getSessionSpotlightVariant(){
+ if(memorySpotlightVariant==='a'||memorySpotlightVariant==='b')return memorySpotlightVariant;
  const key='osgard.games.select-spotlight-variant.v1';
- try{const existing=sessionStorage.getItem(key);if(existing==='a'||existing==='b')return existing;const chosen=Math.random()<0.5?'a':'b';sessionStorage.setItem(key,chosen);return chosen}catch{return Math.random()<0.5?'a':'b'}
+ try{
+  const existing=sessionStorage.getItem(key);
+  if(existing==='a'||existing==='b'){memorySpotlightVariant=existing;return existing}
+  memorySpotlightVariant=Math.random()<0.5?'a':'b';
+  sessionStorage.setItem(key,memorySpotlightVariant);
+  return memorySpotlightVariant;
+ }catch{
+  memorySpotlightVariant=Math.random()<0.5?'a':'b';
+  return memorySpotlightVariant;
+ }
 }
 const pendingSelectTelemetry=new Set();
 function cancelPendingSelectTelemetry(){for(const controller of pendingSelectTelemetry){try{controller.abort()}catch{}}pendingSelectTelemetry.clear()}
