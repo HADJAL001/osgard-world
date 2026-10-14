@@ -6,7 +6,7 @@
  * admin, operator, checkout-success or cross-origin requests.
  */
 const CACHE_PREFIX = 'osgard-play-shell-';
-const CACHE_NAME = 'osgard-play-shell-v1.0.2';
+const CACHE_NAME = 'osgard-play-shell-v1.0.3';
 const PRECACHE_URLS = [
   '/games/',
   '/games/index.html',
@@ -28,7 +28,12 @@ const PRECACHE_URLS = [
   '/games/device-fit.css',
   '/games/device-fit.js',
   '/games/experiment-core.js',
-  '/games/experiment-runtime.js'
+  '/games/experiment-runtime.js',
+  '/games/platform-map/',
+  '/games/platform-map/index.html',
+  '/games/platform-map/platform-map.css',
+  '/games/platform-map/platform-map.js',
+  '/games/game-registry.v1.json'
 ];
 const PUBLIC_STATIC_ALLOWLIST = new Set([
   '/games/app.webmanifest',
@@ -48,6 +53,9 @@ const PUBLIC_STATIC_ALLOWLIST = new Set([
   '/games/device-fit.js',
   '/games/experiment-core.js',
   '/games/experiment-runtime.js',
+  '/games/platform-map/platform-map.css',
+  '/games/platform-map/platform-map.js',
+  '/games/game-registry.v1.json',
   '/games/favicon.svg'
 ]);
 
@@ -116,6 +124,10 @@ self.addEventListener('fetch', event => {
         if (url.pathname === '/games/expedition/' || url.pathname === '/games/expedition/index.html') {
           const cachedExpedition = await cache.match(url.pathname === '/games/expedition/' ? '/games/expedition/' : '/games/expedition/index.html');
           if (cachedExpedition) return cachedExpedition;
+        }
+        if (url.pathname === '/games/platform-map/' || url.pathname === '/games/platform-map/index.html') {
+          const cachedMap = await cache.match(url.pathname === '/games/platform-map/' ? '/games/platform-map/' : '/games/platform-map/index.html');
+          if (cachedMap) return cachedMap;
         }
         const cached = await cache.match('/games/offline.html');
         return cached || new Response('OSGARD PLAY is offline. Reconnect and try again.', {
