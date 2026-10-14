@@ -15,7 +15,7 @@ assert.ok(css.includes("--acid:#d9ff57") && css.includes(".arena") && css.includ
 assert.ok(css.includes("/skillcred/fonts/InterVariable.woff2") && css.includes("/skillcred/fonts/JetBrainsMono-Regular.woff2"),
   "SWARM should use the site's self-hosted font files.");
 assert.ok(!css.includes("fonts.googleapis.com"), "SWARM must not reintroduce a third-party font request.");
-assert.match(css, /prefers-reduced-motion:\\s*reduce/, "SWARM interface must respect reduced-motion preference.");
+assert.match(css, /prefers-reduced-motion:\s*reduce/, "SWARM interface must respect reduced-motion preference.");
 
 assert.ok(game.includes("querySelector('#game')") && game.includes("const roles = [") &&
   game.includes("function newGame(") && game.includes("swarm-room-session") &&
@@ -27,7 +27,7 @@ const jsBranch = matrix.indexOf("path === '/games/swarm/game.js'");
 const genericCssFallback = matrix.indexOf(": path.endsWith('.css')", cssBranch);
 assert.ok(cssBranch >= 0 && jsBranch > cssBranch && genericCssFallback > jsBranch,
   "SWARM asset validators must run before generic CSS/JS fallbacks.");
-assert.ok(matrix.includes("const compact = normalized.replace(/\\\\s+/g, '')") &&
+assert.ok(matrix.includes("const compact = normalized.replace(/\\s+/g, '')") &&
   matrix.includes("compact.includes('--acid:#d9ff57')") &&
   matrix.includes("compact.includes('/skillcred/fonts/intervariable.woff2')"),
   "Production route matrix must validate SWARM with SWARM-specific, whitespace-tolerant asset markers.");
