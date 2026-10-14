@@ -25,7 +25,7 @@
     "qa:null-shift": "node scripts/null-shift-premium-smoke.mjs",
     "qa:games-portal": "node scripts/games-portal-smoke.mjs && npm run qa:civic-cascade && npm run qa:games-expedition && npm run qa:civic-release-contract",
     "qa:entertainment": "node scripts/entertainment-hub-smoke.mjs",
-    "qa:games-detail": "node scripts/games-detail-smoke.mjs && npm run qa:cascade-lab-hypothesis && npm run qa:cascade-lab-engineering && npm run qa:cascade-lab-experiment-studio && npm run qa:cascade-lab-trajectory-xray && npm run qa:cascade-lab-mission-director && npm run qa:cascade-lab-evidence-integrity && npm run qa:cascade-lab-pwa",
+    "qa:games-detail": "node scripts/games-detail-smoke.mjs && npm run qa:cascade-lab-hypothesis && npm run qa:cascade-lab-engineering && npm run qa:cascade-lab-experiment-studio && npm run qa:cascade-lab-trajectory-xray && npm run qa:cascade-lab-mission-director && npm run qa:cascade-lab-evidence-integrity && npm run qa:cascade-lab-pwa && npm run qa:cascade-lab-reproducibility",
     "qa:game-business-bridge": "node scripts/game-detail-growth-cta-smoke.mjs",
     "qa:cascade-lab-hypothesis": "node scripts/cascade-lab-hypothesis-smoke.mjs",
     "qa:game-detail-runtime": "node scripts/game-detail-runtime-smoke.mjs",
@@ -73,7 +73,8 @@
     "qa:owned-promo-config": "node scripts/owned-promo-config-smoke.mjs",
     "qa:games-accessibility-funnel": "node scripts/games-accessibility-funnel-smoke.mjs && node scripts/consented-analytics-queue-smoke.mjs && node --test services/osgard-commerce-api/test/core.test.mjs",
     "qa:civic-release-contract": "node scripts/civic-cascade-release-contract-smoke.mjs",
-    "qa:ecosystem-release": "node scripts/osgard-ecosystem-release-preflight.mjs && node scripts/osgard-ecosystem-release-preflight-smoke.mjs"
+    "qa:ecosystem-release": "node scripts/osgard-ecosystem-release-preflight.mjs && node scripts/osgard-ecosystem-release-preflight-smoke.mjs",
+    "qa:cascade-lab-reproducibility": "node scripts/cascade-lab-reproducibility-lab-smoke.mjs"
   },
   "dependencies": {
     "@types/three": "^0.186.0",
