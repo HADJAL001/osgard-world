@@ -233,3 +233,17 @@ The important commercial boundary remains: owned-service cross-promotion is impl
 This pass targets the actual game-detail iframe rather than rebuilding features already in the portal. It adds a 15-second startup watchdog, a slow-start hint at 4.5 seconds, per-attempt guards to ignore stale iframe callbacks, cleanup for all scheduled timers, a retry that remounts the iframe, separate error reasons, a loading progress indicator without invented percentages, polite/urgent accessible status announcements, focus return, Escape-to-close from the parent UI, synchronized fullscreen state and an explicit retry/share/standalone recovery panel. The new CSS handles narrow screens and `prefers-reduced-motion`. `games-detail-smoke.mjs` now guards these contracts in CI.
 
 The code has been committed to an isolated feature branch; type-check/build/smoke must pass in GitHub Actions before merge. No production deployment or device-level testing is claimed.
+
+
+## 9. Detail-page lifecycle telemetry — 14 October 2026
+
+The individual game page now treats the embedded iframe's gameplay lifecycle separately from its HTML load:
+- `game_session_started` is recorded only after an explicit `osgard:game-lifecycle` message with `state: started`.
+- Messages are accepted only when their origin is the current site, their source is the currently mounted iframe, their protocol is the expected string, and the game ID matches the active detail page.
+- Duplicate `started` messages do not create duplicate concurrent sessions.
+- `game_session_completed` includes the duration in whole seconds and an end reason. A game only gets a completion reason when it explicitly sends `completed`; close, route exit and gameplay error remain different outcomes.
+- Events still pass through the existing allowlisted queue only if the latest analytics consent is granted. No session data is sent just because the iframe fired `load`.
+- The in-player toolbar switches among loading/ready, active, completed and error labels based on the observed state.
+- Eight new detail smoke assertions cover message-source validation, game matching, start signal, de-duplication, duration/end reason, close/exit and consent gates.
+
+The events are best-effort telemetry; the games that do not yet emit a started lifecycle message will not be counted as started from their HTML load. This is intentional to avoid fabricating sessions. Production deployment and post-deploy route/device validation remain separate release steps.
