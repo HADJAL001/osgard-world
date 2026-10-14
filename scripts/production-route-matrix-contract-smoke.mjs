@@ -88,6 +88,9 @@ assert.equal(catalogueFallback.items.length, 11, "Static fallback must preserve 
 assert.deepEqual(catalogueFallback.items.map(item => item.sortOrder), [1,2,3,4,5,6,7,8,9,10,11]);
 assert.equal(new Set(catalogueFallback.items.map(item => item.id)).size, 11, "Fallback catalogue IDs must be unique.");
 assert.ok(nginx.includes('location = /games/catalog-runtime.js') && nginx.includes('gzip_static off;') && nginx.includes('no-cache, must-revalidate'), "The small catalogue runtime must bypass stale precompressed sidecars and revalidate.");
+assert.ok(nginx.includes('no-store, no-cache, must-revalidate, max-age=0') && nginx.includes('if_modified_since off;'), "The Games catalogue runtime must not reuse a stale empty cached response.");
+assert.ok(matrix.includes("expectedBuild.slice(0, 12)") && matrix.includes("cache: 'no-store'"), "Production route checks must probe current-release static assets without reusing cache entries.");
+assert.ok(englishGames.includes('favicon.svg?v=__OSGARD_BUILD_VERSION__') && russianGames.includes('favicon.svg?v=__OSGARD_BUILD_VERSION__') && deployWorkflow.includes('osgard-release/html/games/en/index.html'), "Both language catalogues must publish build-versioned favicon URLs.");
 assert.ok(nginx.includes('location = /commerce-api/v1/game-catalog') && nginx.includes('error_page 502 503 504 =200 /games/game-catalog-fallback.json;'), "The public read-only catalogue must use a safe static fallback only during API outages.");
 assert.ok(nginx.includes('location = /commerce-api/v1/admin/game-catalog') && nginx.includes('error_page 502 504 =503 @osgard_commerce_unavailable;') && nginx.includes('COMMERCE_API_UNAVAILABLE'), "Operator catalogue calls must fail with a clear JSON 503, never fabricated admin success.");
 assert.ok(assetOptimizer.includes("'catalog-runtime.js'"), "The catalogue runtime must be non-empty and minified during build.");
