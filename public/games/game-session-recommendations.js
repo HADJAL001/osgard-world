@@ -1119,6 +1119,12 @@ function gameCoachShelf(detail,gameId){
 }
 
 let lastIntermissionGame='',lastIntermissionCount=0,lastInlineIntermissionSession='';
+const renderedInlineIntermissionSessions=new Set();
+function rememberInlineIntermissionSession(key){
+ if(!key)return;
+ renderedInlineIntermissionSessions.add(key);
+ while(renderedInlineIntermissionSessions.size>256)renderedInlineIntermissionSessions.delete(renderedInlineIntermissionSessions.values().next().value);
+}
 function refreshCurrentServiceShelf(forceRebuild=false){
  if(!titles[lastIntermissionGame])return;
  const current=root.querySelector('.og-postgame-services')||(outsideRoot&&outsideRoot.querySelector('.og-postgame-services'));
@@ -1174,10 +1180,11 @@ document.addEventListener('osgard:game-launching',()=>{
 function renderOsgardSelect(gameId,sessionId){
  const id=gameId;if(!titles[id])return;
  const key=typeof sessionId==='string'&&/^[a-z0-9:_-]{1,160}$/i.test(sessionId)?sessionId:'';
- // A natural completion emits both session-ended and game-completed. Render once per session.
- if(key&&key===lastInlineIntermissionSession&&root.querySelector('.og-postgame-suite'))return;
+ // A natural completion can emit both game-completed and session-ended. De-duplicate by session ID even if another UI handler mutates or clears the host between events.
+ if(key&&(renderedInlineIntermissionSessions.has(key)||key===lastInlineIntermissionSession&&root.querySelector('.og-postgame-suite')))return;
  const completedCount=recordCompletedRound(id,key),preferences=readServicePreferences();
  lastInlineIntermissionSession=key;
+ rememberInlineIntermissionSession(key);
  lastIntermissionGame=id;lastIntermissionCount=completedCount;
  const previousSuite=root.querySelector('.og-postgame-suite');if(previousSuite){disposePostgameTree(previousSuite);previousSuite.remove()}
  const suite=make('section','og-postgame-suite');const panels=[servicesShelf(id,shouldShowServicePromos(preferences,completedCount),completedCount)];if(managedPromoConfig.showShareRewards)panels.push(rewardShelf(id));suite.append(...panels);root.append(suite);
