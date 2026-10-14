@@ -38,7 +38,7 @@ done <<< "$listing"
 while IFS= read -r line; do
   [[ -n "$line" ]] || continue
   mode="${line:0:1}"
-  [[ "$mode" != "l" && "$mode" != "h" ]] || die "Symbolic and hard links are not allowed in the static archive."
+  [[ "$mode" == "-" || "$mode" == "d" ]] || die "Only regular files and directories are allowed in the static archive."
 done <<< "$verbose_listing"
 
 inside_archive="/tmp/osgard-frontend-release-${release_id}.tgz"
