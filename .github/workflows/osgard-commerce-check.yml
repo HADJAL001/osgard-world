@@ -16,6 +16,9 @@ jobs:
       - name: Domain tests
         working-directory: services/osgard-commerce-api
         run: npm test
+      - name: Lead workflow validation smoke
+        working-directory: .
+        run: npm run qa:lead-workflow
       - name: Syntax checks
         working-directory: services/osgard-commerce-api
         run: npm run check
