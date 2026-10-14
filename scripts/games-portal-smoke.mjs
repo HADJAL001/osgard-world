@@ -446,9 +446,11 @@ assert.ok(lazyRuntime.includes("script.async=true")&&lazyRuntime.includes("encod
    return !event.defaultPrevented;
   }
  };
- const fakeWindow={};
+ const fakeWindow={addEventListener(){}};
  const fakeLocation={origin:'https://osgard.world',search:'',pathname:'/games/'};
- const lazyApi=new Function('document','window','location','Element','MouseEvent','URLSearchParams','encodeURIComponent','Promise','setTimeout',lazyRuntime+';return window.OSGARDGamesLazy;')(fakeDocument,fakeWindow,fakeLocation,FakeElement,FakeMouseEvent,URLSearchParams,encodeURIComponent,Promise,setTimeout);
+ const fakeValues=new Map();
+ const fakeStorage={getItem:key=>fakeValues.has(key)?fakeValues.get(key):null,setItem:(key,value)=>fakeValues.set(key,String(value)),removeItem:key=>fakeValues.delete(key)};
+ const lazyApi=new Function('document','window','location','Element','MouseEvent','URLSearchParams','encodeURIComponent','Promise','setTimeout','localStorage',lazyRuntime+';return window.OSGARDGamesLazy;')(fakeDocument,fakeWindow,fakeLocation,FakeElement,FakeMouseEvent,URLSearchParams,encodeURIComponent,Promise,setTimeout,fakeStorage);
  const gameLink=new FakeElement('a');gameLink.dataset.play='swarm';gameLink.href='https://osgard.world/games/swarm/';
  const firstClick=fakeDocument.dispatchEvent({type:'click',target:gameLink,button:0,metaKey:false,ctrlKey:false,shiftKey:false,altKey:false});
  assert.equal(firstClick,false,'First gameplay click must pause native navigation while the lifecycle runtime loads');
@@ -459,6 +461,14 @@ assert.ok(lazyRuntime.includes("script.async=true")&&lazyRuntime.includes("encod
  assert.ok(loadedScripts.some(src=>src.startsWith('/games/game-session-recommendations.js?v=qa-release-123')),'Referral/recommendation script must use the deployed build marker');
  assert.ok(loadedStyles.some(link=>link.href.startsWith('/games/game-session-recommendations.css?v=qa-release-123')),'Recommendation CSS must load only when the growth module is requested');
  assert.equal(fakeWindow.OSGARDGamesLazy.loadPlayerRuntime instanceof Function,true,'Loader API must remain available to retry the runtime');
+ assert.equal(lazyApi.loadConsentFeatures instanceof Function,true,'Consent-gated measurement loader must remain callable for recovery');
+ assert.equal(await lazyApi.loadConsentFeatures(),false,'An unconsented first visit must not download analytics or A/B code');
+ const measurementFiles=['consented-analytics.js','experiment-core.js','experiment-runtime.js'];
+ assert.deepEqual(loadedScripts.filter(src=>measurementFiles.some(name=>src.includes('/'+name+'?'))),[],'Analytics and experiment assets must remain absent until consent');
+ fakeStorage.setItem('osgard.games.analytics-consent.v1','yes');
+ assert.equal(await lazyApi.loadConsentFeatures(),true,'Granting consent must activate the existing measurement stack');
+ const measurementOrder=loadedScripts.map(src=>measurementFiles.findIndex(name=>src.includes('/'+name+'?'))).filter(index=>index>=0);
+ assert.deepEqual(measurementOrder,[0,1,2],'Consent queue must load before experiment registry and runtime');
 }
 
 assert.ok(deployWorkflow.includes('s|__OSGARD_BUILD_VERSION__|$ASSET_VERSION|g')&&deployWorkflow.includes('grep -Fq "<meta name=\\"osgard-build\\" content=\\"$ASSET_VERSION\\">"'),'Deploy packaging must stamp and verify the Games build marker')
