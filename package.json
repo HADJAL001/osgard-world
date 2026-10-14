@@ -22,7 +22,7 @@
     "qa:live-bundle": "node scripts/live-bundle-audit.mjs",
     "qa:time-ui": "node scripts/time-prototype-smoke.mjs",
     "qa:null-shift": "node scripts/null-shift-premium-smoke.mjs",
-    "qa:games-portal": "node scripts/games-portal-smoke.mjs && npm run qa:civic-cascade",
+    "qa:games-portal": "node scripts/games-portal-smoke.mjs && npm run qa:civic-cascade && npm run qa:games-expedition",
     "qa:entertainment": "node scripts/entertainment-hub-smoke.mjs",
     "qa:games-detail": "node scripts/games-detail-smoke.mjs && npm run qa:cascade-lab-hypothesis",
     "qa:cascade-lab-hypothesis": "node scripts/cascade-lab-hypothesis-smoke.mjs",
@@ -50,7 +50,8 @@
     "qa:pwa": "node scripts/osgard-play-pwa-smoke.mjs",
     "qa:cascade-lab-dossier": "node scripts/cascade-lab-experiment-dossier-smoke.mjs",
     "qa:civic-cascade": "node scripts/civic-cascade-crisis-smoke.mjs",
-    "qa:games-diagnostics": "node scripts/games-diagnostics-smoke.mjs"
+    "qa:games-diagnostics": "node scripts/games-diagnostics-smoke.mjs",
+    "qa:games-expedition": "node scripts/games-expedition-smoke.mjs"
   },
   "dependencies": {
     "@types/three": "^0.186.0",

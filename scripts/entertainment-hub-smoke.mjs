@@ -43,8 +43,9 @@ const checks = [
   ['28 · Responsive layout includes tablet, phone and narrow-phone breakpoints', css.includes('@media(max-width:1020px)') && css.includes('@media(max-width:740px)') && css.includes('@media(max-width:400px)')],
   ['29 · Reduced-motion preference is respected', css.includes('prefers-reduced-motion:reduce')],
   ['30 · Production routing and sitemap describe the new non-redirect page', routes.includes("text.includes('<title>OSGARD ENTERTAINMENT — Играй. Исследуй. Передавай вызов.</title>')") && sitemap.includes('https://osgard.world/entertainment/')],
+  ['31 · Expedition builder is linked in desktop/mobile navigation and the hero', page.includes('href="/games/expedition/"') && page.includes('Собрать экспедицию')],
 ];
-assert.equal(checks.length, 30);
+assert.equal(checks.length, 31);
 for (const [label, pass] of checks) assert.ok(pass, label);
 assert.doesNotThrow(() => new Function(js), 'Entertainment controller must parse as browser JavaScript');
 assert.ok(!/https?:\/\/(?:fonts\.googleapis\.com|fonts\.gstatic\.com|cdn\.jsdelivr\.net|unpkg\.com)/i.test(page), 'The landing page must not depend on remote asset CDNs');
