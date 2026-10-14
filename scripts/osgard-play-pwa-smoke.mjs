@@ -50,7 +50,6 @@ assert.ok(install.includes('osgard.games.analytics-consent.v1'), 'PWA analytics 
 assert.ok(install.includes("track('pwa_install_prompt_shown')") && install.includes("track('pwa_install_accepted')") && install.includes("track('pwa_install_dismissed')"));
 assert.ok(install.includes('Safari') && install.includes('На экран') && install.includes('aria-hidden'));
 assert.ok(!install.includes('document.cookie') && !install.includes('fetch('), 'Install helper must not add non-consented trackers or network APIs');
-assert.ok(sw.includes("request.method !== 'GET'") || sw.includes("request.method !== 'GET'") === false); // Fetch guard is tested below.
 assert.ok(sw.includes("if (request.method !== 'GET') return"));
 assert.ok(sw.includes('url.origin !== self.location.origin'));
 for (const path of ['/games/admin/', '/games/operations/', '/games/commerce-admin/', '/games/premium/success/', '/games/commerce-config.json', '/commerce-api/']) {
