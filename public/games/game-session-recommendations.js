@@ -845,17 +845,79 @@ function rewardShelf(gameId){
  const note=make('p','og-postgame-reward-note','Награда за публикацию: +50 локальных SHARDS не чаще раза в UTC-день на этом устройстве — после самостоятельного подтверждения игроком. Копирование само по себе не считается репостом и не даёт награду. OSGARD не получает надёжный сигнал о факте публикации; социальные платформы не подтверждают факт поста. Отдельно доступны серверно-квалифицированные +50 SHARDS за приглашение, по которому друг открыл ссылку и завершил игровую сессию не короче 30 секунд. Эта проверка подтверждает последовательность событий и время, но не уникальную личность. Все SHARDS — только косметические очки, не имеют денежной стоимости и не являются платёжным средством; баланс публикации хранится локально и может быть сброшен очисткой данных браузера. В SIGNAL RUN их можно потратить на косметический профиль GOLD SIGNAL за 100 SHARDS; он меняет только цвета и не влияет на счёт или сложность.');
  section.append(head,actions,grid,claim,qualifiedClaim,qualifiedNote,qualifiedStatus,status,note);return section;
 }
+const intermissionDialog=document.querySelector('#osgard-select-intermission');
+const intermissionHost=document.querySelector('#osgard-select-intermission-content');
+const intermissionTitle=document.querySelector('#osgard-select-intermission-title');
+const intermissionDescription=document.querySelector('#osgard-select-intermission-description');
+const intermissionStatus=document.querySelector('#osgard-select-intermission-status');
+const shownIntermissionSessions=new Set();
+const gameRoutes={
+ 'null-shift':'/games/null-shift-godot/',time:'/games/time',swarm:'/games/swarm/',inherit:'/games/inherit/',remix:'/games/remix/',
+ 'civic-cascade':'/games/civic-cascade/',patina:'/games/patina/','signal-run':'/games/signal-run/','cascade-lab':'/games/cascade-lab/',
+ 'afterimage-run':'/games/afterimage-run/','aether-grid':'/games/aether-grid/'
+};
+function intermissionKey(gameId,sessionId){
+ const supplied=typeof sessionId==='string'?sessionId.trim():'';
+ return supplied&&/^[a-z0-9:_-]{1,160}$/i.test(supplied)?supplied:'fallback:'+gameId+':'+Math.floor(Date.now()/3000);
+}
+function closePremiumIntermission(){
+ if(intermissionDialog&&intermissionDialog.open)intermissionDialog.close();
+}
+function openPremiumIntermission(gameId,sessionId){
+ if(!titles[gameId]||!intermissionDialog||!intermissionHost||typeof intermissionDialog.showModal!=='function')return false;
+ const key=intermissionKey(gameId,sessionId);
+ if(shownIntermissionSessions.has(key))return true;
+ shownIntermissionSessions.add(key);
+ if(shownIntermissionSessions.size>100)shownIntermissionSessions.delete(shownIntermissionSessions.values().next().value);
+ const completedCount=recordCompletedRound(gameId,key);
+ const preferences=readServicePreferences();
+ disposePostgameTree(intermissionHost);
+ intermissionHost.replaceChildren();
+ if(intermissionTitle)intermissionTitle.textContent='Раунд окончен. Выбери следующий шаг.';
+ if(intermissionDescription)intermissionDescription.textContent='Сессия '+titles[gameId]+' завершена. Выбери собственный проект OSGARD, поделись приглашением, получи косметические SHARDS или открой следующий игровой мир. Переходы добровольные; активный игровой процесс рекламой не перекрывается.';
+ if(intermissionStatus)intermissionStatus.textContent=preferences.frequency==='off'
+  ?'Промо-показы сервисов отключены по твоему выбору. Ссылки на игры и награда за приглашение остаются доступны.'
+  :preferences.frequency==='every3'&&completedCount%3!==0
+   ?'Сервисы по расписанию сейчас не продвигаются. Можно перейти к следующей игре или поделиться приглашением.'
+   :'Выбери сервис или сеть для приглашения. Сервисы можно настроить, а подборку — пропустить.';
+ const suite=make('section','og-postgame-suite og-postgame-intermission-suite');
+ const nextIds=(recommendationByGame[gameId]||[]).filter(id=>titles[id]&&id!==gameId);
+ const nextId=nextIds.find(id=>gameRoutes[id])||Object.keys(gameRoutes).find(id=>id!==gameId);
+ if(nextId&&gameRoutes[nextId]){
+  const nextCard=make('section','og-postgame-next-world');
+  const nextCopy=make('div','og-postgame-next-world-copy');
+  nextCopy.append(make('p','og-postgame-eyebrow','NEXT WORLD / CONTINUE YOUR RUN'));
+  nextCopy.append(make('h3','','Следом — '+titles[nextId]));
+  nextCopy.append(make('p','','Продолжай открывать миры OSGARD. Текущая сессия уже завершена.'));
+  const nextLink=make('a','og-postgame-next-world-link','Запустить следующую игру ↗');
+  nextLink.href=gameRoutes[nextId];nextLink.dataset.play=nextId;
+  nextCopy.append(nextLink);nextCard.append(nextCopy);suite.append(nextCard);
+ }
+ suite.append(servicesShelf(gameId,shouldShowServicePromos(preferences,completedCount),completedCount),rewardShelf(gameId));
+ intermissionHost.append(suite);
+ try{
+  if(!intermissionDialog.open)intermissionDialog.showModal();
+  return true;
+ }catch(error){
+  shownIntermissionSessions.delete(key);
+  disposePostgameTree(intermissionHost);
+  intermissionHost.replaceChildren();
+  if(intermissionStatus)intermissionStatus.textContent='Полноэкранное окно недоступно в этом браузере. Показываем подборку внизу страницы.';
+  return false;
+ }
+}
 function renderOutsideIntermission(detail){
  const id=detail&&detail.game;
  if(!outsideRoot||!titles[id]||!detail||detail.sessionStarted!==true||detail.reason!=='closed_by_user')return;
+ if(openPremiumIntermission(id,detail.sessionId))return;
+ if(shownIntermissionSessions.has(intermissionKey(id,detail.sessionId)))return;
  const completedCount=recordCompletedRound(id,detail.sessionId),preferences=readServicePreferences();
- disposePostgameTree(outsideRoot);
- outsideRoot.replaceChildren();
+ disposePostgameTree(outsideRoot);outsideRoot.replaceChildren();
  const suite=make('section','og-postgame-suite og-postgame-outside-suite');
  const intro=make('div','og-postgame-outside-intro');
  intro.append(make('p','og-postgame-eyebrow','OSGARD SELECT / BETWEEN WORLDS'));
  intro.append(make('h2','og-postgame-title','Раунд окончен. Выбери следующий шаг.'));
- intro.append(make('p','og-postgame-copy','Ты завершил сессию '+titles[id]+'. Выбери один из собственных проектов OSGARD, поделись приглашением или сразу вернись к каталогу.'));
+ intro.append(make('p','og-postgame-copy','Ты завершил сессию '+titles[id]+'. Выбери собственные проекты OSGARD, поделись приглашением или вернись к каталогу.'));
  const back=make('a','og-postgame-back','Выбрать следующую игру ↗');back.href='#catalog';
  suite.append(intro,back,servicesShelf(id,shouldShowServicePromos(preferences,completedCount),completedCount),rewardShelf(id));
  outsideRoot.append(suite);outsideRoot.hidden=false;
@@ -865,7 +927,28 @@ function renderOutsideIntermission(detail){
  }
 }
 document.addEventListener('osgard:game-session-ended',event=>renderOutsideIntermission(event.detail));
+
+if(intermissionDialog&&intermissionHost){
+ const cleanupIntermission=()=>{disposePostgameTree(intermissionHost);intermissionHost.replaceChildren()};
+ document.querySelector('#osgard-select-intermission-close')?.addEventListener('click',closePremiumIntermission);
+ document.querySelector('#osgard-select-intermission-resume')?.addEventListener('click',closePremiumIntermission);
+ intermissionDialog.addEventListener('click',event=>{if(event.target===intermissionDialog)closePremiumIntermission()});
+ intermissionDialog.addEventListener('close',cleanupIntermission);
+ document.querySelector('#osgard-select-intermission-catalog')?.addEventListener('click',()=>{
+  closePremiumIntermission();
+  const player=document.querySelector('#player-dialog');
+  if(player&&player.open){
+   const closeButton=player.querySelector('#player-close');
+   if(closeButton)closeButton.click();else player.close();
+  }
+  const reduced=typeof window.matchMedia==='function'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  window.setTimeout(()=>document.querySelector('#catalog')?.scrollIntoView({behavior:reduced?'auto':'smooth',block:'start'}),0);
+ });
+}
+
 document.addEventListener('osgard:game-launching',()=>{
+ if(intermissionDialog&&intermissionDialog.open)closePremiumIntermission();
+ disposePostgameTree(intermissionHost);if(intermissionHost)intermissionHost.replaceChildren();
  disposeCurrentPostgame();
  if(!outsideRoot)return;
  outsideRoot.replaceChildren();
@@ -873,6 +956,8 @@ document.addEventListener('osgard:game-launching',()=>{
 });
 function renderOsgardSelect(gameId,sessionId){
  const id=gameId;if(!titles[id])return;
+ if(openPremiumIntermission(id,sessionId))return;
+ if(shownIntermissionSessions.has(intermissionKey(id,sessionId)))return;
  const completedCount=recordCompletedRound(id,sessionId),preferences=readServicePreferences();
  const previousSuite=root.querySelector('.og-postgame-suite');if(previousSuite){disposePostgameTree(previousSuite);previousSuite.remove()}
  const suite=make('section','og-postgame-suite');suite.append(servicesShelf(id,shouldShowServicePromos(preferences,completedCount),completedCount),rewardShelf(id));root.append(suite);
