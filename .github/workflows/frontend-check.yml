@@ -68,6 +68,8 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
+      - name: Test release attestation against tampering and unsafe artifacts
+        run: npm run qa:release-attestation
       - name: Verify cross-surface OSGARD product contracts
         run: npm run qa:contracts
       - name: Validate production activation shell before build and tests
@@ -78,6 +80,8 @@ jobs:
         run: npm run qa:ios-appstore
       - name: Build the production site
         run: npm run build
+      - name: Create and verify production build attestation
+        run: npm run release:attest && npm run release:verify
       - name: Verify live SkillCred page wiring
         run: npm run qa:skillcred
       - name: Verify Imperium of Time game systems and visual diagnostics
@@ -127,3 +131,12 @@ jobs:
           npx vite build --config mobile/vite.config.mjs
           node scripts/prepare-ios-app.mjs --web-only
           node scripts/ios-appstore-preflight.mjs --built-web
+
+      - name: Upload OSGARD build evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: osgard-build-evidence
+          path: |
+            release-attestation.json
+            osgard-contract-audit.json
+          if-no-files-found: error
