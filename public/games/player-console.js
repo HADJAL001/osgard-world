@@ -646,7 +646,15 @@
     });
     window.addEventListener('online', updateConnectionState);
     window.addEventListener('offline', updateConnectionState);
-    document.addEventListener('visibilitychange', () => { lastTick = monotonicNow(); });
+    document.addEventListener('visibilitychange', () => {
+      const now = monotonicNow();
+      if (document.hidden && activeGame && $('#player-dialog')?.open) {
+        const delta = Math.max(0, Math.min(10, (now - lastTick) / 1000));
+        if (delta > 0) stats.secondsByGame[activeGame] = (stats.secondsByGame[activeGame] || 0) + delta;
+        persistStats();
+      }
+      lastTick = now;
+    });
     const player = $('#player-dialog');
     if (player) {
       const observer = new MutationObserver(() => {
