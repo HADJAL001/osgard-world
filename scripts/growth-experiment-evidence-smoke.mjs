@@ -39,6 +39,8 @@ assert.equal(estimateSampleSizePerVariant(99, 2), null);
 const aggregates = parseExperimentImport('variant,exposures,conversions\na,1200,60\nb,1210,73', 'source.csv');
 assert.equal(aggregates.variants.a.conversions, 60);
 assert.equal(aggregates.variants.b.exposures, 1210);
+const quotedCsv = parseExperimentImport('variant,exposures,conversions\n"A",100,5\n"B",100,7', 'quoted.csv');
+assert.equal(quotedCsv.variants.b.conversions, 7, 'Quoted CSV variant labels should import safely');
 assert.throws(() => parseExperimentImport('variant,exposures,conversions\na,4,5\nb,4,1', 'bad.csv'), /не могут превышать/);
 assert.throws(() => parseExperimentImport('variant,exposures,conversions\na,4,1', 'partial.csv'), /обе строки/);
 
@@ -62,6 +64,12 @@ assert.deepEqual(eventAggregate.variants, {
   b: { exposures: 1, conversions: 1 },
 });
 assert.ok(eventAggregate.warnings.some(item => /без подтверждённого показа/.test(item)));
+const ambiguousEvents = parseExperimentImport(JSON.stringify({events:[
+ {name:'product_experiment_exposed',session_id:'session_ambiguous',source:'osgard-experiment:catalog-hero-cta-v1:a:exposed'},
+ {name:'product_experiment_exposed',session_id:'session_ambiguous',source:'osgard-experiment:catalog-hero-cta-v1:b:exposed'},
+]}));
+assert.equal(ambiguousEvents.variants.a.exposures, 0, 'Cross-variant session assignment must be excluded');
+assert.equal(ambiguousEvents.variants.b.exposures, 0, 'Ambiguous session must not enter either arm');
 const jsonl = rawEvents.map(item => JSON.stringify(item)).join('\n');
 assert.equal(parseExperimentImport(jsonl, 'events.jsonl').variants.a.exposures, 1);
 
@@ -74,4 +82,4 @@ assert.ok(summary.warnings.some(item => /не доказывает причин�
 assert.equal(analyzeExperiment([{variant:'a',exposures:0,conversions:0},{variant:'b',exposures:0,conversions:0}]).statusCode, 'no-data');
 const guide = readFileSync(new URL('../docs/11_OSGARD_GROWTH_EVIDENCE_LAB.md', import.meta.url), 'utf8');
 assert.match(guide, /95%/);
-console.log(JSON.stringify({ status: 'PASS', checks: 29, importFormats: ['aggregate-csv', 'aggregate-json', 'event-json', 'event-jsonl', 'event-csv'], stats: ['Wilson 95%', 'Newcombe difference 95%', 'two-proportion sample size'], privacy: 'local-only', sample: plannedSmallEffect }, null, 2));
+console.log(JSON.stringify({ status: 'PASS', checks: 'statistics + import formats + privacy contract + browser syntax', importFormats: ['aggregate-csv', 'aggregate-json', 'event-json', 'event-jsonl', 'event-csv'], stats: ['Wilson 95%', 'Newcombe difference 95%', 'two-proportion sample size'], privacy: 'local-only', sample: plannedSmallEffect }, null, 2));
