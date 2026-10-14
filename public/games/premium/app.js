@@ -266,6 +266,7 @@ import {
 
     checkoutInProgress = true;
     redirectingToProvider = false;
+    refresh.disabled = true;
     const buttons = Array.from(grid.querySelectorAll('button'));
     buttons.forEach(button => { button.disabled = true; });
     grid.setAttribute('aria-busy', 'true');
@@ -294,6 +295,7 @@ import {
     } finally {
       if (!redirectingToProvider) {
         checkoutInProgress = false;
+        refresh.disabled = false;
         grid.setAttribute('aria-busy', 'false');
         buttons.forEach(button => { button.disabled = button.dataset.available !== 'true'; });
       }
