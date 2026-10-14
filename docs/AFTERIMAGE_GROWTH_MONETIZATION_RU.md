@@ -1,7 +1,7 @@
 # AFTERIMAGE//RUN — growth & monetization plan
 
 ## Product pitch
-A compact sci-fi precision runner in OSGARD PLAY: the same UTC daily seed for everyone, a personal best/ghost, a challenge URL carrying the seed and score, share-result image, and a cosmetic SIGNAL SHARD that can be earned once per UTC day by starting a share flow or copying a challenge link. The game explicitly tells the player that the actual public post is not verified.
+A compact sci-fi precision runner in OSGARD PLAY: the same UTC daily seed for everyone, a personal best/ghost, a challenge URL carrying the seed and score, share-result image, and a cosmetic SIGNAL SHARD that can be claimed once per UTC day only after the player explicitly confirms they published a share; opening a composer or copying a link does not award it. The game explicitly tells the player that the actual public post is not verified.
 
 ## Viral loop to measure
 1. A player starts from the OSGARD games catalog or Entertainment.
@@ -10,7 +10,7 @@ A compact sci-fi precision runner in OSGARD PLAY: the same UTC daily seed for ev
 4. The recipient lands on the same date/seed, plays their run and can share their result.
 5. A non-transferable, cosmetic shard provides a small in-game acknowledgement. It does not alter speed, score, or paid rights.
 
-The share incentive is intentionally a reward for starting the share flow, not a claim that a post was published. Client-only localStorage is easy to reset and is not anti-fraud. Before offering tradable/paid value or a referral payout, implement server-side invite attribution, idempotent referral records, account/abuse controls, and require a qualified referred player's first completed session. The local shard is cosmetic-only.
+The share incentive requires explicit player confirmation after a share flow; the application cannot independently verify that a public post appeared. Client-only localStorage is easy to reset and is not anti-fraud. Before offering tradable/paid value or a referral payout, implement server-side invite attribution, idempotent referral records, account/abuse controls, and require a qualified referred player's first completed session. The local shard is cosmetic-only.
 
 ## Owned-service intermission
 On closing an embedded game session, show one optional luxury cross-promotion panel containing the ten OSGARD-owned products. The player chooses a specific card then explicitly opens that destination, or dismisses the intermission. Each link carries:
@@ -58,3 +58,47 @@ Minimum useful release experiment:
 
 ## Release boundaries
 The first release uses local personal-best data and a locally stored cosmetic shard. It has no public leaderboard, cross-device save, ad SDK, payment processor or server-backed referral reward. The intermission is owned-service cross-promotion, not third-party ads. Activate server-backed monetization only after accounts, provider approval, webhook/signature validation, consent and refund handling exist.
+
+## AFTERIMAGE//RUN v1.5.0 — пакет из 30 улучшений (14 октября 2026)
+
+Это технический релиз-кандидат. Изменения сгруппированы по эффекту для игрока, честности рекордов и поддержки игры; они не являются обещанием коммерческого результата.
+
+### 30 улучшений
+
+1. Ежедневная дата seed проверяется как настоящая календарная дата UTC, а не только по формату строки.
+2. Целевой счёт из ссылки проходит проверку безопасного целого и ограничение диапазона.
+3. Победа над вызовом засчитывается только при результате **строго выше** указанной цели.
+4. Вызов формируется через канонический маршрут приглашения OSGARD.
+5. Реферальный код проверяется и при необходимости создаётся безопасный локальный fallback.
+6. UTM-метки и код приглашения сохраняются в допустимой цепочке переходов.
+7. Случайность трассы отделена от визуальной случайности, поэтому частицы и дрожание камеры не переставляют препятствия.
+8. Повтор использует тот же seed и сбрасывает оба генератора случайных чисел.
+9. Устранён дублирующийся reset(), который раньше мог переопределять часть состояния.
+10. PNG-карточка результата содержит короткий маршрут, дневной seed и корректный целевой счёт.
+11. Добавлены отдельные способы распространения: системный Share, Telegram, VK, X, WhatsApp, Facebook и копирование ссылки.
+12. Косметическая награда появляется только после отдельного подтверждения пользователя; открытие окна публикации само по себе её не выдаёт.
+13. SIGNAL SHARD ограничена одной локальной наградой на текущую UTC-дату, с обработкой ошибок localStorage.
+14. Подтверждённая косметика включает золотой световой след и сохраняется локально.
+15. Игровая анимация использует единственный управляемый requestAnimationFrame scheduler.
+16. Простой фоновый рендер ограничен примерно 24 кадрами в секунду.
+17. Таймеры и кадры отменяются при сбросе, сворачивании вкладки и уходе со страницы.
+18. Забег автоматически ставится на паузу при скрытии вкладки.
+19. Поддерживается prefers-reduced-motion.
+20. Холст перерисовывается на HiDPI-буфере с ограничением коэффициента масштаба до 2.5.
+21. После изменения размеров окна холст пересчитывает backing resolution и масштаб координат.
+22. Игровые события отправляются с соблюдением существующего согласия и авторизации; встроенная игра не дублирует события start/completed, которые регистрирует родительский интерфейс.
+23. На экране есть отдельная кнопка прыжка для сенсорных устройств.
+24. Добавлено короткое окно jump-buffer, чтобы не терять ввод рядом с моментом приземления.
+25. Синтезированные звуковые эффекты выключены по умолчанию и управляются настройкой; внешние аудиофайлы не требуются.
+26. Тактильный отклик — отдельная добровольная настройка и используется только при наличии navigator.vibrate.
+27. Режим Focus увеличивает расстояния между препятствиями и снижает скорость, но явно помечает попытку как тренировочную и не перезаписывает рейтинговый рекорд.
+28. Индикатор цели показывает прогресс сбора шести осколков и сообщает о достижении 3/6 и 6/6.
+29. Добавлены высококонтрастная палитра, полноэкранный режим и дополнительные горячие клавиши (P, R, Escape).
+30. Экспортируется локальный диагностический JSON с seed, счётом, дистанцией, длительностью, осколками, пиками комбо, рывками, режимом, целевым счётом и фактом сохранения рекорда. Имя, email, токен или user-agent в отчёт не включаются.
+
+### Как монетизация соединена с игрой
+
+- **Сейчас:** существующий OSGARD SELECT остаётся единственной межигровой витриной собственных сервисов. Пользователь выбирает проект или пропускает экран. Переходы размечаются UTM, но считаются доходом только после фактически атрибутированной продажи или закрытого контракта.
+- **Не включено:** внешняя рекламная сеть, платные покупки, подписка и выплата за репост. В v1.5.0 SIGNAL SHARD — локальная косметика, не денежная ценность.
+- **Следующий коммерческий эксперимент:** сравнить долю завершённых забегов и повторных попыток с обычным экраном результата против экрана с вызовом другу. Отдельно измерять открытие social composer, переход реферала, его старт и завершённый забег; эти этапы не считать взаимозаменяемыми.
+- **Миллион долларов:** это цель, а не прогноз. Вести отдельно реальные рекламные выплаты, завершённые покупки, атрибутированные квалифицированные заявки и маржу закрытых проектов. Просмотры, клики и нажатия «поделиться» не прибавлять к выручке.
