@@ -925,7 +925,7 @@ const ANALYTICS_EVENT_TYPES = Object.freeze([
   'service_ad_shown', 'service_ad_clicked', 'service_ad_share_opened', 'service_ad_share_confirmed'
 ]);
 const EVENT_SET = new Set(ANALYTICS_EVENT_TYPES);
-const SERVICE_CAMPAIGN_IDS = new Set(['marcosa', 'taxi', 'smart-map', 'business', 'creator-studio', 'project-builder', 'worlds', 'osgard-os', 'myosa', 'o2-system', 'gold-glamour']);
+const SERVICE_CAMPAIGN_IDS = new Set(['marcosa', 'taxi', 'smart-map', 'business', 'creator-studio', 'project-builder', 'worlds', 'osgard-os', 'myosa', 'o2-system', 'gold-glamour', 'partner-studio']);
 const SERVICE_AD_EVENT_TYPES = new Set(['service_ad_shown', 'service_ad_clicked', 'service_ad_share_opened', 'service_ad_share_confirmed']);
 const MODES = new Set(['campaign', 'daily', 'duel', 'solution']);
 const IDENTIFIER = /^[a-z0-9-]{16,64}$/i;
@@ -1190,6 +1190,7 @@ const OSGARD_SERVICE_DESTINATIONS = Object.freeze({
   'myosa': 'https://myosa.world/',
   'o2-system': 'https://o2system.art/',
   'gold-glamour': 'https://gold-glamour.online/',
+  'partner-studio': 'https://osgard.world/games/partners/',
   'business': OSGARD_OS_URL + '/',
   'creator-studio': 'https://osgardvanguard.studio/',
   'project-builder': 'https://osgardbewworld.com/',
@@ -1275,6 +1276,13 @@ const OSGARD_CAMPAIGNS = Object.freeze([
     description: 'Проект премиальных услуг с золотом и выездным обслуживанием. Изучи подробности на сайте.',
     stage: 'Премиальный сервис экосистемы', accent: 'gold',
     cta: 'Открыть GOLD GLAMOUR', destinationLabel: 'gold-glamour.online', url: OSGARD_SERVICE_DESTINATIONS['gold-glamour']
+  },
+  {
+    id: 'partner-studio', number: '12', brand: 'OSGARD PARTNER STUDIO', category: 'BRANDED GAMES / B2B',
+    title: 'Преврати бренд в игровой опыт.',
+    description: 'Заказные мини-игры, брендированные игровые события и спонсорские уровни для компаний — по согласованию.',
+    stage: 'Коммерческое предложение · без рекламы поверх активного раунда', accent: 'gold',
+    cta: 'Обсудить брендированную игру', destinationLabel: 'osgard.world/games/partners', url: OSGARD_SERVICE_DESTINATIONS['partner-studio']
   }
 ]);
 
@@ -1360,7 +1368,8 @@ const CAMPAIGN_TO_SERVICE_PREFERENCE = Object.freeze({
   marcosa: 'marcosa', taxi: 'senjorio', 'smart-map': 'superday',
   business: 'osgard-business', 'creator-studio': 'vanguard',
   'project-builder': 'projects', worlds: 'projects', 'osgard-os': 'osgard-business',
-  myosa: 'myosa', 'o2-system': 'o2-system', 'gold-glamour': 'gold-glamour'
+  myosa: 'myosa', 'o2-system': 'o2-system', 'gold-glamour': 'gold-glamour',
+  'partner-studio': 'partner-studio'
 });
 
 function analyticsMode() { return activeDuelChallenge ? 'duel' : activeDailyChallenge ? 'daily' : 'campaign'; }
