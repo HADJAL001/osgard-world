@@ -2386,7 +2386,7 @@ func _update_guard_perception(guard: Dictionary, body: CharacterBody3D, sees_pla
 	guard["search_timer"] = search_timer
 	var role_tag := guard.get("role_tag") as Label3D
 	if is_instance_valid(role_tag) and str(guard.get("displayed_ai_state", "")) != state:
-		var role_name := str(guard.get("role", "RANGER"))
+		var role_name: String = str(guard.get("role", "RANGER"))
 		match state:
 			"ENGAGED":
 				role_tag.text = role_name + " · CONTACT"
