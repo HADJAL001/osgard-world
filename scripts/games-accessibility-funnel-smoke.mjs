@@ -1,0 +1,53 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+const read = path => readFileSync(path, 'utf8');
+const catalog = read('public/games/index.html');
+const a11yCss = read('public/games/accessibility-center.css');
+const a11yJs = read('public/games/accessibility-center.js');
+const funnel = read('public/games/catalog-funnel-events.js');
+const clientAnalytics = read('public/games/consented-analytics.js');
+const serverCore = read('services/osgard-commerce-api/src/core.mjs');
+const admin = read('public/games/admin/index.html');
+const healthAudit = read('scripts/external-project-healthcheck.mjs');
+const healthWorkflow = read('.github/workflows/external-project-health.yml');
+const funnelEvents = ['catalog_search_used','catalog_filter_changed','game_favorite_toggled','game_player_fullscreen_opened','game_player_retry_requested','game_player_error_shown','accessibility_preferences_changed'];
+function allowListBlock(source, startToken) {
+  const start = source.indexOf(startToken);
+  assert.notEqual(start, -1, 'Missing allow-list: ' + startToken);
+  const end = source.indexOf(']);', start);
+  assert.notEqual(end, -1, 'Allow-list has no closing delimiter: ' + startToken);
+  return source.slice(start, end);
+}
+const clientAllowList = allowListBlock(clientAnalytics, 'const ALLOWED_EVENTS = new Set([');
+const serverAllowList = allowListBlock(serverCore, 'export const ALLOWED_EVENTS = new Set([');
+for (const name of funnelEvents) {
+  assert.ok(clientAllowList.includes("'" + name + "'"), 'Client must allow ' + name);
+  assert.ok(serverAllowList.includes('"' + name + '"'), 'Server must allow ' + name);
+}
+console.log('PASS 1 — client/server event schema parity.');
+assert.ok(catalog.includes('/games/accessibility-center.css?v=__OSGARD_BUILD_VERSION__'));
+assert.ok(catalog.includes('/games/accessibility-center.js?v=__OSGARD_BUILD_VERSION__'));
+assert.ok(catalog.includes('/games/catalog-funnel-events.js?v=__OSGARD_BUILD_VERSION__'));
+assert.ok(catalog.includes('id="player-dialog"') && catalog.includes('id="player-frame"'));
+console.log('PASS 2 — consented funnel and accessibility modules are wired into the current catalogue.');
+for (const token of ['osgard.games.accessibility.v1','prefers-reduced-motion','osgard-a11y-contrast','osgard-a11y-large-type','osgard-a11y-large-targets','aria-live="polite"',"event.key.toLowerCase() !== 'a',"window.addEventListener('storage'"]) assert.ok(a11yJs.includes(token), 'Missing accessibility behaviour: ' + token);
+for (const token of ['min-height:44px','prefers-reduced-motion:reduce','outline:3px solid','grid-template-columns:minmax(0,1fr)']) assert.ok(a11yCss.includes(token), 'Missing accessibility styling: ' + token);
+console.log('PASS 3 — persisted accessibility, keyboard/focus, announcements, reduced motion and mobile targets.');
+assert.ok(funnel.includes('if (!ALLOWED.has(name) || !consentGranted()) return false'));
+assert.ok(funnel.includes('const bucket = value.length <= 3') || funnel.includes("const bucket = value.length <= 3"));
+assert.ok(funnel.includes("'game_player_retry_requested'"));
+assert.ok(funnel.includes("retry.textContent = 'Повторить загрузку ↻'"));
+assert.ok(funnel.includes('frame.src = new URL(src, location.href).href'));
+assert.ok(funnel.includes("text.includes('недоступ')"));
+assert.ok(!/const event\s*=\s*\{[^}]*query:\s*search\.value/s.test(funnel), 'Raw search terms must not appear in events');
+console.log('PASS 4 — privacy-preserving, consent-gated funnel and player retry/error instrumentation.');
+assert.ok(admin.includes('id="export-csv"'));
+assert.ok(admin.includes('lastAggregateReport={generatedAt:new Date().toISOString(),range:{from,to},summary,cohorts,snapshots}'));
+assert.ok(admin.includes('const blocked=/(email|token|secret|password|customer|order.?id|session.?id|payment.?intent|checkout.?url|authorization|raw.?event|player.?id|user.?id)/i'));
+assert.ok(admin.includes("if(/^\\s*[=+\\-@]/.test(text))text=\"'\"+text"));
+assert.ok(admin.includes('Персональные поля исключены.'));
+console.log('PASS 5 — aggregate CSV export excludes sensitive keys and neutralizes spreadsheet formulas.');
+assert.equal((healthAudit.match(/\{ id: '/g) || []).length, 10);
+assert.ok(healthWorkflow.includes("cron: '17 5 * * *'") && healthWorkflow.includes('actions/upload-artifact@v4'));
+console.log('PASS 6 — existing ten-project health audit and scheduled artifact workflow remain intact.');
+console.log('PASS OSGARD Games contract smoke complete.');
