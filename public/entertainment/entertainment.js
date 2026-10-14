@@ -87,7 +87,7 @@
       if (!button) return;
       button.setAttribute('aria-pressed', String(active));
       button.textContent = active ? '★' : '☆';
-      button.setAttribute('aria-label', (active ? 'Убрать ' : 'Добавить ') + allowedGames.get(id).title + ' ' + (active ? 'из' : 'в') + ' избранное');
+      button.setAttribute('aria-label', active ? 'Убрать ' + allowedGames.get(id).title + ' из избранного' : 'Добавить ' + allowedGames.get(id).title + ' в избранное');
     });
     favoriteCount.textContent = String(favorites.size);
     favoriteFilter.classList.toggle('is-active', favoritesOnly);
