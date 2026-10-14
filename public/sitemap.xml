@@ -40,4 +40,10 @@
   <url><loc>https://osgard.world/game/aether-grid</loc><lastmod>2026-10-13</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://osgard.world/support/osgard-play/</loc><lastmod>2026-10-13</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://osgard.world/games/diagnostics/</loc><lastmod>2026-10-14</lastmod><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url>
+    <loc>https://osgard.world/games/feedback/</loc>
+    <lastmod>2026-10-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
 </urlset>
