@@ -42,11 +42,11 @@ Production-подключение Commerce API и платёжные флаги 
 ### Каталог и обмен подборками
 23. Поисковая строка получает shareable-параметр `q`.
 24. Выбранный жанр получает shareable-параметр `genre`.
-25. Избранное может быть частью ссылки через `favorites=1`.
+25. При публикации избранного ссылка включает реальные разрешённые ID игр в параметре `games=...`, а не переключает локальное избранное получателя.
 26. Состояние адресной строки синхронизируется через `history.replaceState` без перезагрузки или спама в истории.
 27. Сброс фильтров приводит URL к состоянию экрана.
 28. Добавлена команда поделиться текущей подборкой через системное меню или копирование ссылки.
-29. Ссылка на подборку содержит только состояние каталога и не копирует входящие referral/UTM параметры.
+29. Ссылка на подборку содержит поисковый запрос, жанр и/или точный allow-listed список игр и не копирует входящие referral/UTM параметры.
 30. Добавлены статические проверки manifest, Service Worker security boundaries, consent-gated install events и PR CI workflow.
 
 ## Что измеряется и что не имитируется
@@ -61,7 +61,7 @@ Production-подключение Commerce API и платёжные флаги 
 - `public/games/osgard-play-sw.js`
 - `public/games/pwa-install.css`
 - `public/games/pwa-install.js`
-- `public/games/catalog-state.js`
+- `public/games/catalog-state.js` — URL-state, safe game-ID allow-list и cross-device share collections.
 - `public/games/index.html`
 - `public/games/consented-analytics.js`
 - `services/osgard-commerce-api/src/core.mjs`
