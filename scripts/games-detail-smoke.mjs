@@ -88,6 +88,9 @@ for (const p of ['public/games/index.html','public/games/cascade-lab/index.html'
   assert.ok(existsSync(p), `Required publication asset missing: ${p}`)
 }
 execFileSync(process.execPath, ['--check', 'scripts/production-route-matrix.mjs'], { stdio: 'pipe' })
+assert.ok(routeMatrix.includes("content.includes(\"document.addEventListener('osgard:game-completed'\")") && routeMatrix.includes("content.includes(\"section.className='og-expedition-band'\")"), 'Production route matrix must validate the generated expedition section class rather than a CSS selector')
+assert.ok(routeMatrix.includes('entertainment\\\\.js') && routeMatrix.includes('\\\\?v=[^"]+'), 'Production route matrix must accept versioned Entertainment script URLs without pinning an obsolete cache version')
+assert.ok(/src="\\/entertainment\\/entertainment\\.js\\?v=[^"]+"/.test(entertainmentPage), 'Entertainment must reference a versioned runtime asset')
 assert.ok(routeMatrix.includes("const isGodotDirectory = route === '/games/null-shift-godot/'") && routeMatrix.includes("method: isGodotDirectory ? 'HEAD' : 'GET'") && routeMatrix.includes("isGodotDirectory ? '' : await response.text()"), 'Godot directory availability must be checked without downloading its heavy HTML shell')
 assert.ok(routeMatrix.includes("route.startsWith('/games/null-shift-godot/index.html')") || routeMatrix.includes("route.startsWith('/games/null-shift-godot')") && routeMatrix.includes("text.includes('data-nullshift-shell=\"premium-v1\"')"), 'Godot content contract and asset checks must remain on the explicit index/asset probes')
 console.log('PASS OSGARD GAME DETAIL: eleven routes, details, SEO sitemap, safe legacy fallback, Nginx redirects, asynchronous SPA readiness and honest lifecycle events.')
