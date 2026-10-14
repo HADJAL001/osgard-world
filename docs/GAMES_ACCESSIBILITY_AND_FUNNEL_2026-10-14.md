@@ -8,12 +8,12 @@ The existing code explicitly keeps live checkout and ad-network activation disab
 
 ## Seven delivered upgrades
 
-1. **Accessibility centre.** Persistent preferences for system/reduced/full motion, higher contrast, enlarged type and 44px interaction targets. The dialog includes focus styling, live announcements and a responsive layout.
+1. **Accessibility centre.** Persistent preferences for system/reduced/full motion, higher contrast, enlarged type and 44px interaction targets. The dialog includes focus styling, live announcements and a responsive layout. A keyboard-safe fallback handles Escape, focus wrapping, collapsed/expanded state and focus restoration when the browser cannot use native modal-dialog APIs.
 2. **Player recovery.** The game-player dialog adds a retry action that reloads the selected iframe route without forcing the user to close the modal.
 3. **Consent-gated funnel evidence.** New events record coarse search-length buckets, genre filters, favorites, fullscreen intent, retry/error buckets and accessibility preference changes. Raw search terms and form fields are not sent.
 4. **Client/server contract parity.** The same seven event names were added to the browser and commerce API allow-lists. Existing explicit consent and bounded queue rules remain.
 5. **Safe admin CSV export.** The protected analytics dashboard exports the currently loaded aggregate summary, cohorts and snapshots. It excludes sensitive-looking keys, caps rows and neutralizes spreadsheet formula-leading cells. JSONL export remains.
-6. **Focused CI quality gate.** Static contract smoke tests verify asset wiring, client/server event parity, accessibility, privacy, player retry and CSV protections. A GitHub Actions workflow runs the focused check and existing queue/API tests.
+6. **Focused CI quality gate.** Static contract smoke tests verify asset wiring, client/server event parity, accessibility, privacy, player retry and CSV protections. Runtime-oriented tests exercise settings normalization/persistence, fallback-dialog keyboard behavior, cross-tab storage synchronization, analytics opt-in, and synchronous/asynchronous queue failures. A GitHub Actions workflow runs the focused checks and existing queue/API tests.
 7. **Release and operations runbook.** This document records architecture, tests, privacy boundaries and external setup required for release.
 
 ## Files added
@@ -41,7 +41,7 @@ Run from repository root with Node 22:
 
     npm run qa:games-accessibility-funnel
 
-It runs the contract smoke, existing consented queue simulation and commerce API core tests. The dedicated GitHub Actions workflow performs these checks on pull requests. This suite does not substitute for a formal WCAG audit, production deployment check, actual ad inventory approval, Stripe transactions or legal review.
+It runs the contract smoke, a browser-API test harness with no third-party dependency, the existing consented queue simulation and commerce API core tests. The dedicated GitHub Actions workflow performs these checks on pull requests. This suite does not substitute for a formal WCAG audit, production deployment check, actual ad inventory approval, Stripe transactions or legal review.
 
 ## External readiness and deployment
 
