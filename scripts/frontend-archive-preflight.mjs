@@ -63,8 +63,9 @@ for (const file of normalizedFiles) {
   inventory.push({ path: file.path, bytes: data.byteLength, sha256 })
 }
 
-let revision = typeof process.env.GITHUB_SHA === 'string' && /^[a-f0-9]{40,64}$/i.test(process.env.GITHUB_SHA)
-  ? process.env.GITHUB_SHA.toLowerCase()
+const declaredRevision = process.env.OSGARD_SOURCE_REVISION || process.env.GITHUB_SHA || ''
+let revision = typeof declaredRevision === 'string' && /^[a-f0-9]{40,64}$/i.test(declaredRevision)
+  ? declaredRevision.toLowerCase()
   : null
 if (!revision) {
   try {
