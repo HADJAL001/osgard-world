@@ -95,6 +95,7 @@ function pairGroup(baselineGroup, variantGroup) {
 }
 function compareDesign(baseline, variant) {
   if (!baseline || !variant) return {ok:false, reason:'Для сравнения нужны два запуска.'};
+  if (baseline.id === variant.id) return {ok:false, reason:'Выбери две разные записи; запуск нельзя сравнивать с самим собой.'};
   if (scenarioKey(baseline) !== scenarioKey(variant)) {
     return {ok:false, reason:'Сценарии отличаются: сравнивай один протокол, режим и дату ежедневного испытания.'};
   }
@@ -184,7 +185,7 @@ function trajectoryDeviation(baseline,variant,samples=41) {
   return rounded(total/samples,2);
 }
 function observedDelta(baseline,variant) {
-  if(!baseline||!variant||scenarioKey(baseline)!==scenarioKey(variant))return {comparable:false,reason:'Сравнение результатов допустимо только для одного сценария.'};
+  if(!baseline||!variant||baseline.id===variant.id||scenarioKey(baseline)!==scenarioKey(variant))return {comparable:false,reason:'Нужны две разные записи одного сценария.'};
   const delta=(a,b)=>finite(a)&&finite(b)?rounded(a-b,3):null;
   return {
     comparable:true,
@@ -284,7 +285,7 @@ const css=[
 const style=document.createElement('style');style.dataset.cascadeLabDifferential=VERSION;style.textContent=css;document.head.append(style);
 const make=(tag,cls,value)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(value!==undefined)node.textContent=String(value);return node;};
 const button=(label,cls,handler)=>{const node=make('button',cls,label);node.type='button';node.addEventListener('click',handler);return node;};
-const panel=make('section','cl-diff');panel.setAttribute('aria-labelledby','cl-diff-title');panel.setAttribute('aria-live','polite');
+const panel=make('section','cl-diff');panel.setAttribute('aria-labelledby','cl-diff-title');
 const head=make('div','cl-diff-head');head.append(make('p','cl-diff-kicker','CASCADE LAB / DIFFERENTIAL LAB'),make('span','cl-diff-pill','VERSION '+VERSION));
 const title=make('h3','','Докажи качество эксперимента.');
 const lead=make('p','cl-diff-lead','Сравни не только движение, но и сам чертёж: лаборатория сопоставляет детали одного типа, выделяет изменения конструкции, показывает повторяемость одинаковой сборки и формирует паспорт сравнения. Это инструмент контроля эксперимента, а не автоматическое доказательство причины.');
