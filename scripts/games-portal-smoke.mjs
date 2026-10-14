@@ -180,7 +180,7 @@ assert.ok(afterimageGame.includes('id="share-facebook"')&&afterimageGame.include
 assert.ok(afterimageGame.includes('SIGNAL SHARD')&&afterimageGame.includes('Публичная публикация поста не проверяется'),'Share reward copy must not claim that a public post was verified')
 const growthPlan=readFileSync(resolve('docs/AFTERIMAGE_GROWTH_MONETIZATION_RU.md'),'utf8')
 const growth30=growthPlan.slice(growthPlan.indexOf('### 30 улучшений'),growthPlan.indexOf('### Как монетизация соединена с игрой'))
-assert.equal((growth30.match(/^\\d+\\./gm)||[]).length,30,'AFTERIMAGE growth document must enumerate exactly 30 improvements')
+assert.equal((growth30.match(/^\d+\./gm)||[]).length,30,'AFTERIMAGE growth document must enumerate exactly 30 improvements')
 assert.ok(!growthPlan.includes('reward for starting the share flow')&&!growthPlan.includes('by starting a share flow or copying a challenge link'),'Growth document must match explicit share reward confirmation')
 assert.ok(afterimageGame.includes("let shardCosmeticUnlocked=Object.values(safeRead(REWARD,{})).some(record=>record&&record.kind==='cosmetic')"),'Previously claimed SIGNAL SHARD cosmetics must persist across sessions')
 assert.ok(afterimageGame.includes("shardCosmeticUnlocked=true")&&afterimageGame.includes("color:'#ffc86a'")&&afterimageGame.includes("shardCosmeticUnlocked?'#ffe6a8':'#7cecff'"),'Confirmed SIGNAL SHARD reward must unlock an actual in-game gold cosmetic')
