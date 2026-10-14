@@ -136,7 +136,13 @@ assert.ok(admin.includes("'/commerce-api/healthz'") && admin.includes("health.da
 for (const [label, page] of [["Games", html], ["Partners", partners], ["Premium", store]]) {
   const queueTag = page.indexOf('src="/games/consented-analytics.js?v=__OSGARD_BUILD_VERSION__"');
   const clientTag = page.indexOf('src="/games/commerce-client.js"');
-  assert.ok(queueTag >= 0 && clientTag > queueTag, label + " must load consent queue before sending analytics.");
+  if (label === "Games") {
+    assert.ok(!page.includes('<script src="/games/consented-analytics.js?v=__OSGARD_BUILD_VERSION__" defer></script>'), "Games must not eagerly download optional analytics before consent.");
+    assert.ok(page.includes("function hasAnalyticsConsent()") && page.includes("loadScript('consented-analytics.js')") && page.includes("if(!hasAnalyticsConsent())return Promise.resolve(false)"), "Games must load the consent queue before experiment analytics through its explicit-consent loader.");
+    assert.ok(clientTag >= 0, "Games commerce form client must remain available.");
+  } else {
+    assert.ok(queueTag >= 0 && clientTag > queueTag, label + " must load consent queue before sending analytics.");
+  }
 }
 for (const value of ["window.OSGARD_CONSENTED_ANALYTICS", "MAX_PENDING = 100", "MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000", "result?.accepted", "clearQueue()"]) {
   assert.ok(consentQueue.includes(value), "Consent-aware retry queue is missing: " + value);
