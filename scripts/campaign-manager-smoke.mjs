@@ -61,7 +61,8 @@ for (const marker of [
 ]) assert.ok(publicPage.includes(marker), "Games hub missing sponsored campaign integration: " + marker);
 assert.ok(publicPage.includes('id="catalog"'), "Existing playable catalog must remain");
 assert.ok(publicScript.includes("osgard.games.sponsor-exposures.v1"));
-assert.ok(publicScript.includes("if (!storage || !('IntersectionObserver' in window)) return"), "Hide sponsor cards if frequency cap can't be honoured");
+assert.ok(publicScript.includes("if (consentGranted() && !storageForConsent()) return"), "When consent is enabled, hide sponsor cards if persistent frequency capping cannot be honoured");
+assert.ok(publicScript.includes("if (!consentGranted()) return true; // Ads may display, but no persistent cap/metrics are stored."), "Declined analytics consent must not create persistent local tracking.");
 assert.ok(publicScript.includes("entry.intersectionRatio < 0.5") && publicScript.includes("}, 1000)"), "Impressions must require real visible time");
 assert.ok(publicScript.includes("window.OSGARD_CONSENTED_ANALYTICS") && publicScript.includes("sponsored_campaign_clicked"));
 assert.ok(publicScript.includes("credentials: 'omit'") && publicScript.includes("root.hidden = true"), "Public loader must not send cookies and must fail closed");
