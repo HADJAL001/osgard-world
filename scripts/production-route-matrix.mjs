@@ -227,7 +227,11 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
       // downloading Godot WebAssembly, PCK and font files for both device profiles.
       const sizeOnlyTypes = new Set(['font','wasm','pack'])
       const sizeOnly = sizeOnlyTypes.has(expectedType)
-      const asset = await fetch(new URL(path, base), { method: sizeOnly ? 'HEAD' : 'GET', headers: { 'user-agent': userAgent }, signal: AbortSignal.timeout(ROUTE_TIMEOUT_MS) })
+      // Probe the current release, not an old immutable edge-cache entry at the unversioned asset URL.
+      // The app itself uses versioned asset URLs; use the build SHA here to keep route-matrix evidence aligned.
+      const assetUrl = new URL(path, base)
+      assetUrl.searchParams.set('_osgard_route_check', expectedBuild || String(Date.now()))
+      const asset = await fetch(assetUrl, { method: sizeOnly ? 'HEAD' : 'GET', headers: { 'user-agent': userAgent, 'cache-control': 'no-cache', pragma: 'no-cache' }, cache: 'no-store', signal: AbortSignal.timeout(ROUTE_TIMEOUT_MS) })
       const contentType = asset.headers.get('content-type') || ''
       const mime = contentType.toLowerCase()
       const typeOk = expectedType === 'text/css' ? mime.includes('text/css') : expectedType === 'json' ? mime.includes('application/json') || mime.includes('text/json') || mime.includes('text/plain') : expectedType === 'javascript' ? mime.includes('javascript') || mime.includes('ecmascript') : expectedType === 'png' ? mime.includes('image/png') : expectedType === 'wasm' ? mime.includes('wasm') || mime.includes('octet-stream') : expectedType === 'pack' ? mime.length > 0 : mime.includes('font/woff2') || mime.includes('application/octet-stream')
