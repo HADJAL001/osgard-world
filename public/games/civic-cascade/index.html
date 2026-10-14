@@ -8,7 +8,7 @@
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://osgard.world/games/civic-cascade/">
 <title>CIVIC CASCADE — кризисная стратегия | OSGARD PLAY</title>
-<meta name="osgard-game-version" content="2.9.0-robust-doctrine-search">
+<meta name="osgard-game-version" content="3.0.0-pareto-strategy-dossier">
 <style>
 :root{color-scheme:dark;--bg:#080d10;--panel:#10191d;--panel2:#142126;--line:#ffffff1c;--ink:#edf3ee;--muted:#91a29e;--mint:#b8f4cf;--cyan:#68d8d2;--gold:#e1c58a;--warn:#f2b27c;--bad:#ff827b;--mono:ui-monospace,Consolas,monospace;--serif:Georgia,serif}
 *{box-sizing:border-box}html{background:var(--bg);scroll-behavior:smooth}body{margin:0;color:var(--ink);background:radial-gradient(ellipse at 76% -18%,#234d453d,transparent 48%),var(--bg);font:14px/1.55 Inter,Geist,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}button,select{font:inherit}button,a,select{touch-action:manipulation}a{color:inherit;text-decoration:none}button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(--mint);outline-offset:3px}.wrap{max-width:1440px;padding:0 clamp(14px,2.8vw,42px);margin:auto}
@@ -130,6 +130,7 @@
 .doctrine-option-head span{color:var(--cyan);font:8px var(--mono)}
 .doctrine-option-actions{margin:8px 0;color:#e2ece5;font-size:10px;line-height:1.65;overflow-wrap:anywhere}
 .doctrine-option-metrics{margin:0;color:var(--muted);font:8px/1.7 var(--mono);overflow-wrap:anywhere}
+.doctrine-option-rationale{margin:0;padding:8px;border-left:2px solid var(--cyan);background:#68d8d20a;color:#bce8dd;font-size:9px;line-height:1.65;overflow-wrap:anywhere}
 .doctrine-option button{width:100%;min-height:36px;margin-top:8px;white-space:normal}
 .doctrine-footer{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:8px;margin-top:9px}
 .doctrine-footer .ctrl{min-height:41px;width:100%;white-space:normal;line-height:1.35}
@@ -283,7 +284,7 @@
    <div><strong id="cc-doctrine-title">АВТОНОМНЫЙ КОМПИЛЯТОР ПЛАНА</strong><small>ПОИСК ПО КОМБИНАЦИЯМ · ОБЪЯСНИМЫЙ РЕЗУЛЬТАТ</small></div>
    <span id="cc-doctrine-status" role="status" aria-live="polite">ПОСТАВЬ СИМУЛЯЦИЮ НА ПАУЗУ</span>
   </div>
-  <p class="doctrine-intro">Штаб перебирает допустимые последовательности до четырёх приказов, а затем проверяет лучшие варианты в трёх контролируемых стресс-сценариях: усиление подтопления, перегрузка сети и повреждение слабейшего узла. Сравнение проводится с базовым сценарием без новых приказов при том же стресс-факторе. Найденный план не исполняется сам.</p>
+  <p class="doctrine-intro">Штаб ищет планы до четырёх приказов, проверяет сильнейшие варианты в трёх стресс-сценариях и выводит до трёх стратегий с разными компромиссами. Парето-сравнение учитывает общую оценку, цену плана, худший сдвиг риска, устойчивость слабейшего узла и число пройденных стрессов. Каждую рекомендацию сопровождает объяснение выгоды и слабого места. План не исполняется сам.</p>
   <div class="doctrine-tools">
    <label for="cc-doctrine-mode">ЦЕЛЬ ОПЕРАЦИИ</label>
    <select id="cc-doctrine-mode" aria-label="Цель поиска штабного плана">
@@ -951,6 +952,71 @@ function assessDoctrineRobustness(sourceState,orders,nominalScore,simulateOrders
  };
 }
 
+
+function doctrineDominates(a,b){
+ const ar=a.robustness||{},br=b.robustness||{};
+ const dimensions=[
+  [a.robustScore,b.robustScore,'min'],
+  [a.cost,b.cost,'min'],
+  [ar.worstRiskDelta??Infinity,br.worstRiskDelta??Infinity,'min'],
+  [ar.worstIntegrityDelta??-Infinity,br.worstIntegrityDelta??-Infinity,'max'],
+  [ar.stableProfiles??0,br.stableProfiles??0,'max']
+ ];
+ let strictlyBetter=false;
+ for(const [left,right,direction] of dimensions){
+  if(!Number.isFinite(left)||!Number.isFinite(right))return false;
+  if(direction==='min'){
+   if(left>right)return false;
+   if(left<right)strictlyBetter=true;
+  }else{
+   if(left<right)return false;
+   if(left>right)strictlyBetter=true;
+  }
+ }
+ return strictlyBetter;
+}
+function doctrineParetoPortfolio(sortedCandidates,limit=3){
+ const front=sortedCandidates.filter(candidate=>!sortedCandidates.some(other=>other.signature!==candidate.signature&&doctrineDominates(other,candidate)));
+ const compare=(a,b)=>a.robustScore-b.robustScore||a.cost-b.cost||a.signature.localeCompare(b.signature);
+ front.sort(compare);
+ const ordered=[...front,...sortedCandidates.filter(candidate=>!front.some(item=>item.signature===candidate.signature)).sort(compare)];
+ const chosen=[],seenPrefixes=new Set();
+ const prefixOf=candidate=>candidate.orders.slice(0,2).map(order=>order.action+':'+(order.nodeId||'-')).join('|');
+ for(const candidate of ordered){
+  if(chosen.length>=limit)break;
+  const prefix=prefixOf(candidate);
+  if(seenPrefixes.has(prefix))continue;
+  chosen.push(candidate);seenPrefixes.add(prefix);
+ }
+ for(const candidate of ordered){
+  if(chosen.length>=limit)break;
+  if(!chosen.some(item=>item.signature===candidate.signature))chosen.push(candidate);
+ }
+ return chosen.map((candidate,index)=>({
+  ...candidate,
+  paretoMember:front.some(item=>item.signature===candidate.signature),
+  portfolioRole:index===0?'ПАРЕТО-ЛИДЕР':front.some(item=>item.signature===candidate.signature)?'ПАРЕТО-КОМПРОМИСС':'РЕЗЕРВНЫЙ ВАРИАНТ'
+ }));
+}
+function explainDoctrineTradeoff(candidate,baseline,visibleCandidates){
+ const baselineRisk=baseline.forecast[baseline.forecast.length-1].risk;
+ const end=candidate.forecast[candidate.forecast.length-1];
+ const delta=end.risk-baselineRisk;
+ const worst=candidate.robustness.profiles.slice().sort((a,b)=>b.riskDelta90-a.riskDelta90||a.weakestIntegrityDelta-b.weakestIntegrityDelta)[0];
+ const minCost=Math.min(...visibleCandidates.map(item=>item.cost));
+ const parts=[];
+ parts.push(delta<0?'ОБЫЧНЫЙ СЦЕНАРИЙ: риск ниже на '+Math.abs(delta)+' п.':delta>0?'ОБЫЧНЫЙ СЦЕНАРИЙ: риск выше на '+delta+' п.':'ОБЫЧНЫЙ СЦЕНАРИЙ: риск без изменений');
+ parts.push('СТРЕССЫ: '+candidate.robustness.stableProfiles+'/'+candidate.robustness.profileCount+' устойчивых');
+ parts.push(candidate.cost===minCost?'САМЫЙ ЭКОНОМНЫЙ ИЗ ПОКАЗАННЫХ':'цена выше самого дешёвого варианта на '+(candidate.cost-minCost)+' ед.');
+ if(worst.riskDelta90>2||worst.weakestIntegrityDelta< -8||worst.criticalNodeDelta>1){
+  parts.push('СЛАБОЕ МЕСТО: '+worst.label+' · Δ риска '+(worst.riskDelta90>0?'+':'')+worst.riskDelta90+' · Δ целостности '+(worst.weakestIntegrityDelta>0?'+':'')+worst.weakestIntegrityDelta);
+ }else{
+  parts.push('ХУДШИЙ СТРЕСС НЕ СОЗДАЛ СИЛЬНОГО РОСТА РИСКА');
+ }
+ parts.push(candidate.paretoMember?'НЕ ДОМИНИРУЕТСЯ ДРУГИМ КАНДИДАТОМ':'РЕЗЕРВНЫЙ ВАРИАНТ ПО РЕЗУЛЬТАТАМ ПОИСКА');
+ return parts.join(' · ');
+}
+
 function searchDoctrinePlans(sourceState,mode,selectedNodeId,simulateOrders,simulatePath,nodeDefinitions,actionMetadata){
  const horizons=[30,60,90],maxDepth=4,beamWidth=6,robustnessCandidateLimit=8;
  const weakNodes=nodeDefinitions.slice().sort((a,b)=>{
@@ -1006,7 +1072,9 @@ function searchDoctrinePlans(sourceState,mode,selectedNodeId,simulateOrders,simu
   const robustness=assessDoctrineRobustness(sourceState,candidate.orders,candidate.score,simulateOrders,simulatePath,nodeDefinitions,mode);
   return {...candidate,robustness,robustScore:robustness.adjustedScore};
  }).sort((a,b)=>a.robustScore-b.robustScore||a.score-b.score||a.cost-b.cost||a.signature.localeCompare(b.signature));
- return {baseline,alternatives:robustCandidates.slice(0,3),evaluatedCount:explored.size,robustnessEvaluatedCount:robustCandidates.length,mode};
+ const portfolio=doctrineParetoPortfolio(robustCandidates,3);
+ const openingPrefixCount=new Set(robustCandidates.map(candidate=>candidate.orders.slice(0,2).map(order=>order.action+':'+(order.nodeId||'-')).join('|'))).size;
+ return {baseline,alternatives:portfolio,evaluatedCount:explored.size,robustnessEvaluatedCount:robustCandidates.length,portfolioSize:portfolio.length,openingPrefixCount,paretoFrontSize:robustCandidates.filter(candidate=>!robustCandidates.some(other=>other.signature!==candidate.signature&&doctrineDominates(other,candidate))).length,mode};
 }
 
 let doctrineResult=null,doctrineSelectedIndex=0,doctrineStaleMessage='';
@@ -1033,7 +1101,7 @@ function renderDoctrineResults(message){
  result.alternatives.forEach((candidate,index)=>{
   const card=document.createElement('article');card.className='doctrine-option';card.dataset.selected=String(index===doctrineSelectedIndex);
   const head=document.createElement('div');head.className='doctrine-option-head';
-  const title=document.createElement('strong');title.textContent=(index===0?'ЛУЧШИЙ НАЙДЕННЫЙ ВАРИАНТ':'АЛЬТЕРНАТИВА '+String(index+1).padStart(2,'0'));
+  const title=document.createElement('strong');title.textContent=candidate.portfolioRole|| (index===0?'ЛУЧШИЙ НАЙДЕННЫЙ ВАРИАНТ':'АЛЬТЕРНАТИВА '+String(index+1).padStart(2,'0'));
   const robustness=candidate.robustness;const score=document.createElement('span');score.textContent='ОЦЕНКА '+candidate.robustScore.toFixed(2)+' · УСТОЙЧИВОСТЬ '+robustness.stableProfiles+'/'+robustness.profileCount;head.append(title,score);
   const actions=document.createElement('p');actions.className='doctrine-option-actions';
   actions.textContent=candidate.orders.map((order,i)=>{
@@ -1045,9 +1113,10 @@ function renderDoctrineResults(message){
   const metrics=document.createElement('p');metrics.className='doctrine-option-metrics';
   metrics.textContent='РИСК T+90: '+baseRisk+' → '+terminal.risk+' ('+(riskDelta>0?'+':'')+riskDelta+') · СЛАБЫЙ УЗЕЛ: '+weak+' '+terminal.weakestIntegrity+'% · РЕСУРСЫ: '+candidate.cost+' · БРИГАДЫ: '+candidate.crewsUsed+' · КРИТИЧЕСКИЕ УЗЛЫ: '+terminal.criticalNodes.length;
   const stress=document.createElement('p');stress.className='doctrine-option-metrics';stress.textContent='СТРЕСС-ПРОФИЛИ: '+robustness.profiles.map(profile=>profile.label+' — Δриска '+(profile.riskDelta90>0?'+':'')+profile.riskDelta90+'; слабый узел '+(profile.weakestIntegrityDelta>0?'+':'')+profile.weakestIntegrityDelta).join(' · ');
+  const rationale=document.createElement('p');rationale.className='doctrine-option-rationale';rationale.textContent=explainDoctrineTradeoff(candidate,baseline,result.alternatives);
   const choose=document.createElement('button');choose.type='button';choose.className='ctrl';choose.textContent=index===doctrineSelectedIndex?'✓ Вариант выбран':'Выбрать этот вариант';choose.disabled=index===doctrineSelectedIndex;
   choose.addEventListener('click',()=>{doctrineSelectedIndex=index;renderDoctrineResults();refreshDoctrineAvailability()});
-  card.append(head,actions,metrics,stress,choose);root.append(card);
+  card.append(head,actions,metrics,stress,rationale,choose);root.append(card);
  });
 }
 function refreshDoctrineAvailability(){
@@ -1062,7 +1131,7 @@ function refreshDoctrineAvailability(){
  if(apply)apply.disabled=!canWork||!doctrineResult||!doctrineResult.alternatives[doctrineSelectedIndex];
  if(reset)reset.disabled=!doctrineResult&&!doctrineStaleMessage;
  if(status){
-  if(doctrineResult)status.textContent='ГОТОВО · '+doctrineResult.evaluatedCount+' ВАРИАНТОВ · СТРЕСС-ПРОВЕРЕНО '+doctrineResult.robustnessEvaluatedCount+' · '+doctrineResult.durationMs+' МС';
+  if(doctrineResult)status.textContent='ГОТОВО · '+doctrineResult.evaluatedCount+' ВАРИАНТОВ · ПАРЕТО '+doctrineResult.paretoFrontSize+' · СТРЕСС-ПРОВЕРЕНО '+doctrineResult.robustnessEvaluatedCount+' · '+doctrineResult.durationMs+' МС';
   else if(doctrineStaleMessage)status.textContent='НУЖЕН ПЕРЕСЧЁТ';
   else status.textContent=canWork?'ГОТОВ К РАСЧЁТУ · ПАУЗА':'ПОСТАВЬ СИМУЛЯЦИЮ НА ПАУЗУ';
  }
