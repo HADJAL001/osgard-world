@@ -18,9 +18,9 @@ The client may emit intent events. Server-side services must validate scores, in
 
 ## World registry
 
-The registry is the single source of truth for the seven OSGARD worlds. The game registry is the single source of truth for the five game routes and each game's reason to exist:
+The registry is the single source of truth for the seven OSGARD worlds. The game registry is the source of truth for the eleven current game identities, launch paths, and each game's reason to exist. The first five preserve the original world verbs: `TIME -> управлять`, `SWARM -> координироваться`, `NULL//SHIFT -> проникать`, `INHERIT -> наследовать`, `REMIX -> создавать`.
 
-`TIME -> управлять`, `SWARM -> координироваться`, `NULL//SHIFT -> проникать`, `INHERIT -> наследовать`, `REMIX -> создавать`.
+The remaining registry entries are `CIVIC CASCADE`, `PATINA ATELIER`, `SIGNAL RUN`, `CASCADE LAB`, `AFTERIMAGE//RUN`, and `AETHER GRID`. The Contract Integrity Engine verifies mirrored IDs/routes in the catalogue, structured data, device diagnostics, player launcher, invitations, post-session recommendations, share-card generation, production route matrix and sitemap.
 
 ## Integration rule
 
