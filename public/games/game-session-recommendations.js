@@ -185,7 +185,7 @@ captureInvite();installInviteBanner();
 const root=document.querySelector('#post-run-recommendations');
 const outsideRoot=document.querySelector('#osgard-aftergame-intermission');
 if(!root||typeof window==='undefined'||typeof location==='undefined')return;
-const titles={'null-shift':'NULL//SHIFT',time:'Империя времени',swarm:'SWARM',inherit:'INHERIT',remix:'REMIX','civic-cascade':'CIVIC CASCADE',patina:'PATINA Atelier','signal-run':'SIGNAL RUN','cascade-lab':'CASCADE LAB','afterimage-run':'AFTERIMAGE//RUN','aether-grid':'AETHER GRID'};
+const titles={'null-shift':'NULL//SHIFT',time:'Империя времени',swarm:'SWARM',inherit:'INHERIT',remix:'REMIX','civic-cascade':'CIVIC CASCADE',patina:'PATINA Atelier','signal-run':'SIGNAL RUN','cascade-lab':'CASCADE LAB','afterimage-run':'AFTERIMAGE//RUN','aether-grid':'AETHER GRID','heist-echo':'HEIST//ECHO'};
 const services=[
  ['marcosa','05','MARCOSA','SOCIAL / COMMUNITY','Премиальная социальная сеть нового поколения для общения и сообществ','https://marcosa.club/',true],
  ['projects','01','OSGARD BEW WORLD','DIGITAL STUDIO','Создание проектов, сайтов и приложений','https://osgardbewworld.com/'],
@@ -249,7 +249,7 @@ const recommendationByGame={
  'signal-run':['myosa','projects','superday'],
  'cascade-lab':['projects','myosa','vanguard'],
  'afterimage-run':['superday','projects','vanguard','partner-studio'],
- 'aether-grid':['projects','myosa','vanguard','partner-studio']
+ 'aether-grid':['projects','myosa','vanguard','partner-studio'],'heist-echo':['myosa','vanguard','projects','partner-studio']
 };
 function readPreferredService(){try{const id=localStorage.getItem(preferredServiceKey)||'';return availableServiceIds.includes(id)?id:''}catch{return''}}
 function savePreferredService(id){if(!availableServiceIds.includes(id))return false;try{localStorage.setItem(preferredServiceKey,id);return true}catch{return false}}
