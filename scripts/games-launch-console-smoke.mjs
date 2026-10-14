@@ -21,6 +21,10 @@ assert.ok(html.includes('https://wa.me/79640027222') && html.includes('mailto:os
 assert.ok(operations.includes("path:'/games/command-center/'"), 'Deployment operations must include the command deck route')
 assert.ok(operations.includes('href="/games/command-center/"'), 'Operations navigation must expose the command deck shortcut')
 assert.ok(routeMatrix.includes("'/games/command-center/'"), 'Production route matrix must exercise the command deck')
+assert.ok(routeMatrix.includes("route === '/games/command-center/'") &&
+  routeMatrix.includes("reportType: 'osgard-play-command-deck'") &&
+  routeMatrix.includes("databaseReady !== true"),
+  'Production route matrix must inspect the Command Deck page contract instead of the generic demo fallback')
 assert.ok(packageJson.scripts['qa:games-operations']?.includes('games-launch-console-smoke.mjs'), 'The established operations test must run the new command-deck contract')
 
 console.log('PASS OSGARD PLAY command deck: noindex, privacy-safe status checks, readiness boundaries, owner workflow links and deployment route coverage.')
