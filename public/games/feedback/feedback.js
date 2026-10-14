@@ -143,7 +143,9 @@
     anchor.remove();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
-  function updateCount() { if (count) count.textContent = String(description.value.length) + ' / 3000'; }
+  const incomingGame = new URL(location.href).searchParams.get('game');
+  if (incomingGame && games.has(incomingGame)) form.elements.namedItem('gameId').value = incomingGame;
+    function updateCount() { if (count) count.textContent = String(description.value.length) + ' / 3000'; }
   description.addEventListener('input', updateCount);
 
   exportButton.addEventListener('click', () => {
