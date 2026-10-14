@@ -37,6 +37,16 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
+      - name: Run contract gate and preserve blocked evidence
+        continue-on-error: true
+        run: |
+          set +e
+          npm run qa:contracts > /tmp/osgard-contract-audit.log 2>&1
+          code=$?
+          echo "Contract audit exit code: $code"
+          if [ ! -s osgard-contract-audit.json ]; then
+            node -e "require('node:fs').writeFileSync('osgard-contract-audit.json', JSON.stringify({schema:'osgard.contract-integrity.v1',status:'blocked',summary:{checks:1,passed:0,failed:1,warnings:0},contract:{sha256:'0'.repeat(64)},checks:[{id:'contract-audit',title:'Contract audit did not produce a report',status:'failed',detail:'The command failed before writing its report.'}]}, null, 2))"
+          fi
       - name: Run release readiness and preserve report on failure
         continue-on-error: true
         run: |
@@ -45,10 +55,23 @@ jobs:
           code=$?
           echo "Release readiness exit code: $code"
           if [ ! -s release-readiness.json ]; then
-            node -e "require('node:fs').writeFileSync('release-readiness.json', JSON.stringify({status:'blocked',checks:[{name:'release-readiness-report',status:'failed'}]}, null, 2))"
+            node -e "require('node:fs').writeFileSync('release-readiness.json', JSON.stringify({status:'blocked',checks:[{id:'release-readiness-report',title:'Release readiness did not produce a report',status:'failed'}]}, null, 2))"
           fi
-      - name: Prepare AI advisory review
-        run: node scripts/osgard-ai-release-review.mjs --report release-readiness.json --send-to-openai
+          if [ ! -s production-route-matrix.json ]; then
+            node -e "require('node:fs').writeFileSync('production-route-matrix.json', JSON.stringify({schema:'osgard.production-route-matrix.v1',status:'blocked',routes:[{route:'/games/',status:'failed',reason:'Route matrix did not produce a report.'}]}, null, 2))"
+          fi
+      - name: Build and attest the artifact, preserving blocked evidence
+        continue-on-error: true
+        run: |
+          set +e
+          npm run build && npm run preflight:frontend && npm run release:attest && npm run release:verify
+          code=$?
+          echo "Build/attestation exit code: $code"
+          if [ ! -s release-attestation.json ]; then
+            node -e "require('node:fs').writeFileSync('release-attestation.json', JSON.stringify({schema:'osgard.release-verification.v1',status:'blocked',checks:[{id:'release-attestation',title:'Build or contract-bound attestation failed',status:'failed',detail:'Review the deterministic build and preflight logs.'}]}, null, 2))"
+          fi
+      - name: Prepare AI advisory review over minimized quality evidence
+        run: node scripts/osgard-ai-release-review.mjs --report release-readiness.json --report osgard-contract-audit.json --report release-attestation.json --report production-route-matrix.json --send-to-openai
       - name: Upload AI review and machine evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -57,3 +80,7 @@ jobs:
           if-no-files-found: warn
           path: |
             osgard-ai-release-review.json
+            release-readiness.json
+            osgard-contract-audit.json
+            release-attestation.json
+            production-route-matrix.json
