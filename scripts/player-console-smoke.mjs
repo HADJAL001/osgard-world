@@ -56,7 +56,7 @@ test('Daily completion objectives use dated completion events and remain backwar
   assert.match(js, /completionLog: \[\]/);
   assert.match(js, /stats\.completionLog = \[\.\.\.\(stats\.completionLog \|\| \[\]\), \{ game: id, at: new Date\(\)\.toISOString\(\), \.\.\./);
   assert.match(js, /Array\.isArray\(raw\.completionLog\)/);
-  assert.match(js, /document\.addEventListener\('osgard:game-level-completed', recordGameCompletion\)/);
+  assert.match(js, /document\.addEventListener\('osgard:game-completed', recordGameCompletion\)/);\n  assert.match(js, /document\.addEventListener\('osgard:game-level-completed', recordGameCompletion\)/);
   assert.match(js, /row\.game === id && row\.sessionId === sessionId/);
   assert.match(js, /validateMissionState\(parsed\.missions\)/);
   assert.match(js, /missions: missionState/);
@@ -71,7 +71,7 @@ test('Mission rendering refreshes when the queue, launch history or a game resul
   assert.match(css, /\.og-pc-mission-hero/);
   assert.match(css, /\.og-pc-missions-list/);
   assert.match(css, /\.og-pc-mission-meter/);
-  assert.match(css, /aria-valuenow/);
+  assert.match(js, /setAttribute\('aria-valuenow'/);
 });
 test('catalogue checks remain same-origin and do not send events to third parties', () => {
   assert.match(js, /route\.origin !== location\.origin/);
