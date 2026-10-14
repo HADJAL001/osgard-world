@@ -398,6 +398,8 @@ const lazyRuntimeMatch=html.match(/<script id="games-lazy-runtime">([\s\S]*?)<\/
 assert.ok(lazyRuntimeMatch,'The Games hub must provide the on-demand runtime loader')
 const lazyRuntime=lazyRuntimeMatch[1]
 new Function(lazyRuntime)
+assert.ok(!html.includes('<script src="/games/sponsored-campaigns.js?v=__OSGARD_BUILD_VERSION__" defer></script>'), 'Sponsor renderer must not execute on first paint')
+for(const marker of ["function loadSponsorRenderer()","loadScript('sponsored-campaigns.js')","function watchSponsorRenderer()","rootMargin:'120px 0px'","watchSponsorRenderer()","loadSponsorRenderer})"]) assert.ok(lazyRuntime.includes(marker),'Lazy sponsor loader contract missing: '+marker)
 for(const marker of ["function loadPlayerRuntime()","function loadRecommendations()","function loadCatalogEnhancements()","function watchCatalogEnhancements()","rootMargin:'360px 0px'","loadScript('luxury.js')","loadScript('player-lifecycle.js')","loadScript('game-session-recommendations.js')","link.dataset.osgardLazy='recommendations-css'","event.stopImmediatePropagation()","playPending()","playerState==='failed'","meta[name=\"osgard-build\"]"]) assert.ok(lazyRuntime.includes(marker),'Lazy-load contract missing: '+marker)
 assert.ok(lazyRuntime.includes("params.get('og_ref')")&&lazyRuntime.includes("loadRecommendations()"),'Invite landings must lazily activate consent-aware referral UI')
 assert.ok(lazyRuntime.includes("script.async=true")&&lazyRuntime.includes("encodeURIComponent(version)"),'On-demand scripts must be asynchronous and release-versioned')
