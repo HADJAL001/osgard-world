@@ -297,3 +297,41 @@ The Godot build tracks a persistent UTC daily-clear streak, longest streak and l
 - The modifiers change the simulation itself (guard speed, cooldown/damage/HP, timed lane cycle, supply interaction, phase-instability cost and radar visibility), not just labels or particle effects. The HUD and loadout show the active anomalies before and during the run.
 - Expanded the Godot headless runtime smoke to verify that modifier selection is deterministic and distinct, malformed links cannot grant modifiers, and the selected mutators alter the real game state. The deploy pipeline regenerates and publishes the Godot Web export directly on OSgard World.
 - This adds repeatable challenge variation without changing the existing challenge URL format, regular contracts, local career economy, or daily reward idempotency.
+
+
+## Godot release 0.13 — Precision Combat Director / 30 upgrades
+
+This release changes the combat and scoring loop in the Godot 3D runtime (not a mock page). The following 30 upgrades are included:
+
+1. Upper-hit-zone precision detection through the real weapon raycast.
+2. Precision hits inflict two damage points; precision + Overdrive can reach three.
+3. Distinctive critical-hit readout above the target.
+4. Dedicated critical-hit burst, light and ring feedback.
+5. A higher-pitch critical-hit audio cue.
+6. Timed elimination combo chains.
+7. Combo expiry after 4.25 seconds without a takedown.
+8. Five deterministic combo multiplier tiers (×1.00 to ×2.00).
+9. Combo multipliers affect the earned-credit bounty.
+10. Enemy-role bounty differences for Stalker, Ranger and Heavy.
+11. A substantial Warden elite bounty.
+12. Best-combo tracking in the mission record.
+13. Overdrive charge earned through eliminations.
+14. Extra charge for a precision finishing hit.
+15. Overdrive only activates at full charge.
+16. A five-second Overdrive duration with an explicit expiry state.
+17. Increased weapon damage while Overdrive is active.
+18. Damage mitigation while Overdrive is active.
+19. Reduced hostile movement speed during Overdrive.
+20. Slower hostile dash, cooldown and attack-telegraph simulation while active.
+21. Smooth camera field-of-view boost during Overdrive.
+22. Premium purple activation ring and dynamic light pulse.
+23. Separate activation, critical-hit, combo and expiry sound cues.
+24. Keyboard activation on R.
+25. Gamepad activation on right-stick click without stealing the fire trigger.
+26. A dedicated mobile/touch Overdrive button.
+27. A visible Overdrive charge bar in mission control.
+28. A live combo, multiplier and accuracy readout.
+29. Shot accuracy and actual damage-taken metrics for each run.
+30. S/A/B/C mission grades, score-driven grade bonuses and a fuller results report.
+
+The runtime smoke now checks combo thresholds, critical damage, the charge gate, Overdrive's real enemy-speed effect, timer decay, kill awards, combo breaking, accuracy arithmetic and grade bonuses. The pause screen no longer inflates mission elapsed time. Existing daily challenge IDs, fixed mutators, career upgrades, extraction objective, desktop/touch/gamepad input modes and local-only progression remain compatible.

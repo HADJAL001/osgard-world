@@ -902,12 +902,53 @@ func _run_smoke() -> void:
 	if not _expect(game.devices.size() == 3, "three destructible devices must spawn"):
 		return
 
-	print("RUNTIME_STAGE: guard/device combat")
+	print("RUNTIME_STAGE: combat director math, grade and overdrive")
+	if not _expect(is_equal_approx(game._combat_combo_multiplier(0), 1.0) and is_equal_approx(game._combat_combo_multiplier(2), 1.25) and is_equal_approx(game._combat_combo_multiplier(4), 1.5) and is_equal_approx(game._combat_combo_multiplier(6), 1.75) and is_equal_approx(game._combat_combo_multiplier(9), 2.0), "combo thresholds must award five deterministic payout tiers"):
+		return
+	if not _expect(game._combat_damage_per_hit(false, false) == 1 and game._combat_damage_per_hit(true, false) == 2 and game._combat_damage_per_hit(false, true) == 2 and game._combat_damage_per_hit(true, true) == 3, "precision and Overdrive damage must stack to three hit points without bypassing the normal weapon pipeline"):
+		return
+	if not _expect(game._mission_grade_for_score(920) == "S" and game._mission_grade_for_score(700) == "A" and game._mission_grade_for_score(450) == "B" and game._mission_grade_for_score(200) == "C", "mission rank thresholds must be stable S/A/B/C tiers"):
+		return
+	if not _expect(game._mission_grade_bonus("S") == 700 and game._mission_grade_bonus("A") == 500 and game._mission_grade_bonus("B") == 300 and game._mission_grade_bonus("C") == 150, "grade rewards must match the released reward table"):
+		return
+	if not _expect(game._calculate_mission_score(5, 3, 6, 90.0, 10.0, 120.0) > game._calculate_mission_score(5, 0, 0, 60.0, 30.0, 180.0), "precision, chained kills, accuracy and clean execution must improve the mission score"):
+		return
+	game._record_weapon_shot(false)
+	game._record_weapon_shot(true)
+	if not _expect(game.shots_fired == 2 and game.shots_hit == 1 and is_equal_approx(game._combat_accuracy_percentage(), 50.0), "accuracy must be measured from actual fired and confirmed target-hit events"):
+		return
+	var saved_overdrive_charge: float = game.overdrive_charge
+	var saved_overdrive_timer: float = game.overdrive_timer
+	game.overdrive_charge = 99.0
+	game.overdrive_timer = 0.0
+	var activations_before: int = game.overdrive_activations
+	game._activate_overdrive()
+	if not _expect(game.overdrive_activations == activations_before and is_zero_approx(game.overdrive_timer), "Overdrive must reject activation before full charge"):
+		return
+	game.overdrive_charge = 100.0
+	game._activate_overdrive()
+	if not _expect(game.overdrive_activations == activations_before + 1 and is_equal_approx(game.overdrive_timer, game.OVERDRIVE_DURATION) and is_zero_approx(game.overdrive_charge), "full charge must trigger a timed real Overdrive and consume the meter"):
+		return
+	if not _expect(game._effective_guard_speed(game.guards[0]) < float(game.guards[0]["speed"]), "active Overdrive must slow enemy movement in the live guard simulation"):
+		return
+	game._update_combat_director(2.0)
+	if not _expect(game.overdrive_timer < game.OVERDRIVE_DURATION and game.overdrive_timer > 0.0, "Overdrive duration must tick down on unpaused simulation time"):
+		return
+	game.overdrive_charge = saved_overdrive_charge
+	game.overdrive_timer = saved_overdrive_timer
+	game.shots_fired = 0
+	game.shots_hit = 0
+	game.combat_combo = 0
+	game.combat_combo_best = 0
+	game.combo_breaks = 0
+
+	print("RUNTIME_STAGE: precision combat and combo payouts")
 	var guard_node: Node3D = game.guards[0]["node"]
 	var guard_hp := int(game.guards[0]["hp"])
-	game._damage_target(guard_node)
+	var critical_count_before: int = game.critical_hits
+	game._damage_target(guard_node, true)
 	var hit_feedback := guard_node.get_node_or_null("HitFeedback") as Label3D
-	if not _expect(is_instance_valid(hit_feedback) and hit_feedback.visible and hit_feedback.text.contains("1"), "confirmed hits must show a floating damage number"):
+	if not _expect(is_instance_valid(hit_feedback) and hit_feedback.visible and hit_feedback.text.contains("CRIT") and hit_feedback.text.contains("2"), "upper-zone precision hits must show the CRIT label and doubled hit value"):
 		return
 	if not _expect(float(game.guards[0].get("hit_flash_timer", 0.0)) > 0.0 and float(game.guards[0].get("hit_label_timer", 0.0)) > 0.0, "hit feedback timers must be live and measurable"):
 		return
@@ -916,13 +957,24 @@ func _run_smoke() -> void:
 	if not _expect(is_instance_valid(armor_flash) and armor_flash.material_override == game.materials["white"] and armor_flash.scale.x > 1.0, "a confirmed hit must flash and briefly scale the target armor"):
 		return
 	var health_readout := guard_node.get_node_or_null("HealthReadout") as Label3D
-	if not _expect(is_instance_valid(health_readout) and health_readout.visible and health_readout.text.contains(str(guard_hp - 1)), "damage must expose the correct floating enemy health readout"):
+	if not _expect(is_instance_valid(health_readout) and health_readout.visible and health_readout.text.contains(str(guard_hp - 2)), "a precision hit must subtract two HP and update the floating enemy health readout"):
 		return
-	for _hit in range(guard_hp - 1):
+	if not _expect(game.critical_hits == critical_count_before + 1 and int(game.guards[0]["hp"]) == guard_hp - 2, "precision-hit telemetry and actual hostile HP must both update"):
+		return
+	for _hit in range(guard_hp - 2):
 		game._damage_target(guard_node)
 	if not _expect(game.guards.size() == 2, "weapon damage must eliminate a guard"):
 		return
 	if not _expect(game.eliminations == 1, "elimination telemetry must update"):
+		return
+	if not _expect(game.combat_combo == 1 and game.combat_combo_best == 1 and game.combat_combo_timer > 0.0, "a confirmed elimination must begin a timed combo chain"):
+		return
+	if not _expect(game.run_credits >= 100 and game.combat_score_total > 0 and game.overdrive_charge > 0.0, "kill bounty, combat score and Overdrive charge must be awarded in one shared elimination path"):
+		return
+	game.combat_combo = 4
+	game.combat_combo_timer = 1.0
+	game._break_combat_combo()
+	if not _expect(game.combat_combo == 0 and is_zero_approx(game.combat_combo_timer) and game.combo_breaks == 1, "active combo breaker must reset the streak and record a break"):
 		return
 	if not _expect(game.ring_pool.size() > 0 and game.ring_effects.size() > 0, "eliminating a guard must trigger the pooled cinematic impact ring"):
 		return

@@ -15,6 +15,9 @@ const DASH_TRAIL_INTERVAL := 0.042
 const DASH_TRAIL_LIFETIME := 0.18
 const PULSE_LANE_DISRUPTION_SECONDS := 1.85
 const PULSE_LANE_DISRUPTION_RANGE := 1.75
+const COMBAT_COMBO_WINDOW := 4.25
+const OVERDRIVE_MAX_CHARGE := 100.0
+const OVERDRIVE_DURATION := 5.0
 
 var player: CharacterBody3D
 var camera: Camera3D
@@ -40,6 +43,9 @@ var health_label: Label
 var credits_label: Label
 var threat_label: Label
 var telemetry_label: Label
+var combat_status_label: Label
+var overdrive_bar: ProgressBar
+var mobile_overdrive_button: Button
 var diagnostics_label: Label
 var keypad_panel: PanelContainer
 var keypad_progress_label: Label
@@ -140,6 +146,21 @@ var career_names := ["STANDARD RAID", "BLACKOUT RUN", "IRON VEIL"]
 var contract_bonus := [0, 350, 550]
 var objective_text := "ВЗЛОМАТЬ ТЕРМИНАЛ → ЗАБРАТЬ ЯДРО → ЭВАКУИРОВАТЬСЯ"
 var eliminations := 0
+var critical_hits := 0
+var shots_fired := 0
+var shots_hit := 0
+var damage_taken_total := 0.0
+var combat_combo := 0
+var combat_combo_timer := 0.0
+var combat_combo_best := 0
+var combo_breaks := 0
+var overdrive_charge := 0.0
+var overdrive_timer := 0.0
+var overdrive_activations := 0
+var mission_accuracy := 100.0
+var mission_score := 0
+var combat_score_total := 0
+var mission_grade := "C"
 var scene_clock := 0.0
 var operator_rig: Node3D
 var operator_suit: MeshInstance3D
@@ -282,6 +303,21 @@ func _reset_runtime_collections() -> void:
 	daily_shift_instability_bonus = 0.0
 	daily_radar_jammed = false
 	daily_supply_blackout = false
+	critical_hits = 0
+	shots_fired = 0
+	shots_hit = 0
+	damage_taken_total = 0.0
+	combat_combo = 0
+	combat_combo_timer = 0.0
+	combat_combo_best = 0
+	combo_breaks = 0
+	overdrive_charge = 0.0
+	overdrive_timer = 0.0
+	overdrive_activations = 0
+	mission_accuracy = 100.0
+	mission_score = 0
+	combat_score_total = 0
+	mission_grade = "C"
 	objective_beacon_beam_materials = objective_beacon_beam_materials.duplicate()
 	objective_beacon_beam_materials.clear()
 	objective_beacon_target = null
@@ -344,10 +380,11 @@ func _reset_runtime_collections() -> void:
 func _process(delta: float) -> void:
 	var dt := minf(delta, 0.06)
 	current_frame_ms = maxf(0.0, delta * 1000.0)
-	elapsed += dt
-	scene_clock += dt
-	if not paused_game and not mission_finished:
+	if not paused_game and not mission_finished and not briefing_visible:
+		elapsed += dt
+		_update_combat_director(dt)
 		_update_phase_lanes(dt)
+	scene_clock += dt
 	damage_flash_timer = maxf(0.0, damage_flash_timer - dt)
 	camera_shake_timer = maxf(0.0, camera_shake_timer - dt)
 	impact_flash_timer = maxf(0.0, impact_flash_timer - dt)
@@ -446,6 +483,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_interact()
 		KEY_Q:
 			_deploy_pulse()
+		KEY_R:
+			_activate_overdrive()
 		KEY_SPACE:
 			_try_dash()
 		KEY_SHIFT:
@@ -574,6 +613,8 @@ func _handle_gamepad_button(event: InputEventJoypadButton) -> void:
 			_set_pause(not paused_game)
 		JOY_BUTTON_BACK:
 			_toggle_diagnostics()
+		JOY_BUTTON_RIGHT_STICK:
+			_activate_overdrive()
 		JOY_BUTTON_LEFT_SHOULDER:
 			_toggle_loadout()
 		# RB/RT fires while held; polling keeps the trigger responsive with no key-repeat.
@@ -1871,7 +1912,8 @@ func _update_guards(delta: float) -> void:
 		var health_readout := body.get_node_or_null("HealthReadout") as Label3D
 		if is_instance_valid(health_readout):
 			health_readout.visible = bool(guard["warden"]) or health_timer > 0.0
-		var stun := maxf(0.0, float(guard["stun"]) - delta)
+		var ai_delta: float = delta * (0.64 if overdrive_timer > 0.0 else 1.0)
+		var stun := maxf(0.0, float(guard["stun"]) - ai_delta)
 		guard["stun"] = stun
 		if stun > 0.0:
 			guard["windup"] = 0.0
@@ -1887,9 +1929,9 @@ func _update_guards(delta: float) -> void:
 			body.look_at(Vector3(player.global_position.x, body.global_position.y, player.global_position.z), Vector3.UP)
 		var role: String = str(guard.get("role", "RANGER"))
 		if role == "STALKER":
-			var dash_windup := maxf(0.0, float(guard.get("dash_windup", 0.0)) - delta)
-			var dash_timer := maxf(0.0, float(guard.get("dash_timer", 0.0)) - delta)
-			var dash_cooldown := maxf(0.0, float(guard.get("dash_cooldown", 1.0)) - delta)
+			var dash_windup := maxf(0.0, float(guard.get("dash_windup", 0.0)) - ai_delta)
+			var dash_timer := maxf(0.0, float(guard.get("dash_timer", 0.0)) - ai_delta)
+			var dash_cooldown := maxf(0.0, float(guard.get("dash_cooldown", 1.0)) - ai_delta)
 			guard["dash_cooldown"] = dash_cooldown
 			if float(guard.get("dash_windup", 0.0)) > 0.0:
 				guard["dash_windup"] = dash_windup
@@ -1901,7 +1943,7 @@ func _update_guards(delta: float) -> void:
 				continue
 			if float(guard.get("dash_timer", 0.0)) > 0.0:
 				guard["dash_timer"] = dash_timer
-				body.velocity = to_player.normalized() * float(guard["speed"]) * 3.4
+				body.velocity = to_player.normalized() * _effective_guard_speed(guard) * 3.4
 				body.move_and_slide()
 				if body.global_position.distance_to(player.global_position) < 2.15 and damage_cooldown <= 0.0:
 					_damage_player(14.0)
@@ -1916,7 +1958,7 @@ func _update_guards(delta: float) -> void:
 				continue
 		var windup := float(guard["windup"])
 		if windup > 0.0:
-			windup -= delta
+			windup -= ai_delta
 			guard["windup"] = windup
 			body.velocity = Vector3.ZERO
 			if windup <= 0.0:
@@ -1936,7 +1978,7 @@ func _update_guards(delta: float) -> void:
 				guard["cooldown"] = randf_range(1.45, 2.15) if role == "RANGER" else randf_range(2.0, 3.0)
 			guards[index] = guard
 			continue
-		var cooldown := maxf(0.0, float(guard["cooldown"]) - delta)
+		var cooldown := maxf(0.0, float(guard["cooldown"]) - ai_delta)
 		guard["cooldown"] = cooldown
 		if distance < 13.5 and cooldown <= 0.0:
 			guard["windup"] = 0.92 if role == "WARDEN" else (0.82 if role == "HEAVY" else 0.62)
@@ -1962,7 +2004,7 @@ func _update_guards(delta: float) -> void:
 			_play_sfx(230.0 if role != "WARDEN" else 115.0, 0.18, 0.08)
 			body.velocity = Vector3.ZERO
 		elif distance > 2.7 and distance < 22.0:
-			body.velocity = to_player.normalized() * float(guard["speed"])
+			body.velocity = to_player.normalized() * _effective_guard_speed(guard)
 			body.move_and_slide()
 		else:
 			body.velocity = Vector3.ZERO
@@ -2022,11 +2064,18 @@ func _fire_weapon() -> void:
 	query.collision_mask = 0xFFFFFFFF
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
 	var beam_end := to
+	var critical_hit := false
+	var is_combat_hit := false
 	if not hit.is_empty():
 		beam_end = hit["position"]
 		var collider: Object = hit["collider"]
 		if collider is Node:
-			_damage_target(collider as Node)
+			is_combat_hit = _is_combat_target(collider as Node)
+			if is_combat_hit and _is_hostile_target(collider as Node) and collider is Node3D:
+				var hit_position: Vector3 = hit["position"]
+				critical_hit = hit_position.y >= (collider as Node3D).global_position.y + 0.48
+			_damage_target(collider as Node, critical_hit)
+	_record_weapon_shot(is_combat_hit)
 	_spawn_beam(from, beam_end, materials["cyan"], 0.09)
 	_spawn_hit_sparks(beam_end, materials["cyan"])
 	_screen_impulse(0.018, 0.055)
@@ -2035,18 +2084,21 @@ func _fire_weapon() -> void:
 		crosshair_hit_timer = 0.12
 	_play_sfx(680.0, 0.055, 0.08)
 
-func _damage_target(target: Node) -> void:
+func _damage_target(target: Node, critical_hit: bool = false) -> void:
 	for index in range(guards.size() - 1, -1, -1):
 		var guard: Dictionary = guards[index]
 		if guard["node"] == target:
-			guard["hp"] = int(guard["hp"]) - 1
+			var damage_points: int = _combat_damage_per_hit(critical_hit, overdrive_timer > 0.0)
+			guard["hp"] = int(guard["hp"]) - damage_points
+			if critical_hit:
+				critical_hits += 1
 			guard["health_timer"] = 1.8
 			guard["hit_flash_timer"] = 0.14
 			guard["hit_label_timer"] = 0.52
 			_spawn_impact_light(target.global_position + Vector3.UP * 0.72, Color(1.0, 0.58, 0.22), 2.1, 3.9, 0.13)
 			var hit_feedback: Label3D = guard.get("hit_label") as Label3D
 			if is_instance_valid(hit_feedback):
-				hit_feedback.text = "−1"
+				hit_feedback.text = ("CRIT " if critical_hit else "") + "−%d" % damage_points
 				hit_feedback.visible = true
 				hit_feedback.position.y = 3.02 if bool(guard.get("warden", false)) else 2.58
 				hit_feedback.modulate = Color(1.0, 0.94, 0.7, 1.0)
@@ -2056,7 +2108,11 @@ func _damage_target(target: Node) -> void:
 			if is_instance_valid(health_readout):
 				health_readout.text = "HP %d / %d" % [maxi(0, int(guard["hp"])), max_hp]
 				health_readout.visible = true
-			_spawn_hit_sparks(target.global_position + Vector3.UP * 0.7, materials["amber"])
+			_spawn_hit_sparks(target.global_position + Vector3.UP * 0.7, materials["white"] if critical_hit else materials["amber"])
+			if critical_hit:
+				_spawn_impact_light(target.global_position + Vector3.UP * 1.0, Color(1.0, 0.92, 0.58), 2.8, 4.8, 0.16)
+				_spawn_ring_burst(target.global_position + Vector3.UP * 0.12, materials["white"])
+				_play_sfx(920.0, 0.075, 0.07)
 			if int(guard["hp"]) <= 0:
 				var body: Node3D = guard["node"]
 				_spawn_ring_burst(body.global_position + Vector3.UP * 0.14, materials["amber"] if bool(guard["warden"]) else materials["cyan"])
@@ -2068,9 +2124,7 @@ func _damage_target(target: Node) -> void:
 					target_lock_has_position = false
 				body.queue_free()
 				guards.remove_at(index)
-				eliminations += 1
-				run_credits += 100
-				objective_text = "ЦЕЛЬ УСТРАНЕНА · +100 КРЕДИТОВ"
+				_register_hostile_elimination(guard, body, critical_hit)
 				_play_sfx(145.0, 0.22, 0.12)
 				_update_hud()
 			return
@@ -2294,7 +2348,11 @@ func _damage_player(amount: float, attacker: Node3D = null) -> void:
 	damage_flash_timer = 0.2
 	impact_flash_timer = maxf(impact_flash_timer, 0.28)
 	_screen_impulse(0.24, 0.32)
-	player_health = maxf(0.0, player_health - amount)
+	_break_combat_combo()
+	var mitigated_amount: float = amount * (0.72 if overdrive_timer > 0.0 else 1.0)
+	var old_health: float = player_health
+	player_health = maxf(0.0, player_health - mitigated_amount)
+	damage_taken_total += old_health - player_health
 	_spawn_impact_light(player.global_position + Vector3.UP * 0.82, Color(1.0, 0.12, 0.22), 2.5, 4.7, 0.19)
 	if is_instance_valid(attacker):
 		_show_damage_direction(attacker)
@@ -2306,21 +2364,29 @@ func _damage_player(amount: float, attacker: Node3D = null) -> void:
 func _finish_mission(success: bool) -> void:
 	if mission_finished:
 		return
+	mission_accuracy = _combat_accuracy_percentage()
+	mission_score = _calculate_mission_score(eliminations, critical_hits, combat_combo_best, mission_accuracy, damage_taken_total, elapsed)
+	mission_grade = _mission_grade_for_score(mission_score)
 	mission_finished = true
 	paused_game = false
 	if success:
 		var daily_bonus := _claim_daily_challenge_reward()
-		var payout := run_credits + int(contract_bonus[current_contract]) + daily_bonus
+		var grade_bonus := _mission_grade_bonus(mission_grade)
+		var payout := run_credits + int(contract_bonus[current_contract]) + daily_bonus + grade_bonus
 		career_credits += payout
 		career.set_value("career", "completed_runs", int(career.get_value("career", "completed_runs", 0)) + 1)
 		career.set_value("career", "best_eliminations", maxi(eliminations, int(career.get_value("career", "best_eliminations", 0))))
 		career.set_value("career", "total_eliminations", int(career.get_value("career", "total_eliminations", 0)) + eliminations)
+		career.set_value("career", "total_critical_hits", int(career.get_value("career", "total_critical_hits", 0)) + critical_hits)
+		career.set_value("career", "best_combo", maxi(combat_combo_best, int(career.get_value("career", "best_combo", 0))))
+		career.set_value("career", "best_mission_score", maxi(mission_score, int(career.get_value("career", "best_mission_score", 0))))
+		career.set_value("career", "total_combat_score", int(career.get_value("career", "total_combat_score", 0)) + mission_score)
 		_save_career()
 		_set_result_title("ЭВАКУАЦИЯ УСПЕШНА", "РЕЙД ЗАВЕРШЁН · +%d КРЕДИТОВ ЗАНЕСЕНО В КАРЬЕРУ" % payout, Color(0.38, 1.0, 0.85))
 		if is_instance_valid(result_reward_label):
 			var daily_suffix := " · DAILY +%d" % daily_bonus if daily_bonus > 0 else ""
 			var streak_suffix := " · СЕРИЯ %d ДН." % daily_streak if daily_bonus > 0 else ""
-			result_reward_label.text = "УСТРАНЕНИЙ %d · НАГРАДА %d%s%s · ПОБЕД %d" % [eliminations, payout, daily_suffix, streak_suffix, int(career.get_value("career", "completed_runs", 0))]
+			result_reward_label.text = "РАНГ %s · SCORE %d · ACC %.0f%% · КРИТЫ %d · COMBO %d · НАГРАДА %d%s%s · ПОБЕД %d" % [mission_grade, mission_score, mission_accuracy, critical_hits, combat_combo_best, payout, daily_suffix, streak_suffix, int(career.get_value("career", "completed_runs", 0))]
 		if is_instance_valid(result_share_label):
 			result_share_label.text = "КОД ВЫЗОВА: %s · ПОДЕЛИСЬ И ПРИГЛАСИ ДРУГА" % _today_challenge_code()
 		objective_text = "МИССИЯ ВЫПОЛНЕНА · КАРЬЕРНЫЙ БАЛАНС %d" % career_credits
@@ -2328,7 +2394,7 @@ func _finish_mission(success: bool) -> void:
 	else:
 		_set_result_title("ОПЕРАТОР ПОТЕРЯН", "КОНТРАКТ ПРОВАЛЕН · БАЛАНС КАРЬЕРЫ НЕ ИЗМЕНЁН", Color(1.0, 0.25, 0.34))
 		if is_instance_valid(result_reward_label):
-			result_reward_label.text = "РЕЗУЛЬТАТ: %d УСТРАНЕНИЙ · ПОПРОБУЙ ЕЩЁ РАЗ" % eliminations
+			result_reward_label.text = "РЕЙД ПРОВАЛЕН · РАНГ %s · SCORE %d · ACC %.0f%% · КРИТЫ %d · COMBO %d" % [mission_grade, mission_score, mission_accuracy, critical_hits, combat_combo_best]
 		if is_instance_valid(result_share_label):
 			result_share_label.text = "ВЫЗОВ ДРУГУ: %s" % _today_challenge_code()
 		objective_text = "ОПЕРАТОР НЕ ВЕРНУЛСЯ · ПЕРЕЗАПУСТИТЕ РЕЙД"
@@ -2338,6 +2404,141 @@ func _finish_mission(success: bool) -> void:
 		JavaScriptBridge.eval("if(window.OSGARDGameLifecycle){window.OSGARDGameLifecycle({type:'osgard:game-lifecycle',game:'null-shift',state:'completed',at:Date.now()});}else if(window.parent!==window){window.parent.postMessage({type:'osgard:game-lifecycle',game:'null-shift',state:'completed',at:Date.now()},window.location.origin);}")
 	_update_hud()
 
+
+
+func _combat_combo_multiplier(chain_count: int) -> float:
+	if chain_count >= 9:
+		return 2.0
+	if chain_count >= 6:
+		return 1.75
+	if chain_count >= 4:
+		return 1.5
+	if chain_count >= 2:
+		return 1.25
+	return 1.0
+
+func _combat_damage_per_hit(critical_hit: bool, overdrive_active: bool) -> int:
+	return 1 + int(critical_hit) + int(overdrive_active)
+
+func _record_weapon_shot(confirmed_combat_hit: bool) -> void:
+	shots_fired += 1
+	if confirmed_combat_hit:
+		shots_hit += 1
+
+func _is_hostile_target(target: Node) -> bool:
+	for guard in guards:
+		if guard.get("node") == target:
+			return true
+	return false
+
+func _is_combat_target(target: Node) -> bool:
+	if not is_instance_valid(target):
+		return false
+	if target.has_meta("device_index"):
+		return true
+	return _is_hostile_target(target)
+
+func _combat_accuracy_percentage() -> float:
+	if shots_fired <= 0:
+		return 100.0
+	return clampf(float(shots_hit) / float(shots_fired) * 100.0, 0.0, 100.0)
+
+func _break_combat_combo() -> void:
+	if combat_combo > 0:
+		combo_breaks += 1
+	combat_combo = 0
+	combat_combo_timer = 0.0
+
+func _register_hostile_elimination(guard: Dictionary, body: Node3D, precision_finisher: bool) -> void:
+	eliminations += 1
+	combat_combo += 1
+	combat_combo_timer = COMBAT_COMBO_WINDOW
+	combat_combo_best = maxi(combat_combo_best, combat_combo)
+	var role := str(guard.get("role", "RANGER"))
+	var role_bounty := 0
+	match role:
+		"STALKER":
+			role_bounty = 20
+		"HEAVY":
+			role_bounty = 45
+		"RANGER":
+			role_bounty = 15
+		"WARDEN":
+			role_bounty = 250
+	var multiplier := _combat_combo_multiplier(combat_combo)
+	var credits := roundi(float(100 + role_bounty) * multiplier)
+	var points := roundi(float(120 + role_bounty) * multiplier)
+	run_credits += credits
+	combat_score_total += points
+	var charge_gain := 28.0 + (10.0 if precision_finisher else 0.0) + (15.0 if bool(guard.get("warden", false)) else 0.0)
+	overdrive_charge = minf(OVERDRIVE_MAX_CHARGE, overdrive_charge + charge_gain)
+	objective_text = "ЛИКВИДАЦИЯ · +%d CR · COMBO %d · ×%.2f" % [credits, combat_combo, multiplier]
+	_play_sfx(170.0 + minf(520.0, float(combat_combo) * 42.0), 0.2, 0.12)
+	if overdrive_charge >= OVERDRIVE_MAX_CHARGE and overdrive_timer <= 0.0:
+		objective_text += " · OVERDRIVE ГОТОВ"
+	_update_hud()
+
+func _update_combat_director(delta: float) -> void:
+	if combat_combo_timer > 0.0:
+		combat_combo_timer = maxf(0.0, combat_combo_timer - delta)
+		if combat_combo_timer <= 0.0 and combat_combo > 0:
+			combat_combo = 0
+			_update_hud()
+	if overdrive_timer > 0.0:
+		overdrive_timer = maxf(0.0, overdrive_timer - delta)
+		if overdrive_timer <= 0.0:
+			_play_sfx(240.0, 0.26, 0.08)
+			objective_text = "OVERDRIVE ЗАВЕРШЁН · КОНТУР ОХЛАЖДАЕТСЯ"
+			_update_hud()
+
+func _activate_overdrive() -> void:
+	if paused_game or mission_finished or briefing_visible or terminal_active:
+		return
+	if overdrive_timer > 0.0:
+		objective_text = "OVERDRIVE АКТИВЕН · %.1f С" % overdrive_timer
+		_update_hud()
+		return
+	if overdrive_charge < OVERDRIVE_MAX_CHARGE:
+		objective_text = "OVERDRIVE НЕ ЗАРЯЖЕН · НУЖНО 100%% · СЕЙЧАС %d%%" % int(roundf(overdrive_charge))
+		_update_hud()
+		return
+	overdrive_charge = 0.0
+	overdrive_timer = OVERDRIVE_DURATION
+	overdrive_activations += 1
+	phase_flash_timer = maxf(phase_flash_timer, 0.28)
+	_screen_impulse(0.12, 0.22)
+	_spawn_ring_burst(player.global_position + Vector3.UP * 0.2, materials["violet"])
+	_spawn_impact_light(player.global_position + Vector3.UP * 0.8, Color(0.7, 0.36, 1.0), 3.8, 6.4, 0.28)
+	_play_sfx(480.0, 0.48, 0.16)
+	objective_text = "OVERDRIVE АКТИВЕН · 5 СЕКУНД · УСИЛЕННЫЙ УРОН / ЗАЩИТА"
+	_update_hud()
+
+func _effective_guard_speed(guard: Dictionary) -> float:
+	return float(guard.get("speed", 1.0)) * (0.66 if overdrive_timer > 0.0 else 1.0)
+
+func _calculate_mission_score(kills: int, precision: int, best_chain: int, accuracy: float, taken_damage: float, duration: float) -> int:
+	var raw_score := kills * 120 + precision * 35 + best_chain * 18 + roundi(clampf(accuracy, 0.0, 100.0) * 2.0) - roundi(maxf(0.0, taken_damage) * 2.5) - roundi(maxf(0.0, duration) * 0.5)
+	return maxi(0, raw_score)
+
+func _mission_grade_for_score(score: int) -> String:
+	if score >= 900:
+		return "S"
+	if score >= 680:
+		return "A"
+	if score >= 440:
+		return "B"
+	return "C"
+
+func _mission_grade_bonus(grade: String) -> int:
+	match grade:
+		"S":
+			return 700
+		"A":
+			return 500
+		"B":
+			return 300
+		_:
+			return 150
 
 func _daily_mutator_catalog() -> Array[Dictionary]:
 	return [
@@ -2954,6 +3155,24 @@ func _create_ui() -> void:
 	objective_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	objective_label.custom_minimum_size = Vector2(285.0, 64.0)
 	telemetry_label = _label(objective_stack, "HOSTILES 03  ·  DEVICES 03  ·  CONTRACT 01", 10, Color(0.48, 0.72, 0.72))
+	combat_status_label = _label(objective_stack, "COMBO 00 · MULT ×1.00 · ACC 100%", 9, Color(0.38, 1.0, 0.86))
+	overdrive_bar = ProgressBar.new()
+	overdrive_bar.name = "OverdriveCharge"
+	overdrive_bar.min_value = 0.0
+	overdrive_bar.max_value = OVERDRIVE_MAX_CHARGE
+	overdrive_bar.value = 0.0
+	overdrive_bar.show_percentage = false
+	overdrive_bar.custom_minimum_size = Vector2(278.0, 5.0)
+	overdrive_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var overdrive_bar_background := StyleBoxFlat.new()
+	overdrive_bar_background.bg_color = Color(0.035, 0.078, 0.086, 0.98)
+	overdrive_bar_background.set_corner_radius_all(3)
+	overdrive_bar.add_theme_stylebox_override("background", overdrive_bar_background)
+	var overdrive_bar_fill := StyleBoxFlat.new()
+	overdrive_bar_fill.bg_color = Color(0.65, 0.38, 1.0)
+	overdrive_bar_fill.set_corner_radius_all(3)
+	overdrive_bar.add_theme_stylebox_override("fill", overdrive_bar_fill)
+	objective_stack.add_child(overdrive_bar)
 	objective_actions = HBoxContainer.new()
 	objective_actions.add_theme_constant_override("separation", 6)
 	objective_stack.add_child(objective_actions)
@@ -3535,7 +3754,8 @@ func _create_mobile_controls(parent: Control) -> void:
 		{"key": "use", "label": "ДЕЙСТВИЕ"},
 		{"key": "pulse", "label": "ИМПУЛЬС"},
 		{"key": "shift", "label": "СДВИГ"},
-		{"key": "dash", "label": "РЫВОК"}
+		{"key": "dash", "label": "РЫВОК"},
+		{"key": "overdrive", "label": "OVERDRIVE"}
 	]
 	for item in combat_actions:
 		var action_button := _add_button(action_grid, item["label"], func(): pass, Vector2(84.0, 38.0))
@@ -3545,6 +3765,9 @@ func _create_mobile_controls(parent: Control) -> void:
 		if str(item["key"]) == "dash":
 			mobile_dash_button = action_button
 			mobile_dash_button.add_theme_font_size_override("font_size", 8)
+		if str(item["key"]) == "overdrive":
+			mobile_overdrive_button = action_button
+			mobile_overdrive_button.add_theme_font_size_override("font_size", 7)
 	var utility_row := HBoxContainer.new()
 	utility_row.add_theme_constant_override("separation", 4)
 	action_stack.add_child(utility_row)
@@ -3579,6 +3802,8 @@ func _set_mobile_action(action: String, pressed: bool) -> void:
 					_shift_layer()
 				"dash":
 					_try_dash()
+				"overdrive":
+					_activate_overdrive()
 
 func _update_mobile_layout() -> void:
 	# Godot may dispatch a first layout frame before the platform reports a valid viewport.
@@ -3626,7 +3851,7 @@ func _update_mobile_layout() -> void:
 		objective_panel.offset_left = 10.0
 		objective_panel.offset_right = -10.0
 		objective_panel.offset_top = 148.0
-		objective_panel.offset_bottom = 242.0 if daily_challenge_active and not daily_mutators.is_empty() else 218.0
+		objective_panel.offset_bottom = 292.0 if daily_challenge_active and not daily_mutators.is_empty() else 266.0
 		objective_title.visible = false
 		telemetry_label.visible = false
 		objective_actions.visible = false
@@ -3651,10 +3876,10 @@ func _update_mobile_layout() -> void:
 		objective_panel.offset_left = -334.0
 		objective_panel.offset_top = 18.0
 		objective_panel.offset_right = -18.0
-		objective_panel.offset_bottom = 224.0 if daily_challenge_active and not daily_mutators.is_empty() else 196.0
+		objective_panel.offset_bottom = 276.0 if daily_challenge_active and not daily_mutators.is_empty() else 250.0
 		if is_instance_valid(tactical_radar_panel):
-			tactical_radar_panel.offset_top = 238.0 if daily_challenge_active and not daily_mutators.is_empty() else 210.0
-			tactical_radar_panel.offset_bottom = 432.0 if daily_challenge_active and not daily_mutators.is_empty() else 404.0
+			tactical_radar_panel.offset_top = 290.0 if daily_challenge_active and not daily_mutators.is_empty() else 264.0
+			tactical_radar_panel.offset_bottom = 484.0 if daily_challenge_active and not daily_mutators.is_empty() else 458.0
 		objective_title.visible = true
 		telemetry_label.visible = true
 		objective_actions.visible = true
@@ -3821,6 +4046,16 @@ func _update_hud() -> void:
 	telemetry_label.text = "HOSTILES %02d  ·  DEVICES %02d  ·  CONTRACT %02d" % [guards.size(), _living_device_count(), current_contract + 1]
 	if daily_challenge_active and not daily_mutators.is_empty():
 		telemetry_label.text += "  ·  DAILY / 2 MODS"
+	if is_instance_valid(combat_status_label):
+		var overdrive_readout := "LIVE %.1f S" % overdrive_timer if overdrive_timer > 0.0 else "CHARGE %03d%%" % int(roundf(overdrive_charge))
+		combat_status_label.text = "COMBO %02d · ×%.2f · ACC %.0f%% · %s" % [combat_combo, _combat_combo_multiplier(combat_combo), _combat_accuracy_percentage(), overdrive_readout]
+		combat_status_label.add_theme_color_override("font_color", Color(0.92, 0.72, 1.0) if overdrive_timer > 0.0 else (Color(1.0, 0.77, 0.39) if combat_combo >= 4 else Color(0.38, 1.0, 0.86)))
+	if is_instance_valid(overdrive_bar):
+		overdrive_bar.value = clampf(overdrive_charge, 0.0, OVERDRIVE_MAX_CHARGE)
+		overdrive_bar.tooltip_text = "OVERDRIVE · R / CLICK RIGHT STICK / TOUCH · 5 СЕКУНД"
+	if is_instance_valid(mobile_overdrive_button):
+		mobile_overdrive_button.text = "OVR LIVE" if overdrive_timer > 0.0 else ("OVR %d%%" % int(roundf(overdrive_charge)))
+		mobile_overdrive_button.disabled = overdrive_charge < OVERDRIVE_MAX_CHARGE or overdrive_timer > 0.0 or paused_game or mission_finished or briefing_visible
 	_update_input_hint()
 	if diagnostics_enabled:
 		var samples := frame_samples.duplicate()
@@ -3846,9 +4081,9 @@ func _update_input_hint() -> void:
 	if mobile_controls_visible:
 		hint = "TOUCH · MOVE / FIRE / ACTION · DASH · PULSE · PHASE SHIFT"
 	elif gamepad_mode_active:
-		hint = "GAMEPAD · LS MOVE · RS AIM · RT/RB FIRE · A ACTION · B DASH · X PULSE · Y PHASE · START PAUSE"
+		hint = "GAMEPAD · LS MOVE · RS AIM · RT/RB FIRE · R-STICK OVERDRIVE · A ACTION · B DASH · X PULSE · Y PHASE"
 	else:
-		hint = "WASD / ARROWS MOVE · MOUSE AIM / FIRE · E ACTION · Q PULSE · SPACE DASH · SHIFT PHASE · PAD: LS / RS / RT"
+		hint = "WASD / ARROWS MOVE · MOUSE AIM / FIRE · E ACTION · Q PULSE · R OVERDRIVE · SPACE DASH · SHIFT PHASE"
 	if bottom_hint.text != hint:
 		bottom_hint.text = hint
 
@@ -3880,7 +4115,8 @@ func _update_camera(delta: float) -> void:
 	var movement_fov := clampf(horizontal_speed / PLAYER_SPEED, 0.0, 1.0) * 1.35 * motion_scale
 	var shift_fov := (3.1 if null_shift_timer > 0.0 else 0.0) * motion_scale
 	var recoil_fov := clampf(weapon_recoil, 0.0, 1.0) * 0.85 * motion_scale
-	var target_fov: float = CAMERA_BASE_FOV + movement_fov + shift_fov + recoil_fov
+	var overdrive_fov: float = (3.6 if overdrive_timer > 0.0 else 0.0) * motion_scale
+	var target_fov: float = CAMERA_BASE_FOV + movement_fov + shift_fov + recoil_fov + overdrive_fov
 	camera.fov = lerpf(camera.fov, target_fov, 1.0 - exp(-maxf(delta, 0.0) * 4.8))
 
 
