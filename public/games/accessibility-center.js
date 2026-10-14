@@ -50,7 +50,7 @@
   trigger.className = 'osgard-a11y-trigger';
   trigger.setAttribute('aria-haspopup', 'dialog');
   trigger.setAttribute('aria-controls', 'osgard-accessibility-dialog');
-  trigger.setAttribute('aria-label', 'Открыть настройки доступности');
+  // Keep the accessible name equal to the visible label “Доступность”; the A± mark is decorative.
   trigger.innerHTML = '<span class="osgard-a11y-mark" aria-hidden="true">A±</span><span>Доступность</span>';
   const dialog = document.createElement('dialog');
   dialog.id = 'osgard-accessibility-dialog';
