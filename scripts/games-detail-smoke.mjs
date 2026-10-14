@@ -152,6 +152,7 @@ assert.ok(aetherGame.includes('activeProtocol().noHints||won||paused') && aether
 assert.ok(aetherGame.includes("url.searchParams.set('og_protocol',selected)") && aetherGame.includes('info.description'), 'AETHER GRID share links must carry the selected protocol and human-readable objective')
 assert.ok(inviteRuntime.includes('validAetherProtocol') && inviteRuntime.includes("target.pathname = '/games/aether-grid/'") && inviteRuntime.includes("target.searchParams.set('protocol', requestedAetherProtocol)"), 'AETHER GRID friend invitation must preserve valid challenge protocols at the standalone game route')
 assert.ok(routeMatrix.includes("CACHE\\s*=\\s*PREFIX") && routeMatrix.includes("\\bmethod\\s*!==\\s*['\"]GET") && routeMatrix.includes("\\bmode\\s*===\\s*['\"]navigate"), 'Production route checks must remain compatible with minified service-worker source while validating semantics')
+assert.ok(routeMatrix.includes('1.2.0-challenge-protocol-forge') && !routeMatrix.includes('1.1.0-game-11-premium-session') && routeMatrix.includes("['standard','no-hints','no-undo','iron-circuit']"), 'Production AETHER GRID route contract must track the current challenge-protocol build')
 
 assert.ok(detail.includes("'afterimage-run': /afterimage") && detail.includes("run/i"), 'Embedded readiness must recognize the standalone AFTERIMAGE//RUN page title')
 assert.ok(detail.includes('Space, Arrow Up or tap the arena') && detail.includes('Escape pauses the run'), 'AFTERIMAGE detail must document its actual game controls')
