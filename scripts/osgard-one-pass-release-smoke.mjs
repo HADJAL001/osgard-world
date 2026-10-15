@@ -12,6 +12,12 @@ assert.equal(pullRequestPlan.find(step => step.id === 'full-release-readiness')?
   'Full release readiness remains a critical stage in PR context; only its live probes are deferred.');
 assert.equal(deployedReleasePlan.find(step => step.id === 'live-bundle-audit')?.critical, true,
   'Live bundle integrity remains blocking for an actual release/manual dispatch.');
+assert.ok(pullRequestPlan.findIndex(step => step.id === 'full-release-readiness') < pullRequestPlan.findIndex(step => step.id === 'live-bundle-audit'),
+  'Bundle comparison must run after the current dist build exists.');
+assert.ok(deployedReleasePlan.find(step => step.id === 'full-release-readiness')?.label.includes('Full release suite'),
+  'Deployed/manual context retains the full release label.');
+assert.ok(pullRequestPlan.find(step => step.id === 'full-release-readiness')?.label.includes('Source release suite'),
+  'Pull requests must not suggest that live-production probes ran as blocking source checks.');
 assert.ok(plan.length >= 20, 'The one-pass runner must cover the full repository release surface.');
 const aiPreview = plan.find(step => step.id === 'ai-review-preview');
 assert.ok(aiPreview, 'The plan must produce the offline AI review packet after deterministic release evidence exists.');
