@@ -170,6 +170,51 @@ test('CSV export is aggregate-only and resists spreadsheet formula injection', (
   assert.ok(!csv.includes('session_id'));
 });
 
+
+test('decision engine produces ordered, explainable, read-only actions from aggregate signals', () => {
+  const report = engine.derive(fixture({
+    paidRevenueByAttribution:[{gameId:'unknown',source:'direct',orders:9,currency:'USD',totalMinor:'10'}],
+    serviceAttributionConversions:[
+      {serviceId:'marcosa',currency:'USD',conversions:3,paidEvents:2,refunds:5,grossPaidMinor:'500',refundMinor:'900',netPaidMinor:'-400'},
+    ],
+    analyticsEventsLast30Days:0,
+    analyticsFunnel:{catalogViews:10,gameStarts:5,completedSessions:2,premiumPageViews:4,leadSubmittedEvents:0,crossPromoClicks:1},
+    ownedPromoByService:[{serviceId:'projects',gameId:'remix',impressions:5,clicks:2}],
+  }), fixedDate);
+  const plan = report.decisionPlan;
+  assert.equal(plan.schema, 'osgard.commerce-decision-plan.v1');
+  assert.equal(plan.mode, 'deterministic-read-only');
+  assert.equal(plan.automationEnabled, false);
+  assert.ok(plan.total >= 4);
+  assert.ok(plan.critical >= 1);
+  assert.equal(plan.items[0].severity, 'critical', 'critical integrity signals must be ordered first');
+  assert.ok(plan.items.some(item => item.title === 'Сверить возвраты и paid-события'));
+  assert.ok(plan.items.some(item => item.title === 'Повысить полноту атрибуции игр'));
+  assert.ok(plan.items.some(item => item.title === 'Проверить согласие и доставку событий'));
+  assert.ok(plan.items.some(item => item.title === 'Накопить измеряемую выборку для OSGARD SELECT'));
+  assert.ok(plan.items.every(item => item.automated === false && item.status === 'investigate' && item.steps.length >= 2));
+  assert.ok(plan.items.every(item => ['Commerce/API','Product Analytics','Analytics','Growth/Analytics','Operations','Product','Commerce'].includes(item.owner)));
+});
+
+test('Markdown/CSV exports include action checklist but never calculate mixed-currency totals', () => {
+  const report = engine.derive(fixture({
+    alerts:[
+      {id:'revenue:missing-currency',severity:'warning',title:'=HYPERLINK("bad")',detail:'Inspect server contract'},
+      {id:'analytics:empty',severity:'info',title:'@SUM(1,1)',detail:'No consented events'},
+    ],
+  }), fixedDate);
+  const markdown = engine.toMarkdown(report);
+  assert.ok(markdown.startsWith('# OSGARD Premium · план проверок\n'));
+  assert.ok(markdown.includes('- [ ] Проверить имя и тип поля в ответе агрегирующего API.'));
+  assert.ok(markdown.endsWith('\n'));
+  assert.ok(!markdown.includes('\\n'), 'Markdown should contain real line breaks, not literal backslash-n text');
+  const csv = engine.toCsv(report);
+  assert.ok(csv.includes('"action:warning"') || csv.includes('"action:info"'));
+  assert.ok(csv.includes('"action-detail"'));
+  assert.ok(csv.includes('"\'=HYPERLINK(""bad"")"'), 'CSV formula injection should remain neutralized');
+  assert.ok(!Object.prototype.hasOwnProperty.call(report.headline, 'totalRevenueMinor'));
+});
+
 test('commerce admin loads the engine and exposes explicit aggregate-only exports', async () => {
   const page=await readFile('public/games/commerce-admin/index.html','utf8');
   assert.ok(page.includes('<script src="/games/commerce-admin/intelligence.js"></script>'));
@@ -181,6 +226,10 @@ test('commerce admin loads the engine and exposes explicit aggregate-only export
     'id="intel-promo-rows"',
     'id="intel-export-json"',
     'id="intel-export-csv"',
+    'id="intel-plan-actions"',
+    'id="intel-plan-summary"',
+    'id="intel-export-plan"',
+    'window.OSGARDCommerceIntelligence.toMarkdown(lastIntelligenceReport)',
     'window.OSGARDCommerceIntelligence.derive(overview)',
     'window.OSGARDCommerceIntelligence.toCsv(lastIntelligenceReport)',
   ]) assert.ok(page.includes(marker),'missing premium dashboard contract: '+marker);
