@@ -24,6 +24,8 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
+      - name: Test PR review-only live checks and release policy
+        run: npm run qa:one-pass
       - name: Check cross-surface OSGARD product contracts
         run: npm run qa:contracts
       - name: Test static asset performance budgets
