@@ -604,6 +604,7 @@
       currencies,
       alerts,
       actions,
+      actionsAvailable:Array.isArray(input.decisionPlan?.items) || Array.isArray(input.actions),
       qualitySources,
       windowNote,
     };
@@ -715,6 +716,136 @@
     return '\uFEFF'+rows.map(row=>row.map(escape).join(',')).join('\r\n')+'\r\n';
   }
 
+  function buildReportTrend(inputs) {
+    if (!Array.isArray(inputs) || inputs.length < 2 || inputs.length > 10) {
+      throw new Error('Для Trend Lab нужны от 2 до 10 JSON-отчётов.');
+    }
+    const snapshots = inputs.map(input=>normalizeComparisonSnapshot(input))
+      .sort((a,b)=>Date.parse(a.generatedAt)-Date.parse(b.generatedAt));
+    const timestamps = snapshots.map(snapshot=>snapshot.generatedAt);
+    if (new Set(timestamps).size !== timestamps.length) {
+      throw new Error('Отчёты имеют одинаковую метку времени; удалите дубликат, чтобы порядок тренда был однозначным.');
+    }
+    const currencyIds = [...new Set(snapshots.flatMap(snapshot=>snapshot.currencies.map(row=>row.currency)))].sort();
+    if (currencyIds.length > 30) throw new Error('В загруженной истории более 30 разных валют; разделите отчёты на меньшие группы.');
+    const amountFields = [
+      ['commerceGrossMinor','Commerce gross'],
+      ['reportingGrossMinor','Service reporting gross'],
+      ['reportingRefundMinor','Service reporting refunds'],
+      ['reportingNetMinor','Service reporting net'],
+    ];
+    const countFields = [
+      ['paidOrders','Commerce paid orders'],
+      ['reportingPaidEvents','Service paid events'],
+      ['reportingRefundEvents','Service refund events'],
+    ];
+    const series = [];
+    const addSeries = (id,label,kind,unit,currency,pointValues) => {
+      const points = snapshots.map((snapshot,index) => {
+        const entry = pointValues[index] ?? null;
+        if (entry && typeof entry === 'object' && !Array.isArray(entry)) {
+          return { timestamp:snapshot.generatedAt, value:entry.value ?? null, state:entry.state || 'measured', missingReason:entry.missingReason || null };
+        }
+        return { timestamp:snapshot.generatedAt, value:entry, state:entry===null||entry===undefined?'unavailable':'measured', missingReason:entry===null||entry===undefined?'not-reported':null };
+      });
+      if (!points.some(point=>point.value!==null && point.value!==undefined)) return;
+      series.push({id,label,kind,unit,currency:currency||null,points});
+    };
+    addSeries('headline:paidOrders','Оплаченные заказы','headline','count',null,snapshots.map(snapshot=>snapshot.headline.paidOrders));
+    addSeries('headline:totalOrders','Заказы всех статусов','headline','count',null,snapshots.map(snapshot=>snapshot.headline.totalOrders));
+    addSeries('headline:paidOrderShare','Paid-доля записей','headline','percentage-points',null,snapshots.map(snapshot=>snapshot.headline.paidOrderShare));
+    for (const severity of ['critical','warning','info']) {
+      addSeries('alerts:'+severity,'Сигналы · '+severity,'signals','count',null,
+        snapshots.map(snapshot=>snapshot.alerts.filter(item=>item.severity===severity).length));
+    }
+    addSeries('actions:count','Рекомендации к проверке','actions','count',null,
+      snapshots.map(snapshot=>snapshot.actionsAvailable ? snapshot.actions.length : {value:null,state:'unavailable',missingReason:'Движок плана отсутствовал в этом отчёте'}));
+    for (const currency of currencyIds) {
+      for (const [field,label] of countFields) {
+        addSeries('currency-count:'+currency+':'+field,label+' · '+currency,'currency-count','count',currency,
+          snapshots.map(snapshot=>{
+            const row=snapshot.currencies.find(item=>item.currency===currency);
+            return !row ? {value:null,state:'currency-not-reported',missingReason:'В отчёте нет этой валюты'} : row[field];
+          }));
+      }
+      for (const [field,label] of amountFields) {
+        addSeries('currency-minor:'+currency+':'+field,label+' · '+currency,'currency-amount','minor',currency,
+          snapshots.map(snapshot=>{
+            const row=snapshot.currencies.find(item=>item.currency===currency);
+            return !row ? {value:null,state:'currency-not-reported',missingReason:'В отчёте нет этой валюты'} : row[field];
+          }));
+      }
+    }
+    const qualityIds=[...new Set(snapshots.flatMap(snapshot=>snapshot.qualitySources.map(source=>source.id)))].sort();
+    const qualitySeries=qualityIds.map(id=>{
+      const byId=snapshots.map(snapshot=>snapshot.qualitySources.find(source=>source.id===id)||null);
+      const example=byId.find(Boolean);
+      return {
+        id,
+        title:example?.title||id,
+        points:snapshots.map((snapshot,index)=>{
+          const source=byId[index];
+          return {
+            timestamp:snapshot.generatedAt,
+            status:source?.status||'not-reported',
+            window:source?.window||'Окно не передано в этом отчёте',
+          };
+        }),
+      };
+    });
+    const qualityCounts = ['measured','partial','unavailable','blocked'].map(status=>({
+      status,
+      points:snapshots.map(snapshot=>snapshot.qualitySources.length
+        ? snapshot.qualitySources.filter(source=>source.status===status).length : null),
+    }));
+    const notes = [...new Set(snapshots.map(snapshot=>snapshot.windowNote).filter(Boolean))];
+    return {
+      schema:'osgard.commerce-report-trend.v1',
+      generatedAt:new Date().toISOString(),
+      snapshots:snapshots.map(snapshot=>({
+        generatedAt:snapshot.generatedAt,
+        currencyCount:snapshot.currencies.length,
+        alertCount:snapshot.alerts.length,
+        actionsReported:snapshot.actionsAvailable,
+        qualityReported:snapshot.qualitySources.length>0,
+        windowNote:snapshot.windowNote,
+      })),
+      summary:{
+        reportCount:snapshots.length,
+        currencyCount:currencyIds.length,
+        seriesCount:series.length,
+        qualitySourceCount:qualityIds.length,
+        reportsMissingQuality:snapshots.filter(snapshot=>snapshot.qualitySources.length===0).length,
+        spanDays:Math.round((Date.parse(snapshots[snapshots.length-1].generatedAt)-Date.parse(snapshots[0].generatedAt))/86400000*100)/100,
+      },
+      series,
+      qualitySeries,
+      qualityCounts,
+      windowNotes:notes,
+      interpretation:'Это временной обзор агрегированных снимков, а не синхронные когорты. Накопительные заказы и скользящие окна могут двигаться по разным причинам. Отсутствующий источник/валюта остаётся пропуском; никакие валюты не складываются и причинность не выводится.',
+    };
+  }
+  function toTrendCsv(trend) {
+    const rows=[['section','series_id','label','currency','timestamp','value','state','missing_reason','window']];
+    const add=(section,id,label,currency,timestamp,value,state,missingReason='',window='')=>
+      rows.push([section,id,label,currency||'',timestamp||'',value===null||value===undefined?'':value,state||'',missingReason||'',window||'']);
+    for(const item of trend?.series||[]) {
+      for(const point of item.points||[]) add(item.kind,item.id,item.label,item.currency,point.timestamp,point.value,point.state,point.missingReason,'');
+    }
+    for(const item of trend?.qualitySeries||[]) {
+      for(const point of item.points||[]) add('quality-source',item.id,item.title,'',point.timestamp,point.status,point.status,'',point.window);
+    }
+    for(const item of trend?.qualityCounts||[]) {
+      for(let index=0;index<item.points.length;index++) add('quality-count',item.status,'Источники качества', '',trend?.snapshots?.[index]?.generatedAt,item.points[index],item.points[index]===null?'not-reported':'measured');
+    }
+    const escape=value=>{
+      let text=String(value ?? '');
+      if(/^\\s*[=+\\-@]/.test(text)) text="'"+text;
+      return '"'+text.replace(/"/g,'""')+'"';
+    };
+    return '\\uFEFF'+rows.map(row=>row.map(escape).join(',')).join('\\r\\n')+'\\r\\n';
+  }
+
   function formatMinor(value, currency) {
     const code = currencyCode(currency);
     if (!code) return '—';
@@ -768,5 +899,5 @@
     return '\uFEFF' + rows.map(row=>row.map(escape).join(',')).join('\r\n') + '\r\n';
   }
 
-  window.OSGARDCommerceIntelligence = Object.freeze({ schema:SCHEMA, derive, formatMinor, toCsv, buildDecisionPlan, toMarkdown, normalizeComparisonSnapshot, compareReports, toComparisonCsv });
+  window.OSGARDCommerceIntelligence = Object.freeze({ schema:SCHEMA, derive, formatMinor, toCsv, buildDecisionPlan, toMarkdown, normalizeComparisonSnapshot, compareReports, toComparisonCsv, buildReportTrend, toTrendCsv });
 })();
