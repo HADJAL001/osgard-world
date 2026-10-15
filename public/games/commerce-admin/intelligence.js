@@ -958,8 +958,8 @@
       } else for (const step of signal.steps) rows.push([report.schema,signal.id,signal.ruleId,signal.severity,signal.title,signal.source,signal.previous ?? '',signal.current ?? '',signal.delta ?? '',signal.threshold,signal.rationale,step]);
     }
     rows.push(['summary','state','','','','',report?.summary?.snapshotCount ?? '',report?.summary?.signalCount ?? '',report?.summary?.skippedComparisons ?? '',report?.interpretation || '']);
-    const escape=value=>{let text=String(value ?? '');if(/^\\s*[=+\\-@]/.test(text))text="'"+text;return '"'+text.replace(/"/g,'""')+'"';};
-    return '\uFEFF'+rows.map(row=>row.map(escape).join(',')).join('\\r\\n')+'\\r\\n';
+    const escape=value=>{let text=String(value ?? '');if(/^\s*[=+\-@]/.test(text))text="'"+text;return '"'+text.replace(/"/g,'""')+'"';};
+    return '\uFEFF'+rows.map(row=>row.map(escape).join(',')).join('\r\n')+'\r\n';
   }
   function toTrendCsv(trend) {
     const rows=[['section','series_id','label','currency','timestamp','value','state','missing_reason','window']];
