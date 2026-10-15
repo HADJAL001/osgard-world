@@ -77,7 +77,7 @@ export function serializeCsv(rows, { bom = true } = {}) {
   return (bom ? '\uFEFF' : '') + content;
 }
 
-export function buildFinancialCsv({ inputs, scenarios, generatedAt, requiredMonthlyStartingVisitors } = {}) {
+export function buildFinancialCsv({ inputs, scenarios, generatedAt, requiredMonthlyStartingVisitors, decisionIntelligence } = {}) {
   if (!inputs || typeof inputs !== 'object') throw new TypeError('Financial CSV requires normalized input assumptions.');
   if (!Array.isArray(scenarios) || scenarios.length !== 3) throw new TypeError('Financial CSV requires the three defined financial scenarios.');
   for (const entry of scenarios) {
@@ -86,6 +86,27 @@ export function buildFinancialCsv({ inputs, scenarios, generatedAt, requiredMont
   const context = { inputs, generatedAt: generatedAt ?? '', requiredMonthlyStartingVisitors };
   const headers = FIELDS.map(([key]) => key);
   const rows = scenarios.map(entry => FIELDS.map(([, pick]) => pick(entry, context)));
+  if (decisionIntelligence?.schema === 'osgard.decision-intelligence.v1' && decisionIntelligence.simulation) {
+    const simulation = decisionIntelligence.simulation;
+    const metricRows = [
+      ['decision_intelligence_metric', 'value', 'model_note'],
+      ['simulation_iterations', simulation.iterations, simulation.basis || ''],
+      ['simulation_seed', simulation.seed, 'Deterministic seed for reproducibility.'],
+      ['monthly_net_operating_p10_usd', simulation.netOperatingUsd?.p10, 'Illustrative downside percentile, not a forecast.'],
+      ['monthly_net_operating_p50_usd', simulation.netOperatingUsd?.p50, 'Illustrative median percentile, not a forecast.'],
+      ['monthly_net_operating_p90_usd', simulation.netOperatingUsd?.p90, 'Illustrative upside percentile, not a forecast.'],
+      ['annual_gross_revenue_p10_usd', simulation.annualGrossRevenueUsd?.p10, 'Illustrative annualized range.'],
+      ['annual_gross_revenue_p50_usd', simulation.annualGrossRevenueUsd?.p50, 'Illustrative annualized range.'],
+      ['annual_gross_revenue_p90_usd', simulation.annualGrossRevenueUsd?.p90, 'Illustrative annualized range.'],
+      ['simulated_break_even_rate_pct', simulation.probabilityBreakEvenPct, 'Share of simulated runs with monthly net >= 0. Not a market probability.'],
+      ['simulated_annual_target_rate_pct', simulation.probabilityAnnualTargetPct, 'Share of simulated runs reaching the entered annual gross target.'],
+      ['break_even_monthly_start_visitors', decisionIntelligence.breakEvenMonthlyVisitors ?? '', 'Null/blank means no break-even within the documented ceiling.'],
+      ['top_sensitivity_lever', decisionIntelligence.sensitivity?.[0]?.label || '', 'Largest one-at-a-time model sensitivity.'],
+      ['top_sensitivity_impact_monthly_usd', decisionIntelligence.sensitivity?.[0]?.impactUsd ?? '', 'Difference across the configured sensitivity shock.'],
+      ['decision_intelligence_note', simulation.note || NOTE, 'Illustrative assumptions only; do not read as live performance.'],
+    ];
+    rows.push([], ...metricRows);
+  }
   return serializeCsv([headers, ...rows]);
 }
 
