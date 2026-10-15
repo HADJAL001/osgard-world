@@ -178,7 +178,8 @@
 <div id="intel-plan-actions" class="intel-plan-list"><p class="intel-empty">Нет актуального плана.</p></div>
 </section>
 <section class="intel-block" style="margin-top:14px" aria-labelledby="intel-review-heading">
-<div class="intel-plan-head"><div><h3 id="intel-review-heading">Decision Ops · рабочий реестр</h3><p class="retention">Назначайте статус ручной проверки и оставляйте короткую заметку по каждому сигналу. Отметки хранятся только в памяти текущей вкладки и сбрасываются при обновлении отчёта или закрытии страницы.</p></div><div class="intel-actions"><button id="intel-review-export-json" type="button" disabled>Экспорт реестра JSON ↓</button><button id="intel-review-export-csv" type="button" disabled>Экспорт реестра CSV ↓</button><button id="intel-review-export-md" type="button" disabled>Экспорт реестра MD ↓</button><button id="intel-review-clear" type="button" disabled>Сбросить отметки</button></div></div>
+<div class="intel-plan-head"><div><h3 id="intel-review-heading">Decision Ops · рабочий реестр</h3><p class="retention">Назначайте статус ручной проверки и оставляйте короткую заметку по каждому сигналу. Отметки остаются в памяти вкладки; экспортируйте JSON и вручную импортируйте его после обновления отчёта, чтобы перенести только совпавшие действия.</p></div><div class="intel-actions"><button id="intel-review-export-json" type="button" disabled>Экспорт реестра JSON ↓</button><button id="intel-review-export-csv" type="button" disabled>Экспорт реестра CSV ↓</button><button id="intel-review-export-md" type="button" disabled>Экспорт реестра MD ↓</button><button id="intel-review-clear" type="button" disabled>Сбросить отметки</button></div></div>
+<div class="intel-compare-controls"><label for="intel-review-import-file" class="retention">Перенести статусы из прежнего реестра JSON (локально)</label><input id="intel-review-import-file" type="file" accept=".json,application/json" disabled></div>
 <div class="intel-review-controls">
 <label for="intel-review-filter">Статус проверки<select id="intel-review-filter"><option value="all">Все статусы</option><option value="open">Открыто</option><option value="investigating">Проверяется</option><option value="blocked">Заблокировано</option><option value="checked">Проверка выполнена</option></select></label>
 <label for="intel-review-query">Поиск по проверкам<input id="intel-review-query" type="search" maxlength="120" placeholder="Название, источник, ответственный…"></label>
@@ -223,6 +224,11 @@
 <p id="intel-trend-status" class="intel-status" role="status" aria-live="polite">Загрузите минимум два предыдущих агрегированных отчёта.</p>
 <p id="intel-trend-summary" class="intel-trend-summary"></p>
 <div id="intel-trend-series" class="intel-trend-grid"><p class="intel-empty">История ещё не рассчитана.</p></div>
+<section class="intel-block" style="margin-top:14px" aria-labelledby="intel-trend-signals-heading">
+<div class="intel-plan-head"><div><h4 id="intel-trend-signals-heading">Trend Intelligence · сигналы изменений</h4><p class="retention">Прозрачные пороговые правила для проверки источников и резких сдвигов. Требуется минимум 3 снимка; это приоритизация расследования, не диагноз и не автоматическое решение.</p></div><div class="intel-actions"><button id="intel-trend-signals-export-json" type="button" disabled>Экспорт сигналов JSON ↓</button><button id="intel-trend-signals-export-csv" type="button" disabled>Экспорт сигналов CSV ↓</button></div></div>
+<p id="intel-trend-signals-status" class="intel-status" role="status" aria-live="polite">Загрузите историю из минимум трёх снимков.</p>
+<div id="intel-trend-signals" class="intel-review-list"><p class="intel-empty">Сигналы появятся после расчёта истории.</p></div>
+</section>
 <h4 style="margin:18px 0 8px;font-size:12px">Статусы качества по снимкам</h4>
 <div class="table-wrap"><table class="intel-trend-quality"><thead id="intel-trend-quality-head"><tr><th>Источник</th><th>Нет истории</th></tr></thead><tbody id="intel-trend-quality-rows"><tr><td colspan="2">Загрузите отчёты с Data Quality Ledger.</td></tr></tbody></table></div>
 </section>
@@ -252,6 +258,7 @@ let comparisonBaseline = null;
 let lastComparisonReport = null;
 let trendSnapshots = [];
 let lastTrendReport = null;
+let lastTrendSignalReport = null;
 let operatorReviewState = new Map();
 let lastReviewRegister = null;
 async function base() {
