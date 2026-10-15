@@ -341,12 +341,12 @@ function trendReport(generatedAt, currencies, qualityStatus='measured', extras={
   return {
     schema:engine.schema,
     generatedAt,
-    headline:{paidOrders:extras.paidOrders ?? 2,totalOrders:4,paidOrderShare:50},
+    headline:{paidOrders:extras.paidOrders ?? 2,totalOrders:4,paidOrderShare:extras.paidOrderShare ?? 50},
     currencies,
     alerts:extras.alerts||[],
     decisionPlan:extras.actionsAvailable===false?undefined:{items:[]},
     window:{note:'Source periods differ; no synchronized cohort.'},
-    dataQuality:{
+    dataQuality:Object.prototype.hasOwnProperty.call(extras,'dataQuality') ? extras.dataQuality : {
       schema:'osgard.commerce-data-quality.v1',
       sources:[{id:'commerce-order-ledger',title:extras.qualityTitle||'Orders',status:qualityStatus,window:'Cumulative'}],
     },
@@ -396,6 +396,84 @@ test('Trend Lab validates snapshot count and duplicate timestamps', () => {
   assert.throws(()=>engine.buildReportTrend(Array.from({length:11},(_,index)=>trendReport('2026-10-'+String(index+1).padStart(2,'0')+'T10:00:00.000Z',[trendCurrency('USD','100')]))),/от 2 до 10/i);
 });
 
+test('Trend Intelligence raises explainable, threshold-bound signals and never mixes unknowns with zero', () => {
+  const reports=[
+    trendReport('2026-10-01T10:00:00.000Z',[trendCurrency('USD','10000',10)],'measured',{paidOrders:10,paidOrderShare:80,alerts:[]}),
+    trendReport('2026-10-08T10:00:00.000Z',[trendCurrency('USD','10000',8)],'partial',{paidOrders:8,paidOrderShare:70,alerts:[]}),
+    trendReport('2026-10-15T10:00:00.000Z',[trendCurrency('USD','10000',7)],'blocked',{
+      paidOrders:7,paidOrderShare:50,
+      alerts:[
+        {id:'critical:a',severity:'critical',title:'Critical A'},
+        {id:'critical:b',severity:'critical',title:'Critical B'},
+        ...Array.from({length:4},(_,i)=>({id:'warning:'+i,severity:'warning',title:'Warning '+i})),
+      ],
+    }),
+  ];
+  const trend=engine.buildReportTrend(reports);
+  const signals=engine.buildTrendSignals(trend);
+  assert.equal(signals.schema,'osgard.commerce-trend-signals.v1');
+  assert.equal(signals.summary.snapshotCount,3);
+  assert.equal(signals.summary.enoughHistory,true);
+  assert.equal(signals.summary.state,'attention-critical');
+  const quality=signals.signals.find(item=>item.ruleId==='quality-regression:commerce-order-ledger');
+  assert.ok(quality);
+  assert.equal(quality.severity,'critical');
+  assert.equal(quality.previous,'partial');
+  assert.equal(quality.current,'blocked');
+  const critical=signals.signals.find(item=>item.ruleId==='alerts:critical');
+  assert.equal(critical.delta,2);
+  assert.equal(critical.severity,'critical');
+  const warnings=signals.signals.find(item=>item.ruleId==='alerts:warning');
+  assert.equal(warnings.delta,4);
+  assert.equal(warnings.severity,'warning');
+  const share=signals.signals.find(item=>item.ruleId==='paid-order-share-drop');
+  assert.equal(share.delta,-20);
+  assert.match(share.rationale,/не вероятность успешной оплаты/i);
+  assert.ok(signals.signals.some(item=>item.ruleId==='paid-order-count-decreased'));
+  assert.ok(signals.signals.every(item=>item.automated===false&&item.status==='investigate'));
+  const csv=engine.toTrendSignalsCsv(signals);
+  assert.ok(csv.startsWith('\uFEFF'));
+  assert.ok(csv.includes('quality-regression'));
+  assert.ok(csv.includes('\r\n'));
+  assert.match(signals.interpretation,/не доказывают причинность/i);
+});
+
+test('Trend Intelligence requires three snapshots and treats missing quality metadata as unknown', () => {
+  const one=trendReport('2026-10-01T10:00:00.000Z',[trendCurrency('USD','100')]);
+  const two=trendReport('2026-10-08T10:00:00.000Z',[trendCurrency('USD','100')]);
+  const short=engine.buildTrendSignals(engine.buildReportTrend([one,two]));
+  assert.equal(short.summary.state,'insufficient-history');
+  assert.equal(short.summary.signalCount,0);
+  const third=trendReport('2026-10-15T10:00:00.000Z',[trendCurrency('USD','100')],'measured',{
+    dataQuality:{schema:'osgard.commerce-data-quality.v1',sources:[]},
+  });
+  const trend=engine.buildReportTrend([
+    trendReport('2026-10-01T10:00:00.000Z',[trendCurrency('USD','100')],'measured'),
+    trendReport('2026-10-08T10:00:00.000Z',[trendCurrency('USD','100')],'blocked'),
+    third,
+  ]);
+  const result=engine.buildTrendSignals(trend);
+  assert.equal(result.summary.enoughHistory,true);
+  assert.ok(!result.signals.some(item=>item.ruleId==='quality-regression:commerce-order-ledger'&&item.current==='not-reported'),
+    'missing quality metadata must not be misclassified as an improvement or deterioration');
+  assert.ok(result.skippedComparisons>=1);
+  assert.throws(()=>engine.buildTrendSignals({schema:'wrong'}),/некорректный отчёт Trend Lab/i);
+});
+
+test('Trend signal CSV neutralizes formula-like text and preserves CRLF rows', () => {
+  const csv=engine.toTrendSignalsCsv({
+    schema:'osgard.commerce-trend-signals.v1',
+    summary:{snapshotCount:3,signalCount:1,skippedComparisons:0},
+    interpretation:'Report only',
+    signals:[{id:'=HYPERLINK("evil")',ruleId:'test',severity:'warning',title:'@SUM(1,1)',source:'-sheet',previous:1,current:2,delta:1,threshold:'+',rationale:'safe',steps:['=cmd']}],
+  });
+  assert.ok(csv.includes('"\'=HYPERLINK(""evil"")"'));
+  assert.ok(csv.includes('"\'@SUM(1,1)"'));
+  assert.ok(csv.includes('"\'-sheet"'));
+  assert.ok(csv.includes('"\'=cmd"'));
+  assert.ok(csv.endsWith('\r\n'));
+});
+
 test('commerce admin loads the engine and exposes explicit aggregate-only exports', async () => {
   const page=await readFile('public/games/commerce-admin/index.html','utf8');
   assert.ok(page.includes('<script src="/games/commerce-admin/intelligence.js"></script>'));
@@ -417,6 +495,8 @@ test('commerce admin loads the engine and exposes explicit aggregate-only export
     'id="intel-review-export-json"',
     'id="intel-review-export-csv"',
     'id="intel-review-export-md"',
+    'id="intel-review-import-file"',
+    'window.OSGARDCommerceIntelligence.importDecisionRegister(parsed,lastIntelligenceReport)',
     'function renderDecisionRegister(report)',
     'engine.buildDecisionRegister(report,stateObject)',
     'engine.normalizeReviewEntry({status:select.value,note:note.value,updatedAt:new Date().toISOString()})',
@@ -435,6 +515,13 @@ test('commerce admin loads the engine and exposes explicit aggregate-only export
     'id="intel-trend-files"',
     'id="intel-trend-series"',
     'id="intel-trend-quality-rows"',
+    'id="intel-trend-signals-heading"',
+    'id="intel-trend-signals-status"',
+    'id="intel-trend-signals"',
+    'id="intel-trend-signals-export-json"',
+    'id="intel-trend-signals-export-csv"',
+    'engine.buildTrendSignals(trend)',
+    'window.OSGARDCommerceIntelligence.toTrendSignalsCsv(lastTrendSignalReport)',
     'function renderTrend()',
     'engine.buildReportTrend(trendSnapshots)',
     'window.OSGARDCommerceIntelligence.toTrendCsv(lastTrendReport)',
@@ -465,6 +552,18 @@ test('commerce admin loads the engine and exposes explicit aggregate-only export
   const reviewHandler=page.slice(reviewStart,reviewEnd);
   assert.ok(!/\bfetch\s*\(|sendBeacon|XMLHttpRequest/.test(reviewHandler),'Operator reviews must never be uploaded to a server');
   assert.ok(!/localStorage|sessionStorage/.test(reviewHandler),'Operator reviews must stay in memory only');
+  const reviewImportStart=page.indexOf("$('#intel-review-import-file').addEventListener('change'");
+  const reviewImportEnd=page.indexOf("$('#intel-compare-file').addEventListener('change'");
+  assert.ok(reviewImportStart>=0&&reviewImportEnd>reviewImportStart,'Decision Ops JSON carry-forward handler must exist');
+  const reviewImportHandler=page.slice(reviewImportStart,reviewImportEnd);
+  assert.ok(!/\bfetch\s*\(|sendBeacon|XMLHttpRequest|localStorage|sessionStorage|document\.cookie/.test(reviewImportHandler),
+    'Imported review JSON must remain local and must not access browser persistence');
+  const trendSignalsStart=page.indexOf("$('#intel-trend-signals-export-json').addEventListener('click'");
+  const trendSignalsEnd=page.indexOf("$('#load').addEventListener('click',load);");
+  assert.ok(trendSignalsStart>=0&&trendSignalsEnd>trendSignalsStart,'Trend Intelligence exports must be wired');
+  const trendSignalsHandler=page.slice(trendSignalsStart,trendSignalsEnd);
+  assert.ok(!/\bfetch\s*\(|sendBeacon|XMLHttpRequest|localStorage|sessionStorage|document\.cookie/.test(trendSignalsHandler),
+    'Trend signals must be calculated/exported locally without browser persistence');
 });
 
 test('Decision Ops review notes validate statuses, timestamps, length and secret-like values', () => {
@@ -505,6 +604,34 @@ test('Decision Ops register is source-linked and counts human review states', ()
   assert.equal(register.items[1].status,'checked');
   assert.match(register.interpretation,/не означает, что исходный сигнал устранён/);
 });
+test('Decision Ops safely carries reviewed states forward using only matching action IDs', () => {
+  const oldReport={generatedAt:'2026-10-08T10:00:00.000Z',decisionPlan:{items:[
+    {id:'action:stable',sourceAlertId:'alert:stable',severity:'warning',title:'Stable action',sourceTitle:'Old source',owner:'Commerce',effort:'small',rationale:'Review old row',steps:['Check the record'],automated:false},
+    {id:'action:removed',sourceAlertId:'alert:removed',severity:'info',title:'Removed action',sourceTitle:'Old source',owner:'Operations',effort:'small',rationale:'No longer reported',steps:['Check history'],automated:false},
+  ]}};
+  const oldRegister=engine.buildDecisionRegister(oldReport,{
+    'action:stable':{status:'investigating',note:'Проверяю webhook',updatedAt:fixedDate},
+    'action:removed':{status:'blocked',note:'Нет доступа к выгрузке',updatedAt:fixedDate},
+  });
+  const currentReport={generatedAt:'2026-10-15T10:00:00.000Z',decisionPlan:{items:[
+    {id:'action:stable',sourceAlertId:'alert:stable',severity:'warning',title:'Stable action',sourceTitle:'Current source',owner:'Commerce',effort:'small',rationale:'Continue review',steps:['Recheck the record'],automated:false},
+    {id:'action:new',sourceAlertId:'alert:new',severity:'critical',title:'New action',sourceTitle:'New source',owner:'Operations',effort:'large',rationale:'New signal',steps:['Investigate'],automated:false},
+  ]}};
+  const imported=engine.importDecisionRegister(oldRegister,currentReport);
+  assert.equal(imported.schema,'osgard.commerce-review-import.v1');
+  assert.equal(imported.matchedCount,1);
+  assert.equal(imported.ignoredCount,1);
+  assert.equal(imported.sourceIsOlderThanTarget,true);
+  assert.ok(!Object.prototype.hasOwnProperty.call(imported.reviewState,'action:removed'));
+  assert.equal(imported.reviewState['action:stable'].status,'investigating');
+  const currentRegister=engine.buildDecisionRegister(currentReport,imported.reviewState);
+  assert.equal(currentRegister.items.find(item=>item.id==='action:stable').note,'Проверяю webhook');
+  assert.equal(currentRegister.items.find(item=>item.id==='action:new').status,'open');
+  assert.throws(()=>engine.importDecisionRegister({...oldRegister,items:[oldRegister.items[0],oldRegister.items[0]]},currentReport),/повторный ID/i);
+  assert.throws(()=>engine.importDecisionRegister({...oldRegister,items:[{...oldRegister.items[0],note:'api_key=sk_live_1234567890abcdef'}]},currentReport),/похож|секрет/i);
+  assert.throws(()=>engine.importDecisionRegister(oldRegister,{generatedAt:fixedDate,decisionPlan:{items:[{id:'action:unrelated'}]}}),/нет совпадающих ID/i);
+});
+
 test('Decision Ops exports preserve source context and neutralize spreadsheet formulas', () => {
   const report={generatedAt:fixedDate,decisionPlan:{items:[
     {id:'action:csv',sourceAlertId:'alert:csv',severity:'warning',title:'=HYPERLINK("bad")',sourceTitle:'test source',owner:'Operations',effort:'small',rationale:'Review only',steps:['Check source'],automated:false},

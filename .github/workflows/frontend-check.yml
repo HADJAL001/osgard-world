@@ -25,6 +25,7 @@ on:
       - "scripts/business-hub-smoke.mjs"
       - "public/business/**"
       - "docs/40_OSGARD_PREMIUM_COMMAND_DASHBOARD_2026-10-15.md"
+      - "docs/46_OSGARD_PREMIUM_CONTINUITY_TREND_INTELLIGENCE_2026-10-15.md"
       - "scripts/games-operations-smoke.mjs"
       - "docs/38_OSGARD_RELEASE_GATE_SEMANTICS_2026-10-15.md"
       - "scripts/osgard-one-pass-release.test.mjs"
