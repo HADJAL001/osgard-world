@@ -891,6 +891,7 @@ $('#intel-comparison-export-csv').addEventListener('click', () => {
 });
 $('#load').addEventListener('click',load);
 $('#token').addEventListener('keydown',event=>{if(event.key==='Enter')load();});
-window.addEventListener('pagehide',()=>{token='';comparisonBaseline=null;lastComparisonReport=null;lastIntelligenceReport=null;$('#token').value='';$('#intel-compare-file').value='';});
+window.addEventListener('pagehide',()=>{token='';$('#token').value='';});
+window.addEventListener('pagehide',()=>{comparisonBaseline=null;lastComparisonReport=null;lastIntelligenceReport=null;$('#intel-compare-file').value='';});
 })();
 </script><script src="/games/experiment-core.js?v=__OSGARD_BUILD_VERSION__" defer></script></body></html>
