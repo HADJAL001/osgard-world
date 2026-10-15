@@ -17,7 +17,6 @@
     }
     return null;
   };
-  const moneyMinor = value => parseMinor(value, false) ?? 0n;
   const currencyCode = value => {
     const code = String(value || '').toUpperCase();
     return /^[A-Z]{3}$/.test(code) ? code : '';
@@ -120,7 +119,7 @@
         reportingNetMinor:service ? (service.netValid ? service.netMinor.toString() : null) : '0',
         serviceCount:service?.services.size ?? 0,
         refundEventRate:service?.paidEvents > 0 ? Math.round(service.refunds / service.paidEvents * 10000) / 100 : null,
-        reportedNetNegative:!!service && service.netMinor < 0n,
+        reportedNetNegative:!!service && service.netValid && service.netMinor < 0n,
         exponent:exponent(code),
       };
     });
@@ -190,7 +189,7 @@
     if (experimentRows.length && !experimentRows.some(row => nonNegative(row.exposures) > 0)) {
       alert('experiments:no-exposure','info','Нет зафиксированных показов эксперимента','Нельзя выбрать победителя без измеренных экспозиций и конверсий.');
     }
-    if (premiumPageViews > 0 && paidOrders === 0) alert('premium:observed-no-paid','info','Есть просмотры Premium, но нет оплаченных заказов в Commerce API',
+    if (premiumPageViews > 0 && attributedOrders === 0) alert('premium:observed-no-paid','info','Есть просмотры Premium, но нет paid-заказов в атрибуционном отчёте за 30 дней',
       'Это сигнал проверить checkout и webhook. Просмотры и заказы не привязаны здесь к одной когорте, поэтому это не conversion rate.');
     const analyticsEventsPresent = (typeof data.analyticsEventsLast30Days === 'number' && Number.isSafeInteger(data.analyticsEventsLast30Days) && data.analyticsEventsLast30Days >= 0) ||
       (typeof data.analyticsEventsLast30Days === 'string' && /^\d{1,15}$/.test(data.analyticsEventsLast30Days));
