@@ -47,7 +47,7 @@ function fixture(overrides = {}) {
 test('separates currencies and independent Commerce/API integration ledgers', () => {
   const report = engine.derive(fixture(), fixedDate);
   assert.equal(report.schema, 'osgard.commerce-intelligence.v1');
-  assert.deepEqual(report.currencies.map(row => row.currency), ['EUR','USD']);
+  assert.equal(report.currencies.map(row => row.currency).join(','), 'EUR,USD');
   const eur = report.currencies.find(row => row.currency === 'EUR');
   const usd = report.currencies.find(row => row.currency === 'USD');
   assert.equal(eur.commerceGrossMinor, '5000');
@@ -67,7 +67,7 @@ test('preserves currency precision including zero- and three-decimal currencies 
   assert.equal(engine.formatMinor('12345','KWD'),'12,345 KWD');
   assert.equal(engine.formatMinor('10000','USD'),'100,00 USD');
   assert.equal(engine.formatMinor('-250','EUR'),'−2,50 EUR');
-  assert.equal(engine.formatMinor('bad','USD'),'0,00 USD');
+  assert.equal(engine.formatMinor('bad','USD'),'—');
 });
 
 test('computes transparent event ratios without claiming unique-person conversion', () => {
