@@ -494,7 +494,11 @@ test('Decision Ops register is source-linked and counts human review states', ()
   assert.equal(register.mode,'session-only-read-only');
   assert.equal(register.automationEnabled,false);
   assert.equal(register.sourceGeneratedAt,fixedDate);
-  assert.deepEqual(register.summary,{total:2,open:0,investigating:0,blocked:1,checked:1});
+  assert.equal(register.summary.total,2);
+  assert.equal(register.summary.open,0);
+  assert.equal(register.summary.investigating,0);
+  assert.equal(register.summary.blocked,1);
+  assert.equal(register.summary.checked,1);
   assert.deepEqual(register.items.map(item=>item.id),['action:critical','action:info']);
   assert.equal(register.items[0].sourceTitle,'Refund ledger');
   assert.equal(register.items[0].status,'blocked');
