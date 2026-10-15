@@ -827,6 +827,140 @@
       interpretation:'Это временной обзор агрегированных снимков, а не синхронные когорты. Накопительные заказы и скользящие окна могут двигаться по разным причинам. Отсутствующий источник/валюта остаётся пропуском; никакие валюты не складываются и причинность не выводится.',
     };
   }
+  const QUALITY_STATUS_RANK = Object.freeze({ measured:0, partial:1, unavailable:2, blocked:3 });
+  function buildTrendSignals(trend) {
+    if (!trend || typeof trend !== 'object' || trend.schema !== 'osgard.commerce-report-trend.v1' ||
+        !Array.isArray(trend.snapshots) || !Array.isArray(trend.series) || !Array.isArray(trend.qualitySeries)) {
+      throw new Error('Trend Intelligence получил некорректный отчёт Trend Lab.');
+    }
+    const snapshots = trend.snapshots;
+    const enoughHistory = snapshots.length >= 3;
+    const signals = [];
+    let skippedComparisons = 0;
+    const latest = snapshots[snapshots.length - 1] || null;
+    const previous = snapshots[snapshots.length - 2] || null;
+    const timestamp = latest?.generatedAt || trend.generatedAt || new Date().toISOString();
+    const add = (id,severity,title,source,observed,threshold,rationale,steps) => {
+      signals.push({
+        id:'trend:' + id + ':' + timestamp,
+        ruleId:id,
+        severity,
+        title,
+        source,
+        previous:observed?.previous ?? null,
+        current:observed?.current ?? null,
+        delta:observed?.delta ?? null,
+        threshold,
+        rationale,
+        steps,
+        automated:false,
+        status:'investigate',
+      });
+    };
+    if (enoughHistory && latest && previous) {
+      for (const source of trend.qualitySeries) {
+        const points = Array.isArray(source.points) ? source.points : [];
+        const before = points[points.length - 2];
+        const after = points[points.length - 1];
+        if (!before || !after || !Object.prototype.hasOwnProperty.call(QUALITY_STATUS_RANK,before.status) ||
+            !Object.prototype.hasOwnProperty.call(QUALITY_STATUS_RANK,after.status)) {
+          skippedComparisons++;
+          continue;
+        }
+        if (QUALITY_STATUS_RANK[after.status] > QUALITY_STATUS_RANK[before.status]) {
+          const severity = after.status === 'blocked' ? 'critical' : 'warning';
+          add('quality-regression:' + source.id,severity,
+            'Качество источника ухудшилось: ' + String(source.title || source.id).slice(0,120),
+            'data-quality:' + source.id,
+            {previous:before.status,current:after.status,delta:null},
+            'Любой переход к менее доступному статусу',
+            'Статус изменился с "' + before.status + '" на "' + after.status + '". Это сигнал проверить источник, а не доказательство причины.',
+            ['Проверить статус и окно источника в исходных агрегатах.','Сверить API-контракт и время последнего успешного обновления.','После исправления обновить отчёт и подтвердить восстановление источника.']);
+        }
+      }
+      const byId = new Map((trend.series || []).map(item => [item.id,item]));
+      const alertRules = [
+        {id:'alerts:critical',severityFor:delta=>delta>=2?'critical':'warning',minimum:1,label:'Критические сигналы увеличились',threshold:'Рост минимум на 1; +2 и более требуют критического приоритета',steps:['Открыть список критических сигналов в текущем Premium-отчёте.','Проверить, новые ли это сигналы или изменился состав источников.','Зафиксировать результат проверки в Decision Ops; не считать исчезновение сигнала доказательством устранения.']},
+        {id:'alerts:warning',severityFor:()=> 'warning',minimum:3,label:'Число предупреждений заметно выросло',threshold:'Рост минимум на 3 предупреждения за один шаг снимков',steps:['Сравнить изменившиеся сигналы с предыдущим экспортом.','Сначала проверить предупреждения источников и схемы данных.','Не делать вывод о финансовом результате без проверки исходных данных.']},
+      ];
+      for (const rule of alertRules) {
+        const serie = byId.get(rule.id);
+        const points = Array.isArray(serie?.points) ? serie.points : [];
+        const before=points[points.length-2], after=points[points.length-1];
+        if (!before || !after || !Number.isSafeInteger(before.value) || !Number.isSafeInteger(after.value)) {
+          skippedComparisons++;
+          continue;
+        }
+        const delta=after.value-before.value;
+        if (delta>=rule.minimum) add(rule.id,rule.severityFor(delta),rule.label,rule.id,
+          {previous:before.value,current:after.value,delta},rule.threshold,
+          'Сравниваются количества сигналов в двух последних снимках. Это приоритет расследования, не диагноз и не доказательство изменения бизнеса.',
+          rule.steps);
+      }
+      const share=byId.get('headline:paidOrderShare');
+      const sharePoints=Array.isArray(share?.points)?share.points:[];
+      const beforeShare=sharePoints[sharePoints.length-2],afterShare=sharePoints[sharePoints.length-1];
+      if (beforeShare && afterShare && Number.isFinite(beforeShare.value) && Number.isFinite(afterShare.value)) {
+        const delta=Math.round((afterShare.value-beforeShare.value)*100)/100;
+        if (delta<=-15) add('paid-order-share-drop','warning','Снизилась доля записей со статусом paid','headline:paidOrderShare',
+          {previous:beforeShare.value,current:afterShare.value,delta},'Снижение на 15 процентных пунктов или более',
+          'Это доля оплаченных записей среди всех записей заказа, не вероятность успешной оплаты и не когортная конверсия. Проверьте определения и состав снимков.',
+          ['Проверить состав заказов по статусам и окно источника.','Сверить изменения API и миграции статусов между снимками.','Не считать это платёжным отказом без проверки checkout/webhook и исходных записей.']);
+      } else skippedComparisons++;
+      const paid=byId.get('headline:paidOrders');
+      const paidPoints=Array.isArray(paid?.points)?paid.points:[];
+      const beforePaid=paidPoints[paidPoints.length-2],afterPaid=paidPoints[paidPoints.length-1];
+      if (beforePaid && afterPaid && Number.isSafeInteger(beforePaid.value) && Number.isSafeInteger(afterPaid.value) &&
+          afterPaid.value < beforePaid.value) {
+        add('paid-order-count-decreased','warning','Накопительный счётчик paid-заказов уменьшился','headline:paidOrders',
+          {previous:beforePaid.value,current:afterPaid.value,delta:afterPaid.value-beforePaid.value},
+          'Любое уменьшение между снимками',
+          'Накопительный агрегат уменьшился. Причиной могут быть корректировка, удаление, фильтр или изменение API; данных недостаточно, чтобы выбрать причину.',
+          ['Сверить оба снимка и окно данных.','Проверить изменения определения статуса/фильтров и журналы источника.','Подтвердить ожидаемую корректировку у владельца API.']);
+      }
+    } else {
+      skippedComparisons++;
+    }
+    const rank={critical:0,warning:1,info:2};
+    signals.sort((a,b)=>(rank[a.severity]??9)-(rank[b.severity]??9)||a.ruleId.localeCompare(b.ruleId));
+    const summary={
+      snapshotCount:snapshots.length,
+      enoughHistory,
+      generatedAt:new Date().toISOString(),
+      signalCount:signals.length,
+      critical:signals.filter(item=>item.severity==='critical').length,
+      warnings:signals.filter(item=>item.severity==='warning').length,
+      skippedComparisons,
+      state:!enoughHistory?'insufficient-history':signals.some(item=>item.severity==='critical')?'attention-critical':signals.length?'attention':'no-rule-triggered',
+    };
+    return {
+      schema:'osgard.commerce-trend-signals.v1',
+      summary,
+      sourceGeneratedAt:timestamp,
+      minimumHistory:3,
+      rules:[
+        {id:'quality-regression',threshold:'Любое ухудшение измеренного статуса источника',meaning:'Проверить источник; причина автоматически не определяется.'},
+        {id:'alerts:critical',threshold:'Рост критических сигналов минимум на 1; +2 повышает приоритет',meaning:'Сравнение числа сигналов в двух соседних снимках.'},
+        {id:'alerts:warning',threshold:'Рост предупреждений минимум на 3',meaning:'Сравнение числа сигналов в двух соседних снимках.'},
+        {id:'paid-order-share-drop',threshold:'Падение paid-доли записей минимум на 15 п.п.',meaning:'Не является когортной конверсией или вероятностью платежного успеха.'},
+        {id:'paid-order-count-decreased',threshold:'Любое уменьшение накопительного числа paid-заказов',meaning:'Требует сверки снимков и определения источника.'},
+      ],
+      signals,
+      skippedComparisons,
+      interpretation:'Правила детерминированы и предназначены для приоритизации ручной проверки. Неизвестные значения не считаются нулём; валюты не складываются; тренды не доказывают причинность. Состояние без сигналов означает только, что эти фиксированные правила не сработали.',
+    };
+  }
+  function toTrendSignalsCsv(report) {
+    const rows=[['schema','signal_id','rule_id','severity','title','source','previous','current','delta','threshold','rationale','step']];
+    for (const signal of report?.signals || []) {
+      if (!Array.isArray(signal.steps) || !signal.steps.length) {
+        rows.push([report.schema,signal.id,signal.ruleId,signal.severity,signal.title,signal.source,signal.previous ?? '',signal.current ?? '',signal.delta ?? '',signal.threshold,signal.rationale,'']);
+      } else for (const step of signal.steps) rows.push([report.schema,signal.id,signal.ruleId,signal.severity,signal.title,signal.source,signal.previous ?? '',signal.current ?? '',signal.delta ?? '',signal.threshold,signal.rationale,step]);
+    }
+    rows.push(['summary','state','','','','',report?.summary?.snapshotCount ?? '',report?.summary?.signalCount ?? '',report?.summary?.skippedComparisons ?? '',report?.interpretation || '']);
+    const escape=value=>{let text=String(value ?? '');if(/^\\s*[=+\\-@]/.test(text))text="'"+text;return '"'+text.replace(/"/g,'""')+'"';};
+    return '\uFEFF'+rows.map(row=>row.map(escape).join(',')).join('\\r\\n')+'\\r\\n';
+  }
   function toTrendCsv(trend) {
     const rows=[['section','series_id','label','currency','timestamp','value','state','missing_reason','window']];
     const add=(section,id,label,currency,timestamp,value,state,missingReason='',window='')=>
@@ -945,6 +1079,50 @@
       interpretation:'Отметки относятся только к этой вкладке и выбранному снимку отчёта. «Проверка выполнена» не означает, что исходный сигнал устранён; перепроверьте его после обновления агрегатов.',
     };
   }
+  function importDecisionRegister(input, report) {
+    if (!input || typeof input!=='object' || Array.isArray(input) ||
+        input.schema!=='osgard.commerce-review-register.v1' ||
+        !Array.isArray(input.items) || input.items.length>500 ||
+        typeof input.generatedAt!=='string' || !Number.isFinite(Date.parse(input.generatedAt)) ||
+        (input.sourceGeneratedAt!==null && input.sourceGeneratedAt!==undefined &&
+          (typeof input.sourceGeneratedAt!=='string' || !Number.isFinite(Date.parse(input.sourceGeneratedAt))))) {
+      throw new Error('Файл не является поддерживаемым реестром Decision Ops.');
+    }
+    if (!report || typeof report!=='object' || Array.isArray(report)) {
+      throw new Error('Сначала загрузите текущий Premium-отчёт.');
+    }
+    const plan=report.decisionPlan || buildDecisionPlan(report);
+    const currentItems=Array.isArray(plan.items)?plan.items:[];
+    const currentIds=new Set(currentItems.map(item=>String(item.id||'')).filter(Boolean));
+    const seen=new Set();
+    const state=Object.create(null);
+    const ignoredIds=[];
+    for(const item of input.items) {
+      if(!item || typeof item!=='object' || Array.isArray(item) ||
+          typeof item.id!=='string' || !/^[a-z0-9][a-z0-9:_-]{0,179}$/i.test(item.id) ||
+          seen.has(item.id)) {
+        throw new Error('В реестре есть некорректный или повторный ID действия.');
+      }
+      seen.add(item.id);
+      const normalized=normalizeReviewEntry({status:item.status,note:item.note,updatedAt:item.updatedAt});
+      if(!normalized.ok) throw new Error('Запись "'+item.id.slice(0,80)+'": '+normalized.error);
+      if(currentIds.has(item.id)) state[item.id]=normalized.entry;
+      else ignoredIds.push(item.id.slice(0,180));
+    }
+    const matched=Object.keys(state).length;
+    if(matched===0) throw new Error('Нет совпадающих ID действий в текущем отчёте. Отметки не изменены.');
+    return {
+      schema:'osgard.commerce-review-import.v1',
+      importedAt:new Date().toISOString(),
+      sourceGeneratedAt:new Date(input.sourceGeneratedAt || input.generatedAt).toISOString(),
+      targetGeneratedAt:typeof report.generatedAt==='string'&&Number.isFinite(Date.parse(report.generatedAt))?new Date(report.generatedAt).toISOString():null,
+      matchedCount:matched,
+      ignoredCount:ignoredIds.length,
+      ignoredIds:ignoredIds.slice(0,100),
+      reviewState:state,
+      interpretation:'Перенесены только статусы и заметки действий, чьи стабильные ID присутствуют в текущем плане. Старые действия без совпадения пропущены. Файл обработан локально; изменения не отправлены на сервер.',
+    };
+  }
   function toReviewCsv(register) {
     const rows=[['schema','source_generated_at','action_id','source_alert_id','severity','title','owner','effort','status','note','updated_at','steps']];
     for (const item of register?.items || []) rows.push([
@@ -1016,5 +1194,5 @@
     return '\uFEFF' + rows.map(row=>row.map(escape).join(',')).join('\r\n') + '\r\n';
   }
 
-  window.OSGARDCommerceIntelligence = Object.freeze({ schema:SCHEMA, derive, formatMinor, toCsv, buildDecisionPlan, toMarkdown, normalizeComparisonSnapshot, compareReports, toComparisonCsv, buildReportTrend, toTrendCsv, REVIEW_STATUSES, normalizeReviewEntry, buildDecisionRegister, toReviewCsv, toReviewMarkdown });
+  window.OSGARDCommerceIntelligence = Object.freeze({ schema:SCHEMA, derive, formatMinor, toCsv, buildDecisionPlan, toMarkdown, normalizeComparisonSnapshot, compareReports, toComparisonCsv, buildReportTrend, buildTrendSignals, toTrendSignalsCsv, toTrendCsv, REVIEW_STATUSES, normalizeReviewEntry, buildDecisionRegister, importDecisionRegister, toReviewCsv, toReviewMarkdown });
 })();
