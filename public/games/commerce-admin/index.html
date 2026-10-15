@@ -1174,7 +1174,7 @@ $('#intel-review-query').addEventListener('input',()=>{if(lastIntelligenceReport
 $('#intel-review-export-json').addEventListener('click',()=>{
   if(!lastIntelligenceReport||!window.OSGARDCommerceIntelligence)return;
   lastReviewRegister=window.OSGARDCommerceIntelligence.buildDecisionRegister(lastIntelligenceReport,Object.fromEntries(operatorReviewState.entries()));
-  downloadAggregateReport('osgard-premium-review-register-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify(lastReviewRegister,null,2)+'\\n','application/json;charset=utf-8');
+  downloadAggregateReport('osgard-premium-review-register-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify(lastReviewRegister,null,2)+'\n','application/json;charset=utf-8');
 });
 $('#intel-review-export-csv').addEventListener('click',()=>{
   if(!lastReviewRegister||!window.OSGARDCommerceIntelligence)return;
