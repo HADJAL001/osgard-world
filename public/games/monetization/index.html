@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#080a0b">
-  <meta name="description" content="Интерактивная модель монетизации игр OSGARD. Три сценария расчёта на изменяемых допущениях — не фактическая статистика и не обещание дохода.">
+  <meta name="description" content="OSGARD Revenue Intelligence: сценарии, риск-диапазоны P10/P50/P90, безубыточность, чувствительность и локальное сравнение финансовых допущений. Не фактическая выручка.">
   <meta property="og:title" content="OSGARD PLAY — модель экономики игр">
   <meta property="og:description" content="Расчётный инструмент для оценки рекламной выручки, покупок, заявок на разработку и операционных расходов.">
   <link rel="canonical" href="https://osgard.world/games/monetization/">
   <link rel="icon" href="/games/favicon.svg" type="image/svg+xml">
-  <title>Экономика OSGARD PLAY — сценарная модель</title>
+  <title>OSGARD Revenue Intelligence — сценарии и безубыточность</title>
   <style>
     :root{color-scheme:dark;--bg:#080a0b;--panel:#101415;--panel2:#0c1010;--ink:#f2f0e8;--muted:#a0a69b;--line:#ffffff20;--acid:#d3ff69;--metal:#d2c9b4;--danger:#ff9b91;--mono:ui-monospace,Consolas,monospace;--serif:Georgia,serif;--sans:Inter,Geist,system-ui,-apple-system,"Segoe UI",sans-serif}
     *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:90px}body{margin:0;background:radial-gradient(ellipse at 78% 0%,#9cc16812,transparent 31%),var(--bg);color:var(--ink);font:14px/1.6 var(--sans);-webkit-font-smoothing:antialiased}a{color:inherit;text-decoration:none}button,input{font:inherit}button,a,input{outline-offset:3px}button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--acid)}.shell{width:min(1280px,100%);margin:auto;padding-inline:clamp(18px,4vw,58px)}
@@ -25,6 +25,19 @@
     .growth-goal{margin:0 0 58px;padding:clamp(20px,3vw,34px);border:1px solid #d3ff6940;background:linear-gradient(120deg,#d3ff690b,transparent 65%),#0d1010}.growth-head{display:flex;align-items:end;justify-content:space-between;gap:24px}.growth-head h2{margin:0;font-size:clamp(27px,4vw,42px);letter-spacing:-.06em;line-height:1.04}.growth-head h2 em{font-family:var(--serif);font-weight:400;font-style:normal;color:var(--metal)}.growth-head p:not(.eyebrow){max-width:700px;color:var(--muted);font-size:11px;line-height:1.8}.growth-target{flex:0 0 auto;border-left:1px solid #d3ff6960;padding-left:19px}.growth-target strong{display:block;color:var(--acid);font:clamp(25px,3vw,37px) var(--serif);white-space:nowrap}.growth-target span{display:block;max-width:165px;color:#929a8b;font-size:10px;line-height:1.5}.growth-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-top:18px}.growth-kpi{min-width:0;padding:15px;border:1px solid #ffffff18;background:#ffffff03}.growth-kpi span,.growth-kpi small{display:block;color:#929a8e;font-size:10px;line-height:1.6}.growth-kpi b{display:block;margin:9px 0;color:var(--metal);font:clamp(21px,2.4vw,29px) var(--serif);overflow-wrap:anywhere}.growth-kpi small{color:#697365;font-size:9px}.target-mix{margin:18px 0 4px;padding:17px;border:1px solid #d3ff6928;background:#090e0c}.target-mix-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}.target-mix-head h3{margin:0;color:var(--metal);font:20px var(--serif)}.target-mix-head p{margin:0;color:var(--muted);font-size:10px}.target-mix-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.target-mix-card{min-width:0;padding:13px;border:1px solid #ffffff16;background:#ffffff03}.target-mix-card span{display:block;color:#929a8e;font-size:9px;line-height:1.55}.target-mix-card b{display:block;margin-top:8px;color:var(--acid);font:20px var(--serif);overflow-wrap:anywhere}.target-mix-card small{display:block;margin-top:5px;color:#667267;font-size:9px;line-height:1.55}@media(max-width:900px){.target-mix-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.target-mix-grid{grid-template-columns:1fr}.target-mix-card b{font-size:22px}}.growth-footnote{margin:14px 0 0;color:#80887b;font-size:10px;line-height:1.8}
     @media(max-width:900px){.growth-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.growth-head{align-items:start}}
     @media(max-width:560px){.growth-head{display:grid;gap:14px}.growth-target{border-left:0;border-top:1px solid #d3ff6960;padding:13px 0 0}.growth-grid{grid-template-columns:1fr 1fr}.growth-kpi{padding:12px}.growth-kpi b{font-size:22px}}
+
+    .decision-intelligence{margin:0 0 54px;padding:clamp(18px,3vw,30px);border:1px solid #d3ff6940;background:linear-gradient(135deg,#d3ff690b,transparent 45%),#0b0f0e}
+    .intel-head{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:20px}.intel-head h2{margin:0;font-size:clamp(27px,4vw,41px);letter-spacing:-.065em;line-height:1.03}.intel-head p:not(.eyebrow){max-width:650px;color:var(--muted);font-size:11px;line-height:1.8}
+    .intel-controls{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.intel-controls label{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:11px}.intel-controls select,.snapshot-input,.snapshot-select{min-height:42px;max-width:100%;padding:8px 11px;border:1px solid var(--line);background:#080b0b;color:var(--ink);font:11px var(--sans)}
+    .risk-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:18px 0}.risk-kpi{min-width:0;padding:14px;border:1px solid #ffffff18;background:#ffffff03}.risk-kpi span{display:block;color:#8d9587;font-size:9px;line-height:1.5}.risk-kpi b{display:block;margin-top:8px;color:var(--metal);font:clamp(17px,2vw,25px) var(--serif);overflow-wrap:anywhere}.risk-kpi small{display:block;margin-top:5px;color:#6f786d;font-size:9px;line-height:1.5}
+    .intel-columns{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:13px;margin-top:14px}.intel-panel{min-width:0;border:1px solid #ffffff18;background:#080c0b;padding:17px}.intel-panel h3{margin:0 0 7px;font:20px var(--serif);color:var(--metal)}.intel-subtitle{margin:0 0 14px;color:var(--muted);font-size:10px;line-height:1.7}
+    .risk-row{padding:12px 0;border-top:1px solid #ffffff12}.risk-row:first-child{border-top:0}.risk-row-head{display:flex;justify-content:space-between;gap:10px;align-items:baseline}.risk-row-head strong{font-size:11px;font-weight:600}.risk-values{display:flex;gap:12px;flex-wrap:wrap;margin-top:5px;color:var(--muted);font:10px var(--mono)}.risk-values b{color:var(--ink);font-weight:500}.risk-track{position:relative;height:12px;margin-top:10px;border:1px solid #ffffff20;background:linear-gradient(90deg,#ff9b9122 0%,#ffffff06 50%,#d3ff6922 100%)}.risk-marker{position:absolute;top:-4px;width:3px;height:18px;background:var(--metal);transform:translateX(-50%)}.risk-marker.p10{background:var(--danger)}.risk-marker.p50{width:4px;background:var(--ink)}.risk-marker.p90{background:var(--acid)}.risk-legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:7px;color:var(--muted);font-size:9px}.risk-legend span:before{content:'';display:inline-block;width:7px;height:7px;margin-right:5px;background:var(--metal)}.risk-legend .legend-p10:before{background:var(--danger)}.risk-legend .legend-p90:before{background:var(--acid)}
+    .lever-row{padding:11px 0;border-top:1px solid #ffffff12}.lever-row:first-child{border-top:0}.lever-head{display:flex;justify-content:space-between;gap:10px;font-size:10px}.lever-head b{font:10px var(--mono);color:var(--metal);white-space:nowrap}.lever-track{height:5px;margin-top:8px;background:#ffffff10}.lever-fill{height:100%;background:var(--acid)}.lever-direction{margin-top:4px;color:var(--muted);font-size:9px}
+    .recommendations{display:grid;gap:8px;margin:0;padding:0;list-style:none}.recommendation{padding:12px;border:1px solid #ffffff16;background:#ffffff03}.recommendation strong{display:block;font-size:11px}.recommendation p{margin:5px 0 0;color:var(--muted);font-size:10px;line-height:1.7}.priority{display:inline-block;margin-bottom:6px;padding:2px 5px;border:1px solid #ffffff24;color:var(--metal);font:9px var(--mono);text-transform:uppercase;letter-spacing:.08em}.priority.high{border-color:#ff9b9155;color:var(--danger)}.priority.medium{border-color:#d3ff6940;color:var(--acid)}
+    .snapshot-box{margin-top:13px;padding-top:16px;border-top:1px solid #ffffff18}.snapshot-toolbar{display:grid;grid-template-columns:minmax(150px,.65fr) minmax(180px,1fr);gap:8px}.snapshot-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}.snapshot-status{min-height:22px;margin:8px 0 0;color:var(--muted);font-size:10px}.snapshot-comparison{margin-top:10px}.snapshot-comparison:empty{display:none}.comparison-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.comparison-item{padding:10px;border:1px solid #ffffff16}.comparison-item span{display:block;color:var(--muted);font-size:9px}.comparison-item b{display:block;margin-top:5px;font:17px var(--serif);overflow-wrap:anywhere}.intel-footnote{margin:14px 0 0;padding-top:12px;border-top:1px solid #ffffff15;color:#858d81;font-size:10px;line-height:1.8}
+    @media(max-width:1100px){.risk-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.intel-columns{grid-template-columns:1fr}}
+    @media(max-width:680px){.intel-head{align-items:start;flex-direction:column}.risk-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.snapshot-toolbar{grid-template-columns:1fr}.comparison-grid{grid-template-columns:1fr}.intel-panel{padding:13px}}
+
 </style>
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"OSGARD PLAY — сценарная модель экономики игр","description":"Локальный калькулятор финансовых сценариев с редактируемыми допущениями; не отображает фактическую статистику сайта."}</script>
 </head>
@@ -57,6 +70,67 @@
         </div>
       </section>
       <p class="growth-footnote">Сначала измеряй посещения, запуск игры, удержание, приглашения и конверсию. Реклама и платежи считаются модельными, пока не подтверждены соответствующими провайдерами; этот блок не показывает реальные доходы OSGARD.</p><p class="growth-footnote" id="growth-target-status" role="status" aria-live="polite">Расчёт необходимого стартового трафика выполняется локально на основании допущений ниже.</p><a class="btn primary" href="/games/partners/">Обсудить спонсорскую интеграцию ↗</a>
+    </section>
+    <section class="decision-intelligence" aria-labelledby="intelligence-title">
+      <div class="intel-head">
+        <div>
+          <p class="eyebrow">OSGARD / DECISION INTELLIGENCE</p>
+          <h2 id="intelligence-title">Не одно число.<br>А диапазон решений.</h2>
+          <p>Локальная симуляция неопределённости показывает downside, базовую медиану, upside, безубыточный трафик и рычаги, которые сильнее всего меняют результат. Это инженерные диапазоны, не вероятности, обученные на фактических данных.</p>
+        </div>
+        <div class="intel-controls">
+          <label for="risk-iterations">Прогоны <select id="risk-iterations"><option value="500">500</option><option value="1500" selected>1 500</option><option value="3000">3 000</option></select></label>
+          <button class="btn primary" id="risk-recompute" type="button">Пересчитать риск</button>
+        </div>
+      </div>
+      <div class="risk-grid" aria-label="Диапазоны неопределённости">
+        <div class="risk-kpi"><span>NET · P10 / downside</span><b id="risk-p10">—</b><small>Нижний 10-й процентиль, в месяц</small></div>
+        <div class="risk-kpi"><span>NET · P50 / медиана</span><b id="risk-p50">—</b><small>Центральный результат симуляции</small></div>
+        <div class="risk-kpi"><span>NET · P90 / upside</span><b id="risk-p90">—</b><small>Верхний 10-й процентиль, в месяц</small></div>
+        <div class="risk-kpi"><span>Безубыточный стартовый трафик</span><b id="risk-breakeven-visitors">—</b><small>Минимум посещений в месяц в base-модели</small></div>
+        <div class="risk-kpi"><span>Прогоны с NET ≥ 0</span><b id="risk-break-even-probability">—</b><small>Результат заданных диапазонов, не рыночная вероятность</small></div>
+        <div class="risk-kpi"><span>Прогоны, достигшие годовой цели</span><b id="risk-target-probability">—</b><small>Валовая годовая цель в той же модели</small></div>
+      </div>
+      <div class="intel-columns">
+        <section class="intel-panel" aria-labelledby="risk-distribution-title">
+          <h3 id="risk-distribution-title">Диапазон операционного результата</h3>
+          <p class="intel-subtitle">Маркер показывает положение P10, P50 и P90 в диапазоне конкретной метрики. Все числа пересчитываются в браузере.</p>
+          <div id="risk-distribution"><p class="status">Подготовка локальной симуляции…</p></div>
+          <div class="risk-legend"><span class="legend-p10">P10 · downside</span><span>P50 · медиана</span><span class="legend-p90">P90 · upside</span></div>
+        </section>
+        <section class="intel-panel" aria-labelledby="sensitivity-title">
+          <h3 id="sensitivity-title">Самые сильные рычаги</h3>
+          <p class="intel-subtitle">Одно допущение за раз, изменение на ±20%. Рейтинг показывает чувствительность модели, а не причинность в реальном бизнесе.</p>
+          <div id="sensitivity-list"><p class="status">Рассчитываем чувствительность…</p></div>
+        </section>
+      </div>
+      <div class="intel-columns">
+        <section class="intel-panel" aria-labelledby="decision-recommendations-title">
+          <h3 id="decision-recommendations-title">Рекомендации к следующему эксперименту</h3>
+          <p class="intel-subtitle">Советы выводятся из узких мест и чувствительности введённых допущений — данные на сервер не отправляются.</p>
+          <ul class="recommendations" id="decision-recommendations"><li class="recommendation">Рассчитываем приоритеты…</li></ul>
+        </section>
+        <section class="intel-panel" aria-labelledby="snapshot-title">
+          <h3 id="snapshot-title">Сценарии на этом устройстве</h3>
+          <p class="intel-subtitle">Сохраняются только числовые допущения в localStorage текущего браузера. До 8 версий; не отправляются на сервер.</p>
+          <div class="snapshot-box">
+            <div class="snapshot-toolbar">
+              <label class="field" for="snapshot-name">Название версии<input id="snapshot-name" class="snapshot-input" maxlength="60" autocomplete="off" placeholder="Например: рост Premium на 20%"></label>
+              <label class="field" for="saved-snapshots">Сохранённые версии<select id="saved-snapshots" class="snapshot-select"><option value="">Нет сохранённых сценариев</option></select></label>
+            </div>
+            <div class="snapshot-actions">
+              <button class="btn primary" id="save-snapshot" type="button">Сохранить текущий</button>
+              <button class="btn" id="load-snapshot" type="button">Загрузить</button>
+              <button class="btn" id="compare-snapshot" type="button">Сравнить с текущим</button>
+              <button class="btn" id="delete-snapshot" type="button">Удалить</button>
+              <button class="btn" id="import-model-json" type="button">Импорт JSON</button><input id="import-model-file" type="file" accept=".json,application/json" hidden>
+            </div>
+            <p id="snapshot-status" class="snapshot-status" role="status" aria-live="polite">Сценарии остаются на этом устройстве.</p>
+            <div id="snapshot-comparison" class="snapshot-comparison" aria-live="polite"></div>
+          </div>
+        </section>
+      </div>
+      <p class="intel-footnote">Метод: треугольные множители неопределённости и общий demand-pulse для частичной корреляции трафика и запуска игр; seed зафиксирован для повторяемости. Это не live-аналитика, не инвестиционный совет и не обещание дохода. Сценарные спонсорские договоры, введённые вручную, считаются фиксированными.</p>
     </section>
     <section><div class="section-head"><h2>Настрой допущения</h2><p>Начальные значения — пример для проверки формул, а не данные OSGARD и не подтверждённые рыночные ориентиры. Введи собственные значения по результатам измерений.</p></div>
       <div class="layout">
@@ -121,7 +195,7 @@
       </div>
       <ul class="model-notes"><li>Осторожный сценарий снижает трафик, запуск игр, сессии, заполнение, eCPM, покупки и закрытие заказов; расходы повышаются.</li><li>Оптимистичный сценарий моделирует масштабирование, но не является целью или гарантией. Измеренные значения должны заменить начальные множители.</li><li>Premium использует отдельную конверсию, цену и месячный отток. Выручка первого года рассчитывается по подписочным когортам; MRR к 12-му месяцу показан отдельно. Весь расчёт остаётся условным до включения защищённого checkout.</li><li>Рекламные показы должны оставаться добровольными и не мешать управлению игрой. Вознаграждение за рекламу не включено, пока нет подтверждения просмотра и серверной защиты повторной выдачи.</li><li>На странице не собираются персональные данные, заявки или аналитические события. JSON-экспорт содержит только допущения и вычисленные значения.</li></ul>
     </section>
-    <footer><span>OSGARD PLAY / GROWTH LAB · ВЕРСИЯ МОДЕЛИ 2</span><nav><a href="/games/">Каталог игр</a><a href="/privacy/">Конфиденциальность</a><a href="/terms/">Условия</a><a href="/development">Разработка продуктов</a></nav></footer>
+    <footer><span>OSGARD PLAY / REVENUE INTELLIGENCE · MODEL 7</span><nav><a href="/games/">Каталог игр</a><a href="/privacy/">Конфиденциальность</a><a href="/terms/">Условия</a><a href="/development">Разработка продуктов</a></nav></footer>
   </main>
   <script type="module" src="/games/monetization/app.js"></script>
 </body>
