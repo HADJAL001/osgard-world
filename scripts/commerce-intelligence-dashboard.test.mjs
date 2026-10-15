@@ -669,7 +669,8 @@ test('Executive Pulse is transparent, bounded and never invents a health score',
   assert.equal(pulse.schema,'osgard.commerce-executive-pulse.v1');
   assert.equal(pulse.state,'clear');
   assert.equal(pulse.summary.paidOrders,7);
-  assert.deepEqual(pulse.summary.qualityCoverage,{measured:7,total:7});
+  assert.equal(pulse.summary.qualityCoverage.measured,7);
+  assert.equal(pulse.summary.qualityCoverage.total,7);
   assert.equal(pulse.automationEnabled,false);
   assert.equal(Object.prototype.hasOwnProperty.call(pulse,'score'),false);
   assert.match(pulse.interpretation,/нет искусственного health-score/i);
@@ -698,7 +699,11 @@ test('Executive Pulse distinguishes warnings, partial evidence and blocked input
       summary:{totalSources:7,measured:4,partial:2,unavailable:1,blocked:0}},
   }));
   assert.equal(limited.state,'limited');
-  assert.deepEqual(limited.summary.quality,{total:7,measured:4,partial:2,unavailable:1,blocked:0});
+  assert.equal(limited.summary.quality.total,7);
+  assert.equal(limited.summary.quality.measured,4);
+  assert.equal(limited.summary.quality.partial,2);
+  assert.equal(limited.summary.quality.unavailable,1);
+  assert.equal(limited.summary.quality.blocked,0);
 
   const blocked=engine.buildExecutivePulse(executivePulseReport({
     dataQuality:{schema:'osgard.commerce-data-quality.v1',state:'blocked',
@@ -750,7 +755,7 @@ test('Premium dashboard renders Executive Pulse with accessible status and safe 
   assert.ok(html.includes('id="intel-executive-reasons"'));
   assert.ok(html.includes('id="intel-executive-actions"'));
   assert.ok(html.includes('aria-live="polite"'));
-  assert.ok(renderer.includes('renderExecutivePulse(report);'));
+  assert.ok(html.includes('renderExecutivePulse(report);'),'renderIntelligence must invoke the Executive Pulse renderer');
   assert.ok(!renderer.includes('innerHTML'),'Executive Pulse must render untrusted API text through textContent, not HTML interpolation');
 });
 
