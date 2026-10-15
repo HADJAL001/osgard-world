@@ -8,6 +8,9 @@ on:
       - "scripts/skillcred-page-smoke.mjs"
       - "scripts/time-prototype-smoke.mjs"
       - "scripts/games-portal-smoke.mjs"
+      - "scripts/liveops-dashboard-smoke.mjs"
+      - "scripts/liveops-analytics-core-smoke.mjs"
+      - "docs/37_LIVEOPS_PREMIUM_ANALYTICS_DASHBOARD_2026-10-15.md"
       - "scripts/device-fit-smoke.mjs"
       - "scripts/games-detail-smoke.mjs"
       - "scripts/game-detail-runtime-smoke.mjs"
@@ -105,6 +108,8 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
+      - name: Verify protected LiveOps analytics dashboard
+        run: npm run qa:liveops-dashboard
       - name: Check cross-surface OSGARD product contracts
         run: npm run qa:contracts
       - name: Test one-pass deployment context and release evidence policy
