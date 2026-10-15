@@ -317,7 +317,7 @@ test('data quality ledger labels measured, partial and unavailable sources witho
   assert.ok(csv.includes('"lead-attribution"'));
   const markdown=engine.toMarkdown(report);
   assert.ok(markdown.includes('## Качество и сопоставимость источников'));
-  assert.ok(markdown.includes('Окно: Накопительное окно доступных записей Commerce API'));
+  assert.ok(markdown.includes('окно: Накопительное окно доступных записей Commerce API'));
 });
 
 test('data quality distinguishes invalid source fields from measured zeros', () => {
