@@ -85,7 +85,8 @@
     "qa:live-bundle-smoke": "node scripts/live-bundle-audit-smoke.mjs",
     "qa:release-readiness-policy": "node scripts/release-readiness-policy-smoke.mjs",
     "qa:commerce-intelligence": "node --test scripts/commerce-intelligence-dashboard.test.mjs",
-    "qa:revenue-command-center": "node --test scripts/monetization-intelligence.test.mjs scripts/monetization-command-center.test.mjs"
+    "qa:revenue-command-center": "node --test scripts/monetization-intelligence.test.mjs scripts/monetization-command-center.test.mjs",
+    "qa:business-hub": "node scripts/business-hub-smoke.mjs"
   },
   "dependencies": {
     "@types/three": "^0.186.0",

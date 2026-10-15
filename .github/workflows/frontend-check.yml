@@ -22,6 +22,8 @@ on:
       - "docs/37_OSGARD_OPERATIONS_PULSE_2026-10-15.md"
       - "scripts/operations-dashboard-metrics-smoke.mjs"
       - "scripts/commerce-intelligence-dashboard.test.mjs"
+      - "scripts/business-hub-smoke.mjs"
+      - "public/business/**"
       - "docs/40_OSGARD_PREMIUM_COMMAND_DASHBOARD_2026-10-15.md"
       - "scripts/games-operations-smoke.mjs"
       - "docs/38_OSGARD_RELEASE_GATE_SEMANTICS_2026-10-15.md"
@@ -120,6 +122,8 @@ jobs:
         run: npm run check
       - name: Verify iOS App Store and Codemagic source configuration
         run: npm run qa:ios-appstore
+      - name: Verify OSGARD Business hub and local-only brief builder
+        run: npm run qa:business-hub
       - name: Build the production site
         run: npm run build
       - name: Enforce production asset budgets
