@@ -427,16 +427,17 @@
       };
     });
     if (new Set(alerts.map(item=>item.id)).size !== alerts.length) throw new Error('Идентификаторы сигналов должны быть уникальными.');
-    const sourceActions = Array.isArray(input.decisionPlan?.items) ? input.decisionPlan.items : [];
+    const sourceActions = Array.isArray(input.decisionPlan?.items) ? input.decisionPlan.items : Array.isArray(input.actions) ? input.actions : [];
     if (sourceActions.length > 500) throw new Error('План действий содержит слишком много записей.');
     const actions = sourceActions.map(row => {
+      const actionId = typeof row?.sourceAlertId === 'string' ? row.sourceAlertId : row?.id;
       if (!row || typeof row !== 'object' || Array.isArray(row) ||
-          typeof row.sourceAlertId !== 'string' || !row.sourceAlertId.trim() ||
+          typeof actionId !== 'string' || !actionId.trim() || actionId.length > 180 ||
           !['critical','warning','info'].includes(row.severity)) {
         throw new Error('План действий содержит некорректный элемент.');
       }
       return {
-        id:row.sourceAlertId.slice(0,180),
+        id:actionId.slice(0,180),
         severity:row.severity,
         title:String(row.title || 'Проверка без названия').replace(/[\u0000-\u001f\u007f]/g,' ').slice(0,180),
       };
