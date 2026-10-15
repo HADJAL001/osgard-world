@@ -416,7 +416,13 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
                 /ARCHIVE_SCHEMA\s*=\s*['"]osgard\.cascade-lab\.evidence-integrity-archive\.v1['"]/.test(content) &&
                 !/\bfetch\s*\(/.test(content) && !/\bXMLHttpRequest\b/.test(content) &&
                 !/\bsendBeacon\b/.test(content) && !/\.innerHTML\b/.test(content)
-            : content.includes('demo/issue') && content.includes('data-clock-step')
+            : path === '/games/commerce-admin/intelligence.js'
+               ? content.includes('window.OSGARDCommerceIntelligence') &&
+                 content.includes('function derive(') &&
+                 !content.includes('fetch(') &&
+                 !content.includes('localStorage') &&
+                 !content.includes('sessionStorage')
+             : content.includes('demo/issue') && content.includes('data-clock-step')
       }
       return { path, status: asset.status, expectedType, contentType, typeOk, nonEmpty, ok: asset.status === 200 && typeOk && nonEmpty }
     }))
