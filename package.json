@@ -30,7 +30,7 @@
     "qa:cascade-lab-hypothesis": "node scripts/cascade-lab-hypothesis-smoke.mjs",
     "qa:game-detail-runtime": "node scripts/game-detail-runtime-smoke.mjs",
     "qa:civic-cascade-forecast": "node scripts/civic-cascade-forecast-smoke.mjs",
-    "qa:games-operations": "node scripts/games-operations-smoke.mjs",
+    "qa:games-operations": "node scripts/games-operations-smoke.mjs && node scripts/operations-dashboard-metrics-smoke.mjs",
     "qa:campaign-manager": "node scripts/campaign-manager-smoke.mjs",
     "qa:intermission-sponsor": "node scripts/game-intermission-sponsor-smoke.mjs",
     "qa:game-recommendations": "node scripts/game-recommendations-smoke.mjs",

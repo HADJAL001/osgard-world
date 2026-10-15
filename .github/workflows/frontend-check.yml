@@ -19,6 +19,9 @@ on:
       - "scripts/external-project-healthcheck.mjs"
       - "scripts/external-project-healthcheck-smoke.mjs"
       - "scripts/project-intake-smoke.mjs"
+      - "docs/37_OSGARD_OPERATIONS_PULSE_2026-10-15.md"
+      - "scripts/operations-dashboard-metrics-smoke.mjs"
+      - "scripts/games-operations-smoke.mjs"
       - "docs/38_OSGARD_RELEASE_GATE_SEMANTICS_2026-10-15.md"
       - "scripts/osgard-one-pass-release.test.mjs"
       - "scripts/live-bundle-audit.mjs"
@@ -127,6 +130,8 @@ jobs:
         run: npm run qa:time-ui
       - name: Verify OSGARD Games portal and Lighthouse guardrails
         run: npm run qa:games-portal
+      - name: Verify Operations Pulse metrics and baseline import
+        run: npm run qa:games-operations
       - name: Verify OSGARD PLAY 30-check diagnostics
         run: npm run qa:games-diagnostics
       - name: Verify Smart Launch local-only device and accessibility contract

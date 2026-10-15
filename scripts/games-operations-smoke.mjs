@@ -73,6 +73,6 @@ assert.ok(!/\b(?:POST|PUT|PATCH|DELETE)\b/.test(page), 'Route health must not mu
 assert.ok(page.includes('status:response.status') && page.includes('checkedAt:new Date().toISOString()'), 'JSON report must preserve actual HTTP status and check time');
 assert.ok(page.includes('HTTP-ответ совпадает с базовым контрактом') && page.includes('не доказывает успешный запуск игры'), 'UI must clearly distinguish route availability from playable runtime validation');
 assert.ok(page.includes("if (state !== 'fail') state = 'warn'"), 'Build-marker warnings must never downgrade failed route checks');
-assert.ok(page.includes('const startedAt = new Date().toISOString()') && page.includes('startedAt, finishedAt:new Date().toISOString()'), 'Export report must capture distinct start and finish timestamps');
+assert.ok(page.includes('const startedAt = new Date().toISOString()') && page.includes('startedAt,') && page.includes('finishedAt:new Date().toISOString()'), 'Export report must capture distinct start and finish timestamps');
 
 console.log('PASS OSGARD Games operations console: ' + targets.length + ' route contracts, 11 game/runtime entrypoints, same-origin GET-only checks, privacy boundary and JSON export.');
