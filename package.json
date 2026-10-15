@@ -86,7 +86,8 @@
     "qa:release-readiness-policy": "node scripts/release-readiness-policy-smoke.mjs",
     "qa:commerce-intelligence": "node --test scripts/commerce-intelligence-dashboard.test.mjs",
     "qa:revenue-command-center": "node --test scripts/monetization-intelligence.test.mjs scripts/monetization-command-center.test.mjs",
-    "qa:business-hub": "node scripts/business-hub-smoke.mjs"
+    "qa:business-hub": "node scripts/business-hub-smoke.mjs",
+    "qa:liveops-dashboard": "node scripts/liveops-dashboard-smoke.mjs && node scripts/liveops-analytics-core-smoke.mjs"
   },
   "dependencies": {
     "@types/three": "^0.186.0",
