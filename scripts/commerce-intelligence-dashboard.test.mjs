@@ -495,6 +495,8 @@ test('commerce admin loads the engine and exposes explicit aggregate-only export
     'id="intel-review-export-json"',
     'id="intel-review-export-csv"',
     'id="intel-review-export-md"',
+    'id="intel-review-import-file"',
+    'window.OSGARDCommerceIntelligence.importDecisionRegister(parsed,lastIntelligenceReport)',
     'function renderDecisionRegister(report)',
     'engine.buildDecisionRegister(report,stateObject)',
     'engine.normalizeReviewEntry({status:select.value,note:note.value,updatedAt:new Date().toISOString()})',
@@ -513,6 +515,13 @@ test('commerce admin loads the engine and exposes explicit aggregate-only export
     'id="intel-trend-files"',
     'id="intel-trend-series"',
     'id="intel-trend-quality-rows"',
+    'id="intel-trend-signals-heading"',
+    'id="intel-trend-signals-status"',
+    'id="intel-trend-signals"',
+    'id="intel-trend-signals-export-json"',
+    'id="intel-trend-signals-export-csv"',
+    'engine.buildTrendSignals(trend)',
+    'window.OSGARDCommerceIntelligence.toTrendSignalsCsv(lastTrendSignalReport)',
     'function renderTrend()',
     'engine.buildReportTrend(trendSnapshots)',
     'window.OSGARDCommerceIntelligence.toTrendCsv(lastTrendReport)',
@@ -543,6 +552,18 @@ test('commerce admin loads the engine and exposes explicit aggregate-only export
   const reviewHandler=page.slice(reviewStart,reviewEnd);
   assert.ok(!/\bfetch\s*\(|sendBeacon|XMLHttpRequest/.test(reviewHandler),'Operator reviews must never be uploaded to a server');
   assert.ok(!/localStorage|sessionStorage/.test(reviewHandler),'Operator reviews must stay in memory only');
+  const reviewImportStart=page.indexOf("$('#intel-review-import-file').addEventListener('change'");
+  const reviewImportEnd=page.indexOf("$('#intel-compare-file').addEventListener('change'");
+  assert.ok(reviewImportStart>=0&&reviewImportEnd>reviewImportStart,'Decision Ops JSON carry-forward handler must exist');
+  const reviewImportHandler=page.slice(reviewImportStart,reviewImportEnd);
+  assert.ok(!/\\bfetch\\s*\\(|sendBeacon|XMLHttpRequest|localStorage|sessionStorage|document\\.cookie/.test(reviewImportHandler),
+    'Imported review JSON must remain local and must not access browser persistence');
+  const trendSignalsStart=page.indexOf("$('#intel-trend-signals-export-json').addEventListener('click'");
+  const trendSignalsEnd=page.indexOf("$('#load').addEventListener('click',load);");
+  assert.ok(trendSignalsStart>=0&&trendSignalsEnd>trendSignalsStart,'Trend Intelligence exports must be wired');
+  const trendSignalsHandler=page.slice(trendSignalsStart,trendSignalsEnd);
+  assert.ok(!/\\bfetch\\s*\\(|sendBeacon|XMLHttpRequest|localStorage|sessionStorage|document\\.cookie/.test(trendSignalsHandler),
+    'Trend signals must be calculated/exported locally without browser persistence');
 });
 
 test('Decision Ops review notes validate statuses, timestamps, length and secret-like values', () => {
