@@ -87,6 +87,12 @@ assert.equal(catalogueFallback.source, "defaults");
 assert.equal(catalogueFallback.items.length, 12, "Static fallback must preserve the canonical twelve-game catalogue.");
 assert.deepEqual(catalogueFallback.items.map(item => item.sortOrder), [1,2,3,4,5,6,7,8,9,10,11,12]);
 assert.equal(new Set(catalogueFallback.items.map(item => item.id)).size, 12, "Fallback catalogue IDs must be unique.");
+assert.ok(matrix.includes('function matchesCanonicalCatalogue(body)') &&
+  matrix.includes('canonicalCatalogueItems.length') &&
+  !matrix.includes('items.length === 11'),
+  "Production route matrix must compare the live API and fallback with the canonical registry rather than a stale fixed game count.");
+assert.ok(matrix.includes('31 диагностических проверок') && !matrix.includes('30 диагностических проверок'),
+  "Production route matrix must track the current 31-check browser diagnostics contract.");
 assert.ok(nginx.includes('location = /games/catalog-runtime.js') && nginx.includes('gzip_static off;') && nginx.includes('no-cache, must-revalidate'), "The small catalogue runtime must bypass stale precompressed sidecars and revalidate.");
 assert.ok(nginx.includes('no-store, no-cache, must-revalidate, max-age=0') && nginx.includes('if_modified_since off;'), "The Games catalogue runtime must not reuse a stale empty cached response.");
 assert.ok(matrix.includes("expectedBuild.slice(0, 12)") && matrix.includes("cache: 'no-store'"), "Production route checks must probe current-release static assets without reusing cache entries.");
