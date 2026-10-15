@@ -114,6 +114,44 @@
 
 @media(max-width:680px){.intel-plan-list{grid-template-columns:minmax(0,1fr)}}
 
+/* Executive Pulse: decisions first, evidence visible, no synthetic health score. */
+.intel-executive{border:1px solid var(--line);padding:16px;margin:12px 0 18px;background:linear-gradient(125deg,#d3ff690b,#d5bb8208 60%,transparent);border-radius:2px}
+.intel-executive[data-state="critical"],.intel-executive[data-state="blocked"]{border-color:#ff958e70}
+.intel-executive[data-state="attention"]{border-color:#ffd18b70}
+.intel-executive[data-state="limited"]{border-color:#d5bb8270}
+.intel-executive[data-state="clear"]{border-color:#c9ff8a50}
+.intel-executive-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.intel-executive-kicker{font:10px/1.4 ui-monospace,Consolas,monospace;letter-spacing:.14em;color:var(--lime);margin:0 0 6px}
+.intel-executive-head h3{font:400 clamp(21px,2.5vw,29px)/1.15 Georgia,serif;margin:0}
+.intel-executive-summary{font-size:12px;line-height:1.55;color:var(--muted);max-width:760px;margin:8px 0 0}
+.intel-executive-state{display:inline-flex;align-items:center;gap:7px;max-width:100%;border:1px solid var(--line);padding:7px 10px;font:10px/1.4 ui-monospace,Consolas,monospace;color:var(--muted)}
+.intel-executive-state:before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+.intel-executive-state[data-state="critical"],.intel-executive-state[data-state="blocked"]{color:#ff958e;border-color:#ff958e66}
+.intel-executive-state[data-state="attention"]{color:#ffd18b;border-color:#ffd18b66}
+.intel-executive-state[data-state="limited"]{color:#d5bb82;border-color:#d5bb8266}
+.intel-executive-state[data-state="monitoring"]{color:#8adbd0;border-color:#8adbd066}
+.intel-executive-state[data-state="clear"]{color:#c9ff8a;border-color:#c9ff8a66}
+.intel-executive-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:15px 0}
+.intel-executive-metric{min-width:0;padding:10px 11px;border:1px solid var(--line);background:#080b09}
+.intel-executive-metric span{display:block;font-size:10px;color:var(--muted)}
+.intel-executive-metric strong{display:block;font:400 clamp(20px,2vw,27px)/1.2 Georgia,serif;color:var(--gold);overflow-wrap:anywhere;margin-top:4px}
+.intel-executive-metric small{display:block;font-size:10px;color:var(--muted);margin-top:4px}
+.intel-executive-lanes{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.3fr);gap:10px}
+.intel-executive-lane{min-width:0;border-top:1px solid var(--line);padding-top:12px}
+.intel-executive-lane h4{font-size:11px;letter-spacing:.05em;margin:0 0 8px;color:var(--ink)}
+.intel-executive-reasons{margin:0;padding-left:18px;color:var(--muted);font-size:11px;line-height:1.6}
+.intel-executive-reasons li+li{margin-top:5px}
+.intel-executive-actions{display:grid;gap:7px}
+.intel-executive-action{border-left:2px solid var(--gold);padding:8px 10px;background:#ffffff04;min-width:0}
+.intel-executive-action[data-severity="critical"]{border-left-color:#ff958e}
+.intel-executive-action[data-severity="warning"]{border-left-color:#ffd18b}
+.intel-executive-action[data-severity="info"]{border-left-color:#8adbd0}
+.intel-executive-action strong{display:block;font-size:11px;line-height:1.45}
+.intel-executive-action p{color:var(--muted);font-size:10px;line-height:1.5;margin:4px 0}
+.intel-executive-action a{font-size:10px;color:var(--lime);text-underline-offset:3px}
+.intel-executive-footnote{border-top:1px solid var(--line);margin:12px 0 0;padding-top:9px;font-size:10px;line-height:1.5;color:var(--muted)}
+@media(max-width:760px){.intel-executive-lanes{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:560px){.intel-executive-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.intel-executive{padding:12px}}
 .intel-status[data-kind="error"]{color:#ff958e}
 .intel-status[data-kind="success"]{color:#c9ff8a}
 @media(max-width:900px){.intel-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.intel-grid{grid-template-columns:minmax(0,1fr)}}
@@ -167,6 +205,18 @@
 <section class="panel" id="premium-command-dashboard" aria-labelledby="intel-heading">
 <div class="intel-head"><div><h2 id="intel-heading">Premium Command Dashboard</h2><p class="retention">Финансовая картина, воронка событий и проверяемые сигналы. Только серверные агрегаты; без демо-чисел и без персональных данных.</p></div><div class="intel-actions"><button id="intel-export-json" type="button" disabled>Экспорт отчёта JSON ↓</button><button id="intel-export-csv" type="button" disabled>Экспорт агрегатов CSV ↓</button><button id="intel-export-plan" type="button" disabled>Экспорт плана действий MD ↓</button></div></div>
 <p id="intel-status" class="intel-status" role="status" aria-live="polite">Подключитесь к Commerce API, чтобы рассчитать показатели.</p>
+<section id="intel-executive-pulse" class="intel-executive" data-state="unknown" aria-labelledby="intel-executive-heading">
+ <div class="intel-executive-head">
+  <div><p class="intel-executive-kicker">EXECUTIVE CONTROL / EVIDENCE FIRST</p><h3 id="intel-executive-heading">Главное за один взгляд</h3><p id="intel-executive-summary" class="intel-executive-summary" role="status" aria-live="polite">Состояние появится после загрузки серверных агрегатов.</p></div>
+  <span id="intel-executive-state" class="intel-executive-state" data-state="unknown">Ожидаем данные</span>
+ </div>
+ <div id="intel-executive-metrics" class="intel-executive-metrics"><article class="intel-executive-metric"><span>Критические сигналы</span><strong>—</strong><small>Нет отчёта</small></article></div>
+ <div class="intel-executive-lanes">
+  <section class="intel-executive-lane" aria-labelledby="intel-executive-reasons-heading"><h4 id="intel-executive-reasons-heading">Почему выбран этот статус</h4><ul id="intel-executive-reasons" class="intel-executive-reasons"><li>Сначала загрузите отчёт.</li></ul></section>
+  <section class="intel-executive-lane" aria-labelledby="intel-executive-actions-heading"><h4 id="intel-executive-actions-heading">Следующие 3 действия</h4><div id="intel-executive-actions" class="intel-executive-actions"><p class="intel-empty">План появится после проверки данных.</p></div></section>
+ </div>
+ <p class="intel-executive-footnote">Статус — детерминированная приоритизация правил и полноты источников, а не искусственный процент здоровья. Ничего не меняется автоматически; денежные суммы разных валют не объединяются.</p>
+</section>
 <div id="intel-kpis" class="intel-kpis"><article class="intel-kpi"><span>Оплаченные заказы</span><strong>—</strong><small>Нет данных</small></article></div>
 <div class="intel-grid">
 <section class="intel-block" aria-labelledby="intel-currency-heading"><h3 id="intel-currency-heading">Деньги — строго по валютам</h3><p class="retention">Заказы — накопительные по всему сроку хранения. Отчёты интеграторов — последние 30 дней. Источники показаны рядом, но не суммируются друг с другом.</p><div class="table-wrap"><table class="intel-table"><thead><tr><th>Валюта</th><th>Paid orders</th><th>Заказы: gross · весь срок</th><th>Сервисы: gross · 30 дней</th><th>Возвраты · 30 дней</th><th>Net отчёта · 30 дней</th><th>Paid / refunds events</th></tr></thead><tbody id="intel-currency-rows"><tr><td colspan="7">Загрузите агрегаты.</td></tr></tbody></table></div></section>
@@ -488,7 +538,53 @@ function renderDataQuality(report) {
     const li=document.createElement('li');li.textContent=note;caveats.append(li);
   }
 }
+function renderExecutivePulse(report) {
+  const engine=window.OSGARDCommerceIntelligence;
+  const pulse=engine.buildExecutivePulse(report);
+  const $id=id=>document.getElementById(id);
+  const root=$id('intel-executive-pulse');
+  const state=$id('intel-executive-state');
+  root.dataset.state=pulse.state;
+  state.dataset.state=pulse.state;
+  state.textContent=pulse.stateLabel;
+  $id('intel-executive-summary').textContent=
+    'Платежи не изменяются автоматически · отчёт '+new Date(pulse.generatedAt).toLocaleString('ru-RU')+
+    ' · режим '+(pulse.automationEnabled?'автоматический':'только анализ и проверка');
+  const fmt=value=>value===null||value===undefined?'—':new Intl.NumberFormat('ru-RU').format(value);
+  const quality=pulse.summary.qualityCoverage;
+  const metricRows=[
+    ['Критические сигналы',fmt(pulse.summary.critical),'Приоритет проверки'],
+    ['Предупреждения',fmt(pulse.summary.warnings),'Требуют разбора'],
+    ['Источники измерены',quality?fmt(quality.measured)+' / '+fmt(quality.total):'—','Не процент достоверности'],
+    ['Оплаченные заказы',fmt(pulse.summary.paidOrders),'Записи Commerce API'],
+  ];
+  const metricRoot=$id('intel-executive-metrics');metricRoot.replaceChildren();
+  for(const [label,value,note] of metricRows){
+    const card=document.createElement('article');card.className='intel-executive-metric';
+    const l=document.createElement('span'),v=document.createElement('strong'),n=document.createElement('small');
+    l.textContent=label;v.textContent=value;n.textContent=note;card.append(l,v,n);metricRoot.append(card);
+  }
+  const reasons=$id('intel-executive-reasons');reasons.replaceChildren();
+  for(const reason of pulse.reasons){
+    const li=document.createElement('li');li.textContent=reason;reasons.append(li);
+  }
+  const actions=$id('intel-executive-actions');actions.replaceChildren();
+  if(!pulse.nextActions.length){
+    const empty=document.createElement('p');empty.className='intel-empty';
+    empty.textContent='Плановых проверок нет по текущим правилам. Это не гарантия отсутствия проблем.';
+    actions.append(empty);
+  }
+  for(const action of pulse.nextActions.slice(0,3)){
+    const card=document.createElement('article');card.className='intel-executive-action';card.dataset.severity=action.severity;
+    const title=document.createElement('strong');title.textContent=action.title;
+    const detail=document.createElement('p');detail.textContent=action.owner+' · трудоёмкость: '+action.effort+(action.firstStep?' · '+action.firstStep:'');
+    const link=document.createElement('a');link.href=action.severity==='critical'||action.severity==='warning'?'#intel-alert-heading':'#intel-plan-heading';
+    link.textContent='Открыть полный разбор →';
+    card.append(title,detail,link);actions.append(card);
+  }
+}
 function renderIntelligence(report) {
+  renderExecutivePulse(report);
   renderDataQuality(report);
   const $id = id => document.getElementById(id);
   const kpis = $id('intel-kpis'); kpis.replaceChildren();
