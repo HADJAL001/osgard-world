@@ -318,7 +318,7 @@ test('commerce admin loads the engine and exposes explicit aggregate-only export
   const compareEnd=page.indexOf("$('#load').addEventListener('click',load);");
   assert.ok(compareStart>=0&&compareEnd>compareStart,'Local comparison must have a bounded file-import handler');
   const compareHandler=page.slice(compareStart,compareEnd);
-  assert.ok(!/\\bfetch\\s*\\(|sendBeacon|XMLHttpRequest/.test(compareHandler),'The previous JSON snapshot must never be uploaded to a server');
+  assert.ok(!/\bfetch\s*\(|sendBeacon|XMLHttpRequest/.test(compareHandler),'The previous JSON snapshot must never be uploaded to a server');
 });
 
 test('intelligence engine makes no network calls and does not read browser or user records', () => {
