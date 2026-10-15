@@ -311,16 +311,28 @@ function renderTrend() {
   const exportJson = $id('intel-trend-export-json');
   const exportCsv = $id('intel-trend-export-csv');
   const clear = $id('intel-trend-clear');
+  const signalRoot = $id('intel-trend-signals');
+  const signalStatus = $id('intel-trend-signals-status');
+  const signalJson = $id('intel-trend-signals-export-json');
+  const signalCsv = $id('intel-trend-signals-export-csv');
   exportJson.disabled = !lastTrendReport;
   exportCsv.disabled = !lastTrendReport;
+  signalJson.disabled = !lastTrendSignalReport;
+  signalCsv.disabled = !lastTrendSignalReport;
   clear.disabled = trendSnapshots.length === 0;
   root.replaceChildren();
   qualityHead.replaceChildren();
   qualityRows.replaceChildren();
+  signalRoot.replaceChildren();
+  lastTrendSignalReport = null;
   if (!lastTrendReport) {
     status.dataset.kind = '';
     status.textContent = 'Загрузите от 2 до 10 сохранённых JSON-отчётов. Файлы останутся только в памяти вкладки.';
     summary.textContent = '';
+    signalStatus.dataset.kind = '';
+    signalStatus.textContent = 'Загрузите историю из минимум трёх снимков.';
+    signalJson.disabled = true;signalCsv.disabled = true;
+    const signalEmpty=document.createElement('p');signalEmpty.className='intel-empty';signalEmpty.textContent='Нужны минимум 3 снимка; пропущенные значения не считаются нулём.';signalRoot.append(signalEmpty);
     const empty=document.createElement('p');empty.className='intel-empty';empty.textContent='Многоточечная история ещё не рассчитана.';root.append(empty);
     const h=document.createElement('tr');
     for(const label of ['Источник','Нет истории']){const th=document.createElement('th');th.textContent=label;h.append(th);}
@@ -331,6 +343,39 @@ function renderTrend() {
   const trend=lastTrendReport;
   const engine=window.OSGARDCommerceIntelligence;
   const fmtDate=value=>new Date(value).toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'2-digit'});
+  try {
+    lastTrendSignalReport=engine.buildTrendSignals(trend);
+    signalRoot.replaceChildren();
+    const pulse=lastTrendSignalReport.summary;
+    const stateLabel=pulse.state==='insufficient-history'?'Недостаточно истории':pulse.state==='attention-critical'?'Есть критические сигналы':pulse.state==='attention'?'Нужна ручная проверка':'Пороговые правила не сработали';
+    signalStatus.dataset.kind=pulse.critical?'error':pulse.warnings?'warning':'success';
+    signalStatus.textContent=stateLabel+' · сигналов '+pulse.signalCount+' (критических '+pulse.critical+', предупреждений '+pulse.warnings+') · пропущено сравнений из-за отсутствия/формата данных: '+pulse.skippedComparisons+'. Автоматических действий нет.';
+    signalJson.disabled=false;signalCsv.disabled=false;
+    if(!pulse.enoughHistory){
+      const empty=document.createElement('p');empty.className='intel-empty';empty.textContent='Для сигналов требуется минимум три снимка. Текущая история содержит '+pulse.snapshotCount+'.';
+      signalRoot.append(empty);
+    } else if(!lastTrendSignalReport.signals.length){
+      const empty=document.createElement('p');empty.className='intel-empty';empty.textContent='Фиксированные правила не обнаружили изменений выше порогов. Это не гарантирует отсутствие проблем.';
+      signalRoot.append(empty);
+    }
+    for(const signal of lastTrendSignalReport.signals){
+      const card=document.createElement('article');card.className='intel-review-item';card.dataset.severity=signal.severity;
+      const title=document.createElement('h4');title.textContent=(signal.severity==='critical'?'КРИТИЧЕСКИЙ СИГНАЛ · ':signal.severity==='warning'?'ПРОВЕРИТЬ · ':'ИНФО · ')+signal.title;
+      const meta=document.createElement('div');meta.className='intel-review-meta';
+      for(const value of [signal.severity.toUpperCase(),'порог: '+signal.threshold,'источник: '+signal.source]){
+        const chip=document.createElement('span');chip.textContent=value;meta.append(chip);
+      }
+      const observed=document.createElement('p');observed.className='intel-review-source';
+      observed.textContent='Предыдущий снимок: '+String(signal.previous??'—')+' · текущий: '+String(signal.current??'—')+' · изменение: '+String(signal.delta??'не вычислено');
+      const rationale=document.createElement('p');rationale.className='intel-review-source';rationale.textContent=signal.rationale;
+      const list=document.createElement('ol');for(const stepText of signal.steps||[]){const li=document.createElement('li');li.textContent=stepText;list.append(li);}
+      card.append(title,meta,observed,rationale,list);signalRoot.append(card);
+    }
+  } catch(error) {
+    lastTrendSignalReport=null;signalJson.disabled=true;signalCsv.disabled=true;
+    signalStatus.dataset.kind='error';signalStatus.textContent='Trend Intelligence не смог рассчитать сигналы: '+String(error?.message||'ошибка').slice(0,180);
+    const empty=document.createElement('p');empty.className='intel-empty';empty.textContent='Исправьте структуру отчёта и пересчитайте историю.';signalRoot.replaceChildren(empty);
+  }
   const fmtValue=(series,value)=>{
     if(value===null||value===undefined)return '—';
     if(series.unit==='minor')return engine.formatMinor(String(value),series.currency);
@@ -601,7 +646,7 @@ function renderDecisionRegister(report) {
   const engine=window.OSGARDCommerceIntelligence;
   const root=$('#intel-review-items');
   const status=$('#intel-review-status');
-  const exports=['#intel-review-export-json','#intel-review-export-csv','#intel-review-export-md','#intel-review-clear'];
+  const exports=['#intel-review-export-json','#intel-review-export-csv','#intel-review-export-md','#intel-review-clear','#intel-review-import-file'];
   if(!engine||!report){
     lastReviewRegister=null;
     root.replaceChildren();
@@ -680,7 +725,8 @@ function clearIntelligence(message='Ждём данные после подкл�
   for (const id of ['intel-alerts','intel-funnel','intel-plan-actions','intel-quality-sources','intel-review-items']) $id(id).replaceChildren();
   $id('intel-review-status').textContent='Реестр появится после загрузки актуальных агрегатов.';
   $id('intel-review-filter').value='all';$id('intel-review-query').value='';
-  for(const id of ['intel-review-export-json','intel-review-export-csv','intel-review-export-md','intel-review-clear'])$id(id).disabled=true;
+  for(const id of ['intel-review-export-json','intel-review-export-csv','intel-review-export-md','intel-review-clear','intel-review-import-file'])$id(id).disabled=true;
+  $id('intel-review-import-file').value='';
   $id('intel-quality-summary').textContent='Качество источников появится после загрузки нового отчёта.';
   $id('intel-quality-caveats').replaceChildren();
   $id('intel-plan-summary').textContent = 'План будет рассчитан после получения нового отчёта.';
@@ -1198,6 +1244,26 @@ $('#intel-review-clear').addEventListener('click',()=>{
   if(lastIntelligenceReport)renderDecisionRegister(lastIntelligenceReport);
   $('#intel-review-status').textContent='Все отметки сброшены только в текущей вкладке.';
 });
+$('#intel-review-import-file').addEventListener('change',async event=>{
+  const input=event.target;
+  const file=input.files?.[0]||null;
+  if(!file)return;
+  if(!lastIntelligenceReport||!window.OSGARDCommerceIntelligence){input.value='';$('#intel-review-status').textContent='Сначала загрузите текущий Premium-отчёт.';return;}
+  try{
+    if(file.size>1024*1024)throw new Error('Файл реестра больше разрешённого 1 МБ.');
+    const parsed=JSON.parse(await file.text());
+    const imported=window.OSGARDCommerceIntelligence.importDecisionRegister(parsed,lastIntelligenceReport);
+    operatorReviewState=new Map(Object.entries(imported.reviewState));
+    renderDecisionRegister(lastIntelligenceReport);
+    $('#intel-review-status').dataset.kind=imported.ignoredCount?'warning':'success';
+    $('#intel-review-status').textContent='Перенесено отметок: '+imported.matchedCount+'; старых действий без совпадения пропущено: '+imported.ignoredCount+'. Источник: '+new Date(imported.sourceGeneratedAt).toLocaleString('ru-RU')+'. Файл обработан локально; API не изменён.';
+    input.value='';
+  }catch(error){
+    input.value='';
+    $('#intel-review-status').dataset.kind='error';
+    $('#intel-review-status').textContent='Реестр не импортирован: '+String(error?.message||'неизвестная ошибка').slice(0,180)+' Отметки не изменены.';
+  }
+});
 $('#intel-compare-file').addEventListener('change', async event => {
   const file = event.target.files?.[0] || null;
   if (!file) { comparisonBaseline=null;renderComparison();return; }
@@ -1265,9 +1331,17 @@ $('#intel-trend-export-csv').addEventListener('click',()=>{
   if(!lastTrendReport||!window.OSGARDCommerceIntelligence)return;
   downloadAggregateReport('osgard-premium-trend-'+new Date().toISOString().slice(0,10)+'.csv',window.OSGARDCommerceIntelligence.toTrendCsv(lastTrendReport),'text/csv;charset=utf-8');
 });
+$('#intel-trend-signals-export-json').addEventListener('click',()=>{
+  if(!lastTrendSignalReport)return;
+  downloadAggregateReport('osgard-premium-trend-signals-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify(lastTrendSignalReport,null,2)+'\n','application/json;charset=utf-8');
+});
+$('#intel-trend-signals-export-csv').addEventListener('click',()=>{
+  if(!lastTrendSignalReport||!window.OSGARDCommerceIntelligence)return;
+  downloadAggregateReport('osgard-premium-trend-signals-'+new Date().toISOString().slice(0,10)+'.csv',window.OSGARDCommerceIntelligence.toTrendSignalsCsv(lastTrendSignalReport),'text/csv;charset=utf-8');
+});
 $('#load').addEventListener('click',load);
 $('#token').addEventListener('keydown',event=>{if(event.key==='Enter')load();});
 window.addEventListener('pagehide',()=>{token='';$('#token').value='';});
-window.addEventListener('pagehide',()=>{comparisonBaseline=null;lastComparisonReport=null;lastIntelligenceReport=null;trendSnapshots=[];lastTrendReport=null;operatorReviewState.clear();lastReviewRegister=null;$('#intel-compare-file').value='';$('#intel-trend-files').value='';$('#intel-review-query').value='';});
+window.addEventListener('pagehide',()=>{comparisonBaseline=null;lastComparisonReport=null;lastIntelligenceReport=null;trendSnapshots=[];lastTrendReport=null;lastTrendSignalReport=null;operatorReviewState.clear();lastReviewRegister=null;$('#intel-compare-file').value='';$('#intel-trend-files').value='';$('#intel-review-import-file').value='';$('#intel-review-query').value='';});
 })();
 </script><script src="/games/experiment-core.js?v=__OSGARD_BUILD_VERSION__" defer></script></body></html>
