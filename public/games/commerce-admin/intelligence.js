@@ -884,11 +884,11 @@
     const rawNote = input.note === undefined || input.note === null ? '' : input.note;
     if (typeof rawNote !== 'string') return { ok:false, error:'Заметка должна быть текстом.' };
     if (rawNote.length > 240) return { ok:false, error:'Заметка должна содержать не более 240 символов.' };
-    const note = rawNote.replace(/[\\u0000-\\u001f\\u007f]/g, ' ').replace(/\\s+/g, ' ').trim();
+    const note = rawNote.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim();
     const secretPatterns = [
-      /\\bBearer\\s+[^\\s]+/i,
-      /\\b(?:sk_live|sk_test|rk_live|pk_live)_[A-Za-z0-9_-]{8,}\\b/i,
-      /\\b(?:password|passwd|api[_-]?key|access[_-]?token|secret)\\s*[:=]\\s*[^\\s,;]+/i,
+      /\bBearer\s+[^\s]+/i,
+      /\b(?:sk_live|sk_test|rk_live|pk_live)_[A-Za-z0-9_-]{8,}\b/i,
+      /\b(?:password|passwd|api[_-]?key|access[_-]?token|secret)\s*[:=]\s*[^\s,;]+/i,
       /-----BEGIN [A-Z ]+PRIVATE KEY-----/i,
     ];
     if (secretPatterns.some(pattern => pattern.test(note))) {
@@ -914,14 +914,14 @@
         id:String(action.id || '').slice(0, 180),
         sourceAlertId:String(action.sourceAlertId || '').slice(0, 180),
         severity:['critical','warning','info'].includes(action.severity) ? action.severity : 'info',
-        title:String(action.title || 'Проверка без названия').replace(/[\\u0000-\\u001f\\u007f]/g,' ').slice(0, 240),
-        owner:String(action.owner || 'Operations').replace(/[\\u0000-\\u001f\\u007f]/g,' ').slice(0, 100),
+        title:String(action.title || 'Проверка без названия').replace(/[\u0000-\u001f\u007f]/g,' ').slice(0, 240),
+        owner:String(action.owner || 'Operations').replace(/[\u0000-\u001f\u007f]/g,' ').slice(0, 100),
         effort:['small','medium','large'].includes(action.effort) ? action.effort : 'medium',
-        rationale:String(action.rationale || '').replace(/[\\u0000-\\u001f\\u007f]/g,' ').slice(0, 500),
+        rationale:String(action.rationale || '').replace(/[\u0000-\u001f\u007f]/g,' ').slice(0, 500),
         status:entry.status,
         note:entry.note,
         updatedAt:entry.updatedAt,
-        steps:(Array.isArray(action.steps) ? action.steps : []).slice(0, 12).map(step=>String(step).replace(/[\\u0000-\\u001f\\u007f]/g,' ').slice(0, 300)),
+        steps:(Array.isArray(action.steps) ? action.steps : []).slice(0, 12).map(step=>String(step).replace(/[\u0000-\u001f\u007f]/g,' ').slice(0, 300)),
         automated:false,
       };
     });
@@ -954,13 +954,13 @@
     rows.push(['interpretation','','','','','','','','',register?.interpretation || '','','']);
     const escape=value=>{
       let text=String(value ?? '');
-      if(/^\\s*[=+\\-@]/.test(text)) text="'"+text;
+      if(/^\s*[=+\-@]/.test(text)) text="'"+text;
       return '"'+text.replace(/"/g,'""')+'"';
     };
-    return '\\uFEFF'+rows.map(row=>row.map(escape).join(',')).join('\\r\\n')+'\\r\\n';
+    return '\uFEFF'+rows.map(row=>row.map(escape).join(',')).join('\r\n')+'\r\n';
   }
   function toReviewMarkdown(register) {
-    const clean=value=>String(value??'').replace(/[\\u0000-\\u001f\\u007f]/g,' ').replace(/[\\r\\n]+/g,' ').replace(/\\|/g,'\\\\|').slice(0,500);
+    const clean=value=>String(value??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/[\r\n]+/g,' ').replace(/\|/g,'\\|').slice(0,500);
     const lines=[
       '# OSGARD Premium · реестр проверок',
       '',
@@ -976,7 +976,7 @@
       lines.push('');
     }
     lines.push('> '+clean(register?.interpretation||''));
-    return lines.join('\\n')+'\\n';
+    return lines.join('\n')+'\n';
   }
 
   function toCsv(report) {
