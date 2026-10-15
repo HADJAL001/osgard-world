@@ -9,14 +9,15 @@
     if (typeof value === 'string' && /^\d{1,15}$/.test(value)) return Number(value);
     return 0;
   };
-  const moneyMinor = value => {
-    if (typeof value === 'bigint' && value >= 0n) return value;
-    if (typeof value === 'number' && Number.isSafeInteger(value) && value >= 0) return BigInt(value);
-    if (typeof value === 'string' && /^\d{1,30}$/.test(value)) {
+  const parseMinor = (value, allowNegative = false) => {
+    if (typeof value === 'bigint') return allowNegative || value >= 0n ? value : null;
+    if (typeof value === 'number' && Number.isSafeInteger(value) && (allowNegative || value >= 0)) return BigInt(value);
+    if (typeof value === 'string' && (allowNegative ? /^-?\d{1,30}$/ : /^\d{1,30}$/).test(value)) {
       try { return BigInt(value); } catch {}
     }
-    return 0n;
+    return null;
   };
+  const moneyMinor = value => parseMinor(value, false) ?? 0n;
   const currencyCode = value => {
     const code = String(value || '').toUpperCase();
     return /^[A-Z]{3}$/.test(code) ? code : '';
@@ -55,9 +56,13 @@
         warnings.push({ id:'currency:commerce-invalid', severity:'warning', title:'Строка суммы исключена', detail:'API вернул сумму с некорректным кодом валюты.' });
         continue;
       }
-      const entry = commerceCurrencies.get(code) || { currency:code, orders:0, grossMinor:0n };
+      const entry = commerceCurrencies.get(code) || { currency:code, orders:0, grossMinor:0n, grossValid:true };
       entry.orders += nonNegative(row.count);
-      entry.grossMinor += moneyMinor(row.total_minor ?? row.totalMinor);
+      const amount = parseMinor(row.total_minor ?? row.totalMinor);
+      if (amount === null) {
+        entry.grossValid = false;
+        warnings.push({ id:'amount:commerce-invalid', severity:'warning', title:'Сумма заказа исключена из расчёта', detail:'В накопительной сводке заказов обнаружена некорректная сумма; количество заказов сохранено, денежный итог помечен как недоступный.' });
+      } else entry.grossMinor += amount;
       commerceCurrencies.set(code, entry);
     }
 
@@ -72,19 +77,28 @@
       }
       const entry = serviceCurrencies.get(code) || {
         currency:code, conversions:0, paidEvents:0, refunds:0,
-        grossMinor:0n, refundMinor:0n, netMinor:0n, services:new Set()
+        grossMinor:0n, refundMinor:0n, netMinor:0n, grossValid:true, refundValid:true, netValid:true, services:new Set()
       };
       entry.conversions += nonNegative(row.conversions);
       entry.paidEvents += nonNegative(row.paidEvents);
       entry.refunds += nonNegative(row.refunds);
-      entry.grossMinor += moneyMinor(row.grossPaidMinor);
-      entry.refundMinor += moneyMinor(row.refundMinor);
+      const grossAmount = parseMinor(row.grossPaidMinor);
+      const refundAmount = parseMinor(row.refundMinor);
+      if (grossAmount === null) {
+        entry.grossValid = false;
+        warnings.push({ id:'amount:service-gross-invalid', severity:'warning', title:'Gross-сумма интегратора недоступна', detail:'Сервисный отчёт содержит некорректную gross-сумму; она не заменяется нулём.' });
+      } else entry.grossMinor += grossAmount;
+      if (refundAmount === null) {
+        entry.refundValid = false;
+        warnings.push({ id:'amount:service-refund-invalid', severity:'warning', title:'Сумма возвратов интегратора недоступна', detail:'Сервисный отчёт содержит некорректную сумму возвратов; она не заменяется нулём.' });
+      } else entry.refundMinor += refundAmount;
       // Use the API's explicit net metric; never cross-sum different currencies.
-      const netValue = row.netPaidMinor;
-      if (typeof netValue === 'string' && /^-?\d{1,30}$/.test(netValue)) {
-        try { entry.netMinor += BigInt(netValue); } catch {}
-      } else {
-        entry.netMinor += moneyMinor(row.grossPaidMinor) - moneyMinor(row.refundMinor);
+      const netValue = parseMinor(row.netPaidMinor, true);
+      if (netValue !== null) entry.netMinor += netValue;
+      else if (grossAmount !== null && refundAmount !== null) entry.netMinor += grossAmount - refundAmount;
+      else {
+        entry.netValid = false;
+        warnings.push({ id:'amount:service-net-invalid', severity:'warning', title:'Net-сумма интегратора недоступна', detail:'Net нельзя достоверно посчитать из неполных денежных полей.' });
       }
       if (typeof row.serviceId === 'string' && /^[a-z0-9-]{1,60}$/i.test(row.serviceId)) entry.services.add(row.serviceId);
       serviceCurrencies.set(code, entry);
@@ -97,13 +111,13 @@
       return {
         currency:code,
         paidOrders:commerce?.orders ?? 0,
-        commerceGrossMinor:(commerce?.grossMinor ?? 0n).toString(),
+        commerceGrossMinor:commerce ? (commerce.grossValid ? commerce.grossMinor.toString() : null) : '0',
         reportingConversions:service?.conversions ?? 0,
         reportingPaidEvents:service?.paidEvents ?? 0,
         reportingRefundEvents:service?.refunds ?? 0,
-        reportingGrossMinor:(service?.grossMinor ?? 0n).toString(),
-        reportingRefundMinor:(service?.refundMinor ?? 0n).toString(),
-        reportingNetMinor:(service?.netMinor ?? 0n).toString(),
+        reportingGrossMinor:service ? (service.grossValid ? service.grossMinor.toString() : null) : '0',
+        reportingRefundMinor:service ? (service.refundValid ? service.refundMinor.toString() : null) : '0',
+        reportingNetMinor:service ? (service.netValid ? service.netMinor.toString() : null) : '0',
         serviceCount:service?.services.size ?? 0,
         refundEventRate:service?.paidEvents > 0 ? Math.round(service.refunds / service.paidEvents * 10000) / 100 : null,
         reportedNetNegative:!!service && service.netMinor < 0n,
@@ -223,7 +237,8 @@
   function formatMinor(value, currency) {
     const code = currencyCode(currency);
     if (!code) return '—';
-    const amount = typeof value === 'string' && /^-?\d{1,30}$/.test(value) ? BigInt(value) : moneyMinor(value);
+    const amount = parseMinor(value, true);
+    if (amount === null) return '—';
     const exp = exponent(code);
     const negative = amount < 0n;
     const absolute = negative ? -amount : amount;
