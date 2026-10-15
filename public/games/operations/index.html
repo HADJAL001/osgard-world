@@ -115,25 +115,16 @@
   const sortSelect = $('#sort-results');
   const progressNode = $('#run-progress');
   let lastReport = null;
+  let lastFullReport = null;
   let running = false;
   let showOnlyIssues = false;
   let activeRunController = null;
   let observedBuild = 'не определена';
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const stateLabel = (state) => state === 'pass' ? 'ПРОЙДЕНО' : state === 'warn' ? 'ВНИМАНИЕ' : state === 'cancelled' ? 'ОТМЕНЕНО' : 'ОШИБКА';
-  const severity = (state) => state === 'fail' ? 3 : state === 'warn' ? 2 : state === 'pass' ? 1 : 0;
-  const median = (values) => {
-    if (!values.length) return null;
-    const sorted = values.slice().sort((a,b)=>a-b);
-    const middle = Math.floor(sorted.length / 2);
-    return sorted.length % 2 ? sorted[middle] : Math.round((sorted[middle - 1] + sorted[middle]) / 2);
-  };
-  const percentile = (values, ratio) => {
-    if (!values.length) return null;
-    const sorted = values.slice().sort((a,b)=>a-b);
-    return sorted[Math.max(0, Math.ceil(ratio * sorted.length) - 1)];
-  };
-  const countByState = (items, state) => items.filter((item) => item.state === state).length;
+  const metrics = window.OSGARDOperationsMetrics;
+  if (!metrics) throw new Error('OSGARDOperationsMetrics did not load');
+  const severity = metrics.severity;
   const targetMap = new Map(TARGETS.map((target) => [target.id, target]));
   for (const group of Array.from(new Set(TARGETS.map((target) => target.group))).sort((a,b)=>a.localeCompare(b,'ru'))) {
     const option = document.createElement('option');
@@ -250,11 +241,11 @@
       '<td><span class="result ' + item.state + '"><i class="dot"></i>' + stateLabel(item.state) + '</span><div class="route-path">HTTP ' + (item.status === null ? '—' : item.status) + '</div></td>' +
       '<td class="latency">' + item.elapsedMs + ' ms</td><td class="detail">' + escapeHtml(item.detail) + '</td></tr>').join('');
     const all = lastReport?.results || [];
+    const summary = metrics.summarize(all);
     const checked = all.filter((item) => item.state !== 'cancelled');
-    const latencies = checked.map((item) => item.elapsedMs).filter(Number.isFinite);
-    const count = (state) => countByState(all, state);
-    const mid = median(latencies);
-    const p95 = percentile(latencies, .95);
+    const count = (state) => summary.counts[state] || 0;
+    const mid = summary.medianMs;
+    const p95 = summary.p95Ms;
     $('#metric-total').textContent = String(all.length);
     $('#metric-checked').textContent = checked.length + ' проверено · ' + count('cancelled') + ' отменено';
     $('#metric-pass').textContent = String(count('pass'));
@@ -262,7 +253,7 @@
     $('#metric-fail').textContent = String(count('fail'));
     $('#metric-median').textContent = mid === null ? '—' : String(mid);
     $('#metric-p95').textContent = p95 === null ? '—' : String(p95);
-    $('#metric-slow').textContent = String(checked.filter((item) => item.elapsedMs > 2500).length);
+    $('#metric-slow').textContent = String(summary.slowOver2500Ms);
     $('#build-id').textContent = 'Версия опубликованной сборки: ' + (lastReport?.build || observedBuild);
     exportButton.disabled = !lastReport;
     copyButton.disabled = !lastReport;
@@ -283,38 +274,11 @@
   }
   function compareReports(previous, currentResults) {
     if (!previous?.results?.length) return null;
-    const oldMap = new Map(previous.results.map((item) => [item.id, item]));
-    const common = currentResults.filter((item) => oldMap.has(item.id) && item.state !== 'cancelled' && oldMap.get(item.id).state !== 'cancelled');
-    if (!common.length) return null;
-    let regressions = 0;
-    let recoveries = 0;
-    let latencyDelta = 0;
-    let latencySamples = 0;
-    const changes = [];
-    for (const item of common) {
-      const old = oldMap.get(item.id);
-      if (severity(item.state) < severity(old.state)) regressions++;
-      if (severity(item.state) > severity(old.state)) recoveries++;
-      if (Number.isFinite(item.elapsedMs) && Number.isFinite(old.elapsedMs)) {
-        latencyDelta += item.elapsedMs - old.elapsedMs;
-        latencySamples++;
-      }
-      if (item.state !== old.state || item.elapsedMs - old.elapsedMs >= 500) {
-        changes.push({ id:item.id, from:old.state, to:item.state, latencyDeltaMs:item.elapsedMs-old.elapsedMs });
-      }
-    }
-    return {
-      baselineFinishedAt: previous.finishedAt,
-      comparedRoutes: common.length,
-      regressions,
-      recoveries,
-      averageLatencyDeltaMs: latencySamples ? Math.round(latencyDelta / latencySamples) : null,
-      changes
-    };
+    return metrics.compare(previous, currentResults);
   }
   async function runChecks(selectedTargets = TARGETS, scope = 'full') {
     if (running) return;
-    const baseline = lastReport;
+    const baseline = lastFullReport || lastReport;
     const startedAt = new Date().toISOString();
     const startedClock = performance.now();
     activeRunController = new AbortController();
@@ -361,16 +325,17 @@
         durationMs:Math.round(performance.now()-startedClock),
         cancelled:wasCancelled,
         build:observedBuild,
-        counts:{ passed:countByState(ordered,'pass'), warnings:countByState(ordered,'warn'), failed:countByState(ordered,'fail'), cancelled:countByState(ordered,'cancelled') },
-        latencySummary:{ sampleCount:allLatency.length, medianMs:median(allLatency), p95Ms:percentile(allLatency,.95), maxMs:allLatency.length?Math.max(...allLatency):null, slowOver2500Ms:allLatency.filter((ms)=>ms>2500).length },
+        counts:metrics.summarize(ordered).counts,
+        latencySummary:metrics.summarize(ordered),
         comparison,
         privacy:{ cookiesSent:false, credentials:'omit', analyticsEventsCreated:false, externalHostsContacted:false, storageUsed:false, mutationRequestsCreated:false },
         results:ordered
       };
-      progressNode.value = selectedTargets.length;
+      progressNode.value = ordered.filter((item)=>item.state!=='cancelled').length;
       running = false;
       activeRunController = null;
       resultsNode.removeAttribute('aria-busy');
+      if (scope === 'full' && !wasCancelled) lastFullReport = lastReport;
       render();
     }
   }
