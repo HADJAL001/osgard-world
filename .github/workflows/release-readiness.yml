@@ -46,6 +46,8 @@ jobs:
         run: npm run qa:null-shift
       - name: Verify OSGARD Games portal
         run: npm run qa:games-portal
+      - name: Verify premium Operations Pulse dashboard and metrics
+        run: npm run qa:games-operations
       - name: Verify premium Entertainment discovery, sharing and SEO
         run: npm run qa:entertainment
       - name: Verify OSGARD SELECT luxury spotlight and share-reward guardrails
