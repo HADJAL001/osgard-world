@@ -154,6 +154,8 @@
 const $ = s => document.querySelector(s);
 let token = '';
 let lastIntelligenceReport = null;
+let comparisonBaseline = null;
+let lastComparisonReport = null;
 async function base() {
   const response = await fetch('/games/commerce-config.json', { cache: 'no-store' }).catch(() => null);
   const config = response?.ok ? await response.json().catch(() => ({})) : {};
@@ -246,6 +248,7 @@ function renderIntelligence(report) {
   }
   if(decisionPlan.items.length>12){const rest=document.createElement('p');rest.className='intel-empty';rest.textContent='В интерфейсе показаны первые 12 пунктов. Полный план доступен в Markdown/JSON-экспорте.';planRoot.append(rest);}
   $id('intel-export-plan').disabled=false;
+  renderComparison();
   const funnelRoot=$id('intel-funnel');funnelRoot.replaceChildren();
   const funnelRows=[
     ['Просмотры каталога',report.funnel.catalogViews,'От каталога к старту: '+pct(report.funnel.catalogToStartEventRatio)],
@@ -259,12 +262,95 @@ function renderIntelligence(report) {
   const promoRoot=$id('intel-promo-rows');promoRoot.replaceChildren();
   if(!report.promo.length){const row=document.createElement('tr'),cell=document.createElement('td');cell.colSpan=6;cell.textContent='Нет подходящих данных по OSGARD SELECT за окно отчёта.';row.append(cell);promoRoot.append(row);}
   for(const item of report.promo){const row=document.createElement('tr');const vals=[item.serviceId,number(item.impressions),number(item.clicks),pct(item.clickRate),item.sampleState==='descriptive'?'Описательно':'Малая выборка',number(item.gameCount)];for(const val of vals){const cell=document.createElement('td');cell.textContent=val;row.append(cell);}promoRoot.append(row);}
+function renderComparison() {
+  const $id = id => document.getElementById(id);
+  const status = $id('intel-comparison-status');
+  const summary = $id('intel-comparison-summary');
+  const currencyRoot = $id('intel-comparison-currency-rows');
+  const changesRoot = $id('intel-comparison-changes');
+  const jsonButton = $id('intel-comparison-export-json');
+  const csvButton = $id('intel-comparison-export-csv');
+  const clearButton = $id('intel-clear-baseline');
+  lastComparisonReport = null;
+  jsonButton.disabled = true;
+  csvButton.disabled = true;
+  clearButton.disabled = !comparisonBaseline;
+  summary.textContent = '';
+  currencyRoot.replaceChildren();
+  changesRoot.replaceChildren();
+  if (!comparisonBaseline) {
+    status.dataset.kind = '';
+    status.textContent = 'Импортируйте сохранённый агрегированный отчёт, чтобы сравнить его с текущими данными.';
+    const row=document.createElement('tr'),cell=document.createElement('td');cell.colSpan=7;cell.textContent='Выберите предыдущий JSON-отчёт.';row.append(cell);currencyRoot.append(row);
+    const empty=document.createElement('p');empty.className='intel-empty';empty.textContent='Изменения появятся после импорта и загрузки текущего отчёта.';changesRoot.append(empty);
+    return;
+  }
+  if (!lastIntelligenceReport) {
+    status.dataset.kind = '';
+    status.textContent = 'Предыдущий отчёт проверен и хранится только в памяти этой страницы. Загрузите текущие агрегаты для сравнения.';
+    const row=document.createElement('tr'),cell=document.createElement('td');cell.colSpan=7;cell.textContent='Ожидается текущий отчёт.';row.append(cell);currencyRoot.append(row);
+    const empty=document.createElement('p');empty.className='intel-empty';empty.textContent='Сравнение будет рассчитано после загрузки свежих данных.';changesRoot.append(empty);
+    return;
+  }
+  try {
+    const engine = window.OSGARDCommerceIntelligence;
+    if (!engine?.compareReports) throw new Error('Движок сравнения не загрузился.');
+    const report = engine.compareReports(comparisonBaseline,lastIntelligenceReport);
+    lastComparisonReport = report;
+    const signed = value => value === null || value === undefined ? '—' : (value>0?'+':'') + new Intl.NumberFormat('ru-RU',{maximumFractionDigits:2}).format(value);
+    const percentagePoint = value => value === null || value === undefined ? '—' : signed(value)+' п.п.';
+    const stateLabel = value => value==='new'?'Новая в отчёте':value==='not-in-current'?'Нет в новом отчёте':'Есть в обоих';
+    const priorDate = new Date(report.previousGeneratedAt).toLocaleString('ru-RU');
+    const currentDate = new Date(report.currentGeneratedAt).toLocaleString('ru-RU');
+    const metricText = report.metrics.map(item=>item.label+': '+signed(item.delta)+(item.unit==='percentage-points'?' п.п.':'')).join(' · ');
+    summary.textContent = metricText+' · новых сигналов: '+report.summary.newAlerts+' · отсутствуют в новом отчёте: '+report.summary.absentAlerts+' · изменились: '+report.summary.changedAlerts+' · новых проверок: '+report.summary.newActions+'. '+report.interpretation;
+    status.dataset.kind='success';
+    status.textContent='Сравнение рассчитано локально · предыдущий отчёт: '+priorDate+' · текущий отчёт: '+currentDate+(report.currentIsNewer?'':' · ВНИМАНИЕ: текущий отчёт старше выбранного базового');
+    if (!report.currencies.length) {
+      const row=document.createElement('tr'),cell=document.createElement('td');cell.colSpan=7;cell.textContent='В обоих отчётах нет валютных строк.';row.append(cell);currencyRoot.append(row);
+    }
+    for(const item of report.currencies) {
+      const row=document.createElement('tr');
+      const countDelta=item.counts.paidOrders.delta;
+      const values=[
+        item.currency,
+        stateLabel(item.presence),
+        signed(countDelta),
+        item.amountsMinor.commerceGrossMinor.delta===null?'—':engine.formatMinor(item.amountsMinor.commerceGrossMinor.delta,item.currency),
+        item.amountsMinor.reportingGrossMinor.delta===null?'—':engine.formatMinor(item.amountsMinor.reportingGrossMinor.delta,item.currency),
+        item.amountsMinor.reportingRefundMinor.delta===null?'—':engine.formatMinor(item.amountsMinor.reportingRefundMinor.delta,item.currency),
+        item.amountsMinor.reportingNetMinor.delta===null?'—':engine.formatMinor(item.amountsMinor.reportingNetMinor.delta,item.currency)
+      ];
+      for(const value of values){const cell=document.createElement('td');cell.textContent=value;row.append(cell);}
+      currencyRoot.append(row);
+    }
+    const changes=[...report.alertChanges,...report.actionChanges];
+    if(!changes.length){const empty=document.createElement('p');empty.className='intel-empty';empty.textContent='Список сигналов и проверок не изменился между этими двумя снимками.';changesRoot.append(empty);}
+    for(const item of changes.slice(0,40)){
+      const card=document.createElement('article');card.className='intel-compare-change';card.dataset.status=item.status;
+      const title=document.createElement('strong');
+      const statusLabel=item.status==='new'?'НОВОЕ':item.status==='changed'?'ИЗМЕНЕНО':'НЕ ПРИСУТСТВУЕТ В НОВОМ';
+      title.textContent=(item.kind==='alert'?'Сигнал · ':'Проверка · ')+statusLabel+' · '+item.title;
+      const detail=document.createElement('small');
+      detail.textContent='ID: '+item.id+(item.previousSeverity?' · раньше: '+item.previousSeverity:'')+(item.severity?' · сейчас: '+item.severity:'');
+      card.append(title,detail);changesRoot.append(card);
+    }
+    if(changes.length>40){const rest=document.createElement('p');rest.className='intel-empty';rest.textContent='Показаны первые 40 изменений; полный список включён в экспорт.';changesRoot.append(rest);}
+    jsonButton.disabled=false;
+    csvButton.disabled=false;
+  } catch(error) {
+    lastComparisonReport=null;
+    status.dataset.kind='error';
+    status.textContent='Не удалось сравнить отчёты: '+String(error?.message||'неизвестная ошибка').slice(0,180);
+  }
+}
   $id('intel-status').dataset.kind='success';
   $id('intel-status').textContent='Рассчитано '+new Date(report.generatedAt).toLocaleString('ru-RU')+' · заказы: накопительно; сервисные конверсии и события: 30 дней; атрибуция лидов: 90 дней · сигналов: '+report.headline.warnings+'. Только агрегаты.';
   $id('intel-export-json').disabled=false;$id('intel-export-csv').disabled=false;
 }
 function clearIntelligence(message='Ждём данные после подключения…') {
   lastIntelligenceReport = null;
+  lastComparisonReport = null;
   const $id = id => document.getElementById(id);
   $id('intel-status').textContent = message;
   $id('intel-status').dataset.kind = '';
@@ -277,6 +363,13 @@ function clearIntelligence(message='Ждём данные после подкл�
   for (const id of ['intel-alerts','intel-funnel','intel-plan-actions']) $id(id).replaceChildren();
   $id('intel-plan-summary').textContent = 'План будет рассчитан после получения нового отчёта.';
   $id('intel-export-json').disabled = true; $id('intel-export-csv').disabled = true; $id('intel-export-plan').disabled = true;
+  $id('intel-comparison-export-json').disabled = true; $id('intel-comparison-export-csv').disabled = true;
+  $id('intel-comparison-summary').textContent = '';
+  $id('intel-comparison-currency-rows').replaceChildren();
+  const row=document.createElement('tr'),cell=document.createElement('td');cell.colSpan=7;cell.textContent='Сравнение появится после загрузки текущего отчёта.';row.append(cell);$id('intel-comparison-currency-rows').append(row);
+  $id('intel-comparison-changes').replaceChildren();
+  $id('intel-comparison-status').textContent = comparisonBaseline ? 'Предыдущий отчёт остаётся в памяти страницы; ожидается текущий отчёт.' : 'Импортируйте предыдущий JSON-отчёт.';
+  $id('intel-clear-baseline').disabled = !comparisonBaseline;
 }
 function downloadAggregateReport(name,content,type) {
   const blob=new Blob([content],{type});
@@ -761,8 +854,42 @@ $('#intel-export-csv').addEventListener('click', () => {
   downloadAggregateReport('osgard-premium-intelligence-' + new Date().toISOString().slice(0,10) + '.csv',
     window.OSGARDCommerceIntelligence.toCsv(lastIntelligenceReport),'text/csv;charset=utf-8');
 });
+$('#intel-compare-file').addEventListener('change', async event => {
+  const file = event.target.files?.[0] || null;
+  if (!file) { comparisonBaseline=null;renderComparison();return; }
+  comparisonBaseline=null;
+  lastComparisonReport=null;
+  clearIntelligence('Проверяем предыдущий агрегированный отчёт локально…');
+  try {
+    if (file.size > 2 * 1024 * 1024) throw new Error('Файл больше разрешённых 2 МБ.');
+    const parsed=JSON.parse(await file.text());
+    comparisonBaseline=window.OSGARDCommerceIntelligence.normalizeComparisonSnapshot(parsed);
+    $('#intel-clear-baseline').disabled=false;
+    $('#intel-comparison-status').dataset.kind='success';
+    $('#intel-comparison-status').textContent='Импортировано в оперативную память страницы: '+new Date(comparisonBaseline.generatedAt).toLocaleString('ru-RU')+'. Файл не отправляется на сервер и не сохраняется.';
+    renderComparison();
+  } catch(error) {
+    comparisonBaseline=null;
+    $('#intel-compare-file').value='';
+    renderComparison();
+    $('#intel-comparison-status').dataset.kind='error';
+    $('#intel-comparison-status').textContent='Отчёт отклонён: '+String(error?.message||'неизвестная ошибка').slice(0,180);
+  }
+});
+$('#intel-clear-baseline').addEventListener('click', () => {
+  comparisonBaseline=null;lastComparisonReport=null;$('#intel-compare-file').value='';renderComparison();
+});
+$('#intel-comparison-export-json').addEventListener('click', () => {
+  if (!lastComparisonReport) return;
+  downloadAggregateReport('osgard-premium-comparison-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify(lastComparisonReport,null,2)+'\\n','application/json;charset=utf-8');
+});
+$('#intel-comparison-export-csv').addEventListener('click', () => {
+  if (!lastComparisonReport || !window.OSGARDCommerceIntelligence) return;
+  downloadAggregateReport('osgard-premium-comparison-'+new Date().toISOString().slice(0,10)+'.csv',
+    window.OSGARDCommerceIntelligence.toComparisonCsv(lastComparisonReport),'text/csv;charset=utf-8');
+});
 $('#load').addEventListener('click',load);
 $('#token').addEventListener('keydown',event=>{if(event.key==='Enter')load();});
-window.addEventListener('pagehide',()=>{token='';$('#token').value='';});
+window.addEventListener('pagehide',()=>{token='';comparisonBaseline=null;lastComparisonReport=null;lastIntelligenceReport=null;$('#token').value='';$('#intel-compare-file').value='';});
 })();
 </script><script src="/games/experiment-core.js?v=__OSGARD_BUILD_VERSION__" defer></script></body></html>
