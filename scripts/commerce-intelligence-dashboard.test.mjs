@@ -274,7 +274,7 @@ test('comparison import strictly validates aggregate shape and CSV neutralizes h
     alerts:[{id:'=HYPERLINK("bad")',severity:'warning',title:'@SUM(1,1)'}],
     decisionPlan:{items:[{sourceAlertId:'=HYPERLINK("bad")',severity:'warning',title:'@SUM(1,1)'}]},
   };
-  assert.throws(()=>engine.compareReports({...base,schema:'wrong'},base),/поддерживаемого агрегированного отчёта/i);
+  assert.throws(()=>engine.compareReports({...base,schema:'wrong'},base),/поддерживаемым агрегированным отчётом/i);
   assert.throws(()=>engine.compareReports({...base,currencies:[...base.currencies,{...base.currencies[0]}]},base),/уникальными/i);
   const comparison=engine.compareReports(
     {...base,alerts:[],decisionPlan:{items:[]}},
