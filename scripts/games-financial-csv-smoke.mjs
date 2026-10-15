@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { buildFinancialCsv, serializeCsv, FINANCIAL_CSV_NOTE } from '../public/games/monetization/export.mjs';
 import { DEFAULT_INPUTS, SCENARIOS, calculateScenario, calculateRequiredMonthlyVisitors } from '../public/games/monetization/model.js';
+import { projectCohortCashFlow } from '../public/games/monetization/forecast.mjs';
 
 const root = process.cwd();
 const pagePath = resolve(root, 'public/games/monetization/index.html');
@@ -40,6 +41,31 @@ assert.ok(csv.includes('"annual_gross_revenue_target_usd_input"'), 'CSV must inc
 assert.ok(csv.includes('"net_operating_usd_estimate"'), 'CSV must include modeled net operating result');
 assert.ok(csv.includes('"required_monthly_starting_visitors_estimate"'), 'CSV must include calculated starting-traffic requirement');
 assert.ok(csv.includes('"Illustrative scenario only.'), 'CSV must disclose that values are scenario estimates');
+const riskCsv = buildFinancialCsv({
+  inputs,
+  scenarios,
+  generatedAt,
+  requiredMonthlyStartingVisitors: calculateRequiredMonthlyVisitors(inputs),
+  cashFlowProjection: projectCohortCashFlow(inputs, { months: 12, startingCashUsd: 5000 }),
+  decisionIntelligence: {
+    schema: 'osgard.decision-intelligence.v1',
+    breakEvenMonthlyVisitors: 12345,
+    sensitivity: [{ label: 'Traffic', impactUsd: 456 }],
+    simulation: {
+      iterations: 500, seed: 20261015, basis: 'test-only triangular multipliers',
+      netOperatingUsd: { p10: -10, p50: 50, p90: 150 },
+      annualGrossRevenueUsd: { p10: 100, p50: 600, p90: 1200 },
+      probabilityBreakEvenPct: 67.5, probabilityAnnualTargetPct: 12.5,
+      note: 'Illustrative uncertainty, not a forecast.',
+    },
+  },
+});
+assert.ok(riskCsv.includes('"monthly_net_operating_p10_usd"'), 'Risk-aware CSV must export the downside percentile');
+assert.ok(riskCsv.includes('"simulated_break_even_rate_pct"'), 'Risk-aware CSV must export simulated break-even rate');
+assert.ok(riskCsv.includes('"break_even_monthly_start_visitors"'), 'Risk-aware CSV must export required break-even traffic');
+assert.ok(riskCsv.includes('"top_sensitivity_lever"'), 'Risk-aware CSV must export the strongest sensitivity driver');
+assert.ok(riskCsv.includes('"cash_flow_ending_mrr_usd"'), 'Command-center CSV must export end-of-horizon MRR');
+assert.ok(riskCsv.includes('"cash_flow_depletion_month"'), 'Command-center CSV must export the modeled runway limit');
 const negative = serializeCsv([['value', 'note'], [-25, '=WEBSERVICE("https://invalid.example")']], { bom: false });
 assert.ok(negative.startsWith('"value";"note"\r\n'), 'CSV header and row separator should be quoted/CRLF');
 assert.ok(negative.includes('"-25"'), 'Negative numeric values should remain numeric-formatted values');
