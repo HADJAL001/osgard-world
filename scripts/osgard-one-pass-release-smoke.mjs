@@ -4,6 +4,14 @@ import { buildPlan, evaluateExternalReport, summarizeReport } from './osgard-one
 
 const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
 const plan = buildPlan();
+const pullRequestPlan = buildPlan({ eventName: 'pull_request' });
+const deployedReleasePlan = buildPlan({ eventName: 'workflow_dispatch' });
+assert.equal(pullRequestPlan.find(step => step.id === 'live-bundle-audit')?.critical, false,
+  'Live production bundle drift must be review-only before the PR is deployed.');
+assert.equal(pullRequestPlan.find(step => step.id === 'full-release-readiness')?.critical, true,
+  'Full release readiness remains a critical stage in PR context; only its live probes are deferred.');
+assert.equal(deployedReleasePlan.find(step => step.id === 'live-bundle-audit')?.critical, true,
+  'Live bundle integrity remains blocking for an actual release/manual dispatch.');
 assert.ok(plan.length >= 20, 'The one-pass runner must cover the full repository release surface.');
 const aiPreview = plan.find(step => step.id === 'ai-review-preview');
 assert.ok(aiPreview, 'The plan must produce the offline AI review packet after deterministic release evidence exists.');
