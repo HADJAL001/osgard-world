@@ -45,7 +45,7 @@ assert.ok(admin.includes('id="export-csv"'));
 assert.match(admin, /lastAggregateReport=\{generatedAt,range,previousRange:previousRange\|\|null,summary,previousSummary:previous,cohorts,snapshots,comparisonStatus:/);
 assert.ok(admin.includes('const blocked=/(email|token|secret|password|customer|order.?id|session.?id|payment.?intent|checkout.?url|authorization|raw.?event|player.?id|user.?id)/i'));
 assert.ok(admin.includes("if(/^\\s*[=+\\-@]/.test(text))text=\"'\"+text"));
-assert.ok(admin.includes('Персональные поля исключены.'));
+assert.ok(admin.includes('Персональные поля исключаются фильтром колонок.'));
 console.log('PASS 5 — aggregate CSV export excludes sensitive keys and neutralizes spreadsheet formulas.');
 assert.equal((healthAudit.match(/\{ id: '/g) || []).length, 10);
 assert.ok(healthWorkflow.includes("cron: '17 5 * * *'") && healthWorkflow.includes('actions/upload-artifact@v4'));
