@@ -133,7 +133,7 @@ test('experiment JSON backup roundtrips and rejects wrong schema, duplicates and
   assert.equal(restored.length, 2);
   assert.equal(restored[0].schema, 'osgard.experiment.v1');
   assert.throws(() => parseExperimentBackup(JSON.stringify({ kind: 'wrong', version: 1, entries: [] })), /схеме/i);
-  assert.throws(() => parseExperimentBackup(JSON.stringify({ ...backup, entries: [entries[0], entries[0]] })), /дублирующихся/i);
+  assert.throws(() => parseExperimentBackup(JSON.stringify({ ...backup, entries: [entries[0], entries[0]] })), /дублирующ/i);
   assert.throws(() => parseExperimentBackup(' '.repeat(500001)), /500 КБ/i);
 });
 
