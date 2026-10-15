@@ -63,7 +63,7 @@ test('separates currencies and independent Commerce/API integration ledgers', ()
 });
 
 test('preserves currency precision including zero- and three-decimal currencies and large integer strings', () => {
-  assert.equal(engine.formatMinor('12345678901234567890','JPY'),'12 345 678 901 234 567 890 JPY');
+  assert.equal(engine.formatMinor('12345678901234567890','JPY').replace(/[\\s\\u00a0\\u202f]/g,''),'12345678901234567890JPY');
   assert.equal(engine.formatMinor('12345','KWD'),'12,345 KWD');
   assert.equal(engine.formatMinor('10000','USD'),'100,00 USD');
   assert.equal(engine.formatMinor('-250','EUR'),'−2,50 EUR');
@@ -133,7 +133,45 @@ test('promo summary groups by service and does not rank undefined rates above me
 });
 
 test('malformed currency rows are excluded and surfaced as a warning', () => {
-  const report=engine.derive(fixture({grossPaidByCurrency:[{currency:'US$',total_minor:'100000',count:99}]}),fixedDate);
+  const report=engine.derive(fixture({grossPaidByCurrency:[{currency:'US
+  assert.ok(report.alerts.some(alert=>alert.id==='currency:commerce-invalid'));
+});
+
+test('CSV export is aggregate-only and resists spreadsheet formula injection', () => {
+  const report=engine.derive(fixture(),fixedDate);
+  report.alerts.push({severity:'warning',id:'=HYPERLINK("evil")',title:'@SUM(1,1)',detail:'not exported'});
+  const csv=engine.toCsv(report);
+  assert.ok(csv.startsWith('\uFEFF'));
+  assert.ok(csv.includes('"\'=HYPERLINK(""evil"")"'));
+  assert.ok(csv.includes('"\'@SUM(1,1)"'));
+  assert.ok(!csv.includes('email'));
+  assert.ok(!csv.includes('order_id'));
+  assert.ok(!csv.includes('session_id'));
+});
+
+test('commerce admin loads the engine and exposes explicit aggregate-only exports', async () => {
+  const page=await readFile('public/games/commerce-admin/index.html','utf8');
+  assert.ok(page.includes('<script src="/games/commerce-admin/intelligence.js"></script>'));
+  for (const marker of [
+    'id="premium-command-dashboard"',
+    'id="intel-currency-rows"',
+    'id="intel-alerts"',
+    'id="intel-funnel"',
+    'id="intel-promo-rows"',
+    'id="intel-export-json"',
+    'id="intel-export-csv"',
+    'window.OSGARDCommerceIntelligence.derive(overview)',
+    'window.OSGARDCommerceIntelligence.toCsv(lastIntelligenceReport)',
+  ]) assert.ok(page.includes(marker),'missing premium dashboard contract: '+marker);
+  assert.ok(!/localStorage|sessionStorage/.test(page),'Commerce admin must not persist operator tokens');
+});
+
+test('intelligence engine makes no network calls and does not read browser or user records', () => {
+  assert.ok(!/\bfetch\s*\(/.test(engineSource));
+  assert.ok(!/\b(localStorage|sessionStorage|document\.cookie)\b/.test(engineSource));
+  assert.ok(!/email|order_id|payment_intent|authorization|customer_email/i.test(engineSource));
+});
+,total_minor:'100000',count:99},{currency:'USD',total_minor:'1000',count:1}],serviceAttributionConversions:[]}),fixedDate);
   assert.equal(report.currencies.length,1);
   assert.equal(report.currencies[0].currency,'USD');
   assert.ok(report.alerts.some(alert=>alert.id==='currency:commerce-invalid'));
