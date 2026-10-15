@@ -654,10 +654,9 @@ async function load() {
       lastIntelligenceReport = window.OSGARDCommerceIntelligence.derive(overview);
       renderIntelligence(lastIntelligenceReport);
     } catch (intelligenceError) {
-      lastIntelligenceReport = null;
+      clearIntelligence('Частичный отчёт удалён после ошибки расчёта.');
       $('#intel-status').dataset.kind = 'error';
       $('#intel-status').textContent = 'Не удалось рассчитать Premium Intelligence: ' + String(intelligenceError?.message || 'ошибка').slice(0,180);
-      $('#intel-export-json').disabled = true; $('#intel-export-csv').disabled = true;
     }
     if (promoSettingsResult.ok) {
       renderPromoSettings(promoSettingsResult.data.config || {});
