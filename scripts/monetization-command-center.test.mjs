@@ -151,6 +151,9 @@ test('premium command center is local-first and has wired UI for cash-flow and e
   ]) assert.ok(page.includes('id="' + id + '"'), 'Missing command-center UI: ' + id);
   assert.ok(app.includes('projectCohortCashFlow') && app.includes('renderCashFlow(inputs)'));
   assert.ok(app.includes('completeExperiment') && app.includes('parseExperimentBackup'));
+  assert.ok(app.includes('cashFlow: currentCashFlowSettings()') && app.includes('applyCashFlowSettings(snapshot.cashFlow)'));
+  assert.ok(app.includes('cashFlow: normalizeCashFlowSettings(item.cashFlow)') && app.includes('Δ кассы в конце горизонта'));
+  assert.ok(app.includes('cashFlowProjection: latestCashFlow'), 'Financial exports must preserve the exact current cash-flow projection');
   assert.ok(!/\bfetch\s*\(/.test(app), 'Cash flow and experiment ledger must not make network requests');
   assert.ok(!/\bfetch\s*\(|XMLHttpRequest|sendBeacon/.test(forecast + ledger), 'Pure local engines must stay offline');
   assert.ok(ledger.includes('MAX_EXPERIMENTS = 40') && ledger.includes('MAX_EXPERIMENT_BACKUP_BYTES = 500_000'));
