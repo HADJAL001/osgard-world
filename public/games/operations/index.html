@@ -46,6 +46,10 @@
         <button class="btn" id="retry-problems" type="button" disabled>Повторить проблемы</button>
         <button class="btn" id="export-report" type="button" disabled>Экспорт JSON</button>
         <button class="btn" id="copy-report" type="button" disabled>Скопировать отчёт</button>
+        <button class="btn" id="load-baseline" type="button" aria-describedby="baseline-status">Импортировать baseline JSON</button>
+        <button class="btn" id="clear-baseline" type="button" disabled>Сбросить baseline</button>
+        <input id="baseline-file" type="file" accept=".json,application/json" hidden>
+        <span class="route-path" id="baseline-status" role="status">Baseline: последний полный прогон в текущей вкладке.</span>
         <label class="toggle"><input id="issues-only" type="checkbox">Показывать только предупреждения и ошибки</label>
       </div>
       <section class="filters" aria-label="Фильтры результатов">
@@ -110,12 +114,18 @@
   const retryButton = $('#retry-problems');
   const exportButton = $('#export-report');
   const copyButton = $('#copy-report');
+  const baselineButton = $('#load-baseline');
+  const clearBaselineButton = $('#clear-baseline');
+  const baselineFileInput = $('#baseline-file');
+  const baselineStatus = $('#baseline-status');
   const searchInput = $('#result-search');
   const groupFilter = $('#group-filter');
   const sortSelect = $('#sort-results');
   const progressNode = $('#run-progress');
   let lastReport = null;
   let lastFullReport = null;
+  let importedBaselineReport = null;
+  let importedBaselineName = '';
   let running = false;
   let showOnlyIssues = false;
   let activeRunController = null;
@@ -258,7 +268,12 @@
     $('#build-id').textContent = 'Версия опубликованной сборки: ' + (lastReport?.build || observedBuild);
     exportButton.disabled = !lastReport;
     copyButton.disabled = !lastReport;
+    baselineButton.disabled = running;
+    clearBaselineButton.disabled = running || !importedBaselineReport;
     retryButton.disabled = running || !all.some((item) => item.state === 'fail' || item.state === 'warn');
+    baselineStatus.textContent = importedBaselineReport
+      ? 'Baseline: импортирован JSON-файл «' + importedBaselineName + '»; содержимое валидировано локально.'
+      : 'Baseline: последний полный прогон в текущей вкладке.';
     $('#run-status').textContent = running ? 'Проверяем маршруты…' : (lastReport ? (lastReport.cancelled ? 'Запуск остановлен оператором' : 'Последняя проверка: ' + new Date(lastReport.finishedAt).toLocaleString('ru-RU')) + ' · ' + checked.length + ' проверено из ' + all.length : 'Проверка ещё не запускалась.');
     if (lastReport?.comparison) {
       const cmp = lastReport.comparison;
@@ -266,20 +281,22 @@
       if (cmp.regressions) pieces.push('<span style="color:var(--red)">ухудшений: ' + cmp.regressions + '</span>');
       if (cmp.recoveries) pieces.push('<strong>восстановлений: ' + cmp.recoveries + '</strong>');
       if (cmp.averageLatencyDeltaMs !== null) pieces.push('средняя задержка ' + (cmp.averageLatencyDeltaMs > 0 ? '+' : '') + cmp.averageLatencyDeltaMs + ' мс');
-      $('#run-delta').innerHTML = 'Сравнение с предыдущим запуском (' + cmp.comparedRoutes + ' общих маршрутов): ' + (pieces.join(' · ') || 'изменений статусов нет');
+      $('#run-delta').innerHTML = 'Сравнение с ' + escapeHtml(cmp.baselineSource || 'предыдущим запуском') + ' (' + cmp.comparedRoutes + ' общих маршрутов): ' + (pieces.join(' · ') || 'изменений статусов нет');
     } else $('#run-delta').textContent = 'Сравнение с предыдущим запуском появится после второго запуска.';
     runButton.disabled = running;
     cancelButton.disabled = !running;
     progressNode.max = Math.max(1, running ? activeTargetCount : (lastReport?.targetCount || TARGETS.length));
     progressNode.setAttribute('aria-valuetext', progressNode.value + ' из ' + progressNode.max);
   }
-  function compareReports(previous, currentResults) {
+  function compareReports(previous, currentResults, baselineSource) {
     if (!previous?.results?.length) return null;
-    return metrics.compare(previous, currentResults);
+    const result = metrics.compare(previous, currentResults);
+    return result ? { ...result, baselineSource } : null;
   }
   async function runChecks(selectedTargets = TARGETS, scope = 'full') {
     if (running) return;
-    const baseline = lastFullReport || lastReport;
+    const baseline = importedBaselineReport || lastFullReport || lastReport;
+    const baselineSource = importedBaselineReport ? 'импортированным JSON-файлом' : lastFullReport ? 'последним полным прогоном' : 'предыдущим запуском';
     const startedAt = new Date().toISOString();
     const startedClock = performance.now();
     activeRunController = new AbortController();
@@ -314,7 +331,7 @@
         }
       }
       const ordered = selectedTargets.map((target) => results.find((item) => item.id === target.id)).filter(Boolean);
-      const comparison = compareReports(baseline, ordered);
+      const comparison = compareReports(baseline, ordered, baselineSource);
       lastReport = {
         schemaVersion:2,
         reportType:'osgard-games-readonly-route-health',
@@ -352,6 +369,39 @@
   searchInput.addEventListener('input', render);
   groupFilter.addEventListener('change', render);
   sortSelect.addEventListener('change', render);
+  baselineButton.addEventListener('click', () => {
+    if (!running) baselineFileInput.click();
+  });
+  clearBaselineButton.addEventListener('click', () => {
+    if (running) return;
+    importedBaselineReport = null;
+    importedBaselineName = '';
+    $('#run-delta').textContent = 'Baseline сброшен. Следующее сравнение будет с последним полным прогоном в этой вкладке.';
+    render();
+  });
+  baselineFileInput.addEventListener('change', async (event) => {
+    const file = event.target.files && event.target.files[0];
+    baselineFileInput.value = '';
+    if (!file) return;
+    if (running) {
+      baselineStatus.textContent = 'Нельзя менять baseline во время активной проверки.';
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      baselineStatus.textContent = 'Файл больше допустимых 2 МБ; baseline не изменён.';
+      return;
+    }
+    try {
+      const report = JSON.parse(await file.text());
+      const normalized = metrics.normalizeBaseline(report, TARGETS);
+      importedBaselineReport = normalized;
+      importedBaselineName = file.name.replace(/[\\/\r\n]/g,'').slice(0,100) || 'baseline.json';
+      $('#run-delta').textContent = 'Baseline импортирован и проверен локально. Запусти проверку, чтобы сравнить маршруты.';
+      render();
+    } catch (error) {
+      baselineStatus.textContent = 'Baseline отклонён: ' + String(error && error.message || 'некорректный JSON').slice(0,180);
+    }
+  });
   exportButton.addEventListener('click', () => {
     if (!lastReport) return;
     const url = URL.createObjectURL(new Blob([JSON.stringify(lastReport,null,2)],{type:'application/json'}));
