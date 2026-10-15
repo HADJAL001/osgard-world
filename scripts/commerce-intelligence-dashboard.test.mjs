@@ -336,7 +336,7 @@ test('data quality distinguishes invalid source fields from measured zeros', () 
   assert.equal(blocked.state,'blocked');
   assert.equal(blocked.summary.blocked,7);
 });
-\ntest('commerce admin loads the engine and exposes explicit aggregate-only exports', async () => {
+test('commerce admin loads the engine and exposes explicit aggregate-only exports', async () => {
   const page=await readFile('public/games/commerce-admin/index.html','utf8');
   assert.ok(page.includes('<script src="/games/commerce-admin/intelligence.js"></script>'));
   for (const marker of [
