@@ -831,6 +831,8 @@
     const rows=[['section','series_id','label','currency','timestamp','value','state','missing_reason','window']];
     const add=(section,id,label,currency,timestamp,value,state,missingReason='',window='')=>
       rows.push([section,id,label,currency||'',timestamp||'',value===null||value===undefined?'':value,state||'',missingReason||'',window||'']);
+    for(const note of trend?.windowNotes||[]) add('window-note','period-semantics','Source periods differ','','',note,'warning');
+    if(trend?.interpretation) add('interpretation','limits','Trend interpretation','','',trend.interpretation,'warning');
     for(const item of trend?.series||[]) {
       for(const point of item.points||[]) add(item.kind,item.id,item.label,item.currency,point.timestamp,point.value,point.state,point.missingReason,'');
     }
