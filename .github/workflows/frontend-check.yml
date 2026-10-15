@@ -19,6 +19,13 @@ on:
       - "scripts/external-project-healthcheck.mjs"
       - "scripts/external-project-healthcheck-smoke.mjs"
       - "scripts/project-intake-smoke.mjs"
+      - "scripts/osgard-one-pass-release-smoke.mjs"
+      - "scripts/osgard-one-pass-release.mjs"
+      - "scripts/release-readiness.mjs"
+      - "scripts/release-readiness-policy-smoke.mjs"
+      - "scripts/release-readiness-policy.mjs"
+      - "scripts/live-bundle-audit-smoke.mjs"
+      - "scripts/live-bundle-audit-core.mjs"
       - "scripts/osgard-contract-audit.mjs"
       - "scripts/catalog-state-scale-smoke.mjs"
       - "scripts/osgard-performance-budget.mjs"
@@ -89,6 +96,8 @@ jobs:
         run: npm ci
       - name: Check cross-surface OSGARD product contracts
         run: npm run qa:contracts
+      - name: Test one-pass deployment context and release evidence policy
+        run: npm run qa:one-pass
       - name: Test static asset performance budgets
         run: npm run qa:performance-budget-tests
       - name: Test build-attestation tamper resistance
