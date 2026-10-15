@@ -915,6 +915,7 @@
         sourceAlertId:String(action.sourceAlertId || '').slice(0, 180),
         severity:['critical','warning','info'].includes(action.severity) ? action.severity : 'info',
         title:String(action.title || 'Проверка без названия').replace(/[\u0000-\u001f\u007f]/g,' ').slice(0, 240),
+        sourceTitle:String(action.sourceTitle || '').replace(/[\u0000-\u001f\u007f]/g,' ').slice(0, 180),
         owner:String(action.owner || 'Operations').replace(/[\u0000-\u001f\u007f]/g,' ').slice(0, 100),
         effort:['small','medium','large'].includes(action.effort) ? action.effort : 'medium',
         rationale:String(action.rationale || '').replace(/[\u0000-\u001f\u007f]/g,' ').slice(0, 500),
