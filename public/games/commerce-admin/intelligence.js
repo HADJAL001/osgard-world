@@ -1101,7 +1101,7 @@
     const ignoredIds=[];
     for(const item of input.items) {
       if(!item || typeof item!=='object' || Array.isArray(item) ||
-          typeof item.id!=='string' || !/^[a-z0-9][a-z0-9:_-]{0,179}$/i.test(item.id) ||
+          typeof item.id!=='string' || !/^[a-z0-9][a-z0-9:._-]{0,179}$/i.test(item.id) ||
           seen.has(item.id)) {
         throw new Error('В реестре есть некорректный или повторный ID действия.');
       }
