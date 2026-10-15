@@ -145,6 +145,19 @@ test('malformed currency rows are excluded and surfaced as a warning', () => {
   assert.ok(report.alerts.some(alert=>alert.id==='currency:commerce-invalid'));
 });
 
+test('malformed money stays unavailable and never silently becomes zero', () => {
+  const report=engine.derive(fixture({
+    grossPaidByCurrency:[{currency:'USD',total_minor:'not-a-number',count:3}],
+    serviceAttributionConversions:[],
+  }),fixedDate);
+  const usd=report.currencies.find(row=>row.currency==='USD');
+  assert.ok(usd);
+  assert.equal(usd.paidOrders,3);
+  assert.equal(usd.commerceGrossMinor,null);
+  assert.equal(engine.formatMinor(usd.commerceGrossMinor,'USD'),'—');
+  assert.ok(report.alerts.some(alert=>alert.id==='amount:commerce-invalid'));
+});
+
 test('CSV export is aggregate-only and resists spreadsheet formula injection', () => {
   const report=engine.derive(fixture(),fixedDate);
   report.alerts.push({severity:'warning',id:'=HYPERLINK("evil")',title:'@SUM(1,1)',detail:'not exported'});
