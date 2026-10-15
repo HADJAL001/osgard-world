@@ -38,7 +38,7 @@
     return [];
   };
   function buildDataQualityReport(data, warnings, inputValid, generatedAt) {
-    const own = key => Object.prototype.hasOwnProperty.call(data, key) && data[key] !== undefined && data[key] !== null;
+    const own = key => Object.prototype.hasOwnProperty.call(data, key) && data[key] !== undefined;
     const validCount = value => typeof value === 'number'
       ? Number.isSafeInteger(value) && value >= 0
       : typeof value === 'string' && /^\d{1,15}$/.test(value);
