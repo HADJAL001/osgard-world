@@ -318,7 +318,7 @@
     const severityRank = { critical:0, warning:1, info:2 };
     alerts.sort((a,b)=>(severityRank[a.severity]??9)-(severityRank[b.severity]??9)||a.id.localeCompare(b.id));
 
-    return {
+    const report = {
       schema:SCHEMA,
       generatedAt:Number.isFinite(Date.parse(generatedAt))?new Date(generatedAt).toISOString():new Date().toISOString(),
       window:{
@@ -350,6 +350,98 @@
         'Отчёты интеграторов не являются независимым подтверждением платёжного провайдера или бухгалтерским отчётом.',
         'Аналитика основана на согласованных событиях и не доказывает число уникальных людей.',
       ]
+    };
+    report.executivePulse = buildExecutivePulse(report);
+    return report;
+  }
+
+  function buildExecutivePulse(report) {
+    const validReport = !!report && typeof report === 'object' && !Array.isArray(report) && report.schema === SCHEMA;
+    const alerts = validReport && Array.isArray(report.alerts) ? report.alerts : [];
+    const countSeverity = severity => alerts.filter(item => item && item.severity === severity).length;
+    const critical = countSeverity('critical');
+    const warnings = countSeverity('warning');
+    const informational = countSeverity('info');
+    const quality = report?.dataQuality?.schema === 'osgard.commerce-data-quality.v1' &&
+      report.dataQuality.summary && typeof report.dataQuality.summary === 'object' &&
+      !Array.isArray(report.dataQuality.summary) ? report.dataQuality : null;
+    const count = value => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : 0;
+    const qualitySummary = quality ? {
+      total:count(quality.summary.totalSources),
+      measured:count(quality.summary.measured),
+      partial:count(quality.summary.partial),
+      unavailable:count(quality.summary.unavailable),
+      blocked:count(quality.summary.blocked),
+    } : { total:0, measured:0, partial:0, unavailable:0, blocked:0 };
+    const qualityKnown = !!quality && qualitySummary.total > 0 &&
+      qualitySummary.measured + qualitySummary.partial + qualitySummary.unavailable + qualitySummary.blocked === qualitySummary.total;
+    let state = 'clear';
+    if (!validReport || !qualityKnown || qualitySummary.blocked > 0 || quality.state === 'blocked') state = 'blocked';
+    else if (critical > 0) state = 'critical';
+    else if (warnings > 0) state = 'attention';
+    else if (qualitySummary.partial > 0 || qualitySummary.unavailable > 0 || quality.state !== 'complete') state = 'limited';
+    else if (informational > 0) state = 'monitoring';
+
+    const labels = {
+      blocked:'Нельзя подтвердить целостность картины',
+      critical:'Требуется приоритетная проверка',
+      attention:'Есть предупреждения для разбора',
+      limited:'Картина неполная',
+      monitoring:'Наблюдение без критических сигналов',
+      clear:'Критических сигналов не обнаружено',
+    };
+    const reasons = [];
+    if (!validReport) reasons.push('Отчёт отсутствует или его схема не соответствует ожидаемой; значения не интерпретируются.');
+    if (!qualityKnown) reasons.push('Качество источников неизвестно или описано неполно; зелёный статус не присваивается.');
+    if (qualitySummary.blocked > 0 || quality?.state === 'blocked') reasons.push('Один или несколько источников заблокированы проверкой структуры.');
+    if (critical > 0) reasons.push('Критических сигналов: ' + critical + '. Сначала проверьте финансовые и интеграционные аномалии.');
+    if (warnings > 0) reasons.push('Предупреждений: ' + warnings + '. Неизвестные поля нельзя считать нулями.');
+    if (qualityKnown && (qualitySummary.partial > 0 || qualitySummary.unavailable > 0)) {
+      reasons.push('Источники: измерено ' + qualitySummary.measured + ', частично ' + qualitySummary.partial + ', недоступно ' + qualitySummary.unavailable + '.');
+    }
+    if (state === 'clear' || state === 'monitoring') reasons.push('Текущие пороговые правила не нашли критических/предупреждающих сигналов. Это не гарантия отсутствия проблем.');
+    if (informational > 0 && critical === 0 && warnings === 0) reasons.push('Информационных сигналов: ' + informational + '. Проверьте их контекст перед выводами.');
+
+    const plan = validReport && report.decisionPlan && Array.isArray(report.decisionPlan.items)
+      ? report.decisionPlan
+      : buildDecisionPlan({ generatedAt:report?.generatedAt, alerts, promo:validReport && Array.isArray(report.promo) ? report.promo : [] });
+    const severityOrder = { critical:0, warning:1, info:2 };
+    const safeText = (value, max = 240) => String(value ?? '').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
+    const nextActions = (Array.isArray(plan.items) ? plan.items : [])
+      .filter(item => item && typeof item === 'object' && !Array.isArray(item))
+      .map((item,index) => ({
+        id:/^[a-z0-9][a-z0-9:._-]{0,179}$/i.test(String(item.id || '')) ? String(item.id) : 'action-' + index,
+        title:safeText(item.title || 'Проверка без названия',180),
+        severity:['critical','warning','info'].includes(item.severity) ? item.severity : 'info',
+        owner:safeText(item.owner || 'Operations',80),
+        effort:['small','medium','large'].includes(item.effort) ? item.effort : 'medium',
+        rationale:safeText(item.rationale,360),
+        sourceAlertId:safeText(item.sourceAlertId,120),
+        firstStep:safeText(Array.isArray(item.steps) ? item.steps[0] : '',220),
+        automated:false,
+      }))
+      .sort((a,b)=>(severityOrder[a.severity]??9)-(severityOrder[b.severity]??9) || a.id.localeCompare(b.id))
+      .slice(0,5);
+    const headline = validReport && report.headline && typeof report.headline === 'object' ? report.headline : {};
+    return {
+      schema:'osgard.commerce-executive-pulse.v1',
+      generatedAt:validReport && typeof report.generatedAt === 'string' && Number.isFinite(Date.parse(report.generatedAt))
+        ? new Date(report.generatedAt).toISOString() : new Date().toISOString(),
+      state,
+      stateLabel:labels[state],
+      automationEnabled:false,
+      summary:{
+        critical,
+        warnings,
+        informational,
+        paidOrders:typeof headline.paidOrders === 'number' && Number.isSafeInteger(headline.paidOrders) && headline.paidOrders >= 0 ? headline.paidOrders : null,
+        trackedCurrencies:typeof headline.trackedCurrencyCount === 'number' && Number.isSafeInteger(headline.trackedCurrencyCount) && headline.trackedCurrencyCount >= 0 ? headline.trackedCurrencyCount : null,
+        quality:qualityKnown ? qualitySummary : null,
+        qualityCoverage:qualityKnown ? { measured:qualitySummary.measured, total:qualitySummary.total } : null,
+      },
+      reasons:reasons.slice(0,8),
+      nextActions,
+      interpretation:'Детерминированная приоритизация по правилам и качеству источников. Нет искусственного health-score, смешивания валют или автоматического изменения платежей.',
     };
   }
 
@@ -479,8 +571,15 @@
   function toMarkdown(report) {
     const plan = report?.decisionPlan || buildDecisionPlan(report);
     const clean = value => String(value ?? '').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/[\r\n]+/g,' ').replace(/\|/g,'\\|').replace(new RegExp(String.fromCharCode(96), 'g'), "'").slice(0, 500);
+    const pulse = report?.executivePulse || buildExecutivePulse(report);
     const lines = [
       '# OSGARD Premium · план проверок',
+      '',
+      '## Executive Pulse',
+      '',
+      'Состояние: ' + clean(pulse.stateLabel) + ' · критические: ' + pulse.summary.critical + ' · предупреждения: ' + pulse.summary.warnings,
+      ...pulse.reasons.map(reason => '- ' + clean(reason)),
+      ...pulse.nextActions.slice(0,3).map((action,index) => '- Следующее действие ' + (index+1) + ': ' + clean(action.title) + ' (' + clean(action.owner) + ')'),
       '',
       'Сформировано: ' + clean(plan.generatedAt),
       'Режим: deterministic-read-only · автоматические действия отключены',
@@ -1166,6 +1265,15 @@
   function toCsv(report) {
     const rows = [['section','metric','value','currency']];
     const add = (section,metric,value,currency='') => rows.push([section,metric,value,currency]);
+    const pulse = report?.executivePulse || buildExecutivePulse(report);
+    add('executive-pulse','state',pulse.state);
+    add('executive-pulse','stateLabel',pulse.stateLabel);
+    add('executive-pulse','critical',pulse.summary.critical);
+    add('executive-pulse','warnings',pulse.summary.warnings);
+    add('executive-pulse','informational',pulse.summary.informational);
+    add('executive-pulse','qualityCoverage',pulse.summary.qualityCoverage ? pulse.summary.qualityCoverage.measured + '/' + pulse.summary.qualityCoverage.total : 'unknown');
+    for (const reason of pulse.reasons) add('executive-pulse-reason','reason',reason);
+    for (const action of pulse.nextActions) add('executive-pulse-action',action.id,action.title);
     for (const [key,value] of Object.entries(report?.headline || {})) add('headline',key,value ?? '');
     for (const row of report?.currencies || []) {
       add('commerce', 'paidOrders', row.paidOrders,row.currency);
@@ -1199,5 +1307,5 @@
     return '\uFEFF' + rows.map(row=>row.map(escape).join(',')).join('\r\n') + '\r\n';
   }
 
-  window.OSGARDCommerceIntelligence = Object.freeze({ schema:SCHEMA, derive, formatMinor, toCsv, buildDecisionPlan, toMarkdown, normalizeComparisonSnapshot, compareReports, toComparisonCsv, buildReportTrend, buildTrendSignals, toTrendSignalsCsv, toTrendCsv, REVIEW_STATUSES, normalizeReviewEntry, buildDecisionRegister, importDecisionRegister, toReviewCsv, toReviewMarkdown });
+  window.OSGARDCommerceIntelligence = Object.freeze({ schema:SCHEMA, derive, formatMinor, toCsv, buildDecisionPlan, buildExecutivePulse, toMarkdown, normalizeComparisonSnapshot, compareReports, toComparisonCsv, buildReportTrend, buildTrendSignals, toTrendSignalsCsv, toTrendCsv, REVIEW_STATUSES, normalizeReviewEntry, buildDecisionRegister, importDecisionRegister, toReviewCsv, toReviewMarkdown });
 })();
