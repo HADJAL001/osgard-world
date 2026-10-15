@@ -286,7 +286,57 @@ test('comparison import strictly validates aggregate shape and CSV neutralizes h
   assert.ok(!csv.includes('email'));
 });
 
-test('commerce admin loads the engine and exposes explicit aggregate-only exports', async () => {
+
+test('data quality ledger labels measured, partial and unavailable sources without a fake confidence score', () => {
+  const report=engine.derive(fixture(),fixedDate);
+  const quality=report.dataQuality;
+  assert.equal(quality.schema,'osgard.commerce-data-quality.v1');
+  assert.equal(quality.state,'limited');
+  assert.equal(quality.summary.totalSources,7);
+  assert.ok(quality.summary.measured>=5);
+  assert.equal(quality.comparability.mixedCurrencyTotals,false);
+  assert.equal(quality.comparability.synchronizedCohortsAvailable,false);
+  assert.equal(quality.comparability.uniquePeopleAvailable,false);
+  assert.equal(quality.comparability.causalityProven,false);
+  assert.equal(quality.comparability.financialAudit,false);
+  const orders=quality.sources.find(source=>source.id==='commerce-order-ledger');
+  const services=quality.sources.find(source=>source.id==='service-reporting-ledger');
+  const analytics=quality.sources.find(source=>source.id==='consented-analytics');
+  const leads=quality.sources.find(source=>source.id==='lead-attribution');
+  assert.equal(orders.status,'measured');
+  assert.match(orders.window,/Накопительное/);
+  assert.equal(services.status,'measured');
+  assert.match(services.window,/30 дней/);
+  assert.equal(analytics.status,'measured');
+  assert.equal(leads.status,'unavailable');
+  assert.ok(quality.caveats.some(note=>note.includes('90 дней')));
+  assert.ok(quality.caveats.some(note=>note.includes('не ноль')));
+  assert.ok(!Object.prototype.hasOwnProperty.call(quality,'confidencePercent'));
+  const csv=engine.toCsv(report);
+  assert.ok(csv.includes('"data-quality-source"'));
+  assert.ok(csv.includes('"lead-attribution"'));
+  const markdown=engine.toMarkdown(report);
+  assert.ok(markdown.includes('## Качество и сопоставимость источников'));
+  assert.ok(markdown.includes('Окно: Накопительное окно доступных записей Commerce API'));
+});
+
+test('data quality distinguishes invalid source fields from measured zeros', () => {
+  const report=engine.derive(fixture({analyticsFunnel:null,grossPaidByCurrency:null}),fixedDate);
+  const quality=report.dataQuality;
+  const analytics=quality.sources.find(source=>source.id==='consented-analytics');
+  const orders=quality.sources.find(source=>source.id==='commerce-order-ledger');
+  assert.equal(analytics.status,'partial','one present analytics field cannot hide the malformed funnel');
+  assert.equal(analytics.fields.find(field=>field.key==='analyticsEventsLast30Days').state,'present');
+  assert.equal(analytics.fields.find(field=>field.key==='analyticsFunnel').state,'invalid');
+  assert.equal(orders.status,'partial');
+  assert.equal(orders.fields.find(field=>field.key==='grossPaidByCurrency').state,'invalid');
+  assert.ok(quality.summary.partial>=2);
+  assert.ok(quality.state==='limited');
+  const blocked=engine.derive(null,fixedDate).dataQuality;
+  assert.equal(blocked.state,'blocked');
+  assert.equal(blocked.summary.blocked,7);
+});
+\ntest('commerce admin loads the engine and exposes explicit aggregate-only exports', async () => {
   const page=await readFile('public/games/commerce-admin/index.html','utf8');
   assert.ok(page.includes('<script src="/games/commerce-admin/intelligence.js"></script>'));
   for (const marker of [
@@ -300,6 +350,12 @@ test('commerce admin loads the engine and exposes explicit aggregate-only export
     'id="intel-plan-actions"',
     'id="intel-plan-summary"',
     'id="intel-export-plan"',
+    'id="intel-quality-heading"',
+    'id="intel-quality-summary"',
+    'id="intel-quality-sources"',
+    'id="intel-quality-caveats"',
+    'function renderDataQuality(report)',
+    'renderDataQuality(report)',
     'id="intel-compare-file"',
     'id="intel-comparison-currency-rows"',
     'id="intel-comparison-changes"',
