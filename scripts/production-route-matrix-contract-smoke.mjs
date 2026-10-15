@@ -82,6 +82,8 @@ assert.ok(matrix.includes("route === '/games/commerce-admin/' ? ['/games/commerc
   'Commerce Admin intelligence must be checked through the typed static-asset contract.');
 
 
+assert.ok(!matrix.includes("route === '/games/commerce-admin/intelligence.js'"),
+  'The JavaScript file must not enter the page-route contract list.');
 assert.ok(matrix.includes("path === '/games/commerce-admin/intelligence.js'") &&
   matrix.includes("content.includes('window.OSGARDCommerceIntelligence')") &&
   matrix.includes("content.includes('function derive(')"),
