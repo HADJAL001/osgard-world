@@ -29,13 +29,17 @@
   };
   const pctLabel = value => value === null ? 'Недостаточно данных' : value.toFixed(1) + '%';
   const validRows = (value, warnings, label) => {
-    if (value === undefined || value === null) return [];
+    if (value === undefined || value === null) {
+      warnings.push({ id:'schema:missing-' + label, severity:'warning', title:'Данные отсутствуют в ответе API', detail:'Поле ' + label + ' не было передано; его нельзя трактовать как ноль.' });
+      return [];
+    }
     if (Array.isArray(value)) return value.filter(item => item && typeof item === 'object' && !Array.isArray(item));
     warnings.push({ id:'schema:' + label, severity:'warning', title:'Некорректный формат данных', detail:'Поле ' + label + ' не является списком; секция исключена из расчёта.' });
     return [];
   };
   function derive(overview, generatedAt = new Date().toISOString()) {
-    const data = overview && typeof overview === 'object' && !Array.isArray(overview) ? overview : {};
+    const inputValid = !!overview && typeof overview === 'object' && !Array.isArray(overview);
+    const data = inputValid ? overview : {};
     const warnings = [];
     const statuses = validRows(data.ordersByStatus, warnings, 'ordersByStatus')
       .map(row => ({ status:String(row.status || 'unknown').slice(0,40).toLowerCase(), count:nonNegative(row.count) }));
@@ -117,7 +121,9 @@
     }
     const unknownAttributionRate = attributedOrders > 0 ? Math.round(unknownGameOrders / attributedOrders * 10000) / 100 : null;
 
-    const funnelSource = data.analyticsFunnel && typeof data.analyticsFunnel === 'object' && !Array.isArray(data.analyticsFunnel) ? data.analyticsFunnel : {};
+    const funnelValid = !!data.analyticsFunnel && typeof data.analyticsFunnel === 'object' && !Array.isArray(data.analyticsFunnel);
+    if (!funnelValid) warnings.push({ id:'schema:analyticsFunnel', severity:'warning', title:'Воронка не предоставлена', detail:'API не вернул корректный analyticsFunnel; нули ниже не следует трактовать как измеренный нулевой трафик.' });
+    const funnelSource = funnelValid ? data.analyticsFunnel : {};
     const catalogViews = nonNegative(funnelSource.catalogViews);
     const gameStarts = nonNegative(funnelSource.gameStarts);
     const completedSessions = nonNegative(funnelSource.completedSessions);
@@ -151,7 +157,7 @@
 
     const alerts = [];
     const alert = (id,severity,title,detail) => alerts.push({ id,severity,title,detail });
-    if (!data || typeof data !== 'object' || Array.isArray(overview)) {
+    if (!inputValid) {
       alert('overview:invalid','critical','API вернул некорректную сводку','Данные не прошли базовую проверку структуры.');
     }
     if (totalOrders === 0) alert('orders:none','info','Заказы не зарегистрированы в Commerce API','Это означает отсутствие записей в текущем ответе API, а не доказательство отсутствия продаж в других системах.');
@@ -172,7 +178,10 @@
     }
     if (premiumPageViews > 0 && paidOrders === 0) alert('premium:observed-no-paid','info','Есть просмотры Premium, но нет оплаченных заказов в Commerce API',
       'Это сигнал проверить checkout и webhook. Просмотры и заказы не привязаны здесь к одной когорте, поэтому это не conversion rate.');
-    if (nonNegative(data.analyticsEventsLast30Days) === 0) alert('analytics:empty','info','Нет согласованных аналитических событий за 30 дней',
+    const analyticsEventsPresent = (typeof data.analyticsEventsLast30Days === 'number' && Number.isSafeInteger(data.analyticsEventsLast30Days) && data.analyticsEventsLast30Days >= 0) ||
+      (typeof data.analyticsEventsLast30Days === 'string' && /^\d{1,15}$/.test(data.analyticsEventsLast30Days));
+    if (!analyticsEventsPresent) warnings.push({ id:'schema:analyticsEventsLast30Days', severity:'warning', title:'Число событий не предоставлено', detail:'API не вернул корректный счётчик согласованных событий; это неизвестное значение, а не ноль.' });
+    else if (nonNegative(data.analyticsEventsLast30Days) === 0) alert('analytics:empty','info','Нет согласованных аналитических событий за 30 дней',
       'Проверьте consent, доставку событий и retention. Ноль означает ноль записей в ответе, а не нулевую аудиторию.');
     for (const warning of warnings) alerts.push(warning);
     const severityRank = { critical:0, warning:1, info:2 };
@@ -181,7 +190,10 @@
     return {
       schema:SCHEMA,
       generatedAt:Number.isFinite(Date.parse(generatedAt))?new Date(generatedAt).toISOString():new Date().toISOString(),
-      window:{ days:30, source:'server aggregate overview', note:'Лиды по атрибуции имеют окно 90 дней; остальные показатели ориентированы на последние 30 дней согласно контракту API.' },
+      window:{
+        source:'server aggregate overview',
+        note:'Периоды различаются: ordersByStatus/grossPaidByCurrency — накопительные; paidRevenueByAttribution, serviceAttributionConversions и аналитические события — последние 30 дней; атрибуция лидов — 90 дней.'
+      },
       headline:{
         paidOrders,
         totalOrders,
