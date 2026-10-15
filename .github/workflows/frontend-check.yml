@@ -21,6 +21,8 @@ on:
       - "scripts/project-intake-smoke.mjs"
       - "docs/37_OSGARD_OPERATIONS_PULSE_2026-10-15.md"
       - "scripts/operations-dashboard-metrics-smoke.mjs"
+      - "scripts/commerce-intelligence-dashboard.test.mjs"
+      - "docs/40_OSGARD_PREMIUM_COMMAND_DASHBOARD_2026-10-15.md"
       - "scripts/games-operations-smoke.mjs"
       - "docs/38_OSGARD_RELEASE_GATE_SEMANTICS_2026-10-15.md"
       - "scripts/osgard-one-pass-release.test.mjs"
@@ -132,6 +134,8 @@ jobs:
         run: npm run qa:games-portal
       - name: Verify Operations Pulse metrics and baseline import
         run: npm run qa:games-operations
+      - name: Run Premium Commerce Intelligence tests
+        run: npm run qa:commerce-intelligence
       - name: Verify OSGARD PLAY 30-check diagnostics
         run: npm run qa:games-diagnostics
       - name: Verify Smart Launch local-only device and accessibility contract

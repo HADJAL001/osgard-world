@@ -83,7 +83,8 @@
     "release:attest": "node scripts/osgard-release-attestation.mjs create --contract-report osgard-contract-audit.json --performance-report osgard-performance-budget.json",
     "release:verify": "node scripts/osgard-release-attestation.mjs verify --contract-report osgard-contract-audit.json --performance-report osgard-performance-budget.json",
     "qa:live-bundle-smoke": "node scripts/live-bundle-audit-smoke.mjs",
-    "qa:release-readiness-policy": "node scripts/release-readiness-policy-smoke.mjs"
+    "qa:release-readiness-policy": "node scripts/release-readiness-policy-smoke.mjs",
+    "qa:commerce-intelligence": "node --test scripts/commerce-intelligence-dashboard.test.mjs"
   },
   "dependencies": {
     "@types/three": "^0.186.0",

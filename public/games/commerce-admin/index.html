@@ -7,6 +7,46 @@
 <style>
 :root{color-scheme:dark;--bg:#080a0b;--panel:#111514;--ink:#f2f0e8;--muted:#a5aaa1;--line:#ffffff20;--lime:#d3ff69;--gold:#d5bb82}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 85% 0,#30362155,transparent 35%),var(--bg);color:var(--ink);font:14px/1.6 system-ui,sans-serif}.wrap{width:min(1120px,calc(100% - 28px));margin:auto}.top{padding:20px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}.top a{color:var(--lime)}h1{font:clamp(36px,6vw,64px)/.98 Georgia,serif;font-weight:400;letter-spacing:-.04em;margin:36px 0 12px}.muted{color:var(--muted)}.panel{background:var(--panel);border:1px solid var(--line);padding:18px;margin:14px 0}.auth{display:flex;gap:10px;flex-wrap:wrap}.auth input{flex:1;min-width:220px;background:#070a09;border:1px solid var(--line);padding:13px;color:var(--ink)}button{background:var(--lime);border:1px solid var(--lime);padding:12px 18px;color:#10140b;font-weight:650;cursor:pointer}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.metric,.item{padding:14px;border:1px solid var(--line);overflow-wrap:anywhere}.metric b{display:block;font:27px/1.2 Georgia,serif;color:var(--gold)}.metric span,.item p{font-size:12px;color:var(--muted)}.list{display:grid;gap:8px}.item strong{color:var(--gold)}.item p{margin:4px 0;white-space:pre-wrap}.table-wrap{width:100%;overflow-x:auto;border:1px solid var(--line)}.analytics-table{width:100%;min-width:760px;border-collapse:collapse;font-size:11px}.analytics-table th,.analytics-table td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}.analytics-table th{color:var(--gold);font-weight:600;background:#ffffff05}.analytics-table td{color:var(--muted)}.analytics-table tbody tr:last-child td{border-bottom:0}.retention{font-size:11px;color:var(--muted);margin:0 0 14px}.status{min-height:24px;color:var(--gold)}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;color:var(--muted)}button:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-offset:3px}@media(max-width:680px){.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.panel{padding:13px}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
 .promo-settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0}.promo-setting{display:grid;gap:7px;align-content:start;padding:13px;border:1px solid var(--line);background:#080a09}.promo-setting>span,.promo-settings-label{font-size:11px;color:var(--muted)}.promo-setting select{width:100%;min-height:42px;padding:9px;background:#080a09;color:var(--ink);border:1px solid var(--line)}.promo-check{display:flex;gap:10px;align-items:flex-start;padding:10px;border:1px solid var(--line);font-size:12px}.promo-check input{accent-color:var(--gold);margin-top:3px}.promo-service-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 18px}.promo-settings-actions{display:flex;gap:10px;flex-wrap:wrap}.promo-settings-status{min-height:24px;color:var(--gold);font-size:12px}.promo-setting-note{font-size:11px;color:var(--muted);margin:10px 0}@media(max-width:680px){.promo-settings-grid{grid-template-columns:1fr}.promo-service-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}.readiness-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.readiness-item{border:1px solid var(--line);background:#ffffff03;padding:14px;min-width:0}.readiness-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.readiness-label{font-size:13px;color:var(--ink)}.readiness-status{display:inline-flex;flex-shrink:0;align-items:center;border:1px solid var(--line);border-radius:999px;padding:3px 8px;font:10px/1.4 ui-monospace,Consolas,monospace;color:var(--muted)}.readiness-status[data-state="ready"]{color:#c9ff8a;border-color:#c9ff8a55}.readiness-status[data-state="test_only"]{color:#94d8ff;border-color:#94d8ff55}.readiness-status[data-state="blocked"]{color:#ffb0a5;border-color:#ffb0a555}.readiness-status[data-state="armed"]{color:#ffcf7a;border-color:#ffcf7a66}.readiness-status[data-state="review_required"]{color:var(--gold);border-color:#d5bb8255}.readiness-status[data-state="not_integrated"]{color:#b9b4ff;border-color:#b9b4ff55}.readiness-item p{margin:8px 0 0;color:var(--muted);font-size:12px;line-height:1.55}.readiness-meta{font:10px/1.5 ui-monospace,Consolas,monospace;color:var(--muted)}@media(max-width:680px){.readiness-list{grid-template-columns:minmax(0,1fr)}.readiness-head{align-items:center}}
+
+/* Premium Command Dashboard: responsive, source-labeled aggregate intelligence. */
+.intel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.intel-head h2{margin:0 0 6px;font:400 clamp(24px,3vw,34px)/1.1 Georgia,serif}
+.intel-actions{display:flex;gap:8px;flex-wrap:wrap}
+.intel-actions button{min-height:38px;padding:9px 12px;font-size:11px}
+.intel-actions button:disabled{opacity:.4;cursor:not-allowed}
+.intel-meta{color:var(--muted);font-size:11px;margin:8px 0 14px}
+.intel-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px;margin:16px 0}
+.intel-kpi{min-width:0;border:1px solid var(--line);padding:13px;background:linear-gradient(145deg,#ffffff07,transparent)}
+.intel-kpi span{display:block;color:var(--muted);font-size:10px}
+.intel-kpi strong{display:block;color:var(--gold);font:400 clamp(20px,2.4vw,30px)/1.2 Georgia,serif;overflow-wrap:anywhere;margin-top:6px}
+.intel-kpi small{display:block;color:var(--muted);font-size:10px;margin-top:6px}
+.intel-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(270px,.85fr);gap:14px;margin-top:14px}
+.intel-block{min-width:0;border:1px solid var(--line);padding:15px;background:#080b09}
+.intel-block h3{font:400 21px/1.2 Georgia,serif;margin:0 0 8px}
+.intel-table{width:100%;border-collapse:collapse;min-width:760px;font-size:11px}
+.intel-table th,.intel-table td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.intel-table th{color:var(--gold);font-weight:600}
+.intel-table td{color:var(--muted);font-variant-numeric:tabular-nums}
+.intel-alerts{display:grid;gap:8px}
+.intel-alert{border:1px solid var(--line);border-left:3px solid var(--gold);padding:11px 12px;background:#ffffff03}
+.intel-alert[data-severity="critical"]{border-left-color:#ff958e}
+.intel-alert[data-severity="warning"]{border-left-color:#ffd18b}
+.intel-alert[data-severity="info"]{border-left-color:#8adbd0}
+.intel-alert strong{display:block;font-size:12px;font-weight:650}
+.intel-alert p{margin:5px 0 0;color:var(--muted);font-size:11px;line-height:1.5}
+.intel-empty{color:var(--muted);font-size:12px;border:1px dashed var(--line);padding:14px}
+.intel-funnel{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:10px}
+.intel-step{padding:12px;border:1px solid var(--line);min-width:0}
+.intel-step span{display:block;color:var(--muted);font-size:10px}
+.intel-step strong{display:block;color:var(--ink);font:400 26px/1.2 Georgia,serif;margin:5px 0;overflow-wrap:anywhere}
+.intel-step small{color:var(--gold);font-size:10px}
+.intel-note{border-left:2px solid var(--gold);padding:10px 12px;background:#d5bb8208;color:var(--muted);font-size:11px;line-height:1.55;margin-top:12px}
+.intel-status{min-height:24px;color:var(--gold);font-size:11px;margin:8px 0}
+.intel-status[data-kind="error"]{color:#ff958e}
+.intel-status[data-kind="success"]{color:#c9ff8a}
+@media(max-width:900px){.intel-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.intel-grid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:560px){.intel-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.intel-funnel{grid-template-columns:minmax(0,1fr)}.intel-actions{width:100%}.intel-actions button{flex:1}}
+
 </style></head>
 <body><div class="wrap">
 <header class="top"><strong>OSGARD WORLD / COMMERCE</strong><a href="/games/">← Игровой каталог</a></header>
@@ -30,6 +70,18 @@
 <p class="promo-setting-note">Настройки хранятся в PostgreSQL Commerce API. Изменения применяются к новым межигровым окнам после обновления публичной конфигурации; ранее сохранённые пользовательские предпочтения не перезаписываются. Социальные публикации не подтверждаются автоматически.</p>
 </section>
 <section class="panel"><h2>Сводка</h2><div class="metrics"><div class="metric"><b id="lead-total">—</b><span>Заявки, всего</span></div><div class="metric"><b id="lead-new">—</b><span>Новые заявки</span></div><div class="metric"><b id="order-total">—</b><span>Заказы</span></div><div class="metric"><b id="events-total">—</b><span>События за 30 дней</span></div></div><pre id="money"></pre></section>
+<section class="panel" id="premium-command-dashboard" aria-labelledby="intel-heading">
+<div class="intel-head"><div><h2 id="intel-heading">Premium Command Dashboard</h2><p class="retention">Финансовая картина, воронка событий и проверяемые сигналы. Только серверные агрегаты; без демо-чисел и без персональных данных.</p></div><div class="intel-actions"><button id="intel-export-json" type="button" disabled>Экспорт отчёта JSON ↓</button><button id="intel-export-csv" type="button" disabled>Экспорт агрегатов CSV ↓</button></div></div>
+<p id="intel-status" class="intel-status" role="status" aria-live="polite">Подключитесь к Commerce API, чтобы рассчитать показатели.</p>
+<div id="intel-kpis" class="intel-kpis"><article class="intel-kpi"><span>Оплаченные заказы</span><strong>—</strong><small>Нет данных</small></article></div>
+<div class="intel-grid">
+<section class="intel-block" aria-labelledby="intel-currency-heading"><h3 id="intel-currency-heading">Деньги — строго по валютам</h3><p class="retention">Заказы — накопительные по всему сроку хранения. Отчёты интеграторов — последние 30 дней. Источники показаны рядом, но не суммируются друг с другом.</p><div class="table-wrap"><table class="intel-table"><thead><tr><th>Валюта</th><th>Paid orders</th><th>Заказы: gross · весь срок</th><th>Сервисы: gross · 30 дней</th><th>Возвраты · 30 дней</th><th>Net отчёта · 30 дней</th><th>Paid / refunds events</th></tr></thead><tbody id="intel-currency-rows"><tr><td colspan="7">Загрузите агрегаты.</td></tr></tbody></table></div></section>
+<section class="intel-block" aria-labelledby="intel-alert-heading"><h3 id="intel-alert-heading">Решения и риски</h3><p class="retention">Сигналы — это повод проверить данные, не автоматические бизнес-решения.</p><div id="intel-alerts" class="intel-alerts"><p class="intel-empty">Сигналы появятся после загрузки.</p></div></section>
+</div>
+<section class="intel-block" style="margin-top:14px" aria-labelledby="intel-funnel-heading"><h3 id="intel-funnel-heading">Путь игрока и интерес к Premium</h3><p class="retention">Отношения ниже — доли событий за 30 дней, не уникальные люди и не сквозные когорты.</p><div id="intel-funnel" class="intel-funnel"><article class="intel-step"><span>Каталог</span><strong>—</strong></article></div><p class="intel-note">Просмотры Premium и оплаченные заказы не соединяются в conversion rate: текущий агрегат не связывает их в одну когорту. Если просмотры есть, а заказов нет, панель предложит проверить checkout и webhook без объявления ложной конверсии.</p></section>
+<section class="intel-block" style="margin-top:14px" aria-labelledby="intel-promo-heading"><h3 id="intel-promo-heading">OSGARD SELECT · эффективность переходов</h3><p class="retention">Описательный CTR по согласованным видимым появлениям. Малая выборка явно помечается; победитель автоматически не назначается.</p><div class="table-wrap"><table class="intel-table"><thead><tr><th>Сервис</th><th>Появления</th><th>Клики</th><th>CTR</th><th>Выборка</th><th>Игры</th></tr></thead><tbody id="intel-promo-rows"><tr><td colspan="6">Загрузите агрегаты.</td></tr></tbody></table></div></section>
+<p class="intel-note">Источники: Commerce API overview, агрегаты заказов и согласованные события. Валовая выручка не учитывает комиссии, налоги и операционные расходы. Отчёты интеграторов не являются независимым подтверждением платёжного провайдера. Экспорт содержит только производные агрегаты — не email, контакты, идентификаторы заказов, токены или строки событий.</p>
+</section>
 <section class="panel" id="launch-readiness" aria-labelledby="readiness-heading"><h2 id="readiness-heading">Готовность к коммерческому запуску</h2><p id="readiness-summary" class="status" role="status" aria-live="polite">Введите операторский токен и нажмите «Загрузить», чтобы получить серверный отчёт готовности.</p><div id="readiness-items" class="readiness-list"><article class="readiness-item"><strong class="readiness-label">Отчёт ещё не загружен</strong><p>Показываются только статусы, проверяемые сервером. Секреты в отчёт не входят.</p></article></div><p id="readiness-generated" class="readiness-meta">Read-only gate · no secrets · no launch flags changed</p></section>
 <section class="panel"><h2>OSGARD SELECT · 30 дней</h2><p class="retention">Собственные промо-появления считаются только после согласия на аналитику и если карточка была видна не менее чем наполовину в течение секунды. Это не показы сторонней рекламной сети.</p><div class="table-wrap"><table class="analytics-table" id="owned-promo-table"><thead><tr><th scope="col">Сервис</th><th scope="col">Игра</th><th scope="col">Видимые появления</th><th scope="col">Переходы</th><th scope="col">CTR по появлениям</th></tr></thead><tbody id="owned-promo-body"><tr><td colspan="5">Не загружено.</td></tr></tbody></table></div><div class="metrics" aria-label="Управление межигровыми предложениями"><div class="metric"><b id="owned-promo-snoozes">—</b><span>Паузы промо за 30 дней</span></div><div class="metric"><b id="owned-promo-snooze-clears">—</b><span>Возобновления промо</span></div></div><div class="metrics" aria-label="Коммерческие переходы из OSGARD SELECT"><div class="metric"><b id="owned-promo-directory-clicks">—</b><span>Переходы в каталог экосистемы</span></div><div class="metric"><b id="owned-promo-development-clicks">—</b><span>Переходы к созданию продуктов</span></div></div><p class="retention">Переходы доступны только как согласованные события. Они не означают посещение сайта назначения, заявку или продажу. Пауза — добровольное действие пользователя. Учитываются только события при включённой аналитике; показатель не означает отказ от всех сервисов навсегда.</p><h3>Тест текста CTA · A/B/C</h3><p class="retention">Сравниваются три варианта текста главной кнопки OSGARD SELECT. Показ учитывается после согласия и достаточной видимости; повторные клики по одному spotlight в одной вкладке дедуплицируются. Это события/сессии, не уникальные люди и не доказательство причинного эффекта. Не объявляй победителя по малой выборке.</p><div class="table-wrap"><table class="analytics-table" id="owned-promo-variant-table"><thead><tr><th scope="col">Вариант</th><th scope="col">Видимые появления</th><th scope="col">Клики по CTA</th><th scope="col">CTR</th></tr></thead><tbody id="owned-promo-variant-body"><tr><td colspan="4">Не загружено.</td></tr></tbody></table></div><p class="retention">Воронка соцсетей · только согласованные события</p><div class="metrics" aria-label="Социальные приглашения"><div class="metric"><b id="analytics-social-share-intents">—</b><span>Открытия форм публикации</span></div><div class="metric"><b id="analytics-social-reward-claims">—</b><span>Самоподтверждённые награды</span></div></div><p class="muted">Платформы соцсетей не подтверждают сайту факт публикации. Эти показатели отражают открытие формы и локальную награду после подтверждения игроком, а не проверенные репосты.</p></section>
 <section class="panel"><h2>Социальный канал · 30 дней</h2><p class="retention">Сравнивай кнопки публикации и самоподтверждённые награды по сети. «Награда / намерение» — не подтверждение реального репоста: соцсети не сообщают сайту факт публикации.</p><div class="table-wrap"><table class="analytics-table" id="social-network-table"><thead><tr><th scope="col">Канал</th><th scope="col">Открытия публикации</th><th scope="col">Запрошенные награды</th><th scope="col">Награды / открытия</th></tr></thead><tbody id="social-network-body"><tr><td colspan="4">Не загружено.</td></tr></tbody></table></div></section>
@@ -41,11 +93,13 @@
 <section class="panel"><h2>Последние заявки</h2><div id="leads" class="list"><p class="muted">Не загружено.</p></div></section>
 <section class="panel"><h2>Последние заказы</h2><div id="orders" class="list"><p class="muted">Не загружено.</p></div></section>
 </main></div>
+<script src="/games/commerce-admin/intelligence.js"></script>
 <script>
 (() => {
 'use strict';
 const $ = s => document.querySelector(s);
 let token = '';
+let lastIntelligenceReport = null;
 async function base() {
   const response = await fetch('/games/commerce-config.json', { cache: 'no-store' }).catch(() => null);
   const config = response?.ok ? await response.json().catch(() => ({})) : {};
@@ -85,6 +139,77 @@ const PROMO_ADMIN_SERVICES = [
   ['gold-glamour','GOLD GLAMOUR'],['osgard-business','OSGARD OS'],
   ['vanguard','OSGARD VANGUARD STUDIO'],['partner-studio','OSGARD PARTNER STUDIO'],
 ];
+
+function renderIntelligence(report) {
+  const $id = id => document.getElementById(id);
+  const kpis = $id('intel-kpis'); kpis.replaceChildren();
+  const number = value => new Intl.NumberFormat('ru-RU').format(Number(value || 0));
+  const pct = value => value === null || !Number.isFinite(value) ? 'Недостаточно данных' : Number(value).toFixed(1) + '%';
+  const kpiRows = [
+    ['Оплаченные заказы', number(report.headline.paidOrders), 'Записи со статусом paid'],
+    ['Заказы всего', number(report.headline.totalOrders), 'Все статусы Commerce API'],
+    ['Paid-доля записей', pct(report.headline.paidOrderShare), 'Не вероятность успешной оплаты'],
+    ['Валют в учёте', number(report.headline.trackedCurrencyCount), 'Ничего не складываем между валютами'],
+    ['Не привязано к игре', pct(report.headline.unknownAttributionRate), number(report.headline.unknownGameOrders) + ' из ' + number(report.headline.attributedPaidOrders) + ' атрибутированных paid-заказов'],
+  ];
+  for (const [label,value,note] of kpiRows) {
+    const card=document.createElement('article');card.className='intel-kpi';
+    const l=document.createElement('span'),v=document.createElement('strong'),n=document.createElement('small');
+    l.textContent=label;v.textContent=value;n.textContent=note;card.append(l,v,n);kpis.append(card);
+  }
+  const currencyRoot=$id('intel-currency-rows');currencyRoot.replaceChildren();
+  if(!report.currencies.length){const row=document.createElement('tr'),cell=document.createElement('td');cell.colSpan=7;cell.textContent='Нет сумм с валидным кодом валюты в ответе API.';row.append(cell);currencyRoot.append(row);}
+  for(const item of report.currencies){
+    const row=document.createElement('tr');
+    const values=[item.currency,number(item.paidOrders),window.OSGARDCommerceIntelligence.formatMinor(item.commerceGrossMinor,item.currency),window.OSGARDCommerceIntelligence.formatMinor(item.reportingGrossMinor,item.currency),window.OSGARDCommerceIntelligence.formatMinor(item.reportingRefundMinor,item.currency),window.OSGARDCommerceIntelligence.formatMinor(item.reportingNetMinor,item.currency),number(item.reportingPaidEvents)+' / '+number(item.reportingRefundEvents)];
+    for(const value of values){const cell=document.createElement('td');cell.textContent=value;row.append(cell);}currencyRoot.append(row);
+  }
+  const alertRoot=$id('intel-alerts');alertRoot.replaceChildren();
+  if(!report.alerts.length){const el=document.createElement('p');el.className='intel-empty';el.textContent='Автоматических сигналов по текущим правилам нет. Это не является гарантией отсутствия ошибок.';alertRoot.append(el);}
+  for(const item of report.alerts){
+    const card=document.createElement('article');card.className='intel-alert';card.dataset.severity=item.severity;
+    const title=document.createElement('strong'),detail=document.createElement('p');
+    title.textContent=(item.severity==='critical'?'КРИТИЧНО · ':item.severity==='warning'?'ПРОВЕРИТЬ · ':'ИНФО · ')+item.title;
+    detail.textContent=item.detail;card.append(title,detail);alertRoot.append(card);
+  }
+  const funnelRoot=$id('intel-funnel');funnelRoot.replaceChildren();
+  const funnelRows=[
+    ['Просмотры каталога',report.funnel.catalogViews,'От каталога к старту: '+pct(report.funnel.catalogToStartEventRatio)],
+    ['Старты игры',report.funnel.gameStarts,'Завершение / старт: '+pct(report.funnel.startToCompletionEventRatio)],
+    ['Завершения',report.funnel.completedSessions,'Доля событий может превышать 100%'],
+    ['Просмотры Premium',report.funnel.premiumPageViews,'Отдельный сигнал интереса; не когорта'],
+    ['События заявок',report.funnel.leadSubmittedEvents,'Согласованные события'],
+    ['Клики по промо',report.funnel.crossPromoClicks,'Согласованные события'],
+  ];
+  for(const [label,value,note] of funnelRows){const card=document.createElement('article');card.className='intel-step';const l=document.createElement('span'),v=document.createElement('strong'),n=document.createElement('small');l.textContent=label;v.textContent=number(value);n.textContent=note;card.append(l,v,n);funnelRoot.append(card);}
+  const promoRoot=$id('intel-promo-rows');promoRoot.replaceChildren();
+  if(!report.promo.length){const row=document.createElement('tr'),cell=document.createElement('td');cell.colSpan=6;cell.textContent='Нет подходящих данных по OSGARD SELECT за окно отчёта.';row.append(cell);promoRoot.append(row);}
+  for(const item of report.promo){const row=document.createElement('tr');const vals=[item.serviceId,number(item.impressions),number(item.clicks),pct(item.clickRate),item.sampleState==='descriptive'?'Описательно':'Малая выборка',number(item.gameCount)];for(const val of vals){const cell=document.createElement('td');cell.textContent=val;row.append(cell);}promoRoot.append(row);}
+  $id('intel-status').dataset.kind='success';
+  $id('intel-status').textContent='Рассчитано '+new Date(report.generatedAt).toLocaleString('ru-RU')+' · заказы: накопительно; сервисные конверсии и события: 30 дней; атрибуция лидов: 90 дней · сигналов: '+report.headline.warnings+'. Только агрегаты.';
+  $id('intel-export-json').disabled=false;$id('intel-export-csv').disabled=false;
+}
+function clearIntelligence(message='Ждём данные после подключения…') {
+  lastIntelligenceReport = null;
+  const $id = id => document.getElementById(id);
+  $id('intel-status').textContent = message;
+  $id('intel-status').dataset.kind = '';
+  $id('intel-kpis').replaceChildren();
+  for (const id of ['intel-currency-rows','intel-promo-rows']) {
+    const body=$id(id);body.replaceChildren();
+    const row=document.createElement('tr'),cell=document.createElement('td');
+    cell.colSpan=id==='intel-currency-rows'?7:6;cell.textContent='Нет актуального отчёта.';row.append(cell);body.append(row);
+  }
+  for (const id of ['intel-alerts','intel-funnel']) $id(id).replaceChildren();
+  $id('intel-export-json').disabled = true; $id('intel-export-csv').disabled = true;
+}
+function downloadAggregateReport(name,content,type) {
+  const blob=new Blob([content],{type});
+  const url=URL.createObjectURL(blob),link=document.createElement('a');
+  link.href=url;link.download=name;link.rel='noopener';link.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
 function renderPromoServiceOptions(rootId, attr, checkedIds, enabledIds = PROMO_ADMIN_SERVICES.map(x => x[0])) {
   const root = $('#'+rootId); root.replaceChildren();
   for (const [id,labelText] of PROMO_ADMIN_SERVICES) {
@@ -471,6 +596,7 @@ async function load() {
   token = $('#token').value.trim();
   if (token.length < 32) { $('#status').textContent = 'Токен должен содержать не менее 32 символов.'; return; }
   $('#load').disabled = true; $('#status').textContent = 'Загружаем данные…';
+  clearIntelligence('Обновляем агрегаты; прежний отчёт и экспорт сброшены до завершения запроса.');
   try {
     const [overview, leads, orders, readinessResult, promoSettingsResult] = await Promise.all([
       api('/v1/admin/overview'),
@@ -481,6 +607,16 @@ async function load() {
     ]);
     if (readinessResult.ok) renderReadiness(readinessResult.data);
     else renderReadinessUnavailable(readinessResult.error);
+    try {
+      if (!window.OSGARDCommerceIntelligence) throw new Error('Premium Intelligence не загрузился.');
+      lastIntelligenceReport = window.OSGARDCommerceIntelligence.derive(overview);
+      renderIntelligence(lastIntelligenceReport);
+    } catch (intelligenceError) {
+      lastIntelligenceReport = null;
+      $('#intel-status').dataset.kind = 'error';
+      $('#intel-status').textContent = 'Не удалось рассчитать Premium Intelligence: ' + String(intelligenceError?.message || 'ошибка').slice(0,180);
+      $('#intel-export-json').disabled = true; $('#intel-export-csv').disabled = true;
+    }
     if (promoSettingsResult.ok) {
       renderPromoSettings(promoSettingsResult.data.config || {});
       $('#owned-promo-settings-status').textContent = 'Источник: ' + (promoSettingsResult.data.source || 'database') + (promoSettingsResult.data.updatedAt ? ' · изменено ' + new Date(promoSettingsResult.data.updatedAt).toLocaleString() : ' · исходные значения') + '.';
@@ -533,9 +669,19 @@ async function load() {
     list('#leads',leads.items || [],['project_type','contact','budget','description','status','attribution_game_id','attribution_source','attribution_campaign','created_at']);
     list('#orders',orders.items || [],['order_id','product_key','email','status','currency','amount_total','attribution_game_id','attribution_source','attribution_campaign','created_at']);
     $('#status').textContent = 'Данные получены. Выручка показана до комиссий и операционных расходов.';
-  } catch (error) { $('#status').textContent = 'Не удалось загрузить данные: ' + String(error.message || 'ошибка').slice(0,180); }
+  } catch (error) { $('#status').textContent = 'Не удалось загрузить данные: ' + String(error.message || 'ошибка').slice(0,180); $('#intel-status').dataset.kind='error'; $('#intel-status').textContent='Premium Intelligence не обновлён: '+String(error.message || 'ошибка').slice(0,180); }
   finally { $('#load').disabled = false; }
 }
+$('#intel-export-json').addEventListener('click', () => {
+  if (!lastIntelligenceReport) return;
+  downloadAggregateReport('osgard-premium-intelligence-' + new Date().toISOString().slice(0,10) + '.json',
+    JSON.stringify(lastIntelligenceReport,null,2) + '\n','application/json;charset=utf-8');
+});
+$('#intel-export-csv').addEventListener('click', () => {
+  if (!lastIntelligenceReport || !window.OSGARDCommerceIntelligence) return;
+  downloadAggregateReport('osgard-premium-intelligence-' + new Date().toISOString().slice(0,10) + '.csv',
+    window.OSGARDCommerceIntelligence.toCsv(lastIntelligenceReport),'text/csv;charset=utf-8');
+});
 $('#load').addEventListener('click',load);
 $('#token').addEventListener('keydown',event=>{if(event.key==='Enter')load();});
 window.addEventListener('pagehide',()=>{token='';$('#token').value='';});
