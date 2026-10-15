@@ -359,7 +359,7 @@
   }
   function toMarkdown(report) {
     const plan = report?.decisionPlan || buildDecisionPlan(report);
-    const clean = value => String(value ?? '').replace(/[\\u0000-\\u001f\\u007f]/g,' ').replace(/[\\r\\n]+/g,' ').replace(/\\|/g,'\\\\|').replace(/\\x60/g,'\\\\x60').slice(0, 500);
+    const clean = value => String(value ?? '').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/[\r\n]+/g,' ').replace(/\|/g,'\\|').replace(new RegExp(String.fromCharCode(96), 'g'), "'").slice(0, 500);
     const lines = [
       '# OSGARD Premium · план проверок',
       '',
@@ -379,7 +379,7 @@
       lines.push('');
     }
     lines.push('> ' + clean(plan.interpretation));
-    return lines.join('\\n') + '\\n';
+    return lines.join('\n') + '\n';
   }
 
   function formatMinor(value, currency) {
