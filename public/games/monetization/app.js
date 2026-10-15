@@ -298,6 +298,7 @@ function renderExperiments() {
   document.getElementById('experiment-completed').textContent = count(summary.completed);
   document.getElementById('experiment-target-hit-rate').textContent =
     summary.targetHitRatePct === null ? '—' : percent(summary.targetHitRatePct);
+  document.getElementById('experiment-overdue').textContent = count(summary.overdue);
   const list = document.getElementById('experiment-list');
   list.replaceChildren();
   if (!entries.length) {
