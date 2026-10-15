@@ -382,6 +382,186 @@
     return lines.join('\n') + '\n';
   }
 
+  function normalizeComparisonSnapshot(input) {
+    if (!input || typeof input !== 'object' || Array.isArray(input) ||
+        input.schema !== SCHEMA ||
+        typeof input.generatedAt !== 'string' || !Number.isFinite(Date.parse(input.generatedAt)) ||
+        !input.headline || typeof input.headline !== 'object' || Array.isArray(input.headline) ||
+        !Array.isArray(input.currencies) || input.currencies.length > 100 ||
+        !Array.isArray(input.alerts) || input.alerts.length > 500) {
+      throw new Error('Файл не является поддерживаемым агрегированным отчётом OSGARD Premium.');
+    }
+    const safeCount = value => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : null;
+    const safePercent = value => typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100 ? value : null;
+    const seenCurrencies = new Set();
+    const currencies = input.currencies.map(row => {
+      if (!row || typeof row !== 'object' || Array.isArray(row)) throw new Error('В отчёте обнаружена некорректная строка валюты.');
+      const currency = currencyCode(row.currency);
+      if (!currency || seenCurrencies.has(currency)) throw new Error('Коды валют должны быть корректными и уникальными.');
+      seenCurrencies.add(currency);
+      const minor = value => {
+        const parsed = parseMinor(value, true);
+        return parsed === null ? null : parsed.toString();
+      };
+      return {
+        currency,
+        paidOrders:safeCount(row.paidOrders),
+        reportingPaidEvents:safeCount(row.reportingPaidEvents),
+        reportingRefundEvents:safeCount(row.reportingRefundEvents),
+        commerceGrossMinor:minor(row.commerceGrossMinor),
+        reportingGrossMinor:minor(row.reportingGrossMinor),
+        reportingRefundMinor:minor(row.reportingRefundMinor),
+        reportingNetMinor:minor(row.reportingNetMinor),
+      };
+    });
+    const alerts = input.alerts.map(row => {
+      if (!row || typeof row !== 'object' || Array.isArray(row) ||
+          typeof row.id !== 'string' || !row.id.trim() || row.id.length > 180 ||
+          !['critical','warning','info'].includes(row.severity)) {
+        throw new Error('Список сигналов содержит некорректный элемент.');
+      }
+      return {
+        id:row.id.slice(0,180),
+        severity:row.severity,
+        title:String(row.title || 'Сигнал без названия').replace(/[\u0000-\u001f\u007f]/g,' ').slice(0,180),
+      };
+    });
+    if (new Set(alerts.map(item=>item.id)).size !== alerts.length) throw new Error('Идентификаторы сигналов должны быть уникальными.');
+    const sourceActions = Array.isArray(input.decisionPlan?.items) ? input.decisionPlan.items : [];
+    if (sourceActions.length > 500) throw new Error('План действий содержит слишком много записей.');
+    const actions = sourceActions.map(row => {
+      if (!row || typeof row !== 'object' || Array.isArray(row) ||
+          typeof row.sourceAlertId !== 'string' || !row.sourceAlertId.trim() ||
+          !['critical','warning','info'].includes(row.severity)) {
+        throw new Error('План действий содержит некорректный элемент.');
+      }
+      return {
+        id:row.sourceAlertId.slice(0,180),
+        severity:row.severity,
+        title:String(row.title || 'Проверка без названия').replace(/[\u0000-\u001f\u007f]/g,' ').slice(0,180),
+      };
+    });
+    if (new Set(actions.map(item=>item.id)).size !== actions.length) throw new Error('Идентификаторы действий должны быть уникальными.');
+    return {
+      schema:SCHEMA,
+      generatedAt:new Date(input.generatedAt).toISOString(),
+      headline:{
+        paidOrders:safeCount(input.headline.paidOrders),
+        totalOrders:safeCount(input.headline.totalOrders),
+        paidOrderShare:safePercent(input.headline.paidOrderShare),
+      },
+      currencies,
+      alerts,
+      actions,
+    };
+  }
+  function compareReports(previousInput, currentInput) {
+    const previous = normalizeComparisonSnapshot(previousInput);
+    const current = normalizeComparisonSnapshot(currentInput);
+    const deltaCount = (oldValue, newValue) =>
+      oldValue !== null && newValue !== null ? newValue - oldValue : null;
+    const deltaPercent = (oldValue, newValue) =>
+      oldValue !== null && newValue !== null ? Math.round((newValue-oldValue)*100)/100 : null;
+    const metrics = [
+      {id:'paidOrders',label:'Оплаченные заказы',unit:'count',
+        previous:previous.headline.paidOrders,current:current.headline.paidOrders,
+        delta:deltaCount(previous.headline.paidOrders,current.headline.paidOrders)},
+      {id:'totalOrders',label:'Заказы всех статусов',unit:'count',
+        previous:previous.headline.totalOrders,current:current.headline.totalOrders,
+        delta:deltaCount(previous.headline.totalOrders,current.headline.totalOrders)},
+      {id:'paidOrderShare',label:'Paid-доля записей',unit:'percentage-points',
+        previous:previous.headline.paidOrderShare,current:current.headline.paidOrderShare,
+        delta:deltaPercent(previous.headline.paidOrderShare,current.headline.paidOrderShare)},
+    ];
+    const oldCurrencies = new Map(previous.currencies.map(row=>[row.currency,row]));
+    const newCurrencies = new Map(current.currencies.map(row=>[row.currency,row]));
+    const currencyIds = [...new Set([...oldCurrencies.keys(),...newCurrencies.keys()])].sort();
+    const amountFields = ['commerceGrossMinor','reportingGrossMinor','reportingRefundMinor','reportingNetMinor'];
+    const countFields = ['paidOrders','reportingPaidEvents','reportingRefundEvents'];
+    const currencyChanges = currencyIds.map(currency => {
+      const oldRow = oldCurrencies.get(currency) || null;
+      const newRow = newCurrencies.get(currency) || null;
+      const presence = !oldRow ? 'new' : !newRow ? 'not-in-current' : 'compared';
+      const result = {currency,presence,counts:{},amountsMinor:{}};
+      for (const field of countFields) {
+        result.counts[field] = {
+          previous:oldRow?.[field] ?? null,
+          current:newRow?.[field] ?? null,
+          delta:oldRow && newRow ? deltaCount(oldRow[field],newRow[field]) : null,
+        };
+      }
+      for (const field of amountFields) {
+        const oldValue = oldRow?.[field] ?? null;
+        const newValue = newRow?.[field] ?? null;
+        let delta = null;
+        if (oldRow && newRow && oldValue !== null && newValue !== null) {
+          const oldMinor = parseMinor(oldValue,true), newMinor = parseMinor(newValue,true);
+          if (oldMinor !== null && newMinor !== null) delta = (newMinor-oldMinor).toString();
+        }
+        result.amountsMinor[field] = {previous:oldValue,current:newValue,delta};
+      }
+      return result;
+    });
+    const diffItems = (oldItems,newItems,kind) => {
+      const oldMap = new Map(oldItems.map(item=>[item.id,item]));
+      const newMap = new Map(newItems.map(item=>[item.id,item]));
+      const result = [];
+      for (const item of newItems) {
+        const old = oldMap.get(item.id);
+        if (!old) result.push({kind,id:item.id,status:'new',severity:item.severity,title:item.title,previousSeverity:null});
+        else if (old.severity !== item.severity || old.title !== item.title) {
+          result.push({kind,id:item.id,status:'changed',severity:item.severity,title:item.title,previousSeverity:old.severity,previousTitle:old.title});
+        }
+      }
+      for (const item of oldItems) if (!newMap.has(item.id)) {
+        result.push({kind,id:item.id,status:'not-in-current',severity:item.severity,title:item.title,previousSeverity:item.severity,previousTitle:item.title});
+      }
+      const rank = {critical:0,warning:1,info:2};
+      return result.sort((a,b)=>(rank[a.severity]??9)-(rank[b.severity]??9)||a.id.localeCompare(b.id));
+    };
+    const alertChanges = diffItems(previous.alerts,current.alerts,'alert');
+    const actionChanges = diffItems(previous.actions,current.actions,'action');
+    return {
+      schema:'osgard.commerce-report-comparison.v1',
+      previousGeneratedAt:previous.generatedAt,
+      currentGeneratedAt:current.generatedAt,
+      currentIsNewer:Date.parse(current.generatedAt)>=Date.parse(previous.generatedAt),
+      metrics,
+      currencies:currencyChanges,
+      alertChanges,
+      actionChanges,
+      summary:{
+        newCurrencies:currencyChanges.filter(row=>row.presence==='new').length,
+        absentCurrencies:currencyChanges.filter(row=>row.presence==='not-in-current').length,
+        newAlerts:alertChanges.filter(row=>row.status==='new').length,
+        absentAlerts:alertChanges.filter(row=>row.status==='not-in-current').length,
+        changedAlerts:alertChanges.filter(row=>row.status==='changed').length,
+        newActions:actionChanges.filter(row=>row.status==='new').length,
+        absentActions:actionChanges.filter(row=>row.status==='not-in-current').length,
+        changedActions:actionChanges.filter(row=>row.status==='changed').length,
+      },
+      interpretation:'Сравниваются два снимка агрегатов, а не синхронные когорты. Окна заказов, сервисных событий и атрибуции различаются; дельты не доказывают причинность. Новая/отсутствующая валюта не заменяется нулём.',
+    };
+  }
+  function toComparisonCsv(comparison) {
+    const rows=[['section','metric','currency','previous','current','delta','status']];
+    const add=(section,metric,currency,previous,current,delta,status='')=>rows.push([section,metric,currency,previous ?? '',current ?? '',delta ?? '',status]);
+    for(const metric of comparison?.metrics || []) add('headline',metric.label,'',metric.previous,metric.current,metric.delta,metric.unit);
+    for(const row of comparison?.currencies || []) {
+      for(const [field,values] of Object.entries(row.counts || {})) add('currency-count',field,row.currency,values.previous,values.current,values.delta,row.presence);
+      for(const [field,values] of Object.entries(row.amountsMinor || {})) add('currency-minor',field,row.currency,values.previous,values.current,values.delta,row.presence);
+    }
+    for(const item of [...(comparison?.alertChanges || []),...(comparison?.actionChanges || [])]) {
+      add(item.kind,item.id,'',item.previousTitle || '',item.title || '',item.previousSeverity || '',item.status);
+    }
+    const escape=value=>{
+      let text=String(value ?? '');
+      if(/^\s*[=+\-@]/.test(text)) text="'"+text;
+      return '"'+text.replace(/"/g,'""')+'"';
+    };
+    return '\uFEFF'+rows.map(row=>row.map(escape).join(',')).join('\r\n')+'\r\n';
+  }
+
   function formatMinor(value, currency) {
     const code = currencyCode(currency);
     if (!code) return '—';
@@ -425,5 +605,5 @@
     return '\uFEFF' + rows.map(row=>row.map(escape).join(',')).join('\r\n') + '\r\n';
   }
 
-  window.OSGARDCommerceIntelligence = Object.freeze({ schema:SCHEMA, derive, formatMinor, toCsv, buildDecisionPlan, toMarkdown });
+  window.OSGARDCommerceIntelligence = Object.freeze({ schema:SCHEMA, derive, formatMinor, toCsv, buildDecisionPlan, toMarkdown, normalizeComparisonSnapshot, compareReports, toComparisonCsv });
 })();
