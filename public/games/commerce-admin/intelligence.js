@@ -604,7 +604,9 @@
       currencies,
       alerts,
       actions,
-      actionsAvailable:Array.isArray(input.decisionPlan?.items) || Array.isArray(input.actions),
+      actionsAvailable:typeof input.actionsAvailable==='boolean'
+        ? input.actionsAvailable
+        : Array.isArray(input.decisionPlan?.items) || Array.isArray(input.actions),
       qualitySources,
       windowNote,
     };
