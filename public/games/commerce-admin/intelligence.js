@@ -498,6 +498,17 @@
       lines.push('');
     }
     lines.push('> ' + clean(plan.interpretation));
+    const quality = report?.dataQuality;
+    if (quality?.schema === 'osgard.commerce-data-quality.v1') {
+      lines.push('');
+      lines.push('## Качество и сопоставимость источников');
+      lines.push('');
+      lines.push('Состояние: ' + clean(quality.state) + ' · измерено: ' + quality.summary.measured + ' · частично: ' + quality.summary.partial + ' · недоступно: ' + quality.summary.unavailable);
+      for (const source of quality.sources || []) {
+        lines.push('- ' + clean(source.title) + ': ' + clean(source.status) + ' · окно: ' + clean(source.window) + ' · ' + clean(source.note));
+      }
+      for (const caveat of quality.caveats || []) lines.push('- Ограничение: ' + clean(caveat));
+    }
     return lines.join('\n') + '\n';
   }
 
@@ -713,6 +724,16 @@
       add('service-reporting', 'refundEvents', row.reportingRefundEvents,row.currency);
     }
     for (const row of report?.alerts || []) add('alert:' + row.severity,row.id,row.title);
+    if (report?.dataQuality?.schema === 'osgard.commerce-data-quality.v1') {
+      add('data-quality','state',report.dataQuality.state);
+      for (const [key,value] of Object.entries(report.dataQuality.summary || {})) add('data-quality-summary',key,value);
+      for (const source of report.dataQuality.sources || []) {
+        add('data-quality-source',source.id,source.status,source.window);
+        add('data-quality-note',source.id,source.note);
+        for (const warning of source.warnings || []) add('data-quality-warning',warning.id,warning.title,warning.severity);
+      }
+      for (const [index,caveat] of (report.dataQuality.caveats || []).entries()) add('data-quality-caveat',String(index+1),caveat);
+    }
     for (const action of report?.decisionPlan?.items || []) {
       add('action:' + action.severity, action.id, action.title);
       add('action-detail', action.sourceAlertId, action.owner + ' · ' + action.effort + ' · ' + action.steps.join('; '));
