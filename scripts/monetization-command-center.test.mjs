@@ -71,8 +71,16 @@ test('experiment creation sanitizes text and rejects invalid driver/date/range',
   assert.equal(entry.title, 'Тест конверсии в запуск');
   assert.equal(entry.status, 'planned');
   assert.throws(() => createExperiment({ title: 'x', hypothesis: 'too short', driver: 'unknown', direction: 'increase', baseline: 1, target: 2 }, { id: 'x', now: NOW }), /Название|гипотеза|показатель/i);
-  assert.throws(() => createExperiment({ ...entry, dueDate: '2026-02-30' }, { id: 'bad_date', now: NOW }), /календарн|Дата/i);
-  assert.throws(() => createExperiment({ ...entry, baseline: 'NaN' }, { id: 'bad_number', now: NOW }), /числом/i);
+  const draft = {
+    title: 'Тест конверсии в запуск',
+    hypothesis: 'Изменение первого экрана увеличит долю запуска игры на когорте новых посетителей.',
+    driver: 'gameStartRate',
+    direction: 'increase',
+    baseline: 30,
+    target: 36,
+  };
+  assert.throws(() => createExperiment({ ...draft, dueDate: '2026-02-30' }, { id: 'bad_date', now: NOW }), /календарн|Дата/i);
+  assert.throws(() => createExperiment({ ...draft, baseline: 'NaN' }, { id: 'bad_number', now: NOW }), /числом/i);
 });
 
 test('completed experiment records actual value, target success and observed lift', () => {
