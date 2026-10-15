@@ -276,7 +276,10 @@ test('comparison import strictly validates aggregate shape and CSV neutralizes h
   };
   assert.throws(()=>engine.compareReports({...base,schema:'wrong'},base),/поддерживаемого агрегированного отчёта/i);
   assert.throws(()=>engine.compareReports({...base,currencies:[...base.currencies,{...base.currencies[0]}]},base),/уникальными/i);
-  const comparison=engine.compareReports(base,{...base,generatedAt:'2026-10-16T00:00:00.000Z'});
+  const comparison=engine.compareReports(
+    {...base,alerts:[],decisionPlan:{items:[]}},
+    {...base,generatedAt:'2026-10-16T00:00:00.000Z'}
+  );
   const csv=engine.toComparisonCsv(comparison);
   assert.ok(csv.startsWith('\uFEFF'));
   assert.ok(csv.includes('"\'=HYPERLINK(""bad"")"'));
@@ -301,7 +304,7 @@ test('commerce admin loads the engine and exposes explicit aggregate-only export
     'id="intel-comparison-currency-rows"',
     'id="intel-comparison-changes"',
     'id="intel-comparison-export-json"',
-    'window.OSGARDCommerceIntelligence.compareReports(comparisonBaseline,lastIntelligenceReport)',
+    'engine.compareReports(comparisonBaseline,lastIntelligenceReport)',
     'window.OSGARDCommerceIntelligence.toComparisonCsv(lastComparisonReport)',
     'window.OSGARDCommerceIntelligence.toMarkdown(lastIntelligenceReport)',
     'window.OSGARDCommerceIntelligence.derive(overview)',
