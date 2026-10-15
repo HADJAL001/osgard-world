@@ -189,6 +189,20 @@ function renderIntelligence(report) {
   $id('intel-status').textContent='Рассчитано '+new Date(report.generatedAt).toLocaleString('ru-RU')+' · заказы: накопительно; сервисные конверсии и события: 30 дней; атрибуция лидов: 90 дней · сигналов: '+report.headline.warnings+'. Только агрегаты.';
   $id('intel-export-json').disabled=false;$id('intel-export-csv').disabled=false;
 }
+function clearIntelligence(message='Ждём данные после подключения…') {
+  lastIntelligenceReport = null;
+  const $id = id => document.getElementById(id);
+  $id('intel-status').textContent = message;
+  $id('intel-status').dataset.kind = '';
+  $id('intel-kpis').replaceChildren();
+  for (const id of ['intel-currency-rows','intel-promo-rows']) {
+    const body=$id(id);body.replaceChildren();
+    const row=document.createElement('tr'),cell=document.createElement('td');
+    cell.colSpan=id==='intel-currency-rows'?7:6;cell.textContent='Нет актуального отчёта.';row.append(cell);body.append(row);
+  }
+  for (const id of ['intel-alerts','intel-funnel']) $id(id).replaceChildren();
+  $id('intel-export-json').disabled = true; $id('intel-export-csv').disabled = true;
+}
 function downloadAggregateReport(name,content,type) {
   const blob=new Blob([content],{type});
   const url=URL.createObjectURL(blob),link=document.createElement('a');
@@ -582,6 +596,7 @@ async function load() {
   token = $('#token').value.trim();
   if (token.length < 32) { $('#status').textContent = 'Токен должен содержать не менее 32 символов.'; return; }
   $('#load').disabled = true; $('#status').textContent = 'Загружаем данные…';
+  clearIntelligence('Обновляем агрегаты; прежний отчёт и экспорт сброшены до завершения запроса.');
   try {
     const [overview, leads, orders, readinessResult, promoSettingsResult] = await Promise.all([
       api('/v1/admin/overview'),
@@ -654,7 +669,7 @@ async function load() {
     list('#leads',leads.items || [],['project_type','contact','budget','description','status','attribution_game_id','attribution_source','attribution_campaign','created_at']);
     list('#orders',orders.items || [],['order_id','product_key','email','status','currency','amount_total','attribution_game_id','attribution_source','attribution_campaign','created_at']);
     $('#status').textContent = 'Данные получены. Выручка показана до комиссий и операционных расходов.';
-  } catch (error) { $('#status').textContent = 'Не удалось загрузить данные: ' + String(error.message || 'ошибка').slice(0,180); }
+  } catch (error) { $('#status').textContent = 'Не удалось загрузить данные: ' + String(error.message || 'ошибка').slice(0,180); $('#intel-status').dataset.kind='error'; $('#intel-status').textContent='Premium Intelligence не обновлён: '+String(error.message || 'ошибка').slice(0,180); }
   finally { $('#load').disabled = false; }
 }
 $('#intel-export-json').addEventListener('click', () => {
