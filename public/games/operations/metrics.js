@@ -61,5 +61,49 @@
       changes,
     };
   }
-  root.OSGARDOperationsMetrics = Object.freeze({ severity, median, percentile, summarize, compare });
+  function normalizeBaseline(report, targets) {
+    if (!report || typeof report !== 'object' ||
+        ![1, 2].includes(report.schemaVersion) ||
+        report.reportType !== 'osgard-games-readonly-route-health' ||
+        !Array.isArray(report.results) ||
+        report.results.length < 1 ||
+        report.results.length > (targets || []).length ||
+        typeof report.finishedAt !== 'string' ||
+        !Number.isFinite(Date.parse(report.finishedAt))) {
+      throw new Error('Файл не является корректным отчётом OSGARD Operations Pulse.');
+    }
+    const byId = new Map((targets || []).map((target)=>[target.id,target]));
+    const seen = new Set();
+    const normalized = report.results.map((item) => {
+      const target = item && byId.get(item.id);
+      if (!target || seen.has(item.id) || item.path !== target.path) {
+        throw new Error('Отчёт содержит неизвестный, повторный или несовпадающий маршрут.');
+      }
+      if (!['pass','warn','fail','cancelled'].includes(item.state) ||
+          !Number.isFinite(item.elapsedMs) || item.elapsedMs < 0 || item.elapsedMs > 300000 ||
+          !(item.status === null || (Number.isInteger(item.status) && item.status >= 100 && item.status <= 599))) {
+        throw new Error('Отчёт содержит некорректное состояние, HTTP-код или задержку.');
+      }
+      seen.add(item.id);
+      return {
+        id:target.id,
+        label:target.label,
+        path:target.path,
+        group:target.group,
+        state:item.state,
+        status:item.status,
+        elapsedMs:item.elapsedMs,
+        contentType:'',
+        detail:'',
+        checkedAt:typeof item.checkedAt === 'string' && Number.isFinite(Date.parse(item.checkedAt)) ? new Date(item.checkedAt).toISOString() : '',
+      };
+    });
+    return {
+      schemaVersion:report.schemaVersion,
+      reportType:'osgard-games-readonly-route-health',
+      finishedAt:new Date(report.finishedAt).toISOString(),
+      results:normalized,
+    };
+  }
+  root.OSGARDOperationsMetrics = Object.freeze({ severity, median, percentile, summarize, compare, normalizeBaseline });
 })(window);
