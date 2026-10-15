@@ -224,6 +224,7 @@
       funnel,
       promo,
       alerts,
+      decisionPlan:buildDecisionPlan({generatedAt,alerts,promo}),
       interpretation:[
         'Валюты никогда не складываются между собой.',
         'commerce_orders и serviceAttributionConversions — разные источники; они не суммируются в одну цифру выручки.',
@@ -231,6 +232,154 @@
         'Аналитика основана на согласованных событиях и не доказывает число уникальных людей.',
       ]
     };
+  }
+
+  const SEVERITY_RANK = Object.freeze({ critical:0, warning:1, info:2 });
+  const ACTION_RULES = [
+    {
+      matches: id => id.startsWith('revenue:negative:') || id.startsWith('refunds:counts:'),
+      owner:'Commerce/API', effort:'medium',
+      title:'Сверить возвраты и paid-события',
+      rationale:'Сервисный ledger показывает потенциально несогласованные paid/refund-события. Это диагностический сигнал, не подтверждённый финансовый убыток.',
+      steps:['Сопоставить окно отчёта, event types и idempotency webhook на сервере.','Проверить несколько агрегированных примеров в защищённом серверном журнале.','Не менять баланс и не выполнять возврат автоматически.'],
+    },
+    {
+      matches: id => id.startsWith('revenue:missing-currency') || id.startsWith('currency:') || id.startsWith('amount:') || id.startsWith('schema:'),
+      owner:'Commerce/API', effort:'small',
+      title:'Исправить контракт данных',
+      rationale:'Отсутствующее или некорректное поле нельзя трактовать как нулевое значение.',
+      steps:['Проверить имя и тип поля в ответе агрегирующего API.','Исправить преобразование и добавить регрессионный тест на пустое/некорректное значение.','Пересчитать отчёт после исправления; не заполнять неизвестные суммы нулями.'],
+    },
+    {
+      matches: id => id.startsWith('attribution:unknown'),
+      owner:'Product Analytics', effort:'medium',
+      title:'Повысить полноту атрибуции игр',
+      rationale:'Часть оплаченных записей не связана с зарегистрированной игрой, поэтому сравнение источников неполно.',
+      steps:['Проверить allow-list gameId на входе checkout и webhook.','Нормализовать source/campaign на сервере, не собирая лишние персональные данные.','Отслеживать долю unknown после изменения на том же агрегатном окне.'],
+    },
+    {
+      matches: id => id.startsWith('refunds:rate:'),
+      owner:'Commerce/API', effort:'small',
+      title:'Проверить временное окно возвратов',
+      rationale:'Доля возвратных событий превысила диагностический порог; это не отраслевой норматив и не доказательство проблемы платежей.',
+      steps:['Сравнить определения paidEvents и refunds и временные окна.','Проверить повторную доставку событий и дедупликацию.','Сравнить динамику до и после подтверждённого изменения.'],
+    },
+    {
+      matches: id => id.startsWith('analytics:empty'),
+      owner:'Analytics', effort:'small',
+      title:'Проверить согласие и доставку событий',
+      rationale:'API не показывает согласованных событий в текущем окне; это может быть отсутствие событий или сбой доставки.',
+      steps:['Проверить opt-in flow и default-deny очередь без чтения личных данных.','Проверить статус endpoint и количество принятых агрегированных событий.','Не включать аналитику в обход согласия пользователя.'],
+    },
+    {
+      matches: id => id.startsWith('premium:observed-no-paid'),
+      owner:'Commerce', effort:'medium',
+      title:'Проверить путь checkout',
+      rationale:'Есть просмотры Premium и нет связанных paid-записей в разных агрегатах. Это не конверсия и не доказательство поломки.',
+      steps:['Выполнить тестовый checkout в разрешённой тестовой среде.','Проверить success/cancel return URL и обработчик webhook.','Сопоставить тестовый paid-event и order record без экспорта данных клиента.'],
+    },
+    {
+      matches: id => id.startsWith('orders:none'),
+      owner:'Commerce/API', effort:'small',
+      title:'Подтвердить источник сводки заказов',
+      rationale:'В текущем ответе отсутствуют записи заказов; причина из агрегата не определяется.',
+      steps:['Проверить диапазон и права endpoint overview.','Сверить состояние тестового заказа с серверной сводкой.','Не делать вывод об отсутствии продаж во всех системах.'],
+    },
+    {
+      matches: id => id.startsWith('experiments:no-exposure'),
+      owner:'Product', effort:'small',
+      title:'Не объявлять победителя эксперимента',
+      rationale:'Без измеренных экспозиций и конверсий невозможно сравнить варианты.',
+      steps:['Проверить, что событие exposure отправляется после фактического показа.','Проверить consent и назначение варианта.','Оставить решение без победителя до появления достаточных данных.'],
+    },
+  ];
+  function actionForAlert(alert) {
+    const id = String(alert?.id || 'unknown').slice(0, 120);
+    const rule = ACTION_RULES.find(item => item.matches(id));
+    const fallback = {
+      owner:'Operations', effort:'small',
+      title:'Проверить сигнал по первичному источнику',
+      rationale:'Для этого сигнала нет специального сценария; сначала подтвердите его источник и полноту данных.',
+      steps:['Открыть диагностическое описание сигнала.','Проверить соответствующий агрегат на сервере.','Зафиксировать результат до изменения конфигурации или бизнес-логики.'],
+    };
+    const selected = rule || fallback;
+    const severity = Object.prototype.hasOwnProperty.call(SEVERITY_RANK, alert?.severity) ? alert.severity : 'info';
+    return {
+      id:'action:' + id,
+      sourceAlertId:id,
+      severity,
+      owner:selected.owner,
+      effort:selected.effort,
+      title:selected.title,
+      rationale:selected.rationale,
+      steps:selected.steps.slice(),
+      sourceTitle:String(alert?.title || 'Сигнал без названия').replace(/[\\u0000-\\u001f\\u007f]/g,' ').slice(0, 180),
+      automated:false,
+      status:'investigate',
+    };
+  }
+  function buildDecisionPlan(report) {
+    const alerts = Array.isArray(report?.alerts) ? report.alerts : [];
+    const actions = alerts.map(actionForAlert);
+    for (const promo of Array.isArray(report?.promo) ? report.promo : []) {
+      if (promo?.sampleState !== 'small_sample') continue;
+      const serviceId = String(promo.serviceId || 'unknown').replace(/[^a-z0-9-]/gi,'').slice(0, 50) || 'unknown';
+      actions.push({
+        id:'action:promo-small-sample:' + serviceId,
+        sourceAlertId:'promo:small-sample:' + serviceId,
+        severity:'info',
+        owner:'Growth/Analytics',
+        effort:'small',
+        title:'Накопить измеряемую выборку для OSGARD SELECT',
+        rationale:'CTR по малому числу показов слишком нестабилен для решения о победителе.',
+        steps:['Проверить, что показ засчитывается только после согласованных условий видимости.','Накопить больше 30 валидных показов прежде чем интерпретировать CTR.','Не отключать и не масштабировать сервис автоматически.'],
+        sourceTitle:'Сервис ' + serviceId + ': ' + String(promo.impressions || 0) + ' показов',
+        automated:false,
+        status:'investigate',
+      });
+    }
+    const unique = new Map();
+    for (const action of actions) if (!unique.has(action.id)) unique.set(action.id, action);
+    const items = [...unique.values()].sort((a,b) =>
+      (SEVERITY_RANK[a.severity] ?? 9) - (SEVERITY_RANK[b.severity] ?? 9) ||
+      a.sourceAlertId.localeCompare(b.sourceAlertId));
+    return {
+      schema:'osgard.commerce-decision-plan.v1',
+      generatedAt:typeof report?.generatedAt === 'string' && Number.isFinite(Date.parse(report.generatedAt))
+        ? new Date(report.generatedAt).toISOString() : new Date().toISOString(),
+      mode:'deterministic-read-only',
+      automationEnabled:false,
+      total:items.length,
+      critical:items.filter(item=>item.severity==='critical').length,
+      warnings:items.filter(item=>item.severity==='warning').length,
+      informational:items.filter(item=>item.severity==='info').length,
+      items,
+      interpretation:'Это детерминированный список проверок на основе агрегированных сигналов, а не финансовый совет. Никакие действия не выполняются автоматически.',
+    };
+  }
+  function toMarkdown(report) {
+    const plan = report?.decisionPlan || buildDecisionPlan(report);
+    const clean = value => String(value ?? '').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/[\r\n]+/g,' ').replace(/\|/g,'\\|').replace(new RegExp(String.fromCharCode(96), 'g'), "'").slice(0, 500);
+    const lines = [
+      '# OSGARD Premium · план проверок',
+      '',
+      'Сформировано: ' + clean(plan.generatedAt),
+      'Режим: deterministic-read-only · автоматические действия отключены',
+      'Всего: ' + plan.total + ' · критические: ' + plan.critical + ' · проверить: ' + plan.warnings + ' · информационные: ' + plan.informational,
+      '',
+    ];
+    if (!plan.items.length) lines.push('Сигналов для дополнительной проверки по текущим правилам нет. Это не гарантирует отсутствия проблем.');
+    for (const item of plan.items) {
+      lines.push('## [' + item.severity.toUpperCase() + '] ' + clean(item.title));
+      lines.push('');
+      lines.push('- Ответственный: ' + clean(item.owner) + '; трудоёмкость: ' + clean(item.effort));
+      lines.push('- Источник: ' + clean(item.sourceTitle) + ' (' + clean(item.sourceAlertId) + ')');
+      lines.push('- Почему: ' + clean(item.rationale));
+      for (const step of item.steps) lines.push('- [ ] ' + clean(step));
+      lines.push('');
+    }
+    lines.push('> ' + clean(plan.interpretation));
+    return lines.join('\n') + '\n';
   }
 
   function formatMinor(value, currency) {
@@ -264,6 +413,10 @@
       add('service-reporting', 'refundEvents', row.reportingRefundEvents,row.currency);
     }
     for (const row of report?.alerts || []) add('alert:' + row.severity,row.id,row.title);
+    for (const action of report?.decisionPlan?.items || []) {
+      add('action:' + action.severity, action.id, action.title);
+      add('action-detail', action.sourceAlertId, action.owner + ' · ' + action.effort + ' · ' + action.steps.join('; '));
+    }
     const escape = value => {
       let text = String(value ?? '');
       if (/^\s*[=+\-@]/.test(text)) text = "'" + text;
@@ -272,5 +425,5 @@
     return '\uFEFF' + rows.map(row=>row.map(escape).join(',')).join('\r\n') + '\r\n';
   }
 
-  window.OSGARDCommerceIntelligence = Object.freeze({ schema:SCHEMA, derive, formatMinor, toCsv });
+  window.OSGARDCommerceIntelligence = Object.freeze({ schema:SCHEMA, derive, formatMinor, toCsv, buildDecisionPlan, toMarkdown });
 })();

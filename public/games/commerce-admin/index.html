@@ -42,6 +42,22 @@
 .intel-step small{color:var(--gold);font-size:10px}
 .intel-note{border-left:2px solid var(--gold);padding:10px 12px;background:#d5bb8208;color:var(--muted);font-size:11px;line-height:1.55;margin-top:12px}
 .intel-status{min-height:24px;color:var(--gold);font-size:11px;margin:8px 0}
+.intel-plan-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.intel-plan-summary{color:var(--muted);font-size:11px;line-height:1.55;margin:8px 0 14px}
+.intel-plan-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.intel-action{min-width:0;border:1px solid var(--line);border-left:3px solid #8adbd0;background:#ffffff03;padding:14px}
+.intel-action[data-severity="critical"]{border-left-color:#ff958e}
+.intel-action[data-severity="warning"]{border-left-color:#ffd18b}
+.intel-action[data-severity="info"]{border-left-color:#8adbd0}
+.intel-action h4{font-size:13px;line-height:1.35;margin:0 0 8px}
+.intel-action-meta{display:flex;gap:7px;flex-wrap:wrap;color:var(--muted);font:10px/1.5 ui-monospace,Consolas,monospace;margin:0 0 8px}
+.intel-action-meta span{border:1px solid var(--line);border-radius:99px;padding:3px 7px}
+.intel-action p{color:var(--muted);font-size:11px;line-height:1.5;margin:5px 0}
+.intel-action ol{margin:8px 0 0;padding-left:19px;color:var(--ink);font-size:11px;line-height:1.55}
+.intel-action li{padding:2px 0}
+.intel-action-source{overflow-wrap:anywhere;color:var(--muted);font:10px/1.5 ui-monospace,Consolas,monospace}
+@media(max-width:680px){.intel-plan-list{grid-template-columns:minmax(0,1fr)}}
+
 .intel-status[data-kind="error"]{color:#ff958e}
 .intel-status[data-kind="success"]{color:#c9ff8a}
 @media(max-width:900px){.intel-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.intel-grid{grid-template-columns:minmax(0,1fr)}}
@@ -71,13 +87,18 @@
 </section>
 <section class="panel"><h2>Сводка</h2><div class="metrics"><div class="metric"><b id="lead-total">—</b><span>Заявки, всего</span></div><div class="metric"><b id="lead-new">—</b><span>Новые заявки</span></div><div class="metric"><b id="order-total">—</b><span>Заказы</span></div><div class="metric"><b id="events-total">—</b><span>События за 30 дней</span></div></div><pre id="money"></pre></section>
 <section class="panel" id="premium-command-dashboard" aria-labelledby="intel-heading">
-<div class="intel-head"><div><h2 id="intel-heading">Premium Command Dashboard</h2><p class="retention">Финансовая картина, воронка событий и проверяемые сигналы. Только серверные агрегаты; без демо-чисел и без персональных данных.</p></div><div class="intel-actions"><button id="intel-export-json" type="button" disabled>Экспорт отчёта JSON ↓</button><button id="intel-export-csv" type="button" disabled>Экспорт агрегатов CSV ↓</button></div></div>
+<div class="intel-head"><div><h2 id="intel-heading">Premium Command Dashboard</h2><p class="retention">Финансовая картина, воронка событий и проверяемые сигналы. Только серверные агрегаты; без демо-чисел и без персональных данных.</p></div><div class="intel-actions"><button id="intel-export-json" type="button" disabled>Экспорт отчёта JSON ↓</button><button id="intel-export-csv" type="button" disabled>Экспорт агрегатов CSV ↓</button><button id="intel-export-plan" type="button" disabled>Экспорт плана действий MD ↓</button></div></div>
 <p id="intel-status" class="intel-status" role="status" aria-live="polite">Подключитесь к Commerce API, чтобы рассчитать показатели.</p>
 <div id="intel-kpis" class="intel-kpis"><article class="intel-kpi"><span>Оплаченные заказы</span><strong>—</strong><small>Нет данных</small></article></div>
 <div class="intel-grid">
 <section class="intel-block" aria-labelledby="intel-currency-heading"><h3 id="intel-currency-heading">Деньги — строго по валютам</h3><p class="retention">Заказы — накопительные по всему сроку хранения. Отчёты интеграторов — последние 30 дней. Источники показаны рядом, но не суммируются друг с другом.</p><div class="table-wrap"><table class="intel-table"><thead><tr><th>Валюта</th><th>Paid orders</th><th>Заказы: gross · весь срок</th><th>Сервисы: gross · 30 дней</th><th>Возвраты · 30 дней</th><th>Net отчёта · 30 дней</th><th>Paid / refunds events</th></tr></thead><tbody id="intel-currency-rows"><tr><td colspan="7">Загрузите агрегаты.</td></tr></tbody></table></div></section>
 <section class="intel-block" aria-labelledby="intel-alert-heading"><h3 id="intel-alert-heading">Решения и риски</h3><p class="retention">Сигналы — это повод проверить данные, не автоматические бизнес-решения.</p><div id="intel-alerts" class="intel-alerts"><p class="intel-empty">Сигналы появятся после загрузки.</p></div></section>
 </div>
+<section class="intel-block" style="margin-top:14px" aria-labelledby="intel-plan-heading">
+<div class="intel-plan-head"><div><h3 id="intel-plan-heading">План следующего действия</h3><p class="retention">Конкретные проверки на основе сигналов. Только рекомендации: система не меняет платежи, конфигурацию или эксперименты автоматически.</p></div></div>
+<p id="intel-plan-summary" class="intel-plan-summary" role="status" aria-live="polite">План появится после загрузки агрегатов.</p>
+<div id="intel-plan-actions" class="intel-plan-list"><p class="intel-empty">Нет актуального плана.</p></div>
+</section>
 <section class="intel-block" style="margin-top:14px" aria-labelledby="intel-funnel-heading"><h3 id="intel-funnel-heading">Путь игрока и интерес к Premium</h3><p class="retention">Отношения ниже — доли событий за 30 дней, не уникальные люди и не сквозные когорты.</p><div id="intel-funnel" class="intel-funnel"><article class="intel-step"><span>Каталог</span><strong>—</strong></article></div><p class="intel-note">Просмотры Premium и оплаченные заказы не соединяются в conversion rate: текущий агрегат не связывает их в одну когорту. Если просмотры есть, а заказов нет, панель предложит проверить checkout и webhook без объявления ложной конверсии.</p></section>
 <section class="intel-block" style="margin-top:14px" aria-labelledby="intel-promo-heading"><h3 id="intel-promo-heading">OSGARD SELECT · эффективность переходов</h3><p class="retention">Описательный CTR по согласованным видимым появлениям. Малая выборка явно помечается; победитель автоматически не назначается.</p><div class="table-wrap"><table class="intel-table"><thead><tr><th>Сервис</th><th>Появления</th><th>Клики</th><th>CTR</th><th>Выборка</th><th>Игры</th></tr></thead><tbody id="intel-promo-rows"><tr><td colspan="6">Загрузите агрегаты.</td></tr></tbody></table></div></section>
 <p class="intel-note">Источники: Commerce API overview, агрегаты заказов и согласованные события. Валовая выручка не учитывает комиссии, налоги и операционные расходы. Отчёты интеграторов не являются независимым подтверждением платёжного провайдера. Экспорт содержит только производные агрегаты — не email, контакты, идентификаторы заказов, токены или строки событий.</p>
@@ -172,6 +193,26 @@ function renderIntelligence(report) {
     title.textContent=(item.severity==='critical'?'КРИТИЧНО · ':item.severity==='warning'?'ПРОВЕРИТЬ · ':'ИНФО · ')+item.title;
     detail.textContent=item.detail;card.append(title,detail);alertRoot.append(card);
   }
+  const decisionPlan=report.decisionPlan || window.OSGARDCommerceIntelligence.buildDecisionPlan(report);
+  const planSummary=$id('intel-plan-summary');
+  planSummary.textContent='Всего '+number(decisionPlan.total)+' проверок · критические '+number(decisionPlan.critical)+' · важные '+number(decisionPlan.warnings)+' · информационные '+number(decisionPlan.informational)+'. Приоритет определяется тяжестью сигнала, а не финансовой оценкой.';
+  const planRoot=$id('intel-plan-actions');planRoot.replaceChildren();
+  if(!decisionPlan.items.length){const empty=document.createElement('p');empty.className='intel-empty';empty.textContent='Нет дополнительных проверок по текущим правилам. Это не гарантирует отсутствия проблем.';planRoot.append(empty);}
+  for(const item of decisionPlan.items.slice(0,12)){
+    const card=document.createElement('article');card.className='intel-action';card.dataset.severity=item.severity;
+    const title=document.createElement('h4');title.textContent=item.title;
+    const meta=document.createElement('div');meta.className='intel-action-meta';
+    for(const value of [item.severity.toUpperCase(),item.owner,'усилие: '+item.effort,'только проверка']){
+      const chip=document.createElement('span');chip.textContent=value;meta.append(chip);
+    }
+    const rationale=document.createElement('p');rationale.textContent=item.rationale;
+    const source=document.createElement('p');source.className='intel-action-source';source.textContent='Источник: '+item.sourceTitle+' · '+item.sourceAlertId;
+    const list=document.createElement('ol');
+    for(const stepText of item.steps){const li=document.createElement('li');li.textContent=stepText;list.append(li);}
+    card.append(title,meta,rationale,source,list);planRoot.append(card);
+  }
+  if(decisionPlan.items.length>12){const rest=document.createElement('p');rest.className='intel-empty';rest.textContent='В интерфейсе показаны первые 12 пунктов. Полный план доступен в Markdown/JSON-экспорте.';planRoot.append(rest);}
+  $id('intel-export-plan').disabled=false;
   const funnelRoot=$id('intel-funnel');funnelRoot.replaceChildren();
   const funnelRows=[
     ['Просмотры каталога',report.funnel.catalogViews,'От каталога к старту: '+pct(report.funnel.catalogToStartEventRatio)],
@@ -200,8 +241,9 @@ function clearIntelligence(message='Ждём данные после подкл�
     const row=document.createElement('tr'),cell=document.createElement('td');
     cell.colSpan=id==='intel-currency-rows'?7:6;cell.textContent='Нет актуального отчёта.';row.append(cell);body.append(row);
   }
-  for (const id of ['intel-alerts','intel-funnel']) $id(id).replaceChildren();
-  $id('intel-export-json').disabled = true; $id('intel-export-csv').disabled = true;
+  for (const id of ['intel-alerts','intel-funnel','intel-plan-actions']) $id(id).replaceChildren();
+  $id('intel-plan-summary').textContent = 'План будет рассчитан после получения нового отчёта.';
+  $id('intel-export-json').disabled = true; $id('intel-export-csv').disabled = true; $id('intel-export-plan').disabled = true;
 }
 function downloadAggregateReport(name,content,type) {
   const blob=new Blob([content],{type});
@@ -612,10 +654,9 @@ async function load() {
       lastIntelligenceReport = window.OSGARDCommerceIntelligence.derive(overview);
       renderIntelligence(lastIntelligenceReport);
     } catch (intelligenceError) {
-      lastIntelligenceReport = null;
+      clearIntelligence('Частичный отчёт удалён после ошибки расчёта.');
       $('#intel-status').dataset.kind = 'error';
       $('#intel-status').textContent = 'Не удалось рассчитать Premium Intelligence: ' + String(intelligenceError?.message || 'ошибка').slice(0,180);
-      $('#intel-export-json').disabled = true; $('#intel-export-csv').disabled = true;
     }
     if (promoSettingsResult.ok) {
       renderPromoSettings(promoSettingsResult.data.config || {});
@@ -676,6 +717,11 @@ $('#intel-export-json').addEventListener('click', () => {
   if (!lastIntelligenceReport) return;
   downloadAggregateReport('osgard-premium-intelligence-' + new Date().toISOString().slice(0,10) + '.json',
     JSON.stringify(lastIntelligenceReport,null,2) + '\n','application/json;charset=utf-8');
+});
+$('#intel-export-plan').addEventListener('click', () => {
+  if (!lastIntelligenceReport || !window.OSGARDCommerceIntelligence) return;
+  downloadAggregateReport('osgard-premium-action-plan-' + new Date().toISOString().slice(0,10) + '.md',
+    window.OSGARDCommerceIntelligence.toMarkdown(lastIntelligenceReport),'text/markdown;charset=utf-8');
 });
 $('#intel-export-csv').addEventListener('click', () => {
   if (!lastIntelligenceReport || !window.OSGARDCommerceIntelligence) return;
