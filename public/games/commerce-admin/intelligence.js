@@ -37,6 +37,124 @@
     warnings.push({ id:'schema:' + label, severity:'warning', title:'Некорректный формат данных', detail:'Поле ' + label + ' не является списком; секция исключена из расчёта.' });
     return [];
   };
+  function buildDataQualityReport(data, warnings, inputValid, generatedAt) {
+    const own = key => Object.prototype.hasOwnProperty.call(data, key) && data[key] !== undefined && data[key] !== null;
+    const validCount = value => typeof value === 'number'
+      ? Number.isSafeInteger(value) && value >= 0
+      : typeof value === 'string' && /^\d{1,15}$/.test(value);
+    const fieldState = (key, kind) => {
+      if (!own(key)) return { key, state:'missing', rowCount:null };
+      const value = data[key];
+      if (kind === 'array') {
+        if (!Array.isArray(value)) return { key, state:'invalid', rowCount:null };
+        const accepted = value.filter(item=>item && typeof item==='object' && !Array.isArray(item)).length;
+        return { key, state:accepted===value.length?'present':'partial', rowCount:accepted };
+      }
+      if (kind === 'object') {
+        return { key, state:typeof value==='object' && !Array.isArray(value)?'present':'invalid', rowCount:null };
+      }
+      return { key, state:validCount(value)?'present':'invalid', rowCount:null };
+    };
+    const definitions = [
+      {
+        id:'commerce-order-ledger', title:'Заказы Commerce API',
+        fields:[['ordersByStatus','array'],['grossPaidByCurrency','array']],
+        window:'Накопительное окно доступных записей Commerce API',
+        note:'Статусы заказов и gross по валютам. Пустой массив означает 0 строк в ответе, но не доказательство отсутствия продаж в других системах.',
+        warningPrefixes:['schema:missing-ordersByStatus','schema:ordersByStatus','schema:missing-grossPaidByCurrency','schema:grossPaidByCurrency','currency:commerce-invalid','amount:commerce-invalid','revenue:missing-currency'],
+      },
+      {
+        id:'service-reporting-ledger', title:'Отчёты сервисных интеграторов',
+        fields:[['serviceAttributionConversions','array']],
+        window:'Последние 30 дней',
+        note:'Отдельный отчётный ledger интеграторов. Не складывать с заказами Commerce API и не считать независимым подтверждением платёжного провайдера.',
+        warningPrefixes:['schema:missing-serviceAttributionConversions','schema:serviceAttributionConversions','currency:service-invalid','amount:service-gross-invalid','amount:service-refund-invalid','amount:service-net-invalid'],
+      },
+      {
+        id:'consented-analytics', title:'Согласованные аналитические события',
+        fields:[['analyticsEventsLast30Days','count'],['analyticsFunnel','object']],
+        window:'Последние 30 дней',
+        note:'Учитываются только согласованные события. Число событий не является числом уникальных пользователей.',
+        warningPrefixes:['schema:analyticsEventsLast30Days','schema:missing-analyticsFunnel','schema:analyticsFunnel'],
+      },
+      {
+        id:'paid-game-attribution', title:'Атрибуция оплаченных заказов по игре',
+        fields:[['paidRevenueByAttribution','array']],
+        window:'Последние 30 дней',
+        note:'Непривязанные gameId понижают полноту сравнения источников; source/campaign — классификация, а не доказательство причинности.',
+        warningPrefixes:['schema:missing-paidRevenueByAttribution','schema:paidRevenueByAttribution'],
+      },
+      {
+        id:'lead-attribution', title:'Атрибуция заявок',
+        fields:[['leadsByAttribution','array']],
+        window:'Последние 90 дней',
+        note:'Отдельное окно от заказов и игровых событий; не использовать как синхронную воронку оплаты.',
+        warningPrefixes:['schema:missing-leadsByAttribution','schema:leadsByAttribution'],
+      },
+      {
+        id:'owned-promotion', title:'OSGARD SELECT',
+        fields:[['ownedPromoByService','array']],
+        window:'Последние 30 дней',
+        note:'Появления учитываются при выполнении consent/visibility-контракта. CTR с малой выборкой — описательный сигнал, не критерий автоматического победителя.',
+        warningPrefixes:['schema:missing-ownedPromoByService','schema:ownedPromoByService'],
+      },
+      {
+        id:'product-experiments', title:'Эксперименты продукта',
+        fields:[['productExperimentStats','array']],
+        window:'Окно агрегатов API; сверяйте определение exposure на стороне источника',
+        note:'Без измеренных экспозиций и конверсий выбирать победителя нельзя.',
+        warningPrefixes:['schema:missing-productExperimentStats','schema:productExperimentStats'],
+      },
+    ];
+    const sources = definitions.map(definition => {
+      const fields = definition.fields.map(([key,kind])=>fieldState(key,kind));
+      const validFields = fields.filter(field=>field.state==='present' || field.state==='partial').length;
+      const rowIssue = fields.some(field=>field.state==='partial' || field.state==='invalid');
+      const relevantWarnings = (warnings || []).filter(item=>definition.warningPrefixes.some(prefix=>String(item.id||'').startsWith(prefix)));
+      let status = validFields===0 ? 'unavailable' : validFields===fields.length && !rowIssue && relevantWarnings.length===0 ? 'measured' : 'partial';
+      if (!inputValid) status='blocked';
+      return {
+        id:definition.id,
+        title:definition.title,
+        status,
+        window:definition.window,
+        fields:fields.map(field=>({key:field.key,state:field.state,rowCount:field.rowCount})),
+        rowCount:fields.reduce((total,field)=>total+(field.rowCount===null?0:field.rowCount),0),
+        warnings:relevantWarnings.map(item=>({
+          id:String(item.id||'').slice(0,120),
+          severity:['critical','warning','info'].includes(item.severity)?item.severity:'warning',
+          title:String(item.title||'Предупреждение источника').replace(/[\u0000-\u001f\u007f]/g,' ').slice(0,180),
+        })),
+        note:definition.note,
+      };
+    });
+    const measured = sources.filter(source=>source.status==='measured').length;
+    const partial = sources.filter(source=>source.status==='partial').length;
+    const unavailable = sources.filter(source=>source.status==='unavailable').length;
+    const blocked = sources.filter(source=>source.status==='blocked').length;
+    return {
+      schema:'osgard.commerce-data-quality.v1',
+      generatedAt:Number.isFinite(Date.parse(generatedAt))?new Date(generatedAt).toISOString():new Date().toISOString(),
+      state:!inputValid?'blocked':partial===0&&unavailable===0?'complete':'limited',
+      summary:{totalSources:sources.length,measured,partial,unavailable,blocked,warningCount:(warnings||[]).length},
+      sources,
+      comparability:{
+        mixedCurrencyTotals:false,
+        synchronizedCohortsAvailable:false,
+        uniquePeopleAvailable:false,
+        causalityProven:false,
+        financialAudit:false,
+      },
+      caveats:[
+        'Накопительные заказы нельзя напрямую сравнивать с 30-дневными событиями или отчётами интеграторов.',
+        'Атрибуция заявок использует окно 90 дней; не соединяйте её с 30-дневными событиями как одну когорту.',
+        'Отсутствующее поле означает неизвестные данные, а не ноль.',
+        'Валюты остаются раздельными; обменный курс не применяется.',
+        'Статусы «измерено/частично/недоступно» описывают наличие и структуру агрегатов, а не статистическую достоверность бизнеса.',
+      ],
+    };
+  }
+
   function derive(overview, generatedAt = new Date().toISOString()) {
     const inputValid = !!overview && typeof overview === 'object' && !Array.isArray(overview);
     const data = inputValid ? overview : {};
@@ -224,6 +342,7 @@
       funnel,
       promo,
       alerts,
+      dataQuality:buildDataQualityReport(data,warnings,inputValid,generatedAt),
       decisionPlan:buildDecisionPlan({generatedAt,alerts,promo}),
       interpretation:[
         'Валюты никогда не складываются между собой.',
