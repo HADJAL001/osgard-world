@@ -116,6 +116,10 @@
 
 /* Executive Pulse: decisions first, evidence visible, no synthetic health score. */
 .intel-executive{border:1px solid var(--line);padding:16px;margin:12px 0 18px;background:linear-gradient(125deg,#d3ff690b,#d5bb8208 60%,transparent);border-radius:2px}
+.intel-executive[data-state="critical"],.intel-executive[data-state="blocked"]{border-color:#ff958e70}
+.intel-executive[data-state="attention"]{border-color:#ffd18b70}
+.intel-executive[data-state="limited"]{border-color:#d5bb8270}
+.intel-executive[data-state="clear"]{border-color:#c9ff8a50}
 .intel-executive-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .intel-executive-kicker{font:10px/1.4 ui-monospace,Consolas,monospace;letter-spacing:.14em;color:var(--lime);margin:0 0 6px}
 .intel-executive-head h3{font:400 clamp(21px,2.5vw,29px)/1.15 Georgia,serif;margin:0}
