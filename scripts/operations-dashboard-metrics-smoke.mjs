@@ -46,6 +46,29 @@ assert.equal(comparison.averageLatencyDeltaMs, -267);
 assert.equal(comparison.changes.length, 3);
 assert.equal(engine.compare(previous, [{ id:'d', state:'pass', elapsedMs:20 }]), null);
 
+const targets = [
+  { id:'a', label:'ALPHA', path:'/games/alpha/', group:'Игра' },
+  { id:'b', label:'BETA', path:'/games/beta/', group:'Игра' },
+];
+const historicalReport = {
+  schemaVersion:2,
+  reportType:'osgard-games-readonly-route-health',
+  finishedAt:'2026-10-15T10:00:00.000Z',
+  results:[
+    { id:'a', path:'/games/alpha/', label:'<img src=x onerror=alert(1)>', state:'pass', status:200, elapsedMs:110 },
+    { id:'b', path:'/games/beta/', label:'BETA', state:'warn', status:200, elapsedMs:2800 },
+  ],
+};
+const baseline = engine.normalizeBaseline(historicalReport, targets);
+assert.equal(baseline.results.length, 2);
+assert.equal(baseline.results[0].label, 'ALPHA', 'untrusted labels are replaced with registry-owned labels');
+assert.equal(baseline.results[0].path, '/games/alpha/');
+assert.equal(baseline.results[0].detail, '', 'untrusted diagnostic details are not re-rendered from a baseline');
+assert.throws(() => engine.normalizeBaseline({ ...historicalReport, results:[{ ...historicalReport.results[0], id:'unknown' }] }, targets), /unknown, repeated, or mismatched route/i);
+assert.throws(() => engine.normalizeBaseline({ ...historicalReport, results:[historicalReport.results[0], historicalReport.results[0]] }, targets), /unknown, repeated, or mismatched route/i);
+assert.throws(() => engine.normalizeBaseline({ ...historicalReport, results:[{ ...historicalReport.results[0], elapsedMs:500000 }] }, targets), /invalid state, HTTP status, or latency/i);
+assert.throws(() => engine.normalizeBaseline({ ...historicalReport, results:[{ ...historicalReport.results[0], path:'/evil/' }] }, targets), /unknown, repeated, or mismatched route/i);
+
 const page = await readFile('public/games/operations/index.html', 'utf8');
 assert.ok(page.includes('<script src="/games/operations/metrics.js"></script>'), 'dashboard must load the tested same-origin metrics engine');
 for (const marker of [
@@ -57,6 +80,11 @@ for (const marker of [
   'id="run-progress"',
   'id="metric-median"',
   'id="metric-p95"',
+  'id="baseline-file"',
+  'id="load-baseline"',
+  'id="clear-baseline"',
+  'metrics.normalizeBaseline(report, TARGETS)',
+  'file.size > 2 * 1024 * 1024',
   'lastFullReport',
   "credentials: 'omit'",
   "method: 'GET'",
@@ -64,4 +92,4 @@ for (const marker of [
 
 assert.ok(!/localStorage|sessionStorage|document\.cookie/i.test(page), 'dashboard remains session-only and does not access browser persistence or cookies');
 assert.ok(!/<script\b[^>]*\bsrc=["']https?:\/\//i.test(page), 'dashboard must not load third-party scripts');
-console.log('PASS Operations Pulse metrics: percentiles, state counts, true regressions/recoveries, delta sorting inputs, session-only reports and accessible control wiring.');
+console.log('PASS Operations Pulse metrics: percentiles, regression/recovery comparison, safe local JSON baseline import, size/schema/path validation, session-only reports and accessible control wiring.');
