@@ -410,6 +410,17 @@ test('commerce admin loads the engine and exposes explicit aggregate-only export
     'id="intel-plan-actions"',
     'id="intel-plan-summary"',
     'id="intel-export-plan"',
+    'id="intel-review-heading"',
+    'id="intel-review-items"',
+    'id="intel-review-filter"',
+    'id="intel-review-query"',
+    'id="intel-review-export-json"',
+    'id="intel-review-export-csv"',
+    'id="intel-review-export-md"',
+    'function renderDecisionRegister(report)',
+    'engine.buildDecisionRegister(report,stateObject)',
+    'engine.normalizeReviewEntry({status:select.value,note:note.value,updatedAt:new Date().toISOString()})',
+    'operatorReviewState.clear()',
     'id="intel-quality-heading"',
     'id="intel-quality-summary"',
     'id="intel-quality-sources"',
@@ -448,8 +459,68 @@ test('commerce admin loads the engine and exposes explicit aggregate-only export
   assert.ok(trendStart>=0&&trendEnd>trendStart,'Trend history must have a bounded local import handler');
   const trendHandler=page.slice(trendStart,trendEnd);
   assert.ok(!/\bfetch\s*\(|sendBeacon|XMLHttpRequest/.test(trendHandler),'Trend JSON must never be uploaded to a server');
+  const reviewStart=page.indexOf("$('#intel-review-filter').addEventListener('change'");
+  const reviewEnd=page.indexOf("$('#intel-compare-file').addEventListener('change'");
+  assert.ok(reviewStart>=0&&reviewEnd>reviewStart,'Decision Ops review handlers must be present');
+  const reviewHandler=page.slice(reviewStart,reviewEnd);
+  assert.ok(!/\bfetch\s*\(|sendBeacon|XMLHttpRequest/.test(reviewHandler),'Operator reviews must never be uploaded to a server');
+  assert.ok(!/localStorage|sessionStorage/.test(reviewHandler),'Operator reviews must stay in memory only');
 });
 
+test('Decision Ops review notes validate statuses, timestamps, length and secret-like values', () => {
+  const clean=engine.normalizeReviewEntry({status:'investigating',note:'  Проверить\u0000 маршрут  сегодня  ',updatedAt:fixedDate});
+  assert.equal(clean.ok,true);
+  assert.equal(clean.entry.status,'investigating');
+  assert.equal(clean.entry.note,'Проверить маршрут сегодня');
+  assert.equal(clean.entry.updatedAt,fixedDate);
+  assert.equal(engine.normalizeReviewEntry({status:'closed',note:''}).ok,false);
+  assert.equal(engine.normalizeReviewEntry({status:'blocked',note:'x'.repeat(241)}).ok,false);
+  assert.equal(engine.normalizeReviewEntry({status:'open',note:'api_key=sk_live_1234567890abcdef'}).ok,false);
+  assert.equal(engine.normalizeReviewEntry({status:'open',note:'Bearer abcdefgh'}).ok,false);
+  assert.equal(engine.normalizeReviewEntry({status:'open',note:'okay',updatedAt:'not-a-date'}).ok,false);
+});
+test('Decision Ops register is source-linked and counts human review states', () => {
+  const report={generatedAt:fixedDate,decisionPlan:{items:[
+    {id:'action:critical',sourceAlertId:'refund:gap',severity:'critical',title:'Сверить возвраты',sourceTitle:'Refund ledger',owner:'Commerce',effort:'small',rationale:'Проверить разницу',steps:['Сверить записи'],automated:false},
+    {id:'action:info',sourceAlertId:'sample:small',severity:'info',title:'Накопить выборку',sourceTitle:'Promo ledger',owner:'Growth',effort:'medium',rationale:'Малая выборка',steps:['Накопить показы'],automated:false},
+  ]}};
+  const state={
+    'action:critical':{status:'blocked',note:'Ждём выгрузку',updatedAt:fixedDate},
+    'action:info':{status:'checked',note:'Порог проверен',updatedAt:fixedDate},
+    'action:not-in-report':{status:'checked',note:'Не должно попасть',updatedAt:fixedDate},
+  };
+  const register=engine.buildDecisionRegister(report,state);
+  assert.equal(register.schema,'osgard.commerce-review-register.v1');
+  assert.equal(register.mode,'session-only-read-only');
+  assert.equal(register.automationEnabled,false);
+  assert.equal(register.sourceGeneratedAt,fixedDate);
+  assert.equal(register.summary.total,2);
+  assert.equal(register.summary.open,0);
+  assert.equal(register.summary.investigating,0);
+  assert.equal(register.summary.blocked,1);
+  assert.equal(register.summary.checked,1);
+  assert.deepEqual(register.items.map(item=>item.id),['action:critical','action:info']);
+  assert.equal(register.items[0].sourceTitle,'Refund ledger');
+  assert.equal(register.items[0].status,'blocked');
+  assert.equal(register.items[1].status,'checked');
+  assert.match(register.interpretation,/не означает, что исходный сигнал устранён/);
+});
+test('Decision Ops exports preserve source context and neutralize spreadsheet formulas', () => {
+  const report={generatedAt:fixedDate,decisionPlan:{items:[
+    {id:'action:csv',sourceAlertId:'alert:csv',severity:'warning',title:'=HYPERLINK("bad")',sourceTitle:'test source',owner:'Operations',effort:'small',rationale:'Review only',steps:['Check source'],automated:false},
+  ]}};
+  const state={'action:csv':{status:'investigating',note:'=HYPERLINK("evil")',updatedAt:fixedDate}};
+  const register=engine.buildDecisionRegister(report,state);
+  const csv=engine.toReviewCsv(register);
+  const markdown=engine.toReviewMarkdown(register);
+  assert.ok(csv.startsWith('\uFEFF'));
+  assert.ok(csv.includes("'=HYPERLINK"));
+  assert.ok(csv.includes('"alert:csv"'));
+  assert.ok(csv.includes('"Проверяется"'));
+  assert.ok(markdown.startsWith('# OSGARD Premium · реестр проверок\n'));
+  assert.ok(markdown.includes('- Заметка оператора: =HYPERLINK("evil")'));
+  assert.ok(markdown.endsWith('\n'));
+});
 test('intelligence engine makes no network calls and does not read browser or user records', () => {
   assert.ok(!/\bfetch\s*\(/.test(engineSource));
   assert.ok(!/\b(localStorage|sessionStorage|document\.cookie)\b/.test(engineSource));

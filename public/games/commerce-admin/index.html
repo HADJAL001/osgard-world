@@ -119,6 +119,28 @@
 @media(max-width:900px){.intel-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.intel-grid{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:560px){.intel-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.intel-funnel{grid-template-columns:minmax(0,1fr)}.intel-actions{width:100%}.intel-actions button{flex:1}}
 
+
+/* Decision Ops: a session-scoped human review queue. */
+.intel-review-controls{display:flex;align-items:end;gap:9px;flex-wrap:wrap;margin:12px 0}
+.intel-review-controls label{display:grid;gap:5px;color:var(--muted);font-size:11px;min-width:150px;flex:1}
+.intel-review-controls input,.intel-review-controls select,.intel-review-item select,.intel-review-item textarea{width:100%;min-height:42px;background:#070a09;color:var(--ink);border:1px solid var(--line);padding:9px 10px;font:inherit}
+.intel-review-controls button,.intel-review-item button{padding:10px 12px;font-size:11px}
+.intel-review-summary{color:var(--gold);font-size:11px;line-height:1.6;margin:10px 0}
+.intel-review-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.intel-review-item{min-width:0;border:1px solid var(--line);border-left:3px solid #8adbd0;background:#ffffff03;padding:13px}
+.intel-review-item[data-severity="critical"]{border-left-color:#ff958e}
+.intel-review-item[data-severity="warning"]{border-left-color:#ffd18b}
+.intel-review-item h4{font-size:13px;line-height:1.4;margin:0 0 8px}
+.intel-review-meta{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 9px;color:var(--muted);font:10px/1.45 ui-monospace,Consolas,monospace;overflow-wrap:anywhere}
+.intel-review-meta span{border:1px solid var(--line);border-radius:99px;padding:3px 7px}
+.intel-review-source,.intel-review-time{color:var(--muted);font-size:10px;overflow-wrap:anywhere}
+.intel-review-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;align-items:end;margin-top:12px}
+.intel-review-field{display:grid;gap:5px;color:var(--muted);font-size:10px;min-width:0}
+.intel-review-field textarea{min-height:68px;resize:vertical}
+.intel-review-form button{min-height:42px}
+.intel-review-note{font-size:10px;color:var(--muted);margin:8px 0 0}
+@media(max-width:760px){.intel-review-list{grid-template-columns:minmax(0,1fr)}.intel-review-form{grid-template-columns:minmax(0,1fr)}.intel-review-form button{width:100%}}
+
 </style></head>
 <body><div class="wrap">
 <header class="top"><strong>OSGARD WORLD / COMMERCE</strong><a href="/games/">← Игровой каталог</a></header>
@@ -154,6 +176,16 @@
 <div class="intel-plan-head"><div><h3 id="intel-plan-heading">План следующего действия</h3><p class="retention">Конкретные проверки на основе сигналов. Только рекомендации: система не меняет платежи, конфигурацию или эксперименты автоматически.</p></div></div>
 <p id="intel-plan-summary" class="intel-plan-summary" role="status" aria-live="polite">План появится после загрузки агрегатов.</p>
 <div id="intel-plan-actions" class="intel-plan-list"><p class="intel-empty">Нет актуального плана.</p></div>
+</section>
+<section class="intel-block" style="margin-top:14px" aria-labelledby="intel-review-heading">
+<div class="intel-plan-head"><div><h3 id="intel-review-heading">Decision Ops · рабочий реестр</h3><p class="retention">Назначайте статус ручной проверки и оставляйте короткую заметку по каждому сигналу. Отметки хранятся только в памяти текущей вкладки и сбрасываются при обновлении отчёта или закрытии страницы.</p></div><div class="intel-actions"><button id="intel-review-export-json" type="button" disabled>Экспорт реестра JSON ↓</button><button id="intel-review-export-csv" type="button" disabled>Экспорт реестра CSV ↓</button><button id="intel-review-export-md" type="button" disabled>Экспорт реестра MD ↓</button><button id="intel-review-clear" type="button" disabled>Сбросить отметки</button></div></div>
+<div class="intel-review-controls">
+<label for="intel-review-filter">Статус проверки<select id="intel-review-filter"><option value="all">Все статусы</option><option value="open">Открыто</option><option value="investigating">Проверяется</option><option value="blocked">Заблокировано</option><option value="checked">Проверка выполнена</option></select></label>
+<label for="intel-review-query">Поиск по проверкам<input id="intel-review-query" type="search" maxlength="120" placeholder="Название, источник, ответственный…"></label>
+</div>
+<p id="intel-review-status" class="intel-review-summary" role="status" aria-live="polite">Реестр появится после загрузки агрегатов.</p>
+<div id="intel-review-items" class="intel-review-list"><p class="intel-empty">Нет загруженного отчёта.</p></div>
+<p class="intel-review-note">Не вводите персональные данные, пароли, токены или платёжные секреты. Экспорт содержит заметки оператора; сохраняйте файлы только в разрешённом месте. «Проверка выполнена» не означает, что проблема устранена.</p>
 </section>
 <section class="intel-block" style="margin-top:14px" aria-labelledby="intel-quality-heading">
 <h3 id="intel-quality-heading">Качество и сопоставимость данных</h3>
@@ -220,6 +252,8 @@ let comparisonBaseline = null;
 let lastComparisonReport = null;
 let trendSnapshots = [];
 let lastTrendReport = null;
+let operatorReviewState = new Map();
+let lastReviewRegister = null;
 async function base() {
   const response = await fetch('/games/commerce-config.json', { cache: 'no-store' }).catch(() => null);
   const config = response?.ok ? await response.json().catch(() => ({})) : {};
@@ -456,6 +490,7 @@ function renderIntelligence(report) {
   if(decisionPlan.items.length>12){const rest=document.createElement('p');rest.className='intel-empty';rest.textContent='В интерфейсе показаны первые 12 пунктов. Полный план доступен в Markdown/JSON-экспорте.';planRoot.append(rest);}
   $id('intel-export-plan').disabled=false;
   renderComparison();
+  renderDecisionRegister(report);
   const funnelRoot=$id('intel-funnel');funnelRoot.replaceChildren();
   const funnelRows=[
     ['Просмотры каталога',report.funnel.catalogViews,'От каталога к старту: '+pct(report.funnel.catalogToStartEventRatio)],
@@ -555,8 +590,76 @@ function renderComparison() {
   $id('intel-status').textContent='Рассчитано '+new Date(report.generatedAt).toLocaleString('ru-RU')+' · заказы: накопительно; сервисные конверсии и события: 30 дней; атрибуция лидов: 90 дней · сигналов: '+report.headline.warnings+'. Только агрегаты.';
   $id('intel-export-json').disabled=false;$id('intel-export-csv').disabled=false;
 }
+function renderDecisionRegister(report) {
+  const engine=window.OSGARDCommerceIntelligence;
+  const root=$('#intel-review-items');
+  const status=$('#intel-review-status');
+  const exports=['#intel-review-export-json','#intel-review-export-csv','#intel-review-export-md','#intel-review-clear'];
+  if(!engine||!report){
+    lastReviewRegister=null;
+    root.replaceChildren();
+    root.append(Object.assign(document.createElement('p'),{className:'intel-empty',textContent:'Реестр появится после загрузки текущих агрегатов.'}));
+    status.textContent='Нет актуального отчёта для проверки.';
+    exports.forEach(selector=>$(selector).disabled=true);
+    return;
+  }
+  const stateObject=Object.fromEntries(operatorReviewState.entries());
+  const register=engine.buildDecisionRegister(report,stateObject);
+  lastReviewRegister=register;
+  const number=value=>new Intl.NumberFormat('ru-RU').format(Number(value||0));
+  const labels=engine.REVIEW_STATUSES||{open:'Открыто',investigating:'Проверяется',blocked:'Заблокировано',checked:'Проверка выполнена'};
+  status.textContent='Всего '+number(register.summary.total)+' · открыто '+number(register.summary.open)+' · проверяется '+number(register.summary.investigating)+' · заблокировано '+number(register.summary.blocked)+' · проверка выполнена '+number(register.summary.checked)+'. Только память вкладки; API не изменяется.';
+  root.replaceChildren();
+  const filter=$('#intel-review-filter').value;
+  const query=$('#intel-review-query').value.trim().toLocaleLowerCase('ru-RU');
+  const items=register.items.filter(item=>{
+    if(filter!=='all'&&item.status!==filter)return false;
+    return !query||[item.title,item.owner,item.sourceAlertId,item.sourceTitle,item.rationale,item.note].some(value=>String(value||'').toLocaleLowerCase('ru-RU').includes(query));
+  });
+  if(!items.length){
+    const empty=document.createElement('p');empty.className='intel-empty';
+    empty.textContent=register.items.length?'Нет проверок, подходящих под выбранные фильтры.':'В текущем отчёте нет действий для ручной проверки.';
+    root.append(empty);
+  }
+  items.forEach((item,index)=>{
+    const card=document.createElement('article');card.className='intel-review-item';card.dataset.severity=item.severity;
+    const title=document.createElement('h4');title.textContent=item.title;
+    const meta=document.createElement('div');meta.className='intel-review-meta';
+    for(const value of [item.severity.toUpperCase(),labels[item.status]||item.status,item.owner,'усилие: '+item.effort]){
+      const chip=document.createElement('span');chip.textContent=value;meta.append(chip);
+    }
+    const rationale=document.createElement('p');rationale.className='intel-review-source';rationale.textContent=item.rationale;
+    const source=document.createElement('p');source.className='intel-review-source';source.textContent='Источник: '+item.sourceAlertId;
+    const form=document.createElement('div');form.className='intel-review-form';
+    const fields=document.createElement('div');fields.className='intel-review-fields';
+    const statusId='intel-review-status-'+index;
+    const statusLabel=document.createElement('label');statusLabel.className='intel-review-field';statusLabel.htmlFor=statusId;statusLabel.append(document.createTextNode('Результат ручной проверки'));
+    const select=document.createElement('select');select.id=statusId;select.dataset.actionId=item.id;
+    for(const [key,labelText] of Object.entries(labels)){const option=document.createElement('option');option.value=key;option.textContent=labelText;select.append(option);}
+    select.value=item.status;statusLabel.append(select);
+    const noteId='intel-review-note-'+index;
+    const noteLabel=document.createElement('label');noteLabel.className='intel-review-field';noteLabel.htmlFor=noteId;noteLabel.append(document.createTextNode('Короткая заметка оператора · до 240 символов'));
+    const note=document.createElement('textarea');note.id=noteId;note.maxLength=240;note.value=item.note;note.placeholder='Что проверено, что блокирует, следующий шаг…';noteLabel.append(note);
+    fields.append(statusLabel,noteLabel);
+    const save=document.createElement('button');save.type='button';save.textContent='Сохранить отметку';save.addEventListener('click',()=>{
+      const normalized=engine.normalizeReviewEntry({status:select.value,note:note.value,updatedAt:new Date().toISOString()});
+      if(!normalized.ok){status.dataset.kind='error';status.textContent=normalized.error;return;}
+      operatorReviewState.set(item.id,normalized.entry);
+      renderDecisionRegister(report);
+      status.dataset.kind='success';
+      status.textContent='Отметка сохранена в памяти текущей вкладки. Она не отправлена на сервер.';
+    });
+    form.append(fields,save);
+    const time=document.createElement('p');time.className='intel-review-time';time.textContent=item.updatedAt?'Последняя отметка: '+new Date(item.updatedAt).toLocaleString('ru-RU'):'Ещё не отмечено.';
+    card.append(title,meta,rationale,source,form,time);
+    root.append(card);
+  });
+  exports.forEach(selector=>$(selector).disabled=false);
+}
 function clearIntelligence(message='Ждём данные после подключения…') {
   lastIntelligenceReport = null;
+  operatorReviewState.clear();
+  lastReviewRegister = null;
   lastComparisonReport = null;
   const $id = id => document.getElementById(id);
   $id('intel-status').textContent = message;
@@ -567,7 +670,10 @@ function clearIntelligence(message='Ждём данные после подкл�
     const row=document.createElement('tr'),cell=document.createElement('td');
     cell.colSpan=id==='intel-currency-rows'?7:6;cell.textContent='Нет актуального отчёта.';row.append(cell);body.append(row);
   }
-  for (const id of ['intel-alerts','intel-funnel','intel-plan-actions','intel-quality-sources']) $id(id).replaceChildren();
+  for (const id of ['intel-alerts','intel-funnel','intel-plan-actions','intel-quality-sources','intel-review-items']) $id(id).replaceChildren();
+  $id('intel-review-status').textContent='Реестр появится после загрузки актуальных агрегатов.';
+  $id('intel-review-filter').value='all';$id('intel-review-query').value='';
+  for(const id of ['intel-review-export-json','intel-review-export-csv','intel-review-export-md','intel-review-clear'])$id(id).disabled=true;
   $id('intel-quality-summary').textContent='Качество источников появится после загрузки нового отчёта.';
   $id('intel-quality-caveats').replaceChildren();
   $id('intel-plan-summary').textContent = 'План будет рассчитан после получения нового отчёта.';
@@ -1063,6 +1169,28 @@ $('#intel-export-csv').addEventListener('click', () => {
   downloadAggregateReport('osgard-premium-intelligence-' + new Date().toISOString().slice(0,10) + '.csv',
     window.OSGARDCommerceIntelligence.toCsv(lastIntelligenceReport),'text/csv;charset=utf-8');
 });
+$('#intel-review-filter').addEventListener('change',()=>{if(lastIntelligenceReport)renderDecisionRegister(lastIntelligenceReport);});
+$('#intel-review-query').addEventListener('input',()=>{if(lastIntelligenceReport)renderDecisionRegister(lastIntelligenceReport);});
+$('#intel-review-export-json').addEventListener('click',()=>{
+  if(!lastIntelligenceReport||!window.OSGARDCommerceIntelligence)return;
+  lastReviewRegister=window.OSGARDCommerceIntelligence.buildDecisionRegister(lastIntelligenceReport,Object.fromEntries(operatorReviewState.entries()));
+  downloadAggregateReport('osgard-premium-review-register-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify(lastReviewRegister,null,2)+'\n','application/json;charset=utf-8');
+});
+$('#intel-review-export-csv').addEventListener('click',()=>{
+  if(!lastReviewRegister||!window.OSGARDCommerceIntelligence)return;
+  downloadAggregateReport('osgard-premium-review-register-'+new Date().toISOString().slice(0,10)+'.csv',window.OSGARDCommerceIntelligence.toReviewCsv(lastReviewRegister),'text/csv;charset=utf-8');
+});
+$('#intel-review-export-md').addEventListener('click',()=>{
+  if(!lastReviewRegister||!window.OSGARDCommerceIntelligence)return;
+  downloadAggregateReport('osgard-premium-review-register-'+new Date().toISOString().slice(0,10)+'.md',window.OSGARDCommerceIntelligence.toReviewMarkdown(lastReviewRegister),'text/markdown;charset=utf-8');
+});
+$('#intel-review-clear').addEventListener('click',()=>{
+  if(!operatorReviewState.size)return;
+  if(!window.confirm('Сбросить все отметки и заметки в этой вкладке?'))return;
+  operatorReviewState.clear();
+  if(lastIntelligenceReport)renderDecisionRegister(lastIntelligenceReport);
+  $('#intel-review-status').textContent='Все отметки сброшены только в текущей вкладке.';
+});
 $('#intel-compare-file').addEventListener('change', async event => {
   const file = event.target.files?.[0] || null;
   if (!file) { comparisonBaseline=null;renderComparison();return; }
@@ -1133,6 +1261,6 @@ $('#intel-trend-export-csv').addEventListener('click',()=>{
 $('#load').addEventListener('click',load);
 $('#token').addEventListener('keydown',event=>{if(event.key==='Enter')load();});
 window.addEventListener('pagehide',()=>{token='';$('#token').value='';});
-window.addEventListener('pagehide',()=>{comparisonBaseline=null;lastComparisonReport=null;lastIntelligenceReport=null;trendSnapshots=[];lastTrendReport=null;$('#intel-compare-file').value='';$('#intel-trend-files').value='';});
+window.addEventListener('pagehide',()=>{comparisonBaseline=null;lastComparisonReport=null;lastIntelligenceReport=null;trendSnapshots=[];lastTrendReport=null;operatorReviewState.clear();lastReviewRegister=null;$('#intel-compare-file').value='';$('#intel-trend-files').value='';$('#intel-review-query').value='';});
 })();
 </script><script src="/games/experiment-core.js?v=__OSGARD_BUILD_VERSION__" defer></script></body></html>
