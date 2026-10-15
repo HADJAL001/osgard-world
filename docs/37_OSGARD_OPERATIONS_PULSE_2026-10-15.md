@@ -11,7 +11,7 @@ Operations Pulse turns the read-only Games route checker into a small on-demand 
 3. Review route status, HTTP code, expected content type/marker, latency, and the explanation.
 4. Use **Repeat problems** to recheck routes currently marked warning or failure without rerunning the full matrix.
 5. Use **Stop** to cancel an active run. Not-yet-started routes are marked cancelled, not passed.
-6. Export or copy the JSON report for issue triage.
+6. Export or copy the JSON report for issue triage. To compare across reloads, import a previously exported baseline JSON; it is read and normalized entirely in the current tab. Use Clear baseline to return to the latest completed full run.
 
 ## Performance metrics
 
@@ -28,5 +28,5 @@ Cancelled probes are excluded from latency percentiles. Metrics describe the obs
 - Probes use GET, `cache: no-store`, `credentials: omit`, and an 8-second per-route timeout.
 - No cookies are read or sent intentionally, no browser storage is accessed, and no analytics/event API is called.
 - JSON reports can contain route paths, HTTP statuses, response content types, diagnostic messages, timestamps and timing metrics. Review before sharing outside the team.
-- Results and comparison baselines remain in tab memory only; reload clears them. Export JSON if retention is required.
+- Results and the latest full-run baseline remain in tab memory only; reload clears them. Export JSON if retention is required. Imported baseline reports are capped at 2 MiB and validated against current route IDs, paths, state values and timing bounds before use. User-provided labels/details are never rendered from the baseline.
 - HTTP availability and a page marker do not prove a playable session, payment completion, authorization for a valid user, production revenue or device compatibility. Use the existing API, runtime, production route and device tests for those claims.
