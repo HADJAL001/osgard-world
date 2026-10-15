@@ -859,7 +859,8 @@ $('#intel-compare-file').addEventListener('change', async event => {
   if (!file) { comparisonBaseline=null;renderComparison();return; }
   comparisonBaseline=null;
   lastComparisonReport=null;
-  clearIntelligence('Проверяем предыдущий агрегированный отчёт локально…');
+  renderComparison();
+  $('#intel-comparison-status').textContent='Проверяем предыдущий агрегированный отчёт локально…';
   try {
     if (file.size > 2 * 1024 * 1024) throw new Error('Файл больше разрешённых 2 МБ.');
     const parsed=JSON.parse(await file.text());
