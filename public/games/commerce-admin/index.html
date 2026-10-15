@@ -56,6 +56,23 @@
 .intel-action ol{margin:8px 0 0;padding-left:19px;color:var(--ink);font-size:11px;line-height:1.55}
 .intel-action li{padding:2px 0}
 .intel-action-source{overflow-wrap:anywhere;color:var(--muted);font:10px/1.5 ui-monospace,Consolas,monospace}
+.intel-compare-controls{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:12px 0}
+.intel-compare-controls input[type=file]{max-width:min(420px,100%);color:var(--muted);font-size:11px}
+.intel-compare-controls button{min-height:38px;padding:9px 12px;font-size:11px}
+.intel-compare-summary{color:var(--muted);font-size:11px;line-height:1.6;margin:10px 0}
+.intel-compare-table{min-width:900px;width:100%;border-collapse:collapse;font-size:11px}
+.intel-compare-table th,.intel-compare-table td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+.intel-compare-table th{color:var(--gold)}
+.intel-compare-table td{color:var(--muted);font-variant-numeric:tabular-nums}
+.intel-compare-changes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}
+.intel-compare-change{min-width:0;border:1px solid var(--line);padding:11px;background:#ffffff03}
+.intel-compare-change[data-status="new"]{border-left:3px solid #8adbd0}
+.intel-compare-change[data-status="changed"]{border-left:3px solid #ffd18b}
+.intel-compare-change[data-status="not-in-current"]{border-left:3px solid #a5aaa1}
+.intel-compare-change strong{display:block;font-size:11px}
+.intel-compare-change small{display:block;color:var(--muted);font-size:10px;margin-top:5px;overflow-wrap:anywhere}
+@media(max-width:680px){.intel-compare-changes{grid-template-columns:minmax(0,1fr)}}
+
 @media(max-width:680px){.intel-plan-list{grid-template-columns:minmax(0,1fr)}}
 
 .intel-status[data-kind="error"]{color:#ff958e}
@@ -98,6 +115,22 @@
 <div class="intel-plan-head"><div><h3 id="intel-plan-heading">План следующего действия</h3><p class="retention">Конкретные проверки на основе сигналов. Только рекомендации: система не меняет платежи, конфигурацию или эксперименты автоматически.</p></div></div>
 <p id="intel-plan-summary" class="intel-plan-summary" role="status" aria-live="polite">План появится после загрузки агрегатов.</p>
 <div id="intel-plan-actions" class="intel-plan-list"><p class="intel-empty">Нет актуального плана.</p></div>
+</section>
+<section class="intel-block" style="margin-top:14px" aria-labelledby="intel-comparison-heading">
+<h3 id="intel-comparison-heading">Сравнение с прошлым отчётом</h3>
+<p class="retention">Выберите ранее сохранённый JSON-экспорт. Файл читается только в этом браузере, не загружается на сервер и не сохраняется после закрытия страницы. Сравнение агрегатов не доказывает причинность; разные окна отчёта явно отмечаются.</p>
+<div class="intel-compare-controls">
+<label for="intel-compare-file" class="retention">Предыдущий отчёт JSON</label>
+<input id="intel-compare-file" type="file" accept=".json,application/json">
+<button id="intel-clear-baseline" type="button" disabled>Очистить базовый отчёт</button>
+<button id="intel-comparison-export-json" type="button" disabled>Экспорт сравнения JSON ↓</button>
+<button id="intel-comparison-export-csv" type="button" disabled>Экспорт сравнения CSV ↓</button>
+</div>
+<p id="intel-comparison-status" class="intel-status" role="status" aria-live="polite">Импортируйте сохранённый агрегированный отчёт, чтобы сравнить его с текущими данными.</p>
+<p id="intel-comparison-summary" class="intel-compare-summary"></p>
+<div class="table-wrap"><table class="intel-compare-table"><thead><tr><th>Валюта</th><th>Присутствие</th><th>Paid orders Δ</th><th>Commerce gross Δ</th><th>Service gross Δ</th><th>Refunds Δ</th><th>Service net Δ</th></tr></thead><tbody id="intel-comparison-currency-rows"><tr><td colspan="7">Сравнение ещё не рассчитано.</td></tr></tbody></table></div>
+<h4 style="margin:18px 0 8px;font-size:12px">Изменения сигналов и плана проверок</h4>
+<div id="intel-comparison-changes" class="intel-compare-changes"><p class="intel-empty">Сравнение ещё не рассчитано.</p></div>
 </section>
 <section class="intel-block" style="margin-top:14px" aria-labelledby="intel-funnel-heading"><h3 id="intel-funnel-heading">Путь игрока и интерес к Premium</h3><p class="retention">Отношения ниже — доли событий за 30 дней, не уникальные люди и не сквозные когорты.</p><div id="intel-funnel" class="intel-funnel"><article class="intel-step"><span>Каталог</span><strong>—</strong></article></div><p class="intel-note">Просмотры Premium и оплаченные заказы не соединяются в conversion rate: текущий агрегат не связывает их в одну когорту. Если просмотры есть, а заказов нет, панель предложит проверить checkout и webhook без объявления ложной конверсии.</p></section>
 <section class="intel-block" style="margin-top:14px" aria-labelledby="intel-promo-heading"><h3 id="intel-promo-heading">OSGARD SELECT · эффективность переходов</h3><p class="retention">Описательный CTR по согласованным видимым появлениям. Малая выборка явно помечается; победитель автоматически не назначается.</p><div class="table-wrap"><table class="intel-table"><thead><tr><th>Сервис</th><th>Появления</th><th>Клики</th><th>CTR</th><th>Выборка</th><th>Игры</th></tr></thead><tbody id="intel-promo-rows"><tr><td colspan="6">Загрузите агрегаты.</td></tr></tbody></table></div></section>
