@@ -16,9 +16,9 @@
     .wrap{width:min(1180px,calc(100% - 36px));margin:auto}.top{min-height:72px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:16px}.brand{display:inline-flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none;font:650 12px var(--mono);letter-spacing:.11em}.brand svg{width:32px;height:32px;color:var(--lime)}.brand small{display:block;margin-top:3px;color:var(--muted);font-size:9px;letter-spacing:.16em}.top-links{display:flex;gap:20px;flex-wrap:wrap}.top-links a{font-size:11px;color:var(--muted)}
     .hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,.55fr);gap:32px;align-items:end;padding:clamp(44px,7vw,82px) 0 28px}.eyebrow{color:var(--lime);font:10px var(--mono);letter-spacing:.17em;text-transform:uppercase}.hero h1{font:400 clamp(42px,7vw,76px)/.98 var(--serif);letter-spacing:-.045em;margin:16px 0 20px;max-width:780px}.hero h1 em{color:var(--gold);font-style:normal}.hero p{max-width:710px;color:var(--muted);font-size:13px}.scope{padding:18px;border:1px solid var(--line);background:linear-gradient(145deg,#ffffff07,transparent 62%),var(--panel);border-radius:10px}.scope strong{display:block;color:var(--lime);font:11px var(--mono);letter-spacing:.12em;margin-bottom:9px}.scope p{font-size:11px;margin:0}
     .toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:9px;padding:14px 0 18px;border-block:1px solid var(--line)}.btn{min-height:44px;padding:10px 16px;border:1px solid var(--line);border-radius:6px;color:var(--ink);background:#ffffff06}.btn.primary{background:var(--lime);border-color:var(--lime);color:#11140c;font-weight:700}.btn:disabled{opacity:.55;cursor:wait}.toggle{display:inline-flex;align-items:center;gap:9px;margin-left:auto;color:var(--muted);font-size:12px}.toggle input{accent-color:var(--lime);width:17px;height:17px}
-    .summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0}.metric{min-height:96px;border:1px solid var(--line);background:var(--panel);padding:15px;border-radius:8px}.metric small{display:block;color:var(--muted);font:10px var(--mono);letter-spacing:.09em}.metric strong{display:block;margin-top:8px;font:400 29px/1.1 var(--serif)}.metric .pass{color:var(--lime)}.metric .warn{color:var(--gold)}.metric .fail{color:var(--red)}
-    .statusline{min-height:28px;color:var(--muted);font-size:12px;padding:4px 0 12px}.table-wrap{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel)}table{width:100%;border-collapse:collapse}th,td{padding:13px 15px;border-bottom:1px solid #ffffff12;text-align:left;vertical-align:top}th{color:var(--muted);font:10px var(--mono);letter-spacing:.12em;background:#ffffff04}tbody tr:last-child td{border-bottom:0}.route-name{display:block;font-weight:650}.route-path{display:block;color:var(--muted);font:10px/1.6 var(--mono);overflow-wrap:anywhere;margin-top:4px}.route-description{display:block;color:var(--muted);font-size:11px;margin-top:3px}.result{display:inline-flex;align-items:center;gap:7px;font:10px var(--mono);letter-spacing:.07em;white-space:nowrap}.dot{width:7px;height:7px;border-radius:50%;background:var(--muted)}.result.pass{color:var(--lime)}.result.pass .dot{background:var(--lime)}.result.warn{color:var(--gold)}.result.warn .dot{background:var(--gold)}.result.fail{color:var(--red)}.result.fail .dot{background:var(--red)}.detail{font-size:11px;color:var(--muted);max-width:420px;overflow-wrap:anywhere}.latency{font:11px var(--mono);white-space:nowrap}.empty{padding:30px;text-align:center;color:var(--muted)}.footnotes{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0 55px}.note{border:1px solid var(--line);background:#ffffff03;padding:16px;border-radius:8px}.note strong{font-size:12px}.note p{font-size:11px;color:var(--muted);margin:7px 0 0}.build{font:10px var(--mono);color:var(--gold);overflow-wrap:anywhere}.footer{border-top:1px solid var(--line);padding:22px 0 36px;color:var(--muted);font-size:10px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
-    @media(max-width:760px){.wrap{width:calc(100% - 28px)}.hero{grid-template-columns:1fr;gap:18px;padding-top:42px}.hero h1{font-size:clamp(40px,12vw,62px)}.summary{grid-template-columns:repeat(2,minmax(0,1fr))}.toggle{margin-left:0;width:100%}.table-wrap{border:0;background:transparent;overflow:visible}table,tbody{display:block}thead{display:none}tbody{display:grid;gap:9px}tr{display:grid;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:12px}td{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #ffffff10;padding:8px 2px}td:first-child{display:block}td:last-child{border-bottom:0}.detail{text-align:right;max-width:62%}.footnotes{grid-template-columns:1fr}.top-links{gap:10px}.top-links a{font-size:10px}}
+    .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:10px;margin:18px 0}.metric{min-height:96px;border:1px solid var(--line);background:var(--panel);padding:15px;border-radius:8px}.metric small{display:block;color:var(--muted);font:10px var(--mono);letter-spacing:.09em}.metric strong{display:block;margin-top:8px;font:400 29px/1.1 var(--serif)}.metric .pass{color:var(--lime)}.metric .warn{color:var(--gold)}.metric .fail{color:var(--red)}
+    .filters{display:grid;grid-template-columns:minmax(190px,1.4fr) repeat(2,minmax(150px,.7fr));gap:10px;margin:14px 0}.filters label{display:grid;gap:5px;color:var(--muted);font:10px var(--mono);letter-spacing:.08em}.filters input,.filters select{width:100%;min-height:42px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);padding:9px 11px;font:12px var(--sans)}.filters input:focus-visible,.filters select:focus-visible{outline:2px solid var(--lime);outline-offset:2px}.progressline{display:flex;align-items:center;gap:12px;margin:4px 0 0}.progressline progress{width:min(320px,48vw);height:8px;accent-color:var(--lime);border:0;border-radius:9px;overflow:hidden}.progressline progress::-webkit-progress-bar{background:#ffffff12}.progressline progress::-webkit-progress-value{background:var(--lime)}.progressline progress::-moz-progress-bar{background:var(--lime)}.delta-line{font:11px/1.6 var(--mono);color:var(--muted);padding:2px 0 12px}.delta-line strong{color:var(--lime)}.metric .submetric{display:block;color:var(--muted);font:10px var(--mono);margin-top:5px}.statusline{min-height:28px;color:var(--muted);font-size:12px;padding:4px 0 6px}.table-wrap{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel)}table{width:100%;border-collapse:collapse}th,td{padding:13px 15px;border-bottom:1px solid #ffffff12;text-align:left;vertical-align:top}th{color:var(--muted);font:10px var(--mono);letter-spacing:.12em;background:#ffffff04}tbody tr:last-child td{border-bottom:0}.route-name{display:block;font-weight:650}.route-path{display:block;color:var(--muted);font:10px/1.6 var(--mono);overflow-wrap:anywhere;margin-top:4px}.route-description{display:block;color:var(--muted);font-size:11px;margin-top:3px}.result{display:inline-flex;align-items:center;gap:7px;font:10px var(--mono);letter-spacing:.07em;white-space:nowrap}.dot{width:7px;height:7px;border-radius:50%;background:var(--muted)}.result.pass{color:var(--lime)}.result.pass .dot{background:var(--lime)}.result.warn{color:var(--gold)}.result.warn .dot{background:var(--gold)}.result.fail{color:var(--red)}.result.fail .dot{background:var(--red)}.detail{font-size:11px;color:var(--muted);max-width:420px;overflow-wrap:anywhere}.latency{font:11px var(--mono);white-space:nowrap}.empty{padding:30px;text-align:center;color:var(--muted)}.footnotes{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0 55px}.note{border:1px solid var(--line);background:#ffffff03;padding:16px;border-radius:8px}.note strong{font-size:12px}.note p{font-size:11px;color:var(--muted);margin:7px 0 0}.build{font:10px var(--mono);color:var(--gold);overflow-wrap:anywhere}.footer{border-top:1px solid var(--line);padding:22px 0 36px;color:var(--muted);font-size:10px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+    @media(max-width:760px){.wrap{width:calc(100% - 28px)}.hero{grid-template-columns:1fr;gap:18px;padding-top:42px}.hero h1{font-size:clamp(40px,12vw,62px)}.summary{grid-template-columns:repeat(2,minmax(0,1fr))}.filters{grid-template-columns:1fr}.progressline{align-items:flex-start;flex-direction:column;gap:5px}.toggle{margin-left:0;width:100%}.table-wrap{border:0;background:transparent;overflow:visible}table,tbody{display:block}thead{display:none}tbody{display:grid;gap:9px}tr{display:grid;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:12px}td{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #ffffff10;padding:8px 2px}td:first-child{display:block}td:last-child{border-bottom:0}.detail{text-align:right;max-width:62%}.footnotes{grid-template-columns:1fr}.top-links{gap:10px}.top-links a{font-size:10px}}
     @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
   </style>
 </head>
@@ -42,17 +42,28 @@
       </section>
       <div class="toolbar">
         <button class="btn primary" id="run-checks" type="button">Запустить проверку</button>
+        <button class="btn" id="cancel-checks" type="button" disabled>Остановить</button>
+        <button class="btn" id="retry-problems" type="button" disabled>Повторить проблемы</button>
         <button class="btn" id="export-report" type="button" disabled>Экспорт JSON</button>
         <button class="btn" id="copy-report" type="button" disabled>Скопировать отчёт</button>
         <label class="toggle"><input id="issues-only" type="checkbox">Показывать только предупреждения и ошибки</label>
       </div>
+      <section class="filters" aria-label="Фильтры результатов">
+        <label for="result-search">ПОИСК ПО МАРШРУТУ И ОТЧЁТУ<input id="result-search" type="search" placeholder="Например: NULL//SHIFT, 404, Commerce" autocomplete="off"></label>
+        <label for="group-filter">ГРУППА МАРШРУТОВ<select id="group-filter"><option value="all">Все группы</option></select></label>
+        <label for="sort-results">СОРТИРОВКА<select id="sort-results"><option value="severity">Сначала проблемы</option><option value="latency-desc">Самые медленные</option><option value="latency-asc">Самые быстрые</option><option value="route">По названию</option></select></label>
+      </section>
       <section class="summary" aria-label="Сводка проверок">
-        <div class="metric"><small>МАРШРУТЫ</small><strong id="metric-total">—</strong></div>
+        <div class="metric"><small>МАРШРУТЫ</small><strong id="metric-total">—</strong><span class="submetric" id="metric-checked">проверены</span></div>
         <div class="metric"><small>ПРОЙДЕНЫ</small><strong class="pass" id="metric-pass">—</strong></div>
         <div class="metric"><small>ПРЕДУПРЕЖДЕНИЯ</small><strong class="warn" id="metric-warn">—</strong></div>
         <div class="metric"><small>ОШИБКИ</small><strong class="fail" id="metric-fail">—</strong></div>
+        <div class="metric"><small>МЕДИАНА</small><strong id="metric-median">—</strong><span class="submetric">мс</span></div>
+        <div class="metric"><small>P95</small><strong id="metric-p95">—</strong><span class="submetric">мс</span></div>
+        <div class="metric"><small>МЕДЛЕННЫЕ</small><strong id="metric-slow">—</strong><span class="submetric">более 2500 мс</span></div>
       </section>
-      <p class="statusline" id="run-status" role="status" aria-live="polite">Подготовка списка маршрутов…</p>
+      <div class="progressline"><progress id="run-progress" max="19" value="0" aria-label="Прогресс проверки маршрутов"></progress><p class="statusline" id="run-status" role="status" aria-live="polite">Подготовка списка маршрутов…</p></div>
+      <p class="delta-line" id="run-delta" aria-live="polite">Сравнение с предыдущим запуском появится после первой проверки.</p>
       <p class="build" id="build-id">Версия опубликованной сборки: ещё не проверена</p>
       <section class="table-wrap" aria-label="Результаты диагностики">
         <table>
@@ -95,17 +106,49 @@
   const $ = (selector) => document.querySelector(selector);
   const resultsNode = $('#results');
   const runButton = $('#run-checks');
+  const cancelButton = $('#cancel-checks');
+  const retryButton = $('#retry-problems');
   const exportButton = $('#export-report');
   const copyButton = $('#copy-report');
+  const searchInput = $('#result-search');
+  const groupFilter = $('#group-filter');
+  const sortSelect = $('#sort-results');
+  const progressNode = $('#run-progress');
   let lastReport = null;
   let running = false;
   let showOnlyIssues = false;
+  let activeRunController = null;
   let observedBuild = 'не определена';
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const stateLabel = (state) => state === 'pass' ? 'ПРОЙДЕНО' : state === 'warn' ? 'ВНИМАНИЕ' : 'ОШИБКА';
-  async function probe(target) {
+  const stateLabel = (state) => state === 'pass' ? 'ПРОЙДЕНО' : state === 'warn' ? 'ВНИМАНИЕ' : state === 'cancelled' ? 'ОТМЕНЕНО' : 'ОШИБКА';
+  const severity = (state) => state === 'fail' ? 3 : state === 'warn' ? 2 : state === 'pass' ? 1 : 0;
+  const median = (values) => {
+    if (!values.length) return null;
+    const sorted = values.slice().sort((a,b)=>a-b);
+    const middle = Math.floor(sorted.length / 2);
+    return sorted.length % 2 ? sorted[middle] : Math.round((sorted[middle - 1] + sorted[middle]) / 2);
+  };
+  const percentile = (values, ratio) => {
+    if (!values.length) return null;
+    const sorted = values.slice().sort((a,b)=>a-b);
+    return sorted[Math.max(0, Math.ceil(ratio * sorted.length) - 1)];
+  };
+  const countByState = (items, state) => items.filter((item) => item.state === state).length;
+  const targetMap = new Map(TARGETS.map((target) => [target.id, target]));
+  for (const group of Array.from(new Set(TARGETS.map((target) => target.group))).sort((a,b)=>a.localeCompare(b,'ru'))) {
+    const option = document.createElement('option');
+    option.value = group;
+    option.textContent = group;
+    groupFilter.appendChild(option);
+  }
+  async function probe(target, runSignal) {
     const started = performance.now();
     const controller = new AbortController();
+    const abortFromRun = () => controller.abort();
+    if (runSignal) {
+      if (runSignal.aborted) controller.abort();
+      else runSignal.addEventListener('abort', abortFromRun, { once:true });
+    }
     const timeout = window.setTimeout(() => controller.abort(), 8000);
     try {
       const url = new URL(target.path, location.origin);
@@ -143,7 +186,7 @@
           if (!base) {
             let discovered = false;
             try {
-              const healthResponse = await fetch('/commerce-api/healthz', { cache: 'no-store', credentials: 'omit' });
+              const healthResponse = await fetch('/commerce-api/healthz', { cache: 'no-store', credentials: 'omit', signal: controller.signal });
               const health = healthResponse.ok ? await healthResponse.json().catch(() => ({})) : {};
               discovered = healthResponse.ok && health.service === 'osgard-commerce-api' && health.databaseReady === true;
             } catch { discovered = false; }
@@ -167,51 +210,182 @@
       return { id:target.id, label:target.label, path:target.path, group:target.group, state, status:response.status, elapsedMs, contentType, detail:detail || 'HTTP-ответ совпадает с базовым контрактом.', checkedAt:new Date().toISOString() };
     } catch (error) {
       const elapsedMs = Math.round(performance.now() - started);
-      const aborted = error && (error.name === 'AbortError');
+      if (runSignal?.aborted) {
+        return { id:target.id, label:target.label, path:target.path, group:target.group, state:'cancelled', status:null, elapsedMs, contentType:'', detail:'Проверка остановлена оператором.', checkedAt:new Date().toISOString() };
+      }
+      const aborted = error && error.name === 'AbortError';
       return { id:target.id, label:target.label, path:target.path, group:target.group, state:'fail', status:null, elapsedMs, contentType:'', detail:aborted ? 'Тайм-аут после 8 секунд.' : String(error && error.message || 'Сетевая ошибка').slice(0,220), checkedAt:new Date().toISOString() };
     } finally {
       window.clearTimeout(timeout);
+      if (runSignal) runSignal.removeEventListener('abort', abortFromRun);
     }
   }
+  function filteredRows() {
+    const query = searchInput.value.trim().toLocaleLowerCase('ru-RU');
+    const group = groupFilter.value;
+    const sortMode = sortSelect.value;
+    const rows = (lastReport?.results || []).filter((item) => {
+      if (showOnlyIssues && item.state === 'pass') return false;
+      if (group !== 'all' && item.group !== group) return false;
+      if (query) {
+        const target = targetMap.get(item.id);
+        const haystack = [item.label, item.path, item.group, item.detail, target?.description || '', item.status === null ? '' : String(item.status)]
+          .join(' ').toLocaleLowerCase('ru-RU');
+        if (!haystack.includes(query)) return false;
+      }
+      return true;
+    });
+    const stablePath = (a,b) => a.path.localeCompare(b.path,'ru');
+    if (sortMode === 'latency-desc') rows.sort((a,b)=>(b.elapsedMs||0)-(a.elapsedMs||0)||stablePath(a,b));
+    else if (sortMode === 'latency-asc') rows.sort((a,b)=>(a.elapsedMs||0)-(b.elapsedMs||0)||stablePath(a,b));
+    else if (sortMode === 'route') rows.sort((a,b)=>stablePath(a,b));
+    else rows.sort((a,b)=>severity(b.state)-severity(a.state)||(b.elapsedMs||0)-(a.elapsedMs||0)||stablePath(a,b));
+    return rows;
+  }
   function render() {
-    const rows = (lastReport?.results || []).filter((item) => !showOnlyIssues || item.state !== 'pass');
-    if (!rows.length) resultsNode.innerHTML = '<tr><td colspan="4" class="empty">Нет предупреждений и ошибок в последнем запуске.</td></tr>';
+    const rows = filteredRows();
+    if (!rows.length) resultsNode.innerHTML = '<tr><td colspan="4" class="empty">Ничего не найдено по выбранным фильтрам.</td></tr>';
     else resultsNode.innerHTML = rows.map((item) => '<tr>' +
-      '<td><span class="route-name">' + escapeHtml(item.label) + '</span><span class="route-path">' + escapeHtml(item.path) + '</span><span class="route-description">' + escapeHtml(TARGETS.find((t) => t.id === item.id)?.description || '') + '</span></td>' +
+      '<td><span class="route-name">' + escapeHtml(item.label) + '</span><span class="route-path">' + escapeHtml(item.path) + '</span><span class="route-description">' + escapeHtml(targetMap.get(item.id)?.description || '') + '</span></td>' +
       '<td><span class="result ' + item.state + '"><i class="dot"></i>' + stateLabel(item.state) + '</span><div class="route-path">HTTP ' + (item.status === null ? '—' : item.status) + '</div></td>' +
       '<td class="latency">' + item.elapsedMs + ' ms</td><td class="detail">' + escapeHtml(item.detail) + '</td></tr>').join('');
     const all = lastReport?.results || [];
-    const count = (state) => all.filter((item) => item.state === state).length;
+    const checked = all.filter((item) => item.state !== 'cancelled');
+    const latencies = checked.map((item) => item.elapsedMs).filter(Number.isFinite);
+    const count = (state) => countByState(all, state);
+    const mid = median(latencies);
+    const p95 = percentile(latencies, .95);
     $('#metric-total').textContent = String(all.length);
+    $('#metric-checked').textContent = checked.length + ' проверено · ' + count('cancelled') + ' отменено';
     $('#metric-pass').textContent = String(count('pass'));
     $('#metric-warn').textContent = String(count('warn'));
     $('#metric-fail').textContent = String(count('fail'));
-    $('#build-id').textContent = 'Версия опубликованной сборки: ' + observedBuild;
+    $('#metric-median').textContent = mid === null ? '—' : String(mid);
+    $('#metric-p95').textContent = p95 === null ? '—' : String(p95);
+    $('#metric-slow').textContent = String(checked.filter((item) => item.elapsedMs > 2500).length);
+    $('#build-id').textContent = 'Версия опубликованной сборки: ' + (lastReport?.build || observedBuild);
     exportButton.disabled = !lastReport;
     copyButton.disabled = !lastReport;
-    $('#run-status').textContent = running ? 'Проверяем маршруты…' : (lastReport ? 'Последняя проверка: ' + new Date(lastReport.finishedAt).toLocaleString('ru-RU') + ' · ' + all.length + ' проверок' : 'Проверка ещё не запускалась.');
+    retryButton.disabled = running || !all.some((item) => item.state === 'fail' || item.state === 'warn');
+    $('#run-status').textContent = running ? 'Проверяем маршруты…' : (lastReport ? (lastReport.cancelled ? 'Запуск остановлен оператором' : 'Последняя проверка: ' + new Date(lastReport.finishedAt).toLocaleString('ru-RU')) + ' · ' + checked.length + ' проверено из ' + all.length : 'Проверка ещё не запускалась.');
+    if (lastReport?.comparison) {
+      const cmp = lastReport.comparison;
+      const pieces = [];
+      if (cmp.regressions) pieces.push('<span style="color:var(--red)">ухудшений: ' + cmp.regressions + '</span>');
+      if (cmp.recoveries) pieces.push('<strong>восстановлений: ' + cmp.recoveries + '</strong>');
+      if (cmp.averageLatencyDeltaMs !== null) pieces.push('средняя задержка ' + (cmp.averageLatencyDeltaMs > 0 ? '+' : '') + cmp.averageLatencyDeltaMs + ' мс');
+      $('#run-delta').innerHTML = 'Сравнение с предыдущим запуском (' + cmp.comparedRoutes + ' общих маршрутов): ' + (pieces.join(' · ') || 'изменений статусов нет');
+    } else $('#run-delta').textContent = 'Сравнение с предыдущим запуском появится после второго запуска.';
+    runButton.disabled = running;
+    cancelButton.disabled = !running;
+    progressNode.max = Math.max(1, lastReport?.targetCount || TARGETS.length);
+    progressNode.setAttribute('aria-valuetext', (lastReport?.results.length || 0) + ' из ' + progressNode.max);
   }
-  async function runChecks() {
+  function compareReports(previous, currentResults) {
+    if (!previous?.results?.length) return null;
+    const oldMap = new Map(previous.results.map((item) => [item.id, item]));
+    const common = currentResults.filter((item) => oldMap.has(item.id) && item.state !== 'cancelled' && oldMap.get(item.id).state !== 'cancelled');
+    if (!common.length) return null;
+    let regressions = 0;
+    let recoveries = 0;
+    let latencyDelta = 0;
+    let latencySamples = 0;
+    const changes = [];
+    for (const item of common) {
+      const old = oldMap.get(item.id);
+      if (severity(item.state) < severity(old.state)) regressions++;
+      if (severity(item.state) > severity(old.state)) recoveries++;
+      if (Number.isFinite(item.elapsedMs) && Number.isFinite(old.elapsedMs)) {
+        latencyDelta += item.elapsedMs - old.elapsedMs;
+        latencySamples++;
+      }
+      if (item.state !== old.state || item.elapsedMs - old.elapsedMs >= 500) {
+        changes.push({ id:item.id, from:old.state, to:item.state, latencyDeltaMs:item.elapsedMs-old.elapsedMs });
+      }
+    }
+    return {
+      baselineFinishedAt: previous.finishedAt,
+      comparedRoutes: common.length,
+      regressions,
+      recoveries,
+      averageLatencyDeltaMs: latencySamples ? Math.round(latencyDelta / latencySamples) : null,
+      changes
+    };
+  }
+  async function runChecks(selectedTargets = TARGETS, scope = 'full') {
     if (running) return;
+    const baseline = lastReport;
     const startedAt = new Date().toISOString();
+    const startedClock = performance.now();
+    activeRunController = new AbortController();
     running = true;
     runButton.disabled = true;
-    $('#run-status').textContent = 'Проверяем ' + TARGETS.length + ' маршрутов группами по четыре…';
-    resultsNode.innerHTML = '<tr><td colspan="4" class="empty">Проверка выполняется. Не закрывайте страницу.</td></tr>';
+    cancelButton.disabled = false;
+    retryButton.disabled = true;
+    progressNode.max = Math.max(1, selectedTargets.length);
+    progressNode.value = 0;
+    resultsNode.setAttribute('aria-busy', 'true');
+    $('#run-status').textContent = 'Проверяем ' + selectedTargets.length + ' маршрутов группами по четыре…';
     observedBuild = 'не определена';
-    const results = [];
-    for (let start = 0; start < TARGETS.length; start += 4) {
-      const batch = TARGETS.slice(start, start + 4);
-      results.push(...await Promise.all(batch.map(probe)));
-      $('#run-status').textContent = 'Готово ' + results.length + ' из ' + TARGETS.length + ' маршрутов…';
-    }
-    lastReport = { schemaVersion:1, reportType:'osgard-games-readonly-route-health', origin:location.origin, startedAt, finishedAt:new Date().toISOString(), build:observedBuild, privacy:{ cookiesSent:false, credentials:'omit', analyticsEventsCreated:false, externalHostsContacted:false }, results };
-    running = false;
-    runButton.disabled = false;
     render();
+    const results = [];
+    const completedIds = new Set();
+    try {
+      for (let start = 0; start < selectedTargets.length; start += 4) {
+        if (activeRunController.signal.aborted) break;
+        const batch = selectedTargets.slice(start, start + 4);
+        const batchResults = await Promise.all(batch.map((target) => probe(target, activeRunController.signal)));
+        results.push(...batchResults);
+        batchResults.forEach((item) => completedIds.add(item.id));
+        progressNode.value = results.length;
+        $('#run-status').textContent = 'Готово ' + results.length + ' из ' + selectedTargets.length + ' маршрутов…';
+      }
+    } finally {
+      const wasCancelled = activeRunController.signal.aborted;
+      for (const target of selectedTargets) {
+        if (!completedIds.has(target.id)) {
+          results.push({ id:target.id, label:target.label, path:target.path, group:target.group, state:'cancelled', status:null, elapsedMs:0, contentType:'', detail:'Проверка не запускалась: текущий запуск был остановлен.', checkedAt:new Date().toISOString() });
+        }
+      }
+      const ordered = selectedTargets.map((target) => results.find((item) => item.id === target.id)).filter(Boolean);
+      const allLatency = ordered.filter((item) => item.state !== 'cancelled').map((item) => item.elapsedMs);
+      const comparison = compareReports(baseline, ordered);
+      lastReport = {
+        schemaVersion:2,
+        reportType:'osgard-games-readonly-route-health',
+        origin:location.origin,
+        scope,
+        targetCount:selectedTargets.length,
+        startedAt,
+        finishedAt:new Date().toISOString(),
+        durationMs:Math.round(performance.now()-startedClock),
+        cancelled:wasCancelled,
+        build:observedBuild,
+        counts:{ passed:countByState(ordered,'pass'), warnings:countByState(ordered,'warn'), failed:countByState(ordered,'fail'), cancelled:countByState(ordered,'cancelled') },
+        latencySummary:{ sampleCount:allLatency.length, medianMs:median(allLatency), p95Ms:percentile(allLatency,.95), maxMs:allLatency.length?Math.max(...allLatency):null, slowOver2500Ms:allLatency.filter((ms)=>ms>2500).length },
+        comparison,
+        privacy:{ cookiesSent:false, credentials:'omit', analyticsEventsCreated:false, externalHostsContacted:false, storageUsed:false, mutationRequestsCreated:false },
+        results:ordered
+      };
+      progressNode.value = selectedTargets.length;
+      running = false;
+      activeRunController = null;
+      resultsNode.removeAttribute('aria-busy');
+      render();
+    }
   }
   runButton.addEventListener('click', () => { void runChecks(); });
+  cancelButton.addEventListener('click', () => { if (activeRunController) activeRunController.abort(); });
+  retryButton.addEventListener('click', () => {
+    if (!lastReport || running) return;
+    const issueIds = new Set(lastReport.results.filter((item)=>item.state==='fail'||item.state==='warn').map((item)=>item.id));
+    const targets = TARGETS.filter((target)=>issueIds.has(target.id));
+    if (targets.length) void runChecks(targets, 'retry-problems');
+  });
   $('#issues-only').addEventListener('change', (event) => { showOnlyIssues = event.target.checked; render(); });
+  searchInput.addEventListener('input', render);
+  groupFilter.addEventListener('change', render);
+  sortSelect.addEventListener('change', render);
   exportButton.addEventListener('click', () => {
     if (!lastReport) return;
     const url = URL.createObjectURL(new Blob([JSON.stringify(lastReport,null,2)],{type:'application/json'}));
@@ -219,8 +393,7 @@
   });
   copyButton.addEventListener('click', async () => {
     if (!lastReport) return;
-    const text = JSON.stringify(lastReport,null,2);
-    try { await navigator.clipboard.writeText(text);copyButton.textContent='Отчёт скопирован'; }
+    try { await navigator.clipboard.writeText(JSON.stringify(lastReport,null,2));copyButton.textContent='Отчёт скопирован'; }
     catch { $('#run-status').textContent='Браузер запретил clipboard API. Используйте «Экспорт JSON».'; }
   });
   runChecks();
