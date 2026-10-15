@@ -376,10 +376,10 @@
     const qualityKnown = !!quality && qualitySummary.total > 0 &&
       qualitySummary.measured + qualitySummary.partial + qualitySummary.unavailable + qualitySummary.blocked === qualitySummary.total;
     let state = 'clear';
-    if (!validReport || !qualityKnown || qualitySummary.blocked > 0 || quality.state === 'blocked') state = 'blocked';
+    if (!validReport || qualitySummary.blocked > 0 || quality?.state === 'blocked') state = 'blocked';
     else if (critical > 0) state = 'critical';
     else if (warnings > 0) state = 'attention';
-    else if (qualitySummary.partial > 0 || qualitySummary.unavailable > 0 || quality.state !== 'complete') state = 'limited';
+    else if (!qualityKnown || qualitySummary.partial > 0 || qualitySummary.unavailable > 0 || quality.state !== 'complete') state = 'limited';
     else if (informational > 0) state = 'monitoring';
 
     const labels = {
