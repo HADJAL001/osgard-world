@@ -47,7 +47,7 @@ body{background:radial-gradient(ellipse at 54% 12%,#0a1428 0%,#050b1a 44%,#01040
 @media(max-width:1024px) and (min-width:761px){.hero{grid-template-columns:minmax(0,1.05fr) minmax(360px,.95fr);gap:42px}.hero-title{font-size:clamp(50px,6vw,78px)}}
 
 /* The hero uses the editorial type pairing defined for OSGARD World. */
-:root{font-family:'Jost',Arial,sans-serif}
+:root{font-family:'Manrope',Arial,sans-serif}
 h1,h2,h3,.hero-title{font-family:'Cormorant Garamond',Georgia,serif}
 
 /* Product cards: each one leads with the outcome, then the proof. */
