@@ -147,7 +147,7 @@
       clickRate:rate(row.clicks,row.impressions), gameCount:row.games.size,
       sampleState:row.impressions >= 30 ? 'descriptive' : 'small_sample',
       note:row.impressions >= 30 ? 'Описательный CTR; не доказывает причинный эффект.' : 'Малая выборка: не ранжировать как победителя.'
-    })).sort((a,b)=>b.clickRate===null?-1:a.clickRate===null?1:b.clickRate-a.clickRate||b.impressions-a.impressions||a.serviceId.localeCompare(b.serviceId));
+    })).sort((a,b)=>a.clickRate===null&&b.clickRate===null?a.serviceId.localeCompare(b.serviceId):a.clickRate===null?1:b.clickRate===null?-1:b.clickRate-a.clickRate||b.impressions-a.impressions||a.serviceId.localeCompare(b.serviceId));
 
     const alerts = [];
     const alert = (id,severity,title,detail) => alerts.push({ id,severity,title,detail });
