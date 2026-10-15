@@ -74,14 +74,16 @@
     "qa:games-accessibility-funnel": "node scripts/games-accessibility-funnel-smoke.mjs && node scripts/consented-analytics-queue-smoke.mjs && node --test services/osgard-commerce-api/test/core.test.mjs",
     "qa:civic-release-contract": "node scripts/civic-cascade-release-contract-smoke.mjs",
     "qa:ecosystem-release": "node scripts/osgard-ecosystem-release-preflight.mjs && node scripts/osgard-ecosystem-release-preflight-smoke.mjs",
-    "qa:one-pass": "node --test scripts/osgard-one-pass-release.test.mjs && node scripts/osgard-one-pass-release-smoke.mjs",
+    "qa:one-pass": "node --test scripts/osgard-one-pass-release.test.mjs && node scripts/osgard-one-pass-release-smoke.mjs && npm run qa:live-bundle-smoke && npm run qa:release-readiness-policy",
     "qa:civic-cascade-advisor": "node --test services/osgard-commerce-api/test/civic-cascade-advisor.test.mjs && node --check services/osgard-commerce-api/src/civic-cascade-advisor.mjs && node scripts/civic-cascade-advisor-smoke.mjs && node scripts/civic-cascade-release-contract-smoke.mjs && node scripts/civic-cascade-forecast-smoke.mjs && node scripts/civic-cascade-crisis-smoke.mjs",
     "qa:contracts": "node scripts/generate-games-share-cards.mjs && node scripts/osgard-contract-audit.mjs && node scripts/catalog-state-scale-smoke.mjs",
     "qa:performance-budget": "node scripts/osgard-performance-budget.mjs dist",
     "qa:performance-budget-tests": "node --test scripts/osgard-performance-budget.test.mjs",
     "qa:release-attestation": "node --test scripts/osgard-release-attestation.test.mjs",
     "release:attest": "node scripts/osgard-release-attestation.mjs create --contract-report osgard-contract-audit.json --performance-report osgard-performance-budget.json",
-    "release:verify": "node scripts/osgard-release-attestation.mjs verify --contract-report osgard-contract-audit.json --performance-report osgard-performance-budget.json"
+    "release:verify": "node scripts/osgard-release-attestation.mjs verify --contract-report osgard-contract-audit.json --performance-report osgard-performance-budget.json",
+    "qa:live-bundle-smoke": "node scripts/live-bundle-audit-smoke.mjs",
+    "qa:release-readiness-policy": "node scripts/release-readiness-policy-smoke.mjs"
   },
   "dependencies": {
     "@types/three": "^0.186.0",
