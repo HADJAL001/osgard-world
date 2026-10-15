@@ -38,7 +38,10 @@
     @media(max-width:1100px){.risk-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.intel-columns{grid-template-columns:1fr}}
     @media(max-width:680px){.intel-head{align-items:start;flex-direction:column}.risk-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.snapshot-toolbar{grid-template-columns:1fr}.comparison-grid{grid-template-columns:1fr}.intel-panel{padding:13px}}
 
-</style>
+
+    .cashflow-controls{display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin:14px 0 18px}.cashflow-controls label,.experiment-form label,.experiment-completion label{display:grid;gap:6px;color:var(--muted);font-size:11px}.cashflow-controls input,.cashflow-controls select,.experiment-form input,.experiment-form select,.experiment-form textarea,.experiment-completion input,.experiment-completion select{min-height:42px;min-width:0;width:100%;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);padding:9px 11px;font:12px var(--sans)}.cashflow-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:12px 0}.cashflow-kpi{padding:15px;border:1px solid var(--line);border-radius:8px;background:var(--panel);min-width:0}.cashflow-kpi span{display:block;color:var(--muted);font:10px var(--mono)}.cashflow-kpi b{display:block;margin-top:8px;font:24px/1.15 var(--serif);overflow-wrap:anywhere}.cashflow-table-wrap{overflow:auto;border:1px solid var(--line);border-radius:8px;background:var(--panel)}.cashflow-table{width:100%;min-width:760px;border-collapse:collapse}.cashflow-table th,.cashflow-table td{padding:11px 12px;border-bottom:1px solid #ffffff12;text-align:right;font-size:11px;white-space:nowrap}.cashflow-table th:first-child,.cashflow-table td:first-child{text-align:left}.cashflow-table th{position:sticky;top:0;background:#121717;color:var(--muted);font:10px var(--mono)}.cashflow-table tbody tr:last-child td{border-bottom:0}.cashflow-net-positive{color:var(--lime)}.cashflow-net-negative{color:var(--red)}.cashflow-bar{display:inline-block;min-width:2px;height:6px;border-radius:4px;background:var(--lime);vertical-align:middle;margin-right:6px}.cashflow-note{padding:12px 14px;border-left:2px solid var(--gold);background:#e8c77a0c;color:var(--muted);font-size:11px;line-height:1.7;margin-top:12px}.experiment-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(260px,.9fr);gap:16px;align-items:start}.experiment-form,.experiment-completion{display:grid;gap:12px;padding:18px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}.experiment-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.experiment-form textarea{min-height:82px;resize:vertical}.experiment-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px}.experiment-summary .metric{min-height:72px;padding:11px}.experiment-summary .metric b{font-size:21px}.experiment-list{display:grid;gap:9px;margin-top:12px}.experiment-card{border:1px solid var(--line);border-radius:8px;padding:14px;background:#ffffff03}.experiment-card-head{display:flex;justify-content:space-between;gap:10px;align-items:start}.experiment-card h4{margin:0;font-size:14px;letter-spacing:-.02em}.experiment-card p{margin:7px 0;color:var(--muted);font-size:11px;line-height:1.65}.experiment-badge{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px 8px;font:9px var(--mono);white-space:nowrap}.experiment-badge.success{color:var(--lime);border-color:#d3ff6955}.experiment-badge.failure{color:var(--red);border-color:#ff9b9155}.experiment-meta{display:flex;gap:7px;flex-wrap:wrap;color:var(--muted);font:10px var(--mono)}.experiment-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.experiment-actions .btn{min-height:34px;padding:6px 10px;font-size:10px}.experiment-footer{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.experiment-status{min-height:22px;color:var(--muted);font-size:11px}.muted-empty{padding:18px;border:1px dashed var(--line);color:var(--muted);font-size:12px;text-align:center;border-radius:8px}@media(max-width:800px){.cashflow-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.experiment-grid{grid-template-columns:1fr}.experiment-summary{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:480px){.experiment-form-grid{grid-template-columns:1fr}.cashflow-controls>*{flex:1 1 150px}}
+
+  </style>
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"OSGARD PLAY — сценарная модель экономики игр","description":"Локальный калькулятор финансовых сценариев с редактируемыми допущениями; не отображает фактическую статистику сайта."}</script>
 </head>
 <body>
@@ -132,6 +135,61 @@
       </div>
       <p class="intel-footnote">Метод: треугольные множители неопределённости и общий demand-pulse для частичной корреляции трафика и запуска игр; seed зафиксирован для повторяемости. Это не live-аналитика, не инвестиционный совет и не обещание дохода. Сценарные спонсорские договоры, введённые вручную, считаются фиксированными.</p>
     </section>
+
+    <section class="decision-intelligence" aria-labelledby="cashflow-title">
+      <div class="section-head"><h2 id="cashflow-title">Касса на 12–36 месяцев</h2><p>Когортный расчёт подписки, MRR, расходов и накопленного денежного потока. Не подключается к банку и не использует фактическую бухгалтерию.</p></div>
+      <div class="cashflow-controls">
+        <label for="cashflow-starting-cash">Стартовый денежный резерв, USD<input id="cashflow-starting-cash" type="number" min="0" max="1000000000000" step="100" value="0"></label>
+        <label for="cashflow-horizon">Горизонт прогноза<select id="cashflow-horizon"><option value="12" selected>12 месяцев</option><option value="24">24 месяца</option><option value="36">36 месяцев</option></select></label>
+        <button class="btn primary" id="cashflow-recompute" type="button">Пересчитать денежный поток</button>
+      </div>
+      <div class="cashflow-kpis" aria-live="polite">
+        <div class="cashflow-kpi"><span>MRR в конце горизонта</span><b id="cashflow-ending-mrr">—</b></div>
+        <div class="cashflow-kpi"><span>Накопленный остаток</span><b id="cashflow-ending-cash">—</b></div>
+        <div class="cashflow-kpi"><span>Операционная безубыточность</span><b id="cashflow-break-even-month">—</b></div>
+        <div class="cashflow-kpi"><span>Исчерпание резерва</span><b id="cashflow-runway-month">—</b></div>
+      </div>
+      <div class="cashflow-table-wrap"><table class="cashflow-table"><thead><tr><th>Месяц</th><th>Активные подписчики</th><th>MRR</th><th>Валовые поступления</th><th>Комиссии</th><th>Расходы</th><th>NET / мес.</th><th>Касса после месяца</th></tr></thead><tbody id="cashflow-rows"><tr><td colspan="8" class="empty">Расчёт появится после загрузки модели.</td></tr></tbody></table></div>
+      <p class="cashflow-note" id="cashflow-note">Поступления без подписки считаются постоянными, новые когорты подписчиков повторяются каждый месяц, отток постоянен. Это сценарная траектория, не прогноз, откалиброванный по когортам OSGARD.</p>
+    </section>
+    <section class="decision-intelligence" aria-labelledby="experiment-ledger-title">
+      <div class="section-head"><h2 id="experiment-ledger-title">Лаборатория бизнес-экспериментов</h2><p>Фиксируй гипотезы до запуска, сравнивай базу и цель, заноси измеренный результат. Журнал хранится только в этом браузере.</p></div>
+      <div class="experiment-summary" aria-live="polite">
+        <div class="metric"><span>Всего экспериментов</span><b id="experiment-total">0</b></div>
+        <div class="metric"><span>Завершено</span><b id="experiment-completed">0</b></div>
+        <div class="metric"><span>Цель достигнута</span><b id="experiment-target-hit-rate">—</b></div>
+      </div>
+      <div class="experiment-grid">
+        <div>
+          <div class="experiment-form" id="experiment-create-form">
+            <h3>Зарегистрировать гипотезу</h3>
+            <label for="experiment-title">Название<input id="experiment-title" maxlength="80" autocomplete="off" placeholder="Например: улучшить конверсию старта"></label>
+            <div class="experiment-form-grid">
+              <label for="experiment-driver">Показатель<select id="experiment-driver"></select></label>
+              <label for="experiment-direction">Желаемое направление<select id="experiment-direction"><option value="increase">Повысить</option><option value="decrease">Снизить</option></select></label>
+              <label for="experiment-baseline">Базовое значение<input id="experiment-baseline" type="number" min="0" max="1000000000000" step="0.01" required></label>
+              <label for="experiment-target">Целевое значение<input id="experiment-target" type="number" min="0" max="1000000000000" step="0.01" required></label>
+              <label for="experiment-due-date">Дата проверки<input id="experiment-due-date" type="date"></label>
+            </div>
+            <label for="experiment-hypothesis">Гипотеза и способ измерения<textarea id="experiment-hypothesis" maxlength="320" placeholder="Что меняем, на какой когорте и как считаем результат?" rows="3"></textarea></label>
+            <button class="btn primary" id="experiment-create" type="button">Сохранить план эксперимента</button>
+          </div>
+          <div class="experiment-completion" style="margin-top:12px">
+            <h3>Записать измеренный результат</h3>
+            <label for="experiment-selected">Выбери активный эксперимент<select id="experiment-selected"><option value="">Нет активных экспериментов</option></select></label>
+            <div class="experiment-form-grid">
+              <label for="experiment-actual">Фактическое значение<input id="experiment-actual" type="number" min="0" max="1000000000000" step="0.01"></label>
+              <label for="experiment-new-status">Статус<select id="experiment-new-status"><option value="running">В работе</option><option value="planned">Запланирован</option><option value="cancelled">Отменить</option></select></label>
+            </div>
+            <div class="experiment-actions"><button class="btn primary" id="experiment-complete" type="button">Завершить с фактом</button><button class="btn" id="experiment-status-update" type="button">Обновить статус</button><button class="btn" id="experiment-delete" type="button">Удалить выбранный</button></div>
+          </div>
+          <p class="experiment-status" id="experiment-status" role="status" aria-live="polite">Журнал локальный. Не вводи пароли, клиентские секреты или платёжные данные.</p>
+          <div class="experiment-footer"><button class="btn" id="experiment-export" type="button">Экспорт журнала JSON</button><button class="btn" id="experiment-import" type="button">Импорт журнала JSON</button><input id="experiment-import-file" type="file" accept="application/json,.json" hidden></div>
+        </div>
+        <div><h3>Журнал и результат</h3><div class="experiment-list" id="experiment-list"><div class="muted-empty">Пока нет экспериментов. Зарегистрируй первую гипотезу.</div></div></div>
+      </div>
+    </section>
+
     <section><div class="section-head"><h2>Настрой допущения</h2><p>Начальные значения — пример для проверки формул, а не данные OSGARD и не подтверждённые рыночные ориентиры. Введи собственные значения по результатам измерений.</p></div>
       <div class="layout">
         <form id="assumptions-form" class="form-panel">
