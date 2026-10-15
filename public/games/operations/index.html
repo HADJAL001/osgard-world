@@ -119,6 +119,7 @@
   let running = false;
   let showOnlyIssues = false;
   let activeRunController = null;
+  let activeTargetCount = TARGETS.length;
   let observedBuild = 'не определена';
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const stateLabel = (state) => state === 'pass' ? 'ПРОЙДЕНО' : state === 'warn' ? 'ВНИМАНИЕ' : state === 'cancelled' ? 'ОТМЕНЕНО' : 'ОШИБКА';
@@ -243,7 +244,7 @@
     const all = lastReport?.results || [];
     const summary = metrics.summarize(all);
     const checked = all.filter((item) => item.state !== 'cancelled');
-    const count = (state) => summary.counts[state] || 0;
+    const count = (state) => summary.counts[state === 'pass' ? 'passed' : state === 'warn' ? 'warnings' : state === 'fail' ? 'failed' : 'cancelled'] || 0;
     const mid = summary.medianMs;
     const p95 = summary.p95Ms;
     $('#metric-total').textContent = String(all.length);
@@ -269,8 +270,8 @@
     } else $('#run-delta').textContent = 'Сравнение с предыдущим запуском появится после второго запуска.';
     runButton.disabled = running;
     cancelButton.disabled = !running;
-    progressNode.max = Math.max(1, lastReport?.targetCount || TARGETS.length);
-    progressNode.setAttribute('aria-valuetext', (lastReport?.results.length || 0) + ' из ' + progressNode.max);
+    progressNode.max = Math.max(1, running ? activeTargetCount : (lastReport?.targetCount || TARGETS.length));
+    progressNode.setAttribute('aria-valuetext', progressNode.value + ' из ' + progressNode.max);
   }
   function compareReports(previous, currentResults) {
     if (!previous?.results?.length) return null;
@@ -282,6 +283,7 @@
     const startedAt = new Date().toISOString();
     const startedClock = performance.now();
     activeRunController = new AbortController();
+    activeTargetCount = selectedTargets.length;
     running = true;
     runButton.disabled = true;
     cancelButton.disabled = false;
@@ -312,7 +314,6 @@
         }
       }
       const ordered = selectedTargets.map((target) => results.find((item) => item.id === target.id)).filter(Boolean);
-      const allLatency = ordered.filter((item) => item.state !== 'cancelled').map((item) => item.elapsedMs);
       const comparison = compareReports(baseline, ordered);
       lastReport = {
         schemaVersion:2,
