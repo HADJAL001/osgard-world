@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { buildFinancialCsv, serializeCsv, FINANCIAL_CSV_NOTE } from '../public/games/monetization/export.mjs';
 import { DEFAULT_INPUTS, SCENARIOS, calculateScenario, calculateRequiredMonthlyVisitors } from '../public/games/monetization/model.js';
+import { projectCohortCashFlow } from '../public/games/monetization/forecast.mjs';
 
 const root = process.cwd();
 const pagePath = resolve(root, 'public/games/monetization/index.html');
@@ -45,6 +46,7 @@ const riskCsv = buildFinancialCsv({
   scenarios,
   generatedAt,
   requiredMonthlyStartingVisitors: calculateRequiredMonthlyVisitors(inputs),
+  cashFlowProjection: projectCohortCashFlow(inputs, { months: 12, startingCashUsd: 5000 }),
   decisionIntelligence: {
     schema: 'osgard.decision-intelligence.v1',
     breakEvenMonthlyVisitors: 12345,
@@ -62,6 +64,8 @@ assert.ok(riskCsv.includes('"monthly_net_operating_p10_usd"'), 'Risk-aware CSV m
 assert.ok(riskCsv.includes('"simulated_break_even_rate_pct"'), 'Risk-aware CSV must export simulated break-even rate');
 assert.ok(riskCsv.includes('"break_even_monthly_start_visitors"'), 'Risk-aware CSV must export required break-even traffic');
 assert.ok(riskCsv.includes('"top_sensitivity_lever"'), 'Risk-aware CSV must export the strongest sensitivity driver');
+assert.ok(riskCsv.includes('"cash_flow_ending_mrr_usd"'), 'Command-center CSV must export end-of-horizon MRR');
+assert.ok(riskCsv.includes('"cash_flow_depletion_month"'), 'Command-center CSV must export the modeled runway limit');
 const negative = serializeCsv([['value', 'note'], [-25, '=WEBSERVICE("https://invalid.example")']], { bom: false });
 assert.ok(negative.startsWith('"value";"note"\r\n'), 'CSV header and row separator should be quoted/CRLF');
 assert.ok(negative.includes('"-25"'), 'Negative numeric values should remain numeric-formatted values');
