@@ -648,6 +648,110 @@ test('Decision Ops exports preserve source context and neutralize spreadsheet fo
   assert.ok(markdown.includes('- Заметка оператора: =HYPERLINK("evil")'));
   assert.ok(markdown.endsWith('\n'));
 });
+function executivePulseReport(overrides = {}) {
+  const base = {
+    schema:engine.schema,
+    generatedAt:fixedDate,
+    headline:{paidOrders:7,trackedCurrencyCount:2},
+    alerts:[],
+    dataQuality:{
+      schema:'osgard.commerce-data-quality.v1',
+      state:'complete',
+      summary:{totalSources:7,measured:7,partial:0,unavailable:0,blocked:0,warningCount:0},
+    },
+    decisionPlan:{items:[]},
+  };
+  return {...base,...overrides};
+}
+
+test('Executive Pulse is transparent, bounded and never invents a health score', () => {
+  const pulse=engine.buildExecutivePulse(executivePulseReport());
+  assert.equal(pulse.schema,'osgard.commerce-executive-pulse.v1');
+  assert.equal(pulse.state,'clear');
+  assert.equal(pulse.summary.paidOrders,7);
+  assert.deepEqual(pulse.summary.qualityCoverage,{measured:7,total:7});
+  assert.equal(pulse.automationEnabled,false);
+  assert.equal(Object.prototype.hasOwnProperty.call(pulse,'score'),false);
+  assert.match(pulse.interpretation,/нет искусственного health-score/i);
+  assert.ok(pulse.reasons.some(reason=>/не гарантия/i.test(reason)));
+});
+
+test('Executive Pulse prioritizes critical signals even when quality metadata is incomplete', () => {
+  const pulse=engine.buildExecutivePulse(executivePulseReport({
+    alerts:[{id:'refunds:counts:USD',severity:'critical',title:'Refund mismatch',detail:'Check ledger.'}],
+    dataQuality:null,
+  }));
+  assert.equal(pulse.state,'critical');
+  assert.equal(pulse.summary.critical,1);
+  assert.ok(pulse.reasons.some(reason=>/качество источников неизвестно/i.test(reason)));
+});
+
+test('Executive Pulse distinguishes warnings, partial evidence and blocked input', () => {
+  const warning=engine.buildExecutivePulse(executivePulseReport({
+    alerts:[{id:'attribution:unknown',severity:'warning',title:'Attribution gap',detail:'Review it.'}],
+  }));
+  assert.equal(warning.state,'attention');
+  assert.equal(warning.summary.warnings,1);
+
+  const limited=engine.buildExecutivePulse(executivePulseReport({
+    dataQuality:{schema:'osgard.commerce-data-quality.v1',state:'limited',
+      summary:{totalSources:7,measured:4,partial:2,unavailable:1,blocked:0}},
+  }));
+  assert.equal(limited.state,'limited');
+  assert.deepEqual(limited.summary.quality,{total:7,measured:4,partial:2,unavailable:1,blocked:0});
+
+  const blocked=engine.buildExecutivePulse(executivePulseReport({
+    dataQuality:{schema:'osgard.commerce-data-quality.v1',state:'blocked',
+      summary:{totalSources:7,measured:0,partial:0,unavailable:0,blocked:7}},
+  }));
+  assert.equal(blocked.state,'blocked');
+  const invalid=engine.buildExecutivePulse(null);
+  assert.equal(invalid.state,'blocked');
+  assert.equal(invalid.summary.paidOrders,null);
+});
+
+test('Executive Pulse caps action list, orders severity and sanitizes displayed text', () => {
+  const actions=[
+    {id:'action:info',title:'Info item',severity:'info',owner:'Growth',effort:'small',steps:['First info']},
+    {id:'action:warn',title:'Warning item',severity:'warning',owner:'Ops',effort:'medium',steps:['First warning']},
+    {id:'action:critical',title:'Critical item',severity:'critical',owner:'Commerce',effort:'large',steps:['Check ledger']},
+    {id:'action:info-2',title:'Info 2',severity:'info',owner:'Growth',effort:'small',steps:['Step']},
+    {id:'action:warn-2',title:'Warning 2',severity:'warning',owner:'Ops',effort:'medium',steps:['Step']},
+    {id:'action:critical-2',title:'Critical 2',severity:'critical',owner:'Commerce',effort:'large',steps:['=unsafe\u0000 step']},
+  ];
+  const pulse=engine.buildExecutivePulse(executivePulseReport({
+    alerts:[{id:'a',severity:'critical',title:'Critical',detail:'Test'}],
+    decisionPlan:{items:actions},
+  }));
+  assert.equal(pulse.nextActions.length,5);
+  assert.deepEqual(pulse.nextActions.slice(0,2).map(item=>item.severity),['critical','critical']);
+  assert.ok(pulse.nextActions.every(item=>item.automated===false));
+  assert.ok(!pulse.nextActions[4].firstStep.includes('\u0000'));
+});
+
+test('Executive Pulse is included in the report and aggregate-only exports', () => {
+  const report=engine.derive(fixture(),fixedDate);
+  assert.equal(report.executivePulse.schema,'osgard.commerce-executive-pulse.v1');
+  const csv=engine.toCsv(report);
+  const markdown=engine.toMarkdown(report);
+  assert.ok(csv.includes('"executive-pulse","state"'));
+  assert.ok(markdown.includes('## Executive Pulse'));
+  assert.ok(markdown.includes('Следующее действие'));
+  assert.ok(!csv.includes('customer_email'));
+});
+
+test('Premium dashboard renders Executive Pulse with accessible status and safe DOM text', async () => {
+  const html=await readFile('public/games/commerce-admin/index.html','utf8');
+  const inline=[...html.matchAll(/<script>([\\s\\S]*?)<\\/script>/g)].map(match=>match[1]);
+  assert.ok(html.includes('id="intel-executive-pulse"'));
+  assert.ok(html.includes('id="intel-executive-state"'));
+  assert.ok(html.includes('id="intel-executive-reasons"'));
+  assert.ok(html.includes('id="intel-executive-actions"'));
+  assert.ok(html.includes('aria-live="polite"'));
+  assert.ok(inline.some(script=>script.includes('function renderExecutivePulse(report)')&&script.includes('renderExecutivePulse(report);')));
+  assert.ok(!/innerHTML/.test(inline.find(script=>script.includes('function renderExecutivePulse(report)')||script.includes('const pulse=engine.buildExecutivePulse'))||''));
+});
+
 test('intelligence engine makes no network calls and does not read browser or user records', () => {
   assert.ok(!/\bfetch\s*\(/.test(engineSource));
   assert.ok(!/\b(localStorage|sessionStorage|document\.cookie)\b/.test(engineSource));
