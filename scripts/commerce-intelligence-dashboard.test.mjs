@@ -215,6 +215,74 @@ test('Markdown/CSV exports include action checklist but never calculate mixed-cu
   assert.ok(!Object.prototype.hasOwnProperty.call(report.headline, 'totalRevenueMinor'));
 });
 
+
+test('comparison engine reports per-currency deltas without zero-filling missing currencies', () => {
+  const previous = {
+    schema:engine.schema,
+    generatedAt:'2026-10-14T10:00:00.000Z',
+    headline:{paidOrders:3,totalOrders:6,paidOrderShare:50},
+    currencies:[
+      {currency:'USD',paidOrders:2,reportingPaidEvents:4,reportingRefundEvents:1,commerceGrossMinor:'10000',reportingGrossMinor:'12000',reportingRefundMinor:'2000',reportingNetMinor:'10000'},
+      {currency:'EUR',paidOrders:1,reportingPaidEvents:2,reportingRefundEvents:0,commerceGrossMinor:'5000',reportingGrossMinor:'7000',reportingRefundMinor:'0',reportingNetMinor:'7000'},
+    ],
+    alerts:[{id:'attribution:unknown',severity:'warning',title:'Unknown attribution'}],
+    decisionPlan:{items:[{sourceAlertId:'attribution:unknown',severity:'warning',title:'Fix attribution'}]},
+  };
+  const current = {
+    schema:engine.schema,
+    generatedAt:fixedDate,
+    headline:{paidOrders:4,totalOrders:7,paidOrderShare:57.14},
+    currencies:[
+      {currency:'USD',paidOrders:3,reportingPaidEvents:5,reportingRefundEvents:2,commerceGrossMinor:'11000',reportingGrossMinor:'13000',reportingRefundMinor:'2000',reportingNetMinor:'11000'},
+      {currency:'JPY',paidOrders:1,reportingPaidEvents:1,reportingRefundEvents:0,commerceGrossMinor:'1200',reportingGrossMinor:'1200',reportingRefundMinor:'0',reportingNetMinor:'1200'},
+    ],
+    alerts:[
+      {id:'attribution:unknown',severity:'critical',title:'Unknown attribution changed'},
+      {id:'analytics:empty',severity:'info',title:'No consented events'},
+    ],
+    decisionPlan:{items:[
+      {sourceAlertId:'attribution:unknown',severity:'critical',title:'Fix attribution'},
+      {sourceAlertId:'analytics:empty',severity:'info',title:'Check event delivery'},
+    ]},
+  };
+  const comparison = engine.compareReports(previous,current);
+  assert.equal(comparison.schema,'osgard.commerce-report-comparison.v1');
+  assert.equal(comparison.currentIsNewer,true);
+  assert.equal(comparison.metrics[0].delta,1);
+  assert.equal(comparison.metrics[2].delta,7.14);
+  const usd=comparison.currencies.find(row=>row.currency==='USD');
+  assert.equal(usd.presence,'compared');
+  assert.equal(usd.counts.paidOrders.delta,1);
+  assert.equal(usd.amountsMinor.commerceGrossMinor.delta,'1000');
+  const eur=comparison.currencies.find(row=>row.currency==='EUR');
+  assert.equal(eur.presence,'not-in-current');
+  assert.equal(eur.amountsMinor.commerceGrossMinor.delta,null,'missing currencies must not be treated as zero');
+  assert.equal(comparison.currencies.find(row=>row.currency==='JPY').presence,'new');
+  assert.equal(comparison.summary.newAlerts,1);
+  assert.equal(comparison.summary.changedAlerts,1);
+  assert.equal(comparison.summary.newActions,1);
+  assert.equal(comparison.summary.changedActions,1);
+  assert.ok(!Object.prototype.hasOwnProperty.call(comparison,'totalRevenueMinor'));
+});
+
+test('comparison import strictly validates aggregate shape and CSV neutralizes hostile labels', () => {
+  const base = {
+    schema:engine.schema,
+    generatedAt:fixedDate,
+    headline:{paidOrders:1,totalOrders:1,paidOrderShare:100},
+    currencies:[{currency:'USD',paidOrders:1,reportingPaidEvents:1,reportingRefundEvents:0,commerceGrossMinor:'100',reportingGrossMinor:'100',reportingRefundMinor:'0',reportingNetMinor:'100'}],
+    alerts:[{id:'=HYPERLINK("bad")',severity:'warning',title:'@SUM(1,1)'}],
+    decisionPlan:{items:[{sourceAlertId:'=HYPERLINK("bad")',severity:'warning',title:'@SUM(1,1)'}]},
+  };
+  assert.throws(()=>engine.compareReports({...base,schema:'wrong'},base),/поддерживаемого агрегированного отчёта/i);
+  assert.throws(()=>engine.compareReports({...base,currencies:[...base.currencies,{...base.currencies[0]}]},base),/уникальными/i);
+  const comparison=engine.compareReports(base,{...base,generatedAt:'2026-10-16T00:00:00.000Z'});
+  const csv=engine.toComparisonCsv(comparison);
+  assert.ok(csv.startsWith('\uFEFF'));
+  assert.ok(csv.includes('"\'=HYPERLINK(""bad"")"'));
+  assert.ok(!csv.includes('email'));
+});
+
 test('commerce admin loads the engine and exposes explicit aggregate-only exports', async () => {
   const page=await readFile('public/games/commerce-admin/index.html','utf8');
   assert.ok(page.includes('<script src="/games/commerce-admin/intelligence.js"></script>'));
@@ -229,6 +297,12 @@ test('commerce admin loads the engine and exposes explicit aggregate-only export
     'id="intel-plan-actions"',
     'id="intel-plan-summary"',
     'id="intel-export-plan"',
+    'id="intel-compare-file"',
+    'id="intel-comparison-currency-rows"',
+    'id="intel-comparison-changes"',
+    'id="intel-comparison-export-json"',
+    'window.OSGARDCommerceIntelligence.compareReports(comparisonBaseline,lastIntelligenceReport)',
+    'window.OSGARDCommerceIntelligence.toComparisonCsv(lastComparisonReport)',
     'window.OSGARDCommerceIntelligence.toMarkdown(lastIntelligenceReport)',
     'window.OSGARDCommerceIntelligence.derive(overview)',
     'window.OSGARDCommerceIntelligence.toCsv(lastIntelligenceReport)',
