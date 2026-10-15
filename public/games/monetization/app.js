@@ -399,6 +399,25 @@ function downloadJson(payload, filename) {
   window.setTimeout(() => URL.revokeObjectURL(href), 1000);
 }
 
+function normalizeCashFlowSettings(candidate = {}) {
+  const allowedHorizons = [12, 24, 36];
+  const rawMonths = Number(candidate.months ?? 12);
+  const months = allowedHorizons.includes(rawMonths) ? rawMonths : 12;
+  const rawCash = Number(candidate.startingCashUsd ?? 0);
+  const startingCashUsd = Number.isFinite(rawCash) ? Math.max(0, Math.min(1_000_000_000_000, rawCash)) : 0;
+  return { months, startingCashUsd };
+}
+function currentCashFlowSettings() {
+  return normalizeCashFlowSettings({
+    months: document.getElementById('cashflow-horizon').value,
+    startingCashUsd: document.getElementById('cashflow-starting-cash').value,
+  });
+}
+function applyCashFlowSettings(candidate) {
+  const settings = normalizeCashFlowSettings(candidate);
+  document.getElementById('cashflow-horizon').value = String(settings.months);
+  document.getElementById('cashflow-starting-cash').value = String(settings.startingCashUsd);
+}
 function readSnapshots() {
   try {
     const parsed = JSON.parse(localStorage.getItem(SNAPSHOT_KEY) || '[]');
@@ -413,6 +432,7 @@ function readSnapshots() {
         name: item.name.replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, 60) || 'Без названия',
         createdAt: item.createdAt,
         inputs: normalizeInputs(item.inputs),
+        cashFlow: normalizeCashFlowSettings(item.cashFlow),
       }))
       .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
       .slice(0, SNAPSHOT_LIMIT);
@@ -466,6 +486,7 @@ document.getElementById('save-snapshot').addEventListener('click', () => {
     name,
     createdAt: new Date().toISOString(),
     inputs: readInputs(),
+    cashFlow: currentCashFlowSettings(),
   };
   const snapshots = [newItem, ...readSnapshots()].slice(0, SNAPSHOT_LIMIT);
   if (!writeSnapshots(snapshots)) {
@@ -484,6 +505,7 @@ document.getElementById('load-snapshot').addEventListener('click', () => {
     const field = form.elements.namedItem(key);
     if (field) field.value = String(value);
   }
+  applyCashFlowSettings(snapshot.cashFlow);
   render();
   setSnapshotStatus('Загружена версия «' + snapshot.name + '». Все значения остаются локальными.');
 });
@@ -495,6 +517,8 @@ document.getElementById('compare-snapshot').addEventListener('click', () => {
   const currentBase = calculateScenario(current, 'base');
   const savedRisk = runUncertaintySimulation(snapshot.inputs, { iterations: 500, seed: RISK_SEED });
   const currentRisk = runUncertaintySimulation(current, { iterations: 500, seed: RISK_SEED });
+  const savedCashFlow = projectCohortCashFlow(snapshot.inputs, snapshot.cashFlow);
+  const currentCashFlow = latestCashFlow || projectCohortCashFlow(current, currentCashFlowSettings());
   const container = document.getElementById('snapshot-comparison');
   container.replaceChildren();
   const grid = el('div', 'comparison-grid');
@@ -502,6 +526,8 @@ document.getElementById('compare-snapshot').addEventListener('click', () => {
     createComparisonItem('Δ месячного NET (текущий − сохранённый)', money(currentBase.netOperatingUsd - savedBase.netOperatingUsd), 'Базовый сценарий'),
     createComparisonItem('Δ downside P10', money(currentRisk.netOperatingUsd.p10 - savedRisk.netOperatingUsd.p10), '500 парных прогонов, одинаковый seed'),
     createComparisonItem('Δ годовой валовой выручки', money(currentBase.totalRevenueUsd * 12 - savedBase.totalRevenueUsd * 12), 'Расчётные значения, не фактические продажи'),
+    createComparisonItem('Δ кассы в конце горизонта', money(currentCashFlow.endingCashUsd - savedCashFlow.endingCashUsd), 'Текущий и сохранённый cash-flow сценарии'),
+    createComparisonItem('Δ MRR в конце горизонта', money(currentCashFlow.endingMrrUsd - savedCashFlow.endingMrrUsd), 'Сравнение когортных подписочных траекторий'),
   );
   container.append(grid);
   setSnapshotStatus('Сравнение «' + snapshot.name + '» с текущими допущениями рассчитано локально.');
@@ -547,6 +573,7 @@ document.getElementById('import-model-file').addEventListener('change', async (e
           name: item.name.replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, 60) || 'Импортированный сценарий',
           createdAt: typeof item.createdAt === 'string' && Number.isFinite(Date.parse(item.createdAt)) ? item.createdAt : new Date().toISOString(),
           inputs: normalizeInputs(item.inputs),
+          cashFlow: normalizeCashFlowSettings(item.cashFlow),
         }));
       if (!writeSnapshots(imported)) throw new Error('Браузер не разрешил сохранить импортированные сценарии.');
       renderSavedSnapshots();
@@ -691,7 +718,8 @@ exportButton.addEventListener('click', () => {
     scenarios: SCENARIOS.map((scenario) => ({ label: scenario.label, assumptions: scenario, results: calculateScenario(inputs, scenario.id) })),
     decisionIntelligence: latestIntelligence || renderIntelligence(inputs, calculateScenario(inputs, 'base')),
     cashFlowProjection: latestCashFlow || projectCohortCashFlow(inputs, { months: 12, startingCashUsd: 0 }),
-    savedScenarios: readSnapshots().map((item) => ({ name: item.name, createdAt: item.createdAt, inputs: item.inputs })),
+    cashFlowProjection: latestCashFlow || projectCohortCashFlow(inputs, currentCashFlowSettings()),
+    savedScenarios: readSnapshots().map((item) => ({ name: item.name, createdAt: item.createdAt, inputs: item.inputs, cashFlow: item.cashFlow })),
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const href = URL.createObjectURL(blob);
