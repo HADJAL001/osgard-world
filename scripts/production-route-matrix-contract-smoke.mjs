@@ -75,11 +75,13 @@ assert.ok(monetization.includes('id="export-csv"') &&
   "Financial model CSV export must remain available, explicit and spreadsheet-safe.");
 
 
-const declaredRoutes = matrix.slice(matrix.indexOf('const routes = ['), matrix.indexOf(']\\nconst agents'));
-assert.ok(!declaredRoutes.includes(\"'/games/commerce-admin/intelligence.js'\"),
+const declaredRoutes = matrix.slice(matrix.indexOf('const routes = ['), matrix.indexOf(']' + String.fromCharCode(10) + 'const agents'));
+assert.ok(!declaredRoutes.includes("'/games/commerce-admin/intelligence.js'"),
   'A JavaScript module must not be included as a page-level route contract.');
-assert.ok(matrix.includes(\"route === '/games/commerce-admin/' ? ['/games/commerce-admin/intelligence.js']\"),
+assert.ok(matrix.includes("route === '/games/commerce-admin/' ? ['/games/commerce-admin/intelligence.js']"),
   'Commerce Admin intelligence must be checked through the typed static-asset contract.');
+
+
 const expectedEnglishGameIds = ['null-shift','empire-of-time','swarm','inherit','remix','civic-cascade','patina','signal-run','cascade-lab','afterimage-run','aether-grid','heist-echo'];
 assert.ok(englishGames.includes('<html lang="en">') && englishGames.includes('<title>OSGARD PLAY — Explore Digital Worlds</title>'), "English Games entry needs a unique English document title and language.");
 assert.ok(englishGames.includes('href="https://osgard.world/games/en/"') && englishGames.includes('href="https://osgard.world/games/"') && englishGames.includes('hreflang="x-default"'), "English Games entry needs canonical and reciprocal language metadata.");
