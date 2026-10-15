@@ -957,7 +957,9 @@
         rows.push([report.schema,signal.id,signal.ruleId,signal.severity,signal.title,signal.source,signal.previous ?? '',signal.current ?? '',signal.delta ?? '',signal.threshold,signal.rationale,'']);
       } else for (const step of signal.steps) rows.push([report.schema,signal.id,signal.ruleId,signal.severity,signal.title,signal.source,signal.previous ?? '',signal.current ?? '',signal.delta ?? '',signal.threshold,signal.rationale,step]);
     }
-    rows.push(['summary','state','','','','',report?.summary?.snapshotCount ?? '',report?.summary?.signalCount ?? '',report?.summary?.skippedComparisons ?? '',report?.interpretation || '']);
+    rows.push(['summary','state','','','','','',report?.summary?.state || '', '',
+      'snapshots='+String(report?.summary?.snapshotCount ?? '')+'; skipped='+String(report?.summary?.skippedComparisons ?? ''),
+      report?.interpretation || '', '']);
     const escape=value=>{let text=String(value ?? '');if(/^\s*[=+\-@]/.test(text))text="'"+text;return '"'+text.replace(/"/g,'""')+'"';};
     return '\uFEFF'+rows.map(row=>row.map(escape).join(',')).join('\r\n')+'\r\n';
   }
@@ -1111,11 +1113,14 @@
     }
     const matched=Object.keys(state).length;
     if(matched===0) throw new Error('Нет совпадающих ID действий в текущем отчёте. Отметки не изменены.');
+    const sourceGeneratedAt=new Date(input.sourceGeneratedAt || input.generatedAt).toISOString();
+    const targetGeneratedAt=typeof report.generatedAt==='string'&&Number.isFinite(Date.parse(report.generatedAt))?new Date(report.generatedAt).toISOString():null;
     return {
       schema:'osgard.commerce-review-import.v1',
       importedAt:new Date().toISOString(),
-      sourceGeneratedAt:new Date(input.sourceGeneratedAt || input.generatedAt).toISOString(),
-      targetGeneratedAt:typeof report.generatedAt==='string'&&Number.isFinite(Date.parse(report.generatedAt))?new Date(report.generatedAt).toISOString():null,
+      sourceGeneratedAt,
+      targetGeneratedAt,
+      sourceIsOlderThanTarget:!!targetGeneratedAt&&Date.parse(sourceGeneratedAt)<Date.parse(targetGeneratedAt),
       matchedCount:matched,
       ignoredCount:ignoredIds.length,
       ignoredIds:ignoredIds.slice(0,100),
