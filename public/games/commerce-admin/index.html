@@ -1256,7 +1256,7 @@ $('#intel-review-import-file').addEventListener('change',async event=>{
     operatorReviewState=new Map(Object.entries(imported.reviewState));
     renderDecisionRegister(lastIntelligenceReport);
     $('#intel-review-status').dataset.kind=imported.ignoredCount?'warning':'success';
-    $('#intel-review-status').textContent='Перенесено отметок: '+imported.matchedCount+'; старых действий без совпадения пропущено: '+imported.ignoredCount+'. Источник: '+new Date(imported.sourceGeneratedAt).toLocaleString('ru-RU')+'. Файл обработан локально; API не изменён.';
+    $('#intel-review-status').textContent='Перенесено отметок: '+imported.matchedCount+'; старых действий без совпадения пропущено: '+imported.ignoredCount+'. Источник: '+new Date(imported.sourceGeneratedAt).toLocaleString('ru-RU')+'. '+(imported.sourceIsOlderThanTarget?'ВНИМАНИЕ: это отметки прошлого снимка — проверьте актуальность перед использованием. ':'')+'Файл обработан локально; API не изменён.';
     input.value='';
   }catch(error){
     input.value='';
