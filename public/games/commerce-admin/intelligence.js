@@ -867,6 +867,118 @@
     return (negative ? '−' : '') + wholeText + (exp ? ',' + fraction : '') + ' ' + code;
   }
 
+  const REVIEW_STATUSES = Object.freeze({
+    open:'Открыто',
+    investigating:'Проверяется',
+    blocked:'Заблокировано',
+    checked:'Проверка выполнена',
+  });
+  function normalizeReviewEntry(input) {
+    if (!input || typeof input !== 'object' || Array.isArray(input)) {
+      return { ok:false, error:'Некорректная запись проверки.' };
+    }
+    const status = String(input.status || 'open');
+    if (!Object.prototype.hasOwnProperty.call(REVIEW_STATUSES, status)) {
+      return { ok:false, error:'Неизвестный статус проверки.' };
+    }
+    const rawNote = input.note === undefined || input.note === null ? '' : input.note;
+    if (typeof rawNote !== 'string') return { ok:false, error:'Заметка должна быть текстом.' };
+    if (rawNote.length > 240) return { ok:false, error:'Заметка должна содержать не более 240 символов.' };
+    const note = rawNote.replace(/[\\u0000-\\u001f\\u007f]/g, ' ').replace(/\\s+/g, ' ').trim();
+    const secretPatterns = [
+      /\\bBearer\\s+[^\\s]+/i,
+      /\\b(?:sk_live|sk_test|rk_live|pk_live)_[A-Za-z0-9_-]{8,}\\b/i,
+      /\\b(?:password|passwd|api[_-]?key|access[_-]?token|secret)\\s*[:=]\\s*[^\\s,;]+/i,
+      /-----BEGIN [A-Z ]+PRIVATE KEY-----/i,
+    ];
+    if (secretPatterns.some(pattern => pattern.test(note))) {
+      return { ok:false, error:'Заметка похожа на секрет. Удалите пароль/токен и повторите.' };
+    }
+    const rawUpdatedAt = input.updatedAt;
+    let updatedAt = null;
+    if (rawUpdatedAt !== undefined && rawUpdatedAt !== null && rawUpdatedAt !== '') {
+      if (typeof rawUpdatedAt !== 'string' || !Number.isFinite(Date.parse(rawUpdatedAt))) {
+        return { ok:false, error:'Некорректное время отметки.' };
+      }
+      updatedAt = new Date(rawUpdatedAt).toISOString();
+    }
+    return { ok:true, entry:{ status, note, updatedAt } };
+  }
+  function buildDecisionRegister(report, reviewState = {}) {
+    const plan = report?.decisionPlan || buildDecisionPlan(report);
+    const states = reviewState && typeof reviewState === 'object' && !Array.isArray(reviewState) ? reviewState : {};
+    const items = (Array.isArray(plan.items) ? plan.items : []).map(action => {
+      const candidate = Object.prototype.hasOwnProperty.call(states, action.id) ? normalizeReviewEntry(states[action.id]) : null;
+      const entry = candidate?.ok ? candidate.entry : { status:'open', note:'', updatedAt:null };
+      return {
+        id:String(action.id || '').slice(0, 180),
+        sourceAlertId:String(action.sourceAlertId || '').slice(0, 180),
+        severity:['critical','warning','info'].includes(action.severity) ? action.severity : 'info',
+        title:String(action.title || 'Проверка без названия').replace(/[\\u0000-\\u001f\\u007f]/g,' ').slice(0, 240),
+        owner:String(action.owner || 'Operations').replace(/[\\u0000-\\u001f\\u007f]/g,' ').slice(0, 100),
+        effort:['small','medium','large'].includes(action.effort) ? action.effort : 'medium',
+        rationale:String(action.rationale || '').replace(/[\\u0000-\\u001f\\u007f]/g,' ').slice(0, 500),
+        status:entry.status,
+        note:entry.note,
+        updatedAt:entry.updatedAt,
+        steps:(Array.isArray(action.steps) ? action.steps : []).slice(0, 12).map(step=>String(step).replace(/[\\u0000-\\u001f\\u007f]/g,' ').slice(0, 300)),
+        automated:false,
+      };
+    });
+    const summary = {
+      total:items.length,
+      open:items.filter(item=>item.status==='open').length,
+      investigating:items.filter(item=>item.status==='investigating').length,
+      blocked:items.filter(item=>item.status==='blocked').length,
+      checked:items.filter(item=>item.status==='checked').length,
+    };
+    return {
+      schema:'osgard.commerce-review-register.v1',
+      generatedAt:new Date().toISOString(),
+      sourceGeneratedAt:typeof report?.generatedAt==='string'&&Number.isFinite(Date.parse(report.generatedAt))?new Date(report.generatedAt).toISOString():null,
+      mode:'session-only-read-only',
+      persistence:'memory-only; cleared on report refresh and page exit',
+      automationEnabled:false,
+      summary,
+      items,
+      interpretation:'Отметки относятся только к этой вкладке и выбранному снимку отчёта. «Проверка выполнена» не означает, что исходный сигнал устранён; перепроверьте его после обновления агрегатов.',
+    };
+  }
+  function toReviewCsv(register) {
+    const rows=[['schema','source_generated_at','action_id','source_alert_id','severity','title','owner','effort','status','note','updated_at','steps']];
+    for (const item of register?.items || []) rows.push([
+      register.schema, register.sourceGeneratedAt || '', item.id, item.sourceAlertId, item.severity,
+      item.title, item.owner, item.effort, REVIEW_STATUSES[item.status] || item.status,
+      item.note, item.updatedAt || '', (item.steps || []).join('; '),
+    ]);
+    rows.push(['interpretation','','','','','','','','',register?.interpretation || '','','']);
+    const escape=value=>{
+      let text=String(value ?? '');
+      if(/^\\s*[=+\\-@]/.test(text)) text="'"+text;
+      return '"'+text.replace(/"/g,'""')+'"';
+    };
+    return '\\uFEFF'+rows.map(row=>row.map(escape).join(',')).join('\\r\\n')+'\\r\\n';
+  }
+  function toReviewMarkdown(register) {
+    const clean=value=>String(value??'').replace(/[\\u0000-\\u001f\\u007f]/g,' ').replace(/[\\r\\n]+/g,' ').replace(/\\|/g,'\\\\|').slice(0,500);
+    const lines=[
+      '# OSGARD Premium · реестр проверок',
+      '',
+      'Снимок отчёта: '+clean(register?.sourceGeneratedAt || 'не указан'),
+      'Сформировано: '+clean(register?.generatedAt || ''),
+      'Всего: '+Number(register?.summary?.total||0)+' · открыто: '+Number(register?.summary?.open||0)+' · проверяется: '+Number(register?.summary?.investigating||0)+' · заблокировано: '+Number(register?.summary?.blocked||0)+' · проверка выполнена: '+Number(register?.summary?.checked||0),
+      '',
+    ];
+    for(const item of register?.items||[]){
+      lines.push('## ['+clean(item.severity)+'] '+clean(item.title),'','- Статус: '+clean(REVIEW_STATUSES[item.status]||item.status),'- Ответственный: '+clean(item.owner),'- Источник: '+clean(item.sourceAlertId),'- Отметка: '+clean(item.updatedAt||'не отмечено'));
+      if(item.note) lines.push('- Заметка оператора: '+clean(item.note));
+      for(const step of item.steps||[]) lines.push('- [ ] '+clean(step));
+      lines.push('');
+    }
+    lines.push('> '+clean(register?.interpretation||''));
+    return lines.join('\\n')+'\\n';
+  }
+
   function toCsv(report) {
     const rows = [['section','metric','value','currency']];
     const add = (section,metric,value,currency='') => rows.push([section,metric,value,currency]);
@@ -903,5 +1015,5 @@
     return '\uFEFF' + rows.map(row=>row.map(escape).join(',')).join('\r\n') + '\r\n';
   }
 
-  window.OSGARDCommerceIntelligence = Object.freeze({ schema:SCHEMA, derive, formatMinor, toCsv, buildDecisionPlan, toMarkdown, normalizeComparisonSnapshot, compareReports, toComparisonCsv, buildReportTrend, toTrendCsv });
+  window.OSGARDCommerceIntelligence = Object.freeze({ schema:SCHEMA, derive, formatMinor, toCsv, buildDecisionPlan, toMarkdown, normalizeComparisonSnapshot, compareReports, toComparisonCsv, buildReportTrend, toTrendCsv, REVIEW_STATUSES, normalizeReviewEntry, buildDecisionRegister, toReviewCsv, toReviewMarkdown });
 })();
