@@ -621,6 +621,7 @@ test('Decision Ops safely carries reviewed states forward using only matching ac
   assert.equal(imported.schema,'osgard.commerce-review-import.v1');
   assert.equal(imported.matchedCount,1);
   assert.equal(imported.ignoredCount,1);
+  assert.equal(imported.sourceIsOlderThanTarget,true);
   assert.ok(!Object.prototype.hasOwnProperty.call(imported.reviewState,'action:removed'));
   assert.equal(imported.reviewState['action:stable'].status,'investigating');
   const currentRegister=engine.buildDecisionRegister(currentReport,imported.reviewState);
