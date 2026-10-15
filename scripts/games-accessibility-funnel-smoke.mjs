@@ -42,7 +42,7 @@ assert.ok(funnel.includes("text.includes('недоступ')"));
 assert.ok(!/const event\s*=\s*\{[^}]*query:\s*search\.value/s.test(funnel), 'Raw search terms must not appear in events');
 console.log('PASS 4 — privacy-preserving, consent-gated funnel and player retry/error instrumentation.');
 assert.ok(admin.includes('id="export-csv"'));
-assert.ok(admin.includes('lastAggregateReport={generatedAt:new Date().toISOString(),range:{from,to},summary,cohorts,snapshots}'));
+assert.match(admin, /lastAggregateReport=\{generatedAt,range,previousRange:previousRange\|\|null,summary,previousSummary:previous,cohorts,snapshots,comparisonStatus:/);
 assert.ok(admin.includes('const blocked=/(email|token|secret|password|customer|order.?id|session.?id|payment.?intent|checkout.?url|authorization|raw.?event|player.?id|user.?id)/i'));
 assert.ok(admin.includes("if(/^\\s*[=+\\-@]/.test(text))text=\"'\"+text"));
 assert.ok(admin.includes('Персональные поля исключены.'));
