@@ -24,6 +24,8 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
+      - name: Validate public Business hub
+        run: npm run qa:business-hub
       - name: Test PR review-only live checks and release policy
         run: npm run qa:one-pass
       - name: Check cross-surface OSGARD product contracts
