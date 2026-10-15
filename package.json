@@ -30,7 +30,7 @@
     "qa:cascade-lab-hypothesis": "node scripts/cascade-lab-hypothesis-smoke.mjs",
     "qa:game-detail-runtime": "node scripts/game-detail-runtime-smoke.mjs",
     "qa:civic-cascade-forecast": "node scripts/civic-cascade-forecast-smoke.mjs",
-    "qa:games-operations": "node scripts/games-operations-smoke.mjs && node scripts/operations-dashboard-metrics-smoke.mjs",
+    "qa:games-operations": "node scripts/games-operations-smoke.mjs && node scripts/operations-dashboard-metrics-smoke.mjs && npm run qa:commerce-intelligence",
     "qa:campaign-manager": "node scripts/campaign-manager-smoke.mjs",
     "qa:intermission-sponsor": "node scripts/game-intermission-sponsor-smoke.mjs",
     "qa:game-recommendations": "node scripts/game-recommendations-smoke.mjs",
@@ -83,7 +83,8 @@
     "release:attest": "node scripts/osgard-release-attestation.mjs create --contract-report osgard-contract-audit.json --performance-report osgard-performance-budget.json",
     "release:verify": "node scripts/osgard-release-attestation.mjs verify --contract-report osgard-contract-audit.json --performance-report osgard-performance-budget.json",
     "qa:live-bundle-smoke": "node scripts/live-bundle-audit-smoke.mjs",
-    "qa:release-readiness-policy": "node scripts/release-readiness-policy-smoke.mjs"
+    "qa:release-readiness-policy": "node scripts/release-readiness-policy-smoke.mjs",
+    "qa:commerce-intelligence": "node --test scripts/commerce-intelligence-dashboard.test.mjs"
   },
   "dependencies": {
     "@types/three": "^0.186.0",
