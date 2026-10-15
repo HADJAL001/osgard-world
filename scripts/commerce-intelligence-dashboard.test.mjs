@@ -426,7 +426,7 @@ test('commerce admin loads the engine and exposes explicit aggregate-only export
     'id="intel-trend-quality-rows"',
     'function renderTrend()',
     'engine.buildReportTrend(trendSnapshots)',
-    'engine.toTrendCsv(lastTrendReport)',
+    'window.OSGARDCommerceIntelligence.toTrendCsv(lastTrendReport)',
     'files.length<2||files.length>10',
     'file.size>2*1024*1024',
     'file.size > 2 * 1024 * 1024',
