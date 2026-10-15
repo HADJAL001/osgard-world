@@ -201,7 +201,7 @@ export function createExperimentBackup(items = [], options = {}) {
   };
 }
 export function parseExperimentBackup(raw) {
-  if (typeof raw !== 'string' || Buffer.byteLength(raw, 'utf8') > MAX_EXPERIMENT_BACKUP_BYTES) {
+  if (typeof raw !== 'string' || new TextEncoder().encode(raw).length > MAX_EXPERIMENT_BACKUP_BYTES) {
     throw new TypeError('JSON журнала больше 500 КБ или имеет неверный формат.');
   }
   let payload;
