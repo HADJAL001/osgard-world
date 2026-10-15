@@ -19,6 +19,13 @@ const admin = readFileSync(resolve("public/games/commerce-admin/index.html"), "u
 const config = JSON.parse(readFileSync(resolve("public/games/commerce-config.json"), "utf8"));
 const nginx = readFileSync(resolve("nginx.conf"), "utf8");
 const routeMatrix = readFileSync(resolve("scripts/production-route-matrix.mjs"), "utf8");
+const commerceDeploy = readFileSync(resolve("scripts/deploy-commerce-api-remote.sh"), "utf8");
+assert.ok(
+  commerceDeploy.includes("b.items.length!==12") &&
+  commerceDeploy.includes('x.id==="heist-echo"') &&
+  commerceDeploy.includes("12 safe catalogue entries including HEIST//ECHO"),
+  "Remote Commerce API rollout must validate the canonical twelve-game catalogue and require HEIST//ECHO before switching services."
+);
 
 const readyzStart = server.indexOf('app.get("/readyz"');
 const readyzEnd = server.indexOf("\n});", readyzStart);
