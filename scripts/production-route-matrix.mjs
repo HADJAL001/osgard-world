@@ -1,11 +1,25 @@
 import { isValidPartnerInventoryText } from './partner-inventory-contract.mjs'
-import { writeFile } from 'node:fs/promises'
+import { readFile, writeFile } from 'node:fs/promises'
 import { summarizeRouteFailures } from './route-matrix-report.mjs'
 const base = process.env.OSGARD_BASE_URL || 'https://osgard.world'
 const expectCurrentDesign = process.env.SKILLCRED_EXPECT_CURRENT_DESIGN === '1'
 const expectedBuild = String(process.env.OSGARD_EXPECTED_BUILD || '').trim()
 const ROUTE_TIMEOUT_MS = 10000
 const GODOT_ROUTE_TIMEOUT_MS = 20000
+const canonicalCatalogue = JSON.parse(await readFile(new URL('../public/games/game-catalog-fallback.json', import.meta.url), 'utf8'))
+const canonicalCatalogueItems = Array.isArray(canonicalCatalogue.items) ? canonicalCatalogue.items : []
+const canonicalCatalogueById = new Map(canonicalCatalogueItems.map((item) => [item.id, item]))
+function matchesCanonicalCatalogue(body) {
+  if (!body || body.schemaVersion !== canonicalCatalogue.schemaVersion ||
+      !Array.isArray(body.items) || body.items.length !== canonicalCatalogueItems.length ||
+      canonicalCatalogueItems.length < 1) return false
+  const ids = body.items.map((item) => item && item.id)
+  if (ids.some((id) => typeof id !== 'string') || new Set(ids).size !== canonicalCatalogueItems.length ||
+      ids.some((id) => !canonicalCatalogueById.has(id))) return false
+  return body.items.every((item) => typeof item.href === 'string' &&
+    item.href === canonicalCatalogueById.get(item.id).href &&
+    item.href.startsWith('/games/'))
+}
 const routes = ['/games/heist-echo/','/games/heist-echo/index.html','/games/heist-echo/manifest.webmanifest','/games/heist-echo/icon.svg','/games/heist-echo/sw.js','/games/heist-echo/payload-01.txt','/games/heist-echo/payload-02.txt','/games/heist-echo/payload-03.txt','/games/heist-echo/payload-04.txt','/games/heist-echo/payload-05.txt','/','/skillcred/','/skillcred-api/health','/skillcred-api/ready','/skillcred-api/issuer','/entertainment','/entertainment/','/entertainment/entertainment.css','/entertainment/entertainment.js','/games/','/games/index.html','/games/en/','/games/en/index.html','/games/game-catalog-fallback.json','/games/diagnostics/','/games/diagnostics/diagnostics.js','/games/expedition/','/games/expedition/index.html','/games/expedition/core.js','/games/expedition/app.js','/games/expedition/catalog-runtime.js','/games/expedition/expedition.css','/sitemap.xml','/games/civic-cascade/','/games/civic-cascade/release.json','/games/patina/','/games/cascade-lab/','/games/cascade-lab/manifest.webmanifest','/games/cascade-lab/service-worker.js','/games/cascade-lab/lab-icon.svg','/games/cascade-lab/hypothesis-lab.js','/games/cascade-lab/engineering-suite.js','/games/cascade-lab/experiment-studio.js','/games/cascade-lab/case-passport.js','/games/cascade-lab/trajectory-xray.js','/games/cascade-lab/evidence-integrity.js','/games/afterimage-run/','/games/aether-grid/','/games/partners/','/games/ecosystem/','/games/growth-studio/','/games/experiments/','/games/experiments/app.js','/games/experiments/evidence-engine.js','/games/monetization/','/games/monetization/export.mjs','/games/premium/','/games/premium/success/','/games/commerce-admin/','/games/commerce-config.json','/games/commerce-client.js','/games/admin/','/games/admin/campaigns/','/games/operations/','/games/command-center/','/games/player-console.js','/games/player-console.css','/games/admin/partners/','/games/admin/catalog/','/games/admin/catalog/catalog.js','/games/catalog-runtime.js','/commerce-api/v1/game-catalog','/commerce-api/v1/admin/game-catalog','/games/invite/','/games/invite/null-shift/','/games/invite/time/','/games/invite/swarm/','/games/invite/inherit/','/games/invite/remix/','/games/invite/civic-cascade/','/games/invite/patina/','/games/invite/signal-run/','/games/invite/cascade-lab/','/games/invite/afterimage-run/','/games/invite/aether-grid/','/games/invite/heist-echo/','/games/invite/invite-landing.js','/games/share-cards/catalog.png','/games/share-cards/null-shift.png','/games/share-cards/afterimage-run.png','/games/share-cards/aether-grid.png','/games/share-cards/heist-echo.png','/games/favicon.svg','/privacy/','/terms/','/support/osgard-play/','/community','/stream','/archive','/profile','/api/v1/player/profile','/api/v1/analytics/summary?from=0&to=1','/r/1842','/games/time','/game/time','/game/swarm','/game/null-shift','/game/inherit','/game/remix','/game/signal-run','/game/civic-cascade','/game/patina','/game/cascade-lab','/game/afterimage-run','/game/aether-grid','/game/heist-echo','/games/swarm/','/games/swarm/index.html','/games/inherit/','/games/inherit/index.html','/games/remix/','/games/remix/index.html','/games/signal-run/','/games/null-shift/','/games/null-shift/index.html','/games/null-shift-godot/','/games/null-shift-godot/index.html','/play/swarm','/play/null-shift','/play/inherit','/play/remix','/media','/business','/create','/mobility']
 const agents = { desktop: 'OSGARD-Route-Matrix/1.1 Desktop', mobile: 'OSGARD-Route-Matrix/1.1 Mobile' }
 const results = []
@@ -42,7 +56,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
       : route.startsWith('/api/v1/')
       ? [401, 403].includes(response.status) && (response.headers.get('content-type') || '').toLowerCase().includes('application/json') && (() => { try { JSON.parse(text); return true } catch { return false } })()
       : route === '/commerce-api/v1/game-catalog'
-        ? response.status === 200 && (response.headers.get('content-type') || '').toLowerCase().includes('application/json') && (() => { try { const body = JSON.parse(text); return body.schemaVersion === 1 && Array.isArray(body.items) && body.items.length === 11 && body.items.every((item) => typeof item.id === 'string' && item.href.startsWith('/games/')) } catch { return false } })()
+        ? response.status === 200 && (response.headers.get('content-type') || '').toLowerCase().includes('application/json') && (() => { try { return matchesCanonicalCatalogue(JSON.parse(text)) } catch { return false } })()
         : route === '/commerce-api/v1/admin/game-catalog'
           ? [401, 403, 503].includes(response.status) && (response.headers.get('content-type') || '').toLowerCase().includes('application/json') && (() => { try { JSON.parse(text); return true } catch { return false } })()
       : route === '/games/admin/catalog/'
@@ -54,7 +68,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
       : isEnglishGamesHub
         ? text.includes('<title>OSGARD PLAY — Explore Digital Worlds</title>') && text.includes('<html lang="en">') && text.includes('href="https://osgard.world/games/en/"') && text.includes('hreflang="ru"') && text.includes('name="description"') && text.includes('Language availability:') && text.includes('id="aether-grid"')
       : route === '/games/game-catalog-fallback.json'
-        ? (response.headers.get('content-type') || '').toLowerCase().includes('application/json') && (() => { try { const body = JSON.parse(text); return body.schemaVersion === 1 && body.source === 'defaults' && Array.isArray(body.items) && body.items.length === 11 && new Set(body.items.map(item => item.id)).size === 11 && body.items.every(item => typeof item.href === 'string' && item.href.startsWith('/games/')); } catch { return false; } })()
+        ? (response.headers.get('content-type') || '').toLowerCase().includes('application/json') && (() => { try { const body = JSON.parse(text); return body.source === 'defaults' && matchesCanonicalCatalogue(body); } catch { return false; } })()
       : route === '/skillcred/'
       ? text.includes('id="issueBtn"') &&
         text.includes('id="verifyBtn"') &&
@@ -83,7 +97,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
         : route === '/games/expedition/expedition.css'
           ? (response.headers.get('content-type') || '').toLowerCase().includes('text/css') && text.includes('.og-expedition-band') && text.includes('prefers-reduced-motion')
         : route === '/games/diagnostics/'
-          ? text.includes('<title>OSGARD PLAY — Проверка совместимости</title>') && text.includes('data-og-diagnostics="1"') && text.includes('30 диагностических проверок')
+          ? text.includes('<title>OSGARD PLAY — Проверка совместимости</title>') && text.includes('data-og-diagnostics="1"') && text.includes('31 диагностических проверок')
         : route === '/games/diagnostics/diagnostics.js'
           ? (response.headers.get('content-type') || '').toLowerCase().includes('javascript') && text.includes('window.OSGARDDiagnostics') && text.includes("schema: 'osgard.play.diagnostics.v1'")
         : route === '/games/premium/'

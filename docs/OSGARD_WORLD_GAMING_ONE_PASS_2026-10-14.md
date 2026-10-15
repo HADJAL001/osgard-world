@@ -11,7 +11,7 @@ The current repository is a working multi-surface project rather than a blank po
 - **Frontend:** React 19, Vite, TypeScript and Three.js are declared in the repository package manifest.
 - **Games:** public/games/ serves a standalone game hub as static HTML/JavaScript while the main SPA also provides game discovery and detail routes. The game manifest and catalogue currently describe eleven games: Empire of Time, SWARM, NULL//SHIFT, INHERIT, REMIX, CIVIC CASCADE, PATINA Atelier, SIGNAL RUN, CASCADE LAB, AFTERIMAGE//RUN and AETHER GRID.
 - **Player experience:** search, genre filters, favourites/recent history, in-portal player, fullscreen/share actions, individual game details and contextual recommendations are already present in source.
-- **Entertainment funnel:** all eleven static Entertainment game cards and the React fallback route launch actions through `/games/?play=<game-id>` with source UTM fields, so players reach the shared OSGARD SELECT intermission, optional SHARDS reward and referral flow instead of bypassing it through standalone game URLs.
+- **Entertainment funnel:** all twelve static Entertainment game cards and the React fallback route launch actions through `/games/?play=<game-id>` with source UTM fields, so players reach the shared OSGARD SELECT intermission, optional SHARDS reward and referral flow instead of bypassing it through standalone game URLs.
 - **Owned-project network:** /games/ecosystem/ lists ten first-party project destinations with categories and UTM-style attribution. VPN is excluded from promotional eligibility while connectivity is unverified.
 - **Lead intake:** the development form validates project type, contact and description, records explicit permission to process the submitted request, and does not pretend a request was saved when the backend is unavailable.
 - **Privacy and consent:** privacy/terms pages, a consent-gated bounded analytics queue and client/server event allow-lists exist. Opt-in funnel events avoid sending raw search text.
@@ -98,14 +98,14 @@ From the repository root, with the documented Node.js toolchain and dependencies
     node scripts/osgard-one-pass-release-smoke.mjs
     node scripts/osgard-one-pass-release.mjs
 
-The one-pass runner executes the source preflight, focused game/consent/privacy/economics/partner/project checks, a live HTTP homepage check for the ten owned projects, and the existing full release suite (npm run qa:release). It continues through independent gates to produce a complete report.
+The one-pass runner executes the source preflight, focused game/consent/privacy/economics/partner/project checks, a live HTTP homepage check for the ten owned projects, and the existing full release suite (npm run qa:release). It continues through independent gates to produce a complete report. Live-production comparison is context-aware: on a pull request, the unmerged revision's route matrix and bundle audit are recorded as REVIEW rather than BLOCK because that revision has not been deployed; all local source, typecheck, dependency, build, asset-budget and archive checks remain blocking. On workflow_run after a successful production deploy, or on manual release dispatch, live route and bundle checks remain required gates.
 
 Generated, non-committed files:
 - artifacts/osgard-one-pass-release.json — pass/block/review results and manual commercial gates.
 - artifacts/external-project-health.json — current homepage HTTP/metadata observations from that run.
 - release-readiness.json and production-route-matrix.json — output from existing release checks when produced.
 
-A network failure in the external homepage audit is marked **REVIEW**, not interpreted as proof that a product is offline. A failure in source QA, build, archive preflight, dependency audit or required production route/API checks remains a block.
+A network failure in the external homepage audit is marked **REVIEW**, not interpreted as proof that a product is offline. On pull requests, live production route/bundle comparisons are also marked **REVIEW** until the source revision is deployed; this does not downgrade any local source QA, build, archive preflight or dependency check. After deployment or manual release dispatch, failed production route/API/bundle checks remain blockers.
 
 The corresponding GitHub Actions workflow runs the same command on pull requests and manual dispatch, and stores the JSON evidence as workflow artifacts. This is quality evidence, not a production deployment.
 

@@ -6,6 +6,12 @@ on:
     paths:
       - 'scripts/osgard-one-pass-release.mjs'
       - 'scripts/osgard-one-pass-release-smoke.mjs'
+      - 'scripts/release-readiness-policy-smoke.mjs'
+      - 'scripts/release-readiness-policy.mjs'
+      - 'scripts/release-readiness.mjs'
+      - 'scripts/live-bundle-audit-smoke.mjs'
+      - 'scripts/live-bundle-audit-core.mjs'
+      - 'scripts/live-bundle-audit.mjs'
       - 'docs/OSGARD_WORLD_GAMING_ONE_PASS_2026-10-14.md'
       - '.github/workflows/osgard-one-pass-release.yml'
       - 'package.json'

@@ -34,7 +34,10 @@ const node = (id, label, args, options = {}) => ({
   timeoutMs: options.timeoutMs || (options.kind === 'external' ? 60 * 1000 : DEFAULT_STEP_TIMEOUT_MS),
 });
 
-export function buildPlan() {
+export function buildPlan({ eventName = process.env.GITHUB_EVENT_NAME } = {}) {
+  // A pull request is not deployed yet. Live production comparisons remain visible
+  // in the report, but only as review items; local source/build/security gates stay critical.
+  const pullRequestValidation = eventName === 'pull_request'
   return [
     npm('source-preflight', 'Source architecture, catalogue, legal, privacy and monetization gate', 'qa:ecosystem-release'),
     npm('core-state', 'Core state machine and event-model contract', 'qa:core'),
@@ -58,7 +61,6 @@ export function buildPlan() {
     npm('project-intake', 'Project enquiry validation, consent and safe manual fallback', 'qa:project-intake'),
     npm('game-business-bridge', 'Game-to-development enquiry attribution', 'qa:game-business-bridge'),
     npm('games-assets', 'Generated game assets, static asset integrity and mobile assets', 'qa:games-assets'),
-    npm('live-bundle-audit', 'Live production bundle integrity and unexpected asset audit', 'qa:live-bundle'),
     npm('economics-model', 'Three-scenario financial model and spreadsheet-safe export', 'qa:games-model'),
     npm('device-fit', 'Responsive layout and local-only device capability contracts', 'qa:device-fit'),
     npm('player-console', 'Player console state, history and local-control contracts', 'qa:player-console'),
@@ -69,7 +71,14 @@ export function buildPlan() {
     node('external-homepage-http', 'Live HTTP homepage audit for ten owned projects (review-only; network can be transient)', [
       path.join(ROOT, 'scripts/external-project-healthcheck.mjs'), '--out', EXTERNAL_PATH,
     ], { critical: false, kind: 'external' }),
-    npm('full-release-readiness', 'Full release suite: typecheck, dependency audit, build, archive preflight and production route/API probes', 'qa:release'),
+    npm('full-release-readiness', pullRequestValidation
+      ? 'Source release suite: typecheck, dependency audit, build and archive preflight (live probes deferred)'
+      : 'Full release suite: typecheck, dependency audit, build, archive preflight and production route/API probes', 'qa:release'),
+    // Run after the full suite has created dist/index.html, so bundle identity is
+    // compared against the exact current artifact rather than only a prose marker.
+    npm('live-bundle-audit', pullRequestValidation
+      ? 'Live production bundle comparison (review-only until the PR is deployed)'
+      : 'Live production bundle integrity and unexpected asset audit', 'qa:live-bundle', { critical: !pullRequestValidation }),
     node('ai-review-preview', 'Build sanitized offline AI release-review packet from generated QA evidence (no API request)', [
       path.join(ROOT, 'scripts/osgard-ai-release-review.mjs'), '--output', 'osgard-ai-release-review.json',
     ], { timeoutMs: 60 * 1000 }),
@@ -369,12 +378,18 @@ export async function runOnePass({ plan = buildPlan(), reportDir = REPORT_DIR, t
             .filter((check) => check.status === 'failed')
             .map((check) => String(check.name || 'unnamed check').slice(0, 200)),
         };
+        const readinessStatus = releaseReadiness.status.toLowerCase();
         const readinessSaysBlocked = ['blocked', 'failed', 'failure', 'error']
-          .includes(releaseReadiness.status.toLowerCase());
+          .includes(readinessStatus);
+        const readinessNeedsReview = ['review', 'review_required', 'requires_review']
+          .includes(readinessStatus);
         if ((readinessSaysBlocked || releaseReadiness.failedChecks.length > 0) && record.status === 'PASS') {
           record.status = 'BLOCK';
           record.detail = 'Release-readiness report is blocked or contains failed checks despite a zero process exit code: ' +
             releaseReadiness.failedChecks.join(', ').slice(0, 3000);
+        } else if (readinessNeedsReview && record.status === 'PASS') {
+          record.status = 'REVIEW';
+          record.detail = 'Local release gates passed; live production route/bundle checks are review-only for an unmerged pull request and remain required after deployment.';
         }
       } catch {
         if (record.status === 'PASS') {

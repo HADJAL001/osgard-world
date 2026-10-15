@@ -26,3 +26,6 @@ The registry is the single source of truth for the seven OSGARD worlds. The game
 
 New products and games must add a manifest entry and event names before adding UI. This prevents the portal, analytics, recommendations, and profile surfaces from drifting apart.
 
+
+
+The game registry currently contains twelve games. The registry count is validated against the static fallback and live read-only catalogue by the production route matrix; do not duplicate a hard-coded count in route probes.
