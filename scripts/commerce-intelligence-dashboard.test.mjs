@@ -346,7 +346,7 @@ function trendReport(generatedAt, currencies, qualityStatus='measured', extras={
     alerts:extras.alerts||[],
     decisionPlan:extras.actionsAvailable===false?undefined:{items:[]},
     window:{note:'Source periods differ; no synchronized cohort.'},
-    dataQuality:{
+    dataQuality:Object.prototype.hasOwnProperty.call(extras,'dataQuality') ? extras.dataQuality : {
       schema:'osgard.commerce-data-quality.v1',
       sources:[{id:'commerce-order-ledger',title:extras.qualityTitle||'Orders',status:qualityStatus,window:'Cumulative'}],
     },
