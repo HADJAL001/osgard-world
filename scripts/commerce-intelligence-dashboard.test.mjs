@@ -556,13 +556,13 @@ test('commerce admin loads the engine and exposes explicit aggregate-only export
   const reviewImportEnd=page.indexOf("$('#intel-compare-file').addEventListener('change'");
   assert.ok(reviewImportStart>=0&&reviewImportEnd>reviewImportStart,'Decision Ops JSON carry-forward handler must exist');
   const reviewImportHandler=page.slice(reviewImportStart,reviewImportEnd);
-  assert.ok(!/\\bfetch\\s*\\(|sendBeacon|XMLHttpRequest|localStorage|sessionStorage|document\\.cookie/.test(reviewImportHandler),
+  assert.ok(!/\bfetch\s*\(|sendBeacon|XMLHttpRequest|localStorage|sessionStorage|document\.cookie/.test(reviewImportHandler),
     'Imported review JSON must remain local and must not access browser persistence');
   const trendSignalsStart=page.indexOf("$('#intel-trend-signals-export-json').addEventListener('click'");
   const trendSignalsEnd=page.indexOf("$('#load').addEventListener('click',load);");
   assert.ok(trendSignalsStart>=0&&trendSignalsEnd>trendSignalsStart,'Trend Intelligence exports must be wired');
   const trendSignalsHandler=page.slice(trendSignalsStart,trendSignalsEnd);
-  assert.ok(!/\\bfetch\\s*\\(|sendBeacon|XMLHttpRequest|localStorage|sessionStorage|document\\.cookie/.test(trendSignalsHandler),
+  assert.ok(!/\bfetch\s*\(|sendBeacon|XMLHttpRequest|localStorage|sessionStorage|document\.cookie/.test(trendSignalsHandler),
     'Trend signals must be calculated/exported locally without browser persistence');
 });
 
