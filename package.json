@@ -34,7 +34,7 @@
     "qa:campaign-manager": "node scripts/campaign-manager-smoke.mjs",
     "qa:intermission-sponsor": "node scripts/game-intermission-sponsor-smoke.mjs",
     "qa:game-recommendations": "node scripts/game-recommendations-smoke.mjs",
-    "qa:games-model": "node scripts/games-monetization-smoke.mjs && node scripts/games-financial-csv-smoke.mjs && node --test scripts/monetization-intelligence.test.mjs",
+    "qa:games-model": "node scripts/games-monetization-smoke.mjs && node scripts/games-financial-csv-smoke.mjs && node --test scripts/monetization-intelligence.test.mjs scripts/monetization-command-center.test.mjs",
     "qa:growth-evidence": "node scripts/growth-experiment-evidence-smoke.mjs",
     "qa:null-shift-godot": "node scripts/null-shift-godot-smoke.mjs",
     "qa:partners-page": "node scripts/partners-page-smoke.mjs",
