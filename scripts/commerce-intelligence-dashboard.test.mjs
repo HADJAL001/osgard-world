@@ -197,12 +197,12 @@ test('decision engine produces ordered, explainable, read-only actions from aggr
 });
 
 test('Markdown/CSV exports include action checklist but never calculate mixed-currency totals', () => {
-  const report = engine.derive(fixture({
-    alerts:[
-      {id:'revenue:missing-currency',severity:'warning',title:'=HYPERLINK("bad")',detail:'Inspect server contract'},
-      {id:'analytics:empty',severity:'info',title:'@SUM(1,1)',detail:'No consented events'},
-    ],
-  }), fixedDate);
+  const report = engine.derive(fixture(), fixedDate);
+  report.alerts = [
+    {id:'revenue:missing-currency',severity:'warning',title:'=HYPERLINK("bad")',detail:'Inspect server contract'},
+    {id:'analytics:empty',severity:'info',title:'@SUM(1,1)',detail:'No consented events'},
+  ];
+  report.decisionPlan = engine.buildDecisionPlan(report);
   const markdown = engine.toMarkdown(report);
   assert.ok(markdown.startsWith('# OSGARD Premium · план проверок\n'));
   assert.ok(markdown.includes('- [ ] Проверить имя и тип поля в ответе агрегирующего API.'));
