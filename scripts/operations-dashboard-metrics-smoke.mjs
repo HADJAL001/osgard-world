@@ -64,10 +64,10 @@ assert.equal(baseline.results.length, 2);
 assert.equal(baseline.results[0].label, 'ALPHA', 'untrusted labels are replaced with registry-owned labels');
 assert.equal(baseline.results[0].path, '/games/alpha/');
 assert.equal(baseline.results[0].detail, '', 'untrusted diagnostic details are not re-rendered from a baseline');
-assert.throws(() => engine.normalizeBaseline({ ...historicalReport, results:[{ ...historicalReport.results[0], id:'unknown' }] }, targets), /unknown, repeated, or mismatched route/i);
-assert.throws(() => engine.normalizeBaseline({ ...historicalReport, results:[historicalReport.results[0], historicalReport.results[0]] }, targets), /unknown, repeated, or mismatched route/i);
-assert.throws(() => engine.normalizeBaseline({ ...historicalReport, results:[{ ...historicalReport.results[0], elapsedMs:500000 }] }, targets), /invalid state, HTTP status, or latency/i);
-assert.throws(() => engine.normalizeBaseline({ ...historicalReport, results:[{ ...historicalReport.results[0], path:'/evil/' }] }, targets), /unknown, repeated, or mismatched route/i);
+assert.throws(() => engine.normalizeBaseline({ ...historicalReport, results:[{ ...historicalReport.results[0], id:'unknown' }] }, targets), /неизвестный, повторный или несовпадающий маршрут/i);
+assert.throws(() => engine.normalizeBaseline({ ...historicalReport, results:[historicalReport.results[0], historicalReport.results[0]] }, targets), /неизвестный, повторный или несовпадающий маршрут/i);
+assert.throws(() => engine.normalizeBaseline({ ...historicalReport, results:[{ ...historicalReport.results[0], elapsedMs:500000 }] }, targets), /некорректное состояние, HTTP-код или задержку/i);
+assert.throws(() => engine.normalizeBaseline({ ...historicalReport, results:[{ ...historicalReport.results[0], path:'/evil/' }] }, targets), /неизвестный, повторный или несовпадающий маршрут/i);
 
 const page = await readFile('public/games/operations/index.html', 'utf8');
 assert.ok(page.includes('<script src="/games/operations/metrics.js"></script>'), 'dashboard must load the tested same-origin metrics engine');
