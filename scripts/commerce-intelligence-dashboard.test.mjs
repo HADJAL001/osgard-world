@@ -742,14 +742,16 @@ test('Executive Pulse is included in the report and aggregate-only exports', () 
 
 test('Premium dashboard renders Executive Pulse with accessible status and safe DOM text', async () => {
   const html=await readFile('public/games/commerce-admin/index.html','utf8');
-  const inline=[...html.matchAll(/<script>([\\s\\S]*?)<\\/script>/g)].map(match=>match[1]);
+  const renderStart=html.indexOf('function renderExecutivePulse(report)');
+  const renderEnd=html.indexOf('function renderIntelligence(report)',renderStart);
+  const renderer=renderStart>=0&&renderEnd>renderStart?html.slice(renderStart,renderEnd):'';
   assert.ok(html.includes('id="intel-executive-pulse"'));
   assert.ok(html.includes('id="intel-executive-state"'));
   assert.ok(html.includes('id="intel-executive-reasons"'));
   assert.ok(html.includes('id="intel-executive-actions"'));
   assert.ok(html.includes('aria-live="polite"'));
-  assert.ok(inline.some(script=>script.includes('function renderExecutivePulse(report)')&&script.includes('renderExecutivePulse(report);')));
-  assert.ok(!/innerHTML/.test(inline.find(script=>script.includes('function renderExecutivePulse(report)')||script.includes('const pulse=engine.buildExecutivePulse'))||''));
+  assert.ok(renderer.includes('renderExecutivePulse(report);'));
+  assert.ok(!renderer.includes('innerHTML'),'Executive Pulse must render untrusted API text through textContent, not HTML interpolation');
 });
 
 test('intelligence engine makes no network calls and does not read browser or user records', () => {
