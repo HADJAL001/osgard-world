@@ -336,6 +336,66 @@ test('data quality distinguishes invalid source fields from measured zeros', () 
   assert.equal(blocked.state,'blocked');
   assert.equal(blocked.summary.blocked,7);
 });
+
+function trendReport(generatedAt, currencies, qualityStatus='measured', extras={}) {
+  return {
+    schema:engine.schema,
+    generatedAt,
+    headline:{paidOrders:extras.paidOrders ?? 2,totalOrders:4,paidOrderShare:50},
+    currencies,
+    alerts:extras.alerts||[],
+    decisionPlan:extras.actionsAvailable===false?undefined:{items:[]},
+    window:{note:'Source periods differ; no synchronized cohort.'},
+    dataQuality:{
+      schema:'osgard.commerce-data-quality.v1',
+      sources:[{id:'commerce-order-ledger',title:extras.qualityTitle||'Orders',status:qualityStatus,window:'Cumulative'}],
+    },
+  };
+}
+function trendCurrency(currency, commerceGrossMinor, paidOrders=1) {
+  return {currency,paidOrders,reportingPaidEvents:1,reportingRefundEvents:0,
+    commerceGrossMinor,reportingGrossMinor:commerceGrossMinor,reportingRefundMinor:'0',reportingNetMinor:commerceGrossMinor};
+}
+
+test('Trend Lab builds time-ordered multi-snapshot series and preserves missing currency/action/quality states', () => {
+  const reports=[
+    trendReport('2026-10-01T10:00:00.000Z',[trendCurrency('USD','10000',2),trendCurrency('EUR','2000',1)],'measured',{paidOrders:2,qualityTitle:'=HYPERLINK("evil")'}),
+    trendReport('2026-10-08T10:00:00.000Z',[trendCurrency('USD','12500',3)],'partial',{paidOrders:3,actionsAvailable:false}),
+    trendReport('2026-10-15T10:00:00.000Z',[trendCurrency('USD','15000',4),trendCurrency('JPY','4000',1)],'unavailable',{paidOrders:4}),
+  ];
+  const trend=engine.buildReportTrend(reports);
+  assert.equal(trend.schema,'osgard.commerce-report-trend.v1');
+  assert.equal(trend.summary.reportCount,3);
+  assert.equal(trend.summary.currencyCount,3);
+  assert.equal(trend.summary.spanDays,14);
+  assert.equal(trend.summary.reportsMissingQuality,0);
+  const eur=trend.series.find(item=>item.id==='currency-minor:EUR:commerceGrossMinor');
+  assert.ok(eur);
+  assert.equal(eur.points[0].value,'2000');
+  assert.equal(eur.points[1].value,null);
+  assert.equal(eur.points[1].state,'currency-not-reported');
+  assert.equal(eur.points[2].value,null,'currency missing from the last snapshot must remain unknown, not zero');
+  const actions=trend.series.find(item=>item.id==='actions:count');
+  assert.ok(actions);
+  assert.equal(actions.points[1].value,null,'a missing plan must not be reported as zero actions');
+  assert.equal(actions.points[1].missingReason,'Движок плана отсутствовал в этом отчёте');
+  const quality=trend.qualitySeries.find(item=>item.id==='commerce-order-ledger');
+  assert.deepEqual(quality.points.map(point=>point.status),['measured','partial','unavailable']);
+  assert.ok(trend.series.some(item=>item.id==='headline:paidOrders'));
+  const csv=engine.toTrendCsv(trend);
+  assert.ok(csv.startsWith('\uFEFF'));
+  assert.ok(csv.includes('currency-not-reported'));
+  assert.ok(csv.includes('"\'=HYPERLINK(""evil"")"'),'CSV formula injection must be neutralized');
+  assert.ok(csv.includes('Source periods differ'));
+});
+
+test('Trend Lab validates snapshot count and duplicate timestamps', () => {
+  const one=trendReport('2026-10-01T10:00:00.000Z',[trendCurrency('USD','100')]);
+  assert.throws(()=>engine.buildReportTrend([one]),/от 2 до 10/i);
+  assert.throws(()=>engine.buildReportTrend([one,{...one}]),/одинаковую метку времени/i);
+  assert.throws(()=>engine.buildReportTrend(Array.from({length:11},(_,index)=>trendReport('2026-10-'+String(index+1).padStart(2,'0')+'T10:00:00.000Z',[trendCurrency('USD','100')]))),/от 2 до 10/i);
+});
+
 test('commerce admin loads the engine and exposes explicit aggregate-only exports', async () => {
   const page=await readFile('public/games/commerce-admin/index.html','utf8');
   assert.ok(page.includes('<script src="/games/commerce-admin/intelligence.js"></script>'));
@@ -361,6 +421,14 @@ test('commerce admin loads the engine and exposes explicit aggregate-only export
     'id="intel-comparison-changes"',
     'id="intel-comparison-export-json"',
     'id="intel-comparison-export-csv"',
+    'id="intel-trend-files"',
+    'id="intel-trend-series"',
+    'id="intel-trend-quality-rows"',
+    'function renderTrend()',
+    'engine.buildReportTrend(trendSnapshots)',
+    'window.OSGARDCommerceIntelligence.toTrendCsv(lastTrendReport)',
+    'files.length<2||files.length>10',
+    'file.size>2*1024*1024',
     'file.size > 2 * 1024 * 1024',
     'normalizeComparisonSnapshot(parsed)',
     'engine.compareReports(comparisonBaseline,lastIntelligenceReport)',
@@ -375,6 +443,11 @@ test('commerce admin loads the engine and exposes explicit aggregate-only export
   assert.ok(compareStart>=0&&compareEnd>compareStart,'Local comparison must have a bounded file-import handler');
   const compareHandler=page.slice(compareStart,compareEnd);
   assert.ok(!/\bfetch\s*\(|sendBeacon|XMLHttpRequest/.test(compareHandler),'The previous JSON snapshot must never be uploaded to a server');
+  const trendStart=page.indexOf("$('#intel-trend-files').addEventListener('change'");
+  const trendEnd=page.indexOf("$('#intel-trend-clear').addEventListener('click'");
+  assert.ok(trendStart>=0&&trendEnd>trendStart,'Trend history must have a bounded local import handler');
+  const trendHandler=page.slice(trendStart,trendEnd);
+  assert.ok(!/\bfetch\s*\(|sendBeacon|XMLHttpRequest/.test(trendHandler),'Trend JSON must never be uploaded to a server');
 });
 
 test('intelligence engine makes no network calls and does not read browser or user records', () => {
