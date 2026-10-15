@@ -717,7 +717,7 @@ test('Executive Pulse caps action list, orders severity and sanitizes displayed 
     {id:'action:critical',title:'Critical item',severity:'critical',owner:'Commerce',effort:'large',steps:['Check ledger']},
     {id:'action:info-2',title:'Info 2',severity:'info',owner:'Growth',effort:'small',steps:['Step']},
     {id:'action:warn-2',title:'Warning 2',severity:'warning',owner:'Ops',effort:'medium',steps:['Step']},
-    {id:'action:critical-2',title:'Critical 2',severity:'critical',owner:'Commerce',effort:'large',steps:['=unsafe\u0000 step']},
+    {id:'action:critical-2',title:'Critical 2',severity:'critical',owner:'Commerce',effort:'large',steps:['=unsafe'+String.fromCharCode(0)+' step']},
   ];
   const pulse=engine.buildExecutivePulse(executivePulseReport({
     alerts:[{id:'a',severity:'critical',title:'Critical',detail:'Test'}],
@@ -726,7 +726,7 @@ test('Executive Pulse caps action list, orders severity and sanitizes displayed 
   assert.equal(pulse.nextActions.length,5);
   assert.deepEqual(pulse.nextActions.slice(0,2).map(item=>item.severity),['critical','critical']);
   assert.ok(pulse.nextActions.every(item=>item.automated===false));
-  assert.ok(!pulse.nextActions[4].firstStep.includes('\u0000'));
+  assert.ok(pulse.nextActions.every(item=>!item.firstStep.includes(String.fromCharCode(0))));
 });
 
 test('Executive Pulse is included in the report and aggregate-only exports', () => {
