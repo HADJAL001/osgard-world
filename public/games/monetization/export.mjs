@@ -77,7 +77,7 @@ export function serializeCsv(rows, { bom = true } = {}) {
   return (bom ? '\uFEFF' : '') + content;
 }
 
-export function buildFinancialCsv({ inputs, scenarios, generatedAt, requiredMonthlyStartingVisitors, decisionIntelligence } = {}) {
+export function buildFinancialCsv({ inputs, scenarios, generatedAt, requiredMonthlyStartingVisitors, decisionIntelligence, cashFlowProjection } = {}) {
   if (!inputs || typeof inputs !== 'object') throw new TypeError('Financial CSV requires normalized input assumptions.');
   if (!Array.isArray(scenarios) || scenarios.length !== 3) throw new TypeError('Financial CSV requires the three defined financial scenarios.');
   for (const entry of scenarios) {
@@ -106,6 +106,20 @@ export function buildFinancialCsv({ inputs, scenarios, generatedAt, requiredMont
       ['decision_intelligence_note', simulation.note || NOTE, 'Illustrative assumptions only; do not read as live performance.'],
     ];
     rows.push([], ...metricRows);
+  }
+  if (cashFlowProjection?.schema === 'osgard.cohort-cashflow.v1' && Array.isArray(cashFlowProjection.series)) {
+    const cashRows = [
+      ['cash_flow_metric', 'value', 'model_note'],
+      ['cash_flow_horizon_months', cashFlowProjection.months, 'Projection horizon; assumptions are held flat.'],
+      ['cash_flow_starting_cash_usd', cashFlowProjection.startingCashUsd, 'User-entered reserve, not a bank balance.'],
+      ['cash_flow_ending_cash_usd', cashFlowProjection.endingCashUsd, 'Illustrative accumulated cash flow.'],
+      ['cash_flow_ending_mrr_usd', cashFlowProjection.endingMrrUsd, 'Cohort churn projection, not measured MRR.'],
+      ['cash_flow_ending_subscribers', cashFlowProjection.endingSubscribers, 'Illustrative cohort model.'],
+      ['cash_flow_operating_break_even_month', cashFlowProjection.operatingBreakEvenMonth ?? '', 'Blank means no modeled operating break-even within the horizon.'],
+      ['cash_flow_depletion_month', cashFlowProjection.cashDepletionMonth ?? '', 'Blank means the entered reserve was not depleted within the horizon.'],
+      ['cash_flow_note', cashFlowProjection.note || NOTE, 'Do not interpret as live performance.'],
+    ];
+    rows.push([], ...cashRows);
   }
   return serializeCsv([headers, ...rows]);
 }
