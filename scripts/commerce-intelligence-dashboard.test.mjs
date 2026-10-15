@@ -304,6 +304,9 @@ test('commerce admin loads the engine and exposes explicit aggregate-only export
     'id="intel-comparison-currency-rows"',
     'id="intel-comparison-changes"',
     'id="intel-comparison-export-json"',
+    'id="intel-comparison-export-csv"',
+    'file.size > 2 * 1024 * 1024',
+    'normalizeComparisonSnapshot(parsed)',
     'engine.compareReports(comparisonBaseline,lastIntelligenceReport)',
     'window.OSGARDCommerceIntelligence.toComparisonCsv(lastComparisonReport)',
     'window.OSGARDCommerceIntelligence.toMarkdown(lastIntelligenceReport)',
@@ -311,6 +314,11 @@ test('commerce admin loads the engine and exposes explicit aggregate-only export
     'window.OSGARDCommerceIntelligence.toCsv(lastIntelligenceReport)',
   ]) assert.ok(page.includes(marker),'missing premium dashboard contract: '+marker);
   assert.ok(!/localStorage|sessionStorage/.test(page),'Commerce admin must not persist operator tokens');
+  const compareStart=page.indexOf("$('#intel-compare-file').addEventListener('change'");
+  const compareEnd=page.indexOf("$('#load').addEventListener('click',load);");
+  assert.ok(compareStart>=0&&compareEnd>compareStart,'Local comparison must have a bounded file-import handler');
+  const compareHandler=page.slice(compareStart,compareEnd);
+  assert.ok(!/\\bfetch\\s*\\(|sendBeacon|XMLHttpRequest/.test(compareHandler),'The previous JSON snapshot must never be uploaded to a server');
 });
 
 test('intelligence engine makes no network calls and does not read browser or user records', () => {
