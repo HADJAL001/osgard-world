@@ -1,6 +1,19 @@
 import { DEFAULT_INPUTS, SCENARIOS, calculateScenario, calculateRequiredMonthlyVisitors, normalizeInputs } from './model.js';
 import { buildFinancialCsv } from './export.mjs';
 import { runUncertaintySimulation, calculateBreakEvenMonthlyVisitors, analyzeSensitivity, buildDecisionRecommendations } from './intelligence.mjs';
+import { projectCohortCashFlow } from './forecast.mjs';
+import {
+  EXPERIMENT_DRIVERS,
+  createExperiment,
+  completeExperiment,
+  transitionExperiment,
+  normalizeExperimentCollection,
+  summarizeExperiments,
+  createExperimentBackup,
+  parseExperimentBackup,
+  MAX_EXPERIMENTS,
+  MAX_EXPERIMENT_BACKUP_BYTES,
+} from './experiments.mjs';
 
 const form = document.getElementById('assumptions-form');
 const resultsNode = document.getElementById('scenario-results');
@@ -102,6 +115,8 @@ function render() {
       ? 'Цель покрывается смоделированными договорами/поступлениями без дополнительного стартового трафика. Это допущение, не подтверждённая выручка.'
       : 'Ориентир: ' + count(requiredMonthlyVisitors) + ' стартовых посещений в месяц. Модель включает расчётные приглашения; фактический трафик и выручку нужно измерить.';
   latestIntelligence = renderIntelligence(inputs, base);
+  renderCashFlow(inputs);
+  renderExperiments();
 }
 
 
@@ -190,6 +205,197 @@ function renderIntelligence(inputs, baseResult) {
     recommendations,
   };
 }
+
+const EXPERIMENT_STORAGE_KEY = 'osgard.monetization.experiments.v1';
+const EXPERIMENT_STATUS_LABELS = Object.freeze({
+  planned: 'План',
+  running: 'В работе',
+  completed: 'Завершён',
+  cancelled: 'Отменён',
+});
+function renderCashFlow(inputs) {
+  const months = Number(document.getElementById('cashflow-horizon').value) || 12;
+  const startingCashRaw = Number(document.getElementById('cashflow-starting-cash').value);
+  const projection = projectCohortCashFlow(inputs, {
+    months,
+    startingCashUsd: Number.isFinite(startingCashRaw) ? startingCashRaw : 0,
+  });
+  document.getElementById('cashflow-ending-mrr').textContent = money(projection.endingMrrUsd);
+  document.getElementById('cashflow-ending-cash').textContent = money(projection.endingCashUsd);
+  document.getElementById('cashflow-break-even-month').textContent = projection.operatingBreakEvenMonth === null
+    ? 'Не достигнута' : 'Месяц ' + projection.operatingBreakEvenMonth;
+  document.getElementById('cashflow-runway-month').textContent = projection.cashDepletionMonth === null
+    ? 'Не исчерпан' : 'Месяц ' + projection.cashDepletionMonth;
+  const rows = document.getElementById('cashflow-rows');
+  rows.replaceChildren();
+  const maxAbsNet = Math.max(1, ...projection.series.map(item => Math.abs(item.netCashFlowUsd)));
+  for (const month of projection.series) {
+    const row = document.createElement('tr');
+    const values = [
+      'М' + month.month,
+      count(month.subscribers),
+      money(month.mrrUsd),
+      money(month.grossRevenueUsd),
+      money(month.paymentFeesUsd),
+      money(month.operatingCostUsd),
+      money(month.netCashFlowUsd),
+      money(month.cumulativeCashUsd),
+    ];
+    values.forEach((value, index) => {
+      const cell = document.createElement('td');
+      if (index === 6) {
+        const bar = el('span', 'cashflow-bar');
+        bar.style.width = Math.max(2, Math.min(60, Math.abs(month.netCashFlowUsd) / maxAbsNet * 60)).toFixed(1) + 'px';
+        bar.style.background = month.netCashFlowUsd >= 0 ? 'var(--lime)' : 'var(--red)';
+        bar.setAttribute('aria-hidden', 'true');
+        cell.append(bar, document.createTextNode(value));
+        cell.className = month.netCashFlowUsd >= 0 ? 'cashflow-net-positive' : 'cashflow-net-negative';
+      } else {
+        cell.textContent = value;
+      }
+      row.append(cell);
+    });
+    rows.append(row);
+  }
+  document.getElementById('cashflow-note').textContent =
+    projection.note + ' Допущения: ' + projection.assumptions.nonSubscriptionIncome + ' ' +
+    projection.assumptions.subscriptions + ' ' + projection.assumptions.costs;
+}
+function readExperiments() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(EXPERIMENT_STORAGE_KEY) || '[]');
+    return normalizeExperimentCollection(stored);
+  } catch {
+    return [];
+  }
+}
+function writeExperiments(entries) {
+  try {
+    localStorage.setItem(EXPERIMENT_STORAGE_KEY, JSON.stringify(normalizeExperimentCollection(entries)));
+    return true;
+  } catch {
+    return false;
+  }
+}
+function experimentId() {
+  return (globalThis.crypto && typeof globalThis.crypto.randomUUID === 'function')
+    ? globalThis.crypto.randomUUID().replace(/[^A-Za-z0-9_-]/g, '')
+    : ('exp_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10));
+}
+function setExperimentStatus(message) {
+  document.getElementById('experiment-status').textContent = message;
+}
+function selectedExperiment() {
+  const id = document.getElementById('experiment-selected').value;
+  return readExperiments().find(item => item.id === id) || null;
+}
+function renderExperiments() {
+  const entries = readExperiments();
+  const summary = summarizeExperiments(entries);
+  document.getElementById('experiment-total').textContent = count(summary.total);
+  document.getElementById('experiment-completed').textContent = count(summary.completed);
+  document.getElementById('experiment-target-hit-rate').textContent =
+    summary.targetHitRatePct === null ? '—' : percent(summary.targetHitRatePct);
+  const list = document.getElementById('experiment-list');
+  list.replaceChildren();
+  if (!entries.length) {
+    list.append(el('div', 'muted-empty', 'Пока нет экспериментов. Зарегистрируй первую гипотезу.'));
+  }
+  for (const entry of entries) {
+    const card = el('article', 'experiment-card');
+    const head = el('div', 'experiment-card-head');
+    const title = el('h4', '', entry.title);
+    const badgeClass = entry.status === 'completed'
+      ? (entry.targetAchieved ? 'experiment-badge success' : 'experiment-badge failure')
+      : 'experiment-badge';
+    const badgeText = entry.status === 'completed'
+      ? (entry.targetAchieved ? 'Цель достигнута' : 'Цель не достигнута')
+      : EXPERIMENT_STATUS_LABELS[entry.status];
+    head.append(title, el('span', badgeClass, badgeText));
+    card.append(head, el('p', '', entry.hypothesis));
+    const driver = EXPERIMENT_DRIVERS.find(item => item.key === entry.driver);
+    const meta = el('div', 'experiment-meta');
+    meta.append(
+      el('span', '', (driver?.label || entry.driver) + ': ' + count(entry.baseline) + ' → ' + count(entry.target)),
+      el('span', '', entry.direction === 'increase' ? '↑ повысить' : '↓ снизить'),
+      el('span', '', entry.dueDate ? 'Срок: ' + entry.dueDate : 'Без срока'),
+    );
+    if (entry.actual !== null) {
+      meta.append(el('span', '', 'Факт: ' + count(entry.actual)));
+      if (entry.baseline !== 0) {
+        const lift = (entry.actual - entry.baseline) / Math.abs(entry.baseline) * 100;
+        meta.append(el('span', '', 'Δ к базе: ' + percent(lift)));
+      } else {
+        meta.append(el('span', '', 'Δ к базе: база равна нулю'));
+      }
+    }
+    card.append(meta);
+    const actions = el('div', 'experiment-actions');
+    const selectButton = el('button', 'btn', 'Выбрать');
+    selectButton.type = 'button';
+    selectButton.addEventListener('click', () => {
+      const select = document.getElementById('experiment-selected');
+      select.value = entry.id;
+      setExperimentStatus('Выбран эксперимент «' + entry.title + '». Для завершения введи измеренное значение.');
+      syncExperimentControls();
+    });
+    actions.append(selectButton);
+    if (entry.status === 'planned') {
+      const start = el('button', 'btn', 'Начать');
+      start.type = 'button';
+      start.addEventListener('click', () => {
+        try {
+          const changed = transitionExperiment(entry, 'running');
+          const updated = entries.map(item => item.id === entry.id ? changed : item);
+          if (!writeExperiments(updated)) throw new Error('Браузер не разрешил локальное сохранение.');
+          renderExperiments();
+          document.getElementById('experiment-selected').value = entry.id;
+          syncExperimentControls();
+          setExperimentStatus('Эксперимент отмечен как выполняющийся.');
+        } catch (error) { setExperimentStatus('Ошибка: ' + String(error.message || error)); }
+      });
+      actions.append(start);
+    }
+    card.append(actions);
+    list.append(card);
+  }
+  const select = document.getElementById('experiment-selected');
+  const previous = select.value;
+  select.replaceChildren();
+  const active = entries.filter(item => ['planned', 'running'].includes(item.status));
+  const empty = el('option', '', active.length ? 'Выбери эксперимент' : 'Нет активных экспериментов');
+  empty.value = '';
+  select.append(empty);
+  for (const entry of active) {
+    const option = el('option', '', entry.title + ' · ' + EXPERIMENT_STATUS_LABELS[entry.status]);
+    option.value = entry.id;
+    select.append(option);
+  }
+  select.value = active.some(item => item.id === previous) ? previous : '';
+  syncExperimentControls();
+}
+function syncExperimentControls() {
+  const item = selectedExperiment();
+  const available = Boolean(item);
+  document.getElementById('experiment-actual').disabled = !available;
+  document.getElementById('experiment-complete').disabled = !available;
+  document.getElementById('experiment-new-status').disabled = !available;
+  document.getElementById('experiment-status-update').disabled = !available;
+  document.getElementById('experiment-delete').disabled = !available;
+  if (item && item.actual !== null) document.getElementById('experiment-actual').value = String(item.actual);
+}
+function downloadJson(payload, filename) {
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const href = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = href;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(href), 1000);
+}
+
 function readSnapshots() {
   try {
     const parsed = JSON.parse(localStorage.getItem(SNAPSHOT_KEY) || '[]');
@@ -352,9 +558,114 @@ document.getElementById('import-model-file').addEventListener('change', async (e
     setSnapshotStatus('Импорт отклонён: ' + String(error?.message || 'неверный JSON').slice(0, 220));
   }
 });
+document.getElementById('cashflow-starting-cash').addEventListener('input', () => renderCashFlow(readInputs()));
+document.getElementById('cashflow-horizon').addEventListener('change', () => renderCashFlow(readInputs()));
+document.getElementById('cashflow-recompute').addEventListener('click', () => renderCashFlow(readInputs()));
+
+const experimentDriverSelect = document.getElementById('experiment-driver');
+for (const driver of EXPERIMENT_DRIVERS) {
+  const option = el('option', '', driver.label);
+  option.value = driver.key;
+  experimentDriverSelect.append(option);
+}
+experimentDriverSelect.addEventListener('change', () => {
+  const driver = EXPERIMENT_DRIVERS.find(item => item.key === experimentDriverSelect.value);
+  if (driver) document.getElementById('experiment-direction').value = driver.direction;
+});
+document.getElementById('experiment-create').addEventListener('click', () => {
+  try {
+    const existing = readExperiments();
+    if (existing.length >= MAX_EXPERIMENTS) throw new Error('Достигнут лимит в ' + MAX_EXPERIMENTS + ' локальных экспериментов. Экспортируй журнал и удали старые записи.');
+    const created = createExperiment({
+      title: document.getElementById('experiment-title').value,
+      hypothesis: document.getElementById('experiment-hypothesis').value,
+      driver: experimentDriverSelect.value,
+      direction: document.getElementById('experiment-direction').value,
+      baseline: document.getElementById('experiment-baseline').value,
+      target: document.getElementById('experiment-target').value,
+      dueDate: document.getElementById('experiment-due-date').value,
+    }, { id: experimentId(), now: new Date().toISOString() });
+    if (!writeExperiments([created, ...existing])) throw new Error('Браузер не разрешил сохранить журнал. Проверь доступность localStorage.');
+    document.getElementById('experiment-title').value = '';
+    document.getElementById('experiment-hypothesis').value = '';
+    document.getElementById('experiment-baseline').value = '';
+    document.getElementById('experiment-target').value = '';
+    document.getElementById('experiment-due-date').value = '';
+    renderExperiments();
+    document.getElementById('experiment-selected').value = created.id;
+    syncExperimentControls();
+    setExperimentStatus('Гипотеза сохранена локально. Фактические показатели не создаются автоматически.');
+  } catch (error) {
+    setExperimentStatus('Эксперимент не сохранён: ' + String(error?.message || error).slice(0, 240));
+  }
+});
+document.getElementById('experiment-selected').addEventListener('change', syncExperimentControls);
+document.getElementById('experiment-complete').addEventListener('click', () => {
+  try {
+    const selected = selectedExperiment();
+    if (!selected) throw new Error('Сначала выбери активный эксперимент.');
+    const actual = document.getElementById('experiment-actual').value;
+    if (actual === '') throw new Error('Введи измеренное фактическое значение.');
+    const changed = completeExperiment(selected, actual);
+    const entries = readExperiments().map(item => item.id === changed.id ? changed : item);
+    if (!writeExperiments(entries)) throw new Error('Браузер не разрешил сохранить результат.');
+    renderExperiments();
+    setExperimentStatus(changed.targetAchieved
+      ? 'Цель достигнута по введённому факту. Это ручное измерение, не данные аналитики.'
+      : 'Цель не достигнута по введённому факту. Сохраняем это как результат, а не скрываем неудачу.');
+  } catch (error) { setExperimentStatus('Результат не сохранён: ' + String(error?.message || error).slice(0, 240)); }
+});
+document.getElementById('experiment-status-update').addEventListener('click', () => {
+  try {
+    const selected = selectedExperiment();
+    if (!selected) throw new Error('Сначала выбери активный эксперимент.');
+    const status = document.getElementById('experiment-new-status').value;
+    const changed = transitionExperiment(selected, status);
+    if (!writeExperiments(readExperiments().map(item => item.id === changed.id ? changed : item))) {
+      throw new Error('Браузер не разрешил обновить локальный журнал.');
+    }
+    renderExperiments();
+    setExperimentStatus('Статус эксперимента: ' + EXPERIMENT_STATUS_LABELS[changed.status] + '.');
+  } catch (error) { setExperimentStatus('Статус не изменён: ' + String(error?.message || error).slice(0, 240)); }
+});
+document.getElementById('experiment-delete').addEventListener('click', () => {
+  const selected = selectedExperiment();
+  if (!selected) { setExperimentStatus('Сначала выбери активный эксперимент.'); return; }
+  if (!window.confirm('Удалить эксперимент «' + selected.title + '» из локального журнала?')) return;
+  if (!writeExperiments(readExperiments().filter(item => item.id !== selected.id))) {
+    setExperimentStatus('Не удалось удалить запись из localStorage.');
+    return;
+  }
+  renderExperiments();
+  setExperimentStatus('Эксперимент удалён из локального журнала.');
+});
+document.getElementById('experiment-export').addEventListener('click', () => {
+  try {
+    downloadJson(createExperimentBackup(readExperiments()), 'osgard-revenue-experiments.json');
+    setExperimentStatus('Локальный журнал экспортирован в JSON.');
+  } catch (error) { setExperimentStatus('Не удалось экспортировать: ' + String(error?.message || error)); }
+});
+document.getElementById('experiment-import').addEventListener('click', () => document.getElementById('experiment-import-file').click());
+document.getElementById('experiment-import-file').addEventListener('change', async event => {
+  const file = event.currentTarget.files?.[0];
+  event.currentTarget.value = '';
+  if (!file) return;
+  if (file.size > MAX_EXPERIMENT_BACKUP_BYTES) {
+    setExperimentStatus('Импорт остановлен: файл журнала превышает 500 КБ.');
+    return;
+  }
+  try {
+    const imported = parseExperimentBackup(await file.text());
+    if (!window.confirm('Импортировать ' + imported.length + ' экспериментов и заменить текущий локальный журнал?')) return;
+    if (!writeExperiments(imported)) throw new Error('Браузер не разрешил сохранить импорт.');
+    renderExperiments();
+    setExperimentStatus('Локальный журнал импортирован. Сетевых запросов не выполнялось.');
+  } catch (error) { setExperimentStatus('Импорт отклонён: ' + String(error?.message || error).slice(0, 240)); }
+});
 document.getElementById('risk-iterations').addEventListener('change', render);
 document.getElementById('risk-recompute').addEventListener('click', render);
 renderSavedSnapshots();
+renderExperiments();
 
 form.addEventListener('input', render);
 resetButton.addEventListener('click', () => {
