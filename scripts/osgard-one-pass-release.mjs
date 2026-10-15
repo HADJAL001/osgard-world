@@ -61,7 +61,6 @@ export function buildPlan({ eventName = process.env.GITHUB_EVENT_NAME } = {}) {
     npm('project-intake', 'Project enquiry validation, consent and safe manual fallback', 'qa:project-intake'),
     npm('game-business-bridge', 'Game-to-development enquiry attribution', 'qa:game-business-bridge'),
     npm('games-assets', 'Generated game assets, static asset integrity and mobile assets', 'qa:games-assets'),
-    npm('live-bundle-audit', 'Live production bundle integrity and unexpected asset audit', 'qa:live-bundle', { critical: !pullRequestValidation }),
     npm('economics-model', 'Three-scenario financial model and spreadsheet-safe export', 'qa:games-model'),
     npm('device-fit', 'Responsive layout and local-only device capability contracts', 'qa:device-fit'),
     npm('player-console', 'Player console state, history and local-control contracts', 'qa:player-console'),
@@ -72,7 +71,14 @@ export function buildPlan({ eventName = process.env.GITHUB_EVENT_NAME } = {}) {
     node('external-homepage-http', 'Live HTTP homepage audit for ten owned projects (review-only; network can be transient)', [
       path.join(ROOT, 'scripts/external-project-healthcheck.mjs'), '--out', EXTERNAL_PATH,
     ], { critical: false, kind: 'external' }),
-    npm('full-release-readiness', 'Full release suite: typecheck, dependency audit, build, archive preflight and production route/API probes', 'qa:release'),
+    npm('full-release-readiness', pullRequestValidation
+      ? 'Source release suite: typecheck, dependency audit, build and archive preflight (live probes deferred)'
+      : 'Full release suite: typecheck, dependency audit, build, archive preflight and production route/API probes', 'qa:release'),
+    // Run after the full suite has created dist/index.html, so bundle identity is
+    // compared against the exact current artifact rather than only a prose marker.
+    npm('live-bundle-audit', pullRequestValidation
+      ? 'Live production bundle comparison (review-only until the PR is deployed)'
+      : 'Live production bundle integrity and unexpected asset audit', 'qa:live-bundle', { critical: !pullRequestValidation }),
     node('ai-review-preview', 'Build sanitized offline AI release-review packet from generated QA evidence (no API request)', [
       path.join(ROOT, 'scripts/osgard-ai-release-review.mjs'), '--output', 'osgard-ai-release-review.json',
     ], { timeoutMs: 60 * 1000 }),
