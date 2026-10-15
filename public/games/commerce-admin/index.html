@@ -57,6 +57,27 @@
 .intel-action li{padding:2px 0}
 .intel-action-source{overflow-wrap:anywhere;color:var(--muted);font:10px/1.5 ui-monospace,Consolas,monospace}
 .intel-compare-controls{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:12px 0}
+.intel-trend-controls{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:12px 0}
+.intel-trend-controls input[type=file]{max-width:min(480px,100%);color:var(--muted);font-size:11px}
+.intel-trend-controls button{min-height:38px;padding:9px 12px;font-size:11px}
+.intel-trend-summary{color:var(--muted);font-size:11px;line-height:1.6;margin:10px 0}
+.intel-trend-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.intel-trend-card{min-width:0;border:1px solid var(--line);padding:12px;background:#ffffff03}
+.intel-trend-card h4{font-size:12px;line-height:1.4;margin:0 0 6px;overflow-wrap:anywhere}
+.intel-trend-meta{color:var(--muted);font:10px/1.5 ui-monospace,Consolas,monospace;margin-bottom:8px}
+.intel-trend-svg{display:block;width:100%;height:55px;color:var(--gold);overflow:visible}
+.intel-trend-svg[data-unit="minor"]{color:#8adbd0}
+.intel-trend-values{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:9px}
+.intel-trend-point{border:1px solid var(--line);padding:6px;min-width:0}
+.intel-trend-point time{display:block;color:var(--muted);font:10px/1.4 ui-monospace,Consolas,monospace}
+.intel-trend-point strong{display:block;font-size:11px;line-height:1.4;overflow-wrap:anywhere;margin-top:3px}
+.intel-trend-point small{display:block;color:var(--muted);font-size:10px;line-height:1.4;margin-top:3px;overflow-wrap:anywhere}
+.intel-trend-quality{width:100%;border-collapse:collapse;font-size:11px}
+.intel-trend-quality th,.intel-trend-quality td{padding:8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+.intel-trend-quality th{color:var(--gold)}
+.intel-trend-quality td{color:var(--muted)}
+@media(max-width:680px){.intel-trend-grid{grid-template-columns:minmax(0,1fr)}}
+
 .intel-quality-summary{color:var(--muted);font-size:11px;line-height:1.6;margin:8px 0 12px}
 .intel-quality-sources{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
 .intel-quality-card{min-width:0;border:1px solid var(--line);border-left:3px solid var(--gold);padding:12px;background:#ffffff03}
@@ -156,6 +177,22 @@
 <div class="table-wrap"><table class="intel-compare-table"><thead><tr><th>Валюта</th><th>Присутствие</th><th>Paid orders Δ</th><th>Commerce gross Δ</th><th>Service gross Δ</th><th>Refunds Δ</th><th>Service net Δ</th></tr></thead><tbody id="intel-comparison-currency-rows"><tr><td colspan="7">Сравнение ещё не рассчитано.</td></tr></tbody></table></div>
 <h4 style="margin:18px 0 8px;font-size:12px">Изменения сигналов и плана проверок</h4>
 <div id="intel-comparison-changes" class="intel-compare-changes"><p class="intel-empty">Сравнение ещё не рассчитано.</p></div>
+</section>
+<section class="intel-block" style="margin-top:14px" aria-labelledby="intel-trend-heading">
+<h3 id="intel-trend-heading">Trend Lab · история Premium-отчётов</h3>
+<p class="retention">Выберите от 2 до 10 сохранённых JSON-экспортов Premium. Они читаются локально и остаются только в памяти вкладки. Пропущенная валюта/метрика остаётся пропуском; накопительные заказы, 30-дневные события и 90-дневная атрибуция не становятся одной когортой.</p>
+<div class="intel-trend-controls">
+<label for="intel-trend-files" class="retention">История JSON (2–10 файлов)</label>
+<input id="intel-trend-files" type="file" accept=".json,application/json" multiple>
+<button id="intel-trend-clear" type="button" disabled>Очистить историю</button>
+<button id="intel-trend-export-json" type="button" disabled>Экспорт тренда JSON ↓</button>
+<button id="intel-trend-export-csv" type="button" disabled>Экспорт точек CSV ↓</button>
+</div>
+<p id="intel-trend-status" class="intel-status" role="status" aria-live="polite">Загрузите минимум два предыдущих агрегированных отчёта.</p>
+<p id="intel-trend-summary" class="intel-trend-summary"></p>
+<div id="intel-trend-series" class="intel-trend-grid"><p class="intel-empty">История ещё не рассчитана.</p></div>
+<h4 style="margin:18px 0 8px;font-size:12px">Статусы качества по снимкам</h4>
+<div class="table-wrap"><table class="intel-trend-quality"><thead id="intel-trend-quality-head"><tr><th>Источник</th><th>Нет истории</th></tr></thead><tbody id="intel-trend-quality-rows"><tr><td colspan="2">Загрузите отчёты с Data Quality Ledger.</td></tr></tbody></table></div>
 </section>
 <section class="intel-block" style="margin-top:14px" aria-labelledby="intel-funnel-heading"><h3 id="intel-funnel-heading">Путь игрока и интерес к Premium</h3><p class="retention">Отношения ниже — доли событий за 30 дней, не уникальные люди и не сквозные когорты.</p><div id="intel-funnel" class="intel-funnel"><article class="intel-step"><span>Каталог</span><strong>—</strong></article></div><p class="intel-note">Просмотры Premium и оплаченные заказы не соединяются в conversion rate: текущий агрегат не связывает их в одну когорту. Если просмотры есть, а заказов нет, панель предложит проверить checkout и webhook без объявления ложной конверсии.</p></section>
 <section class="intel-block" style="margin-top:14px" aria-labelledby="intel-promo-heading"><h3 id="intel-promo-heading">OSGARD SELECT · эффективность переходов</h3><p class="retention">Описательный CTR по согласованным видимым появлениям. Малая выборка явно помечается; победитель автоматически не назначается.</p><div class="table-wrap"><table class="intel-table"><thead><tr><th>Сервис</th><th>Появления</th><th>Клики</th><th>CTR</th><th>Выборка</th><th>Игры</th></tr></thead><tbody id="intel-promo-rows"><tr><td colspan="6">Загрузите агрегаты.</td></tr></tbody></table></div></section>
