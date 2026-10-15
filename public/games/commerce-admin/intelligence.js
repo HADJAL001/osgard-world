@@ -573,6 +573,26 @@
       };
     });
     if (new Set(actions.map(item=>item.id)).size !== actions.length) throw new Error('Идентификаторы действий должны быть уникальными.');
+    const rawQualitySources = input.dataQuality?.schema === 'osgard.commerce-data-quality.v1' && Array.isArray(input.dataQuality.sources)
+      ? input.dataQuality.sources.slice(0,30) : Array.isArray(input.qualitySources) ? input.qualitySources.slice(0,30) : [];
+    const qualityIds = new Set();
+    const qualitySources = rawQualitySources.map(row => {
+      if (!row || typeof row !== 'object' || Array.isArray(row) ||
+          typeof row.id !== 'string' || !/^[a-z0-9-]{1,80}$/.test(row.id) ||
+          !['measured','partial','unavailable','blocked','not-reported'].includes(row.status)) {
+        throw new Error('Реестр качества источников содержит некорректный элемент.');
+      }
+      if (qualityIds.has(row.id)) throw new Error('Идентификаторы источников качества должны быть уникальными.');
+      qualityIds.add(row.id);
+      return {
+        id:row.id,
+        title:String(row.title || row.id).replace(/[\u0000-\u001f\u007f]/g,' ').slice(0,160),
+        status:row.status,
+        window:String(row.window || 'Окно не указано').replace(/[\u0000-\u001f\u007f]/g,' ').slice(0,220),
+      };
+    });
+    const windowNote = String(input.windowNote || input.window?.note || 'Окно источника в экспортированном отчёте не указано.')
+      .replace(/[\u0000-\u001f\u007f]/g,' ').slice(0,500);
     return {
       schema:SCHEMA,
       generatedAt:new Date(input.generatedAt).toISOString(),
@@ -584,6 +604,8 @@
       currencies,
       alerts,
       actions,
+      qualitySources,
+      windowNote,
     };
   }
   function compareReports(previousInput, currentInput) {
