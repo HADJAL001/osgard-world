@@ -29,6 +29,7 @@ const SNAPSHOT_KEY = 'osgard.monetization.scenarios.v1';
 const SNAPSHOT_LIMIT = 8;
 const RISK_SEED = 20261015;
 let latestIntelligence = null;
+let latestCashFlow = null;
 
 function readInputs() {
   const data = new FormData(form);
@@ -115,7 +116,7 @@ function render() {
       ? 'Цель покрывается смоделированными договорами/поступлениями без дополнительного стартового трафика. Это допущение, не подтверждённая выручка.'
       : 'Ориентир: ' + count(requiredMonthlyVisitors) + ' стартовых посещений в месяц. Модель включает расчётные приглашения; фактический трафик и выручку нужно измерить.';
   latestIntelligence = renderIntelligence(inputs, base);
-  renderCashFlow(inputs);
+  latestCashFlow = renderCashFlow(inputs);
   renderExperiments();
 }
 
@@ -260,6 +261,7 @@ function renderCashFlow(inputs) {
   document.getElementById('cashflow-note').textContent =
     projection.note + ' Допущения: ' + projection.assumptions.nonSubscriptionIncome + ' ' +
     projection.assumptions.subscriptions + ' ' + projection.assumptions.costs;
+  return projection;
 }
 function readExperiments() {
   try {
@@ -558,9 +560,9 @@ document.getElementById('import-model-file').addEventListener('change', async (e
     setSnapshotStatus('Импорт отклонён: ' + String(error?.message || 'неверный JSON').slice(0, 220));
   }
 });
-document.getElementById('cashflow-starting-cash').addEventListener('input', () => renderCashFlow(readInputs()));
-document.getElementById('cashflow-horizon').addEventListener('change', () => renderCashFlow(readInputs()));
-document.getElementById('cashflow-recompute').addEventListener('click', () => renderCashFlow(readInputs()));
+document.getElementById('cashflow-starting-cash').addEventListener('input', () => { latestCashFlow = renderCashFlow(readInputs()); });
+document.getElementById('cashflow-horizon').addEventListener('change', () => { latestCashFlow = renderCashFlow(readInputs()); });
+document.getElementById('cashflow-recompute').addEventListener('click', () => { latestCashFlow = renderCashFlow(readInputs()); });
 
 const experimentDriverSelect = document.getElementById('experiment-driver');
 for (const driver of EXPERIMENT_DRIVERS) {
@@ -679,7 +681,7 @@ exportButton.addEventListener('click', () => {
   const inputs = readInputs();
   const payload = {
     kind: 'osgard-games-business-model',
-    modelVersion: 7,
+    modelVersion: 8,
     note: 'Illustrative scenario only. Decision intelligence contains a seeded triangular-multiplier uncertainty analysis, a break-even traffic calculation and one-at-a-time sensitivity; the ranges are assumptions, not learned probabilities. Subscriptions are calculated as first-year monthly cohorts with churn, separate from one-time purchases; month-12 MRR is shown separately. Checkout, Premium sales and ads are not activated by this model.',
     currency: 'USD',
     generatedAt: new Date().toISOString(),
@@ -687,6 +689,7 @@ exportButton.addEventListener('click', () => {
     growthTarget: { annualRevenueTargetUsd: inputs.annualRevenueTargetUsd, requiredMonthlyStartingVisitors: calculateRequiredMonthlyVisitors(inputs, inputs.annualRevenueTargetUsd) },
     scenarios: SCENARIOS.map((scenario) => ({ label: scenario.label, assumptions: scenario, results: calculateScenario(inputs, scenario.id) })),
     decisionIntelligence: latestIntelligence || renderIntelligence(inputs, calculateScenario(inputs, 'base')),
+    cashFlowProjection: latestCashFlow || projectCohortCashFlow(inputs, { months: 12, startingCashUsd: 0 }),
     savedScenarios: readSnapshots().map((item) => ({ name: item.name, createdAt: item.createdAt, inputs: item.inputs })),
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -710,7 +713,7 @@ exportCsvButton.addEventListener('click', () => {
     assumptions: scenario,
     results: calculateScenario(inputs, scenario.id),
   }));
-  const csv = buildFinancialCsv({ inputs, scenarios, generatedAt, requiredMonthlyStartingVisitors, decisionIntelligence: latestIntelligence });
+  const csv = buildFinancialCsv({ inputs, scenarios, generatedAt, requiredMonthlyStartingVisitors, decisionIntelligence: latestIntelligence, cashFlowProjection: latestCashFlow || projectCohortCashFlow(inputs) });
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const href = URL.createObjectURL(blob);
   const link = document.createElement('a');
