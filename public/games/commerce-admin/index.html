@@ -241,7 +241,8 @@ function clearIntelligence(message='Ждём данные после подкл�
     const row=document.createElement('tr'),cell=document.createElement('td');
     cell.colSpan=id==='intel-currency-rows'?7:6;cell.textContent='Нет актуального отчёта.';row.append(cell);body.append(row);
   }
-  for (const id of ['intel-alerts','intel-funnel']) $id(id).replaceChildren();
+  for (const id of ['intel-alerts','intel-funnel','intel-plan-actions']) $id(id).replaceChildren();
+  $id('intel-plan-summary').textContent = 'План будет рассчитан после получения нового отчёта.';
   $id('intel-export-json').disabled = true; $id('intel-export-csv').disabled = true; $id('intel-export-plan').disabled = true;
 }
 function downloadAggregateReport(name,content,type) {
