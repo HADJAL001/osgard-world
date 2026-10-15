@@ -51,7 +51,7 @@
         return { key, state:accepted===value.length?'present':'partial', rowCount:accepted };
       }
       if (kind === 'object') {
-        return { key, state:typeof value==='object' && !Array.isArray(value)?'present':'invalid', rowCount:null };
+        return { key, state:value!==null && typeof value==='object' && !Array.isArray(value)?'present':'invalid', rowCount:null };
       }
       return { key, state:validCount(value)?'present':'invalid', rowCount:null };
     };
