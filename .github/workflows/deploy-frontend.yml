@@ -64,6 +64,7 @@ on:
       - "services/osgard-commerce-api/src/civic-cascade-advisor.mjs"
       - "services/osgard-commerce-api/test/civic-cascade-advisor.test.mjs"
       - "scripts/cascade-lab-evidence-integrity-smoke.mjs"
+      - "scripts/cascade-lab-replay-observatory-smoke.mjs"
       - "scripts/osgard-play-pwa-smoke.mjs"
       - "docs/27_OSGARD_PLAY_30_RELEASE_IMPROVEMENTS_2026-10-14.md"
       - ".github/workflows/osgard-play-qa.yml"
@@ -136,6 +137,8 @@ jobs:
         run: npm run qa:cascade-lab-experiment-studio
       - name: Verify CASCADE LAB trajectory plots, event timeline and privacy boundaries
         run: npm run qa:cascade-lab-trajectory-xray
+      - name: Verify CASCADE LAB replay fingerprints, repeatability and archive integrity
+        run: npm run qa:cascade-lab-replay-observatory
       - name: Test game session clock and iframe lifecycle trust boundaries
         run: npm run qa:game-detail-runtime
       - name: Verify REMIX growth funnel, attribution and sponsor safety

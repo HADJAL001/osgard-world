@@ -25,7 +25,7 @@
     "qa:null-shift": "node scripts/null-shift-premium-smoke.mjs",
     "qa:games-portal": "node scripts/games-portal-smoke.mjs && npm run qa:civic-cascade && npm run qa:games-expedition && npm run qa:civic-release-contract && node scripts/game-catalog-admin-smoke.mjs && node scripts/games-catalog-asset-smoke.mjs public/games && node --test services/osgard-commerce-api/test/game-catalog.test.mjs && bash -n scripts/deploy-commerce-api-remote.sh",
     "qa:entertainment": "node scripts/entertainment-hub-smoke.mjs",
-    "qa:games-detail": "node scripts/games-detail-smoke.mjs && npm run qa:cascade-lab-hypothesis && npm run qa:cascade-lab-engineering && npm run qa:cascade-lab-experiment-studio && npm run qa:cascade-lab-trajectory-xray && npm run qa:cascade-lab-mission-director && npm run qa:cascade-lab-evidence-integrity && npm run qa:cascade-lab-pwa",
+    "qa:games-detail": "node scripts/games-detail-smoke.mjs && npm run qa:cascade-lab-hypothesis && npm run qa:cascade-lab-engineering && npm run qa:cascade-lab-experiment-studio && npm run qa:cascade-lab-trajectory-xray && npm run qa:cascade-lab-mission-director && npm run qa:cascade-lab-evidence-integrity && npm run qa:cascade-lab-pwa && npm run qa:cascade-lab-replay-observatory",
     "qa:game-business-bridge": "node scripts/game-detail-growth-cta-smoke.mjs",
     "qa:cascade-lab-hypothesis": "node scripts/cascade-lab-hypothesis-smoke.mjs",
     "qa:game-detail-runtime": "node scripts/game-detail-runtime-smoke.mjs",
@@ -87,7 +87,8 @@
     "qa:commerce-intelligence": "node --test scripts/commerce-intelligence-dashboard.test.mjs",
     "qa:revenue-command-center": "node --test scripts/monetization-intelligence.test.mjs scripts/monetization-command-center.test.mjs",
     "qa:business-hub": "node scripts/business-hub-smoke.mjs",
-    "qa:liveops-dashboard": "node scripts/liveops-dashboard-smoke.mjs && node scripts/liveops-analytics-core-smoke.mjs"
+    "qa:liveops-dashboard": "node scripts/liveops-dashboard-smoke.mjs && node scripts/liveops-analytics-core-smoke.mjs",
+    "qa:cascade-lab-replay-observatory": "node scripts/cascade-lab-replay-observatory-smoke.mjs"
   },
   "dependencies": {
     "@types/three": "^0.186.0",
