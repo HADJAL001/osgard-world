@@ -11,6 +11,7 @@ on:
       - 'scripts/external-project-healthcheck-smoke.mjs'
       - '.github/workflows/external-project-health.yml'
       - 'docs/EXTERNAL_PROJECT_LINK_AUDIT.md'
+      - 'docs/OSGARD-GAMING-ECOSYSTEM-AUDIT-2026-10.md'
 
 permissions:
   contents: read

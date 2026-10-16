@@ -19,7 +19,7 @@
       return /^[a-zA-Z0-9_-]{1,60}$/.test(value) ? [key + '=' + value] : [];
     });
   }
-  const ATTRIBUTION_GAME_IDS = new Set(['time','swarm','null-shift','inherit','remix','civic-cascade','patina','signal-run','cascade-lab','afterimage-run','aether-grid']);
+  const ATTRIBUTION_GAME_IDS = new Set(['time','swarm','null-shift','inherit','remix','civic-cascade','patina','signal-run','cascade-lab','afterimage-run','aether-grid','heist-echo']);
   const safeAttributionSlug = (value, fallback) => {
     const candidate = clean(value, 48).toLowerCase();
     return /^[a-z0-9][a-z0-9_-]{0,47}$/.test(candidate) ? candidate : fallback;

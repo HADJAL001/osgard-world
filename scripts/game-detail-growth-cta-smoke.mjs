@@ -37,7 +37,7 @@ assert.ok(apiCore.includes('if (input.consent !== true)'), 'Server event batch m
 
 assert.ok(commerceClient.includes('function readLeadAttribution(form)'), 'Server lead submission must read a bounded attribution object')
 assert.ok(commerceClient.includes('attribution: leadAttribution'), 'Lead submission must persist attribution as structured fields, not only embed it in free text')
-assert.ok(commerceClient.includes("const ATTRIBUTION_GAME_IDS = new Set(['time','swarm','null-shift','inherit','remix','civic-cascade','patina','signal-run','cascade-lab','afterimage-run','aether-grid'])"), 'Lead attribution must allow-list known game IDs')
+assert.ok(commerceClient.includes("const ATTRIBUTION_GAME_IDS = new Set(['time','swarm','null-shift','inherit','remix','civic-cascade','patina','signal-run','cascade-lab','afterimage-run','aether-grid','heist-echo'])"), 'Lead attribution must allow-list known game IDs')
 assert.ok(commerceClient.includes("gameId: ATTRIBUTION_GAME_IDS.has(gameCandidate) ? gameCandidate : 'unknown'"), 'Unknown game IDs must be normalized rather than trusted')
 assert.ok(commerceClient.includes("safeAttributionSlug(params.get('utm_source'"), 'Source/campaign values need strict slug normalization')
 assert.ok(commerceClient.includes("form.id === 'campaign-form' ? 'partner-form' : 'development-page'"), 'Non-campaign inquiries must have a truthful fallback source')
