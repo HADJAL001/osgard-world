@@ -406,8 +406,24 @@ var chronicle_previous_paused := false
 var chronicle_return_to_result := false
 var chronicle_return_to_loadout := false
 const MAX_RAID_EVENT_COUNT := 64
+const MAX_TACTICAL_REPLAY_SAMPLES := 360
+const TACTICAL_REPLAY_SAMPLE_INTERVAL := 0.25
+const TACTICAL_REPLAY_SCHEMA := "osgard.nullshift.tactical-replay/v1"
+const TACTICAL_REPLAY_VIEW_SCRIPT = preload("res://scripts/tactical_replay_view.gd")
 const AFTER_ACTION_REPORT_SCHEMA := "osgard.nullshift.after-action/v1"
 var raid_event_ledger: Array[Dictionary] = []
+var tactical_replay_samples: Array[Dictionary] = []
+var tactical_replay_sample_clock := 0.0
+var tactical_replay_event_tape: Array[Dictionary] = []
+var tactical_replay_panel: PanelContainer
+var tactical_replay_view: Control
+var tactical_replay_slider: HSlider
+var tactical_replay_summary_label: Label
+var tactical_replay_readout_label: Label
+var tactical_replay_play_button: Button
+var tactical_replay_timer: Timer
+var tactical_replay_return_to_result := false
+var tactical_replay_previous_paused := false
 var daily_run_seed := 0
 var mission_success := false
 var amber_style_button: Button
@@ -493,6 +509,13 @@ func _reset_runtime_collections() -> void:
 	materials.clear()
 	raid_event_ledger = raid_event_ledger.duplicate(true)
 	raid_event_ledger.clear()
+	tactical_replay_samples = tactical_replay_samples.duplicate(true)
+	tactical_replay_samples.clear()
+	tactical_replay_sample_clock = 0.0
+	tactical_replay_event_tape = tactical_replay_event_tape.duplicate(true)
+	tactical_replay_event_tape.clear()
+	if is_instance_valid(tactical_replay_timer):
+		tactical_replay_timer.stop()
 	downed_bodies = downed_bodies.duplicate()
 	for old_evidence in downed_bodies:
 		var old_evidence_node := old_evidence.get("node") as Node3D
@@ -680,6 +703,7 @@ func _process(delta: float) -> void:
 	current_frame_ms = maxf(0.0, delta * 1000.0)
 	if not paused_game and not mission_finished and not briefing_visible:
 		elapsed += dt
+		_update_tactical_replay(dt)
 		_update_combat_director(dt)
 		_update_extraction_director(dt)
 		_update_phase_lanes(dt)
@@ -3828,6 +3852,7 @@ func _finish_mission(success: bool) -> void:
 	_pulse_gamepad(0.28, 0.78 if success else 0.42, 0.22 if success else 0.13)
 	_clear_phase_echo()
 	_record_raid_event("mission_finished", "SUCCESS" if success else "FAILED", float(mission_score), player.global_position if is_instance_valid(player) else Vector3.ZERO)
+	_record_tactical_replay_sample(true)
 	paused_game = false
 	extraction_pressure_active = false
 	extraction_window_remaining = 0.0
@@ -4271,6 +4296,95 @@ func _apply_guard_suppression(guard: Dictionary, amount: float, critical_hit: bo
 		_play_sfx(310.0 if not is_warden else 190.0, 0.14, 0.085)
 	return guard
 
+
+func _update_tactical_replay(delta: float) -> void:
+	if not is_instance_valid(player):
+		return
+	tactical_replay_sample_clock += maxf(0.0, delta)
+	if tactical_replay_sample_clock + 0.0001 < TACTICAL_REPLAY_SAMPLE_INTERVAL:
+		return
+	tactical_replay_sample_clock = fmod(tactical_replay_sample_clock, TACTICAL_REPLAY_SAMPLE_INTERVAL)
+	_record_tactical_replay_sample()
+
+func _record_tactical_replay_sample(force: bool = false) -> void:
+	if not is_instance_valid(player):
+		return
+	var sample: Dictionary = {
+		"t": snappedf(maxf(0.0, elapsed), 0.01),
+		"x": snappedf(clampf(player.global_position.x, -22.0, 22.0), 0.1),
+		"z": snappedf(clampf(player.global_position.z, -13.0, 13.0), 0.1),
+		"hp": clampi(int(roundf(player_health)), 0, 200),
+		"heat": snappedf(clampf(weapon_heat, 0.0, WEAPON_HEAT_LIMIT), 0.1),
+		"stealth": stealth_mode_active,
+		"alarm": alarm_active,
+		"hostiles": clampi(guards.size(), 0, 32),
+		"combo": clampi(combat_combo, 0, 999)
+	}
+	if not tactical_replay_samples.is_empty():
+		var last_index: int = tactical_replay_samples.size() - 1
+		var last_sample: Dictionary = tactical_replay_samples[last_index]
+		var last_time: float = float(last_sample.get("t", -1.0))
+		if absf(float(sample["t"]) - last_time) <= 0.01:
+			tactical_replay_samples[last_index] = sample
+			return
+		if float(sample["t"]) < last_time:
+			if not force:
+				return
+			sample["t"] = snappedf(last_time, 0.01)
+	tactical_replay_samples.append(sample)
+	while tactical_replay_samples.size() > MAX_TACTICAL_REPLAY_SAMPLES:
+		tactical_replay_samples.pop_front()
+
+func _normalize_tactical_replay_samples(raw_samples: Array) -> Array[Dictionary]:
+	var normalized: Array[Dictionary] = []
+	var start_index: int = maxi(0, raw_samples.size() - MAX_TACTICAL_REPLAY_SAMPLES)
+	var previous_time := -1.0
+	for index in range(start_index, raw_samples.size()):
+		var raw_value: Variant = raw_samples[index]
+		if not raw_value is Dictionary:
+			continue
+		var item: Dictionary = raw_value
+		var time_value: float = float(item.get("t", -1.0))
+		var x_value: float = float(item.get("x", 9999.0))
+		var z_value: float = float(item.get("z", 9999.0))
+		var heat_value: float = float(item.get("heat", 0.0))
+		if not is_finite(time_value) or not is_finite(x_value) or not is_finite(z_value) or not is_finite(heat_value):
+			continue
+		if time_value < 0.0 or x_value < -22.0 or x_value > 22.0 or z_value < -13.0 or z_value > 13.0:
+			continue
+		if time_value < previous_time:
+			continue
+		var clean: Dictionary = {
+			"t": snappedf(time_value, 0.01),
+			"x": snappedf(x_value, 0.1),
+			"z": snappedf(z_value, 0.1),
+			"hp": clampi(int(item.get("hp", 0)), 0, 200),
+			"heat": snappedf(clampf(heat_value, 0.0, WEAPON_HEAT_LIMIT), 0.1),
+			"stealth": bool(item.get("stealth", false)),
+			"alarm": bool(item.get("alarm", false)),
+			"hostiles": clampi(int(item.get("hostiles", 0)), 0, 32),
+			"combo": clampi(int(item.get("combo", 0)), 0, 999)
+		}
+		normalized.append(clean)
+		previous_time = time_value
+	return normalized
+
+func _build_tactical_replay_payload() -> Dictionary:
+	var normalized := _normalize_tactical_replay_samples(tactical_replay_samples)
+	var first_time := 0.0
+	var final_time := 0.0
+	if not normalized.is_empty():
+		first_time = float(normalized[0].get("t", 0.0))
+		final_time = float(normalized[normalized.size() - 1].get("t", first_time))
+	return {
+		"schema": TACTICAL_REPLAY_SCHEMA,
+		"sampleIntervalSeconds": TACTICAL_REPLAY_SAMPLE_INTERVAL,
+		"sampleCount": normalized.size(),
+		"startSeconds": first_time,
+		"endSeconds": final_time,
+		"samples": normalized
+	}
+
 func _record_raid_event(event_type: String, detail: String, value: float = 0.0, at: Vector3 = Vector3.ZERO) -> void:
 	# Fixed-capacity local black box; no account data, network calls or full replay payloads.
 	while raid_event_ledger.size() >= MAX_RAID_EVENT_COUNT:
@@ -4482,7 +4596,8 @@ func _build_after_action_report() -> Dictionary:
 		"dailyObjective": _daily_side_objective_state() if daily_challenge_active else {},
 		"anomalies": daily_mutator_ids.duplicate(),
 		"insights": _after_action_insights(),
-		"events": raid_event_ledger.duplicate(true)
+		"events": raid_event_ledger.duplicate(true),
+		"tacticalReplay": _build_tactical_replay_payload()
 	}
 
 func _export_after_action_report() -> void:
