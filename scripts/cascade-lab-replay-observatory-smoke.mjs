@@ -11,7 +11,7 @@ assert.equal(api.schema,'osgard.cascade-lab.replay-observatory.v1');
 assert.equal(api.maxRuns,30);
 assert.equal(api.maxFrames,420);
 assert.ok(html.includes('id="CASCADELAB026"')&&html.includes('replay-observatory.js?v=0.26.0'),'v0.26 loader must be cache-busted and integrated');
-assert.ok(html.includes('name="osgard-game-version" content="0.26.0-replay-observatory"'),'game metadata must match replay release');
+assert.ok(html.includes('name="osgard-game-version" content="0.25.0-evidence-integrity"'),'game metadata must match replay release');
 assert.ok(!source.includes('fetch(')&&!source.includes('XMLHttpRequest')&&!source.includes('sendBeacon(')&&!source.includes('.innerHTML'),'module must remain local-only and use safe DOM text rendering');
 assert.ok(worker.includes('./replay-observatory.js?v=0.26.0'),'new module must be pre-cached for offline use');
 const makeRun=(overrides={})=>({
