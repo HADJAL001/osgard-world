@@ -116,7 +116,7 @@ assert.ok(matrix.includes('31 диагностических проверок') 
 assert.ok(nginx.includes('location = /games/catalog-runtime.js') && nginx.includes('gzip_static off;') && nginx.includes('no-cache, must-revalidate'), "The small catalogue runtime must bypass stale precompressed sidecars and revalidate.");
 assert.ok(nginx.includes('no-store, no-cache, must-revalidate, max-age=0') && nginx.includes('if_modified_since off;'), "The Games catalogue runtime must not reuse a stale empty cached response.");
 assert.ok(matrix.includes("expectedBuild.slice(0, 12)") && matrix.includes("cache: 'no-store'"), "Production route checks must probe current-release static assets without reusing cache entries.");
-assert.ok(matrix.includes("const isGamesHubRoute = ['/games/', '/games/index.html'].includes(route)") &&
+assert.ok(matrix.includes("const isGamesHubRoute = [") && matrix.includes("'/games/en/index.html'") &&
   matrix.includes("if (expectedBuild && (isGamesHubRoute ||"),
   "The public Games HTML routes must be probed with a revision-specific cache-buster.");
 assert.ok(nginx.includes("location ~ ^/games/") && nginx.includes("expires off;") &&
