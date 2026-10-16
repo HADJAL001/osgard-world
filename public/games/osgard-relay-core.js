@@ -109,6 +109,10 @@
       const next = { ...state, phase: 'await_second_start', secondGame: game };
       return { state: next, changed: true, events: ['relay_game_2_selected'], rewardUnlocked: false };
     }
+    if (event.type === 'cancel') {
+      if (state.phase === 'completed' || state.phase === 'abandoned') return unchanged;
+      return { state: { ...state, phase: 'abandoned' }, changed: true, events: ['relay_abandoned'], rewardUnlocked: false };
+    }
     if (event.type === 'session_ended') {
       if (event.reason === 'game_completed') return unchanged;
       if (state.phase === 'first_started' && game === state.firstGame) {

@@ -6,7 +6,7 @@ An optional two-game chain can increase the share of players who complete a seco
 ## Player flow
 1. On the Games catalogue, a player voluntarily selects one of five supported games and starts a Relay in the current tab.
 2. The player lifecycle shell reports a session start only after its existing iframe origin/source/game checks confirm a real start. A valid game-completed message must come from the active same-origin iframe.
-3. Only a completed first title opens a curated second-title choice. A random other title, a launch error, a close or a reload cannot complete the chain.
+3. Only a completed first title opens a curated second-title choice. A random other title, a launch error, a close or a reload cannot complete the chain. Players can also explicitly cancel a pending route; cancellation records an abandoned event (when consent is granted) and never grants the cosmetic.
 4. After a completed second title, the client awards a cosmetic “Relay Trail” mark in localStorage. The copy explicitly says it is local to this browser; it is not an account inventory, money or transferable currency.
 5. The player may prepare a short invitation link. It contains a random eight-hex route code and the two game IDs, not the inviter's name. Browser share success is not treated as proof of delivery.
 

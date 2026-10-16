@@ -22,3 +22,8 @@
 .og-relay-invite-url{display:block;width:100%;min-height:70px;margin-top:8px;padding:8px;border:1px solid #ffffff25;border-radius:6px;background:#080b08;color:#d3ff69;font:11px/1.5 ui-monospace,Consolas,monospace;overflow-wrap:anywhere}
 @media(max-width:620px){.og-relay-entry,.og-relay-postgame{padding:16px;border-radius:10px}.og-relay-entry-controls{align-items:stretch;flex-direction:column}.og-relay-first-game,.og-relay-start,.og-relay-share{width:100%;min-width:0}.og-relay-choices{grid-template-columns:1fr}.og-relay-choice{padding:12px}}
 @media(prefers-reduced-motion:reduce){.og-relay-choice,.og-relay-start,.og-relay-share{transition:none;scroll-behavior:auto}}
+
+.og-relay-cancel{justify-self:start;display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:9px 13px;border:1px solid #ffffff28;border-radius:8px;background:transparent;color:#a8b3a2;font:600 10px/1.3 system-ui,sans-serif;cursor:pointer}
+.og-relay-cancel:hover,.og-relay-cancel:focus-visible{border-color:#c8d0c3;color:#f2f0e8;background:#ffffff07;outline:2px solid transparent}
+@media(max-width:620px){.og-relay-cancel{width:100%;min-height:42px}}
+@media(prefers-reduced-motion:reduce){.og-relay-cancel{transition:none}}

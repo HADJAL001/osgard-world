@@ -60,6 +60,14 @@ const abandoned=core.transition(start1.state,{type:'session_ended',game:'null-sh
 assert.equal(abandoned.state.phase,'abandoned');
 assert.deepEqual(abandoned.events,['relay_abandoned']);
 assert.equal(abandoned.rewardUnlocked,false,'Abandoning the chain must not award the cosmetic');
+const cancelled=core.transition(first,{type:'cancel',at:145});
+assert.equal(cancelled.state.phase,'abandoned','Manual cancellation must abandon the route');
+assert.deepEqual(cancelled.events,['relay_abandoned']);
+assert.equal(cancelled.rewardUnlocked,false,'Cancelling must not grant the cosmetic');
+assert.equal(core.transition(completed.state,{type:'cancel',at:210}).changed,false,'A completed route must not be retroactively cancelled');
+assert.ok(relaySource.includes('function cancelRelay(')&&relaySource.includes('Отменить маршрут'),'Users must be able to cancel a pending Relay from the UI');
+assert.ok(relayCss.includes('.og-relay-cancel'),'The cancellation control needs a styled accessible target');
+
 assert.deepEqual(core.choices(milestone.state),['swarm','time']);
 const invite=core.validateInvite({code:'deadbeef',firstGame:'null-shift',secondGame:'swarm'});
 assert.deepEqual(invite,{code:'deadbeef',firstGame:'null-shift',secondGame:'swarm'});

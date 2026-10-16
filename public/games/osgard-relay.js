@@ -115,6 +115,23 @@
   function setMessage(node, value) {
     if (node) node.textContent = value;
   }
+  function cancelRelay() {
+    const current = getState();
+    if (!current) return false;
+    const result = applyTransition({ type: 'cancel', game: current.phase === 'await_second_start' ? current.secondGame : current.firstGame, at: Date.now() });
+    if (!result.changed) return false;
+    const panel = $('#og-relay-panel', host || document);
+    if (panel) panel.remove();
+    setMessage(entryStatus, 'Маршрут отменён. Любую игру можно запускать отдельно.');
+    return true;
+  }
+  function appendCancelButton(target) {
+    const cancel = make('button', 'og-relay-cancel', 'Отменить маршрут');
+    cancel.type = 'button';
+    cancel.addEventListener('click', cancelRelay);
+    target.append(cancel);
+    return cancel;
+  }
   function createChoices(target, state, mode) {
     const choices = core.choices(state);
     if (!choices.length) return;
@@ -188,6 +205,7 @@
     if (state && state.phase === 'await_second') {
       entry.append(make('p', 'og-relay-progress', 'Первый финал подтверждён: ' + games[state.firstGame].title + '. Выбери вторую игру.'));
       createChoices(entry, state, 'catalog');
+      appendCancelButton(entry);
       entry.append(entryStatus);
       return;
     }
@@ -204,7 +222,9 @@
       const resume = make('button', 'og-relay-start', 'Запустить первую игру ↗');
       resume.type = 'button';
       resume.addEventListener('click', () => launchGame(state.firstGame));
-      entry.append(resume, entryStatus);
+      entry.append(resume);
+      appendCancelButton(entry);
+      entry.append(entryStatus);
       return;
     }
     if (state && state.phase === 'await_second_start') {
@@ -212,7 +232,9 @@
       const resumeSecond = make('button', 'og-relay-start', 'Продолжить во второй игре ↗');
       resumeSecond.type = 'button';
       resumeSecond.addEventListener('click', () => launchGame(state.secondGame));
-      entry.append(resumeSecond, entryStatus);
+      entry.append(resumeSecond);
+      appendCancelButton(entry);
+      entry.append(entryStatus);
       return;
     }
     if (state && ['first_started','second_started'].includes(state.phase)) {
@@ -287,6 +309,7 @@
       panel.append(make('h3', 'og-relay-title', 'Первый этап завершён. Продолжим?'),
         make('p', 'og-relay-copy', 'Завершение первой игры подтверждено игровым клиентом. Выбери второй мир, чтобы закрыть маршрут.'));
       createChoices(panel, state, 'postgame');
+      appendCancelButton(panel);
     } else if (state.phase === 'completed') {
       panel.append(make('h3', 'og-relay-title', 'Relay завершён'),
         make('p', 'og-relay-copy', 'Открыт локальный знак Relay Trail. Это косметическая отметка в текущем браузере, а не серверный предмет или переносимый баланс.'));
