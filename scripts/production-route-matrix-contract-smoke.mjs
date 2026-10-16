@@ -17,6 +17,12 @@ const catalogueFallback = JSON.parse(readFileSync(resolve("public/games/game-cat
 const assetOptimizer = readFileSync(resolve("scripts/optimize-games-static-assets.mjs"), "utf8");
 const deployWorkflow = readFileSync(resolve(".github/workflows/deploy-frontend.yml"), "utf8");
 
+assert.ok(matrix.includes('data-nullshift-release="0.24.0-grounded-shadows"') &&
+  matrix.includes('name="osgard-game-version" content="0.24.0-grounded-shadows"') &&
+  matrix.includes("text.includes('RELEASE 0.24.0')") &&
+  !matrix.includes('0.23.0-phantom-protocol'),
+  "Production route matrix must test the current NULL SHIFT 0.24.0 Grounded Shadows export, not the retired 0.23 release.");
+
 
 assert.ok(html.includes("<title>SWARM — One Body. Eight Minds.</title>"), "SWARM page title contract is missing.");
 assert.ok(html.includes('href="./styles.css"') && html.includes('src="./game.js"'), "SWARM page must load its local CSS and game entry point.");
