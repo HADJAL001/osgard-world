@@ -33,16 +33,16 @@ function normalize(raw){
   .map(p=>({t:round(clamp(p.t,0,120),3),x:round(clamp(p.x,-200,1400),2),y:round(clamp(p.y,-200,850),2),
    vx:finite(p.vx)?round(clamp(p.vx,-10000,10000),2):null,vy:finite(p.vy)?round(clamp(p.vy,-10000,10000),2):null,
    gateOpen:p.gateOpen===true,checkpoints:list(p.checkpoints).slice(0,20).map(v=>clean(v,50))}));
- const events=list(raw.telemetry&&raw.telemetry.events).slice(-MAX_EVENTS).filter(e=>e&&typeof e==='object').map(e=>({
+ const events=list(raw.events|| (raw.telemetry&&raw.telemetry.events)).slice(-MAX_EVENTS).filter(e=>e&&typeof e==='object').map(e=>({
   type:clean(e.type||'event',36),label:clean(e.label||e.type||'Событие',100),t:finite(e.t)?round(clamp(e.t,0,120),3):null,
   x:finite(e.x)?round(clamp(e.x,-200,1400),1):null,y:finite(e.y)?round(clamp(e.y,-200,850),1):null,
   speed:finite(e.speed)?round(clamp(e.speed,0,10000),1):null}));
  const checkpointsReached=list(raw.checkpointsReached).slice(0,20).map(v=>clean(v,50));
- const telemetry=raw.telemetry&&typeof raw.telemetry==='object'?raw.telemetry:{};
+ const telemetry=raw.telemetry&&typeof raw.telemetry==='object'?raw.telemetry:(raw.metrics&&typeof raw.metrics==='object'?raw.metrics:{});
  const blueprint={levelId,devices};
  const blueprintFingerprint=hash(canonical(blueprint));
  const traceFingerprint=hash(canonical(trajectory.map(p=>({t:p.t,x:p.x,y:p.y,vx:p.vx,vy:p.vy,gateOpen:p.gateOpen,checkpoints:p.checkpoints}))));
- const duration=finite(raw.timeSeconds)?round(clamp(raw.timeSeconds,0,120),3):(trajectory.length?trajectory[trajectory.length-1].t:0);
+ const duration=finite(raw.timeSeconds)?round(clamp(raw.timeSeconds,0,120),3):finite(raw.duration)?round(clamp(raw.duration,0,120),3):(trajectory.length?trajectory[trajectory.length-1].t:0);
  const distances=[];
  for(let i=1;i<trajectory.length;i++)distances.push(Math.hypot(trajectory[i].x-trajectory[i-1].x,trajectory[i].y-trajectory[i-1].y));
  const distance=distances.reduce((a,b)=>a+b,0);
@@ -115,7 +115,7 @@ function validateArchive(payload){
 }
 const api={version:VERSION,schema:SCHEMA,archiveSchema:ARCHIVE_SCHEMA,maxRuns:MAX_RUNS,maxFrames:MAX_FRAMES,normalize,quality,compareRuns,validateArchive,hash,canonical};
 if(typeof window==='undefined'||!window.document){globalThis.__CASCADELAB026_TEST__=api;return;}
-if(window.CASCLAB026)return;
+if(window.CASCADELAB026)return;
 const make=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;};
 const css=[
 '.cl-replay-observatory{margin:22px auto 34px;max-width:1180px;padding:clamp(14px,2.2vw,24px);border:1px solid #70e0ff38;border-radius:20px;background:radial-gradient(ellipse at 8% 0%,#28c6e51a,transparent 38%),linear-gradient(145deg,#0c1424f7,#101827f5);color:#eaf4ff;font:14px/1.5 system-ui,sans-serif;box-shadow:0 22px 70px #0005}'
