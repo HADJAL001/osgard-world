@@ -34,6 +34,21 @@ const backendIds = [...backend.slice(backendStart, backendEnd).matchAll(/\bid:\s
   .sort();
 assert.deepEqual(backendIds, catalogIds, 'Backend catalog must match the canonical game IDs');
 
+const commerceCore = read('services/osgard-commerce-api/src/core.mjs');
+const coreListStart = commerceCore.indexOf('const GAME_IDS = new Set([');
+assert.ok(coreListStart >= 0, 'Commerce API game attribution allow-list is missing');
+const coreListEnd = commerceCore.indexOf(']);', coreListStart);
+assert.ok(coreListEnd > coreListStart, 'Commerce API game attribution allow-list is malformed');
+const coreGameIds = [...commerceCore.slice(coreListStart, coreListEnd).matchAll(/"([^"]+)"/g)]
+  .map((match) => match[1])
+  .sort();
+assert.deepEqual(
+  coreGameIds,
+  [...catalogIds, 'unknown'].sort(),
+  'Commerce API must accept the canonical game IDs and only the documented unknown sentinel',
+);
+assert.ok(commerceCore.includes('gameId: GAME_IDS.has(gameCandidate) ? gameCandidate : "unknown"'), 'Server must independently normalize unknown game IDs');
+
 const consentedAnalytics = read('public/games/consented-analytics.js');
 assert.ok(consentedAnalytics.includes("'cross_promo_clicked'"), 'Consent-gated game analytics must allow cross-promotion click events');
 
