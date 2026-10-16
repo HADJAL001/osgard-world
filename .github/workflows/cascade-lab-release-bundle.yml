@@ -1,0 +1,115 @@
+name: CASCADE LAB full OSGARD WORLD bundle
+on:
+  push:
+    branches: [master]
+    paths:
+      - '.github/workflows/cascade-lab-release-bundle.yml'
+      - 'public/games/cascade-lab/**'
+      - 'public/games/index.html'
+      - 'public/games/luxury.css'
+      - 'public/games/daily-circuit.css'
+      - 'public/games/player-lifecycle.js'
+      - 'public/games/game-session-recommendations.js'
+      - 'public/games/commerce-client.js'
+      - 'public/games/commerce-config.json'
+      - 'public/games/commerce-admin/**'
+      - 'public/games/partners/**'
+      - 'public/games/admin/**'
+      - 'src/GameDetailPage.tsx'
+      - 'src/core/manifest.ts'
+      - 'public/sitemap.xml'
+      - 'public/entertainment/**'
+      - 'nginx.conf'
+      - 'services/osgard-commerce-api/**'
+      - 'docs/*CASCADE*'
+      - 'scripts/cascade-lab-*-smoke.mjs'
+      - 'scripts/games-detail-smoke.mjs'
+      - 'scripts/games-portal-smoke.mjs'
+      - 'scripts/osgard-select-growth-smoke.mjs'
+      - 'scripts/game-intermission-sponsor-smoke.mjs'
+      - 'scripts/game-recommendations-smoke.mjs'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: cascade-lab-full-bundle
+  cancel-in-progress: false
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Verify five-block bundle contract
+        run: node scripts/cascade-lab-release-bundle-smoke.mjs
+      - name: Verify game modules and PWA
+        run: npm run qa:games-detail
+      - name: Verify OSGARD SELECT, share rewards and preferences
+        run: npm run qa:osgard-select && npm run qa:intermission-sponsor && npm run qa:game-recommendations
+      - name: Verify game catalogue lifecycle
+        run: node scripts/games-portal-smoke.mjs
+      - name: Assemble complete release ZIP from repository source
+        env:
+          RELEASE_COMMIT: ${{ github.sha }}
+          RELEASE_REF: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          root='CASCADE-LAB-0.26.0-OSGARD-WORLD-FULL'
+          out='release-bundle'
+          mkdir -p "$root/game" "$root/portal-integration/public/games" "$root/portal-integration/services" "$root/source-context/src" "$root/source-context/public" "$root/docs" "$root/qa" "$out"
+          cp -a public/games/cascade-lab/. "$root/game/"
+          cp -a public/games/index.html public/games/luxury.css public/games/daily-circuit.css "$root/portal-integration/public/games/"
+          cp -a public/games/player-lifecycle.js public/games/game-session-recommendations.js public/games/commerce-client.js public/games/commerce-config.json "$root/portal-integration/public/games/"
+          cp -a public/games/commerce-admin "$root/portal-integration/public/games/commerce-admin"
+          cp -a public/games/partners "$root/portal-integration/public/games/partners"
+          cp -a public/games/admin "$root/portal-integration/public/games/admin"
+          cp -a services/osgard-commerce-api "$root/portal-integration/services/osgard-commerce-api"
+          cp -a src/GameDetailPage.tsx "$root/source-context/src/"
+          cp -a src/core/manifest.ts "$root/source-context/src/manifest.ts"
+          cp -a public/sitemap.xml "$root/source-context/public/"
+          cp -a public/entertainment "$root/source-context/public/"
+          cp -a nginx.conf "$root/source-context/"
+          cp -a docs/13_CASCADE_LAB_GAMES_INTEGRATION.md docs/33_CASCADE_LAB_0.26.0_REPLAY_OBSERVATORY.md docs/CASCADE_LAB_PWA_0.26.0_OFFLINE_FIELD_DEVICE.md docs/34_CASCADE_LAB_0.26.0_RELEASE_BUNDLE.md "$root/docs/"
+          for f in docs/*CASCADE*LAB* docs/*CASCADE_LAB*; do if [ -f "$f" ]; then cp -n "$f" "$root/docs/"; fi; done
+          cp -a scripts/cascade-lab-*-smoke.mjs scripts/games-detail-smoke.mjs scripts/games-portal-smoke.mjs scripts/osgard-select-growth-smoke.mjs scripts/game-intermission-sponsor-smoke.mjs scripts/game-recommendations-smoke.mjs scripts/production-route-matrix.mjs "$root/qa/"
+          cat > "$root/README-RU.md" <<'EOF'
+# CASCADE LAB — полный пакет OSGARD WORLD
+
+Пять блоков: физическая лаборатория; Hypothesis/Engineering/Experiment/Case Passport/Mission Director; Trajectory X-Ray/Evidence Integrity/Replay Observatory; OSGARD SELECT с настройкой частоты и локальными SHARDS; PWA, commerce-снимки и QA.
+
+Запуск: `cd game`, `python -m http.server 4173`, открыть `http://localhost:4173/`. PWA требует HTTP(S), а не `file://`.
+
+`portal-integration/` и `source-context/` — снимки связанных файлов для интеграции в исходные пути сайта. SHARDS — не деньги; ручное подтверждение не доказывает публикацию поста; replay fingerprints не криптографические подписи. Выручка и вирусность не заявляются без измерений.
+EOF
+          cat > "$root/BUILD-INFO.json" <<EOF
+{
+  "bundle": "CASCADE-LAB-0.26.0-OSGARD-WORLD-FULL",
+  "replayObservatory": "0.26.0",
+  "gameShell": "0.25.0-evidence-integrity",
+  "pwaShellCache": "v0.26.2",
+  "sourceCommit": "$RELEASE_COMMIT",
+  "sourceRef": "$RELEASE_REF",
+  "builtAtUtc": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+EOF
+          (cd "$root" && find . -type f ! -name 'PACKAGE-SHA256SUMS.txt' -print0 | sort -z | xargs -0 sha256sum > PACKAGE-SHA256SUMS.txt)
+          zip -qr "$out/CASCADE-LAB-0.26.0-OSGARD-WORLD-FULL.zip" "$root"
+          unzip -t "$out/CASCADE-LAB-0.26.0-OSGARD-WORLD-FULL.zip"
+          cd "$out"
+          sha256sum CASCADE-LAB-0.26.0-OSGARD-WORLD-FULL.zip > CASCADE-LAB-0.26.0-OSGARD-WORLD-FULL.zip.sha256
+          sha256sum -c CASCADE-LAB-0.26.0-OSGARD-WORLD-FULL.zip.sha256
+          unzip -Z1 CASCADE-LAB-0.26.0-OSGARD-WORLD-FULL.zip | grep -E 'game/(index.html|replay-observatory.js|service-worker.js|manifest.webmanifest)$'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CASCADE-LAB-0.26.0-OSGARD-WORLD-FULL
+          path: |
+            release-bundle/CASCADE-LAB-0.26.0-OSGARD-WORLD-FULL.zip
+            release-bundle/CASCADE-LAB-0.26.0-OSGARD-WORLD-FULL.zip.sha256
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
