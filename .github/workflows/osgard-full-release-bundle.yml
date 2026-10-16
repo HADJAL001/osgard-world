@@ -1,0 +1,47 @@
+name: OSGARD WORLD full source and production bundle
+on:
+  push:
+    branches:
+      - feat/osgard-gaming-five-blocks-release-bundle-20261016
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: osgard-world-full-bundle-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  release-bundle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout the exact release commit
+        uses: actions/checkout@v4
+      - name: Prepare Node runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Block 1 — audit required system modules and bundle hygiene
+        run: node scripts/osgard-full-release-preflight.mjs
+      - name: Block 2 — compile and build the production website
+        run: npm run build
+      - name: Block 3 — test catalogue, individual game routes and lifecycle
+        run: npm run qa:games-portal
+      - name: Block 4 — test ecosystem, consent and financial model contracts
+        run: npm run qa:ecosystem && npm run qa:privacy-consent && npm run qa:games-model
+      - name: Block 5 — assemble complete source and deployable site ZIPs
+        env:
+          RELEASE_COMMIT: ${{ github.sha }}
+          RELEASE_REF: ${{ github.ref_name }}
+          OSGARD_QA_GATES: preflight,build,qa:games-portal,qa:ecosystem,qa:privacy-consent,qa:games-model
+          OSGARD_BUNDLE_OUT: ${{ runner.temp }}/osgard-world-full-release-bundle
+        run: node scripts/osgard-full-release-bundle.mjs
+      - name: Upload full source, production website, manifest and hashes
+        uses: actions/upload-artifact@v4
+        with:
+          name: OSGARD-WORLD-GAMING-FULL-${{ github.sha }}
+          path: ${{ runner.temp }}/osgard-world-full-release-bundle/*
+          if-no-files-found: error
+          retention-days: 90
