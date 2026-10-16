@@ -16,6 +16,9 @@ const sitemap = readFileSync(resolve("public/sitemap.xml"), "utf8");
 const catalogueFallback = JSON.parse(readFileSync(resolve("public/games/game-catalog-fallback.json"), "utf8"));
 const assetOptimizer = readFileSync(resolve("scripts/optimize-games-static-assets.mjs"), "utf8");
 const deployWorkflow = readFileSync(resolve(".github/workflows/deploy-frontend.yml"), "utf8");
+const godotShell = readFileSync(resolve("godot/null-shift/web/boot_shell.html"), "utf8");
+const expectedGodotRelease = (godotShell.match(/data-nullshift-release="([^"]+)"/) || [])[1] || "";
+const expectedGodotSemver = (expectedGodotRelease.match(/^(\\d+\\.\\d+\\.\\d+)/) || [])[1] || "";
 
 
 assert.ok(html.includes("<title>SWARM — One Body. Eight Minds.</title>"), "SWARM page title contract is missing.");
@@ -115,6 +118,14 @@ assert.ok(nginx.includes('location = /commerce-api/v1/admin/game-catalog') && ng
 assert.ok(assetOptimizer.includes("'catalog-runtime.js'"), "The catalogue runtime must be non-empty and minified during build.");
 assert.ok(deployWorkflow.includes('const compact=source.replace(/' + String.fromCharCode(92) + 's+/g,"")') && deployWorkflow.includes('compact.includes(".textContent=")') && deployWorkflow.includes('compact.includes(".title")') && deployWorkflow.includes('compact.includes(".innerHTML")') && deployWorkflow.includes('!body.equals(inflated)'), "Deployment archive validation must accept minified code while verifying safe rendering and exact gzip bytes.");
 assert.ok(matrix.includes("'/games/en/'") && matrix.includes("'/games/game-catalog-fallback.json'") && matrix.includes("compact.includes('.textContent=')"), "The production route matrix must validate the global entry, fallback payload and minified runtime.");
+
+assert.ok(expectedGodotRelease && expectedGodotSemver, "Current Godot shell must declare a versioned release contract");
+assert.ok(matrix.includes("const nullShiftShellContract = await readFile(new URL('../godot/null-shift/web/boot_shell.html', import.meta.url), 'utf8')") &&
+  matrix.includes('data-nullshift-release="${expectedNullShiftRelease}"') &&
+  matrix.includes('name="osgard-game-version" content="${expectedNullShiftRelease}"') &&
+  matrix.includes('RELEASE ${expectedNullShiftVersion}'),
+  "Production route validation must derive Godot HTML release markers from the current checked-in shell");
+assert.ok(!matrix.includes("0.23.0-phantom-protocol"), "Production route matrix must not pin an obsolete Godot release string");
 
 assert.ok(matrix.includes("nonEmpty = path === '/games/favicon.svg'") &&
   matrix.includes("content.includes('<svg')") &&
