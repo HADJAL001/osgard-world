@@ -1,8 +1,35 @@
 import { ArrowDown, ArrowUpRight, Check, Layers3, Rocket, ShieldCheck, Timer } from 'lucide-react'
 import { ProjectIntake } from './ProjectIntake'
+import { type MouseEvent } from 'react'
+import { recordOsgardEvent } from './core/eventQueue'
+// @ts-expect-error JavaScript helper has a colocated runtime module.
+import { hasAnalyticsConsent } from './core/analyticsConsent.mjs'
 
 type Locale = 'ru' | 'en'
 type Props = { locale: Locale, botUrl: string }
+
+function trackProjectClick(event: MouseEvent<HTMLAnchorElement>, url: string, name: string, index: number) {
+  // Cross-site attribution is added only after explicit consent. Without consent,
+  // the ordinary official project URL remains untouched and no analytics is stored.
+  if (!hasAnalyticsConsent()) return
+  try {
+    const destination = new URL(`https://${url}`)
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || `project-${index + 1}`
+    destination.searchParams.set('utm_source', 'osgard_world')
+    destination.searchParams.set('utm_medium', 'ecosystem_directory')
+    destination.searchParams.set('utm_campaign', 'development_portfolio')
+    destination.searchParams.set('utm_content', `${String(index + 1).padStart(2, '0')}-${slug}`)
+    event.currentTarget.href = destination.toString()
+    recordOsgardEvent('cross_promo_clicked', {
+      placement: 'development_portfolio',
+      destination: slug,
+      position: index + 1,
+      campaign: 'development_portfolio',
+    })
+  } catch {
+    // Keep the original link working if optional tracking cannot be prepared.
+  }
+}
 
 const projects = [
   ['OSGARD BEW WORLD', 'osgardbewworld.com/', 'Digital product studio', 'Создание игр, сайтов, приложений и цифровых платформ.', 'Разработка'],
@@ -42,7 +69,7 @@ export function Development({ locale, botUrl }: Props) {
 
     <ProjectIntake locale={locale} botUrl={botUrl} />
 
-    <div className="development-portfolio" id="development-portfolio"><div className="development-heading"><p className="eyebrow">SELECTED WORK</p><h3>{ru ? 'Направления экосистемы OSGARD.' : 'OSGARD ecosystem projects.'}</h3></div><div className="portfolio-rail">{projects.map(([name, url, category, description, result], index) => <a href={`https://${url}`} target="_blank" rel="noreferrer" className="portfolio-card" key={url}><div className={`portfolio-preview preview-${index % 5}`}><span>{name.split(' ').map(word => word[0]).join('').slice(0, 3)}</span><i>{String(index + 1).padStart(2, '0')}</i></div><small>{category}</small><b>{name}</b><p>{ru ? description : `${category} product built for a focused workflow.`}</p><strong className="project-result">{result}</strong><em>{ru ? 'Открыть' : 'Open'} <ArrowUpRight /></em></a>)}</div></div>
+    <div className="development-portfolio" id="development-portfolio"><div className="development-heading"><p className="eyebrow">SELECTED WORK</p><h3>{ru ? 'Направления экосистемы OSGARD.' : 'OSGARD ecosystem projects.'}</h3></div><div className="portfolio-rail">{projects.map(([name, url, category, description, result], index) => <a href={`https://${url}`} onClick={event => trackProjectClick(event, url, name, index)} target="_blank" rel="noopener noreferrer" className="portfolio-card" key={url}><div className={`portfolio-preview preview-${index % 5}`}><span>{name.split(' ').map(word => word[0]).join('').slice(0, 3)}</span><i>{String(index + 1).padStart(2, '0')}</i></div><small>{category}</small><b>{name}</b><p>{ru ? description : `${category} product built for a focused workflow.`}</p><strong className="project-result">{result}</strong><em>{ru ? 'Открыть' : 'Open'} <ArrowUpRight /></em></a>)}</div></div>
 
     <div className="development-pricing"><div className="development-heading"><p className="eyebrow">SCOPE / DELIVERY</p><h3>{ru ? 'Что мы делаем. И сколько это стоит.' : 'What we build. And what it costs.'}</h3></div><div className="pricing-grid">{prices.map(plan => <article className={`price-card${plan.featured ? ' is-featured' : ''}`} key={plan.name}>{plan.featured && <span className="price-note">{ru ? 'Рекомендуем' : 'Recommended'}</span>}<p>{plan.name}</p><strong>{plan.price}</strong><small>{ru ? `Срок: ${plan.time}` : `Delivery: ${plan.time}`}</small><em className="price-saving">{plan.saving}</em><ul>{plan.items.map(item => <li key={item}><Check />{item}</li>)}</ul><a href={botUrl} target="_blank" rel="noreferrer">{plan.name === 'EXCLUSIVE' && ru ? 'Обсудить индивидуально' : ru ? 'Обсудить задачу' : 'Discuss your brief'}<ArrowUpRight /></a></article>)}</div></div>
 
