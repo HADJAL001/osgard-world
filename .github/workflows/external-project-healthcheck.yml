@@ -41,6 +41,9 @@ jobs:
 
       - name: Run bounded HTTPS homepage checks
         run: node scripts/external-project-healthcheck.mjs --out artifacts/external-project-health.json
+ 
+      - name: Verify workflow contract
+        run: node scripts/external-project-healthcheck-workflow-smoke.mjs
 
       - name: Apply optional strict gate
         if: ${{ inputs.strict == true }}
