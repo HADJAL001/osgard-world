@@ -1139,6 +1139,7 @@ app.get("/v1/admin/overview", requireAdmin, async (_req, res) => {
           COUNT(*) FILTER (WHERE event_name = 'owned_promo_snooze_cleared' AND source ~ '^osgard-select:snooze-resume:[0-9]{1,10}$')::int AS "ownedPromoSnoozeClears",
           COUNT(*) FILTER (WHERE event_name = 'cross_promo_clicked' AND source ~ '^osgard-select:ecosystem:[a-z0-9-]{1,40}$')::int AS "ownedPromoDirectoryClicks",
           COUNT(*) FILTER (WHERE event_name = 'cross_promo_clicked' AND source ~ '^osgard-select:development:[a-z0-9-]{1,40}$')::int AS "ownedPromoDevelopmentClicks",
+          COUNT(*) FILTER (WHERE event_name = 'cross_promo_clicked' AND source ~ '^osgard-select:custom-game:[a-z0-9-]{1,40}$')::int AS "ownedPromoCustomGameClicks",
           (SELECT COUNT(*) FROM invite_shares)::int AS "inviteShares",
           (SELECT COUNT(*) FROM invite_shares s JOIN invite_opens o USING (invite_code))::int AS "referralOpens",
           (SELECT COUNT(*) FROM invite_shares s JOIN invite_starts r USING (invite_code))::int AS "referredStarts",
