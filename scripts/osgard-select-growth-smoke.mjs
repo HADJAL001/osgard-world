@@ -125,7 +125,7 @@ assert.ok(source.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN','Врем�
 assert.ok(source.includes("const availableServiceIds=services.filter(item=>item[7]!==false).map(item=>item[0])") &&
   source.includes("input.disabled=active===false"),
   'The promotion list must obey explicit service-availability flags while keeping the unverified VPN disclosed');
-const categoryCountSource = source.match(/function countPromotableServices\\(category\\)\\{[\\s\\S]*?\\n \\}/);
+const categoryCountSource = source.match(/function countPromotableServices\(category\)\{[\s\S]*?\n \}/);
 assert.ok(categoryCountSource, 'Intermission category counts must be derived from active services.');
 const countPromotableServices = vm.runInNewContext('(' + categoryCountSource[0] + ')', {
   services: [
