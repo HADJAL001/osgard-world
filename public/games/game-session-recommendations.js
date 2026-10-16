@@ -613,7 +613,10 @@ function servicesShelf(gameId,showPromos,completedCount){
  settings.append(settingsHeading,settingsDescription,frequencyLabel,choicesHeading,choices,presetActions,saveButton,preferencesStatus);
 
  const categoryByService={projects:'studio',vanguard:'studio','partner-studio':'studio','o2-system':'business','osgard-business':'business',senjorio:'life',superday:'life',myosa:'tech',gardvpn:'tech',marcosa:'social','gold-glamour':'luxury'};
- const filterDefs=[['all','Все доступные · '+availableServiceIds.length],['studio','Разработка · 3'],['business','Бизнес · 2'],['life','Город и жизнь · 2'],['tech','Технологии · 2'],['social','Социальные · 1'],['luxury','Luxury · 1']];
+ function countPromotableServices(category){
+  return services.filter(([id,,,,,,,active=true])=>active!==false&&managedPromoConfig.enabledServices.includes(id)&&(category==='all'||categoryByService[id]===category)).length;
+ }
+ const filterDefs=[['all','Все доступные · '+countPromotableServices('all')],['studio','Разработка · '+countPromotableServices('studio')],['business','Бизнес · '+countPromotableServices('business')],['life','Город и жизнь · '+countPromotableServices('life')],['tech','Технологии · '+countPromotableServices('tech')],['social','Социальные · '+countPromotableServices('social')],['luxury','Luxury · '+countPromotableServices('luxury')]];
  const filters=make('div','og-postgame-service-filters');filters.setAttribute('role','group');filters.setAttribute('aria-label','Выбрать категорию сервиса OSGARD');
  const filterButtons=[];
  filterDefs.forEach(([id,labelText])=>{const button=make('button','og-postgame-service-filter',labelText);button.type='button';button.dataset.osgardServiceFilter=id;button.setAttribute('aria-pressed',String(id==='all'));filters.append(button);filterButtons.push(button)});
