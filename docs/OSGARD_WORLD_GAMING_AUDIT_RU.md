@@ -88,7 +88,7 @@
 ## 6. Выпуск и операционные ворота
 
 Перед merge/deploy:
-- [ ] Запустить `npm run qa:external-project-healthcheck` и проверить новый контракт workflow.
+- [ ] Запустить `npm run qa:external-project-healthcheck` для поведенческого smoke и `node scripts/external-project-healthcheck-workflow-smoke.mjs` для workflow-контракта.
 - [ ] Из GitHub Actions выполнить workflow вручную в warning-only режиме; получить первый реальный JSON health report.
 - [ ] Разобрать недоступные URL вручную и проверить цепочку редиректов/HTTPS.
 - [ ] Запустить `npm run qa:games-portal`, `npm run qa:games-detail`, `npm run qa:ecosystem-directory`, `npm run qa:ecosystem`, `npm run qa:project-intake`, `npm run qa:privacy-consent` и `npm run qa:release`.
