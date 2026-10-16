@@ -31,15 +31,19 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
     // The directory URL can stream a large WebAssembly HTML shell slowly. Probe only
     // its headers; the explicit index.html route and required binary assets below still
     // receive content-aware GET checks.
+    // Cache-bust the Games HTML shells as well as selected static assets. The deploy inserts
+    // the expected revision into these pages; without a unique query some edge caches can
+    // keep a previous catalogue shell while the origin has already moved to a newer archive.
+    const isGamesHubRoute = ['/games/', '/games/index.html', '/games/en/', '/games/en/index.html'].includes(route)
     const routeUrl = new URL(route, base)
-    // Force a current-revision read of the static Godot export shell as well as the cached JS assets.
-    // Some edge caches keep index.html independently of the deployment's freshly published .wasm/.pck files.
-    if (expectedBuild && ['/games/catalog-runtime.js', '/games/favicon.svg', '/games/null-shift-godot/index.html'].includes(route)) routeUrl.searchParams.set('_osgard_route_check', expectedBuild.slice(0, 12))
+    if (expectedBuild && (isGamesHubRoute || ['/games/catalog-runtime.js', '/games/favicon.svg', '/games/null-shift-godot/index.html'].includes(route))) {
+      routeUrl.searchParams.set('_osgard_route_check', expectedBuild.slice(0, 12))
+    }
     const response = await fetch(routeUrl, { method: isGodotDirectory ? 'HEAD' : 'GET', headers: { 'user-agent': userAgent, 'cache-control': 'no-cache', pragma: 'no-cache' }, cache: 'no-store', signal: AbortSignal.timeout(timeoutMs) })
     const responseBody = route.startsWith('/games/share-cards/') ? new Uint8Array(await response.arrayBuffer()) : isGodotDirectory ? '' : await response.text()
     const text = typeof responseBody === 'string' ? responseBody : ''
     const isExpeditionPage = route === '/games/expedition/' || route === '/games/expedition/index.html'
-    const isGamesHub = route === '/games/' || route === '/games/index.html'
+    const isGamesHub = ['/games/', '/games/index.html'].includes(route)
     const isEnglishGamesHub = route === '/games/en/' || route === '/games/en/index.html'
     const actualBuild = isGamesHub ? (text.match(/<meta name="osgard-build" content="([a-f0-9]{12})">/i)?.[1] || '') : ''
     const expectedBuildMatches = !isGamesHub || (actualBuild.length === 12 && (!expectedBuild || actualBuild === expectedBuild.slice(0, 12)))
