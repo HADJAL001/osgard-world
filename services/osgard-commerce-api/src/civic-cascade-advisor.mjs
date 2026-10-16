@@ -49,6 +49,12 @@ export function validateCivicCascadeAdvisorInput(input){
    }
   }
   if(!integer(raw.resourceCost,0,10000)||!integer(raw.crewsUsed,0,4)||!finite(raw.nominalScore,0,100000)||!finite(raw.stressAdjustedScore,0,100000)||!finite(raw.riskT90,0,100)||!finite(raw.riskDeltaT90,-100,100)||!finite(raw.weakestIntegrityT90,0,100)||!integer(raw.stableProfiles,0,9)||raw.profileCount!==9)return{ok:false,status:400,code:"CIVIC_ADVISOR_METRICS_INVALID"};
+  let orderAudit=null;
+  if(raw.orderAudit!==undefined&&raw.orderAudit!==null){
+   const audit=raw.orderAudit;
+   if(!object(audit)||!integer(audit.testedAdjacentSwaps,0,3)||!integer(audit.feasibleAdjacentSwaps,0,3)||!integer(audit.scoredAdjacentSwaps,0,3)||audit.feasibleAdjacentSwaps>audit.testedAdjacentSwaps||audit.scoredAdjacentSwaps>audit.feasibleAdjacentSwaps||typeof audit.improvedByReordering!=="boolean"||!finite(audit.scoreImprovement,0,100000)||(audit.swapPosition!==null&&!integer(audit.swapPosition,0,2))||(audit.improvedByReordering&&(audit.swapPosition===null||audit.scoreImprovement<0.2))||(!audit.improvedByReordering&&(audit.swapPosition!==null||audit.scoreImprovement!==0)))return{ok:false,status:400,code:"CIVIC_ADVISOR_ORDER_AUDIT_INVALID"};
+   orderAudit={testedAdjacentSwaps:audit.testedAdjacentSwaps,feasibleAdjacentSwaps:audit.feasibleAdjacentSwaps,scoredAdjacentSwaps:audit.scoredAdjacentSwaps,improvedByReordering:audit.improvedByReordering,scoreImprovement:audit.scoreImprovement,swapPosition:audit.swapPosition};
+  }
   if(!Array.isArray(raw.worstStressByFamily)||raw.worstStressByFamily.length!==3)return{ok:false,status:400,code:"CIVIC_ADVISOR_STRESS_INVALID"};
   const familyMap=new Map();
   for(const p of raw.worstStressByFamily){
@@ -56,7 +62,7 @@ export function validateCivicCascadeAdvisorInput(input){
    familyMap.set(p.family,{family:p.family,severity:p.severity,riskDelta90:p.riskDelta90,weakestIntegrityDelta:p.weakestIntegrityDelta,criticalNodeDelta:p.criticalNodeDelta});
   }
   if(FAMILIES.some(f=>!familyMap.has(f)))return{ok:false,status:400,code:"CIVIC_ADVISOR_STRESS_INVALID"};
-  candidates.push({rank:raw.rank,role:raw.role,orders,resourceCost:raw.resourceCost,crewsUsed:raw.crewsUsed,nominalScore:raw.nominalScore,stressAdjustedScore:raw.stressAdjustedScore,riskT90:raw.riskT90,riskDeltaT90:raw.riskDeltaT90,weakestIntegrityT90:raw.weakestIntegrityT90,stableProfiles:raw.stableProfiles,profileCount:9,worstStressByFamily:FAMILIES.map(f=>familyMap.get(f))});
+  candidates.push({rank:raw.rank,role:raw.role,orders,resourceCost:raw.resourceCost,crewsUsed:raw.crewsUsed,nominalScore:raw.nominalScore,stressAdjustedScore:raw.stressAdjustedScore,riskT90:raw.riskT90,riskDeltaT90:raw.riskDeltaT90,weakestIntegrityT90:raw.weakestIntegrityT90,stableProfiles:raw.stableProfiles,profileCount:9,orderAudit,worstStressByFamily:FAMILIES.map(f=>familyMap.get(f))});
  }
  if(ranks.size!==input.candidates.length)return{ok:false,status:400,code:"CIVIC_ADVISOR_CANDIDATE_INVALID"};
  return{ok:true,data:{scenario:{id:input.scenario},objective:input.objective,locale:input.locale==="en"?"en":"ru",evaluatedCandidateCount:input.evaluatedCandidateCount,baseline:{riskT90:input.baseline.riskT90,weakestIntegrityT90:input.baseline.weakestIntegrityT90,criticalNodesT90:input.baseline.criticalNodesT90},candidates:candidates.sort((a,b)=>a.rank-b.rank)}};
@@ -88,8 +94,8 @@ export async function generateCivicCascadeAdvice(input,{env=process.env,fetchImp
  if(!config.enabled)return{ok:false,status:503,code:"OPENAI_CIVIC_ADVISOR_NOT_CONFIGURED"};
  if(typeof fetchImpl!=="function")return{ok:false,status:503,code:"OPENAI_CIVIC_ADVISOR_UNAVAILABLE"};
  const instructions=checked.data.locale==="en"
-  ?"You are a cautious strategy auditor for CIVIC CASCADE, a deterministic crisis simulation. Use only supplied structured metrics. Do not invent rules, outcomes, weather, future random incidents or causal evidence. The local engine remains the source of truth. Recommend a listed candidate only when evidence supports it; otherwise set recommendedRank to none. Explain measurable benefit, trade-off, limitation and one falsifiable experiment. Never execute or modify a plan. Return only the strict JSON schema."
-  :"Ты — осторожный аудитор стратегий CIVIC CASCADE. Используй только переданные метрики. Не выдумывай правила, исходы, погоду, будущие инциденты или причинность. Локальный движок остаётся источником истины. Рекомендуй вариант только если измерения это оправдывают, иначе укажи recommendedRank=none. Объясни выгоду, компромисс, ограничение и один проверяемый эксперимент. Не выполняй и не меняй план. Верни только строгий JSON Schema.";
+  ?"You are a cautious strategy auditor for CIVIC CASCADE, a deterministic crisis simulation. Use only supplied structured metrics. Do not invent rules, outcomes, weather, future random incidents or causal evidence. The local engine remains the source of truth. Recommend a listed candidate only when evidence supports it; otherwise set recommendedRank to none. Explain measurable benefit, trade-off, limitation and one falsifiable experiment. If an orderAudit summary is present, distinguish adjacent-swap local search from exhaustive permutation search and state only the measured improvement. Never execute or modify a plan. Return only the strict JSON schema."
+  :"Ты — осторожный аудитор стратегий CIVIC CASCADE. Используй только переданные метрики. Не выдумывай правила, исходы, погоду, будущие инциденты или причинность. Локальный движок остаётся источником истины. Рекомендуй вариант только если измерения это оправдывают, иначе укажи recommendedRank=none. Объясни выгоду, компромисс, ограничение и один проверяемый эксперимент. Если есть orderAudit, отличай локальную проверку соседних перестановок от полного перебора всех порядков и называй только измеренное улучшение. Не выполняй и не меняй план. Верни только строгий JSON Schema.";
  let response;
  try{response=await fetchImpl("https://api.openai.com/v1/responses",{method:"POST",headers:{Authorization:"Bearer "+config.apiKey,"Content-Type":"application/json"},body:JSON.stringify({model:config.model,store:false,max_output_tokens:500,input:[{role:"system",content:instructions},{role:"user",content:JSON.stringify(checked.data)}],text:{format:{type:"json_schema",name:"osgard_civic_cascade_advisor",strict:true,schema:CIVIC_CASCADE_ADVISOR_SCHEMA}}}),signal:AbortSignal.timeout(timeoutMs)})}
  catch{return{ok:false,status:503,code:"OPENAI_CIVIC_ADVISOR_UNAVAILABLE"}}
