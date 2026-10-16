@@ -93,7 +93,7 @@ rollback() {
 
 (
   set -euo pipefail
-  docker exec -e OSGARD_GAME_API_TARGET="$api_target" "$container_name" sh -lc "
+  if ! docker exec -e OSGARD_GAME_API_TARGET="$api_target" "$container_name" sh -lc "
     set -eu
     rm -rf /tmp/osgard-gh-next /tmp/osgard-gh-previous
     mkdir -p /tmp/osgard-gh-next
