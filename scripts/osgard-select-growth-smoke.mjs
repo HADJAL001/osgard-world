@@ -125,6 +125,22 @@ assert.ok(source.includes("['gardvpn','08','GARD VPN','PRIVACY / VPN','Врем�
 assert.ok(source.includes("const availableServiceIds=services.filter(item=>item[7]!==false).map(item=>item[0])") &&
   source.includes("input.disabled=active===false"),
   'The promotion list must obey explicit service-availability flags while keeping the unverified VPN disclosed');
+const categoryCountSource = source.match(/function countPromotableServices\\(category\\)\\{[\\s\\S]*?\\n \\}/);
+assert.ok(categoryCountSource, 'Intermission category counts must be derived from active services.');
+const countPromotableServices = vm.runInNewContext('(' + categoryCountSource[0] + ')', {
+  services: [
+    ['myosa','06','MYOSA','AI PLATFORM','desc','https://myosa.world/',false,true],
+    ['gardvpn','08','GARD VPN','PRIVACY / VPN','unverified','https://gardvpn.is/',false,false],
+    ['projects','01','OSGARD BEW WORLD','DIGITAL STUDIO','desc','https://osgardbewworld.com/',false,true],
+  ],
+  managedPromoConfig: { enabledServices: ['myosa','gardvpn','projects'] },
+  categoryByService: { myosa: 'tech', gardvpn: 'tech', projects: 'studio' },
+});
+assert.equal(countPromotableServices('tech'), 1, 'Inactive GARD VPN must not inflate the technology category.');
+assert.equal(countPromotableServices('studio'), 1, 'An enabled studio service counts once.');
+assert.equal(countPromotableServices('all'), 2, 'The total counts enabled and active services only.');
+assert.equal(countPromotableServices('business'), 0, 'An empty category reports zero, not a stale hard-coded count.');
+
 assert.ok(source.includes("const activeSelected=services.filter(([id,,,,,,featured=false,active=true])=>active!==false&&managedPromoConfig.enabledServices.includes(id)&&preferences.selected.includes(id))") &&
   source.includes("const visible=activeSelected;"),
   'Unavailable service IDs must be excluded from the promotable service card grid');
