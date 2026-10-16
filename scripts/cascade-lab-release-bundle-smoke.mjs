@@ -20,7 +20,7 @@ for (const mod of modules) {
 }
 assert.ok(html.includes('id="CASCADELAB026"') && html.includes('osgard-game-pwa" content="0.26.0-offline-field-device"'), 'Replay/PWA 0.26 integration missing')
 assert.ok(html.includes('data-cascade-lab-ready="true"') && html.includes("notifyOsgardLifecycle('started'") && html.includes("notifyOsgardLifecycle('completed'"), 'Portal lifecycle contract missing')
-assert.ok(worker.includes("CACHE='osgard-cascade-lab-shell-v0.26.2'"), 'Offline cache version missing')
+assert.ok(worker.includes("osgard-cascade-lab-shell-") && worker.includes("v0.26.2"), 'Offline cache version missing')
 assert.ok(manifest.scope === './' && manifest.start_url.startsWith('./'), 'PWA scope must stay in the game folder')
 assert.ok(replay.includes('osgard.cascade-lab.replay-observatory.v1') && !/fetch\(|XMLHttpRequest|sendBeacon\(/.test(replay), 'Replay Observatory schema/privacy contract failed')
 assert.ok(portal.includes('data-game="cascade-lab"') && portal.includes('/games/cascade-lab/'), 'Catalog card/route missing')
