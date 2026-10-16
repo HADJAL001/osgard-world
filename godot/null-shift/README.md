@@ -276,3 +276,8 @@ Controls: **F2** graphics, **F3** diagnostics, **F4** reduced motion, **F5** col
 - Contact shadows are visual-only: no collision, no shadow casting, and they are disabled in Performance mode or the hardest adaptive quality tier. Live diagnostics expose visible/registered shadow counts alongside rendering metrics.
 - Headless runtime tests verify the shader and alpha gradient, bounded opacity, floor placement, non-shadow-casting planes, operator/guard/device/objective coverage and the contact-shadow registry. The static Godot smoke contract guards the shader path and release version.
 - This improves grounding and readability without claiming native 8K, imported PBR assets or full real-time global illumination.
+
+
+## Release 0.25 — Tactical Replay
+
+From the completed-raid screen open **TACTICAL REPLAY / L** to inspect a top-down operator route, move along the sample timeline, play/pause the trace and jump to nearby recorded events. Each sample also captures health, weapon heat, stealth/alarm state, remaining hostiles and combo. The after-action JSON embeds the same normalized trace. It is limited to 360 recent samples, stays on-device, and reconstructs route/event history instead of recording a full 3D video.

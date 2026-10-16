@@ -1921,6 +1921,56 @@ func _run_smoke() -> void:
 	if not _expect(after_action.get("events", []).size() == game.MAX_RAID_EVENT_COUNT and after_action.get("insights", []).size() > 0, "after-action report must include the bounded event tape and actionable, locally computed coaching"):
 		return
 
+	print("RUNTIME_STAGE: Tactical Replay / bounded route tape and map cursor")
+	var replay_saved_samples: Array[Dictionary] = game.tactical_replay_samples.duplicate(true)
+	var replay_saved_clock: float = game.tactical_replay_sample_clock
+	var replay_saved_elapsed: float = game.elapsed
+	var replay_saved_position: Vector3 = game.player.global_position
+	var valid_replay: Array = [
+		{"t": 0.0, "x": 0.0, "z": 0.0, "hp": 100, "heat": 12.0, "stealth": false, "alarm": false, "hostiles": 3, "combo": 1},
+		{"t": 0.25, "x": 1.25, "z": -2.0, "hp": 84, "heat": 49.5, "stealth": true, "alarm": true, "hostiles": 2, "combo": 4},
+		{"t": -3.0, "x": 2.0, "z": 0.0, "hp": 100, "heat": 0.0},
+		{"t": 0.5, "x": 500.0, "z": 0.0, "hp": 100, "heat": 0.0},
+		{"t": 0.75, "x": 3.0, "z": 0.5, "hp": 999, "heat": 500.0, "hostiles": 999, "combo": 9999}
+	]
+	var normalized_replay: Array[Dictionary] = game._normalize_tactical_replay_samples(valid_replay)
+	if not _expect(normalized_replay.size() == 3 and is_equal_approx(float(normalized_replay[0]["t"]), 0.0) and bool(normalized_replay[1]["stealth"]) and bool(normalized_replay[1]["alarm"]), "tactical replay validator must preserve ordered in-bounds samples while rejecting negative timestamps and impossible arena coordinates"):
+		return
+	if not _expect(int(normalized_replay[2]["hp"]) == 200 and is_equal_approx(float(normalized_replay[2]["heat"]), 100.0) and int(normalized_replay[2]["hostiles"]) == 32 and int(normalized_replay[2]["combo"]) == 999, "tactical replay validator must clamp every bounded gameplay field before export or display"):
+		return
+	var oversized_replay: Array = []
+	for replay_index in range(game.MAX_TACTICAL_REPLAY_SAMPLES + 16):
+		oversized_replay.append({"t": float(replay_index) * 0.25, "x": 0.0, "z": 0.0, "hp": 100, "heat": 0.0})
+	var capped_replay: Array[Dictionary] = game._normalize_tactical_replay_samples(oversized_replay)
+	if not _expect(capped_replay.size() == game.MAX_TACTICAL_REPLAY_SAMPLES and is_equal_approx(float(capped_replay[0]["t"]), 4.0), "tactical replay payload must cap storage at 360 recent samples and retain the newest route window"):
+		return
+	game.tactical_replay_samples.clear()
+	game.elapsed = 1.0
+	game.player.global_position = Vector3(2.0, 0.82, -1.0)
+	game._record_tactical_replay_sample(true)
+	game.elapsed = 1.25
+	game.player.global_position = Vector3(3.5, 0.82, 1.0)
+	game._record_tactical_replay_sample(true)
+	var replay_payload: Dictionary = game._build_tactical_replay_payload()
+	if not _expect(str(replay_payload.get("schema", "")) == game.TACTICAL_REPLAY_SCHEMA and int(replay_payload.get("sampleCount", 0)) == 2 and replay_payload.get("samples", []).size() == 2, "tactical replay payload must be versioned and include both recorded route samples"):
+		return
+	if not _expect(is_instance_valid(game.tactical_replay_panel) and is_instance_valid(game.tactical_replay_view) and is_instance_valid(game.tactical_replay_slider), "result-screen Tactical Replay must construct an interactive map, seek slider and modal panel"):
+		return
+	game.tactical_replay_view.call("configure", replay_payload["samples"], [])
+	game.tactical_replay_view.call("set_cursor_index", 1)
+	var replay_cursor: Dictionary = game.tactical_replay_view.call("current_sample")
+	if not _expect(int(game.tactical_replay_view.call("get_cursor_index")) == 1 and is_equal_approx(float(replay_cursor.get("t", -1.0)), 1.25), "tactical replay map must support deterministic cursor seeking to the matching sample"):
+		return
+	var replay_after_action: Dictionary = game._build_after_action_report()
+	if not _expect(replay_after_action.get("tacticalReplay", {}).get("schema", "") == game.TACTICAL_REPLAY_SCHEMA and replay_after_action.get("tacticalReplay", {}).get("samples", []).size() == 2, "after-action JSON must carry the same bounded tactical route for local export"):
+		return
+	game.tactical_replay_samples = replay_saved_samples
+	game.tactical_replay_sample_clock = replay_saved_clock
+	game.elapsed = replay_saved_elapsed
+	game.player.global_position = replay_saved_position
+	game.tactical_replay_view.call("configure", game.tactical_replay_samples, game.raid_event_ledger)
+	game.tactical_replay_slider.max_value = float(maxi(0, game.tactical_replay_samples.size() - 1))
+	game.tactical_replay_slider.value = game.tactical_replay_slider.max_value
 	print("RUNTIME_STAGE: thermal sovereignty and tactical recon")
 	var previous_mission_finished: bool = game.mission_finished
 	var previous_paused: bool = game.paused_game
@@ -2107,7 +2157,7 @@ func _run_smoke() -> void:
 	game.counter_windows_earned = old_counter_earned
 	game.countershot_hits = old_counter_hits
 	var new_report: Dictionary = game._build_after_action_report()
-	if not _expect(str(new_report.get("gameVersion", "")) == "0.24.0-grounded-shadows" and new_report.get("suppression", {}).has("pressureHits") and new_report.get("suppression", {}).has("attackInterrupts"), "after-action export must include versioned kinetic-pressure metrics"):
+	if not _expect(str(new_report.get("gameVersion", "")) == "0.25.0-tactical-replay" and new_report.get("suppression", {}).has("pressureHits") and new_report.get("suppression", {}).has("attackInterrupts"), "after-action export must include versioned kinetic-pressure metrics"):
 		return
 	if not _expect(new_report.get("thermal", {}).has("overheatEvents") and new_report.get("thermal", {}).has("ventHostilesInterrupted"), "after-action export must include versioned thermal metrics"):
 		return
@@ -2119,7 +2169,7 @@ func _run_smoke() -> void:
 		return
 	if not _expect(new_report.get("dailyObjective", {}).has("goal"), "daily report must export the measurable tactical bonus objective"):
 		return
-	if not _expect(str(new_report.get("gameVersion", "")) == "0.24.0-grounded-shadows" and new_report.get("phaseEcho", {}).get("deployments", -1) >= 0 and new_report.get("phaseEcho", {}).has("confirmedLures"), "after-action report must expose versioned Echo use and confirmed AI diversion counts"):
+	if not _expect(str(new_report.get("gameVersion", "")) == "0.25.0-tactical-replay" and new_report.get("phaseEcho", {}).get("deployments", -1) >= 0 and new_report.get("phaseEcho", {}).has("confirmedLures"), "after-action report must expose versioned Echo use and confirmed AI diversion counts"):
 		return
 
 	print("RUNTIME_STAGE: operator chronicle integrity, bounded archive and medals")
