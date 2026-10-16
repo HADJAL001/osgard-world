@@ -3,8 +3,8 @@
   "gameId": "civic-cascade",
   "title": "CIVIC CASCADE",
   "edition": "Web Edition",
-  "version": "3.4.0",
-  "releaseId": "civic-cascade-web-3.4.0",
+  "version": "3.5.0",
+  "releaseId": "civic-cascade-web-3.5.0",
   "canonicalUrl": "https://osgard.world/games/civic-cascade/",
   "detailUrl": "https://osgard.world/game/civic-cascade",
   "entrypoint": "/games/civic-cascade/",
@@ -270,7 +270,24 @@
         1.5
       ],
       "stressRankingUsesAllSeverityLevels": true,
-      "reportsWorstCaseByFamily": true
+      "reportsWorstCaseByFamily": true,
+      "orderSensitivityAudit": {
+        "enabled": true,
+        "method": "bounded-adjacent-swap-local-search",
+        "auditedPortfolioCandidates": 3,
+        "maxAdjacentSwapsPerCandidate": 3,
+        "maxTotalAdjacentSwaps": 9,
+        "maximizesStressAdjustedScore": true,
+        "comparesAgainstSameResourceAndCrewRules": true,
+        "rechecksAllNineStressProfiles": true,
+        "minimumAdoptedImprovement": 0.2,
+        "reportsOriginalAndFinalSignatures": true,
+        "neverExecutesAutomatically": true,
+        "localOnly": true
+      },
+      "orderAuditCandidateLimit": 3,
+      "maxAdjacentSwapsPerCandidate": 3,
+      "requiresMaterialStressAdjustedImprovement": true
     },
     "decisionDossier": {
       "enabled": true,
@@ -296,7 +313,7 @@
       "comparesResourceCost": true,
       "labelsParetoMembership": true,
       "tracksNoPersonalData": true,
-      "modelVersion": "3.4.0",
+      "modelVersion": "3.5.0",
       "stressProfileCount": 9,
       "includesStressSeverityBands": true,
       "canonicalization": "recursive object-key sort; array order preserved; JSON.stringify scalar encoding",
@@ -310,7 +327,11 @@
       "rejectsUnknownActionsAndNodeTargets": true,
       "maxJsonDepth": 32,
       "maxJsonNodes": 50000,
-      "canonicalKeyOrderIndependent": true
+      "canonicalKeyOrderIndependent": true,
+      "includesOrderSensitivityAudit": true,
+      "orderAuditMethod": "bounded-adjacent-swap-local-search",
+      "orderAuditCandidateLimit": 3,
+      "orderSwapsPerCandidate": 3
     },
     "dossierVerification": {
       "enabled": true,
@@ -371,7 +392,8 @@
       "canEnqueueOrExecuteOrders": false,
       "failsClosedWhenUnconfigured": true,
       "localPlannerRemainsAvailable": true,
-      "regressionTest": "services/osgard-commerce-api/test/civic-cascade-advisor.test.mjs"
+      "regressionTest": "services/osgard-commerce-api/test/civic-cascade-advisor.test.mjs",
+      "receivesOrderAuditSummary": true
     }
   },
   "cinematicExport": {
@@ -412,6 +434,6 @@
   "deployment": {
     "target": "https://osgard.world",
     "mechanism": "repository push triggers the site's production deployment workflow",
-    "liveStatus": "OpenAI advisor remains disabled until OPENAI_CIVIC_CASCADE_ADVISOR_ENABLED=true and a private OPENAI_API_KEY are configured in the Commerce API environment; verify release 3.4.0 via the production route matrix."
+    "liveStatus": "verify release 3.5.0 and order-audit contract with production route checks after deployment"
   }
 }
