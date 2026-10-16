@@ -8,6 +8,10 @@ on:
       - "scripts/skillcred-page-smoke.mjs"
       - "scripts/time-prototype-smoke.mjs"
       - "scripts/games-portal-smoke.mjs"
+      - "scripts/osgard-relay-smoke.mjs"
+      - "public/games/osgard-relay-*"
+      - "services/osgard-commerce-api/src/core.mjs"
+      - "services/osgard-commerce-api/test/core.test.mjs"
       - "scripts/liveops-dashboard-smoke.mjs"
       - "scripts/liveops-analytics-core-smoke.mjs"
       - "docs/37_LIVEOPS_PREMIUM_ANALYTICS_DASHBOARD_2026-10-15.md"
@@ -156,6 +160,8 @@ jobs:
         run: npm run qa:entertainment
       - name: Verify OSGARD SELECT luxury spotlight and share-reward guardrails
         run: npm run qa:osgard-select
+      - name: Verify opt-in OSGARD Relay two-game experiment and consent contract
+        run: npm run qa:osgard-relay
       - name: Verify portal-wide analytics consent and revoke semantics
         run: npm run qa:core-analytics-consent
       - name: Test consented analytics offline retry and withdrawal

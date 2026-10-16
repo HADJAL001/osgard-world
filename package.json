@@ -48,6 +48,7 @@
     "predev": "node scripts/generate-games-share-cards.mjs",
     "prebuild": "node scripts/generate-games-share-cards.mjs",
     "qa:consented-analytics-queue": "node scripts/consented-analytics-queue-smoke.mjs",
+    "qa:osgard-relay": "node scripts/osgard-relay-smoke.mjs && node --test services/osgard-commerce-api/test/core.test.mjs && node --check public/games/osgard-relay-core.js && node --check public/games/osgard-relay.js",
     "qa:product-experiments": "node scripts/product-experiment-engine-smoke.mjs",
     "qa:games-assets": "node scripts/games-static-assets-smoke.mjs",
     "qa:ios-appstore": "node scripts/ios-appstore-preflight.mjs",

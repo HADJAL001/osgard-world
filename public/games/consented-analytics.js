@@ -16,6 +16,7 @@
     'owned_promo_impression', 'owned_promo_intermission_skipped',
     'owned_promo_preferences_saved', 'owned_promo_snoozed', 'owned_promo_snooze_cleared', 'social_share_intent', 'social_reward_claimed', 'referral_reward_claimed', 'invite_link_prepared',
     'game_launched', 'game_session_completed', 'lead_submitted', 'partner_inquiry',
+    'relay_seen', 'relay_opt_in', 'relay_game_1_started', 'relay_milestone_reached', 'relay_game_2_selected', 'relay_game_2_started', 'relay_completed', 'relay_invite_link_prepared', 'relay_invite_opened', 'relay_invite_accepted', 'relay_abandoned',
     'sponsored_campaign_impression', 'sponsored_campaign_clicked',
     'pwa_install_prompt_shown', 'pwa_install_accepted', 'pwa_install_dismissed', 'pwa_standalone_opened', 'product_experiment_exposed', 'product_experiment_converted',
     'catalog_search_used', 'catalog_filter_changed', 'game_favorite_toggled',

@@ -496,7 +496,7 @@ test("service conversion API tokens are parsed securely and validated per servic
 
 
 test("new Games accessibility and funnel events are allowed only with explicit consent", () => {
-  const names = ["catalog_search_used","catalog_filter_changed","game_favorite_toggled","game_player_fullscreen_opened","game_player_retry_requested","game_player_error_shown","accessibility_preferences_changed"];
+  const names = ["catalog_search_used","catalog_filter_changed","game_favorite_toggled","game_player_fullscreen_opened","game_player_retry_requested","game_player_error_shown","accessibility_preferences_changed","relay_seen","relay_opt_in","relay_game_1_started","relay_milestone_reached","relay_game_2_selected","relay_game_2_started","relay_completed","relay_invite_link_prepared","relay_invite_opened","relay_invite_accepted","relay_abandoned"];
   for (const [index, name] of names.entries()) {
     const event = {
       name,
