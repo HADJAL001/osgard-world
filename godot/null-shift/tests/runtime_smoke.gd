@@ -2157,7 +2157,7 @@ func _run_smoke() -> void:
 	game.counter_windows_earned = old_counter_earned
 	game.countershot_hits = old_counter_hits
 	var new_report: Dictionary = game._build_after_action_report()
-	if not _expect(str(new_report.get("gameVersion", "")) == "0.24.0-grounded-shadows" and new_report.get("suppression", {}).has("pressureHits") and new_report.get("suppression", {}).has("attackInterrupts"), "after-action export must include versioned kinetic-pressure metrics"):
+	if not _expect(str(new_report.get("gameVersion", "")) == "0.25.0-tactical-replay" and new_report.get("suppression", {}).has("pressureHits") and new_report.get("suppression", {}).has("attackInterrupts"), "after-action export must include versioned kinetic-pressure metrics"):
 		return
 	if not _expect(new_report.get("thermal", {}).has("overheatEvents") and new_report.get("thermal", {}).has("ventHostilesInterrupted"), "after-action export must include versioned thermal metrics"):
 		return
@@ -2169,7 +2169,7 @@ func _run_smoke() -> void:
 		return
 	if not _expect(new_report.get("dailyObjective", {}).has("goal"), "daily report must export the measurable tactical bonus objective"):
 		return
-	if not _expect(str(new_report.get("gameVersion", "")) == "0.24.0-grounded-shadows" and new_report.get("phaseEcho", {}).get("deployments", -1) >= 0 and new_report.get("phaseEcho", {}).has("confirmedLures"), "after-action report must expose versioned Echo use and confirmed AI diversion counts"):
+	if not _expect(str(new_report.get("gameVersion", "")) == "0.25.0-tactical-replay" and new_report.get("phaseEcho", {}).get("deployments", -1) >= 0 and new_report.get("phaseEcho", {}).has("confirmedLures"), "after-action report must expose versioned Echo use and confirmed AI diversion counts"):
 		return
 
 	print("RUNTIME_STAGE: operator chronicle integrity, bounded archive and medals")
