@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync, existsSync, statSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
+const workflow = readFileSync('.github/workflows/deploy-frontend.yml', 'utf8')
 const root = 'godot/null-shift'
 const required = ['project.godot','export_presets.cfg','scenes/main.tscn','scripts/main.gd','scripts/tactical_radar.gd','scripts/tactical_replay_view.gd','tests/runtime_smoke.gd','README.md','web/boot_shell.html']
 for (const path of required) assert.ok(existsSync(join(root, path)), 'Missing Godot project file: ' + path)
@@ -216,6 +217,14 @@ const afterActionExportStart = game.indexOf('func _export_after_action_report() 
 const afterActionExportEnd = game.indexOf('\nfunc ', afterActionExportStart + 1)
 assert.ok(afterActionExportStart >= 0 && afterActionExportEnd > afterActionExportStart, 'After-action export handler must be a real function')
 assert.ok(!/\b(?:fetch|XMLHttpRequest|sendBeacon)\s*\(/.test(game.slice(afterActionExportStart, afterActionExportEnd)), 'After-action export must be a local browser download or clipboard copy, never a telemetry upload')
+
+assert.ok(game.includes('BLACKOUT_WARNING_SECONDS') && game.includes('BLACKOUT_ACTIVE_SECONDS') && game.includes('BLACKOUT_COOLDOWN_SECONDS'), 'Reactor blackout needs warning, active window and cooldown')
+for (const feature of ['_create_blackout_lights(', '_update_reactor_blackout(', '_set_reactor_blackout_state(', 'blackout_state == "ACTIVE"', 'radius *= 0.70', 'reactor_blackout_started', 'blackout_events_triggered']) assert.ok(game.includes(feature), 'Reactor blackout integration missing: ' + feature)
+assert.ok(game.includes('AUDIO_POOL_CAPACITY') && game.includes('AUDIO_STREAM_CACHE_CAPACITY') && game.includes('_create_audio_pool(') && game.includes('_build_cached_sfx_stream('), 'SFX pool/cache system missing')
+assert.ok(game.includes('BLACKOUTS %02d') && game.includes('_active_audio_player_count()'), 'New live diagnostics are missing')
+assert.ok(game.includes('blackout_status_label') && game.includes('04", "ПЕРЕЖИТЬ BLACKOUT'), 'Blackout must be explained in the briefing and HUD')
+assert.ok(workflow.includes('Package full OSGARD source ZIP') && workflow.includes('osgard-world-full-source-') && workflow.includes('git archive HEAD'), 'CI must package and upload a full tracked-source ZIP')
+
 console.log('PASS NULL//SHIFT Godot source contract: project, renderer, gameplay systems, keyboard/touch/gamepad controls, extraction siege, saves and real diagnostics')
 if (process.argv[2] === '--export-check') {
   const dir = resolve(process.argv[3] || 'public/games/null-shift-godot')

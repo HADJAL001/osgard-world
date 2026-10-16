@@ -281,3 +281,16 @@ Controls: **F2** graphics, **F3** diagnostics, **F4** reduced motion, **F5** col
 ## Release 0.25 — Tactical Replay
 
 From the completed-raid screen open **TACTICAL REPLAY / L** to inspect a top-down operator route, move along the sample timeline, play/pause the trace and jump to nearby recorded events. Each sample also captures health, weapon heat, stealth/alarm state, remaining hostiles and combo. The after-action JSON embeds the same normalized trace. It is limited to 360 recent samples, stays on-device, and reconstructs route/event history instead of recording a full 3D video.
+
+
+## Release 0.26 — Reactor Blackout, bounded audio and full-source delivery
+
+This five-block update adds a timed network blackout after the terminal is breached and the alarm is active:
+
+1. **Combat event director:** amber warning lights announce 3.4 seconds before the blackout. The network remains down for 7.5 seconds, followed by a 46-second cooldown. The event freezes with the raid and warning/start/end are stored in the local event ledger.
+2. **Reactive lighting:** four pre-created, shadowless emergency lamps switch from amber warning to red active state. Ambient, directional and fill lighting dim during the blackout and return to their starting levels afterward. Nodes are reused instead of created during combat.
+3. **Stealth consequence:** guard sight radius falls by 30% while the network is down unless tactical scan is active. Footsteps and gunfire remain audible, so this is an opportunity to reposition, not invulnerability.
+4. **Audio efficiency:** ten reusable AudioStreamPlayer nodes play procedural cues. Quantized waveform cache entries are bounded to 36; live diagnostics report active voices, cache occupancy and how often the pool had to cut off a voice.
+5. **Usability, evidence and ZIP:** the first-run briefing teaches the blackout mechanic, the HUD shows its state, and the diagnostics record event count. CI creates and uploads a full tracked-source ZIP with build metadata. The archive excludes .git metadata, generated build output, node_modules and runtime secrets.
+
+The archive is complete tracked source, including application code, Godot project, tests, workflows and docs. It is not a prebuilt native 8K asset pack; device-specific performance still needs physical-device testing.

@@ -8,6 +8,12 @@ const MAX_BEAM_POOL := 28
 const MAX_RING_POOL := 10
 const MAX_SPARK_POOL := 8
 const MAX_IMPACT_LIGHT_POOL := 4
+const BLACKOUT_INITIAL_DELAY_SECONDS := 18.0
+const BLACKOUT_WARNING_SECONDS := 3.4
+const BLACKOUT_ACTIVE_SECONDS := 7.5
+const BLACKOUT_COOLDOWN_SECONDS := 46.0
+const AUDIO_POOL_CAPACITY := 10
+const AUDIO_STREAM_CACHE_CAPACITY := 36
 const DASH_DURATION := 0.24
 const DASH_COOLDOWN := 1.65
 const DASH_SPEED_MULTIPLIER := 3.05
@@ -85,6 +91,20 @@ var camera: Camera3D
 var camera_rig: Node3D
 var world_environment: WorldEnvironment
 var key_light: DirectionalLight3D
+var blackout_lights: Array[OmniLight3D] = []
+var blackout_state := "IDLE"
+var blackout_warning_remaining := 0.0
+var blackout_remaining := 0.0
+var blackout_cooldown_remaining := BLACKOUT_INITIAL_DELAY_SECONDS
+var blackout_events_triggered := 0
+var blackout_base_ambient_energy := 0.52
+var blackout_base_key_energy := 1.18
+var blackout_base_fill_energy := 2.2
+var blackout_base_fog_color := Color(0.018, 0.038, 0.045)
+var audio_players: Array[AudioStreamPlayer] = []
+var audio_stream_cache: Dictionary = {}
+var audio_pool_cursor := 0
+var audio_pool_exhaustions := 0
 var terminal: Node3D
 var quantum_core: Node3D
 var extraction: Node3D
@@ -145,6 +165,7 @@ var device_cell_novas := 0
 var device_lane_collapses := 0
 var device_hostiles_suppressed := 0
 var hazard_status_label: Label
+var blackout_status_label: Label
 var health_bar: ProgressBar
 var health_bar_fill: StyleBoxFlat
 var effects: Array[Node] = []
@@ -482,6 +503,8 @@ func _ready() -> void:
 	_create_materials()
 	_create_procedural_surface_textures()
 	_create_lighting()
+	_create_blackout_lights()
+	_create_audio_pool()
 	_create_impact_light_pool()
 	_create_arena()
 	_create_arena_props()
@@ -649,6 +672,19 @@ func _reset_runtime_collections() -> void:
 	extraction_overload_triggered = false
 	extraction_reinforcements_spawned = 0
 	extraction_overload_count = 0
+	blackout_state = "IDLE"
+	blackout_warning_remaining = 0.0
+	blackout_remaining = 0.0
+	blackout_cooldown_remaining = BLACKOUT_INITIAL_DELAY_SECONDS
+	blackout_events_triggered = 0
+	blackout_lights = blackout_lights.duplicate()
+	blackout_lights.clear()
+	audio_players = audio_players.duplicate()
+	audio_players.clear()
+	audio_stream_cache = audio_stream_cache.duplicate()
+	audio_stream_cache.clear()
+	audio_pool_cursor = 0
+	audio_pool_exhaustions = 0
 	dash_trail_clock = 0.0
 	dash_trail_last_position = Vector3.ZERO
 	dash_trails_emitted = 0
@@ -710,6 +746,7 @@ func _process(delta: float) -> void:
 		_update_tactical_replay(dt)
 		_update_combat_director(dt)
 		_update_extraction_director(dt)
+		_update_reactor_blackout(dt)
 		_update_phase_lanes(dt)
 		_update_phase_echo(dt)
 		_update_salvage_drops(dt)
@@ -1254,6 +1291,115 @@ func _create_lighting() -> void:
 	fill_light.shadow_enabled = false
 	add_child(fill_light)
 	_create_atmosphere_particles()
+
+func _create_blackout_lights() -> void:
+	if is_instance_valid(world_environment) and world_environment.environment != null:
+		blackout_base_ambient_energy = world_environment.environment.ambient_light_energy
+		blackout_base_fog_color = world_environment.environment.fog_light_color
+	if is_instance_valid(key_light):
+		blackout_base_key_energy = key_light.light_energy
+	if is_instance_valid(fill_light):
+		blackout_base_fill_energy = fill_light.light_energy
+	var positions: Array[Vector3] = [
+		Vector3(-20.8, 2.1, -11.7),
+		Vector3(20.8, 2.1, -11.7),
+		Vector3(-20.8, 2.1, 11.7),
+		Vector3(20.8, 2.1, 11.7)
+	]
+	for index in range(positions.size()):
+		var lamp := OmniLight3D.new()
+		lamp.name = "EmergencyBeacon_%02d" % (index + 1)
+		lamp.position = positions[index]
+		lamp.light_color = Color(1.0, 0.58, 0.19)
+		lamp.light_energy = 0.0
+		lamp.omni_range = 7.5
+		lamp.shadow_enabled = false
+		lamp.visible = false
+		add_child(lamp)
+		blackout_lights.append(lamp)
+
+
+func _create_audio_pool() -> void:
+	audio_players = audio_players.duplicate()
+	audio_players.clear()
+	audio_stream_cache = audio_stream_cache.duplicate()
+	audio_stream_cache.clear()
+	audio_pool_cursor = 0
+	audio_pool_exhaustions = 0
+	for index in range(AUDIO_POOL_CAPACITY):
+		var audio_player := AudioStreamPlayer.new()
+		audio_player.name = "PooledSFX_%02d" % (index + 1)
+		audio_player.bus = "Master"
+		audio_player.volume_db = -7.0
+		add_child(audio_player)
+		audio_players.append(audio_player)
+
+
+func _set_reactor_blackout_state(next_state: String) -> void:
+	if blackout_state == next_state:
+		return
+	var previous_state := blackout_state
+	blackout_state = next_state
+	var active := next_state == "ACTIVE"
+	var dim_factor := 0.34 if active else 1.0
+	if is_instance_valid(world_environment) and world_environment.environment != null:
+		world_environment.environment.ambient_light_energy = blackout_base_ambient_energy * dim_factor
+		world_environment.environment.fog_light_color = Color(0.045, 0.008, 0.014) if active else blackout_base_fog_color
+	if is_instance_valid(key_light):
+		key_light.light_energy = blackout_base_key_energy * (0.24 if active else 1.0)
+	if is_instance_valid(fill_light):
+		fill_light.light_energy = blackout_base_fill_energy * (0.18 if active else 1.0)
+	for index in range(blackout_lights.size()):
+		var lamp := blackout_lights[index]
+		if not is_instance_valid(lamp):
+			continue
+		lamp.visible = next_state != "IDLE"
+		lamp.light_color = Color(1.0, 0.58, 0.19) if next_state == "WARNING" else Color(1.0, 0.13, 0.19)
+		lamp.light_energy = 0.45 if next_state == "WARNING" else (1.85 if active else 0.0)
+	if next_state == "WARNING":
+		objective_text = "СЕТЬ НАРУШЕНА · ОТКЛЮЧЕНИЕ ЧЕРЕЗ %.1f С" % blackout_warning_remaining
+		_record_raid_event("reactor_blackout_warning", "Emergency lighting active; network blackout imminent", blackout_warning_remaining, player.global_position if is_instance_valid(player) else Vector3.ZERO)
+		_play_sfx(680.0, 0.16, 0.075)
+	elif next_state == "ACTIVE":
+		blackout_events_triggered += 1
+		objective_text = "BLACKOUT ACTIVE · СЛЕДИ ЗА ШУМОМ И ТЕНЯМИ"
+		_record_raid_event("reactor_blackout_started", "Hostile sight radius reduced; sound signatures remain audible", blackout_events_triggered, player.global_position if is_instance_valid(player) else Vector3.ZERO)
+		_play_sfx(155.0, 0.42, 0.11)
+	elif previous_state == "ACTIVE":
+		_record_raid_event("reactor_blackout_ended", "Emergency grid restored", blackout_events_triggered, player.global_position if is_instance_valid(player) else Vector3.ZERO)
+		objective_text = "СЕТЬ ВОССТАНОВЛЕНА · КОНТУРЫ СТАБИЛЬНЫ"
+		_play_sfx(440.0, 0.18, 0.06)
+	_update_hud()
+
+
+func _update_reactor_blackout(delta: float) -> void:
+	var dt := maxf(0.0, delta)
+	if mission_finished or not terminal_unlocked or not alarm_active:
+		blackout_warning_remaining = 0.0
+		blackout_remaining = 0.0
+		_set_reactor_blackout_state("IDLE")
+		return
+	if blackout_state == "WARNING":
+		blackout_warning_remaining = maxf(0.0, blackout_warning_remaining - dt)
+		for index in range(blackout_lights.size()):
+			var lamp := blackout_lights[index]
+			if is_instance_valid(lamp):
+				lamp.light_energy = 0.28 + absf(sin(scene_clock * 8.0 + float(index))) * 0.78
+		if blackout_warning_remaining <= 0.0:
+			blackout_remaining = BLACKOUT_ACTIVE_SECONDS
+			_set_reactor_blackout_state("ACTIVE")
+		return
+	if blackout_state == "ACTIVE":
+		blackout_remaining = maxf(0.0, blackout_remaining - dt)
+		if blackout_remaining <= 0.0:
+			blackout_cooldown_remaining = BLACKOUT_COOLDOWN_SECONDS
+			_set_reactor_blackout_state("IDLE")
+		return
+	blackout_cooldown_remaining = maxf(0.0, blackout_cooldown_remaining - dt)
+	if blackout_cooldown_remaining <= 0.0:
+		blackout_warning_remaining = BLACKOUT_WARNING_SECONDS
+		_set_reactor_blackout_state("WARNING")
+
 
 func _create_atmosphere_particles() -> void:
 	# Fine drifting motes give the arena depth without external textures or per-frame allocations.
@@ -2648,7 +2794,11 @@ func _squad_alert_audible_radius() -> float:
 	return 34.0
 
 func _guard_sight_radius(phantom_enabled: bool) -> float:
-	return PHANTOM_SIGHT_RADIUS if phantom_enabled else GUARD_SIGHT_RADIUS
+	var radius: float = PHANTOM_SIGHT_RADIUS if phantom_enabled else GUARD_SIGHT_RADIUS
+	# A blackout creates a stealth window unless active tactical scan counters darkness.
+	if blackout_state == "ACTIVE" and scan_active_timer <= 0.0:
+		radius *= 0.70
+	return radius
 
 func _guard_sight_fov(phantom_enabled: bool) -> float:
 	return PHANTOM_SIGHT_FOV_DEGREES if phantom_enabled else GUARD_SIGHT_FOV_DEGREES
@@ -3907,6 +4057,10 @@ func _damage_player(amount: float, attacker: Node3D = null) -> void:
 	_update_hud()
 
 func _finish_mission(success: bool) -> void:
+	if blackout_state != "IDLE":
+		blackout_warning_remaining = 0.0
+		blackout_remaining = 0.0
+		_set_reactor_blackout_state("IDLE")
 	if mission_finished:
 		return
 	mission_accuracy = _combat_accuracy_percentage()
@@ -6094,6 +6248,7 @@ func _create_ui() -> void:
 	credits_label = _label(status_stack, "РЕЙД  000  ·  КАРЬЕРА  000", 12, Color(1.0, 0.77, 0.39))
 	threat_label = _label(status_stack, "УГРОЗА: ВЫСОКАЯ", 11, Color(1.0, 0.3, 0.38))
 	hazard_status_label = _label(status_stack, "ЭНЕРГОКОНТУРЫ · СТАБИЛЬНО", 9, Color(0.38, 0.9, 0.82))
+	blackout_status_label = _label(status_stack, "СЕТЬ · СТАБИЛЬНО", 9, Color(0.38, 0.9, 0.82))
 	dash_status_label = _label(status_stack, "РЫВОК ГОТОВ · SPACE", 9, Color(0.38, 0.9, 0.82))
 	phase_echo_status_label = _label(status_stack, "PHASE ECHO READY · T", 9, Color(0.38, 0.82, 1.0))
 	phase_lane_status_row = HBoxContainer.new()
@@ -6345,6 +6500,7 @@ func _create_briefing_panel() -> void:
 	_add_briefing_step(stack, "01", "ВЗЛОМАТЬ ТЕРМИНАЛ", "Подойди к панели и нажми E. Введи шифр: ↑ ← ↓ →.", Color(0.36, 1.0, 0.83))
 	_add_briefing_step(stack, "02", "ЗАБРАТЬ ЯДРО", "Используй укрытия и стреляй по угрозам. Янтарная полоса заряжается перед красной опасной фазой: уходи с линии или активируй NULL Shift. Затем забери золотое ядро.", Color(1.0, 0.74, 0.36))
 	_add_briefing_step(stack, "03", "ЭВАКУИРОВАТЬСЯ", "Доберись до бирюзовой площадки и нажми E, чтобы завершить рейд.", Color(0.56, 0.57, 1.0))
+	_add_briefing_step(stack, "04", "ПЕРЕЖИТЬ BLACKOUT", "При тревоге сеть заранее предупредит янтарными аварийными огнями. Во время отключения охрана хуже видит, но выстрелы и шаги по-прежнему могут выдать твоё положение.", Color(1.0, 0.54, 0.28))
 	var controls := _label(stack, "КОМПЬЮТЕР   WASD / стрелки · мышь + ЛКМ · Q импульс · SHIFT сдвиг", 10, Color(0.48, 0.74, 0.73))
 	controls.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var mobile_note := _label(stack, "ТЕЛЕФОН   Левый блок — движение · правый — огонь и способности", 10, Color(0.48, 0.74, 0.73))
@@ -7163,6 +7319,9 @@ func _update_live_diagnostics() -> void:
 	]
 
 
+	diagnostics_label.text += "\nBLACKOUTS %02d · SFX %02d/%02d · CACHE %02d/%02d · REUSED %d" % [blackout_events_triggered, _active_audio_player_count(), audio_players.size(), audio_stream_cache.size(), AUDIO_STREAM_CACHE_CAPACITY, audio_pool_exhaustions]
+
+
 func _update_hud() -> void:
 	if diagnostics_enabled:
 		_update_live_diagnostics()
@@ -7178,6 +7337,16 @@ func _update_hud() -> void:
 	threat_label.text = "УГРОЗА: %s" % ("КРИТИЧЕСКАЯ" if alarm_active else ("ВЫСОКАЯ" if not guards.is_empty() else "НИЗКАЯ"))
 	threat_label.add_theme_color_override("font_color", Color(1.0, 0.25, 0.34) if alarm_active else Color(0.95, 0.72, 0.39) if not guards.is_empty() else Color(0.35, 1.0, 0.81))
 	objective_label.text = objective_text
+	if is_instance_valid(blackout_status_label):
+		if blackout_state == "WARNING":
+			blackout_status_label.text = "BLACKOUT WARNING · %.1f S" % blackout_warning_remaining
+			blackout_status_label.add_theme_color_override("font_color", Color(1.0, 0.68, 0.31))
+		elif blackout_state == "ACTIVE":
+			blackout_status_label.text = "GRID DOWN · STEALTH WINDOW"
+			blackout_status_label.add_theme_color_override("font_color", Color(1.0, 0.24, 0.3))
+		else:
+			blackout_status_label.text = "СЕТЬ · СТАБИЛЬНО"
+			blackout_status_label.add_theme_color_override("font_color", Color(0.38, 0.9, 0.82))
 	if daily_challenge_active and not daily_mutators.is_empty():
 		objective_label.text += "\nDAILY ANOMALIES · " + _daily_mutators_hud_text()
 	if daily_challenge_active:
@@ -7687,8 +7856,30 @@ func _spawn_hit_sparks(at: Vector3, material: Material) -> void:
 	effects.append(particles)
 
 func _play_sfx(frequency: float, duration: float, volume: float) -> void:
-	if not sound_enabled:
+	if not sound_enabled or audio_players.is_empty():
 		return
+	var freq := float(int(roundf(clampf(frequency, 50.0, 2400.0) / 5.0) * 5))
+	var length_ms := int(roundf(clampf(duration, 0.035, 0.82) * 1000.0 / 20.0) * 20)
+	var gain := clampf(volume, 0.0, 0.4)
+	var key := "%d:%d:%d" % [int(freq), length_ms, int(roundf(gain * 1000.0))]
+	var stream := audio_stream_cache.get(key) as AudioStreamWAV
+	if not is_instance_valid(stream):
+		stream = _build_cached_sfx_stream(freq, float(length_ms) / 1000.0, gain)
+		if audio_stream_cache.size() >= AUDIO_STREAM_CACHE_CAPACITY:
+			var oldest_key: Variant = audio_stream_cache.keys()[0]
+			audio_stream_cache.erase(oldest_key)
+		audio_stream_cache[key] = stream
+	var player_index: int = audio_pool_cursor % audio_players.size()
+	var audio_player: AudioStreamPlayer = audio_players[player_index]
+	audio_pool_cursor = (audio_pool_cursor + 1) % maxi(1, audio_players.size())
+	if audio_player.playing:
+		audio_pool_exhaustions += 1
+		audio_player.stop()
+	audio_player.stream = stream
+	audio_player.play()
+
+
+func _build_cached_sfx_stream(frequency: float, duration: float, volume: float) -> AudioStreamWAV:
 	var rate := 22050
 	var sample_count := clampi(int(rate * duration), 64, 18000)
 	var pcm := PackedByteArray()
@@ -7706,12 +7897,15 @@ func _play_sfx(frequency: float, duration: float, volume: float) -> void:
 	stream.mix_rate = rate
 	stream.stereo = false
 	stream.data = pcm
-	var audio_player := AudioStreamPlayer.new()
-	audio_player.stream = stream
-	audio_player.volume_db = -7.0
-	add_child(audio_player)
-	audio_player.finished.connect(audio_player.queue_free)
-	audio_player.play()
+	return stream
+
+
+func _active_audio_player_count() -> int:
+	var count := 0
+	for audio_player in audio_players:
+		if is_instance_valid(audio_player) and audio_player.playing:
+			count += 1
+	return count
 
 func _draw_beam(from: Vector3, to: Vector3, material: Material, lifetime: float) -> void:
 	_spawn_beam(from, to, material, lifetime)

@@ -378,3 +378,23 @@ jobs:
         env:
           OSGARD_BASE_URL: https://osgard.world
         run: node scripts/skillcred-proxy-smoke.mjs
+      - name: Package full OSGARD source ZIP
+        if: success()
+        run: |
+          set -euo pipefail
+          command -v zip
+          rm -rf /tmp/osgard-world-source
+          mkdir -p /tmp/osgard-world-source
+          git archive HEAD | tar -x -C /tmp/osgard-world-source
+          printf 'OSGARD WORLD — FULL SOURCE ARCHIVE\nCommit: %s\nBuild: %s.%s\nCreated UTC: %s\nContents: tracked source, game modules, Godot project, QA scripts, workflows and documentation.\nExcludes: .git metadata, build output, node_modules and runtime secrets.\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > /tmp/osgard-world-source/BUILD-INFO.txt
+          cd /tmp
+          zip -qr "$GITHUB_WORKSPACE/osgard-world-full-latest.zip" osgard-world-source
+          unzip -t "$GITHUB_WORKSPACE/osgard-world-full-latest.zip"
+      - name: Upload full OSGARD source ZIP
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: osgard-world-full-source-${{ github.sha }}
+          path: osgard-world-full-latest.zip
+          if-no-files-found: error
+          retention-days: 30
