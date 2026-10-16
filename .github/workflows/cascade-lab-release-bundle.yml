@@ -78,25 +78,25 @@ jobs:
           for f in docs/*CASCADE*LAB* docs/*CASCADE_LAB*; do if [ -f "$f" ]; then cp -n "$f" "$root/docs/"; fi; done
           cp -a scripts/cascade-lab-*-smoke.mjs scripts/games-detail-smoke.mjs scripts/games-portal-smoke.mjs scripts/osgard-select-growth-smoke.mjs scripts/game-intermission-sponsor-smoke.mjs scripts/game-recommendations-smoke.mjs scripts/production-route-matrix.mjs "$root/qa/"
           cat > "$root/README-RU.md" <<'EOF'
-# CASCADE LAB — полный пакет OSGARD WORLD
-
-Пять блоков: физическая лаборатория; Hypothesis/Engineering/Experiment/Case Passport/Mission Director; Trajectory X-Ray/Evidence Integrity/Replay Observatory; OSGARD SELECT с настройкой частоты и локальными SHARDS; PWA, commerce-снимки и QA.
-
-Запуск: `cd game`, `python -m http.server 4173`, открыть `http://localhost:4173/`. PWA требует HTTP(S), а не `file://`.
-
-`portal-integration/` и `source-context/` — снимки связанных файлов для интеграции в исходные пути сайта. SHARDS — не деньги; ручное подтверждение не доказывает публикацию поста; replay fingerprints не криптографические подписи. Выручка и вирусность не заявляются без измерений.
-EOF
+          # CASCADE LAB — полный пакет OSGARD WORLD
+          
+          Пять блоков: физическая лаборатория; Hypothesis/Engineering/Experiment/Case Passport/Mission Director; Trajectory X-Ray/Evidence Integrity/Replay Observatory; OSGARD SELECT с настройкой частоты и локальными SHARDS; PWA, commerce-снимки и QA.
+          
+          Запуск: `cd game`, `python -m http.server 4173`, открыть `http://localhost:4173/`. PWA требует HTTP(S), а не `file://`.
+          
+          `portal-integration/` и `source-context/` — снимки связанных файлов для интеграции в исходные пути сайта. SHARDS — не деньги; ручное подтверждение не доказывает публикацию поста; replay fingerprints не криптографические подписи. Выручка и вирусность не заявляются без измерений.
+          EOF
           cat > "$root/BUILD-INFO.json" <<EOF
-{
-  "bundle": "CASCADE-LAB-0.26.0-OSGARD-WORLD-FULL",
-  "replayObservatory": "0.26.0",
-  "gameShell": "0.25.0-evidence-integrity",
-  "pwaShellCache": "v0.26.2",
-  "sourceCommit": "$RELEASE_COMMIT",
-  "sourceRef": "$RELEASE_REF",
-  "builtAtUtc": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-}
-EOF
+          {
+            "bundle": "CASCADE-LAB-0.26.0-OSGARD-WORLD-FULL",
+            "replayObservatory": "0.26.0",
+            "gameShell": "0.25.0-evidence-integrity",
+            "pwaShellCache": "v0.26.2",
+            "sourceCommit": "$RELEASE_COMMIT",
+            "sourceRef": "$RELEASE_REF",
+            "builtAtUtc": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
           (cd "$root" && find . -type f ! -name 'PACKAGE-SHA256SUMS.txt' -print0 | sort -z | xargs -0 sha256sum > PACKAGE-SHA256SUMS.txt)
           zip -qr "$out/CASCADE-LAB-0.26.0-OSGARD-WORLD-FULL.zip" "$root"
           unzip -t "$out/CASCADE-LAB-0.26.0-OSGARD-WORLD-FULL.zip"
