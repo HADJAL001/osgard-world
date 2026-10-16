@@ -139,17 +139,40 @@ rollback() {
   if ! docker exec -e OSGARD_EXPECTED_BUILD_SHORT="$expected_build_short" "$container_name" sh -lc '
     set -eu
     expected="$OSGARD_EXPECTED_BUILD_SHORT"
-    hub=/tmp/osgard-games-origin-check.html
-    wget -q -T 5 -O "$hub" "http://127.0.0.1/games/?_osgard_route_check=$expected"
-    grep -Fq "<meta name=\\"osgard-build\\" content=\\"$expected\\">" "$hub"
-    for asset in \
-      consented-analytics.js player-lifecycle.js game-session-recommendations.js game-session-recommendations.css \
-      daily-circuit.js daily-circuit.css sponsored-campaigns.js sponsored-campaigns.css catalog-runtime.js \
-      signal-run/game.js signal-run/daily.js null-shift-godot/index.html cascade-lab/mission-director.js; do
-      test -s "/usr/share/nginx/html/games/$asset"
-      wget -q -T 5 -O /dev/null "http://127.0.0.1/games/$asset?_osgard_route_check=$expected"
+    root=/usr/share/nginx/html/games
+    hub="$root/index.html"
+    if ! grep -Fq "$expected" "$hub"; then
+      echo "FAIL: active Games index.html does not contain expected build marker $expected." >&2
+      grep -n "osgard-build" "$hub" | head -n 3 || true
+      exit 20
+    fi
+
+    hub_response=/tmp/osgard-games-origin-check.html
+    if ! wget -q -T 5 -O "$hub_response" "http://127.0.0.1/games/?_osgard_route_check=$expected" 2>/tmp/osgard-games-origin-wget.log; then
+      echo "FAIL: local Nginx GET /games/ did not return a successful response." >&2
+      cat /tmp/osgard-games-origin-wget.log >&2 || true
+      exit 21
+    fi
+    if ! grep -Fq "$expected" "$hub_response"; then
+      echo "FAIL: local Nginx /games/ response does not contain expected revision $expected." >&2
+      grep -n "osgard-build" "$hub_response" | head -n 3 || true
+      head -c 500 "$hub_response" >&2 || true
+      exit 22
+    fi
+
+    for asset in consented-analytics.js player-lifecycle.js game-session-recommendations.js game-session-recommendations.css daily-circuit.js daily-circuit.css sponsored-campaigns.js sponsored-campaigns.css catalog-runtime.js signal-run/game.js signal-run/daily.js null-shift-godot/index.html cascade-lab/mission-director.js; do
+      path="$root/$asset"
+      if ! test -s "$path"; then
+        echo "FAIL: required Games asset is missing or empty: $path" >&2
+        exit 23
+      fi
+      if ! wget -q -T 5 -O /dev/null "http://127.0.0.1/games/$asset?_osgard_route_check=$expected" 2>/tmp/osgard-games-asset-wget.log; then
+        echo "FAIL: local Nginx cannot serve required Games asset: $asset" >&2
+        cat /tmp/osgard-games-asset-wget.log >&2 || true
+        exit 24
+      fi
     done
-    echo "PASS: local Nginx serves Games revision $expected and required runtime assets."
+    echo "PASS: local Nginx serves Games revision $expected and all required runtime assets."
   '; then
     echo "ERROR: activated Nginx origin does not serve the expected Games build/assets; rolling back." >&2
     rollback
