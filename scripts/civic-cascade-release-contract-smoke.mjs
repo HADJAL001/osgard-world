@@ -7,7 +7,7 @@ const release = JSON.parse(readFileSync(resolve(root, "public/games/civic-cascad
 const matrix = readFileSync(resolve(root, "scripts/production-route-matrix.mjs"), "utf8");
 
 assert.equal(release.gameId, "civic-cascade");
-assert.equal(release.version, "3.4.0");
+assert.equal(release.version, "3.5.0");
 assert.equal(release.buildContract?.decisionDossier?.modelVersion, release.version,
   "Decision dossier model version must track the published CIVIC CASCADE release");
 assert.equal(release.buildContract?.decisionDossier?.hashScope,
@@ -20,6 +20,10 @@ assert.ok(matrix.includes("release.buildContract?.decisionDossier?.modelVersion 
 assert.ok(matrix.includes("release.buildContract?.decisionDossier?.hashScope === '" + release.buildContract.decisionDossier.hashScope + "'"),
   "The production route matrix must validate the current canonical hash scope");
 assert.equal(release.buildContract?.openAICivicCascadeAdvisor?.enabled, true)
+assert.equal(release.buildContract?.autonomousDoctrinePlanner?.orderSensitivityAudit?.enabled, true);
+assert.equal(release.buildContract?.autonomousDoctrinePlanner?.orderSensitivityAudit?.maxAdjacentSwapsPerCandidate, 3);
+assert.equal(release.buildContract?.decisionDossier?.includesOrderSensitivityAudit, true);
+assert.equal(release.buildContract?.openAICivicCascadeAdvisor?.receivesOrderAuditSummary, true);
 assert.equal(release.buildContract?.openAICivicCascadeAdvisor?.defaultFeatureFlag, false)
 assert.equal(release.buildContract?.openAICivicCascadeAdvisor?.requiresPerRequestConsent, true)
 assert.equal(release.buildContract?.openAICivicCascadeAdvisor?.canMutateGameState, false)
