@@ -3213,6 +3213,7 @@ try{Object.defineProperty(window,'CASCADELAB014',{value:Object.freeze({version:V
 <script id="CASCADELAB022" src="./trajectory-xray.js?v=0.22.0" data-cascade-lab-xray="0.22.0" defer></script>
 <script id="CASCADELAB024" src="./mission-director.js?v=0.24.1" data-cascade-lab-director="0.24.0" defer></script>
 <script id="CASCADELAB025" src="./evidence-integrity.js?v=0.25.0" data-cascade-lab-evidence="0.25.0" defer></script>
+<script id="CASCADELAB026" src="./replay-observatory.js?v=0.26.0" data-cascade-lab-replay="0.26.0" defer></script>
 <script data-osgard-pwa-bootstrap>
 (function(){
 'use strict';
@@ -3230,7 +3231,7 @@ if(button){
  });
  window.addEventListener('appinstalled',()=>{button.dataset.installed='true';button.title='CASCADE LAB установлена';button.setAttribute('aria-label','CASCADE LAB установлена на устройство');message('CASCADE LAB установлена. Локальные сохранения остаются на этом устройстве.');});
 }
-if('serviceWorker' in navigator && location.protocol!=='file:')navigator.serviceWorker.register('./service-worker.js?v=0.26.1',{scope:'./',updateViaCache:'none'}).catch(()=>{/* Optional PWA capability; browser game remains available. */});
+if('serviceWorker' in navigator && location.protocol!=='file:')navigator.serviceWorker.register('./service-worker.js?v=0.26.2',{scope:'./',updateViaCache:'none'}).catch(()=>{/* Optional PWA capability; browser game remains available. */});
 window.addEventListener('offline',()=>message('Нет сети. Установленная лаборатория сможет открываться из локального кэша; внешние сервисы потребуют интернет.'));
 window.addEventListener('online',()=>message('Связь восстановлена. История и сохранения остаются локальными на этом устройстве.'));
 })();
