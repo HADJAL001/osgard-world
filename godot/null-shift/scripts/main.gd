@@ -781,6 +781,23 @@ func _physics_process(delta: float) -> void:
 		_finish_mission(false)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if is_instance_valid(tactical_replay_panel) and tactical_replay_panel.visible:
+		if event is InputEventKey:
+			var replay_key := event as InputEventKey
+			if replay_key.pressed and not replay_key.echo:
+				match replay_key.keycode:
+					KEY_ESCAPE:
+						_close_tactical_replay()
+					KEY_SPACE:
+						_toggle_tactical_replay_playback()
+					KEY_LEFT:
+						if is_instance_valid(tactical_replay_slider):
+							tactical_replay_slider.value = maxf(0.0, tactical_replay_slider.value - 1.0)
+					KEY_RIGHT:
+						if is_instance_valid(tactical_replay_slider):
+							tactical_replay_slider.value = minf(tactical_replay_slider.max_value, tactical_replay_slider.value + 1.0)
+			get_viewport().set_input_as_handled()
+		return
 	if is_instance_valid(chronicle_panel) and chronicle_panel.visible:
 		if event is InputEventKey:
 			var chronicle_key := event as InputEventKey
@@ -864,6 +881,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			_cycle_contract()
 		KEY_J:
 			_show_operator_chronicle()
+		KEY_L:
+			if mission_finished:
+				_show_tactical_replay()
 		KEY_U:
 			_toggle_loadout()
 		KEY_1:
@@ -4620,6 +4640,209 @@ func _export_after_action_report() -> void:
 	_update_hud()
 
 
+
+func _create_tactical_replay_panel() -> void:
+	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+	var panel_width: float = maxf(288.0, minf(920.0, viewport_size.x - 24.0))
+	var panel_height: float = maxf(320.0, minf(650.0, viewport_size.y - 24.0))
+	tactical_replay_panel = _make_panel(hud_root, Control.PRESET_CENTER, Rect2(-panel_width * 0.5, -panel_height * 0.5, panel_width, panel_height))
+	tactical_replay_panel.name = "TacticalReplay"
+	tactical_replay_panel.z_index = 120
+	tactical_replay_panel.visible = false
+	var stack := _panel_stack(tactical_replay_panel)
+	_label(stack, "OSGARD FIELD INTELLIGENCE  /  LOCAL BLACK BOX", 9, Color(0.38, 1.0, 0.86))
+	_label(stack, "TACTICAL REPLAY", 23, Color(0.91, 0.98, 0.96))
+	tactical_replay_summary_label = _label(stack, "NO RECORDED ROUTE", 10, Color(1.0, 0.77, 0.39))
+	tactical_replay_view = Control.new()
+	tactical_replay_view.name = "TacticalReplayMap"
+	tactical_replay_view.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tactical_replay_view.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	tactical_replay_view.custom_minimum_size = Vector2(panel_width - 48.0, maxf(145.0, minf(285.0, panel_height * 0.42)))
+	tactical_replay_view.mouse_filter = Control.MOUSE_FILTER_STOP
+	tactical_replay_view.set_script(TACTICAL_REPLAY_VIEW_SCRIPT)
+	stack.add_child(tactical_replay_view)
+	tactical_replay_slider = HSlider.new()
+	tactical_replay_slider.name = "TacticalReplaySeek"
+	tactical_replay_slider.min_value = 0.0
+	tactical_replay_slider.max_value = 0.0
+	tactical_replay_slider.step = 1.0
+	tactical_replay_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tactical_replay_slider.tooltip_text = "Перемотка маршрута и событий рейда"
+	tactical_replay_slider.value_changed.connect(_on_tactical_replay_seek)
+	stack.add_child(tactical_replay_slider)
+	tactical_replay_readout_label = _label(stack, "ВЫБЕРИ ТОЧКУ НА ШКАЛЕ", 9, Color(0.76, 0.89, 0.86))
+	tactical_replay_readout_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var controls_row := HBoxContainer.new()
+	controls_row.add_theme_constant_override("separation", 6)
+	stack.add_child(controls_row)
+	tactical_replay_play_button = _add_button(controls_row, "▶ ВОСПРОИЗВЕСТИ", _toggle_tactical_replay_playback, Vector2(170.0, 34.0))
+	_add_button(controls_row, "← СОБЫТИЕ", _jump_tactical_replay_event.bind(-1), Vector2(118.0, 34.0))
+	_add_button(controls_row, "СОБЫТИЕ →", _jump_tactical_replay_event.bind(1), Vector2(118.0, 34.0))
+	var footer_row := HBoxContainer.new()
+	footer_row.add_theme_constant_override("separation", 6)
+	stack.add_child(footer_row)
+	_add_button(footer_row, "ЭКСПОРТ AFTER-ACTION JSON", _export_after_action_report, Vector2(maxf(130.0, (panel_width - 64.0) * 0.56), 34.0))
+	_add_button(footer_row, "ЗАКРЫТЬ / ESC", _close_tactical_replay, Vector2(maxf(110.0, (panel_width - 64.0) * 0.4), 34.0))
+	tactical_replay_timer = Timer.new()
+	tactical_replay_timer.name = "TacticalReplayPlaybackClock"
+	tactical_replay_timer.wait_time = TACTICAL_REPLAY_SAMPLE_INTERVAL
+	tactical_replay_timer.one_shot = false
+	tactical_replay_timer.process_mode = Node.PROCESS_MODE_ALWAYS
+	tactical_replay_timer.timeout.connect(_advance_tactical_replay)
+	add_child(tactical_replay_timer)
+	_refresh_tactical_replay_layout(viewport_size)
+
+func _refresh_tactical_replay_layout(viewport_size: Vector2) -> void:
+	if not is_instance_valid(tactical_replay_panel):
+		return
+	var panel_width: float = maxf(288.0, minf(920.0, viewport_size.x - 24.0))
+	var panel_height: float = maxf(300.0, minf(650.0, viewport_size.y - 24.0))
+	tactical_replay_panel.offset_left = -panel_width * 0.5
+	tactical_replay_panel.offset_right = panel_width * 0.5
+	tactical_replay_panel.offset_top = -panel_height * 0.5
+	tactical_replay_panel.offset_bottom = panel_height * 0.5
+	if is_instance_valid(tactical_replay_view):
+		tactical_replay_view.custom_minimum_size = Vector2(panel_width - 48.0, maxf(130.0, minf(285.0, panel_height * 0.42)))
+
+func _show_tactical_replay() -> void:
+	if not mission_finished:
+		objective_text = "TACTICAL REPLAY ДОСТУПЕН ПОСЛЕ ЗАВЕРШЕНИЯ РЕЙДА"
+		_update_hud()
+		return
+	_record_tactical_replay_sample(true)
+	tactical_replay_samples = _normalize_tactical_replay_samples(tactical_replay_samples)
+	tactical_replay_event_tape = raid_event_ledger.duplicate(true)
+	tactical_replay_return_to_result = is_instance_valid(result_panel) and result_panel.visible
+	tactical_replay_previous_paused = paused_game
+	if is_instance_valid(result_panel):
+		result_panel.visible = false
+	if is_instance_valid(loadout_panel):
+		loadout_panel.visible = false
+	if is_instance_valid(pause_panel):
+		pause_panel.visible = false
+	if is_instance_valid(chronicle_panel):
+		chronicle_panel.visible = false
+	paused_game = true
+	tactical_replay_view.call("configure", tactical_replay_samples, tactical_replay_event_tape)
+	tactical_replay_slider.min_value = 0.0
+	tactical_replay_slider.max_value = float(maxi(0, tactical_replay_samples.size() - 1))
+	tactical_replay_slider.value = tactical_replay_slider.max_value
+	_update_tactical_replay_panel()
+	tactical_replay_panel.visible = true
+	_update_hud()
+
+func _close_tactical_replay() -> void:
+	if is_instance_valid(tactical_replay_timer):
+		tactical_replay_timer.stop()
+	if is_instance_valid(tactical_replay_panel):
+		tactical_replay_panel.visible = false
+	paused_game = tactical_replay_previous_paused
+	if tactical_replay_return_to_result and is_instance_valid(result_panel) and mission_finished:
+		result_panel.visible = true
+	tactical_replay_return_to_result = false
+	_update_hud()
+
+func _on_tactical_replay_seek(value: float) -> void:
+	if not is_instance_valid(tactical_replay_view):
+		return
+	var index: int = clampi(int(roundf(value)), 0, maxi(0, tactical_replay_samples.size() - 1))
+	tactical_replay_view.call("set_cursor_index", index)
+	_update_tactical_replay_panel()
+
+func _update_tactical_replay_panel() -> void:
+	if not is_instance_valid(tactical_replay_view) or not is_instance_valid(tactical_replay_summary_label) or not is_instance_valid(tactical_replay_readout_label):
+		return
+	var count: int = tactical_replay_samples.size()
+	if count == 0:
+		tactical_replay_summary_label.text = "NO ROUTE SAMPLES · EXPORT STILL CONTAINS THE EVENT TAPE"
+		tactical_replay_readout_label.text = "В ЭТОМ РЕЙДЕ НЕТ ЗАПИСАННОГО МАРШРУТА"
+		tactical_replay_view.call("configure", [], tactical_replay_event_tape)
+		return
+	var index: int = clampi(int(roundf(tactical_replay_slider.value)), 0, count - 1)
+	var first_time: float = float(tactical_replay_samples[0].get("t", 0.0))
+	var current: Dictionary = tactical_replay_samples[index]
+	var current_time: float = float(current.get("t", first_time))
+	var end_time: float = float(tactical_replay_samples[count - 1].get("t", current_time))
+	tactical_replay_summary_label.text = "TRACE %d/%d  ·  %s → %s  ·  EVENTS %d  ·  LOCAL ONLY" % [
+		index + 1, count, _format_tactical_replay_time(first_time), _format_tactical_replay_time(end_time), tactical_replay_event_tape.size()
+	]
+	var state_text := "%s  ·  HP %03d  ·  HEAT %02d%%  ·  HOSTILES %02d  ·  COMBO %02d" % [
+		_format_tactical_replay_time(current_time), int(current.get("hp", 0)), int(roundf(float(current.get("heat", 0.0)))),
+		int(current.get("hostiles", 0)), int(current.get("combo", 0))
+	]
+	state_text += "  ·  " + ("PHANTOM" if bool(current.get("stealth", false)) else "STANDARD")
+	state_text += "  ·  " + ("ALARM" if bool(current.get("alarm", false)) else "QUIET")
+	var closest_event: Dictionary = {}
+	var closest_delta := 9999.0
+	for event in tactical_replay_event_tape:
+		var event_time: float = float(event.get("t", 0.0))
+		var time_delta: float = absf(event_time - current_time)
+		if time_delta < closest_delta:
+			closest_delta = time_delta
+			closest_event = event
+	if not closest_event.is_empty() and closest_delta <= 1.5:
+		state_text += "\nEVENT · %s · %s" % [str(closest_event.get("type", "EVENT")).to_upper(), str(closest_event.get("detail", "")).substr(0, 86)]
+	else:
+		state_text += "\nROUTE TRACE · NO EVENT WITHIN 1.5 S"
+	tactical_replay_readout_label.text = state_text
+
+func _format_tactical_replay_time(seconds: float) -> String:
+	var safe_seconds: int = maxi(0, int(floor(seconds)))
+	return "%02d:%02d" % [int(safe_seconds / 60), safe_seconds % 60]
+
+func _toggle_tactical_replay_playback() -> void:
+	if not is_instance_valid(tactical_replay_timer) or tactical_replay_samples.is_empty():
+		return
+	if not tactical_replay_timer.is_stopped():
+		tactical_replay_timer.stop()
+		tactical_replay_play_button.text = "▶ ВОСПРОИЗВЕСТИ"
+		return
+	if tactical_replay_slider.value >= tactical_replay_slider.max_value:
+		tactical_replay_slider.value = 0.0
+	tactical_replay_play_button.text = "Ⅱ ПАУЗА"
+	tactical_replay_timer.start()
+
+func _advance_tactical_replay() -> void:
+	if not is_instance_valid(tactical_replay_panel) or not tactical_replay_panel.visible or tactical_replay_samples.is_empty():
+		tactical_replay_timer.stop()
+		return
+	var next_index: int = int(roundf(tactical_replay_slider.value)) + 1
+	if next_index >= tactical_replay_samples.size():
+		tactical_replay_timer.stop()
+		tactical_replay_play_button.text = "↻ ПОВТОРИТЬ"
+		return
+	tactical_replay_slider.value = float(next_index)
+
+func _jump_tactical_replay_event(direction: int) -> void:
+	if tactical_replay_samples.is_empty() or tactical_replay_event_tape.is_empty():
+		return
+	var current_index: int = clampi(int(roundf(tactical_replay_slider.value)), 0, tactical_replay_samples.size() - 1)
+	var current_time: float = float(tactical_replay_samples[current_index].get("t", 0.0))
+	var target_time := -1.0
+	var best_gap := 999999.0
+	for event in tactical_replay_event_tape:
+		var event_time: float = float(event.get("t", 0.0))
+		var gap: float = event_time - current_time
+		if direction > 0 and gap > 0.02 and gap < best_gap:
+			best_gap = gap
+			target_time = event_time
+		elif direction < 0 and gap < -0.02 and absf(gap) < best_gap:
+			best_gap = absf(gap)
+			target_time = event_time
+	if target_time < 0.0:
+		if direction < 0:
+			target_time = float(tactical_replay_samples[0].get("t", 0.0))
+		else:
+			target_time = float(tactical_replay_samples[tactical_replay_samples.size() - 1].get("t", current_time))
+	var best_index := 0
+	var closest := 999999.0
+	for index in range(tactical_replay_samples.size()):
+		var gap: float = absf(float(tactical_replay_samples[index].get("t", 0.0)) - target_time)
+		if gap < closest:
+			closest = gap
+			best_index = index
+	tactical_replay_slider.value = float(best_index)
+
 func _create_operator_chronicle_panel() -> void:
 	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
 	var panel_width: float = maxf(288.0, minf(760.0, viewport_size.x - 24.0))
@@ -6005,12 +6228,18 @@ func _create_ui() -> void:
 	result_intel_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	result_share_label = _label(result_stack, "ЕЖЕДНЕВНЫЙ КОД ВЫЗОВА ГОТОВ", 10, Color(0.38, 1.0, 0.86))
 	result_share_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_add_button(result_stack, "ЭКСПОРТ AFTER-ACTION JSON", _export_after_action_report, Vector2(result_button_width, 34.0))
+	var result_tools_row := HBoxContainer.new()
+	result_tools_row.add_theme_constant_override("separation", 6)
+	result_stack.add_child(result_tools_row)
+	var result_tool_width: float = (result_button_width - 6.0) * 0.5
+	_add_button(result_tools_row, "ПОВТОР / L", _show_tactical_replay, Vector2(result_tool_width, 34.0))
+	_add_button(result_tools_row, "ЭКСПОРТ JSON", _export_after_action_report, Vector2(result_tool_width, 34.0))
 	_add_button(result_stack, "ПОДЕЛИТЬСЯ РЕЗУЛЬТАТОМ / ВЫЗВАТЬ ДРУГА", _share_run, Vector2(result_button_width, 38.0))
 	_add_button(result_stack, "НОВЫЙ РЕЙД", _restart_game, Vector2(result_button_width, 42.0))
 	_add_button(result_stack, "МОДУЛИ И КОСМЕТИКА", _show_loadout_from_result, Vector2(result_button_width, 38.0))
 	_add_button(result_stack, "OPERATOR CHRONICLE / J", _show_operator_chronicle, Vector2(result_button_width, 34.0))
 	_create_operator_chronicle_panel()
+	_create_tactical_replay_panel()
 
 	tactical_radar_panel = _make_panel(hud_root, Control.PRESET_TOP_RIGHT, Rect2(-264.0, 210.0, 246.0, 194.0))
 	var radar_stack: VBoxContainer = _panel_stack(tactical_radar_panel)
@@ -6624,6 +6853,7 @@ func _update_mobile_layout() -> void:
 	_apply_hud_scale()
 	var width: float = viewport_size.x
 	_refresh_operator_chronicle_layout(viewport_size)
+	_refresh_tactical_replay_layout(viewport_size)
 	var compact: bool = width < 880.0 or touch_device
 	mobile_controls_visible = compact
 	if is_instance_valid(tactical_radar_panel):
