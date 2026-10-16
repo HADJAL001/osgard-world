@@ -1,6 +1,13 @@
 name: External project healthcheck
 
 on:
+  pull_request:
+    paths:
+      - ".github/workflows/external-project-healthcheck.yml"
+      - "scripts/external-project-healthcheck.mjs"
+      - "scripts/external-project-healthcheck-smoke.mjs"
+      - "scripts/external-project-healthcheck-workflow-smoke.mjs"
+      - "package.json"
   schedule:
     - cron: "19 7 * * *"
   workflow_dispatch:
