@@ -34,7 +34,7 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
     // Cache-bust the Games HTML shells as well as selected static assets. The deploy inserts
     // the expected revision into these pages; without a unique query some edge caches can
     // keep a previous catalogue shell while the origin has already moved to a newer archive.
-    const isGamesHubRoute = ['/games/', '/games/index.html'].includes(route)
+    const isGamesHubRoute = ['/games/', '/games/index.html', '/games/en/', '/games/en/index.html'].includes(route)
     const routeUrl = new URL(route, base)
     if (expectedBuild && (isGamesHubRoute || ['/games/catalog-runtime.js', '/games/favicon.svg', '/games/null-shift-godot/index.html'].includes(route))) {
       routeUrl.searchParams.set('_osgard_route_check', expectedBuild.slice(0, 12))
