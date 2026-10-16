@@ -35,7 +35,7 @@ assert.equal(a.quality.score,100);
 assert.equal(a.quality.grade,'STRONG');
 assert.equal(a.metrics.frameCount,3);
 assert.equal(a.metrics.eventCount,1);
-assert.equal(a.metrics.peakSpeed,7);
+assert.equal(a.metrics.peakSpeed,6.4,'peak speed must be derived from the observed trajectory when velocity samples exist');
 assert.equal(a.duration,2);
 assert.equal(a.blueprintFingerprint,api.normalize(makeRun({id:'run-b'})).blueprintFingerprint,'blueprint fingerprint must ignore run ID');
 assert.equal(a.traceFingerprint,api.normalize(makeRun({id:'run-b'})).traceFingerprint,'trace fingerprint must be deterministic');
