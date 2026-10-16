@@ -1580,6 +1580,18 @@ function readSharedServicePreferences() {
     return defaults;
   }
 }
+const SHARED_PROMO_SNOOZE_KEY = 'osgard.games.postgame-snooze-until.v1';
+const SHARED_PROMO_SNOOZE_MAX_MS = 24 * 60 * 60 * 1000 + 60000;
+function isSharedPromoSnoozed(now = Date.now()) {
+  try {
+    const until = Number(localStorage.getItem(SHARED_PROMO_SNOOZE_KEY) || 0);
+    if (Number.isSafeInteger(until) && until > now && until - now <= SHARED_PROMO_SNOOZE_MAX_MS) return true;
+    if (until > 0) localStorage.removeItem(SHARED_PROMO_SNOOZE_KEY);
+    return false;
+  } catch {
+    return false;
+  }
+}
 function getEligibleServiceCampaigns(preferences = readSharedServicePreferences()) {
   if (!Array.isArray(preferences.selected)) return OSGARD_CAMPAIGNS;
   return OSGARD_CAMPAIGNS.filter(campaign => {
@@ -1660,7 +1672,7 @@ function showServiceInterstitial(continueAction, { completedLevel = false } = {}
   const eligible = getEligibleServiceCampaigns(preferences);
   // The Games catalogue and this game share one preference. "Off" and an empty
   // service selection bypass promotion without interrupting the player's action.
-  if (!dialog || typeof dialog.showModal !== 'function' || preferences.frequency === 'off' || !eligible.length) {
+  if (!dialog || typeof dialog.showModal !== 'function' || isSharedPromoSnoozed() || preferences.frequency === 'off' || !eligible.length) {
     continueAction?.(); return;
   }
   // "Every three" counts successful level completions, not menu clicks or daily-mode entry.
