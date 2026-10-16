@@ -56,6 +56,10 @@ on:
       - "scripts/time-prototype-smoke.mjs"
       - "scripts/null-shift-premium-smoke.mjs"
       - "scripts/games-portal-smoke.mjs"
+      - "scripts/osgard-relay-smoke.mjs"
+      - "public/games/osgard-relay-*"
+      - "services/osgard-commerce-api/src/core.mjs"
+      - "services/osgard-commerce-api/test/core.test.mjs"
       - "scripts/games-expedition-smoke.mjs"
       - "scripts/civic-cascade-crisis-smoke.mjs"
       - "scripts/civic-cascade-forecast-smoke.mjs"
@@ -125,6 +129,8 @@ jobs:
         run: npm run qa:games-assets
       - name: Verify OSGARD SELECT luxury spotlight and social reward guardrails
         run: npm run qa:osgard-select
+      - name: Verify opt-in OSGARD Relay two-game experiment and consent contract
+        run: npm run qa:osgard-relay
       - name: Exercise consented analytics queue during offline/online transitions
         run: npm run qa:consented-analytics-queue
       - name: Smoke-test individual game pages and SEO routes

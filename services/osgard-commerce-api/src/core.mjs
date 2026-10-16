@@ -37,6 +37,7 @@ export const ALLOWED_EVENTS = new Set([
   "invite_link_prepared",
   "referral_link_opened",
   "game_session_started",
+  "relay_seen", "relay_opt_in", "relay_game_1_started", "relay_milestone_reached", "relay_game_2_selected", "relay_game_2_started", "relay_completed", "relay_invite_link_prepared", "relay_invite_opened", "relay_invite_accepted", "relay_abandoned",
   "checkout_started",
   "checkout_paid",
   "cross_promo_clicked",

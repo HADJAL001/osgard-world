@@ -260,3 +260,13 @@ The approved publication sequence is: run the pull-request quality gates and ext
 ### One high-potential product experiment
 
 Prioritize a **cross-game “OSGARD Relay”** over building more portal UI: one daily challenge chain that starts in one title and sends a player to a second title only after a real gameplay milestone, with a shareable invite code and a small cosmetic-only local reward. Instrument the funnel as `relay_seen → game_1_started → milestone_reached → game_2_started → invite_accepted → D7_return`. Keep it opt-in, no pay-to-win, no forced ad, and label local rewards as local until a server-authoritative wallet exists. A first controlled experiment should compare this chain with the current single-game end screen and decide from completed second-game sessions and seven-day return—not click count alone.
+
+
+## OSGARD Relay — двухигровой эксперимент (16 октября 2026)
+
+- В каталог добавляется добровольный маршрут через две совместимые игры. Игрок сам выбирает первую игру; продолжение становится доступно лишь после сигнала `completed` от активного same-origin iframe и только если подтверждена реальная игровая сессия.
+- Вторая игра выбирается из заранее определённых совместимых пар. Случайное открытие другой игры, закрытие сессии, явная отмена и перезагрузка активного этапа не дают награду и помечают/сбрасывают маршрут как прерванный.
+- После двух подтверждённых завершений появляется косметический знак Relay Trail. Он записывается только в локальное хранилище этого браузера; это не серверный предмет, не платёжное средство и не переносимый баланс.
+- Код приглашения содержит только случайный короткий код и пару игр, не имя отправителя. Интерфейс не утверждает, что системный Share доставил ссылку; пригласивший/получатель должны совершить явные действия.
+- События Relay добавлены в клиентский allow-list consent-gated analytics и серверный allow-list. Без действующего согласия Relay не отправляет аналитику; сам модуль не делает прямых сетевых вызовов.
+- Smoke-тест покрывает переходы состояния, неправильные пары, отказ от завершения до реального старта, прерывание маршрута, схему приглашения и локальный характер награды. Это продуктовый эксперимент, а не подтверждение удержания или коммерческого успеха.
