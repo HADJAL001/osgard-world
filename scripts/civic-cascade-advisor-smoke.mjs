@@ -12,6 +12,11 @@ assert.ok(moduleSource.includes("input.consent!==true") || moduleSource.includes
 assert.ok(moduleSource.includes("store:false")||moduleSource.includes("store:false"));
 assert.ok(moduleSource.includes("https://api.openai.com/v1/responses"));
 assert.ok(moduleSource.includes("additionalProperties:false"));
+assert.ok(moduleSource.includes("CIVIC_ADVISOR_ORDER_AUDIT_INVALID"));
+assert.ok(moduleSource.includes("adjacent-swap local search"));
+assert.ok(html.includes("bounded-adjacent-swap-local-search"));
+assert.ok(manifest.buildContract.autonomousDoctrinePlanner.orderSensitivityAudit.enabled);
+assert.ok(manifest.buildContract.openAICivicCascadeAdvisor.receivesOrderAuditSummary);
 assert.ok(server.includes('app.get("/v1/civic-cascade-advisor/status"')&&server.includes('app.post("/v1/civic-cascade-advisor"'));
 assert.ok(server.includes("windowMs: 60 * 60 * 1000, limit: 3"));
 assert.ok(html.includes('id="cc-doctrine-ai-consent"')&&html.includes('id="cc-doctrine-ai-run"'));
