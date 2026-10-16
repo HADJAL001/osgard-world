@@ -1,0 +1,58 @@
+name: External project healthcheck
+
+on:
+  schedule:
+    - cron: "19 7 * * *"
+  workflow_dispatch:
+    inputs:
+      strict:
+        description: "Fail the run if any external project is unavailable (otherwise report warnings only)."
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: external-project-healthcheck-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Check the ten owner-listed project homepages
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run bounded HTTPS homepage checks
+        run: node scripts/external-project-healthcheck.mjs --out artifacts/external-project-health.json
+
+      - name: Apply optional strict gate
+        if: ${{ inputs.strict == true }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const report = JSON.parse(readFileSync('artifacts/external-project-health.json', 'utf8'));
+          if (report.unavailableCount > 0) {
+            console.error(`Strict external-project check failed: ${report.unavailableCount}/${report.projectCount} homepage(s) unavailable.`);
+            process.exit(1);
+          }
+          console.log(`All ${report.projectCount} homepages responded within the checker policy.`);
+          NODE
+
+      - name: Upload JSON report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: external-project-health-${{ github.run_id }}
+          path: artifacts/external-project-health.json
+          if-no-files-found: error
+          retention-days: 30
