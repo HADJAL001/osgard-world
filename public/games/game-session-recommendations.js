@@ -898,7 +898,16 @@ function servicesShelf(gameId,showPromos,completedCount){
  directoryUrl.searchParams.set('utm_content',gameId);
  directoryLink.href=directoryUrl.href;directoryLink.target='_blank';directoryLink.rel='noopener noreferrer';
  directoryLink.addEventListener('click',()=>{if(hasConsent())void sendSelectEvent('cross_promo_clicked',gameId,'osgard-select:ecosystem:'+gameId)});
- const creationLink=make('a','og-postgame-portfolio-link is-primary','Создать свой цифровой продукт ↗');
+ const brandGameLink=make('a','og-postgame-portfolio-link is-primary','Заказать игру для бренда ↗');
+ const brandGameUrl=new URL('/games/partners/',location.origin);
+ brandGameUrl.searchParams.set('utm_source','osgard_games');
+ brandGameUrl.searchParams.set('utm_medium','post_game');
+ brandGameUrl.searchParams.set('utm_campaign','branded_game_intake');
+ brandGameUrl.searchParams.set('utm_content',gameId);
+ brandGameLink.href=brandGameUrl.href;brandGameLink.target='_blank';brandGameLink.rel='noopener noreferrer';
+ brandGameLink.setAttribute('aria-label','Обсудить заказную игру или брендированное игровое событие после '+titles[gameId]);
+ brandGameLink.addEventListener('click',()=>{if(hasConsent())void sendSelectEvent('cross_promo_clicked',gameId,'osgard-select:custom-game:'+gameId)});
+ const creationLink=make('a','og-postgame-portfolio-link','Создать свой цифровой продукт ↗');
  const creationUrl=new URL('https://osgardbewworld.com/');
  creationUrl.searchParams.set('utm_source','osgard_games');
  creationUrl.searchParams.set('utm_medium','post_game');
@@ -906,7 +915,7 @@ function servicesShelf(gameId,showPromos,completedCount){
  creationUrl.searchParams.set('utm_content',gameId);
  creationLink.href=creationUrl.href;creationLink.target='_blank';creationLink.rel='noopener noreferrer';
  creationLink.addEventListener('click',()=>{if(hasConsent())void sendSelectEvent('cross_promo_clicked',gameId,'osgard-select:development:'+gameId)});
- portfolioLinks.append(directoryLink,creationLink);portfolioActions.append(portfolioCopy,portfolioLinks);
+ portfolioLinks.append(directoryLink,brandGameLink,creationLink);portfolioActions.append(portfolioCopy,portfolioLinks);
  const foot=make('p','og-postgame-service-foot','Переход добровольный и открывается в новой вкладке. Это собственные проекты OSGARD; результаты кликов считаются только после согласия на аналитику. Нет сторонней рекламной сети или фиктивных показов.');
  const decision=make('div','og-postgame-service-decision');
  const skipButton=make('button','og-postgame-skip','Пропустить подборку');skipButton.type='button';

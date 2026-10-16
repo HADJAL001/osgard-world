@@ -402,6 +402,21 @@ assert.ok(source.includes("new URL('/games/ecosystem/',location.origin)") &&
   source.includes("directoryUrl.searchParams.set('utm_medium','post_game')") &&
   source.includes("directoryUrl.searchParams.set('utm_campaign','between_worlds')"),
   'The ecosystem CTA must point to the real project directory with source/game attribution');
+
+assert.ok(source.includes("new URL('/games/partners/',location.origin)") &&
+  source.includes("brandGameUrl.searchParams.set('utm_campaign','branded_game_intake')") &&
+  source.includes("brandGameUrl.searchParams.set('utm_content',gameId)") &&
+  source.includes('Заказать игру для бренда ↗'),
+  'The post-game screen must offer a direct branded-game inquiry CTA with per-game UTM attribution');
+assert.ok(source.includes("'osgard-select:custom-game:'+gameId") &&
+  source.includes("if(hasConsent())void sendSelectEvent('cross_promo_clicked',gameId,'osgard-select:custom-game:'+gameId)"),
+  'Branded-game clicks must be tracked separately and only after explicit analytics consent');
+assert.ok(commerceApi.includes('ownedPromoCustomGameClicks') &&
+  commerceApi.includes("osgard-select:custom-game:[a-z0-9-]{1,40}"),
+  'The protected API must aggregate a strictly patterned branded-game click source');
+assert.ok(commerceAdmin.includes('id="owned-promo-custom-game-clicks"') &&
+  commerceAdmin.includes("$('#owned-promo-custom-game-clicks').textContent = fmt(funnel.ownedPromoCustomGameClicks)"),
+  'The protected commerce dashboard must display branded-game inquiry clicks separately from general development clicks');
 assert.ok(source.includes("new URL('https://osgardbewworld.com/')") &&
   source.includes("creationUrl.searchParams.set('utm_campaign','custom_product_intake')") &&
   source.includes("creationUrl.searchParams.set('utm_content',gameId)"),
@@ -432,5 +447,5 @@ console.log(JSON.stringify({
   status: 'passed',
   serviceDestinations: services.length,
   gameContexts: 9,
-  checks: 84, notes: 'Source-level guardrails; social publication is self-confirmed, not verified by social-network APIs.'
+  checks: 88, notes: 'Source-level guardrails; social publication is self-confirmed, not verified by social-network APIs.'
 }));
