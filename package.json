@@ -43,7 +43,7 @@
     "qa:ecosystem-directory": "node scripts/ecosystem-directory-smoke.mjs",
     "qa:remix-growth": "node scripts/remix-growth-smoke.mjs",
     "audit:external-projects": "node scripts/external-project-healthcheck.mjs",
-    "qa:external-project-healthcheck": "node scripts/external-project-healthcheck-smoke.mjs",
+    "qa:external-project-healthcheck": "node scripts/external-project-healthcheck-smoke.mjs && node scripts/external-project-healthcheck-workflow-smoke.mjs",
     "qa:osgard-select": "node scripts/osgard-select-growth-smoke.mjs",
     "predev": "node scripts/generate-games-share-cards.mjs",
     "prebuild": "node scripts/generate-games-share-cards.mjs",
