@@ -4675,9 +4675,12 @@ func _create_tactical_replay_panel() -> void:
 	var controls_row := HBoxContainer.new()
 	controls_row.add_theme_constant_override("separation", 6)
 	stack.add_child(controls_row)
-	tactical_replay_play_button = _add_button(controls_row, "▶ ВОСПРОИЗВЕСТИ", _toggle_tactical_replay_playback, Vector2(170.0, 34.0))
-	_add_button(controls_row, "← СОБЫТИЕ", _jump_tactical_replay_event.bind(-1), Vector2(118.0, 34.0))
-	_add_button(controls_row, "СОБЫТИЕ →", _jump_tactical_replay_event.bind(1), Vector2(118.0, 34.0))
+	var replay_controls_width: float = maxf(220.0, panel_width - 48.0)
+	var replay_play_width: float = replay_controls_width * 0.40
+	var replay_event_width: float = replay_controls_width * 0.27
+	tactical_replay_play_button = _add_button(controls_row, "▶ ВОСПРОИЗВЕСТИ", _toggle_tactical_replay_playback, Vector2(replay_play_width, 34.0))
+	_add_button(controls_row, "← СОБЫТИЕ", _jump_tactical_replay_event.bind(-1), Vector2(replay_event_width, 34.0))
+	_add_button(controls_row, "СОБЫТИЕ →", _jump_tactical_replay_event.bind(1), Vector2(replay_event_width, 34.0))
 	var footer_row := HBoxContainer.new()
 	footer_row.add_theme_constant_override("separation", 6)
 	stack.add_child(footer_row)

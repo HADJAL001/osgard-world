@@ -14,10 +14,12 @@ func configure(sample_data: Array, event_data: Array) -> void:
 	_events.clear()
 	for raw_sample in sample_data:
 		if raw_sample is Dictionary:
-			_samples.append((raw_sample as Dictionary).duplicate(true))
+			var sample_dictionary: Dictionary = raw_sample
+			_samples.append(sample_dictionary.duplicate(true))
 	for raw_event in event_data:
 		if raw_event is Dictionary:
-			_events.append((raw_event as Dictionary).duplicate(true))
+			var event_dictionary: Dictionary = raw_event
+			_events.append(event_dictionary.duplicate(true))
 	_cursor_index = clampi(_cursor_index, 0, maxi(0, _samples.size() - 1))
 	queue_redraw()
 
