@@ -9,7 +9,7 @@ assert.equal(new Set(catalogIds).size, catalogIds.length, 'Fallback catalog game
 assert.ok(catalogIds.length > 0, 'Fallback catalog must contain games');
 
 const commerceClient = read('public/games/commerce-client.js');
-const attributionMatch = commerceClient.match(/const ATTRIBUTION_GAME_IDS = new Set\\(\\[([^\\]]+)\\]\\);/);
+const attributionMatch = commerceClient.match(/const ATTRIBUTION_GAME_IDS = new Set\(\[([^\]]+)\]\);/);
 assert.ok(attributionMatch, 'Commerce client attribution allow-list is missing');
 const attributionIds = [...attributionMatch[1].matchAll(/['"]([^'"]+)['"]/g)].map((match) => match[1]).sort();
 assert.deepEqual(
@@ -19,7 +19,7 @@ assert.deepEqual(
 );
 
 const manifest = read('src/core/manifest.ts');
-const gameTypeMatch = manifest.match(/export type OsgardGameId = ([^\\n]+)/);
+const gameTypeMatch = manifest.match(/export type OsgardGameId = ([^\n]+)/);
 assert.ok(gameTypeMatch, 'OsgardGameId union is missing');
 const frontendIds = [...gameTypeMatch[1].matchAll(/'([^']+)'/g)].map((match) => match[1]).sort();
 assert.deepEqual(frontendIds, catalogIds, 'Frontend game ID type must match the canonical catalogue');
@@ -29,7 +29,7 @@ const backendStart = backend.indexOf('const DEFAULT_GAME_CATALOG = Object.freeze
 assert.ok(backendStart >= 0, 'Backend default game catalog is missing');
 const backendEnd = backend.indexOf(']);', backendStart);
 assert.ok(backendEnd > backendStart, 'Backend default game catalog declaration is malformed');
-const backendIds = [...backend.slice(backendStart, backendEnd).matchAll(/\\bid:\\s*["']([^"']+)["']/g)]
+const backendIds = [...backend.slice(backendStart, backendEnd).matchAll(/\bid:\s*["']([^"']+)["']/g)]
   .map((match) => match[1])
   .sort();
 assert.deepEqual(backendIds, catalogIds, 'Backend catalog must match the canonical game IDs');
