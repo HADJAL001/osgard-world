@@ -6,6 +6,7 @@ const workflow = readFileSync(workflowPath, 'utf8');
 const checker = readFileSync('scripts/external-project-healthcheck.mjs', 'utf8');
 const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
 
+assert.ok(workflow.includes('pull_request:') && workflow.includes('scripts/external-project-healthcheck-workflow-smoke.mjs'), 'Workflow must run for PRs touching the audit implementation');
 assert.ok(workflow.includes('schedule:') && workflow.includes('cron: "19 7 * * *"'), 'Homepage checks must run daily on a schedule');
 assert.ok(workflow.includes('workflow_dispatch:') && workflow.includes('type: boolean') && workflow.includes('default: false'), 'Manual runs must support an optional strict gate without failing routine runs for transient outages');
 assert.ok(workflow.includes('permissions:\n  contents: read'), 'The scheduled workflow must use read-only repository permissions');
