@@ -595,3 +595,42 @@ The Chronicle uses the existing local career save and Godot runtime—no backend
 7. **Career proof:** local after-action JSON records Phantom stance time, quiet steps, detections, takedowns, evidence discoveries and bonus credits. Three takedowns in a successful run unlock the PHANTOM OPERATOR medal. Headless tests exercise input state, detection, direction checks, elite immunity, body discovery/expiry and report fields.
 
 This release keeps the local-only reporting model and the existing Godot 3D/Web/mobile renderer; no third-party runtime dependency is added. The Web export must be regenerated with the exact 0.23.0-phantom-protocol release marker.
+
+
+## Godot release 0.25 — Tactical Replay / 30 connected refinements
+
+### Route capture and integrity
+1. Samples the real operator position while the game simulation advances.
+2. Captures an explicit terminal sample at extraction or failure.
+3. Uses a consistent 0.25-second sample interval.
+4. Caps the retained route at 360 samples.
+5. Records time, X/Z location, health, weapon heat, stealth, alarm, hostile count and combo.
+6. Clamps route coordinates to the game arena.
+7. Rejects non-finite values, negative timestamps and out-of-bounds positions.
+8. Prevents backwards timestamps.
+9. Clamps all numeric gameplay fields before displaying or exporting.
+10. Adds a versioned `osgard.nullshift.tactical-replay/v1` payload.
+11. Extends after-action JSON with the route without player identity data.
+12. Retains the original bounded 64-event black box separately.
+13. Maps recorded event locations when the event carries coordinates.
+14. Avoids capturing every 3D animation or full world snapshot.
+15. Retains the most recent sample window after long raids.
+
+### Interactive tactical analysis
+16. Adds a top-down tactical route map to the result screen.
+17. Displays the arena boundary and a readable grid.
+18. Draws the operator route as a continuous trace.
+19. Overlays recorded raid events.
+20. Colour-codes extraction, damage, phase/Echo and stealth/evidence events.
+21. Adds a synchronized seek slider.
+22. Adds play/pause over recorded route samples.
+23. Adds previous/next event navigation.
+24. Shows selected timestamp, health and thermal state.
+25. Shows hostile count and combat combo at the selected sample.
+26. Shows Phantom stance and alarm state.
+27. Keeps map cursor, slider and readout synchronized.
+28. Adds keyboard controls: L opens after a completed raid, arrows seek, Space toggles playback, Escape closes.
+29. Keeps the panel responsive for desktop and compact touch screens.
+30. Integrates replay into the live Godot UI, after-action report, headless tests and production shell version checks.
+
+The replay is an honest top-down reconstruction of sampled operator movement and event markers, not a frame-perfect 3D video of every enemy. The recorder is bounded and local; no telemetry endpoint, account identifier or third-party runtime dependency was added. The Web export must carry the exact `0.25.0-tactical-replay` release marker.

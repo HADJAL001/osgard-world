@@ -2,10 +2,10 @@ config_version=5
 
 [application]
 config/name="NULL SHIFT"
-config/version="0.24.0"
+config/version="0.25.0"
 run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
-config/description="NULL//SHIFT 0.24.0 Grounded Shadows: cinematic Godot 3D tactical extraction, procedural contact shadows, deterministic challenges, tactical mastery and private local career archive."
+config/description="NULL//SHIFT 0.25.0 Tactical Replay: cinematic Godot 3D tactical extraction, procedural contact shadows, bounded local route review, deterministic challenges, tactical mastery and private after-action archive."
 
 [display]
 window/size/viewport_width=1600
