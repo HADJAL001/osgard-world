@@ -4519,7 +4519,7 @@ func _build_after_action_report() -> Dictionary:
 	return {
 		"schema": AFTER_ACTION_REPORT_SCHEMA,
 		"game": "NULL//SHIFT",
-		"gameVersion": "0.23.0-phantom-protocol",
+		"gameVersion": "0.24.0-tactical-replay",
 		"outcome": outcome,
 		"challengeCode": daily_challenge_code if daily_challenge_active else "",
 		"runSeed": daily_run_seed,
@@ -5224,7 +5224,7 @@ func _build_operator_chronicle_export() -> Dictionary:
 	return {
 		"schema": OPERATOR_CHRONICLE_SCHEMA,
 		"game": "NULL//SHIFT",
-		"gameVersion": "0.23.0-phantom-protocol",
+		"gameVersion": "0.24.0-tactical-replay",
 		"generatedAtUtc": Time.get_datetime_string_from_system(true),
 		"localOnly": true,
 		"networkUpload": false,

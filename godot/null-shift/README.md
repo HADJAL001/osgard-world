@@ -267,3 +267,8 @@ While Overdrive is active, a weapon hit on a guard can conduct a single violet a
 7. **Regression checks:** headless smoke checks palette separation, HUD bounds, missing-controller fallback, touch controls and all three quality profiles.
 
 Controls: **F2** graphics, **F3** diagnostics, **F4** reduced motion, **F5** colour-safe hazards, **F6** HUD scale, **F7** controller haptics. This is a native Godot rendering/accessibility upgrade, not native 8K output; verify frame pacing on physical target devices.
+
+
+## Release 0.24 — Tactical Replay
+
+After each completed extraction or failed raid, open **TACTICAL REPLAY / L** from the result screen to inspect a top-down route, scrub a 0.25-second sample tape, and step between recorded events. The versioned JSON after-action report also contains a normalized tactical route. The capture stores at most 360 samples, rejects invalid coordinates/timestamps, and remains on-device; it is not a frame-perfect 3D video.

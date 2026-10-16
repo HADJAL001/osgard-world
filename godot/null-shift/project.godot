@@ -2,10 +2,10 @@ config_version=5
 
 [application]
 config/name="NULL SHIFT"
-config/version="0.23.0"
+config/version="0.24.0"
 run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
-config/description="NULL//SHIFT 0.23.0 Phantom Protocol: cinematic 3D tactical extraction, deterministic daily anomalies, tactical mastery, bounded local career archive and private JSON export."
+config/description="NULL//SHIFT 0.24.0 Tactical Replay: cinematic 3D tactical extraction, deterministic daily anomalies, tactical mastery, bounded local career archive, 360-sample tactical replay and private JSON export."
 
 [display]
 window/size/viewport_width=1600
