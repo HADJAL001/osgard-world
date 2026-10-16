@@ -1809,7 +1809,7 @@ function finishSimulation() {
   lastReplay.push({ t: physics.time + .15, x: physics.x, y: physics.y, vx: physics.vx, vy: physics.vy, gateOpen: physics.gateOpen, checkpoints: [...physics.checkpointsReached] });
   sound(won ? 'win' : 'fail');
   if (won) {
-    notifyOsgardLifecycle('level_completed', { levelId: level.id, mode: analyticsMode() });
+    notifyOsgardLifecycle('completed', { levelId: level.id, mode: analyticsMode() });
     completed.add(level.id); $('targetStatus').textContent = 'ВЫПОЛНЕНО'; $('targetStatus').classList.add('complete');
     const grade = gradeRun({ deviceCount: devices.length, par: level.par, time: physics.time, parTime: level.parTime ?? 6 });
     lastCompletedResult = { levelId: level.id, grade, time: physics.time, devices: devices.length };
