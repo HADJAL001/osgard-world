@@ -16,6 +16,7 @@ const sitemap = readFileSync(resolve("public/sitemap.xml"), "utf8");
 const catalogueFallback = JSON.parse(readFileSync(resolve("public/games/game-catalog-fallback.json"), "utf8"));
 const assetOptimizer = readFileSync(resolve("scripts/optimize-games-static-assets.mjs"), "utf8");
 const deployWorkflow = readFileSync(resolve(".github/workflows/deploy-frontend.yml"), "utf8");
+const activationScript = readFileSync(resolve("scripts/activate-frontend-remote.sh"), "utf8");
 
 assert.ok(matrix.includes('data-nullshift-release="0.25.0-tactical-replay"') &&
   matrix.includes('name="osgard-game-version" content="0.25.0-tactical-replay"') &&
@@ -115,6 +116,18 @@ assert.ok(matrix.includes('31 диагностических проверок') 
 assert.ok(nginx.includes('location = /games/catalog-runtime.js') && nginx.includes('gzip_static off;') && nginx.includes('no-cache, must-revalidate'), "The small catalogue runtime must bypass stale precompressed sidecars and revalidate.");
 assert.ok(nginx.includes('no-store, no-cache, must-revalidate, max-age=0') && nginx.includes('if_modified_since off;'), "The Games catalogue runtime must not reuse a stale empty cached response.");
 assert.ok(matrix.includes("expectedBuild.slice(0, 12)") && matrix.includes("cache: 'no-store'"), "Production route checks must probe current-release static assets without reusing cache entries.");
+assert.ok(matrix.includes("const isGamesHubRoute = [") && matrix.includes("'/games/en/index.html'") &&
+  matrix.includes("if (expectedBuild && (isGamesHubRoute ||"),
+  "Both language catalogue HTML shells must be probed with a revision-specific cache-buster.");
+assert.ok(nginx.includes("location ~ ^/games/") && nginx.includes("expires off;") &&
+  nginx.includes("no-store, no-cache, must-revalidate, max-age=0"),
+  "Games catalogue HTML must not remain stale after direct deployment.");
+assert.ok(deployWorkflow.includes("OSGARD_EXPECTED_BUILD='${GITHUB_SHA}'") &&
+  activationScript.includes("OSGARD_EXPECTED_BUILD") &&
+  activationScript.includes("OSGARD_EXPECTED_BUILD_SHORT") &&
+  activationScript.includes("local Nginx serves Games revision") &&
+  activationScript.includes("rolling back."),
+  "SSH activation must verify the expected Games revision and origin assets before succeeding.");
 assert.ok(englishGames.includes('favicon.svg?v=__OSGARD_BUILD_VERSION__') && russianGames.includes('favicon.svg?v=__OSGARD_BUILD_VERSION__') && deployWorkflow.includes('osgard-release/html/games/en/index.html'), "Both language catalogues must publish build-versioned favicon URLs.");
 assert.ok(nginx.includes('location = /commerce-api/v1/game-catalog') && nginx.includes('error_page 502 503 504 =200 /games/game-catalog-fallback.json;'), "The public read-only catalogue must use a safe static fallback only during API outages.");
 assert.ok(nginx.includes('location = /commerce-api/v1/admin/game-catalog') && nginx.includes('error_page 502 504 =503 @osgard_commerce_unavailable;') && nginx.includes('COMMERCE_API_UNAVAILABLE'), "Operator catalogue calls must fail with a clear JSON 503, never fabricated admin success.");

@@ -7,6 +7,13 @@ state_file="/tmp/osgard-frontend-activation.state"
 log_file="/tmp/osgard-frontend-activation.log"
 rm -f "$state_file" "$log_file"
 
+expected_build="${OSGARD_EXPECTED_BUILD:-}"
+if [[ ! "$expected_build" =~ ^[a-f0-9]{40}$ ]]; then
+  echo "ERROR: a full 40-character OSGARD_EXPECTED_BUILD SHA is required for release activation." >&2
+  exit 1
+fi
+expected_build_short="${expected_build:0:12}"
+
 # The OSGARD game API is sometimes managed by the host, not by Docker Compose.
 # Keep the current release untouched unless the active frontend can reach a healthy API.
 api_target="osgard-game-api"
@@ -86,7 +93,7 @@ rollback() {
 
 (
   set -euo pipefail
-  docker exec -e OSGARD_GAME_API_TARGET="$api_target" "$container_name" sh -lc "
+  if ! docker exec -e OSGARD_GAME_API_TARGET="$api_target" "$container_name" sh -lc "
     set -eu
     rm -rf /tmp/osgard-gh-next /tmp/osgard-gh-previous
     mkdir -p /tmp/osgard-gh-next
@@ -121,7 +128,34 @@ rollback() {
       nginx -t && nginx -s reload
       exit 1
     fi
-  "
+  "; then
+    echo "ERROR: candidate Nginx activation failed; restoring previous frontend release." >&2
+    rollback
+    printf 'failed\n' > "$state_file"
+    exit 1
+  fi
+
+  # Verify the just-activated local Nginx origin before checking the public edge.
+  if ! docker exec -e OSGARD_EXPECTED_BUILD_SHORT="$expected_build_short" "$container_name" sh -lc '
+    set -eu
+    expected="$OSGARD_EXPECTED_BUILD_SHORT"
+    hub=/tmp/osgard-games-origin-check.html
+    wget -q -T 5 -O "$hub" "http://127.0.0.1/games/?_osgard_route_check=$expected"
+    grep -Fq "<meta name=\\"osgard-build\\" content=\\"$expected\\">" "$hub"
+    for asset in \
+      consented-analytics.js player-lifecycle.js game-session-recommendations.js game-session-recommendations.css \
+      daily-circuit.js daily-circuit.css sponsored-campaigns.js sponsored-campaigns.css catalog-runtime.js \
+      signal-run/game.js signal-run/daily.js null-shift-godot/index.html cascade-lab/mission-director.js; do
+      test -s "/usr/share/nginx/html/games/$asset"
+      wget -q -T 5 -O /dev/null "http://127.0.0.1/games/$asset?_osgard_route_check=$expected"
+    done
+    echo "PASS: local Nginx serves Games revision $expected and required runtime assets."
+  '; then
+    echo "ERROR: activated Nginx origin does not serve the expected Games build/assets; rolling back." >&2
+    rollback
+    printf 'failed\n' > "$state_file"
+    exit 1
+  fi
 
   set -x
   if curl --max-time 12 -fsS https://osgard.world/ >/dev/null \
