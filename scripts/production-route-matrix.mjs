@@ -6,6 +6,9 @@ const expectCurrentDesign = process.env.SKILLCRED_EXPECT_CURRENT_DESIGN === '1'
 const expectedBuild = String(process.env.OSGARD_EXPECTED_BUILD || '').trim()
 const ROUTE_TIMEOUT_MS = 10000
 const GODOT_ROUTE_TIMEOUT_MS = 20000
+const nullShiftShellContract = await readFile(new URL('../godot/null-shift/web/boot_shell.html', import.meta.url), 'utf8')
+const expectedNullShiftRelease = (nullShiftShellContract.match(/data-nullshift-release="([^"]+)"/) || [])[1] || ''
+const expectedNullShiftVersion = (expectedNullShiftRelease.match(/^(\\d+\\.\\d+\\.\\d+)/) || [])[1] || ''
 const canonicalCatalogue = JSON.parse(await readFile(new URL('../public/games/game-catalog-fallback.json', import.meta.url), 'utf8'))
 const canonicalCatalogueItems = Array.isArray(canonicalCatalogue.items) ? canonicalCatalogue.items : []
 const canonicalCatalogueById = new Map(canonicalCatalogueItems.map((item) => [item.id, item]))
@@ -282,9 +285,11 @@ for (const [device, userAgent] of Object.entries(agents)) for (const route of ro
               ['/games/null-shift-godot/', '/games/null-shift-godot/index.html'].includes(new URL(response.url).pathname)
             : /<canvas/i.test(text) && /godot/i.test(text) && text.includes('index.wasm') && text.includes('index.pck') &&
               text.includes('data-nullshift-shell="premium-v1"') &&
-              text.includes('data-nullshift-release="0.23.0-phantom-protocol"') &&
-              text.includes('name="osgard-game-version" content="0.23.0-phantom-protocol"') &&
-              text.includes('RELEASE 0.23.0') &&
+              Boolean(expectedNullShiftRelease) &&
+              text.includes(`data-nullshift-release="${expectedNullShiftRelease}"`) &&
+              text.includes(`name="osgard-game-version" content="${expectedNullShiftRelease}"`) &&
+              Boolean(expectedNullShiftVersion) &&
+              text.includes(`RELEASE ${expectedNullShiftVersion}`) &&
               text.includes('Engine.isWebGLAvailable(2)') &&
               text.includes('onProgress') &&
               text.includes('НАЧАТЬ ОПЕРАЦИЮ') && text.includes('osgard:game-lifecycle')
