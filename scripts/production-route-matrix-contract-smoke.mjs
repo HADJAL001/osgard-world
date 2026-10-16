@@ -128,6 +128,10 @@ assert.ok(deployWorkflow.includes("OSGARD_EXPECTED_BUILD='${GITHUB_SHA}'") &&
   activationScript.includes("local Nginx serves Games revision") &&
   activationScript.includes("rolling back."),
   "SSH activation must verify the expected Games revision and origin assets before succeeding.");
+assert.ok(activationScript.includes("FAIL: local Nginx GET /games/") &&
+  activationScript.includes("FAIL: local Nginx /games/ response does not contain expected revision") &&
+  activationScript.includes("FAIL: local Nginx cannot serve required Games asset"),
+  "Origin verification must identify whether the page request, release marker, or individual runtime asset failed.");
 assert.ok(englishGames.includes('favicon.svg?v=__OSGARD_BUILD_VERSION__') && russianGames.includes('favicon.svg?v=__OSGARD_BUILD_VERSION__') && deployWorkflow.includes('osgard-release/html/games/en/index.html'), "Both language catalogues must publish build-versioned favicon URLs.");
 assert.ok(nginx.includes('location = /commerce-api/v1/game-catalog') && nginx.includes('error_page 502 503 504 =200 /games/game-catalog-fallback.json;'), "The public read-only catalogue must use a safe static fallback only during API outages.");
 assert.ok(nginx.includes('location = /commerce-api/v1/admin/game-catalog') && nginx.includes('error_page 502 504 =503 @osgard_commerce_unavailable;') && nginx.includes('COMMERCE_API_UNAVAILABLE'), "Operator catalogue calls must fail with a clear JSON 503, never fabricated admin success.");
