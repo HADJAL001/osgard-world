@@ -267,3 +267,12 @@ While Overdrive is active, a weapon hit on a guard can conduct a single violet a
 7. **Regression checks:** headless smoke checks palette separation, HUD bounds, missing-controller fallback, touch controls and all three quality profiles.
 
 Controls: **F2** graphics, **F3** diagnostics, **F4** reduced motion, **F5** colour-safe hazards, **F6** HUD scale, **F7** controller haptics. This is a native Godot rendering/accessibility upgrade, not native 8K output; verify frame pacing on physical target devices.
+
+
+## Release 0.24 — Grounded Shadows
+
+- Godot 4.7.2 stable remains pinned in CI; the web export stays on the Compatibility renderer for broad WebGL 2 support. The 4.8 line is not adopted while it is still a beta release.
+- Added a procedural spatial shader for soft radial contact shadows. The operator, guards, cipher terminal, quantum core, medkit and field devices each receive a feathered XZ plane just above the arena floor. This uses geometry plus alpha falloff, not a flat screen-space mockup and not additional light sources.
+- Contact shadows are visual-only: no collision, no shadow casting, and they are disabled in Performance mode or the hardest adaptive quality tier. Live diagnostics expose visible/registered shadow counts alongside rendering metrics.
+- Headless runtime tests verify the shader and alpha gradient, bounded opacity, floor placement, non-shadow-casting planes, operator/guard/device/objective coverage and the contact-shadow registry. The static Godot smoke contract guards the shader path and release version.
+- This improves grounding and readability without claiming native 8K, imported PBR assets or full real-time global illumination.

@@ -24,6 +24,30 @@ func _run_smoke() -> void:
 	if not _expect(game.get_script() != null, "main scene script must load without GDScript parse errors"):
 		return
 
+	print("RUNTIME_STAGE: grounded procedural contact shadows")
+	if not _expect(is_instance_valid(game.contact_shadow_material) and is_instance_valid(game.contact_shadow_material.shader), "contact-shadow shader material must be created before the scene"):
+		return
+	var operator_shadow := game.player.get_node_or_null("GroundContactShadow") as MeshInstance3D
+	if not _expect(is_instance_valid(operator_shadow) and operator_shadow.mesh is PlaneMesh and operator_shadow.material_override is ShaderMaterial, "operator must have a real procedural plane shadow and shader material"):
+		return
+	var operator_shadow_material := operator_shadow.material_override as ShaderMaterial
+	var operator_shadow_plane := operator_shadow.mesh as PlaneMesh
+	if not _expect(operator_shadow_material.shader.code.contains("smoothstep") and operator_shadow_material.shader.code.contains("ALPHA = shadow_opacity") and float(operator_shadow_material.get_shader_parameter("shadow_opacity")) > 0.0 and float(operator_shadow_material.get_shader_parameter("shadow_opacity")) <= 0.7, "contact shadow must use a feathered alpha gradient and bounded opacity"):
+		return
+	if not _expect(operator_shadow.cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_OFF and operator_shadow_plane.size.x > 1.0 and operator_shadow_plane.size.y > 0.8 and absf(operator_shadow.global_position.y + 0.022) < 0.005, "contact shadow must be a lightweight non-shadow-casting plane just above the floor"):
+		return
+	for guard_state in game.guards:
+		var guard_body := guard_state.get("node") as Node3D
+		if not _expect(is_instance_valid(guard_body) and is_instance_valid(guard_body.get_node_or_null("GroundContactShadow")), "every live guard must have a grounded contact shadow"):
+			return
+	for device_state in game.devices:
+		var device_body := device_state.get("node") as Node3D
+		if not _expect(is_instance_valid(device_body) and is_instance_valid(device_body.get_node_or_null("GroundContactShadow")), "every field device must have a grounded contact shadow"):
+			return
+	if not _expect(is_instance_valid(game.terminal.get_node_or_null("GroundContactShadow")) and is_instance_valid(game.quantum_core.get_node_or_null("GroundContactShadow")) and is_instance_valid(game.medkit.get_node_or_null("GroundContactShadow")), "terminal, quantum core and recovery kit must ground into the same visual system"):
+		return
+	if not _expect(game.contact_shadows.size() >= game.guards.size() + game.devices.size() + 4, "contact shadow registry must include actors, devices and objective props for quality budgeting"):
+		return
 	print("RUNTIME_STAGE: premium accessibility and rendering controls")
 	var saved_palette: bool = game.color_safe_mode
 	var saved_haptics: bool = game.haptics_enabled
@@ -2083,7 +2107,7 @@ func _run_smoke() -> void:
 	game.counter_windows_earned = old_counter_earned
 	game.countershot_hits = old_counter_hits
 	var new_report: Dictionary = game._build_after_action_report()
-	if not _expect(str(new_report.get("gameVersion", "")) == "0.23.0-phantom-protocol" and new_report.get("suppression", {}).has("pressureHits") and new_report.get("suppression", {}).has("attackInterrupts"), "after-action export must include versioned kinetic-pressure metrics"):
+	if not _expect(str(new_report.get("gameVersion", "")) == "0.24.0-grounded-shadows" and new_report.get("suppression", {}).has("pressureHits") and new_report.get("suppression", {}).has("attackInterrupts"), "after-action export must include versioned kinetic-pressure metrics"):
 		return
 	if not _expect(new_report.get("thermal", {}).has("overheatEvents") and new_report.get("thermal", {}).has("ventHostilesInterrupted"), "after-action export must include versioned thermal metrics"):
 		return
@@ -2095,7 +2119,7 @@ func _run_smoke() -> void:
 		return
 	if not _expect(new_report.get("dailyObjective", {}).has("goal"), "daily report must export the measurable tactical bonus objective"):
 		return
-	if not _expect(str(new_report.get("gameVersion", "")) == "0.23.0-phantom-protocol" and new_report.get("phaseEcho", {}).get("deployments", -1) >= 0 and new_report.get("phaseEcho", {}).has("confirmedLures"), "after-action report must expose versioned Echo use and confirmed AI diversion counts"):
+	if not _expect(str(new_report.get("gameVersion", "")) == "0.24.0-grounded-shadows" and new_report.get("phaseEcho", {}).get("deployments", -1) >= 0 and new_report.get("phaseEcho", {}).has("confirmedLures"), "after-action report must expose versioned Echo use and confirmed AI diversion counts"):
 		return
 
 	print("RUNTIME_STAGE: operator chronicle integrity, bounded archive and medals")

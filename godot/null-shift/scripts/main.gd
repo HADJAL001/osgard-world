@@ -126,6 +126,8 @@ var mobile_action_panel: PanelContainer
 var mobile_controls_visible := false
 var mobile_actions: Dictionary = {"up": false, "down": false, "left": false, "right": false}
 var materials: Dictionary = {}
+var contact_shadow_material: ShaderMaterial
+var contact_shadows: Array[MeshInstance3D] = []
 var surface_albedo_texture: Texture2D
 var surface_normal_texture: Texture2D
 var surface_roughness_texture: Texture2D
@@ -491,6 +493,8 @@ func _reset_runtime_collections() -> void:
 	# Duplicate each collection before clearing it so repeated scene instances cannot cross-contaminate.
 	materials = materials.duplicate()
 	materials.clear()
+	contact_shadows = contact_shadows.duplicate()
+	contact_shadows.clear()
 	raid_event_ledger = raid_event_ledger.duplicate(true)
 	raid_event_ledger.clear()
 	downed_bodies = downed_bodies.duplicate()
@@ -1003,6 +1007,39 @@ func _create_materials() -> void:
 	materials["objective_exit"] = _material(Color(0.42, 1.0, 0.78), Color(0.16, 1.0, 0.62), 1.55, 0.28, 0.22)
 	materials["grid"] = _material(Color(0.09, 0.31, 0.3, 0.4), Color(0.035, 0.25, 0.24), 0.38, 0.0, 1.0)
 	materials["telegraph"] = _material(Color(1.0, 0.13, 0.2, 0.8), Color(1.0, 0.035, 0.08), 1.8, 0.0, 1.0)
+	# Radial contact shadow uses a tiny procedural shader; no textures or extra lights.
+	var shadow_shader := Shader.new()
+	shadow_shader.code = """
+shader_type spatial;
+render_mode unshaded, cull_disabled, depth_draw_never, blend_mix;
+uniform vec3 shadow_tint = vec3(0.003, 0.009, 0.012);
+uniform float shadow_opacity : hint_range(0.0, 0.7) = 0.44;
+void fragment() {
+    vec2 centered_uv = UV * 2.0 - vec2(1.0);
+    float radial_distance = length(centered_uv);
+    float feather = 1.0 - smoothstep(0.06, 1.0, radial_distance);
+    ALBEDO = shadow_tint;
+    ALPHA = shadow_opacity * feather * feather;
+}
+"""
+	contact_shadow_material = ShaderMaterial.new()
+	contact_shadow_material.shader = shadow_shader
+
+func _create_ground_contact_shadow(parent: Node3D, footprint: Vector2, opacity: float = 0.44) -> MeshInstance3D:
+	# Transparent XZ plane just above the floor; no collision and no shadow-casting cost.
+	var plane := PlaneMesh.new()
+	plane.size = footprint
+	var shadow := MeshInstance3D.new()
+	shadow.name = "GroundContactShadow"
+	shadow.mesh = plane
+	var instance_material := contact_shadow_material.duplicate() as ShaderMaterial
+	instance_material.set_shader_parameter("shadow_opacity", clampf(opacity, 0.0, 0.7))
+	shadow.material_override = instance_material
+	shadow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	shadow.position = Vector3(0.0, -parent.position.y - 0.022, 0.0)
+	parent.add_child(shadow)
+	contact_shadows.append(shadow)
+	return shadow
 
 func _create_procedural_surface_textures() -> void:
 	# Generate one seamless surface set in memory: no downloads, binary art assets, or per-frame allocations.
@@ -1560,6 +1597,7 @@ func _create_interactables() -> void:
 	terminal.name = "CipherTerminal"
 	terminal.position = Vector3(-1.0, 0.0, -6.4)
 	add_child(terminal)
+	_create_ground_contact_shadow(terminal, Vector2(2.15, 1.7), 0.4)
 	_add_cube(terminal, Vector3(0.0, 0.45, 0.0), Vector3(1.5, 0.9, 1.05), materials["wall"])
 	_add_cube(terminal, Vector3(0.0, 1.22, -0.13), Vector3(1.2, 0.55, 0.12), materials["cyan_dark"])
 	_add_cube(terminal, Vector3(0.0, 1.23, -0.2), Vector3(0.82, 0.035, 0.025), materials["cyan"])
@@ -1571,6 +1609,7 @@ func _create_interactables() -> void:
 	quantum_core.name = "QuantumCore"
 	quantum_core.position = Vector3(13.1, 0.85, 8.4)
 	add_child(quantum_core)
+	_create_ground_contact_shadow(quantum_core, Vector2(2.1, 1.9), 0.46)
 	var core_ball := SphereMesh.new()
 	core_ball.radius = 0.53
 	core_ball.height = 1.06
@@ -1626,6 +1665,7 @@ func _create_interactables() -> void:
 	medkit.name = "FieldMedkit"
 	medkit.position = Vector3(-15.3, 0.0, 4.8)
 	add_child(medkit)
+	_create_ground_contact_shadow(medkit, Vector2(1.45, 1.2), 0.38)
 	_add_cube(medkit, Vector3(0.0, 0.4, 0.0), Vector3(0.8, 0.65, 0.8), materials["white"])
 	_add_cube(medkit, Vector3(0.0, 0.75, 0.0), Vector3(0.22, 0.055, 0.22), materials["red"])
 	_add_cube(medkit, Vector3(0.0, 0.76, 0.0), Vector3(0.055, 0.06, 0.48), materials["red"])
@@ -1854,6 +1894,7 @@ func _create_device(at: Vector3, kind: String, label: String) -> void:
 	var device_tag: Label3D = _add_world_tag(body, label, materials["violet"] if kind == "ANCHOR" else (materials["amber"] if kind == "CELL" else materials["cyan"]))
 	device_tag.visible = false
 	add_child(body)
+	_create_ground_contact_shadow(body, Vector2(1.85, 1.55), 0.4)
 	devices.append({"node": body, "hp": 2, "kind": kind, "destroyed": false, "tag": device_tag, "scan_timer": 0.0})
 
 func _create_player() -> void:
@@ -1951,6 +1992,7 @@ func _create_player() -> void:
 	muzzle_light.visible = false
 	operator_rig.add_child(muzzle_light)
 	add_child(player)
+	_create_ground_contact_shadow(player, Vector2(1.5, 1.12), 0.46)
 
 	camera_rig = Node3D.new()
 	camera_rig.name = "TacticalCamera"
@@ -2120,6 +2162,9 @@ func _spawn_guard(at: Vector3, is_warden: bool) -> void:
 	scan_readout.visible = false
 	body.add_child(scan_readout)
 	add_child(body)
+	var shadow_width: float = capsule.radius * 3.25
+	var shadow_depth: float = capsule.radius * 2.75
+	_create_ground_contact_shadow(body, Vector2(shadow_width, shadow_depth), 0.46 if is_warden else 0.4)
 	guards.append({
 		"node": body,
 		"role": role,
@@ -4385,7 +4430,7 @@ func _build_after_action_report() -> Dictionary:
 	return {
 		"schema": AFTER_ACTION_REPORT_SCHEMA,
 		"game": "NULL//SHIFT",
-		"gameVersion": "0.23.0-phantom-protocol",
+		"gameVersion": "0.24.0-grounded-shadows",
 		"outcome": outcome,
 		"challengeCode": daily_challenge_code if daily_challenge_active else "",
 		"runSeed": daily_run_seed,
@@ -4886,7 +4931,7 @@ func _build_operator_chronicle_export() -> Dictionary:
 	return {
 		"schema": OPERATOR_CHRONICLE_SCHEMA,
 		"game": "NULL//SHIFT",
-		"gameVersion": "0.23.0-phantom-protocol",
+		"gameVersion": "0.24.0-grounded-shadows",
 		"generatedAtUtc": Time.get_datetime_string_from_system(true),
 		"localOnly": true,
 		"networkUpload": false,
@@ -5367,6 +5412,9 @@ func _apply_quality_mode() -> void:
 	for light in local_lights:
 		if is_instance_valid(light):
 			light.visible = balanced_effects
+	for contact_shadow in contact_shadows:
+		if is_instance_valid(contact_shadow):
+			contact_shadow.visible = not performance_quality and adaptive_quality_level < 2
 	for impact_state in impact_light_effects:
 		var impact_light: OmniLight3D = impact_state.get("node") as OmniLight3D
 		if is_instance_valid(impact_light):
@@ -6753,13 +6801,17 @@ func _update_live_diagnostics() -> void:
 		budget_misses += miss
 	var budget_miss_percent: float = budget_misses / maxf(1.0, float(frame_budget_misses.size())) * 100.0
 	var active_impact_lights: int = _active_impact_light_count()
+	var visible_contact_shadows := 0
+	for contact_shadow in contact_shadows:
+		if is_instance_valid(contact_shadow) and contact_shadow.visible:
+			visible_contact_shadows += 1
 	var operator_rim_active: int = int(is_instance_valid(operator_rim_light) and operator_rim_light.visible)
 	var profile: String = "PERFORMANCE" if performance_quality else ("BALANCED" if not cinematic_quality else ("AUTO-OPTIMIZED II" if adaptive_quality_level >= 2 else ("AUTO-OPTIMIZED I" if adaptive_quality_level == 1 else "CINEMATIC")))
 	var msaa_label: String = "4X" if get_viewport().msaa_3d == Viewport.MSAA_4X else ("2X" if get_viewport().msaa_3d == Viewport.MSAA_2X else "OFF")
-	diagnostics_label.text = "LIVE DIAGNOSTICS\nFPS        %02d\nFRAME P95  %.1f ms\nFRAME NOW  %.1f ms\n60 FPS MISSES %.0f%%\nPROCESS CPU %.2f ms\nPHYSICS CPU %.2f ms\nDRAW / TRI / NODES %d / %d / %d\nFX ACTIVE  %02d\nFX POOLS   %02d BEAM / %02d RING / %02d SPARK\nFX DROPPED %d\nDASH TRAILS %04d\nGUARDS     %d\nDEVICES    %d\nLANE SUPPRESS %03d\nDASH EVADES %d\nDASH CD    %.1f s\nHIT LIGHTS %d / %d POOL\nOPERATOR RIM %d / 1\nOVERDRIVE ARCS %d\nDEVICE FX  EMP %02d / NOVA %02d / LANE %02d\nEXFIL REINF %02d / BREACH %02d\nCOUNTERPLAY %s / SWITCHES %02d\nMSAA %s · HUD %.0f%% · PALETTE %s · RUMBLE %s\nPROFILE    %s" % [
+	diagnostics_label.text = "LIVE DIAGNOSTICS\nFPS        %02d\nFRAME P95  %.1f ms\nFRAME NOW  %.1f ms\n60 FPS MISSES %.0f%%\nPROCESS CPU %.2f ms\nPHYSICS CPU %.2f ms\nDRAW / TRI / NODES %d / %d / %d\nFX ACTIVE  %02d\nFX POOLS   %02d BEAM / %02d RING / %02d SPARK\nFX DROPPED %d\nDASH TRAILS %04d\nGUARDS     %d\nDEVICES    %d\nLANE SUPPRESS %03d\nDASH EVADES %d\nDASH CD    %.1f s\nHIT LIGHTS %d / %d POOL\nOPERATOR RIM %d / 1\nOVERDRIVE ARCS %d\nGROUND SHADOWS %02d / %02d\nDEVICE FX  EMP %02d / NOVA %02d / LANE %02d\nEXFIL REINF %02d / BREACH %02d\nCOUNTERPLAY %s / SWITCHES %02d\nMSAA %s · HUD %.0f%% · PALETTE %s · RUMBLE %s\nPROFILE    %s" % [
 		Engine.get_frames_per_second(), fps_p95_ms, current_frame_ms, budget_miss_percent, process_cpu_ms, physics_cpu_ms, draw_calls, primitives, scene_nodes,
 		effects.size(), beam_pool.size(), ring_pool.size(), spark_pool.size(), effect_pool_exhaustions,
-		dash_trails_emitted, guards.size(), _living_device_count(), phase_lane_disruptions, dash_evasions, dash_cooldown, active_impact_lights, impact_light_pool.size(), operator_rim_active, overdrive_arc_chains, device_emp_overloads, device_cell_novas, device_lane_collapses, extraction_reinforcements_spawned, extraction_overload_count, adaptive_doctrine, tactical_doctrine_changes, msaa_label, _hud_scale_value() * 100.0, "COLOR SAFE" if color_safe_mode else "STANDARD", "ON" if haptics_enabled else "OFF", profile
+		dash_trails_emitted, guards.size(), _living_device_count(), phase_lane_disruptions, dash_evasions, dash_cooldown, active_impact_lights, impact_light_pool.size(), operator_rim_active, overdrive_arc_chains, visible_contact_shadows, contact_shadows.size(), device_emp_overloads, device_cell_novas, device_lane_collapses, extraction_reinforcements_spawned, extraction_overload_count, adaptive_doctrine, tactical_doctrine_changes, msaa_label, _hud_scale_value() * 100.0, "COLOR SAFE" if color_safe_mode else "STANDARD", "ON" if haptics_enabled else "OFF", profile
 	]
 
 
